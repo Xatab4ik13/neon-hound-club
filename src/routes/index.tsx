@@ -1,26 +1,282 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { Header } from "@/components/brand/Header";
+import { Footer } from "@/components/brand/Footer";
+import pinkR6 from "@/assets/pink-r6.jpg";
+import founderHoodie from "@/assets/founder-hoodie.jpg";
+import pitGloves from "@/assets/pit-gloves.jpg";
+import garageKey from "@/assets/garage-key.jpg";
 
 export const Route = createFileRoute("/")({
+  head: () => ({
+    meta: [
+      { title: "HELLHOUND Racing Club — мерч, Race Pass, гараж" },
+      {
+        name: "description",
+        content:
+          "Андеграундный мотоклуб HELLHOUND. Лимитированные дропы, Race Pass, уровни и XP.",
+      },
+      { property: "og:title", content: "HELLHOUND Racing Club" },
+      {
+        property: "og:description",
+        content:
+          "Андеграундный мотоклуб. Лимитированные дропы, Race Pass, уровни и XP.",
+      },
+      { property: "og:image", content: pinkR6 },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
   component: Index,
 });
 
-// IMPORTANT: Replace this placeholder. For sites with multiple pages (About, Services, Contact, etc.),
-// create separate route files (about.tsx, services.tsx, contact.tsx) — don't put all pages in this file.
-function PlaceholderIndex() {
-  return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
-    </div>
-  );
-}
+const TIERS = [
+  { num: "01", name: "Rookie", xp: "0 — 500 XP", state: "locked" as const },
+  { num: "02", name: "Rider", xp: "Текущий уровень", state: "active" as const },
+  { num: "03", name: "Pit Crew", xp: "1500 XP", state: "future" as const },
+  { num: "04", name: "Elite", xp: "5000 XP", state: "future" as const },
+];
+
+const PRODUCTS = [
+  {
+    name: "Founder Hoodie v1",
+    price: "12 990 ₽",
+    status: "SOLD OUT",
+    statusColor: "text-muted-foreground",
+    image: founderHoodie,
+  },
+  {
+    name: "Pit Crew Gloves",
+    price: "8 490 ₽",
+    status: "Осталось 24",
+    statusColor: "text-primary",
+    image: pitGloves,
+  },
+  {
+    name: "Garage Access Key",
+    price: "2 490 ₽",
+    status: "В наличии",
+    statusColor: "text-muted-foreground",
+    image: garageKey,
+  },
+];
 
 function Index() {
-  return <PlaceholderIndex />;
+  return (
+    <div className="min-h-screen bg-background text-foreground">
+      <Header />
+
+      <main>
+        {/* HERO */}
+        <section className="relative px-6 pt-32 pb-20">
+          <div className="mx-auto max-w-7xl">
+            <div className="grid items-end gap-12 lg:grid-cols-[1fr_400px]">
+              <div className="space-y-8">
+                <div className="inline-block border-l-2 border-primary py-1 pl-4">
+                  <span className="font-mono text-xs uppercase tracking-tight text-primary">
+                    Season 01 / Underground Access
+                  </span>
+                </div>
+                <h1 className="text-balance font-display text-7xl uppercase leading-none tracking-tighter md:text-9xl">
+                  Hellhound
+                  <br />
+                  <span className="text-primary">Racing</span> Club
+                </h1>
+                <p className="max-w-md text-base leading-relaxed text-muted-foreground">
+                  Мерч. Розыгрыши. Гараж. Трек. Клуб для своих.
+                </p>
+                <div className="flex flex-wrap gap-4">
+                  <button className="group relative flex items-center gap-3 bg-primary px-6 py-3 text-sm font-semibold uppercase tracking-widest text-primary-foreground ring-1 ring-primary transition-all hover:shadow-[0_0_24px_-4px_oklch(0.62_0.22_5/0.6)] active:scale-[0.98]">
+                    Вступить в клуб
+                    <span className="transition-transform group-hover:translate-x-1">
+                      →
+                    </span>
+                  </button>
+                  <button className="flex items-center border border-border px-6 py-3 text-sm font-semibold uppercase tracking-widest text-foreground transition-colors hover:bg-card">
+                    Race Pass
+                  </button>
+                </div>
+              </div>
+
+              {/* Active giveaway card */}
+              <aside
+                id="race-pass"
+                className="rounded-xl border border-border bg-surface p-6 ring-1 ring-black/5"
+              >
+                <div className="mb-6 flex items-start justify-between">
+                  <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                    Активный розыгрыш
+                  </span>
+                  <span className="size-2 animate-pulse rounded-full bg-primary" />
+                </div>
+                <div className="mb-4 overflow-hidden rounded-lg border border-border">
+                  <img
+                    src={pinkR6}
+                    alt="Project Pink R6 — главный приз розыгрыша"
+                    width={1280}
+                    height={768}
+                    className="aspect-video w-full object-cover"
+                  />
+                </div>
+                <div className="mb-4">
+                  <div className="font-display text-xl uppercase tracking-tight">
+                    Project Pink R6
+                  </div>
+                  <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                    Главный приз / 1 победитель
+                  </div>
+                </div>
+                <div className="flex items-end justify-between border-t border-border pt-4">
+                  <div>
+                    <div className="mb-1 text-[10px] uppercase text-muted-foreground">
+                      До конца
+                    </div>
+                    <div className="font-mono text-2xl text-foreground">
+                      04:12:55:03
+                    </div>
+                  </div>
+                  <button className="bg-foreground px-4 py-2 text-xs font-semibold uppercase tracking-widest text-background transition-opacity hover:opacity-90">
+                    Участвовать
+                  </button>
+                </div>
+              </aside>
+            </div>
+          </div>
+        </section>
+
+        {/* DROP */}
+        <section id="drop" className="bg-surface py-24">
+          <div className="mx-auto max-w-7xl px-6">
+            <div className="mb-12 flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
+              <div>
+                <div className="mb-3 font-mono text-xs uppercase tracking-widest text-primary">
+                  Drop #01
+                </div>
+                <h2 className="text-balance font-display text-4xl uppercase tracking-tight md:text-5xl">
+                  Founder Series
+                </h2>
+                <p className="mt-3 max-w-[48ch] text-pretty text-muted-foreground">
+                  Лимитированный релиз для основателей клуба. Плотная вышивка,
+                  тяжёлый хлопок, без перевыпусков.
+                </p>
+              </div>
+              <div className="text-right">
+                <div className="font-mono text-xl text-primary">666 UNITS ONLY</div>
+                <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                  No Restocks
+                </div>
+              </div>
+            </div>
+
+            <div className="grid gap-6 md:grid-cols-3">
+              {PRODUCTS.map((p) => (
+                <article
+                  key={p.name}
+                  className="group rounded-xl border border-border bg-card p-2 ring-1 ring-black/5 transition-colors hover:border-primary/40"
+                >
+                  <div className="mb-4 overflow-hidden rounded-lg border border-border">
+                    <img
+                      src={p.image}
+                      alt={p.name}
+                      width={768}
+                      height={1024}
+                      loading="lazy"
+                      className="aspect-[3/4] w-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+                    />
+                  </div>
+                  <div className="px-2 pb-2">
+                    <div className="mb-1 flex items-baseline justify-between gap-2 text-sm font-medium uppercase">
+                      <span>{p.name}</span>
+                      <span className="font-mono">{p.price}</span>
+                    </div>
+                    <div
+                      className={`text-[10px] uppercase tracking-widest ${p.statusColor}`}
+                    >
+                      {p.status}
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* CLUB / HIERARCHY */}
+        <section id="club" className="px-6 py-24">
+          <div className="mx-auto max-w-7xl">
+            <div className="grid gap-16 lg:grid-cols-2">
+              <div>
+                <div className="mb-3 font-mono text-xs uppercase tracking-widest text-primary">
+                  Club
+                </div>
+                <h2 className="mb-8 font-display text-5xl uppercase tracking-tighter">
+                  The Hierarchy
+                </h2>
+                <div className="space-y-4">
+                  {TIERS.map((tier) => {
+                    const isActive = tier.state === "active";
+                    return (
+                      <div
+                        key={tier.num}
+                        className={`flex items-center justify-between rounded-lg border p-4 transition-colors ${
+                          isActive
+                            ? "border-primary/40 bg-primary/5"
+                            : tier.state === "locked"
+                              ? "border-border bg-surface"
+                              : "border-border bg-surface/50 opacity-50"
+                        }`}
+                      >
+                        <div className="flex items-center gap-4">
+                          <span
+                            className={`font-mono text-sm ${
+                              isActive ? "text-primary" : "text-muted-foreground"
+                            }`}
+                          >
+                            {tier.num}
+                          </span>
+                          <span className="font-medium uppercase tracking-widest">
+                            {tier.name}
+                          </span>
+                        </div>
+                        <span className="font-mono text-xs text-muted-foreground">
+                          {tier.xp}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="flex flex-col justify-center rounded-xl border border-border bg-surface p-12">
+                <div className="mb-8">
+                  <div className="mb-2 text-xs uppercase tracking-widest text-muted-foreground">
+                    Member Progress
+                  </div>
+                  <div className="font-display text-4xl uppercase">
+                    Rider Status
+                  </div>
+                </div>
+                <div className="space-y-6">
+                  <div className="h-1 w-full overflow-hidden rounded-full bg-background">
+                    <div className="h-full w-[56%] bg-primary" />
+                  </div>
+                  <div className="flex justify-between font-mono text-xs">
+                    <span className="text-foreground">840 XP</span>
+                    <span className="text-muted-foreground">
+                      1500 XP NEXT LEVEL
+                    </span>
+                  </div>
+                  <p className="max-w-[40ch] text-pretty text-sm text-muted-foreground">
+                    Покупай мерч, участвуй в Race Pass и розыгрышах, чтобы
+                    прокачать статус и открыть ранний доступ к дропам.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <Footer />
+    </div>
+  );
 }
