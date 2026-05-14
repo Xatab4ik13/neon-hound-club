@@ -170,7 +170,7 @@ function ShopPage() {
               Магазин клуба
             </h1>
             <p className="max-w-[60ch] text-pretty text-muted-foreground">
-              Мерч HELLHOUND, экипировка от партнёров и БУ-вещи участников клуба. Всё в одном месте.
+              Мерч HELLHOUND, товары от партнёров и БУ-вещи участников клуба. Всё в одном месте.
             </p>
           </header>
 
