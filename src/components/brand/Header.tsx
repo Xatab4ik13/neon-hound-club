@@ -246,7 +246,7 @@ function MobileMenu({
                     {item.label}
                   </span>
                 </span>
-              </a>
+              </Link>
             );
           })}
         </nav>
