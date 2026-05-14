@@ -253,8 +253,8 @@ function MobileMenu({
 
         {/* Footer: cart + login */}
         <div className="relative z-10 space-y-8 bg-gradient-to-t from-black via-black to-transparent p-8">
-          <a
-            href="/cart"
+          <Link
+            to="/cart"
             onClick={onClose}
             className="group flex w-fit items-center gap-4"
           >
@@ -287,10 +287,10 @@ function MobileMenu({
                 [{cartCount}]
               </span>
             </span>
-          </a>
+          </Link>
 
-          <a
-            href={isAuthed ? "/garage" : "/login"}
+          <Link
+            to={isAuthed ? "/garage" : "/login"}
             onClick={onClose}
             className="group relative block w-full overflow-hidden bg-primary py-7 text-center font-display text-2xl italic uppercase font-bold tracking-widest text-black transition-all duration-300 active:scale-[0.97]"
             style={{ clipPath: "polygon(0 15%, 100% 0, 100% 100%, 0 85%)" }}
@@ -302,7 +302,7 @@ function MobileMenu({
             <span className="relative z-10">
               {isAuthed ? "Мой Гараж" : "Войти"}
             </span>
-          </a>
+          </Link>
         </div>
 
         {/* Decorative right edge accents */}
