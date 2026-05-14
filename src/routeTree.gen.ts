@@ -9,16 +9,11 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as ShopRouteImport } from './routes/shop'
 import { Route as LogosRouteImport } from './routes/logos'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ShopIndexRouteImport } from './routes/shop.index'
 import { Route as ShopProductSlugRouteImport } from './routes/shop.$productSlug'
 
-const ShopRoute = ShopRouteImport.update({
-  id: '/shop',
-  path: '/shop',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const LogosRoute = LogosRouteImport.update({
   id: '/logos',
   path: '/logos',
@@ -29,54 +24,53 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ShopIndexRoute = ShopIndexRouteImport.update({
+  id: '/shop/',
+  path: '/shop/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ShopProductSlugRoute = ShopProductSlugRouteImport.update({
-  id: '/$productSlug',
-  path: '/$productSlug',
-  getParentRoute: () => ShopRoute,
+  id: '/shop/$productSlug',
+  path: '/shop/$productSlug',
+  getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/logos': typeof LogosRoute
-  '/shop': typeof ShopRouteWithChildren
   '/shop/$productSlug': typeof ShopProductSlugRoute
+  '/shop/': typeof ShopIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/logos': typeof LogosRoute
-  '/shop': typeof ShopRouteWithChildren
   '/shop/$productSlug': typeof ShopProductSlugRoute
+  '/shop': typeof ShopIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/logos': typeof LogosRoute
-  '/shop': typeof ShopRouteWithChildren
   '/shop/$productSlug': typeof ShopProductSlugRoute
+  '/shop/': typeof ShopIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/logos' | '/shop' | '/shop/$productSlug'
+  fullPaths: '/' | '/logos' | '/shop/$productSlug' | '/shop/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/logos' | '/shop' | '/shop/$productSlug'
-  id: '__root__' | '/' | '/logos' | '/shop' | '/shop/$productSlug'
+  to: '/' | '/logos' | '/shop/$productSlug' | '/shop'
+  id: '__root__' | '/' | '/logos' | '/shop/$productSlug' | '/shop/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LogosRoute: typeof LogosRoute
-  ShopRoute: typeof ShopRouteWithChildren
+  ShopProductSlugRoute: typeof ShopProductSlugRoute
+  ShopIndexRoute: typeof ShopIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/shop': {
-      id: '/shop'
-      path: '/shop'
-      fullPath: '/shop'
-      preLoaderRoute: typeof ShopRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/logos': {
       id: '/logos'
       path: '/logos'
@@ -91,31 +85,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/shop/': {
+      id: '/shop/'
+      path: '/shop'
+      fullPath: '/shop/'
+      preLoaderRoute: typeof ShopIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/shop/$productSlug': {
       id: '/shop/$productSlug'
-      path: '/$productSlug'
+      path: '/shop/$productSlug'
       fullPath: '/shop/$productSlug'
       preLoaderRoute: typeof ShopProductSlugRouteImport
-      parentRoute: typeof ShopRoute
+      parentRoute: typeof rootRouteImport
     }
   }
 }
 
-interface ShopRouteChildren {
-  ShopProductSlugRoute: typeof ShopProductSlugRoute
-}
-
-const ShopRouteChildren: ShopRouteChildren = {
-  ShopProductSlugRoute: ShopProductSlugRoute,
-}
-
-const ShopRouteWithChildren = ShopRoute._addFileChildren(ShopRouteChildren)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LogosRoute: LogosRoute,
-  ShopRoute: ShopRouteWithChildren,
+  ShopProductSlugRoute: ShopProductSlugRoute,
+  ShopIndexRoute: ShopIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
