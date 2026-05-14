@@ -108,7 +108,7 @@ export function Hero() {
       />
 
       {/* HUD corner markers */}
-      <CornerMark position="tl" label="NODE" value="HH-01 / SEASON 01" />
+      <CornerMark position="tl" label="NODE" value="HH-01" />
       <CornerMark position="tr" label="STATUS" value="● LIVE" />
       <CornerMark position="bl" label="LAT" value="55.7558 N" />
       <CornerMark position="br" label="PING" value="14MS / OK" />
