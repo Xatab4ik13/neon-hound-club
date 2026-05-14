@@ -20,7 +20,7 @@ export const Route = createFileRoute("/")({
       {
         property: "og:description",
         content:
-          "Андеграундный мотоклуб. Лимитированные дропы, Race Pass, уровни и XP.",
+          "Андеграундный мотоклуб. Лимитированный мерч, Race Pass, уровни и XP.",
       },
       { property: "og:image", content: pinkR6 },
       { property: "og:type", content: "website" },
