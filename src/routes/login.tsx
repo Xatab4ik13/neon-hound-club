@@ -69,6 +69,12 @@ function LoginPage() {
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-black pt-20">
+      {/* Page-enter wipe — primary slab sweeps off to the right */}
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-0 z-[70] origin-left bg-primary"
+        style={{ animation: "page-wipe 700ms cubic-bezier(0.7, 0, 0.2, 1) forwards" }}
+      />
       {/* Background rally stripes */}
       <div
         aria-hidden
@@ -95,7 +101,7 @@ function LoginPage() {
         <span className="h-20 w-[2px] bg-primary" />
       </div>
 
-      <div className="relative z-10 mx-auto flex min-h-[calc(100vh-5rem)] w-full max-w-[480px] flex-col px-6 py-10 md:py-16">
+      <div className="relative z-10 mx-auto flex min-h-[calc(100vh-5rem)] w-full max-w-[480px] flex-col px-6 py-10 md:py-16 animate-fade-in" style={{ animationDelay: "350ms", animationFillMode: "both" }}>
         {/* Heading */}
         <div className="mb-8">
           <h1
