@@ -190,7 +190,7 @@ function MobileMenu({
             to="/"
             onClick={onClose}
             className="font-display text-2xl italic uppercase tracking-tighter text-primary"
-            style={{ textShadow: "0 0 10px hsl(var(--primary) / 0.3)" }}
+            style={{ textShadow: "0 0 10px color-mix(in oklab, var(--primary) 30%, transparent)" }}
           >
             HELLHOUND
           </Link>
