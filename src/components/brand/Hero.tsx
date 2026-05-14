@@ -56,8 +56,8 @@ export function Hero() {
           </p>
 
           <div className="mt-10 flex flex-wrap items-center gap-6">
-            <a
-              href="#join"
+            <Link
+              to="/login"
               className="group relative inline-block overflow-hidden bg-primary px-10 py-5 text-center font-display text-xl italic font-bold uppercase tracking-widest text-black transition-all duration-300 active:scale-[0.97]"
               style={{ clipPath: "polygon(0 15%, 100% 0, 100% 100%, 0 85%)" }}
             >
@@ -69,7 +69,7 @@ export function Hero() {
                 Войти в клуб
                 <span className="transition-transform group-hover:translate-x-1">→</span>
               </span>
-            </a>
+            </Link>
             <div className="flex flex-col">
               <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground/70">
                 Стоимость входа
