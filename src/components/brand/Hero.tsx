@@ -57,7 +57,7 @@ export function Hero() {
           <div className="mt-10 flex flex-wrap items-center gap-6">
             <a
               href="#join"
-              className="group relative inline-flex items-center gap-3 bg-primary px-7 py-4 text-sm font-semibold uppercase tracking-[0.2em] text-primary-foreground transition-colors hover:bg-primary/90"
+              className="group relative inline-flex items-center gap-3 rounded-full bg-primary px-7 py-4 text-sm font-semibold uppercase tracking-[0.2em] text-primary-foreground transition-colors hover:bg-primary/90"
             >
               Войти в клуб
               <span className="transition-transform group-hover:translate-x-1">
