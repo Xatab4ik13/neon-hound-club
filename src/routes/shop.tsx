@@ -211,102 +211,109 @@ function ShopPage() {
               </div>
 
               <nav className="px-6 pb-10 pt-6 lg:sticky lg:top-28 lg:px-0 lg:pt-0">
-                <div className="mb-4 hidden font-mono text-[10px] uppercase tracking-[0.3em] text-muted-foreground lg:block">
+                <div className="mb-5 hidden font-mono text-[10px] uppercase tracking-[0.3em] text-muted-foreground lg:block">
                   Каталог
                 </div>
-                <ul className="space-y-1">
+                <ul className="flex flex-col gap-2.5">
                   {CATEGORIES.map((cat) => {
-                    const isActive = activeCat === cat.slug;
-                    const isOpen = openCats[cat.slug] ?? false;
+                    const isActive = activeCat === cat.slug && !activeSub;
                     const hasSub = cat.sub.length > 0;
+                    const isOpen = hasSub
+                      ? (openCats[cat.slug] ?? false) || activeCat === cat.slug
+                      : false;
 
                     return (
-                      <li key={cat.slug}>
-                        <div className="flex items-stretch">
+                      <li key={cat.slug} className="flex flex-col gap-2">
+                        <div
+                          className={`relative transition-transform duration-300 ${
+                            isActive ? "translate-x-2" : "hover:translate-x-1"
+                          }`}
+                        >
+                          {/* Pink accent bar (active only) */}
+                          {isActive && (
+                            <span
+                              aria-hidden
+                              className="absolute -left-1.5 top-0 bottom-0 z-10 w-[5px] bg-primary shadow-[0_0_15px_hsl(var(--primary)/0.6)]"
+                            />
+                          )}
+
                           <button
-                            onClick={() => selectCat(cat.slug)}
-                            className={`group relative flex flex-1 items-center justify-between gap-2 rounded-md px-3 py-2.5 text-left text-sm font-medium uppercase tracking-wider transition-colors ${
-                              isActive && !activeSub
-                                ? "bg-primary/10 text-primary"
-                                : "text-muted-foreground hover:text-foreground"
+                            onClick={() => {
+                              selectCat(cat.slug);
+                              if (hasSub) toggleCat(cat.slug);
+                            }}
+                            style={{
+                              clipPath:
+                                "polygon(0 0, 92% 0, 100% 100%, 0% 100%)",
+                            }}
+                            className={`group flex w-full items-center px-5 py-3 text-left transition-colors duration-200 ${
+                              isActive
+                                ? "bg-primary"
+                                : "border-l-2 border-transparent bg-card hover:border-primary hover:bg-surface"
                             }`}
                           >
-                            <span className="flex items-center gap-2.5">
-                              <span
-                                className={`h-1 w-1 rounded-full transition-all duration-300 ${
-                                  isActive && !activeSub
-                                    ? "bg-primary shadow-[0_0_8px_hsl(var(--primary))]"
-                                    : "bg-muted-foreground/30 group-hover:bg-foreground/60"
-                                }`}
-                              />
+                            <span
+                              className={`font-display text-xl font-medium uppercase tracking-wider transition-colors ${
+                                isActive
+                                  ? "text-background"
+                                  : "text-muted-foreground group-hover:text-foreground"
+                              }`}
+                            >
                               {cat.name}
                             </span>
-                            <span className="font-mono text-[10px] text-muted-foreground/70">
-                              {cat.count}
-                            </span>
                           </button>
-                          {hasSub && (
-                            <button
-                              onClick={() => toggleCat(cat.slug)}
-                              aria-label={isOpen ? "Свернуть" : "Развернуть"}
-                              className="ml-1 flex w-8 items-center justify-center text-muted-foreground transition-colors hover:text-primary"
-                            >
-                              <svg
-                                width="12"
-                                height="12"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2.5"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                className={`transition-transform duration-300 ${
-                                  isOpen ? "rotate-90" : ""
-                                }`}
-                              >
-                                <polyline points="9 18 15 12 9 6" />
-                              </svg>
-                            </button>
-                          )}
                         </div>
 
                         {hasSub && (
                           <div
                             className="grid transition-all duration-300 ease-out"
-                            style={{
-                              gridTemplateRows: isOpen ? "1fr" : "0fr",
-                            }}
+                            style={{ gridTemplateRows: isOpen ? "1fr" : "0fr" }}
                           >
-                            <ul className="overflow-hidden">
-                              <div className="ml-5 mt-1 space-y-0.5 border-l border-border pl-3">
-                                {cat.sub.map((s) => {
+                            <div className="overflow-hidden">
+                              <ul className="ml-5 flex flex-col gap-1 pt-1">
+                                {cat.sub.map((s, i) => {
                                   const subActive =
-                                    activeCat === cat.slug && activeSub === s.slug;
+                                    activeCat === cat.slug &&
+                                    activeSub === s.slug;
                                   return (
                                     <li key={s.slug}>
                                       <button
-                                        onClick={() => selectSub(cat.slug, s.slug)}
-                                        className={`flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-left text-xs uppercase tracking-wider transition-colors ${
-                                          subActive
-                                            ? "text-primary"
-                                            : "text-muted-foreground/80 hover:text-foreground"
-                                        }`}
+                                        onClick={() =>
+                                          selectSub(cat.slug, s.slug)
+                                        }
+                                        style={{
+                                          animation: isOpen
+                                            ? `shop-card-in 0.35s ease-out backwards`
+                                            : undefined,
+                                          animationDelay: isOpen
+                                            ? `${i * 50}ms`
+                                            : undefined,
+                                        }}
+                                        className="group/sub flex w-full items-center gap-3 py-1 transition-transform duration-200 hover:translate-x-1"
                                       >
-                                        <span className="flex items-center gap-2">
-                                          {subActive && (
-                                            <span className="h-px w-3 bg-primary" />
-                                          )}
+                                        <span
+                                          aria-hidden
+                                          className={`h-4 w-1 transition-colors ${
+                                            subActive
+                                              ? "bg-primary"
+                                              : "bg-border group-hover/sub:bg-primary"
+                                          }`}
+                                        />
+                                        <span
+                                          className={`font-display text-sm uppercase tracking-widest transition-colors ${
+                                            subActive
+                                              ? "text-foreground"
+                                              : "text-muted-foreground group-hover/sub:text-foreground"
+                                          }`}
+                                        >
                                           {s.name}
-                                        </span>
-                                        <span className="font-mono text-[10px] opacity-60">
-                                          {s.count}
                                         </span>
                                       </button>
                                     </li>
                                   );
                                 })}
-                              </div>
-                            </ul>
+                              </ul>
+                            </div>
                           </div>
                         )}
                       </li>
