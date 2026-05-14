@@ -3,7 +3,7 @@ import { Logo } from "./Logo";
 
 const NAV = [
   { label: "Race Pass", href: "#race-pass" },
-  { label: "Дроп", href: "#drop" },
+  { label: "Мерч", href: "#drop" },
   { label: "Гараж", href: "#garage" },
   { label: "Клуб", href: "#club" },
 ];
