@@ -69,12 +69,6 @@ function LoginPage() {
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-black pt-20">
-      {/* Page-enter wipe — primary slab sweeps off to the right */}
-      <div
-        aria-hidden
-        className="pointer-events-none fixed inset-0 z-[70] origin-left bg-primary"
-        style={{ animation: "page-wipe 700ms cubic-bezier(0.7, 0, 0.2, 1) forwards" }}
-      />
       {/* Background rally stripes */}
       <div
         aria-hidden
