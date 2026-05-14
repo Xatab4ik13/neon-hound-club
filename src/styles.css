@@ -141,14 +141,15 @@
   }
 }
 
-@keyframes page-wipe {
+@keyframes page-fade-zoom {
   0% {
-    transform: translateX(0);
-  }
-  40% {
-    transform: translateX(0);
+    opacity: 0;
+    transform: scale(0.96);
+    filter: blur(6px);
   }
   100% {
-    transform: translateX(101%);
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0);
   }
 }
