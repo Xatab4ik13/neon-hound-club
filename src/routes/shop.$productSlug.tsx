@@ -474,9 +474,7 @@ function StoriesGallery({
   badge?: string;
 }) {
   const [active, setActive] = useState(0);
-  const [progress, setProgress] = useState(0);
   const [paused, setPaused] = useState(false);
-  const [zoom, setZoom] = useState<{ x: number; y: number } | null>(null);
   const startRef = useRef(performance.now());
   const rafRef = useRef<number | null>(null);
   const DURATION = 6000;
@@ -485,20 +483,17 @@ function StoriesGallery({
   const next = () => setActive((a) => (a + 1) % count);
   const prev = () => setActive((a) => (a - 1 + count) % count);
 
-  // Auto-advance with progress
+  // Auto-advance
   useEffect(() => {
     if (count <= 1) return;
     startRef.current = performance.now();
-    setProgress(0);
 
     const tick = (t: number) => {
       if (paused) {
-        startRef.current = t - progress * DURATION;
+        startRef.current = t;
       } else {
         const elapsed = t - startRef.current;
-        const p = Math.min(1, elapsed / DURATION);
-        setProgress(p);
-        if (p >= 1) {
+        if (elapsed >= DURATION) {
           next();
           return;
         }
@@ -512,28 +507,14 @@ function StoriesGallery({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active, paused, count]);
 
-  const goTo = (i: number) => {
-    setActive(i);
-  };
-
   const hue = ACCENT_HUES[active % ACCENT_HUES.length];
   const accent = `hsl(${hue} 90% 60%)`;
 
   return (
     <div
-      className="relative aspect-[3/4] w-full overflow-hidden bg-surface lg:aspect-auto lg:h-[760px]"
+      className="group/gallery relative aspect-[3/4] w-full overflow-hidden bg-surface lg:aspect-auto lg:h-[760px]"
       onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => {
-        setPaused(false);
-        setZoom(null);
-      }}
-      onMouseMove={(e) => {
-        const r = e.currentTarget.getBoundingClientRect();
-        setZoom({
-          x: ((e.clientX - r.left) / r.width) * 100,
-          y: ((e.clientY - r.top) / r.height) * 100,
-        });
-      }}
+      onMouseLeave={() => setPaused(false)}
     >
       {/* Ambient color glow — shifts per slide */}
       <div
@@ -544,7 +525,7 @@ function StoriesGallery({
         }}
       />
 
-      {/* Slides */}
+      {/* Slides — Ken Burns zoom in/out */}
       {images.map((src, i) => {
         const isActive = i === active;
         return (
@@ -562,16 +543,8 @@ function StoriesGallery({
               loading={i === 0 ? "eager" : "lazy"}
               className="h-full w-full object-cover"
               style={{
-                transformOrigin:
-                  zoom && isActive ? `${zoom.x}% ${zoom.y}%` : "center center",
-                transform: isActive
-                  ? zoom
-                    ? "scale(1.6)"
-                    : "scale(1.08)"
-                  : "scale(1)",
-                transition: zoom
-                  ? "transform 0.25s ease-out"
-                  : "transform 7s ease-out",
+                transform: isActive ? "scale(1.12)" : "scale(1)",
+                transition: "transform 7s ease-out",
               }}
             />
           </div>
@@ -584,33 +557,9 @@ function StoriesGallery({
         className="pointer-events-none absolute inset-0 z-10 bg-gradient-to-t from-background/60 via-transparent to-background/30"
       />
 
-      {/* Stories progress segments */}
-      <div className="absolute inset-x-6 top-5 z-30 flex gap-1.5">
-        {images.map((_, i) => (
-          <button
-            key={i}
-            onClick={() => goTo(i)}
-            className="group h-[3px] flex-1 overflow-hidden rounded-full bg-white/15"
-            aria-label={`Фото ${i + 1}`}
-          >
-            <span
-              className="block h-full bg-primary transition-[width] ease-linear"
-              style={{
-                width:
-                  i < active
-                    ? "100%"
-                    : i === active
-                      ? `${progress * 100}%`
-                      : "0%",
-              }}
-            />
-          </button>
-        ))}
-      </div>
-
       {/* Badge */}
       {badge && (
-        <span className="absolute left-6 top-12 z-30 rounded-full bg-background/80 px-3 py-1 font-mono text-[10px] uppercase tracking-widest text-foreground backdrop-blur">
+        <span className="absolute left-6 top-6 z-30 rounded-full bg-background/80 px-3 py-1 font-mono text-[10px] uppercase tracking-widest text-foreground backdrop-blur">
           {badge}
         </span>
       )}
@@ -623,23 +572,29 @@ function StoriesGallery({
         </span>
       </div>
 
-      {/* Zoom hint */}
-      <div className="pointer-events-none absolute right-6 top-12 z-30 hidden items-center gap-1.5 rounded-full border border-white/15 bg-background/50 px-2.5 py-1 font-mono text-[10px] uppercase tracking-widest text-foreground/70 backdrop-blur lg:flex">
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3M11 8v6M8 11h6"/></svg>
-        zoom
-      </div>
-
-      {/* Click zones — prev / next */}
-      <button
-        onClick={prev}
-        aria-label="Предыдущее фото"
-        className="absolute inset-y-0 left-0 z-20 w-1/3 cursor-w-resize"
-      />
-      <button
-        onClick={next}
-        aria-label="Следующее фото"
-        className="absolute inset-y-0 right-0 z-20 w-1/3 cursor-e-resize"
-      />
+      {/* Translucent arrows */}
+      {count > 1 && (
+        <>
+          <button
+            onClick={prev}
+            aria-label="Предыдущее фото"
+            className="absolute left-4 top-1/2 z-30 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-background/30 text-foreground/80 backdrop-blur-md transition-all duration-300 hover:border-primary/60 hover:bg-background/60 hover:text-primary md:left-6 md:h-14 md:w-14 md:opacity-0 md:group-hover/gallery:opacity-100"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
+          </button>
+          <button
+            onClick={next}
+            aria-label="Следующее фото"
+            className="absolute right-4 top-1/2 z-30 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-background/30 text-foreground/80 backdrop-blur-md transition-all duration-300 hover:border-primary/60 hover:bg-background/60 hover:text-primary md:right-6 md:h-14 md:w-14 md:opacity-0 md:group-hover/gallery:opacity-100"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 6l6 6-6 6" />
+            </svg>
+          </button>
+        </>
+      )}
     </div>
   );
 }
