@@ -167,10 +167,10 @@ function ShopPage() {
               Магазин
             </div>
             <h1 className="font-display text-5xl uppercase tracking-tighter md:text-6xl">
-              Лимитированный мерч
+              Магазин клуба
             </h1>
             <p className="max-w-[60ch] text-pretty text-muted-foreground">
-              Только то, что носим сами. Маленькие тиражи, плотные ткани, без перевыпусков.
+              Мерч HELLHOUND, экипировка от партнёров и БУ-вещи участников клуба. Всё в одном месте.
             </p>
           </header>
 
