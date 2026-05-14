@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "@tanstack/react-router";
 import pinkR6 from "@/assets/pink-r6.jpg";
 
 /**
