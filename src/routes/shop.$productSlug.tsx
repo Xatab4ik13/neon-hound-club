@@ -305,27 +305,6 @@ function ProductPage() {
             </aside>
           </div>
 
-          {/* RELATED */}
-          {related.length > 0 && (
-            <section className="mt-24">
-              <div className="mb-6 flex items-baseline justify-between border-b border-border pb-4">
-                <h2 className="font-display text-2xl uppercase tracking-tight">
-                  Может зайти
-                </h2>
-                <Link
-                  to="/shop"
-                  className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground hover:text-primary"
-                >
-                  В магазин →
-                </Link>
-              </div>
-              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-                {related.map((p) => (
-                  <RelatedCard key={p.id} product={p} />
-                ))}
-              </div>
-            </section>
-          )}
         </div>
       </main>
 
