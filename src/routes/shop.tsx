@@ -1,10 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { Header } from "@/components/brand/Header";
 import { Footer } from "@/components/brand/Footer";
-import founderHoodie from "@/assets/founder-hoodie.jpg";
-import pitGloves from "@/assets/pit-gloves.jpg";
-import garageKey from "@/assets/garage-key.jpg";
+import { PRODUCTS, type Product } from "@/data/products";
 
 export const Route = createFileRoute("/shop")({
   head: () => ({
@@ -13,12 +11,13 @@ export const Route = createFileRoute("/shop")({
       {
         name: "description",
         content:
-          "Лимитированный мерч и экипировка HELLHOUND. Худи, футболки, перчатки, аксессуары.",
+          "Мерч HELLHOUND, товары от партнёров и б/у вещи участников клуба.",
       },
       { property: "og:title", content: "Магазин — HELLHOUND Racing Club" },
       {
         property: "og:description",
-        content: "Лимитированный мерч и экипировка HELLHOUND.",
+        content:
+          "Мерч HELLHOUND, товары от партнёров и б/у вещи участников клуба.",
       },
     ],
   }),
@@ -34,12 +33,7 @@ type Category = {
 };
 
 const CATEGORIES: Category[] = [
-  {
-    slug: "all",
-    name: "Всё",
-    count: 24,
-    sub: [],
-  },
+  { slug: "all", name: "Всё", count: 24, sub: [] },
   {
     slug: "apparel",
     name: "Одежда",
@@ -82,31 +76,6 @@ const CATEGORIES: Category[] = [
       { slug: "keychains", name: "Брелоки", count: 1 },
     ],
   },
-];
-
-type Product = {
-  id: string;
-  name: string;
-  price: number;
-  image: string;
-  badge?: { label: string; tone: "primary" | "muted" | "danger" };
-  category: string;
-  sub?: string;
-};
-
-const PRODUCTS: Product[] = [
-  { id: "1", name: "Худи Founder v1", price: 12990, image: founderHoodie, badge: { label: "Распродано", tone: "muted" }, category: "apparel", sub: "hoodies" },
-  { id: "2", name: "Перчатки Пит-крю", price: 8490, image: pitGloves, badge: { label: "Осталось 24", tone: "primary" }, category: "gear", sub: "gloves" },
-  { id: "3", name: "Ключ от гаража", price: 2490, image: garageKey, category: "garage", sub: "keychains" },
-  { id: "4", name: "Худи Track v2", price: 13990, image: founderHoodie, badge: { label: "Новинка", tone: "primary" }, category: "apparel", sub: "hoodies" },
-  { id: "5", name: "Футболка Pack 01", price: 3990, image: founderHoodie, category: "apparel", sub: "tees" },
-  { id: "6", name: "Перчатки Race Day", price: 9990, image: pitGloves, category: "gear", sub: "gloves" },
-  { id: "7", name: "Кепка Box Logo", price: 2990, image: garageKey, badge: { label: "Hot", tone: "danger" }, category: "accessories", sub: "caps" },
-  { id: "8", name: "Стикерпак №1", price: 590, image: garageKey, category: "garage", sub: "stickers" },
-  { id: "9", name: "Лонгслив Crew", price: 5490, image: founderHoodie, category: "apparel", sub: "longsleeves" },
-  { id: "10", name: "Налокотники Pro", price: 4490, image: pitGloves, category: "gear", sub: "elbows" },
-  { id: "11", name: "Сумка через плечо", price: 6490, image: garageKey, category: "accessories", sub: "bags" },
-  { id: "12", name: "Постер Yamaha R6", price: 1490, image: garageKey, category: "garage", sub: "posters" },
 ];
 
 const SORTS = [
@@ -395,14 +364,16 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
         : "bg-background/80 text-muted-foreground border border-border";
 
   return (
-    <article
+    <Link
+      to="/shop/$productSlug"
+      params={{ productSlug: product.slug }}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       style={{
         animation: "shop-card-in 0.5s ease-out backwards",
         animationDelay: `${index * 60}ms`,
       }}
-      className="group relative overflow-hidden rounded-xl border border-border bg-card transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-[0_20px_40px_-20px_hsl(var(--primary)/0.3)]"
+      className="group relative block overflow-hidden rounded-xl border border-border bg-card transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-[0_20px_40px_-20px_hsl(var(--primary)/0.3)]"
     >
       <div className="relative aspect-[4/5] overflow-hidden bg-surface">
         <img
@@ -423,6 +394,11 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
 
         {/* Quick add */}
         <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
           aria-label={`Добавить ${product.name} в корзину`}
           className={`absolute bottom-3 left-3 right-3 flex items-center justify-center gap-2 rounded-full bg-primary py-2.5 text-xs font-semibold uppercase tracking-widest text-primary-foreground transition-all duration-300 ${
             hover
@@ -443,6 +419,6 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
           {product.price.toLocaleString("ru-RU")} ₽
         </span>
       </div>
-    </article>
+    </Link>
   );
 }
