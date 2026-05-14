@@ -364,14 +364,16 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
         : "bg-background/80 text-muted-foreground border border-border";
 
   return (
-    <article
+    <Link
+      to="/shop/$productSlug"
+      params={{ productSlug: product.slug }}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       style={{
         animation: "shop-card-in 0.5s ease-out backwards",
         animationDelay: `${index * 60}ms`,
       }}
-      className="group relative overflow-hidden rounded-xl border border-border bg-card transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-[0_20px_40px_-20px_hsl(var(--primary)/0.3)]"
+      className="group relative block overflow-hidden rounded-xl border border-border bg-card transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-[0_20px_40px_-20px_hsl(var(--primary)/0.3)]"
     >
       <div className="relative aspect-[4/5] overflow-hidden bg-surface">
         <img
@@ -392,6 +394,11 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
 
         {/* Quick add */}
         <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
           aria-label={`Добавить ${product.name} в корзину`}
           className={`absolute bottom-3 left-3 right-3 flex items-center justify-center gap-2 rounded-full bg-primary py-2.5 text-xs font-semibold uppercase tracking-widest text-primary-foreground transition-all duration-300 ${
             hover
@@ -412,6 +419,6 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
           {product.price.toLocaleString("ru-RU")} ₽
         </span>
       </div>
-    </article>
+    </Link>
   );
 }
