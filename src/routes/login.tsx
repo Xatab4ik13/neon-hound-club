@@ -95,7 +95,10 @@ function LoginPage() {
         <span className="h-20 w-[2px] bg-primary" />
       </div>
 
-      <div className="relative z-10 mx-auto flex min-h-[calc(100vh-5rem)] w-full max-w-[480px] flex-col px-6 py-10 md:py-16 animate-fade-in" style={{ animationDelay: "350ms", animationFillMode: "both" }}>
+      <div
+        className="relative z-10 mx-auto flex min-h-[calc(100vh-5rem)] w-full max-w-[480px] flex-col px-6 py-10 md:py-16"
+        style={{ animation: "page-fade-zoom 500ms cubic-bezier(0.16, 1, 0.3, 1) both" }}
+      >
         {/* Heading */}
         <div className="mb-8">
           <h1
