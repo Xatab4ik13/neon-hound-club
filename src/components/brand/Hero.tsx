@@ -73,7 +73,7 @@ export function Hero() {
         </div>
 
         {/* RIGHT — RAFFLE CARD */}
-        <aside className="lg:col-span-5">
+        <aside className="lg:col-span-4">
           <a
             href="#raffle"
             className="group relative block overflow-hidden border border-border bg-card transition-colors hover:border-primary/50"
@@ -114,9 +114,8 @@ export function Hero() {
 
             {/* Countdown */}
             <div className="px-5 py-5">
-              <div className="mb-3 flex items-center justify-between font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                <span>До конца</span>
-                <span>розыгрыша</span>
+              <div className="mb-3 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+                До конца розыгрыша
               </div>
               <div className="grid grid-cols-4 gap-2">
                 {[
@@ -139,10 +138,7 @@ export function Hero() {
                 ))}
               </div>
 
-              <div className="mt-5 flex items-center justify-between border-t border-border pt-4">
-                <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                  Билет от 100 ₽
-                </span>
+              <div className="mt-5 flex items-center justify-end border-t border-border pt-4">
                 <span className="text-sm font-medium uppercase tracking-[0.15em] text-primary transition-transform group-hover:translate-x-1">
                   Участвовать →
                 </span>
