@@ -93,6 +93,15 @@ function ShopPage() {
   const [sort, setSort] = useState("new");
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  useEffect(() => {
+    if (!sidebarOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [sidebarOpen]);
+
   const filtered = useMemo(() => {
     let list = PRODUCTS.filter((p) => {
       if (activeCat === "all") return true;
