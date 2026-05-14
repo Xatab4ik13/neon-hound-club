@@ -3,9 +3,9 @@ import { Logo } from "./Logo";
 
 const NAV = [
   { label: "Магазин", href: "/shop" },
-  { label: "Новости", href: "/news" },
   { label: "Hell Pass", href: "/hell-pass" },
   { label: "О клубе", href: "/about" },
+  { label: "Новости", href: "/news" },
 ];
 
 export function Header() {
