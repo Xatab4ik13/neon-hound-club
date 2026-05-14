@@ -117,13 +117,6 @@ export function Hero() {
         <div className="grid items-end gap-12 lg:grid-cols-[1.1fr_440px]">
           {/* COPY */}
           <div className="space-y-8">
-            <div className="flex items-center gap-3 font-mono text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
-              <span className="inline-flex h-px w-8 bg-primary" />
-              <span className="text-primary">SEASON 01</span>
-              <span className="opacity-50">/</span>
-              <span>ЗАКРЫТЫЙ ДОСТУП</span>
-            </div>
-
             <h1 className="font-display text-[clamp(3.5rem,9vw,9.5rem)] font-bold uppercase leading-[0.85] tracking-[-0.03em]">
               <span className="block animate-[fade-in_0.8s_ease-out]">Hellhound</span>
               <span className="block animate-[fade-in_1s_ease-out]">
@@ -157,28 +150,6 @@ export function Hero() {
                 Race Pass
               </a>
             </div>
-
-            {/* Inline metrics row — quiet HUD telemetry */}
-            <dl className="grid max-w-md grid-cols-3 gap-x-6 gap-y-1 border-t border-border/60 pt-6 font-mono text-xs">
-              <div>
-                <dt className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground/70">
-                  Участников
-                </dt>
-                <dd className="text-base text-foreground">3 425</dd>
-              </div>
-              <div>
-                <dt className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground/70">
-                  Сезон
-                </dt>
-                <dd className="text-base text-foreground">01</dd>
-              </div>
-              <div>
-                <dt className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground/70">
-                  Дропов
-                </dt>
-                <dd className="text-base text-foreground">01 / 04</dd>
-              </div>
-            </dl>
           </div>
 
           {/* GIVEAWAY CARD */}
