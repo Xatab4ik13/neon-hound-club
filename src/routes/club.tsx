@@ -103,7 +103,7 @@ function ClubPage() {
 
       <div className="relative flex min-h-screen">
         {/* Sidebar — desktop */}
-        <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-white/[0.06] bg-black/40 backdrop-blur-md lg:flex">
+        <aside className="sticky top-0 hidden h-screen w-80 shrink-0 flex-col overflow-hidden border-r border-white/[0.06] bg-black/40 backdrop-blur-md lg:flex">
           <SidebarBody pathname={pathname} />
         </aside>
 
