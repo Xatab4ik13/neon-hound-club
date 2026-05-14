@@ -9,12 +9,18 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SchoolRouteImport } from './routes/school'
 import { Route as LogosRouteImport } from './routes/logos'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ShopIndexRouteImport } from './routes/shop.index'
 import { Route as ShopProductSlugRouteImport } from './routes/shop.$productSlug'
 
+const SchoolRoute = SchoolRouteImport.update({
+  id: '/school',
+  path: '/school',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LogosRoute = LogosRouteImport.update({
   id: '/logos',
   path: '/logos',
@@ -45,6 +51,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/logos': typeof LogosRoute
+  '/school': typeof SchoolRoute
   '/shop/$productSlug': typeof ShopProductSlugRoute
   '/shop/': typeof ShopIndexRoute
 }
@@ -52,6 +59,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/logos': typeof LogosRoute
+  '/school': typeof SchoolRoute
   '/shop/$productSlug': typeof ShopProductSlugRoute
   '/shop': typeof ShopIndexRoute
 }
@@ -60,27 +68,49 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/logos': typeof LogosRoute
+  '/school': typeof SchoolRoute
   '/shop/$productSlug': typeof ShopProductSlugRoute
   '/shop/': typeof ShopIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/logos' | '/shop/$productSlug' | '/shop/'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/logos'
+    | '/school'
+    | '/shop/$productSlug'
+    | '/shop/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/logos' | '/shop/$productSlug' | '/shop'
-  id: '__root__' | '/' | '/login' | '/logos' | '/shop/$productSlug' | '/shop/'
+  to: '/' | '/login' | '/logos' | '/school' | '/shop/$productSlug' | '/shop'
+  id:
+    | '__root__'
+    | '/'
+    | '/login'
+    | '/logos'
+    | '/school'
+    | '/shop/$productSlug'
+    | '/shop/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LoginRoute: typeof LoginRoute
   LogosRoute: typeof LogosRoute
+  SchoolRoute: typeof SchoolRoute
   ShopProductSlugRoute: typeof ShopProductSlugRoute
   ShopIndexRoute: typeof ShopIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/school': {
+      id: '/school'
+      path: '/school'
+      fullPath: '/school'
+      preLoaderRoute: typeof SchoolRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/logos': {
       id: '/logos'
       path: '/logos'
@@ -123,9 +153,20 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LoginRoute: LoginRoute,
   LogosRoute: LogosRoute,
+  SchoolRoute: SchoolRoute,
   ShopProductSlugRoute: ShopProductSlugRoute,
   ShopIndexRoute: ShopIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
