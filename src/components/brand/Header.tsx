@@ -1,6 +1,4 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { Logo } from "./Logo";
 
 const NAV = [
   { label: "Магазин", href: "/shop" },
@@ -9,107 +7,45 @@ const NAV = [
   { label: "Новости", href: "/news" },
 ];
 
-type PillRect = { left: number; width: number } | null;
-
 export function Header() {
   // TODO: replace with real auth state
   const isAuthed = false;
-
   const { pathname } = useLocation();
-  const navRef = useRef<HTMLDivElement>(null);
-  const itemRefs = useRef<Array<HTMLAnchorElement | null>>([]);
-  const [hoverIdx, setHoverIdx] = useState<number | null>(null);
-  const [pill, setPill] = useState<PillRect>(null);
-  const [activePill, setActivePill] = useState<PillRect>(null);
-
-  const activeIdx = NAV.findIndex(
-    (i) => pathname === i.href || pathname.startsWith(i.href + "/"),
-  );
-
-  const measure = (idx: number | null): PillRect => {
-    if (idx === null || idx < 0) return null;
-    const el = itemRefs.current[idx];
-    const wrap = navRef.current;
-    if (!el || !wrap) return null;
-    const a = el.getBoundingClientRect();
-    const b = wrap.getBoundingClientRect();
-    return { left: a.left - b.left, width: a.width };
-  };
-
-  useLayoutEffect(() => {
-    setActivePill(measure(activeIdx));
-    setPill(measure(hoverIdx ?? activeIdx));
-  }, [activeIdx, hoverIdx]);
-
-  useEffect(() => {
-    const onResize = () => {
-      setActivePill(measure(activeIdx));
-      setPill(measure(hoverIdx ?? activeIdx));
-    };
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, [activeIdx, hoverIdx]);
 
   return (
     <nav className="fixed top-0 z-50 w-full border-b border-white/5 bg-background/80 backdrop-blur-md">
       <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6 md:px-8">
         <Link
           to="/"
-          aria-label="HELLHOUND Racing Club home"
-          className="flex-shrink-0"
+          aria-label="HELLHOUND Racing Club"
+          className="flex-shrink-0 font-display text-2xl font-bold tracking-tighter text-primary"
         >
-          <Logo />
+          HELLHOUND
         </Link>
 
-        <div
-          ref={navRef}
-          className="relative hidden items-center gap-1 md:flex"
-          onMouseLeave={() => setHoverIdx(null)}
-        >
-          {/* Hover pill — следует за курсором */}
-          <span
-            aria-hidden
-            className={`pointer-events-none absolute top-1/2 h-10 -translate-y-1/2 rounded-full bg-white/5 transition-all duration-300 ease-out ${
-              pill && hoverIdx !== null ? "opacity-100" : "opacity-0"
-            }`}
-            style={
-              pill
-                ? { left: pill.left, width: pill.width }
-                : { left: 0, width: 0 }
-            }
-          />
-          {/* Active pill — подсветка текущего раздела */}
-          <span
-            aria-hidden
-            className={`pointer-events-none absolute top-1/2 h-10 -translate-y-1/2 rounded-full bg-primary/10 transition-all duration-300 ease-out ${
-              activePill ? "opacity-100" : "opacity-0"
-            }`}
-            style={
-              activePill
-                ? { left: activePill.left, width: activePill.width }
-                : { left: 0, width: 0 }
-            }
-          />
-
-          {NAV.map((item, idx) => {
-            const isActive = idx === activeIdx;
+        <div className="hidden items-center gap-1 md:flex">
+          {NAV.map((item) => {
+            const isActive =
+              pathname === item.href || pathname.startsWith(item.href + "/");
             return (
               <a
                 key={item.label}
                 href={item.href}
-                ref={(el) => {
-                  itemRefs.current[idx] = el;
-                }}
-                onMouseEnter={() => setHoverIdx(idx)}
-                onFocus={() => setHoverIdx(idx)}
-                onBlur={() => setHoverIdx(null)}
-                className={`relative z-10 px-5 py-2.5 text-[13px] font-medium uppercase tracking-[0.18em] transition-colors duration-300 ${
+                className={`group relative px-5 py-2.5 text-[13px] font-medium uppercase tracking-[0.18em] transition-colors duration-300 ${
                   isActive
                     ? "text-primary"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                {item.label}
+                <span className="relative z-10">{item.label}</span>
+                <span
+                  aria-hidden
+                  className={`absolute inset-0 rounded-full transition-all duration-300 ${
+                    isActive
+                      ? "scale-100 bg-primary/10 opacity-100"
+                      : "scale-95 bg-white/5 opacity-0 group-hover:scale-100 group-hover:opacity-100"
+                  }`}
+                />
               </a>
             );
           })}
@@ -119,7 +55,7 @@ export function Header() {
           <a
             href="/cart"
             aria-label="Корзина"
-            className="group relative text-muted-foreground transition-colors hover:text-primary"
+            className="relative text-muted-foreground transition-colors hover:text-primary"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
