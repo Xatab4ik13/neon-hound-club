@@ -277,7 +277,7 @@ function MobileMenu({
                 <span
                   aria-hidden
                   className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-primary"
-                  style={{ boxShadow: "0 0 8px hsl(var(--primary))" }}
+                  style={{ boxShadow: "0 0 8px var(--primary)" }}
                 />
               )}
             </span>
