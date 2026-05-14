@@ -44,6 +44,9 @@ export function Hero() {
             <span className="block text-[16vw] text-foreground sm:text-[13vw] lg:text-[8vw]">
               HELL<span className="text-primary">HOUND</span>
             </span>
+            <span className="mt-2 block font-mono text-[11px] uppercase tracking-[0.4em] text-muted-foreground sm:text-xs lg:text-sm">
+              Racing Club
+            </span>
           </h1>
 
           <p className="mt-8 max-w-[36ch] text-pretty text-lg text-muted-foreground md:text-xl">
