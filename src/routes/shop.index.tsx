@@ -4,7 +4,7 @@ import { Header } from "@/components/brand/Header";
 import { Footer } from "@/components/brand/Footer";
 import { PRODUCTS, type Product } from "@/data/products";
 
-export const Route = createFileRoute("/shop")({
+export const Route = createFileRoute("/shop/")({
   head: () => ({
     meta: [
       { title: "Магазин — HELLHOUND Racing Club" },
