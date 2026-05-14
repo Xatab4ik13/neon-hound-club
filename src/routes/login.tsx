@@ -208,6 +208,10 @@ function LoginPage() {
               ))}
             </div>
 
+            <p className="text-center font-mono text-[10px] uppercase tracking-[0.22em] text-primary/70">
+              Demo: введите любые 4 цифры
+            </p>
+
             <div className="flex items-center justify-between font-mono text-[11px] uppercase tracking-[0.2em]">
               <button
                 type="button"
