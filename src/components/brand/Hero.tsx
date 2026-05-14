@@ -39,9 +39,9 @@ export function Hero() {
 
       <div className="relative mx-auto grid max-w-7xl grid-cols-1 items-center gap-12 lg:grid-cols-12 lg:gap-16">
         {/* LEFT — BRAND + SLOGAN + CTA */}
-        <div className="lg:col-span-8">
+        <div className="min-w-0 lg:col-span-8">
           <h1 className="font-display uppercase leading-[0.85] tracking-tighter">
-            <span className="block text-[16vw] text-foreground sm:text-[13vw] lg:text-[8vw]">
+            <span className="block text-foreground [font-size:clamp(3rem,12vw,11rem)]">
               HELL<span className="text-primary">HOUND</span>
             </span>
             <span className="mt-3 block font-display text-2xl uppercase tracking-[0.25em] text-muted-foreground sm:text-3xl lg:text-4xl">
