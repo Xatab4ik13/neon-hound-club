@@ -42,7 +42,8 @@ function LoginPage() {
 
   const handleSendCode = (e: React.FormEvent) => {
     e.preventDefault();
-    if (phone.replace(/\D/g, "").length < 11) return;
+    // Demo: принимаем любой непустой номер
+    if (phone.replace(/\D/g, "").length < 1) return;
     setStep("code");
     setResendIn(45);
     setCode(["", "", "", ""]);
@@ -56,8 +57,8 @@ function LoginPage() {
     setCode(next);
     if (digit && i < 3) codeRefs.current[i + 1]?.focus();
     if (next.every((d) => d) && next.join("").length === 4) {
-      // TODO: verify code via backend
-      setTimeout(() => navigate({ to: "/" }), 300);
+      // Demo: любой 4-значный код пускает в клуб
+      setTimeout(() => navigate({ to: "/club" }), 300);
     }
   };
 
