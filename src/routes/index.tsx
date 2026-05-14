@@ -76,7 +76,7 @@ function Index() {
             <div className="mb-12 flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
               <div>
                 <div className="mb-3 font-mono text-xs uppercase tracking-widest text-primary">
-                  Дроп #01
+                  Лимитированный мерч
                 </div>
                 <h2 className="text-balance font-display text-4xl uppercase tracking-tight md:text-5xl">
                   Серия основателей
