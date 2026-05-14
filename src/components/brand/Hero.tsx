@@ -3,12 +3,50 @@ import pinkR6 from "@/assets/pink-r6.jpg";
 
 /**
  * Hero — HELLHOUND Racing Club.
- * HUD-style underground racing landing block.
- * Composition: copy left, live giveaway card right, telemetry markers in the corners.
+ * Левая колонка: заголовок-выгода + список причин вступить + CTA с пилюлей «Бесплатно».
+ * Правая колонка: карточка активного розыгрыша (главный магнит).
  */
 
-// Target end date for the active giveaway countdown (mock until real data).
 const RAFFLE_END = new Date(Date.now() + 4 * 24 * 60 * 60 * 1000 + 12 * 60 * 60 * 1000).toISOString();
+
+const BENEFITS = [
+  {
+    n: "01",
+    title: "Розыгрыши мотоциклов",
+    sub: "Project Pink R6 уже в розыгрыше. Дальше — больше.",
+    tag: "сейчас",
+  },
+  {
+    n: "02",
+    title: "Мерч раньше остальных",
+    sub: "Лимитки уходят за часы. Клуб видит первым.",
+    tag: "сейчас",
+  },
+  {
+    n: "03",
+    title: "Видео до выхода на YouTube",
+    sub: "Director's cut, RAW-камеры, бэкстейдж.",
+    tag: "скоро",
+  },
+  {
+    n: "04",
+    title: "Чат райдеров СНГ",
+    sub: "По городам и мото. Без TG и Discord.",
+    tag: "скоро",
+  },
+  {
+    n: "05",
+    title: "Гараж и карта райдеров",
+    sub: "Своя мото, свой уровень, свои люди рядом.",
+    tag: "скоро",
+  },
+  {
+    n: "06",
+    title: "Школа Hellhound со скидкой",
+    sub: "Город / Трек / Падение. Только для клуба.",
+    tag: "скоро",
+  },
+];
 
 function pad(n: number) {
   return n.toString().padStart(2, "0");
@@ -17,58 +55,17 @@ function pad(n: number) {
 function useCountdown(targetIso: string) {
   const target = new Date(targetIso).getTime();
   const [now, setNow] = useState(() => Date.now());
-
   useEffect(() => {
     const id = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(id);
   }, []);
-
   const diff = Math.max(0, target - now);
-  const days = Math.floor(diff / 86_400_000);
-  const hours = Math.floor((diff % 86_400_000) / 3_600_000);
-  const minutes = Math.floor((diff % 3_600_000) / 60_000);
-  const seconds = Math.floor((diff % 60_000) / 1000);
-
-  return { days, hours, minutes, seconds };
-}
-
-function CornerMark({
-  position,
-  label,
-  value,
-}: {
-  position: "tl" | "tr" | "bl" | "br";
-  label: string;
-  value: string;
-}) {
-  const pos = {
-    tl: "left-6 top-24 items-start",
-    tr: "right-6 top-24 items-end",
-    bl: "left-6 bottom-6 items-start",
-    br: "right-6 bottom-6 items-end",
-  }[position];
-
-  const bracket = {
-    tl: "border-l border-t",
-    tr: "border-r border-t",
-    bl: "border-l border-b",
-    br: "border-r border-b",
-  }[position];
-
-  return (
-    <div
-      className={`pointer-events-none absolute z-10 hidden flex-col gap-1 lg:flex ${pos}`}
-      aria-hidden
-    >
-      <div className={`size-3 border-primary/60 ${bracket}`} />
-      <div className="font-mono text-[10px] uppercase leading-none tracking-[0.2em] text-muted-foreground/70">
-        {label}
-      </div>
-      <div className="font-mono text-[10px] leading-none tracking-tight text-foreground/80">
-        {value}
-      </div>
-    </div>
-  );
+  return {
+    days: Math.floor(diff / 86_400_000),
+    hours: Math.floor((diff % 86_400_000) / 3_600_000),
+    minutes: Math.floor((diff % 3_600_000) / 60_000),
+    seconds: Math.floor((diff % 60_000) / 1000),
+  };
 }
 
 export function Hero() {
@@ -77,27 +74,25 @@ export function Hero() {
 
   return (
     <section className="relative overflow-hidden px-6 pt-32 pb-24">
-      {/* Ambient backdrop — radial pink glow + subtle grid */}
+      {/* Ambient backdrop */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 -z-10"
         style={{
           background:
-            "radial-gradient(60% 50% at 30% 35%, oklch(0.62 0.22 5 / 0.08), transparent 70%), radial-gradient(40% 40% at 80% 70%, oklch(0.62 0.22 5 / 0.05), transparent 70%)",
+            "radial-gradient(60% 50% at 25% 30%, oklch(0.62 0.22 5 / 0.10), transparent 70%), radial-gradient(40% 40% at 85% 75%, oklch(0.62 0.22 5 / 0.06), transparent 70%)",
         }}
       />
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 -z-10 opacity-[0.06]"
+        className="pointer-events-none absolute inset-0 -z-10 opacity-[0.05]"
         style={{
           backgroundImage:
             "linear-gradient(to right, oklch(0.95 0 0 / 0.3) 1px, transparent 1px), linear-gradient(to bottom, oklch(0.95 0 0 / 0.3) 1px, transparent 1px)",
           backgroundSize: "80px 80px",
-          maskImage:
-            "radial-gradient(ellipse at center, black 30%, transparent 75%)",
+          maskImage: "radial-gradient(ellipse at center, black 30%, transparent 75%)",
         }}
       />
-      {/* Film grain */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 -z-10 opacity-[0.035] mix-blend-overlay"
@@ -107,57 +102,78 @@ export function Hero() {
         }}
       />
 
-      {/* HUD corner markers */}
-      <CornerMark position="tl" label="NODE" value="HH-01" />
-      <CornerMark position="tr" label="STATUS" value="● LIVE" />
-      <CornerMark position="bl" label="LAT" value="55.7558 N" />
-      <CornerMark position="br" label="PING" value="14MS / OK" />
-
       <div className="relative mx-auto max-w-7xl">
-        <div className="grid items-end gap-12 lg:grid-cols-[1.1fr_440px]">
-          {/* COPY */}
-          <div className="space-y-8">
-            <h1 className="font-display text-[clamp(3.5rem,9vw,9.5rem)] font-bold uppercase leading-[0.85] tracking-[-0.03em]">
-              <span className="block animate-[fade-in_0.8s_ease-out]">Hellhound</span>
-              <span className="block animate-[fade-in_1s_ease-out]">
-                <span className="text-primary">Racing</span>{" "}
-                <span className="text-foreground">Club</span>
+        <div className="grid items-start gap-14 lg:grid-cols-[1.15fr_440px]">
+          {/* LEFT: HEADLINE + BENEFITS + CTA */}
+          <div className="space-y-10">
+            {/* Headline — benefit-first */}
+            <h1 className="font-display text-[clamp(3rem,7.5vw,7.5rem)] font-bold uppercase leading-[0.88] tracking-[-0.03em]">
+              <span className="block">Мотоциклы.</span>
+              <span className="block">
+                Мерч. <span className="text-primary">Свои.</span>
+              </span>
+              <span className="block text-foreground/60">
+                Всё это — клуб <span className="text-foreground">HELLHOUND</span>.
               </span>
             </h1>
 
-            <div className="flex items-center gap-3">
-              <span className="inline-block h-1 w-1 rounded-full bg-primary" />
-              <p className="font-mono text-xs uppercase tracking-[0.18em] text-muted-foreground">
-                Официальный клуб подписчиков HELLHOUND Racing
-              </p>
-            </div>
+            {/* Benefits list — editorial, hover reveals subtitle */}
+            <ul className="divide-y divide-border border-y border-border">
+              {BENEFITS.map((b) => (
+                <li
+                  key={b.n}
+                  className="group grid grid-cols-[3rem_1fr_auto] items-center gap-6 py-4 transition-colors hover:bg-primary/[0.04]"
+                >
+                  <span className="font-mono text-xs text-muted-foreground/70 transition-colors group-hover:text-primary">
+                    {b.n}
+                  </span>
+                  <div className="min-w-0">
+                    <div className="font-display text-xl uppercase tracking-tight md:text-2xl">
+                      {b.title}
+                    </div>
+                    <div className="mt-0.5 max-h-0 overflow-hidden text-sm text-muted-foreground opacity-0 transition-all duration-300 group-hover:max-h-12 group-hover:opacity-100">
+                      {b.sub}
+                    </div>
+                  </div>
+                  <span
+                    className={`font-mono text-[10px] uppercase tracking-[0.2em] ${
+                      b.tag === "сейчас" ? "text-primary" : "text-muted-foreground/60"
+                    }`}
+                  >
+                    {b.tag}
+                  </span>
+                </li>
+              ))}
+            </ul>
 
-            <div className="flex flex-wrap items-center gap-3 pt-4">
+            {/* CTA + free pill */}
+            <div className="flex flex-wrap items-center gap-4 pt-2">
               <button
                 type="button"
                 className="group relative inline-flex items-center gap-3 overflow-hidden bg-primary px-7 py-4 text-sm font-semibold uppercase tracking-[0.2em] text-primary-foreground ring-1 ring-primary transition-all hover:shadow-[0_0_32px_-4px_oklch(0.62_0.22_5/0.7)] active:scale-[0.98]"
               >
-                <span>Вступить в клуб</span>
+                <span>Войти в клуб</span>
                 <span aria-hidden className="font-mono transition-transform group-hover:translate-x-1">
                   →
                 </span>
               </button>
-              <a
-                href="#race-pass"
-                className="inline-flex items-center gap-3 border border-border bg-background/40 px-7 py-4 text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground backdrop-blur-sm transition-colors hover:border-primary/50 hover:text-foreground"
-              >
-                <span className="size-1.5 rounded-full bg-primary/70" />
-                Race Pass
-              </a>
+              <div className="inline-flex items-center gap-2 border border-border bg-background/60 px-4 py-3 backdrop-blur-sm">
+                <span className="relative flex size-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
+                  <span className="relative inline-flex size-2 rounded-full bg-primary" />
+                </span>
+                <span className="font-mono text-xs uppercase tracking-[0.22em] text-foreground">
+                  Вход бесплатный · 0 ₽
+                </span>
+              </div>
             </div>
           </div>
 
-          {/* GIVEAWAY CARD */}
+          {/* RIGHT: GIVEAWAY CARD */}
           <aside
             id="race-pass"
-            className="relative rounded-xl border border-border/80 bg-surface/80 p-5 ring-1 ring-black/40 backdrop-blur-sm"
+            className="relative rounded-xl border border-border/80 bg-surface/80 p-5 ring-1 ring-black/40 backdrop-blur-sm lg:sticky lg:top-28"
           >
-            {/* Card HUD bracket */}
             <div
               aria-hidden
               className="pointer-events-none absolute -top-px -left-px size-4 border-l border-t border-primary"
@@ -188,7 +204,6 @@ export function Hero() {
                 height={768}
                 className="aspect-[16/10] w-full object-cover"
               />
-              {/* scan-line overlay */}
               <div
                 aria-hidden
                 className="pointer-events-none absolute inset-0 opacity-30 mix-blend-overlay"
@@ -197,12 +212,8 @@ export function Hero() {
                     "repeating-linear-gradient(to bottom, transparent 0, transparent 2px, oklch(0 0 0 / 0.5) 2px, oklch(0 0 0 / 0.5) 3px)",
                 }}
               />
-              {/* corner readout on image */}
               <div className="absolute bottom-2 left-2 font-mono text-[9px] uppercase tracking-[0.2em] text-foreground/80">
                 YZF-R6 / 599cc / MOD.PINK
-              </div>
-              <div className="absolute top-2 right-2 font-mono text-[9px] uppercase tracking-[0.2em] text-primary">
-                PRIZE_01
               </div>
             </div>
 
