@@ -57,7 +57,7 @@
   --muted-foreground: oklch(0.72 0 0);        /* #A7A7A7 silver */
 
   /* Brand accent — Hound Pink */
-  --primary: oklch(0.62 0.22 5);              /* #E91E63 */
+  --primary: oklch(0.665 0.249 357.3); /* #FF2D95 */
   --primary-foreground: oklch(0.98 0 0);
 
   --secondary: oklch(0.22 0 0);
@@ -93,7 +93,7 @@
   --foreground: oklch(0.95 0 0);
   --muted: oklch(0.22 0 0);
   --muted-foreground: oklch(0.72 0 0);
-  --primary: oklch(0.62 0.22 5);
+  --primary: oklch(0.665 0.249 357.3); /* #FF2D95 */
   --primary-foreground: oklch(0.98 0 0);
   --secondary: oklch(0.22 0 0);
   --secondary-foreground: oklch(0.95 0 0);
