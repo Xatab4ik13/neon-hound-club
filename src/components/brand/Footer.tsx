@@ -21,7 +21,7 @@ export function Footer() {
               <ul className="space-y-2 text-xs uppercase tracking-wider">
                 <li>
                   <a href="#drop" className="transition-colors hover:text-primary">
-                    Дропы
+                    Мерч
                   </a>
                 </li>
                 <li>

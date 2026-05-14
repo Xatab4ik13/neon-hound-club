@@ -14,13 +14,13 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "Андеграундный мотоклуб HELLHOUND. Лимитированные дропы, Race Pass, уровни и XP.",
+          "Андеграундный мотоклуб HELLHOUND. Лимитированный мерч, Race Pass, уровни и XP.",
       },
       { property: "og:title", content: "HELLHOUND Racing Club" },
       {
         property: "og:description",
         content:
-          "Андеграундный мотоклуб. Лимитированные дропы, Race Pass, уровни и XP.",
+          "Андеграундный мотоклуб. Лимитированный мерч, Race Pass, уровни и XP.",
       },
       { property: "og:image", content: pinkR6 },
       { property: "og:type", content: "website" },
@@ -76,7 +76,7 @@ function Index() {
             <div className="mb-12 flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
               <div>
                 <div className="mb-3 font-mono text-xs uppercase tracking-widest text-primary">
-                  Дроп #01
+                  Лимитированный мерч
                 </div>
                 <h2 className="text-balance font-display text-4xl uppercase tracking-tight md:text-5xl">
                   Серия основателей
@@ -194,7 +194,7 @@ function Index() {
                   </div>
                   <p className="max-w-[40ch] text-pretty text-sm text-muted-foreground">
                     Покупай мерч, участвуй в Race Pass и розыгрышах, чтобы
-                    прокачать статус и открыть ранний доступ к дропам.
+                    прокачать статус и открыть ранний доступ к новому мерчу.
                   </p>
                 </div>
               </div>
