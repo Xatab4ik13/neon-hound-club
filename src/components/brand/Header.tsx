@@ -225,9 +225,9 @@ function MobileMenu({
             const isActive =
               pathname === item.href || pathname.startsWith(item.href + "/");
             return (
-              <a
+              <Link
                 key={item.href}
-                href={item.href}
+                to={item.href}
                 onClick={onClose}
                 className="group relative flex h-24 items-center overflow-hidden border-b border-white/[0.04] outline-none"
               >
