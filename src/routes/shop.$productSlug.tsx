@@ -4,7 +4,7 @@ import {
   notFound,
   useRouter,
 } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Header } from "@/components/brand/Header";
 import { Footer } from "@/components/brand/Footer";
 import { PRODUCTS, SOURCE_LABEL, type Product } from "@/data/products";
@@ -124,36 +124,25 @@ function ProductPage() {
             <span className="text-foreground">{product.name}</span>
           </nav>
 
-          <div className="grid gap-10 lg:grid-cols-[1.3fr_1fr] lg:gap-16">
-            {/* GALLERY */}
-            <section className="flex flex-col gap-3">
-              {gallery.map((src, i) => (
-                <div
-                  key={i}
-                  className="relative aspect-[4/5] overflow-hidden border border-border bg-surface"
-                  style={{
-                    animation: "shop-card-in 0.5s ease-out backwards",
-                    animationDelay: `${i * 80}ms`,
-                  }}
-                >
-                  <img
-                    src={src}
-                    alt={`${product.name} — фото ${i + 1}`}
-                    loading={i === 0 ? "eager" : "lazy"}
-                    className="h-full w-full object-cover"
-                  />
-                  {i === 0 && product.badge && (
-                    <span className="absolute left-4 top-4 rounded-full bg-background/80 px-3 py-1 font-mono text-[10px] uppercase tracking-widest text-foreground backdrop-blur">
-                      {product.badge.label}
-                    </span>
-                  )}
-                </div>
-              ))}
+          <div className="relative grid grid-cols-1 gap-0 overflow-visible lg:grid-cols-12">
+            {/* GALLERY — Stories slider */}
+            <section className="relative lg:col-span-7">
+              <StoriesGallery
+                images={gallery}
+                name={product.name}
+                badge={product.badge?.label}
+              />
+              {/* Diagonal slash motif — cuts gallery edge into panel */}
+              <div
+                aria-hidden
+                className="pointer-events-none absolute right-0 top-0 hidden h-full w-32 bg-background lg:block"
+                style={{ clipPath: "polygon(100% 0, 100% 100%, 0% 100%)" }}
+              />
             </section>
 
             {/* STICKY PANEL */}
-            <aside className="relative">
-              <div className="lg:sticky lg:top-28">
+            <aside className="relative z-10 lg:col-span-5 lg:-ml-16 lg:pl-20">
+              <div className="pt-10 lg:sticky lg:top-28 lg:pt-12">
                 {/* Source badge */}
                 <div className="mb-5 flex flex-wrap items-center gap-2">
                   <span
@@ -489,5 +478,189 @@ function RelatedCard({ product }: { product: Product }) {
         </span>
       </div>
     </Link>
+  );
+}
+
+/* ---------------- Stories Gallery ---------------- */
+
+const ACCENT_HUES = [330, 18, 200, 280, 140]; // pink, orange, cyan, violet, mint
+
+function StoriesGallery({
+  images,
+  name,
+  badge,
+}: {
+  images: string[];
+  name: string;
+  badge?: string;
+}) {
+  const [active, setActive] = useState(0);
+  const [progress, setProgress] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const [zoom, setZoom] = useState<{ x: number; y: number } | null>(null);
+  const startRef = useRef(performance.now());
+  const rafRef = useRef<number | null>(null);
+  const DURATION = 6000;
+
+  const count = images.length;
+  const next = () => setActive((a) => (a + 1) % count);
+  const prev = () => setActive((a) => (a - 1 + count) % count);
+
+  // Auto-advance with progress
+  useEffect(() => {
+    if (count <= 1) return;
+    startRef.current = performance.now();
+    setProgress(0);
+
+    const tick = (t: number) => {
+      if (paused) {
+        startRef.current = t - progress * DURATION;
+      } else {
+        const elapsed = t - startRef.current;
+        const p = Math.min(1, elapsed / DURATION);
+        setProgress(p);
+        if (p >= 1) {
+          next();
+          return;
+        }
+      }
+      rafRef.current = requestAnimationFrame(tick);
+    };
+    rafRef.current = requestAnimationFrame(tick);
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active, paused, count]);
+
+  const goTo = (i: number) => {
+    setActive(i);
+  };
+
+  const hue = ACCENT_HUES[active % ACCENT_HUES.length];
+  const accent = `hsl(${hue} 90% 60%)`;
+
+  return (
+    <div
+      className="relative aspect-[3/4] w-full overflow-hidden bg-surface lg:aspect-auto lg:h-[760px]"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => {
+        setPaused(false);
+        setZoom(null);
+      }}
+      onMouseMove={(e) => {
+        const r = e.currentTarget.getBoundingClientRect();
+        setZoom({
+          x: ((e.clientX - r.left) / r.width) * 100,
+          y: ((e.clientY - r.top) / r.height) * 100,
+        });
+      }}
+    >
+      {/* Ambient color glow — shifts per slide */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -inset-20 opacity-50 blur-3xl transition-all duration-1000"
+        style={{
+          background: `radial-gradient(circle at 30% 70%, ${accent} 0%, transparent 60%)`,
+        }}
+      />
+
+      {/* Slides */}
+      {images.map((src, i) => {
+        const isActive = i === active;
+        return (
+          <div
+            key={i}
+            className="absolute inset-0 transition-opacity duration-700 ease-out"
+            style={{
+              opacity: isActive ? 1 : 0,
+              zIndex: isActive ? 2 : 1,
+            }}
+          >
+            <img
+              src={src}
+              alt={`${name} — фото ${i + 1}`}
+              loading={i === 0 ? "eager" : "lazy"}
+              className="h-full w-full object-cover"
+              style={{
+                transformOrigin:
+                  zoom && isActive ? `${zoom.x}% ${zoom.y}%` : "center center",
+                transform: isActive
+                  ? zoom
+                    ? "scale(1.6)"
+                    : "scale(1.08)"
+                  : "scale(1)",
+                transition: zoom
+                  ? "transform 0.25s ease-out"
+                  : "transform 7s ease-out",
+              }}
+            />
+          </div>
+        );
+      })}
+
+      {/* Vignette */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 z-10 bg-gradient-to-t from-background/60 via-transparent to-background/30"
+      />
+
+      {/* Stories progress segments */}
+      <div className="absolute inset-x-6 top-5 z-30 flex gap-1.5">
+        {images.map((_, i) => (
+          <button
+            key={i}
+            onClick={() => goTo(i)}
+            className="group h-[3px] flex-1 overflow-hidden rounded-full bg-white/15"
+            aria-label={`Фото ${i + 1}`}
+          >
+            <span
+              className="block h-full bg-primary transition-[width] ease-linear"
+              style={{
+                width:
+                  i < active
+                    ? "100%"
+                    : i === active
+                      ? `${progress * 100}%`
+                      : "0%",
+              }}
+            />
+          </button>
+        ))}
+      </div>
+
+      {/* Badge */}
+      {badge && (
+        <span className="absolute left-6 top-12 z-30 rounded-full bg-background/80 px-3 py-1 font-mono text-[10px] uppercase tracking-widest text-foreground backdrop-blur">
+          {badge}
+        </span>
+      )}
+
+      {/* Bottom marker */}
+      <div className="absolute bottom-6 left-6 z-30 flex items-center gap-3">
+        <span className="h-px w-10 bg-primary" />
+        <span className="font-mono text-[10px] uppercase tracking-[0.3em] text-foreground/70">
+          {String(active + 1).padStart(2, "0")} / {String(count).padStart(2, "0")}
+        </span>
+      </div>
+
+      {/* Zoom hint */}
+      <div className="pointer-events-none absolute right-6 top-12 z-30 hidden items-center gap-1.5 rounded-full border border-white/15 bg-background/50 px-2.5 py-1 font-mono text-[10px] uppercase tracking-widest text-foreground/70 backdrop-blur lg:flex">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3M11 8v6M8 11h6"/></svg>
+        zoom
+      </div>
+
+      {/* Click zones — prev / next */}
+      <button
+        onClick={prev}
+        aria-label="Предыдущее фото"
+        className="absolute inset-y-0 left-0 z-20 w-1/3 cursor-w-resize"
+      />
+      <button
+        onClick={next}
+        aria-label="Следующее фото"
+        className="absolute inset-y-0 right-0 z-20 w-1/3 cursor-e-resize"
+      />
+    </div>
   );
 }
