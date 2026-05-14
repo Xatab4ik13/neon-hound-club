@@ -143,43 +143,87 @@ function ShopPage() {
             </p>
           </header>
 
-          {/* Mobile filter trigger */}
+          {/* Mobile filter trigger — big asymmetric CTA */}
           <button
             onClick={() => setSidebarOpen(true)}
-            className="mb-6 inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-xs font-medium uppercase tracking-widest text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary lg:hidden"
+            style={{ clipPath: "polygon(0 15%, 100% 0, 100% 100%, 0 85%)" }}
+            className="group relative mb-8 flex w-full items-center justify-between gap-3 overflow-hidden bg-primary px-6 py-5 text-left transition-transform active:scale-[0.98] lg:hidden"
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="4" y1="6" x2="20" y2="6" />
-              <line x1="7" y1="12" x2="17" y2="12" />
-              <line x1="10" y1="18" x2="14" y2="18" />
-            </svg>
-            Категории
+            <span
+              aria-hidden
+              className="absolute inset-0 opacity-[0.08]"
+              style={{
+                backgroundImage:
+                  "repeating-linear-gradient(45deg, #000 0, #000 1px, transparent 0, transparent 12px)",
+              }}
+            />
+            <span className="relative z-10 flex items-center gap-3">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="square" className="text-black">
+                <line x1="4" y1="6" x2="20" y2="6" />
+                <line x1="7" y1="12" x2="17" y2="12" />
+                <line x1="10" y1="18" x2="14" y2="18" />
+              </svg>
+              <span className="font-display text-2xl italic font-bold uppercase tracking-wider text-black">
+                Категории
+              </span>
+            </span>
+            <span className="relative z-10 font-mono text-[11px] uppercase tracking-widest text-black/70">
+              {CATEGORIES.length}
+            </span>
           </button>
 
           <div className="grid gap-10 lg:grid-cols-[260px_1fr]">
             {/* SIDEBAR */}
+            {/* Mobile backdrop */}
+            <div
+              onClick={() => setSidebarOpen(false)}
+              aria-hidden
+              className={`fixed inset-0 z-40 bg-black/80 backdrop-blur-sm transition-opacity duration-300 lg:hidden ${
+                sidebarOpen ? "opacity-100" : "pointer-events-none opacity-0"
+              }`}
+            />
             <aside
-              className={`fixed inset-0 z-40 transform bg-background/95 backdrop-blur-md transition-transform duration-300 lg:relative lg:inset-auto lg:z-auto lg:transform-none lg:bg-transparent lg:backdrop-blur-none ${
+              role={sidebarOpen ? "dialog" : undefined}
+              aria-modal={sidebarOpen ? true : undefined}
+              className={`fixed inset-y-0 left-0 z-50 flex w-[88%] max-w-[380px] transform flex-col overflow-hidden bg-black transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] lg:relative lg:inset-auto lg:z-auto lg:w-auto lg:max-w-none lg:transform-none lg:bg-transparent ${
                 sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
               }`}
             >
-              <div className="flex items-center justify-between border-b border-border px-6 py-4 lg:hidden">
-                <span className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
+              {/* Rally stripes bg (mobile only) */}
+              <div
+                aria-hidden
+                className="pointer-events-none absolute inset-0 opacity-[0.04] lg:hidden"
+                style={{
+                  backgroundImage:
+                    "repeating-linear-gradient(45deg, var(--primary) 0, var(--primary) 1px, transparent 0, transparent 20px)",
+                }}
+              />
+
+              {/* Mobile header */}
+              <div className="relative z-10 flex items-center justify-between px-8 pt-12 pb-8 lg:hidden">
+                <span
+                  className="font-display text-2xl italic uppercase tracking-tighter text-primary"
+                  style={{ textShadow: "0 0 10px color-mix(in oklab, var(--primary) 30%, transparent)" }}
+                >
                   Категории
                 </span>
                 <button
+                  type="button"
                   onClick={() => setSidebarOpen(false)}
                   aria-label="Закрыть"
-                  className="text-muted-foreground transition-colors hover:text-primary"
+                  className="group relative flex h-12 w-12 items-center justify-center transition-transform active:scale-90"
                 >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="18" y1="6" x2="6" y2="18" />
-                    <line x1="6" y1="6" x2="18" y2="18" />
+                  <span
+                    aria-hidden
+                    className="absolute inset-0 border border-primary/30 transition-colors duration-500 group-hover:border-primary"
+                  />
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="square" className="relative z-10 text-primary">
+                    <path d="M18 6L6 18M6 6l12 12" />
                   </svg>
                 </button>
               </div>
 
-              <nav className="px-6 pb-10 pt-6 lg:sticky lg:top-28 lg:px-0 lg:pt-0">
+              <nav className="relative z-10 flex-1 overflow-y-auto border-t border-white/[0.04] px-6 pb-10 pt-6 lg:sticky lg:top-28 lg:overflow-visible lg:border-t-0 lg:px-0 lg:pt-0">
                 <div className="mb-5 hidden font-mono text-[10px] uppercase tracking-[0.3em] text-muted-foreground lg:block">
                   Каталог
                 </div>
