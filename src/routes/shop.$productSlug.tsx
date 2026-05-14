@@ -84,8 +84,10 @@ const ACCORDION_KEYS = ["desc", "comp", "care", "ship"] as const;
 type AccordionKey = (typeof ACCORDION_KEYS)[number];
 
 function ProductPage() {
-  const { product } = Route.useLoaderData();
-  const gallery = product.gallery?.length ? product.gallery : [product.image];
+  const { product } = Route.useLoaderData() as { product: Product };
+  const gallery: string[] = product.gallery?.length
+    ? product.gallery
+    : [product.image];
 
   const [size, setSize] = useState<string | null>(
     product.sizes?.[Math.min(1, product.sizes.length - 1)] ?? null,
