@@ -194,7 +194,7 @@ function Index() {
                   </div>
                   <p className="max-w-[40ch] text-pretty text-sm text-muted-foreground">
                     Покупай мерч, участвуй в Race Pass и розыгрышах, чтобы
-                    прокачать статус и открыть ранний доступ к дропам.
+                    прокачать статус и открыть ранний доступ к новому мерчу.
                   </p>
                 </div>
               </div>
