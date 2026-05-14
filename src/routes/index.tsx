@@ -14,7 +14,7 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "Андеграундный мотоклуб HELLHOUND. Лимитированные дропы, Race Pass, уровни и XP.",
+          "Андеграундный мотоклуб HELLHOUND. Лимитированный мерч, Race Pass, уровни и XP.",
       },
       { property: "og:title", content: "HELLHOUND Racing Club" },
       {
