@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Header } from "@/components/brand/Header";
 import { Footer } from "@/components/brand/Footer";
 import { PRODUCTS, type Product } from "@/data/products";
