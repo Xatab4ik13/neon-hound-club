@@ -118,7 +118,7 @@ export function Hero() {
             {/* Countdown */}
             <div className="px-5 py-5">
               <div className="mb-3 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                До конца розыгрыша
+                До конца конкурса
               </div>
               <div className="grid grid-cols-4 gap-2">
                 {[
