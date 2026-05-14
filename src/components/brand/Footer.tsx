@@ -8,20 +8,20 @@ export function Footer() {
           <div>
             <Logo className="mb-4" />
             <p className="text-xs uppercase leading-relaxed tracking-widest text-muted-foreground">
-              Underground Motor Culture
+              Андеграундная мото-культура
               <br />
-              Est. MMXXV / Zero Limits
+              Основано MMXXV / Без границ
             </p>
           </div>
           <div className="flex gap-12">
             <div className="space-y-3">
               <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
-                Shop
+                Магазин
               </div>
               <ul className="space-y-2 text-xs uppercase tracking-wider">
                 <li>
                   <a href="#drop" className="transition-colors hover:text-primary">
-                    Drops
+                    Дропы
                   </a>
                 </li>
                 <li>
@@ -38,7 +38,7 @@ export function Footer() {
             </div>
             <div className="space-y-3">
               <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
-                Social
+                Соцсети
               </div>
               <ul className="space-y-2 text-xs uppercase tracking-wider">
                 <li>
@@ -61,10 +61,10 @@ export function Footer() {
           </div>
           <div className="flex flex-col justify-between text-right">
             <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
-              © 2025 HELLHOUND RACING CLUB. ALL RIGHTS RESERVED.
+              © 2025 HELLHOUND RACING CLUB. Все права защищены.
             </div>
             <div className="font-mono text-[10px] text-primary">
-              LATENCY: 14MS // STATUS: OPERATIONAL
+              ПИНГ: 14MS // СТАТУС: В СЕТИ
             </div>
           </div>
         </div>

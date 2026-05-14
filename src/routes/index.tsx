@@ -30,29 +30,29 @@ export const Route = createFileRoute("/")({
 });
 
 const TIERS = [
-  { num: "01", name: "Rookie", xp: "0 — 500 XP", state: "locked" as const },
-  { num: "02", name: "Rider", xp: "Текущий уровень", state: "active" as const },
-  { num: "03", name: "Pit Crew", xp: "1500 XP", state: "future" as const },
-  { num: "04", name: "Elite", xp: "5000 XP", state: "future" as const },
+  { num: "01", name: "Новичок", xp: "0 — 500 XP", state: "locked" as const },
+  { num: "02", name: "Райдер", xp: "Текущий уровень", state: "active" as const },
+  { num: "03", name: "Пит-крю", xp: "1500 XP", state: "future" as const },
+  { num: "04", name: "Элита", xp: "5000 XP", state: "future" as const },
 ];
 
 const PRODUCTS = [
   {
-    name: "Founder Hoodie v1",
+    name: "Худи Founder v1",
     price: "12 990 ₽",
-    status: "SOLD OUT",
+    status: "Распродано",
     statusColor: "text-muted-foreground",
     image: founderHoodie,
   },
   {
-    name: "Pit Crew Gloves",
+    name: "Перчатки Пит-крю",
     price: "8 490 ₽",
     status: "Осталось 24",
     statusColor: "text-primary",
     image: pitGloves,
   },
   {
-    name: "Garage Access Key",
+    name: "Ключ от гаража",
     price: "2 490 ₽",
     status: "В наличии",
     statusColor: "text-muted-foreground",
@@ -73,7 +73,7 @@ function Index() {
               <div className="space-y-8">
                 <div className="inline-block border-l-2 border-primary py-1 pl-4">
                   <span className="font-mono text-xs uppercase tracking-tight text-primary">
-                    Season 01 / Underground Access
+                    Сезон 01 / Закрытый доступ
                   </span>
                 </div>
                 <h1 className="text-balance font-display text-7xl uppercase leading-none tracking-tighter md:text-9xl">
@@ -81,6 +81,9 @@ function Index() {
                   <br />
                   <span className="text-primary">Racing</span> Club
                 </h1>
+                <div className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
+                  Гоночный клуб
+                </div>
                 <p className="max-w-md text-base leading-relaxed text-muted-foreground">
                   Мерч. Розыгрыши. Гараж. Трек. Клуб для своих.
                 </p>
@@ -149,10 +152,10 @@ function Index() {
             <div className="mb-12 flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
               <div>
                 <div className="mb-3 font-mono text-xs uppercase tracking-widest text-primary">
-                  Drop #01
+                  Дроп #01
                 </div>
                 <h2 className="text-balance font-display text-4xl uppercase tracking-tight md:text-5xl">
-                  Founder Series
+                  Серия основателей
                 </h2>
                 <p className="mt-3 max-w-[48ch] text-pretty text-muted-foreground">
                   Лимитированный релиз для основателей клуба. Плотная вышивка,
@@ -160,9 +163,9 @@ function Index() {
                 </p>
               </div>
               <div className="text-right">
-                <div className="font-mono text-xl text-primary">666 UNITS ONLY</div>
+                <div className="font-mono text-xl text-primary">ТОЛЬКО 666 ШТ.</div>
                 <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
-                  No Restocks
+                  Без перевыпуска
                 </div>
               </div>
             </div>
@@ -206,10 +209,10 @@ function Index() {
             <div className="grid gap-16 lg:grid-cols-2">
               <div>
                 <div className="mb-3 font-mono text-xs uppercase tracking-widest text-primary">
-                  Club
+                  Клуб
                 </div>
                 <h2 className="mb-8 font-display text-5xl uppercase tracking-tighter">
-                  The Hierarchy
+                  Иерархия
                 </h2>
                 <div className="space-y-4">
                   {TIERS.map((tier) => {
@@ -249,10 +252,10 @@ function Index() {
               <div className="flex flex-col justify-center rounded-xl border border-border bg-surface p-12">
                 <div className="mb-8">
                   <div className="mb-2 text-xs uppercase tracking-widest text-muted-foreground">
-                    Member Progress
+                    Прогресс участника
                   </div>
                   <div className="font-display text-4xl uppercase">
-                    Rider Status
+                    Статус: Райдер
                   </div>
                 </div>
                 <div className="space-y-6">
@@ -262,7 +265,7 @@ function Index() {
                   <div className="flex justify-between font-mono text-xs">
                     <span className="text-foreground">840 XP</span>
                     <span className="text-muted-foreground">
-                      1500 XP NEXT LEVEL
+                      1500 XP до след. уровня
                     </span>
                   </div>
                   <p className="max-w-[40ch] text-pretty text-sm text-muted-foreground">
