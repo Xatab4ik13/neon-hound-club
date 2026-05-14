@@ -57,11 +57,16 @@ export function Hero() {
           <div className="mt-10 flex flex-wrap items-center gap-6">
             <a
               href="#join"
-              className="group relative inline-flex items-center gap-3 rounded-full bg-primary px-7 py-4 text-sm font-semibold uppercase tracking-[0.2em] text-primary-foreground transition-colors hover:bg-primary/90"
+              className="group relative inline-block overflow-hidden bg-primary px-10 py-5 text-center font-display text-xl italic font-bold uppercase tracking-widest text-black transition-all duration-300 active:scale-[0.97]"
+              style={{ clipPath: "polygon(0 15%, 100% 0, 100% 100%, 0 85%)" }}
             >
-              Войти в клуб
-              <span className="transition-transform group-hover:translate-x-1">
-                →
+              <span
+                aria-hidden
+                className="absolute inset-0 bg-white opacity-0 transition-opacity group-hover:opacity-10"
+              />
+              <span className="relative z-10 inline-flex items-center gap-3">
+                Войти в клуб
+                <span className="transition-transform group-hover:translate-x-1">→</span>
               </span>
             </a>
             <div className="flex flex-col">
