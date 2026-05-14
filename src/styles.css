@@ -77,7 +77,7 @@
   --ring: oklch(0.62 0.22 5);
 
   /* Fonts */
-  --font-display: "Archivo Black", "Druk Wide", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Oswald", ui-sans-serif, system-ui, sans-serif;
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 }
