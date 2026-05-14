@@ -37,16 +37,11 @@ export function Hero() {
         className="pointer-events-none absolute -left-40 top-1/2 h-[480px] w-[480px] -translate-y-1/2 rounded-full bg-primary/20 blur-[160px]"
       />
 
-      <div className="relative mx-auto grid max-w-7xl grid-cols-1 items-center gap-16 lg:grid-cols-12 lg:gap-20">
+      <div className="relative mx-auto grid max-w-7xl grid-cols-1 items-center gap-12 lg:grid-cols-12 lg:gap-16">
         {/* LEFT — BRAND + SLOGAN + CTA */}
-        <div className="lg:col-span-7">
-          <div className="mb-6 inline-flex items-center gap-3 font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
-            <span className="h-px w-8 bg-primary" />
-            Racing Club / EST. 2024
-          </div>
-
+        <div className="lg:col-span-8">
           <h1 className="font-display uppercase leading-[0.85] tracking-tighter">
-            <span className="block text-[18vw] text-foreground sm:text-[14vw] lg:text-[9.5vw]">
+            <span className="block text-[16vw] text-foreground sm:text-[13vw] lg:text-[8vw]">
               HELL<span className="text-primary">HOUND</span>
             </span>
           </h1>
@@ -78,7 +73,7 @@ export function Hero() {
         </div>
 
         {/* RIGHT — RAFFLE CARD */}
-        <aside className="lg:col-span-5">
+        <aside className="lg:col-span-4">
           <a
             href="#raffle"
             className="group relative block overflow-hidden border border-border bg-card transition-colors hover:border-primary/50"
@@ -119,9 +114,8 @@ export function Hero() {
 
             {/* Countdown */}
             <div className="px-5 py-5">
-              <div className="mb-3 flex items-center justify-between font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                <span>До конца</span>
-                <span>розыгрыша</span>
+              <div className="mb-3 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+                До конца розыгрыша
               </div>
               <div className="grid grid-cols-4 gap-2">
                 {[
@@ -144,10 +138,7 @@ export function Hero() {
                 ))}
               </div>
 
-              <div className="mt-5 flex items-center justify-between border-t border-border pt-4">
-                <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                  Билет от 100 ₽
-                </span>
+              <div className="mt-5 flex items-center justify-end border-t border-border pt-4">
                 <span className="text-sm font-medium uppercase tracking-[0.15em] text-primary transition-transform group-hover:translate-x-1">
                   Участвовать →
                 </span>
