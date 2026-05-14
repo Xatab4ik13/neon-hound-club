@@ -16,7 +16,7 @@ export const Route = createFileRoute("/shop/$productSlug")({
     return { product };
   },
   head: ({ loaderData }) => {
-    const p = loaderData?.product;
+    const p = loaderData?.product as Product | undefined;
     if (!p) return { meta: [{ title: "Товар — HELLHOUND" }] };
     const title = `${p.name} — HELLHOUND Racing Club`;
     const desc =
