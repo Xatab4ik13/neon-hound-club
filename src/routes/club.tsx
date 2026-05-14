@@ -372,7 +372,7 @@ function MobileDrawer({
         }`}
       />
       <aside
-        className={`absolute left-0 top-0 flex h-full w-72 flex-col border-r border-white/[0.06] bg-black transition-transform duration-300 ease-out ${
+        className={`absolute left-0 top-0 flex h-full w-80 flex-col overflow-hidden border-r border-white/[0.06] bg-black transition-transform duration-300 ease-out ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
