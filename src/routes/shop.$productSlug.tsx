@@ -124,36 +124,25 @@ function ProductPage() {
             <span className="text-foreground">{product.name}</span>
           </nav>
 
-          <div className="grid gap-10 lg:grid-cols-[1.3fr_1fr] lg:gap-16">
-            {/* GALLERY */}
-            <section className="flex flex-col gap-3">
-              {gallery.map((src, i) => (
-                <div
-                  key={i}
-                  className="relative aspect-[4/5] overflow-hidden border border-border bg-surface"
-                  style={{
-                    animation: "shop-card-in 0.5s ease-out backwards",
-                    animationDelay: `${i * 80}ms`,
-                  }}
-                >
-                  <img
-                    src={src}
-                    alt={`${product.name} — фото ${i + 1}`}
-                    loading={i === 0 ? "eager" : "lazy"}
-                    className="h-full w-full object-cover"
-                  />
-                  {i === 0 && product.badge && (
-                    <span className="absolute left-4 top-4 rounded-full bg-background/80 px-3 py-1 font-mono text-[10px] uppercase tracking-widest text-foreground backdrop-blur">
-                      {product.badge.label}
-                    </span>
-                  )}
-                </div>
-              ))}
+          <div className="relative grid grid-cols-1 gap-0 overflow-visible lg:grid-cols-12">
+            {/* GALLERY — Stories slider */}
+            <section className="relative lg:col-span-7">
+              <StoriesGallery
+                images={gallery}
+                name={product.name}
+                badge={product.badge?.label}
+              />
+              {/* Diagonal slash motif — cuts gallery edge into panel */}
+              <div
+                aria-hidden
+                className="pointer-events-none absolute right-0 top-0 hidden h-full w-32 bg-background lg:block"
+                style={{ clipPath: "polygon(100% 0, 100% 100%, 0% 100%)" }}
+              />
             </section>
 
             {/* STICKY PANEL */}
-            <aside className="relative">
-              <div className="lg:sticky lg:top-28">
+            <aside className="relative z-10 lg:col-span-5 lg:-ml-16 lg:pl-20">
+              <div className="pt-10 lg:sticky lg:top-28 lg:pt-12">
                 {/* Source badge */}
                 <div className="mb-5 flex flex-wrap items-center gap-2">
                   <span
