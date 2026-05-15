@@ -19,9 +19,7 @@ export type PlaqueBg =
   | "legend-molten-gold"
   | "legend-cyber-rune"
   | "legend-holo-prism"
-  | "vip-platinum"
-  | "vip-holo-card"
-  | "vip-pink-chrome";
+  | "vip-platinum";
 
 export type RankId =
   | "rookie"
