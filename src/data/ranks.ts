@@ -18,20 +18,26 @@ export type PlaqueBg =
   | "legend-chrome"
   | "legend-molten-gold"
   | "legend-cyber-rune"
-  | "legend-holo-prism";
+  | "legend-holo-prism"
+  | "vip-platinum"
+  | "vip-holo-card"
+  | "vip-pink-chrome";
 
 export type RankId =
   | "rookie"
   | "pit-crew"
   | "road-captain"
   | "alpha-hound"
-  | "hell-legend";
+  | "hell-legend"
+  | "vip";
 
 export type RankMeta = {
   id: RankId;
   label: string;     // длинное имя для дашборда: "ROAD CAPTAIN"
   short: string;     // короткое для лестницы: "CAPTAIN"
   plaqueBg: PlaqueBg;
+  /** Для рангов с несколькими равноправными визуалами (VIP). Первый = дефолт. */
+  plaqueVariants?: PlaqueBg[];
   /** основной цвет акцента ранга (XP-бар, активный шаг лестницы) */
   accent: string;
   /** мягкий цвет (пройденные шаги, glow) */
@@ -39,6 +45,10 @@ export type RankMeta = {
   /** цвет текста поверх accent (для активного шага лестницы) */
   onAccent: string;
   isMax?: boolean;
+  /** платный ранг — рисуем замок/цену вместо XP-бара */
+  isPaid?: boolean;
+  /** плейсхолдер цены, рисуется на плашке вместо XP */
+  priceLabel?: string;
 };
 
 export const RANKS: RankMeta[] = [
@@ -56,7 +66,7 @@ export const RANKS: RankMeta[] = [
     label: "PIT CREW",
     short: "PIT",
     plaqueBg: "pit-diamond",
-    accent: "#b8a48a", // пыльный песок
+    accent: "#b8a48a",
     accentSoft: "rgba(184, 164, 138, 0.35)",
     onAccent: "#0a0a0a",
   },
@@ -65,7 +75,7 @@ export const RANKS: RankMeta[] = [
     label: "ROAD CAPTAIN",
     short: "CAPTAIN",
     plaqueBg: "captain-speedlines",
-    accent: "#d4d0c4", // серебро / хром (var(--metal) ярче)
+    accent: "#d4d0c4",
     accentSoft: "rgba(212, 208, 196, 0.4)",
     onAccent: "#0a0a0a",
   },
@@ -74,7 +84,7 @@ export const RANKS: RankMeta[] = [
     label: "ALPHA HOUND",
     short: "ALPHA",
     plaqueBg: "alpha-aurora",
-    accent: "#b48dff", // фиолет
+    accent: "#b48dff",
     accentSoft: "rgba(180, 141, 255, 0.4)",
     onAccent: "#0a0a0a",
   },
@@ -83,10 +93,22 @@ export const RANKS: RankMeta[] = [
     label: "HELL LEGEND",
     short: "LEGEND",
     plaqueBg: "legend-molten-gold",
-    accent: "#ffb648", // золото
+    accent: "#ffb648",
     accentSoft: "rgba(255, 182, 72, 0.45)",
     onAccent: "#1a1000",
+  },
+  {
+    id: "vip",
+    label: "VIP",
+    short: "VIP",
+    plaqueBg: "vip-platinum",
+    plaqueVariants: ["vip-platinum", "vip-holo-card", "vip-pink-chrome"],
+    accent: "#e8e4d6",
+    accentSoft: "rgba(232, 228, 214, 0.5)",
+    onAccent: "#0a0a0a",
     isMax: true,
+    isPaid: true,
+    priceLabel: "от 4 990 ₽",
   },
 ];
 

@@ -9,7 +9,13 @@ import {
 } from "@/data/profile";
 import { PlaqueBackground, ProfilePlaque } from "./club";
 import { RANKS } from "@/data/ranks";
-import { setRankIndex, setXpPct, useCurrentRank, useRankState } from "@/data/rank-state";
+import {
+  setRankIndex,
+  setVipVariant,
+  setXpPct,
+  useCurrentRank,
+  useRankState,
+} from "@/data/rank-state";
 import {
   ArrowRight,
   Bike,
@@ -48,7 +54,8 @@ function MePage() {
 // ---------- Dashboard (приборка) ----------
 
 function Dashboard() {
-  const { rank, next, xp, xpMax, xpPct, isMax } = useCurrentRank();
+  const { rank, plaqueBg, next, xp, xpMax, xpPct, isMax } = useCurrentRank();
+  const isPaid = !!rank.isPaid;
 
   return (
     <section
@@ -56,7 +63,7 @@ function Dashboard() {
       className="relative mb-8 overflow-hidden border border-white/[0.06] bg-[#0b0b0b]"
     >
       {/* Decor: фон по текущему рангу */}
-      <PlaqueBackground bg={rank.plaqueBg} />
+      <PlaqueBackground bg={plaqueBg} />
       {/* Тёмная подложка для читаемости текста */}
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/55 via-black/25 to-black/55" />
 
@@ -132,7 +139,18 @@ function Dashboard() {
             <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
               Ранг
             </span>
-            {next ? (
+            {isPaid ? (
+              <span
+                className="flex items-center gap-1 font-mono text-[10px] font-extrabold uppercase tracking-[0.25em]"
+                style={{ color: rank.accent }}
+              >
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <rect x="4" y="11" width="16" height="10" rx="1" />
+                  <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+                </svg>
+                Платный · {rank.priceLabel}
+              </span>
+            ) : next ? (
               <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
                 до{" "}
                 <span className="font-bold" style={{ color: rank.accent }}>
@@ -192,7 +210,17 @@ function Dashboard() {
               >
                 {rank.label}
               </span>
-              {isMax ? (
+              {isPaid ? (
+                <span
+                  className="flex items-center gap-1.5 font-extrabold uppercase tracking-[0.2em]"
+                  style={{ color: rank.accent }}
+                >
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2 L15 9 L22 9 L16.5 13.5 L18.5 21 L12 16.5 L5.5 21 L7.5 13.5 L2 9 L9 9 Z" />
+                  </svg>
+                  {rank.priceLabel}
+                </span>
+              ) : isMax ? (
                 <span
                   className="font-extrabold uppercase tracking-[0.2em]"
                   style={{ color: rank.accent }}
@@ -272,14 +300,16 @@ function RankLadder() {
 // ---------- Dev rank switcher (плавающая панелька) ----------
 
 function RankSwitcher() {
-  const { rankIndex, xpPct } = useRankState();
+  const { rankIndex, xpPct, vipVariant } = useRankState();
+  const currentRank = RANKS[rankIndex];
+  const variants = currentRank.plaqueVariants;
   return (
-    <div className="fixed bottom-4 right-4 z-50 w-72 border border-white/10 bg-black/85 p-3 font-mono text-[10px] uppercase tracking-wider text-muted-foreground shadow-[0_10px_40px_-10px_rgba(0,0,0,0.8)] backdrop-blur-md">
+    <div className="fixed bottom-4 right-4 z-50 w-80 border border-white/10 bg-black/85 p-3 font-mono text-[10px] uppercase tracking-wider text-muted-foreground shadow-[0_10px_40px_-10px_rgba(0,0,0,0.8)] backdrop-blur-md">
       <div className="mb-2 flex items-center justify-between">
         <span className="font-bold text-foreground">Dev · ранг</span>
         <span className="text-[9px] opacity-60">только превью</span>
       </div>
-      <div className="mb-3 grid grid-cols-5 gap-1">
+      <div className="mb-3 grid grid-cols-6 gap-1">
         {RANKS.map((r, i) => {
           const active = i === rankIndex;
           return (
@@ -307,10 +337,39 @@ function RankSwitcher() {
           );
         })}
       </div>
+
+      {variants && variants.length > 1 ? (
+        <div className="mb-3">
+          <div className="mb-1 flex items-baseline justify-between">
+            <span className="text-[9px] font-bold text-foreground">VIP · визуал</span>
+            <span className="text-[9px] opacity-60">{vipVariant + 1} / {variants.length}</span>
+          </div>
+          <div className="grid grid-cols-3 gap-1">
+            {variants.map((v, i) => {
+              const active = i === vipVariant;
+              const labels = ["Платина", "Голо", "Розовый хром"];
+              return (
+                <button
+                  key={v}
+                  type="button"
+                  onClick={() => setVipVariant(i)}
+                  className={`border px-1 py-1.5 text-[9px] font-bold leading-none transition-colors ${
+                    active
+                      ? "border-white bg-white text-black"
+                      : "border-white/10 text-muted-foreground hover:border-white/30"
+                  }`}
+                  title={v}
+                >
+                  {labels[i] ?? `V${i + 1}`}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
+
       <label className="flex items-center gap-2">
-        <span className="w-6 text-[10px] tabular-nums text-foreground">
-          XP
-        </span>
+        <span className="w-6 text-[10px] tabular-nums text-foreground">XP</span>
         <input
           type="range"
           min={0}

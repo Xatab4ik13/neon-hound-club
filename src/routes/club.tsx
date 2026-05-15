@@ -727,7 +727,6 @@ const PLAQUE_BG: Record<PlaqueBg, PlaqueVariant> = {
             opacity: 0.85,
           }}
         />
-        {/* призматический ореол */}
         <div
           aria-hidden
           className="pointer-events-none absolute -inset-[40%]"
@@ -739,7 +738,6 @@ const PLAQUE_BG: Record<PlaqueBg, PlaqueVariant> = {
             mixBlendMode: "overlay",
           }}
         />
-        {/* tilt-блик */}
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0"
@@ -751,7 +749,170 @@ const PLAQUE_BG: Record<PlaqueBg, PlaqueVariant> = {
             mixBlendMode: "screen",
           }}
         />
-        {/* читаемость текста */}
+        <div className="pointer-events-none absolute inset-0 bg-black/45" />
+      </>
+    ),
+  },
+
+  // ---- VIP · 3 «вау» концепта (платный ранг) ----
+  "vip-platinum": {
+    base: "bg-[#050505]",
+    decor: () => (
+      <>
+        {/* глубокая бездна с лёгким холодным свечением */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(120% 90% at 50% 110%, rgba(180,200,230,0.35) 0%, rgba(80,90,110,0.15) 30%, transparent 60%)",
+          }}
+        />
+        {/* гранёный бриллиант — медленно вращающийся conic */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -inset-[60%]"
+          style={{
+            background:
+              "conic-gradient(from 0deg, rgba(255,255,255,0.0) 0deg, rgba(220,230,245,0.85) 30deg, rgba(255,255,255,0.0) 60deg, rgba(180,200,230,0.6) 120deg, rgba(255,255,255,0.0) 150deg, rgba(240,245,255,0.95) 210deg, rgba(255,255,255,0.0) 240deg, rgba(200,215,235,0.7) 300deg, rgba(255,255,255,0.0) 330deg)",
+            animation: "plaque-prism-rotate 14s linear infinite",
+            filter: "blur(28px)",
+            mixBlendMode: "screen",
+          }}
+        />
+        {/* чёткие огранённые блики — фасеты */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            backgroundImage:
+              "linear-gradient(60deg, transparent 40%, rgba(255,255,255,0.18) 49%, rgba(255,255,255,0.55) 50%, rgba(255,255,255,0.18) 51%, transparent 60%), linear-gradient(-50deg, transparent 45%, rgba(220,230,245,0.25) 50%, transparent 55%)",
+            mixBlendMode: "screen",
+          }}
+        />
+        {/* платиновый sweep */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            backgroundImage:
+              "linear-gradient(110deg, transparent 0%, transparent 35%, rgba(255,255,255,0.5) 48%, rgba(255,255,255,0.95) 50%, rgba(255,255,255,0.5) 52%, transparent 65%, transparent 100%)",
+            backgroundSize: "260% 100%",
+            animation: "plaque-gold-sweep 5s linear infinite",
+            mixBlendMode: "screen",
+          }}
+        />
+        {/* вершинный vignette + чёрная подложка для текста */}
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/55 via-black/20 to-black/55" />
+      </>
+    ),
+  },
+  "vip-holo-card": {
+    base: "bg-[#06060a]",
+    decor: () => (
+      <>
+        {/* iridescent голограмма как на премиум-картах */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            backgroundImage:
+              "linear-gradient(115deg, #2a1a3a 0%, #6b3aa0 14%, #ff5fb0 28%, #ffb547 42%, #b8ff5a 56%, #45e8ff 70%, #6b3aa0 84%, #2a1a3a 100%)",
+            backgroundSize: "240% 100%",
+            animation: "plaque-holo 9s linear infinite",
+            opacity: 0.55,
+            mixBlendMode: "screen",
+          }}
+        />
+        {/* эмбоссированный паттерн ромбов */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            backgroundImage:
+              "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'><path d='M16 2 L30 16 L16 30 L2 16 Z' fill='none' stroke='%23ffffff' stroke-opacity='0.10' stroke-width='1'/></svg>\")",
+            backgroundSize: "22px 22px",
+            mixBlendMode: "overlay",
+          }}
+        />
+        {/* призматический ореол */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -inset-[40%]"
+          style={{
+            background:
+              "conic-gradient(from 0deg, rgba(255,255,255,0.0), rgba(255,200,240,0.4), rgba(255,255,255,0.0) 30%, rgba(180,255,220,0.5) 60%, rgba(255,255,255,0.0) 90%)",
+            animation: "plaque-prism-rotate 12s linear infinite",
+            filter: "blur(30px)",
+            mixBlendMode: "screen",
+          }}
+        />
+        {/* tilt-блик */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            backgroundImage:
+              "linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.55) 48%, rgba(255,255,255,0.95) 50%, rgba(255,255,255,0.55) 52%, transparent 70%)",
+            backgroundSize: "220% 100%",
+            animation: "plaque-gold-sweep 4.5s linear infinite",
+            mixBlendMode: "screen",
+          }}
+        />
+        <div className="pointer-events-none absolute inset-0 bg-black/45" />
+      </>
+    ),
+  },
+  "vip-pink-chrome": {
+    base: "bg-[#0a0008]",
+    decor: () => (
+      <>
+        {/* брендовый розовый glow снизу + хром сверху */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(110% 90% at 50% 115%, color-mix(in oklab, var(--primary) 70%, transparent) 0%, color-mix(in oklab, var(--primary) 30%, transparent) 25%, transparent 60%)",
+            animation: "plaque-vip-breathe 4.5s ease-in-out infinite",
+          }}
+        />
+        {/* жидкий хром с розовыми гранями */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            backgroundImage:
+              "linear-gradient(110deg, color-mix(in oklab, var(--primary) 80%, transparent) 0%, rgba(245,245,250,0.45) 22%, color-mix(in oklab, var(--primary) 60%, transparent) 44%, rgba(255,255,255,0.5) 66%, color-mix(in oklab, var(--primary) 80%, transparent) 88%, rgba(245,245,250,0.45) 100%)",
+            backgroundSize: "240% 100%",
+            animation: "plaque-chrome 5s linear infinite",
+            mixBlendMode: "overlay",
+          }}
+        />
+        {/* радиальные грани как алмаз */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -inset-[50%]"
+          style={{
+            background:
+              "conic-gradient(from 45deg, rgba(255,255,255,0) 0deg, rgba(255,255,255,0.5) 45deg, rgba(255,255,255,0) 90deg, rgba(255,80,180,0.55) 180deg, rgba(255,255,255,0) 225deg, rgba(255,255,255,0.55) 270deg, rgba(255,255,255,0) 315deg)",
+            animation: "plaque-prism-rotate 10s linear infinite",
+            filter: "blur(32px)",
+            mixBlendMode: "screen",
+          }}
+        />
+        {/* искра-блик */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            backgroundImage:
+              "linear-gradient(110deg, transparent 35%, rgba(255,255,255,0.7) 49%, rgba(255,255,255,1) 50%, rgba(255,255,255,0.7) 51%, transparent 65%)",
+            backgroundSize: "260% 100%",
+            animation: "plaque-gold-sweep 4s linear infinite",
+            mixBlendMode: "screen",
+          }}
+        />
         <div className="pointer-events-none absolute inset-0 bg-black/45" />
       </>
     ),
@@ -779,9 +940,10 @@ export function ProfilePlaque({
   compact?: boolean;
   onNavigate?: () => void;
 }) {
-  const { rank, xp, xpMax, xpPct, isMax } = useCurrentRank();
-  const variant = PLAQUE_BG[rank.plaqueBg];
+  const { rank, plaqueBg, xp, xpMax, xpPct, isMax } = useCurrentRank();
+  const variant = PLAQUE_BG[plaqueBg];
   const size = compact ? 44 : 56;
+  const isPaid = !!rank.isPaid;
 
   return (
     <Link
@@ -868,7 +1030,19 @@ export function ProfilePlaque({
             </div>
           </div>
 
-          {isMax ? (
+          {isPaid ? (
+            <div className="flex items-center gap-1 whitespace-nowrap">
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ color: rank.accent }}>
+                <path d="M12 2 L15 9 L22 9 L16.5 13.5 L18.5 21 L12 16.5 L5.5 21 L7.5 13.5 L2 9 L9 9 Z" />
+              </svg>
+              <span
+                className="font-mono text-[9px] font-extrabold uppercase tracking-[0.25em]"
+                style={{ color: rank.accent }}
+              >
+                VIP
+              </span>
+            </div>
+          ) : isMax ? (
             <div className="flex items-center whitespace-nowrap">
               <span
                 className="font-mono text-[9px] font-extrabold uppercase tracking-[0.25em]"
