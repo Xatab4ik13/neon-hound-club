@@ -127,6 +127,7 @@ function Dashboard() {
             </div>
             <button
               type="button"
+              onClick={() => setSettingsOpen(true)}
               className="mt-3 inline-flex items-center gap-1.5 border border-white/[0.08] bg-black/30 px-2.5 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground transition-colors hover:border-white/30 hover:text-foreground"
             >
               <Settings className="h-3 w-3" />
