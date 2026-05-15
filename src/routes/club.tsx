@@ -145,215 +145,146 @@ function SidebarBody({
   const activeIndex = NAV.findIndex((item) =>
     item.href === "/club" ? pathname === "/club" : pathname.startsWith(item.href),
   );
-  const total = "60.9";
-  const progressPct = activeIndex <= 0 ? 0 : Math.round((activeIndex / (NAV.length - 1)) * 100);
+  const xpPct = Math.round((ME.xp / ME.xpMax) * 100);
 
   return (
     <>
-      {/* Scanning grid overlay */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-[0.03]"
-        style={{
-          backgroundImage:
-            "radial-gradient(var(--primary) 0.5px, transparent 0.5px)",
-          backgroundSize: "16px 16px",
-        }}
-      />
-
-      {/* Brand header */}
-      <div className="relative z-10 flex items-start justify-between border-b border-white/[0.04] px-6 pb-5 pt-7">
-        <Link
-          to="/"
-          onClick={onNavigate}
-          className="block"
-          aria-label="HELLHOUND home"
-        >
-          <span
-            className="block font-display text-2xl font-black italic tracking-tighter text-primary"
-            style={{ textShadow: "0 0 8px color-mix(in oklab, var(--primary) 30%, transparent)" }}
-          >
-            HELLHOUND
-          </span>
-          <span className="mt-1 flex items-center gap-2 font-mono text-[9px] font-bold uppercase tracking-[0.3em] text-muted-foreground">
-            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
-            NAV UNIT V1.04
-          </span>
-        </Link>
-        <div className="text-right font-mono text-[10px] leading-tight text-muted-foreground/70">
-          <div>ST: 98%</div>
-          <div>LAT: 55.75</div>
-        </div>
+      {/* Background blobs */}
+      <div aria-hidden className="pointer-events-none absolute inset-0 opacity-[0.12]">
+        <div className="absolute -right-16 -top-10 h-64 w-64 rounded-full bg-primary/60 blur-[100px]" />
+        <div className="absolute -bottom-10 -left-16 h-64 w-64 rounded-full bg-primary/30 blur-[100px]" />
       </div>
 
-      {/* Route */}
-      <nav className="relative z-10 flex-1 overflow-y-auto px-4 py-6">
-        <div className="relative">
-          {/* Road SVG */}
-          <div
-            aria-hidden
-            className="pointer-events-none absolute bottom-0 left-[22px] top-0 w-8"
+      {/* Brand header */}
+      <div className="relative z-10 px-6 pb-5 pt-7">
+        <Link to="/" onClick={onNavigate} className="block" aria-label="HELLHOUND home">
+          <span
+            className="block font-display text-3xl font-black tracking-tight text-foreground"
+            style={{ textShadow: "0 0 8px color-mix(in oklab, var(--primary) 25%, transparent)" }}
           >
-            <svg
-              className="h-full w-full"
-              preserveAspectRatio="none"
-              viewBox="0 0 40 600"
-              fill="none"
-            >
-              <path
-                d="M20,0 C30,60 10,120 20,180 S30,300 20,360 S10,480 20,540 S30,620 20,600"
-                stroke="hsl(0 0% 10%)"
-                strokeWidth="4"
-                strokeLinecap="round"
-              />
-              <path
-                d="M15,100 L25,100 M15,220 L25,220 M15,340 L25,340 M15,460 L25,460"
-                stroke="hsl(0 0% 14%)"
-                strokeWidth="1"
-              />
-              <path
-                d="M20,0 C30,60 10,120 20,80"
-                stroke="var(--primary)"
-                strokeWidth="4"
-                strokeLinecap="round"
-                style={{ filter: "drop-shadow(0 0 8px color-mix(in oklab, var(--primary) 60%, transparent))" }}
-              />
-            </svg>
-          </div>
+            HELL<span className="italic text-primary">HOUND</span>
+          </span>
+        </Link>
+      </div>
 
-          <ul className="relative z-10 space-y-0">
-            {NAV.map((item, idx) => {
-              const isActive = idx === activeIndex;
-              const isFinal = "final" in item && item.final;
-              const isLast = idx === NAV.length - 1;
+      {/* Slabs */}
+      <nav className="relative z-10 flex-1 overflow-y-auto px-4 py-2">
+        <ul className="flex flex-col gap-3">
+          {NAV.map((item, idx) => {
+            const isActive = idx === activeIndex;
+            const isFinal = item.final;
+            const Icon = item.icon;
+
+            // Special: Hell Pass — gradient slab with right pink edge
+            if (isFinal) {
               return (
-                <li key={item.href}>
+                <li key={item.href} className="mt-2">
                   <Link
                     to={item.href}
                     onClick={onNavigate}
-                    className="group relative flex h-14 items-center"
+                    className="group relative flex h-16 items-center transition-transform duration-300 hover:translate-x-1"
                   >
-                    {/* Waypoint marker */}
-                    <div className="flex w-12 shrink-0 justify-center">
-                      {isActive ? (
-                        <span className="relative">
-                          <span
-                            aria-hidden
-                            className="absolute -inset-2 animate-pulse rounded-full bg-primary/20 blur-md"
-                          />
-                          <span className="relative flex h-8 w-8 items-center justify-center rounded-full border-2 border-primary bg-black ring-4 ring-primary/10">
-                            <span className="h-2 w-2 rounded-full bg-primary" />
-                          </span>
-                        </span>
-                      ) : isFinal ? (
-                        <span
-                          className="flex h-5 w-5 rotate-45 items-center justify-center border-2 border-primary bg-card"
-                          style={{ boxShadow: "0 0 15px color-mix(in oklab, var(--primary) 20%, transparent)" }}
-                        >
-                          <span className="h-1.5 w-1.5 animate-ping rounded-full bg-primary" />
-                        </span>
-                      ) : (
-                        <span className="h-2.5 w-2.5 rounded-full border-2 border-white/[0.12] bg-card transition-all duration-300 group-hover:border-primary group-hover:bg-primary/20" />
-                      )}
-                    </div>
-
-                    {/* Label */}
-                    <div className="ml-3 min-w-0">
-                      <div
-                        className={`font-semibold uppercase tracking-wide transition-colors ${
-                          isActive
-                            ? "text-sm text-primary"
-                            : isFinal
-                              ? "text-sm font-black tracking-widest text-foreground"
-                              : "text-sm text-muted-foreground group-hover:text-foreground"
+                    <div
+                      aria-hidden
+                      className={`absolute inset-0 -skew-x-12 border-r-4 border-primary bg-gradient-to-r from-primary/40 to-black transition-all duration-300 ${
+                        isActive ? "from-primary/60" : "group-hover:from-primary/55"
+                      }`}
+                    />
+                    <div className="relative flex w-full items-center px-6">
+                      <Icon
+                        className={`mr-4 h-5 w-5 transition-colors ${
+                          isActive ? "text-foreground" : "text-primary group-hover:text-foreground"
+                        }`}
+                        strokeWidth={2}
+                      />
+                      <span
+                        className={`font-display text-sm font-black uppercase italic tracking-widest transition-colors ${
+                          isActive ? "text-foreground" : "text-primary group-hover:text-foreground"
                         }`}
                       >
                         {item.label}
-                      </div>
-                      {isActive && (
-                        <div className="mt-0.5 flex items-center gap-2">
-                          <span className="font-mono text-[9px] leading-none text-primary/60">
-                            TRK: {item.distance}
-                          </span>
-                          <span className="rounded bg-primary/10 px-1 font-mono text-[8px] font-bold text-primary">
-                            CURR
-                          </span>
-                        </div>
-                      )}
-                      {isFinal && !isActive && (
-                        <div className="mt-0.5 font-mono text-[8px] font-bold uppercase tracking-widest text-muted-foreground/70">
-                          Final Sector
-                        </div>
-                      )}
-                    </div>
-                  </Link>
-
-                  {/* Distance spacer between stops */}
-                  {!isLast && (
-                    <div className="ml-12 flex h-9 items-center border-l border-dashed border-white/[0.08]">
-                      <span className="pl-4 font-mono text-[10px] font-bold uppercase tracking-tighter text-muted-foreground/70">
-                        {NAV[idx + 1].distance}
-                        {NAV[idx + 1].eta && (
-                          <span className="ml-2 text-muted-foreground/40">
-                            [E: {NAV[idx + 1].eta}]
-                          </span>
-                        )}
                       </span>
                     </div>
-                  )}
+                  </Link>
                 </li>
               );
-            })}
-          </ul>
-        </div>
+            }
+
+            return (
+              <li key={item.href}>
+                <Link
+                  to={item.href}
+                  onClick={onNavigate}
+                  className="group relative flex h-14 items-center transition-transform duration-300 hover:translate-x-1"
+                >
+                  <div
+                    aria-hidden
+                    className={`absolute inset-0 -skew-x-12 transition-all duration-300 ${
+                      isActive
+                        ? "scale-x-[1.02] bg-primary shadow-[0_10px_24px_-6px_color-mix(in_oklab,var(--primary)_45%,transparent)]"
+                        : "border border-white/[0.08] bg-white/[0.02] group-hover:border-primary/60 group-hover:bg-white/[0.05]"
+                    }`}
+                  />
+                  <div className="relative flex w-full items-center px-6">
+                    <Icon
+                      className={`mr-4 h-5 w-5 transition-colors ${
+                        isActive
+                          ? "text-black"
+                          : "text-muted-foreground group-hover:text-primary"
+                      }`}
+                      strokeWidth={isActive ? 2.5 : 2}
+                    />
+                    <span
+                      className={`font-display uppercase tracking-tighter transition-colors ${
+                        isActive
+                          ? "text-lg font-black italic text-black"
+                          : "text-sm font-bold text-muted-foreground group-hover:text-foreground"
+                      }`}
+                    >
+                      {item.label}
+                    </span>
+                  </div>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
       </nav>
 
-      {/* Telemetry footer */}
-      <div className="relative z-10 border-t border-white/[0.04] bg-black/40 p-5">
-        <div className="mb-3 flex items-end justify-between">
-          <div>
-            <div className="font-mono text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/70">
-              Total Trip
+      {/* User card */}
+      <div className="relative z-10 p-5">
+        <div className="flex items-center gap-4 rounded-xl border border-white/[0.06] bg-white/[0.03] p-4 backdrop-blur-md">
+          <div className="relative">
+            <div className="flex h-12 w-12 items-center justify-center bg-primary font-display text-base font-black uppercase italic text-black">
+              {ME.nick.slice(0, 2)}
             </div>
-            <div className="font-mono text-lg font-bold leading-tight tracking-tighter text-foreground">
-              {total}
-              <span className="ml-1 text-xs text-muted-foreground">KM</span>
+            <span
+              aria-hidden
+              className="absolute -bottom-1 -right-1 h-3.5 w-3.5 rounded-full border-2 border-black bg-emerald-500"
+            />
+          </div>
+          <div className="flex min-w-0 flex-1 flex-col">
+            <span className="truncate font-mono text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">
+              {ME.nick}
+            </span>
+            <div className="flex items-baseline gap-1.5">
+              <span className="font-display text-xl font-black leading-none text-foreground">
+                {ME.xp}
+              </span>
+              <span className="font-mono text-[10px] font-black text-primary">XP</span>
+            </div>
+            <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-white/[0.06]">
+              <div className="h-full bg-primary" style={{ width: `${xpPct}%` }} />
             </div>
           </div>
-          <Link
-            to="/"
-            onClick={onNavigate}
-            aria-label="На главную"
-            className="group flex h-10 w-10 items-center justify-center border border-white/[0.08] bg-card transition-all hover:border-primary hover:bg-primary/10"
-          >
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              className="text-muted-foreground transition-colors group-hover:text-primary"
-            >
-              <path d="M19 12H5M12 5l-7 7 7 7" />
-            </svg>
-          </Link>
-        </div>
-
-        <div className="h-1 w-full overflow-hidden rounded-full bg-white/[0.05]">
-          <div
-            className="h-full bg-primary transition-all duration-500"
-            style={{
-              width: `${progressPct}%`,
-              boxShadow: "0 0 8px color-mix(in oklab, var(--primary) 60%, transparent)",
-            }}
-          />
-        </div>
-        <div className="mt-1 flex justify-between font-mono text-[8px] font-bold uppercase">
-          <span className="text-muted-foreground/60">Progress</span>
-          <span className="text-primary">{progressPct}% COMPLETED</span>
         </div>
       </div>
+
+      {/* Bottom accent */}
+      <div
+        aria-hidden
+        className="h-1 w-full bg-gradient-to-r from-primary via-primary/40 to-transparent opacity-60"
+      />
     </>
   );
 }
