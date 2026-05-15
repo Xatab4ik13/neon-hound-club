@@ -54,17 +54,23 @@ function Dashboard() {
       aria-label="Прогресс райдера"
       className="relative mb-8 overflow-hidden border border-white/[0.06] bg-[#0b0b0b]"
     >
-      {/* Decor: aurora (Alpha Hound) */}
+      {/* Decor: molten gold (Hell Legend) */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background:
+            "radial-gradient(120% 90% at 50% 115%, #ffb648 0%, #ff5a00 18%, #7a1a00 40%, transparent 70%)",
+          animation: "plaque-lava-pulse 4s ease-in-out infinite",
+        }}
+      />
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0"
         style={{
           backgroundImage:
-            "radial-gradient(50% 140% at 20% 50%, color-mix(in oklab, var(--primary) 55%, transparent), transparent 70%), radial-gradient(45% 130% at 80% 50%, color-mix(in oklab, #b026ff 65%, transparent), transparent 70%)",
-          backgroundSize: "200% 100%, 200% 100%",
-          animation: "plaque-aurora 8s ease-in-out infinite",
+            "radial-gradient(2px 60% at 22% 50%, #ffcf6b 0%, transparent 70%), radial-gradient(2px 80% at 58% 60%, #ffb648 0%, transparent 70%), radial-gradient(2px 50% at 82% 40%, #ffe28a 0%, transparent 70%)",
           mixBlendMode: "screen",
-          opacity: 0.85,
         }}
       />
       <div
@@ -72,10 +78,13 @@ function Dashboard() {
         className="pointer-events-none absolute inset-0"
         style={{
           backgroundImage:
-            "repeating-linear-gradient(0deg, rgba(255,255,255,0.04) 0 1px, transparent 1px 3px)",
+            "linear-gradient(110deg, transparent 0%, transparent 35%, rgba(255, 215, 120, 0.55) 48%, rgba(255, 245, 200, 0.85) 50%, rgba(255, 215, 120, 0.55) 52%, transparent 65%, transparent 100%)",
+          backgroundSize: "250% 100%",
+          animation: "plaque-gold-sweep 6s linear infinite",
+          mixBlendMode: "screen",
         }}
       />
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/40" />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/65 via-transparent to-black/40" />
       {/* Decor: glow */}
       <div
         aria-hidden
