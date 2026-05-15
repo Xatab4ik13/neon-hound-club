@@ -31,55 +31,9 @@ export const Route = createFileRoute("/club/me")({
   component: MePage,
 });
 
-const ALPHA_VARIANTS: { id: PlaqueBg; label: string; note: string }[] = [
-  { id: "alpha-aurora", label: "A · Aurora", note: "розово-фиолетовая аврора, медленный дрейф" },
-  { id: "alpha-grid", label: "B · Neon grid", note: "неоновая сетка + горящий розовый горизонт" },
-  { id: "alpha-claw", label: "C · Claw strike", note: "когти + световой удар слева направо" },
-];
-
-function PlaquePreview() {
-  return (
-    <section
-      aria-label="Концепты Alpha Hound"
-      className="mb-10 border border-dashed border-white/10 bg-card/30 p-5"
-    >
-      <div className="mb-4 flex items-baseline justify-between">
-        <h2 className="font-display text-sm font-black uppercase italic tracking-widest text-foreground">
-          Alpha Hound · 3 концепта
-        </h2>
-        <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-          выбери один
-        </span>
-      </div>
-      <div className="space-y-4">
-        <div>
-          <div className="mb-2 font-mono text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
-            Утверждено · Road Captain (для сравнения)
-          </div>
-          <ProfilePlaque compact bg="captain-speedlines" />
-        </div>
-        {ALPHA_VARIANTS.map((v) => (
-          <div key={v.id}>
-            <div className="mb-2 flex items-baseline gap-3">
-              <span className="font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-primary">
-                {v.label}
-              </span>
-              <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-                {v.note}
-              </span>
-            </div>
-            <ProfilePlaque compact bg={v.id} />
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
 function MePage() {
   return (
     <main className="mx-auto w-full max-w-5xl px-4 py-6 md:px-8 md:py-10">
-      <PlaquePreview />
       <Dashboard />
       <StatsRow />
       <SectionTickets />
@@ -100,27 +54,28 @@ function Dashboard() {
       aria-label="Прогресс райдера"
       className="relative mb-8 overflow-hidden border border-white/[0.06] bg-[#0b0b0b]"
     >
-      {/* Decor: asphalt + pink aura right (Road Captain) */}
+      {/* Decor: aurora (Alpha Hound) */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0"
         style={{
-          background:
-            "radial-gradient(110% 160% at 100% 50%, color-mix(in oklab, var(--primary) 22%, transparent), transparent 55%)",
+          backgroundImage:
+            "radial-gradient(50% 140% at 20% 50%, color-mix(in oklab, var(--primary) 55%, transparent), transparent 70%), radial-gradient(45% 130% at 80% 50%, color-mix(in oklab, #b026ff 65%, transparent), transparent 70%)",
+          backgroundSize: "200% 100%, 200% 100%",
+          animation: "plaque-aurora 8s ease-in-out infinite",
+          mixBlendMode: "screen",
+          opacity: 0.85,
         }}
       />
-      {/* Decor: moving speedlines */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-80"
+        className="pointer-events-none absolute inset-0"
         style={{
           backgroundImage:
-            "repeating-linear-gradient(90deg, rgba(255,255,255,0.10) 0 2px, transparent 2px 80px), repeating-linear-gradient(90deg, rgba(255,255,255,0.04) 0 1px, transparent 1px 24px)",
-          backgroundSize: "200px 100%, 80px 100%",
-          animation: "plaque-speedlines 1.6s linear infinite",
-          maskImage: "linear-gradient(90deg, transparent 0%, #000 30%, #000 100%)",
+            "repeating-linear-gradient(0deg, rgba(255,255,255,0.04) 0 1px, transparent 1px 3px)",
         }}
       />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/40" />
       {/* Decor: glow */}
       <div
         aria-hidden
