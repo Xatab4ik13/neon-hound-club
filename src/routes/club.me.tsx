@@ -31,9 +31,55 @@ export const Route = createFileRoute("/club/me")({
   component: MePage,
 });
 
+const ALPHA_VARIANTS: { id: PlaqueBg; label: string; note: string }[] = [
+  { id: "alpha-aurora", label: "A · Aurora", note: "розово-фиолетовая аврора, медленный дрейф" },
+  { id: "alpha-grid", label: "B · Neon grid", note: "неоновая сетка + горящий розовый горизонт" },
+  { id: "alpha-claw", label: "C · Claw strike", note: "когти + световой удар слева направо" },
+];
+
+function PlaquePreview() {
+  return (
+    <section
+      aria-label="Концепты Alpha Hound"
+      className="mb-10 border border-dashed border-white/10 bg-card/30 p-5"
+    >
+      <div className="mb-4 flex items-baseline justify-between">
+        <h2 className="font-display text-sm font-black uppercase italic tracking-widest text-foreground">
+          Alpha Hound · 3 концепта
+        </h2>
+        <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+          выбери один
+        </span>
+      </div>
+      <div className="space-y-4">
+        <div>
+          <div className="mb-2 font-mono text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
+            Утверждено · Road Captain (для сравнения)
+          </div>
+          <ProfilePlaque compact bg="captain-speedlines" />
+        </div>
+        {ALPHA_VARIANTS.map((v) => (
+          <div key={v.id}>
+            <div className="mb-2 flex items-baseline gap-3">
+              <span className="font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-primary">
+                {v.label}
+              </span>
+              <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                {v.note}
+              </span>
+            </div>
+            <ProfilePlaque compact bg={v.id} />
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function MePage() {
   return (
     <main className="mx-auto w-full max-w-5xl px-4 py-6 md:px-8 md:py-10">
+      <PlaquePreview />
       <Dashboard />
       <StatsRow />
       <SectionTickets />
