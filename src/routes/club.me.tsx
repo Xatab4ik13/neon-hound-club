@@ -1,4 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState } from "react";
+import { SettingsModal } from "@/components/club/SettingsModal";
 import {
   ACTIVE_TICKETS,
   GARAGE,
@@ -53,10 +55,12 @@ function MePage() {
 // ---------- Dashboard (приборка) ----------
 
 function Dashboard() {
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const { rank, plaqueBg, next, xp, xpMax, xpPct, isMax } = useCurrentRank();
   const isPaid = !!rank.isPaid;
 
   return (
+    <>
     <section
       aria-label="Прогресс райдера"
       className="relative mb-8 overflow-hidden border border-white/[0.06] bg-[#0b0b0b]"
@@ -124,6 +128,7 @@ function Dashboard() {
             </div>
             <button
               type="button"
+              onClick={() => setSettingsOpen(true)}
               className="mt-3 inline-flex items-center gap-1.5 border border-white/[0.08] bg-black/30 px-2.5 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground transition-colors hover:border-white/30 hover:text-foreground"
             >
               <Settings className="h-3 w-3" />
@@ -240,8 +245,11 @@ function Dashboard() {
         </div>
       </div>
     </section>
+      <SettingsModal open={settingsOpen} onOpenChange={setSettingsOpen} />
+    </>
   );
 }
+
 
 function RankLadder() {
   const { rankIndex } = useRankState();
