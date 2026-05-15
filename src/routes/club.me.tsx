@@ -54,14 +54,20 @@ function Dashboard() {
       aria-label="Прогресс райдера"
       className="relative mb-8 overflow-hidden border border-white/[0.06] bg-[#0b0b0b]"
     >
-      {/* Decor: rally stripes */}
+      {/* Decor: diamond plate (Pit Crew) */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-[0.04]"
+        className="pointer-events-none absolute inset-0 opacity-[0.10]"
         style={{
           backgroundImage:
-            "repeating-linear-gradient(45deg, var(--primary) 0, var(--primary) 1px, transparent 0, transparent 14px)",
+            "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'><path d='M0 14 L14 0 L16 2 L2 16 Z M12 28 L26 14 L28 16 L14 30 Z' fill='%23ffffff' fill-opacity='1'/></svg>\")",
+          backgroundSize: "28px 28px",
         }}
+      />
+      {/* Decor: pink wash */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 bg-gradient-to-r from-primary/[0.04] via-transparent to-primary/[0.10]"
       />
       {/* Decor: glow */}
       <div
