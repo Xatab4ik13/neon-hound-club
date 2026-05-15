@@ -244,8 +244,13 @@ function Dashboard() {
         </div>
       </div>
     </section>
+      <SettingsModal open={settingsOpen} onOpenChange={setSettingsOpen} />
+    </>
   );
 }
+
+function DashboardWrapperFix() { return null; }
+// eslint-disable-next-line
 
 function RankLadder() {
   const { rankIndex } = useRankState();
