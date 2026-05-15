@@ -264,7 +264,10 @@ export type PlaqueBg =
   | "pit-hazard"
   | "captain-speedlines"
   | "captain-sweep"
-  | "captain-halftone";
+  | "captain-halftone"
+  | "alpha-aurora"
+  | "alpha-grid"
+  | "alpha-claw";
 
 type PlaqueVariant = {
   base: string;
