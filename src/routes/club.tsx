@@ -940,9 +940,10 @@ export function ProfilePlaque({
   compact?: boolean;
   onNavigate?: () => void;
 }) {
-  const { rank, xp, xpMax, xpPct, isMax } = useCurrentRank();
-  const variant = PLAQUE_BG[rank.plaqueBg];
+  const { rank, plaqueBg, xp, xpMax, xpPct, isMax } = useCurrentRank();
+  const variant = PLAQUE_BG[plaqueBg];
   const size = compact ? 44 : 56;
+  const isPaid = !!rank.isPaid;
 
   return (
     <Link
@@ -1029,7 +1030,19 @@ export function ProfilePlaque({
             </div>
           </div>
 
-          {isMax ? (
+          {isPaid ? (
+            <div className="flex items-center gap-1 whitespace-nowrap">
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ color: rank.accent }}>
+                <path d="M12 2 L15 9 L22 9 L16.5 13.5 L18.5 21 L12 16.5 L5.5 21 L7.5 13.5 L2 9 L9 9 Z" />
+              </svg>
+              <span
+                className="font-mono text-[9px] font-extrabold uppercase tracking-[0.25em]"
+                style={{ color: rank.accent }}
+              >
+                VIP
+              </span>
+            </div>
+          ) : isMax ? (
             <div className="flex items-center whitespace-nowrap">
               <span
                 className="font-mono text-[9px] font-extrabold uppercase tracking-[0.25em]"
