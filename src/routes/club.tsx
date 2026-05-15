@@ -259,24 +259,6 @@ function TopBar({ onMenu }: { onMenu: () => void }) {
 
 // ---------- Profile plaque ----------
 
-export type PlaqueBg =
-  | "rider"
-  | "pit-diamond"
-  | "pit-carbon"
-  | "pit-hazard"
-  | "captain-speedlines"
-  | "captain-sweep"
-  | "captain-halftone"
-  | "alpha-aurora"
-  | "alpha-grid"
-  | "alpha-claw"
-  | "legend-inferno"
-  | "legend-storm"
-  | "legend-chrome"
-  | "legend-molten-gold"
-  | "legend-cyber-rune"
-  | "legend-holo-prism";
-
 type PlaqueVariant = {
   base: string;
   decor?: () => React.ReactNode;
