@@ -15,6 +15,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as ClubRouteImport } from './routes/club'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ShopIndexRouteImport } from './routes/shop.index'
+import { Route as ClubIndexRouteImport } from './routes/club.index'
 import { Route as ShopProductSlugRouteImport } from './routes/shop.$productSlug'
 
 const SchoolRoute = SchoolRouteImport.update({
@@ -47,6 +48,11 @@ const ShopIndexRoute = ShopIndexRouteImport.update({
   path: '/shop/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ClubIndexRoute = ClubIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ClubRoute,
+} as any)
 const ShopProductSlugRoute = ShopProductSlugRouteImport.update({
   id: '/shop/$productSlug',
   path: '/shop/$productSlug',
@@ -55,30 +61,32 @@ const ShopProductSlugRoute = ShopProductSlugRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/club': typeof ClubRoute
+  '/club': typeof ClubRouteWithChildren
   '/login': typeof LoginRoute
   '/logos': typeof LogosRoute
   '/school': typeof SchoolRoute
   '/shop/$productSlug': typeof ShopProductSlugRoute
+  '/club/': typeof ClubIndexRoute
   '/shop/': typeof ShopIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/club': typeof ClubRoute
   '/login': typeof LoginRoute
   '/logos': typeof LogosRoute
   '/school': typeof SchoolRoute
   '/shop/$productSlug': typeof ShopProductSlugRoute
+  '/club': typeof ClubIndexRoute
   '/shop': typeof ShopIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/club': typeof ClubRoute
+  '/club': typeof ClubRouteWithChildren
   '/login': typeof LoginRoute
   '/logos': typeof LogosRoute
   '/school': typeof SchoolRoute
   '/shop/$productSlug': typeof ShopProductSlugRoute
+  '/club/': typeof ClubIndexRoute
   '/shop/': typeof ShopIndexRoute
 }
 export interface FileRouteTypes {
@@ -90,15 +98,16 @@ export interface FileRouteTypes {
     | '/logos'
     | '/school'
     | '/shop/$productSlug'
+    | '/club/'
     | '/shop/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/club'
     | '/login'
     | '/logos'
     | '/school'
     | '/shop/$productSlug'
+    | '/club'
     | '/shop'
   id:
     | '__root__'
@@ -108,12 +117,13 @@ export interface FileRouteTypes {
     | '/logos'
     | '/school'
     | '/shop/$productSlug'
+    | '/club/'
     | '/shop/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  ClubRoute: typeof ClubRoute
+  ClubRoute: typeof ClubRouteWithChildren
   LoginRoute: typeof LoginRoute
   LogosRoute: typeof LogosRoute
   SchoolRoute: typeof SchoolRoute
@@ -165,6 +175,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShopIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/club/': {
+      id: '/club/'
+      path: '/'
+      fullPath: '/club/'
+      preLoaderRoute: typeof ClubIndexRouteImport
+      parentRoute: typeof ClubRoute
+    }
     '/shop/$productSlug': {
       id: '/shop/$productSlug'
       path: '/shop/$productSlug'
@@ -175,9 +192,19 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface ClubRouteChildren {
+  ClubIndexRoute: typeof ClubIndexRoute
+}
+
+const ClubRouteChildren: ClubRouteChildren = {
+  ClubIndexRoute: ClubIndexRoute,
+}
+
+const ClubRouteWithChildren = ClubRoute._addFileChildren(ClubRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  ClubRoute: ClubRoute,
+  ClubRoute: ClubRouteWithChildren,
   LoginRoute: LoginRoute,
   LogosRoute: LogosRoute,
   SchoolRoute: SchoolRoute,
@@ -187,3 +214,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
