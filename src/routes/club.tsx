@@ -301,8 +301,6 @@ function MobileDrawer({
 // ---------- Top bar ----------
 
 function TopBar({ onMenu }: { onMenu: () => void }) {
-  const xpPct = Math.round((ME.xp / ME.xpMax) * 100);
-
   return (
     <header className="sticky top-0 z-40 border-b border-white/[0.06] bg-background/80 backdrop-blur-md">
       <div className="flex h-16 items-center gap-3 px-4 md:px-8">
@@ -332,42 +330,103 @@ function TopBar({ onMenu }: { onMenu: () => void }) {
           <span aria-hidden className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-primary" />
         </button>
 
-        {/* Profile chip */}
-        <div className="flex items-center gap-3 border border-white/[0.08] py-1.5 pl-1.5 pr-3">
-          {/* Avatar */}
-          <div className="relative flex h-9 w-9 items-center justify-center bg-primary/15 font-display text-sm font-bold uppercase italic text-primary">
-            {ME.nick.slice(0, 2)}
-            <span
-              aria-hidden
-              className="absolute inset-0 ring-1 ring-inset ring-primary/40"
+        <ProfilePlaque compact />
+      </div>
+    </header>
+  );
+}
+
+// ---------- Profile plaque ----------
+
+function ProfilePlaque({
+  compact = false,
+  onNavigate,
+}: {
+  compact?: boolean;
+  onNavigate?: () => void;
+}) {
+  const xpPct = Math.round((ME.xp / ME.xpMax) * 100);
+  const size = compact ? 48 : 60;
+
+  return (
+    <Link
+      to="/club"
+      onClick={onNavigate}
+      aria-label={`Профиль ${ME.nick}, ${ME.rank}, ${ME.xp} из ${ME.xpMax} XP`}
+      className="group relative flex w-full items-center bg-[#0f0f0f] transition-transform duration-200 hover:scale-[1.02] active:scale-95"
+      style={{
+        height: `${size}px`,
+        maxWidth: compact ? "320px" : "100%",
+        clipPath: "polygon(0 0, 94% 0, 100% 50%, 94% 100%, 0 100%)",
+      }}
+    >
+      <div
+        aria-hidden
+        className="absolute inset-0 bg-gradient-to-r from-primary/0 via-primary/5 to-primary/20 opacity-0 transition-opacity group-hover:opacity-100"
+      />
+
+      {/* Avatar */}
+      <div
+        className="relative flex h-full shrink-0 items-center justify-center bg-primary transition-all group-hover:brightness-110"
+        style={{ width: `${size}px` }}
+      >
+        <div
+          aria-hidden
+          className="absolute inset-0 opacity-20"
+          style={{
+            backgroundImage:
+              "repeating-linear-gradient(45deg, #000 0, #000 1px, transparent 0, transparent 50%)",
+            backgroundSize: "4px 4px",
+          }}
+        />
+        <span
+          className={`relative -skew-x-12 font-display font-black italic uppercase text-black ${
+            compact ? "text-xl" : "text-2xl"
+          }`}
+        >
+          {ME.nick.slice(0, 2)}
+        </span>
+      </div>
+
+      {/* Content */}
+      <div className="relative flex h-full flex-1 flex-col justify-center pl-3 pr-7 md:pl-4 md:pr-8">
+        <div className="flex items-baseline justify-between gap-2">
+          <span
+            className={`truncate font-display font-black italic uppercase tracking-tighter text-foreground transition-colors group-hover:text-primary ${
+              compact ? "text-[15px]" : "text-[17px]"
+            }`}
+          >
+            {ME.nick}
+          </span>
+          <div className="flex h-3 shrink-0 items-center border-l-2 border-primary pl-1.5">
+            <span className="font-mono text-[9px] font-bold uppercase tracking-[0.2em] text-primary opacity-90">
+              {ME.rank}
+            </span>
+          </div>
+        </div>
+
+        <div className="mt-1 flex items-center gap-3">
+          <div className="relative h-1.5 flex-1 overflow-hidden bg-neutral-900">
+            <div className="absolute inset-0 bg-neutral-800/50" />
+            <div
+              className="absolute inset-y-0 left-0 bg-primary transition-all duration-1000 group-hover:shadow-[0_0_12px_var(--primary)]"
+              style={{ width: `${xpPct}%` }}
             />
           </div>
-
-          {/* Nick + rank + XP */}
-          <div className="hidden min-w-[140px] flex-col gap-1 sm:flex">
-            <div className="flex items-center gap-2">
-              <span className="font-mono text-[11px] font-semibold uppercase tracking-wider text-foreground">
-                {ME.nick}
-              </span>
-              <span className="border border-primary/40 px-1.5 py-px font-mono text-[9px] font-bold uppercase tracking-wider text-primary">
-                {ME.rank}
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="relative h-1 w-full overflow-hidden bg-white/[0.06]">
-                <div
-                  className="absolute inset-y-0 left-0 bg-primary"
-                  style={{ width: `${xpPct}%` }}
-                />
-              </div>
-              <span className="font-mono text-[10px] tabular-nums text-muted-foreground">
-                {ME.xp}/{ME.xpMax} XP
-              </span>
-            </div>
+          <div className="flex items-baseline whitespace-nowrap font-mono text-[10px] font-bold tabular-nums text-neutral-500">
+            <span className="text-foreground">{ME.xp}</span>
+            <span className="mx-0.5 opacity-30">/</span>
+            <span>{ME.xpMax}</span>
+            <span className="ml-1 font-extrabold text-primary">XP</span>
           </div>
         </div>
       </div>
-    </header>
+
+      <div
+        aria-hidden
+        className="pointer-events-none absolute right-0 top-0 h-full w-[15%] bg-gradient-to-l from-primary/20 to-transparent"
+      />
+    </Link>
   );
 }
 
