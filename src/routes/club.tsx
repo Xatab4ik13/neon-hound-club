@@ -257,36 +257,152 @@ function TopBar({ onMenu }: { onMenu: () => void }) {
 
 // ---------- Profile plaque ----------
 
-export type PlaqueBg = "rider" | "pit-diamond" | "pit-carbon" | "pit-hazard";
+export type PlaqueBg =
+  | "rider"
+  | "pit-diamond"
+  | "pit-carbon"
+  | "pit-hazard"
+  | "captain-speedlines"
+  | "captain-sweep"
+  | "captain-halftone";
 
-const PLAQUE_BG: Record<PlaqueBg, { base: string; overlay?: React.CSSProperties; tint?: string }> = {
-  rider: {
-    base: "bg-[#0f0f0f]",
-  },
+type PlaqueVariant = {
+  base: string;
+  decor?: () => React.ReactNode;
+};
+
+const PLAQUE_BG: Record<PlaqueBg, PlaqueVariant> = {
+  rider: { base: "bg-[#0f0f0f]" },
   "pit-diamond": {
     base: "bg-[#141414]",
-    overlay: {
-      backgroundImage:
-        "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'><path d='M0 14 L14 0 L16 2 L2 16 Z M12 28 L26 14 L28 16 L14 30 Z' fill='%23ffffff' fill-opacity='0.08'/></svg>\")",
-      backgroundSize: "20px 20px",
-    },
-    tint: "bg-gradient-to-r from-primary/[0.04] via-transparent to-primary/[0.10]",
+    decor: () => (
+      <>
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            backgroundImage:
+              "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'><path d='M0 14 L14 0 L16 2 L2 16 Z M12 28 L26 14 L28 16 L14 30 Z' fill='%23ffffff' fill-opacity='0.08'/></svg>\")",
+            backgroundSize: "20px 20px",
+          }}
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 bg-gradient-to-r from-primary/[0.04] via-transparent to-primary/[0.10]"
+        />
+      </>
+    ),
   },
   "pit-carbon": {
     base: "bg-[#0d0d0d]",
-    overlay: {
-      backgroundImage:
-        "repeating-linear-gradient(45deg, rgba(255,255,255,0.05) 0 1px, transparent 1px 4px), repeating-linear-gradient(-45deg, rgba(255,255,255,0.04) 0 1px, transparent 1px 4px)",
-    },
-    tint: "bg-gradient-to-br from-transparent via-transparent to-primary/[0.12]",
+    decor: () => (
+      <>
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            backgroundImage:
+              "repeating-linear-gradient(45deg, rgba(255,255,255,0.05) 0 1px, transparent 1px 4px), repeating-linear-gradient(-45deg, rgba(255,255,255,0.04) 0 1px, transparent 1px 4px)",
+          }}
+        />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-primary/[0.12]" />
+      </>
+    ),
   },
   "pit-hazard": {
     base: "bg-[#0f0f0f]",
-    overlay: {
-      backgroundImage:
-        "repeating-linear-gradient(135deg, rgba(255,255,255,0.05) 0 10px, transparent 10px 22px)",
-    },
-    tint: "bg-gradient-to-r from-primary/[0.06] via-transparent to-transparent",
+    decor: () => (
+      <>
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            backgroundImage:
+              "repeating-linear-gradient(135deg, rgba(255,255,255,0.05) 0 10px, transparent 10px 22px)",
+          }}
+        />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-primary/[0.06] via-transparent to-transparent" />
+      </>
+    ),
+  },
+
+  // ---- Road Captain (3 концепта) ----
+  "captain-speedlines": {
+    base: "bg-[#0a0a0a]",
+    decor: () => (
+      <>
+        {/* dark asphalt base + radial glow */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(120% 180% at 100% 50%, color-mix(in oklab, var(--primary) 22%, transparent), transparent 55%), #0a0a0a",
+          }}
+        />
+        {/* moving speedlines */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            backgroundImage:
+              "repeating-linear-gradient(90deg, rgba(255,255,255,0.10) 0 2px, transparent 2px 80px), repeating-linear-gradient(90deg, rgba(255,255,255,0.04) 0 1px, transparent 1px 24px)",
+            backgroundSize: "200px 100%, 80px 100%",
+            animation: "plaque-speedlines 1.6s linear infinite",
+            maskImage:
+              "linear-gradient(90deg, transparent 0%, #000 30%, #000 100%)",
+          }}
+        />
+      </>
+    ),
+  },
+  "captain-sweep": {
+    base: "bg-[#101010]",
+    decor: () => (
+      <>
+        {/* brushed metal */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            backgroundImage:
+              "repeating-linear-gradient(90deg, rgba(255,255,255,0.05) 0 1px, transparent 1px 3px)",
+          }}
+        />
+        {/* slow chrome sweep */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-y-0 left-0 w-1/3"
+          style={{
+            background:
+              "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.18) 45%, color-mix(in oklab, var(--primary) 60%, transparent) 55%, transparent 100%)",
+            animation: "plaque-sweep 4s ease-in-out infinite",
+            mixBlendMode: "screen",
+          }}
+        />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-primary/[0.10]" />
+      </>
+    ),
+  },
+  "captain-halftone": {
+    base: "bg-[#0c0c0c]",
+    decor: () => (
+      <>
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            backgroundImage:
+              "radial-gradient(circle at 50% 50%, color-mix(in oklab, var(--primary) 70%, white 20%) 1px, transparent 1.6px)",
+            backgroundSize: "10px 10px",
+            animation: "plaque-halftone 3.2s ease-in-out infinite",
+            maskImage:
+              "linear-gradient(105deg, transparent 0%, #000 35%, #000 65%, transparent 100%)",
+          }}
+        />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-black/40 via-transparent to-primary/[0.12]" />
+      </>
+    ),
   },
 };
 
@@ -342,12 +458,7 @@ export function ProfilePlaque({
           clipPath: "polygon(0 0, 96% 0, 100% 50%, 96% 100%, 0 100%)",
         }}
       >
-        {variant.overlay && (
-          <div aria-hidden className="pointer-events-none absolute inset-0" style={variant.overlay} />
-        )}
-        {variant.tint && (
-          <div aria-hidden className={`pointer-events-none absolute inset-0 ${variant.tint}`} />
-        )}
+        {variant.decor?.()}
         <div
           aria-hidden
           className="absolute inset-0 bg-gradient-to-r from-primary/0 via-primary/[0.04] to-primary/15 opacity-0 transition-opacity group-hover:opacity-100"

@@ -175,3 +175,21 @@
     filter: blur(0);
   }
 }
+
+/* Plaque background animations */
+@keyframes plaque-speedlines {
+  0% { background-position: 0 0; }
+  100% { background-position: 200px 0; }
+}
+
+@keyframes plaque-sweep {
+  0% { transform: translateX(-60%); opacity: 0; }
+  20% { opacity: 1; }
+  80% { opacity: 1; }
+  100% { transform: translateX(160%); opacity: 0; }
+}
+
+@keyframes plaque-halftone {
+  0%, 100% { opacity: 0.10; transform: scale(1); }
+  50% { opacity: 0.18; transform: scale(1.04); }
+}
