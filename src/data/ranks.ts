@@ -102,7 +102,6 @@ export const RANKS: RankMeta[] = [
     label: "VIP",
     short: "VIP",
     plaqueBg: "vip-platinum",
-    plaqueVariants: ["vip-platinum", "vip-holo-card", "vip-pink-chrome"],
     accent: "#e8e4d6",
     accentSoft: "rgba(232, 228, 214, 0.5)",
     onAccent: "#0a0a0a",
