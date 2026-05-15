@@ -250,8 +250,6 @@ function Dashboard() {
   );
 }
 
-function DashboardWrapperFix() { return null; }
-// eslint-disable-next-line
 
 function RankLadder() {
   const { rankIndex } = useRankState();
