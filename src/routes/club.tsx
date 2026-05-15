@@ -23,13 +23,13 @@ export const Route = createFileRoute("/club")({
 
 // ---------- Mock data ----------
 
-const NAV = [
-  { label: "Лента", href: "/club", distance: "0.0 КМ", eta: null },
-  { label: "Мой Гараж", href: "/club/garage", distance: "12.4 КМ", eta: "22m" },
-  { label: "Розыгрыши", href: "/club/raffles", distance: "4.2 КМ", eta: "8m" },
-  { label: "Магазин", href: "/shop", distance: "8.0 КМ", eta: "14m" },
-  { label: "Школа", href: "/school", distance: "6.5 КМ", eta: "12m" },
-  { label: "Hell Pass", href: "/hell-pass", distance: "29.8 КМ", eta: "—", final: true },
+const NAV: { label: string; href: string; icon: LucideIcon; final?: boolean }[] = [
+  { label: "Лента", href: "/club", icon: Newspaper },
+  { label: "Мой Гараж", href: "/club/garage", icon: Wrench },
+  { label: "Розыгрыши", href: "/club/raffles", icon: Ticket },
+  { label: "Магазин", href: "/shop", icon: ShoppingBag },
+  { label: "Школа", href: "/school", icon: GraduationCap },
+  { label: "Hell Pass", href: "/hell-pass", icon: Gem, final: true },
 ];
 
 const ME = {
