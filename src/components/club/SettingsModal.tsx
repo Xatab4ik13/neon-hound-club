@@ -130,9 +130,9 @@ function AddressTab() {
   return (
     <div className="space-y-6">
       <div>
-        <SectionTitle>Доставка СДЭК</SectionTitle>
+        <SectionTitle>Адрес доставки</SectionTitle>
         <p className="mb-4 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-          Используется для мерча и призов розыгрышей
+          Доставка только СДЭК. Используется для мерча и призов.
         </p>
         <div className="grid gap-4 md:grid-cols-2">
           <Field label="ФИО получателя"><Input placeholder="Иванов Иван Иванович" /></Field>
@@ -145,14 +145,7 @@ function AddressTab() {
             <Input placeholder="ПВЗ MSK123, ул. Тверская 1" />
           </Field>
         </div>
-        <div className="mt-4 grid gap-4 md:grid-cols-2">
-          <Field label="Способ доставки">
-            <select className="h-9 w-full border border-input bg-background px-3 text-sm">
-              <option>Пункт выдачи СДЭК</option>
-              <option>Курьер до двери</option>
-              <option>Постамат</option>
-            </select>
-          </Field>
+        <div className="mt-4">
           <Field label="Комментарий"><Input placeholder="Код домофона, этаж…" /></Field>
         </div>
       </div>
