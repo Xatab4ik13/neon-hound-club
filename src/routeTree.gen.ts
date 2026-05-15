@@ -15,7 +15,9 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as ClubRouteImport } from './routes/club'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ShopIndexRouteImport } from './routes/shop.index'
+import { Route as ClubIndexRouteImport } from './routes/club.index'
 import { Route as ShopProductSlugRouteImport } from './routes/shop.$productSlug'
+import { Route as ClubMeRouteImport } from './routes/club.me'
 
 const SchoolRoute = SchoolRouteImport.update({
   id: '/school',
@@ -47,38 +49,53 @@ const ShopIndexRoute = ShopIndexRouteImport.update({
   path: '/shop/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ClubIndexRoute = ClubIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ClubRoute,
+} as any)
 const ShopProductSlugRoute = ShopProductSlugRouteImport.update({
   id: '/shop/$productSlug',
   path: '/shop/$productSlug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ClubMeRoute = ClubMeRouteImport.update({
+  id: '/me',
+  path: '/me',
+  getParentRoute: () => ClubRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/club': typeof ClubRoute
+  '/club': typeof ClubRouteWithChildren
   '/login': typeof LoginRoute
   '/logos': typeof LogosRoute
   '/school': typeof SchoolRoute
+  '/club/me': typeof ClubMeRoute
   '/shop/$productSlug': typeof ShopProductSlugRoute
+  '/club/': typeof ClubIndexRoute
   '/shop/': typeof ShopIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/club': typeof ClubRoute
   '/login': typeof LoginRoute
   '/logos': typeof LogosRoute
   '/school': typeof SchoolRoute
+  '/club/me': typeof ClubMeRoute
   '/shop/$productSlug': typeof ShopProductSlugRoute
+  '/club': typeof ClubIndexRoute
   '/shop': typeof ShopIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/club': typeof ClubRoute
+  '/club': typeof ClubRouteWithChildren
   '/login': typeof LoginRoute
   '/logos': typeof LogosRoute
   '/school': typeof SchoolRoute
+  '/club/me': typeof ClubMeRoute
   '/shop/$productSlug': typeof ShopProductSlugRoute
+  '/club/': typeof ClubIndexRoute
   '/shop/': typeof ShopIndexRoute
 }
 export interface FileRouteTypes {
@@ -89,16 +106,19 @@ export interface FileRouteTypes {
     | '/login'
     | '/logos'
     | '/school'
+    | '/club/me'
     | '/shop/$productSlug'
+    | '/club/'
     | '/shop/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/club'
     | '/login'
     | '/logos'
     | '/school'
+    | '/club/me'
     | '/shop/$productSlug'
+    | '/club'
     | '/shop'
   id:
     | '__root__'
@@ -107,13 +127,15 @@ export interface FileRouteTypes {
     | '/login'
     | '/logos'
     | '/school'
+    | '/club/me'
     | '/shop/$productSlug'
+    | '/club/'
     | '/shop/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  ClubRoute: typeof ClubRoute
+  ClubRoute: typeof ClubRouteWithChildren
   LoginRoute: typeof LoginRoute
   LogosRoute: typeof LogosRoute
   SchoolRoute: typeof SchoolRoute
@@ -165,6 +187,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShopIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/club/': {
+      id: '/club/'
+      path: '/'
+      fullPath: '/club/'
+      preLoaderRoute: typeof ClubIndexRouteImport
+      parentRoute: typeof ClubRoute
+    }
     '/shop/$productSlug': {
       id: '/shop/$productSlug'
       path: '/shop/$productSlug'
@@ -172,12 +201,31 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShopProductSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/club/me': {
+      id: '/club/me'
+      path: '/me'
+      fullPath: '/club/me'
+      preLoaderRoute: typeof ClubMeRouteImport
+      parentRoute: typeof ClubRoute
+    }
   }
 }
 
+interface ClubRouteChildren {
+  ClubMeRoute: typeof ClubMeRoute
+  ClubIndexRoute: typeof ClubIndexRoute
+}
+
+const ClubRouteChildren: ClubRouteChildren = {
+  ClubMeRoute: ClubMeRoute,
+  ClubIndexRoute: ClubIndexRoute,
+}
+
+const ClubRouteWithChildren = ClubRoute._addFileChildren(ClubRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  ClubRoute: ClubRoute,
+  ClubRoute: ClubRouteWithChildren,
   LoginRoute: LoginRoute,
   LogosRoute: LogosRoute,
   SchoolRoute: SchoolRoute,
