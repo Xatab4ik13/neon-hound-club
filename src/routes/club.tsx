@@ -270,7 +270,10 @@ export type PlaqueBg =
   | "alpha-claw"
   | "legend-inferno"
   | "legend-storm"
-  | "legend-chrome";
+  | "legend-chrome"
+  | "legend-molten-gold"
+  | "legend-cyber-rune"
+  | "legend-holo-prism";
 
 type PlaqueVariant = {
   base: string;
