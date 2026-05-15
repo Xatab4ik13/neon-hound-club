@@ -145,8 +145,6 @@ function SidebarBody({
   const activeIndex = NAV.findIndex((item) =>
     item.href === "/club" ? pathname === "/club" : pathname.startsWith(item.href),
   );
-  const xpPct = Math.round((ME.xp / ME.xpMax) * 100);
-
   return (
     <>
       {/* Background blobs */}
