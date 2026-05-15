@@ -339,86 +339,112 @@ function ProfilePlaque({
   onNavigate?: () => void;
 }) {
   const xpPct = Math.round((ME.xp / ME.xpMax) * 100);
-  const size = compact ? 48 : 60;
+  const size = compact ? 44 : 56;
 
   return (
     <Link
       to="/club"
       onClick={onNavigate}
       aria-label={`Профиль ${ME.nick}, ${ME.rank}, ${ME.xp} из ${ME.xpMax} XP`}
-      className="group relative flex w-full items-center bg-[#0f0f0f] transition-transform duration-200 hover:scale-[1.02] active:scale-95"
-      style={{
-        height: `${size}px`,
-        maxWidth: compact ? "320px" : "100%",
-        clipPath: "polygon(0 0, 94% 0, 100% 50%, 94% 100%, 0 100%)",
-      }}
+      className="group relative flex items-center gap-3 transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98]"
+      style={{ width: compact ? "360px" : "100%" }}
     >
+      {/* Round avatar */}
       <div
-        aria-hidden
-        className="absolute inset-0 bg-gradient-to-r from-primary/0 via-primary/5 to-primary/20 opacity-0 transition-opacity group-hover:opacity-100"
-      />
-
-      {/* Avatar */}
-      <div
-        className="relative flex h-full shrink-0 items-center justify-center bg-primary transition-all group-hover:brightness-110"
-        style={{ width: `${size}px` }}
+        className="relative shrink-0 rounded-full bg-primary ring-2 ring-primary/40 ring-offset-2 ring-offset-background transition-all group-hover:ring-primary group-hover:shadow-[0_0_16px_color-mix(in_oklab,var(--primary)_55%,transparent)]"
+        style={{ height: `${size}px`, width: `${size}px` }}
       >
         <div
           aria-hidden
-          className="absolute inset-0 opacity-20"
+          className="absolute inset-0 rounded-full opacity-25"
           style={{
             backgroundImage:
               "repeating-linear-gradient(45deg, #000 0, #000 1px, transparent 0, transparent 50%)",
             backgroundSize: "4px 4px",
           }}
         />
-        <span
-          className={`relative -skew-x-12 font-display font-black italic uppercase text-black ${
-            compact ? "text-xl" : "text-2xl"
-          }`}
-        >
-          {ME.nick.slice(0, 2)}
-        </span>
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span
+            className={`font-display font-black italic uppercase text-black ${
+              compact ? "text-base" : "text-lg"
+            }`}
+          >
+            {ME.nick.slice(0, 2)}
+          </span>
+        </div>
       </div>
 
-      {/* Content */}
-      <div className="relative flex h-full flex-1 flex-col justify-center pl-3 pr-7 md:pl-4 md:pr-8">
-        <div className="flex items-baseline justify-between gap-2">
+      {/* Slanted plaque body */}
+      <div
+        className="relative flex h-full min-w-0 flex-1 flex-col justify-center bg-[#0f0f0f] py-2 pl-4 pr-6"
+        style={{
+          height: `${size}px`,
+          clipPath: "polygon(0 0, 96% 0, 100% 50%, 96% 100%, 0 100%)",
+        }}
+      >
+        <div
+          aria-hidden
+          className="absolute inset-0 bg-gradient-to-r from-primary/0 via-primary/[0.04] to-primary/15 opacity-0 transition-opacity group-hover:opacity-100"
+        />
+
+        {/* Nickname — full width */}
+        <div className="relative flex items-center gap-2">
           <span
-            className={`truncate font-display font-black italic uppercase tracking-tighter text-foreground transition-colors group-hover:text-primary ${
+            className={`min-w-0 flex-1 truncate font-display font-black italic uppercase tracking-tight text-foreground transition-colors group-hover:text-primary ${
               compact ? "text-[15px]" : "text-[17px]"
             }`}
           >
             {ME.nick}
           </span>
-          <div className="flex h-3 shrink-0 items-center border-l-2 border-primary pl-1.5">
-            <span className="font-mono text-[9px] font-bold uppercase tracking-[0.2em] text-primary opacity-90">
-              {ME.rank}
-            </span>
-          </div>
         </div>
 
-        <div className="mt-1 flex items-center gap-3">
-          <div className="relative h-1.5 flex-1 overflow-hidden bg-neutral-900">
-            <div className="absolute inset-0 bg-neutral-800/50" />
+        {/* XP row */}
+        <div className="relative mt-1.5 flex items-center gap-2">
+          <div className="relative h-1.5 flex-1 overflow-hidden rounded-sm bg-neutral-900/80 ring-1 ring-inset ring-white/5">
+            {/* Track gradient */}
             <div
-              className="absolute inset-y-0 left-0 bg-primary transition-all duration-1000 group-hover:shadow-[0_0_12px_var(--primary)]"
-              style={{ width: `${xpPct}%` }}
+              aria-hidden
+              className="absolute inset-0 opacity-60"
+              style={{
+                backgroundImage:
+                  "linear-gradient(90deg, transparent 0, rgba(255,255,255,0.04) 50%, transparent 100%)",
+              }}
             />
+            {/* Filled bar — pulsing */}
+            <div
+              className="absolute inset-y-0 left-0 overflow-hidden rounded-sm bg-primary"
+              style={{
+                width: `${xpPct}%`,
+                animation: "xp-pulse 2.4s ease-in-out infinite",
+              }}
+            >
+              {/* Shimmer sweep */}
+              <div
+                aria-hidden
+                className="absolute inset-y-0 w-1/3"
+                style={{
+                  background:
+                    "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.55) 50%, transparent 100%)",
+                  animation: "xp-shimmer 2.8s ease-in-out infinite",
+                }}
+              />
+            </div>
           </div>
+
           <div className="flex items-baseline whitespace-nowrap font-mono text-[10px] font-bold tabular-nums text-neutral-500">
             <span className="text-foreground">{ME.xp}</span>
             <span className="mx-0.5 opacity-30">/</span>
             <span>{ME.xpMax}</span>
             <span className="ml-1 font-extrabold text-primary">XP</span>
           </div>
+
+          <div className="flex h-3 shrink-0 items-center border-l-2 border-primary pl-1.5">
+            <span className="font-mono text-[9px] font-bold uppercase tracking-[0.2em] text-primary">
+              {ME.rank}
+            </span>
+          </div>
         </div>
       </div>
-
-      <div
-        aria-hidden
-        className="pointer-events-none absolute right-0 top-0 h-full w-[15%] bg-gradient-to-l from-primary/20 to-transparent"
-      />
     </Link>
   );
 }
