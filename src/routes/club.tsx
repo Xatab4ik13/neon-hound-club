@@ -249,7 +249,7 @@ function TopBar({ onMenu }: { onMenu: () => void }) {
           <span aria-hidden className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-primary" />
         </button>
 
-        <ProfilePlaque compact />
+        <ProfilePlaque compact bg="pit-diamond" />
       </div>
     </header>
   );
