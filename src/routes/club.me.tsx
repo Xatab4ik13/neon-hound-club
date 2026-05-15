@@ -1,4 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState } from "react";
+import { SettingsModal } from "@/components/club/SettingsModal";
 import {
   ACTIVE_TICKETS,
   GARAGE,
