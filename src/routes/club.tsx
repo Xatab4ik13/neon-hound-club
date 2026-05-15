@@ -257,13 +257,49 @@ function TopBar({ onMenu }: { onMenu: () => void }) {
 
 // ---------- Profile plaque ----------
 
+export type PlaqueBg = "rider" | "pit-diamond" | "pit-carbon" | "pit-hazard";
+
+const PLAQUE_BG: Record<PlaqueBg, { base: string; overlay?: React.CSSProperties; tint?: string }> = {
+  rider: {
+    base: "bg-[#0f0f0f]",
+  },
+  "pit-diamond": {
+    base: "bg-[#141414]",
+    overlay: {
+      backgroundImage:
+        "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'><path d='M0 14 L14 0 L16 2 L2 16 Z M12 28 L26 14 L28 16 L14 30 Z' fill='%23ffffff' fill-opacity='0.08'/></svg>\")",
+      backgroundSize: "20px 20px",
+    },
+    tint: "bg-gradient-to-r from-primary/[0.04] via-transparent to-primary/[0.10]",
+  },
+  "pit-carbon": {
+    base: "bg-[#0d0d0d]",
+    overlay: {
+      backgroundImage:
+        "repeating-linear-gradient(45deg, rgba(255,255,255,0.05) 0 1px, transparent 1px 4px), repeating-linear-gradient(-45deg, rgba(255,255,255,0.04) 0 1px, transparent 1px 4px)",
+    },
+    tint: "bg-gradient-to-br from-transparent via-transparent to-primary/[0.12]",
+  },
+  "pit-hazard": {
+    base: "bg-[#0f0f0f]",
+    overlay: {
+      backgroundImage:
+        "repeating-linear-gradient(135deg, rgba(255,255,255,0.05) 0 10px, transparent 10px 22px)",
+    },
+    tint: "bg-gradient-to-r from-primary/[0.06] via-transparent to-transparent",
+  },
+};
+
 function ProfilePlaque({
   compact = false,
   onNavigate,
+  bg = "rider",
 }: {
   compact?: boolean;
   onNavigate?: () => void;
+  bg?: PlaqueBg;
 }) {
+  const variant = PLAQUE_BG[bg];
   const xpPct = Math.round((ME.xp / ME.xpMax) * 100);
   const size = compact ? 44 : 56;
 
