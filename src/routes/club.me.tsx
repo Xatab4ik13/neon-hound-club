@@ -9,7 +9,13 @@ import {
 } from "@/data/profile";
 import { PlaqueBackground, ProfilePlaque } from "./club";
 import { RANKS } from "@/data/ranks";
-import { setRankIndex, setXpPct, useCurrentRank, useRankState } from "@/data/rank-state";
+import {
+  setRankIndex,
+  setVipVariant,
+  setXpPct,
+  useCurrentRank,
+  useRankState,
+} from "@/data/rank-state";
 import {
   ArrowRight,
   Bike,
@@ -48,7 +54,8 @@ function MePage() {
 // ---------- Dashboard (приборка) ----------
 
 function Dashboard() {
-  const { rank, next, xp, xpMax, xpPct, isMax } = useCurrentRank();
+  const { rank, plaqueBg, next, xp, xpMax, xpPct, isMax } = useCurrentRank();
+  const isPaid = !!rank.isPaid;
 
   return (
     <section
@@ -56,7 +63,7 @@ function Dashboard() {
       className="relative mb-8 overflow-hidden border border-white/[0.06] bg-[#0b0b0b]"
     >
       {/* Decor: фон по текущему рангу */}
-      <PlaqueBackground bg={rank.plaqueBg} />
+      <PlaqueBackground bg={plaqueBg} />
       {/* Тёмная подложка для читаемости текста */}
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/55 via-black/25 to-black/55" />
 
