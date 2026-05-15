@@ -290,7 +290,7 @@ const PLAQUE_BG: Record<PlaqueBg, { base: string; overlay?: React.CSSProperties;
   },
 };
 
-function ProfilePlaque({
+export function ProfilePlaque({
   compact = false,
   onNavigate,
   bg = "rider",
