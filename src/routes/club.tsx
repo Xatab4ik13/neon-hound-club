@@ -336,12 +336,18 @@ function ProfilePlaque({
       </div>
 
       <div
-        className="relative flex h-full min-w-0 flex-1 flex-col justify-center bg-[#0f0f0f] py-2 pl-4 pr-6"
+        className={`relative flex h-full min-w-0 flex-1 flex-col justify-center overflow-hidden ${variant.base} py-2 pl-4 pr-6`}
         style={{
           height: `${size}px`,
           clipPath: "polygon(0 0, 96% 0, 100% 50%, 96% 100%, 0 100%)",
         }}
       >
+        {variant.overlay && (
+          <div aria-hidden className="pointer-events-none absolute inset-0" style={variant.overlay} />
+        )}
+        {variant.tint && (
+          <div aria-hidden className={`pointer-events-none absolute inset-0 ${variant.tint}`} />
+        )}
         <div
           aria-hidden
           className="absolute inset-0 bg-gradient-to-r from-primary/0 via-primary/[0.04] to-primary/15 opacity-0 transition-opacity group-hover:opacity-100"
