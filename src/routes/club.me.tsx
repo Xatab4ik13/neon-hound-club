@@ -55,6 +55,7 @@ function MePage() {
 // ---------- Dashboard (приборка) ----------
 
 function Dashboard() {
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const { rank, plaqueBg, next, xp, xpMax, xpPct, isMax } = useCurrentRank();
   const isPaid = !!rank.isPaid;
 
