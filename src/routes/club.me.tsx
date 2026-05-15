@@ -139,7 +139,18 @@ function Dashboard() {
             <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
               Ранг
             </span>
-            {next ? (
+            {isPaid ? (
+              <span
+                className="flex items-center gap-1 font-mono text-[10px] font-extrabold uppercase tracking-[0.25em]"
+                style={{ color: rank.accent }}
+              >
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <rect x="4" y="11" width="16" height="10" rx="1" />
+                  <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+                </svg>
+                Платный · {rank.priceLabel}
+              </span>
+            ) : next ? (
               <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
                 до{" "}
                 <span className="font-bold" style={{ color: rank.accent }}>
@@ -199,7 +210,17 @@ function Dashboard() {
               >
                 {rank.label}
               </span>
-              {isMax ? (
+              {isPaid ? (
+                <span
+                  className="flex items-center gap-1.5 font-extrabold uppercase tracking-[0.2em]"
+                  style={{ color: rank.accent }}
+                >
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2 L15 9 L22 9 L16.5 13.5 L18.5 21 L12 16.5 L5.5 21 L7.5 13.5 L2 9 L9 9 Z" />
+                  </svg>
+                  {rank.priceLabel}
+                </span>
+              ) : isMax ? (
                 <span
                   className="font-extrabold uppercase tracking-[0.2em]"
                   style={{ color: rank.accent }}
