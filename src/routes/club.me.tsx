@@ -54,20 +54,26 @@ function Dashboard() {
       aria-label="Прогресс райдера"
       className="relative mb-8 overflow-hidden border border-white/[0.06] bg-[#0b0b0b]"
     >
-      {/* Decor: diamond plate (Pit Crew) */}
+      {/* Decor: asphalt + pink aura right (Road Captain) */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-[0.10]"
+        className="pointer-events-none absolute inset-0"
         style={{
-          backgroundImage:
-            "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'><path d='M0 14 L14 0 L16 2 L2 16 Z M12 28 L26 14 L28 16 L14 30 Z' fill='%23ffffff' fill-opacity='1'/></svg>\")",
-          backgroundSize: "28px 28px",
+          background:
+            "radial-gradient(110% 160% at 100% 50%, color-mix(in oklab, var(--primary) 22%, transparent), transparent 55%)",
         }}
       />
-      {/* Decor: pink wash */}
+      {/* Decor: moving speedlines */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 bg-gradient-to-r from-primary/[0.04] via-transparent to-primary/[0.10]"
+        className="pointer-events-none absolute inset-0 opacity-80"
+        style={{
+          backgroundImage:
+            "repeating-linear-gradient(90deg, rgba(255,255,255,0.10) 0 2px, transparent 2px 80px), repeating-linear-gradient(90deg, rgba(255,255,255,0.04) 0 1px, transparent 1px 24px)",
+          backgroundSize: "200px 100%, 80px 100%",
+          animation: "plaque-speedlines 1.6s linear infinite",
+          maskImage: "linear-gradient(90deg, transparent 0%, #000 30%, #000 100%)",
+        }}
       />
       {/* Decor: glow */}
       <div
