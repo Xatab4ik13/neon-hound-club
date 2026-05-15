@@ -60,6 +60,7 @@ function Dashboard() {
   const isPaid = !!rank.isPaid;
 
   return (
+    <>
     <section
       aria-label="Прогресс райдера"
       className="relative mb-8 overflow-hidden border border-white/[0.06] bg-[#0b0b0b]"
