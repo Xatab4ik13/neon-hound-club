@@ -8,7 +8,7 @@ import {
   WIN_HISTORY,
   type Order,
 } from "@/data/profile";
-import { ProfilePlaque, type PlaqueBg } from "./club";
+import { ProfilePlaque } from "./club";
 import {
   ArrowRight,
   Bike,
@@ -31,55 +31,9 @@ export const Route = createFileRoute("/club/me")({
   component: MePage,
 });
 
-const LEGEND_VARIANTS: { id: PlaqueBg; label: string; note: string }[] = [
-  { id: "legend-molten-gold", label: "D · Molten gold", note: "расплавленное золото + лава, шиммер-свип" },
-  { id: "legend-cyber-rune", label: "E · Cyber rune", note: "киберпанк cyan/magenta, скан-линия, glitch" },
-  { id: "legend-holo-prism", label: "F · Holo prism", note: "голограмма-радуга как на коллекционной карте" },
-];
-
-function PlaquePreview() {
-  return (
-    <section
-      aria-label="Концепты Hell Legend"
-      className="mb-10 border border-dashed border-white/10 bg-card/30 p-5"
-    >
-      <div className="mb-4 flex items-baseline justify-between">
-        <h2 className="font-display text-sm font-black uppercase italic tracking-widest text-foreground">
-          Hell Legend · 3 концепта
-        </h2>
-        <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-          выбери один
-        </span>
-      </div>
-      <div className="space-y-4">
-        <div>
-          <div className="mb-2 font-mono text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
-            Утверждено · Alpha Hound (для сравнения)
-          </div>
-          <ProfilePlaque compact bg="alpha-aurora" />
-        </div>
-        {LEGEND_VARIANTS.map((v) => (
-          <div key={v.id}>
-            <div className="mb-2 flex items-baseline gap-3">
-              <span className="font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-primary">
-                {v.label}
-              </span>
-              <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-                {v.note}
-              </span>
-            </div>
-            <ProfilePlaque compact bg={v.id} />
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
 function MePage() {
   return (
     <main className="mx-auto w-full max-w-5xl px-4 py-6 md:px-8 md:py-10">
-      <PlaquePreview />
       <Dashboard />
       <StatsRow />
       <SectionTickets />
@@ -100,17 +54,23 @@ function Dashboard() {
       aria-label="Прогресс райдера"
       className="relative mb-8 overflow-hidden border border-white/[0.06] bg-[#0b0b0b]"
     >
-      {/* Decor: aurora (Alpha Hound) */}
+      {/* Decor: molten gold (Hell Legend) */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background:
+            "radial-gradient(120% 90% at 50% 115%, #ffb648 0%, #ff5a00 18%, #7a1a00 40%, transparent 70%)",
+          animation: "plaque-lava-pulse 4s ease-in-out infinite",
+        }}
+      />
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0"
         style={{
           backgroundImage:
-            "radial-gradient(50% 140% at 20% 50%, color-mix(in oklab, var(--primary) 55%, transparent), transparent 70%), radial-gradient(45% 130% at 80% 50%, color-mix(in oklab, #b026ff 65%, transparent), transparent 70%)",
-          backgroundSize: "200% 100%, 200% 100%",
-          animation: "plaque-aurora 8s ease-in-out infinite",
+            "radial-gradient(2px 60% at 22% 50%, #ffcf6b 0%, transparent 70%), radial-gradient(2px 80% at 58% 60%, #ffb648 0%, transparent 70%), radial-gradient(2px 50% at 82% 40%, #ffe28a 0%, transparent 70%)",
           mixBlendMode: "screen",
-          opacity: 0.85,
         }}
       />
       <div
@@ -118,10 +78,13 @@ function Dashboard() {
         className="pointer-events-none absolute inset-0"
         style={{
           backgroundImage:
-            "repeating-linear-gradient(0deg, rgba(255,255,255,0.04) 0 1px, transparent 1px 3px)",
+            "linear-gradient(110deg, transparent 0%, transparent 35%, rgba(255, 215, 120, 0.55) 48%, rgba(255, 245, 200, 0.85) 50%, rgba(255, 215, 120, 0.55) 52%, transparent 65%, transparent 100%)",
+          backgroundSize: "250% 100%",
+          animation: "plaque-gold-sweep 6s linear infinite",
+          mixBlendMode: "screen",
         }}
       />
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/40" />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/65 via-transparent to-black/40" />
       {/* Decor: glow */}
       <div
         aria-hidden

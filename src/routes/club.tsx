@@ -249,7 +249,7 @@ function TopBar({ onMenu }: { onMenu: () => void }) {
           <span aria-hidden className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-primary" />
         </button>
 
-        <ProfilePlaque compact bg="alpha-aurora" />
+        <ProfilePlaque compact bg="legend-molten-gold" />
       </div>
     </header>
   );
@@ -646,7 +646,7 @@ const PLAQUE_BG: Record<PlaqueBg, PlaqueVariant> = {
           style={{
             background:
               "radial-gradient(120% 90% at 50% 115%, #ffb648 0%, #ff5a00 18%, #7a1a00 40%, transparent 70%)",
-            animation: "plaque-lava-pulse 2.4s ease-in-out infinite",
+            animation: "plaque-lava-pulse 4s ease-in-out infinite",
           }}
         />
         {/* трещины расплавленного золота */}
@@ -667,7 +667,7 @@ const PLAQUE_BG: Record<PlaqueBg, PlaqueVariant> = {
             backgroundImage:
               "linear-gradient(110deg, transparent 0%, transparent 35%, rgba(255, 215, 120, 0.55) 48%, rgba(255, 245, 200, 0.85) 50%, rgba(255, 215, 120, 0.55) 52%, transparent 65%, transparent 100%)",
             backgroundSize: "250% 100%",
-            animation: "plaque-gold-sweep 3.5s linear infinite",
+            animation: "plaque-gold-sweep 6s linear infinite",
             mixBlendMode: "screen",
           }}
         />
