@@ -251,33 +251,9 @@ function SidebarBody({
         </ul>
       </nav>
 
-      {/* User card */}
-      <div className="relative z-10 p-5">
-        <div className="flex items-center gap-4 rounded-xl border border-white/[0.06] bg-white/[0.03] p-4 backdrop-blur-md">
-          <div className="relative">
-            <div className="flex h-12 w-12 items-center justify-center bg-primary font-display text-base font-black uppercase italic text-black">
-              {ME.nick.slice(0, 2)}
-            </div>
-            <span
-              aria-hidden
-              className="absolute -bottom-1 -right-1 h-3.5 w-3.5 rounded-full border-2 border-black bg-emerald-500"
-            />
-          </div>
-          <div className="flex min-w-0 flex-1 flex-col">
-            <span className="truncate font-mono text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">
-              {ME.nick}
-            </span>
-            <div className="flex items-baseline gap-1.5">
-              <span className="font-display text-xl font-black leading-none text-foreground">
-                {ME.xp}
-              </span>
-              <span className="font-mono text-[10px] font-black text-primary">XP</span>
-            </div>
-            <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-white/[0.06]">
-              <div className="h-full bg-primary" style={{ width: `${xpPct}%` }} />
-            </div>
-          </div>
-        </div>
+      {/* User card — slanted plaque */}
+      <div className="relative z-10 p-4">
+        <ProfilePlaque onNavigate={onNavigate} />
       </div>
 
       {/* Bottom accent */}
