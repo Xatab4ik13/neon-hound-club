@@ -32,9 +32,9 @@ export const Route = createFileRoute("/club/me")({
 });
 
 const LEGEND_VARIANTS: { id: PlaqueBg; label: string; note: string }[] = [
-  { id: "legend-inferno", label: "A · Inferno", note: "огненная кромка снизу + летящие искры" },
-  { id: "legend-storm", label: "B · Storm", note: "тёмная гроза с белой молнией каждые 5 сек" },
-  { id: "legend-chrome", label: "C · Liquid chrome", note: "жидкий хром + вращающийся розово-фиолет ореол" },
+  { id: "legend-molten-gold", label: "D · Molten gold", note: "расплавленное золото + лава, шиммер-свип" },
+  { id: "legend-cyber-rune", label: "E · Cyber rune", note: "киберпанк cyan/magenta, скан-линия, glitch" },
+  { id: "legend-holo-prism", label: "F · Holo prism", note: "голограмма-радуга как на коллекционной карте" },
 ];
 
 function PlaquePreview() {
