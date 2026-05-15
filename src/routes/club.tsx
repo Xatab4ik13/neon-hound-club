@@ -633,6 +633,145 @@ const PLAQUE_BG: Record<PlaqueBg, PlaqueVariant> = {
       </>
     ),
   },
+
+  // ---- Hell Legend · расширенные «вау» концепты ----
+  "legend-molten-gold": {
+    base: "bg-[#0a0600]",
+    decor: () => (
+      <>
+        {/* глубокая лава снизу */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(120% 90% at 50% 115%, #ffb648 0%, #ff5a00 18%, #7a1a00 40%, transparent 70%)",
+            animation: "plaque-lava-pulse 2.4s ease-in-out infinite",
+          }}
+        />
+        {/* трещины расплавленного золота */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 opacity-70"
+          style={{
+            backgroundImage:
+              "radial-gradient(2px 60% at 22% 50%, #ffcf6b 0%, transparent 70%), radial-gradient(2px 80% at 58% 60%, #ffb648 0%, transparent 70%), radial-gradient(2px 50% at 82% 40%, #ffe28a 0%, transparent 70%)",
+            mixBlendMode: "screen",
+          }}
+        />
+        {/* золотой шиммер-свип */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            backgroundImage:
+              "linear-gradient(110deg, transparent 0%, transparent 35%, rgba(255, 215, 120, 0.55) 48%, rgba(255, 245, 200, 0.85) 50%, rgba(255, 215, 120, 0.55) 52%, transparent 65%, transparent 100%)",
+            backgroundSize: "250% 100%",
+            animation: "plaque-gold-sweep 3.5s linear infinite",
+            mixBlendMode: "screen",
+          }}
+        />
+        {/* верхний vignette */}
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/65 via-transparent to-black/30" />
+      </>
+    ),
+  },
+  "legend-cyber-rune": {
+    base: "bg-[#02020a]",
+    decor: () => (
+      <>
+        {/* двойная неоновая засветка: cyan слева, magenta справа */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(80% 100% at 0% 50%, rgba(0, 220, 255, 0.45), transparent 55%), radial-gradient(80% 100% at 100% 50%, rgba(255, 40, 200, 0.5), transparent 55%)",
+          }}
+        />
+        {/* техно-сетка с перспективой */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            backgroundImage:
+              "linear-gradient(rgba(0,255,255,0.18) 1px, transparent 1px), linear-gradient(90deg, rgba(255,0,180,0.18) 1px, transparent 1px)",
+            backgroundSize: "22px 22px, 22px 22px",
+            maskImage:
+              "linear-gradient(to bottom, transparent 0%, black 35%, black 100%)",
+          }}
+        />
+        {/* двигающаяся скан-линия */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 h-[2px]"
+          style={{
+            background:
+              "linear-gradient(90deg, transparent, rgba(0,255,255,0.95), transparent)",
+            boxShadow: "0 0 12px rgba(0,255,255,0.9)",
+            animation: "plaque-scan 2.8s linear infinite",
+          }}
+        />
+        {/* glitch-блок */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-y-2 left-[35%] w-[2px]"
+          style={{
+            background: "linear-gradient(to bottom, #ff28c8, transparent, #00e5ff)",
+            animation: "plaque-glitch 4s steps(1) infinite",
+            mixBlendMode: "screen",
+          }}
+        />
+        {/* читаемость */}
+        <div className="pointer-events-none absolute inset-0 bg-black/35" />
+      </>
+    ),
+  },
+  "legend-holo-prism": {
+    base: "bg-[#050008]",
+    decor: () => (
+      <>
+        {/* радужный голо-фон */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            backgroundImage:
+              "linear-gradient(115deg, #ff3df0 0%, #ffb547 18%, #f5ff5a 36%, #45ffb0 54%, #45c8ff 72%, #b65aff 90%, #ff3df0 100%)",
+            backgroundSize: "200% 100%",
+            animation: "plaque-holo 6s linear infinite",
+            opacity: 0.85,
+          }}
+        />
+        {/* призматический ореол */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -inset-[40%]"
+          style={{
+            background:
+              "conic-gradient(from 0deg, rgba(255,255,255,0.0), rgba(255,255,255,0.45), rgba(255,255,255,0.0) 25%, rgba(255,255,255,0.55) 50%, rgba(255,255,255,0.0) 75%, rgba(255,255,255,0.45))",
+            animation: "plaque-prism-rotate 9s linear infinite",
+            filter: "blur(24px)",
+            mixBlendMode: "overlay",
+          }}
+        />
+        {/* tilt-блик */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            backgroundImage:
+              "linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.55) 48%, rgba(255,255,255,0.85) 50%, rgba(255,255,255,0.55) 52%, transparent 70%)",
+            backgroundSize: "220% 100%",
+            animation: "plaque-gold-sweep 4.2s linear infinite",
+            mixBlendMode: "screen",
+          }}
+        />
+        {/* читаемость текста */}
+        <div className="pointer-events-none absolute inset-0 bg-black/45" />
+      </>
+    ),
+  },
 };
 
 export function ProfilePlaque({
