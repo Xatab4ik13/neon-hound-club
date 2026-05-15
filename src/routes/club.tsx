@@ -10,6 +10,8 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { ME } from "@/data/profile";
+import { type PlaqueBg } from "@/data/ranks";
+import { useCurrentRank } from "@/data/rank-state";
 
 export const Route = createFileRoute("/club")({
   head: () => ({
