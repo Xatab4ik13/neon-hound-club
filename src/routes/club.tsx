@@ -513,6 +513,123 @@ const PLAQUE_BG: Record<PlaqueBg, PlaqueVariant> = {
       </>
     ),
   },
+
+  // ---- Hell Legend (3 концепта, "вау") ----
+  "legend-inferno": {
+    base: "bg-[#0a0303]",
+    decor: () => (
+      <>
+        {/* тёмный жар-фон */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(120% 100% at 50% 110%, color-mix(in oklab, var(--primary) 70%, #ff3b00) 0%, color-mix(in oklab, var(--primary) 35%, transparent) 25%, transparent 60%)",
+          }}
+        />
+        {/* пламя — нижняя кромка */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2"
+          style={{
+            background:
+              "linear-gradient(to top, color-mix(in oklab, var(--primary) 90%, #ff5a00) 0%, color-mix(in oklab, var(--primary) 60%, transparent) 35%, transparent 100%)",
+            filter: "blur(6px)",
+            animation: "plaque-flame 1.6s ease-in-out infinite",
+            mixBlendMode: "screen",
+          }}
+        />
+        {/* искры */}
+        {[0, 1, 2, 3, 4].map((i) => (
+          <span
+            key={i}
+            aria-hidden
+            className="pointer-events-none absolute bottom-1 h-[3px] w-[3px] rounded-full bg-white shadow-[0_0_6px_color-mix(in_oklab,var(--primary)_90%,white)]"
+            style={{
+              left: `${15 + i * 17}%`,
+              animation: `plaque-ember ${1.8 + i * 0.4}s ${i * 0.3}s ease-out infinite`,
+            }}
+          />
+        ))}
+        {/* верхний vignette */}
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-transparent" />
+      </>
+    ),
+  },
+  "legend-storm": {
+    base: "bg-[#050008]",
+    decor: () => (
+      <>
+        {/* грозовое облако */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(80% 120% at 30% 30%, rgba(60, 20, 80, 0.55), transparent 60%), radial-gradient(80% 120% at 70% 70%, rgba(20, 0, 40, 0.7), transparent 60%)",
+            animation: "plaque-storm-bg 5s linear infinite",
+          }}
+        />
+        {/* статичная фактура */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            backgroundImage:
+              "repeating-linear-gradient(0deg, rgba(255,255,255,0.04) 0 1px, transparent 1px 4px)",
+          }}
+        />
+        {/* молния — белая зигзаг-полоса */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-y-0 left-1/2 w-[3px] -translate-x-1/2"
+          style={{
+            background:
+              "linear-gradient(to bottom, transparent, white 30%, color-mix(in oklab, var(--primary) 90%, white) 60%, transparent)",
+            transform: "translateX(-50%) skewX(-12deg)",
+            filter: "blur(0.5px) drop-shadow(0 0 12px white) drop-shadow(0 0 20px color-mix(in oklab, var(--primary) 80%, transparent))",
+            animation: "plaque-lightning 5s linear infinite",
+          }}
+        />
+        {/* розовая аура */}
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-primary/10" />
+      </>
+    ),
+  },
+  "legend-chrome": {
+    base: "bg-[#080008]",
+    decor: () => (
+      <>
+        {/* конический ореол вращается */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -inset-[40%]"
+          style={{
+            background:
+              "conic-gradient(from 0deg, color-mix(in oklab, var(--primary) 80%, transparent), transparent 25%, color-mix(in oklab, #b026ff 70%, transparent) 50%, transparent 75%, color-mix(in oklab, var(--primary) 80%, transparent))",
+            animation: "plaque-conic 6s linear infinite",
+            filter: "blur(20px)",
+            opacity: 0.55,
+          }}
+        />
+        {/* жидкий хром */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            backgroundImage:
+              "linear-gradient(110deg, color-mix(in oklab, var(--primary) 70%, transparent) 0%, rgba(255,255,255,0.35) 25%, color-mix(in oklab, #b026ff 60%, transparent) 50%, rgba(255,255,255,0.35) 75%, color-mix(in oklab, var(--primary) 70%, transparent) 100%)",
+            backgroundSize: "200% 100%",
+            animation: "plaque-chrome 4s linear infinite",
+            mixBlendMode: "overlay",
+          }}
+        />
+        {/* затемнение для читаемости текста */}
+        <div className="pointer-events-none absolute inset-0 bg-black/40" />
+      </>
+    ),
+  },
 };
 
 export function ProfilePlaque({
