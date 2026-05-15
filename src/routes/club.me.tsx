@@ -8,7 +8,7 @@ import {
   WIN_HISTORY,
   type Order,
 } from "@/data/profile";
-import { ProfilePlaque, type PlaqueBg } from "./club";
+import { ProfilePlaque } from "./club";
 import {
   ArrowRight,
   Bike,
