@@ -249,11 +249,6 @@ function SidebarBody({
         </ul>
       </nav>
 
-      {/* User card — slanted plaque */}
-      <div className="relative z-10 p-4">
-        <ProfilePlaque onNavigate={onNavigate} />
-      </div>
-
       {/* Bottom accent */}
       <div
         aria-hidden
