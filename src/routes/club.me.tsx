@@ -54,27 +54,28 @@ function Dashboard() {
       aria-label="Прогресс райдера"
       className="relative mb-8 overflow-hidden border border-white/[0.06] bg-[#0b0b0b]"
     >
-      {/* Decor: asphalt + pink aura right (Road Captain) */}
+      {/* Decor: aurora (Alpha Hound) */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0"
         style={{
-          background:
-            "radial-gradient(110% 160% at 100% 50%, color-mix(in oklab, var(--primary) 22%, transparent), transparent 55%)",
+          backgroundImage:
+            "radial-gradient(50% 140% at 20% 50%, color-mix(in oklab, var(--primary) 55%, transparent), transparent 70%), radial-gradient(45% 130% at 80% 50%, color-mix(in oklab, #b026ff 65%, transparent), transparent 70%)",
+          backgroundSize: "200% 100%, 200% 100%",
+          animation: "plaque-aurora 8s ease-in-out infinite",
+          mixBlendMode: "screen",
+          opacity: 0.85,
         }}
       />
-      {/* Decor: moving speedlines */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-80"
+        className="pointer-events-none absolute inset-0"
         style={{
           backgroundImage:
-            "repeating-linear-gradient(90deg, rgba(255,255,255,0.10) 0 2px, transparent 2px 80px), repeating-linear-gradient(90deg, rgba(255,255,255,0.04) 0 1px, transparent 1px 24px)",
-          backgroundSize: "200px 100%, 80px 100%",
-          animation: "plaque-speedlines 1.6s linear infinite",
-          maskImage: "linear-gradient(90deg, transparent 0%, #000 30%, #000 100%)",
+            "repeating-linear-gradient(0deg, rgba(255,255,255,0.04) 0 1px, transparent 1px 3px)",
         }}
       />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/40" />
       {/* Decor: glow */}
       <div
         aria-hidden
