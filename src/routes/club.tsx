@@ -407,6 +407,109 @@ const PLAQUE_BG: Record<PlaqueBg, PlaqueVariant> = {
       </>
     ),
   },
+
+  // ---- Alpha Hound (3 концепта, "вау" нарастает) ----
+  "alpha-aurora": {
+    base: "bg-[#0a0510]",
+    decor: () => (
+      <>
+        {/* aurora gradient — два пятна дрейфуют */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            backgroundImage:
+              "radial-gradient(50% 140% at 20% 50%, color-mix(in oklab, var(--primary) 55%, transparent), transparent 70%), radial-gradient(45% 130% at 80% 50%, color-mix(in oklab, #b026ff 65%, transparent), transparent 70%)",
+            backgroundSize: "200% 100%, 200% 100%",
+            animation: "plaque-aurora 8s ease-in-out infinite",
+            mixBlendMode: "screen",
+            opacity: 0.85,
+          }}
+        />
+        {/* тонкий шум-сетка */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            backgroundImage:
+              "repeating-linear-gradient(0deg, rgba(255,255,255,0.04) 0 1px, transparent 1px 3px)",
+          }}
+        />
+        {/* верхний vignette */}
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/40" />
+      </>
+    ),
+  },
+  "alpha-grid": {
+    base: "bg-[#070710]",
+    decor: () => (
+      <>
+        {/* перспективная неон-сетка */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            backgroundImage:
+              "linear-gradient(color-mix(in oklab, var(--primary) 70%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in oklab, var(--primary) 70%, transparent) 1px, transparent 1px)",
+            backgroundSize: "26px 100%, 100% 14px",
+            maskImage:
+              "linear-gradient(180deg, transparent 0%, #000 35%, #000 65%, transparent 100%)",
+            animation: "plaque-grid-pulse 2.4s ease-in-out infinite",
+          }}
+        />
+        {/* розовый горизонт */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-1/2 h-px"
+          style={{
+            background:
+              "linear-gradient(90deg, transparent, color-mix(in oklab, var(--primary) 90%, white) 50%, transparent)",
+            boxShadow:
+              "0 0 8px color-mix(in oklab, var(--primary) 80%, transparent), 0 0 16px color-mix(in oklab, var(--primary) 60%, transparent)",
+          }}
+        />
+        {/* угловое свечение */}
+        <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-primary/40 blur-3xl" />
+      </>
+    ),
+  },
+  "alpha-claw": {
+    base: "bg-[#0a0a0a]",
+    decor: () => (
+      <>
+        {/* тёмная фактура */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(80% 140% at 50% 50%, transparent 30%, rgba(0,0,0,0.6) 100%), repeating-linear-gradient(135deg, rgba(255,255,255,0.04) 0 1px, transparent 1px 5px)",
+          }}
+        />
+        {/* три когтя — расходящиеся линии справа */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-y-0 right-[10%] flex flex-col justify-center gap-[6px]"
+        >
+          <span className="block h-[2px] w-16 bg-gradient-to-l from-primary via-primary/60 to-transparent shadow-[0_0_8px_color-mix(in_oklab,var(--primary)_80%,transparent)]" />
+          <span className="block h-[2px] w-20 bg-gradient-to-l from-primary via-primary/60 to-transparent shadow-[0_0_8px_color-mix(in_oklab,var(--primary)_80%,transparent)]" />
+          <span className="block h-[2px] w-14 bg-gradient-to-l from-primary via-primary/60 to-transparent shadow-[0_0_8px_color-mix(in_oklab,var(--primary)_80%,transparent)]" />
+        </div>
+        {/* световой удар */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-y-0 left-0 w-1/4"
+          style={{
+            background:
+              "linear-gradient(90deg, transparent, color-mix(in oklab, var(--primary) 70%, white) 50%, transparent)",
+            filter: "blur(4px)",
+            mixBlendMode: "screen",
+            animation: "plaque-claw 3.2s ease-in-out infinite",
+          }}
+        />
+      </>
+    ),
+  },
 };
 
 export function ProfilePlaque({
