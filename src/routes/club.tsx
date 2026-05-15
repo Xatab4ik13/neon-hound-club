@@ -1,5 +1,14 @@
 import { createFileRoute, Link, useLocation } from "@tanstack/react-router";
 import { useState } from "react";
+import {
+  Newspaper,
+  Wrench,
+  Ticket,
+  ShoppingBag,
+  GraduationCap,
+  Gem,
+  type LucideIcon,
+} from "lucide-react";
 
 export const Route = createFileRoute("/club")({
   head: () => ({
