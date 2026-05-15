@@ -267,7 +267,10 @@ export type PlaqueBg =
   | "captain-halftone"
   | "alpha-aurora"
   | "alpha-grid"
-  | "alpha-claw";
+  | "alpha-claw"
+  | "legend-inferno"
+  | "legend-storm"
+  | "legend-chrome";
 
 type PlaqueVariant = {
   base: string;
