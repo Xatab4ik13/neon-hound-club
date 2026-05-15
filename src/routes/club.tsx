@@ -10,6 +10,8 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { ME } from "@/data/profile";
+import { type PlaqueBg } from "@/data/ranks";
+import { useCurrentRank } from "@/data/rank-state";
 
 export const Route = createFileRoute("/club")({
   head: () => ({
@@ -249,31 +251,13 @@ function TopBar({ onMenu }: { onMenu: () => void }) {
           <span aria-hidden className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-primary" />
         </button>
 
-        <ProfilePlaque compact bg="legend-molten-gold" />
+        <ProfilePlaque compact />
       </div>
     </header>
   );
 }
 
 // ---------- Profile plaque ----------
-
-export type PlaqueBg =
-  | "rider"
-  | "pit-diamond"
-  | "pit-carbon"
-  | "pit-hazard"
-  | "captain-speedlines"
-  | "captain-sweep"
-  | "captain-halftone"
-  | "alpha-aurora"
-  | "alpha-grid"
-  | "alpha-claw"
-  | "legend-inferno"
-  | "legend-storm"
-  | "legend-chrome"
-  | "legend-molten-gold"
-  | "legend-cyber-rune"
-  | "legend-holo-prism";
 
 type PlaqueVariant = {
   base: string;
@@ -774,30 +758,48 @@ const PLAQUE_BG: Record<PlaqueBg, PlaqueVariant> = {
   },
 };
 
+/**
+ * Декоративный фон плашки/дашборда — рендерит base + decor по PlaqueBg.
+ * Используется в плашке профиля и в большой «приборке» на /club/me.
+ */
+export function PlaqueBackground({ bg, className = "" }: { bg: PlaqueBg; className?: string }) {
+  const variant = PLAQUE_BG[bg];
+  return (
+    <>
+      <div aria-hidden className={`absolute inset-0 ${variant.base} ${className}`} />
+      {variant.decor?.()}
+    </>
+  );
+}
+
 export function ProfilePlaque({
   compact = false,
   onNavigate,
-  bg = "rider",
 }: {
   compact?: boolean;
   onNavigate?: () => void;
-  bg?: PlaqueBg;
 }) {
-  const variant = PLAQUE_BG[bg];
-  const xpPct = Math.round((ME.xp / ME.xpMax) * 100);
+  const { rank, xp, xpMax, xpPct, isMax } = useCurrentRank();
+  const variant = PLAQUE_BG[rank.plaqueBg];
   const size = compact ? 44 : 56;
 
   return (
     <Link
       to="/club/me"
       onClick={onNavigate}
-      aria-label={`Профиль ${ME.nick}, ${ME.rank}, ${ME.xp} из ${ME.xpMax} XP`}
+      aria-label={`Профиль ${ME.nick}, ${rank.label}, ${xp} из ${xpMax} XP`}
       className="group relative flex items-center gap-3 transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98]"
       style={{ width: compact ? "360px" : "100%" }}
     >
       <div
-        className="relative shrink-0 rounded-full bg-primary ring-2 ring-primary/40 ring-offset-2 ring-offset-background transition-all group-hover:ring-primary group-hover:shadow-[0_0_16px_color-mix(in_oklab,var(--primary)_55%,transparent)]"
-        style={{ height: `${size}px`, width: `${size}px` }}
+        className="relative shrink-0 rounded-full ring-2 ring-offset-2 ring-offset-background transition-all"
+        style={{
+          height: `${size}px`,
+          width: `${size}px`,
+          backgroundColor: rank.accent,
+          // ring-color
+          boxShadow: `0 0 0 2px ${rank.accentSoft}`,
+        }}
       >
         <div
           aria-hidden
@@ -810,9 +812,8 @@ export function ProfilePlaque({
         />
         <div className="absolute inset-0 flex items-center justify-center">
           <span
-            className={`font-display font-black italic uppercase text-black ${
-              compact ? "text-base" : "text-lg"
-            }`}
+            className={`font-display font-black italic uppercase ${compact ? "text-base" : "text-lg"}`}
+            style={{ color: rank.onAccent }}
           >
             {ME.nick.slice(0, 2)}
           </span>
@@ -829,12 +830,15 @@ export function ProfilePlaque({
         {variant.decor?.()}
         <div
           aria-hidden
-          className="absolute inset-0 bg-gradient-to-r from-primary/0 via-primary/[0.04] to-primary/15 opacity-0 transition-opacity group-hover:opacity-100"
+          className="absolute inset-0 opacity-0 transition-opacity group-hover:opacity-100"
+          style={{
+            background: `linear-gradient(to right, transparent, ${rank.accentSoft})`,
+          }}
         />
 
         <div className="relative flex items-center gap-2">
           <span
-            className={`min-w-0 flex-1 truncate font-display font-black italic uppercase tracking-tight text-foreground transition-colors group-hover:text-primary ${
+            className={`min-w-0 flex-1 truncate font-display font-black italic uppercase tracking-tight text-foreground transition-colors ${
               compact ? "text-[15px]" : "text-[17px]"
             }`}
           >
@@ -843,20 +847,13 @@ export function ProfilePlaque({
         </div>
 
         <div className="relative mt-1.5 flex items-center gap-2">
-          <div className="relative h-1.5 flex-1 overflow-hidden rounded-sm bg-neutral-900/80 ring-1 ring-inset ring-white/5">
+          <div className="relative h-1.5 flex-1 overflow-hidden rounded-sm bg-black/55 ring-1 ring-inset ring-white/10">
             <div
-              aria-hidden
-              className="absolute inset-0 opacity-60"
-              style={{
-                backgroundImage:
-                  "linear-gradient(90deg, transparent 0, rgba(255,255,255,0.04) 50%, transparent 100%)",
-              }}
-            />
-            <div
-              className="absolute inset-y-0 left-0 overflow-hidden rounded-sm bg-primary"
+              className="absolute inset-y-0 left-0 overflow-hidden rounded-sm"
               style={{
                 width: `${xpPct}%`,
-                animation: "xp-pulse 2.4s ease-in-out infinite",
+                backgroundColor: rank.accent,
+                boxShadow: `0 0 8px ${rank.accentSoft}`,
               }}
             >
               <div
@@ -871,16 +868,35 @@ export function ProfilePlaque({
             </div>
           </div>
 
-          <div className="flex items-baseline whitespace-nowrap font-mono text-[10px] font-bold tabular-nums text-neutral-500">
-            <span className="text-foreground">{ME.xp}</span>
-            <span className="mx-0.5 opacity-30">/</span>
-            <span>{ME.xpMax}</span>
-            <span className="ml-1 font-extrabold text-primary">XP</span>
-          </div>
+          {isMax ? (
+            <div className="flex items-center whitespace-nowrap">
+              <span
+                className="font-mono text-[9px] font-extrabold uppercase tracking-[0.25em]"
+                style={{ color: rank.accent }}
+              >
+                MAX
+              </span>
+            </div>
+          ) : (
+            <div className="flex items-baseline whitespace-nowrap font-mono text-[10px] font-bold tabular-nums text-neutral-500">
+              <span className="text-foreground">{xp}</span>
+              <span className="mx-0.5 opacity-30">/</span>
+              <span>{xpMax}</span>
+              <span className="ml-1 font-extrabold" style={{ color: rank.accent }}>
+                XP
+              </span>
+            </div>
+          )}
 
-          <div className="flex h-3 shrink-0 items-center border-l-2 border-primary pl-1.5">
-            <span className="font-mono text-[9px] font-bold uppercase tracking-[0.2em] text-primary">
-              {ME.rank}
+          <div
+            className="flex h-3 shrink-0 items-center border-l-2 pl-1.5"
+            style={{ borderColor: rank.accent }}
+          >
+            <span
+              className="font-mono text-[9px] font-bold uppercase tracking-[0.2em]"
+              style={{ color: rank.accent }}
+            >
+              {rank.short}
             </span>
           </div>
         </div>

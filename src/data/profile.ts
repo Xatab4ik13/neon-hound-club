@@ -1,14 +1,9 @@
-export const RANKS = ["ROOKIE", "RIDER", "VETERAN", "HELLHOUND"] as const;
-export type Rank = (typeof RANKS)[number];
+// Профиль райдера. Ранги и XP вынесены в src/data/ranks.ts + rank-state.ts.
 
 export const ME = {
   nick: "ASPHALT_DOG",
   city: "Москва",
   bike: "Yamaha MT-09",
-  rank: "RIDER" as Rank,
-  rankIndex: 1, // index into RANKS
-  xp: 1240,
-  xpMax: 2000,
   joined: "март 2024",
   totals: { tickets: 7, wins: 1, orders: 4, bikes: 1 },
 };

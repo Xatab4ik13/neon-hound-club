@@ -4,11 +4,12 @@ import {
   GARAGE,
   ME,
   ORDERS,
-  RANKS,
   WIN_HISTORY,
   type Order,
 } from "@/data/profile";
-import { ProfilePlaque } from "./club";
+import { PlaqueBackground, ProfilePlaque } from "./club";
+import { RANKS } from "@/data/ranks";
+import { setRankIndex, setXpPct, useCurrentRank, useRankState } from "@/data/rank-state";
 import {
   ArrowRight,
   Bike,
@@ -39,6 +40,7 @@ function MePage() {
       <SectionTickets />
       <SectionOrders />
       <SectionGarage />
+      <RankSwitcher />
     </main>
   );
 }
@@ -46,50 +48,17 @@ function MePage() {
 // ---------- Dashboard (приборка) ----------
 
 function Dashboard() {
-  const xpPct = Math.round((ME.xp / ME.xpMax) * 100);
-  const next = RANKS[ME.rankIndex + 1];
+  const { rank, next, xp, xpMax, xpPct, isMax } = useCurrentRank();
 
   return (
     <section
       aria-label="Прогресс райдера"
       className="relative mb-8 overflow-hidden border border-white/[0.06] bg-[#0b0b0b]"
     >
-      {/* Decor: molten gold (Hell Legend) */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background:
-            "radial-gradient(120% 90% at 50% 115%, #ffb648 0%, #ff5a00 18%, #7a1a00 40%, transparent 70%)",
-          animation: "plaque-lava-pulse 4s ease-in-out infinite",
-        }}
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0"
-        style={{
-          backgroundImage:
-            "radial-gradient(2px 60% at 22% 50%, #ffcf6b 0%, transparent 70%), radial-gradient(2px 80% at 58% 60%, #ffb648 0%, transparent 70%), radial-gradient(2px 50% at 82% 40%, #ffe28a 0%, transparent 70%)",
-          mixBlendMode: "screen",
-        }}
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0"
-        style={{
-          backgroundImage:
-            "linear-gradient(110deg, transparent 0%, transparent 35%, rgba(255, 215, 120, 0.55) 48%, rgba(255, 245, 200, 0.85) 50%, rgba(255, 215, 120, 0.55) 52%, transparent 65%, transparent 100%)",
-          backgroundSize: "250% 100%",
-          animation: "plaque-gold-sweep 6s linear infinite",
-          mixBlendMode: "screen",
-        }}
-      />
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/65 via-transparent to-black/40" />
-      {/* Decor: glow */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-primary/30 blur-[120px]"
-      />
+      {/* Decor: фон по текущему рангу */}
+      <PlaqueBackground bg={rank.plaqueBg} />
+      {/* Тёмная подложка для читаемости текста */}
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/55 via-black/25 to-black/55" />
 
       <div className="relative grid gap-8 p-6 md:grid-cols-[auto_1fr] md:p-8">
         {/* Left: avatar + identity */}
@@ -97,10 +66,19 @@ function Dashboard() {
           <div className="relative">
             <div
               aria-hidden
-              className="absolute -inset-1 rounded-full bg-primary/30 blur-xl"
-              style={{ animation: "xp-pulse 3s ease-in-out infinite" }}
+              className="absolute -inset-1 rounded-full blur-xl"
+              style={{
+                backgroundColor: rank.accentSoft,
+                animation: "xp-pulse 3s ease-in-out infinite",
+              }}
             />
-            <div className="relative h-24 w-24 overflow-hidden rounded-full bg-primary ring-4 ring-primary/30 ring-offset-4 ring-offset-[#0b0b0b] md:h-28 md:w-28">
+            <div
+              className="relative h-24 w-24 overflow-hidden rounded-full ring-4 ring-offset-4 ring-offset-[#0b0b0b] md:h-28 md:w-28"
+              style={{
+                backgroundColor: rank.accent,
+                boxShadow: `0 0 0 4px ${rank.accentSoft}`,
+              }}
+            >
               <div
                 aria-hidden
                 className="absolute inset-0 opacity-20"
@@ -111,7 +89,10 @@ function Dashboard() {
                 }}
               />
               <div className="absolute inset-0 flex items-center justify-center">
-                <span className="font-display text-3xl font-black italic uppercase text-black md:text-4xl">
+                <span
+                  className="font-display text-3xl font-black italic uppercase md:text-4xl"
+                  style={{ color: rank.onAccent }}
+                >
                   {ME.nick.slice(0, 2)}
                 </span>
               </div>
@@ -137,7 +118,7 @@ function Dashboard() {
             </div>
             <button
               type="button"
-              className="mt-3 inline-flex items-center gap-1.5 border border-white/[0.08] px-2.5 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground transition-colors hover:border-primary/60 hover:text-primary"
+              className="mt-3 inline-flex items-center gap-1.5 border border-white/[0.08] bg-black/30 px-2.5 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground transition-colors hover:border-white/30 hover:text-foreground"
             >
               <Settings className="h-3 w-3" />
               Настройки
@@ -151,14 +132,24 @@ function Dashboard() {
             <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
               Ранг
             </span>
-            {next && (
+            {next ? (
               <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
                 до{" "}
-                <span className="font-bold text-primary">{next}</span> ·{" "}
+                <span className="font-bold" style={{ color: rank.accent }}>
+                  {next.label}
+                </span>{" "}
+                ·{" "}
                 <span className="font-bold tabular-nums text-foreground">
-                  {ME.xpMax - ME.xp}
+                  {xpMax - xp}
                 </span>{" "}
                 XP
+              </span>
+            ) : (
+              <span
+                className="font-mono text-[10px] font-extrabold uppercase tracking-[0.25em]"
+                style={{ color: rank.accent }}
+              >
+                Достигнут максимум
               </span>
             )}
           </div>
@@ -166,7 +157,7 @@ function Dashboard() {
           <RankLadder />
 
           <div className="mt-5">
-            <div className="relative h-3 overflow-hidden rounded-sm bg-neutral-900/80 ring-1 ring-inset ring-white/5">
+            <div className="relative h-3 overflow-hidden rounded-sm bg-black/55 ring-1 ring-inset ring-white/10">
               <div
                 aria-hidden
                 className="absolute inset-0 opacity-60"
@@ -176,10 +167,11 @@ function Dashboard() {
                 }}
               />
               <div
-                className="absolute inset-y-0 left-0 overflow-hidden rounded-sm bg-primary"
+                className="absolute inset-y-0 left-0 overflow-hidden rounded-sm"
                 style={{
                   width: `${xpPct}%`,
-                  animation: "xp-pulse 2.4s ease-in-out infinite",
+                  backgroundColor: rank.accent,
+                  boxShadow: `0 0 12px ${rank.accentSoft}, 0 0 24px ${rank.accentSoft}`,
                 }}
               >
                 <div
@@ -194,14 +186,28 @@ function Dashboard() {
               </div>
             </div>
             <div className="mt-2 flex items-baseline justify-between font-mono text-[11px] tabular-nums">
-              <span className="font-bold uppercase tracking-[0.2em] text-primary">
-                {ME.rank}
+              <span
+                className="font-bold uppercase tracking-[0.2em]"
+                style={{ color: rank.accent }}
+              >
+                {rank.label}
               </span>
-              <span className="text-muted-foreground">
-                <span className="font-bold text-foreground">{ME.xp.toLocaleString("ru-RU")}</span>{" "}
-                <span className="opacity-40">/</span>{" "}
-                {ME.xpMax.toLocaleString("ru-RU")} XP
-              </span>
+              {isMax ? (
+                <span
+                  className="font-extrabold uppercase tracking-[0.2em]"
+                  style={{ color: rank.accent }}
+                >
+                  MAX
+                </span>
+              ) : (
+                <span className="text-muted-foreground">
+                  <span className="font-bold text-foreground">
+                    {xp.toLocaleString("ru-RU")}
+                  </span>{" "}
+                  <span className="opacity-40">/</span>{" "}
+                  {xpMax.toLocaleString("ru-RU")} XP
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -211,44 +217,114 @@ function Dashboard() {
 }
 
 function RankLadder() {
+  const { rankIndex } = useRankState();
   return (
     <div className="flex items-stretch gap-1.5">
       {RANKS.map((rank, i) => {
-        const isPast = i < ME.rankIndex;
-        const isActive = i === ME.rankIndex;
+        const isPast = i < rankIndex;
+        const isActive = i === rankIndex;
         return (
           <div
-            key={rank}
+            key={rank.id}
             className="group relative flex h-12 flex-1 items-center justify-center"
             aria-current={isActive ? "step" : undefined}
           >
             <div
               aria-hidden
-              className={`absolute inset-0 -skew-x-12 transition-all ${
-                isActive
-                  ? "bg-primary shadow-[0_8px_24px_-6px_color-mix(in_oklab,var(--primary)_55%,transparent)]"
-                  : isPast
-                    ? "bg-primary/25 ring-1 ring-inset ring-primary/40"
-                    : "border border-white/[0.08] bg-white/[0.02]"
-              }`}
+              className="absolute inset-0 -skew-x-12 transition-all"
               style={
-                isActive ? { animation: "xp-pulse 2.4s ease-in-out infinite" } : undefined
+                isActive
+                  ? {
+                      backgroundColor: rank.accent,
+                      boxShadow: `0 8px 24px -6px ${rank.accentSoft}`,
+                      animation: "xp-pulse 2.4s ease-in-out infinite",
+                    }
+                  : isPast
+                    ? {
+                        backgroundColor: rank.accentSoft,
+                        boxShadow: `inset 0 0 0 1px ${rank.accentSoft}`,
+                      }
+                    : {
+                        border: "1px solid rgba(255,255,255,0.08)",
+                        backgroundColor: "rgba(255,255,255,0.02)",
+                      }
               }
             />
             <span
-              className={`relative font-display text-[11px] font-black uppercase italic tracking-wider md:text-xs ${
-                isActive
-                  ? "text-black"
+              className="relative font-display text-[11px] font-black uppercase italic tracking-wider md:text-xs"
+              style={{
+                color: isActive
+                  ? rank.onAccent
                   : isPast
-                    ? "text-primary"
-                    : "text-muted-foreground/60"
-              }`}
+                    ? rank.accent
+                    : "rgba(167,167,167,0.6)",
+              }}
             >
-              {rank}
+              {rank.short}
             </span>
           </div>
         );
       })}
+    </div>
+  );
+}
+
+// ---------- Dev rank switcher (плавающая панелька) ----------
+
+function RankSwitcher() {
+  const { rankIndex, xpPct } = useRankState();
+  return (
+    <div className="fixed bottom-4 right-4 z-50 w-72 border border-white/10 bg-black/85 p-3 font-mono text-[10px] uppercase tracking-wider text-muted-foreground shadow-[0_10px_40px_-10px_rgba(0,0,0,0.8)] backdrop-blur-md">
+      <div className="mb-2 flex items-center justify-between">
+        <span className="font-bold text-foreground">Dev · ранг</span>
+        <span className="text-[9px] opacity-60">только превью</span>
+      </div>
+      <div className="mb-3 grid grid-cols-5 gap-1">
+        {RANKS.map((r, i) => {
+          const active = i === rankIndex;
+          return (
+            <button
+              key={r.id}
+              type="button"
+              onClick={() => setRankIndex(i)}
+              className={`flex flex-col items-center gap-1 border px-1 py-1.5 transition-colors ${
+                active ? "border-transparent" : "border-white/10 hover:border-white/30"
+              }`}
+              style={
+                active
+                  ? { backgroundColor: r.accent, color: r.onAccent }
+                  : { color: r.accent }
+              }
+              title={r.label}
+            >
+              <span
+                aria-hidden
+                className="h-2 w-2 rounded-full"
+                style={{ backgroundColor: active ? r.onAccent : r.accent }}
+              />
+              <span className="text-[9px] font-bold leading-none">{r.short}</span>
+            </button>
+          );
+        })}
+      </div>
+      <label className="flex items-center gap-2">
+        <span className="w-6 text-[10px] tabular-nums text-foreground">
+          XP
+        </span>
+        <input
+          type="range"
+          min={0}
+          max={100}
+          step={1}
+          value={xpPct}
+          onChange={(e) => setXpPct(Number(e.target.value))}
+          className="flex-1 accent-primary"
+          aria-label="Прогресс XP"
+        />
+        <span className="w-8 text-right text-[10px] tabular-nums text-foreground">
+          {xpPct}%
+        </span>
+      </label>
     </div>
   );
 }
