@@ -141,6 +141,28 @@
   }
 }
 
+@keyframes xp-pulse {
+  0%, 100% {
+    box-shadow:
+      0 0 6px color-mix(in oklab, var(--primary) 55%, transparent),
+      0 0 14px color-mix(in oklab, var(--primary) 25%, transparent),
+      inset 0 0 4px color-mix(in oklab, white 20%, transparent);
+    filter: brightness(1);
+  }
+  50% {
+    box-shadow:
+      0 0 12px color-mix(in oklab, var(--primary) 80%, transparent),
+      0 0 24px color-mix(in oklab, var(--primary) 45%, transparent),
+      inset 0 0 6px color-mix(in oklab, white 35%, transparent);
+    filter: brightness(1.18);
+  }
+}
+
+@keyframes xp-shimmer {
+  0% { transform: translateX(-120%) skewX(-20deg); }
+  100% { transform: translateX(320%) skewX(-20deg); }
+}
+
 @keyframes page-fade-zoom {
   0% {
     opacity: 0;
