@@ -19,9 +19,7 @@ export type PlaqueBg =
   | "legend-molten-gold"
   | "legend-cyber-rune"
   | "legend-holo-prism"
-  | "vip-platinum"
-  | "vip-holo-card"
-  | "vip-pink-chrome";
+  | "vip-platinum";
 
 export type RankId =
   | "rookie"
@@ -102,7 +100,6 @@ export const RANKS: RankMeta[] = [
     label: "VIP",
     short: "VIP",
     plaqueBg: "vip-platinum",
-    plaqueVariants: ["vip-platinum", "vip-holo-card", "vip-pink-chrome"],
     accent: "#e8e4d6",
     accentSoft: "rgba(232, 228, 214, 0.5)",
     onAccent: "#0a0a0a",
