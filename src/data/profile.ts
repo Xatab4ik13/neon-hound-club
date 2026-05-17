@@ -14,8 +14,24 @@ export type ActiveTicket = {
   myTickets: number;
   totalTickets: number;
   deadline: string;
+  /** ISO-таймстемп закрытия розыгрыша — для live-таймера. */
+  deadlineAt: string;
   image: string;
 };
+
+// Динамические дедлайны: ближайшее воскресенье 23:59 и ближайшая пятница 20:00.
+function nextWeekday(targetDow: number, hour: number, minute: number) {
+  const now = new Date();
+  const d = new Date(now);
+  d.setHours(hour, minute, 0, 0);
+  const diff = (targetDow - now.getDay() + 7) % 7;
+  if (diff === 0 && d.getTime() <= now.getTime()) {
+    d.setDate(d.getDate() + 7);
+  } else {
+    d.setDate(d.getDate() + diff);
+  }
+  return d.toISOString();
+}
 
 export const ACTIVE_TICKETS: ActiveTicket[] = [
   {
@@ -24,6 +40,7 @@ export const ACTIVE_TICKETS: ActiveTicket[] = [
     myTickets: 12,
     totalTickets: 3000,
     deadline: "вс · 23:59",
+    deadlineAt: nextWeekday(0, 23, 59),
     image:
       "https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?w=800&q=80",
   },
@@ -33,6 +50,7 @@ export const ACTIVE_TICKETS: ActiveTicket[] = [
     myTickets: 3,
     totalTickets: 500,
     deadline: "пт · 20:00",
+    deadlineAt: nextWeekday(5, 20, 0),
     image:
       "https://images.unsplash.com/photo-1502945015378-0e284ca1a5be?w=800&q=80",
   },
