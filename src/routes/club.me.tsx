@@ -2,8 +2,10 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { SettingsModal } from "@/components/club/SettingsModal";
 import { BikeCard } from "@/components/club/BikeCard";
+import { HeroBikeCard } from "@/components/club/HeroBikeCard";
 import { BikeFormModal } from "@/components/club/BikeFormModal";
 import { EmptyGarageSlot } from "@/components/club/EmptyGarageSlot";
+import { Countdown } from "@/components/club/Countdown";
 import {
   ACTIVE_TICKETS,
   ME,
@@ -51,9 +53,9 @@ function MePage() {
     <main className="mx-auto w-full max-w-5xl px-4 py-6 md:px-8 md:py-10">
       <Dashboard />
       <StatsRow />
+      <SectionGarage />
       <SectionTickets />
       <SectionOrders />
-      <SectionGarage />
       <RankSwitcher />
     </main>
   );
@@ -435,53 +437,43 @@ function SectionTickets() {
     <section aria-label="Мои розыгрыши" className="mb-10">
       <SectionHeader title="Мои розыгрыши" href="/club/raffles" hrefLabel="Все розыгрыши" />
       <div className="grid gap-3 md:grid-cols-2">
-        {ACTIVE_TICKETS.map((t) => {
-          const sharePct = Math.min(100, Math.round((t.myTickets / t.totalTickets) * 100 * 5));
-          return (
-            <article
-              key={t.id}
-              className="group relative flex overflow-hidden border border-white/[0.06] bg-card/40 transition-colors hover:border-primary/40"
-            >
-              <div className="relative h-auto w-28 shrink-0 overflow-hidden bg-black">
-                <img
-                  src={t.image}
-                  alt=""
-                  loading="lazy"
-                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent to-card/40" />
-              </div>
-              <div className="flex min-w-0 flex-1 flex-col justify-between p-4">
-                <div>
-                  <h3 className="truncate font-display text-base font-black uppercase italic tracking-tight text-foreground">
-                    {t.title}
-                  </h3>
-                  <div className="mt-1 font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-                    закрытие: <span className="text-primary">{t.deadline}</span>
-                  </div>
-                </div>
-                <div className="mt-3">
-                  <div className="flex items-baseline justify-between font-mono text-[11px] tabular-nums">
-                    <span>
-                      <span className="font-bold text-foreground">{t.myTickets}</span>
-                      <span className="text-muted-foreground"> моих</span>
-                    </span>
-                    <span className="text-muted-foreground">
-                      из {t.totalTickets.toLocaleString("ru-RU")}
-                    </span>
-                  </div>
-                  <div className="mt-1.5 h-1 overflow-hidden bg-neutral-900">
-                    <div
-                      className="h-full bg-primary"
-                      style={{ width: `${sharePct}%` }}
-                      aria-label={`Доля моих билетов: ${sharePct}%`}
-                    />
-                  </div>
+        {ACTIVE_TICKETS.map((t) => (
+          <article
+            key={t.id}
+            className="group relative flex overflow-hidden border border-white/[0.06] bg-card/40 transition-colors hover:border-primary/40"
+          >
+            <div className="relative h-auto w-28 shrink-0 overflow-hidden bg-black">
+              <img
+                src={t.image}
+                alt=""
+                loading="lazy"
+                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent to-card/40" />
+            </div>
+            <div className="flex min-w-0 flex-1 flex-col justify-between gap-3 p-4">
+              <div>
+                <h3 className="truncate font-display text-base font-black uppercase italic tracking-tight text-foreground">
+                  {t.title}
+                </h3>
+                <div className="mt-1 flex items-baseline gap-2">
+                  <span className="font-display text-2xl font-black italic tabular-nums text-foreground">
+                    {t.myTickets}
+                  </span>
+                  <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+                    {t.myTickets === 1 ? "билет" : "билетов"}
+                  </span>
                 </div>
               </div>
-            </article>
-          );
-        })}
+              <div className="flex items-center justify-between border-t border-white/[0.06] pt-2">
+                <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+                  до итогов
+                </span>
+                <Countdown deadlineAt={t.deadlineAt} compact />
+              </div>
+            </div>
+          </article>
+        ))}
       </div>
 
       {WIN_HISTORY.length > 0 && (
@@ -580,33 +572,53 @@ function SectionGarage() {
     persist(bikes.filter((x) => x.id !== id));
   }
 
+  const [primary, ...rest] = bikes;
+
   return (
     <section aria-label="Мой гараж" className="mb-10">
-      <div className="mb-3 flex items-baseline justify-between">
+      <div className="mb-3 flex items-baseline justify-between border-b border-white/[0.06] pb-2">
         <h2 className="font-display text-sm font-black uppercase italic tracking-widest text-foreground">
           Мой гараж
         </h2>
-        {bikes.length > 0 && (
-          <button
-            type="button"
-            onClick={openAdd}
-            className="group flex items-center gap-1 font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground transition-colors hover:text-primary"
-          >
-            + Добавить байк
-          </button>
+        <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+          слотов: {bikes.length}/2
+        </span>
+      </div>
+
+      {/* Hero: главный байк + пустой слот */}
+      <div className="grid gap-4 md:grid-cols-4">
+        {primary ? (
+          <div className="md:col-span-3">
+            <HeroBikeCard
+              bike={primary}
+              onEdit={() => openEdit(primary)}
+              onDelete={() => handleDelete(primary.id)}
+            />
+          </div>
+        ) : (
+          <div className="md:col-span-3">
+            <EmptyGarageSlot onAdd={openAdd} />
+          </div>
         )}
+        <div className="md:col-span-1">
+          <EmptyGarageSlot onAdd={openAdd} />
+        </div>
       </div>
-      <div className="grid gap-4 md:grid-cols-2">
-        {bikes.map((b) => (
-          <BikeCard
-            key={b.id}
-            bike={b}
-            onEdit={() => openEdit(b)}
-            onDelete={() => handleDelete(b.id)}
-          />
-        ))}
-        <EmptyGarageSlot onAdd={openAdd} />
-      </div>
+
+      {/* Дополнительные байки — обычные карточки в 2 колонки */}
+      {rest.length > 0 && (
+        <div className="mt-4 grid gap-4 md:grid-cols-2">
+          {rest.map((b) => (
+            <BikeCard
+              key={b.id}
+              bike={b}
+              onEdit={() => openEdit(b)}
+              onDelete={() => handleDelete(b.id)}
+            />
+          ))}
+        </div>
+      )}
+
       <BikeFormModal
         open={modalOpen}
         onOpenChange={setModalOpen}
