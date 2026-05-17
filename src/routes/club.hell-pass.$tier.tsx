@@ -54,7 +54,7 @@ function ErrorPage({ error }: { error: Error }) {
 }
 
 function TierDetailPage() {
-  const { tier } = Route.useLoaderData();
+  const { tier } = Route.useLoaderData() as { tier: Tier };
   const isGold = tier.recommended;
   const isPlatinum = tier.ultimate;
 
