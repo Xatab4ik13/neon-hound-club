@@ -436,62 +436,96 @@ function SectionTickets() {
   return (
     <section aria-label="Мои розыгрыши" className="mb-10">
       <SectionHeader title="Мои розыгрыши" href="/club/raffles" hrefLabel="Все розыгрыши" />
-      <div className="grid gap-3 md:grid-cols-2">
-        {ACTIVE_TICKETS.map((t) => (
-          <article
-            key={t.id}
-            className="group relative flex overflow-hidden border border-white/[0.06] bg-card/40 transition-colors hover:border-primary/40"
-          >
-            <div className="relative h-auto w-28 shrink-0 overflow-hidden bg-black">
-              <img
-                src={t.image}
-                alt=""
-                loading="lazy"
-                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-              />
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent to-card/40" />
-            </div>
-            <div className="flex min-w-0 flex-1 flex-col justify-between gap-3 p-4">
-              <div>
-                <h3 className="truncate font-display text-base font-black uppercase italic tracking-tight text-foreground">
-                  {t.title}
-                </h3>
-                <div className="mt-1 flex items-baseline gap-2">
-                  <span className="font-display text-2xl font-black italic tabular-nums text-foreground">
-                    {t.myTickets}
-                  </span>
-                  <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                    {t.myTickets === 1 ? "билет" : "билетов"}
-                  </span>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        {ACTIVE_TICKETS.map((t, idx) => {
+          const code = `${String(idx + 1).padStart(3, "0")}-${t.id.toUpperCase()}`;
+          return (
+            <article
+              key={t.id}
+              className="group relative flex overflow-hidden border border-white/[0.06] bg-card/40 shadow-[0_0_20px_rgba(255,0,127,0.04)] transition-all duration-500 hover:border-primary/60"
+            >
+              {/* Фото */}
+              <div className="relative w-[45%] shrink-0 overflow-hidden border-r border-white/[0.06] bg-black">
+                <img
+                  src={t.image}
+                  alt=""
+                  loading="lazy"
+                  className="h-full w-full object-cover opacity-80 transition-transform duration-700 group-hover:scale-110"
+                />
+                <div
+                  aria-hidden
+                  className="pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-card/90"
+                />
+                {/* LIVE badge */}
+                <div className="absolute left-3 top-3">
+                  <div className="flex items-center gap-2 bg-primary px-2 py-0.5 font-mono text-[10px] font-black uppercase tracking-wider text-primary-foreground shadow-lg shadow-primary/40">
+                    <span className="block h-1.5 w-1.5 animate-pulse rounded-full bg-white" />
+                    LIVE
+                  </div>
                 </div>
               </div>
-              <div className="flex items-center justify-between border-t border-white/[0.06] pt-2">
-                <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                  до итогов
-                </span>
-                <Countdown deadlineAt={t.deadlineAt} compact />
+
+              {/* Контент */}
+              <div className="relative flex min-w-0 flex-1 flex-col justify-between gap-4 p-5">
+                <div>
+                  <div className="mb-1 font-mono text-[9px] uppercase tracking-[0.25em] text-muted-foreground/70">
+                    ID: {code}
+                  </div>
+                  <h3 className="truncate font-display text-xl font-black uppercase italic tracking-tight text-foreground transition-colors group-hover:text-primary">
+                    {t.title}
+                  </h3>
+                  <div className="mt-2 flex items-center gap-2">
+                    <span className="font-mono text-4xl font-bold leading-none tabular-nums tracking-tighter text-foreground">
+                      {t.myTickets}
+                    </span>
+                    <span className="font-mono text-[9px] font-bold uppercase leading-tight text-muted-foreground">
+                      уникальных
+                      <br />
+                      билетов
+                    </span>
+                  </div>
+                </div>
+
+                <div className="border-t border-white/[0.06] pt-3">
+                  <div className="mb-2 flex items-center justify-between font-mono text-[9px] uppercase tracking-[0.25em] text-muted-foreground">
+                    <span>до завершения</span>
+                    <span className="font-bold text-primary">● RUNNING</span>
+                  </div>
+                  <Countdown deadlineAt={t.deadlineAt} variant="tactical" />
+                </div>
               </div>
-            </div>
-          </article>
-        ))}
+            </article>
+          );
+        })}
       </div>
 
       {WIN_HISTORY.length > 0 && (
-        <div className="mt-4 border border-white/[0.06] bg-card/30 p-4">
-          <div className="mb-2 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-            <Trophy className="h-3 w-3 text-primary" />
-            История выигрышей
+        <div className="group relative mt-4 flex items-center justify-between overflow-hidden border border-white/[0.06] bg-card/40 p-4">
+          <div className="absolute inset-y-0 left-0 w-1 bg-primary opacity-40 transition-opacity group-hover:opacity-100" />
+          <div className="flex items-center gap-4">
+            <div className="flex h-10 w-10 items-center justify-center border border-white/[0.08] bg-black transition-colors group-hover:border-primary/50">
+              <Trophy className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-primary" />
+            </div>
+            <div>
+              <div className="mb-0.5 font-mono text-[9px] font-bold uppercase tracking-[0.3em] text-muted-foreground/70">
+                Архив побед
+              </div>
+              <div className="font-display text-sm font-black uppercase italic tracking-wide text-foreground">
+                {WIN_HISTORY[0].title}
+              </div>
+            </div>
           </div>
-          <ul className="divide-y divide-white/[0.04]">
-            {WIN_HISTORY.map((w) => (
-              <li key={w.id} className="flex items-center justify-between py-2 text-sm">
-                <span className="truncate text-foreground">{w.title}</span>
-                <span className="ml-3 shrink-0 font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-                  {w.date} · <span className="text-primary">{w.status}</span>
-                </span>
-              </li>
-            ))}
-          </ul>
+          <div className="flex items-center gap-6">
+            <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+              {WIN_HISTORY[0].date}
+            </span>
+            <div className="border border-white/[0.08] bg-primary/[0.08] px-3 py-1.5 transition-colors group-hover:border-primary/40">
+              <span className="font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-foreground">
+                {WIN_HISTORY[0].status}
+              </span>
+            </div>
+          </div>
         </div>
       )}
     </section>
