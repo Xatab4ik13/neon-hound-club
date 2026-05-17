@@ -4,7 +4,7 @@ import {
   Percent,
   Sparkles,
   Zap,
-  Frame,
+  BadgeCheck,
   GraduationCap,
   MessageSquare,
   Vote,
@@ -47,7 +47,7 @@ const SILVER_PERKS: Perk[] = [
   { icon: Percent, label: "скидка на мерч", value: "5%" },
   { icon: Sparkles, label: "AI-вопросов про твой мото / мес", value: "20" },
   { icon: Zap, label: "буст XP клуба", value: "×1.25" },
-  { icon: Frame, label: "сезонная рамка профиля", value: "1 базовая" },
+  { icon: BadgeCheck, label: "месячный значок «Silver S01» в коллекцию", accent: true },
   { icon: GraduationCap, label: "скидка на школу HELLHOUND", value: "−20%" },
   { icon: MessageSquare, label: "комментарии в ленте клуба" },
   { icon: Vote, label: "голос за следующее видео", value: "×1" },
@@ -60,7 +60,7 @@ const GOLD_PERKS: Perk[] = [
   { icon: Percent, label: "скидка на мерч", value: "10%", accent: true },
   { icon: Sparkles, label: "AI-вопросов про твой мото / мес", value: "100", accent: true },
   { icon: Zap, label: "буст XP клуба", value: "×1.5", accent: true },
-  { icon: Frame, label: "сезонных рамки на выбор", value: "2" },
+  { icon: BadgeCheck, label: "значок «Gold S01» + редкий значок месяца за активность", accent: true },
   { icon: Vote, label: "вес голоса за следующее видео", value: "×2" },
   { icon: Trophy, label: "бонусных билета в месячный эксклюзив", value: "+3", accent: true },
   { icon: ShoppingBag, label: "предзаказ мерча до общего старта", accent: true },
@@ -72,7 +72,7 @@ const PLATINUM_PERKS: Perk[] = [
   { icon: InfinityIcon, label: "AI-вопросов — безлимит", value: "∞", accent: true },
   { icon: ImagePlus, label: "AI-генераций картинок / мес", value: "20", accent: true },
   { icon: Zap, label: "буст XP клуба", value: "×2.0", accent: true },
-  { icon: Crown, label: "все сезонные рамки + анимированная Platinum-рамка" },
+  { icon: Crown, label: "значок «Platinum S01» (Legendary) + Founder-значок в первый месяц", accent: true },
   { icon: Vote, label: "вес голоса за следующее видео", value: "×5" },
   { icon: Trophy, label: "бонусных билета в месячный эксклюзив", value: "+10", accent: true },
   { icon: Sparkles, label: "закрытый Platinum-розыгрыш раз в сезон", accent: true },
@@ -450,9 +450,10 @@ function SeasonNote() {
             Сезон — каждые 3 месяца
           </h3>
           <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-            Сезонные рамки и значки обнуляются. Старые остаются в коллекции, но
-            не как «текущий сезон» — это делает их редкими. Закрытый Platinum-розыгрыш
-            и сезонный мерч-подарок — раз в сезон.
+            Каждый месяц — новый дизайн значка Pass: Silver / Gold / Platinum
+            со штампом месяца (напр. «GOLD S01 · 05/26»). Старые остаются в
+            коллекции навсегда — пропустил месяц, значок уже не получить.
+            Закрытый Platinum-розыгрыш и сезонный мерч-подарок — раз в сезон.
           </p>
         </div>
       </div>

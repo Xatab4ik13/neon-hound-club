@@ -6,6 +6,7 @@ import { HeroBikeCard } from "@/components/club/HeroBikeCard";
 import { BikeFormModal } from "@/components/club/BikeFormModal";
 import { EmptyGarageSlot } from "@/components/club/EmptyGarageSlot";
 import { Countdown } from "@/components/club/Countdown";
+import { BadgeCase } from "@/components/club/BadgeCase";
 import {
   ACTIVE_TICKETS,
   ME,
@@ -53,6 +54,7 @@ function MePage() {
     <main className="mx-auto w-full max-w-5xl px-4 py-6 md:px-8 md:py-10">
       <Dashboard />
       <StatsRow />
+      <BadgeCase />
       <SectionGarage />
       <SectionTickets />
       <SectionOrders />
