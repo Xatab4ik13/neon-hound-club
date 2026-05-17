@@ -266,15 +266,104 @@ function Glyph({ id, color, glow }: { id: string; color: string; glow: string })
           <rect x="26" y="22" width="4" height="3" fill={c} />
         </g>
       );
-    case "night-ride":
-      // Луна + звезда
+    case "first-raffle":
+      // Билет №001 с подковой удачи
       return (
         <g>
-          <path d="M30 12 A12 12 0 1 0 38 30 A9 9 0 0 1 30 12 Z"
+          {/* подкова на заднем плане */}
+          <path d="M16 14 C16 24 16 30 20 34 M32 14 C32 24 32 30 28 34"
+            stroke={c} strokeWidth="1.6" strokeLinecap="round" fill="none" opacity="0.55" />
+          <circle cx="20" cy="34" r="1" fill={c} opacity="0.6" />
+          <circle cx="28" cy="34" r="1" fill={c} opacity="0.6" />
+          {/* билет */}
+          <path d="M12 20 V23 A1.2 1.2 0 0 1 12 25.4 V28 H36 V25.4 A1.2 1.2 0 0 1 36 23 V20 Z"
+            fill="#0a0a0a" stroke={c} strokeWidth="1.3" strokeLinejoin="round" />
+          <text x="24" y="26" textAnchor="middle" fontSize="6" fontWeight="900" fill={c} fontFamily="monospace">001</text>
+        </g>
+      );
+    case "rank-rookie":
+      // Один шеврон вверх
+      return (
+        <g>
+          <path d="M14 26 L24 16 L34 26 L34 30 L24 20 L14 30 Z" fill={c} opacity="0.9" />
+          <path d="M19 32 L24 27 L29 32" stroke={c} strokeWidth="1.5" fill="none" strokeLinecap="round" />
+        </g>
+      );
+    case "rank-pit-crew":
+      // Скрещённые гаечные ключи
+      return (
+        <g transform="rotate(45 24 24)">
+          {/* ключ 1 */}
+          <path d="M12 22 H28 V26 H12 Z M28 20 A4 4 0 1 1 28 28 Z" fill="#0a0a0a" stroke={c} strokeWidth="1.3" strokeLinejoin="round" />
+          <circle cx="32" cy="24" r="2" fill={c} opacity="0.3" />
+          {/* ключ 2 (перпендикулярный) */}
+          <g transform="rotate(90 24 24)">
+            <path d="M12 22 H28 V26 H12 Z M28 20 A4 4 0 1 1 28 28 Z" fill="#0a0a0a" stroke={c} strokeWidth="1.3" strokeLinejoin="round" />
+            <circle cx="32" cy="24" r="2" fill={c} opacity="0.3" />
+          </g>
+        </g>
+      );
+    case "rank-road-captain":
+      // Руль / штурвал
+      return (
+        <g>
+          <circle cx="24" cy="24" r="10" fill="#0a0a0a" stroke={c} strokeWidth="1.5" />
+          <circle cx="24" cy="24" r="3" fill={c} opacity="0.4" stroke={c} strokeWidth="1" />
+          {/* спицы */}
+          <path d="M24 14 V21 M24 27 V34 M14 24 H21 M27 24 H34" stroke={c} strokeWidth="1.5" strokeLinecap="round" />
+          {/* верхние хваты */}
+          <path d="M16 18 L19 21 M32 18 L29 21 M16 30 L19 27 M32 30 L29 27" stroke={c} strokeWidth="1.1" strokeLinecap="round" opacity="0.7" />
+        </g>
+      );
+    case "rank-alpha-hound":
+      // Лапа волка с когтями
+      return (
+        <g>
+          {/* подушка */}
+          <path d="M18 26 Q24 22 30 26 Q32 32 28 36 H20 Q16 32 18 26 Z"
             fill="#0a0a0a" stroke={c} strokeWidth="1.4" strokeLinejoin="round" />
-          <path d="M16 14 L17 17 L20 18 L17 19 L16 22 L15 19 L12 18 L15 17 Z" fill={c} />
-          <circle cx="22" cy="32" r="0.8" fill={c} opacity="0.7" />
-          <circle cx="33" cy="22" r="0.6" fill={c} opacity="0.5" />
+          {/* пальцы */}
+          <ellipse cx="17" cy="20" rx="2.2" ry="3" fill="#0a0a0a" stroke={c} strokeWidth="1.2" />
+          <ellipse cx="22" cy="16" rx="2.2" ry="3" fill="#0a0a0a" stroke={c} strokeWidth="1.2" />
+          <ellipse cx="27" cy="16" rx="2.2" ry="3" fill="#0a0a0a" stroke={c} strokeWidth="1.2" />
+          <ellipse cx="32" cy="20" rx="2.2" ry="3" fill="#0a0a0a" stroke={c} strokeWidth="1.2" />
+          {/* когти */}
+          <path d="M16 17 L15 14 M22 13 L22 10 M27 13 L27 10 M33 17 L34 14"
+            stroke={c} strokeWidth="1.3" strokeLinecap="round" />
+        </g>
+      );
+    case "rank-hell-legend":
+      // Пламенная корона
+      return (
+        <g>
+          {/* пламя/корона */}
+          <path d="M13 30 L13 22 L17 26 L20 16 L24 24 L28 16 L31 26 L35 22 L35 30 Z"
+            fill={c} opacity="0.25" stroke={c} strokeWidth="1.4" strokeLinejoin="round" />
+          {/* внутренние огоньки */}
+          <path d="M20 26 Q22 22 24 26 Q26 22 28 26" stroke={c} strokeWidth="1.2" fill="none" />
+          {/* база */}
+          <rect x="13" y="32" width="22" height="3" fill={c} opacity="0.85" />
+          <rect x="13" y="36" width="22" height="1" fill={c} opacity="0.5" />
+          {/* камни */}
+          <circle cx="18" cy="33.5" r="0.9" fill="#0a0a0a" />
+          <circle cx="24" cy="33.5" r="1.1" fill="#0a0a0a" />
+          <circle cx="30" cy="33.5" r="0.9" fill="#0a0a0a" />
+        </g>
+      );
+    case "rank-vip":
+      // Платиновая звезда с лавром
+      return (
+        <g>
+          {/* лавровые ветки */}
+          <path d="M12 30 Q14 22 18 18" stroke={c} strokeWidth="1.3" fill="none" strokeLinecap="round" />
+          <path d="M36 30 Q34 22 30 18" stroke={c} strokeWidth="1.3" fill="none" strokeLinecap="round" />
+          <path d="M13 28 L15 27 M13 25 L15 24 M14 22 L16 21" stroke={c} strokeWidth="1" strokeLinecap="round" opacity="0.85" />
+          <path d="M35 28 L33 27 M35 25 L33 24 M34 22 L32 21" stroke={c} strokeWidth="1" strokeLinecap="round" opacity="0.85" />
+          {/* звезда */}
+          <path d="M24 12 L26.6 19 L34 19.5 L28.3 24 L30.3 31 L24 27 L17.7 31 L19.7 24 L14 19.5 L21.4 19 Z"
+            fill="#0a0a0a" stroke={c} strokeWidth="1.4" strokeLinejoin="round" />
+          <path d="M24 16 L25.6 19.8 L29.5 20 L26.5 22.5 L27.5 26 L24 23.8 L20.5 26 L21.5 22.5 L18.5 20 L22.4 19.8 Z"
+            fill={c} opacity="0.4" />
         </g>
       );
     default:

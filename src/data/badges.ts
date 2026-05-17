@@ -4,6 +4,7 @@
 export type BadgeRarity = "common" | "rare" | "epic" | "legendary" | "mythic";
 
 export type BadgeCategory =
+  | "rank"        // выдаётся при достижении ранга
   | "club"        // базовая клубная активность
   | "pass"        // месячный дроп Hell Pass (сезонный)
   | "event"       // эвенты, стримы, тракдеи
@@ -146,22 +147,76 @@ export const BADGES: Badge[] = [
   {
     id: "preorder-pioneer",
     name: "Pre-order Pioneer",
-    description: "Оформил предзаказ на дроп до общего старта.",
+    description: "Оформил предзаказ на мерч до общего старта.",
     rarity: "epic",
     category: "achievement",
     owned: false,
   },
-
-  // ── Клуб ──────────────────────────────────────────────────────────────
   {
-    id: "rookie",
+    id: "first-raffle",
+    name: "First Raffle",
+    description:
+      "Участвовал в самом первом розыгрыше HELLHOUND. Выдаётся один раз — позже получить нельзя.",
+    rarity: "epic",
+    category: "achievement",
+    issue: "05 / 26",
+    owned: false,
+    mintedOf: 0,
+  },
+
+  // ── Ранги ─────────────────────────────────────────────────────────────
+  {
+    id: "rank-rookie",
     name: "Rookie",
-    description: "Вступил в клуб HELLHOUND. Стартовый значок.",
+    description: "Стартовый ранг. Выдаётся всем, кто завёл профиль в клубе.",
     rarity: "common",
-    category: "club",
+    category: "rank",
     owned: true,
     mintedOf: 3425,
   },
+  {
+    id: "rank-pit-crew",
+    name: "Pit Crew",
+    description: "Доехал до ранга Pit Crew — 2 000 XP за активность в клубе.",
+    rarity: "common",
+    category: "rank",
+    owned: false,
+  },
+  {
+    id: "rank-road-captain",
+    name: "Road Captain",
+    description: "Ранг Road Captain — 4 000 XP. Уже не новичок.",
+    rarity: "rare",
+    category: "rank",
+    owned: false,
+  },
+  {
+    id: "rank-alpha-hound",
+    name: "Alpha Hound",
+    description: "Ранг Alpha Hound — 6 000 XP. Один из старших в стае.",
+    rarity: "epic",
+    category: "rank",
+    owned: false,
+  },
+  {
+    id: "rank-hell-legend",
+    name: "Hell Legend",
+    description: "Максимальный ранг по активности — 8 000 XP. Легенда клуба.",
+    rarity: "legendary",
+    category: "rank",
+    owned: false,
+  },
+  {
+    id: "rank-vip",
+    name: "VIP",
+    description:
+      "VIP-ранг по платной подписке. Выдаётся, пока активна VIP-подписка клуба.",
+    rarity: "mythic",
+    category: "rank",
+    owned: false,
+  },
+
+  // ── Клуб ──────────────────────────────────────────────────────────────
   {
     id: "garage-started",
     name: "Garage Started",
@@ -194,14 +249,6 @@ export const BADGES: Badge[] = [
     id: "track-day",
     name: "Track Day",
     description: "Засветился на оффлайн-тракдее клуба.",
-    rarity: "epic",
-    category: "event",
-    owned: false,
-  },
-  {
-    id: "night-ride",
-    name: "Night Ride",
-    description: "Ночной розыгрыш — выдаётся за участие в спецтираже после 23:00.",
     rarity: "epic",
     category: "event",
     owned: false,

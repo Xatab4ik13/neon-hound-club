@@ -16,6 +16,7 @@ import { Lock } from "lucide-react";
 const CATEGORY_LABEL: Record<BadgeCategory, string> = {
   pass: "Hell Pass · сезонные",
   founder: "Founder",
+  rank: "Ранги",
   achievement: "Достижения",
   event: "Эвенты",
   club: "Клуб",
@@ -24,6 +25,7 @@ const CATEGORY_LABEL: Record<BadgeCategory, string> = {
 const CATEGORY_ORDER: BadgeCategory[] = [
   "founder",
   "pass",
+  "rank",
   "achievement",
   "event",
   "club",
