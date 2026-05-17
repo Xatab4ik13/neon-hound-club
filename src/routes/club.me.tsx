@@ -2,8 +2,10 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { SettingsModal } from "@/components/club/SettingsModal";
 import { BikeCard } from "@/components/club/BikeCard";
+import { HeroBikeCard } from "@/components/club/HeroBikeCard";
 import { BikeFormModal } from "@/components/club/BikeFormModal";
 import { EmptyGarageSlot } from "@/components/club/EmptyGarageSlot";
+import { Countdown } from "@/components/club/Countdown";
 import {
   ACTIVE_TICKETS,
   ME,
@@ -51,9 +53,9 @@ function MePage() {
     <main className="mx-auto w-full max-w-5xl px-4 py-6 md:px-8 md:py-10">
       <Dashboard />
       <StatsRow />
+      <SectionGarage />
       <SectionTickets />
       <SectionOrders />
-      <SectionGarage />
       <RankSwitcher />
     </main>
   );
