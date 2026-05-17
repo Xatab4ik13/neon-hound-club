@@ -1,7 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
-import { ME } from "@/data/profile";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState } from "react";
 import { RANKS, type RankId } from "@/data/ranks";
+import { ME_SLUG, PUBLIC_USERS } from "@/data/users";
 
 export const Route = createFileRoute("/club/")({
   head: () => ({
@@ -16,17 +16,9 @@ export const Route = createFileRoute("/club/")({
 
 // ───────── Типы и моки ─────────
 
-type Author = { name: string; handle: string; badge: "OWNER" | "TEAM" };
-
-type Commenter = {
-  nick: string;
-  initials: string;
-  rank: RankId;
-};
-
 type Comment = {
   id: string;
-  author: Commenter;
+  authorSlug: string;
   time: string;
   text: string;
   likes: number;
@@ -34,7 +26,7 @@ type Comment = {
 
 type Post = {
   id: string;
-  author: Author;
+  authorSlug: string;
   time: string;
   text: string;
   image?: string;
@@ -46,118 +38,52 @@ type Post = {
 const POSTS: Post[] = [
   {
     id: "1",
-    author: { name: "Hell", handle: "@hell", badge: "OWNER" },
+    authorSlug: "hell",
     time: "2 ч",
     pinned: true,
     text: "Розыгрыш Yamaha R1 закрывается в воскресенье. Осталось 412 билетов из 3000. Кто ещё думает — подумайте быстрее.",
     image: "https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?w=1200&q=80",
     likes: 842,
     comments: [
-      {
-        id: "c1",
-        author: { nick: "asphalt_dog", initials: "AS", rank: "alpha-hound" },
-        time: "22 мин",
-        text: "Уже закинул на три билета. В этот раз повезёт больше, чем с Кавасаки.",
-        likes: 18,
-      },
-      {
-        id: "c2",
-        author: { nick: "tankslapper", initials: "TS", rank: "road-captain" },
-        time: "1 ч",
-        text: "По стате R1 идёт активнее, чем R6 в прошлом сезоне. Логично — модель свежее.",
-        likes: 9,
-      },
-      {
-        id: "c3",
-        author: { nick: "vasya_pit", initials: "VP", rank: "pit-crew" },
-        time: "1 ч",
-        text: "А по доставке выигравшему — забирать самому или привезут?",
-        likes: 4,
-      },
-      {
-        id: "c4",
-        author: { nick: "hell_legend_01", initials: "HL", rank: "hell-legend" },
-        time: "2 ч",
-        text: "Hell, спасибо за честный розыгрыш. Уже третий год подряд участвую.",
-        likes: 27,
-      },
+      { id: "c1", authorSlug: "asphalt_dog", time: "22 мин", text: "Уже закинул на три билета. В этот раз повезёт больше, чем с Кавасаки.", likes: 18 },
+      { id: "c2", authorSlug: "tankslapper", time: "1 ч", text: "По стате R1 идёт активнее, чем R6 в прошлом сезоне. Логично — модель свежее.", likes: 9 },
+      { id: "c3", authorSlug: "vasya_pit", time: "1 ч", text: "А по доставке выигравшему — забирать самому или привезут?", likes: 4 },
+      { id: "c4", authorSlug: "hell_legend_01", time: "2 ч", text: "Hell, спасибо за честный розыгрыш. Уже третий год подряд участвую.", likes: 27 },
     ],
   },
   {
     id: "2",
-    author: { name: "Hell", handle: "@hell", badge: "OWNER" },
+    authorSlug: "hell",
     time: "вчера",
     text: "Снимаем новый ролик про падения. RAW-камеры с трека уйдут только в клуб — за неделю до публики.",
     likes: 1204,
     comments: [
-      {
-        id: "c5",
-        author: { nick: "vip_rider", initials: "VR", rank: "vip" },
-        time: "10 ч",
-        text: "Это причина оставаться в клубе. Спасибо.",
-        likes: 33,
-      },
-      {
-        id: "c6",
-        author: { nick: "rookie_max", initials: "RM", rank: "rookie" },
-        time: "8 ч",
-        text: "А будет момент с тем выездом на гравий?",
-        likes: 2,
-      },
+      { id: "c5", authorSlug: "vip_rider", time: "10 ч", text: "Это причина оставаться в клубе. Спасибо.", likes: 33 },
+      { id: "c6", authorSlug: "rookie_max", time: "8 ч", text: "А будет момент с тем выездом на гравий?", likes: 2 },
     ],
   },
   {
     id: "3",
-    author: { name: "Pavel / команда", handle: "@team_pavel", badge: "TEAM" },
+    authorSlug: "team_pavel",
     time: "2 дн",
     text: "Перчатки HELLHOUND v2 поехали в производство. Первая партия — 300 пар, waitlist открываем в пятницу.",
     image: "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?w=1200&q=80",
     likes: 567,
     comments: [
-      {
-        id: "c7",
-        author: { nick: "moto_anya", initials: "MA", rank: "road-captain" },
-        time: "1 д",
-        text: "Размерная сетка та же, что у v1, или поменялась? У меня M был впритык.",
-        likes: 11,
-      },
-      {
-        id: "c8",
-        author: { nick: "garage_77", initials: "G7", rank: "pit-crew" },
-        time: "20 ч",
-        text: "Защита костяшек обновилась? На v1 за сезон стёрлась.",
-        likes: 6,
-      },
-      {
-        id: "c9",
-        author: { nick: "wheelie_kid", initials: "WK", rank: "alpha-hound" },
-        time: "5 ч",
-        text: "Платина, забирайте перед общим стартом. Иначе разберут.",
-        likes: 14,
-      },
+      { id: "c7", authorSlug: "moto_anya", time: "1 д", text: "Размерная сетка та же, что у v1, или поменялась? У меня M был впритык.", likes: 11 },
+      { id: "c8", authorSlug: "garage_77", time: "20 ч", text: "Защита костяшек обновилась? На v1 за сезон стёрлась.", likes: 6 },
+      { id: "c9", authorSlug: "wheelie_kid", time: "5 ч", text: "Платина, забирайте перед общим стартом. Иначе разберут.", likes: 14 },
     ],
   },
   {
     id: "4",
-    author: { name: "Hell", handle: "@hell", badge: "OWNER" },
+    authorSlug: "hell",
     time: "3 дн",
     text: "Скинул в общий чат маршрут на субботу — Дмитров, 180 км по плохому асфальту. Кто едет — отметьтесь.",
     likes: 392,
     comments: [
-      {
-        id: "c10",
-        author: { nick: "kuzya_msk", initials: "KZ", rank: "rookie" },
-        time: "2 д",
-        text: "Я в деле. На R6, средний темп норм?",
-        likes: 3,
-      },
-      {
-        id: "c11",
-        author: { nick: "captain_volk", initials: "CV", rank: "road-captain" },
-        time: "2 д",
-        text: "Если асфальт реально плохой — лучше не на спорте. Возьму твин.",
-        likes: 8,
-      },
+      { id: "c10", authorSlug: "kuzya_msk", time: "2 д", text: "Я в деле. На R6, средний темп норм?", likes: 3 },
+      { id: "c11", authorSlug: "captain_volk", time: "2 д", text: "Если асфальт реально плохой — лучше не на спорте. Возьму твин.", likes: 8 },
     ],
   },
 ];
@@ -172,8 +98,16 @@ const RANK_BY_ID = Object.fromEntries(RANKS.map((r) => [r.id, r])) as Record<
 function ClubFeedPage() {
   return (
     <main className="mx-auto w-full max-w-2xl px-4 py-6 md:px-8 md:py-10">
-      <Composer />
-      <div className="space-y-4">
+      <div className="mb-6 flex items-center justify-between border-b border-white/[0.06] pb-3">
+        <h1 className="font-display text-lg font-black uppercase italic tracking-tight text-foreground">
+          Лента
+        </h1>
+        <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+          постят только Hell и команда
+        </span>
+      </div>
+
+      <div className="space-y-6">
         {POSTS.map((post) => (
           <PostCard key={post.id} post={post} />
         ))}
@@ -182,64 +116,44 @@ function ClubFeedPage() {
   );
 }
 
-function Composer() {
-  return (
-    <div className="mb-6 border border-white/[0.06] bg-card/40 p-4 text-sm text-muted-foreground">
-      <div className="flex items-center gap-3">
-        <div className="flex h-9 w-9 items-center justify-center bg-primary/15 font-display text-xs font-bold uppercase italic text-primary">
-          {ME.nick.slice(0, 2)}
-        </div>
-        <button
-          type="button"
-          className="flex-1 cursor-not-allowed border border-dashed border-white/[0.08] px-4 py-2 text-left text-muted-foreground/70"
-          title="Только Hell и команда могут публиковать"
-        >
-          Только Hell и команда публикуют посты
-        </button>
-      </div>
-    </div>
-  );
-}
-
 // ───────── Post ─────────
 
 function PostCard({ post }: { post: Post }) {
   const [liked, setLiked] = useState(false);
   const likeCount = post.likes + (liked ? 1 : 0);
+  const author = PUBLIC_USERS[post.authorSlug];
 
   return (
-    <article className="border border-white/[0.06] bg-card/40 transition-colors hover:border-white/[0.12]">
+    <article className="border border-white/[0.06] bg-card/40 transition-colors hover:border-white/[0.10]">
       {post.pinned && (
-        <div className="flex items-center gap-2 border-b border-white/[0.06] px-5 py-2 font-mono text-[10px] uppercase tracking-[0.2em] text-primary">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+        <div className="flex items-center gap-2 border-b border-white/[0.06] bg-primary/[0.04] px-5 py-2 font-mono text-[10px] uppercase tracking-[0.2em] text-primary">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
             <path d="M16 4l4 4-6 2 2 6-4 4-2-6-6 2 4-4-2-6 6 2 4-4z" />
           </svg>
           Закреплено
         </div>
       )}
 
-      <div className="flex items-center gap-3 px-5 pt-4">
-        <div className="flex h-10 w-10 items-center justify-center bg-primary/15 font-display text-sm font-bold uppercase italic text-primary">
-          {post.author.name.slice(0, 1)}
-        </div>
+      <header className="flex items-center gap-3 px-5 pt-5">
+        <UserLink slug={post.authorSlug}>
+          <RankAvatar initials={author?.initials ?? "?"} rankId={author?.rank ?? "rookie"} size={48} />
+        </UserLink>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <span className="truncate font-display text-base font-bold uppercase italic tracking-tight text-foreground">
-              {post.author.name}
-            </span>
-            <span className="border border-primary/40 px-1.5 py-px font-mono text-[9px] font-bold uppercase tracking-wider text-primary">
-              {post.author.badge}
-            </span>
+            <UserLink slug={post.authorSlug} className="truncate">
+              <span className="truncate font-display text-[17px] font-black uppercase italic tracking-tight text-foreground transition-colors hover:text-primary">
+                {author?.nick ?? post.authorSlug}
+              </span>
+            </UserLink>
+            <RoleBadge role={author?.role ?? "rider"} />
           </div>
-          <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-            {post.author.handle} · {post.time}
+          <span className="mt-0.5 block font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+            {post.time}
           </span>
         </div>
-      </div>
+      </header>
 
-      <p className="px-5 pb-4 pt-3 text-[15px] leading-relaxed text-foreground/90">
-        {post.text}
-      </p>
+      <p className="px-5 pb-4 pt-4 text-[15.5px] leading-[1.55] text-foreground/90">{post.text}</p>
 
       {post.image && (
         <div className="border-y border-white/[0.06] bg-black">
@@ -248,20 +162,22 @@ function PostCard({ post }: { post: Post }) {
             alt=""
             loading="lazy"
             decoding="async"
-            className="h-auto w-full object-cover"
+            className="aspect-[16/9] w-full object-cover"
           />
         </div>
       )}
 
-      <div className="flex items-center gap-1 border-b border-white/[0.04] px-3 py-2">
+      <div className="flex items-stretch border-b border-white/[0.04]">
         <PostAction
-          icon={<HeartIcon filled={liked} />}
+          icon={<HeartIcon filled={liked} size={18} />}
           count={likeCount}
           label="Лайк"
           active={liked}
           onClick={() => setLiked((v) => !v)}
         />
+        <span aria-hidden className="my-2 w-px bg-white/[0.05]" />
         <PostAction icon={<CommentIcon />} count={post.comments.length} label="Комментарий" />
+        <span aria-hidden className="my-2 w-px bg-white/[0.05]" />
         <PostAction icon={<ShareIcon />} label="Поделиться" />
       </div>
 
@@ -289,13 +205,23 @@ function PostAction({
       onClick={onClick}
       aria-label={label}
       aria-pressed={active}
-      className={`group flex items-center gap-2 px-3 py-2 font-mono text-xs tabular-nums transition-colors ${
-        active ? "text-primary" : "text-muted-foreground hover:text-primary"
+      className={`group flex flex-1 items-center justify-center gap-2 px-3 py-3 font-mono text-[12px] font-bold uppercase tracking-wider tabular-nums transition-colors ${
+        active ? "text-primary" : "text-muted-foreground hover:bg-white/[0.02] hover:text-foreground"
       }`}
     >
       <span className="transition-transform group-active:scale-90">{icon}</span>
-      {count !== undefined && <span>{formatCount(count)}</span>}
+      {count !== undefined ? <span>{formatCount(count)}</span> : <span>{label}</span>}
     </button>
+  );
+}
+
+function RoleBadge({ role }: { role: "owner" | "team" | "rider" }) {
+  if (role === "rider") return null;
+  const label = role === "owner" ? "OWNER" : "TEAM";
+  return (
+    <span className="shrink-0 border border-primary/40 bg-primary/10 px-1.5 py-px font-mono text-[9px] font-bold uppercase tracking-wider text-primary">
+      {label}
+    </span>
   );
 }
 
@@ -309,7 +235,7 @@ function CommentsBlock({ postId, comments }: { postId: string; comments: Comment
   const hidden = Math.max(0, comments.length - INITIAL_VISIBLE);
 
   return (
-    <div className="bg-[#0a0a0a]/60">
+    <div className="bg-black/30">
       <ul className="divide-y divide-white/[0.04]">
         {visible.map((c) => (
           <CommentItem key={c.id} comment={c} />
@@ -335,26 +261,30 @@ function CommentsBlock({ postId, comments }: { postId: string; comments: Comment
 
 function CommentItem({ comment }: { comment: Comment }) {
   const [liked, setLiked] = useState(false);
-  const rank = RANK_BY_ID[comment.author.rank];
+  const user = PUBLIC_USERS[comment.authorSlug];
+  const rank = RANK_BY_ID[user?.rank ?? "rookie"];
   const count = comment.likes + (liked ? 1 : 0);
 
   return (
-    <li className="flex gap-3 px-5 py-3">
-      <RankAvatar initials={comment.author.initials} rankId={comment.author.rank} />
+    <li className="flex gap-3 px-5 py-3.5">
+      <UserLink slug={comment.authorSlug}>
+        <RankAvatar initials={user?.initials ?? "?"} rankId={user?.rank ?? "rookie"} size={36} />
+      </UserLink>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <span className="truncate font-display text-[13px] font-bold uppercase italic tracking-tight text-foreground">
-            {comment.author.nick}
-          </span>
+          <UserLink slug={comment.authorSlug} className="min-w-0 truncate">
+            <span className="truncate font-display text-[13px] font-bold uppercase italic tracking-tight text-foreground transition-colors hover:text-primary">
+              {user?.nick ?? comment.authorSlug}
+            </span>
+          </UserLink>
           <span
             className="shrink-0 border px-1 py-px font-mono text-[8px] font-bold uppercase tracking-wider"
-            style={{
-              color: rank.accent,
-              borderColor: rank.accentSoft,
-            }}
+            style={{ color: rank.accent, borderColor: rank.accentSoft }}
           >
             {rank.short}
           </span>
+          {user?.role === "owner" && <RoleBadge role="owner" />}
+          {user?.role === "team" && <RoleBadge role="team" />}
           <span className="ml-auto shrink-0 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
             {comment.time}
           </span>
@@ -378,14 +308,43 @@ function CommentItem({ comment }: { comment: Comment }) {
   );
 }
 
-function RankAvatar({ initials, rankId }: { initials: string; rankId: RankId }) {
+function UserLink({
+  slug,
+  children,
+  className = "",
+}: {
+  slug: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <Link
+      to="/club/u/$nick"
+      params={{ nick: slug }}
+      className={`shrink-0 ${className}`}
+    >
+      {children}
+    </Link>
+  );
+}
+
+function RankAvatar({
+  initials,
+  rankId,
+  size = 36,
+}: {
+  initials: string;
+  rankId: RankId;
+  size?: number;
+}) {
   const rank = RANK_BY_ID[rankId];
-  // Двойная рамка цветом ранга — без backdrop-blur и без анимаций.
   return (
     <div
-      className="relative flex h-9 w-9 shrink-0 items-center justify-center"
+      className="relative flex shrink-0 items-center justify-center"
       style={{
-        boxShadow: `0 0 0 1px ${rank.accentSoft}, inset 0 0 0 1px rgba(0,0,0,0.6)`,
+        height: size,
+        width: size,
+        boxShadow: `0 0 0 1px ${rank.accentSoft}`,
       }}
     >
       <div
@@ -395,14 +354,14 @@ function RankAvatar({ initials, rankId }: { initials: string; rankId: RankId }) 
       />
       <div
         aria-hidden
-        className="absolute inset-0 opacity-15"
+        className="absolute inset-0 opacity-20"
         style={{
           background: `linear-gradient(135deg, ${rank.accent} 0%, transparent 70%)`,
         }}
       />
       <span
-        className="relative font-display text-[11px] font-black uppercase italic"
-        style={{ color: rank.accent }}
+        className="relative font-display font-black uppercase italic"
+        style={{ color: rank.accent, fontSize: Math.round(size * 0.32) }}
       >
         {initials}
       </span>
@@ -412,8 +371,7 @@ function RankAvatar({ initials, rankId }: { initials: string; rankId: RankId }) 
 
 function CommentComposer({ postId }: { postId: string }) {
   const [value, setValue] = useState("");
-  const initials = useMemo(() => ME.nick.slice(0, 2).toUpperCase(), []);
-  // postId — задел под будущий submit на бэк; пока локально.
+  const me = PUBLIC_USERS[ME_SLUG];
   const disabled = value.trim().length === 0;
 
   return (
@@ -422,25 +380,22 @@ function CommentComposer({ postId }: { postId: string }) {
         e.preventDefault();
         if (disabled) return;
         setValue("");
-        // Заглушка: позже сюда придёт мутация по postId.
         void postId;
       }}
-      className="flex items-center gap-2 border-t border-white/[0.06] bg-black/30 px-3 py-2.5"
+      className="flex items-center gap-2 border-t border-white/[0.06] bg-black/40 px-3 py-2.5"
     >
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center bg-primary/15 font-display text-[10px] font-bold uppercase italic text-primary">
-        {initials}
-      </div>
+      <RankAvatar initials={me.initials} rankId={me.rank} size={32} />
       <input
         type="text"
         value={value}
         onChange={(e) => setValue(e.target.value)}
         placeholder="Написать комментарий…"
-        className="min-w-0 flex-1 border border-white/[0.06] bg-black/40 px-3 py-1.5 text-[13px] text-foreground placeholder:text-muted-foreground/60 outline-none focus:border-primary/50"
+        className="min-w-0 flex-1 border border-white/[0.06] bg-black/40 px-3 py-2 text-[13px] text-foreground placeholder:text-muted-foreground/60 outline-none focus:border-primary/50"
       />
       <button
         type="submit"
         disabled={disabled}
-        className="px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-widest text-primary transition-opacity disabled:opacity-30"
+        className="px-3 py-2 font-mono text-[10px] font-bold uppercase tracking-widest text-primary transition-opacity disabled:opacity-30"
       >
         отпр.
       </button>
