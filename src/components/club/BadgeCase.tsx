@@ -77,22 +77,6 @@ export function BadgeCase({ showLocked = false }: { showLocked?: boolean }) {
         })}
       </div>
 
-      {/* Все собранные значки одним гридом — без пустых категорий */}
-      {visibleBadges.length > 0 && (
-        <div className="mt-6">
-          <div className="mb-2 flex items-center gap-3">
-            <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
-              Коллекция
-            </span>
-            <div className="h-px flex-1 bg-white/[0.06]" />
-          </div>
-          <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8">
-            {visibleBadges.map((b) => (
-              <BadgeTile key={b.id} badge={b} onClick={() => setSelected(b)} />
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Деталь выбранного значка */}
       {selected && <BadgeDetail badge={selected} onClose={() => setSelected(null)} />}
