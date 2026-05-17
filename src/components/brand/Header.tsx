@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 
 const NAV = [
   { label: "Магазин", href: "/shop" },
-  { label: "Hell Pass", href: "/hell-pass" },
+  { label: "Hell Pass", href: "/club/hell-pass" },
   { label: "Школа", href: "/school" },
   { label: "О клубе", href: "/about" },
   { label: "Новости", href: "/news" },
