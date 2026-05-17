@@ -305,3 +305,11 @@
 @media (prefers-reduced-motion: reduce) {
   .badge-float, .badge-spin, .badge-glow { animation: none !important; }
 }
+
+/* Когда открыта модалка — глушим тяжёлые анимации фона, чтобы не лагало. */
+body[data-modal-open="1"] .badge-float,
+body[data-modal-open="1"] .badge-spin,
+body[data-modal-open="1"] .badge-glow,
+body[data-modal-open="1"] [class*="plaque-"] {
+  animation: none !important;
+}
