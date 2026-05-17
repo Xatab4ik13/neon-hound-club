@@ -4,7 +4,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { TIERS, type Perk, type Tier } from "@/data/hell-pass";
 
-export const Route = createFileRoute("/club/hell-pass")({
+export const Route = createFileRoute("/club/hell-pass/")({
   head: () => ({
     meta: [
       { title: "Hell Pass — подписка клуба HELLHOUND" },
