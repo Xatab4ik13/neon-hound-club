@@ -31,7 +31,7 @@ const NAV: { label: string; href: string; icon: LucideIcon; final?: boolean }[] 
   { label: "Мой Гараж", href: "/club/garage", icon: Wrench },
   { label: "Розыгрыши", href: "/club/raffles", icon: Ticket },
   { label: "Магазин", href: "/shop", icon: ShoppingBag },
-  { label: "Школа", href: "/school", icon: GraduationCap },
+  { label: "Школа", href: "/club/school", icon: GraduationCap },
   { label: "Hell Pass", href: "/hell-pass", icon: Gem, final: true },
 ];
 
