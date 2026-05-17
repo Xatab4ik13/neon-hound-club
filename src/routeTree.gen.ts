@@ -21,6 +21,7 @@ import { Route as ShopProductSlugRouteImport } from './routes/shop.$productSlug'
 import { Route as ClubSchoolRouteImport } from './routes/club.school'
 import { Route as ClubMeRouteImport } from './routes/club.me'
 import { Route as ClubHellPassRouteImport } from './routes/club.hell-pass'
+import { Route as ClubHellPassTierRouteImport } from './routes/club.hell-pass.$tier'
 
 const SchoolRoute = SchoolRouteImport.update({
   id: '/school',
@@ -82,6 +83,11 @@ const ClubHellPassRoute = ClubHellPassRouteImport.update({
   path: '/hell-pass',
   getParentRoute: () => ClubRoute,
 } as any)
+const ClubHellPassTierRoute = ClubHellPassTierRouteImport.update({
+  id: '/$tier',
+  path: '/$tier',
+  getParentRoute: () => ClubHellPassRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -90,12 +96,13 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/logos': typeof LogosRoute
   '/school': typeof SchoolRoute
-  '/club/hell-pass': typeof ClubHellPassRoute
+  '/club/hell-pass': typeof ClubHellPassRouteWithChildren
   '/club/me': typeof ClubMeRoute
   '/club/school': typeof ClubSchoolRoute
   '/shop/$productSlug': typeof ShopProductSlugRoute
   '/club/': typeof ClubIndexRoute
   '/shop/': typeof ShopIndexRoute
+  '/club/hell-pass/$tier': typeof ClubHellPassTierRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -103,12 +110,13 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/logos': typeof LogosRoute
   '/school': typeof SchoolRoute
-  '/club/hell-pass': typeof ClubHellPassRoute
+  '/club/hell-pass': typeof ClubHellPassRouteWithChildren
   '/club/me': typeof ClubMeRoute
   '/club/school': typeof ClubSchoolRoute
   '/shop/$productSlug': typeof ShopProductSlugRoute
   '/club': typeof ClubIndexRoute
   '/shop': typeof ShopIndexRoute
+  '/club/hell-pass/$tier': typeof ClubHellPassTierRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -118,12 +126,13 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/logos': typeof LogosRoute
   '/school': typeof SchoolRoute
-  '/club/hell-pass': typeof ClubHellPassRoute
+  '/club/hell-pass': typeof ClubHellPassRouteWithChildren
   '/club/me': typeof ClubMeRoute
   '/club/school': typeof ClubSchoolRoute
   '/shop/$productSlug': typeof ShopProductSlugRoute
   '/club/': typeof ClubIndexRoute
   '/shop/': typeof ShopIndexRoute
+  '/club/hell-pass/$tier': typeof ClubHellPassTierRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -140,6 +149,7 @@ export interface FileRouteTypes {
     | '/shop/$productSlug'
     | '/club/'
     | '/shop/'
+    | '/club/hell-pass/$tier'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -153,6 +163,7 @@ export interface FileRouteTypes {
     | '/shop/$productSlug'
     | '/club'
     | '/shop'
+    | '/club/hell-pass/$tier'
   id:
     | '__root__'
     | '/'
@@ -167,6 +178,7 @@ export interface FileRouteTypes {
     | '/shop/$productSlug'
     | '/club/'
     | '/shop/'
+    | '/club/hell-pass/$tier'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -266,18 +278,37 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ClubHellPassRouteImport
       parentRoute: typeof ClubRoute
     }
+    '/club/hell-pass/$tier': {
+      id: '/club/hell-pass/$tier'
+      path: '/$tier'
+      fullPath: '/club/hell-pass/$tier'
+      preLoaderRoute: typeof ClubHellPassTierRouteImport
+      parentRoute: typeof ClubHellPassRoute
+    }
   }
 }
 
+interface ClubHellPassRouteChildren {
+  ClubHellPassTierRoute: typeof ClubHellPassTierRoute
+}
+
+const ClubHellPassRouteChildren: ClubHellPassRouteChildren = {
+  ClubHellPassTierRoute: ClubHellPassTierRoute,
+}
+
+const ClubHellPassRouteWithChildren = ClubHellPassRoute._addFileChildren(
+  ClubHellPassRouteChildren,
+)
+
 interface ClubRouteChildren {
-  ClubHellPassRoute: typeof ClubHellPassRoute
+  ClubHellPassRoute: typeof ClubHellPassRouteWithChildren
   ClubMeRoute: typeof ClubMeRoute
   ClubSchoolRoute: typeof ClubSchoolRoute
   ClubIndexRoute: typeof ClubIndexRoute
 }
 
 const ClubRouteChildren: ClubRouteChildren = {
-  ClubHellPassRoute: ClubHellPassRoute,
+  ClubHellPassRoute: ClubHellPassRouteWithChildren,
   ClubMeRoute: ClubMeRoute,
   ClubSchoolRoute: ClubSchoolRoute,
   ClubIndexRoute: ClubIndexRoute,
