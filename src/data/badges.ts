@@ -4,6 +4,7 @@
 export type BadgeRarity = "common" | "rare" | "epic" | "legendary" | "mythic";
 
 export type BadgeCategory =
+  | "rank"        // выдаётся при достижении ранга
   | "club"        // базовая клубная активность
   | "pass"        // месячный дроп Hell Pass (сезонный)
   | "event"       // эвенты, стримы, тракдеи
