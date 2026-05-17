@@ -1,14 +1,21 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { SettingsModal } from "@/components/club/SettingsModal";
+import { BikeCard } from "@/components/club/BikeCard";
+import { BikeFormModal } from "@/components/club/BikeFormModal";
+import { EmptyGarageSlot } from "@/components/club/EmptyGarageSlot";
 import {
   ACTIVE_TICKETS,
-  GARAGE,
   ME,
   ORDERS,
   WIN_HISTORY,
   type Order,
 } from "@/data/profile";
+import {
+  loadBikes,
+  saveBikes,
+  type StoredBike,
+} from "@/data/bike-storage";
 import { PlaqueBackground, ProfilePlaque } from "./club";
 import { RANKS } from "@/data/ranks";
 import {
@@ -543,46 +550,69 @@ function OrderStatus({ status }: { status: Order["status"] }) {
 }
 
 function SectionGarage() {
+  const [bikes, setBikes] = useState<StoredBike[]>([]);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editing, setEditing] = useState<StoredBike | null>(null);
+
+  useEffect(() => {
+    setBikes(loadBikes());
+  }, []);
+
+  function persist(next: StoredBike[]) {
+    setBikes(next);
+    saveBikes(next);
+  }
+
+  function openAdd() {
+    setEditing(null);
+    setModalOpen(true);
+  }
+  function openEdit(b: StoredBike) {
+    setEditing(b);
+    setModalOpen(true);
+  }
+  function handleSave(b: StoredBike) {
+    const exists = bikes.some((x) => x.id === b.id);
+    persist(exists ? bikes.map((x) => (x.id === b.id ? b : x)) : [...bikes, b]);
+  }
+  function handleDelete(id: string) {
+    if (typeof window !== "undefined" && !window.confirm("Удалить байк?")) return;
+    persist(bikes.filter((x) => x.id !== id));
+  }
+
   return (
     <section aria-label="Мой гараж" className="mb-10">
-      <SectionHeader title="Мой гараж" href="/club/garage" hrefLabel="Открыть гараж" />
-      <div className="grid gap-3 md:grid-cols-2">
-        {GARAGE.map((b) => (
-          <article
-            key={b.id}
-            className="group relative overflow-hidden border border-white/[0.06] bg-card/40 transition-colors hover:border-primary/40"
+      <div className="mb-3 flex items-baseline justify-between">
+        <h2 className="font-display text-sm font-black uppercase italic tracking-widest text-foreground">
+          Мой гараж
+        </h2>
+        {bikes.length > 0 && (
+          <button
+            type="button"
+            onClick={openAdd}
+            className="group flex items-center gap-1 font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground transition-colors hover:text-primary"
           >
-            <div className="aspect-[16/9] overflow-hidden bg-black">
-              <img
-                src={b.image}
-                alt={`${b.brand} ${b.model}`}
-                loading="lazy"
-                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-              />
-            </div>
-            <div className="flex items-end justify-between p-4">
-              <div className="min-w-0">
-                <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                  {b.brand} · {b.year}
-                </div>
-                <h3 className="mt-0.5 truncate font-display text-xl font-black uppercase italic tracking-tight text-foreground">
-                  {b.model}
-                </h3>
-              </div>
-              <div className="text-right font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-                <span className="text-foreground">{b.mileage}</span>
-                <div className="opacity-60">пробег</div>
-              </div>
-            </div>
-          </article>
-        ))}
-        <button
-          type="button"
-          className="flex min-h-[200px] items-center justify-center border border-dashed border-white/[0.1] bg-card/20 p-4 font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary"
-        >
-          + Добавить байк
-        </button>
+            + Добавить байк
+          </button>
+        )}
       </div>
+      <div className="grid gap-4 md:grid-cols-2">
+        {bikes.map((b) => (
+          <BikeCard
+            key={b.id}
+            bike={b}
+            onEdit={() => openEdit(b)}
+            onDelete={() => handleDelete(b.id)}
+          />
+        ))}
+        <EmptyGarageSlot onAdd={openAdd} />
+      </div>
+      <BikeFormModal
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        bike={editing}
+        onSave={handleSave}
+      />
     </section>
   );
 }
