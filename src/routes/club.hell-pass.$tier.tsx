@@ -166,10 +166,9 @@ function TierDetailPage() {
                 </span>
               </div>
 
-              <Link
-                to="/checkout"
-                search={{ pass: tier.slug }}
-                className="mt-6 block w-full px-6 py-3.5 text-center font-display text-sm font-bold uppercase tracking-widest text-white transition-all hover:scale-[1.02]"
+              <button
+                type="button"
+                className="mt-6 block w-full px-6 py-3.5 text-center font-display text-sm font-bold uppercase tracking-widest transition-all hover:scale-[1.02]"
                 style={{
                   background: isGold
                     ? "linear-gradient(135deg, #ffb648 0%, #925f1b 100%)"
@@ -184,7 +183,7 @@ function TierDetailPage() {
                 }}
               >
                 Купить {tier.name}
-              </Link>
+              </button>
 
               <div className="mt-4 font-mono text-[10px] uppercase tracking-widest text-white/40">
                 Списание раз в месяц. Отмена в один клик из личного кабинета.
