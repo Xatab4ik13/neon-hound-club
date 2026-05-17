@@ -1,6 +1,6 @@
 // Витрина значков в профиле. Сверху — закреплённые 4 слота (как pinned
-// items в CS-инвентаре). Ниже — полная коллекция: owned яркие, locked
-// затемнены силуэтом.
+// items в CS-инвентаре). Ниже — полная коллекция: по умолчанию показываются
+// только полученные значки (owned). Админ / владелец может включить showLocked.
 
 import { useState } from "react";
 import {
@@ -31,9 +31,10 @@ const CATEGORY_ORDER: BadgeCategory[] = [
   "club",
 ];
 
-export function BadgeCase() {
+export function BadgeCase({ showLocked = false }: { showLocked?: boolean }) {
   const [selected, setSelected] = useState<Badge | null>(null);
-  const ownedCount = BADGES.filter((b) => b.owned).length;
+  const visibleBadges = showLocked ? BADGES : BADGES.filter((b) => b.owned);
+  const ownedCount = visibleBadges.length;
   const pinned = PINNED_BADGE_IDS.map((id) => BADGES.find((b) => b.id === id)).filter(
     (b): b is Badge => !!b && b.owned,
   );
@@ -57,8 +58,6 @@ export function BadgeCase() {
         </div>
         <div className="text-right font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
           <span className="font-bold tabular-nums text-foreground">{ownedCount}</span>
-          <span className="opacity-40"> / </span>
-          <span className="tabular-nums">{BADGES.length}</span>
           <div className="mt-0.5 text-[9px] opacity-60">собрано</div>
         </div>
       </div>
@@ -78,10 +77,10 @@ export function BadgeCase() {
         })}
       </div>
 
-      {/* Полная коллекция по категориям */}
+      {/* Полная коллекция по категориям — только owned по умолчанию */}
       <div className="mt-6 space-y-6">
         {CATEGORY_ORDER.map((cat) => {
-          const items = BADGES.filter((b) => b.category === cat);
+          const items = visibleBadges.filter((b) => b.category === cat);
           if (!items.length) return null;
           return (
             <div key={cat}>
@@ -90,9 +89,6 @@ export function BadgeCase() {
                   {CATEGORY_LABEL[cat]}
                 </span>
                 <div className="h-px flex-1 bg-white/[0.06]" />
-                <span className="font-mono text-[10px] tabular-nums text-muted-foreground/70">
-                  {items.filter((b) => b.owned).length}/{items.length}
-                </span>
               </div>
               <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8">
                 {items.map((b) => (
