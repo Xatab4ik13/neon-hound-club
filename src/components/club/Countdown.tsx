@@ -17,9 +17,11 @@ type Props = {
   deadlineAt: string;
   /** Прятать секунды (для компактных мест). */
   compact?: boolean;
+  /** Визуальный вариант. tactical = крупно, ведущий разряд розовый и пульсирует. */
+  variant?: "default" | "tactical";
 };
 
-export function Countdown({ deadlineAt, compact = false }: Props) {
+export function Countdown({ deadlineAt, compact = false, variant = "default" }: Props) {
   const target = new Date(deadlineAt).getTime();
   const [now, setNow] = useState(() => Date.now());
 
@@ -38,11 +40,38 @@ export function Countdown({ deadlineAt, compact = false }: Props) {
     );
   }
 
+  if (variant === "tactical") {
+    // Список значащих разрядов: дни (если есть) → ч → м → с (если нет дней)
+    const units: { value: string; label: string }[] = [];
+    if (days > 0) units.push({ value: pad(days), label: "д" });
+    units.push({ value: pad(hours), label: "ч" });
+    units.push({ value: pad(minutes), label: "м" });
+    if (days === 0) units.push({ value: pad(seconds), label: "с" });
+
+    return (
+      <div className="flex items-baseline gap-2 font-mono tabular-nums">
+        {units.map((u, i) => (
+          <span key={u.label} className="inline-flex items-baseline">
+            <span
+              className={
+                "text-2xl font-bold leading-none " +
+                (i === 0 ? "text-primary animate-pulse" : "text-foreground")
+              }
+            >
+              {u.value}
+            </span>
+            <span className="ml-1 text-[10px] font-bold uppercase text-muted-foreground">
+              {u.label}
+            </span>
+          </span>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div className="flex items-baseline gap-1.5 font-mono tabular-nums">
-      {days > 0 && (
-        <Unit value={String(days)} label="д" />
-      )}
+      {days > 0 && <Unit value={String(days)} label="д" />}
       <Unit value={pad(hours)} label="ч" />
       <Unit value={pad(minutes)} label="м" />
       {!compact && <Unit value={pad(seconds)} label="с" />}
