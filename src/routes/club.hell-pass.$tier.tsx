@@ -3,7 +3,7 @@
 
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { ArrowLeft, Check } from "lucide-react";
-import { getTier, type Perk } from "@/data/hell-pass";
+import { getTier, type Perk, type Tier } from "@/data/hell-pass";
 
 export const Route = createFileRoute("/club/hell-pass/$tier")({
   loader: ({ params }) => {
