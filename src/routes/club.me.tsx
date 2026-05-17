@@ -572,33 +572,53 @@ function SectionGarage() {
     persist(bikes.filter((x) => x.id !== id));
   }
 
+  const [primary, ...rest] = bikes;
+
   return (
     <section aria-label="Мой гараж" className="mb-10">
-      <div className="mb-3 flex items-baseline justify-between">
+      <div className="mb-3 flex items-baseline justify-between border-b border-white/[0.06] pb-2">
         <h2 className="font-display text-sm font-black uppercase italic tracking-widest text-foreground">
           Мой гараж
         </h2>
-        {bikes.length > 0 && (
-          <button
-            type="button"
-            onClick={openAdd}
-            className="group flex items-center gap-1 font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground transition-colors hover:text-primary"
-          >
-            + Добавить байк
-          </button>
+        <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+          слотов: {bikes.length}/2
+        </span>
+      </div>
+
+      {/* Hero: главный байк + пустой слот */}
+      <div className="grid gap-4 md:grid-cols-4">
+        {primary ? (
+          <div className="md:col-span-3">
+            <HeroBikeCard
+              bike={primary}
+              onEdit={() => openEdit(primary)}
+              onDelete={() => handleDelete(primary.id)}
+            />
+          </div>
+        ) : (
+          <div className="md:col-span-3">
+            <EmptyGarageSlot onAdd={openAdd} />
+          </div>
         )}
+        <div className="md:col-span-1">
+          <EmptyGarageSlot onAdd={openAdd} />
+        </div>
       </div>
-      <div className="grid gap-4 md:grid-cols-2">
-        {bikes.map((b) => (
-          <BikeCard
-            key={b.id}
-            bike={b}
-            onEdit={() => openEdit(b)}
-            onDelete={() => handleDelete(b.id)}
-          />
-        ))}
-        <EmptyGarageSlot onAdd={openAdd} />
-      </div>
+
+      {/* Дополнительные байки — обычные карточки в 2 колонки */}
+      {rest.length > 0 && (
+        <div className="mt-4 grid gap-4 md:grid-cols-2">
+          {rest.map((b) => (
+            <BikeCard
+              key={b.id}
+              bike={b}
+              onEdit={() => openEdit(b)}
+              onDelete={() => handleDelete(b.id)}
+            />
+          ))}
+        </div>
+      )}
+
       <BikeFormModal
         open={modalOpen}
         onOpenChange={setModalOpen}
