@@ -122,6 +122,7 @@ function EmptyPinned() {
 
 function PinnedSlot({ badge, onClick }: { badge: Badge; onClick: () => void }) {
   const r = RARITY[badge.rarity];
+  const premium = badge.rarity === "legendary" || badge.rarity === "mythic";
   return (
     <button
       type="button"
@@ -134,9 +135,9 @@ function PinnedSlot({ badge, onClick }: { badge: Badge; onClick: () => void }) {
     >
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-30"
+        className="pointer-events-none absolute inset-0 opacity-40"
         style={{
-          background: `radial-gradient(120% 80% at 50% 110%, ${r.color}33 0%, transparent 60%)`,
+          background: `radial-gradient(120% 80% at 50% 110%, ${r.color}40 0%, transparent 60%)`,
         }}
       />
       <div
@@ -147,8 +148,17 @@ function PinnedSlot({ badge, onClick }: { badge: Badge; onClick: () => void }) {
             "repeating-linear-gradient(45deg, transparent, transparent 6px, #fff 6px, #fff 7px)",
         }}
       />
+      {/* Sweep блик на hover */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 overflow-hidden"
+      >
+        <div
+          className="absolute top-0 h-full w-1/3 -translate-x-[120%] skew-x-[-20deg] bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-[260%]"
+        />
+      </div>
       <div className="relative">
-        <BadgeIcon id={badge.id} color={r.color} size={44} />
+        <BadgeIcon id={badge.id} color={r.color} soft={r.soft} size={56} animated premium={premium} />
       </div>
       <div className="relative mt-2 font-display text-[10px] font-black uppercase italic tracking-wider text-foreground md:text-[11px]">
         {badge.name}
@@ -166,11 +176,12 @@ function PinnedSlot({ badge, onClick }: { badge: Badge; onClick: () => void }) {
 function BadgeTile({ badge, onClick }: { badge: Badge; onClick: () => void }) {
   const r = RARITY[badge.rarity];
   const locked = !badge.owned;
+  const premium = badge.rarity === "legendary" || badge.rarity === "mythic";
   return (
     <button
       type="button"
       onClick={onClick}
-      className="group relative flex aspect-square flex-col items-center justify-center overflow-hidden border bg-[#0b0b0b] p-2 text-center transition-all hover:scale-[1.04]"
+      className="group relative flex aspect-square flex-col items-center justify-center overflow-hidden border bg-[#0b0b0b] p-2 text-center transition-all hover:-translate-y-0.5 hover:scale-[1.04]"
       style={{
         borderColor: locked ? "rgba(255,255,255,0.05)" : r.soft,
       }}
@@ -180,27 +191,39 @@ function BadgeTile({ badge, onClick }: { badge: Badge; onClick: () => void }) {
       {!locked && (
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 opacity-25 transition-opacity group-hover:opacity-50"
+          className="pointer-events-none absolute inset-0 opacity-30 transition-opacity group-hover:opacity-60"
           style={{
             background: `radial-gradient(120% 80% at 50% 110%, ${r.color}55 0%, transparent 65%)`,
           }}
         />
       )}
+      {/* Sweep на hover */}
+      {!locked && (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 overflow-hidden"
+        >
+          <div className="absolute top-0 h-full w-1/3 -translate-x-[120%] skew-x-[-20deg] bg-gradient-to-r from-transparent via-white/15 to-transparent transition-transform duration-700 group-hover:translate-x-[260%]" />
+        </div>
+      )}
       <div
-        className="relative transition-transform group-hover:scale-110"
+        className="relative transition-transform"
         style={{
-          filter: locked ? "grayscale(1) brightness(0.35)" : "none",
+          filter: locked ? "grayscale(1) brightness(0.32) opacity(0.85)" : "none",
         }}
       >
         <BadgeIcon
           id={badge.id}
           color={locked ? "#3a3a3a" : r.color}
-          size={32}
+          soft={r.soft}
+          size={40}
+          animated={!locked}
+          premium={!locked && premium}
         />
       </div>
       <div
         className="relative mt-1.5 line-clamp-1 font-mono text-[9px] uppercase tracking-wider"
-        style={{ color: locked ? "rgba(167,167,167,0.4)" : "rgba(255,255,255,0.75)" }}
+        style={{ color: locked ? "rgba(167,167,167,0.4)" : "rgba(255,255,255,0.78)" }}
       >
         {badge.name}
       </div>
@@ -246,12 +269,19 @@ function BadgeDetail({ badge, onClose }: { badge: Badge; onClose: () => void }) 
         />
         <div className="relative flex flex-col items-center text-center">
           <div
-            className="flex h-24 w-24 items-center justify-center"
+            className="flex h-28 w-28 items-center justify-center"
             style={{
               filter: locked ? "grayscale(1) brightness(0.4)" : "none",
             }}
           >
-            <BadgeIcon id={badge.id} color={locked ? "#444" : r.color} size={80} />
+            <BadgeIcon
+              id={badge.id}
+              color={locked ? "#444" : r.color}
+              soft={r.soft}
+              size={104}
+              animated={!locked}
+              premium={!locked && (badge.rarity === "legendary" || badge.rarity === "mythic")}
+            />
           </div>
           <div
             className="mt-3 font-mono text-[10px] font-bold uppercase tracking-[0.3em]"
