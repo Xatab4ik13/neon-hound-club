@@ -10,6 +10,7 @@ import {
 
 import appCss from "../styles.css?url";
 import { ViewerProvider } from "@/hooks/use-viewer";
+import { CartProvider } from "@/hooks/use-cart";
 
 function NotFoundComponent() {
   return (
@@ -132,7 +133,9 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <ViewerProvider>
-        <Outlet />
+        <CartProvider>
+          <Outlet />
+        </CartProvider>
       </ViewerProvider>
     </QueryClientProvider>
   );
