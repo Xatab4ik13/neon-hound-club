@@ -14,6 +14,7 @@ import {
   Field,
   Modal,
   ConfirmModal,
+  ImageUploader,
 } from "@/components/admin/ui";
 
 export const Route = createFileRoute("/admin/raffles")({
