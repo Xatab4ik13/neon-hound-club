@@ -131,7 +131,9 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Outlet />
+      <ViewerProvider>
+        <Outlet />
+      </ViewerProvider>
     </QueryClientProvider>
   );
 }
