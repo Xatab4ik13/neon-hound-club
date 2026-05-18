@@ -1,13 +1,12 @@
-// Hell AI — AI-механик. Узкая полезная фича клуба:
-// чат с привязкой к байку пользователя из профиля. Без генерации картинок,
-// без «AI-чата с Hell» — только техническая помощь по мото.
-//
-// На этом этапе — рабочий UI с мок-ответами. Подключение к Lovable AI Gateway
-// (модель `google/gemini-3-flash-preview`) — отдельной задачей.
+// Hell AI — AI-механик. Узкая полезная фича клуба.
+// Редизайн: диагностический «телеметрический» UI вместо обычного чат-окна.
+// Слева — приборка по байку и квоте Pass, справа — терминал диалога с
+// потоковой печатью ответа, статусом «ONLINE» и сканлайнами.
 
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import {
+  Activity,
   Bike,
   Bot,
   Gauge,
@@ -35,8 +34,7 @@ export const Route = createFileRoute("/club/hell-ai")({
   component: HellAiPage,
 });
 
-// ── Тариф юзера (заглушка). Берётся из Pass-стейта, пока — статика. ──────
-// silver → 20, gold → 100, platinum → ∞. Гость без Pass — 0.
+// ── Тариф юзера (заглушка) ────────────────────────────────────────────────
 type PassTier = "guest" | "silver" | "gold" | "platinum";
 const CURRENT_TIER: PassTier = "gold";
 const QUOTA_BY_TIER: Record<PassTier, number | "∞"> = {
@@ -52,44 +50,24 @@ const TIER_LABEL: Record<PassTier, string> = {
   platinum: "Platinum",
 };
 
-// ── Сообщения ──────────────────────────────────────────────────────────────
+// ── Сообщения ────────────────────────────────────────────────────────────
 type Msg = {
   id: string;
   role: "user" | "ai";
   text: string;
-  /** Для AI-ответа — короткий «источник», чтобы было видно что это не угадайка. */
   source?: string;
+  /** Анимация печати — сколько символов уже показано. */
+  typed?: number;
 };
 
 const SUGGESTIONS: { icon: typeof Wrench; label: string; prompt: string }[] = [
-  {
-    icon: Wrench,
-    label: "Момент затяжки оси",
-    prompt: "Какой момент затяжки передней оси на моём мото?",
-  },
-  {
-    icon: Gauge,
-    label: "Давление в шинах",
-    prompt: "Какое давление в шинах для города и для трека?",
-  },
-  {
-    icon: Sparkles,
-    label: "Какое масло лить",
-    prompt: "Какое моторное масло рекомендовано и какой интервал замены?",
-  },
-  {
-    icon: Lightbulb,
-    label: "Типичные болячки",
-    prompt: "Расскажи про типичные болячки этой модели после 20 000 км.",
-  },
-  {
-    icon: Zap,
-    label: "Что за стук",
-    prompt: "Лёгкий металлический стук в районе цепи на холодную — что проверить?",
-  },
+  { icon: Wrench, label: "Момент затяжки оси", prompt: "Какой момент затяжки передней оси на моём мото?" },
+  { icon: Gauge, label: "Давление в шинах", prompt: "Какое давление в шинах для города и для трека?" },
+  { icon: Sparkles, label: "Какое масло лить", prompt: "Какое моторное масло рекомендовано и какой интервал замены?" },
+  { icon: Lightbulb, label: "Типичные болячки", prompt: "Расскажи про типичные болячки этой модели после 20 000 км." },
+  { icon: Zap, label: "Что за стук", prompt: "Лёгкий металлический стук в районе цепи на холодную — что проверить?" },
 ];
 
-// Простой мок: отвечаем шаблонами с привязкой к байку из профиля.
 function mockAnswer(prompt: string, bike: string): { text: string; source: string } {
   const lower = prompt.toLowerCase();
   if (lower.includes("ось") || lower.includes("затяж")) {
@@ -118,7 +96,7 @@ function mockAnswer(prompt: string, bike: string): { text: string; source: strin
   }
   if (lower.includes("стук") || lower.includes("шум")) {
     return {
-      text: `Лёгкий стук на холодную в районе цепи — это чаще всего: 1) провис цепи вне допуска (проверь по метке — норма 25–35 мм), 2) направляющая цепи (резиновая), 3) звезда. Если уходит после прогрева — почти всегда цепь. Смажь, отрегулируй натяг.`,
+      text: `Лёгкий стук на холодную в районе цепи — это чаще всего: 1) провис цепи вне допуска (норма 25–35 мм), 2) направляющая цепи (резиновая), 3) звезда. Если уходит после прогрева — почти всегда цепь. Смажь, отрегулируй натяг.`,
       source: "Диагностика по симптому",
     };
   }
@@ -132,6 +110,7 @@ function HellAiPage() {
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [used, setUsed] = useState(0);
+  const [thinking, setThinking] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const quota = QUOTA_BY_TIER[CURRENT_TIER];
@@ -140,124 +119,152 @@ function HellAiPage() {
   const left = isUnlimited ? Infinity : (quota as number) - used;
   const canAsk = !isGuest && (isUnlimited || left > 0);
 
+  // Автоскролл
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-  }, [messages.length]);
+  }, [messages, thinking]);
+
+  // Стриминг печати последнего AI-ответа.
+  useEffect(() => {
+    const last = messages[messages.length - 1];
+    if (!last || last.role !== "ai") return;
+    if (last.typed !== undefined && last.typed >= last.text.length) return;
+    const t = setInterval(() => {
+      setMessages((m) => {
+        const arr = [...m];
+        const i = arr.length - 1;
+        const cur = arr[i];
+        if (!cur || cur.role !== "ai") return m;
+        const next = Math.min(cur.text.length, (cur.typed ?? 0) + 3);
+        arr[i] = { ...cur, typed: next };
+        return arr;
+      });
+    }, 16);
+    return () => clearInterval(t);
+  }, [messages]);
 
   function send(text: string) {
     const clean = text.trim();
-    if (!clean || !canAsk) return;
+    if (!clean || !canAsk || thinking) return;
     const u: Msg = { id: `u${Date.now()}`, role: "user", text: clean };
     setMessages((m) => [...m, u]);
     setInput("");
     setUsed((n) => n + 1);
-    // Лёгкая задержка, чтобы было ощущение «думает».
+    setThinking(true);
     setTimeout(() => {
       const ans = mockAnswer(clean, ME.bike);
+      setThinking(false);
       setMessages((m) => [
         ...m,
-        { id: `a${Date.now()}`, role: "ai", text: ans.text, source: ans.source },
+        { id: `a${Date.now()}`, role: "ai", text: ans.text, source: ans.source, typed: 0 },
       ]);
-    }, 350);
+    }, 700);
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-col px-4 py-6 md:px-8 md:py-10">
-      {/* Шапка */}
-      <header className="mb-6">
-        <div className="mb-2 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
-          <Bot className="h-3 w-3 text-primary" />
-          AI-механик клуба
+    <main className="mx-auto w-full max-w-6xl px-4 py-6 md:px-8 md:py-10">
+      {/* Шапка с пульсом */}
+      <header className="mb-8">
+        <div className="mb-3 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
+          <span className="relative flex h-2 w-2">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-60" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
+          </span>
+          AI-механик · online
         </div>
-        <h1 className="font-display text-3xl font-black uppercase italic leading-[0.95] tracking-tighter text-foreground md:text-5xl">
+        <h1 className="font-display text-4xl font-black uppercase italic leading-[0.95] tracking-tighter text-foreground md:text-6xl">
           HELL <span className="text-primary">AI</span>
         </h1>
-        <p className="mt-2 max-w-xl text-sm text-muted-foreground md:text-base">
+        <p className="mt-3 max-w-xl text-sm text-muted-foreground md:text-base">
           Узкий полезный AI: вопросы по твоему мото. Моменты затяжки, давление, масла,
           болячки модели, диагностика по симптому. Без болтовни — по делу.
         </p>
       </header>
 
-      {/* Байк + квота */}
-      <section className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <BikePanel />
-        <QuotaPanel
-          tier={CURRENT_TIER}
-          used={used}
-          quota={quota}
-          isUnlimited={isUnlimited}
-        />
-      </section>
+      {/* Грид: телеметрия + терминал */}
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-[280px_minmax(0,1fr)]">
+        {/* Левая колонка — телеметрия */}
+        <aside className="flex flex-col gap-3">
+          <BikeCard />
+          <QuotaCard tier={CURRENT_TIER} used={used} quota={quota} isUnlimited={isUnlimited} />
+          <QuickActions onPick={send} disabled={!canAsk || thinking} />
+        </aside>
 
-      {/* Чат */}
-      <section className="flex min-h-[420px] flex-col border border-white/[0.06] bg-card/40">
-        <div
-          ref={scrollRef}
-          className="flex-1 overflow-y-auto p-4 md:p-5"
-          style={{ maxHeight: "55vh" }}
-        >
-          {messages.length === 0 ? (
-            <EmptyState onPick={send} disabled={!canAsk} />
-          ) : (
-            <ul className="space-y-4">
-              {messages.map((m) => (
-                <li key={m.id}>
-                  {m.role === "user" ? <UserBubble text={m.text} /> : <AiBubble msg={m} />}
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+        {/* Правая колонка — терминал */}
+        <section className="relative flex min-h-[560px] flex-col overflow-hidden border border-white/[0.08] bg-card/40">
+          {/* верхняя плашка терминала */}
+          <div className="flex items-center justify-between border-b border-white/[0.08] bg-black/40 px-4 py-2">
+            <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+              <Activity className="h-3 w-3 text-primary" />
+              hell-ai · session
+            </div>
+            <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+              {thinking ? <span className="text-primary">analyzing…</span> : "ready"}
+            </div>
+          </div>
 
-        {/* Композер */}
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            send(input);
-          }}
-          className="flex items-center gap-2 border-t border-white/[0.06] bg-black/40 p-3"
-        >
-          <input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder={
-              isGuest
-                ? "Hell AI доступен с Hell Pass"
-                : canAsk
-                  ? `Спроси про ${ME.bike}…`
-                  : "Лимит на месяц исчерпан"
-            }
-            disabled={!canAsk}
-            className="flex-1 bg-transparent px-2 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none disabled:cursor-not-allowed"
-          />
-          <button
-            type="submit"
-            disabled={!canAsk || !input.trim()}
-            className="flex h-9 items-center gap-1.5 bg-primary px-3 font-mono text-[11px] font-bold uppercase tracking-widest text-primary-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-30"
+          {/* лента сообщений */}
+          <div
+            ref={scrollRef}
+            className="relative flex-1 overflow-y-auto p-4 md:p-6"
+            style={{
+              maxHeight: "62vh",
+              backgroundImage:
+                "repeating-linear-gradient(0deg, transparent 0, transparent 31px, color-mix(in oklab, var(--primary) 6%, transparent) 31px, color-mix(in oklab, var(--primary) 6%, transparent) 32px)",
+            }}
           >
-            <Send className="h-3.5 w-3.5" />
-            Спросить
-          </button>
-        </form>
-      </section>
+            {messages.length === 0 ? (
+              <EmptyTerminal onPick={send} disabled={!canAsk} />
+            ) : (
+              <ul className="space-y-5">
+                {messages.map((m) => (
+                  <li key={m.id}>
+                    {m.role === "user" ? <UserLine text={m.text} /> : <AiLine msg={m} />}
+                  </li>
+                ))}
+                {thinking && (
+                  <li>
+                    <ThinkingLine />
+                  </li>
+                )}
+              </ul>
+            )}
+          </div>
 
-      {/* Подсказки под чатом */}
-      {messages.length > 0 && canAsk && (
-        <div className="mt-3 flex flex-wrap gap-2">
-          {SUGGESTIONS.slice(0, 3).map((s) => (
+          {/* Композер */}
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              send(input);
+            }}
+            className="flex items-center gap-2 border-t border-white/[0.08] bg-black/60 p-3"
+          >
+            <span className="pl-1 font-mono text-[12px] text-primary">{">"}</span>
+            <input
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder={
+                isGuest
+                  ? "Hell AI доступен с Hell Pass"
+                  : canAsk
+                    ? `спроси про ${ME.bike}…`
+                    : "лимит на месяц исчерпан"
+              }
+              disabled={!canAsk || thinking}
+              className="flex-1 bg-transparent px-1 font-mono text-[13px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none disabled:cursor-not-allowed"
+            />
             <button
-              key={s.label}
-              onClick={() => send(s.prompt)}
-              className="flex items-center gap-1.5 border border-white/[0.08] bg-card/40 px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
+              type="submit"
+              disabled={!canAsk || !input.trim() || thinking}
+              className="flex h-9 items-center gap-1.5 bg-primary px-3.5 font-mono text-[11px] font-bold uppercase tracking-widest text-primary-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-30"
             >
-              <s.icon className="h-3 w-3" />
-              {s.label}
+              <Send className="h-3.5 w-3.5" />
+              send
             </button>
-          ))}
-        </div>
-      )}
+          </form>
+        </section>
+      </div>
 
-      {/* Мелкий disclaimer */}
       <p className="mt-6 max-w-2xl text-[11px] leading-relaxed text-muted-foreground/70">
         Ответы AI — справочные. Для критичных работ (тормоза, подвеска, мотор) сверяйся с
         мануалом и сервисом. Hell AI не ставит диагнозы за тебя — он экономит время на поиск.
@@ -266,31 +273,35 @@ function HellAiPage() {
   );
 }
 
-// ── Subcomponents ─────────────────────────────────────────────────────────
+// ── Левая колонка ─────────────────────────────────────────────────────────
 
-function BikePanel() {
+function BikeCard() {
   return (
-    <div className="flex items-center gap-3 border border-white/[0.06] bg-card/40 p-4">
-      <div className="flex h-11 w-11 shrink-0 items-center justify-center border border-primary/40 bg-primary/10 text-primary">
-        <Bike className="h-5 w-5" />
+    <div className="border border-white/[0.08] bg-card/40 p-4">
+      <div className="mb-3 flex items-center justify-between font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+        <span>твой мото</span>
+        <Link to="/club/me" className="text-muted-foreground transition-colors hover:text-primary">
+          сменить
+        </Link>
       </div>
-      <div className="min-w-0 flex-1">
-        <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-          Твой мото
+      <div className="flex items-center gap-3">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center border border-primary/40 bg-primary/10 text-primary">
+          <Bike className="h-5 w-5" />
         </div>
-        <div className="truncate text-[15px] font-semibold text-foreground">{ME.bike}</div>
+        <div className="min-w-0">
+          <div className="truncate text-[15px] font-semibold leading-tight text-foreground">
+            {ME.bike}
+          </div>
+          <div className="mt-0.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+            контекст активен
+          </div>
+        </div>
       </div>
-      <Link
-        to="/club/me"
-        className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground transition-colors hover:text-primary"
-      >
-        сменить
-      </Link>
     </div>
   );
 }
 
-function QuotaPanel({
+function QuotaCard({
   tier,
   used,
   quota,
@@ -302,7 +313,6 @@ function QuotaPanel({
   isUnlimited: boolean;
 }) {
   const isGuest = tier === "guest";
-  const pct = isUnlimited || isGuest ? 0 : Math.min(100, (used / (quota as number)) * 100);
 
   if (isGuest) {
     return (
@@ -315,84 +325,63 @@ function QuotaPanel({
         </div>
         <div className="min-w-0 flex-1">
           <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-primary">
-            Нужен Hell Pass
+            нужен Hell Pass
           </div>
           <div className="truncate text-[13px] text-foreground">
-            Открой 20 / 100 / ∞ вопросов в месяц →
+            20 / 100 / ∞ вопросов в месяц →
           </div>
         </div>
       </Link>
     );
   }
 
+  const pct = isUnlimited ? 100 : Math.min(100, (used / (quota as number)) * 100);
+
   return (
-    <div className="flex items-center gap-3 border border-white/[0.06] bg-card/40 p-4">
-      <div className="flex h-11 w-11 shrink-0 items-center justify-center border border-primary/40 bg-primary/10 text-primary">
-        <Sparkles className="h-5 w-5" />
+    <div className="border border-white/[0.08] bg-card/40 p-4">
+      <div className="mb-3 flex items-center justify-between font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+        <span>Hell Pass · {TIER_LABEL[tier]}</span>
+        <span className="tabular-nums text-foreground">
+          {isUnlimited ? "∞" : `${used} / ${quota}`}
+        </span>
       </div>
-      <div className="min-w-0 flex-1">
-        <div className="flex items-baseline justify-between gap-2">
-          <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-            Hell Pass · {TIER_LABEL[tier]}
-          </span>
-          <span className="font-mono text-[11px] tabular-nums text-foreground">
-            {isUnlimited ? "∞" : `${used} / ${quota}`}
-          </span>
-        </div>
-        <div className="mt-1.5 h-1.5 overflow-hidden bg-black/55">
-          <div
-            className="h-full bg-primary transition-all"
-            style={{ width: isUnlimited ? "100%" : `${pct}%` }}
-          />
-        </div>
+      {/* gauge */}
+      <div className="relative h-2 overflow-hidden bg-black/55">
+        <div
+          className="h-full bg-gradient-to-r from-primary to-primary/60 transition-all duration-500"
+          style={{ width: `${pct}%` }}
+        />
+        <div className="pointer-events-none absolute inset-0 bg-[repeating-linear-gradient(90deg,transparent_0,transparent_9px,rgba(0,0,0,0.5)_9px,rgba(0,0,0,0.5)_10px)]" />
+      </div>
+      <div className="mt-2 font-mono text-[10px] uppercase tracking-wider text-muted-foreground/70">
+        {isUnlimited ? "безлимит" : `осталось ${(quota as number) - used} в этом месяце`}
       </div>
     </div>
   );
 }
 
-function EmptyState({
+function QuickActions({
   onPick,
   disabled,
 }: {
-  onPick: (prompt: string) => void;
+  onPick: (p: string) => void;
   disabled: boolean;
 }) {
   return (
-    <div>
-      <div className="mb-4 flex items-center gap-2">
-        <div className="flex h-8 w-8 items-center justify-center border border-primary/40 bg-primary/10 text-primary">
-          <Bot className="h-4 w-4" />
-        </div>
-        <div>
-          <div className="text-[14px] font-semibold text-foreground">
-            Привет. Я AI-механик.
-          </div>
-          <div className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-            знаю твой {ME.bike}
-          </div>
-        </div>
+    <div className="border border-white/[0.08] bg-card/40 p-4">
+      <div className="mb-3 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+        быстрые вопросы
       </div>
-
-      <div className="mb-2 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-        с чего начать
-      </div>
-      <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+      <ul className="space-y-1.5">
         {SUGGESTIONS.map((s) => (
           <li key={s.label}>
             <button
               onClick={() => onPick(s.prompt)}
               disabled={disabled}
-              className="group flex w-full items-center gap-3 border border-white/[0.06] bg-black/30 p-3 text-left transition-colors hover:border-primary/40 hover:bg-primary/5 disabled:cursor-not-allowed disabled:opacity-40"
+              className="group flex w-full items-center gap-2.5 border border-transparent bg-black/20 px-2.5 py-2 text-left transition-all hover:border-primary/40 hover:bg-primary/5 disabled:cursor-not-allowed disabled:opacity-40"
             >
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center border border-white/[0.08] text-muted-foreground transition-colors group-hover:border-primary/40 group-hover:text-primary">
-                <s.icon className="h-3.5 w-3.5" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="truncate text-[13px] text-foreground">{s.label}</div>
-                <div className="truncate font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-                  {s.prompt}
-                </div>
-              </div>
+              <s.icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground transition-colors group-hover:text-primary" />
+              <span className="truncate text-[12px] text-foreground">{s.label}</span>
             </button>
           </li>
         ))}
@@ -401,31 +390,106 @@ function EmptyState({
   );
 }
 
-function UserBubble({ text }: { text: string }) {
+// ── Терминал ──────────────────────────────────────────────────────────────
+
+function EmptyTerminal({
+  onPick,
+  disabled,
+}: {
+  onPick: (p: string) => void;
+  disabled: boolean;
+}) {
   return (
-    <div className="flex justify-end">
-      <div className="max-w-[85%] border border-primary/40 bg-primary/10 px-3.5 py-2.5 text-[14px] text-foreground">
+    <div className="space-y-4 font-mono text-[12px] leading-relaxed">
+      <div className="text-muted-foreground">
+        <span className="text-primary">$</span> hell-ai --init --bike="{ME.bike}"
+      </div>
+      <div className="text-muted-foreground/80">
+        <span className="text-primary">→</span> контекст загружен. сервисные данные модели подключены.
+      </div>
+      <div className="text-muted-foreground/80">
+        <span className="text-primary">→</span> готов к диагностике. задай вопрос или выбери шаблон ниже.
+      </div>
+      <div className="pt-3">
+        <div className="mb-3 text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+          // примеры
+        </div>
+        <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          {SUGGESTIONS.slice(0, 4).map((s) => (
+            <li key={s.label}>
+              <button
+                onClick={() => onPick(s.prompt)}
+                disabled={disabled}
+                className="group flex w-full items-start gap-2.5 border border-white/[0.08] bg-black/40 p-3 text-left transition-all hover:-translate-y-px hover:border-primary/40 hover:bg-primary/5 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <s.icon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+                <div className="min-w-0">
+                  <div className="truncate text-[12px] text-foreground">{s.label}</div>
+                  <div className="mt-0.5 truncate text-[10px] uppercase tracking-wider text-muted-foreground">
+                    {s.prompt}
+                  </div>
+                </div>
+              </button>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+function UserLine({ text }: { text: string }) {
+  return (
+    <div className="font-mono text-[13px] leading-relaxed">
+      <div className="mb-1 flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+        <span className="h-px w-4 bg-primary" />
+        you
+      </div>
+      <div className="border-l-2 border-primary/60 bg-primary/[0.06] px-3 py-2 text-foreground">
         {text}
       </div>
     </div>
   );
 }
 
-function AiBubble({ msg }: { msg: Msg }) {
+function AiLine({ msg }: { msg: Msg }) {
+  const shown = msg.text.slice(0, msg.typed ?? msg.text.length);
+  const isTyping = (msg.typed ?? msg.text.length) < msg.text.length;
   return (
-    <div className="flex max-w-[92%] gap-2.5">
-      <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center border border-primary/40 bg-primary/10 text-primary">
-        <Bot className="h-3.5 w-3.5" />
+    <div className="font-mono text-[13px] leading-relaxed">
+      <div className="mb-1 flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-primary">
+        <Bot className="h-3 w-3" />
+        hell-ai
       </div>
-      <div className="min-w-0 flex-1">
-        <div className="border border-white/[0.06] bg-black/30 px-3.5 py-2.5 text-[14px] leading-relaxed text-foreground">
-          {msg.text}
-        </div>
-        {msg.source && (
-          <div className="mt-1 font-mono text-[10px] uppercase tracking-wider text-muted-foreground/70">
-            ↳ {msg.source}
-          </div>
+      <div className="border-l-2 border-white/20 bg-black/30 px-3 py-2.5 text-foreground">
+        {shown}
+        {isTyping && (
+          <span className="ml-0.5 inline-block h-3 w-1.5 -translate-y-px animate-pulse bg-primary align-middle" />
         )}
+      </div>
+      {msg.source && !isTyping && (
+        <div className="mt-1.5 pl-3 text-[10px] uppercase tracking-wider text-muted-foreground/70">
+          ↳ {msg.source}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ThinkingLine() {
+  return (
+    <div className="font-mono text-[13px]">
+      <div className="mb-1 flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-primary">
+        <Bot className="h-3 w-3" />
+        hell-ai
+      </div>
+      <div className="flex items-center gap-1.5 border-l-2 border-primary/40 bg-black/30 px-3 py-3">
+        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary [animation-delay:-0.3s]" />
+        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary [animation-delay:-0.15s]" />
+        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary" />
+        <span className="ml-2 text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+          анализирую…
+        </span>
       </div>
     </div>
   );
