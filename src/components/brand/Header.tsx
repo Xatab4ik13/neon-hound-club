@@ -20,9 +20,9 @@ const NAV = [
 ];
 
 export function Header() {
-  // TODO: replace with real auth state
-  const isAuthed = false;
+  const { isAuthed, nick, tier, tickets, toggleAuth, signOut } = useViewer();
   const cartCount = 0;
+
   const { pathname } = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
 
