@@ -300,7 +300,7 @@ function FeaturedRaffle({
       className="group relative overflow-hidden border border-white/[0.08] bg-card/40"
     >
       {/* image */}
-      <div className="relative h-[280px] overflow-hidden md:h-[420px]">
+      <div className="relative h-[200px] overflow-hidden sm:h-[280px] md:h-[420px]">
         <motion.img
           key={raffle.id}
           src={raffle.image}
