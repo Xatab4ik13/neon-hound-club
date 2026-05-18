@@ -120,9 +120,11 @@ function UsersPage() {
 function UserCard({
   user,
   onGift,
+  onGivePass,
 }: {
   user: PublicUser;
   onGift: () => void;
+  onGivePass: () => void;
 }) {
   const [rank, setRank] = useState(user.rank);
   const [tier, setTier] = useState<PassTier>("Silver");
@@ -174,7 +176,7 @@ function UserCard({
           <Btn onClick={onGift}>
             <Gift className="h-4 w-4" /> Подарить билеты
           </Btn>
-          <Btn>
+          <Btn onClick={onGivePass}>
             <Crown className="h-4 w-4" /> Дать Pass
           </Btn>
         </div>
