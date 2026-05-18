@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -11,12 +11,13 @@ import {
   Check,
   ChevronRight,
   Zap,
+  ExternalLink,
 } from "lucide-react";
 import { Countdown } from "@/components/club/Countdown";
 import { ACTIVE_TICKETS, ME } from "@/data/profile";
 import { PUBLIC_USERS } from "@/data/users";
 
-export const Route = createFileRoute("/club/raffles")({
+export const Route = createFileRoute("/club/raffles/")({
   head: () => ({
     meta: [
       { title: "Розыгрыши · HELLHOUND" },
@@ -194,31 +195,8 @@ function RafflesPage() {
               <SectionTitle>Активные розыгрыши</SectionTitle>
               <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
                 {others.map((r) => (
-                  <MiniRaffle
-                    key={r.id}
-                    raffle={r}
-                    active={r.id === selectedId}
-                    onSelect={() => {
-                      setSelectedId(r.id);
-                      setStake(0);
-                      window.scrollTo({ top: 0, behavior: "smooth" });
-                    }}
-                  />
+                  <MiniRaffle key={r.id} raffle={r} />
                 ))}
-                {[featured]
-                  .filter((r) => r.id !== selectedId)
-                  .map((r) => (
-                    <MiniRaffle
-                      key={r.id}
-                      raffle={r}
-                      active={false}
-                      onSelect={() => {
-                        setSelectedId(r.id);
-                        setStake(0);
-                        window.scrollTo({ top: 0, behavior: "smooth" });
-                      }}
-                    />
-                  ))}
               </div>
             </section>
           )}
@@ -370,9 +348,19 @@ function FeaturedRaffle({
           <div className="mt-1">
             <Countdown deadlineAt={raffle.deadlineAt} variant="tactical" />
           </div>
-          <h2 className="mt-3 font-display text-3xl font-black uppercase italic leading-none tracking-tight text-foreground md:text-5xl">
-            {raffle.title}
-          </h2>
+          <div className="mt-3 flex flex-wrap items-end justify-between gap-3">
+            <h2 className="font-display text-3xl font-black uppercase italic leading-none tracking-tight text-foreground md:text-5xl">
+              {raffle.title}
+            </h2>
+            <Link
+              to="/club/raffles/$raffleId"
+              params={{ raffleId: raffle.id }}
+              className="group/link inline-flex items-center gap-2 border border-primary/40 bg-black/60 px-4 py-2 font-mono text-[10px] uppercase tracking-[0.22em] text-primary backdrop-blur transition-all hover:border-primary hover:bg-primary/10 hover:shadow-[0_0_24px_-6px_var(--primary)]"
+            >
+              подробнее
+              <ExternalLink className="h-3 w-3 transition-transform group-hover/link:translate-x-0.5" />
+            </Link>
+          </div>
         </div>
       </div>
 
@@ -526,49 +514,45 @@ function StakeBtn({
 
 function MiniRaffle({
   raffle,
-  active,
-  onSelect,
 }: {
   raffle: (typeof ACTIVE_TICKETS)[number];
-  active: boolean;
-  onSelect: () => void;
 }) {
   return (
-    <motion.button
-      type="button"
-      onClick={onSelect}
+    <motion.div
       whileHover={{ y: -3 }}
       transition={{ type: "spring", stiffness: 300, damping: 20 }}
-      className={`group relative overflow-hidden border text-left transition-all ${
-        active
-          ? "border-primary bg-primary/[0.06] shadow-[0_0_28px_-8px_var(--primary)]"
-          : "border-white/[0.08] bg-card/30 hover:border-primary/40"
-      }`}
+      className="group relative overflow-hidden border border-white/[0.08] bg-card/30 transition-all hover:border-primary/40"
     >
-      <div className="relative h-32 overflow-hidden">
-        <img
-          src={raffle.image}
-          alt={raffle.title}
-          loading="lazy"
-          className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
-        <div className="absolute bottom-2 left-3 right-3 flex items-end justify-between">
-          <h3 className="font-display text-base font-black uppercase italic leading-tight tracking-tight text-foreground">
-            {raffle.title}
-          </h3>
-          <ChevronRight className="h-4 w-4 shrink-0 text-primary opacity-0 transition-opacity group-hover:opacity-100" />
+      <Link
+        to="/club/raffles/$raffleId"
+        params={{ raffleId: raffle.id }}
+        className="block"
+      >
+        <div className="relative h-32 overflow-hidden">
+          <img
+            src={raffle.image}
+            alt={raffle.title}
+            loading="lazy"
+            className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+          <div className="absolute bottom-2 left-3 right-3 flex items-end justify-between">
+            <h3 className="font-display text-base font-black uppercase italic leading-tight tracking-tight text-foreground">
+              {raffle.title}
+            </h3>
+            <ChevronRight className="h-4 w-4 shrink-0 text-primary opacity-0 transition-opacity group-hover:opacity-100" />
+          </div>
         </div>
-      </div>
-      <div className="space-y-2 p-3">
-        <div className="flex items-center justify-between font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-          <span>
-            мои: <span className="text-foreground">{raffle.myTickets}</span>
-          </span>
-          <Countdown deadlineAt={raffle.deadlineAt} compact />
+        <div className="space-y-2 p-3">
+          <div className="flex items-center justify-between font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+            <span>
+              мои: <span className="text-foreground">{raffle.myTickets}</span>
+            </span>
+            <Countdown deadlineAt={raffle.deadlineAt} compact />
+          </div>
         </div>
-      </div>
-    </motion.button>
+      </Link>
+    </motion.div>
   );
 }
 
