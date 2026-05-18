@@ -83,26 +83,23 @@ function UserProfilePage() {
         />
 
         <div className="relative flex flex-col gap-6 md:flex-row md:items-center">
-          {/* avatar с рамкой ранга */}
+          {/* avatar в плашке ранга */}
           <div
-            className="relative flex h-28 w-28 shrink-0 items-center justify-center md:h-32 md:w-32"
+            className="relative flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden md:h-32 md:w-32"
             style={{ boxShadow: `0 0 0 2px ${rank.accentSoft}` }}
           >
+            <PlaqueBackground bg={rank.plaqueBg} />
             <div
               aria-hidden
-              className="absolute inset-0"
+              className="absolute inset-0 z-[1]"
               style={{ border: `2px solid ${rank.accent}`, opacity: 0.9 }}
             />
-            <div
-              aria-hidden
-              className="absolute inset-0 opacity-25"
-              style={{
-                background: `linear-gradient(135deg, ${rank.accent} 0%, transparent 75%)`,
-              }}
-            />
             <span
-              className="relative font-display text-3xl font-black uppercase italic md:text-4xl"
-              style={{ color: rank.accent }}
+              className="relative z-[2] font-display text-3xl font-black uppercase italic md:text-4xl"
+              style={{
+                color: rank.accent,
+                textShadow: "0 2px 8px rgba(0,0,0,0.7)",
+              }}
             >
               {user.initials}
             </span>
