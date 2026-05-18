@@ -10,15 +10,19 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SchoolRouteImport } from './routes/school'
+import { Route as NewsRouteImport } from './routes/news'
 import { Route as LogosRouteImport } from './routes/logos'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as HellPassRouteImport } from './routes/hell-pass'
 import { Route as ClubRouteImport } from './routes/club'
 import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as CartRouteImport } from './routes/cart'
+import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ShopIndexRouteImport } from './routes/shop.index'
 import { Route as ClubIndexRouteImport } from './routes/club.index'
 import { Route as ShopProductSlugRouteImport } from './routes/shop.$productSlug'
+import { Route as NewsSlugRouteImport } from './routes/news.$slug'
 import { Route as ClubSchoolRouteImport } from './routes/club.school'
 import { Route as ClubMeRouteImport } from './routes/club.me'
 import { Route as ClubHellAiRouteImport } from './routes/club.hell-ai'
@@ -34,6 +38,11 @@ const SchoolRoute = SchoolRouteImport.update({
   path: '/school',
   getParentRoute: () => rootRouteImport,
 } as any)
+const NewsRoute = NewsRouteImport.update({
+  id: '/news',
+  path: '/news',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LogosRoute = LogosRouteImport.update({
   id: '/logos',
   path: '/logos',
@@ -42,6 +51,11 @@ const LogosRoute = LogosRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HellPassRoute = HellPassRouteImport.update({
+  id: '/hell-pass',
+  path: '/hell-pass',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ClubRoute = ClubRouteImport.update({
@@ -57,6 +71,11 @@ const CheckoutRoute = CheckoutRouteImport.update({
 const CartRoute = CartRouteImport.update({
   id: '/cart',
   path: '/cart',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AboutRoute = AboutRouteImport.update({
+  id: '/about',
+  path: '/about',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -78,6 +97,11 @@ const ShopProductSlugRoute = ShopProductSlugRouteImport.update({
   id: '/shop/$productSlug',
   path: '/shop/$productSlug',
   getParentRoute: () => rootRouteImport,
+} as any)
+const NewsSlugRoute = NewsSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => NewsRoute,
 } as any)
 const ClubSchoolRoute = ClubSchoolRouteImport.update({
   id: '/school',
@@ -127,16 +151,20 @@ const ClubHellPassTierRoute = ClubHellPassTierRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
   '/cart': typeof CartRoute
   '/checkout': typeof CheckoutRouteWithChildren
   '/club': typeof ClubRouteWithChildren
+  '/hell-pass': typeof HellPassRoute
   '/login': typeof LoginRoute
   '/logos': typeof LogosRoute
+  '/news': typeof NewsRouteWithChildren
   '/school': typeof SchoolRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/club/hell-ai': typeof ClubHellAiRoute
   '/club/me': typeof ClubMeRoute
   '/club/school': typeof ClubSchoolRoute
+  '/news/$slug': typeof NewsSlugRoute
   '/shop/$productSlug': typeof ShopProductSlugRoute
   '/club/': typeof ClubIndexRoute
   '/shop/': typeof ShopIndexRoute
@@ -148,15 +176,19 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
   '/cart': typeof CartRoute
   '/checkout': typeof CheckoutRouteWithChildren
+  '/hell-pass': typeof HellPassRoute
   '/login': typeof LoginRoute
   '/logos': typeof LogosRoute
+  '/news': typeof NewsRouteWithChildren
   '/school': typeof SchoolRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/club/hell-ai': typeof ClubHellAiRoute
   '/club/me': typeof ClubMeRoute
   '/club/school': typeof ClubSchoolRoute
+  '/news/$slug': typeof NewsSlugRoute
   '/shop/$productSlug': typeof ShopProductSlugRoute
   '/club': typeof ClubIndexRoute
   '/shop': typeof ShopIndexRoute
@@ -169,16 +201,20 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
   '/cart': typeof CartRoute
   '/checkout': typeof CheckoutRouteWithChildren
   '/club': typeof ClubRouteWithChildren
+  '/hell-pass': typeof HellPassRoute
   '/login': typeof LoginRoute
   '/logos': typeof LogosRoute
+  '/news': typeof NewsRouteWithChildren
   '/school': typeof SchoolRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/club/hell-ai': typeof ClubHellAiRoute
   '/club/me': typeof ClubMeRoute
   '/club/school': typeof ClubSchoolRoute
+  '/news/$slug': typeof NewsSlugRoute
   '/shop/$productSlug': typeof ShopProductSlugRoute
   '/club/': typeof ClubIndexRoute
   '/shop/': typeof ShopIndexRoute
@@ -192,16 +228,20 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/about'
     | '/cart'
     | '/checkout'
     | '/club'
+    | '/hell-pass'
     | '/login'
     | '/logos'
+    | '/news'
     | '/school'
     | '/checkout/success'
     | '/club/hell-ai'
     | '/club/me'
     | '/club/school'
+    | '/news/$slug'
     | '/shop/$productSlug'
     | '/club/'
     | '/shop/'
@@ -213,15 +253,19 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/about'
     | '/cart'
     | '/checkout'
+    | '/hell-pass'
     | '/login'
     | '/logos'
+    | '/news'
     | '/school'
     | '/checkout/success'
     | '/club/hell-ai'
     | '/club/me'
     | '/club/school'
+    | '/news/$slug'
     | '/shop/$productSlug'
     | '/club'
     | '/shop'
@@ -233,16 +277,20 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/about'
     | '/cart'
     | '/checkout'
     | '/club'
+    | '/hell-pass'
     | '/login'
     | '/logos'
+    | '/news'
     | '/school'
     | '/checkout/success'
     | '/club/hell-ai'
     | '/club/me'
     | '/club/school'
+    | '/news/$slug'
     | '/shop/$productSlug'
     | '/club/'
     | '/shop/'
@@ -255,11 +303,14 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AboutRoute: typeof AboutRoute
   CartRoute: typeof CartRoute
   CheckoutRoute: typeof CheckoutRouteWithChildren
   ClubRoute: typeof ClubRouteWithChildren
+  HellPassRoute: typeof HellPassRoute
   LoginRoute: typeof LoginRoute
   LogosRoute: typeof LogosRoute
+  NewsRoute: typeof NewsRouteWithChildren
   SchoolRoute: typeof SchoolRoute
   ShopProductSlugRoute: typeof ShopProductSlugRoute
   ShopIndexRoute: typeof ShopIndexRoute
@@ -274,6 +325,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SchoolRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/news': {
+      id: '/news'
+      path: '/news'
+      fullPath: '/news'
+      preLoaderRoute: typeof NewsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/logos': {
       id: '/logos'
       path: '/logos'
@@ -286,6 +344,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/hell-pass': {
+      id: '/hell-pass'
+      path: '/hell-pass'
+      fullPath: '/hell-pass'
+      preLoaderRoute: typeof HellPassRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/club': {
@@ -307,6 +372,13 @@ declare module '@tanstack/react-router' {
       path: '/cart'
       fullPath: '/cart'
       preLoaderRoute: typeof CartRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/about': {
+      id: '/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof AboutRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -336,6 +408,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/shop/$productSlug'
       preLoaderRoute: typeof ShopProductSlugRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/news/$slug': {
+      id: '/news/$slug'
+      path: '/$slug'
+      fullPath: '/news/$slug'
+      preLoaderRoute: typeof NewsSlugRouteImport
+      parentRoute: typeof NewsRoute
     }
     '/club/school': {
       id: '/club/school'
@@ -441,13 +520,26 @@ const ClubRouteChildren: ClubRouteChildren = {
 
 const ClubRouteWithChildren = ClubRoute._addFileChildren(ClubRouteChildren)
 
+interface NewsRouteChildren {
+  NewsSlugRoute: typeof NewsSlugRoute
+}
+
+const NewsRouteChildren: NewsRouteChildren = {
+  NewsSlugRoute: NewsSlugRoute,
+}
+
+const NewsRouteWithChildren = NewsRoute._addFileChildren(NewsRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AboutRoute: AboutRoute,
   CartRoute: CartRoute,
   CheckoutRoute: CheckoutRouteWithChildren,
   ClubRoute: ClubRouteWithChildren,
+  HellPassRoute: HellPassRoute,
   LoginRoute: LoginRoute,
   LogosRoute: LogosRoute,
+  NewsRoute: NewsRouteWithChildren,
   SchoolRoute: SchoolRoute,
   ShopProductSlugRoute: ShopProductSlugRoute,
   ShopIndexRoute: ShopIndexRoute,
@@ -455,3 +547,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
