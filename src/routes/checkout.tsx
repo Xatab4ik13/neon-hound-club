@@ -19,7 +19,7 @@ export const Route = createFileRoute("/checkout")({
   component: CheckoutPage,
 });
 
-type Delivery = "cdek" | "post" | "pickup";
+
 
 function CheckoutPage() {
   const { items, total, clear } = useCart();
@@ -29,7 +29,6 @@ function CheckoutPage() {
   const [name, setName] = useState(ME.nick ?? "");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
-  const [delivery, setDelivery] = useState<Delivery>("cdek");
   const [address, setAddress] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -95,41 +94,30 @@ function CheckoutPage() {
             </Section>
 
             <Section title="2. Доставка">
-              <div className="grid gap-2 sm:grid-cols-3">
-                {(
-                  [
-                    { id: "cdek", label: "СДЭК", note: "2–5 дней" },
-                    { id: "post", label: "Почта России", note: "5–14 дней" },
-                    { id: "pickup", label: "Самовывоз", note: "Москва" },
-                  ] as Array<{ id: Delivery; label: string; note: string }>
-                ).map((opt) => (
-                  <button
-                    type="button"
-                    key={opt.id}
-                    onClick={() => setDelivery(opt.id)}
-                    className={`rounded-lg border p-4 text-left transition-colors ${
-                      delivery === opt.id
-                        ? "border-primary bg-primary/5"
-                        : "border-border hover:border-primary/40"
-                    }`}
-                  >
-                    <div className="font-medium">{opt.label}</div>
+              <div className="rounded-lg border border-primary/40 bg-primary/5 p-4">
+                <div className="flex items-baseline justify-between gap-3">
+                  <div>
+                    <div className="font-medium">СДЭК</div>
                     <div className="text-xs text-muted-foreground">
-                      {opt.note}
+                      По всей России, 2–5 дней. Стоимость рассчитает курьер.
                     </div>
-                  </button>
-                ))}
-              </div>
-              {delivery !== "pickup" && (
-                <div className="mt-4">
-                  <Field
-                    label="Адрес доставки"
-                    value={address}
-                    onChange={setAddress}
-                    required
-                  />
+                  </div>
+                  <span className="font-mono text-[10px] uppercase tracking-widest text-primary">
+                    выбрано
+                  </span>
                 </div>
-              )}
+              </div>
+              <p className="mt-2 text-[11px] text-muted-foreground">
+                Скоро подключим API СДЭК — расчёт и трекинг автоматом.
+              </p>
+              <div className="mt-4">
+                <Field
+                  label="Адрес доставки"
+                  value={address}
+                  onChange={setAddress}
+                  required
+                />
+              </div>
             </Section>
 
             <Section title="3. Оплата">
