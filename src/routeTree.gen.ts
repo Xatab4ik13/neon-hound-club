@@ -17,16 +17,28 @@ import { Route as HellPassRouteImport } from './routes/hell-pass'
 import { Route as ClubRouteImport } from './routes/club'
 import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as CartRouteImport } from './routes/cart'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ShopIndexRouteImport } from './routes/shop.index'
 import { Route as ClubIndexRouteImport } from './routes/club.index'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as ShopProductSlugRouteImport } from './routes/shop.$productSlug'
 import { Route as NewsSlugRouteImport } from './routes/news.$slug'
 import { Route as ClubSchoolRouteImport } from './routes/club.school'
 import { Route as ClubMeRouteImport } from './routes/club.me'
 import { Route as ClubHellAiRouteImport } from './routes/club.hell-ai'
 import { Route as CheckoutSuccessRouteImport } from './routes/checkout.success'
+import { Route as AdminUsersRouteImport } from './routes/admin.users'
+import { Route as AdminTicketsRouteImport } from './routes/admin.tickets'
+import { Route as AdminShopRouteImport } from './routes/admin.shop'
+import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
+import { Route as AdminSchoolRouteImport } from './routes/admin.school'
+import { Route as AdminRafflesRouteImport } from './routes/admin.raffles'
+import { Route as AdminNewsRouteImport } from './routes/admin.news'
+import { Route as AdminHellAiRouteImport } from './routes/admin.hell-ai'
+import { Route as AdminEconomyRouteImport } from './routes/admin.economy'
+import { Route as AdminCdekRouteImport } from './routes/admin.cdek'
 import { Route as ClubRafflesIndexRouteImport } from './routes/club.raffles.index'
 import { Route as ClubHellPassIndexRouteImport } from './routes/club.hell-pass.index'
 import { Route as ClubUNickRouteImport } from './routes/club.u.$nick'
@@ -73,6 +85,11 @@ const CartRoute = CartRouteImport.update({
   path: '/cart',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AboutRoute = AboutRouteImport.update({
   id: '/about',
   path: '/about',
@@ -92,6 +109,11 @@ const ClubIndexRoute = ClubIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => ClubRoute,
+} as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
 } as any)
 const ShopProductSlugRoute = ShopProductSlugRouteImport.update({
   id: '/shop/$productSlug',
@@ -123,6 +145,56 @@ const CheckoutSuccessRoute = CheckoutSuccessRouteImport.update({
   path: '/success',
   getParentRoute: () => CheckoutRoute,
 } as any)
+const AdminUsersRoute = AdminUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminTicketsRoute = AdminTicketsRouteImport.update({
+  id: '/tickets',
+  path: '/tickets',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminShopRoute = AdminShopRouteImport.update({
+  id: '/shop',
+  path: '/shop',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminSettingsRoute = AdminSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminSchoolRoute = AdminSchoolRouteImport.update({
+  id: '/school',
+  path: '/school',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminRafflesRoute = AdminRafflesRouteImport.update({
+  id: '/raffles',
+  path: '/raffles',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminNewsRoute = AdminNewsRouteImport.update({
+  id: '/news',
+  path: '/news',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminHellAiRoute = AdminHellAiRouteImport.update({
+  id: '/hell-ai',
+  path: '/hell-ai',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminEconomyRoute = AdminEconomyRouteImport.update({
+  id: '/economy',
+  path: '/economy',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminCdekRoute = AdminCdekRouteImport.update({
+  id: '/cdek',
+  path: '/cdek',
+  getParentRoute: () => AdminRoute,
+} as any)
 const ClubRafflesIndexRoute = ClubRafflesIndexRouteImport.update({
   id: '/raffles/',
   path: '/raffles/',
@@ -152,6 +224,7 @@ const ClubHellPassTierRoute = ClubHellPassTierRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/admin': typeof AdminRouteWithChildren
   '/cart': typeof CartRoute
   '/checkout': typeof CheckoutRouteWithChildren
   '/club': typeof ClubRouteWithChildren
@@ -160,12 +233,23 @@ export interface FileRoutesByFullPath {
   '/logos': typeof LogosRoute
   '/news': typeof NewsRouteWithChildren
   '/school': typeof SchoolRoute
+  '/admin/cdek': typeof AdminCdekRoute
+  '/admin/economy': typeof AdminEconomyRoute
+  '/admin/hell-ai': typeof AdminHellAiRoute
+  '/admin/news': typeof AdminNewsRoute
+  '/admin/raffles': typeof AdminRafflesRoute
+  '/admin/school': typeof AdminSchoolRoute
+  '/admin/settings': typeof AdminSettingsRoute
+  '/admin/shop': typeof AdminShopRoute
+  '/admin/tickets': typeof AdminTicketsRoute
+  '/admin/users': typeof AdminUsersRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/club/hell-ai': typeof ClubHellAiRoute
   '/club/me': typeof ClubMeRoute
   '/club/school': typeof ClubSchoolRoute
   '/news/$slug': typeof NewsSlugRoute
   '/shop/$productSlug': typeof ShopProductSlugRoute
+  '/admin/': typeof AdminIndexRoute
   '/club/': typeof ClubIndexRoute
   '/shop/': typeof ShopIndexRoute
   '/club/hell-pass/$tier': typeof ClubHellPassTierRoute
@@ -184,12 +268,23 @@ export interface FileRoutesByTo {
   '/logos': typeof LogosRoute
   '/news': typeof NewsRouteWithChildren
   '/school': typeof SchoolRoute
+  '/admin/cdek': typeof AdminCdekRoute
+  '/admin/economy': typeof AdminEconomyRoute
+  '/admin/hell-ai': typeof AdminHellAiRoute
+  '/admin/news': typeof AdminNewsRoute
+  '/admin/raffles': typeof AdminRafflesRoute
+  '/admin/school': typeof AdminSchoolRoute
+  '/admin/settings': typeof AdminSettingsRoute
+  '/admin/shop': typeof AdminShopRoute
+  '/admin/tickets': typeof AdminTicketsRoute
+  '/admin/users': typeof AdminUsersRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/club/hell-ai': typeof ClubHellAiRoute
   '/club/me': typeof ClubMeRoute
   '/club/school': typeof ClubSchoolRoute
   '/news/$slug': typeof NewsSlugRoute
   '/shop/$productSlug': typeof ShopProductSlugRoute
+  '/admin': typeof AdminIndexRoute
   '/club': typeof ClubIndexRoute
   '/shop': typeof ShopIndexRoute
   '/club/hell-pass/$tier': typeof ClubHellPassTierRoute
@@ -202,6 +297,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/admin': typeof AdminRouteWithChildren
   '/cart': typeof CartRoute
   '/checkout': typeof CheckoutRouteWithChildren
   '/club': typeof ClubRouteWithChildren
@@ -210,12 +306,23 @@ export interface FileRoutesById {
   '/logos': typeof LogosRoute
   '/news': typeof NewsRouteWithChildren
   '/school': typeof SchoolRoute
+  '/admin/cdek': typeof AdminCdekRoute
+  '/admin/economy': typeof AdminEconomyRoute
+  '/admin/hell-ai': typeof AdminHellAiRoute
+  '/admin/news': typeof AdminNewsRoute
+  '/admin/raffles': typeof AdminRafflesRoute
+  '/admin/school': typeof AdminSchoolRoute
+  '/admin/settings': typeof AdminSettingsRoute
+  '/admin/shop': typeof AdminShopRoute
+  '/admin/tickets': typeof AdminTicketsRoute
+  '/admin/users': typeof AdminUsersRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/club/hell-ai': typeof ClubHellAiRoute
   '/club/me': typeof ClubMeRoute
   '/club/school': typeof ClubSchoolRoute
   '/news/$slug': typeof NewsSlugRoute
   '/shop/$productSlug': typeof ShopProductSlugRoute
+  '/admin/': typeof AdminIndexRoute
   '/club/': typeof ClubIndexRoute
   '/shop/': typeof ShopIndexRoute
   '/club/hell-pass/$tier': typeof ClubHellPassTierRoute
@@ -229,6 +336,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/about'
+    | '/admin'
     | '/cart'
     | '/checkout'
     | '/club'
@@ -237,12 +345,23 @@ export interface FileRouteTypes {
     | '/logos'
     | '/news'
     | '/school'
+    | '/admin/cdek'
+    | '/admin/economy'
+    | '/admin/hell-ai'
+    | '/admin/news'
+    | '/admin/raffles'
+    | '/admin/school'
+    | '/admin/settings'
+    | '/admin/shop'
+    | '/admin/tickets'
+    | '/admin/users'
     | '/checkout/success'
     | '/club/hell-ai'
     | '/club/me'
     | '/club/school'
     | '/news/$slug'
     | '/shop/$productSlug'
+    | '/admin/'
     | '/club/'
     | '/shop/'
     | '/club/hell-pass/$tier'
@@ -261,12 +380,23 @@ export interface FileRouteTypes {
     | '/logos'
     | '/news'
     | '/school'
+    | '/admin/cdek'
+    | '/admin/economy'
+    | '/admin/hell-ai'
+    | '/admin/news'
+    | '/admin/raffles'
+    | '/admin/school'
+    | '/admin/settings'
+    | '/admin/shop'
+    | '/admin/tickets'
+    | '/admin/users'
     | '/checkout/success'
     | '/club/hell-ai'
     | '/club/me'
     | '/club/school'
     | '/news/$slug'
     | '/shop/$productSlug'
+    | '/admin'
     | '/club'
     | '/shop'
     | '/club/hell-pass/$tier'
@@ -278,6 +408,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/about'
+    | '/admin'
     | '/cart'
     | '/checkout'
     | '/club'
@@ -286,12 +417,23 @@ export interface FileRouteTypes {
     | '/logos'
     | '/news'
     | '/school'
+    | '/admin/cdek'
+    | '/admin/economy'
+    | '/admin/hell-ai'
+    | '/admin/news'
+    | '/admin/raffles'
+    | '/admin/school'
+    | '/admin/settings'
+    | '/admin/shop'
+    | '/admin/tickets'
+    | '/admin/users'
     | '/checkout/success'
     | '/club/hell-ai'
     | '/club/me'
     | '/club/school'
     | '/news/$slug'
     | '/shop/$productSlug'
+    | '/admin/'
     | '/club/'
     | '/shop/'
     | '/club/hell-pass/$tier'
@@ -304,6 +446,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
+  AdminRoute: typeof AdminRouteWithChildren
   CartRoute: typeof CartRoute
   CheckoutRoute: typeof CheckoutRouteWithChildren
   ClubRoute: typeof ClubRouteWithChildren
@@ -374,6 +517,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CartRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/about': {
       id: '/about'
       path: '/about'
@@ -401,6 +551,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/club/'
       preLoaderRoute: typeof ClubIndexRouteImport
       parentRoute: typeof ClubRoute
+    }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/shop/$productSlug': {
       id: '/shop/$productSlug'
@@ -444,6 +601,76 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CheckoutSuccessRouteImport
       parentRoute: typeof CheckoutRoute
     }
+    '/admin/users': {
+      id: '/admin/users'
+      path: '/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AdminUsersRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/tickets': {
+      id: '/admin/tickets'
+      path: '/tickets'
+      fullPath: '/admin/tickets'
+      preLoaderRoute: typeof AdminTicketsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/shop': {
+      id: '/admin/shop'
+      path: '/shop'
+      fullPath: '/admin/shop'
+      preLoaderRoute: typeof AdminShopRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/settings': {
+      id: '/admin/settings'
+      path: '/settings'
+      fullPath: '/admin/settings'
+      preLoaderRoute: typeof AdminSettingsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/school': {
+      id: '/admin/school'
+      path: '/school'
+      fullPath: '/admin/school'
+      preLoaderRoute: typeof AdminSchoolRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/raffles': {
+      id: '/admin/raffles'
+      path: '/raffles'
+      fullPath: '/admin/raffles'
+      preLoaderRoute: typeof AdminRafflesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/news': {
+      id: '/admin/news'
+      path: '/news'
+      fullPath: '/admin/news'
+      preLoaderRoute: typeof AdminNewsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/hell-ai': {
+      id: '/admin/hell-ai'
+      path: '/hell-ai'
+      fullPath: '/admin/hell-ai'
+      preLoaderRoute: typeof AdminHellAiRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/economy': {
+      id: '/admin/economy'
+      path: '/economy'
+      fullPath: '/admin/economy'
+      preLoaderRoute: typeof AdminEconomyRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/cdek': {
+      id: '/admin/cdek'
+      path: '/cdek'
+      fullPath: '/admin/cdek'
+      preLoaderRoute: typeof AdminCdekRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/club/raffles/': {
       id: '/club/raffles/'
       path: '/raffles'
@@ -481,6 +708,36 @@ declare module '@tanstack/react-router' {
     }
   }
 }
+
+interface AdminRouteChildren {
+  AdminCdekRoute: typeof AdminCdekRoute
+  AdminEconomyRoute: typeof AdminEconomyRoute
+  AdminHellAiRoute: typeof AdminHellAiRoute
+  AdminNewsRoute: typeof AdminNewsRoute
+  AdminRafflesRoute: typeof AdminRafflesRoute
+  AdminSchoolRoute: typeof AdminSchoolRoute
+  AdminSettingsRoute: typeof AdminSettingsRoute
+  AdminShopRoute: typeof AdminShopRoute
+  AdminTicketsRoute: typeof AdminTicketsRoute
+  AdminUsersRoute: typeof AdminUsersRoute
+  AdminIndexRoute: typeof AdminIndexRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminCdekRoute: AdminCdekRoute,
+  AdminEconomyRoute: AdminEconomyRoute,
+  AdminHellAiRoute: AdminHellAiRoute,
+  AdminNewsRoute: AdminNewsRoute,
+  AdminRafflesRoute: AdminRafflesRoute,
+  AdminSchoolRoute: AdminSchoolRoute,
+  AdminSettingsRoute: AdminSettingsRoute,
+  AdminShopRoute: AdminShopRoute,
+  AdminTicketsRoute: AdminTicketsRoute,
+  AdminUsersRoute: AdminUsersRoute,
+  AdminIndexRoute: AdminIndexRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 interface CheckoutRouteChildren {
   CheckoutSuccessRoute: typeof CheckoutSuccessRoute
@@ -533,6 +790,7 @@ const NewsRouteWithChildren = NewsRoute._addFileChildren(NewsRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
+  AdminRoute: AdminRouteWithChildren,
   CartRoute: CartRoute,
   CheckoutRoute: CheckoutRouteWithChildren,
   ClubRoute: ClubRouteWithChildren,
