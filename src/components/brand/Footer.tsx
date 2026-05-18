@@ -3,9 +3,9 @@ import { Logo } from "./Logo";
 
 export function Footer() {
   return (
-    <footer className="border-t border-border bg-background py-12">
+    <footer className="border-t border-border bg-background py-10 md:py-12">
       <div className="mx-auto max-w-7xl px-6">
-        <div className="grid gap-12 md:grid-cols-3">
+        <div className="grid gap-10 md:grid-cols-3 md:gap-12">
           <div>
             <Logo className="mb-4" />
             <p className="text-xs uppercase leading-relaxed tracking-widest text-muted-foreground">
@@ -14,7 +14,7 @@ export function Footer() {
               Основано MMXXVI / Без границ
             </p>
           </div>
-          <div className="flex gap-12">
+          <div className="grid grid-cols-2 gap-8 md:flex md:gap-12">
             <div className="space-y-3">
               <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
                 Клуб
@@ -95,7 +95,7 @@ export function Footer() {
               </ul>
             </div>
           </div>
-          <div className="flex flex-col justify-between text-right">
+          <div className="flex flex-col justify-between gap-3 text-left md:text-right">
             <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
               © 2026 HELLHOUND RACING CLUB. Все права защищены.
             </div>
