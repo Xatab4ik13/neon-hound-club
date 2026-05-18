@@ -1,23 +1,32 @@
-// Hell AI — AI-механик. Узкая полезная фича клуба.
-// Редизайн: диагностический «телеметрический» UI вместо обычного чат-окна.
-// Слева — приборка по байку и квоте Pass, справа — терминал диалога с
-// потоковой печатью ответа, статусом «ONLINE» и сканлайнами.
+// Hell AI — AI-механик клуба HELLHOUND.
+// Минималистичный центрированный композер в духе референса: бэкграунд с
+// мягкими «лава-блобами» в фирменных primary-тонах, glass-карточка ввода,
+// command-палитра по «/», переключатель активного байка (контекст ответа).
 
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { createFileRoute } from "@tanstack/react-router";
 import {
-  Activity,
-  Bike,
-  Bot,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useTransition,
+  type KeyboardEvent as ReactKeyboardEvent,
+} from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import {
+  Bike as BikeIcon,
+  Check,
+  Command as CommandIcon,
   Gauge,
-  Lightbulb,
-  Lock,
-  Send,
+  LoaderIcon,
+  SendIcon,
   Sparkles,
   Wrench,
   Zap,
+  Lightbulb,
 } from "lucide-react";
-import { ME } from "@/data/profile";
+import { cn } from "@/lib/utils";
+import { loadBikes, saveBikes, type StoredBike } from "@/data/bike-storage";
 
 export const Route = createFileRoute("/club/hell-ai")({
   head: () => ({
@@ -26,7 +35,7 @@ export const Route = createFileRoute("/club/hell-ai")({
       {
         name: "description",
         content:
-          "AI-механик: задавай вопросы по своему мото. Моменты затяжки, масла, типичные болячки модели, давление.",
+          "AI-механик: моменты затяжки, давление, масла, типичные болячки модели. По делу, под твой мото.",
       },
       { name: "robots", content: "noindex" },
     ],
@@ -34,7 +43,7 @@ export const Route = createFileRoute("/club/hell-ai")({
   component: HellAiPage,
 });
 
-// ── Тариф юзера (заглушка) ────────────────────────────────────────────────
+// ── Тариф / квоты ─────────────────────────────────────────────────────────
 type PassTier = "guest" | "silver" | "gold" | "platinum";
 const CURRENT_TIER: PassTier = "gold";
 const QUOTA_BY_TIER: Record<PassTier, number | "∞"> = {
@@ -50,447 +59,529 @@ const TIER_LABEL: Record<PassTier, string> = {
   platinum: "Platinum",
 };
 
-// ── Сообщения ────────────────────────────────────────────────────────────
-type Msg = {
-  id: string;
-  role: "user" | "ai";
-  text: string;
-  source?: string;
-  /** Анимация печати — сколько символов уже показано. */
-  typed?: number;
-};
-
-const SUGGESTIONS: { icon: typeof Wrench; label: string; prompt: string }[] = [
-  { icon: Wrench, label: "Момент затяжки оси", prompt: "Какой момент затяжки передней оси на моём мото?" },
-  { icon: Gauge, label: "Давление в шинах", prompt: "Какое давление в шинах для города и для трека?" },
-  { icon: Sparkles, label: "Какое масло лить", prompt: "Какое моторное масло рекомендовано и какой интервал замены?" },
-  { icon: Lightbulb, label: "Типичные болячки", prompt: "Расскажи про типичные болячки этой модели после 20 000 км." },
-  { icon: Zap, label: "Что за стук", prompt: "Лёгкий металлический стук в районе цепи на холодную — что проверить?" },
+// ── Команды ──────────────────────────────────────────────────────────────
+type Cmd = { icon: React.ReactNode; label: string; description: string; prefix: string };
+const COMMANDS: Cmd[] = [
+  { icon: <Wrench className="h-4 w-4" />, label: "Затяжка", description: "моменты затяжки узлов", prefix: "/torque" },
+  { icon: <Gauge className="h-4 w-4" />, label: "Давление", description: "давление в шинах", prefix: "/pressure" },
+  { icon: <Sparkles className="h-4 w-4" />, label: "Масло", description: "тип и интервал замены", prefix: "/oil" },
+  { icon: <Lightbulb className="h-4 w-4" />, label: "Болячки", description: "типичные проблемы модели", prefix: "/issues" },
+  { icon: <Zap className="h-4 w-4" />, label: "Диагностика", description: "стук, шум, симптом", prefix: "/diag" },
 ];
 
-function mockAnswer(prompt: string, bike: string): { text: string; source: string } {
-  const lower = prompt.toLowerCase();
-  if (lower.includes("ось") || lower.includes("затяж")) {
-    return {
-      text: `Для ${bike}: гайка передней оси — 91 Н·м, стяжные болты пера вилки — 23 Н·м. Затягивай в два прохода крест-накрест, перед затяжкой прокачай вилку.`,
-      source: "Service manual · моменты затяжки",
-    };
-  }
-  if (lower.includes("давлен")) {
-    return {
-      text: `${bike}, заводская рекомендация: перед 2.25 / зад 2.50 бар (соло). Для трека на спортивной резине — 2.1 / 2.0 бар (горячее). Проверяй на холодных шинах.`,
-      source: "Owner's manual · разд. шины",
-    };
-  }
-  if (lower.includes("масл")) {
-    return {
-      text: `${bike}: 10W-40 JASO MA2, объём при замене с фильтром — 3.4 л. Интервал — каждые 6 000 км или раз в год. Yamalube 10W-40 или Motul 7100 4T — рабочие варианты.`,
-      source: "Service manual · ТО",
-    };
-  }
-  if (lower.includes("боляч") || lower.includes("проблем")) {
-    return {
-      text: `${bike}, частые точки внимания после 20 000 км: подшипники рулевой колонки (люфт на малых скоростях), задний амортизатор (садится), катушки зажигания на старых модификациях, окисление контактов под седлом. Ничего фатального, но проверить стоит.`,
-      source: "Опыт владельцев · форумы и сервисы",
-    };
-  }
-  if (lower.includes("стук") || lower.includes("шум")) {
-    return {
-      text: `Лёгкий стук на холодную в районе цепи — это чаще всего: 1) провис цепи вне допуска (норма 25–35 мм), 2) направляющая цепи (резиновая), 3) звезда. Если уходит после прогрева — почти всегда цепь. Смажь, отрегулируй натяг.`,
-      source: "Диагностика по симптому",
-    };
-  }
-  return {
-    text: `По ${bike}: дай чуть больше деталей — пробег, на холодную/горячую, симптом постоянный или эпизодический. Так отвечу точнее. (Это демо-ответ — модель подключим следующим шагом.)`,
-    source: "AI-механик · уточнение",
-  };
+// ── Авто-resize textarea ─────────────────────────────────────────────────
+function useAutoResize(minHeight: number, maxHeight: number) {
+  const ref = useRef<HTMLTextAreaElement>(null);
+  const adjust = useCallback(
+    (reset?: boolean) => {
+      const el = ref.current;
+      if (!el) return;
+      if (reset) {
+        el.style.height = `${minHeight}px`;
+        return;
+      }
+      el.style.height = `${minHeight}px`;
+      el.style.height = `${Math.max(minHeight, Math.min(el.scrollHeight, maxHeight))}px`;
+    },
+    [minHeight, maxHeight],
+  );
+  useEffect(() => {
+    if (ref.current) ref.current.style.height = `${minHeight}px`;
+  }, [minHeight]);
+  return { ref, adjust };
+}
+
+function bikeLabel(b: StoredBike) {
+  return `${b.brand} ${b.model}${b.year ? ` ${b.year}` : ""}`;
+}
+
+function mockAnswer(prompt: string, bike: string): string {
+  const l = prompt.toLowerCase();
+  if (l.includes("/torque") || l.includes("затяж") || l.includes("ось"))
+    return `${bike}: гайка передней оси — 91 Н·м, стяжные болты вилки — 23 Н·м. В два прохода крест-накрест, после — прокачать вилку.`;
+  if (l.includes("/pressure") || l.includes("давлен"))
+    return `${bike}: перед 2.25 / зад 2.50 бар (соло, по заводу). Трек на спортивной резине — 2.1 / 2.0 бар горячее. Меряем на холодных.`;
+  if (l.includes("/oil") || l.includes("масл"))
+    return `${bike}: 10W-40 JASO MA2, объём с фильтром ≈ 3.4 л. Интервал — 6 000 км или раз в год. Yamalube 10W-40, Motul 7100 4T — рабочие варианты.`;
+  if (l.includes("/issues") || l.includes("боляч") || l.includes("проблем"))
+    return `${bike} после 20 000 км: подшипники рулевой (люфт на малых), задний амортизатор (садится), катушки на старых модификациях, окисление контактов под седлом.`;
+  if (l.includes("/diag") || l.includes("стук") || l.includes("шум"))
+    return `Стук на холодную в районе цепи — обычно: 1) провис вне допуска (норма 25–35 мм), 2) направляющая, 3) звезда. Уходит после прогрева — почти всегда цепь.`;
+  return `По ${bike}: уточни пробег, симптом, на холодную или на горячую — отвечу точнее. (Демо-ответ, модель подключим следующим шагом.)`;
 }
 
 function HellAiPage() {
-  const [messages, setMessages] = useState<Msg[]>([]);
-  const [input, setInput] = useState("");
+  // байки
+  const [bikes, setBikes] = useState<StoredBike[]>([]);
+  const [activeBikeId, setActiveBikeId] = useState<string>("");
+  useEffect(() => {
+    const list = loadBikes();
+    setBikes(list);
+    setActiveBikeId(list[0]?.id ?? "");
+  }, []);
+  const activeBike = bikes.find((b) => b.id === activeBikeId);
+  const bikeStr = activeBike ? bikeLabel(activeBike) : "твой мото";
+
+  // композер
+  const [value, setValue] = useState("");
+  const [showCmd, setShowCmd] = useState(false);
+  const [activeCmd, setActiveCmd] = useState(-1);
+  const [isThinking, setIsThinking] = useState(false);
+  const [, startTransition] = useTransition();
   const [used, setUsed] = useState(0);
-  const [thinking, setThinking] = useState(false);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const [lastAnswer, setLastAnswer] = useState<{ q: string; a: string } | null>(null);
+  const { ref: taRef, adjust } = useAutoResize(60, 200);
+  const cmdRef = useRef<HTMLDivElement>(null);
 
   const quota = QUOTA_BY_TIER[CURRENT_TIER];
   const isUnlimited = quota === "∞";
   const isGuest = CURRENT_TIER === "guest";
   const left = isUnlimited ? Infinity : (quota as number) - used;
-  const canAsk = !isGuest && (isUnlimited || left > 0);
+  const canAsk = !isGuest && (isUnlimited || left > 0) && !!activeBike;
 
-  // Автоскролл
+  // мышь — для подсветки за курсором
+  const [mouse, setMouse] = useState({ x: 0, y: 0 });
+  const [focused, setFocused] = useState(false);
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-  }, [messages, thinking]);
+    const h = (e: MouseEvent) => setMouse({ x: e.clientX, y: e.clientY });
+    window.addEventListener("mousemove", h);
+    return () => window.removeEventListener("mousemove", h);
+  }, []);
 
-  // Стриминг печати последнего AI-ответа.
+  // команды по слешу
   useEffect(() => {
-    const last = messages[messages.length - 1];
-    if (!last || last.role !== "ai") return;
-    if (last.typed !== undefined && last.typed >= last.text.length) return;
-    const t = setInterval(() => {
-      setMessages((m) => {
-        const arr = [...m];
-        const i = arr.length - 1;
-        const cur = arr[i];
-        if (!cur || cur.role !== "ai") return m;
-        const next = Math.min(cur.text.length, (cur.typed ?? 0) + 3);
-        arr[i] = { ...cur, typed: next };
-        return arr;
-      });
-    }, 16);
-    return () => clearInterval(t);
-  }, [messages]);
+    if (value.startsWith("/") && !value.includes(" ")) {
+      setShowCmd(true);
+      const i = COMMANDS.findIndex((c) => c.prefix.startsWith(value));
+      setActiveCmd(i);
+    } else {
+      setShowCmd(false);
+    }
+  }, [value]);
 
-  function send(text: string) {
-    const clean = text.trim();
-    if (!clean || !canAsk || thinking) return;
-    const u: Msg = { id: `u${Date.now()}`, role: "user", text: clean };
-    setMessages((m) => [...m, u]);
-    setInput("");
-    setUsed((n) => n + 1);
-    setThinking(true);
-    setTimeout(() => {
-      const ans = mockAnswer(clean, ME.bike);
-      setThinking(false);
-      setMessages((m) => [
-        ...m,
-        { id: `a${Date.now()}`, role: "ai", text: ans.text, source: ans.source, typed: 0 },
-      ]);
-    }, 700);
+  // клик вне палитры
+  useEffect(() => {
+    const h = (e: MouseEvent) => {
+      const t = e.target as Node;
+      const btn = document.querySelector("[data-cmd-btn]");
+      if (cmdRef.current && !cmdRef.current.contains(t) && !btn?.contains(t)) {
+        setShowCmd(false);
+      }
+    };
+    document.addEventListener("mousedown", h);
+    return () => document.removeEventListener("mousedown", h);
+  }, []);
+
+  function pickCommand(i: number) {
+    const c = COMMANDS[i];
+    if (!c) return;
+    setValue(c.prefix + " ");
+    setShowCmd(false);
+    taRef.current?.focus();
+  }
+
+  function send() {
+    const text = value.trim();
+    if (!text || !canAsk || isThinking) return;
+    startTransition(() => {
+      setIsThinking(true);
+      setUsed((n) => n + 1);
+      const q = text;
+      setValue("");
+      adjust(true);
+      setTimeout(() => {
+        setLastAnswer({ q, a: mockAnswer(q, bikeStr) });
+        setIsThinking(false);
+      }, 1400);
+    });
+  }
+
+  function onKey(e: ReactKeyboardEvent<HTMLTextAreaElement>) {
+    if (showCmd) {
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setActiveCmd((p) => (p < COMMANDS.length - 1 ? p + 1 : 0));
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setActiveCmd((p) => (p > 0 ? p - 1 : COMMANDS.length - 1));
+      } else if (e.key === "Enter" || e.key === "Tab") {
+        e.preventDefault();
+        if (activeCmd >= 0) pickCommand(activeCmd);
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        setShowCmd(false);
+      }
+    } else if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      send();
+    }
   }
 
   return (
-    <main className="mx-auto w-full max-w-6xl px-4 py-6 md:px-8 md:py-10">
-      {/* Шапка с пульсом */}
-      <header className="mb-8">
-        <div className="mb-3 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
-          <span className="relative flex h-2 w-2">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-60" />
-            <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
-          </span>
-          AI-механик · online
-        </div>
-        <h1 className="font-display text-4xl font-black uppercase italic leading-[0.95] tracking-tighter text-foreground md:text-6xl">
-          HELL <span className="text-primary">AI</span>
-        </h1>
-        <p className="mt-3 max-w-xl text-sm text-muted-foreground md:text-base">
-          Узкий полезный AI: вопросы по твоему мото. Моменты затяжки, давление, масла,
-          болячки модели, диагностика по симптому. Без болтовни — по делу.
-        </p>
-      </header>
+    <div className="relative flex min-h-[calc(100vh-4rem)] w-full items-center justify-center overflow-hidden px-4 py-10">
+      {/* фоновые блобы в фирменном цвете */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute left-1/4 top-0 h-96 w-96 animate-pulse rounded-full bg-primary/15 blur-[128px]" />
+        <div className="absolute bottom-0 right-1/4 h-96 w-96 animate-pulse rounded-full bg-primary/10 blur-[128px] [animation-delay:700ms]" />
+        <div className="absolute right-1/3 top-1/4 h-64 w-64 animate-pulse rounded-full bg-primary/[0.08] blur-[96px] [animation-delay:1000ms]" />
+      </div>
 
-      {/* Грид: телеметрия + терминал */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-[280px_minmax(0,1fr)]">
-        {/* Левая колонка — телеметрия */}
-        <aside className="flex flex-col gap-3">
-          <BikeCard />
-          <QuotaCard tier={CURRENT_TIER} used={used} quota={quota} isUnlimited={isUnlimited} />
-          <QuickActions onPick={send} disabled={!canAsk || thinking} />
-        </aside>
-
-        {/* Правая колонка — терминал */}
-        <section className="relative flex min-h-[560px] flex-col overflow-hidden border border-white/[0.08] bg-card/40">
-          {/* верхняя плашка терминала */}
-          <div className="flex items-center justify-between border-b border-white/[0.08] bg-black/40 px-4 py-2">
-            <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-              <Activity className="h-3 w-3 text-primary" />
-              hell-ai · session
-            </div>
-            <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-              {thinking ? <span className="text-primary">analyzing…</span> : "ready"}
-            </div>
-          </div>
-
-          {/* лента сообщений */}
-          <div
-            ref={scrollRef}
-            className="relative flex-1 overflow-y-auto p-4 md:p-6"
-            style={{
-              maxHeight: "62vh",
-              backgroundImage:
-                "repeating-linear-gradient(0deg, transparent 0, transparent 31px, color-mix(in oklab, var(--primary) 6%, transparent) 31px, color-mix(in oklab, var(--primary) 6%, transparent) 32px)",
-            }}
-          >
-            {messages.length === 0 ? (
-              <EmptyTerminal onPick={send} disabled={!canAsk} />
-            ) : (
-              <ul className="space-y-5">
-                {messages.map((m) => (
-                  <li key={m.id}>
-                    {m.role === "user" ? <UserLine text={m.text} /> : <AiLine msg={m} />}
-                  </li>
-                ))}
-                {thinking && (
-                  <li>
-                    <ThinkingLine />
-                  </li>
-                )}
-              </ul>
-            )}
-          </div>
-
-          {/* Композер */}
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              send(input);
-            }}
-            className="flex items-center gap-2 border-t border-white/[0.08] bg-black/60 p-3"
-          >
-            <span className="pl-1 font-mono text-[12px] text-primary">{">"}</span>
-            <input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder={
-                isGuest
-                  ? "Hell AI доступен с Hell Pass"
-                  : canAsk
-                    ? `спроси про ${ME.bike}…`
-                    : "лимит на месяц исчерпан"
-              }
-              disabled={!canAsk || thinking}
-              className="flex-1 bg-transparent px-1 font-mono text-[13px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none disabled:cursor-not-allowed"
-            />
-            <button
-              type="submit"
-              disabled={!canAsk || !input.trim() || thinking}
-              className="flex h-9 items-center gap-1.5 bg-primary px-3.5 font-mono text-[11px] font-bold uppercase tracking-widest text-primary-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-30"
+      <div className="relative z-10 mx-auto w-full max-w-2xl">
+        <motion.div
+          className="space-y-10"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+        >
+          {/* заголовок */}
+          <div className="space-y-4 text-center">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15, duration: 0.5 }}
+              className="inline-block"
             >
-              <Send className="h-3.5 w-3.5" />
-              send
-            </button>
-          </form>
-        </section>
-      </div>
-
-      <p className="mt-6 max-w-2xl text-[11px] leading-relaxed text-muted-foreground/70">
-        Ответы AI — справочные. Для критичных работ (тормоза, подвеска, мотор) сверяйся с
-        мануалом и сервисом. Hell AI не ставит диагнозы за тебя — он экономит время на поиск.
-      </p>
-    </main>
-  );
-}
-
-// ── Левая колонка ─────────────────────────────────────────────────────────
-
-function BikeCard() {
-  return (
-    <div className="border border-white/[0.08] bg-card/40 p-4">
-      <div className="mb-3 flex items-center justify-between font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-        <span>твой мото</span>
-        <Link to="/club/me" className="text-muted-foreground transition-colors hover:text-primary">
-          сменить
-        </Link>
-      </div>
-      <div className="flex items-center gap-3">
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center border border-primary/40 bg-primary/10 text-primary">
-          <Bike className="h-5 w-5" />
-        </div>
-        <div className="min-w-0">
-          <div className="truncate text-[15px] font-semibold leading-tight text-foreground">
-            {ME.bike}
-          </div>
-          <div className="mt-0.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-            контекст активен
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function QuotaCard({
-  tier,
-  used,
-  quota,
-  isUnlimited,
-}: {
-  tier: PassTier;
-  used: number;
-  quota: number | "∞";
-  isUnlimited: boolean;
-}) {
-  const isGuest = tier === "guest";
-
-  if (isGuest) {
-    return (
-      <Link
-        to="/club/hell-pass"
-        className="group flex items-center gap-3 border border-primary/40 bg-primary/10 p-4 transition-colors hover:bg-primary/15"
-      >
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center border border-primary/40 bg-primary/20 text-primary">
-          <Lock className="h-5 w-5" />
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-primary">
-            нужен Hell Pass
-          </div>
-          <div className="truncate text-[13px] text-foreground">
-            20 / 100 / ∞ вопросов в месяц →
-          </div>
-        </div>
-      </Link>
-    );
-  }
-
-  const pct = isUnlimited ? 100 : Math.min(100, (used / (quota as number)) * 100);
-
-  return (
-    <div className="border border-white/[0.08] bg-card/40 p-4">
-      <div className="mb-3 flex items-center justify-between font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-        <span>Hell Pass · {TIER_LABEL[tier]}</span>
-        <span className="tabular-nums text-foreground">
-          {isUnlimited ? "∞" : `${used} / ${quota}`}
-        </span>
-      </div>
-      {/* gauge */}
-      <div className="relative h-2 overflow-hidden bg-black/55">
-        <div
-          className="h-full bg-gradient-to-r from-primary to-primary/60 transition-all duration-500"
-          style={{ width: `${pct}%` }}
-        />
-        <div className="pointer-events-none absolute inset-0 bg-[repeating-linear-gradient(90deg,transparent_0,transparent_9px,rgba(0,0,0,0.5)_9px,rgba(0,0,0,0.5)_10px)]" />
-      </div>
-      <div className="mt-2 font-mono text-[10px] uppercase tracking-wider text-muted-foreground/70">
-        {isUnlimited ? "безлимит" : `осталось ${(quota as number) - used} в этом месяце`}
-      </div>
-    </div>
-  );
-}
-
-function QuickActions({
-  onPick,
-  disabled,
-}: {
-  onPick: (p: string) => void;
-  disabled: boolean;
-}) {
-  return (
-    <div className="border border-white/[0.08] bg-card/40 p-4">
-      <div className="mb-3 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-        быстрые вопросы
-      </div>
-      <ul className="space-y-1.5">
-        {SUGGESTIONS.map((s) => (
-          <li key={s.label}>
-            <button
-              onClick={() => onPick(s.prompt)}
-              disabled={disabled}
-              className="group flex w-full items-center gap-2.5 border border-transparent bg-black/20 px-2.5 py-2 text-left transition-all hover:border-primary/40 hover:bg-primary/5 disabled:cursor-not-allowed disabled:opacity-40"
+              <div className="mb-3 inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-60" />
+                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary" />
+                </span>
+                hell ai · online
+              </div>
+              <h1 className="bg-gradient-to-r from-foreground to-foreground/40 bg-clip-text pb-1 font-display text-3xl font-medium tracking-tight text-transparent md:text-4xl">
+                Чем помочь по твоему мото?
+              </h1>
+              <motion.div
+                className="h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent"
+                initial={{ width: 0, opacity: 0 }}
+                animate={{ width: "100%", opacity: 1 }}
+                transition={{ delay: 0.5, duration: 0.8 }}
+              />
+            </motion.div>
+            <motion.p
+              className="text-sm text-muted-foreground"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3 }}
             >
-              <s.icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground transition-colors group-hover:text-primary" />
-              <span className="truncate text-[12px] text-foreground">{s.label}</span>
-            </button>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
+              Введи «/» для команд или просто задай вопрос
+            </motion.p>
+          </div>
 
-// ── Терминал ──────────────────────────────────────────────────────────────
+          {/* переключатель байка */}
+          <BikeSwitcher
+            bikes={bikes}
+            activeId={activeBikeId}
+            onPick={(id) => {
+              setActiveBikeId(id);
+              // переставим активный байк в начало и сохраним
+              const next = [...bikes].sort((a, b) =>
+                a.id === id ? -1 : b.id === id ? 1 : 0,
+              );
+              setBikes(next);
+              saveBikes(next);
+            }}
+          />
 
-function EmptyTerminal({
-  onPick,
-  disabled,
-}: {
-  onPick: (p: string) => void;
-  disabled: boolean;
-}) {
-  return (
-    <div className="space-y-4 font-mono text-[12px] leading-relaxed">
-      <div className="text-muted-foreground">
-        <span className="text-primary">$</span> hell-ai --init --bike="{ME.bike}"
-      </div>
-      <div className="text-muted-foreground/80">
-        <span className="text-primary">→</span> контекст загружен. сервисные данные модели подключены.
-      </div>
-      <div className="text-muted-foreground/80">
-        <span className="text-primary">→</span> готов к диагностике. задай вопрос или выбери шаблон ниже.
-      </div>
-      <div className="pt-3">
-        <div className="mb-3 text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-          // примеры
-        </div>
-        <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-          {SUGGESTIONS.slice(0, 4).map((s) => (
-            <li key={s.label}>
-              <button
-                onClick={() => onPick(s.prompt)}
-                disabled={disabled}
-                className="group flex w-full items-start gap-2.5 border border-white/[0.08] bg-black/40 p-3 text-left transition-all hover:-translate-y-px hover:border-primary/40 hover:bg-primary/5 disabled:cursor-not-allowed disabled:opacity-40"
+          {/* последний ответ */}
+          <AnimatePresence mode="wait">
+            {lastAnswer && (
+              <motion.div
+                key={lastAnswer.q}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                className="space-y-3 rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5 backdrop-blur-2xl"
               >
-                <s.icon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
-                <div className="min-w-0">
-                  <div className="truncate text-[12px] text-foreground">{s.label}</div>
-                  <div className="mt-0.5 truncate text-[10px] uppercase tracking-wider text-muted-foreground">
-                    {s.prompt}
-                  </div>
+                <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+                  ты спросил
                 </div>
-              </button>
-            </li>
-          ))}
-        </ul>
-      </div>
-    </div>
-  );
-}
+                <div className="text-sm text-foreground/80">{lastAnswer.q}</div>
+                <div className="h-px bg-white/[0.05]" />
+                <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-primary">
+                  hell ai
+                </div>
+                <div className="text-[15px] leading-relaxed text-foreground">
+                  {lastAnswer.a}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-function UserLine({ text }: { text: string }) {
-  return (
-    <div className="font-mono text-[13px] leading-relaxed">
-      <div className="mb-1 flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-        <span className="h-px w-4 bg-primary" />
-        you
-      </div>
-      <div className="border-l-2 border-primary/60 bg-primary/[0.06] px-3 py-2 text-foreground">
-        {text}
-      </div>
-    </div>
-  );
-}
+          {/* композер */}
+          <motion.div
+            className="relative rounded-2xl border border-white/[0.06] bg-white/[0.02] shadow-2xl backdrop-blur-2xl"
+            initial={{ scale: 0.98 }}
+            animate={{ scale: 1 }}
+            transition={{ delay: 0.1 }}
+          >
+            <AnimatePresence>
+              {showCmd && (
+                <motion.div
+                  ref={cmdRef}
+                  className="absolute bottom-full left-4 right-4 z-50 mb-2 overflow-hidden rounded-lg border border-white/10 bg-background/95 shadow-lg backdrop-blur-xl"
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 5 }}
+                  transition={{ duration: 0.15 }}
+                >
+                  <div className="py-1">
+                    {COMMANDS.map((c, i) => (
+                      <motion.div
+                        key={c.prefix}
+                        onClick={() => pickCommand(i)}
+                        className={cn(
+                          "flex cursor-pointer items-center gap-2 px-3 py-2 text-xs transition-colors",
+                          activeCmd === i
+                            ? "bg-primary/15 text-foreground"
+                            : "text-foreground/70 hover:bg-white/5",
+                        )}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: i * 0.03 }}
+                      >
+                        <span className="flex h-5 w-5 items-center justify-center text-muted-foreground">
+                          {c.icon}
+                        </span>
+                        <span className="font-medium">{c.label}</span>
+                        <span className="ml-auto font-mono text-[10px] text-muted-foreground">
+                          {c.prefix}
+                        </span>
+                      </motion.div>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-function AiLine({ msg }: { msg: Msg }) {
-  const shown = msg.text.slice(0, msg.typed ?? msg.text.length);
-  const isTyping = (msg.typed ?? msg.text.length) < msg.text.length;
-  return (
-    <div className="font-mono text-[13px] leading-relaxed">
-      <div className="mb-1 flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-primary">
-        <Bot className="h-3 w-3" />
-        hell-ai
+            <div className="p-4">
+              <textarea
+                ref={taRef}
+                value={value}
+                onChange={(e) => {
+                  setValue(e.target.value);
+                  adjust();
+                }}
+                onKeyDown={onKey}
+                onFocus={() => setFocused(true)}
+                onBlur={() => setFocused(false)}
+                disabled={!canAsk}
+                placeholder={
+                  isGuest
+                    ? "Hell AI доступен с Hell Pass"
+                    : !activeBike
+                      ? "добавь байк в гараж"
+                      : !canAsk
+                        ? "лимит на месяц исчерпан"
+                        : `спроси про ${bikeStr}…`
+                }
+                className="min-h-[60px] w-full resize-none border-none bg-transparent px-2 py-2 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none disabled:cursor-not-allowed"
+                style={{ overflow: "hidden" }}
+              />
+            </div>
+
+            <div className="flex items-center justify-between gap-4 border-t border-white/[0.05] p-3">
+              <div className="flex items-center gap-2">
+                <motion.button
+                  type="button"
+                  data-cmd-btn
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowCmd((s) => !s);
+                  }}
+                  whileTap={{ scale: 0.94 }}
+                  className={cn(
+                    "rounded-lg p-2 text-muted-foreground transition-colors hover:bg-white/5 hover:text-foreground",
+                    showCmd && "bg-white/10 text-foreground",
+                  )}
+                  aria-label="команды"
+                >
+                  <CommandIcon className="h-4 w-4" />
+                </motion.button>
+                <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+                  {TIER_LABEL[CURRENT_TIER]} ·{" "}
+                  <span className="tabular-nums text-foreground/80">
+                    {isUnlimited ? "∞" : `${used}/${quota}`}
+                  </span>
+                </span>
+              </div>
+
+              <motion.button
+                type="button"
+                onClick={send}
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.98 }}
+                disabled={isThinking || !value.trim() || !canAsk}
+                className={cn(
+                  "flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all",
+                  value.trim() && canAsk
+                    ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
+                    : "bg-white/[0.05] text-muted-foreground",
+                )}
+              >
+                {isThinking ? (
+                  <LoaderIcon className="h-4 w-4 animate-[spin_2s_linear_infinite]" />
+                ) : (
+                  <SendIcon className="h-4 w-4" />
+                )}
+                <span>Send</span>
+              </motion.button>
+            </div>
+          </motion.div>
+        </motion.div>
       </div>
-      <div className="border-l-2 border-white/20 bg-black/30 px-3 py-2.5 text-foreground">
-        {shown}
-        {isTyping && (
-          <span className="ml-0.5 inline-block h-3 w-1.5 -translate-y-px animate-pulse bg-primary align-middle" />
+
+      {/* thinking pill */}
+      <AnimatePresence>
+        {isThinking && (
+          <motion.div
+            className="fixed bottom-8 left-1/2 z-20 -translate-x-1/2 rounded-full border border-white/[0.06] bg-white/[0.03] px-4 py-2 shadow-lg backdrop-blur-2xl"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+          >
+            <div className="flex items-center gap-3">
+              <div className="flex h-7 w-8 items-center justify-center rounded-full bg-primary/15">
+                <span className="font-mono text-[10px] font-bold uppercase text-primary">
+                  hell
+                </span>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-foreground/70">
+                <span>думаю</span>
+                <TypingDots />
+              </div>
+            </div>
+          </motion.div>
         )}
-      </div>
-      {msg.source && !isTyping && (
-        <div className="mt-1.5 pl-3 text-[10px] uppercase tracking-wider text-muted-foreground/70">
-          ↳ {msg.source}
-        </div>
+      </AnimatePresence>
+
+      {/* подсветка за курсором при фокусе */}
+      {focused && (
+        <motion.div
+          className="pointer-events-none fixed z-0 h-[40rem] w-[40rem] rounded-full bg-primary opacity-[0.04] blur-[96px]"
+          animate={{ x: mouse.x - 320, y: mouse.y - 320 }}
+          transition={{ type: "spring", damping: 25, stiffness: 150, mass: 0.5 }}
+        />
       )}
     </div>
   );
 }
 
-function ThinkingLine() {
+// ── переключатель байка ──────────────────────────────────────────────────
+function BikeSwitcher({
+  bikes,
+  activeId,
+  onPick,
+}: {
+  bikes: StoredBike[];
+  activeId: string;
+  onPick: (id: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const active = bikes.find((b) => b.id === activeId);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const h = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", h);
+    return () => document.removeEventListener("mousedown", h);
+  }, []);
+
+  if (bikes.length === 0) {
+    return (
+      <div className="mx-auto flex w-fit items-center gap-2 rounded-full border border-white/[0.06] bg-white/[0.02] px-3 py-1.5 text-xs text-muted-foreground backdrop-blur-xl">
+        <BikeIcon className="h-3.5 w-3.5" />
+        В гараже пусто — добавь байк в профиле
+      </div>
+    );
+  }
+
   return (
-    <div className="font-mono text-[13px]">
-      <div className="mb-1 flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-primary">
-        <Bot className="h-3 w-3" />
-        hell-ai
-      </div>
-      <div className="flex items-center gap-1.5 border-l-2 border-primary/40 bg-black/30 px-3 py-3">
-        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary [animation-delay:-0.3s]" />
-        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary [animation-delay:-0.15s]" />
-        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary" />
-        <span className="ml-2 text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-          анализирую…
+    <div ref={ref} className="relative mx-auto w-fit">
+      <button
+        onClick={() => setOpen((s) => !s)}
+        className="group flex items-center gap-2.5 rounded-full border border-white/[0.06] bg-white/[0.02] py-1.5 pl-2 pr-3.5 text-xs text-foreground/80 backdrop-blur-xl transition-colors hover:border-primary/30 hover:bg-white/[0.04]"
+      >
+        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/15 text-primary">
+          <BikeIcon className="h-3.5 w-3.5" />
         </span>
-      </div>
+        <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+          контекст:
+        </span>
+        <span className="font-medium">{active ? bikeLabel(active) : "—"}</span>
+        <span className="text-muted-foreground/60 transition-transform group-hover:translate-y-0.5">
+          ▾
+        </span>
+      </button>
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 4 }}
+            transition={{ duration: 0.15 }}
+            className="absolute left-1/2 top-full z-30 mt-2 w-72 -translate-x-1/2 overflow-hidden rounded-xl border border-white/10 bg-background/95 shadow-2xl backdrop-blur-xl"
+          >
+            <div className="py-1">
+              {bikes.map((b) => {
+                const isActive = b.id === activeId;
+                return (
+                  <button
+                    key={b.id}
+                    onClick={() => {
+                      onPick(b.id);
+                      setOpen(false);
+                    }}
+                    className={cn(
+                      "flex w-full items-center gap-3 px-3 py-2.5 text-left text-sm transition-colors",
+                      isActive
+                        ? "bg-primary/10 text-foreground"
+                        : "text-foreground/80 hover:bg-white/5",
+                    )}
+                  >
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-white/[0.04] text-primary">
+                      <BikeIcon className="h-4 w-4" />
+                    </span>
+                    <span className="flex-1 truncate">
+                      <span className="block truncate text-[13px] font-medium">
+                        {bikeLabel(b)}
+                      </span>
+                      {b.mileage && (
+                        <span className="block truncate font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                          {b.mileage}
+                        </span>
+                      )}
+                    </span>
+                    {isActive && <Check className="h-4 w-4 text-primary" />}
+                  </button>
+                );
+              })}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function TypingDots() {
+  return (
+    <div className="ml-1 flex items-center">
+      {[0, 1, 2].map((i) => (
+        <motion.div
+          key={i}
+          className="mx-0.5 h-1.5 w-1.5 rounded-full bg-primary"
+          initial={{ opacity: 0.3 }}
+          animate={{ opacity: [0.3, 1, 0.3], scale: [0.85, 1.1, 0.85] }}
+          transition={{
+            duration: 1.2,
+            repeat: Infinity,
+            delay: i * 0.15,
+            ease: "easeInOut",
+          }}
+        />
+      ))}
     </div>
   );
 }
