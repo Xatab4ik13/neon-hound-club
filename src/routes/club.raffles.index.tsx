@@ -294,20 +294,14 @@ function FeaturedRaffle({
   return (
     <motion.section
       layout
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, ease: "easeOut" }}
       className="group relative overflow-hidden border border-white/[0.08] bg-card/40"
     >
       {/* image */}
       <div className="relative h-[200px] overflow-hidden sm:h-[280px] md:h-[420px]">
-        <motion.img
+        <img
           key={raffle.id}
           src={raffle.image}
           alt={raffle.title}
-          initial={{ scale: 1.08, opacity: 0.5 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 1.1, ease: "easeOut" }}
           className="absolute inset-0 h-full w-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-transparent" />
