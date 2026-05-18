@@ -155,7 +155,7 @@ export function Hero() {
                 </span>
               </div>
             </div>
-          </a>
+          </Link>
         </aside>
       </div>
     </section>

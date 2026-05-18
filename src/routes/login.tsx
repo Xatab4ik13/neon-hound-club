@@ -181,11 +181,8 @@ function LoginPage() {
             </button>
 
             <p className="font-mono text-[11px] leading-relaxed text-muted-foreground">
-              Нажимая кнопку, вы соглашаетесь с{" "}
-              <a href="/terms" className="text-primary underline-offset-4 hover:underline">
-                правилами клуба
-              </a>{" "}
-              и обработкой персональных данных.
+              Нажимая кнопку, вы соглашаетесь с правилами клуба и обработкой
+              персональных данных.
             </p>
           </form>
         ) : (
