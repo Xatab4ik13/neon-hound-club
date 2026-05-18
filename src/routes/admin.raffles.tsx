@@ -34,6 +34,7 @@ type Raffle = {
   endsAt: string; // дата окончания — для таймера на сайте
   createdAt: string;
   participants: number;
+  ticketsSpent: number;
   prizes: Prize[];
 };
 
@@ -46,6 +47,7 @@ const SEED: Raffle[] = [
     endsAt: "2026-06-30",
     createdAt: "2026-05-01",
     participants: 823,
+    ticketsSpent: 4120,
     prizes: [
       { id: "p1", name: "Шлем AGV K6", qty: 1 },
       { id: "p2", name: "Перчатки v3", qty: 5 },
@@ -59,6 +61,7 @@ const SEED: Raffle[] = [
     endsAt: "2026-04-30",
     createdAt: "2026-03-01",
     participants: 198,
+    ticketsSpent: 612,
     prizes: [{ id: "p4", name: "Перчатки Пит-крю", qty: 3 }],
   },
 ];
@@ -72,6 +75,7 @@ function emptyRaffle(): Raffle {
     endsAt: "",
     createdAt: new Date().toISOString().slice(0, 10),
     participants: 0,
+    ticketsSpent: 0,
     prizes: [],
   };
 }
