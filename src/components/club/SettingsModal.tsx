@@ -67,45 +67,40 @@ export function SettingsModal({ open, onOpenChange }: Props) {
         onMouseDown={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex shrink-0 items-start justify-between gap-4 border-b border-white/[0.06] px-5 py-4 sm:px-7 sm:py-5">
-          <div className="min-w-0">
-            <h2
-              id="settings-title"
-              className="font-display text-lg font-black uppercase italic tracking-tight sm:text-xl"
-            >
-              Настройки
-            </h2>
-            <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-              Профиль · доставка · уведомления · аккаунт
-            </p>
-          </div>
+        <div className="flex shrink-0 items-center justify-between gap-4 border-b border-white/[0.06] px-5 py-4 sm:px-7 sm:py-5">
+          <h2
+            id="settings-title"
+            className="font-display text-lg font-black uppercase italic tracking-tight sm:text-xl"
+          >
+            Настройки
+          </h2>
           <button
             type="button"
             onClick={() => onOpenChange(false)}
             aria-label="Закрыть"
-            className="-mr-2 -mt-1 flex h-9 w-9 shrink-0 items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
+            className="-mr-2 flex h-9 w-9 shrink-0 items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        {/* Мобильные табы — горизонтальный скролл-ряд */}
+        {/* Мобильные табы — фиксированная сетка 4×, без скролла */}
         <div className="shrink-0 border-b border-white/[0.06] md:hidden">
-          <div className="flex overflow-x-auto">
+          <div className="grid grid-cols-4">
             {TABS.map((t) => (
               <button
                 key={t.id}
                 type="button"
                 onClick={() => setTab(t.id)}
                 className={
-                  "flex shrink-0 items-center gap-2 border-b-2 px-4 py-3 font-mono text-[10px] font-bold uppercase tracking-[0.2em] transition-colors " +
+                  "flex flex-col items-center justify-center gap-1 border-b-2 px-1 py-2.5 font-mono text-[9px] font-bold uppercase tracking-[0.12em] transition-colors " +
                   (tab === t.id
                     ? "border-primary bg-primary/5 text-foreground"
                     : "border-transparent text-muted-foreground hover:text-foreground")
                 }
               >
                 {t.icon}
-                <span>{t.short}</span>
+                <span className="leading-none">{t.short}</span>
               </button>
             ))}
           </div>
