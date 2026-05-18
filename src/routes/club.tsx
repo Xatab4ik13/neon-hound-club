@@ -238,8 +238,6 @@ function TopBar({ onMenu }: { onMenu: () => void }) {
           </svg>
         </button>
 
-        <div className="flex-1" />
-
         <button
           type="button"
           aria-label="Уведомления"
@@ -251,7 +249,9 @@ function TopBar({ onMenu }: { onMenu: () => void }) {
           <span aria-hidden className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-primary" />
         </button>
 
-        <ProfilePlaque compact />
+        <div className="min-w-0 flex-1">
+          <ProfilePlaque compact />
+        </div>
       </div>
     </header>
   );
@@ -841,7 +841,7 @@ export function ProfilePlaque({
       onClick={onNavigate}
       aria-label={`Профиль ${ME.nick}, ${rank.label}, ${xp} из ${xpMax} XP`}
       className={`group relative flex min-w-0 items-center gap-3 transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98] ${
-        compact ? "w-full min-w-0 flex-1 md:max-w-[360px]" : "w-full"
+        compact ? "w-full min-w-0" : "w-full"
       }`}
     >
       <div
@@ -874,7 +874,7 @@ export function ProfilePlaque({
       </div>
 
       <div
-        className={`relative flex h-full min-w-0 flex-1 flex-col justify-center overflow-hidden ${variant.base} py-2 pl-4 pr-6`}
+        className={`relative flex h-full min-w-0 flex-1 flex-col justify-center overflow-hidden ${variant.base} py-2 pl-3 pr-4 sm:pl-4 sm:pr-6`}
         style={{
           height: `${size}px`,
           clipPath: "polygon(0 0, 96% 0, 100% 50%, 96% 100%, 0 100%)",
@@ -954,7 +954,7 @@ export function ProfilePlaque({
           )}
 
           <div
-            className="flex h-3 shrink-0 items-center border-l-2 pl-1.5"
+            className="hidden h-3 shrink-0 items-center border-l-2 pl-1.5 sm:flex"
             style={{ borderColor: rank.accent }}
           >
             <span
