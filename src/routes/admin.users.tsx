@@ -25,7 +25,7 @@ type PassTier = "Silver" | "Gold" | "Platinum" | "—";
 
 function UsersPage() {
   const users = Object.values(PUBLIC_USERS);
-  const [selected, setSelected] = useState<(typeof users)[number] | null>(null);
+  const [selected, setSelected] = useState<PublicUser | null>(null);
   const [confirmBan, setConfirmBan] = useState(false);
   const [giftOpen, setGiftOpen] = useState(false);
   const [query, setQuery] = useState("");
