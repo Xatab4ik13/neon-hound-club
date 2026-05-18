@@ -1,5 +1,15 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useViewer } from "@/hooks/use-viewer";
+
 
 const NAV = [
   { label: "Магазин", href: "/shop" },
