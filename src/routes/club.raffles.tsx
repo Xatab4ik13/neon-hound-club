@@ -576,11 +576,22 @@ function MiniRaffle({
 
 function TicketStore({
   balance,
-  onBuy,
+  cart,
+  totalTickets,
+  totalPrice,
+  onAdd,
+  onRemove,
+  onCheckout,
 }: {
   balance: number;
-  onBuy: (count: number) => void;
+  cart: Record<string, number>;
+  totalTickets: number;
+  totalPrice: number;
+  onAdd: (id: string) => void;
+  onRemove: (id: string) => void;
+  onCheckout: () => void;
 }) {
+  const hasItems = totalTickets > 0;
   return (
     <div className="relative overflow-hidden border border-white/[0.08] bg-card/40 p-5">
       <div
@@ -599,13 +610,65 @@ function TicketStore({
               key={p.id}
               pack={p}
               index={i}
-              onBuy={() => onBuy(p.count)}
+              qty={cart[p.id] || 0}
+              onAdd={() => onAdd(p.id)}
+              onRemove={() => onRemove(p.id)}
             />
           ))}
         </div>
 
-        <div className="mt-4 border-t border-white/[0.06] pt-3 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-          баланс: <span className="text-primary">{balance}</span> билет.
+        {/* totals + checkout */}
+        <div
+          className={`mt-4 border-t border-white/[0.06] pt-4 transition-all ${
+            hasItems ? "opacity-100" : "opacity-60"
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+              к покупке
+            </div>
+            <div className="font-display text-lg font-black italic tabular-nums text-foreground">
+              {totalTickets}
+            </div>
+          </div>
+          <div className="mt-1 flex items-center justify-between">
+            <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+              сумма
+            </div>
+            <div className="font-display text-lg font-black italic tabular-nums text-primary">
+              {totalPrice.toLocaleString("ru-RU")} ₽
+            </div>
+          </div>
+
+          <motion.button
+            type="button"
+            onClick={onCheckout}
+            disabled={!hasItems}
+            whileTap={{ scale: 0.97 }}
+            className="group relative mt-4 flex w-full items-center justify-center gap-2 overflow-hidden bg-primary py-3 font-display text-sm font-black uppercase italic tracking-widest text-primary-foreground transition-all hover:shadow-[0_0_32px_-4px_var(--primary)] disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
+          >
+            <span className="relative z-10 flex items-center gap-2">
+              <Zap className="h-4 w-4" />
+              купить
+            </span>
+            {hasItems && (
+              <motion.div
+                aria-hidden
+                className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent"
+                animate={{ x: ["-100%", "200%"] }}
+                transition={{
+                  duration: 1.6,
+                  repeat: Infinity,
+                  ease: "linear",
+                }}
+              />
+            )}
+          </motion.button>
+
+          <div className="mt-3 text-center font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+            баланс: <span className="text-primary">{balance}</span> билет
+            {balance === 1 ? "" : "а"}
+          </div>
         </div>
       </div>
     </div>
@@ -615,32 +678,42 @@ function TicketStore({
 function PackRow({
   pack,
   index,
-  onBuy,
+  qty,
+  onAdd,
+  onRemove,
 }: {
   pack: (typeof TICKET_PACKS)[number];
   index: number;
-  onBuy: () => void;
+  qty: number;
+  onAdd: () => void;
+  onRemove: () => void;
 }) {
+  const active = qty > 0;
   return (
-    <motion.button
-      type="button"
-      onClick={onBuy}
+    <motion.div
       initial={{ opacity: 0, x: 12 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: index * 0.04 }}
-      whileHover={{ x: 2 }}
-      className={`group flex w-full items-center justify-between gap-3 border px-3 py-2.5 text-left transition-all ${
-        pack.hot
-          ? "border-primary/50 bg-primary/[0.06] hover:border-primary"
-          : "border-white/[0.08] bg-black/30 hover:border-primary/40 hover:bg-primary/[0.04]"
+      className={`group flex items-center justify-between gap-2 border px-3 py-2.5 transition-all ${
+        active
+          ? "border-primary/60 bg-primary/[0.08] shadow-[0_0_20px_-6px_var(--primary)]"
+          : pack.hot
+            ? "border-primary/50 bg-primary/[0.06] hover:border-primary"
+            : "border-white/[0.08] bg-black/30 hover:border-primary/40 hover:bg-primary/[0.04]"
       }`}
     >
-      <div className="flex items-center gap-3">
+      <button
+        type="button"
+        onClick={onAdd}
+        className="flex flex-1 items-center gap-3 text-left"
+      >
         <div
-          className={`flex h-9 w-9 items-center justify-center border ${
-            pack.hot
-              ? "border-primary/60 bg-primary/10 text-primary"
-              : "border-white/[0.10] text-muted-foreground group-hover:text-primary"
+          className={`flex h-9 w-9 shrink-0 items-center justify-center border ${
+            active
+              ? "border-primary/80 bg-primary/20 text-primary"
+              : pack.hot
+                ? "border-primary/60 bg-primary/10 text-primary"
+                : "border-white/[0.10] text-muted-foreground group-hover:text-primary"
           }`}
         >
           <Ticket className="h-4 w-4" />
@@ -655,16 +728,42 @@ function PackRow({
             </div>
           )}
         </div>
-      </div>
-      <div className="text-right">
-        <div className="font-display text-sm font-black tabular-nums text-foreground">
-          {pack.price} ₽
+      </button>
+
+      <div className="flex items-center gap-2">
+        {active && (
+          <>
+            <button
+              type="button"
+              onClick={onRemove}
+              className="flex h-7 w-7 items-center justify-center border border-white/[0.10] text-muted-foreground transition-all hover:border-primary/60 hover:text-primary"
+            >
+              <Minus className="h-3 w-3" />
+            </button>
+            <motion.div
+              key={qty}
+              initial={{ scale: 0.7, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="min-w-[1.5rem] text-center font-display text-base font-black italic tabular-nums text-primary"
+            >
+              {qty}
+            </motion.div>
+          </>
+        )}
+        <div className="text-right">
+          <div className="font-display text-sm font-black tabular-nums text-foreground">
+            {pack.price.toLocaleString("ru-RU")} ₽
+          </div>
+          <div
+            className={`font-mono text-[9px] uppercase tracking-wider transition-opacity ${
+              active ? "text-primary opacity-100" : "text-muted-foreground opacity-0 group-hover:opacity-100"
+            }`}
+          >
+            {active ? "в корзине" : "добавить"}
+          </div>
         </div>
-        <div className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100">
-          купить
-        </div>
       </div>
-    </motion.button>
+    </motion.div>
   );
 }
 
