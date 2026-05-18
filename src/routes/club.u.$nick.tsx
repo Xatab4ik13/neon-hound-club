@@ -180,7 +180,7 @@ function UserProfilePage() {
                     {xp.toLocaleString("ru-RU")}
                   </span>{" "}
                   <span className="opacity-40">/</span>{" "}
-                  {XP_PER_RANK.toLocaleString("ru-RU")} XP
+                  {xpMax.toLocaleString("ru-RU")} XP
                 </span>
               </div>
             </div>
