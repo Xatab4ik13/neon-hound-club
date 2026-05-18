@@ -6,7 +6,7 @@ import {
   useRouter,
 } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
+import { hhToast } from "@/lib/hh-toast";
 import { Header } from "@/components/brand/Header";
 import { Footer } from "@/components/brand/Footer";
 import { PRODUCTS, SOURCE_LABEL, type Product } from "@/data/products";
@@ -113,7 +113,7 @@ function ProductPage() {
   const handleAdd = (goToCart = false) => {
     if (isSold) return;
     if (product.sizes && product.sizes.length > 0 && !size) {
-      toast.error("Выберите размер");
+      hhToast.error("Выберите размер", { meta: "HRC // SIZE_REQUIRED" });
       return;
     }
     add(
@@ -126,7 +126,9 @@ function ProductPage() {
       },
       qty,
     );
-    toast.success(`${product.name} добавлен в корзину`);
+    hhToast.success("Добавлено в корзину", {
+      meta: `${product.name}${size ? ` · ${size}` : ""} × ${qty}`,
+    });
     if (goToCart) navigate({ to: "/cart" });
   };
 
