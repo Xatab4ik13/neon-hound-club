@@ -27,7 +27,6 @@ type Prize = {
   description?: string;
   price: number; // в билетах
   ends: string;
-  participants: number;
   images: string[]; // dataURL
   status: "active" | "draft" | "finished";
 };
@@ -38,6 +37,7 @@ type Raffle = {
   description?: string;
   status: "active" | "draft" | "finished";
   createdAt: string;
+  participants: number; // общие участники розыгрыша
   prizes: Prize[];
 };
 
