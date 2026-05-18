@@ -109,7 +109,7 @@ export function Header() {
             </a>
 
             <a
-              href={isAuthed ? "/garage" : "/login"}
+              href={isAuthed ? "/club" : "/login"}
               className="group relative overflow-hidden rounded-full border border-primary/30 px-6 py-2 font-mono text-[11px] font-medium uppercase tracking-[0.2em] text-primary transition-all duration-300 hover:border-primary hover:shadow-[0_0_15px_hsl(var(--primary)/0.3)]"
             >
               <span className="relative z-10 transition-colors duration-300 group-hover:text-primary-foreground">
