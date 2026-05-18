@@ -28,7 +28,7 @@ export const Route = createFileRoute("/club")({
 
 const NAV: { label: string; href: string; icon: LucideIcon; final?: boolean }[] = [
   { label: "Лента", href: "/club", icon: Newspaper },
-  { label: "Мой Гараж", href: "/club/garage", icon: Wrench },
+  { label: "Hell AI", href: "/club/hell-ai", icon: Bot },
   { label: "Розыгрыши", href: "/club/raffles", icon: Ticket },
   { label: "Магазин", href: "/shop", icon: ShoppingBag },
   { label: "Школа", href: "/club/school", icon: GraduationCap },
