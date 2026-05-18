@@ -115,28 +115,25 @@ function Index() {
         {/* HERO */}
         <Hero />
 
-        {/* DROP */}
+        {/* POPULAR PRODUCTS */}
         <section id="drop" className="bg-surface py-24">
           <div className="mx-auto max-w-7xl px-6">
             <div className="mb-12 flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
               <div>
                 <div className="mb-3 font-mono text-xs uppercase tracking-widest text-primary">
-                  Лимитированный мерч
+                  Магазин
                 </div>
                 <h2 className="text-balance font-display text-4xl uppercase tracking-tight md:text-5xl">
-                  Серия основателей
+                  Популярные товары
                 </h2>
-                <p className="mt-3 max-w-[48ch] text-pretty text-muted-foreground">
-                  Лимитированный релиз для основателей клуба. Плотная вышивка,
-                  тяжёлый хлопок, без перевыпусков.
-                </p>
               </div>
-              <div className="text-right">
-                <div className="font-mono text-xl text-primary">ТОЛЬКО 666 ШТ.</div>
-                <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
-                  Без перевыпуска
-                </div>
-              </div>
+              <Link
+                to="/shop"
+                className="inline-flex items-center gap-2 border border-border px-5 py-2.5 font-mono text-[11px] font-bold uppercase tracking-widest text-muted-foreground transition-colors hover:border-foreground/40 hover:text-foreground"
+              >
+                Смотреть больше
+                <span className="text-[10px]">→</span>
+              </Link>
             </div>
 
             <div className="grid gap-6 md:grid-cols-3">
