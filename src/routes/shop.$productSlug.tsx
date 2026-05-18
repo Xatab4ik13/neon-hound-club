@@ -2,12 +2,15 @@ import {
   createFileRoute,
   Link,
   notFound,
+  useNavigate,
   useRouter,
 } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import { Header } from "@/components/brand/Header";
 import { Footer } from "@/components/brand/Footer";
 import { PRODUCTS, SOURCE_LABEL, type Product } from "@/data/products";
+import { useCart } from "@/hooks/use-cart";
 
 export const Route = createFileRoute("/shop/$productSlug")({
   loader: ({ params }) => {
@@ -105,6 +108,27 @@ function ProductPage() {
 
   const isSold = product.badge?.label.toLowerCase() === "распродано";
 
+  const { add } = useCart();
+  const navigate = useNavigate();
+  const handleAdd = (goToCart = false) => {
+    if (isSold) return;
+    if (product.sizes && product.sizes.length > 0 && !size) {
+      toast.error("Выберите размер");
+      return;
+    }
+    add(
+      {
+        slug: product.slug,
+        name: product.name,
+        price: product.price,
+        image: product.image,
+        size,
+      },
+      qty,
+    );
+    toast.success(`${product.name} добавлен в корзину`);
+    if (goToCart) navigate({ to: "/cart" });
+  };
 
   return (
     <div className="min-h-screen bg-background pb-24 text-foreground lg:pb-0">
