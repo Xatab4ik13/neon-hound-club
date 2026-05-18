@@ -27,7 +27,6 @@ type Prize = {
   description?: string;
   price: number; // в билетах
   ends: string;
-  participants: number;
   images: string[]; // dataURL
   status: "active" | "draft" | "finished";
 };
@@ -38,6 +37,7 @@ type Raffle = {
   description?: string;
   status: "active" | "draft" | "finished";
   createdAt: string;
+  participants: number; // общие участники розыгрыша
   prizes: Prize[];
 };
 
@@ -48,10 +48,11 @@ const SEED: Raffle[] = [
     description: "Главная летняя серия призов от HELLHOUND.",
     status: "active",
     createdAt: "2026-05-01",
+    participants: 823,
     prizes: [
-      { id: "p1", name: "Шлем AGV K6", price: 50, status: "active", ends: "2026-05-20", participants: 284, images: [] },
-      { id: "p2", name: "Перчатки v3", price: 20, status: "active", ends: "2026-05-22", participants: 127, images: [] },
-      { id: "p3", name: "Худи Founder S01", price: 30, status: "active", ends: "2026-05-25", participants: 412, images: [] },
+      { id: "p1", name: "Шлем AGV K6", price: 50, status: "active", ends: "2026-05-20", images: [] },
+      { id: "p2", name: "Перчатки v3", price: 20, status: "active", ends: "2026-05-22", images: [] },
+      { id: "p3", name: "Худи Founder S01", price: 30, status: "active", ends: "2026-05-25", images: [] },
     ],
   },
   {
@@ -59,8 +60,9 @@ const SEED: Raffle[] = [
     name: "Весенний розыгрыш",
     status: "finished",
     createdAt: "2026-03-01",
+    participants: 198,
     prizes: [
-      { id: "p4", name: "Перчатки Пит-крю", price: 15, status: "finished", ends: "2026-04-30", participants: 198, images: [] },
+      { id: "p4", name: "Перчатки Пит-крю", price: 15, status: "finished", ends: "2026-04-30", images: [] },
     ],
   },
 ];
@@ -85,7 +87,7 @@ function RafflesPage() {
   }
 
   const openNew = () => {
-    setEditing({ id: "", name: "", status: "draft", createdAt: new Date().toISOString().slice(0, 10), prizes: [] });
+    setEditing({ id: "", name: "", status: "draft", createdAt: new Date().toISOString().slice(0, 10), participants: 0, prizes: [] });
     setOpen(true);
   };
 
@@ -103,10 +105,11 @@ function RafflesPage() {
 
       <Panel>
         <DataTable
-          headers={["Название", "Призов", "Создан", "Статус", ""]}
+          headers={["Название", "Призов", "Участников", "Создан", "Статус", ""]}
           rows={list.map((r) => [
             <span className="font-medium">{r.name}</span>,
             <Badge tone="zinc">{r.prizes.length}</Badge>,
+            <span className="font-medium">{r.participants}</span>,
             r.createdAt,
             <Badge tone={r.status === "active" ? "emerald" : r.status === "draft" ? "zinc" : "rose"}>
               {r.status === "active" ? "Активен" : r.status === "draft" ? "Черновик" : "Завершён"}
@@ -235,7 +238,6 @@ function RaffleDetail({
       price: 10,
       status: "draft",
       ends: "",
-      participants: 0,
       images: [],
     });
     setOpen(true);
@@ -278,9 +280,12 @@ function RaffleDetail({
         <Panel>
           <PanelHeader>
             <h3 className="text-sm font-semibold">Призы ({raffle.prizes.length})</h3>
+            <span className="text-xs text-zinc-500 dark:text-zinc-400">
+              Участников в розыгрыше: <b>{raffle.participants}</b>
+            </span>
           </PanelHeader>
           <DataTable
-            headers={["", "Название", "Цена", "Окончание", "Участников", "Статус", ""]}
+            headers={["", "Название", "Цена", "Окончание", "Статус", ""]}
             rows={raffle.prizes.map((p) => [
               p.images[0] ? (
                 <img src={p.images[0]} alt={p.name} className="h-10 w-10 rounded object-cover" />
@@ -292,7 +297,6 @@ function RaffleDetail({
               <span className="font-medium">{p.name}</span>,
               `${p.price} 🎟`,
               p.ends || "—",
-              p.participants,
               <Badge tone={p.status === "active" ? "emerald" : p.status === "draft" ? "zinc" : "rose"}>
                 {p.status === "active" ? "Активен" : p.status === "draft" ? "Черновик" : "Завершён"}
               </Badge>,
