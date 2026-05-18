@@ -108,18 +108,80 @@ export function Header() {
               </span>
             </a>
 
-            <a
-              href={isAuthed ? "/club" : "/login"}
-              className="group relative overflow-hidden rounded-full border border-primary/30 px-6 py-2 font-mono text-[11px] font-medium uppercase tracking-[0.2em] text-primary transition-all duration-300 hover:border-primary hover:shadow-[0_0_15px_hsl(var(--primary)/0.3)]"
-            >
-              <span className="relative z-10 transition-colors duration-300 group-hover:text-primary-foreground">
-                {isAuthed ? "Мой Гараж" : "Войти"}
-              </span>
-              <span
-                aria-hidden
-                className="absolute inset-0 translate-y-full bg-primary transition-transform duration-300 group-hover:translate-y-0"
-              />
-            </a>
+            {isAuthed ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className="group flex items-center gap-2.5 rounded-full border border-primary/30 py-1 pl-1 pr-4 text-left transition-colors hover:border-primary"
+                  >
+                    <span
+                      aria-hidden
+                      className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/15 font-mono text-[11px] font-bold uppercase text-primary"
+                    >
+                      {nick?.slice(0, 2) ?? "—"}
+                    </span>
+                    <span className="flex flex-col leading-tight">
+                      <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-foreground">
+                        {nick}
+                      </span>
+                      <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-primary">
+                        {tier ?? ""} · {tickets} б.
+                      </span>
+                    </span>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  className="w-56 border-border bg-background"
+                >
+                  <DropdownMenuLabel className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+                    Личный кабинет
+                  </DropdownMenuLabel>
+                  <DropdownMenuItem asChild>
+                    <Link to="/club">Главная клуба</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/club/me">Мой гараж</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/club/hell-pass">Hell Pass</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onSelect={signOut}>Выйти</DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onSelect={toggleAuth}
+                    className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground"
+                  >
+                    dev: режим гостя
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <>
+                <a
+                  href="/login"
+                  className="group relative overflow-hidden rounded-full border border-primary/30 px-6 py-2 font-mono text-[11px] font-medium uppercase tracking-[0.2em] text-primary transition-all duration-300 hover:border-primary hover:shadow-[0_0_15px_hsl(var(--primary)/0.3)]"
+                >
+                  <span className="relative z-10 transition-colors duration-300 group-hover:text-primary-foreground">
+                    Войти
+                  </span>
+                  <span
+                    aria-hidden
+                    className="absolute inset-0 translate-y-full bg-primary transition-transform duration-300 group-hover:translate-y-0"
+                  />
+                </a>
+                <button
+                  type="button"
+                  onClick={toggleAuth}
+                  className="font-mono text-[9px] uppercase tracking-[0.2em] text-muted-foreground/60 transition-colors hover:text-primary"
+                  title="Dev: войти как ASPHALT_DOG"
+                >
+                  dev
+                </button>
+              </>
+            )}
           </div>
 
           {/* Mobile burger */}
