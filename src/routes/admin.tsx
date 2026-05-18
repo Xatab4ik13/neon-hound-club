@@ -44,17 +44,12 @@ const NAV: NavItem[] = [
 ];
 
 function AdminLayout() {
-  const [theme, setTheme] = useState<"light" | "dark">("dark");
+  const [theme, setTheme] = useState<"light" | "dark">(() => {
+    if (typeof window === "undefined") return "dark";
+    return (localStorage.getItem("admin-theme") as "light" | "dark" | null) ?? "dark";
+  });
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-
-  useEffect(() => {
-    const saved = (typeof window !== "undefined" && localStorage.getItem("admin-theme")) as
-      | "light"
-      | "dark"
-      | null;
-    if (saved) setTheme(saved);
-  }, []);
 
   useEffect(() => {
     if (typeof window !== "undefined") localStorage.setItem("admin-theme", theme);
