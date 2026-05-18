@@ -622,9 +622,9 @@ function SectionGarage() {
       </div>
 
       {/* Hero: главный байк + пустой слот */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
         {primary ? (
-          <div className="md:col-span-3">
+          <div className="col-span-2 md:col-span-3">
             <HeroBikeCard
               bike={primary}
               onEdit={() => openEdit(primary)}
