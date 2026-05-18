@@ -87,7 +87,7 @@ function RafflesPage() {
   }
 
   const openNew = () => {
-    setEditing({ id: "", name: "", status: "draft", createdAt: new Date().toISOString().slice(0, 10), prizes: [] });
+    setEditing({ id: "", name: "", status: "draft", createdAt: new Date().toISOString().slice(0, 10), participants: 0, prizes: [] });
     setOpen(true);
   };
 
