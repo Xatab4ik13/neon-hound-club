@@ -8,15 +8,40 @@ export const ME = {
   totals: { tickets: 7, wins: 1, orders: 4, bikes: 1 },
 };
 
+export type RafflePrize = {
+  /** Место в розыгрыше: 1 — главный приз, 2/3 и т.д. — доп. призы. */
+  place: number;
+  title: string;
+  /** Короткое описание приза (модель, комплектация и т.п.). */
+  note?: string;
+  /** Оценочная стоимость в рублях — для шкалы «общий призовой фонд». */
+  valueRub?: number;
+  image?: string;
+};
+
+export type RaffleSpec = { label: string; value: string };
+
 export type ActiveTicket = {
   id: string;
   title: string;
+  /** Короткий подзаголовок, напр. «спортбайк 2024 · из салона». */
+  subtitle?: string;
   myTickets: number;
   totalTickets: number;
   deadline: string;
   /** ISO-таймстемп закрытия розыгрыша — для live-таймера. */
   deadlineAt: string;
   image: string;
+  /** Дополнительные фото для галереи на детальной странице. */
+  gallery?: string[];
+  /** Длинное описание (поддерживает абзацы через \n\n). */
+  description?: string;
+  /** Технические характеристики (выводятся таблицей). */
+  specs?: RaffleSpec[];
+  /** Все призы розыгрыша. Если не задано — единственный приз = title. */
+  prizes?: RafflePrize[];
+  /** Условия участия / что важно знать. */
+  rules?: string[];
 };
 
 // Динамические дедлайны: ближайшее воскресенье 23:59 и ближайшая пятница 20:00.
@@ -37,22 +62,105 @@ export const ACTIVE_TICKETS: ActiveTicket[] = [
   {
     id: "r1",
     title: "Yamaha R1",
+    subtitle: "Спортбайк 2024 · 998 cc · из салона",
     myTickets: 12,
     totalTickets: 3000,
     deadline: "вс · 23:59",
     deadlineAt: nextWeekday(0, 23, 59),
     image:
-      "https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?w=800&q=80",
+      "https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?w=1600&q=80",
+    gallery: [
+      "https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?w=1600&q=80",
+      "https://images.unsplash.com/photo-1558981852-426c6c22a060?w=1600&q=80",
+      "https://images.unsplash.com/photo-1449426468159-d96dbf08f19f?w=1600&q=80",
+      "https://images.unsplash.com/photo-1571068316344-75bc76f77890?w=1600&q=80",
+    ],
+    description: `Литровый супербайк, на котором ездит Hell сам. Тот самый R1 — с заводской электроникой, кватер-шифтером и режимом Track. Приз едет к победителю на эвакуаторе, в любую точку РФ за наш счёт.
+
+Документы оформляем на победителя, регистрация в ГИБДД — наша забота. Берём на себя ПТС, СТС и страховку ОСАГО на первый год.`,
+    specs: [
+      { label: "Двигатель", value: "998 cc · рядный 4-цилиндровый" },
+      { label: "Мощность", value: "200 л.с." },
+      { label: "Сухая масса", value: "201 кг" },
+      { label: "Год", value: "2024, новый из салона" },
+      { label: "Цвет", value: "Icon Blue" },
+    ],
+    prizes: [
+      {
+        place: 1,
+        title: "Yamaha R1 2024",
+        note: "новый, с документами, доставка по РФ",
+        valueRub: 2_400_000,
+        image:
+          "https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?w=1200&q=80",
+      },
+      {
+        place: 2,
+        title: "Шлем Arai RX-7V",
+        note: "размер и расцветка на выбор победителя",
+        valueRub: 95_000,
+        image:
+          "https://images.unsplash.com/photo-1623080951877-bbabe7d0a44d?w=1200&q=80",
+      },
+      {
+        place: 3,
+        title: "Комплект экипировки HELLHOUND",
+        note: "куртка + перчатки + защита спины",
+        valueRub: 42_000,
+        image:
+          "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?w=1200&q=80",
+      },
+    ],
+    rules: [
+      "Розыгрыш в прямом эфире на YouTube HELLHOUND Racing.",
+      "Победитель определяется ГСЧ по номеру билета.",
+      "Участвовать могут только верифицированные аккаунты клуба (18+).",
+      "Если победитель не выходит на связь 7 дней — приз уходит следующему номеру.",
+    ],
   },
   {
     id: "r2",
     title: "GoPro Hero 12 + комплект",
+    subtitle: "Камера + крепления + 2 аккума",
     myTickets: 3,
     totalTickets: 500,
     deadline: "пт · 20:00",
     deadlineAt: nextWeekday(5, 20, 0),
     image:
-      "https://images.unsplash.com/photo-1502945015378-0e284ca1a5be?w=800&q=80",
+      "https://images.unsplash.com/photo-1502945015378-0e284ca1a5be?w=1600&q=80",
+    gallery: [
+      "https://images.unsplash.com/photo-1502945015378-0e284ca1a5be?w=1600&q=80",
+      "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=1600&q=80",
+    ],
+    description: `GoPro Hero 12 Black в полном «мото-комплекте»: крепление на шлем, на бак, на руль, два аккумулятора и быстрая зарядка. Снимать свои покатушки в 5.3K — теперь не оправдание, что «нечем».
+
+Доставка по РФ за наш счёт.`,
+    specs: [
+      { label: "Модель", value: "GoPro Hero 12 Black" },
+      { label: "Видео", value: "до 5.3K 60p · HyperSmooth 6.0" },
+      { label: "В комплекте", value: "3 крепления + 2 аккума + зарядка" },
+    ],
+    prizes: [
+      {
+        place: 1,
+        title: "GoPro Hero 12 Black + мото-комплект",
+        valueRub: 65_000,
+        image:
+          "https://images.unsplash.com/photo-1502945015378-0e284ca1a5be?w=1200&q=80",
+      },
+      {
+        place: 2,
+        title: "Карта SanDisk Extreme PRO 256GB",
+        valueRub: 5_500,
+        image:
+          "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=1200&q=80",
+      },
+    ],
+    rules: [
+      "Розыгрыш в прямом эфире на YouTube HELLHOUND Racing.",
+      "Победитель определяется ГСЧ по номеру билета.",
+      "Доставка по РФ — за наш счёт.",
+    ],
   },
 ];
 
