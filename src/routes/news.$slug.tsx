@@ -1,7 +1,7 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { Header } from "@/components/brand/Header";
 import { Footer } from "@/components/brand/Footer";
-import { NEWS } from "@/data/news";
+import { NEWS, type NewsItem } from "@/data/news";
 
 export const Route = createFileRoute("/news/$slug")({
   loader: ({ params }) => {
@@ -74,7 +74,7 @@ const FMT = new Intl.DateTimeFormat("ru-RU", {
 });
 
 function NewsArticlePage() {
-  const { item } = Route.useLoaderData() as { item: (typeof import("@/data/news").NEWS)[number] };
+  const { item } = Route.useLoaderData() as { item: NewsItem };
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Header />
