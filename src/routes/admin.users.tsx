@@ -86,7 +86,7 @@ function UsersPage() {
           </>
         }
       >
-        {selected && <UserCard user={selected} onGift={() => setGiftOpen(true)} />}
+        {selected && <UserCard user={selected} onGift={() => setGiftOpen(true)} onGivePass={() => setPassOpen(true)} />}
       </Drawer>
 
       <ConfirmModal
@@ -103,6 +103,14 @@ function UsersPage() {
           open={giftOpen}
           nick={selected.nick}
           onClose={() => setGiftOpen(false)}
+        />
+      )}
+
+      {selected && (
+        <GivePassModal
+          open={passOpen}
+          nick={selected.nick}
+          onClose={() => setPassOpen(false)}
         />
       )}
     </div>
