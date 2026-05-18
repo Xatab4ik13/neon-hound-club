@@ -519,6 +519,7 @@ function MiniRaffle({
           <ChevronRight className="h-4 w-4 shrink-0 text-primary opacity-0 transition-opacity group-hover:opacity-100" />
         </div>
       </div>
+      <div className="space-y-2 p-3">
         <div className="flex items-center justify-between font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
           <span>
             мои: <span className="text-foreground">{raffle.myTickets}</span>
