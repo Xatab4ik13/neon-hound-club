@@ -31,11 +31,29 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
-const TIERS = [
-  { num: "01", name: "Новичок", xp: "0 — 500 XP", state: "locked" as const },
-  { num: "02", name: "Райдер", xp: "Текущий уровень", state: "active" as const },
-  { num: "03", name: "Пит-крю", xp: "1500 XP", state: "future" as const },
-  { num: "04", name: "Элита", xp: "5000 XP", state: "future" as const },
+// Лестница рангов клуба. Источник правды — src/data/ranks.ts.
+// Здесь только то, что нужно на главной (label + порог + accent для подсветки).
+const RANK_LADDER: Array<{
+  num: string;
+  label: string;
+  short: string;
+  from: number;
+  accent: string;
+  hint: string;
+}> = [
+  { num: "01", label: "ROOKIE",       short: "Старт",        from: 0,      accent: "var(--primary)", hint: "сразу после регистрации" },
+  { num: "02", label: "PIT CREW",     short: "Свой",          from: 500,    accent: "#b8a48a",        hint: "первая неделя активности" },
+  { num: "03", label: "ROAD CAPTAIN", short: "Регуляр",       from: 2000,   accent: "#d4d0c4",        hint: "1–1.5 месяца" },
+  { num: "04", label: "ALPHA HOUND",  short: "Ядро",          from: 6000,   accent: "#b48dff",        hint: "3–4 месяца" },
+  { num: "05", label: "HELL LEGEND",  short: "Элита (≈5%)",    from: 15000,  accent: "#ffb648",        hint: "10–14 месяцев" },
+];
+
+// За что даём XP — короткий top-3 для главной.
+// Полный справочник — src/data/xp-sources.ts.
+const XP_HOW: Array<{ title: string; value: string }> = [
+  { title: "Билет в розыгрыш",       value: "+5 XP" },
+  { title: "Покупка мерча",          value: "+1 XP / 100 ₽" },
+  { title: "Hell Pass (ежемесячно)", value: "+50…400 XP" },
 ];
 
 const PRODUCTS = [
@@ -158,76 +176,119 @@ function Index() {
         <section id="club" className="px-6 py-24">
           <div className="mx-auto max-w-7xl">
             <div className="grid gap-16 lg:grid-cols-2">
+              {/* Лестница рангов */}
               <div>
                 <div className="mb-3 font-mono text-xs uppercase tracking-widest text-primary">
                   Клуб
                 </div>
-                <h2 className="mb-8 font-display text-5xl uppercase tracking-tighter">
-                  Иерархия
+                <h2 className="mb-3 font-display text-5xl uppercase tracking-tighter">
+                  Лестница рангов
                 </h2>
-                <div className="space-y-4">
-                  {TIERS.map((tier) => {
-                    const isActive = tier.state === "active";
+                <p className="mb-8 max-w-[44ch] text-sm text-muted-foreground">
+                  Ранг растёт за реальные действия: участие в розыгрышах, покупки
+                  мерча, подписка Hell Pass. Без накруток.
+                </p>
+                <div className="space-y-3">
+                  {RANK_LADDER.map((r, i) => {
+                    const next = RANK_LADDER[i + 1];
+                    const rangeLabel = next
+                      ? `${r.from.toLocaleString("ru-RU")} — ${(next.from - 1).toLocaleString("ru-RU")} XP`
+                      : `${r.from.toLocaleString("ru-RU")}+ XP`;
                     return (
                       <div
-                        key={tier.num}
-                        className={`flex items-center justify-between rounded-lg border p-4 transition-colors ${
-                          isActive
-                            ? "border-primary/40 bg-primary/5"
-                            : tier.state === "locked"
-                              ? "border-border bg-surface"
-                              : "border-border bg-surface/50 opacity-50"
-                        }`}
+                        key={r.num}
+                        className="flex items-center justify-between rounded-lg border border-border bg-surface p-4"
                       >
                         <div className="flex items-center gap-4">
-                          <span
-                            className={`font-mono text-sm ${
-                              isActive ? "text-primary" : "text-muted-foreground"
-                            }`}
-                          >
-                            {tier.num}
+                          <span className="font-mono text-sm text-muted-foreground">
+                            {r.num}
                           </span>
-                          <span className="font-medium uppercase tracking-widest">
-                            {tier.name}
-                          </span>
+                          <div className="flex flex-col">
+                            <span
+                              className="font-display text-base uppercase tracking-widest"
+                              style={{ color: r.accent }}
+                            >
+                              {r.label}
+                            </span>
+                            <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                              {r.short} · {r.hint}
+                            </span>
+                          </div>
                         </div>
-                        <span className="font-mono text-xs text-muted-foreground">
-                          {tier.xp}
+                        <span className="font-mono text-xs tabular-nums text-muted-foreground">
+                          {rangeLabel}
                         </span>
                       </div>
                     );
                   })}
+                  {/* VIP — отдельной плашкой, не в XP-цепочке */}
+                  <div className="flex items-center justify-between rounded-lg border border-dashed border-border bg-surface/50 p-4">
+                    <div className="flex items-center gap-4">
+                      <span className="font-mono text-sm text-muted-foreground">
+                        ★
+                      </span>
+                      <div className="flex flex-col">
+                        <span className="font-display text-base uppercase tracking-widest text-foreground">
+                          VIP
+                        </span>
+                        <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                          Платный · вне XP-лестницы
+                        </span>
+                      </div>
+                    </div>
+                    <span className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
+                      от 4 990 ₽
+                    </span>
+                  </div>
                 </div>
               </div>
 
-              <div className="flex flex-col justify-center rounded-xl border border-border bg-surface p-12">
-                <div className="mb-8">
-                  <div className="mb-2 text-xs uppercase tracking-widest text-muted-foreground">
-                    Прогресс участника
-                  </div>
-                  <div className="font-display text-4xl uppercase">
-                    Статус: Райдер
-                  </div>
+              {/* Как качать ранг */}
+              <div className="flex flex-col justify-center rounded-xl border border-border bg-surface p-10">
+                <div className="mb-2 text-xs uppercase tracking-widest text-muted-foreground">
+                  Как качать ранг
                 </div>
-                <div className="space-y-6">
-                  <div className="h-1 w-full overflow-hidden rounded-full bg-background">
-                    <div className="h-full w-[56%] bg-primary" />
-                  </div>
-                  <div className="flex justify-between font-mono text-xs">
-                    <span className="text-foreground">840 XP</span>
-                    <span className="text-muted-foreground">
-                      1500 XP до след. уровня
-                    </span>
-                  </div>
-                  <p className="max-w-[40ch] text-pretty text-sm text-muted-foreground">
-                    Покупай мерч, участвуй в Race Pass и розыгрышах, чтобы
-                    прокачать статус и открыть ранний доступ к новому мерчу.
-                  </p>
+                <h3 className="mb-6 font-display text-3xl uppercase tracking-tight">
+                  XP за реальные действия
+                </h3>
+                <ul className="space-y-4">
+                  {XP_HOW.map((s) => (
+                    <li
+                      key={s.title}
+                      className="flex items-baseline justify-between gap-4 border-b border-border/60 pb-3 last:border-0 last:pb-0"
+                    >
+                      <span className="text-sm text-foreground">{s.title}</span>
+                      <span className="font-mono text-sm font-bold tabular-nums text-primary">
+                        {s.value}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+
+                <p className="mt-6 max-w-[44ch] text-pretty text-sm text-muted-foreground">
+                  Плюс прохождение курсов Школы, daily-стрики и сезонные квесты.
+                  Победа в розыгрыше — отдельно.
+                </p>
+
+                <div className="mt-8 flex flex-wrap gap-3">
+                  <Link
+                    to={isAuthed ? "/club/me" : "/login"}
+                    className="inline-flex items-center gap-2 border border-primary/60 bg-primary/10 px-5 py-3 font-mono text-[11px] font-bold uppercase tracking-widest text-primary transition-colors hover:bg-primary/20"
+                  >
+                    {isAuthed ? "Мой прогресс" : "Войти в клуб"}
+                  </Link>
+                  <Link
+                    to="/hell-pass"
+                    className="inline-flex items-center gap-2 border border-border px-5 py-3 font-mono text-[11px] font-bold uppercase tracking-widest text-muted-foreground transition-colors hover:border-foreground/40 hover:text-foreground"
+                  >
+                    Hell Pass
+                  </Link>
                 </div>
               </div>
             </div>
           </div>
         </section>
+
       </main>
 
       <Footer />
