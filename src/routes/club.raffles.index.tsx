@@ -294,20 +294,14 @@ function FeaturedRaffle({
   return (
     <motion.section
       layout
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, ease: "easeOut" }}
       className="group relative overflow-hidden border border-white/[0.08] bg-card/40"
     >
       {/* image */}
-      <div className="relative h-[280px] overflow-hidden md:h-[420px]">
-        <motion.img
+      <div className="relative h-[200px] overflow-hidden sm:h-[280px] md:h-[420px]">
+        <img
           key={raffle.id}
           src={raffle.image}
           alt={raffle.title}
-          initial={{ scale: 1.08, opacity: 0.5 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 1.1, ease: "easeOut" }}
           className="absolute inset-0 h-full w-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-transparent" />
@@ -341,21 +335,21 @@ function FeaturedRaffle({
         </div>
 
         {/* title block */}
-        <div className="absolute bottom-0 left-0 right-0 p-6 md:p-8">
-          <div className="font-mono text-[11px] uppercase tracking-[0.24em] text-muted-foreground">
+        <div className="absolute bottom-0 left-0 right-0 p-4 md:p-8">
+          <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground md:text-[11px] md:tracking-[0.24em]">
             до закрытия
           </div>
           <div className="mt-1">
             <Countdown deadlineAt={raffle.deadlineAt} variant="tactical" />
           </div>
           <div className="mt-3 flex flex-wrap items-end justify-between gap-3">
-            <h2 className="font-display text-3xl font-black uppercase italic leading-none tracking-tight text-foreground md:text-5xl">
+            <h2 className="font-display text-2xl font-black uppercase italic leading-none tracking-tight text-foreground sm:text-3xl md:text-5xl">
               {raffle.title}
             </h2>
             <Link
               to="/club/raffles/$raffleId"
               params={{ raffleId: raffle.id }}
-              className="group/link inline-flex items-center gap-2 border border-primary/40 bg-black/60 px-4 py-2 font-mono text-[10px] uppercase tracking-[0.22em] text-primary backdrop-blur transition-all hover:border-primary hover:bg-primary/10 hover:shadow-[0_0_24px_-6px_var(--primary)]"
+              className="group/link inline-flex items-center gap-2 border border-primary/40 bg-black/60 px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.22em] text-primary backdrop-blur transition-all hover:border-primary hover:bg-primary/10 hover:shadow-[0_0_24px_-6px_var(--primary)] md:px-4 md:py-2"
             >
               подробнее
               <ExternalLink className="h-3 w-3 transition-transform group-hover/link:translate-x-0.5" />
@@ -365,11 +359,11 @@ function FeaturedRaffle({
       </div>
 
       {/* body */}
-      <div className="grid grid-cols-1 gap-6 p-6 md:grid-cols-[1fr_auto] md:p-8">
+      <div className="grid grid-cols-1 gap-5 p-4 md:grid-cols-[1fr_auto] md:gap-6 md:p-8">
         {/* stats */}
         <div className="min-w-0 space-y-5">
 
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-3 gap-2 md:gap-3">
             <Stat label="мои билеты" value={String(raffle.myTickets)} />
             <Stat
               label="ставлю"
@@ -674,10 +668,7 @@ function PackRow({
 }) {
   const active = qty > 0;
   return (
-    <motion.div
-      initial={{ opacity: 0, x: 12 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ delay: index * 0.04 }}
+    <div
       className={`group flex items-center justify-between gap-2 border px-3 py-2.5 transition-all ${
         active
           ? "border-primary/60 bg-primary/[0.08] shadow-[0_0_20px_-6px_var(--primary)]"
@@ -747,7 +738,7 @@ function PackRow({
           </div>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }
 
@@ -784,11 +775,7 @@ function PastRow({ item, index }: { item: Past; index: number }) {
   const winner = PUBLIC_USERS[item.winnerSlug];
   const winnerNick = winner?.nick ?? item.winnerSlug.toUpperCase();
   return (
-    <motion.li
-      initial={{ opacity: 0, y: 8 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-40px" }}
-      transition={{ delay: index * 0.05 }}
+    <li
       className="group flex items-center gap-4 py-4 transition-colors hover:bg-white/[0.02]"
     >
       <div className="relative h-16 w-16 shrink-0 overflow-hidden border border-white/[0.08] sm:h-20 sm:w-20">
@@ -829,7 +816,7 @@ function PastRow({ item, index }: { item: Past; index: number }) {
           {winnerNick}
         </div>
       </div>
-    </motion.li>
+    </li>
   );
 }
 
