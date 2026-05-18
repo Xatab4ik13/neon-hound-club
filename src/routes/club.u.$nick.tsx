@@ -56,8 +56,11 @@ function NotFoundUser() {
 function UserProfilePage() {
   const { user } = Route.useLoaderData() as { user: PublicUser };
   const rank = RANK_BY_ID[user.rank];
-  const xp = Math.round((user.xpPct / 100) * XP_PER_RANK);
-  const next = RANKS[RANKS.findIndex((r) => r.id === user.rank) + 1] ?? null;
+  const rankIdx = RANKS.findIndex((r) => r.id === user.rank);
+  const xpMax = getRankSpan(rankIdx);
+  const xp = Math.round((user.xpPct / 100) * xpMax);
+  const nextCandidate = RANKS[rankIdx + 1] ?? null;
+  const next = nextCandidate && !nextCandidate.isPaid ? nextCandidate : null;
   const badges = user.badgeIds
     .map((id) => BADGES.find((b) => b.id === id))
     .filter((b): b is (typeof BADGES)[number] => !!b);
