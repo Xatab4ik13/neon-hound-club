@@ -239,13 +239,22 @@ function ProductsTab({
   );
 }
 
+type Category = { id: string; name: string; subs: string[] };
+
 function CategoriesTab({
   categories,
   onNew,
+  onUpdate,
+  onDelete,
 }: {
-  categories: typeof CATEGORIES_SEED;
+  categories: Category[];
   onNew: () => void;
+  onUpdate: (c: Category) => void;
+  onDelete: (id: string) => void;
 }) {
+  const [editing, setEditing] = useState<Category | null>(null);
+  const [del, setDel] = useState<Category | null>(null);
+
   return (
     <Panel>
       <PanelHeader>
@@ -260,26 +269,125 @@ function CategoriesTab({
             <div className="flex items-center justify-between">
               <div className="font-medium">{c.name}</div>
               <div className="flex gap-1">
-                <Btn variant="ghost">
+                <Btn variant="ghost" onClick={() => setEditing(c)} aria-label="Редактировать категорию">
                   <Edit className="h-3.5 w-3.5" />
                 </Btn>
-                <Btn variant="ghost">
+                <Btn variant="ghost" onClick={() => setDel(c)} aria-label="Удалить категорию">
                   <Trash2 className="h-3.5 w-3.5" />
                 </Btn>
               </div>
             </div>
             <div className="mt-2 flex flex-wrap gap-2">
+              {c.subs.length === 0 && (
+                <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                  Подкатегорий пока нет
+                </span>
+              )}
               {c.subs.map((s) => (
                 <Badge key={s}>{s}</Badge>
               ))}
-              <Btn variant="ghost" className="h-6 px-2 text-xs">
-                + подкатегория
-              </Btn>
             </div>
           </div>
         ))}
       </div>
+
+      {editing && (
+        <CategoryEditModal
+          open={!!editing}
+          initial={editing}
+          onClose={() => setEditing(null)}
+          onSave={(c) => {
+            onUpdate(c);
+            setEditing(null);
+          }}
+        />
+      )}
+
+      <ConfirmModal
+        open={!!del}
+        onClose={() => setDel(null)}
+        onConfirm={() => del && onDelete(del.id)}
+        title="Удалить категорию?"
+        message={`«${del?.name}» и все её подкатегории будут удалены.`}
+      />
     </Panel>
+  );
+}
+
+function CategoryEditModal({
+  open,
+  initial,
+  onClose,
+  onSave,
+}: {
+  open: boolean;
+  initial: Category;
+  onClose: () => void;
+  onSave: (c: Category) => void;
+}) {
+  const [name, setName] = useState(initial.name);
+  const [subs, setSubs] = useState<string[]>(initial.subs);
+  const [newSub, setNewSub] = useState("");
+
+  const renameSub = (i: number, v: string) =>
+    setSubs((s) => s.map((x, j) => (j === i ? v : x)));
+  const removeSub = (i: number) => setSubs((s) => s.filter((_, j) => j !== i));
+  const addSub = () => {
+    const v = newSub.trim();
+    if (!v) return;
+    setSubs((s) => [...s, v]);
+    setNewSub("");
+  };
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Редактировать категорию"
+      footer={
+        <>
+          <Btn onClick={onClose}>Отмена</Btn>
+          <Btn variant="primary" onClick={() => onSave({ ...initial, name, subs })}>
+            Сохранить
+          </Btn>
+        </>
+      }
+    >
+      <div className="space-y-4">
+        <Field label="Название категории">
+          <TextInput value={name} onChange={(e) => setName(e.target.value)} />
+        </Field>
+        <div>
+          <div className="mb-1.5 text-xs font-medium text-zinc-600 dark:text-zinc-400">
+            Подкатегории
+          </div>
+          <div className="space-y-2">
+            {subs.map((s, i) => (
+              <div key={i} className="flex gap-2">
+                <TextInput value={s} onChange={(e) => renameSub(i, e.target.value)} />
+                <Btn variant="ghost" onClick={() => removeSub(i)}>
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Btn>
+              </div>
+            ))}
+            {subs.length === 0 && (
+              <div className="text-xs text-zinc-500 dark:text-zinc-400">Подкатегорий пока нет.</div>
+            )}
+          </div>
+          <div className="mt-3 flex gap-2">
+            <TextInput
+              value={newSub}
+              onChange={(e) => setNewSub(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addSub())}
+              placeholder="Новая подкатегория"
+            />
+            <Btn onClick={addSub}>
+              <Plus className="h-4 w-4" /> Добавить
+            </Btn>
+          </div>
+        </div>
+      </div>
+    </Modal>
   );
 }
 
