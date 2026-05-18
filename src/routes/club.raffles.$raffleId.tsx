@@ -1,4 +1,4 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -16,7 +16,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { Countdown } from "@/components/club/Countdown";
-import { ACTIVE_TICKETS, ME, type ActiveTicket, type RafflePrize, type RaffleSpec } from "@/data/profile";
+import { ACTIVE_TICKETS, ME, type ActiveTicket } from "@/data/profile";
 
 export const Route = createFileRoute("/club/raffles/$raffleId")({
   head: ({ params }) => {
