@@ -225,7 +225,15 @@ function RafflesPage() {
         </div>
 
         <aside className="lg:sticky lg:top-20 lg:self-start">
-          <TicketStore balance={balance} onBuy={handleBuyPack} />
+          <TicketStore
+            balance={balance}
+            cart={cart}
+            totalTickets={cartTotalTickets}
+            totalPrice={cartTotalPrice}
+            onAdd={handleAddPack}
+            onRemove={handleRemovePack}
+            onCheckout={handleCheckout}
+          />
         </aside>
       </div>
 
