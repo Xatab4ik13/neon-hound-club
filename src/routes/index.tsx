@@ -1,7 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { Header } from "@/components/brand/Header";
 import { Footer } from "@/components/brand/Footer";
 import { Hero } from "@/components/brand/Hero";
+import { useViewer } from "@/hooks/use-viewer";
 import pinkR6 from "@/assets/pink-r6.jpg";
 import founderHoodie from "@/assets/founder-hoodie.jpg";
 import pitGloves from "@/assets/pit-gloves.jpg";
