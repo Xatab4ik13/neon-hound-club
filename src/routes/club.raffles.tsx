@@ -768,4 +768,3 @@ function SectionTitle({
 }
 
 // Suppress unused-import warning if reordering
-void useMemo;
