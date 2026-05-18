@@ -28,6 +28,7 @@ function UsersPage() {
   const [selected, setSelected] = useState<PublicUser | null>(null);
   const [confirmBan, setConfirmBan] = useState(false);
   const [giftOpen, setGiftOpen] = useState(false);
+  const [passOpen, setPassOpen] = useState(false);
   const [query, setQuery] = useState("");
 
   const filtered = users.filter((u) =>
