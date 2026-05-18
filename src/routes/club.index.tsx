@@ -102,9 +102,6 @@ function ClubFeedPage() {
         <h1 className="font-display text-lg font-black uppercase italic tracking-tight text-foreground">
           Лента
         </h1>
-        <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-          постят только Hell и команда
-        </span>
       </div>
 
       <div className="space-y-6">
