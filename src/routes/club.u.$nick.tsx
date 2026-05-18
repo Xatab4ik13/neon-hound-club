@@ -155,7 +155,7 @@ function UserProfilePage() {
                     </span>{" "}
                     ·{" "}
                     <span className="font-bold tabular-nums text-foreground">
-                      {XP_PER_RANK - xp}
+                      {xpMax - xp}
                     </span>{" "}
                     XP
                   </span>
