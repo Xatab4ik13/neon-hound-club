@@ -816,7 +816,7 @@ function PastRow({ item, index }: { item: Past; index: number }) {
           {winnerNick}
         </div>
       </div>
-    </motion.li>
+    </li>
   );
 }
 
