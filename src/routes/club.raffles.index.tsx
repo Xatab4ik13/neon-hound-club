@@ -775,11 +775,7 @@ function PastRow({ item, index }: { item: Past; index: number }) {
   const winner = PUBLIC_USERS[item.winnerSlug];
   const winnerNick = winner?.nick ?? item.winnerSlug.toUpperCase();
   return (
-    <motion.li
-      initial={{ opacity: 0, y: 8 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-40px" }}
-      transition={{ delay: index * 0.05 }}
+    <li
       className="group flex items-center gap-4 py-4 transition-colors hover:bg-white/[0.02]"
     >
       <div className="relative h-16 w-16 shrink-0 overflow-hidden border border-white/[0.08] sm:h-20 sm:w-20">
