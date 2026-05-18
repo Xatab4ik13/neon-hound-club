@@ -2,12 +2,15 @@ import {
   createFileRoute,
   Link,
   notFound,
+  useNavigate,
   useRouter,
 } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import { Header } from "@/components/brand/Header";
 import { Footer } from "@/components/brand/Footer";
 import { PRODUCTS, SOURCE_LABEL, type Product } from "@/data/products";
+import { useCart } from "@/hooks/use-cart";
 
 export const Route = createFileRoute("/shop/$productSlug")({
   loader: ({ params }) => {
@@ -105,6 +108,27 @@ function ProductPage() {
 
   const isSold = product.badge?.label.toLowerCase() === "распродано";
 
+  const { add } = useCart();
+  const navigate = useNavigate();
+  const handleAdd = (goToCart = false) => {
+    if (isSold) return;
+    if (product.sizes && product.sizes.length > 0 && !size) {
+      toast.error("Выберите размер");
+      return;
+    }
+    add(
+      {
+        slug: product.slug,
+        name: product.name,
+        price: product.price,
+        image: product.image,
+        size,
+      },
+      qty,
+    );
+    toast.success(`${product.name} добавлен в корзину`);
+    if (goToCart) navigate({ to: "/cart" });
+  };
 
   return (
     <div className="min-h-screen bg-background pb-24 text-foreground lg:pb-0">
@@ -231,6 +255,7 @@ function ProductPage() {
 
                   <button
                     disabled={isSold}
+                    onClick={() => handleAdd(false)}
                     className="group relative flex flex-1 items-center justify-center gap-2 overflow-hidden bg-primary px-6 py-3 font-display text-base uppercase tracking-widest text-primary-foreground shadow-[0_10px_30px_-10px_hsl(var(--primary)/0.6)] transition-all hover:shadow-[0_15px_40px_-10px_hsl(var(--primary)/0.8)] disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground disabled:shadow-none"
                   >
                     {isSold ? "Распродано" : "В корзину"}
@@ -318,6 +343,7 @@ function ProductPage() {
           </div>
           <button
             disabled={isSold}
+            onClick={() => handleAdd(false)}
             className="ml-auto flex flex-1 items-center justify-center gap-2 bg-primary px-5 py-3 font-display text-sm uppercase tracking-widest text-primary-foreground shadow-[0_10px_30px_-10px_hsl(var(--primary)/0.6)] disabled:bg-muted disabled:text-muted-foreground disabled:shadow-none"
           >
             {isSold ? "Распродано" : "В корзину"}

@@ -10,6 +10,8 @@ import {
 
 import appCss from "../styles.css?url";
 import { ViewerProvider } from "@/hooks/use-viewer";
+import { CartProvider } from "@/hooks/use-cart";
+import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
   return (
@@ -132,7 +134,10 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <ViewerProvider>
-        <Outlet />
+        <CartProvider>
+          <Outlet />
+          <Toaster position="bottom-right" theme="dark" />
+        </CartProvider>
       </ViewerProvider>
     </QueryClientProvider>
   );
