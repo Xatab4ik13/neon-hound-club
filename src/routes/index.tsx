@@ -31,11 +31,29 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
-const TIERS = [
-  { num: "01", name: "Новичок", xp: "0 — 500 XP", state: "locked" as const },
-  { num: "02", name: "Райдер", xp: "Текущий уровень", state: "active" as const },
-  { num: "03", name: "Пит-крю", xp: "1500 XP", state: "future" as const },
-  { num: "04", name: "Элита", xp: "5000 XP", state: "future" as const },
+// Лестница рангов клуба. Источник правды — src/data/ranks.ts.
+// Здесь только то, что нужно на главной (label + порог + accent для подсветки).
+const RANK_LADDER: Array<{
+  num: string;
+  label: string;
+  short: string;
+  from: number;
+  accent: string;
+  hint: string;
+}> = [
+  { num: "01", label: "ROOKIE",       short: "Старт",        from: 0,      accent: "var(--primary)", hint: "сразу после регистрации" },
+  { num: "02", label: "PIT CREW",     short: "Свой",          from: 500,    accent: "#b8a48a",        hint: "первая неделя активности" },
+  { num: "03", label: "ROAD CAPTAIN", short: "Регуляр",       from: 2000,   accent: "#d4d0c4",        hint: "1–1.5 месяца" },
+  { num: "04", label: "ALPHA HOUND",  short: "Ядро",          from: 6000,   accent: "#b48dff",        hint: "3–4 месяца" },
+  { num: "05", label: "HELL LEGEND",  short: "Элита (≈5%)",    from: 15000,  accent: "#ffb648",        hint: "10–14 месяцев" },
+];
+
+// За что даём XP — короткий top-3 для главной.
+// Полный справочник — src/data/xp-sources.ts.
+const XP_HOW: Array<{ title: string; value: string }> = [
+  { title: "Билет в розыгрыш",       value: "+5 XP" },
+  { title: "Покупка мерча",          value: "+1 XP / 100 ₽" },
+  { title: "Hell Pass (ежемесячно)", value: "+50…400 XP" },
 ];
 
 const PRODUCTS = [
