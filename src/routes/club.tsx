@@ -2,7 +2,7 @@ import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-rout
 import { useState } from "react";
 import {
   Newspaper,
-  Wrench,
+  Bot,
   Ticket,
   ShoppingBag,
   GraduationCap,
