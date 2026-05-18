@@ -249,7 +249,9 @@ function TopBar({ onMenu }: { onMenu: () => void }) {
           <span aria-hidden className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-primary" />
         </button>
 
-        <div className="min-w-0 flex-1">
+        <div className="hidden flex-1 md:block" />
+
+        <div className="min-w-0 flex-1 md:w-[360px] md:flex-none">
           <ProfilePlaque compact />
         </div>
       </div>
