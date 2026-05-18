@@ -61,9 +61,9 @@ export function Header() {
               const isActive =
                 pathname === item.href || pathname.startsWith(item.href + "/");
               return (
-                <a
+                <Link
                   key={item.label}
-                  href={item.href}
+                  to={item.href}
                   className={`group relative px-5 py-2.5 text-[13px] font-medium uppercase tracking-[0.18em] transition-colors duration-300 ${
                     isActive
                       ? "text-primary"
@@ -79,15 +79,15 @@ export function Header() {
                         : "scale-95 bg-white/5 opacity-0 group-hover:scale-100 group-hover:opacity-100"
                     }`}
                   />
-                </a>
+                </Link>
               );
             })}
           </div>
 
           {/* Desktop cart + login */}
           <div className="hidden items-center gap-5 md:flex">
-            <a
-              href="/cart"
+            <Link
+              to="/cart"
               aria-label="Корзина"
               className="relative text-muted-foreground transition-colors hover:text-primary"
             >
@@ -107,7 +107,7 @@ export function Header() {
               <span className="absolute -right-2 -top-1 rounded-sm bg-primary px-1 font-mono text-[10px] leading-tight text-primary-foreground">
                 {cartCount}
               </span>
-            </a>
+            </Link>
 
             {isAuthed ? (
               <DropdownMenu>
@@ -161,8 +161,8 @@ export function Header() {
               </DropdownMenu>
             ) : (
               <>
-                <a
-                  href="/login"
+                <Link
+                  to="/login"
                   className="group relative overflow-hidden rounded-full border border-primary/30 px-6 py-2 font-mono text-[11px] font-medium uppercase tracking-[0.2em] text-primary transition-all duration-300 hover:border-primary hover:shadow-[0_0_15px_hsl(var(--primary)/0.3)]"
                 >
                   <span className="relative z-10 transition-colors duration-300 group-hover:text-primary-foreground">
@@ -172,7 +172,7 @@ export function Header() {
                     aria-hidden
                     className="absolute inset-0 translate-y-full bg-primary transition-transform duration-300 group-hover:translate-y-0"
                   />
-                </a>
+                </Link>
                 <button
                   type="button"
                   onClick={toggleAuth}
@@ -364,7 +364,7 @@ function MobileMenu({
           </Link>
 
           <Link
-            to={isAuthed ? "/garage" : "/login"}
+            to={isAuthed ? "/club/me" : "/login"}
             onClick={onClose}
             className="group relative block w-full overflow-hidden bg-primary py-7 text-center font-display text-2xl italic uppercase font-bold tracking-widest text-black transition-all duration-300 active:scale-[0.97]"
             style={{ clipPath: "polygon(0 15%, 100% 0, 100% 100%, 0 85%)" }}

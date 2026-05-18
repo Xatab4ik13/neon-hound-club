@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
+import { useViewer } from "@/hooks/use-viewer";
 import pinkR6 from "@/assets/pink-r6.jpg";
 
 /**
@@ -29,6 +30,7 @@ const pad = (n: number) => n.toString().padStart(2, "0");
 
 export function Hero() {
   const { days, hours, minutes, seconds } = useCountdown(RAFFLE_END);
+  const { isAuthed } = useViewer();
 
   return (
     <section className="relative overflow-hidden px-6 py-20 md:px-12 md:py-28">
@@ -57,7 +59,7 @@ export function Hero() {
 
           <div className="mt-10 flex flex-wrap items-center gap-6">
             <Link
-              to="/login"
+              to={isAuthed ? "/club" : "/login"}
               className="group relative inline-block overflow-hidden bg-primary px-10 py-5 text-center font-display text-xl italic font-bold uppercase tracking-widest text-black transition-all duration-300 active:scale-[0.97]"
               style={{ clipPath: "polygon(0 15%, 100% 0, 100% 100%, 0 85%)" }}
             >
@@ -66,13 +68,13 @@ export function Hero() {
                 className="absolute inset-0 bg-white opacity-0 transition-opacity group-hover:opacity-10"
               />
               <span className="relative z-10 inline-flex items-center gap-3">
-                Войти в клуб
+                {isAuthed ? "В клуб" : "Войти в клуб"}
                 <span className="transition-transform group-hover:translate-x-1">→</span>
               </span>
             </Link>
             <div className="flex flex-col">
               <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground/70">
-                Стоимость входа
+                Регистрация
               </span>
               <span className="font-display text-xl uppercase text-foreground">
                 Бесплатно
@@ -83,8 +85,8 @@ export function Hero() {
 
         {/* RIGHT — RAFFLE CARD */}
         <aside className="lg:col-span-4">
-          <a
-            href="#raffle"
+          <Link
+            to={isAuthed ? "/club/raffles" : "/login"}
             className="group relative block overflow-hidden border border-border bg-card transition-colors hover:border-primary/50"
           >
             {/* Header */}
@@ -153,7 +155,7 @@ export function Hero() {
                 </span>
               </div>
             </div>
-          </a>
+          </Link>
         </aside>
       </div>
     </section>
