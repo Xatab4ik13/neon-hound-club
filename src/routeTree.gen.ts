@@ -23,6 +23,7 @@ import { Route as ClubMeRouteImport } from './routes/club.me'
 import { Route as ClubHellAiRouteImport } from './routes/club.hell-ai'
 import { Route as ClubHellPassIndexRouteImport } from './routes/club.hell-pass.index'
 import { Route as ClubUNickRouteImport } from './routes/club.u.$nick'
+import { Route as ClubRafflesRaffleIdRouteImport } from './routes/club.raffles.$raffleId'
 import { Route as ClubHellPassTierRouteImport } from './routes/club.hell-pass.$tier'
 
 const SchoolRoute = SchoolRouteImport.update({
@@ -95,6 +96,11 @@ const ClubUNickRoute = ClubUNickRouteImport.update({
   path: '/u/$nick',
   getParentRoute: () => ClubRoute,
 } as any)
+const ClubRafflesRaffleIdRoute = ClubRafflesRaffleIdRouteImport.update({
+  id: '/$raffleId',
+  path: '/$raffleId',
+  getParentRoute: () => ClubRafflesRoute,
+} as any)
 const ClubHellPassTierRoute = ClubHellPassTierRouteImport.update({
   id: '/hell-pass/$tier',
   path: '/hell-pass/$tier',
@@ -109,12 +115,13 @@ export interface FileRoutesByFullPath {
   '/school': typeof SchoolRoute
   '/club/hell-ai': typeof ClubHellAiRoute
   '/club/me': typeof ClubMeRoute
-  '/club/raffles': typeof ClubRafflesRoute
+  '/club/raffles': typeof ClubRafflesRouteWithChildren
   '/club/school': typeof ClubSchoolRoute
   '/shop/$productSlug': typeof ShopProductSlugRoute
   '/club/': typeof ClubIndexRoute
   '/shop/': typeof ShopIndexRoute
   '/club/hell-pass/$tier': typeof ClubHellPassTierRoute
+  '/club/raffles/$raffleId': typeof ClubRafflesRaffleIdRoute
   '/club/u/$nick': typeof ClubUNickRoute
   '/club/hell-pass/': typeof ClubHellPassIndexRoute
 }
@@ -125,12 +132,13 @@ export interface FileRoutesByTo {
   '/school': typeof SchoolRoute
   '/club/hell-ai': typeof ClubHellAiRoute
   '/club/me': typeof ClubMeRoute
-  '/club/raffles': typeof ClubRafflesRoute
+  '/club/raffles': typeof ClubRafflesRouteWithChildren
   '/club/school': typeof ClubSchoolRoute
   '/shop/$productSlug': typeof ShopProductSlugRoute
   '/club': typeof ClubIndexRoute
   '/shop': typeof ShopIndexRoute
   '/club/hell-pass/$tier': typeof ClubHellPassTierRoute
+  '/club/raffles/$raffleId': typeof ClubRafflesRaffleIdRoute
   '/club/u/$nick': typeof ClubUNickRoute
   '/club/hell-pass': typeof ClubHellPassIndexRoute
 }
@@ -143,12 +151,13 @@ export interface FileRoutesById {
   '/school': typeof SchoolRoute
   '/club/hell-ai': typeof ClubHellAiRoute
   '/club/me': typeof ClubMeRoute
-  '/club/raffles': typeof ClubRafflesRoute
+  '/club/raffles': typeof ClubRafflesRouteWithChildren
   '/club/school': typeof ClubSchoolRoute
   '/shop/$productSlug': typeof ShopProductSlugRoute
   '/club/': typeof ClubIndexRoute
   '/shop/': typeof ShopIndexRoute
   '/club/hell-pass/$tier': typeof ClubHellPassTierRoute
+  '/club/raffles/$raffleId': typeof ClubRafflesRaffleIdRoute
   '/club/u/$nick': typeof ClubUNickRoute
   '/club/hell-pass/': typeof ClubHellPassIndexRoute
 }
@@ -168,6 +177,7 @@ export interface FileRouteTypes {
     | '/club/'
     | '/shop/'
     | '/club/hell-pass/$tier'
+    | '/club/raffles/$raffleId'
     | '/club/u/$nick'
     | '/club/hell-pass/'
   fileRoutesByTo: FileRoutesByTo
@@ -184,6 +194,7 @@ export interface FileRouteTypes {
     | '/club'
     | '/shop'
     | '/club/hell-pass/$tier'
+    | '/club/raffles/$raffleId'
     | '/club/u/$nick'
     | '/club/hell-pass'
   id:
@@ -201,6 +212,7 @@ export interface FileRouteTypes {
     | '/club/'
     | '/shop/'
     | '/club/hell-pass/$tier'
+    | '/club/raffles/$raffleId'
     | '/club/u/$nick'
     | '/club/hell-pass/'
   fileRoutesById: FileRoutesById
@@ -315,6 +327,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ClubUNickRouteImport
       parentRoute: typeof ClubRoute
     }
+    '/club/raffles/$raffleId': {
+      id: '/club/raffles/$raffleId'
+      path: '/$raffleId'
+      fullPath: '/club/raffles/$raffleId'
+      preLoaderRoute: typeof ClubRafflesRaffleIdRouteImport
+      parentRoute: typeof ClubRafflesRoute
+    }
     '/club/hell-pass/$tier': {
       id: '/club/hell-pass/$tier'
       path: '/hell-pass/$tier'
@@ -325,10 +344,22 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface ClubRafflesRouteChildren {
+  ClubRafflesRaffleIdRoute: typeof ClubRafflesRaffleIdRoute
+}
+
+const ClubRafflesRouteChildren: ClubRafflesRouteChildren = {
+  ClubRafflesRaffleIdRoute: ClubRafflesRaffleIdRoute,
+}
+
+const ClubRafflesRouteWithChildren = ClubRafflesRoute._addFileChildren(
+  ClubRafflesRouteChildren,
+)
+
 interface ClubRouteChildren {
   ClubHellAiRoute: typeof ClubHellAiRoute
   ClubMeRoute: typeof ClubMeRoute
-  ClubRafflesRoute: typeof ClubRafflesRoute
+  ClubRafflesRoute: typeof ClubRafflesRouteWithChildren
   ClubSchoolRoute: typeof ClubSchoolRoute
   ClubIndexRoute: typeof ClubIndexRoute
   ClubHellPassTierRoute: typeof ClubHellPassTierRoute
@@ -339,7 +370,7 @@ interface ClubRouteChildren {
 const ClubRouteChildren: ClubRouteChildren = {
   ClubHellAiRoute: ClubHellAiRoute,
   ClubMeRoute: ClubMeRoute,
-  ClubRafflesRoute: ClubRafflesRoute,
+  ClubRafflesRoute: ClubRafflesRouteWithChildren,
   ClubSchoolRoute: ClubSchoolRoute,
   ClubIndexRoute: ClubIndexRoute,
   ClubHellPassTierRoute: ClubHellPassTierRoute,

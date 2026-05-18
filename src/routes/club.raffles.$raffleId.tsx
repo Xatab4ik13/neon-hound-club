@@ -16,7 +16,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { Countdown } from "@/components/club/Countdown";
-import { ACTIVE_TICKETS, ME, type ActiveTicket } from "@/data/profile";
+import { ACTIVE_TICKETS, ME, type ActiveTicket, type RafflePrize, type RaffleSpec } from "@/data/profile";
 
 export const Route = createFileRoute("/club/raffles/$raffleId")({
   loader: ({ params }) => {
