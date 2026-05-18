@@ -268,7 +268,6 @@ function FeaturedRaffle({
   onStakeChange: (v: number) => void;
   onStake: () => void;
 }) {
-  const pct = Math.min(100, (raffle.totalTickets / 3000) * 100);
   const odds =
     raffle.myTickets + stake > 0
       ? ((raffle.myTickets + stake) / raffle.totalTickets) * 100
@@ -339,35 +338,8 @@ function FeaturedRaffle({
 
       {/* body */}
       <div className="grid grid-cols-1 gap-6 p-6 md:grid-cols-[1fr_auto] md:p-8">
-        {/* progress + stats */}
+        {/* stats */}
         <div className="min-w-0 space-y-5">
-          <div>
-            <div className="flex items-end justify-between font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
-              <span>заполнение</span>
-              <span className="text-foreground">
-                {raffle.totalTickets} / 3000
-              </span>
-            </div>
-            <div className="mt-2 h-2 overflow-hidden bg-white/[0.06]">
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${pct}%` }}
-                transition={{ duration: 1.1, ease: "easeOut" }}
-                className="relative h-full bg-gradient-to-r from-primary/70 to-primary"
-              >
-                <motion.div
-                  aria-hidden
-                  animate={{ x: ["-100%", "200%"] }}
-                  transition={{
-                    duration: 2.2,
-                    repeat: Infinity,
-                    ease: "linear",
-                  }}
-                  className="absolute inset-y-0 w-1/3 bg-gradient-to-r from-transparent via-white/40 to-transparent"
-                />
-              </motion.div>
-            </div>
-          </div>
 
           <div className="grid grid-cols-3 gap-3">
             <Stat label="мои билеты" value={String(raffle.myTickets)} />
@@ -521,7 +493,6 @@ function MiniRaffle({
   active: boolean;
   onSelect: () => void;
 }) {
-  const pct = Math.min(100, (raffle.totalTickets / 3000) * 100);
   return (
     <motion.button
       type="button"
@@ -555,14 +526,6 @@ function MiniRaffle({
             мои: <span className="text-foreground">{raffle.myTickets}</span>
           </span>
           <Countdown deadlineAt={raffle.deadlineAt} compact />
-        </div>
-        <div className="h-1 overflow-hidden bg-white/[0.06]">
-          <motion.div
-            initial={{ width: 0 }}
-            animate={{ width: `${pct}%` }}
-            transition={{ duration: 0.8 }}
-            className="h-full bg-primary"
-          />
         </div>
       </div>
     </motion.button>
