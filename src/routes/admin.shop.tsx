@@ -119,7 +119,12 @@ function ShopPage() {
         />
       )}
       {tab === "categories" && (
-        <CategoriesTab categories={categories} onNew={() => setCatOpen(true)} />
+        <CategoriesTab
+          categories={categories}
+          onNew={() => setCatOpen(true)}
+          onUpdate={(c) => setCategories((l) => l.map((x) => (x.id === c.id ? c : x)))}
+          onDelete={(id) => setCategories((l) => l.filter((x) => x.id !== id))}
+        />
       )}
       {tab === "showcase" && <ShowcaseTab products={products} />}
 
