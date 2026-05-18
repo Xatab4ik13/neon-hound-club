@@ -281,7 +281,7 @@ function RaffleDetail({
             <h3 className="text-sm font-semibold">Призы ({raffle.prizes.length})</h3>
           </PanelHeader>
           <DataTable
-            headers={["", "Название", "Цена", "Окончание", "Участников", "Статус", ""]}
+            headers={["", "Название", "Цена", "Окончание", "Статус", ""]}
             rows={raffle.prizes.map((p) => [
               p.images[0] ? (
                 <img src={p.images[0]} alt={p.name} className="h-10 w-10 rounded object-cover" />
@@ -293,7 +293,6 @@ function RaffleDetail({
               <span className="font-medium">{p.name}</span>,
               `${p.price} 🎟`,
               p.ends || "—",
-              p.participants,
               <Badge tone={p.status === "active" ? "emerald" : p.status === "draft" ? "zinc" : "rose"}>
                 {p.status === "active" ? "Активен" : p.status === "draft" ? "Черновик" : "Завершён"}
               </Badge>,
