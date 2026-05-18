@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -11,6 +11,7 @@ import {
   Check,
   ChevronRight,
   Zap,
+  ExternalLink,
 } from "lucide-react";
 import { Countdown } from "@/components/club/Countdown";
 import { ACTIVE_TICKETS, ME } from "@/data/profile";
