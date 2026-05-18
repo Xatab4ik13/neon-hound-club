@@ -195,31 +195,8 @@ function RafflesPage() {
               <SectionTitle>Активные розыгрыши</SectionTitle>
               <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
                 {others.map((r) => (
-                  <MiniRaffle
-                    key={r.id}
-                    raffle={r}
-                    active={r.id === selectedId}
-                    onSelect={() => {
-                      setSelectedId(r.id);
-                      setStake(0);
-                      window.scrollTo({ top: 0, behavior: "smooth" });
-                    }}
-                  />
+                  <MiniRaffle key={r.id} raffle={r} />
                 ))}
-                {[featured]
-                  .filter((r) => r.id !== selectedId)
-                  .map((r) => (
-                    <MiniRaffle
-                      key={r.id}
-                      raffle={r}
-                      active={false}
-                      onSelect={() => {
-                        setSelectedId(r.id);
-                        setStake(0);
-                        window.scrollTo({ top: 0, behavior: "smooth" });
-                      }}
-                    />
-                  ))}
               </div>
             </section>
           )}
