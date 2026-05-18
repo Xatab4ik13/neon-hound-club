@@ -48,10 +48,11 @@ const SEED: Raffle[] = [
     description: "Главная летняя серия призов от HELLHOUND.",
     status: "active",
     createdAt: "2026-05-01",
+    participants: 823,
     prizes: [
-      { id: "p1", name: "Шлем AGV K6", price: 50, status: "active", ends: "2026-05-20", participants: 284, images: [] },
-      { id: "p2", name: "Перчатки v3", price: 20, status: "active", ends: "2026-05-22", participants: 127, images: [] },
-      { id: "p3", name: "Худи Founder S01", price: 30, status: "active", ends: "2026-05-25", participants: 412, images: [] },
+      { id: "p1", name: "Шлем AGV K6", price: 50, status: "active", ends: "2026-05-20", images: [] },
+      { id: "p2", name: "Перчатки v3", price: 20, status: "active", ends: "2026-05-22", images: [] },
+      { id: "p3", name: "Худи Founder S01", price: 30, status: "active", ends: "2026-05-25", images: [] },
     ],
   },
   {
@@ -59,8 +60,9 @@ const SEED: Raffle[] = [
     name: "Весенний розыгрыш",
     status: "finished",
     createdAt: "2026-03-01",
+    participants: 198,
     prizes: [
-      { id: "p4", name: "Перчатки Пит-крю", price: 15, status: "finished", ends: "2026-04-30", participants: 198, images: [] },
+      { id: "p4", name: "Перчатки Пит-крю", price: 15, status: "finished", ends: "2026-04-30", images: [] },
     ],
   },
 ];
