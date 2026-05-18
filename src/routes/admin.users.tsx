@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Ban, Gift, Crown, Save } from "lucide-react";
 import {
   PageHeader,
@@ -23,17 +23,81 @@ export const Route = createFileRoute("/admin/users")({
 
 type PassTier = "Silver" | "Gold" | "Platinum" | "—";
 
+// Детерминированные мок-поля (телефон, ФИО, дата, потрачено)
+// до подключения БД. Считаем 1 раз по slug.
+type UserMeta = {
+  fio: string;
+  phone: string;
+  registeredAt: string;
+  spent: number;
+  pass: PassTier;
+};
+
+const FIO_FIRST = ["Алексей", "Иван", "Дмитрий", "Сергей", "Павел", "Артём", "Михаил", "Никита", "Роман", "Анна", "Мария", "Олег"];
+const FIO_LAST = ["Иванов", "Петров", "Сидоров", "Кузнецов", "Смирнов", "Соколов", "Попов", "Лебедев", "Козлов", "Новиков"];
+const TIERS: PassTier[] = ["Silver", "Gold", "Platinum", "—"];
+
+function hash(s: string) {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+
+function metaFor(u: PublicUser): UserMeta {
+  const h = hash(u.slug);
+  const first = FIO_FIRST[h % FIO_FIRST.length];
+  const last = FIO_LAST[(h >> 3) % FIO_LAST.length];
+  const phone =
+    "+7 (" +
+    String(900 + (h % 99)).padStart(3, "0") +
+    ") " +
+    String(100 + ((h >> 5) % 900)).padStart(3, "0") +
+    "-" +
+    String((h >> 11) % 100).padStart(2, "0") +
+    "-" +
+    String((h >> 17) % 100).padStart(2, "0");
+  const day = (h % 28) + 1;
+  const month = ((h >> 4) % 12) + 1;
+  const year = 2024 + ((h >> 8) % 3);
+  const registeredAt = `${String(day).padStart(2, "0")}.${String(month).padStart(2, "0")}.${year}`;
+  const spent = ((h % 90) + 1) * 490 + ((h >> 7) % 30) * 100;
+  const pass = TIERS[h % TIERS.length];
+  return { fio: `${last} ${first}`, phone, registeredAt, spent, pass };
+}
+
+function passTone(t: PassTier) {
+  if (t === "Silver") return "zinc" as const;
+  if (t === "Gold") return "amber" as const;
+  if (t === "Platinum") return "violet" as const;
+  return "zinc" as const;
+}
+
 function UsersPage() {
-  const users = Object.values(PUBLIC_USERS);
+  const users = useMemo(() => Object.values(PUBLIC_USERS), []);
+  const metas = useMemo(() => {
+    const m = new Map<string, UserMeta>();
+    users.forEach((u) => m.set(u.slug, metaFor(u)));
+    return m;
+  }, [users]);
+
   const [selected, setSelected] = useState<PublicUser | null>(null);
   const [confirmBan, setConfirmBan] = useState(false);
   const [giftOpen, setGiftOpen] = useState(false);
   const [passOpen, setPassOpen] = useState(false);
   const [query, setQuery] = useState("");
 
-  const filtered = users.filter((u) =>
-    u.nick.toLowerCase().includes(query.toLowerCase()),
-  );
+  const filtered = useMemo(() => {
+    const q = query.toLowerCase().trim();
+    if (!q) return users;
+    return users.filter((u) => {
+      const m = metas.get(u.slug)!;
+      return (
+        u.nick.toLowerCase().includes(q) ||
+        m.fio.toLowerCase().includes(q) ||
+        m.phone.includes(q)
+      );
+    });
+  }, [users, metas, query]);
 
   return (
     <div>
@@ -41,7 +105,7 @@ function UsersPage() {
 
       <div className="mb-3 flex gap-2">
         <TextInput
-          placeholder="Поиск по нику, email, телефону…"
+          placeholder="Поиск по нику, ФИО, телефону…"
           className="max-w-md"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -51,18 +115,19 @@ function UsersPage() {
 
       <Panel>
         <DataTable
-          headers={["Ник", "Город", "Мото", "Ранг", "Pass", "XP", ""]}
+          headers={["Ник", "ФИО", "Телефон", "Ранг", "Pass", "Регистрация", ""]}
           rows={filtered.map((u) => {
             const rank = RANKS.find((r) => r.id === u.rank);
+            const m = metas.get(u.slug)!;
             return [
-              <span className="font-medium">{u.nick}</span>,
-              u.city ?? "—",
-              <span className="text-zinc-500 dark:text-zinc-400">{u.bike ?? "—"}</span>,
+              <span className="font-medium">@{u.nick}</span>,
+              <span>{m.fio}</span>,
+              <span className="tabular-nums text-zinc-600 dark:text-zinc-300">{m.phone}</span>,
               <Badge tone={u.rank === "vip" ? "violet" : u.rank === "hell-legend" ? "rose" : "zinc"}>
                 {rank?.label ?? u.rank}
               </Badge>,
-              <Badge tone="blue">Silver</Badge>,
-              `${u.xpPct}%`,
+              <Badge tone={passTone(m.pass)}>{m.pass}</Badge>,
+              <span className="tabular-nums text-zinc-500 dark:text-zinc-400">{m.registeredAt}</span>,
               <Btn variant="ghost" onClick={() => setSelected(u)}>
                 Открыть
               </Btn>,
@@ -86,7 +151,14 @@ function UsersPage() {
           </>
         }
       >
-        {selected && <UserCard user={selected} onGift={() => setGiftOpen(true)} onGivePass={() => setPassOpen(true)} />}
+        {selected && (
+          <UserCard
+            user={selected}
+            meta={metas.get(selected.slug)!}
+            onGift={() => setGiftOpen(true)}
+            onGivePass={() => setPassOpen(true)}
+          />
+        )}
       </Drawer>
 
       <ConfirmModal
@@ -119,15 +191,17 @@ function UsersPage() {
 
 function UserCard({
   user,
+  meta,
   onGift,
   onGivePass,
 }: {
   user: PublicUser;
+  meta: UserMeta;
   onGift: () => void;
   onGivePass: () => void;
 }) {
   const [rank, setRank] = useState(user.rank);
-  const [tier, setTier] = useState<PassTier>("Silver");
+  const [tier, setTier] = useState<PassTier>(meta.pass);
 
   return (
     <div className="space-y-5">
@@ -137,16 +211,31 @@ function UserCard({
         </div>
         <div>
           <div className="text-lg font-semibold">@{user.nick}</div>
+          <div className="text-xs text-zinc-500 dark:text-zinc-400">{meta.fio}</div>
           <div className="text-xs text-zinc-500 dark:text-zinc-400">
             {user.city ?? "—"} • {user.bike ?? "—"}
           </div>
         </div>
       </div>
 
+      <div className="grid grid-cols-2 gap-2">
+        <InfoRow label="Телефон" value={meta.phone} />
+        <InfoRow label="Регистрация" value={meta.registeredAt} />
+      </div>
+
       <div className="grid grid-cols-3 gap-2">
         <Metric label="Билеты" value="124" />
         <Metric label="XP" value={`${user.xpPct}%`} />
         <Metric label="Заказов" value="7" />
+      </div>
+
+      <div className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 dark:border-emerald-900/40 dark:bg-emerald-900/20">
+        <div className="text-[10px] uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+          Внесено всего
+        </div>
+        <div className="text-xl font-bold text-emerald-700 dark:text-emerald-300">
+          {meta.spent.toLocaleString("ru-RU")} ₽
+        </div>
       </div>
 
       <Field label="Ранг">
@@ -205,10 +294,19 @@ function UserCard({
           </li>
           <li className="flex justify-between">
             <span>Регистрация</span>
-            <span className="text-zinc-500">03.04</span>
+            <span className="text-zinc-500">{meta.registeredAt}</span>
           </li>
         </ul>
       </div>
+    </div>
+  );
+}
+
+function InfoRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-md border border-zinc-200 bg-zinc-50 px-3 py-2 dark:border-zinc-800 dark:bg-zinc-900/50">
+      <div className="text-[10px] uppercase tracking-wider text-zinc-500">{label}</div>
+      <div className="text-sm font-medium tabular-nums">{value}</div>
     </div>
   );
 }
