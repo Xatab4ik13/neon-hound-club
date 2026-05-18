@@ -9,6 +9,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useViewer } from "@/hooks/use-viewer";
+import { useCart } from "@/hooks/use-cart";
 
 
 const NAV = [
@@ -21,7 +22,7 @@ const NAV = [
 
 export function Header() {
   const { isAuthed, nick, tier, tickets, toggleAuth, signOut } = useViewer();
-  const cartCount = 0;
+  const cartCount = useCart().count;
 
   const { pathname } = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
