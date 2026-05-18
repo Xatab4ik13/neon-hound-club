@@ -29,44 +29,29 @@ function HHToast({
     <div
       className="relative flex w-[min(92vw,380px)] items-stretch border-2 bg-background"
       style={{
-        borderColor: `oklch(${accent})`,
-        boxShadow: `6px 6px 0 0 oklch(${accent} / 0.28)`,
+        borderColor: accent,
+        boxShadow: `6px 6px 0 0 color-mix(in oklab, ${accent} 28%, transparent)`,
       }}
     >
-      {/* Icon bar */}
       <div
         className="flex w-11 shrink-0 items-center justify-center"
-        style={{ background: `oklch(${accent})` }}
+        style={{ background: accent }}
       >
         <Icon className="size-5 text-background" strokeWidth={3} />
       </div>
 
-      {/* Content */}
       <div className="flex min-w-0 flex-1 flex-col justify-center px-4 py-3">
-        <div
-          className="font-display text-base uppercase leading-tight tracking-wider text-foreground"
-          style={{ fontWeight: 700 }}
-        >
+        <div className="font-display text-base font-bold uppercase leading-tight tracking-wider text-foreground">
           {title}
         </div>
-        {meta ? (
-          <div
-            className="mt-0.5 truncate font-mono text-[10px] uppercase tracking-widest"
-            style={{ color: `oklch(${accent})` }}
-          >
-            {meta}
-          </div>
-        ) : (
-          <div
-            className="mt-0.5 truncate font-mono text-[10px] uppercase tracking-widest"
-            style={{ color: `oklch(${accent})` }}
-          >
-            HRC // {eyebrow}
-          </div>
-        )}
+        <div
+          className="mt-0.5 truncate font-mono text-[10px] uppercase tracking-widest"
+          style={{ color: accent }}
+        >
+          {meta ?? `HRC // ${eyebrow}`}
+        </div>
       </div>
 
-      {/* Close */}
       <button
         onClick={() => sonnerToast.dismiss(id)}
         aria-label="Закрыть"
@@ -75,11 +60,10 @@ function HHToast({
         <X className="size-4" strokeWidth={2} />
       </button>
 
-      {/* Corner detail */}
       <div
         aria-hidden
         className="absolute -right-[3px] -top-[3px] size-1.5"
-        style={{ background: `oklch(${accent})` }}
+        style={{ background: accent }}
       />
     </div>
   );
