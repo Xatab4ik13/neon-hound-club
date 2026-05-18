@@ -105,10 +105,11 @@ function RafflesPage() {
 
       <Panel>
         <DataTable
-          headers={["Название", "Призов", "Создан", "Статус", ""]}
+          headers={["Название", "Призов", "Участников", "Создан", "Статус", ""]}
           rows={list.map((r) => [
             <span className="font-medium">{r.name}</span>,
             <Badge tone="zinc">{r.prizes.length}</Badge>,
+            <span className="font-medium">{r.participants}</span>,
             r.createdAt,
             <Badge tone={r.status === "active" ? "emerald" : r.status === "draft" ? "zinc" : "rose"}>
               {r.status === "active" ? "Активен" : r.status === "draft" ? "Черновик" : "Завершён"}
