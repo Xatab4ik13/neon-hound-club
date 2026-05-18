@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { Plus, Edit, Trash2, Image as ImageIcon, Package, ChevronRight, ArrowLeft } from "lucide-react";
+import { Plus, Edit, Trash2, Package, ChevronRight, ArrowLeft, Minus } from "lucide-react";
 import {
   PageHeader,
   Panel,
@@ -10,7 +10,6 @@ import {
   Badge,
   TextInput,
   TextArea,
-  Select,
   Field,
   Modal,
   ConfirmModal,
@@ -24,20 +23,17 @@ export const Route = createFileRoute("/admin/raffles")({
 type Prize = {
   id: string;
   name: string;
-  description?: string;
-  price: number; // в билетах
-  ends: string;
-  images: string[]; // dataURL
-  status: "active" | "draft" | "finished";
+  qty: number;
 };
 
 type Raffle = {
   id: string;
   name: string;
   description?: string;
-  status: "active" | "draft" | "finished";
+  cover?: string; // dataURL
+  endsAt: string; // дата окончания — для таймера на сайте
   createdAt: string;
-  participants: number; // общие участники розыгрыша
+  participants: number;
   prizes: Prize[];
 };
 
@@ -46,26 +42,39 @@ const SEED: Raffle[] = [
     id: "1",
     name: "Летний розыгрыш №1",
     description: "Главная летняя серия призов от HELLHOUND.",
-    status: "active",
+    cover: "",
+    endsAt: "2026-06-30",
     createdAt: "2026-05-01",
     participants: 823,
     prizes: [
-      { id: "p1", name: "Шлем AGV K6", price: 50, status: "active", ends: "2026-05-20", images: [] },
-      { id: "p2", name: "Перчатки v3", price: 20, status: "active", ends: "2026-05-22", images: [] },
-      { id: "p3", name: "Худи Founder S01", price: 30, status: "active", ends: "2026-05-25", images: [] },
+      { id: "p1", name: "Шлем AGV K6", qty: 1 },
+      { id: "p2", name: "Перчатки v3", qty: 5 },
+      { id: "p3", name: "Худи Founder S01", qty: 10 },
     ],
   },
   {
     id: "2",
     name: "Весенний розыгрыш",
-    status: "finished",
+    cover: "",
+    endsAt: "2026-04-30",
     createdAt: "2026-03-01",
     participants: 198,
-    prizes: [
-      { id: "p4", name: "Перчатки Пит-крю", price: 15, status: "finished", ends: "2026-04-30", images: [] },
-    ],
+    prizes: [{ id: "p4", name: "Перчатки Пит-крю", qty: 3 }],
   },
 ];
+
+function emptyRaffle(): Raffle {
+  return {
+    id: "",
+    name: "",
+    description: "",
+    cover: "",
+    endsAt: "",
+    createdAt: new Date().toISOString().slice(0, 10),
+    participants: 0,
+    prizes: [],
+  };
+}
 
 function RafflesPage() {
   const [list, setList] = useState<Raffle[]>(SEED);
@@ -87,15 +96,19 @@ function RafflesPage() {
   }
 
   const openNew = () => {
-    setEditing({ id: "", name: "", status: "draft", createdAt: new Date().toISOString().slice(0, 10), participants: 0, prizes: [] });
+    setEditing(emptyRaffle());
     setOpen(true);
   };
+
+  const now = Date.now();
+  const statusOf = (r: Raffle) =>
+    r.endsAt && new Date(r.endsAt).getTime() < now ? "finished" : "active";
 
   return (
     <div>
       <PageHeader
         title="Розыгрыши"
-        description="Каждый розыгрыш — серия призов. Открой розыгрыш, чтобы управлять призами."
+        description="Создай розыгрыш, добавь призы и дату окончания — на сайте запустится таймер."
         actions={
           <Btn variant="primary" onClick={openNew}>
             <Plus className="h-4 w-4" /> Новый розыгрыш
@@ -105,33 +118,31 @@ function RafflesPage() {
 
       <Panel>
         <DataTable
-          headers={["Название", "Призов", "Участников", "Создан", "Статус", ""]}
-          rows={list.map((r) => [
-            <span className="font-medium">{r.name}</span>,
-            <Badge tone="zinc">{r.prizes.length}</Badge>,
-            <span className="font-medium">{r.participants}</span>,
-            r.createdAt,
-            <Badge tone={r.status === "active" ? "emerald" : r.status === "draft" ? "zinc" : "rose"}>
-              {r.status === "active" ? "Активен" : r.status === "draft" ? "Черновик" : "Завершён"}
-            </Badge>,
-            <div className="flex gap-1">
-              <Btn variant="ghost" onClick={() => setActiveId(r.id)}>
-                Открыть <ChevronRight className="h-3.5 w-3.5" />
-              </Btn>
-              <Btn
-                variant="ghost"
-                onClick={() => {
-                  setEditing(r);
-                  setOpen(true);
-                }}
-              >
-                <Edit className="h-3.5 w-3.5" />
-              </Btn>
-              <Btn variant="ghost" onClick={() => setConfirm(r)}>
-                <Trash2 className="h-3.5 w-3.5" />
-              </Btn>
-            </div>,
-          ])}
+          headers={["Название", "Призов", "Участников", "Окончание", "Статус", ""]}
+          rows={list.map((r) => {
+            const totalQty = r.prizes.reduce((s, p) => s + (p.qty || 0), 0);
+            const st = statusOf(r);
+            return [
+              <span className="font-medium">{r.name}</span>,
+              <Badge tone="zinc">{r.prizes.length} поз. / {totalQty} шт.</Badge>,
+              <span className="font-medium">{r.participants}</span>,
+              r.endsAt || "—",
+              <Badge tone={st === "active" ? "emerald" : "rose"}>
+                {st === "active" ? "Активен" : "Завершён"}
+              </Badge>,
+              <div className="flex gap-1">
+                <Btn variant="ghost" onClick={() => setActiveId(r.id)}>
+                  Открыть <ChevronRight className="h-3.5 w-3.5" />
+                </Btn>
+                <Btn variant="ghost" onClick={() => { setEditing(r); setOpen(true); }}>
+                  <Edit className="h-3.5 w-3.5" />
+                </Btn>
+                <Btn variant="ghost" onClick={() => setConfirm(r)}>
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Btn>
+              </div>,
+            ];
+          })}
         />
       </Panel>
 
@@ -155,6 +166,59 @@ function RafflesPage() {
         title="Удалить розыгрыш?"
         message={`«${confirm?.name}» и все его призы будут удалены.`}
       />
+    </div>
+  );
+}
+
+function PrizeEditor({
+  prizes,
+  onChange,
+}: {
+  prizes: Prize[];
+  onChange: (p: Prize[]) => void;
+}) {
+  const update = (id: string, patch: Partial<Prize>) =>
+    onChange(prizes.map((x) => (x.id === id ? { ...x, ...patch } : x)));
+  const remove = (id: string) => onChange(prizes.filter((x) => x.id !== id));
+  const add = () =>
+    onChange([...prizes, { id: String(Date.now()) + Math.random(), name: "", qty: 1 }]);
+
+  return (
+    <div className="space-y-2">
+      {prizes.length === 0 && (
+        <div className="rounded border border-dashed border-zinc-200 px-3 py-6 text-center text-xs text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
+          Призов пока нет
+        </div>
+      )}
+      {prizes.map((p) => (
+        <div key={p.id} className="flex items-center gap-2">
+          <TextInput
+            value={p.name}
+            placeholder="Название приза"
+            onChange={(e) => update(p.id, { name: e.target.value })}
+          />
+          <div className="flex items-center gap-1">
+            <Btn variant="ghost" onClick={() => update(p.id, { qty: Math.max(1, p.qty - 1) })}>
+              <Minus className="h-3.5 w-3.5" />
+            </Btn>
+            <TextInput
+              type="number"
+              value={p.qty}
+              onChange={(e) => update(p.id, { qty: Math.max(1, Number(e.target.value) || 1) })}
+              className="w-16 text-center"
+            />
+            <Btn variant="ghost" onClick={() => update(p.id, { qty: p.qty + 1 })}>
+              <Plus className="h-3.5 w-3.5" />
+            </Btn>
+          </div>
+          <Btn variant="ghost" onClick={() => remove(p.id)}>
+            <Trash2 className="h-3.5 w-3.5" />
+          </Btn>
+        </div>
+      ))}
+      <Btn onClick={add}>
+        <Plus className="h-4 w-4" /> Добавить приз
+      </Btn>
     </div>
   );
 }
@@ -196,21 +260,27 @@ function RaffleModal({
         </Field>
         <Field label="Описание">
           <TextArea
-            rows={4}
+            rows={3}
             value={r.description ?? ""}
             onChange={(e) => setR({ ...r, description: e.target.value })}
             placeholder="Кратко — про серию, тему, период…"
           />
         </Field>
-        <Field label="Статус">
-          <Select
-            value={r.status}
-            onChange={(e) => setR({ ...r, status: e.target.value as Raffle["status"] })}
-          >
-            <option value="draft">Черновик</option>
-            <option value="active">Активен</option>
-            <option value="finished">Завершён</option>
-          </Select>
+        <Field label="Обложка (картинка для сайта)">
+          <ImageUploader
+            images={r.cover ? [r.cover] : []}
+            onChange={(imgs) => setR({ ...r, cover: imgs[0] ?? "" })}
+          />
+        </Field>
+        <Field label="Дата окончания (запустит таймер на сайте)">
+          <TextInput
+            type="date"
+            value={r.endsAt}
+            onChange={(e) => setR({ ...r, endsAt: e.target.value })}
+          />
+        </Field>
+        <Field label="Призы">
+          <PrizeEditor prizes={r.prizes} onChange={(prizes) => setR({ ...r, prizes })} />
         </Field>
       </div>
     </Modal>
@@ -227,29 +297,9 @@ function RaffleDetail({
   onBack: () => void;
   onUpdate: (r: Raffle) => void;
 }) {
-  const [editing, setEditing] = useState<Prize | null>(null);
-  const [open, setOpen] = useState(false);
-  const [del, setDel] = useState<Prize | null>(null);
+  const setPrizes = (prizes: Prize[]) => onUpdate({ ...raffle, prizes });
 
-  const openNew = () => {
-    setEditing({
-      id: "",
-      name: "",
-      price: 10,
-      status: "draft",
-      ends: "",
-      images: [],
-    });
-    setOpen(true);
-  };
-
-  const savePrize = (p: Prize) => {
-    const prizes = p.id
-      ? raffle.prizes.map((x) => (x.id === p.id ? p : x))
-      : [{ ...p, id: String(Date.now()) }, ...raffle.prizes];
-    onUpdate({ ...raffle, prizes });
-    setOpen(false);
-  };
+  const totalQty = raffle.prizes.reduce((s, p) => s + (p.qty || 0), 0);
 
   return (
     <div>
@@ -262,153 +312,40 @@ function RaffleDetail({
       <PageHeader
         title={raffle.name}
         description={raffle.description ?? "Управление призами этого розыгрыша"}
-        actions={
-          <Btn variant="primary" onClick={openNew}>
-            <Plus className="h-4 w-4" /> Добавить приз
-          </Btn>
-        }
       />
 
-      {raffle.prizes.length === 0 ? (
-        <Panel>
-          <div className="flex flex-col items-center justify-center px-6 py-16 text-center text-sm text-zinc-500 dark:text-zinc-400">
-            <Package className="mb-2 h-8 w-8" />
-            Пока нет призов. Добавь первый.
+      <div className="grid gap-4 md:grid-cols-3">
+        <Panel className="md:col-span-1">
+          <PanelHeader>
+            <h3 className="text-sm font-semibold">Информация</h3>
+          </PanelHeader>
+          <div className="space-y-3 p-4 text-sm">
+            {raffle.cover ? (
+              <img src={raffle.cover} alt={raffle.name} className="aspect-video w-full rounded object-cover" />
+            ) : (
+              <div className="flex aspect-video w-full items-center justify-center rounded bg-zinc-100 dark:bg-zinc-800">
+                <Package className="h-6 w-6 text-zinc-400" />
+              </div>
+            )}
+            <div className="flex justify-between"><span className="text-zinc-500">Окончание</span><b>{raffle.endsAt || "—"}</b></div>
+            <div className="flex justify-between"><span className="text-zinc-500">Создан</span><b>{raffle.createdAt}</b></div>
+            <div className="flex justify-between"><span className="text-zinc-500">Участников</span><b>{raffle.participants}</b></div>
+            <div className="flex justify-between"><span className="text-zinc-500">Всего призов</span><b>{raffle.prizes.length} поз. / {totalQty} шт.</b></div>
           </div>
         </Panel>
-      ) : (
-        <Panel>
+
+        <Panel className="md:col-span-2">
           <PanelHeader>
-            <h3 className="text-sm font-semibold">Призы ({raffle.prizes.length})</h3>
+            <h3 className="text-sm font-semibold">Призы</h3>
             <span className="text-xs text-zinc-500 dark:text-zinc-400">
-              Участников в розыгрыше: <b>{raffle.participants}</b>
+              Можно менять кол-во, добавлять и удалять
             </span>
           </PanelHeader>
-          <DataTable
-            headers={["", "Название", "Цена", "Окончание", "Статус", ""]}
-            rows={raffle.prizes.map((p) => [
-              p.images[0] ? (
-                <img src={p.images[0]} alt={p.name} className="h-10 w-10 rounded object-cover" />
-              ) : (
-                <div className="flex h-10 w-10 items-center justify-center rounded bg-zinc-100 dark:bg-zinc-800">
-                  <ImageIcon className="h-4 w-4 text-zinc-400" />
-                </div>
-              ),
-              <span className="font-medium">{p.name}</span>,
-              `${p.price} 🎟`,
-              p.ends || "—",
-              <Badge tone={p.status === "active" ? "emerald" : p.status === "draft" ? "zinc" : "rose"}>
-                {p.status === "active" ? "Активен" : p.status === "draft" ? "Черновик" : "Завершён"}
-              </Badge>,
-              <div className="flex gap-1">
-                <Btn
-                  variant="ghost"
-                  onClick={() => {
-                    setEditing(p);
-                    setOpen(true);
-                  }}
-                >
-                  <Edit className="h-3.5 w-3.5" />
-                </Btn>
-                <Btn variant="ghost" onClick={() => setDel(p)}>
-                  <Trash2 className="h-3.5 w-3.5" />
-                </Btn>
-              </div>,
-            ])}
-          />
+          <div className="p-4">
+            <PrizeEditor prizes={raffle.prizes} onChange={setPrizes} />
+          </div>
         </Panel>
-      )}
-
-      {editing && (
-        <PrizeModal open={open} initial={editing} onClose={() => setOpen(false)} onSave={savePrize} />
-      )}
-
-      <ConfirmModal
-        open={!!del}
-        onClose={() => setDel(null)}
-        onConfirm={() =>
-          del && onUpdate({ ...raffle, prizes: raffle.prizes.filter((x) => x.id !== del.id) })
-        }
-        title="Удалить приз?"
-        message={`«${del?.name}» будет удалён из розыгрыша.`}
-      />
-    </div>
-  );
-}
-
-function PrizeModal({
-  open,
-  initial,
-  onClose,
-  onSave,
-}: {
-  open: boolean;
-  initial: Prize;
-  onClose: () => void;
-  onSave: (p: Prize) => void;
-}) {
-  const [p, setP] = useState<Prize>(initial);
-  return (
-    <Modal
-      open={open}
-      onClose={onClose}
-      title={initial.id ? "Редактировать приз" : "Новый приз"}
-      size="lg"
-      footer={
-        <>
-          <Btn onClick={onClose}>Отмена</Btn>
-          <Btn variant="primary" onClick={() => onSave(p)}>
-            Сохранить
-          </Btn>
-        </>
-      }
-    >
-      <div className="space-y-4">
-        <Field label="Название приза">
-          <TextInput value={p.name} onChange={(e) => setP({ ...p, name: e.target.value })} />
-        </Field>
-        <Field label="Описание">
-          <TextArea
-            rows={3}
-            value={p.description ?? ""}
-            onChange={(e) => setP({ ...p, description: e.target.value })}
-            placeholder="Что входит, условия, доставка…"
-          />
-        </Field>
-        <div className="grid grid-cols-3 gap-3">
-          <Field label="Цена билета">
-            <TextInput
-              type="number"
-              value={p.price}
-              onChange={(e) => setP({ ...p, price: Number(e.target.value) })}
-            />
-          </Field>
-          <Field label="Окончание">
-            <TextInput
-              type="date"
-              value={p.ends}
-              onChange={(e) => setP({ ...p, ends: e.target.value })}
-            />
-          </Field>
-          <Field label="Статус">
-            <Select
-              value={p.status}
-              onChange={(e) => setP({ ...p, status: e.target.value as Prize["status"] })}
-            >
-              <option value="draft">Черновик</option>
-              <option value="active">Активен</option>
-              <option value="finished">Завершён</option>
-            </Select>
-          </Field>
-        </div>
-        <Field label="Изображения">
-          <ImageUploader
-            images={p.images}
-            multiple
-            onChange={(images) => setP({ ...p, images })}
-          />
-        </Field>
       </div>
-    </Modal>
+    </div>
   );
 }
