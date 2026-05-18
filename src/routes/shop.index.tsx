@@ -388,7 +388,7 @@ function ShopPage() {
               ) : (
                 <div
                   key={`${activeCat}-${activeSub}-${sort}`}
-                  className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3"
+                  className="grid grid-cols-2 gap-3 sm:gap-5 xl:grid-cols-3"
                 >
                   {filtered.map((p, i) => (
                     <ProductCard key={p.id} product={p} index={i} />
