@@ -2,7 +2,7 @@ import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { ArrowLeft, Bike, Calendar, MapPin, Trophy } from "lucide-react";
 import { BadgeIcon } from "@/components/club/BadgeIcon";
 import { BADGES, RARITY } from "@/data/badges";
-import { RANKS, XP_PER_RANK, type RankId } from "@/data/ranks";
+import { RANKS, getRankSpan, type RankId } from "@/data/ranks";
 import { getUser, type PublicUser } from "@/data/users";
 import { PlaqueBackground } from "./club";
 
