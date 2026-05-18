@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { Plus, Edit, Trash2 } from "lucide-react";
 import { PageHeader, Panel, Btn, DataTable, Badge, TextInput } from "@/components/admin/ui";
 
