@@ -11,7 +11,7 @@ export const Route = createFileRoute("/about")({
       {
         name: "description",
         content:
-          "HELLHOUND Racing Club — клуб райдеров вокруг YouTube-канала HELLHOUND. Hell Pass, мерч, школа, AI-механик. Юридический статус и контакты.",
+          "HELLHOUND Racing Club — клуб райдеров вокруг YouTube-канала HELLHOUND. Hell Pass, мерч, школа, AI-механик.",
       },
       { property: "og:title", content: "О клубе HELLHOUND" },
       {
@@ -126,47 +126,6 @@ function AboutPage() {
               </li>
             ))}
           </ul>
-        </section>
-
-        {/* Юридический блок */}
-        <section className="mt-14 border-l-2 border-primary bg-card p-6 md:p-8">
-          <h2 className="font-display text-xl uppercase tracking-tight">
-            Юридический статус
-          </h2>
-          <div className="mt-4 space-y-3 text-sm leading-relaxed text-muted-foreground">
-            <p>
-              <span className="text-foreground">Hell Pass</span> — платная
-              клубная подписка. Оплачивая её, участник получает доступ к
-              контенту клуба, скидкам, школе и сервисам (включая Hell AI),
-              а также участие в стимулирующих акциях клуба.
-            </p>
-            <p>
-              <span className="text-foreground">
-                Розыгрыши среди подписчиков
-              </span>{" "}
-              — стимулирующие мероприятия для держателей действующей подписки
-              Hell Pass. Отдельная плата за участие в розыгрыше не взимается.
-              Результат розыгрыша не зависит от внесения участником
-              дополнительных платежей. Победитель определяется случайным
-              образом среди участников клуба.
-            </p>
-            <p>
-              <span className="text-foreground">Билеты клуба</span> — внутренний
-              учётный знак активности участника. Не являются ценной бумагой,
-              цифровым финансовым активом, криптовалютой или средством платежа
-              за пределами клуба и не имеют денежной стоимости при возврате.
-            </p>
-            <p className="text-xs">
-              По вопросам, связанным с подпиской и розыгрышами, пишите на
-              <a
-                href="mailto:club@hellhound.racing"
-                className="ml-1 text-primary underline-offset-4 hover:underline"
-              >
-                club@hellhound.racing
-              </a>
-              .
-            </p>
-          </div>
         </section>
 
         <section className="mt-14 text-center">
