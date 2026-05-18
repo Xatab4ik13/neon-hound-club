@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { Plus, Edit, Trash2, Package, ChevronRight, ArrowLeft, Minus } from "lucide-react";
+import { Plus, Edit, Trash2, ChevronRight, ArrowLeft, Minus } from "lucide-react";
 import {
   PageHeader,
   Panel,
