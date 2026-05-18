@@ -15,6 +15,7 @@ import {
   Modal,
   ConfirmModal,
 } from "@/components/admin/ui";
+import { ImageUploader } from "./admin.raffles";
 import { PRODUCTS } from "@/data/products";
 import { cn } from "@/lib/utils";
 
