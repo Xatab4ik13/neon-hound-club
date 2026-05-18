@@ -49,22 +49,36 @@ function NewsListPage() {
               <Link
                 to="/news/$slug"
                 params={{ slug: n.slug }}
-                className="group block border border-border bg-card p-6 transition-colors hover:border-primary/60"
+                className="group grid gap-6 border border-border bg-card p-4 transition-colors hover:border-primary/60 md:grid-cols-[280px_1fr] md:p-6"
               >
-                <div className="flex flex-wrap items-center gap-3 font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
-                  <span className="text-primary">{n.tag}</span>
-                  <span aria-hidden>·</span>
-                  <time dateTime={n.date}>{FMT.format(new Date(n.date))}</time>
+                {n.cover ? (
+                  <div className="overflow-hidden border border-border bg-muted">
+                    <img
+                      src={n.cover}
+                      alt={n.title}
+                      loading="lazy"
+                      className="aspect-[4/3] h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                  </div>
+                ) : (
+                  <div className="aspect-[4/3] border border-border bg-muted md:h-full" />
+                )}
+                <div className="flex flex-col">
+                  <div className="flex flex-wrap items-center gap-3 font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+                    <span className="text-primary">{n.tag}</span>
+                    <span aria-hidden>·</span>
+                    <time dateTime={n.date}>{FMT.format(new Date(n.date))}</time>
+                  </div>
+                  <h2 className="mt-3 font-display text-2xl font-bold uppercase tracking-tight transition-colors group-hover:text-primary md:text-3xl">
+                    {n.title}
+                  </h2>
+                  <p className="mt-3 text-sm text-muted-foreground">
+                    {n.excerpt}
+                  </p>
+                  <span className="mt-auto pt-4 inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-widest text-foreground transition-colors group-hover:text-primary">
+                    Читать <span aria-hidden>→</span>
+                  </span>
                 </div>
-                <h2 className="mt-3 font-display text-2xl font-bold uppercase tracking-tight transition-colors group-hover:text-primary md:text-3xl">
-                  {n.title}
-                </h2>
-                <p className="mt-3 text-sm text-muted-foreground">
-                  {n.excerpt}
-                </p>
-                <span className="mt-4 inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-widest text-foreground transition-colors group-hover:text-primary">
-                  Читать <span aria-hidden>→</span>
-                </span>
               </Link>
             </li>
           ))}
