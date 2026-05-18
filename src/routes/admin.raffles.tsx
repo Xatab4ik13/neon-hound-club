@@ -280,6 +280,9 @@ function RaffleDetail({
         <Panel>
           <PanelHeader>
             <h3 className="text-sm font-semibold">Призы ({raffle.prizes.length})</h3>
+            <span className="text-xs text-zinc-500 dark:text-zinc-400">
+              Участников в розыгрыше: <b>{raffle.participants}</b>
+            </span>
           </PanelHeader>
           <DataTable
             headers={["", "Название", "Цена", "Окончание", "Статус", ""]}
