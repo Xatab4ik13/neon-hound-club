@@ -2,7 +2,15 @@
 // сюда тёмные токены сайта — используем Tailwind utility colors напрямую.
 
 import { cn } from "@/lib/utils";
-import type { ButtonHTMLAttributes, InputHTMLAttributes, TextareaHTMLAttributes, ReactNode } from "react";
+import { X, AlertTriangle } from "lucide-react";
+import {
+  useEffect,
+  type ButtonHTMLAttributes,
+  type InputHTMLAttributes,
+  type TextareaHTMLAttributes,
+  type SelectHTMLAttributes,
+  type ReactNode,
+} from "react";
 
 export function PageHeader({
   title,
@@ -93,6 +101,53 @@ export function TextArea({ className, ...props }: TextareaHTMLAttributes<HTMLTex
       )}
       {...props}
     />
+  );
+}
+
+export function Select({ className, children, ...props }: SelectHTMLAttributes<HTMLSelectElement>) {
+  return (
+    <select
+      className={cn(
+        "h-9 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm text-zinc-900 focus:border-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-200 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:focus:border-zinc-500 dark:focus:ring-zinc-700",
+        className,
+      )}
+      {...props}
+    >
+      {children}
+    </select>
+  );
+}
+
+export function Switch({
+  checked,
+  onChange,
+  label,
+}: {
+  checked: boolean;
+  onChange: (v: boolean) => void;
+  label?: string;
+}) {
+  return (
+    <label className="inline-flex cursor-pointer items-center gap-2">
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        onClick={() => onChange(!checked)}
+        className={cn(
+          "relative h-5 w-9 rounded-full transition-colors",
+          checked ? "bg-emerald-500" : "bg-zinc-300 dark:bg-zinc-700",
+        )}
+      >
+        <span
+          className={cn(
+            "absolute top-0.5 h-4 w-4 rounded-full bg-white transition-transform",
+            checked ? "translate-x-[18px]" : "translate-x-0.5",
+          )}
+        />
+      </button>
+      {label && <span className="text-sm">{label}</span>}
+    </label>
   );
 }
 
@@ -193,5 +248,173 @@ export function StubPage({
         </div>
       </Panel>
     </div>
+  );
+}
+
+// ============= Modal =============
+export function Modal({
+  open,
+  onClose,
+  title,
+  description,
+  children,
+  footer,
+  size = "md",
+}: {
+  open: boolean;
+  onClose: () => void;
+  title: string;
+  description?: string;
+  children: ReactNode;
+  footer?: ReactNode;
+  size?: "sm" | "md" | "lg" | "xl";
+}) {
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    document.addEventListener("keydown", handler);
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", handler);
+      document.body.style.overflow = "";
+    };
+  }, [open, onClose]);
+
+  if (!open) return null;
+  const widths = { sm: "max-w-sm", md: "max-w-lg", lg: "max-w-2xl", xl: "max-w-4xl" }[size];
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-end justify-center sm:items-center">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div
+        className={cn(
+          "relative w-full overflow-hidden rounded-t-lg bg-white shadow-xl dark:bg-zinc-900 sm:rounded-lg",
+          widths,
+          "max-h-[90vh] flex flex-col",
+        )}
+      >
+        <div className="flex items-start justify-between border-b border-zinc-200 px-5 py-4 dark:border-zinc-800">
+          <div>
+            <h2 className="text-base font-semibold">{title}</h2>
+            {description && (
+              <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">{description}</p>
+            )}
+          </div>
+          <button
+            onClick={onClose}
+            className="rounded-md p-1 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-900 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="overflow-y-auto px-5 py-4">{children}</div>
+        {footer && (
+          <div className="flex justify-end gap-2 border-t border-zinc-200 px-5 py-3 dark:border-zinc-800">
+            {footer}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ============= Drawer (для деталей пользователя и т.п.) =============
+export function Drawer({
+  open,
+  onClose,
+  title,
+  children,
+  footer,
+}: {
+  open: boolean;
+  onClose: () => void;
+  title: string;
+  children: ReactNode;
+  footer?: ReactNode;
+}) {
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    document.addEventListener("keydown", handler);
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", handler);
+      document.body.style.overflow = "";
+    };
+  }, [open, onClose]);
+
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-[60]">
+      <div className="absolute inset-0 bg-black/60" onClick={onClose} />
+      <aside className="absolute right-0 top-0 flex h-full w-full max-w-md flex-col bg-white shadow-xl dark:bg-zinc-900">
+        <div className="flex items-center justify-between border-b border-zinc-200 px-5 py-4 dark:border-zinc-800">
+          <h2 className="text-base font-semibold">{title}</h2>
+          <button
+            onClick={onClose}
+            className="rounded-md p-1 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-900 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="flex-1 overflow-y-auto px-5 py-4">{children}</div>
+        {footer && (
+          <div className="flex justify-end gap-2 border-t border-zinc-200 px-5 py-3 dark:border-zinc-800">
+            {footer}
+          </div>
+        )}
+      </aside>
+    </div>
+  );
+}
+
+// ============= Confirm =============
+export function ConfirmModal({
+  open,
+  onClose,
+  onConfirm,
+  title,
+  message,
+  confirmLabel = "Удалить",
+  danger = true,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  title: string;
+  message: string;
+  confirmLabel?: string;
+  danger?: boolean;
+}) {
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title={title}
+      size="sm"
+      footer={
+        <>
+          <Btn onClick={onClose}>Отмена</Btn>
+          <Btn
+            variant={danger ? "danger" : "primary"}
+            onClick={() => {
+              onConfirm();
+              onClose();
+            }}
+          >
+            {confirmLabel}
+          </Btn>
+        </>
+      }
+    >
+      <div className="flex gap-3">
+        {danger && (
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-rose-100 text-rose-600 dark:bg-rose-900/40 dark:text-rose-400">
+            <AlertTriangle className="h-4 w-4" />
+          </div>
+        )}
+        <p className="text-sm text-zinc-600 dark:text-zinc-300">{message}</p>
+      </div>
+    </Modal>
   );
 }
