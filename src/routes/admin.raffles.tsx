@@ -237,7 +237,6 @@ function RaffleDetail({
       price: 10,
       status: "draft",
       ends: "",
-      participants: 0,
       images: [],
     });
     setOpen(true);
