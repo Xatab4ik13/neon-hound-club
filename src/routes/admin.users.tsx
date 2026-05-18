@@ -14,7 +14,7 @@ import {
   ConfirmModal,
   Modal,
 } from "@/components/admin/ui";
-import { PUBLIC_USERS } from "@/data/users";
+import { PUBLIC_USERS, type PublicUser } from "@/data/users";
 import { RANKS } from "@/data/ranks";
 
 export const Route = createFileRoute("/admin/users")({
@@ -112,7 +112,7 @@ function UserCard({
   user,
   onGift,
 }: {
-  user: ReturnType<typeof Object.values<typeof PUBLIC_USERS>>[number];
+  user: PublicUser;
   onGift: () => void;
 }) {
   const [rank, setRank] = useState(user.rank);
