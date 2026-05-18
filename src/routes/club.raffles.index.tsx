@@ -365,11 +365,11 @@ function FeaturedRaffle({
       </div>
 
       {/* body */}
-      <div className="grid grid-cols-1 gap-6 p-6 md:grid-cols-[1fr_auto] md:p-8">
+      <div className="grid grid-cols-1 gap-5 p-4 md:grid-cols-[1fr_auto] md:gap-6 md:p-8">
         {/* stats */}
         <div className="min-w-0 space-y-5">
 
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-3 gap-2 md:gap-3">
             <Stat label="мои билеты" value={String(raffle.myTickets)} />
             <Stat
               label="ставлю"
