@@ -17,7 +17,7 @@ import { Countdown } from "@/components/club/Countdown";
 import { ACTIVE_TICKETS, ME } from "@/data/profile";
 import { PUBLIC_USERS } from "@/data/users";
 
-export const Route = createFileRoute("/club/raffles")({
+export const Route = createFileRoute("/club/raffles/")({
   head: () => ({
     meta: [
       { title: "Розыгрыши · HELLHOUND" },
