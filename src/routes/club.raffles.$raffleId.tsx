@@ -19,23 +19,19 @@ import { Countdown } from "@/components/club/Countdown";
 import { ACTIVE_TICKETS, ME, type ActiveTicket, type RafflePrize, type RaffleSpec } from "@/data/profile";
 
 export const Route = createFileRoute("/club/raffles/$raffleId")({
-  loader: ({ params }) => {
+  head: ({ params }) => {
     const raffle = ACTIVE_TICKETS.find((r) => r.id === params.raffleId);
-    if (!raffle) throw notFound();
-    return { raffle };
+    return {
+      meta: [
+        { title: `${raffle?.title ?? "Розыгрыш"} · HELLHOUND` },
+        {
+          name: "description",
+          content: raffle?.subtitle ?? "Розыгрыш клуба HELLHOUND Racing.",
+        },
+        { name: "robots", content: "noindex" },
+      ],
+    };
   },
-  head: ({ loaderData }) => ({
-    meta: [
-      {
-        title: `${loaderData?.raffle.title ?? "Розыгрыш"} · HELLHOUND`,
-      },
-      {
-        name: "description",
-        content: loaderData?.raffle.subtitle ?? "Розыгрыш клуба HELLHOUND Racing.",
-      },
-      { name: "robots", content: "noindex" },
-    ],
-  }),
   notFoundComponent: () => (
     <div className="mx-auto max-w-md p-10 text-center">
       <h1 className="font-display text-3xl font-black uppercase italic text-foreground">
@@ -53,7 +49,29 @@ export const Route = createFileRoute("/club/raffles/$raffleId")({
 });
 
 function RaffleDetailPage() {
-  const { raffle } = Route.useLoaderData();
+  const { raffleId } = Route.useParams();
+  const raffle = ACTIVE_TICKETS.find((r) => r.id === raffleId);
+
+  if (!raffle) {
+    return (
+      <div className="mx-auto max-w-md p-10 text-center">
+        <h1 className="font-display text-3xl font-black uppercase italic text-foreground">
+          Розыгрыш не найден
+        </h1>
+        <Link
+          to="/club/raffles"
+          className="mt-6 inline-flex items-center gap-2 border border-primary/40 px-4 py-2 font-mono text-xs uppercase tracking-[0.22em] text-primary hover:bg-primary/10"
+        >
+          <ArrowLeft className="h-3 w-3" />к розыгрышам
+        </Link>
+      </div>
+    );
+  }
+
+  return <RaffleDetailContent raffle={raffle} />;
+}
+
+function RaffleDetailContent({ raffle }: { raffle: ActiveTicket }) {
   const [balance, setBalance] = useState(ME.totals.tickets);
   const [stake, setStake] = useState(0);
   const [flash, setFlash] = useState<string | null>(null);
