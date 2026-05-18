@@ -9,9 +9,9 @@ export function Footer() {
           <div>
             <Logo className="mb-4" />
             <p className="text-xs uppercase leading-relaxed tracking-widest text-muted-foreground">
-              Андеграундная мото-культура
+              HELLHOUND Racing Club
               <br />
-              Основано MMXXVI / Без границ
+              Мото-комьюнити Hell
             </p>
           </div>
           <div className="grid grid-cols-2 gap-8 md:flex md:gap-12">

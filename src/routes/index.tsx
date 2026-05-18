@@ -87,7 +87,7 @@ function Index() {
       <Header />
 
       {isAuthed && (
-        <div className="border-b border-primary/20 bg-primary/[0.06]">
+        <div className="mt-20 border-b border-primary/20 bg-primary/[0.06]">
           <div className="mx-auto flex max-w-7xl flex-col items-start gap-3 px-6 py-3 md:flex-row md:items-center md:justify-between md:px-8">
             <div className="flex flex-wrap items-center gap-3 text-sm">
               <span

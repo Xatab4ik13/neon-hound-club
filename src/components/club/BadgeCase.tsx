@@ -63,7 +63,7 @@ export function BadgeCase({ showLocked = false }: { showLocked?: boolean }) {
       </div>
 
       {/* Витрина: 4 pinned */}
-      <div className="grid grid-cols-4 gap-2 border border-white/[0.06] bg-[#0b0b0b] p-3 md:gap-3 md:p-4">
+      <div className="grid grid-cols-2 gap-2 border border-white/[0.06] bg-[#0b0b0b] p-3 sm:grid-cols-4 md:gap-3 md:p-4">
         {Array.from({ length: 4 }).map((_, i) => {
           const b = pinned[i];
           if (!b) return <EmptyPinned key={i} />;

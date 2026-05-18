@@ -49,61 +49,63 @@ function CartPage() {
               {items.map((i) => (
                 <li
                   key={i.id}
-                  className="flex items-center gap-4 rounded-lg border border-border bg-card p-4"
+                  className="rounded-lg border border-border bg-card p-3 sm:p-4"
                 >
-                  <Link
-                    to="/shop/$productSlug"
-                    params={{ productSlug: i.slug }}
-                    className="block size-20 shrink-0 overflow-hidden rounded bg-surface"
-                  >
-                    <img
-                      src={i.image}
-                      alt={i.name}
-                      className="size-full object-cover"
-                    />
-                  </Link>
-                  <div className="min-w-0 flex-1">
+                  <div className="flex gap-3 sm:gap-4">
                     <Link
                       to="/shop/$productSlug"
                       params={{ productSlug: i.slug }}
-                      className="block truncate font-medium hover:text-primary"
+                      className="block size-16 shrink-0 overflow-hidden rounded bg-surface sm:size-20"
                     >
-                      {i.name}
+                      <img
+                        src={i.image}
+                        alt={i.name}
+                        className="size-full object-cover"
+                      />
                     </Link>
-                    <div className="mt-1 text-xs text-muted-foreground">
-                      {i.size ? `Размер ${i.size}` : "—"} ·{" "}
-                      {i.price.toLocaleString("ru-RU")} ₽
-                    </div>
-                    <div className="mt-3 flex items-center gap-3">
-                      <div className="flex items-center border border-border">
-                        <button
-                          onClick={() => setQty(i.id, Math.max(1, i.qty - 1))}
-                          className="flex size-8 items-center justify-center text-muted-foreground hover:text-primary"
-                          aria-label="Уменьшить"
-                        >
-                          −
-                        </button>
-                        <span className="w-8 text-center font-mono text-sm">
-                          {i.qty}
-                        </span>
-                        <button
-                          onClick={() => setQty(i.id, i.qty + 1)}
-                          className="flex size-8 items-center justify-center text-muted-foreground hover:text-primary"
-                          aria-label="Увеличить"
-                        >
-                          +
-                        </button>
-                      </div>
-                      <button
-                        onClick={() => remove(i.id)}
-                        className="text-xs uppercase tracking-widest text-muted-foreground hover:text-primary"
+                    <div className="min-w-0 flex-1">
+                      <Link
+                        to="/shop/$productSlug"
+                        params={{ productSlug: i.slug }}
+                        className="block truncate text-sm font-medium hover:text-primary sm:text-base"
                       >
-                        Удалить
-                      </button>
+                        {i.name}
+                      </Link>
+                      <div className="mt-1 text-[11px] text-muted-foreground sm:text-xs">
+                        {i.size ? `Размер ${i.size}` : "—"} ·{" "}
+                        {i.price.toLocaleString("ru-RU")} ₽
+                      </div>
+                    </div>
+                    <div className="shrink-0 whitespace-nowrap text-right font-mono text-sm">
+                      {(i.price * i.qty).toLocaleString("ru-RU")} ₽
                     </div>
                   </div>
-                  <div className="self-start font-mono text-sm">
-                    {(i.price * i.qty).toLocaleString("ru-RU")} ₽
+                  <div className="mt-3 flex items-center justify-between gap-3">
+                    <div className="flex items-center border border-border">
+                      <button
+                        onClick={() => setQty(i.id, Math.max(1, i.qty - 1))}
+                        className="flex size-8 items-center justify-center text-muted-foreground hover:text-primary"
+                        aria-label="Уменьшить"
+                      >
+                        −
+                      </button>
+                      <span className="w-8 text-center font-mono text-sm">
+                        {i.qty}
+                      </span>
+                      <button
+                        onClick={() => setQty(i.id, i.qty + 1)}
+                        className="flex size-8 items-center justify-center text-muted-foreground hover:text-primary"
+                        aria-label="Увеличить"
+                      >
+                        +
+                      </button>
+                    </div>
+                    <button
+                      onClick={() => remove(i.id)}
+                      className="text-xs uppercase tracking-widest text-muted-foreground hover:text-primary"
+                    >
+                      Удалить
+                    </button>
                   </div>
                 </li>
               ))}
