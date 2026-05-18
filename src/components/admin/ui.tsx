@@ -2,7 +2,7 @@
 // сюда тёмные токены сайта — используем Tailwind utility colors напрямую.
 
 import { cn } from "@/lib/utils";
-import { X, AlertTriangle } from "lucide-react";
+import { X, AlertTriangle, Image as ImageIcon } from "lucide-react";
 import {
   useEffect,
   type ButtonHTMLAttributes,
