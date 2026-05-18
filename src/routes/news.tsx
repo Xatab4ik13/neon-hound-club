@@ -42,9 +42,6 @@ function NewsListPage() {
         <h1 className="mt-3 font-display text-4xl font-black uppercase italic tracking-tighter md:text-6xl">
           Новости
         </h1>
-        <p className="mt-4 max-w-2xl text-base text-muted-foreground">
-          Анонсы мерча, итоги розыгрышей, обновления Hell Pass и школы.
-        </p>
 
         <ul className="mt-12 space-y-4">
           {sorted.map((n) => (
