@@ -341,21 +341,21 @@ function FeaturedRaffle({
         </div>
 
         {/* title block */}
-        <div className="absolute bottom-0 left-0 right-0 p-6 md:p-8">
-          <div className="font-mono text-[11px] uppercase tracking-[0.24em] text-muted-foreground">
+        <div className="absolute bottom-0 left-0 right-0 p-4 md:p-8">
+          <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground md:text-[11px] md:tracking-[0.24em]">
             до закрытия
           </div>
           <div className="mt-1">
             <Countdown deadlineAt={raffle.deadlineAt} variant="tactical" />
           </div>
           <div className="mt-3 flex flex-wrap items-end justify-between gap-3">
-            <h2 className="font-display text-3xl font-black uppercase italic leading-none tracking-tight text-foreground md:text-5xl">
+            <h2 className="font-display text-2xl font-black uppercase italic leading-none tracking-tight text-foreground sm:text-3xl md:text-5xl">
               {raffle.title}
             </h2>
             <Link
               to="/club/raffles/$raffleId"
               params={{ raffleId: raffle.id }}
-              className="group/link inline-flex items-center gap-2 border border-primary/40 bg-black/60 px-4 py-2 font-mono text-[10px] uppercase tracking-[0.22em] text-primary backdrop-blur transition-all hover:border-primary hover:bg-primary/10 hover:shadow-[0_0_24px_-6px_var(--primary)]"
+              className="group/link inline-flex items-center gap-2 border border-primary/40 bg-black/60 px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.22em] text-primary backdrop-blur transition-all hover:border-primary hover:bg-primary/10 hover:shadow-[0_0_24px_-6px_var(--primary)] md:px-4 md:py-2"
             >
               подробнее
               <ExternalLink className="h-3 w-3 transition-transform group-hover/link:translate-x-0.5" />
