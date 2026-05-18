@@ -2,7 +2,7 @@ import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { ArrowLeft, Bike, Calendar, MapPin, Trophy } from "lucide-react";
 import { BadgeIcon } from "@/components/club/BadgeIcon";
 import { BADGES, RARITY } from "@/data/badges";
-import { RANKS, XP_PER_RANK, type RankId } from "@/data/ranks";
+import { RANKS, getRankSpan, type RankId } from "@/data/ranks";
 import { getUser, type PublicUser } from "@/data/users";
 import { PlaqueBackground } from "./club";
 
@@ -56,8 +56,11 @@ function NotFoundUser() {
 function UserProfilePage() {
   const { user } = Route.useLoaderData() as { user: PublicUser };
   const rank = RANK_BY_ID[user.rank];
-  const xp = Math.round((user.xpPct / 100) * XP_PER_RANK);
-  const next = RANKS[RANKS.findIndex((r) => r.id === user.rank) + 1] ?? null;
+  const rankIdx = RANKS.findIndex((r) => r.id === user.rank);
+  const xpMax = getRankSpan(rankIdx);
+  const xp = Math.round((user.xpPct / 100) * xpMax);
+  const nextCandidate = RANKS[rankIdx + 1] ?? null;
+  const next = nextCandidate && !nextCandidate.isPaid ? nextCandidate : null;
   const badges = user.badgeIds
     .map((id) => BADGES.find((b) => b.id === id))
     .filter((b): b is (typeof BADGES)[number] => !!b);
@@ -152,7 +155,7 @@ function UserProfilePage() {
                     </span>{" "}
                     ·{" "}
                     <span className="font-bold tabular-nums text-foreground">
-                      {XP_PER_RANK - xp}
+                      {xpMax - xp}
                     </span>{" "}
                     XP
                   </span>
@@ -177,7 +180,7 @@ function UserProfilePage() {
                     {xp.toLocaleString("ru-RU")}
                   </span>{" "}
                   <span className="opacity-40">/</span>{" "}
-                  {XP_PER_RANK.toLocaleString("ru-RU")} XP
+                  {xpMax.toLocaleString("ru-RU")} XP
                 </span>
               </div>
             </div>
