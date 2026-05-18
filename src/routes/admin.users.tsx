@@ -259,3 +259,54 @@ function GiftTicketsModal({
     </Modal>
   );
 }
+
+function GivePassModal({
+  open,
+  nick,
+  onClose,
+}: {
+  open: boolean;
+  nick: string;
+  onClose: () => void;
+}) {
+  const [tier, setTier] = useState<"Silver" | "Gold" | "Platinum">("Silver");
+  const [months, setMonths] = useState(1);
+  const [reason, setReason] = useState("");
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title={`Дать Pass @${nick}`}
+      size="sm"
+      footer={
+        <>
+          <Btn onClick={onClose}>Отмена</Btn>
+          <Btn variant="primary" onClick={onClose}>
+            <Crown className="h-4 w-4" /> Выдать
+          </Btn>
+        </>
+      }
+    >
+      <div className="space-y-3">
+        <Field label="Уровень Pass">
+          <Select value={tier} onChange={(e) => setTier(e.target.value as typeof tier)}>
+            <option value="Silver">Silver — 490 ₽/мес</option>
+            <option value="Gold">Gold — 1290 ₽/мес</option>
+            <option value="Platinum">Platinum — 2990 ₽/мес</option>
+          </Select>
+        </Field>
+        <Field label="Срок (месяцев)">
+          <Select value={String(months)} onChange={(e) => setMonths(Number(e.target.value))}>
+            <option value="1">1 месяц (по умолчанию)</option>
+            <option value="3">3 месяца</option>
+            <option value="6">6 месяцев</option>
+            <option value="12">12 месяцев</option>
+          </Select>
+        </Field>
+        <Field label="Причина (в журнал)">
+          <TextInput value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Подарок партнёру" />
+        </Field>
+      </div>
+    </Modal>
+  );
+}
