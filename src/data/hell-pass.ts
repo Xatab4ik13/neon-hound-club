@@ -12,7 +12,6 @@ import {
   Vote,
   Trophy,
   ShoppingBag,
-  ImagePlus,
   Coins,
   Crown,
   Gift,
