@@ -520,8 +520,11 @@ function ProductModal({
             </Select>
           </Field>
         </div>
-        <Field label="Изображение (URL)">
-          <TextInput value={p.image} onChange={(e) => setP({ ...p, image: e.target.value })} />
+        <Field label="Изображение товара">
+          <ImageUploader
+            images={p.image ? [p.image] : []}
+            onChange={(arr) => setP({ ...p, image: arr[0] ?? "" })}
+          />
         </Field>
       </div>
     </Modal>
