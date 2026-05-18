@@ -29,7 +29,7 @@ function UsersPage() {
               u.city ?? "—",
               <span className="text-zinc-500 dark:text-zinc-400">{u.bike ?? "—"}</span>,
               <Badge tone={u.rank === "vip" ? "violet" : u.rank === "hell-legend" ? "rose" : "zinc"}>
-                {rank?.name ?? u.rank}
+                {rank?.label ?? u.rank}
               </Badge>,
               <Badge tone="blue">Silver</Badge>,
               `${u.xpPct}%`,

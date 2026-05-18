@@ -21,11 +21,9 @@ function RafflesPage() {
         title="Розыгрыши"
         description="Управление лотами и участием"
         actions={
-          <Btn variant="primary" asChild={false as never}>
-            <Link to="/admin/raffles" className="inline-flex items-center gap-1.5">
-              <Plus className="h-4 w-4" />
-              Новый розыгрыш
-            </Link>
+          <Btn variant="primary">
+            <Plus className="h-4 w-4" />
+            Новый розыгрыш
           </Btn>
         }
       />
