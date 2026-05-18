@@ -4,6 +4,7 @@ import { BadgeIcon } from "@/components/club/BadgeIcon";
 import { BADGES, RARITY } from "@/data/badges";
 import { RANKS, XP_PER_RANK, type RankId } from "@/data/ranks";
 import { getUser, type PublicUser } from "@/data/users";
+import { PlaqueBackground } from "./club";
 
 export const Route = createFileRoute("/club/u/$nick")({
   head: ({ params }) => {
