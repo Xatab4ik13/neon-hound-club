@@ -74,7 +74,7 @@ const FMT = new Intl.DateTimeFormat("ru-RU", {
 });
 
 function NewsArticlePage() {
-  const { item } = Route.useLoaderData();
+  const { item } = Route.useLoaderData() as { item: (typeof import("@/data/news").NEWS)[number] };
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Header />
