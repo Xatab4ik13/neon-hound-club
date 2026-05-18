@@ -841,7 +841,7 @@ export function ProfilePlaque({
       onClick={onNavigate}
       aria-label={`Профиль ${ME.nick}, ${rank.label}, ${xp} из ${xpMax} XP`}
       className={`group relative flex min-w-0 items-center gap-3 transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98] ${
-        compact ? "w-full max-w-[360px] flex-1" : "w-full"
+        compact ? "w-full min-w-0 flex-1 md:max-w-[360px]" : "w-full"
       }`}
     >
       <div
