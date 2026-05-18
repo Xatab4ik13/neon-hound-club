@@ -1,24 +1,24 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Header } from "@/components/brand/Header";
 import { Footer } from "@/components/brand/Footer";
 import { Button } from "@/components/ui/button";
+import { useCart } from "@/hooks/use-cart";
+import { useViewer } from "@/hooks/use-viewer";
 
 export const Route = createFileRoute("/cart")({
   head: () => ({
     meta: [
       { title: "Корзина — HELLHOUND Racing Club" },
       { name: "description", content: "Ваша корзина в магазине HELLHOUND." },
-      { property: "og:title", content: "Корзина — HELLHOUND" },
-      { property: "og:description", content: "Ваша корзина в магазине HELLHOUND." },
     ],
   }),
   component: CartPage,
 });
 
 function CartPage() {
-  // TODO: подключить useCart() с localStorage на следующем этапе.
-  const items: Array<{ id: string; title: string; price: number; qty: number }> = [];
-  const total = items.reduce((s, i) => s + i.price * i.qty, 0);
+  const { items, total, setQty, remove } = useCart();
+  const { isAuthed } = useViewer();
+  const navigate = useNavigate();
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -49,13 +49,62 @@ function CartPage() {
               {items.map((i) => (
                 <li
                   key={i.id}
-                  className="flex items-center justify-between rounded-lg border border-border bg-card p-4"
+                  className="flex items-center gap-4 rounded-lg border border-border bg-card p-4"
                 >
-                  <div>
-                    <div className="font-medium">{i.title}</div>
-                    <div className="text-xs text-muted-foreground">× {i.qty}</div>
+                  <Link
+                    to="/shop/$productSlug"
+                    params={{ productSlug: i.slug }}
+                    className="block size-20 shrink-0 overflow-hidden rounded bg-surface"
+                  >
+                    <img
+                      src={i.image}
+                      alt={i.name}
+                      className="size-full object-cover"
+                    />
+                  </Link>
+                  <div className="min-w-0 flex-1">
+                    <Link
+                      to="/shop/$productSlug"
+                      params={{ productSlug: i.slug }}
+                      className="block truncate font-medium hover:text-primary"
+                    >
+                      {i.name}
+                    </Link>
+                    <div className="mt-1 text-xs text-muted-foreground">
+                      {i.size ? `Размер ${i.size}` : "—"} ·{" "}
+                      {i.price.toLocaleString("ru-RU")} ₽
+                    </div>
+                    <div className="mt-3 flex items-center gap-3">
+                      <div className="flex items-center border border-border">
+                        <button
+                          onClick={() => setQty(i.id, Math.max(1, i.qty - 1))}
+                          className="flex size-8 items-center justify-center text-muted-foreground hover:text-primary"
+                          aria-label="Уменьшить"
+                        >
+                          −
+                        </button>
+                        <span className="w-8 text-center font-mono text-sm">
+                          {i.qty}
+                        </span>
+                        <button
+                          onClick={() => setQty(i.id, i.qty + 1)}
+                          className="flex size-8 items-center justify-center text-muted-foreground hover:text-primary"
+                          aria-label="Увеличить"
+                        >
+                          +
+                        </button>
+                      </div>
+                      <button
+                        onClick={() => remove(i.id)}
+                        className="text-xs uppercase tracking-widest text-muted-foreground hover:text-primary"
+                      >
+                        Удалить
+                      </button>
+                    </div>
                   </div>
-                  <div className="font-mono text-sm">{i.price * i.qty} ₽</div>
+                  <div className="self-start font-mono text-sm">
+                    {(i.price * i.qty).toLocaleString("ru-RU")} ₽
+                  </div>
                 </li>
               ))}
             </ul>
@@ -64,10 +113,22 @@ function CartPage() {
                 <span className="text-xs uppercase tracking-widest text-muted-foreground">
                   Итого
                 </span>
-                <span className="font-display text-2xl font-black">{total} ₽</span>
+                <span className="font-display text-2xl font-black">
+                  {total.toLocaleString("ru-RU")} ₽
+                </span>
               </div>
-              <Button className="mt-6 w-full" disabled>
-                Оформить заказ
+              <div className="mt-2 text-[11px] text-muted-foreground">
+                Кешбэк после оплаты: {Math.floor(total / 200)} билетов
+              </div>
+              <Button
+                className="mt-6 w-full"
+                onClick={() =>
+                  isAuthed
+                    ? navigate({ to: "/checkout" })
+                    : navigate({ to: "/login" })
+                }
+              >
+                {isAuthed ? "Оформить заказ" : "Войти и оформить"}
               </Button>
               <p className="mt-3 text-[11px] text-muted-foreground">
                 Оформление доступно только участникам клуба.
