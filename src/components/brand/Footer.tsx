@@ -42,18 +42,43 @@ export function Footer() {
               </div>
               <ul className="space-y-2 text-xs uppercase tracking-wider">
                 <li>
-                  <a href="#" className="transition-colors hover:text-primary">
+                  <a
+                    href="https://www.youtube.com/@HELLHOUNDRacing"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="transition-colors hover:text-primary"
+                  >
                     YouTube
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="transition-colors hover:text-primary">
+                  <a
+                    href="https://t.me/hellhound_racing"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="transition-colors hover:text-primary"
+                  >
+                    Telegram
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="https://www.instagram.com/hellhound.racing"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="transition-colors hover:text-primary"
+                  >
                     Instagram
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="transition-colors hover:text-primary">
-                    Telegram
+                  <a
+                    href="https://www.twitch.tv/hellhoundracing"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="transition-colors hover:text-primary"
+                  >
+                    Twitch
                   </a>
                 </li>
               </ul>
