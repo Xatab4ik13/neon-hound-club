@@ -268,6 +268,7 @@ function FeaturedRaffle({
   onStakeChange: (v: number) => void;
   onStake: () => void;
 }) {
+  const odds =
     raffle.myTickets + stake > 0
       ? ((raffle.myTickets + stake) / raffle.totalTickets) * 100
       : 0;
