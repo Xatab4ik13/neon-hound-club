@@ -255,6 +255,7 @@ function ProductPage() {
 
                   <button
                     disabled={isSold}
+                    onClick={() => handleAdd(false)}
                     className="group relative flex flex-1 items-center justify-center gap-2 overflow-hidden bg-primary px-6 py-3 font-display text-base uppercase tracking-widest text-primary-foreground shadow-[0_10px_30px_-10px_hsl(var(--primary)/0.6)] transition-all hover:shadow-[0_15px_40px_-10px_hsl(var(--primary)/0.8)] disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground disabled:shadow-none"
                   >
                     {isSold ? "Распродано" : "В корзину"}
@@ -342,6 +343,7 @@ function ProductPage() {
           </div>
           <button
             disabled={isSold}
+            onClick={() => handleAdd(false)}
             className="ml-auto flex flex-1 items-center justify-center gap-2 bg-primary px-5 py-3 font-display text-sm uppercase tracking-widest text-primary-foreground shadow-[0_10px_30px_-10px_hsl(var(--primary)/0.6)] disabled:bg-muted disabled:text-muted-foreground disabled:shadow-none"
           >
             {isSold ? "Распродано" : "В корзину"}
