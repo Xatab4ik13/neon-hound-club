@@ -109,4 +109,70 @@ export const RANKS: RankMeta[] = [
   },
 ];
 
+/**
+ * Пороговые значения XP для каждого ранга по индексу из RANKS.
+ * Кривая растущая (~2.5–3×): Pit Crew — быстро, Hell Legend — статус 10–14 мес.
+ * VIP сидит в массиве «как максимум», но это платный ранг — XP-логика на него не распространяется.
+ */
+export const XP_THRESHOLDS: number[] = [
+  0,       // rookie
+  500,     // pit-crew
+  2_000,   // road-captain
+  6_000,   // alpha-hound
+  15_000,  // hell-legend
+  15_000,  // vip (платный, не достигается через XP)
+];
+
+/** Индекс ранга по абсолютному XP. */
+export function getRankIndexByXp(xp: number): number {
+  // VIP вручную, через XP не выдаётся
+  const maxIdx = RANKS.findIndex((r) => r.isPaid);
+  const limit = maxIdx === -1 ? RANKS.length - 1 : maxIdx - 1;
+  let idx = 0;
+  for (let i = 0; i <= limit; i++) {
+    if (xp >= XP_THRESHOLDS[i]) idx = i;
+  }
+  return idx;
+}
+
+/**
+ * Прогресс внутри текущего ранга:
+ *   pct  — 0..100 для XP-бара
+ *   inRank — сколько XP уже набрано внутри текущего ранга
+ *   span  — сколько XP в текущем ранге всего (до следующего порога)
+ *   toNext — сколько XP осталось до следующего ранга (0 если максимум)
+ */
+export function getRankProgress(xp: number): {
+  rankIndex: number;
+  pct: number;
+  inRank: number;
+  span: number;
+  toNext: number;
+  isMax: boolean;
+} {
+  const rankIndex = getRankIndexByXp(xp);
+  const rank = RANKS[rankIndex];
+  const nextIndex = rankIndex + 1;
+  const next = RANKS[nextIndex];
+  const isMax = !next || !!rank.isMax || !!next.isPaid;
+  if (isMax) {
+    return { rankIndex, pct: 100, inRank: 0, span: 0, toNext: 0, isMax: true };
+  }
+  const base = XP_THRESHOLDS[rankIndex];
+  const top = XP_THRESHOLDS[nextIndex];
+  const span = top - base;
+  const inRank = Math.max(0, xp - base);
+  const pct = Math.max(0, Math.min(100, Math.round((inRank / span) * 100)));
+  const toNext = Math.max(0, top - xp);
+  return { rankIndex, pct, inRank, span, toNext, isMax: false };
+}
+
+/** Сколько XP даёт текущий ранг от своего начала до следующего порога. */
+export function getRankSpan(rankIndex: number): number {
+  const next = XP_THRESHOLDS[rankIndex + 1];
+  if (next === undefined) return 0;
+  return next - XP_THRESHOLDS[rankIndex];
+}
+
+/** @deprecated Плоское значение оставлено для обратной совместимости со старым кодом. */
 export const XP_PER_RANK = 2000;
