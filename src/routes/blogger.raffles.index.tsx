@@ -4,7 +4,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ChevronRight, Trophy, Users, Ticket as TicketIcon } from "lucide-react";
 import { useRaffles, totalTickets, totalPrizeQty, prizeRemaining } from "@/data/raffles-store";
 
-export const Route = createFileRoute("/blogger/raffles")({
+export const Route = createFileRoute("/blogger/raffles/")({
   component: BloggerRafflesPage,
 });
 
