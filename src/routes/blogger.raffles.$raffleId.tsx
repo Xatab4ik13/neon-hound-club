@@ -156,9 +156,9 @@ function BloggerRaffleDetailPage() {
           {totalT.toLocaleString("ru-RU")} билетов в пуле
         </p>
 
-        <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_320px]">
+        <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
           {/* Роллер */}
-          <div className="flex flex-col">
+          <div className="flex min-w-0 flex-col">
             <PrizeBanner prize={availablePrize} winner={winner} />
             <Roller strip={strip} offsetPx={offsetPx} spinning={spinning} winner={winner} />
 
@@ -274,10 +274,9 @@ function Roller({
   return (
     <div
       id="roller-viewport"
-      className="relative w-full overflow-hidden border border-white/[0.08] bg-gradient-to-b from-black via-[#0a0a0f] to-black"
+      className="relative w-full min-w-0 overflow-hidden border border-white/[0.08] bg-gradient-to-b from-black via-[#0a0a0f] to-black"
       style={{
-        height: 168,
-        // мягкие fade-маски по краям
+        height: 180,
         WebkitMaskImage:
           "linear-gradient(to right, transparent 0, #000 12%, #000 88%, transparent 100%)",
         maskImage:
@@ -296,8 +295,31 @@ function Roller({
         }}
       />
 
-      {/* центральный маркер */}
-      <div aria-hidden className="pointer-events-none absolute inset-y-0 left-1/2 z-20 -translate-x-1/2">
+      {/* лента — абсолютная, центрирована по вертикали через flex h-full items-center */}
+      <div
+        className="absolute inset-y-0 left-0 flex h-full items-center will-change-transform"
+        style={{
+          gap: CARD_GAP,
+          transform: `translate3d(${offsetPx}px, 0, 0)`,
+          transition: spinning
+            ? `transform ${SPIN_MS}ms cubic-bezier(0.12, 0.78, 0.18, 1)`
+            : "none",
+        }}
+      >
+        {idle ? (
+          <RollerIdle />
+        ) : (
+          strip.map((slug, i) => (
+            <RollerCard key={i} slug={slug} highlight={!!winner && i === WINNER_INDEX} />
+          ))
+        )}
+      </div>
+
+      {/* центральный маркер — поверх ленты */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-y-0 left-1/2 z-20 -translate-x-1/2"
+      >
         <div
           className="h-full w-[2px]"
           style={{
@@ -306,7 +328,6 @@ function Roller({
             boxShadow: "0 0 18px 2px rgba(255,45,74,0.55), 0 0 36px rgba(255,45,74,0.25)",
           }}
         />
-        {/* стрелки сверху/снизу */}
         <div
           className="absolute left-1/2 top-0 -translate-x-1/2"
           style={{
@@ -329,26 +350,6 @@ function Roller({
             filter: "drop-shadow(0 -2px 4px rgba(255,45,74,0.55))",
           }}
         />
-      </div>
-
-      {/* лента */}
-      <div
-        className="absolute top-1/2 left-0 flex -translate-y-1/2 will-change-transform"
-        style={{
-          gap: CARD_GAP,
-          transform: `translate3d(${offsetPx}px, -50%, 0)`,
-          transition: spinning
-            ? `transform ${SPIN_MS}ms cubic-bezier(0.12, 0.78, 0.18, 1)`
-            : "none",
-        }}
-      >
-        {idle ? (
-          <RollerIdle />
-        ) : (
-          strip.map((slug, i) => (
-            <RollerCard key={i} slug={slug} highlight={!!winner && i === WINNER_INDEX} />
-          ))
-        )}
       </div>
     </div>
   );
