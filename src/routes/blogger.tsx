@@ -1,6 +1,9 @@
 import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-router";
 import { useState } from "react";
 import { Newspaper, Ticket, type LucideIcon } from "lucide-react";
+import { HellhoundPlaqueLarge } from "@/components/club/HellhoundPlaque";
+import { BloggerProfileModal } from "@/components/blogger/BloggerProfileModal";
+import { bloggerProfileStore, useBloggerProfile } from "@/data/blogger-profile";
 
 export const Route = createFileRoute("/blogger")({
   head: () => ({
