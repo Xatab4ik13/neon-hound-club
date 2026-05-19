@@ -279,8 +279,8 @@ function RaffleDetail({
       />
 
       <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Участников" value={raffle.participants.toLocaleString("ru-RU")} />
-        <StatCard label="Потрачено билетов" value={`${raffle.ticketsSpent.toLocaleString("ru-RU")} 🎟`} />
+        <StatCard label="Участников" value={raffle.participants.length.toLocaleString("ru-RU")} />
+        <StatCard label="Потрачено билетов" value={`${totalTickets(raffle).toLocaleString("ru-RU")} 🎟`} />
         <StatCard label="Призов" value={`${raffle.prizes.length} поз. / ${totalQty} шт.`} />
         <StatCard label="Окончание" value={raffle.endsAt || "—"} />
       </div>
