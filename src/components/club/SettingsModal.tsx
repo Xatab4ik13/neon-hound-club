@@ -307,22 +307,119 @@ function ToggleRow({ label, desc, defaultChecked }: { label: string; desc?: stri
 
 // ── Account / danger ───────────────────────────────────────────────────────
 function AccountTab() {
+  const [pwOpen, setPwOpen] = useState(false);
+  const [pwCurrent, setPwCurrent] = useState("");
+  const [pwNew, setPwNew] = useState("");
+  const [pwNew2, setPwNew2] = useState("");
+  const [pwMsg, setPwMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
+
+  const handleSavePassword = () => {
+    setPwMsg(null);
+    if (pwCurrent.length < 6) return setPwMsg({ kind: "err", text: "Введите текущий пароль" });
+    if (pwNew.length < 6) return setPwMsg({ kind: "err", text: "Новый пароль минимум 6 символов" });
+    if (pwNew !== pwNew2) return setPwMsg({ kind: "err", text: "Новые пароли не совпадают" });
+    setPwMsg({ kind: "ok", text: "Пароль обновлён" });
+    setPwCurrent("");
+    setPwNew("");
+    setPwNew2("");
+  };
+
   return (
     <div className="space-y-8">
       <div>
         <SectionTitle>Аккаунт</SectionTitle>
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Email"><Input type="email" defaultValue="hellhound@example.com" /></Field>
+          <Field label="Email (для входа)">
+            <Input type="email" defaultValue="hellhound@example.com" />
+          </Field>
+          <Field label="Телефон (для входа)">
+            <Input type="tel" placeholder="+7 999 000 00 00" />
+          </Field>
           <Field label="Telegram"><Input placeholder="@username" /></Field>
         </div>
-        <div className="mt-4">
+        <p className="mt-3 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+          Если телефон указан — войти можно по email или по телефону. Пароль один.
+        </p>
+        <div className="mt-4 flex justify-end">
+          <PrimaryButton>Сохранить</PrimaryButton>
+        </div>
+      </div>
+
+      <div className="border-t border-white/[0.06] pt-6">
+        <SectionTitle>Пароль</SectionTitle>
+        {!pwOpen ? (
           <button
             type="button"
-            className="font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+            onClick={() => {
+              setPwOpen(true);
+              setPwMsg(null);
+            }}
+            className="inline-flex items-center gap-1.5 border border-white/15 bg-transparent px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.25em] text-foreground transition-colors hover:border-white/40"
           >
             Сменить пароль
           </button>
-        </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-3">
+              <Field label="Текущий пароль">
+                <Input
+                  type="password"
+                  value={pwCurrent}
+                  onChange={(e) => setPwCurrent(e.target.value)}
+                  autoComplete="current-password"
+                />
+              </Field>
+              <Field label="Новый пароль">
+                <Input
+                  type="password"
+                  value={pwNew}
+                  onChange={(e) => setPwNew(e.target.value)}
+                  autoComplete="new-password"
+                />
+              </Field>
+              <Field label="Повторите новый">
+                <Input
+                  type="password"
+                  value={pwNew2}
+                  onChange={(e) => setPwNew2(e.target.value)}
+                  autoComplete="new-password"
+                />
+              </Field>
+            </div>
+            {pwMsg && (
+              <p
+                className={
+                  "font-mono text-[10px] uppercase tracking-wider " +
+                  (pwMsg.kind === "ok" ? "text-primary" : "text-red-400")
+                }
+              >
+                {pwMsg.text}
+              </p>
+            )}
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setPwOpen(false);
+                  setPwMsg(null);
+                  setPwCurrent("");
+                  setPwNew("");
+                  setPwNew2("");
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.25em] text-muted-foreground transition-colors hover:text-foreground"
+              >
+                Отмена
+              </button>
+              <button
+                type="button"
+                onClick={handleSavePassword}
+                className="inline-flex items-center gap-1.5 bg-primary px-4 py-2 font-mono text-[10px] font-bold uppercase tracking-[0.25em] text-primary-foreground transition-opacity hover:opacity-90"
+              >
+                Сохранить пароль
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="border border-red-500/30 bg-red-500/[0.03] p-5">

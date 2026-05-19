@@ -14,6 +14,7 @@ import { Route as NewsRouteImport } from './routes/news'
 import { Route as LogosRouteImport } from './routes/logos'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as HellPassRouteImport } from './routes/hell-pass'
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as ClubRouteImport } from './routes/club'
 import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as CartRouteImport } from './routes/cart'
@@ -68,6 +69,11 @@ const LoginRoute = LoginRouteImport.update({
 const HellPassRoute = HellPassRouteImport.update({
   id: '/hell-pass',
   path: '/hell-pass',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ClubRoute = ClubRouteImport.update({
@@ -228,6 +234,7 @@ export interface FileRoutesByFullPath {
   '/cart': typeof CartRoute
   '/checkout': typeof CheckoutRouteWithChildren
   '/club': typeof ClubRouteWithChildren
+  '/forgot-password': typeof ForgotPasswordRoute
   '/hell-pass': typeof HellPassRoute
   '/login': typeof LoginRoute
   '/logos': typeof LogosRoute
@@ -263,6 +270,7 @@ export interface FileRoutesByTo {
   '/about': typeof AboutRoute
   '/cart': typeof CartRoute
   '/checkout': typeof CheckoutRouteWithChildren
+  '/forgot-password': typeof ForgotPasswordRoute
   '/hell-pass': typeof HellPassRoute
   '/login': typeof LoginRoute
   '/logos': typeof LogosRoute
@@ -301,6 +309,7 @@ export interface FileRoutesById {
   '/cart': typeof CartRoute
   '/checkout': typeof CheckoutRouteWithChildren
   '/club': typeof ClubRouteWithChildren
+  '/forgot-password': typeof ForgotPasswordRoute
   '/hell-pass': typeof HellPassRoute
   '/login': typeof LoginRoute
   '/logos': typeof LogosRoute
@@ -340,6 +349,7 @@ export interface FileRouteTypes {
     | '/cart'
     | '/checkout'
     | '/club'
+    | '/forgot-password'
     | '/hell-pass'
     | '/login'
     | '/logos'
@@ -375,6 +385,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/cart'
     | '/checkout'
+    | '/forgot-password'
     | '/hell-pass'
     | '/login'
     | '/logos'
@@ -412,6 +423,7 @@ export interface FileRouteTypes {
     | '/cart'
     | '/checkout'
     | '/club'
+    | '/forgot-password'
     | '/hell-pass'
     | '/login'
     | '/logos'
@@ -450,6 +462,7 @@ export interface RootRouteChildren {
   CartRoute: typeof CartRoute
   CheckoutRoute: typeof CheckoutRouteWithChildren
   ClubRoute: typeof ClubRouteWithChildren
+  ForgotPasswordRoute: typeof ForgotPasswordRoute
   HellPassRoute: typeof HellPassRoute
   LoginRoute: typeof LoginRoute
   LogosRoute: typeof LogosRoute
@@ -494,6 +507,13 @@ declare module '@tanstack/react-router' {
       path: '/hell-pass'
       fullPath: '/hell-pass'
       preLoaderRoute: typeof HellPassRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/forgot-password': {
+      id: '/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof ForgotPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/club': {
@@ -794,6 +814,7 @@ const rootRouteChildren: RootRouteChildren = {
   CartRoute: CartRoute,
   CheckoutRoute: CheckoutRouteWithChildren,
   ClubRoute: ClubRouteWithChildren,
+  ForgotPasswordRoute: ForgotPasswordRoute,
   HellPassRoute: HellPassRoute,
   LoginRoute: LoginRoute,
   LogosRoute: LogosRoute,
@@ -805,13 +826,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
