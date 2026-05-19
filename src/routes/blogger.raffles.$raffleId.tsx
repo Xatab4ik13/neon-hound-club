@@ -72,6 +72,7 @@ function BloggerRaffleDetailPage() {
     null;
 
   const canSpin = !!availablePrize && totalT > 0 && !spinning && !winner;
+  const canRespin = !!availablePrize && totalT > 0 && !spinning && !!winner && !recorded;
 
   const startSpin = () => {
     if (!canSpin || !availablePrize) return;
