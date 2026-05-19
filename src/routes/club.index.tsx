@@ -65,7 +65,11 @@ function PostCard({ post }: { post: Post }) {
 
       <header className="flex items-center gap-3 px-5 pt-5">
         <UserLink slug={post.authorSlug}>
-          <RankAvatar initials={author?.initials ?? "?"} rankId={author?.rank ?? "rookie"} size={48} />
+          {isHell(post.authorSlug) ? (
+            <HellhoundAvatar size={48} initials={author?.initials ?? "H"} avatarUrl={author?.avatarUrl} />
+          ) : (
+            <RankAvatar initials={author?.initials ?? "?"} rankId={author?.rank ?? "rookie"} size={48} />
+          )}
         </UserLink>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
@@ -74,7 +78,7 @@ function PostCard({ post }: { post: Post }) {
                 {author?.nick ?? post.authorSlug}
               </span>
             </UserLink>
-            <RoleBadge role={author?.role ?? "rider"} />
+            {isHell(post.authorSlug) ? <HellhoundChip size="sm" /> : <RoleBadge role={author?.role ?? "rider"} />}
           </div>
           <span className="mt-0.5 block font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
             {post.time}
@@ -197,7 +201,11 @@ function CommentItem({ comment }: { comment: Comment }) {
   return (
     <li className="flex gap-3 px-5 py-3.5">
       <UserLink slug={comment.authorSlug}>
-        <RankAvatar initials={user?.initials ?? "?"} rankId={user?.rank ?? "rookie"} size={36} />
+        {isHell(comment.authorSlug) ? (
+          <HellhoundAvatar size={36} initials={user?.initials ?? "H"} avatarUrl={user?.avatarUrl} />
+        ) : (
+          <RankAvatar initials={user?.initials ?? "?"} rankId={user?.rank ?? "rookie"} size={36} />
+        )}
       </UserLink>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
@@ -206,14 +214,18 @@ function CommentItem({ comment }: { comment: Comment }) {
               {user?.nick ?? comment.authorSlug}
             </span>
           </UserLink>
-          <span
-            className="shrink-0 border px-1 py-px font-mono text-[8px] font-bold uppercase tracking-wider"
-            style={{ color: rank.accent, borderColor: rank.accentSoft }}
-          >
-            {rank.short}
-          </span>
-          {user?.role === "owner" && <RoleBadge role="owner" />}
-          {user?.role === "team" && <RoleBadge role="team" />}
+          {isHell(comment.authorSlug) ? (
+            <HellhoundChip size="xs" />
+          ) : (
+            <span
+              className="shrink-0 border px-1 py-px font-mono text-[8px] font-bold uppercase tracking-wider"
+              style={{ color: rank.accent, borderColor: rank.accentSoft }}
+            >
+              {rank.short}
+            </span>
+          )}
+          {!isHell(comment.authorSlug) && user?.role === "owner" && <RoleBadge role="owner" />}
+          {!isHell(comment.authorSlug) && user?.role === "team" && <RoleBadge role="team" />}
           <span className="ml-auto shrink-0 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
             {comment.time}
           </span>
