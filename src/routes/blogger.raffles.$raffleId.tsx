@@ -9,8 +9,9 @@
 // 4) после остановки списываем билет и фиксируем приз.
 
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
-import { ArrowLeft, Play, RotateCcw, Trophy } from "lucide-react";
+import { useState, useRef } from "react";
+import { ArrowLeft, Play, RotateCcw, Trophy, Volume2, VolumeX } from "lucide-react";
+import { playSpin, playWin } from "@/lib/roller-sfx";
 import {
   rafflesStore,
   useRaffles,
@@ -53,6 +54,9 @@ function BloggerRaffleDetailPage() {
   const [offsetPx, setOffsetPx] = useState(0);
   const [winner, setWinner] = useState<string | null>(null);
   const [recorded, setRecorded] = useState(false);
+  const [muted, setMuted] = useState(false);
+  const mutedRef = useRef(muted);
+  mutedRef.current = muted;
 
   if (!raffle) {
     return (
@@ -112,12 +116,14 @@ function BloggerRaffleDetailPage() {
         const target = containerW / 2 - winnerCenter + jitter;
         setSpinning(true);
         setOffsetPx(target);
+        if (!mutedRef.current) playSpin(WINNER_INDEX, SPIN_MS);
       });
     });
 
     window.setTimeout(() => {
       setSpinning(false);
       setWinner(winnerSlug);
+      if (!mutedRef.current) playWin();
     }, SPIN_MS + 80);
   };
 
@@ -150,13 +156,25 @@ function BloggerRaffleDetailPage() {
           <ArrowLeft className="h-3.5 w-3.5" /> Все розыгрыши
         </button>
 
-        <h1 className="font-display text-3xl font-black italic uppercase tracking-tight md:text-4xl">
-          {raffle.name}
-        </h1>
-        <p className="mt-1.5 text-sm text-muted-foreground">
-          {raffle.participants.length.toLocaleString("ru-RU")} участников ·{" "}
-          {totalT.toLocaleString("ru-RU")} билетов в пуле
-        </p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="font-display text-3xl font-black italic uppercase tracking-tight md:text-4xl">
+              {raffle.name}
+            </h1>
+            <p className="mt-1.5 text-sm text-muted-foreground">
+              {raffle.participants.length.toLocaleString("ru-RU")} участников ·{" "}
+              {totalT.toLocaleString("ru-RU")} билетов в пуле
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setMuted((m) => !m)}
+            title={muted ? "Включить звук" : "Выключить звук"}
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center border border-white/[0.08] text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary"
+          >
+            {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+          </button>
+        </div>
 
         <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
           {/* Роллер */}
