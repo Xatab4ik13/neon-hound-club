@@ -86,25 +86,68 @@ export function playSpin(totalCards: number, durationMs: number) {
   }
 }
 
-/** Финальный аккорд при остановке на победителе. */
+// Один «гудок» airhorn: стек расстроенных saw + квадрат снизу, лёгкий питч-свип,
+// полосовой фильтр сверху для агрессии, быстрая атака и резкий обрыв.
+function scheduleHonk(c: AudioContext, when: number, dur: number, base: number) {
+  const master = c.createGain();
+  master.gain.setValueAtTime(0.0001, when);
+  master.gain.exponentialRampToValueAtTime(0.35, when + 0.012);
+  master.gain.setValueAtTime(0.35, when + dur - 0.04);
+  master.gain.exponentialRampToValueAtTime(0.0001, when + dur);
+
+  const hp = c.createBiquadFilter();
+  hp.type = "highpass";
+  hp.frequency.value = 220;
+
+  const drive = c.createWaveShaper();
+  const curve = new Float32Array(1024);
+  for (let i = 0; i < 1024; i++) {
+    const x = (i / 1024) * 2 - 1;
+    curve[i] = Math.tanh(x * 2.4);
+  }
+  drive.curve = curve;
+
+  master.connect(drive).connect(hp).connect(c.destination);
+
+  // расстроенные saw — «толстый» гудок
+  const detunes = [-12, -5, 0, 5, 12];
+  detunes.forEach((d) => {
+    const o = c.createOscillator();
+    o.type = "sawtooth";
+    o.frequency.setValueAtTime(base * 0.94, when);
+    o.frequency.exponentialRampToValueAtTime(base, when + 0.05);
+    o.detune.value = d;
+    const g = c.createGain();
+    g.gain.value = 0.18;
+    o.connect(g).connect(master);
+    o.start(when);
+    o.stop(when + dur + 0.02);
+  });
+
+  // суб-квадрат на октаву ниже — низ для DJ-вайба
+  const sub = c.createOscillator();
+  sub.type = "square";
+  sub.frequency.value = base / 2;
+  const subG = c.createGain();
+  subG.gain.value = 0.25;
+  sub.connect(subG).connect(master);
+  sub.start(when);
+  sub.stop(when + dur + 0.02);
+}
+
+/** Airhorn: серия из 4 коротких гудков, как на тусовке. */
 export function playWin() {
   const c = ac();
   if (!c) return;
-  const t0 = c.currentTime + 0.01;
-  const notes = [523.25, 659.25, 783.99, 1046.5]; // C5 E5 G5 C6
-  notes.forEach((f, i) => {
-    const o = c.createOscillator();
-    const g = c.createGain();
-    o.type = "triangle";
-    o.frequency.value = f;
-    const start = t0 + i * 0.06;
-    g.gain.setValueAtTime(0.0001, start);
-    g.gain.exponentialRampToValueAtTime(0.18, start + 0.02);
-    g.gain.exponentialRampToValueAtTime(0.0001, start + 0.9);
-    o.connect(g).connect(c.destination);
-    o.start(start);
-    o.stop(start + 0.95);
-  });
+  const t0 = c.currentTime + 0.02;
+  // ритм: тук-тук-тук-тууу
+  const pattern: Array<[number, number]> = [
+    [0.0, 0.13],
+    [0.18, 0.13],
+    [0.36, 0.13],
+    [0.56, 0.55],
+  ];
+  pattern.forEach(([off, dur]) => scheduleHonk(c, t0 + off, dur, 466)); // ~A#4
 }
 
 /** «Бам» при ре-спине / отмене. */
