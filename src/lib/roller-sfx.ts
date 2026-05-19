@@ -86,68 +86,56 @@ export function playSpin(totalCards: number, durationMs: number) {
   }
 }
 
-// Один «гудок» airhorn: стек расстроенных saw + квадрат снизу, лёгкий питч-свип,
-// полосовой фильтр сверху для агрессии, быстрая атака и резкий обрыв.
-function scheduleHonk(c: AudioContext, when: number, dur: number, base: number) {
-  const master = c.createGain();
-  master.gain.setValueAtTime(0.0001, when);
-  master.gain.exponentialRampToValueAtTime(0.35, when + 0.012);
-  master.gain.setValueAtTime(0.35, when + dur - 0.04);
-  master.gain.exponentialRampToValueAtTime(0.0001, when + dur);
+// Классический MLG/Discord airhorn — реальный сэмпл, ничем не имитируется.
+import airhornUrl from "@/assets/airhorn.mp3";
 
-  const hp = c.createBiquadFilter();
-  hp.type = "highpass";
-  hp.frequency.value = 220;
-
-  const drive = c.createWaveShaper();
-  const curve = new Float32Array(1024);
-  for (let i = 0; i < 1024; i++) {
-    const x = (i / 1024) * 2 - 1;
-    curve[i] = Math.tanh(x * 2.4);
-  }
-  drive.curve = curve;
-
-  master.connect(drive).connect(hp).connect(c.destination);
-
-  // расстроенные saw — «толстый» гудок
-  const detunes = [-12, -5, 0, 5, 12];
-  detunes.forEach((d) => {
-    const o = c.createOscillator();
-    o.type = "sawtooth";
-    o.frequency.setValueAtTime(base * 0.94, when);
-    o.frequency.exponentialRampToValueAtTime(base, when + 0.05);
-    o.detune.value = d;
-    const g = c.createGain();
-    g.gain.value = 0.18;
-    o.connect(g).connect(master);
-    o.start(when);
-    o.stop(when + dur + 0.02);
-  });
-
-  // суб-квадрат на октаву ниже — низ для DJ-вайба
-  const sub = c.createOscillator();
-  sub.type = "square";
-  sub.frequency.value = base / 2;
-  const subG = c.createGain();
-  subG.gain.value = 0.25;
-  sub.connect(subG).connect(master);
-  sub.start(when);
-  sub.stop(when + dur + 0.02);
+let airhornBuf: AudioBuffer | null = null;
+let airhornLoading: Promise<AudioBuffer | null> | null = null;
+async function loadAirhorn(c: AudioContext): Promise<AudioBuffer | null> {
+  if (airhornBuf) return airhornBuf;
+  if (airhornLoading) return airhornLoading;
+  airhornLoading = (async () => {
+    try {
+      const res = await fetch(airhornUrl);
+      const arr = await res.arrayBuffer();
+      airhornBuf = await c.decodeAudioData(arr);
+      return airhornBuf;
+    } catch {
+      return null;
+    }
+  })();
+  return airhornLoading;
 }
 
-/** Airhorn: серия из 4 коротких гудков, как на тусовке. */
+// Предзагружаем сразу, чтобы к концу спина было готово.
+if (typeof window !== "undefined") {
+  const warm = () => {
+    const c = ac();
+    if (c) loadAirhorn(c);
+    window.removeEventListener("pointerdown", warm);
+  };
+  window.addEventListener("pointerdown", warm, { once: true });
+}
+
+/** Airhorn — три honk'а, как в Discord. */
 export function playWin() {
   const c = ac();
   if (!c) return;
-  const t0 = c.currentTime + 0.02;
-  // ритм: тук-тук-тук-тууу
-  const pattern: Array<[number, number]> = [
-    [0.0, 0.13],
-    [0.18, 0.13],
-    [0.36, 0.13],
-    [0.56, 0.55],
-  ];
-  pattern.forEach(([off, dur]) => scheduleHonk(c, t0 + off, dur, 466)); // ~A#4
+  loadAirhorn(c).then((buf) => {
+    if (!buf) return;
+    const c2 = ac();
+    if (!c2) return;
+    const t0 = c2.currentTime + 0.02;
+    // короткий-короткий-длинный, как !airhorn в Discord
+    [0, 0.22, 0.5].forEach((off) => {
+      const src = c2.createBufferSource();
+      src.buffer = buf;
+      const g = c2.createGain();
+      g.gain.value = 0.7;
+      src.connect(g).connect(c2.destination);
+      src.start(t0 + off);
+    });
+  });
 }
 
 /** «Бам» при ре-спине / отмене. */
