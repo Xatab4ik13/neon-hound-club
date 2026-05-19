@@ -156,9 +156,9 @@ function BloggerRaffleDetailPage() {
           {totalT.toLocaleString("ru-RU")} билетов в пуле
         </p>
 
-        <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_320px]">
+        <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
           {/* Роллер */}
-          <div className="flex flex-col">
+          <div className="flex min-w-0 flex-col">
             <PrizeBanner prize={availablePrize} winner={winner} />
             <Roller strip={strip} offsetPx={offsetPx} spinning={spinning} winner={winner} />
 
