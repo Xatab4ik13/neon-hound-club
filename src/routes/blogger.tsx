@@ -1,6 +1,9 @@
 import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-router";
 import { useState } from "react";
 import { Newspaper, Ticket, type LucideIcon } from "lucide-react";
+import { HellhoundPlaqueLarge } from "@/components/club/HellhoundPlaque";
+import { BloggerProfileModal } from "@/components/blogger/BloggerProfileModal";
+import { bloggerProfileStore, useBloggerProfile } from "@/data/blogger-profile";
 
 export const Route = createFileRoute("/blogger")({
   head: () => ({
@@ -18,16 +21,11 @@ const NAV: { label: string; href: string; icon: LucideIcon }[] = [
   { label: "Розыгрыши", href: "/blogger/raffles", icon: Ticket },
 ];
 
-// Демо-профиль блогера (моки)
-const BLOGGER = {
-  nick: "HELL",
-  name: "Hell",
-  initials: "HE",
-};
-
 function BloggerLayout() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   const { pathname } = useLocation();
+  const profile = useBloggerProfile();
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -48,10 +46,17 @@ function BloggerLayout() {
         <MobileDrawer open={menuOpen} onClose={() => setMenuOpen(false)} pathname={pathname} />
 
         <div className="flex min-w-0 flex-1 flex-col">
-          <TopBar onMenu={() => setMenuOpen(true)} />
+          <TopBar onMenu={() => setMenuOpen(true)} onPlaqueClick={() => setProfileOpen(true)} />
           <Outlet />
         </div>
       </div>
+
+      <BloggerProfileModal
+        open={profileOpen}
+        onClose={() => setProfileOpen(false)}
+        profile={profile}
+        onChange={(p) => bloggerProfileStore.update(p)}
+      />
     </div>
   );
 }
@@ -172,7 +177,8 @@ function MobileDrawer({
   );
 }
 
-function TopBar({ onMenu }: { onMenu: () => void }) {
+function TopBar({ onMenu, onPlaqueClick }: { onMenu: () => void; onPlaqueClick: () => void }) {
+  const profile = useBloggerProfile();
   return (
     <header className="sticky top-0 z-40 border-b border-white/[0.06] bg-background/80 backdrop-blur-md">
       <div className="flex h-16 items-center gap-3 px-4 md:px-8">
@@ -189,30 +195,13 @@ function TopBar({ onMenu }: { onMenu: () => void }) {
 
         <div className="flex-1" />
 
-        <BloggerPlaque />
+        <HellhoundPlaqueLarge
+          nick={profile.nick}
+          initials={profile.initials}
+          avatarUrl={profile.avatarUrl}
+          onClick={onPlaqueClick}
+        />
       </div>
     </header>
-  );
-}
-
-function BloggerPlaque() {
-  return (
-    <div className="flex min-w-0 items-center gap-3">
-      <div
-        className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary ring-2 ring-primary/30 ring-offset-2 ring-offset-background"
-      >
-        <span className="font-display text-base font-black italic uppercase text-black">
-          {BLOGGER.initials}
-        </span>
-      </div>
-      <div className="min-w-0">
-        <div className="truncate font-display text-[15px] font-black italic uppercase tracking-tight text-foreground">
-          {BLOGGER.nick}
-        </div>
-        <div className="font-mono text-[9px] font-bold uppercase tracking-[0.25em] text-primary">
-          Blogger
-        </div>
-      </div>
-    </div>
   );
 }

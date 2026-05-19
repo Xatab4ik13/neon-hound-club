@@ -15,56 +15,17 @@ import {
   ConfirmModal,
   ImageUploader,
 } from "@/components/admin/ui";
+import {
+  rafflesStore,
+  useRaffles,
+  totalTickets,
+  type Raffle,
+  type RafflePrize as Prize,
+} from "@/data/raffles-store";
 
 export const Route = createFileRoute("/admin/raffles")({
   component: RafflesPage,
 });
-
-type Prize = {
-  id: string;
-  name: string;
-  qty: number;
-};
-
-type Raffle = {
-  id: string;
-  name: string;
-  description?: string;
-  cover?: string; // dataURL
-  endsAt: string; // дата окончания — для таймера на сайте
-  createdAt: string;
-  participants: number;
-  ticketsSpent: number;
-  prizes: Prize[];
-};
-
-const SEED: Raffle[] = [
-  {
-    id: "1",
-    name: "Летний розыгрыш №1",
-    description: "Главная летняя серия призов от HELLHOUND.",
-    cover: "",
-    endsAt: "2026-06-30",
-    createdAt: "2026-05-01",
-    participants: 823,
-    ticketsSpent: 4120,
-    prizes: [
-      { id: "p1", name: "Шлем AGV K6", qty: 1 },
-      { id: "p2", name: "Перчатки v3", qty: 5 },
-      { id: "p3", name: "Худи Founder S01", qty: 10 },
-    ],
-  },
-  {
-    id: "2",
-    name: "Весенний розыгрыш",
-    cover: "",
-    endsAt: "2026-04-30",
-    createdAt: "2026-03-01",
-    participants: 198,
-    ticketsSpent: 612,
-    prizes: [{ id: "p4", name: "Перчатки Пит-крю", qty: 3 }],
-  },
-];
 
 function emptyRaffle(): Raffle {
   return {
@@ -74,14 +35,13 @@ function emptyRaffle(): Raffle {
     cover: "",
     endsAt: "",
     createdAt: new Date().toISOString().slice(0, 10),
-    participants: 0,
-    ticketsSpent: 0,
+    participants: [],
     prizes: [],
   };
 }
 
 function RafflesPage() {
-  const [list, setList] = useState<Raffle[]>(SEED);
+  const list = useRaffles();
   const [activeId, setActiveId] = useState<string | null>(null);
   const [editing, setEditing] = useState<Raffle | null>(null);
   const [open, setOpen] = useState(false);
@@ -94,7 +54,7 @@ function RafflesPage() {
       <RaffleDetail
         raffle={active}
         onBack={() => setActiveId(null)}
-        onUpdate={(r) => setList((l) => l.map((x) => (x.id === r.id ? r : x)))}
+        onUpdate={(r) => rafflesStore.upsert(r)}
       />
     );
   }
@@ -129,7 +89,7 @@ function RafflesPage() {
             return [
               <span className="font-medium">{r.name}</span>,
               <Badge tone="zinc">{r.prizes.length} поз. / {totalQty} шт.</Badge>,
-              <span className="font-medium">{r.participants}</span>,
+              <span className="font-medium">{r.participants.length}</span>,
               r.endsAt || "—",
               <Badge tone={st === "active" ? "emerald" : "rose"}>
                 {st === "active" ? "Активен" : "Завершён"}
@@ -156,8 +116,8 @@ function RafflesPage() {
           initial={editing}
           onClose={() => setOpen(false)}
           onSave={(r) => {
-            if (r.id) setList((l) => l.map((x) => (x.id === r.id ? r : x)));
-            else setList((l) => [{ ...r, id: String(Date.now()) }, ...l]);
+            const id = r.id || String(Date.now());
+            rafflesStore.upsert({ ...r, id });
             setOpen(false);
           }}
         />
@@ -166,7 +126,7 @@ function RafflesPage() {
       <ConfirmModal
         open={!!confirm}
         onClose={() => setConfirm(null)}
-        onConfirm={() => confirm && setList((l) => l.filter((x) => x.id !== confirm.id))}
+        onConfirm={() => confirm && rafflesStore.remove(confirm.id)}
         title="Удалить розыгрыш?"
         message={`«${confirm?.name}» и все его призы будут удалены.`}
       />
@@ -319,8 +279,8 @@ function RaffleDetail({
       />
 
       <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Участников" value={raffle.participants.toLocaleString("ru-RU")} />
-        <StatCard label="Потрачено билетов" value={`${raffle.ticketsSpent.toLocaleString("ru-RU")} 🎟`} />
+        <StatCard label="Участников" value={raffle.participants.length.toLocaleString("ru-RU")} />
+        <StatCard label="Потрачено билетов" value={`${totalTickets(raffle).toLocaleString("ru-RU")} 🎟`} />
         <StatCard label="Призов" value={`${raffle.prizes.length} поз. / ${totalQty} шт.`} />
         <StatCard label="Окончание" value={raffle.endsAt || "—"} />
       </div>
