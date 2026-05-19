@@ -156,13 +156,25 @@ function BloggerRaffleDetailPage() {
           <ArrowLeft className="h-3.5 w-3.5" /> Все розыгрыши
         </button>
 
-        <h1 className="font-display text-3xl font-black italic uppercase tracking-tight md:text-4xl">
-          {raffle.name}
-        </h1>
-        <p className="mt-1.5 text-sm text-muted-foreground">
-          {raffle.participants.length.toLocaleString("ru-RU")} участников ·{" "}
-          {totalT.toLocaleString("ru-RU")} билетов в пуле
-        </p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="font-display text-3xl font-black italic uppercase tracking-tight md:text-4xl">
+              {raffle.name}
+            </h1>
+            <p className="mt-1.5 text-sm text-muted-foreground">
+              {raffle.participants.length.toLocaleString("ru-RU")} участников ·{" "}
+              {totalT.toLocaleString("ru-RU")} билетов в пуле
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setMuted((m) => !m)}
+            title={muted ? "Включить звук" : "Выключить звук"}
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center border border-white/[0.08] text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary"
+          >
+            {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+          </button>
+        </div>
 
         <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
           {/* Роллер */}
