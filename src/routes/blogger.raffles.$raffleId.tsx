@@ -274,7 +274,7 @@ function Roller({
   return (
     <div
       id="roller-viewport"
-      className="relative flex w-full items-center overflow-hidden border border-white/[0.08] bg-gradient-to-b from-black via-[#0a0a0f] to-black"
+      className="relative w-full min-w-0 overflow-hidden border border-white/[0.08] bg-gradient-to-b from-black via-[#0a0a0f] to-black"
       style={{
         height: 180,
         WebkitMaskImage:
@@ -295,7 +295,27 @@ function Roller({
         }}
       />
 
-      {/* центральный маркер */}
+      {/* лента — абсолютная, центрирована по вертикали через flex h-full items-center */}
+      <div
+        className="absolute inset-y-0 left-0 flex h-full items-center will-change-transform"
+        style={{
+          gap: CARD_GAP,
+          transform: `translate3d(${offsetPx}px, 0, 0)`,
+          transition: spinning
+            ? `transform ${SPIN_MS}ms cubic-bezier(0.12, 0.78, 0.18, 1)`
+            : "none",
+        }}
+      >
+        {idle ? (
+          <RollerIdle />
+        ) : (
+          strip.map((slug, i) => (
+            <RollerCard key={i} slug={slug} highlight={!!winner && i === WINNER_INDEX} />
+          ))
+        )}
+      </div>
+
+      {/* центральный маркер — поверх ленты */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-y-0 left-1/2 z-20 -translate-x-1/2"
@@ -330,26 +350,6 @@ function Roller({
             filter: "drop-shadow(0 -2px 4px rgba(255,45,74,0.55))",
           }}
         />
-      </div>
-
-      {/* лента — flex items-center центрирует по вертикали, transform только по X */}
-      <div
-        className="flex shrink-0 will-change-transform"
-        style={{
-          gap: CARD_GAP,
-          transform: `translate3d(${offsetPx}px, 0, 0)`,
-          transition: spinning
-            ? `transform ${SPIN_MS}ms cubic-bezier(0.12, 0.78, 0.18, 1)`
-            : "none",
-        }}
-      >
-        {idle ? (
-          <RollerIdle />
-        ) : (
-          strip.map((slug, i) => (
-            <RollerCard key={i} slug={slug} highlight={!!winner && i === WINNER_INDEX} />
-          ))
-        )}
       </div>
     </div>
   );
