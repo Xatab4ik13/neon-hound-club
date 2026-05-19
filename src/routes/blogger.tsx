@@ -46,10 +46,17 @@ function BloggerLayout() {
         <MobileDrawer open={menuOpen} onClose={() => setMenuOpen(false)} pathname={pathname} />
 
         <div className="flex min-w-0 flex-1 flex-col">
-          <TopBar onMenu={() => setMenuOpen(true)} />
+          <TopBar onMenu={() => setMenuOpen(true)} onPlaqueClick={() => setProfileOpen(true)} />
           <Outlet />
         </div>
       </div>
+
+      <BloggerProfileModal
+        open={profileOpen}
+        onClose={() => setProfileOpen(false)}
+        profile={profile}
+        onChange={(p) => bloggerProfileStore.update(p)}
+      />
     </div>
   );
 }
