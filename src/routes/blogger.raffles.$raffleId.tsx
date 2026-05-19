@@ -9,7 +9,7 @@
 // 4) после остановки списываем билет и фиксируем приз.
 
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useState } from "react";
 import { ArrowLeft, Play, RotateCcw, Trophy } from "lucide-react";
 import {
   rafflesStore,
