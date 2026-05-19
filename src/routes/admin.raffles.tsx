@@ -89,7 +89,7 @@ function RafflesPage() {
             return [
               <span className="font-medium">{r.name}</span>,
               <Badge tone="zinc">{r.prizes.length} поз. / {totalQty} шт.</Badge>,
-              <span className="font-medium">{r.participants}</span>,
+              <span className="font-medium">{r.participants.length}</span>,
               r.endsAt || "—",
               <Badge tone={st === "active" ? "emerald" : "rose"}>
                 {st === "active" ? "Активен" : "Завершён"}
@@ -116,8 +116,8 @@ function RafflesPage() {
           initial={editing}
           onClose={() => setOpen(false)}
           onSave={(r) => {
-            if (r.id) setList((l) => l.map((x) => (x.id === r.id ? r : x)));
-            else setList((l) => [{ ...r, id: String(Date.now()) }, ...l]);
+            const id = r.id || String(Date.now());
+            rafflesStore.upsert({ ...r, id });
             setOpen(false);
           }}
         />
@@ -126,7 +126,7 @@ function RafflesPage() {
       <ConfirmModal
         open={!!confirm}
         onClose={() => setConfirm(null)}
-        onConfirm={() => confirm && setList((l) => l.filter((x) => x.id !== confirm.id))}
+        onConfirm={() => confirm && rafflesStore.remove(confirm.id)}
         title="Удалить розыгрыш?"
         message={`«${confirm?.name}» и все его призы будут удалены.`}
       />
