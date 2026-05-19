@@ -2,6 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { RANKS, type RankId } from "@/data/ranks";
 import { ME_SLUG, PUBLIC_USERS } from "@/data/users";
+import { useFeedPosts, type FeedComment, type FeedPost } from "@/data/feed-store";
+import { HellhoundAvatar, HellhoundChip, isHell } from "@/components/club/HellhoundPlaque";
 
 export const Route = createFileRoute("/club/")({
   head: () => ({
@@ -14,79 +16,8 @@ export const Route = createFileRoute("/club/")({
   component: ClubFeedPage,
 });
 
-// ───────── Типы и моки ─────────
-
-type Comment = {
-  id: string;
-  authorSlug: string;
-  time: string;
-  text: string;
-  likes: number;
-};
-
-type Post = {
-  id: string;
-  authorSlug: string;
-  time: string;
-  text: string;
-  image?: string;
-  likes: number;
-  pinned?: boolean;
-  comments: Comment[];
-};
-
-const POSTS: Post[] = [
-  {
-    id: "1",
-    authorSlug: "hell",
-    time: "2 ч",
-    pinned: true,
-    text: "Розыгрыш Yamaha R1 закрывается в воскресенье. Осталось 412 билетов из 3000. Кто ещё думает — подумайте быстрее.",
-    image: "https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?w=1200&q=80",
-    likes: 842,
-    comments: [
-      { id: "c1", authorSlug: "asphalt_dog", time: "22 мин", text: "Уже закинул на три билета. В этот раз повезёт больше, чем с Кавасаки.", likes: 18 },
-      { id: "c2", authorSlug: "tankslapper", time: "1 ч", text: "По стате R1 идёт активнее, чем R6 в прошлом сезоне. Логично — модель свежее.", likes: 9 },
-      { id: "c3", authorSlug: "vasya_pit", time: "1 ч", text: "А по доставке выигравшему — забирать самому или привезут?", likes: 4 },
-      { id: "c4", authorSlug: "hell_legend_01", time: "2 ч", text: "Hell, спасибо за честный розыгрыш. Уже третий год подряд участвую.", likes: 27 },
-    ],
-  },
-  {
-    id: "2",
-    authorSlug: "hell",
-    time: "вчера",
-    text: "Снимаем новый ролик про падения. RAW-камеры с трека уйдут только в клуб — за неделю до публики.",
-    likes: 1204,
-    comments: [
-      { id: "c5", authorSlug: "vip_rider", time: "10 ч", text: "Это причина оставаться в клубе. Спасибо.", likes: 33 },
-      { id: "c6", authorSlug: "rookie_max", time: "8 ч", text: "А будет момент с тем выездом на гравий?", likes: 2 },
-    ],
-  },
-  {
-    id: "3",
-    authorSlug: "team_pavel",
-    time: "2 дн",
-    text: "Перчатки HELLHOUND v2 поехали в производство. Первая партия — 300 пар, waitlist открываем в пятницу.",
-    image: "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?w=1200&q=80",
-    likes: 567,
-    comments: [
-      { id: "c7", authorSlug: "moto_anya", time: "1 д", text: "Размерная сетка та же, что у v1, или поменялась? У меня M был впритык.", likes: 11 },
-      { id: "c8", authorSlug: "garage_77", time: "20 ч", text: "Защита костяшек обновилась? На v1 за сезон стёрлась.", likes: 6 },
-      { id: "c9", authorSlug: "wheelie_kid", time: "5 ч", text: "Платина, забирайте перед общим стартом. Иначе разберут.", likes: 14 },
-    ],
-  },
-  {
-    id: "4",
-    authorSlug: "hell",
-    time: "3 дн",
-    text: "Скинул в общий чат маршрут на субботу — Дмитров, 180 км по плохому асфальту. Кто едет — отметьтесь.",
-    likes: 392,
-    comments: [
-      { id: "c10", authorSlug: "kuzya_msk", time: "2 д", text: "Я в деле. На R6, средний темп норм?", likes: 3 },
-      { id: "c11", authorSlug: "captain_volk", time: "2 д", text: "Если асфальт реально плохой — лучше не на спорте. Возьму твин.", likes: 8 },
-    ],
-  },
-];
+type Comment = FeedComment;
+type Post = FeedPost;
 
 const RANK_BY_ID = Object.fromEntries(RANKS.map((r) => [r.id, r])) as Record<
   RankId,
@@ -96,6 +27,7 @@ const RANK_BY_ID = Object.fromEntries(RANKS.map((r) => [r.id, r])) as Record<
 // ───────── Page ─────────
 
 function ClubFeedPage() {
+  const posts = useFeedPosts();
   return (
     <main className="mx-auto w-full max-w-2xl px-4 py-6 md:px-8 md:py-10">
       <div className="mb-6 flex items-center justify-between border-b border-white/[0.06] pb-3">
@@ -105,7 +37,7 @@ function ClubFeedPage() {
       </div>
 
       <div className="space-y-6">
-        {POSTS.map((post) => (
+        {posts.map((post) => (
           <PostCard key={post.id} post={post} />
         ))}
       </div>
