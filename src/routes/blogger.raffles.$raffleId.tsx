@@ -54,6 +54,9 @@ function BloggerRaffleDetailPage() {
   const [offsetPx, setOffsetPx] = useState(0);
   const [winner, setWinner] = useState<string | null>(null);
   const [recorded, setRecorded] = useState(false);
+  const [muted, setMuted] = useState(false);
+  const mutedRef = useRef(muted);
+  mutedRef.current = muted;
 
   if (!raffle) {
     return (
