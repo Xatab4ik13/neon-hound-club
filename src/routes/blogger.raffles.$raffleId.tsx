@@ -75,7 +75,8 @@ function BloggerRaffleDetailPage() {
   const canRespin = !!availablePrize && totalT > 0 && !spinning && !!winner && !recorded;
 
   const startSpin = () => {
-    if (!canSpin || !availablePrize) return;
+    if (!availablePrize || totalT <= 0 || spinning) return;
+    if (winner && recorded) return;
 
     // 1) Честный выбор победителя по весам билетов
     const winnerSlug = pickWeighted(raffle.participants, totalT);
