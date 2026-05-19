@@ -86,30 +86,6 @@ function Index() {
     <div className="min-h-screen bg-background text-foreground">
       <Header />
 
-      {isAuthed && (
-        <div className="mt-20 border-b border-primary/20 bg-primary/[0.06]">
-          <div className="mx-auto flex max-w-7xl flex-col items-start gap-3 px-6 py-3 md:flex-row md:items-center md:justify-between md:px-8">
-            <div className="flex flex-wrap items-center gap-3 text-sm">
-              <span
-                aria-hidden
-                className="h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_8px_var(--primary)]"
-              />
-              <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-primary">
-                Вы в клубе
-              </span>
-              <span className="text-muted-foreground">
-                {nick} · {tier} · {tickets} билетов
-              </span>
-            </div>
-            <Link
-              to="/club"
-              className="font-mono text-[11px] uppercase tracking-[0.2em] text-foreground transition-colors hover:text-primary"
-            >
-              В личный кабинет →
-            </Link>
-          </div>
-        </div>
-      )}
 
       <main>
         {/* HERO */}
