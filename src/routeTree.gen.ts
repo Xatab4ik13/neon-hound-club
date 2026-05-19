@@ -18,6 +18,7 @@ import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as ClubRouteImport } from './routes/club'
 import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as CartRouteImport } from './routes/cart'
+import { Route as BloggerRouteImport } from './routes/blogger'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
@@ -89,6 +90,11 @@ const CheckoutRoute = CheckoutRouteImport.update({
 const CartRoute = CartRouteImport.update({
   id: '/cart',
   path: '/cart',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BloggerRoute = BloggerRouteImport.update({
+  id: '/blogger',
+  path: '/blogger',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -231,6 +237,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/admin': typeof AdminRouteWithChildren
+  '/blogger': typeof BloggerRoute
   '/cart': typeof CartRoute
   '/checkout': typeof CheckoutRouteWithChildren
   '/club': typeof ClubRouteWithChildren
@@ -268,6 +275,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/blogger': typeof BloggerRoute
   '/cart': typeof CartRoute
   '/checkout': typeof CheckoutRouteWithChildren
   '/forgot-password': typeof ForgotPasswordRoute
@@ -306,6 +314,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/admin': typeof AdminRouteWithChildren
+  '/blogger': typeof BloggerRoute
   '/cart': typeof CartRoute
   '/checkout': typeof CheckoutRouteWithChildren
   '/club': typeof ClubRouteWithChildren
@@ -346,6 +355,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/admin'
+    | '/blogger'
     | '/cart'
     | '/checkout'
     | '/club'
@@ -383,6 +393,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/about'
+    | '/blogger'
     | '/cart'
     | '/checkout'
     | '/forgot-password'
@@ -420,6 +431,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/admin'
+    | '/blogger'
     | '/cart'
     | '/checkout'
     | '/club'
@@ -459,6 +471,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
   AdminRoute: typeof AdminRouteWithChildren
+  BloggerRoute: typeof BloggerRoute
   CartRoute: typeof CartRoute
   CheckoutRoute: typeof CheckoutRouteWithChildren
   ClubRoute: typeof ClubRouteWithChildren
@@ -535,6 +548,13 @@ declare module '@tanstack/react-router' {
       path: '/cart'
       fullPath: '/cart'
       preLoaderRoute: typeof CartRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/blogger': {
+      id: '/blogger'
+      path: '/blogger'
+      fullPath: '/blogger'
+      preLoaderRoute: typeof BloggerRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -811,6 +831,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   AdminRoute: AdminRouteWithChildren,
+  BloggerRoute: BloggerRoute,
   CartRoute: CartRoute,
   CheckoutRoute: CheckoutRouteWithChildren,
   ClubRoute: ClubRouteWithChildren,
