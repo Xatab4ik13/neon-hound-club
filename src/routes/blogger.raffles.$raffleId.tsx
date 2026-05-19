@@ -116,12 +116,14 @@ function BloggerRaffleDetailPage() {
         const target = containerW / 2 - winnerCenter + jitter;
         setSpinning(true);
         setOffsetPx(target);
+        if (!mutedRef.current) playSpin(WINNER_INDEX, SPIN_MS);
       });
     });
 
     window.setTimeout(() => {
       setSpinning(false);
       setWinner(winnerSlug);
+      if (!mutedRef.current) playWin();
     }, SPIN_MS + 80);
   };
 
