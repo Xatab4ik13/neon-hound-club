@@ -313,3 +313,26 @@ body[data-modal-open="1"] .badge-glow,
 body[data-modal-open="1"] [class*="plaque-"] {
   animation: none !important;
 }
+
+/* ── Hellhound plaque ──────────────────────────────────────────────────── */
+@keyframes hell-pulse {
+  0%, 100% { opacity: 0.55; transform: scale(1); }
+  50%      { opacity: 0.95; transform: scale(1.04); }
+}
+@keyframes hell-sheen {
+  0%   { transform: translateX(-120%); }
+  100% { transform: translateX(160%); }
+}
+.animate-hell-pulse { animation: hell-pulse 2.4s ease-in-out infinite; }
+.animate-hell-sheen { animation: hell-sheen 3.2s linear infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-hell-pulse, .animate-hell-sheen { animation: none !important; }
+}
+
+/* ── Wheel of fortune ──────────────────────────────────────────────────── */
+@keyframes wheel-spin-pulse {
+  0%, 100% { filter: drop-shadow(0 0 12px rgba(255,45,74,0.35)); }
+  50%      { filter: drop-shadow(0 0 28px rgba(255,209,102,0.55)); }
+}
+.wheel-spinning { animation: wheel-spin-pulse 1.2s ease-in-out infinite; }
