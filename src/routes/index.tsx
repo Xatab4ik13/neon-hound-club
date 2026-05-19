@@ -81,7 +81,7 @@ const PRODUCTS = [
 ];
 
 function Index() {
-  const { isAuthed, nick, tier, tickets } = useViewer();
+  const { isAuthed } = useViewer();
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Header />
