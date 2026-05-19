@@ -274,10 +274,9 @@ function Roller({
   return (
     <div
       id="roller-viewport"
-      className="relative w-full overflow-hidden border border-white/[0.08] bg-gradient-to-b from-black via-[#0a0a0f] to-black"
+      className="relative flex w-full items-center overflow-hidden border border-white/[0.08] bg-gradient-to-b from-black via-[#0a0a0f] to-black"
       style={{
-        height: 168,
-        // мягкие fade-маски по краям
+        height: 180,
         WebkitMaskImage:
           "linear-gradient(to right, transparent 0, #000 12%, #000 88%, transparent 100%)",
         maskImage:
@@ -297,7 +296,10 @@ function Roller({
       />
 
       {/* центральный маркер */}
-      <div aria-hidden className="pointer-events-none absolute inset-y-0 left-1/2 z-20 -translate-x-1/2">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-y-0 left-1/2 z-20 -translate-x-1/2"
+      >
         <div
           className="h-full w-[2px]"
           style={{
@@ -306,7 +308,6 @@ function Roller({
             boxShadow: "0 0 18px 2px rgba(255,45,74,0.55), 0 0 36px rgba(255,45,74,0.25)",
           }}
         />
-        {/* стрелки сверху/снизу */}
         <div
           className="absolute left-1/2 top-0 -translate-x-1/2"
           style={{
@@ -331,12 +332,12 @@ function Roller({
         />
       </div>
 
-      {/* лента */}
+      {/* лента — flex items-center центрирует по вертикали, transform только по X */}
       <div
-        className="absolute top-1/2 left-0 flex -translate-y-1/2 will-change-transform"
+        className="flex shrink-0 will-change-transform"
         style={{
           gap: CARD_GAP,
-          transform: `translate3d(${offsetPx}px, -50%, 0)`,
+          transform: `translate3d(${offsetPx}px, 0, 0)`,
           transition: spinning
             ? `transform ${SPIN_MS}ms cubic-bezier(0.12, 0.78, 0.18, 1)`
             : "none",
