@@ -21,16 +21,11 @@ const NAV: { label: string; href: string; icon: LucideIcon }[] = [
   { label: "Розыгрыши", href: "/blogger/raffles", icon: Ticket },
 ];
 
-// Демо-профиль блогера (моки)
-const BLOGGER = {
-  nick: "HELL",
-  name: "Hell",
-  initials: "HE",
-};
-
 function BloggerLayout() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   const { pathname } = useLocation();
+  const profile = useBloggerProfile();
 
   return (
     <div className="min-h-screen bg-background text-foreground">
