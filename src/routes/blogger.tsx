@@ -177,7 +177,8 @@ function MobileDrawer({
   );
 }
 
-function TopBar({ onMenu }: { onMenu: () => void }) {
+function TopBar({ onMenu, onPlaqueClick }: { onMenu: () => void; onPlaqueClick: () => void }) {
+  const profile = useBloggerProfile();
   return (
     <header className="sticky top-0 z-40 border-b border-white/[0.06] bg-background/80 backdrop-blur-md">
       <div className="flex h-16 items-center gap-3 px-4 md:px-8">
@@ -194,30 +195,13 @@ function TopBar({ onMenu }: { onMenu: () => void }) {
 
         <div className="flex-1" />
 
-        <BloggerPlaque />
+        <HellhoundPlaqueLarge
+          nick={profile.nick}
+          initials={profile.initials}
+          avatarUrl={profile.avatarUrl}
+          onClick={onPlaqueClick}
+        />
       </div>
     </header>
-  );
-}
-
-function BloggerPlaque() {
-  return (
-    <div className="flex min-w-0 items-center gap-3">
-      <div
-        className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary ring-2 ring-primary/30 ring-offset-2 ring-offset-background"
-      >
-        <span className="font-display text-base font-black italic uppercase text-black">
-          {BLOGGER.initials}
-        </span>
-      </div>
-      <div className="min-w-0">
-        <div className="truncate font-display text-[15px] font-black italic uppercase tracking-tight text-foreground">
-          {BLOGGER.nick}
-        </div>
-        <div className="font-mono text-[9px] font-bold uppercase tracking-[0.25em] text-primary">
-          Blogger
-        </div>
-      </div>
-    </div>
   );
 }
