@@ -72,9 +72,11 @@ function BloggerRaffleDetailPage() {
     null;
 
   const canSpin = !!availablePrize && totalT > 0 && !spinning && !winner;
+  const canRespin = !!availablePrize && totalT > 0 && !spinning && !!winner && !recorded;
 
   const startSpin = () => {
-    if (!canSpin || !availablePrize) return;
+    if (!availablePrize || totalT <= 0 || spinning) return;
+    if (winner && recorded) return;
 
     // 1) Честный выбор победителя по весам билетов
     const winnerSlug = pickWeighted(raffle.participants, totalT);
@@ -174,13 +176,23 @@ function BloggerRaffleDetailPage() {
                   Крутить
                 </button>
               ) : !recorded ? (
-                <button
-                  type="button"
-                  onClick={confirmAndContinue}
-                  className="inline-flex items-center gap-2 border border-primary bg-primary px-6 py-3 font-display text-lg font-black italic uppercase tracking-tight text-primary-foreground"
-                >
-                  <Trophy className="h-5 w-5" /> Зафиксировать
-                </button>
+                <>
+                  <button
+                    type="button"
+                    onClick={startSpin}
+                    disabled={!canRespin}
+                    className="inline-flex items-center gap-2 border border-primary/50 bg-primary/10 px-6 py-3 font-display text-lg font-black italic uppercase tracking-tight text-primary transition-all hover:bg-primary/20 disabled:opacity-30"
+                  >
+                    <RotateCcw className="h-5 w-5" /> Крутить ещё раз
+                  </button>
+                  <button
+                    type="button"
+                    onClick={confirmAndContinue}
+                    className="inline-flex items-center gap-2 border border-primary bg-primary px-6 py-3 font-display text-lg font-black italic uppercase tracking-tight text-primary-foreground transition-all hover:shadow-[0_0_28px_-4px_rgba(255,45,74,0.6)]"
+                  >
+                    <Trophy className="h-5 w-5" /> Зафиксировать
+                  </button>
+                </>
               ) : (
                 <button
                   type="button"
