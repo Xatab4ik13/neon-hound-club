@@ -9,6 +9,8 @@ import { passRoutes } from "./pass/routes.js";
 import { garageRoutes } from "./garage/routes.js";
 import { shopPublicRoutes } from "./shop/public.js";
 import { shopAdminRoutes } from "./shop/admin.js";
+import { rafflesPublicRoutes } from "./raffles/public.js";
+import { rafflesAdminRoutes } from "./raffles/admin.js";
 
 const app = Fastify({ logger: true, trustProxy: true });
 
