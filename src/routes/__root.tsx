@@ -4,12 +4,8 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
-  HeadContent,
-  Scripts,
 } from "@tanstack/react-router";
 
-import appCss from "../styles.css?url";
-import faviconUrl from "@/assets/favicon-h.png?url";
 import { ViewerProvider } from "@/hooks/use-viewer";
 import { CartProvider } from "@/hooks/use-cart";
 import { Toaster } from "@/components/ui/sonner";
@@ -72,69 +68,10 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
-  head: () => ({
-    meta: [
-      { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { name: "theme-color", content: "#050505" },
-      { title: "HELLHOUND Racing Club — место для своих" },
-      {
-        name: "description",
-        content:
-          "HELLHOUND Racing Club — мото-комьюнити Hell. Мерч, Race Pass, гараж и место для своих.",
-      },
-      { property: "og:title", content: "HELLHOUND Racing Club" },
-      {
-        property: "og:description",
-        content: "Место для своих. Мото-комьюнити Hell — мерч, Race Pass, гараж.",
-      },
-      { property: "og:type", content: "website" },
-      { property: "og:site_name", content: "HELLHOUND Racing Club" },
-      { name: "twitter:card", content: "summary" },
-      { name: "twitter:title", content: "HELLHOUND Racing Club" },
-      {
-        name: "twitter:description",
-        content: "Место для своих. Мото-комьюнити Hell.",
-      },
-    ],
-    links: [
-      { rel: "icon", type: "image/png", href: faviconUrl },
-      { rel: "apple-touch-icon", href: faviconUrl },
-      { rel: "preconnect", href: "https://fonts.googleapis.com" },
-      {
-        rel: "preconnect",
-        href: "https://fonts.gstatic.com",
-        crossOrigin: "anonymous",
-      },
-      {
-        rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap",
-      },
-      {
-        rel: "stylesheet",
-        href: appCss,
-      },
-    ],
-  }),
-  shellComponent: RootShell,
   component: RootComponent,
   notFoundComponent: NotFoundComponent,
   errorComponent: ErrorComponent,
 });
-
-function RootShell({ children }: { children: React.ReactNode }) {
-  return (
-    <html lang="ru">
-      <head>
-        <HeadContent />
-      </head>
-      <body>
-        {children}
-        <Scripts />
-      </body>
-    </html>
-  );
-}
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();

@@ -52,7 +52,6 @@ import { Route as ClubUNickRouteImport } from './routes/club.u.$nick'
 import { Route as ClubRafflesRaffleIdRouteImport } from './routes/club.raffles.$raffleId'
 import { Route as ClubHellPassTierRouteImport } from './routes/club.hell-pass.$tier'
 import { Route as BloggerRafflesRaffleIdRouteImport } from './routes/blogger.raffles.$raffleId'
-import { Route as ApiPublicOgUNickRouteImport } from './routes/api/public/og/u.$nick'
 
 const SchoolRoute = SchoolRouteImport.update({
   id: '/school',
@@ -269,11 +268,6 @@ const BloggerRafflesRaffleIdRoute = BloggerRafflesRaffleIdRouteImport.update({
   path: '/raffles/$raffleId',
   getParentRoute: () => BloggerRoute,
 } as any)
-const ApiPublicOgUNickRoute = ApiPublicOgUNickRouteImport.update({
-  id: '/api/public/og/u/$nick',
-  path: '/api/public/og/u/$nick',
-  getParentRoute: () => rootRouteImport,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -319,7 +313,6 @@ export interface FileRoutesByFullPath {
   '/blogger/raffles/': typeof BloggerRafflesIndexRoute
   '/club/hell-pass/': typeof ClubHellPassIndexRoute
   '/club/raffles/': typeof ClubRafflesIndexRoute
-  '/api/public/og/u/$nick': typeof ApiPublicOgUNickRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -362,7 +355,6 @@ export interface FileRoutesByTo {
   '/blogger/raffles': typeof BloggerRafflesIndexRoute
   '/club/hell-pass': typeof ClubHellPassIndexRoute
   '/club/raffles': typeof ClubRafflesIndexRoute
-  '/api/public/og/u/$nick': typeof ApiPublicOgUNickRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -409,7 +401,6 @@ export interface FileRoutesById {
   '/blogger/raffles/': typeof BloggerRafflesIndexRoute
   '/club/hell-pass/': typeof ClubHellPassIndexRoute
   '/club/raffles/': typeof ClubRafflesIndexRoute
-  '/api/public/og/u/$nick': typeof ApiPublicOgUNickRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -457,7 +448,6 @@ export interface FileRouteTypes {
     | '/blogger/raffles/'
     | '/club/hell-pass/'
     | '/club/raffles/'
-    | '/api/public/og/u/$nick'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -500,7 +490,6 @@ export interface FileRouteTypes {
     | '/blogger/raffles'
     | '/club/hell-pass'
     | '/club/raffles'
-    | '/api/public/og/u/$nick'
   id:
     | '__root__'
     | '/'
@@ -546,7 +535,6 @@ export interface FileRouteTypes {
     | '/blogger/raffles/'
     | '/club/hell-pass/'
     | '/club/raffles/'
-    | '/api/public/og/u/$nick'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -568,7 +556,6 @@ export interface RootRouteChildren {
   HellPassIndexRoute: typeof HellPassIndexRoute
   NewsIndexRoute: typeof NewsIndexRoute
   ShopIndexRoute: typeof ShopIndexRoute
-  ApiPublicOgUNickRoute: typeof ApiPublicOgUNickRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -874,13 +861,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BloggerRafflesRaffleIdRouteImport
       parentRoute: typeof BloggerRoute
     }
-    '/api/public/og/u/$nick': {
-      id: '/api/public/og/u/$nick'
-      path: '/api/public/og/u/$nick'
-      fullPath: '/api/public/og/u/$nick'
-      preLoaderRoute: typeof ApiPublicOgUNickRouteImport
-      parentRoute: typeof rootRouteImport
-    }
   }
 }
 
@@ -978,7 +958,6 @@ const rootRouteChildren: RootRouteChildren = {
   HellPassIndexRoute: HellPassIndexRoute,
   NewsIndexRoute: NewsIndexRoute,
   ShopIndexRoute: ShopIndexRoute,
-  ApiPublicOgUNickRoute: ApiPublicOgUNickRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
