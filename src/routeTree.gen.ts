@@ -52,6 +52,7 @@ import { Route as ClubUNickRouteImport } from './routes/club.u.$nick'
 import { Route as ClubRafflesRaffleIdRouteImport } from './routes/club.raffles.$raffleId'
 import { Route as ClubHellPassTierRouteImport } from './routes/club.hell-pass.$tier'
 import { Route as BloggerRafflesRaffleIdRouteImport } from './routes/blogger.raffles.$raffleId'
+import { Route as ApiPublicOgUNickRouteImport } from './routes/api/public/og/u.$nick'
 
 const SchoolRoute = SchoolRouteImport.update({
   id: '/school',
@@ -149,9 +150,9 @@ const NewsSlugRoute = NewsSlugRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const HellPassTierRoute = HellPassTierRouteImport.update({
-  id: '/hell-pass/$tier',
-  path: '/hell-pass/$tier',
-  getParentRoute: () => rootRouteImport,
+  id: '/$tier',
+  path: '/$tier',
+  getParentRoute: () => HellPassRoute,
 } as any)
 const ClubSchoolRoute = ClubSchoolRouteImport.update({
   id: '/school',
@@ -268,6 +269,11 @@ const BloggerRafflesRaffleIdRoute = BloggerRafflesRaffleIdRouteImport.update({
   path: '/raffles/$raffleId',
   getParentRoute: () => BloggerRoute,
 } as any)
+const ApiPublicOgUNickRoute = ApiPublicOgUNickRouteImport.update({
+  id: '/api/public/og/u/$nick',
+  path: '/api/public/og/u/$nick',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -313,6 +319,7 @@ export interface FileRoutesByFullPath {
   '/blogger/raffles/': typeof BloggerRafflesIndexRoute
   '/club/hell-pass/': typeof ClubHellPassIndexRoute
   '/club/raffles/': typeof ClubRafflesIndexRoute
+  '/api/public/og/u/$nick': typeof ApiPublicOgUNickRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -355,6 +362,7 @@ export interface FileRoutesByTo {
   '/blogger/raffles': typeof BloggerRafflesIndexRoute
   '/club/hell-pass': typeof ClubHellPassIndexRoute
   '/club/raffles': typeof ClubRafflesIndexRoute
+  '/api/public/og/u/$nick': typeof ApiPublicOgUNickRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -401,6 +409,7 @@ export interface FileRoutesById {
   '/blogger/raffles/': typeof BloggerRafflesIndexRoute
   '/club/hell-pass/': typeof ClubHellPassIndexRoute
   '/club/raffles/': typeof ClubRafflesIndexRoute
+  '/api/public/og/u/$nick': typeof ApiPublicOgUNickRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -448,6 +457,7 @@ export interface FileRouteTypes {
     | '/blogger/raffles/'
     | '/club/hell-pass/'
     | '/club/raffles/'
+    | '/api/public/og/u/$nick'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -490,6 +500,7 @@ export interface FileRouteTypes {
     | '/blogger/raffles'
     | '/club/hell-pass'
     | '/club/raffles'
+    | '/api/public/og/u/$nick'
   id:
     | '__root__'
     | '/'
@@ -535,6 +546,7 @@ export interface FileRouteTypes {
     | '/blogger/raffles/'
     | '/club/hell-pass/'
     | '/club/raffles/'
+    | '/api/public/og/u/$nick'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -549,13 +561,13 @@ export interface RootRouteChildren {
   LogosRoute: typeof LogosRoute
   SchoolRoute: typeof SchoolRoute
   CheckoutSuccessRoute: typeof CheckoutSuccessRoute
-  HellPassTierRoute: typeof HellPassTierRoute
   NewsSlugRoute: typeof NewsSlugRoute
   ShopProductSlugRoute: typeof ShopProductSlugRoute
   CheckoutIndexRoute: typeof CheckoutIndexRoute
   HellPassIndexRoute: typeof HellPassIndexRoute
   NewsIndexRoute: typeof NewsIndexRoute
   ShopIndexRoute: typeof ShopIndexRoute
+  ApiPublicOgUNickRoute: typeof ApiPublicOgUNickRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -695,10 +707,10 @@ declare module '@tanstack/react-router' {
     }
     '/hell-pass/$tier': {
       id: '/hell-pass/$tier'
-      path: '/hell-pass/$tier'
+      path: '/$tier'
       fullPath: '/hell-pass/$tier'
       preLoaderRoute: typeof HellPassTierRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof HellPassRoute
     }
     '/club/school': {
       id: '/club/school'
@@ -861,6 +873,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BloggerRafflesRaffleIdRouteImport
       parentRoute: typeof BloggerRoute
     }
+    '/api/public/og/u/$nick': {
+      id: '/api/public/og/u/$nick'
+      path: '/api/public/og/u/$nick'
+      fullPath: '/api/public/og/u/$nick'
+      preLoaderRoute: typeof ApiPublicOgUNickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -951,14 +970,24 @@ const rootRouteChildren: RootRouteChildren = {
   LogosRoute: LogosRoute,
   SchoolRoute: SchoolRoute,
   CheckoutSuccessRoute: CheckoutSuccessRoute,
-  HellPassTierRoute: HellPassTierRoute,
   NewsSlugRoute: NewsSlugRoute,
   ShopProductSlugRoute: ShopProductSlugRoute,
   CheckoutIndexRoute: CheckoutIndexRoute,
   HellPassIndexRoute: HellPassIndexRoute,
   NewsIndexRoute: NewsIndexRoute,
   ShopIndexRoute: ShopIndexRoute,
+  ApiPublicOgUNickRoute: ApiPublicOgUNickRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
