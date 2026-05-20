@@ -58,9 +58,9 @@ function MePage() {
       <BadgeCase />
       <SectionGarage />
       <SectionTickets />
-      <QuestsBlock />
       <TicketLedger />
       <SectionOrders />
+      <QuestsBlock />
       <InviteBlock />
     </main>
   );
