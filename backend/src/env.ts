@@ -8,6 +8,8 @@ const schema = z.object({
   JWT_SECRET: z.string().min(32, "JWT_SECRET должен быть ≥32 символов"),
   CORS_ORIGINS: z.string().default(""),
   COOKIE_DOMAIN: z.string().optional(),
+  // Hell AI. Опционально: если не задан — Hell AI вернёт 503.
+  LOVABLE_API_KEY: z.string().optional(),
 });
 
 export const env = schema.parse(process.env);
