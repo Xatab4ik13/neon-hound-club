@@ -62,7 +62,7 @@ export function QuestsBlock() {
             </span>
           </div>
           {s.ticketsAvailable > 0 && (
-            <div className="flex items-center gap-2 border-l border-white/[0.06] pl-6">
+            <div className="flex w-full items-center gap-2 border-t border-white/[0.06] pt-2 sm:w-auto sm:border-l sm:border-t-0 sm:pl-6 sm:pt-0">
               <Ticket className="h-4 w-4 text-yellow-400" strokeWidth={1.8} />
               <span className="font-mono text-[11px] uppercase tracking-wider text-yellow-400">
                 Готово к получению:{" "}
