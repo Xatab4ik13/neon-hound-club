@@ -154,7 +154,7 @@ function HellAiAdminPage() {
               <h2 className="text-sm font-semibold">Настройки модели</h2>
             </div>
             <div className="flex items-center gap-2">
-              {saved && <Badge tone="success">Сохранено</Badge>}
+              {saved && <Badge tone="emerald">Сохранено</Badge>}
               <Btn variant="primary" onClick={() => void save()} disabled={saving}>
                 <Save className="h-4 w-4" />
                 {saving ? "Сохранение…" : "Сохранить"}
@@ -230,7 +230,7 @@ function HellAiAdminPage() {
           {log.map((m) => (
             <div key={m.id} className="px-4 py-3 text-sm">
               <div className="mb-1 flex items-center gap-2 text-xs text-zinc-500">
-                <Badge tone={m.role === "user" ? "default" : "primary"}>{m.role}</Badge>
+                <Badge tone={m.role === "user" ? "zinc" : "violet"}>{m.role}</Badge>
                 <span>{m.userEmail ?? m.userId.slice(0, 8)}</span>
                 <span>·</span>
                 <span>{new Date(m.createdAt).toLocaleString("ru-RU")}</span>
