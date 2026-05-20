@@ -24,6 +24,12 @@ import {
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/admin")({
+  head: () => ({
+    meta: [
+      { title: "Админка — HELLHOUND" },
+      { name: "robots", content: "noindex, nofollow" },
+    ],
+  }),
   component: AdminLayout,
 });
 
