@@ -809,8 +809,11 @@ function PastRow({ item, index }: { item: Past; index: number }) {
         </div>
       </div>
 
-      <div className="sm:hidden">
-        <div className="font-display text-xs font-black uppercase italic tracking-tight text-primary">
+      <div className="min-w-0 max-w-[90px] text-right sm:hidden">
+        <div className="font-mono text-[9px] uppercase tracking-[0.2em] text-muted-foreground">
+          забрал
+        </div>
+        <div className="truncate font-display text-xs font-black uppercase italic tracking-tight text-primary">
           {winnerNick}
         </div>
       </div>
