@@ -13,12 +13,16 @@ import {
  */
 export function TicketLedger() {
   const [filter, setFilter] = useState<TicketSource | "all">("all");
+  const [expanded, setExpanded] = useState(false);
 
   const all = TICKET_LEDGER;
   const filtered = useMemo(
     () => (filter === "all" ? all : all.filter((e) => e.source === filter)),
     [all, filter],
   );
+  const COLLAPSED = 6;
+  const visible = expanded ? filtered : filtered.slice(0, COLLAPSED);
+  const hiddenCount = Math.max(0, filtered.length - visible.length);
 
   const totals = useMemo(() => summarizeLedger(all), [all]);
   const visibleTotals = useMemo(() => summarizeLedger(filtered), [filtered]);
