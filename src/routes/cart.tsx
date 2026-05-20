@@ -119,11 +119,26 @@ function CartPage() {
                   {total.toLocaleString("ru-RU")} ₽
                 </span>
               </div>
-              <div className="mt-2 text-[11px] text-muted-foreground">
-                Кешбэк после оплаты: {Math.floor(total / 200)} билетов
-              </div>
+
+              {/* Кешбэк-бейдж */}
+              {total > 0 && (
+                <div className="mt-4 flex items-center justify-between gap-2 border border-emerald-500/30 bg-emerald-500/[0.06] px-3 py-2">
+                  <div className="flex min-w-0 flex-col">
+                    <span className="font-mono text-[9px] font-bold uppercase tracking-[0.2em] text-emerald-300/80">
+                      Кешбэк билетами
+                    </span>
+                    <span className="text-[11px] text-muted-foreground">
+                      1 билет за каждые 200 ₽
+                    </span>
+                  </div>
+                  <span className="whitespace-nowrap font-display text-xl font-black italic tabular-nums text-emerald-300">
+                    +{Math.floor(total / 200)}
+                  </span>
+                </div>
+              )}
+
               <Button
-                className="mt-6 w-full"
+                className="mt-4 w-full"
                 onClick={() =>
                   isAuthed
                     ? navigate({ to: "/checkout" })

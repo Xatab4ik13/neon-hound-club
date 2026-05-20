@@ -151,9 +151,22 @@ function CheckoutPage() {
                   {total.toLocaleString("ru-RU")} ₽
                 </span>
               </div>
-              <div className="mt-1 text-[11px] text-muted-foreground">
-                После оплаты получите {cashback} билетов кешбэком
-              </div>
+
+              {cashback > 0 && (
+                <div className="mt-4 flex items-center justify-between gap-2 border border-emerald-500/30 bg-emerald-500/[0.06] px-3 py-2">
+                  <div className="flex min-w-0 flex-col">
+                    <span className="font-mono text-[9px] font-bold uppercase tracking-[0.2em] text-emerald-300/80">
+                      Кешбэк билетами
+                    </span>
+                    <span className="text-[11px] text-muted-foreground">
+                      зачислится после оплаты
+                    </span>
+                  </div>
+                  <span className="whitespace-nowrap font-display text-xl font-black italic tabular-nums text-emerald-300">
+                    +{cashback}
+                  </span>
+                </div>
+              )}
             </div>
             <Button type="submit" className="w-full" disabled={submitting}>
               {submitting ? "Оформляем…" : "Оплатить"}
