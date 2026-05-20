@@ -1,101 +1,66 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-  type ReactNode,
-} from "react";
-import type { Session } from "@supabase/supabase-js";
-import { useRouter } from "@tanstack/react-router";
-import { supabase } from "@/integrations/supabase/client";
-import { getMyProfile } from "@/lib/profile.functions";
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
+import { ME } from "@/data/profile";
 
 type Tier = "silver" | "gold" | "platinum" | null;
 
 type Viewer = {
   isAuthed: boolean;
-  userId: string | null;
-  email: string | null;
   nick: string | null;
-  avatarUrl: string | null;
   tier: Tier;
   tickets: number;
-  /** false до завершения первичной гидратации сессии — нужно, чтобы шапка не «прыгала». */
+  /** false до тех пор пока не прочитали localStorage — нужно чтобы хедер не «прыгал». */
   hydrated: boolean;
 };
 
 type ViewerContextValue = Viewer & {
-  signOut: () => Promise<void>;
-  refresh: () => Promise<void>;
+  /** Dev-only: переключатель «гость / участник». Удалить, когда подключим реальный auth. */
+  toggleAuth: () => void;
+  signOut: () => void;
 };
+
+const STORAGE_KEY = "hh:viewer:isAuthed";
 
 const ViewerContext = createContext<ViewerContextValue | null>(null);
 
-type ProfileLite = { nick: string | null; avatarUrl: string | null };
+function readInitial(): boolean {
+  if (typeof window === "undefined") return false;
+  return window.localStorage.getItem(STORAGE_KEY) === "1";
+}
 
 export function ViewerProvider({ children }: { children: ReactNode }) {
-  const router = useRouter();
-  const [session, setSession] = useState<Session | null>(null);
-  const [profile, setProfile] = useState<ProfileLite | null>(null);
-  const [hydrated, setHydrated] = useState(false);
+  const [isAuthed, setIsAuthed] = useState<boolean>(false);
+  const [hydrated, setHydrated] = useState<boolean>(false);
 
-  const loadProfile = useCallback(async () => {
-    try {
-      const p = await getMyProfile();
-      if (p) setProfile({ nick: p.nick, avatarUrl: p.avatarUrl ?? null });
-      else setProfile(null);
-    } catch {
-      setProfile(null);
+  // Hydrate after mount, чтобы не ломать SSR.
+  useEffect(() => {
+    setIsAuthed(readInitial());
+    setHydrated(true);
+  }, []);
+
+  const persist = useCallback((value: boolean) => {
+    setIsAuthed(value);
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(STORAGE_KEY, value ? "1" : "0");
     }
   }, []);
 
-  useEffect(() => {
-    // ВАЖНО: подписываемся ДО getSession, чтобы не пропустить ранний refresh.
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
-      setSession(s);
-      if (s) {
-        void loadProfile();
-      } else {
-        setProfile(null);
-      }
-      // Заставляем роутер перепройти beforeLoad-гейты (логин/логаут).
-      void router.invalidate();
-    });
+  const toggleAuth = useCallback(() => persist(!isAuthed), [isAuthed, persist]);
+  const signOut = useCallback(() => persist(false), [persist]);
 
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
-      setHydrated(true);
-      if (data.session) void loadProfile();
-    });
-
-    return () => subscription.unsubscribe();
-  }, [loadProfile, router]);
-
-  const signOut = useCallback(async () => {
-    await supabase.auth.signOut();
-  }, []);
-
-  const value = useMemo<ViewerContextValue>(() => {
-    const isAuthed = !!session;
-    return {
-      isAuthed,
-      userId: session?.user.id ?? null,
-      email: session?.user.email ?? null,
-      nick: profile?.nick ?? null,
-      avatarUrl: profile?.avatarUrl ?? null,
-      // tier и tickets подключим, когда появятся таблицы passes / tickets_ledger.
-      tier: null,
-      tickets: 0,
-      hydrated,
-      signOut,
-      refresh: loadProfile,
-    };
-  }, [session, profile, hydrated, signOut, loadProfile]);
+  const value: ViewerContextValue = {
+    isAuthed,
+    nick: isAuthed ? ME.nick : null,
+    // Тир пока хардкодим — у профиля нет поля. Подменим, когда появится.
+    tier: isAuthed ? "gold" : null,
+    tickets: isAuthed ? ME.totals.tickets : 0,
+    hydrated,
+    toggleAuth,
+    signOut,
+  };
 
   return <ViewerContext.Provider value={value}>{children}</ViewerContext.Provider>;
 }
+
 
 export function useViewer() {
   const ctx = useContext(ViewerContext);

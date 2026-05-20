@@ -1,6 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/forgot-password")({
   head: () => ({
@@ -25,18 +24,12 @@ function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     if (!isEmail(email)) return setError("Введите корректный email");
-    setLoading(true);
-    const { error: err } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
-    setLoading(false);
-    if (err) return setError(err.message);
+    // Demo: имитируем отправку
     setSent(true);
   };
 
@@ -115,15 +108,14 @@ function ForgotPasswordPage() {
 
             <button
               type="submit"
-              disabled={loading}
-              className="group relative block w-full overflow-hidden bg-primary py-6 text-center font-display text-2xl italic uppercase font-bold tracking-widest text-black transition-all duration-300 active:scale-[0.97] disabled:opacity-50"
+              className="group relative block w-full overflow-hidden bg-primary py-6 text-center font-display text-2xl italic uppercase font-bold tracking-widest text-black transition-all duration-300 active:scale-[0.97]"
               style={{ clipPath: "polygon(0 15%, 100% 0, 100% 100%, 0 85%)" }}
             >
               <span
                 aria-hidden
                 className="absolute inset-0 bg-white opacity-0 transition-opacity group-hover:opacity-10"
               />
-              <span className="relative z-10">{loading ? "Отправляем…" : "Прислать ссылку"}</span>
+              <span className="relative z-10">Прислать ссылку</span>
             </button>
 
             <p className="font-mono text-[11px] leading-relaxed text-muted-foreground">
