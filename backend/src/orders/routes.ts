@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { and, desc, eq, inArray, sql } from "drizzle-orm";
+import { desc, eq, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../db/client.js";
 import {
@@ -7,7 +7,6 @@ import {
   orders,
   productVariants,
   products,
-  ticketTransactions,
 } from "../db/schema.js";
 import { requireAuth } from "../auth/middleware.js";
 
