@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import type { Session } from "@supabase/supabase-js";
+import { useRouter } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyProfile } from "@/lib/profile.functions";
 
@@ -35,6 +36,7 @@ const ViewerContext = createContext<ViewerContextValue | null>(null);
 type ProfileLite = { nick: string | null; avatarUrl: string | null };
 
 export function ViewerProvider({ children }: { children: ReactNode }) {
+  const router = useRouter();
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<ProfileLite | null>(null);
   const [hydrated, setHydrated] = useState(false);
@@ -54,11 +56,12 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
       setSession(s);
       if (s) {
-        // не ждём — фоновая подгрузка
         void loadProfile();
       } else {
         setProfile(null);
       }
+      // Заставляем роутер перепройти beforeLoad-гейты (логин/логаут).
+      void router.invalidate();
     });
 
     supabase.auth.getSession().then(({ data }) => {
