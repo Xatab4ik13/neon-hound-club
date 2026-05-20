@@ -318,6 +318,37 @@ export const orderItems = pgTable(
   }),
 );
 
+// ============ Hell AI ============
+// Одна строка-конфиг (id = 1). Редактируется из админки.
+export const hellAiSettings = pgTable("hell_ai_settings", {
+  id: integer("id").primaryKey().default(1),
+  systemPrompt: text("system_prompt").notNull(),
+  signature: text("signature"),                  // подпись в конце ответа, опционально
+  bannedTopics: text("banned_topics"),           // свободный текст — добавляется в system prompt
+  model: varchar("model", { length: 80 }).notNull().default("google/gemini-3-flash-preview"),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const hellAiRoleEnum = pgEnum("hell_ai_role", ["user", "assistant"]);
+
+export const hellAiMessages = pgTable(
+  "hell_ai_messages",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    role: hellAiRoleEnum("role").notNull(),
+    content: text("content").notNull(),
+    bikeId: uuid("bike_id").references(() => userMotorcycles.id, { onDelete: "set null" }),
+    model: varchar("model", { length: 80 }),
+    tokensIn: integer("tokens_in"),
+    tokensOut: integer("tokens_out"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    userCreatedIdx: index("hell_ai_msgs_user_created_idx").on(t.userId, t.createdAt),
+  }),
+);
+
 export type User = typeof users.$inferSelect;
 export type Profile = typeof profiles.$inferSelect;
 export type SubscriptionTier = typeof subscriptionTiers.$inferSelect;
@@ -334,3 +365,5 @@ export type RaffleEntry = typeof raffleEntries.$inferSelect;
 export type RaffleWinner = typeof raffleWinners.$inferSelect;
 export type Order = typeof orders.$inferSelect;
 export type OrderItem = typeof orderItems.$inferSelect;
+export type HellAiSettings = typeof hellAiSettings.$inferSelect;
+export type HellAiMessage = typeof hellAiMessages.$inferSelect;
