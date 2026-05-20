@@ -1,4 +1,5 @@
-import { pgTable, uuid, text, timestamp, varchar, integer, pgEnum, index } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, timestamp, varchar, integer, pgEnum, index, boolean, uniqueIndex } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 
 // ============ auth ============
 export const users = pgTable("users", {
@@ -76,8 +77,38 @@ export const ticketTransactions = pgTable(
   }),
 );
 
+// ============ гараж пользователя ============
+// Контекст для Hell AI. Каждый юзер может иметь несколько мото, одно — primary.
+export const userMotorcycles = pgTable(
+  "user_motorcycles",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    nickname: varchar("nickname", { length: 60 }),  // "Чёрная", "Зверь" — необязательно
+    brand: varchar("brand", { length: 60 }).notNull(),       // Honda, Yamaha, ...
+    model: varchar("model", { length: 80 }).notNull(),       // CBR1000RR, MT-09
+    year: integer("year").notNull(),                          // 2019
+    engineCc: integer("engine_cc"),                           // 1000 — для AI важно
+    mileageKm: integer("mileage_km"),                         // пробег, юзер обновляет вручную
+    vin: varchar("vin", { length: 17 }),                      // для каталогов запчастей, опционально
+    photoUrl: text("photo_url"),
+    notes: text("notes"),                                     // свободное поле: модификации, прошивка
+    isPrimary: boolean("is_primary").notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    userIdx: index("user_motorcycles_user_idx").on(t.userId),
+    // Гарантия: у юзера максимум один primary. Частичный уникальный индекс.
+    onePrimaryPerUser: uniqueIndex("user_motorcycles_one_primary")
+      .on(t.userId)
+      .where(sql`${t.isPrimary} = true`),
+  }),
+);
+
 export type User = typeof users.$inferSelect;
 export type Profile = typeof profiles.$inferSelect;
 export type SubscriptionTier = typeof subscriptionTiers.$inferSelect;
 export type Subscription = typeof subscriptions.$inferSelect;
 export type TicketTransaction = typeof ticketTransactions.$inferSelect;
+export type UserMotorcycle = typeof userMotorcycles.$inferSelect;

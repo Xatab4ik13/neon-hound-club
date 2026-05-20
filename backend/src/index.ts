@@ -6,6 +6,7 @@ import rateLimit from "@fastify/rate-limit";
 import { env, corsOrigins } from "./env.js";
 import { authRoutes } from "./auth/routes.js";
 import { passRoutes } from "./pass/routes.js";
+import { garageRoutes } from "./garage/routes.js";
 
 const app = Fastify({ logger: true, trustProxy: true });
 
@@ -25,6 +26,7 @@ await app.register(rateLimit, { max: 100, timeWindow: "1 minute" });
 app.get("/health", async () => ({ ok: true }));
 await app.register(authRoutes);
 await app.register(passRoutes);
+await app.register(garageRoutes);
 
 app.listen({ port: env.PORT, host: "0.0.0.0" }).catch((err) => {
   app.log.error(err);
