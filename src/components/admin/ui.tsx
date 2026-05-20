@@ -461,7 +461,7 @@ export function ImageUploader({
         <div className="mt-3 flex flex-wrap gap-2">
           {images.map((src, i) => (
             <div key={i} className="relative">
-              <img src={src} alt="" className="h-16 w-16 rounded object-cover" />
+              <img loading="lazy" decoding="async" src={src} alt="" className="h-16 w-16 rounded object-cover" />
               <button
                 type="button"
                 onClick={() => onChange(images.filter((_, j) => j !== i))}
