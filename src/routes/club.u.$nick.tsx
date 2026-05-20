@@ -10,11 +10,21 @@ export const Route = createFileRoute("/club/u/$nick")({
   head: ({ params }) => {
     const user = getUser(params.nick);
     const title = user ? `${user.nick} — клуб HELLHOUND` : "Профиль — клуб HELLHOUND";
+    const description = user
+      ? `${user.nick} в клубе HELLHOUND Racing${user.city ? `, ${user.city}` : ""}.`
+      : "Профиль участника клуба HELLHOUND Racing.";
+    const ogImage = `/api/public/og/u/${params.nick.toLowerCase()}`;
     return {
       meta: [
         { title },
-        { name: "description", content: "Профиль участника клуба HELLHOUND Racing." },
+        { name: "description", content: description },
         { name: "robots", content: "noindex" },
+        { property: "og:title", content: title },
+        { property: "og:description", content: description },
+        { property: "og:image", content: ogImage },
+        { property: "og:type", content: "profile" },
+        { name: "twitter:card", content: "summary_large_image" },
+        { name: "twitter:image", content: ogImage },
       ],
     };
   },
