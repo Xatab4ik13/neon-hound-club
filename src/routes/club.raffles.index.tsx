@@ -331,7 +331,7 @@ function FeaturedRaffle({
             transition={{ duration: 1.4, repeat: Infinity }}
             className="h-1.5 w-1.5 rounded-full bg-primary"
           />
-          главный приз
+          идёт сейчас
         </div>
 
         {/* title block */}
