@@ -5,7 +5,6 @@ import { ArrowRight, Check, Copy, Ticket, Users } from "lucide-react";
 import { useState } from "react";
 import {
   buildReferralUrl,
-  myReferralCode,
   REFERRAL_REWARD_TICKETS,
   useReferrals,
 } from "@/data/referral";
@@ -68,7 +67,7 @@ export function InviteBlock() {
           </button>
         </div>
 
-        <div className="mt-3 flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-white/[0.06] pt-3 font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
+        <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-white/[0.06] pt-3 font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
           <span className="flex items-center gap-1.5">
             <Users className="h-3.5 w-3.5 text-primary" />
             Приведено:{" "}
@@ -83,10 +82,6 @@ export function InviteBlock() {
               {totalTickets}
             </span>{" "}
             билетов
-          </span>
-          <span className="ml-auto">
-            код:{" "}
-            <span className="font-bold text-foreground">{myReferralCode()}</span>
           </span>
         </div>
       </div>

@@ -13,12 +13,16 @@ import {
  */
 export function TicketLedger() {
   const [filter, setFilter] = useState<TicketSource | "all">("all");
+  const [expanded, setExpanded] = useState(false);
 
   const all = TICKET_LEDGER;
   const filtered = useMemo(
     () => (filter === "all" ? all : all.filter((e) => e.source === filter)),
     [all, filter],
   );
+  const COLLAPSED = 6;
+  const visible = expanded ? filtered : filtered.slice(0, COLLAPSED);
+  const hiddenCount = Math.max(0, filtered.length - visible.length);
 
   const totals = useMemo(() => summarizeLedger(all), [all]);
   const visibleTotals = useMemo(() => summarizeLedger(filtered), [filtered]);
@@ -105,11 +109,31 @@ export function TicketLedger() {
           </div>
         ) : (
           <ul className="divide-y divide-white/[0.04]">
-            {filtered.map((e) => (
+            {visible.map((e) => (
               <LedgerRow key={e.id} entry={e} />
             ))}
           </ul>
         )}
+
+        {hiddenCount > 0 && (
+          <button
+            type="button"
+            onClick={() => setExpanded(true)}
+            className="block w-full border-t border-white/[0.06] bg-black/20 px-4 py-2.5 text-center font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground transition-colors hover:bg-black/40 hover:text-foreground"
+          >
+            Показать ещё {hiddenCount} {pluralOps(hiddenCount)}
+          </button>
+        )}
+        {expanded && filtered.length > COLLAPSED && (
+          <button
+            type="button"
+            onClick={() => setExpanded(false)}
+            className="block w-full border-t border-white/[0.06] bg-black/20 px-4 py-2.5 text-center font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground transition-colors hover:bg-black/40 hover:text-foreground"
+          >
+            Свернуть
+          </button>
+        )}
+
         {/* Подсумма по фильтру (когда применён) */}
         {filter !== "all" && filtered.length > 0 && (
           <div className="flex items-baseline justify-between border-t border-white/[0.06] bg-black/30 px-4 py-2.5 font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
@@ -132,6 +156,14 @@ export function TicketLedger() {
       </div>
     </section>
   );
+}
+
+function pluralOps(n: number): string {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return "операцию";
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return "операции";
+  return "операций";
 }
 
 function SummaryCard({
