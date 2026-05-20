@@ -61,6 +61,7 @@ function MePage() {
       <QuestsBlock />
       <TicketLedger />
       <SectionOrders />
+      <InviteBlock />
     </main>
   );
 }
