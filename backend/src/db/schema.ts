@@ -263,6 +263,61 @@ export const raffleWinners = pgTable(
   }),
 );
 
+// ============ заказы ============
+// Снапшотим название/цену/размер на момент покупки — товар может потом
+// поменять цену или быть удалён, а в истории заказа должна остаться правда.
+export const orderStatusEnum = pgEnum("order_status", [
+  "created",    // оформлен, ждёт оплаты
+  "paid",       // оплачен → начислили кешбэк
+  "shipping",   // передан в СДЭК
+  "delivered",  // получен
+  "cancelled",  // отменён
+]);
+
+export const orders = pgTable(
+  "orders",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    code: varchar("code", { length: 16 }).notNull().unique(), // короткий HH-XXXXXX для UI
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "restrict" }),
+    status: orderStatusEnum("status").notNull().default("created"),
+    totalRub: integer("total_rub").notNull(),
+    cashbackTickets: integer("cashback_tickets").notNull().default(0), // сколько начислится при оплате
+    cashbackGranted: boolean("cashback_granted").notNull().default(false),
+    recipientName: varchar("recipient_name", { length: 120 }).notNull(),
+    phone: varchar("phone", { length: 32 }).notNull(),
+    email: varchar("email", { length: 200 }).notNull(),
+    address: text("address").notNull(),
+    note: text("note"),
+    cdekTrackingNumber: varchar("cdek_tracking_number", { length: 64 }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    paidAt: timestamp("paid_at", { withTimezone: true }),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    userIdx: index("orders_user_idx").on(t.userId, t.createdAt),
+    statusIdx: index("orders_status_idx").on(t.status),
+  }),
+);
+
+export const orderItems = pgTable(
+  "order_items",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    orderId: uuid("order_id").notNull().references(() => orders.id, { onDelete: "cascade" }),
+    // Ссылки оставляем мягкими — товар/вариант могут быть удалены
+    productId: uuid("product_id").references(() => products.id, { onDelete: "set null" }),
+    variantId: uuid("variant_id").references(() => productVariants.id, { onDelete: "set null" }),
+    name: varchar("name", { length: 200 }).notNull(),     // снапшот
+    size: varchar("size", { length: 20 }),                // снапшот
+    priceRub: integer("price_rub").notNull(),             // снапшот
+    qty: integer("qty").notNull(),
+  },
+  (t) => ({
+    orderIdx: index("order_items_order_idx").on(t.orderId),
+  }),
+);
+
 export type User = typeof users.$inferSelect;
 export type Profile = typeof profiles.$inferSelect;
 export type SubscriptionTier = typeof subscriptionTiers.$inferSelect;
@@ -277,3 +332,5 @@ export type Raffle = typeof raffles.$inferSelect;
 export type RafflePrize = typeof rafflePrizes.$inferSelect;
 export type RaffleEntry = typeof raffleEntries.$inferSelect;
 export type RaffleWinner = typeof raffleWinners.$inferSelect;
+export type Order = typeof orders.$inferSelect;
+export type OrderItem = typeof orderItems.$inferSelect;
