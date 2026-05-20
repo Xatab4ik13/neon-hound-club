@@ -3,7 +3,7 @@ import { Header } from "@/components/brand/Header";
 import { Footer } from "@/components/brand/Footer";
 import { NEWS } from "@/data/news";
 
-export const Route = createFileRoute("/news")({
+export const Route = createFileRoute("/news/")({
   head: () => ({
     meta: [
       { title: "Новости — HELLHOUND Racing Club" },
