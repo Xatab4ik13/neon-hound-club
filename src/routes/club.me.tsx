@@ -8,12 +8,13 @@ import { EmptyGarageSlot } from "@/components/club/EmptyGarageSlot";
 import { Countdown } from "@/components/club/Countdown";
 import { BadgeCase } from "@/components/club/BadgeCase";
 import { TicketLedger } from "@/components/club/TicketLedger";
+import { QuestsBlock } from "@/components/club/QuestsBlock";
 import { TICKET_LEDGER, summarizeLedger } from "@/data/tickets-ledger";
+import { COMPLETED_RAFFLES } from "@/data/my-raffles";
 import {
   ACTIVE_TICKETS,
   ME,
   ORDERS,
-  WIN_HISTORY,
   type Order,
 } from "@/data/profile";
 import {
