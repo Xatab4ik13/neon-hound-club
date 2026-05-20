@@ -32,6 +32,7 @@ import { Route as HellPassTierRouteImport } from './routes/hell-pass.$tier'
 import { Route as ClubSchoolRouteImport } from './routes/club.school'
 import { Route as ClubQuestsRouteImport } from './routes/club.quests'
 import { Route as ClubMeRouteImport } from './routes/club.me'
+import { Route as ClubInviteRouteImport } from './routes/club.invite'
 import { Route as ClubHellAiRouteImport } from './routes/club.hell-ai'
 import { Route as CheckoutSuccessRouteImport } from './routes/checkout.success'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
@@ -51,6 +52,7 @@ import { Route as ClubUNickRouteImport } from './routes/club.u.$nick'
 import { Route as ClubRafflesRaffleIdRouteImport } from './routes/club.raffles.$raffleId'
 import { Route as ClubHellPassTierRouteImport } from './routes/club.hell-pass.$tier'
 import { Route as BloggerRafflesRaffleIdRouteImport } from './routes/blogger.raffles.$raffleId'
+import { Route as ApiPublicOgUNickRouteImport } from './routes/api/public/og/u.$nick'
 
 const SchoolRoute = SchoolRouteImport.update({
   id: '/school',
@@ -167,6 +169,11 @@ const ClubMeRoute = ClubMeRouteImport.update({
   path: '/me',
   getParentRoute: () => ClubRoute,
 } as any)
+const ClubInviteRoute = ClubInviteRouteImport.update({
+  id: '/invite',
+  path: '/invite',
+  getParentRoute: () => ClubRoute,
+} as any)
 const ClubHellAiRoute = ClubHellAiRouteImport.update({
   id: '/hell-ai',
   path: '/hell-ai',
@@ -262,6 +269,11 @@ const BloggerRafflesRaffleIdRoute = BloggerRafflesRaffleIdRouteImport.update({
   path: '/raffles/$raffleId',
   getParentRoute: () => BloggerRoute,
 } as any)
+const ApiPublicOgUNickRoute = ApiPublicOgUNickRouteImport.update({
+  id: '/api/public/og/u/$nick',
+  path: '/api/public/og/u/$nick',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -286,6 +298,7 @@ export interface FileRoutesByFullPath {
   '/admin/users': typeof AdminUsersRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/club/hell-ai': typeof ClubHellAiRoute
+  '/club/invite': typeof ClubInviteRoute
   '/club/me': typeof ClubMeRoute
   '/club/quests': typeof ClubQuestsRoute
   '/club/school': typeof ClubSchoolRoute
@@ -306,6 +319,7 @@ export interface FileRoutesByFullPath {
   '/blogger/raffles/': typeof BloggerRafflesIndexRoute
   '/club/hell-pass/': typeof ClubHellPassIndexRoute
   '/club/raffles/': typeof ClubRafflesIndexRoute
+  '/api/public/og/u/$nick': typeof ApiPublicOgUNickRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -327,6 +341,7 @@ export interface FileRoutesByTo {
   '/admin/users': typeof AdminUsersRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/club/hell-ai': typeof ClubHellAiRoute
+  '/club/invite': typeof ClubInviteRoute
   '/club/me': typeof ClubMeRoute
   '/club/quests': typeof ClubQuestsRoute
   '/club/school': typeof ClubSchoolRoute
@@ -347,6 +362,7 @@ export interface FileRoutesByTo {
   '/blogger/raffles': typeof BloggerRafflesIndexRoute
   '/club/hell-pass': typeof ClubHellPassIndexRoute
   '/club/raffles': typeof ClubRafflesIndexRoute
+  '/api/public/og/u/$nick': typeof ApiPublicOgUNickRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -372,6 +388,7 @@ export interface FileRoutesById {
   '/admin/users': typeof AdminUsersRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/club/hell-ai': typeof ClubHellAiRoute
+  '/club/invite': typeof ClubInviteRoute
   '/club/me': typeof ClubMeRoute
   '/club/quests': typeof ClubQuestsRoute
   '/club/school': typeof ClubSchoolRoute
@@ -392,6 +409,7 @@ export interface FileRoutesById {
   '/blogger/raffles/': typeof BloggerRafflesIndexRoute
   '/club/hell-pass/': typeof ClubHellPassIndexRoute
   '/club/raffles/': typeof ClubRafflesIndexRoute
+  '/api/public/og/u/$nick': typeof ApiPublicOgUNickRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -418,6 +436,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/checkout/success'
     | '/club/hell-ai'
+    | '/club/invite'
     | '/club/me'
     | '/club/quests'
     | '/club/school'
@@ -438,6 +457,7 @@ export interface FileRouteTypes {
     | '/blogger/raffles/'
     | '/club/hell-pass/'
     | '/club/raffles/'
+    | '/api/public/og/u/$nick'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -459,6 +479,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/checkout/success'
     | '/club/hell-ai'
+    | '/club/invite'
     | '/club/me'
     | '/club/quests'
     | '/club/school'
@@ -479,6 +500,7 @@ export interface FileRouteTypes {
     | '/blogger/raffles'
     | '/club/hell-pass'
     | '/club/raffles'
+    | '/api/public/og/u/$nick'
   id:
     | '__root__'
     | '/'
@@ -503,6 +525,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/checkout/success'
     | '/club/hell-ai'
+    | '/club/invite'
     | '/club/me'
     | '/club/quests'
     | '/club/school'
@@ -523,6 +546,7 @@ export interface FileRouteTypes {
     | '/blogger/raffles/'
     | '/club/hell-pass/'
     | '/club/raffles/'
+    | '/api/public/og/u/$nick'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -544,6 +568,7 @@ export interface RootRouteChildren {
   HellPassIndexRoute: typeof HellPassIndexRoute
   NewsIndexRoute: typeof NewsIndexRoute
   ShopIndexRoute: typeof ShopIndexRoute
+  ApiPublicOgUNickRoute: typeof ApiPublicOgUNickRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -709,6 +734,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ClubMeRouteImport
       parentRoute: typeof ClubRoute
     }
+    '/club/invite': {
+      id: '/club/invite'
+      path: '/invite'
+      fullPath: '/club/invite'
+      preLoaderRoute: typeof ClubInviteRouteImport
+      parentRoute: typeof ClubRoute
+    }
     '/club/hell-ai': {
       id: '/club/hell-ai'
       path: '/hell-ai'
@@ -842,6 +874,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BloggerRafflesRaffleIdRouteImport
       parentRoute: typeof BloggerRoute
     }
+    '/api/public/og/u/$nick': {
+      id: '/api/public/og/u/$nick'
+      path: '/api/public/og/u/$nick'
+      fullPath: '/api/public/og/u/$nick'
+      preLoaderRoute: typeof ApiPublicOgUNickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -892,6 +931,7 @@ const BloggerRouteWithChildren =
 
 interface ClubRouteChildren {
   ClubHellAiRoute: typeof ClubHellAiRoute
+  ClubInviteRoute: typeof ClubInviteRoute
   ClubMeRoute: typeof ClubMeRoute
   ClubQuestsRoute: typeof ClubQuestsRoute
   ClubSchoolRoute: typeof ClubSchoolRoute
@@ -905,6 +945,7 @@ interface ClubRouteChildren {
 
 const ClubRouteChildren: ClubRouteChildren = {
   ClubHellAiRoute: ClubHellAiRoute,
+  ClubInviteRoute: ClubInviteRoute,
   ClubMeRoute: ClubMeRoute,
   ClubQuestsRoute: ClubQuestsRoute,
   ClubSchoolRoute: ClubSchoolRoute,
@@ -937,6 +978,7 @@ const rootRouteChildren: RootRouteChildren = {
   HellPassIndexRoute: HellPassIndexRoute,
   NewsIndexRoute: NewsIndexRoute,
   ShopIndexRoute: ShopIndexRoute,
+  ApiPublicOgUNickRoute: ApiPublicOgUNickRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -10,6 +10,8 @@ import { BadgeCase } from "@/components/club/BadgeCase";
 import { TicketLedger } from "@/components/club/TicketLedger";
 import { QuestsBlock } from "@/components/club/QuestsBlock";
 import { BikeJournal } from "@/components/club/BikeJournal";
+import { InviteBlock } from "@/components/club/InviteBlock";
+import { CdekTracking } from "@/components/club/CdekTracking";
 import { TICKET_LEDGER, summarizeLedger } from "@/data/tickets-ledger";
 import { COMPLETED_RAFFLES } from "@/data/my-raffles";
 import {
@@ -59,6 +61,7 @@ function MePage() {
       <QuestsBlock />
       <TicketLedger />
       <SectionOrders />
+      <InviteBlock />
     </main>
   );
 }
@@ -534,18 +537,18 @@ function SectionOrders() {
       <div className="border border-white/[0.06] bg-card/40">
         <ul className="divide-y divide-white/[0.04]">
           {ORDERS.map((o) => (
-            <li
-              key={o.id}
-              className="grid grid-cols-[1fr_auto_auto] items-center gap-4 px-4 py-3 transition-colors hover:bg-white/[0.02]"
-            >
-              <div className="min-w-0">
-                <div className="truncate text-sm text-foreground">{o.title}</div>
-                <div className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-                  {o.date}
+            <li key={o.id}>
+              <div className="grid grid-cols-[1fr_auto_auto] items-center gap-4 px-4 py-3 transition-colors hover:bg-white/[0.02]">
+                <div className="min-w-0">
+                  <div className="truncate text-sm text-foreground">{o.title}</div>
+                  <div className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                    {o.date}
+                  </div>
                 </div>
+                <div className="font-mono text-[12px] tabular-nums text-foreground">{o.price}</div>
+                <OrderStatus status={o.status} />
               </div>
-              <div className="font-mono text-[12px] tabular-nums text-foreground">{o.price}</div>
-              <OrderStatus status={o.status} />
+              <CdekTracking orderId={o.id} />
             </li>
           ))}
         </ul>
