@@ -13,6 +13,8 @@ import { rafflesPublicRoutes } from "./raffles/public.js";
 import { rafflesAdminRoutes } from "./raffles/admin.js";
 import { ordersRoutes } from "./orders/routes.js";
 import { ordersAdminRoutes } from "./orders/admin.js";
+import { hellAiRoutes } from "./hellai/routes.js";
+import { hellAiAdminRoutes } from "./hellai/admin.js";
 
 const app = Fastify({ logger: true, trustProxy: true });
 
@@ -39,6 +41,8 @@ await app.register(rafflesPublicRoutes);
 await app.register(rafflesAdminRoutes);
 await app.register(ordersRoutes);
 await app.register(ordersAdminRoutes);
+await app.register(hellAiRoutes);
+await app.register(hellAiAdminRoutes);
 
 app.listen({ port: env.PORT, host: "0.0.0.0" }).catch((err) => {
   app.log.error(err);

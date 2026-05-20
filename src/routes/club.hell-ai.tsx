@@ -9,7 +9,6 @@ import {
   useEffect,
   useRef,
   useState,
-  useTransition,
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -26,6 +25,7 @@ import {
   Lightbulb,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { apiFetch, ApiError } from "@/lib/api";
 import { loadBikes, saveBikes, type StoredBike } from "@/data/bike-storage";
 
 export const Route = createFileRoute("/club/hell-ai")({
@@ -95,20 +95,16 @@ function bikeLabel(b: StoredBike) {
   return `${b.brand} ${b.model}${b.year ? ` ${b.year}` : ""}`;
 }
 
-function mockAnswer(prompt: string, bike: string): string {
-  const l = prompt.toLowerCase();
-  if (l.includes("/torque") || l.includes("затяж") || l.includes("ось"))
-    return `${bike}: гайка передней оси — 91 Н·м, стяжные болты вилки — 23 Н·м. В два прохода крест-накрест, после — прокачать вилку.`;
-  if (l.includes("/pressure") || l.includes("давлен"))
-    return `${bike}: перед 2.25 / зад 2.50 бар (соло, по заводу). Трек на спортивной резине — 2.1 / 2.0 бар горячее. Меряем на холодных.`;
-  if (l.includes("/oil") || l.includes("масл"))
-    return `${bike}: 10W-40 JASO MA2, объём с фильтром ≈ 3.4 л. Интервал — 6 000 км или раз в год. Yamalube 10W-40, Motul 7100 4T — рабочие варианты.`;
-  if (l.includes("/issues") || l.includes("боляч") || l.includes("проблем"))
-    return `${bike} после 20 000 км: подшипники рулевой (люфт на малых), задний амортизатор (садится), катушки на старых модификациях, окисление контактов под седлом.`;
-  if (l.includes("/diag") || l.includes("стук") || l.includes("шум"))
-    return `Стук на холодную в районе цепи — обычно: 1) провис вне допуска (норма 25–35 мм), 2) направляющая, 3) звезда. Уходит после прогрева — почти всегда цепь.`;
-  return `По ${bike}: уточни пробег, симптом, на холодную или на горячую — отвечу точнее. (Демо-ответ, модель подключим следующим шагом.)`;
+// Реальный вызов бэкенда. Бэк сам подставит контекст байка (по primary или bikeId)
+// и проверит лимит по тиру Hell Pass.
+async function askHellAi(question: string, bikeId?: string): Promise<string> {
+  const res = await apiFetch<{ answer: string }>("/hell-ai/ask", {
+    method: "POST",
+    body: JSON.stringify({ question, bikeId }),
+  });
+  return res.answer;
 }
+
 
 function HellAiPage() {
   // байки
@@ -127,7 +123,7 @@ function HellAiPage() {
   const [showCmd, setShowCmd] = useState(false);
   const [activeCmd, setActiveCmd] = useState(-1);
   const [isThinking, setIsThinking] = useState(false);
-  const [, startTransition] = useTransition();
+  
   const [used, setUsed] = useState(0);
   const [lastAnswer, setLastAnswer] = useState<{ q: string; a: string } | null>(null);
   const { ref: taRef, adjust } = useAutoResize(60, 200);
@@ -183,17 +179,28 @@ function HellAiPage() {
   function send() {
     const text = value.trim();
     if (!text || !canAsk || isThinking) return;
-    startTransition(() => {
-      setIsThinking(true);
-      setUsed((n) => n + 1);
-      const q = text;
-      setValue("");
-      adjust(true);
-      setTimeout(() => {
-        setLastAnswer({ q, a: mockAnswer(q, bikeStr) });
-        setIsThinking(false);
-      }, 1400);
-    });
+    const q = text;
+    setValue("");
+    adjust(true);
+    setIsThinking(true);
+    setUsed((n) => n + 1);
+    askHellAi(q, activeBike?.id)
+      .then((a) => setLastAnswer({ q, a }))
+      .catch((err: unknown) => {
+        const msg =
+          err instanceof ApiError
+            ? err.status === 401
+              ? "Войди в аккаунт, чтобы пользоваться Hell AI."
+              : err.status === 403
+                ? "Hell AI доступен с Hell Pass. Активируй любой тир."
+                : err.status === 429
+                  ? err.message || "Лимит вопросов на этот месяц исчерпан."
+                  : err.message || "Hell AI временно недоступен."
+            : "Не удалось связаться с Hell AI. Попробуй ещё раз.";
+        setLastAnswer({ q, a: msg });
+        setUsed((n) => Math.max(0, n - 1));
+      })
+      .finally(() => setIsThinking(false));
   }
 
   function onKey(e: ReactKeyboardEvent<HTMLTextAreaElement>) {
