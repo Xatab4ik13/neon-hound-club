@@ -9,6 +9,7 @@ import { Countdown } from "@/components/club/Countdown";
 import { BadgeCase } from "@/components/club/BadgeCase";
 import { TicketLedger } from "@/components/club/TicketLedger";
 import { QuestsBlock } from "@/components/club/QuestsBlock";
+import { BikeJournal } from "@/components/club/BikeJournal";
 import { TICKET_LEDGER, summarizeLedger } from "@/data/tickets-ledger";
 import { COMPLETED_RAFFLES } from "@/data/my-raffles";
 import {
@@ -632,6 +633,16 @@ function SectionGarage() {
           <EmptyGarageSlot onAdd={openAdd} />
         </div>
       </div>
+
+      {/* Журнал основного байка */}
+      {primary && (
+        <div className="mt-4">
+          <BikeJournal
+            bikeId={primary.id}
+            currentMileage={parseInt((primary.mileage ?? "").replace(/\D/g, ""), 10) || 0}
+          />
+        </div>
+      )}
 
       {/* Дополнительные байки — обычные карточки в 2 колонки */}
       {rest.length > 0 && (
