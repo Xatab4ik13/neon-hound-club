@@ -281,11 +281,12 @@ function ErrorLine({ children }: { children: React.ReactNode }) {
   );
 }
 
-function SubmitButton({ children }: { children: React.ReactNode }) {
+function SubmitButton({ children, disabled }: { children: React.ReactNode; disabled?: boolean }) {
   return (
     <button
       type="submit"
-      className="group relative block w-full overflow-hidden bg-primary py-6 text-center font-display text-2xl italic uppercase font-bold tracking-widest text-black transition-all duration-300 active:scale-[0.97]"
+      disabled={disabled}
+      className="group relative block w-full overflow-hidden bg-primary py-6 text-center font-display text-2xl italic uppercase font-bold tracking-widest text-black transition-all duration-300 active:scale-[0.97] disabled:opacity-50"
       style={{ clipPath: "polygon(0 15%, 100% 0, 100% 100%, 0 85%)" }}
     >
       <span
@@ -295,4 +296,14 @@ function SubmitButton({ children }: { children: React.ReactNode }) {
       <span className="relative z-10">{children}</span>
     </button>
   );
+}
+
+function translateAuthError(msg: string): string {
+  const m = msg.toLowerCase();
+  if (m.includes("invalid login")) return "Неверный email или пароль";
+  if (m.includes("email not confirmed")) return "Сначала подтверди email — мы прислали письмо";
+  if (m.includes("user already registered")) return "Этот email уже зарегистрирован";
+  if (m.includes("rate limit")) return "Слишком много попыток. Подожди минуту";
+  if (m.includes("password should be")) return "Пароль слишком короткий (минимум 6 символов)";
+  return msg;
 }
