@@ -197,8 +197,9 @@ function LoginPage() {
             </div>
 
             {error && <ErrorLine>{error}</ErrorLine>}
+            {info && <InfoLine>{info}</InfoLine>}
 
-            <SubmitButton>Войти</SubmitButton>
+            <SubmitButton disabled={loading}>{loading ? "Входим…" : "Войти"}</SubmitButton>
 
             <p className="font-mono text-[11px] leading-relaxed text-muted-foreground">
               Вход по телефону работает, если номер указан в профиле.
@@ -240,8 +241,9 @@ function LoginPage() {
             </FieldLabel>
 
             {error && <ErrorLine>{error}</ErrorLine>}
+            {info && <InfoLine>{info}</InfoLine>}
 
-            <SubmitButton>Создать аккаунт</SubmitButton>
+            <SubmitButton disabled={loading}>{loading ? "Создаём…" : "Создать аккаунт"}</SubmitButton>
 
             <p className="font-mono text-[11px] leading-relaxed text-muted-foreground">
               Телефон, ник и адрес доставки заполняются в личном кабинете после регистрации.
@@ -276,6 +278,14 @@ function FieldLabel({ label, children }: { label: string; children: React.ReactN
 function ErrorLine({ children }: { children: React.ReactNode }) {
   return (
     <p className="border border-red-500/30 bg-red-500/[0.06] px-3 py-2 font-mono text-[11px] uppercase tracking-wider text-red-400">
+      {children}
+    </p>
+  );
+}
+
+function InfoLine({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="border border-primary/30 bg-primary/[0.06] px-3 py-2 font-mono text-[11px] uppercase tracking-[0.18em] text-primary">
       {children}
     </p>
   );
