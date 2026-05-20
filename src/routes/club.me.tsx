@@ -53,7 +53,6 @@ function MePage() {
       <SectionGarage />
       <SectionTickets />
       <SectionOrders />
-      <RankSwitcher />
     </main>
   );
 }
