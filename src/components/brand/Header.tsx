@@ -109,7 +109,10 @@ export function Header() {
               </span>
             </Link>
 
-            {isAuthed ? (
+            {!hydrated ? (
+              // Заглушка пока читаем localStorage — резервируем место чтобы избежать CLS.
+              <div aria-hidden className="h-10 w-[140px]" />
+            ) : isAuthed ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button
@@ -183,6 +186,7 @@ export function Header() {
                 </button>
               </>
             )}
+
           </div>
 
           {/* Mobile burger */}
