@@ -12,7 +12,6 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SchoolRouteImport } from './routes/school'
 import { Route as LogosRouteImport } from './routes/logos'
 import { Route as LoginRouteImport } from './routes/login'
-import { Route as HellPassRouteImport } from './routes/hell-pass'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as ClubRouteImport } from './routes/club'
 import { Route as CartRouteImport } from './routes/cart'
@@ -22,12 +21,14 @@ import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ShopIndexRouteImport } from './routes/shop.index'
 import { Route as NewsIndexRouteImport } from './routes/news.index'
+import { Route as HellPassIndexRouteImport } from './routes/hell-pass.index'
 import { Route as ClubIndexRouteImport } from './routes/club.index'
 import { Route as CheckoutIndexRouteImport } from './routes/checkout.index'
 import { Route as BloggerIndexRouteImport } from './routes/blogger.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as ShopProductSlugRouteImport } from './routes/shop.$productSlug'
 import { Route as NewsSlugRouteImport } from './routes/news.$slug'
+import { Route as HellPassTierRouteImport } from './routes/hell-pass.$tier'
 import { Route as ClubSchoolRouteImport } from './routes/club.school'
 import { Route as ClubMeRouteImport } from './routes/club.me'
 import { Route as ClubHellAiRouteImport } from './routes/club.hell-ai'
@@ -63,11 +64,6 @@ const LogosRoute = LogosRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const HellPassRoute = HellPassRouteImport.update({
-  id: '/hell-pass',
-  path: '/hell-pass',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
@@ -115,6 +111,11 @@ const NewsIndexRoute = NewsIndexRouteImport.update({
   path: '/news/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const HellPassIndexRoute = HellPassIndexRouteImport.update({
+  id: '/hell-pass/',
+  path: '/hell-pass/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ClubIndexRoute = ClubIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -143,6 +144,11 @@ const ShopProductSlugRoute = ShopProductSlugRouteImport.update({
 const NewsSlugRoute = NewsSlugRouteImport.update({
   id: '/news/$slug',
   path: '/news/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HellPassTierRoute = HellPassTierRouteImport.update({
+  id: '/hell-pass/$tier',
+  path: '/hell-pass/$tier',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ClubSchoolRoute = ClubSchoolRouteImport.update({
@@ -259,7 +265,6 @@ export interface FileRoutesByFullPath {
   '/cart': typeof CartRoute
   '/club': typeof ClubRouteWithChildren
   '/forgot-password': typeof ForgotPasswordRoute
-  '/hell-pass': typeof HellPassRoute
   '/login': typeof LoginRoute
   '/logos': typeof LogosRoute
   '/school': typeof SchoolRoute
@@ -277,12 +282,14 @@ export interface FileRoutesByFullPath {
   '/club/hell-ai': typeof ClubHellAiRoute
   '/club/me': typeof ClubMeRoute
   '/club/school': typeof ClubSchoolRoute
+  '/hell-pass/$tier': typeof HellPassTierRoute
   '/news/$slug': typeof NewsSlugRoute
   '/shop/$productSlug': typeof ShopProductSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/blogger/': typeof BloggerIndexRoute
   '/checkout/': typeof CheckoutIndexRoute
   '/club/': typeof ClubIndexRoute
+  '/hell-pass/': typeof HellPassIndexRoute
   '/news/': typeof NewsIndexRoute
   '/shop/': typeof ShopIndexRoute
   '/blogger/raffles/$raffleId': typeof BloggerRafflesRaffleIdRoute
@@ -298,7 +305,6 @@ export interface FileRoutesByTo {
   '/about': typeof AboutRoute
   '/cart': typeof CartRoute
   '/forgot-password': typeof ForgotPasswordRoute
-  '/hell-pass': typeof HellPassRoute
   '/login': typeof LoginRoute
   '/logos': typeof LogosRoute
   '/school': typeof SchoolRoute
@@ -316,12 +322,14 @@ export interface FileRoutesByTo {
   '/club/hell-ai': typeof ClubHellAiRoute
   '/club/me': typeof ClubMeRoute
   '/club/school': typeof ClubSchoolRoute
+  '/hell-pass/$tier': typeof HellPassTierRoute
   '/news/$slug': typeof NewsSlugRoute
   '/shop/$productSlug': typeof ShopProductSlugRoute
   '/admin': typeof AdminIndexRoute
   '/blogger': typeof BloggerIndexRoute
   '/checkout': typeof CheckoutIndexRoute
   '/club': typeof ClubIndexRoute
+  '/hell-pass': typeof HellPassIndexRoute
   '/news': typeof NewsIndexRoute
   '/shop': typeof ShopIndexRoute
   '/blogger/raffles/$raffleId': typeof BloggerRafflesRaffleIdRoute
@@ -341,7 +349,6 @@ export interface FileRoutesById {
   '/cart': typeof CartRoute
   '/club': typeof ClubRouteWithChildren
   '/forgot-password': typeof ForgotPasswordRoute
-  '/hell-pass': typeof HellPassRoute
   '/login': typeof LoginRoute
   '/logos': typeof LogosRoute
   '/school': typeof SchoolRoute
@@ -359,12 +366,14 @@ export interface FileRoutesById {
   '/club/hell-ai': typeof ClubHellAiRoute
   '/club/me': typeof ClubMeRoute
   '/club/school': typeof ClubSchoolRoute
+  '/hell-pass/$tier': typeof HellPassTierRoute
   '/news/$slug': typeof NewsSlugRoute
   '/shop/$productSlug': typeof ShopProductSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/blogger/': typeof BloggerIndexRoute
   '/checkout/': typeof CheckoutIndexRoute
   '/club/': typeof ClubIndexRoute
+  '/hell-pass/': typeof HellPassIndexRoute
   '/news/': typeof NewsIndexRoute
   '/shop/': typeof ShopIndexRoute
   '/blogger/raffles/$raffleId': typeof BloggerRafflesRaffleIdRoute
@@ -385,7 +394,6 @@ export interface FileRouteTypes {
     | '/cart'
     | '/club'
     | '/forgot-password'
-    | '/hell-pass'
     | '/login'
     | '/logos'
     | '/school'
@@ -403,12 +411,14 @@ export interface FileRouteTypes {
     | '/club/hell-ai'
     | '/club/me'
     | '/club/school'
+    | '/hell-pass/$tier'
     | '/news/$slug'
     | '/shop/$productSlug'
     | '/admin/'
     | '/blogger/'
     | '/checkout/'
     | '/club/'
+    | '/hell-pass/'
     | '/news/'
     | '/shop/'
     | '/blogger/raffles/$raffleId'
@@ -424,7 +434,6 @@ export interface FileRouteTypes {
     | '/about'
     | '/cart'
     | '/forgot-password'
-    | '/hell-pass'
     | '/login'
     | '/logos'
     | '/school'
@@ -442,12 +451,14 @@ export interface FileRouteTypes {
     | '/club/hell-ai'
     | '/club/me'
     | '/club/school'
+    | '/hell-pass/$tier'
     | '/news/$slug'
     | '/shop/$productSlug'
     | '/admin'
     | '/blogger'
     | '/checkout'
     | '/club'
+    | '/hell-pass'
     | '/news'
     | '/shop'
     | '/blogger/raffles/$raffleId'
@@ -466,7 +477,6 @@ export interface FileRouteTypes {
     | '/cart'
     | '/club'
     | '/forgot-password'
-    | '/hell-pass'
     | '/login'
     | '/logos'
     | '/school'
@@ -484,12 +494,14 @@ export interface FileRouteTypes {
     | '/club/hell-ai'
     | '/club/me'
     | '/club/school'
+    | '/hell-pass/$tier'
     | '/news/$slug'
     | '/shop/$productSlug'
     | '/admin/'
     | '/blogger/'
     | '/checkout/'
     | '/club/'
+    | '/hell-pass/'
     | '/news/'
     | '/shop/'
     | '/blogger/raffles/$raffleId'
@@ -509,14 +521,15 @@ export interface RootRouteChildren {
   CartRoute: typeof CartRoute
   ClubRoute: typeof ClubRouteWithChildren
   ForgotPasswordRoute: typeof ForgotPasswordRoute
-  HellPassRoute: typeof HellPassRoute
   LoginRoute: typeof LoginRoute
   LogosRoute: typeof LogosRoute
   SchoolRoute: typeof SchoolRoute
   CheckoutSuccessRoute: typeof CheckoutSuccessRoute
+  HellPassTierRoute: typeof HellPassTierRoute
   NewsSlugRoute: typeof NewsSlugRoute
   ShopProductSlugRoute: typeof ShopProductSlugRoute
   CheckoutIndexRoute: typeof CheckoutIndexRoute
+  HellPassIndexRoute: typeof HellPassIndexRoute
   NewsIndexRoute: typeof NewsIndexRoute
   ShopIndexRoute: typeof ShopIndexRoute
 }
@@ -542,13 +555,6 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/hell-pass': {
-      id: '/hell-pass'
-      path: '/hell-pass'
-      fullPath: '/hell-pass'
-      preLoaderRoute: typeof HellPassRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/forgot-password': {
@@ -614,6 +620,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof NewsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/hell-pass/': {
+      id: '/hell-pass/'
+      path: '/hell-pass'
+      fullPath: '/hell-pass/'
+      preLoaderRoute: typeof HellPassIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/club/': {
       id: '/club/'
       path: '/'
@@ -654,6 +667,13 @@ declare module '@tanstack/react-router' {
       path: '/news/$slug'
       fullPath: '/news/$slug'
       preLoaderRoute: typeof NewsSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/hell-pass/$tier': {
+      id: '/hell-pass/$tier'
+      path: '/hell-pass/$tier'
+      fullPath: '/hell-pass/$tier'
+      preLoaderRoute: typeof HellPassTierRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/club/school': {
@@ -885,14 +905,15 @@ const rootRouteChildren: RootRouteChildren = {
   CartRoute: CartRoute,
   ClubRoute: ClubRouteWithChildren,
   ForgotPasswordRoute: ForgotPasswordRoute,
-  HellPassRoute: HellPassRoute,
   LoginRoute: LoginRoute,
   LogosRoute: LogosRoute,
   SchoolRoute: SchoolRoute,
   CheckoutSuccessRoute: CheckoutSuccessRoute,
+  HellPassTierRoute: HellPassTierRoute,
   NewsSlugRoute: NewsSlugRoute,
   ShopProductSlugRoute: ShopProductSlugRoute,
   CheckoutIndexRoute: CheckoutIndexRoute,
+  HellPassIndexRoute: HellPassIndexRoute,
   NewsIndexRoute: NewsIndexRoute,
   ShopIndexRoute: ShopIndexRoute,
 }
