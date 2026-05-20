@@ -28,6 +28,7 @@ import { Route as BloggerIndexRouteImport } from './routes/blogger.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as ShopProductSlugRouteImport } from './routes/shop.$productSlug'
 import { Route as NewsSlugRouteImport } from './routes/news.$slug'
+import { Route as HellPassTierRouteImport } from './routes/hell-pass.$tier'
 import { Route as ClubSchoolRouteImport } from './routes/club.school'
 import { Route as ClubMeRouteImport } from './routes/club.me'
 import { Route as ClubHellAiRouteImport } from './routes/club.hell-ai'
@@ -145,6 +146,11 @@ const NewsSlugRoute = NewsSlugRouteImport.update({
   path: '/news/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const HellPassTierRoute = HellPassTierRouteImport.update({
+  id: '/$tier',
+  path: '/$tier',
+  getParentRoute: () => HellPassRoute,
+} as any)
 const ClubSchoolRoute = ClubSchoolRouteImport.update({
   id: '/school',
   path: '/school',
@@ -259,7 +265,7 @@ export interface FileRoutesByFullPath {
   '/cart': typeof CartRoute
   '/club': typeof ClubRouteWithChildren
   '/forgot-password': typeof ForgotPasswordRoute
-  '/hell-pass': typeof HellPassRoute
+  '/hell-pass': typeof HellPassRouteWithChildren
   '/login': typeof LoginRoute
   '/logos': typeof LogosRoute
   '/school': typeof SchoolRoute
@@ -277,6 +283,7 @@ export interface FileRoutesByFullPath {
   '/club/hell-ai': typeof ClubHellAiRoute
   '/club/me': typeof ClubMeRoute
   '/club/school': typeof ClubSchoolRoute
+  '/hell-pass/$tier': typeof HellPassTierRoute
   '/news/$slug': typeof NewsSlugRoute
   '/shop/$productSlug': typeof ShopProductSlugRoute
   '/admin/': typeof AdminIndexRoute
@@ -298,7 +305,7 @@ export interface FileRoutesByTo {
   '/about': typeof AboutRoute
   '/cart': typeof CartRoute
   '/forgot-password': typeof ForgotPasswordRoute
-  '/hell-pass': typeof HellPassRoute
+  '/hell-pass': typeof HellPassRouteWithChildren
   '/login': typeof LoginRoute
   '/logos': typeof LogosRoute
   '/school': typeof SchoolRoute
@@ -316,6 +323,7 @@ export interface FileRoutesByTo {
   '/club/hell-ai': typeof ClubHellAiRoute
   '/club/me': typeof ClubMeRoute
   '/club/school': typeof ClubSchoolRoute
+  '/hell-pass/$tier': typeof HellPassTierRoute
   '/news/$slug': typeof NewsSlugRoute
   '/shop/$productSlug': typeof ShopProductSlugRoute
   '/admin': typeof AdminIndexRoute
@@ -341,7 +349,7 @@ export interface FileRoutesById {
   '/cart': typeof CartRoute
   '/club': typeof ClubRouteWithChildren
   '/forgot-password': typeof ForgotPasswordRoute
-  '/hell-pass': typeof HellPassRoute
+  '/hell-pass': typeof HellPassRouteWithChildren
   '/login': typeof LoginRoute
   '/logos': typeof LogosRoute
   '/school': typeof SchoolRoute
@@ -359,6 +367,7 @@ export interface FileRoutesById {
   '/club/hell-ai': typeof ClubHellAiRoute
   '/club/me': typeof ClubMeRoute
   '/club/school': typeof ClubSchoolRoute
+  '/hell-pass/$tier': typeof HellPassTierRoute
   '/news/$slug': typeof NewsSlugRoute
   '/shop/$productSlug': typeof ShopProductSlugRoute
   '/admin/': typeof AdminIndexRoute
@@ -403,6 +412,7 @@ export interface FileRouteTypes {
     | '/club/hell-ai'
     | '/club/me'
     | '/club/school'
+    | '/hell-pass/$tier'
     | '/news/$slug'
     | '/shop/$productSlug'
     | '/admin/'
@@ -442,6 +452,7 @@ export interface FileRouteTypes {
     | '/club/hell-ai'
     | '/club/me'
     | '/club/school'
+    | '/hell-pass/$tier'
     | '/news/$slug'
     | '/shop/$productSlug'
     | '/admin'
@@ -484,6 +495,7 @@ export interface FileRouteTypes {
     | '/club/hell-ai'
     | '/club/me'
     | '/club/school'
+    | '/hell-pass/$tier'
     | '/news/$slug'
     | '/shop/$productSlug'
     | '/admin/'
@@ -509,7 +521,7 @@ export interface RootRouteChildren {
   CartRoute: typeof CartRoute
   ClubRoute: typeof ClubRouteWithChildren
   ForgotPasswordRoute: typeof ForgotPasswordRoute
-  HellPassRoute: typeof HellPassRoute
+  HellPassRoute: typeof HellPassRouteWithChildren
   LoginRoute: typeof LoginRoute
   LogosRoute: typeof LogosRoute
   SchoolRoute: typeof SchoolRoute
@@ -655,6 +667,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/news/$slug'
       preLoaderRoute: typeof NewsSlugRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/hell-pass/$tier': {
+      id: '/hell-pass/$tier'
+      path: '/$tier'
+      fullPath: '/hell-pass/$tier'
+      preLoaderRoute: typeof HellPassTierRouteImport
+      parentRoute: typeof HellPassRoute
     }
     '/club/school': {
       id: '/club/school'
@@ -877,6 +896,18 @@ const ClubRouteChildren: ClubRouteChildren = {
 
 const ClubRouteWithChildren = ClubRoute._addFileChildren(ClubRouteChildren)
 
+interface HellPassRouteChildren {
+  HellPassTierRoute: typeof HellPassTierRoute
+}
+
+const HellPassRouteChildren: HellPassRouteChildren = {
+  HellPassTierRoute: HellPassTierRoute,
+}
+
+const HellPassRouteWithChildren = HellPassRoute._addFileChildren(
+  HellPassRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
@@ -885,7 +916,7 @@ const rootRouteChildren: RootRouteChildren = {
   CartRoute: CartRoute,
   ClubRoute: ClubRouteWithChildren,
   ForgotPasswordRoute: ForgotPasswordRoute,
-  HellPassRoute: HellPassRoute,
+  HellPassRoute: HellPassRouteWithChildren,
   LoginRoute: LoginRoute,
   LogosRoute: LogosRoute,
   SchoolRoute: SchoolRoute,
