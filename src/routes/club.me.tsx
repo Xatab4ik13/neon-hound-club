@@ -8,6 +8,7 @@ import { EmptyGarageSlot } from "@/components/club/EmptyGarageSlot";
 import { Countdown } from "@/components/club/Countdown";
 import { BadgeCase } from "@/components/club/BadgeCase";
 import { TicketLedger } from "@/components/club/TicketLedger";
+import { TICKET_LEDGER, summarizeLedger } from "@/data/tickets-ledger";
 import {
   ACTIVE_TICKETS,
   ME,
@@ -315,8 +316,9 @@ function RankLadder() {
 // ---------- Stats ----------
 
 function StatsRow() {
+  const ticketsBalance = summarizeLedger(TICKET_LEDGER).balance;
   const items = [
-    { label: "Билеты", value: ME.totals.tickets, icon: Ticket },
+    { label: "Билеты", value: ticketsBalance, icon: Ticket },
     { label: "Выигрыши", value: ME.totals.wins, icon: Trophy },
     { label: "Заказы", value: ME.totals.orders, icon: ShoppingBag },
     { label: "Байки", value: ME.totals.bikes, icon: Bike },
