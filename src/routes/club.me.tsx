@@ -9,6 +9,7 @@ import { Countdown } from "@/components/club/Countdown";
 import { BadgeCase } from "@/components/club/BadgeCase";
 import { TicketLedger } from "@/components/club/TicketLedger";
 import { QuestsBlock } from "@/components/club/QuestsBlock";
+import { BikeJournal } from "@/components/club/BikeJournal";
 import { TICKET_LEDGER, summarizeLedger } from "@/data/tickets-ledger";
 import { COMPLETED_RAFFLES } from "@/data/my-raffles";
 import {
