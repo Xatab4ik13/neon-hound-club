@@ -115,14 +115,15 @@ function ForgotPasswordPage() {
 
             <button
               type="submit"
-              className="group relative block w-full overflow-hidden bg-primary py-6 text-center font-display text-2xl italic uppercase font-bold tracking-widest text-black transition-all duration-300 active:scale-[0.97]"
+              disabled={loading}
+              className="group relative block w-full overflow-hidden bg-primary py-6 text-center font-display text-2xl italic uppercase font-bold tracking-widest text-black transition-all duration-300 active:scale-[0.97] disabled:opacity-50"
               style={{ clipPath: "polygon(0 15%, 100% 0, 100% 100%, 0 85%)" }}
             >
               <span
                 aria-hidden
                 className="absolute inset-0 bg-white opacity-0 transition-opacity group-hover:opacity-10"
               />
-              <span className="relative z-10">Прислать ссылку</span>
+              <span className="relative z-10">{loading ? "Отправляем…" : "Прислать ссылку"}</span>
             </button>
 
             <p className="font-mono text-[11px] leading-relaxed text-muted-foreground">
