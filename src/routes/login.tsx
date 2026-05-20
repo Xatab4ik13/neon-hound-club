@@ -115,7 +115,7 @@ function LoginPage() {
                   setMode(m);
                   setError("");
                 }}
-                className={`relative h-12 font-display text-sm italic uppercase font-bold tracking-widest transition-colors ${
+                className={`relative h-12 overflow-hidden font-display text-sm italic uppercase font-bold tracking-widest transition-colors ${
                   active ? "text-black" : "text-muted-foreground hover:text-white"
                 }`}
               >

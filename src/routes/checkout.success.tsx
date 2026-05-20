@@ -29,8 +29,12 @@ function SuccessPage() {
           Заказ принят
         </h1>
         <p className="mt-4 text-sm text-muted-foreground">
-          Номер заказа:{" "}
-          <span className="font-mono text-foreground">{o ?? "—"}</span>.
+          {o ? (
+            <>
+              Номер заказа:{" "}
+              <span className="font-mono text-foreground">{o}</span>.{" "}
+            </>
+          ) : null}
           Подтверждение придёт на email. Статусы и трекинг — в личном кабинете.
         </p>
         {t ? (
