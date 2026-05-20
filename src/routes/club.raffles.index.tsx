@@ -65,7 +65,7 @@ const PAST_RAFFLES: Past[] = [
     winnerSlug: "tankslapper",
     total: 1120,
     image:
-      "https://images.unsplash.com/photo-1623080951877-bbabe7d0a44d?w=800&q=80",
+      "https://images.unsplash.com/photo-1599839575945-a9e5af0c3fa5?w=800&q=80",
   },
   {
     id: "h3",
@@ -469,16 +469,14 @@ function Stat({
       <div className="font-mono text-[9px] uppercase tracking-[0.22em] text-muted-foreground">
         {label}
       </div>
-      <motion.div
+      <div
         key={value}
-        initial={{ y: -4, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
         className={`mt-1 font-display text-xl font-black tabular-nums ${
           accent ? "text-primary" : "text-foreground"
         }`}
       >
         {value}
-      </motion.div>
+      </div>
     </div>
   );
 }
