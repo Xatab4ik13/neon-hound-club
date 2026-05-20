@@ -147,9 +147,9 @@ const NewsSlugRoute = NewsSlugRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const HellPassTierRoute = HellPassTierRouteImport.update({
-  id: '/$tier',
-  path: '/$tier',
-  getParentRoute: () => HellPassRoute,
+  id: '/hell-pass/$tier',
+  path: '/hell-pass/$tier',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ClubSchoolRoute = ClubSchoolRouteImport.update({
   id: '/school',
@@ -525,6 +525,7 @@ export interface RootRouteChildren {
   LogosRoute: typeof LogosRoute
   SchoolRoute: typeof SchoolRoute
   CheckoutSuccessRoute: typeof CheckoutSuccessRoute
+  HellPassTierRoute: typeof HellPassTierRoute
   NewsSlugRoute: typeof NewsSlugRoute
   ShopProductSlugRoute: typeof ShopProductSlugRoute
   CheckoutIndexRoute: typeof CheckoutIndexRoute
@@ -670,10 +671,10 @@ declare module '@tanstack/react-router' {
     }
     '/hell-pass/$tier': {
       id: '/hell-pass/$tier'
-      path: '/$tier'
+      path: '/hell-pass/$tier'
       fullPath: '/hell-pass/$tier'
       preLoaderRoute: typeof HellPassTierRouteImport
-      parentRoute: typeof HellPassRoute
+      parentRoute: typeof rootRouteImport
     }
     '/club/school': {
       id: '/club/school'
@@ -908,6 +909,7 @@ const rootRouteChildren: RootRouteChildren = {
   LogosRoute: LogosRoute,
   SchoolRoute: SchoolRoute,
   CheckoutSuccessRoute: CheckoutSuccessRoute,
+  HellPassTierRoute: HellPassTierRoute,
   NewsSlugRoute: NewsSlugRoute,
   ShopProductSlugRoute: ShopProductSlugRoute,
   CheckoutIndexRoute: CheckoutIndexRoute,
@@ -918,13 +920,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
