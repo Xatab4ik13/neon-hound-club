@@ -7,6 +7,8 @@ import { env, corsOrigins } from "./env.js";
 import { authRoutes } from "./auth/routes.js";
 import { passRoutes } from "./pass/routes.js";
 import { garageRoutes } from "./garage/routes.js";
+import { shopPublicRoutes } from "./shop/public.js";
+import { shopAdminRoutes } from "./shop/admin.js";
 
 const app = Fastify({ logger: true, trustProxy: true });
 
@@ -27,6 +29,8 @@ app.get("/health", async () => ({ ok: true }));
 await app.register(authRoutes);
 await app.register(passRoutes);
 await app.register(garageRoutes);
+await app.register(shopPublicRoutes);
+await app.register(shopAdminRoutes);
 
 app.listen({ port: env.PORT, host: "0.0.0.0" }).catch((err) => {
   app.log.error(err);

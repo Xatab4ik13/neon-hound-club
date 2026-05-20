@@ -106,9 +106,100 @@ export const userMotorcycles = pgTable(
   }),
 );
 
+// ============ роли (для админки) ============
+// Отдельная таблица, НЕ колонка в users. Назначаем вручную через SQL:
+//   INSERT INTO user_roles (user_id, role) VALUES ('...', 'admin');
+export const roleEnum = pgEnum("role", ["admin"]);
+
+export const userRoles = pgTable(
+  "user_roles",
+  {
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    role: roleEnum("role").notNull(),
+  },
+  (t) => ({
+    pk: uniqueIndex("user_roles_pk").on(t.userId, t.role),
+  }),
+);
+
+// ============ каталог мерча ============
+// Категории дерева 2 уровня: верхняя ("Одежда") и под-категория ("Худи").
+// Для простоты — self-reference через parent_id.
+export const categories = pgTable("categories", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  parentId: uuid("parent_id"),
+  slug: varchar("slug", { length: 60 }).notNull().unique(),
+  name: varchar("name", { length: 80 }).notNull(),
+  sortOrder: integer("sort_order").notNull().default(0),
+});
+
+export const productSourceEnum = pgEnum("product_source", ["hellhound", "partner", "used"]);
+export const badgeToneEnum = pgEnum("badge_tone", ["primary", "muted", "danger"]);
+
+export const products = pgTable(
+  "products",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    slug: varchar("slug", { length: 120 }).notNull().unique(),
+    name: varchar("name", { length: 200 }).notNull(),
+    priceRub: integer("price_rub").notNull(),
+    // Категория = под-категория (sub). Верхнюю получаем через parent_id у category.
+    categoryId: uuid("category_id").references(() => categories.id, { onDelete: "set null" }),
+    source: productSourceEnum("source").notNull().default("hellhound"),
+    sourceLabel: varchar("source_label", { length: 80 }), // "Komine", "Андрей К."
+    description: text("description"),
+    composition: text("composition"),
+    care: text("care"),
+    badgeLabel: varchar("badge_label", { length: 40 }),   // "Новинка", "Осталось 24"
+    badgeTone: badgeToneEnum("badge_tone"),
+    isPublished: boolean("is_published").notNull().default(true),
+    sortOrder: integer("sort_order").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    publishedIdx: index("products_published_idx").on(t.isPublished, t.sortOrder),
+    categoryIdx: index("products_category_idx").on(t.categoryId),
+  }),
+);
+
+export const productImages = pgTable(
+  "product_images",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    productId: uuid("product_id").notNull().references(() => products.id, { onDelete: "cascade" }),
+    url: text("url").notNull(),
+    sortOrder: integer("sort_order").notNull().default(0),
+    isCover: boolean("is_cover").notNull().default(false),
+  },
+  (t) => ({
+    productIdx: index("product_images_product_idx").on(t.productId, t.sortOrder),
+  }),
+);
+
+// Варианты = размеры. Каждый со своим остатком. Цена обычно как у товара.
+export const productVariants = pgTable(
+  "product_variants",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    productId: uuid("product_id").notNull().references(() => products.id, { onDelete: "cascade" }),
+    size: varchar("size", { length: 20 }).notNull(),  // "S", "M", "One size"
+    stock: integer("stock").notNull().default(0),     // -1 = безлимит, 0 = нет в наличии
+    priceOverrideRub: integer("price_override_rub"),  // null = брать price у product
+    sortOrder: integer("sort_order").notNull().default(0),
+  },
+  (t) => ({
+    uniq: uniqueIndex("variants_product_size_uniq").on(t.productId, t.size),
+  }),
+);
+
 export type User = typeof users.$inferSelect;
 export type Profile = typeof profiles.$inferSelect;
 export type SubscriptionTier = typeof subscriptionTiers.$inferSelect;
 export type Subscription = typeof subscriptions.$inferSelect;
 export type TicketTransaction = typeof ticketTransactions.$inferSelect;
 export type UserMotorcycle = typeof userMotorcycles.$inferSelect;
+export type Category = typeof categories.$inferSelect;
+export type Product = typeof products.$inferSelect;
+export type ProductImage = typeof productImages.$inferSelect;
+export type ProductVariant = typeof productVariants.$inferSelect;
