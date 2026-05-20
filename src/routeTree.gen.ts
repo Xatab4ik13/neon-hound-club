@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SchoolRouteImport } from './routes/school'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as LogosRouteImport } from './routes/logos'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
@@ -57,6 +58,11 @@ import { Route as ApiPublicOgUNickRouteImport } from './routes/api/public/og/u.$
 const SchoolRoute = SchoolRouteImport.update({
   id: '/school',
   path: '/school',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LogosRoute = LogosRouteImport.update({
@@ -285,6 +291,7 @@ export interface FileRoutesByFullPath {
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/logos': typeof LogosRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/school': typeof SchoolRoute
   '/admin/cdek': typeof AdminCdekRoute
   '/admin/economy': typeof AdminEconomyRoute
@@ -328,6 +335,7 @@ export interface FileRoutesByTo {
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/logos': typeof LogosRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/school': typeof SchoolRoute
   '/admin/cdek': typeof AdminCdekRoute
   '/admin/economy': typeof AdminEconomyRoute
@@ -375,6 +383,7 @@ export interface FileRoutesById {
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/logos': typeof LogosRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/school': typeof SchoolRoute
   '/admin/cdek': typeof AdminCdekRoute
   '/admin/economy': typeof AdminEconomyRoute
@@ -423,6 +432,7 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/login'
     | '/logos'
+    | '/reset-password'
     | '/school'
     | '/admin/cdek'
     | '/admin/economy'
@@ -466,6 +476,7 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/login'
     | '/logos'
+    | '/reset-password'
     | '/school'
     | '/admin/cdek'
     | '/admin/economy'
@@ -512,6 +523,7 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/login'
     | '/logos'
+    | '/reset-password'
     | '/school'
     | '/admin/cdek'
     | '/admin/economy'
@@ -559,6 +571,7 @@ export interface RootRouteChildren {
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
   LogosRoute: typeof LogosRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   SchoolRoute: typeof SchoolRoute
   CheckoutSuccessRoute: typeof CheckoutSuccessRoute
   HellPassTierRoute: typeof HellPassTierRoute
@@ -578,6 +591,13 @@ declare module '@tanstack/react-router' {
       path: '/school'
       fullPath: '/school'
       preLoaderRoute: typeof SchoolRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/logos': {
@@ -969,6 +989,7 @@ const rootRouteChildren: RootRouteChildren = {
   ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
   LogosRoute: LogosRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   SchoolRoute: SchoolRoute,
   CheckoutSuccessRoute: CheckoutSuccessRoute,
   HellPassTierRoute: HellPassTierRoute,
@@ -983,13 +1004,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
