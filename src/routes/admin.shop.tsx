@@ -184,8 +184,9 @@ function ProductsTab({
         />
       </div>
       <Panel>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+        <div className="-mx-4 overflow-x-auto px-4 md:mx-0 md:px-0">
+          <table className="w-full min-w-[720px] text-sm">
+
             <thead className="bg-zinc-50 dark:bg-zinc-900/50">
               <tr className="text-left text-xs uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
                 {["Товар", "Категория", "Цена", "Остаток", "Статус", ""].map((h) => (
