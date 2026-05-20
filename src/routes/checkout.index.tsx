@@ -9,7 +9,7 @@ import { useCart } from "@/hooks/use-cart";
 import { useViewer } from "@/hooks/use-viewer";
 import { ME } from "@/data/profile";
 
-export const Route = createFileRoute("/checkout")({
+export const Route = createFileRoute("/checkout/")({
   head: () => ({
     meta: [
       { title: "Оформление заказа — HELLHOUND" },

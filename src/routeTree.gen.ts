@@ -10,20 +10,20 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SchoolRouteImport } from './routes/school'
-import { Route as NewsRouteImport } from './routes/news'
 import { Route as LogosRouteImport } from './routes/logos'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as HellPassRouteImport } from './routes/hell-pass'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as ClubRouteImport } from './routes/club'
-import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as CartRouteImport } from './routes/cart'
 import { Route as BloggerRouteImport } from './routes/blogger'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ShopIndexRouteImport } from './routes/shop.index'
+import { Route as NewsIndexRouteImport } from './routes/news.index'
 import { Route as ClubIndexRouteImport } from './routes/club.index'
+import { Route as CheckoutIndexRouteImport } from './routes/checkout.index'
 import { Route as BloggerIndexRouteImport } from './routes/blogger.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as ShopProductSlugRouteImport } from './routes/shop.$productSlug'
@@ -55,11 +55,6 @@ const SchoolRoute = SchoolRouteImport.update({
   path: '/school',
   getParentRoute: () => rootRouteImport,
 } as any)
-const NewsRoute = NewsRouteImport.update({
-  id: '/news',
-  path: '/news',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const LogosRoute = LogosRouteImport.update({
   id: '/logos',
   path: '/logos',
@@ -83,11 +78,6 @@ const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
 const ClubRoute = ClubRouteImport.update({
   id: '/club',
   path: '/club',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CheckoutRoute = CheckoutRouteImport.update({
-  id: '/checkout',
-  path: '/checkout',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CartRoute = CartRouteImport.update({
@@ -120,10 +110,20 @@ const ShopIndexRoute = ShopIndexRouteImport.update({
   path: '/shop/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const NewsIndexRoute = NewsIndexRouteImport.update({
+  id: '/news/',
+  path: '/news/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ClubIndexRoute = ClubIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => ClubRoute,
+} as any)
+const CheckoutIndexRoute = CheckoutIndexRouteImport.update({
+  id: '/checkout/',
+  path: '/checkout/',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const BloggerIndexRoute = BloggerIndexRouteImport.update({
   id: '/',
@@ -257,13 +257,11 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRouteWithChildren
   '/blogger': typeof BloggerRouteWithChildren
   '/cart': typeof CartRoute
-  '/checkout': typeof CheckoutRouteWithChildren
   '/club': typeof ClubRouteWithChildren
   '/forgot-password': typeof ForgotPasswordRoute
   '/hell-pass': typeof HellPassRoute
   '/login': typeof LoginRoute
   '/logos': typeof LogosRoute
-  '/news': typeof NewsRouteWithChildren
   '/school': typeof SchoolRoute
   '/admin/cdek': typeof AdminCdekRoute
   '/admin/economy': typeof AdminEconomyRoute
@@ -283,7 +281,9 @@ export interface FileRoutesByFullPath {
   '/shop/$productSlug': typeof ShopProductSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/blogger/': typeof BloggerIndexRoute
+  '/checkout/': typeof CheckoutIndexRoute
   '/club/': typeof ClubIndexRoute
+  '/news/': typeof NewsIndexRoute
   '/shop/': typeof ShopIndexRoute
   '/blogger/raffles/$raffleId': typeof BloggerRafflesRaffleIdRoute
   '/club/hell-pass/$tier': typeof ClubHellPassTierRoute
@@ -297,12 +297,10 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/cart': typeof CartRoute
-  '/checkout': typeof CheckoutRouteWithChildren
   '/forgot-password': typeof ForgotPasswordRoute
   '/hell-pass': typeof HellPassRoute
   '/login': typeof LoginRoute
   '/logos': typeof LogosRoute
-  '/news': typeof NewsRouteWithChildren
   '/school': typeof SchoolRoute
   '/admin/cdek': typeof AdminCdekRoute
   '/admin/economy': typeof AdminEconomyRoute
@@ -322,7 +320,9 @@ export interface FileRoutesByTo {
   '/shop/$productSlug': typeof ShopProductSlugRoute
   '/admin': typeof AdminIndexRoute
   '/blogger': typeof BloggerIndexRoute
+  '/checkout': typeof CheckoutIndexRoute
   '/club': typeof ClubIndexRoute
+  '/news': typeof NewsIndexRoute
   '/shop': typeof ShopIndexRoute
   '/blogger/raffles/$raffleId': typeof BloggerRafflesRaffleIdRoute
   '/club/hell-pass/$tier': typeof ClubHellPassTierRoute
@@ -339,13 +339,11 @@ export interface FileRoutesById {
   '/admin': typeof AdminRouteWithChildren
   '/blogger': typeof BloggerRouteWithChildren
   '/cart': typeof CartRoute
-  '/checkout': typeof CheckoutRouteWithChildren
   '/club': typeof ClubRouteWithChildren
   '/forgot-password': typeof ForgotPasswordRoute
   '/hell-pass': typeof HellPassRoute
   '/login': typeof LoginRoute
   '/logos': typeof LogosRoute
-  '/news': typeof NewsRouteWithChildren
   '/school': typeof SchoolRoute
   '/admin/cdek': typeof AdminCdekRoute
   '/admin/economy': typeof AdminEconomyRoute
@@ -365,7 +363,9 @@ export interface FileRoutesById {
   '/shop/$productSlug': typeof ShopProductSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/blogger/': typeof BloggerIndexRoute
+  '/checkout/': typeof CheckoutIndexRoute
   '/club/': typeof ClubIndexRoute
+  '/news/': typeof NewsIndexRoute
   '/shop/': typeof ShopIndexRoute
   '/blogger/raffles/$raffleId': typeof BloggerRafflesRaffleIdRoute
   '/club/hell-pass/$tier': typeof ClubHellPassTierRoute
@@ -383,13 +383,11 @@ export interface FileRouteTypes {
     | '/admin'
     | '/blogger'
     | '/cart'
-    | '/checkout'
     | '/club'
     | '/forgot-password'
     | '/hell-pass'
     | '/login'
     | '/logos'
-    | '/news'
     | '/school'
     | '/admin/cdek'
     | '/admin/economy'
@@ -409,7 +407,9 @@ export interface FileRouteTypes {
     | '/shop/$productSlug'
     | '/admin/'
     | '/blogger/'
+    | '/checkout/'
     | '/club/'
+    | '/news/'
     | '/shop/'
     | '/blogger/raffles/$raffleId'
     | '/club/hell-pass/$tier'
@@ -423,12 +423,10 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/cart'
-    | '/checkout'
     | '/forgot-password'
     | '/hell-pass'
     | '/login'
     | '/logos'
-    | '/news'
     | '/school'
     | '/admin/cdek'
     | '/admin/economy'
@@ -448,7 +446,9 @@ export interface FileRouteTypes {
     | '/shop/$productSlug'
     | '/admin'
     | '/blogger'
+    | '/checkout'
     | '/club'
+    | '/news'
     | '/shop'
     | '/blogger/raffles/$raffleId'
     | '/club/hell-pass/$tier'
@@ -464,13 +464,11 @@ export interface FileRouteTypes {
     | '/admin'
     | '/blogger'
     | '/cart'
-    | '/checkout'
     | '/club'
     | '/forgot-password'
     | '/hell-pass'
     | '/login'
     | '/logos'
-    | '/news'
     | '/school'
     | '/admin/cdek'
     | '/admin/economy'
@@ -490,7 +488,9 @@ export interface FileRouteTypes {
     | '/shop/$productSlug'
     | '/admin/'
     | '/blogger/'
+    | '/checkout/'
     | '/club/'
+    | '/news/'
     | '/shop/'
     | '/blogger/raffles/$raffleId'
     | '/club/hell-pass/$tier'
@@ -507,15 +507,15 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRouteWithChildren
   BloggerRoute: typeof BloggerRouteWithChildren
   CartRoute: typeof CartRoute
-  CheckoutRoute: typeof CheckoutRouteWithChildren
   ClubRoute: typeof ClubRouteWithChildren
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   HellPassRoute: typeof HellPassRoute
   LoginRoute: typeof LoginRoute
   LogosRoute: typeof LogosRoute
-  NewsRoute: typeof NewsRouteWithChildren
   SchoolRoute: typeof SchoolRoute
   ShopProductSlugRoute: typeof ShopProductSlugRoute
+  CheckoutIndexRoute: typeof CheckoutIndexRoute
+  NewsIndexRoute: typeof NewsIndexRoute
   ShopIndexRoute: typeof ShopIndexRoute
 }
 
@@ -526,13 +526,6 @@ declare module '@tanstack/react-router' {
       path: '/school'
       fullPath: '/school'
       preLoaderRoute: typeof SchoolRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/news': {
-      id: '/news'
-      path: '/news'
-      fullPath: '/news'
-      preLoaderRoute: typeof NewsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/logos': {
@@ -568,13 +561,6 @@ declare module '@tanstack/react-router' {
       path: '/club'
       fullPath: '/club'
       preLoaderRoute: typeof ClubRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/checkout': {
-      id: '/checkout'
-      path: '/checkout'
-      fullPath: '/checkout'
-      preLoaderRoute: typeof CheckoutRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/cart': {
@@ -619,12 +605,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShopIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/news/': {
+      id: '/news/'
+      path: '/news'
+      fullPath: '/news/'
+      preLoaderRoute: typeof NewsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/club/': {
       id: '/club/'
       path: '/'
       fullPath: '/club/'
       preLoaderRoute: typeof ClubIndexRouteImport
       parentRoute: typeof ClubRoute
+    }
+    '/checkout/': {
+      id: '/checkout/'
+      path: '/checkout'
+      fullPath: '/checkout/'
+      preLoaderRoute: typeof CheckoutIndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/blogger/': {
       id: '/blogger/'
@@ -849,18 +849,6 @@ const BloggerRouteChildren: BloggerRouteChildren = {
 const BloggerRouteWithChildren =
   BloggerRoute._addFileChildren(BloggerRouteChildren)
 
-interface CheckoutRouteChildren {
-  CheckoutSuccessRoute: typeof CheckoutSuccessRoute
-}
-
-const CheckoutRouteChildren: CheckoutRouteChildren = {
-  CheckoutSuccessRoute: CheckoutSuccessRoute,
-}
-
-const CheckoutRouteWithChildren = CheckoutRoute._addFileChildren(
-  CheckoutRouteChildren,
-)
-
 interface ClubRouteChildren {
   ClubHellAiRoute: typeof ClubHellAiRoute
   ClubMeRoute: typeof ClubMeRoute
@@ -887,33 +875,33 @@ const ClubRouteChildren: ClubRouteChildren = {
 
 const ClubRouteWithChildren = ClubRoute._addFileChildren(ClubRouteChildren)
 
-interface NewsRouteChildren {
-  NewsSlugRoute: typeof NewsSlugRoute
-}
-
-const NewsRouteChildren: NewsRouteChildren = {
-  NewsSlugRoute: NewsSlugRoute,
-}
-
-const NewsRouteWithChildren = NewsRoute._addFileChildren(NewsRouteChildren)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   AdminRoute: AdminRouteWithChildren,
   BloggerRoute: BloggerRouteWithChildren,
   CartRoute: CartRoute,
-  CheckoutRoute: CheckoutRouteWithChildren,
   ClubRoute: ClubRouteWithChildren,
   ForgotPasswordRoute: ForgotPasswordRoute,
   HellPassRoute: HellPassRoute,
   LoginRoute: LoginRoute,
   LogosRoute: LogosRoute,
-  NewsRoute: NewsRouteWithChildren,
   SchoolRoute: SchoolRoute,
   ShopProductSlugRoute: ShopProductSlugRoute,
+  CheckoutIndexRoute: CheckoutIndexRoute,
+  NewsIndexRoute: NewsIndexRoute,
   ShopIndexRoute: ShopIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
