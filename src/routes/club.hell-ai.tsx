@@ -26,6 +26,7 @@ import {
   Lightbulb,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { apiFetch, ApiError } from "@/lib/api";
 import { loadBikes, saveBikes, type StoredBike } from "@/data/bike-storage";
 
 export const Route = createFileRoute("/club/hell-ai")({
