@@ -37,7 +37,7 @@ const LOG = Array.from({ length: 87 }).map((_, i) => {
     "Покупка пакета",
     "Розыгрыш «Шлем AGV»",
     "Кешбэк за заказ",
-    "Подарок: Платформа Pass",
+    "Подарок: Hell Pass",
     "Розыгрыш «Худи Founder»",
   ];
   const day = ((i % 28) + 1).toString().padStart(2, "0");
