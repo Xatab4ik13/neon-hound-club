@@ -160,7 +160,7 @@ function TierCard({ tier, index }: { tier: Tier; index: number }) {
             </div>
             <Link
               to="/club/hell-pass/$tier"
-              params={{ tier: tier.id }}
+              params={{ tier: tier.slug }}
               className="mt-4 inline-flex items-center gap-2 px-6 py-2.5 font-display text-xs font-bold uppercase tracking-widest text-white transition-all hover:scale-[1.04]"
               style={{
                 background: isPlatinum ? "var(--primary)" : "#000",
