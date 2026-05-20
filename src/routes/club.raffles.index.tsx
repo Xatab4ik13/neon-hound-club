@@ -469,18 +469,14 @@ function Stat({
       <div className="font-mono text-[9px] uppercase tracking-[0.22em] text-muted-foreground">
         {label}
       </div>
-      <motion.div
+      <div
         key={value}
-        initial={{ y: -4, opacity: 0.6 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.2 }}
         className={`mt-1 font-display text-xl font-black tabular-nums ${
           accent ? "text-primary" : "text-foreground"
         }`}
-        style={{ opacity: 1 }}
       >
         {value}
-      </motion.div>
+      </div>
     </div>
   );
 }
