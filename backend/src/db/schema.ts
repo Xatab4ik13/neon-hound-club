@@ -273,3 +273,7 @@ export type Category = typeof categories.$inferSelect;
 export type Product = typeof products.$inferSelect;
 export type ProductImage = typeof productImages.$inferSelect;
 export type ProductVariant = typeof productVariants.$inferSelect;
+export type Raffle = typeof raffles.$inferSelect;
+export type RafflePrize = typeof rafflePrizes.$inferSelect;
+export type RaffleEntry = typeof raffleEntries.$inferSelect;
+export type RaffleWinner = typeof raffleWinners.$inferSelect;
