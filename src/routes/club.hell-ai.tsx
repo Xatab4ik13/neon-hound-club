@@ -123,7 +123,7 @@ function HellAiPage() {
   const [showCmd, setShowCmd] = useState(false);
   const [activeCmd, setActiveCmd] = useState(-1);
   const [isThinking, setIsThinking] = useState(false);
-  const [, startTransition] = useTransition();
+  
   const [used, setUsed] = useState(0);
   const [lastAnswer, setLastAnswer] = useState<{ q: string; a: string } | null>(null);
   const { ref: taRef, adjust } = useAutoResize(60, 200);
