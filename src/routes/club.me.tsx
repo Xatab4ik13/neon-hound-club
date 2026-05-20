@@ -7,6 +7,7 @@ import { BikeFormModal } from "@/components/club/BikeFormModal";
 import { EmptyGarageSlot } from "@/components/club/EmptyGarageSlot";
 import { Countdown } from "@/components/club/Countdown";
 import { BadgeCase } from "@/components/club/BadgeCase";
+import { TicketLedger } from "@/components/club/TicketLedger";
 import {
   ACTIVE_TICKETS,
   ME,
@@ -52,6 +53,7 @@ function MePage() {
       <BadgeCase />
       <SectionGarage />
       <SectionTickets />
+      <TicketLedger />
       <SectionOrders />
     </main>
   );
