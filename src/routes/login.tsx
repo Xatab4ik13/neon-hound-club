@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
@@ -46,26 +47,55 @@ function LoginPage() {
 
   const [error, setError] = useState("");
 
-  const handleLogin = (e: React.FormEvent) => {
+  const [loading, setLoading] = useState(false);
+  const [info, setInfo] = useState("");
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setInfo("");
     const id = identifier.trim();
     if (!id) return setError("Введите email или телефон");
     if (!isEmail(id) && !isPhoneLike(id))
       return setError("Это не похоже на email или телефон");
     if (password.length < 6) return setError("Пароль минимум 6 символов");
-    // Demo: пускаем в клуб
-    setTimeout(() => navigate({ to: "/club" }), 150);
+
+    setLoading(true);
+    // Phone-логин подключим позже (нужен SMS-провайдер). Пока — email + password.
+    if (!isEmail(id)) {
+      setLoading(false);
+      return setError("Вход по телефону пока недоступен — используйте email");
+    }
+    const { error: err } = await supabase.auth.signInWithPassword({
+      email: id,
+      password,
+    });
+    setLoading(false);
+    if (err) return setError(translateAuthError(err.message));
+    navigate({ to: "/club" });
   };
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setInfo("");
     if (!isEmail(regEmail)) return setError("Введите корректный email");
     if (regPassword.length < 6) return setError("Пароль минимум 6 символов");
     if (regPassword !== regPassword2) return setError("Пароли не совпадают");
-    // Demo: пускаем в клуб
-    setTimeout(() => navigate({ to: "/club" }), 150);
+
+    setLoading(true);
+    const { data, error: err } = await supabase.auth.signUp({
+      email: regEmail,
+      password: regPassword,
+      options: { emailRedirectTo: `${window.location.origin}/club` },
+    });
+    setLoading(false);
+    if (err) return setError(translateAuthError(err.message));
+    if (data.session) {
+      navigate({ to: "/club" });
+    } else {
+      setInfo("Готово. Проверь почту и подтверди email — после этого войдёшь в клуб.");
+    }
   };
 
   return (
