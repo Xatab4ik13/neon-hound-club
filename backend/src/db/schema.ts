@@ -193,6 +193,76 @@ export const productVariants = pgTable(
   }),
 );
 
+// ============ розыгрыши ============
+// Raffle = одна кампания с одним или несколькими призами.
+// Билет участия = одна строка в raffle_entries. Юзер тратит N билетов → N строк.
+// Розыгрыш приза = SELECT случайной строки → запись в raffle_winners → удаление этой строки.
+// Таким образом один выигравший билет «выбывает» (как в текущем фронте).
+
+export const raffles = pgTable(
+  "raffles",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    slug: varchar("slug", { length: 80 }).notNull().unique(),
+    name: varchar("name", { length: 160 }).notNull(),
+    description: text("description"),
+    coverUrl: text("cover_url"),
+    ticketCost: integer("ticket_cost").notNull().default(1), // сколько билетов = одна попытка
+    endsAt: timestamp("ends_at", { withTimezone: true }).notNull(),
+    isPublished: boolean("is_published").notNull().default(true),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    publishedIdx: index("raffles_published_idx").on(t.isPublished, t.endsAt),
+  }),
+);
+
+export const rafflePrizes = pgTable(
+  "raffle_prizes",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    raffleId: uuid("raffle_id").notNull().references(() => raffles.id, { onDelete: "cascade" }),
+    name: varchar("name", { length: 200 }).notNull(),
+    qty: integer("qty").notNull().default(1),
+    sortOrder: integer("sort_order").notNull().default(0),
+  },
+  (t) => ({
+    raffleIdx: index("raffle_prizes_raffle_idx").on(t.raffleId, t.sortOrder),
+  }),
+);
+
+// Один билет участия = одна строка. После выигрыша строка удаляется.
+export const raffleEntries = pgTable(
+  "raffle_entries",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    raffleId: uuid("raffle_id").notNull().references(() => raffles.id, { onDelete: "cascade" }),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    raffleIdx: index("raffle_entries_raffle_idx").on(t.raffleId),
+    raffleUserIdx: index("raffle_entries_raffle_user_idx").on(t.raffleId, t.userId),
+  }),
+);
+
+export const raffleWinners = pgTable(
+  "raffle_winners",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    raffleId: uuid("raffle_id").notNull().references(() => raffles.id, { onDelete: "cascade" }),
+    prizeId: uuid("prize_id").notNull().references(() => rafflePrizes.id, { onDelete: "cascade" }),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    drawnAt: timestamp("drawn_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    prizeIdx: index("raffle_winners_prize_idx").on(t.prizeId),
+    raffleIdx: index("raffle_winners_raffle_idx").on(t.raffleId),
+    userIdx: index("raffle_winners_user_idx").on(t.userId),
+  }),
+);
+
 export type User = typeof users.$inferSelect;
 export type Profile = typeof profiles.$inferSelect;
 export type SubscriptionTier = typeof subscriptionTiers.$inferSelect;
