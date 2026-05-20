@@ -1,4 +1,4 @@
-import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, redirect, useLocation } from "@tanstack/react-router";
 import { useState } from "react";
 import {
   Newspaper,
@@ -13,6 +13,7 @@ import {
 import { ME } from "@/data/profile";
 import { type PlaqueBg } from "@/data/ranks";
 import { useCurrentRank } from "@/data/rank-state";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/club")({
   head: () => ({
@@ -22,6 +23,12 @@ export const Route = createFileRoute("/club")({
       { name: "robots", content: "noindex" },
     ],
   }),
+  beforeLoad: async ({ location }) => {
+    const { data } = await supabase.auth.getSession();
+    if (!data.session) {
+      throw redirect({ to: "/login", search: { redirect: location.href } as never });
+    }
+  },
   component: ClubLayout,
 });
 
