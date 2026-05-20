@@ -100,7 +100,7 @@ export const ACTIVE_TICKETS: ActiveTicket[] = [
         note: "размер и расцветка на выбор победителя",
         valueRub: 95_000,
         image:
-          "https://images.unsplash.com/photo-1623080951877-bbabe7d0a44d?w=1200&q=80",
+          "https://images.unsplash.com/photo-1599839575945-a9e5af0c3fa5?w=1200&q=80",
       },
       {
         place: 3,
