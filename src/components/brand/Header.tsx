@@ -21,7 +21,7 @@ const NAV = [
 ];
 
 export function Header() {
-  const { isAuthed, nick, tier, tickets, toggleAuth, signOut } = useViewer();
+  const { isAuthed, nick, tier, tickets, toggleAuth, signOut, hydrated } = useViewer();
   const cartCount = useCart().count;
 
   const { pathname } = useLocation();
