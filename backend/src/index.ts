@@ -37,6 +37,8 @@ await app.register(shopPublicRoutes);
 await app.register(shopAdminRoutes);
 await app.register(rafflesPublicRoutes);
 await app.register(rafflesAdminRoutes);
+await app.register(ordersRoutes);
+await app.register(ordersAdminRoutes);
 
 app.listen({ port: env.PORT, host: "0.0.0.0" }).catch((err) => {
   app.log.error(err);
