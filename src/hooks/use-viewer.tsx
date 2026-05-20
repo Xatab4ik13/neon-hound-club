@@ -71,7 +71,7 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
     });
 
     return () => subscription.unsubscribe();
-  }, [loadProfile]);
+  }, [loadProfile, router]);
 
   const signOut = useCallback(async () => {
     await supabase.auth.signOut();
