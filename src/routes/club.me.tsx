@@ -634,6 +634,16 @@ function SectionGarage() {
         </div>
       </div>
 
+      {/* Журнал основного байка */}
+      {primary && (
+        <div className="mt-4">
+          <BikeJournal
+            bikeId={primary.id}
+            currentMileage={parseInt((primary.mileage ?? "").replace(/\D/g, ""), 10) || 0}
+          />
+        </div>
+      )}
+
       {/* Дополнительные байки — обычные карточки в 2 колонки */}
       {rest.length > 0 && (
         <div className="mt-4 grid gap-4 md:grid-cols-2">
