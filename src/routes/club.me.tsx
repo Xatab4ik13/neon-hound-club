@@ -21,12 +21,7 @@ import {
 } from "@/data/bike-storage";
 import { PlaqueBackground, ProfilePlaque } from "./club";
 import { RANKS } from "@/data/ranks";
-import {
-  setRankIndex,
-  setXpPct,
-  useCurrentRank,
-  useRankState,
-} from "@/data/rank-state";
+import { useCurrentRank, useRankState } from "@/data/rank-state";
 import {
   ArrowRight,
   Bike,
@@ -58,7 +53,6 @@ function MePage() {
       <SectionGarage />
       <SectionTickets />
       <SectionOrders />
-      <RankSwitcher />
     </main>
   );
 }
@@ -315,64 +309,6 @@ function RankLadder() {
   );
 }
 
-// ---------- Dev rank switcher (плавающая панелька) ----------
-
-function RankSwitcher() {
-  const { rankIndex, xpPct } = useRankState();
-  return (
-    <div className="fixed bottom-4 right-4 z-50 w-72 border border-white/10 bg-black/85 p-3 font-mono text-[10px] uppercase tracking-wider text-muted-foreground shadow-[0_10px_40px_-10px_rgba(0,0,0,0.8)] backdrop-blur-md">
-      <div className="mb-2 flex items-center justify-between">
-        <span className="font-bold text-foreground">Dev · ранг</span>
-        <span className="text-[9px] opacity-60">только превью</span>
-      </div>
-      <div className="mb-3 grid grid-cols-6 gap-1">
-        {RANKS.map((r, i) => {
-          const active = i === rankIndex;
-          return (
-            <button
-              key={r.id}
-              type="button"
-              onClick={() => setRankIndex(i)}
-              className={`flex flex-col items-center gap-1 border px-1 py-1.5 transition-colors ${
-                active ? "border-transparent" : "border-white/10 hover:border-white/30"
-              }`}
-              style={
-                active
-                  ? { backgroundColor: r.accent, color: r.onAccent }
-                  : { color: r.accent }
-              }
-              title={r.label}
-            >
-              <span
-                aria-hidden
-                className="h-2 w-2 rounded-full"
-                style={{ backgroundColor: active ? r.onAccent : r.accent }}
-              />
-              <span className="text-[9px] font-bold leading-none">{r.short}</span>
-            </button>
-          );
-        })}
-      </div>
-
-      <label className="flex items-center gap-2">
-        <span className="w-6 text-[10px] tabular-nums text-foreground">XP</span>
-        <input
-          type="range"
-          min={0}
-          max={100}
-          step={1}
-          value={xpPct}
-          onChange={(e) => setXpPct(Number(e.target.value))}
-          className="flex-1 accent-primary"
-          aria-label="Прогресс XP"
-        />
-        <span className="w-8 text-right text-[10px] tabular-nums text-foreground">
-          {xpPct}%
-        </span>
-      </label>
-    </div>
-  );
-}
 
 // ---------- Stats ----------
 
