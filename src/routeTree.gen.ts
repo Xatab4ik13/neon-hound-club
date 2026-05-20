@@ -32,6 +32,7 @@ import { Route as HellPassTierRouteImport } from './routes/hell-pass.$tier'
 import { Route as ClubSchoolRouteImport } from './routes/club.school'
 import { Route as ClubQuestsRouteImport } from './routes/club.quests'
 import { Route as ClubMeRouteImport } from './routes/club.me'
+import { Route as ClubInviteRouteImport } from './routes/club.invite'
 import { Route as ClubHellAiRouteImport } from './routes/club.hell-ai'
 import { Route as CheckoutSuccessRouteImport } from './routes/checkout.success'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
@@ -167,6 +168,11 @@ const ClubMeRoute = ClubMeRouteImport.update({
   path: '/me',
   getParentRoute: () => ClubRoute,
 } as any)
+const ClubInviteRoute = ClubInviteRouteImport.update({
+  id: '/invite',
+  path: '/invite',
+  getParentRoute: () => ClubRoute,
+} as any)
 const ClubHellAiRoute = ClubHellAiRouteImport.update({
   id: '/hell-ai',
   path: '/hell-ai',
@@ -286,6 +292,7 @@ export interface FileRoutesByFullPath {
   '/admin/users': typeof AdminUsersRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/club/hell-ai': typeof ClubHellAiRoute
+  '/club/invite': typeof ClubInviteRoute
   '/club/me': typeof ClubMeRoute
   '/club/quests': typeof ClubQuestsRoute
   '/club/school': typeof ClubSchoolRoute
@@ -327,6 +334,7 @@ export interface FileRoutesByTo {
   '/admin/users': typeof AdminUsersRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/club/hell-ai': typeof ClubHellAiRoute
+  '/club/invite': typeof ClubInviteRoute
   '/club/me': typeof ClubMeRoute
   '/club/quests': typeof ClubQuestsRoute
   '/club/school': typeof ClubSchoolRoute
@@ -372,6 +380,7 @@ export interface FileRoutesById {
   '/admin/users': typeof AdminUsersRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/club/hell-ai': typeof ClubHellAiRoute
+  '/club/invite': typeof ClubInviteRoute
   '/club/me': typeof ClubMeRoute
   '/club/quests': typeof ClubQuestsRoute
   '/club/school': typeof ClubSchoolRoute
@@ -418,6 +427,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/checkout/success'
     | '/club/hell-ai'
+    | '/club/invite'
     | '/club/me'
     | '/club/quests'
     | '/club/school'
@@ -459,6 +469,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/checkout/success'
     | '/club/hell-ai'
+    | '/club/invite'
     | '/club/me'
     | '/club/quests'
     | '/club/school'
@@ -503,6 +514,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/checkout/success'
     | '/club/hell-ai'
+    | '/club/invite'
     | '/club/me'
     | '/club/quests'
     | '/club/school'
@@ -709,6 +721,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ClubMeRouteImport
       parentRoute: typeof ClubRoute
     }
+    '/club/invite': {
+      id: '/club/invite'
+      path: '/invite'
+      fullPath: '/club/invite'
+      preLoaderRoute: typeof ClubInviteRouteImport
+      parentRoute: typeof ClubRoute
+    }
     '/club/hell-ai': {
       id: '/club/hell-ai'
       path: '/hell-ai'
@@ -892,6 +911,7 @@ const BloggerRouteWithChildren =
 
 interface ClubRouteChildren {
   ClubHellAiRoute: typeof ClubHellAiRoute
+  ClubInviteRoute: typeof ClubInviteRoute
   ClubMeRoute: typeof ClubMeRoute
   ClubQuestsRoute: typeof ClubQuestsRoute
   ClubSchoolRoute: typeof ClubSchoolRoute
@@ -905,6 +925,7 @@ interface ClubRouteChildren {
 
 const ClubRouteChildren: ClubRouteChildren = {
   ClubHellAiRoute: ClubHellAiRoute,
+  ClubInviteRoute: ClubInviteRoute,
   ClubMeRoute: ClubMeRoute,
   ClubQuestsRoute: ClubQuestsRoute,
   ClubSchoolRoute: ClubSchoolRoute,
