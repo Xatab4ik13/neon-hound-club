@@ -21,12 +21,7 @@ import {
 } from "@/data/bike-storage";
 import { PlaqueBackground, ProfilePlaque } from "./club";
 import { RANKS } from "@/data/ranks";
-import {
-  setRankIndex,
-  setXpPct,
-  useCurrentRank,
-  useRankState,
-} from "@/data/rank-state";
+import { useCurrentRank, useRankState } from "@/data/rank-state";
 import {
   ArrowRight,
   Bike,
