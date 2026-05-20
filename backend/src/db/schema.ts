@@ -332,3 +332,5 @@ export type Raffle = typeof raffles.$inferSelect;
 export type RafflePrize = typeof rafflePrizes.$inferSelect;
 export type RaffleEntry = typeof raffleEntries.$inferSelect;
 export type RaffleWinner = typeof raffleWinners.$inferSelect;
+export type Order = typeof orders.$inferSelect;
+export type OrderItem = typeof orderItems.$inferSelect;
