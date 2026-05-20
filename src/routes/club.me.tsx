@@ -419,15 +419,28 @@ function SectionTickets() {
                   <h3 className="truncate font-display text-xl font-black uppercase italic tracking-tight text-foreground transition-colors group-hover:text-primary">
                     {t.title}
                   </h3>
-                  <div className="mt-2 flex items-center gap-2">
-                    <span className="font-mono text-4xl font-bold leading-none tabular-nums tracking-tighter text-foreground">
-                      {t.myTickets}
-                    </span>
-                    <span className="font-mono text-[9px] font-bold uppercase leading-tight text-muted-foreground">
-                      уникальных
-                      <br />
-                      билетов
-                    </span>
+                  <div className="mt-2 flex items-end gap-4">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-4xl font-bold leading-none tabular-nums tracking-tighter text-foreground">
+                        {t.myTickets}
+                      </span>
+                      <span className="font-mono text-[9px] font-bold uppercase leading-tight text-muted-foreground">
+                        моих
+                        <br />
+                        билетов
+                      </span>
+                    </div>
+                    <div className="ml-auto text-right">
+                      <div className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground/70">
+                        шанс
+                      </div>
+                      <div className="font-mono text-lg font-bold tabular-nums text-primary">
+                        {((t.myTickets / t.totalTickets) * 100).toFixed(2)}%
+                      </div>
+                      <div className="font-mono text-[9px] tabular-nums text-muted-foreground">
+                        из {t.totalTickets.toLocaleString("ru-RU")}
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -444,32 +457,69 @@ function SectionTickets() {
         })}
       </div>
 
-      {WIN_HISTORY.length > 0 && (
-        <div className="group relative mt-4 flex items-center justify-between overflow-hidden border border-white/[0.06] bg-card/40 p-4">
-          <div className="absolute inset-y-0 left-0 w-1 bg-primary opacity-40 transition-opacity group-hover:opacity-100" />
-          <div className="flex items-center gap-4">
-            <div className="flex h-10 w-10 items-center justify-center border border-white/[0.08] bg-black transition-colors group-hover:border-primary/50">
-              <Trophy className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-primary" />
-            </div>
-            <div>
-              <div className="mb-0.5 font-mono text-[9px] font-bold uppercase tracking-[0.3em] text-muted-foreground/70">
-                Архив побед
-              </div>
-              <div className="font-display text-sm font-black uppercase italic tracking-wide text-foreground">
-                {WIN_HISTORY[0].title}
-              </div>
-            </div>
-          </div>
-          <div className="flex items-center gap-6">
-            <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-              {WIN_HISTORY[0].date}
+      {COMPLETED_RAFFLES.length > 0 && (
+        <div className="mt-6">
+          <div className="mb-3 flex items-baseline justify-between">
+            <h3 className="font-display text-xs font-black uppercase italic tracking-widest text-muted-foreground">
+              Завершённые · {COMPLETED_RAFFLES.length}
+            </h3>
+            <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+              {COMPLETED_RAFFLES.filter((r) => r.status === "won").length}{" "}
+              <span className="text-green-400">выиграно</span>
             </span>
-            <div className="border border-white/[0.08] bg-primary/[0.08] px-3 py-1.5 transition-colors group-hover:border-primary/40">
-              <span className="font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-foreground">
-                {WIN_HISTORY[0].status}
-              </span>
-            </div>
           </div>
+          <ul className="grid gap-2 md:grid-cols-2">
+            {COMPLETED_RAFFLES.map((r) => {
+              const won = r.status === "won";
+              return (
+                <li
+                  key={r.id}
+                  className={`group flex items-center gap-3 border bg-card/40 p-3 transition-colors ${
+                    won
+                      ? "border-green-500/30 hover:border-green-500/60"
+                      : "border-white/[0.04] hover:border-white/[0.12]"
+                  }`}
+                >
+                  <div className="relative h-14 w-14 shrink-0 overflow-hidden border border-white/[0.06] bg-black">
+                    <img
+                      src={r.image}
+                      alt=""
+                      loading="lazy"
+                      className="h-full w-full object-cover opacity-80"
+                    />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <Trophy
+                        className={`h-3 w-3 shrink-0 ${won ? "text-green-400" : "text-muted-foreground/40"}`}
+                      />
+                      <span className="truncate text-sm font-bold text-foreground">
+                        {r.title}
+                      </span>
+                    </div>
+                    <div className="mt-0.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                      {r.date} · {r.myTickets} из {r.totalTickets.toLocaleString("ru-RU")} билетов
+                      {!won && r.winnerNick && (
+                        <>
+                          {" · "}
+                          <span className="text-foreground/70">@{r.winnerNick}</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  <span
+                    className={`shrink-0 whitespace-nowrap border px-2 py-0.5 font-mono text-[9px] font-bold uppercase tracking-[0.2em] ${
+                      won
+                        ? "border-green-500/50 text-green-400"
+                        : "border-white/[0.1] text-muted-foreground"
+                    }`}
+                  >
+                    {won ? r.delivery ?? "Выигрыш" : "Не выиграл"}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
         </div>
       )}
     </section>
