@@ -21,7 +21,7 @@ const NAV = [
 ];
 
 export function Header() {
-  const { isAuthed, nick, tier, tickets, toggleAuth, signOut, hydrated } = useViewer();
+  const { isAuthed, nick, tier, tickets, signOut, hydrated } = useViewer();
   const cartCount = useCart().count;
 
   const { pathname } = useLocation();
@@ -152,39 +152,22 @@ export function Header() {
                     <Link to="/club/hell-pass">Hell Pass</Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onSelect={signOut}>Выйти</DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onSelect={toggleAuth}
-                    className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground"
-                  >
-                    dev: режим гостя
-                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => { void signOut(); }}>Выйти</DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <>
-                <Link
-                  to="/login"
-                  className="group relative overflow-hidden rounded-full border border-primary/30 px-6 py-2 font-mono text-[11px] font-medium uppercase tracking-[0.2em] text-primary transition-all duration-300 hover:border-primary hover:shadow-[0_0_15px_hsl(var(--primary)/0.3)]"
-                >
-                  <span className="relative z-10 transition-colors duration-300 group-hover:text-primary-foreground">
-                    Войти
-                  </span>
-                  <span
-                    aria-hidden
-                    className="absolute inset-0 translate-y-full bg-primary transition-transform duration-300 group-hover:translate-y-0"
-                  />
-                </Link>
-                <button
-                  type="button"
-                  onClick={toggleAuth}
-                  className="font-mono text-[9px] uppercase tracking-[0.2em] text-muted-foreground/60 transition-colors hover:text-primary"
-                  title="Dev: войти как ASPHALT_DOG"
-                >
-                  dev
-                </button>
-              </>
+              <Link
+                to="/login"
+                className="group relative overflow-hidden rounded-full border border-primary/30 px-6 py-2 font-mono text-[11px] font-medium uppercase tracking-[0.2em] text-primary transition-all duration-300 hover:border-primary hover:shadow-[0_0_15px_hsl(var(--primary)/0.3)]"
+              >
+                <span className="relative z-10 transition-colors duration-300 group-hover:text-primary-foreground">
+                  Войти
+                </span>
+                <span
+                  aria-hidden
+                  className="absolute inset-0 translate-y-full bg-primary transition-transform duration-300 group-hover:translate-y-0"
+                />
+              </Link>
             )}
 
           </div>

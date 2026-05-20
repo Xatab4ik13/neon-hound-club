@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
@@ -46,26 +47,55 @@ function LoginPage() {
 
   const [error, setError] = useState("");
 
-  const handleLogin = (e: React.FormEvent) => {
+  const [loading, setLoading] = useState(false);
+  const [info, setInfo] = useState("");
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setInfo("");
     const id = identifier.trim();
     if (!id) return setError("Введите email или телефон");
     if (!isEmail(id) && !isPhoneLike(id))
       return setError("Это не похоже на email или телефон");
     if (password.length < 6) return setError("Пароль минимум 6 символов");
-    // Demo: пускаем в клуб
-    setTimeout(() => navigate({ to: "/club" }), 150);
+
+    setLoading(true);
+    // Phone-логин подключим позже (нужен SMS-провайдер). Пока — email + password.
+    if (!isEmail(id)) {
+      setLoading(false);
+      return setError("Вход по телефону пока недоступен — используйте email");
+    }
+    const { error: err } = await supabase.auth.signInWithPassword({
+      email: id,
+      password,
+    });
+    setLoading(false);
+    if (err) return setError(translateAuthError(err.message));
+    navigate({ to: "/club" });
   };
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setInfo("");
     if (!isEmail(regEmail)) return setError("Введите корректный email");
     if (regPassword.length < 6) return setError("Пароль минимум 6 символов");
     if (regPassword !== regPassword2) return setError("Пароли не совпадают");
-    // Demo: пускаем в клуб
-    setTimeout(() => navigate({ to: "/club" }), 150);
+
+    setLoading(true);
+    const { data, error: err } = await supabase.auth.signUp({
+      email: regEmail,
+      password: regPassword,
+      options: { emailRedirectTo: `${window.location.origin}/club` },
+    });
+    setLoading(false);
+    if (err) return setError(translateAuthError(err.message));
+    if (data.session) {
+      navigate({ to: "/club" });
+    } else {
+      setInfo("Готово. Проверь почту и подтверди email — после этого войдёшь в клуб.");
+    }
   };
 
   return (
@@ -167,8 +197,9 @@ function LoginPage() {
             </div>
 
             {error && <ErrorLine>{error}</ErrorLine>}
+            {info && <InfoLine>{info}</InfoLine>}
 
-            <SubmitButton>Войти</SubmitButton>
+            <SubmitButton disabled={loading}>{loading ? "Входим…" : "Войти"}</SubmitButton>
 
             <p className="font-mono text-[11px] leading-relaxed text-muted-foreground">
               Вход по телефону работает, если номер указан в профиле.
@@ -210,8 +241,9 @@ function LoginPage() {
             </FieldLabel>
 
             {error && <ErrorLine>{error}</ErrorLine>}
+            {info && <InfoLine>{info}</InfoLine>}
 
-            <SubmitButton>Создать аккаунт</SubmitButton>
+            <SubmitButton disabled={loading}>{loading ? "Создаём…" : "Создать аккаунт"}</SubmitButton>
 
             <p className="font-mono text-[11px] leading-relaxed text-muted-foreground">
               Телефон, ник и адрес доставки заполняются в личном кабинете после регистрации.
@@ -251,11 +283,20 @@ function ErrorLine({ children }: { children: React.ReactNode }) {
   );
 }
 
-function SubmitButton({ children }: { children: React.ReactNode }) {
+function InfoLine({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="border border-primary/30 bg-primary/[0.06] px-3 py-2 font-mono text-[11px] uppercase tracking-[0.18em] text-primary">
+      {children}
+    </p>
+  );
+}
+
+function SubmitButton({ children, disabled }: { children: React.ReactNode; disabled?: boolean }) {
   return (
     <button
       type="submit"
-      className="group relative block w-full overflow-hidden bg-primary py-6 text-center font-display text-2xl italic uppercase font-bold tracking-widest text-black transition-all duration-300 active:scale-[0.97]"
+      disabled={disabled}
+      className="group relative block w-full overflow-hidden bg-primary py-6 text-center font-display text-2xl italic uppercase font-bold tracking-widest text-black transition-all duration-300 active:scale-[0.97] disabled:opacity-50"
       style={{ clipPath: "polygon(0 15%, 100% 0, 100% 100%, 0 85%)" }}
     >
       <span
@@ -265,4 +306,14 @@ function SubmitButton({ children }: { children: React.ReactNode }) {
       <span className="relative z-10">{children}</span>
     </button>
   );
+}
+
+function translateAuthError(msg: string): string {
+  const m = msg.toLowerCase();
+  if (m.includes("invalid login")) return "Неверный email или пароль";
+  if (m.includes("email not confirmed")) return "Сначала подтверди email — мы прислали письмо";
+  if (m.includes("user already registered")) return "Этот email уже зарегистрирован";
+  if (m.includes("rate limit")) return "Слишком много попыток. Подожди минуту";
+  if (m.includes("password should be")) return "Пароль слишком короткий (минимум 6 символов)";
+  return msg;
 }
