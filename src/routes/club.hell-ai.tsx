@@ -180,17 +180,28 @@ function HellAiPage() {
   function send() {
     const text = value.trim();
     if (!text || !canAsk || isThinking) return;
-    startTransition(() => {
-      setIsThinking(true);
-      setUsed((n) => n + 1);
-      const q = text;
-      setValue("");
-      adjust(true);
-      setTimeout(() => {
-        setLastAnswer({ q, a: mockAnswer(q, bikeStr) });
-        setIsThinking(false);
-      }, 1400);
-    });
+    const q = text;
+    setValue("");
+    adjust(true);
+    setIsThinking(true);
+    setUsed((n) => n + 1);
+    askHellAi(q, activeBike?.id)
+      .then((a) => setLastAnswer({ q, a }))
+      .catch((err: unknown) => {
+        const msg =
+          err instanceof ApiError
+            ? err.status === 401
+              ? "Войди в аккаунт, чтобы пользоваться Hell AI."
+              : err.status === 403
+                ? "Hell AI доступен с Hell Pass. Активируй любой тир."
+                : err.status === 429
+                  ? err.message || "Лимит вопросов на этот месяц исчерпан."
+                  : err.message || "Hell AI временно недоступен."
+            : "Не удалось связаться с Hell AI. Попробуй ещё раз.";
+        setLastAnswer({ q, a: msg });
+        setUsed((n) => Math.max(0, n - 1));
+      })
+      .finally(() => setIsThinking(false));
   }
 
   function onKey(e: ReactKeyboardEvent<HTMLTextAreaElement>) {
