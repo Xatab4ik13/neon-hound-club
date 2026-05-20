@@ -104,8 +104,9 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
 
 function Table({ headers, rows }: { headers: string[]; rows: (string | number)[][] }) {
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
+    <div className="-mx-4 overflow-x-auto px-4 md:mx-0 md:px-0">
+      <table className="w-full min-w-[480px] text-sm">
+
         <thead>
           <tr className="text-left text-xs uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
             {headers.map((h) => (
