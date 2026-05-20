@@ -5,7 +5,6 @@ import { ArrowRight, Check, Copy, Ticket, Users } from "lucide-react";
 import { useState } from "react";
 import {
   buildReferralUrl,
-  myReferralCode,
   REFERRAL_REWARD_TICKETS,
   useReferrals,
 } from "@/data/referral";
