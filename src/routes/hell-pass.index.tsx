@@ -159,7 +159,7 @@ function TierCard({ tier, index }: { tier: Tier; index: number }) {
               в месяц
             </div>
             <Link
-              to="/club/hell-pass/$tier"
+              to="/hell-pass/$tier"
               params={{ tier: tier.slug }}
               className="mt-4 inline-flex items-center gap-2 px-6 py-2.5 font-display text-xs font-bold uppercase tracking-widest text-white transition-all hover:scale-[1.04]"
               style={{
