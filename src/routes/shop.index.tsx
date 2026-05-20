@@ -464,7 +464,7 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
         </button>
       </div>
 
-      <div className="flex items-baseline justify-between gap-3 px-4 py-4">
+      <div className="flex flex-col gap-1 px-4 py-4 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3">
         <h3 className="text-sm font-medium uppercase tracking-wider">
           {product.name}
         </h3>
@@ -472,6 +472,7 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
           {product.price.toLocaleString("ru-RU")} ₽
         </span>
       </div>
+
     </Link>
   );
 }

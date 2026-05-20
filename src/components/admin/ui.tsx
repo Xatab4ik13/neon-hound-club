@@ -196,12 +196,13 @@ export function DataTable({
   rows: ReactNode[][];
 }) {
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
+    <div className="-mx-4 overflow-x-auto px-4 md:mx-0 md:px-0">
+      <table className="w-full min-w-max text-sm md:min-w-0">
+
         <thead className="bg-zinc-50 dark:bg-zinc-900/50">
           <tr className="text-left text-xs uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
             {headers.map((h) => (
-              <th key={h} className="px-4 py-2.5 font-medium">
+              <th key={h} className="whitespace-nowrap px-4 py-2.5 font-medium">
                 {h}
               </th>
             ))}
@@ -214,9 +215,10 @@ export function DataTable({
               className="border-t border-zinc-100 hover:bg-zinc-50/50 dark:border-zinc-800 dark:hover:bg-zinc-800/30"
             >
               {r.map((c, j) => (
-                <td key={j} className="px-4 py-2.5">
+                <td key={j} className="whitespace-nowrap px-4 py-2.5">
                   {c}
                 </td>
+
               ))}
             </tr>
           ))}
