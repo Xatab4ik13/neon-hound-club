@@ -336,3 +336,14 @@ body[data-modal-open="1"] [class*="plaque-"] {
   50%      { filter: drop-shadow(0 0 28px rgba(255,209,102,0.55)); }
 }
 .wheel-spinning { animation: wheel-spin-pulse 1.2s ease-in-out infinite; }
+
+/* ── Global reduced-motion guard ────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+

@@ -86,7 +86,7 @@ function Composer() {
 
       {image && (
         <div className="relative border-y border-white/[0.06] bg-black">
-          <img src={image} alt="" className="max-h-[420px] w-full object-contain" />
+          <img loading="lazy" decoding="async" src={image} alt="" className="max-h-[420px] w-full object-contain" />
           <button
             type="button"
             onClick={() => setImage(undefined)}
@@ -182,7 +182,7 @@ function ManagePostCard({ post }: { post: FeedPost }) {
 
       {post.image && (
         <div className="border-y border-white/[0.06] bg-black">
-          <img src={post.image} alt="" className="max-h-[480px] w-full object-contain" />
+          <img loading="lazy" decoding="async" src={post.image} alt="" className="max-h-[480px] w-full object-contain" />
         </div>
       )}
 

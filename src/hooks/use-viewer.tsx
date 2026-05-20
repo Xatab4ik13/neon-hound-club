@@ -8,6 +8,8 @@ type Viewer = {
   nick: string | null;
   tier: Tier;
   tickets: number;
+  /** false до тех пор пока не прочитали localStorage — нужно чтобы хедер не «прыгал». */
+  hydrated: boolean;
 };
 
 type ViewerContextValue = Viewer & {
@@ -27,10 +29,12 @@ function readInitial(): boolean {
 
 export function ViewerProvider({ children }: { children: ReactNode }) {
   const [isAuthed, setIsAuthed] = useState<boolean>(false);
+  const [hydrated, setHydrated] = useState<boolean>(false);
 
   // Hydrate after mount, чтобы не ломать SSR.
   useEffect(() => {
     setIsAuthed(readInitial());
+    setHydrated(true);
   }, []);
 
   const persist = useCallback((value: boolean) => {
@@ -49,12 +53,14 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
     // Тир пока хардкодим — у профиля нет поля. Подменим, когда появится.
     tier: isAuthed ? "gold" : null,
     tickets: isAuthed ? ME.totals.tickets : 0,
+    hydrated,
     toggleAuth,
     signOut,
   };
 
   return <ViewerContext.Provider value={value}>{children}</ViewerContext.Provider>;
 }
+
 
 export function useViewer() {
   const ctx = useContext(ViewerContext);

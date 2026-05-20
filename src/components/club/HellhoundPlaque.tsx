@@ -38,7 +38,7 @@ export function HellhoundAvatar({
         }}
       >
         {avatarUrl ? (
-          <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+          <img loading="lazy" decoding="async" src={avatarUrl} alt="" className="h-full w-full object-cover" />
         ) : (
           <span
             className="font-display font-black italic uppercase"
