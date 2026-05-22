@@ -90,7 +90,7 @@ function BloggerLayout() {
         <MobileDrawer open={menuOpen} onClose={() => setMenuOpen(false)} pathname={pathname} />
 
         <div className="flex min-w-0 flex-1 flex-col">
-          <TopBar onMenu={() => setMenuOpen(true)} onPlaqueClick={goToSettings} profile={profile} />
+          <TopBar onMenu={() => setMenuOpen(true)} onPlaqueClick={goToSettings} />
           <Outlet />
         </div>
       </div>
