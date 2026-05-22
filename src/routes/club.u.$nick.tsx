@@ -5,11 +5,12 @@ import { BADGES, RARITY } from "@/data/badges";
 import { RANKS, getRankSpan, type RankId } from "@/data/ranks";
 import { getUser, type PublicUser } from "@/data/users";
 import { PlaqueBackground } from "./club";
+import { usePublicProfile, type PublicProfile } from "@/lib/garage-api";
 
 export const Route = createFileRoute("/club/u/$nick")({
   head: ({ params }) => {
     const user = getUser(params.nick);
-    const title = user ? `${user.nick} — клуб HELLHOUND` : "Профиль — клуб HELLHOUND";
+    const title = user ? `${user.nick} — клуб HELLHOUND` : `${params.nick} — клуб HELLHOUND`;
     const description = user
       ? `${user.nick} в клубе HELLHOUND Racing${user.city ? `, ${user.city}` : ""}.`
       : "Профиль участника клуба HELLHOUND Racing.";
@@ -28,12 +29,6 @@ export const Route = createFileRoute("/club/u/$nick")({
       ],
     };
   },
-  loader: ({ params }) => {
-    const user = getUser(params.nick);
-    if (!user) throw notFound();
-    return { user };
-  },
-  notFoundComponent: NotFoundUser,
   component: UserProfilePage,
 });
 
@@ -42,8 +37,61 @@ const RANK_BY_ID = Object.fromEntries(RANKS.map((r) => [r.id, r])) as Record<
   (typeof RANKS)[number]
 >;
 
-function NotFoundUser() {
+// Бэкенд пока не отдаёт ранг/badges/wins — рендерим базовый ранг для всех.
+const DEFAULT_RANK: RankId = "pit-crew";
+
+// Бэк → форма PublicUser (для рендера). Если бэк ничего не знает про rank/XP — ставим базу.
+function fromServer(p: PublicProfile, fallbackMock: PublicUser | undefined): PublicUser {
+  const initials = (p.nick.match(/[A-Za-zА-Яа-я0-9]/g) ?? [p.nick[0] ?? "?"])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+  const joinedDate = new Date(p.joinedAt);
+  const joined = joinedDate.toLocaleDateString("ru-RU", { month: "long", year: "numeric" });
+  const bikeStr = p.primaryBike
+    ? `${p.primaryBike.brand} ${p.primaryBike.model}`.trim()
+    : undefined;
+  return {
+    slug: p.nick.toLowerCase(),
+    nick: p.nick,
+    initials,
+    rank: fallbackMock?.rank ?? DEFAULT_RANK,
+    xpPct: fallbackMock?.xpPct ?? 0,
+    role: p.role === "admin" ? "owner" : fallbackMock?.role ?? "rider",
+    city: p.city ?? undefined,
+    bike: bikeStr,
+    joined,
+    badgeIds: fallbackMock?.badgeIds ?? [],
+    wins: fallbackMock?.wins ?? [],
+    avatarUrl: p.avatarUrl ?? undefined,
+  };
+}
+
+function UserProfilePage() {
   const { nick } = Route.useParams();
+  const q = usePublicProfile(nick);
+  const mock = getUser(nick);
+
+  if (q.isLoading) {
+    return (
+      <main className="mx-auto w-full max-w-2xl px-4 py-16 text-center md:px-8">
+        <p className="font-mono text-[12px] uppercase tracking-wider text-muted-foreground">
+          Загружаем профиль…
+        </p>
+      </main>
+    );
+  }
+
+  // Если бэк отдал 404 — пробуем mock (для seeded-ников). Если и там пусто — not found.
+  const user: PublicUser | null = q.data ? fromServer(q.data, mock) : mock ?? null;
+  if (!user) {
+    if (q.isError) throw q.error;
+    return <NotFoundUser nick={nick} />;
+  }
+  return <UserView user={user} />;
+}
+
+function NotFoundUser({ nick }: { nick: string }) {
   return (
     <main className="mx-auto w-full max-w-2xl px-4 py-16 text-center md:px-8">
       <h1 className="font-display text-2xl font-black uppercase italic text-foreground">
@@ -63,8 +111,7 @@ function NotFoundUser() {
   );
 }
 
-function UserProfilePage() {
-  const { user } = Route.useLoaderData() as { user: PublicUser };
+function UserView({ user }: { user: PublicUser }) {
   const rank = RANK_BY_ID[user.rank];
   const rankIdx = RANKS.findIndex((r) => r.id === user.rank);
   const xpMax = getRankSpan(rankIdx);
@@ -107,15 +154,23 @@ function UserProfilePage() {
               className="absolute inset-0 z-[1]"
               style={{ border: `2px solid ${rank.accent}`, opacity: 0.9 }}
             />
-            <span
-              className="relative z-[2] font-display text-3xl font-black uppercase italic md:text-4xl"
-              style={{
-                color: rank.accent,
-                textShadow: "0 2px 8px rgba(0,0,0,0.7)",
-              }}
-            >
-              {user.initials}
-            </span>
+            {user.avatarUrl ? (
+              <img
+                src={user.avatarUrl}
+                alt={user.nick}
+                className="absolute inset-0 z-[2] h-full w-full object-cover"
+              />
+            ) : (
+              <span
+                className="relative z-[2] font-display text-3xl font-black uppercase italic md:text-4xl"
+                style={{
+                  color: rank.accent,
+                  textShadow: "0 2px 8px rgba(0,0,0,0.7)",
+                }}
+              >
+                {user.initials}
+              </span>
+            )}
           </div>
 
           <div className="min-w-0 flex-1">
@@ -170,7 +225,6 @@ function UserProfilePage() {
                     XP
                   </span>
                 )}
-
               </div>
               <div className="relative h-2.5 overflow-hidden bg-black/55 ring-1 ring-inset ring-white/10">
                 <div
