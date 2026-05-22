@@ -231,11 +231,10 @@ function PollBlock({ poll, postId }: { poll: FeedPoll; postId: string }) {
 
       <ul className="space-y-2">
         {poll.options.map((opt) => {
-          const addBonus = voted === opt.id && voted !== serverVote ? 1 : 0;
-          const subFromServer = serverVote === opt.id && voted !== serverVote ? 1 : 0;
-          const votes = opt.votes + addBonus - subFromServer;
+          const votes = opt.votes;
           const pct = totals > 0 ? Math.round((votes / totals) * 100) : 0;
           const isMine = voted === opt.id;
+
 
           if (!showResults) {
             return (
