@@ -45,7 +45,7 @@ function buildGroups(cartCount: number): { title: string; items: Item[] }[] {
       { label: "Магазин клуба", href: "/club/shop", icon: ShoppingBag },
       {
         label: "Корзина",
-        href: "/cart",
+        href: "/club/cart",
         icon: ShoppingCart,
         badge: cartCount > 0 ? cartCount : undefined,
       },
