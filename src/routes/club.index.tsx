@@ -1,11 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Smile, Paperclip, Send, Search as SearchIcon, Clock, Sticker, X } from "lucide-react";
+import { Smile, Paperclip, Send, Search as SearchIcon, Clock, Sticker, X, Pin, PinOff, Trash2 } from "lucide-react";
 import { RANKS, type RankId } from "@/data/ranks";
 import { ME_SLUG, PUBLIC_USERS } from "@/data/users";
 import { useFeedPosts, feedStore, type FeedComment, type FeedPost, type FeedPoll } from "@/data/feed-store";
 import { HellhoundAvatar, HellhoundChip, isHell } from "@/components/club/HellhoundPlaque";
 import { IOSSheet } from "@/components/ios/IOSSheet";
+
 
 
 export const Route = createFileRoute("/club/")({
@@ -50,7 +51,7 @@ function ClubFeedPage() {
 
 // ───────── Post ─────────
 
-function PostCard({ post }: { post: Post }) {
+export function PostCard({ post, moderate = false }: { post: Post; moderate?: boolean }) {
   const [liked, setLiked] = useState(false);
   const [commentsOpen, setCommentsOpen] = useState(false);
   const likeCount = post.likes + (liked ? 1 : 0);
@@ -88,6 +89,30 @@ function PostCard({ post }: { post: Post }) {
             {post.time}
           </span>
         </div>
+        {moderate && (
+          <div className="flex shrink-0 items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => feedStore.updatePost(post.id, { pinned: !post.pinned })}
+              aria-label={post.pinned ? "Открепить" : "Закрепить"}
+              title={post.pinned ? "Открепить" : "Закрепить"}
+              className="grid h-8 w-8 place-items-center rounded-full border border-white/10 text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
+            >
+              {post.pinned ? <PinOff className="h-3.5 w-3.5" /> : <Pin className="h-3.5 w-3.5" />}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (confirm("Удалить пост?")) feedStore.removePost(post.id);
+              }}
+              aria-label="Удалить пост"
+              title="Удалить пост"
+              className="grid h-8 w-8 place-items-center rounded-full border border-white/10 text-muted-foreground transition-colors hover:border-destructive/60 hover:text-destructive"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        )}
       </header>
 
       {post.text && (
@@ -139,6 +164,7 @@ function PostCard({ post }: { post: Post }) {
         open={commentsOpen}
         onOpenChange={setCommentsOpen}
         post={post}
+        moderate={moderate}
       />
     </article>
   );
@@ -377,10 +403,12 @@ function CommentsSheet({
   open,
   onOpenChange,
   post,
+  moderate = false,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   post: Post;
+  moderate?: boolean;
 }) {
   const [replyTo, setReplyTo] = useState<{ nick: string; commentId: string } | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
@@ -426,6 +454,13 @@ function CommentsSheet({
                       commentId: c.id,
                     })
                   }
+                  onDelete={
+                    moderate
+                      ? () => {
+                          if (confirm("Удалить комментарий?")) feedStore.removeComment(post.id, c.id);
+                        }
+                      : undefined
+                  }
                 />
               ))}
             </ul>
@@ -450,10 +485,12 @@ function CommentItem({
   comment,
   large = false,
   onReply,
+  onDelete,
 }: {
   comment: Comment;
   large?: boolean;
   onReply?: () => void;
+  onDelete?: () => void;
 }) {
   const [liked, setLiked] = useState(false);
   const user = PUBLIC_USERS[comment.authorSlug];
@@ -519,6 +556,17 @@ function CommentItem({
           >
             Ответить
           </button>
+          {onDelete && (
+            <button
+              type="button"
+              onClick={onDelete}
+              aria-label="Удалить комментарий"
+              title="Удалить комментарий"
+              className="ml-auto inline-flex items-center gap-1 font-mono text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60 transition-colors hover:text-destructive"
+            >
+              <Trash2 className="h-3 w-3" /> Удалить
+            </button>
+          )}
         </div>
       </div>
     </li>
