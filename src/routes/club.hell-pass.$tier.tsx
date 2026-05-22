@@ -61,18 +61,33 @@ function ErrorPage({ error }: { error: Error }) {
 
 function TierDetailPage() {
   const { tier } = Route.useLoaderData() as { tier: Tier };
+  const { isAuthed } = useViewer();
+  const navigate = useNavigate();
+  const qc = useQueryClient();
+  const [purchaseId, setPurchaseId] = useState<string | null>(null);
+
+  const purchaseM = useMutation({
+    mutationFn: () => purchasePass(tier.slug as PassTier),
+    onSuccess: (res) => {
+      setPurchaseId(res.purchase.id);
+      qc.invalidateQueries({ queryKey: qk.passMe });
+      if (res.paymentUrl) {
+        window.location.href = res.paymentUrl;
+      } else {
+        toast.success(
+          `Заявка №${res.purchase.id.slice(0, 8)} создана. Ожидает оплаты — пока активирует админ.`,
+        );
+      }
+    },
+    onError: (e) => {
+      const msg = e instanceof ApiError ? e.message : "Не удалось создать заявку";
+      toast.error(msg);
+    },
+  });
+
   const isGold = tier.recommended;
   const isPlatinum = tier.ultimate;
 
-  return (
-    <main className="mx-auto w-full max-w-5xl px-4 py-8 md:px-8 md:py-12">
-      <Link
-        to="/club/hell-pass"
-        className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-widest text-muted-foreground transition-colors hover:text-primary"
-      >
-        <ArrowLeft className="h-3 w-3" />
-        Все тиры
-      </Link>
 
       <div className="mt-6 grid grid-cols-1 gap-8 lg:grid-cols-[1fr_320px]">
         {/* LEFT: контент */}
