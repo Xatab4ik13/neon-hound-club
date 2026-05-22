@@ -43,9 +43,16 @@ function buildGroups(cartCount: number): { title: string; items: Item[] }[] {
       { label: "Ранг и XP", href: "/club/rank", icon: TrendingUp },
       { label: "Пригласить друга", href: "/club/invite", icon: UserPlus },
       { label: "Магазин клуба", href: "/club/shop", icon: ShoppingBag },
+      {
+        label: "Корзина",
+        href: "/cart",
+        icon: ShoppingCart,
+        badge: cartCount > 0 ? cartCount : undefined,
+      },
     ],
   },
-];
+  ];
+}
 
 export function MobileMoreSheet({
   open,
@@ -55,6 +62,8 @@ export function MobileMoreSheet({
   onOpenChange: (v: boolean) => void;
 }) {
   const close = () => onOpenChange(false);
+  const { count: cartCount } = useCart();
+  const GROUPS = buildGroups(cartCount);
 
   return (
     <Drawer.Root open={open} onOpenChange={onOpenChange}>
