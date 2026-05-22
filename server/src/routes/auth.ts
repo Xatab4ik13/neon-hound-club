@@ -186,6 +186,20 @@ export async function authRoutes(app: FastifyInstance) {
     // Квест: подтвердил email.
     await tryCompleteQuest(u.id, "verify_email");
 
+    // XP за подтверждение email (idempotent по user_id)
+    await awardXp({
+      userId: u.id,
+      amount: 50,
+      source: "verify_email",
+      reason: "Подтверждён email",
+      refType: "user",
+      refId: u.id,
+      idempotent: true,
+    });
+
+    // Активация реферала, если был ?ref= при регистрации.
+    try { await activateReferral(u.id); } catch (e) { req.log.error({ err: e }, "activateReferral failed"); }
+
     return reply.send({ ok: true, user: u });
   });
 
