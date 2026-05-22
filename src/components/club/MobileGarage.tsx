@@ -590,7 +590,7 @@ function StatTile({
 
 // ───────────── Reminders ─────────────
 
-function ReminderRow({ bike }: { bike: StoredBike }) {
+function ReminderRow({ bike, inset = true }: { bike: StoredBike; inset?: boolean }) {
   const docs = useBikeDocuments();
   const journal = useBikeJournal();
   const km = parseMileage(bike.mileage);
@@ -599,7 +599,6 @@ function ReminderRow({ bike }: { bike: StoredBike }) {
   type R = { kind: "doc" | "service"; text: string; severity: "warn" | "danger" };
   const items: R[] = [];
 
-  // Service reminders
   SERVICE_TYPES.forEach((t) => {
     const left = kmUntilNextService(service, t, km);
     if (left === null) return;
@@ -618,7 +617,6 @@ function ReminderRow({ bike }: { bike: StoredBike }) {
     }
   });
 
-  // Document reminders
   docs.docs
     .filter((d) => d.bikeId === bike.id)
     .forEach((d) => {
@@ -641,8 +639,8 @@ function ReminderRow({ bike }: { bike: StoredBike }) {
   if (items.length === 0) return null;
 
   return (
-    <div className="mt-4 space-y-1.5 px-4">
-      {items.slice(0, 3).map((r, i) => (
+    <div className={`space-y-1.5 ${inset ? "mt-4 px-4" : ""}`}>
+      {items.slice(0, inset ? 3 : 4).map((r, i) => (
         <div
           key={i}
           className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 text-[13px] ${
