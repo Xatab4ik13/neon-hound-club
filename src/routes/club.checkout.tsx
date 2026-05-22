@@ -42,15 +42,15 @@ function readProfile(): Partial<CheckoutProfile> {
 
 function ClubCheckoutPage() {
   const { items, total, clear } = useCart();
-  const { isAuthed, viewer } = useViewer();
+  const { isAuthed, user } = useViewer();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   const [form, setForm] = useState<CheckoutProfile>({
-    name: viewer?.nick ?? "",
+    name: user?.nick ?? "",
     phone: "",
-    email: viewer?.email ?? "",
-    city: viewer?.city ?? "",
+    email: user?.email ?? "",
+    city: "",
     address: "",
   });
 
@@ -68,14 +68,13 @@ function ClubCheckoutPage() {
 
   // Подхватываем актуальный профиль, когда он подгрузится
   useEffect(() => {
-    if (!viewer) return;
+    if (!user) return;
     setForm((f) => ({
       ...f,
-      name: f.name || viewer.nick || "",
-      email: f.email || viewer.email || "",
-      city: f.city || viewer.city || "",
+      name: f.name || user.nick || "",
+      email: f.email || user.email || "",
     }));
-  }, [viewer]);
+  }, [user]);
 
   // Гард
   useEffect(() => {
