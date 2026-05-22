@@ -274,6 +274,24 @@ export const feedStore = {
       /* noop */
     }
   },
+
+  async unvotePoll(postId: string) {
+    try {
+      await unvotePoll(postId);
+      await refetch();
+    } catch {
+      /* noop */
+    }
+  },
+
+  async toggleCommentLike(commentId: string, liked: boolean) {
+    try {
+      if (liked) await likeComment(commentId);
+      else await unlikeComment(commentId);
+    } catch {
+      /* noop */
+    }
+  },
 };
 
 export function useFeedPosts(): FeedPost[] {
