@@ -38,6 +38,19 @@ export type BikePayload = {
   isPrimary?: boolean;
 };
 
+export type RankInfo = {
+  xp: number;
+  rankIndex: number;
+  rankId: string;
+  rankLabel: string;
+  nextLabel: string | null;
+  pct: number;
+  inRank: number;
+  span: number;
+  toNext: number;
+  isMax: boolean;
+};
+
 export type MyProfile = {
   userId: string;
   email: string;
@@ -53,6 +66,8 @@ export type MyProfile = {
   telegram: string | null;
   youtube: string | null;
   bikesCount: number;
+  xpTotal: number;
+  rank: RankInfo;
 };
 
 export type PublicProfile = {
@@ -66,6 +81,8 @@ export type PublicProfile = {
   telegram: string | null;
   youtube: string | null;
   bikesCount: number;
+  xpTotal: number;
+  rank: RankInfo;
   primaryBike: null | {
     brand: string;
     model: string;
