@@ -168,7 +168,7 @@ function TierDetailPage() {
               />
               <div className="relative">
                 <div className="font-mono text-[10px] font-bold uppercase tracking-widest text-white/50">
-                  Стоимость подписки
+                  Стоимость
                 </div>
                 <div className="mt-2 flex items-baseline gap-2">
                   <span
@@ -178,12 +178,13 @@ function TierDetailPage() {
                     {tier.price.toLocaleString("ru-RU")} ₽
                   </span>
                   <span className="font-mono text-xs uppercase tracking-widest text-white/40">
-                    / мес
+                    / 30 дней
                   </span>
                 </div>
 
                 <Link
                   to="/login"
+                  search={{ redirect: `/club/hell-pass/${tier.slug}` }}
                   className="mt-6 block w-full px-6 py-3.5 text-center font-display text-sm font-bold uppercase tracking-widest transition-all hover:scale-[1.02]"
                   style={{
                     background: isGold
@@ -202,7 +203,7 @@ function TierDetailPage() {
                 </Link>
 
                 <div className="mt-4 font-mono text-[10px] uppercase tracking-widest text-white/40">
-                  Оплата и управление подпиской — в личном кабинете после входа.
+                  Разовый доступ на 30 дней с момента активации. Без автопродления.
                 </div>
               </div>
             </div>
