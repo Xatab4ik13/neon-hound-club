@@ -1,11 +1,13 @@
-// Настройки блогера — переиспользуем модалку профиля как inline-страницу.
-// Меняем email, аватар, пароль. Логика та же, что в BloggerProfileModal.
+// Настройки блогера. Аватар — реальный аплоад в S3 + PATCH /profile/me.
+// Email/пароль пока заглушки: на бекенде эндпоинтов смены ещё нет.
 
 import { createFileRoute } from "@tanstack/react-router";
 import { useRef, useState } from "react";
-import { Upload, Trash2, LogOut } from "lucide-react";
+import { Upload, Trash2, LogOut, Loader2 } from "lucide-react";
 import { HellhoundAvatar, HellhoundChip } from "@/components/club/HellhoundPlaque";
-import { bloggerProfileStore, useBloggerProfile } from "@/data/blogger-profile";
+import { useBloggerProfile } from "@/data/blogger-profile";
+import { useUpdateMyProfile, uploadFileToS3 } from "@/lib/garage-api";
+import { useViewer } from "@/hooks/use-viewer";
 
 export const Route = createFileRoute("/blogger/settings")({
   head: () => ({
@@ -19,39 +21,48 @@ export const Route = createFileRoute("/blogger/settings")({
 
 function BloggerSettingsPage() {
   const profile = useBloggerProfile();
+  const { signOut } = useViewer();
+  const updateProfile = useUpdateMyProfile();
   const fileRef = useRef<HTMLInputElement>(null);
-  const [email, setEmail] = useState(profile.email);
-  const [currentPwd, setCurrentPwd] = useState("");
-  const [newPwd, setNewPwd] = useState("");
-  const [repeatPwd, setRepeatPwd] = useState("");
+  const [uploading, setUploading] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
 
-  const onFile = (file: File | null) => {
+  const flash = (m: string) => {
+    setMsg(m);
+    setErr(null);
+    setTimeout(() => setMsg(null), 1800);
+  };
+  const flashErr = (m: string) => {
+    setErr(m);
+    setMsg(null);
+    setTimeout(() => setErr(null), 2500);
+  };
+
+  const onFile = async (file: File | null) => {
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => bloggerProfileStore.update({ ...profile, avatarUrl: String(reader.result) });
-    reader.readAsDataURL(file);
-  };
-
-  const saveEmail = () => {
-    if (!email.trim() || !email.includes("@")) {
-      setMsg("Неверный email");
-      return;
+    if (!file.type.startsWith("image/")) return flashErr("Это не картинка");
+    if (file.size > 5 * 1024 * 1024) return flashErr("Файл больше 5 МБ");
+    setUploading(true);
+    try {
+      const url = await uploadFileToS3(file, "avatar");
+      await updateProfile.mutateAsync({ avatarUrl: url });
+      flash("Аватар обновлён");
+    } catch (e) {
+      flashErr(e instanceof Error ? e.message : "Не получилось загрузить");
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
     }
-    bloggerProfileStore.update({ ...profile, email: email.trim() });
-    setMsg("Email сохранён");
-    setTimeout(() => setMsg(null), 1800);
   };
 
-  const savePwd = () => {
-    if (!currentPwd || !newPwd) return setMsg("Заполни оба поля пароля");
-    if (newPwd.length < 6) return setMsg("Минимум 6 символов");
-    if (newPwd !== repeatPwd) return setMsg("Пароли не совпадают");
-    setCurrentPwd("");
-    setNewPwd("");
-    setRepeatPwd("");
-    setMsg("Пароль обновлён");
-    setTimeout(() => setMsg(null), 1800);
+  const removeAvatar = async () => {
+    try {
+      await updateProfile.mutateAsync({ avatarUrl: null });
+      flash("Аватар удалён");
+    } catch (e) {
+      flashErr(e instanceof Error ? e.message : "Не получилось удалить");
+    }
   };
 
   return (
@@ -71,15 +82,17 @@ function BloggerSettingsPage() {
               <div className="mt-2 flex flex-wrap gap-2">
                 <button
                   type="button"
+                  disabled={uploading}
                   onClick={() => fileRef.current?.click()}
-                  className="inline-flex items-center gap-1.5 border border-primary/40 bg-primary/10 px-2.5 py-1 font-mono text-[10px] font-bold uppercase tracking-wider text-primary hover:bg-primary/20"
+                  className="inline-flex items-center gap-1.5 border border-primary/40 bg-primary/10 px-2.5 py-1 font-mono text-[10px] font-bold uppercase tracking-wider text-primary hover:bg-primary/20 disabled:opacity-50"
                 >
-                  <Upload className="h-3 w-3" /> Загрузить
+                  {uploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
+                  {uploading ? "Загрузка…" : "Загрузить"}
                 </button>
-                {profile.avatarUrl && (
+                {profile.avatarUrl && !uploading && (
                   <button
                     type="button"
-                    onClick={() => bloggerProfileStore.update({ ...profile, avatarUrl: undefined })}
+                    onClick={removeAvatar}
                     className="inline-flex items-center gap-1.5 border border-white/10 px-2.5 py-1 font-mono text-[10px] font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground"
                   >
                     <Trash2 className="h-3 w-3" /> Удалить
@@ -97,59 +110,20 @@ function BloggerSettingsPage() {
           </div>
         </section>
 
-        {/* Email */}
+        {/* Email — read-only пока нет эндпоинта смены */}
         <section className="border border-white/[0.08] bg-card/40 p-5">
           <label className="block font-mono text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
             Email
           </label>
-          <div className="mt-2 flex gap-2">
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="min-w-0 flex-1 border border-white/10 bg-black/40 px-3 py-2 text-sm outline-none focus:border-primary/50"
-            />
-            <button
-              onClick={saveEmail}
-              className="shrink-0 border border-primary/40 bg-primary/10 px-3 py-2 font-mono text-[11px] font-bold uppercase tracking-wider text-primary hover:bg-primary/20"
-            >
-              Сохранить
-            </button>
+          <input
+            type="email"
+            value={profile.email}
+            disabled
+            className="mt-2 w-full border border-white/10 bg-black/40 px-3 py-2 text-sm text-muted-foreground outline-none"
+          />
+          <div className="mt-2 font-mono text-[10px] uppercase tracking-wider text-muted-foreground/70">
+            Смена email пока недоступна
           </div>
-        </section>
-
-        {/* Пароль */}
-        <section className="space-y-2 border border-white/[0.08] bg-card/40 p-5">
-          <label className="font-mono text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-            Сменить пароль
-          </label>
-          <input
-            type="password"
-            placeholder="Текущий пароль"
-            value={currentPwd}
-            onChange={(e) => setCurrentPwd(e.target.value)}
-            className="w-full border border-white/10 bg-black/40 px-3 py-2 text-sm outline-none focus:border-primary/50"
-          />
-          <input
-            type="password"
-            placeholder="Новый пароль"
-            value={newPwd}
-            onChange={(e) => setNewPwd(e.target.value)}
-            className="w-full border border-white/10 bg-black/40 px-3 py-2 text-sm outline-none focus:border-primary/50"
-          />
-          <input
-            type="password"
-            placeholder="Повторите новый пароль"
-            value={repeatPwd}
-            onChange={(e) => setRepeatPwd(e.target.value)}
-            className="w-full border border-white/10 bg-black/40 px-3 py-2 text-sm outline-none focus:border-primary/50"
-          />
-          <button
-            onClick={savePwd}
-            className="w-full border border-primary/40 bg-primary/10 px-3 py-2 font-mono text-[11px] font-bold uppercase tracking-wider text-primary hover:bg-primary/20"
-          >
-            Обновить пароль
-          </button>
         </section>
 
         {msg && (
@@ -157,11 +131,17 @@ function BloggerSettingsPage() {
             {msg}
           </div>
         )}
+        {err && (
+          <div className="border border-destructive/40 bg-destructive/10 px-3 py-2 font-mono text-[11px] uppercase tracking-wider text-destructive">
+            {err}
+          </div>
+        )}
 
         <button
           type="button"
-          onClick={() => {
+          onClick={async () => {
             if (typeof window !== "undefined" && window.confirm("Выйти из кабинета?")) {
+              await signOut();
               window.location.href = "/";
             }
           }}
