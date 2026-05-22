@@ -58,6 +58,8 @@ function ShopPage() {
       sub: p.sub,
       image: p.image,
       description: p.description,
+      shipping: p.shipping,
+      returns: p.returns,
       ticketsBonus: p.ticketsBonus,
       status: "active" as const,
     })),
