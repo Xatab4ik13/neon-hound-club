@@ -1,9 +1,15 @@
 // Детальная страница одного тира Hell Pass.
-// Полное описание каждого преимущества + кнопка «Купить» → /checkout.
+// Полное описание каждого преимущества + кнопка «Купить».
 
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { ArrowLeft, Check } from "lucide-react";
+import { useState } from "react";
+import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { ArrowLeft, Check, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { getTier, type Perk, type Tier } from "@/data/hell-pass";
+import { purchasePass, qk, type PassTier } from "@/lib/queries";
+import { useViewer } from "@/hooks/use-viewer";
+import { ApiError } from "@/lib/api";
 
 export const Route = createFileRoute("/club/hell-pass/$tier")({
   loader: ({ params }) => {
