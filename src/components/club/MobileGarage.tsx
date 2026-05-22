@@ -398,11 +398,21 @@ function BikeSwitch({
 
 // ───────────── Hero ─────────────
 
-function BikeHero({ bike, onEdit }: { bike: StoredBike; onEdit: () => void }) {
+function BikeHero({
+  bike,
+  onEdit,
+  size = "md",
+}: {
+  bike: StoredBike;
+  onEdit: () => void;
+  size?: "md" | "lg";
+}) {
   const photo = bike.photo || placeholderBike;
+  const isLg = size === "lg";
 
   return (
-    <div className="px-4">
+    <div className={isLg ? "" : "px-4"}>
+
       <div className="relative overflow-hidden rounded-3xl border border-white/[0.06] bg-gradient-to-b from-[#1a0a16] via-[#0e0e0e] to-black">
         {/* розовый glow */}
         <div
