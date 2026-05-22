@@ -68,7 +68,30 @@ export async function ticketsRoutes(app: FastifyInstance) {
 }
 
 export async function adminTicketsRoutes(app: FastifyInstance) {
-  // POST /api/v1/admin/tickets/credit — начислить/списать билеты любому юзеру
+  // GET /api/v1/admin/tickets/journal — общий журнал последних операций
+  app.get("/journal", { preHandler: requireAdmin }, async (req) => {
+    const q = z
+      .object({ limit: z.coerce.number().int().min(1).max(200).default(50) })
+      .parse(req.query ?? {});
+    const rows = await db
+      .select({
+        id: ticketsLedger.id,
+        userId: ticketsLedger.userId,
+        nick: users.nick,
+        amount: ticketsLedger.amount,
+        source: ticketsLedger.source,
+        reason: ticketsLedger.reason,
+        refType: ticketsLedger.refType,
+        refId: ticketsLedger.refId,
+        createdAt: ticketsLedger.createdAt,
+      })
+      .from(ticketsLedger)
+      .leftJoin(users, eq(users.id, ticketsLedger.userId))
+      .orderBy(desc(ticketsLedger.createdAt))
+      .limit(q.limit);
+    return { items: rows };
+  });
+
   app.post("/credit", { preHandler: requireAdmin }, async (req, reply) => {
     const parsed = creditSchema.safeParse(req.body);
     if (!parsed.success) {
