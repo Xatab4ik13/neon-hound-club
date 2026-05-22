@@ -189,7 +189,7 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
 
 
   const isMobile = useIsMobile();
-  const canSubmit = !!brand.trim() && !!model.trim();
+  const canSubmit = !!brand.trim() && !!model.trim() && !submitting;
 
   const formBody = (
     <form id="bike-form" onSubmit={handleSubmit} className="space-y-5 pt-2">
