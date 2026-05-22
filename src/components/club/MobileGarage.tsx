@@ -663,11 +663,11 @@ function RidesList({ bikeId }: { bikeId: string }) {
 
 function DocsList({
   bikeId,
-  onEdit,
+  onView,
   onAdd,
 }: {
   bikeId: string;
-  onEdit: (d: BikeDocument) => void;
+  onView: (d: BikeDocument) => void;
   onAdd: () => void;
 }) {
   const docs = useBikeDocuments();
@@ -679,7 +679,7 @@ function DocsList({
         <EmptyTab
           icon={<ShieldCheck className="h-6 w-6" />}
           title="Документов пока нет"
-          text="Добавь ОСАГО, ТО, СТС — будут напоминания об истечении"
+          text="Добавь ОСАГО, СТС, ВУ — будут под рукой и с напоминаниями"
         />
         <button
           type="button"
@@ -714,12 +714,18 @@ function DocsList({
               : status === "expiring"
                 ? "text-yellow-400"
                 : "text-muted-foreground";
+          const photos = docPhotos(d);
           return (
             <IOSListRow
               key={d.id}
               icon={<DocIcon type={d.type} />}
               label={DOC_TYPE_LABEL[d.type]}
-              description={d.number || (d.issueDate ? fmtDate(d.issueDate) : "Нет данных")}
+              description={
+                <>
+                  {d.number || (d.issueDate ? fmtDate(d.issueDate) : "Нет данных")}
+                  {photos.length > 0 ? ` · 📎 ${photos.length}` : ""}
+                </>
+              }
               trailing={
                 <div className="flex items-center gap-2">
                   <span className={`text-[12px] font-semibold tabular-nums ${tone}`}>
@@ -728,7 +734,7 @@ function DocsList({
                   <ChevronRight className="h-4 w-4 text-muted-foreground/70" />
                 </div>
               }
-              onClick={() => onEdit(d)}
+              onClick={() => onView(d)}
             />
           );
         })}
