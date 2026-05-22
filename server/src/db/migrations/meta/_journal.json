@@ -64,6 +64,13 @@
       "when": 1779550000000,
       "tag": "0008_user_blocked",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1779560000000,
+      "tag": "0009_news_invites_xp_badges",
+      "breakpoints": true
     }
   ]
 }
