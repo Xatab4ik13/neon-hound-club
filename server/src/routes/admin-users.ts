@@ -218,7 +218,7 @@ export async function adminUsersRoutes(app: FastifyInstance) {
       .min(3)
       .max(24)
       .regex(/^[a-zA-Z0-9_]+$/, "Только латиница, цифры и _"),
-    role: z.enum(["user", "admin", "blogger"]).default("user"),
+    role: z.enum(["user", "blogger"]).default("user"),
     emailVerified: z.boolean().default(true),
   });
 
