@@ -833,6 +833,7 @@ export function ProfilePlaque({
   const xpMax = realRankIdx >= 0 ? getRankSpan(realRankIdx) : mockRank.xpMax;
   const plaqueBg = mockRank.plaqueBg; // выбор фона остаётся пользовательским
   const variant = PLAQUE_BG[plaqueBg];
+  const isMax = realRankIdx >= 0 ? realRankIdx === RANKS.length - 1 : mockRank.isMax;
   const size = compact ? 44 : 56;
 
 
