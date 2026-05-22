@@ -1,14 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { BikeCard } from "@/components/club/BikeCard";
-import { HeroBikeCard } from "@/components/club/HeroBikeCard";
 import { BikeFormModal } from "@/components/club/BikeFormModal";
-import { EmptyGarageSlot } from "@/components/club/EmptyGarageSlot";
-import { BikeJournal } from "@/components/club/BikeJournal";
 import { MobileGarage } from "@/components/club/MobileGarage";
 import { loadBikes, saveBikes, type StoredBike } from "@/data/bike-storage";
-import { PageHeader } from "@/components/club/PageHeader";
-import { useIsMobile } from "@/hooks/use-mobile";
 
 export const Route = createFileRoute("/club/garage")({
   head: () => ({
