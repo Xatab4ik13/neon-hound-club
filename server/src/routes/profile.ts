@@ -163,6 +163,13 @@ const createBikeSchema = z.object({
   color: z.string().trim().max(40).nullable().optional(),
   nickname: z.string().trim().max(60).nullable().optional(),
   notes: z.string().max(5000).nullable().optional(),
+  mileage: z.string().trim().max(40).nullable().optional(),
+  purchaseDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "ожидается yyyy-mm-dd")
+    .nullable()
+    .optional(),
+  mods: z.array(z.string().trim().min(1).max(80)).max(50).default([]),
   photos: z.array(ourS3Url).max(20).default([]),
   isPrimary: z.boolean().default(false),
 });
