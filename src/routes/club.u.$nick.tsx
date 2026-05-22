@@ -37,10 +37,9 @@ const RANK_BY_ID = Object.fromEntries(RANKS.map((r) => [r.id, r])) as Record<
   (typeof RANKS)[number]
 >;
 
-// Бэкенд пока не отдаёт ранг/badges/wins — рендерим базовый ранг для всех.
-const DEFAULT_RANK: RankId = "pit-crew";
+// Бэк отдаёт реальный rank/xpPct в `p.rank`. Маппим id 1:1.
+const DEFAULT_RANK: RankId = "rookie";
 
-// Бэк → форма PublicUser (для рендера). Если бэк ничего не знает про rank/XP — ставим базу.
 function fromServer(p: PublicProfile, fallbackMock: PublicUser | undefined): PublicUser {
   const initials = (p.nick.match(/[A-Za-zА-Яа-я0-9]/g) ?? [p.nick[0] ?? "?"])
     .slice(0, 2)
@@ -51,12 +50,13 @@ function fromServer(p: PublicProfile, fallbackMock: PublicUser | undefined): Pub
   const bikeStr = p.primaryBike
     ? `${p.primaryBike.brand} ${p.primaryBike.model}`.trim()
     : undefined;
+  const rankId = (RANKS.find((r) => r.id === p.rank.rankId)?.id ?? DEFAULT_RANK) as RankId;
   return {
     slug: p.nick.toLowerCase(),
     nick: p.nick,
     initials,
-    rank: fallbackMock?.rank ?? DEFAULT_RANK,
-    xpPct: fallbackMock?.xpPct ?? 0,
+    rank: rankId,
+    xpPct: p.rank.pct,
     role: p.role === "admin" ? "owner" : fallbackMock?.role ?? "rider",
     city: p.city ?? undefined,
     bike: bikeStr,
