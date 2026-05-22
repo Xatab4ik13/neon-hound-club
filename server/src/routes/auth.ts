@@ -137,7 +137,7 @@ export async function authRoutes(app: FastifyInstance) {
       });
     }
 
-    const payload: SessionPayload = { sub: u.id, role: u.role as "user" | "admin", nick: u.nick };
+    const payload: SessionPayload = { sub: u.id, role: u.role as SessionPayload["role"], nick: u.nick };
     await setSessionCookie(reply, payload);
 
     return reply.send({
@@ -180,7 +180,7 @@ export async function authRoutes(app: FastifyInstance) {
     if (!u) return reply.code(404).send({ error: "user_not_found" });
 
     // авто-логин после подтверждения
-    const payload: SessionPayload = { sub: u.id, role: u.role as "user" | "admin", nick: u.nick };
+    const payload: SessionPayload = { sub: u.id, role: u.role as SessionPayload["role"], nick: u.nick };
     await setSessionCookie(reply, payload);
 
     // Квест: подтвердил email.
