@@ -130,7 +130,7 @@ function errorToMessage(err: unknown): string {
 }
 
 // ─────────────────────────────────────────────────────────────────────────
-function HellAiPage() {
+export function HellAiPage() {
   const isMobile = useIsMobile();
   return isMobile ? <HellAiMobile /> : <HellAiDesktop />;
 }
