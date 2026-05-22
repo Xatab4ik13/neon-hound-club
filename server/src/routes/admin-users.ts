@@ -117,12 +117,55 @@ export async function adminUsersRoutes(app: FastifyInstance) {
     if (session?.sub === req.params.id) {
       return reply.code(400).send({ error: "cannot_delete_self" });
     }
-    const [row] = await db
-      .delete(users)
-      .where(eq(users.id, req.params.id))
-      .returning({ id: users.id });
-    if (!row) return reply.code(404).send({ error: "not_found" });
-    return { ok: true };
+    try {
+      const [row] = await db
+        .delete(users)
+        .where(eq(users.id, req.params.id))
+        .returning({ id: users.id });
+      if (!row) return reply.code(404).send({ error: "not_found" });
+      return { ok: true };
+    } catch (err: any) {
+      req.log.error({ err, userId: req.params.id }, "admin delete user failed");
+      // FK violation (constraint без CASCADE на старой БД) — чистим связи руками и пробуем ещё раз
+      if (err?.code === "23503") {
+        try {
+          await db.transaction(async (tx) => {
+            const id = req.params.id;
+            await tx.execute(sql`DELETE FROM user_badges WHERE user_id = ${id}`);
+            await tx.execute(sql`DELETE FROM email_verifications WHERE user_id = ${id}`);
+            await tx.execute(sql`DELETE FROM pass_purchases WHERE user_id = ${id}`);
+            await tx.execute(sql`DELETE FROM tickets_ledger WHERE user_id = ${id}`);
+            await tx.execute(sql`UPDATE tickets_ledger SET created_by = NULL WHERE created_by = ${id}`);
+            await tx.execute(sql`DELETE FROM xp_ledger WHERE user_id = ${id}`);
+            await tx.execute(sql`UPDATE xp_ledger SET created_by = NULL WHERE created_by = ${id}`);
+            await tx.execute(sql`DELETE FROM quest_progress WHERE user_id = ${id}`);
+            await tx.execute(sql`DELETE FROM referrals WHERE referrer_id = ${id} OR invited_user_id = ${id}`);
+            await tx.execute(sql`DELETE FROM referral_codes WHERE user_id = ${id}`);
+            await tx.execute(sql`DELETE FROM raffle_entries WHERE user_id = ${id}`);
+            await tx.execute(sql`UPDATE raffles SET winner_user_id = NULL WHERE winner_user_id = ${id}`);
+            await tx.execute(sql`DELETE FROM orders WHERE user_id = ${id}`);
+            await tx.execute(sql`DELETE FROM post_votes WHERE user_id = ${id}`);
+            await tx.execute(sql`DELETE FROM post_likes WHERE user_id = ${id}`);
+            await tx.execute(sql`DELETE FROM post_comments WHERE user_id = ${id}`);
+            await tx.execute(sql`DELETE FROM posts WHERE author_id = ${id}`);
+            await tx.execute(sql`UPDATE news SET created_by = NULL WHERE created_by = ${id}`);
+            await tx.execute(sql`DELETE FROM profiles WHERE user_id = ${id}`);
+            await tx.execute(sql`DELETE FROM users WHERE id = ${id}`);
+          });
+          return { ok: true };
+        } catch (err2: any) {
+          req.log.error({ err: err2, userId: req.params.id }, "admin delete user cascade failed");
+          return reply.code(500).send({
+            error: "delete_failed",
+            detail: err2?.detail ?? err2?.message ?? String(err2),
+          });
+        }
+      }
+      return reply.code(500).send({
+        error: "delete_failed",
+        detail: err?.detail ?? err?.message ?? String(err),
+      });
+    }
   });
 
   // PATCH /api/v1/admin/users/:id — роль / блокировка
