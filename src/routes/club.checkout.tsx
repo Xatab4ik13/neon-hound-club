@@ -42,19 +42,19 @@ function readProfile(): Partial<CheckoutProfile> {
 
 function ClubCheckoutPage() {
   const { items, total, clear } = useCart();
-  const { isAuthed } = useViewer();
+  const { isAuthed, viewer } = useViewer();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const [form, setForm] = useState<CheckoutProfile>({
-    name: ME.nick ?? "",
+    name: viewer?.nick ?? "",
     phone: "",
-    email: "",
-    city: ME.city ?? "",
+    email: viewer?.email ?? "",
+    city: viewer?.city ?? "",
     address: "",
   });
-  const [submitting, setSubmitting] = useState(false);
 
-  // Гидрация из ЛК / прошлого заказа
+  // Гидрация из прошлого заказа
   useEffect(() => {
     const saved = readProfile();
     setForm((f) => ({
@@ -65,6 +65,17 @@ function ClubCheckoutPage() {
       address: saved.address || f.address,
     }));
   }, []);
+
+  // Подхватываем актуальный профиль, когда он подгрузится
+  useEffect(() => {
+    if (!viewer) return;
+    setForm((f) => ({
+      ...f,
+      name: f.name || viewer.nick || "",
+      email: f.email || viewer.email || "",
+      city: f.city || viewer.city || "",
+    }));
+  }, [viewer]);
 
   // Гард
   useEffect(() => {
@@ -77,34 +88,64 @@ function ClubCheckoutPage() {
     [items],
   );
 
+  const orderableItems = useMemo(
+    () => items.filter((i) => Boolean(i.productId)),
+    [items],
+  );
+  const hasLegacyItems = orderableItems.length !== items.length;
+
   const set = <K extends keyof CheckoutProfile>(k: K, v: string) =>
     setForm((f) => ({ ...f, [k]: v }));
 
+  const mutation = useMutation({
+    mutationFn: createOrder,
+    onSuccess: (order) => {
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(PROFILE_KEY, JSON.stringify(form));
+      }
+      clear();
+      queryClient.invalidateQueries({ queryKey: qk.shopOrders });
+      queryClient.invalidateQueries({ queryKey: qk.ticketsBalance });
+      const shortId = order.id.slice(0, 8).toUpperCase();
+      navigate({
+        to: "/checkout/success",
+        search: { o: shortId, t: ticketsTotal },
+      });
+    },
+    onError: (err) => {
+      const msg = err instanceof ApiError ? err.message : "Не удалось оформить заказ";
+      hhToast.error("Ошибка оформления", { meta: msg });
+    },
+  });
+
   const canSubmit =
-    form.name.trim() &&
-    form.phone.trim() &&
-    form.email.trim() &&
-    form.city.trim() &&
-    form.address.trim();
+    form.name.trim().length >= 2 &&
+    form.phone.trim().length >= 5 &&
+    form.city.trim().length >= 1 &&
+    form.address.trim().length >= 3 &&
+    orderableItems.length > 0 &&
+    !mutation.isPending;
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!canSubmit) return;
-    setSubmitting(true);
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem(PROFILE_KEY, JSON.stringify(form));
-    }
-    const orderId = `HH-${Date.now().toString(36).toUpperCase().slice(-6)}`;
-    setTimeout(() => {
-      clear();
-      navigate({
-        to: "/checkout/success",
-        search: { o: orderId, t: ticketsTotal },
-      });
-    }, 600);
+    mutation.mutate({
+      items: orderableItems.map((i) => ({ productId: i.productId!, qty: i.qty })),
+      shipping: {
+        fio: form.name.trim(),
+        phone: form.phone.trim(),
+        city: form.city.trim(),
+        address: form.address.trim(),
+      },
+    });
   };
 
+  const submitting = mutation.isPending;
+
   if (!isAuthed || items.length === 0) return null;
+
+  // Если в корзине только старые позиции без productId — оформить нельзя
+  const cannotOrderBecauseLegacy = orderableItems.length === 0;
 
   return (
     <main
