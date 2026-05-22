@@ -9,7 +9,7 @@ import {
   type UploadKind,
 } from "../lib/s3.js";
 
-const KINDS: UploadKind[] = ["avatar", "bike", "product", "raffle", "shop"];
+const KINDS: UploadKind[] = ["avatar", "bike", "product", "raffle", "shop", "post"];
 
 const signSchema = z.object({
   kind: z.enum(KINDS as [UploadKind, ...UploadKind[]]),
