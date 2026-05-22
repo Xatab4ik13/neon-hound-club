@@ -14,7 +14,7 @@ type SessionUser = {
   id: string;
   email: string;
   nick: string;
-  role: "user" | "admin";
+  role: "user" | "admin" | "blogger";
 };
 
 type Viewer = {

@@ -1,9 +1,8 @@
 // Admin layout: sidebar + topbar + light/dark toggle.
-// Phase 1a: UI scaffold на мок-данных. Авторизация и БД подключим
-// после согласования визуала.
+// Гейт: пускает только role === "admin". Иначе — форма входа прямо на /admin.
 
 import { Link, Outlet, createFileRoute, useRouterState } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import {
   LayoutDashboard,
   Trophy,
@@ -21,8 +20,11 @@ import {
   Sun,
   Moon,
   LogOut,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useViewer } from "@/hooks/use-viewer";
+import { ApiError } from "@/lib/api";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -31,8 +33,111 @@ export const Route = createFileRoute("/admin")({
       { name: "robots", content: "noindex, nofollow" },
     ],
   }),
-  component: AdminLayout,
+  component: AdminGate,
 });
+
+function AdminGate() {
+  const { hydrated, isAuthed, user } = useViewer();
+
+  if (!hydrated) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-zinc-950 text-zinc-400">
+        <Loader2 className="h-5 w-5 animate-spin" />
+      </div>
+    );
+  }
+
+  if (!isAuthed || user?.role !== "admin") {
+    return <AdminLogin reason={isAuthed ? "not_admin" : "guest"} />;
+  }
+
+  return <AdminLayout />;
+}
+
+function AdminLogin({ reason }: { reason: "guest" | "not_admin" }) {
+  const { signIn, signOut } = useViewer();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  async function onSubmit(e: FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setBusy(true);
+    try {
+      const u = await signIn(email.trim(), password);
+      if (u.role !== "admin") {
+        setError("Этот аккаунт не админ.");
+        await signOut().catch(() => {});
+      }
+    } catch (err) {
+      const msg =
+        err instanceof ApiError
+          ? err.message || "Неверный email или пароль"
+          : "Не удалось войти";
+      setError(msg);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="dark">
+      <div className="flex min-h-screen items-center justify-center bg-zinc-950 p-4 text-zinc-100">
+        <form
+          onSubmit={onSubmit}
+          className="w-full max-w-sm space-y-4 rounded-lg border border-zinc-800 bg-zinc-900 p-6"
+        >
+          <div>
+            <div className="text-lg font-semibold">Вход в админку</div>
+            <div className="mt-1 text-xs text-zinc-400">
+              {reason === "not_admin"
+                ? "Текущий аккаунт без прав администратора."
+                : "Только для администраторов HELLHOUND."}
+            </div>
+          </div>
+          <div className="space-y-2">
+            <label className="block text-xs text-zinc-400">Email</label>
+            <input
+              type="email"
+              autoComplete="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm outline-none focus:border-zinc-500"
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="block text-xs text-zinc-400">Пароль</label>
+            <input
+              type="password"
+              autoComplete="current-password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm outline-none focus:border-zinc-500"
+            />
+          </div>
+          {error && (
+            <div className="rounded-md border border-red-900/50 bg-red-950/40 px-3 py-2 text-xs text-red-300">
+              {error}
+            </div>
+          )}
+          <button
+            type="submit"
+            disabled={busy}
+            className="flex w-full items-center justify-center gap-2 rounded-md bg-zinc-100 px-3 py-2 text-sm font-medium text-zinc-900 transition hover:bg-white disabled:opacity-60"
+          >
+            {busy && <Loader2 className="h-4 w-4 animate-spin" />}
+            Войти
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 
 type NavItem = { to: string; label: string; icon: React.ComponentType<{ className?: string }> };
 
