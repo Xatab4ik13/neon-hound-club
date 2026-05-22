@@ -556,6 +556,17 @@ function CommentItem({
           >
             Ответить
           </button>
+          {onDelete && (
+            <button
+              type="button"
+              onClick={onDelete}
+              aria-label="Удалить комментарий"
+              title="Удалить комментарий"
+              className="ml-auto inline-flex items-center gap-1 font-mono text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60 transition-colors hover:text-destructive"
+            >
+              <Trash2 className="h-3 w-3" /> Удалить
+            </button>
+          )}
         </div>
       </div>
     </li>
