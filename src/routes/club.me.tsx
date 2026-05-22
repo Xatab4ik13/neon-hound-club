@@ -15,7 +15,8 @@ import {
 } from "lucide-react";
 import { SettingsModal } from "@/components/club/SettingsModal";
 import { BadgeCase } from "@/components/club/BadgeCase";
-import { ME } from "@/data/profile";
+import { useMyProfile } from "@/lib/garage-api";
+import { useViewer } from "@/hooks/use-viewer";
 import {
   useCurrentRank,
   useRankState,
