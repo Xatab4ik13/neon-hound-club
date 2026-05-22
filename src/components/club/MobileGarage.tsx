@@ -774,7 +774,7 @@ function RidesList({ bikeId, flat = false }: { bikeId: string; flat?: boolean })
   }
 
   return (
-    <div className="px-4">
+    <div className={flat ? "" : "px-4"}>
       <IOSListSection>
         {rides.map((r) => (
           <IOSListRow
