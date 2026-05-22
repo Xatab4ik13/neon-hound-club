@@ -34,6 +34,8 @@ type Product = {
   sub?: string;
   image: string;
   description?: string;
+  shipping?: string;
+  returns?: string;
   ticketsBonus?: number;
   status: "active" | "draft" | "archived";
 };
