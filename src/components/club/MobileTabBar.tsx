@@ -25,7 +25,6 @@ const MORE_PATHS = [
   "/club/quests",
   "/club/raffles",
   "/club/invite",
-  "/club/hell-ai",
   "/club/hell-pass",
   "/club/school",
 ];
