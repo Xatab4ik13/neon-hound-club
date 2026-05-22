@@ -21,6 +21,7 @@ import {
   totalTickets,
   type Raffle,
   type RafflePrize as Prize,
+  type RaffleSpec,
 } from "@/data/raffles-store";
 
 export const Route = createFileRoute("/admin/raffles")({
@@ -31,14 +32,19 @@ function emptyRaffle(): Raffle {
   return {
     id: "",
     name: "",
+    subtitle: "",
     description: "",
     cover: "",
     endsAt: "",
+    deadlineAt: "",
     createdAt: new Date().toISOString().slice(0, 10),
     participants: [],
     prizes: [],
+    specs: [],
+    rules: [],
   };
 }
+
 
 function RafflesPage() {
   const list = useRaffles();
