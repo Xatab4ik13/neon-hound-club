@@ -231,6 +231,9 @@ export async function garageRoutes(app: FastifyInstance) {
         color: d.color ?? null,
         nickname: d.nickname ?? null,
         notes: d.notes ?? null,
+        mileage: d.mileage ?? null,
+        purchaseDate: d.purchaseDate ?? null,
+        mods: d.mods,
         photos: d.photos,
         isPrimary: shouldBePrimary,
       })
