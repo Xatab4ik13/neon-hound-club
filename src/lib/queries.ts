@@ -56,6 +56,69 @@ export type QuestItem = {
   completedAt: string | null;
 };
 
+// ---------- SHOP TYPES ----------
+
+export type ShopProductListItem = {
+  id: string;
+  slug: string;
+  title: string;
+  priceRub: number;
+  bonusTickets: number;
+  images: string[];
+  stock: number | null;
+};
+
+export type ShopProduct = ShopProductListItem & {
+  description: string;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ShopOrderStatus =
+  | "pending_payment"
+  | "paid"
+  | "shipped"
+  | "delivered"
+  | "cancelled"
+  | "refunded";
+
+export type ShopOrderShipping = {
+  fio: string;
+  phone: string;
+  city: string;
+  address: string;
+  postalCode?: string;
+};
+
+export type ShopOrder = {
+  id: string;
+  userId: string;
+  status: ShopOrderStatus;
+  totalRub: number;
+  bonusTicketsTotal: number;
+  shipping: ShopOrderShipping;
+  comment: string | null;
+  cdekTrack: string | null;
+  createdAt: string;
+  updatedAt: string;
+  paidAt: string | null;
+  shippedAt: string | null;
+};
+
+export type ShopOrderItem = {
+  id: string;
+  orderId: string;
+  productId: string | null;
+  titleSnapshot: string;
+  priceRubSnapshot: number;
+  bonusTicketsSnapshot: number;
+  qty: number;
+  createdAt: string;
+};
+
+export type ShopOrderWithItems = ShopOrder & { items: ShopOrderItem[] };
+
 // ---------- KEYS ----------
 
 export const qk = {
@@ -64,6 +127,10 @@ export const qk = {
   passTiers: ["pass", "tiers"] as const,
   passMe: ["pass", "me"] as const,
   quests: ["quests", "list"] as const,
+  shopProducts: ["shop", "products"] as const,
+  shopProduct: (slug: string) => ["shop", "product", slug] as const,
+  shopOrders: ["shop", "orders"] as const,
+  shopOrder: (id: string) => ["shop", "order", id] as const,
 };
 
 // ---------- TICKETS ----------
