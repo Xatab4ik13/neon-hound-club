@@ -44,5 +44,9 @@ export async function buildApp() {
   await app.register(ticketsRoutes, { prefix: "/api/v1/tickets" });
   await app.register(adminTicketsRoutes, { prefix: "/api/v1/admin/tickets" });
 
+  const { shopRoutes, adminShopRoutes } = await import("./routes/shop.js");
+  await app.register(shopRoutes, { prefix: "/api/v1/shop" });
+  await app.register(adminShopRoutes, { prefix: "/api/v1/admin/shop" });
+
   return app;
 }
