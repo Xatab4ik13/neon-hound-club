@@ -144,7 +144,6 @@ function ClubCheckoutPage() {
   if (!isAuthed || items.length === 0) return null;
 
   // Если в корзине только старые позиции без productId — оформить нельзя
-  const cannotOrderBecauseLegacy = orderableItems.length === 0;
 
   return (
     <main
