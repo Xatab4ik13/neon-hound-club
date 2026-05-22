@@ -174,6 +174,13 @@ export function deleteAdminQuest(id: string) {
   return apiFetch<{ ok: true }>(`/api/v1/admin/quests/${id}`, { method: "DELETE" });
 }
 
+export function completeQuestForUser(code: string, userId: string) {
+  return apiFetch<
+    | { credited: true; completionId: string; tickets: number }
+    | { credited: false; reason: string }
+  >(`/api/v1/admin/quests/${encodeURIComponent(code)}/complete-for/${userId}`, { method: "POST" });
+}
+
 // ---------- RAFFLES ADMIN ----------
 
 export type CreateRaffleInput = {
