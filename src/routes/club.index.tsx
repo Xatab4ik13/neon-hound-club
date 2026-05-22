@@ -1,11 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
-import { Smile, Paperclip, Send, Search as SearchIcon, Clock, Sticker } from "lucide-react";
+import { useEffect, useRef, useState, useCallback } from "react";
+import { Smile, Paperclip, Send, Search as SearchIcon, Clock, Sticker, X } from "lucide-react";
 import { RANKS, type RankId } from "@/data/ranks";
 import { ME_SLUG, PUBLIC_USERS } from "@/data/users";
-import { useFeedPosts, type FeedComment, type FeedPost } from "@/data/feed-store";
+import { useFeedPosts, feedStore, type FeedComment, type FeedPost } from "@/data/feed-store";
 import { HellhoundAvatar, HellhoundChip, isHell } from "@/components/club/HellhoundPlaque";
 import { IOSSheet } from "@/components/ios/IOSSheet";
+
 
 export const Route = createFileRoute("/club/")({
   head: () => ({
@@ -238,6 +239,23 @@ function CommentsSheet({
   onOpenChange: (v: boolean) => void;
   post: Post;
 }) {
+  const [replyTo, setReplyTo] = useState<{ nick: string; commentId: string } | null>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+
+  // сбросить reply при закрытии
+  useEffect(() => {
+    if (!open) setReplyTo(null);
+  }, [open]);
+
+  // автоскролл вниз при добавлении
+  const lastCount = useRef(post.comments.length);
+  useEffect(() => {
+    if (post.comments.length > lastCount.current && listRef.current) {
+      listRef.current.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
+    }
+    lastCount.current = post.comments.length;
+  }, [post.comments.length]);
+
   return (
     <IOSSheet
       open={open}
@@ -247,7 +265,7 @@ function CommentsSheet({
       contentClassName="!p-0"
     >
       <div className="flex h-full flex-col">
-        <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-4 md:px-5">
+        <div ref={listRef} className="flex-1 overflow-y-auto overscroll-contain px-4 py-4 md:px-5">
           {post.comments.length === 0 ? (
             <div className="grid h-full place-items-center text-[13px] text-muted-foreground">
               Будь первым — оставь комментарий
@@ -255,13 +273,28 @@ function CommentsSheet({
           ) : (
             <ul className="space-y-5">
               {post.comments.map((c) => (
-                <CommentItem key={c.id} comment={c} large />
+                <CommentItem
+                  key={c.id}
+                  comment={c}
+                  large
+                  onReply={() =>
+                    setReplyTo({
+                      nick: PUBLIC_USERS[c.authorSlug]?.nick ?? c.authorSlug,
+                      commentId: c.id,
+                    })
+                  }
+                />
               ))}
             </ul>
           )}
         </div>
         <div className="shrink-0 border-t border-white/[0.06] bg-[#0d0d0d]">
-          <CommentComposer postId={post.id} large />
+          <CommentComposer
+            postId={post.id}
+            large
+            replyTo={replyTo}
+            onClearReply={() => setReplyTo(null)}
+          />
         </div>
       </div>
     </IOSSheet>
@@ -270,7 +303,15 @@ function CommentsSheet({
 
 // ───────── Comment item ─────────
 
-function CommentItem({ comment, large = false }: { comment: Comment; large?: boolean }) {
+function CommentItem({
+  comment,
+  large = false,
+  onReply,
+}: {
+  comment: Comment;
+  large?: boolean;
+  onReply?: () => void;
+}) {
   const [liked, setLiked] = useState(false);
   const user = PUBLIC_USERS[comment.authorSlug];
   const rank = RANK_BY_ID[user?.rank ?? "rookie"];
@@ -330,7 +371,8 @@ function CommentItem({ comment, large = false }: { comment: Comment; large?: boo
           </button>
           <button
             type="button"
-            className="font-mono text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70 transition-colors hover:text-foreground"
+            onClick={onReply}
+            className="font-mono text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70 transition-colors hover:text-foreground active:opacity-60"
           >
             Ответить
           </button>
@@ -339,6 +381,7 @@ function CommentItem({ comment, large = false }: { comment: Comment; large?: boo
     </li>
   );
 }
+
 
 
 function UserLink({
@@ -432,27 +475,112 @@ const STICKER_PACKS: StickerPack[] = [
   },
 ];
 
-function CommentComposer({ postId, large = false }: { postId: string; large?: boolean }) {
+const RECENT_STICKERS_KEY = "club:recent-stickers";
+
+function loadRecent(): string[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(RECENT_STICKERS_KEY);
+    return raw ? (JSON.parse(raw) as string[]).slice(0, 24) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveRecent(list: string[]) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(RECENT_STICKERS_KEY, JSON.stringify(list.slice(0, 24)));
+  } catch {
+    /* noop */
+  }
+}
+
+function CommentComposer({
+  postId,
+  large = false,
+  replyTo,
+  onClearReply,
+}: {
+  postId: string;
+  large?: boolean;
+  replyTo?: { nick: string; commentId: string } | null;
+  onClearReply?: () => void;
+}) {
   const [value, setValue] = useState("");
   const [panel, setPanel] = useState<null | "emoji" | "stickers">(null);
   const [tab, setTab] = useState<"recent" | "emoji" | "stickers">("stickers");
   const [activePack, setActivePack] = useState<string>(STICKER_PACKS[0].id);
+  const [recent, setRecent] = useState<string[]>(() => loadRecent());
   const me = PUBLIC_USERS[ME_SLUG];
   const disabled = value.trim().length === 0;
   const wrapRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Когда тыкнули «Ответить» — фокус на ввод
   useEffect(() => {
-    if (!panel) return;
-    const onDoc = (e: MouseEvent) => {
-      if (!wrapRef.current?.contains(e.target as Node)) setPanel(null);
-    };
-    document.addEventListener("mousedown", onDoc);
-    return () => document.removeEventListener("mousedown", onDoc);
-  }, [panel]);
+    if (replyTo) inputRef.current?.focus();
+  }, [replyTo]);
+
+  const pushRecent = useCallback((s: string) => {
+    setRecent((prev) => {
+      const next = [s, ...prev.filter((x) => x !== s)].slice(0, 24);
+      saveRecent(next);
+      return next;
+    });
+  }, []);
+
+  const submitText = useCallback(
+    (text: string) => {
+      const clean = text.trim();
+      if (!clean) return;
+      const prefix = replyTo ? `@${replyTo.nick} ` : "";
+      feedStore.addComment(postId, { authorSlug: ME_SLUG, text: `${prefix}${clean}` });
+      setValue("");
+      setPanel(null);
+      onClearReply?.();
+    },
+    [postId, replyTo, onClearReply],
+  );
+
+  const insertEmoji = useCallback((e: string) => {
+    setValue((v) => v + e);
+    inputRef.current?.focus();
+  }, []);
+
+  const sendSticker = useCallback(
+    (s: string) => {
+      pushRecent(s);
+      const prefix = replyTo ? `@${replyTo.nick} ` : "";
+      feedStore.addComment(postId, { authorSlug: ME_SLUG, text: `${prefix}${s}` });
+      setPanel(null);
+      onClearReply?.();
+    },
+    [postId, replyTo, onClearReply, pushRecent],
+  );
 
   return (
     <div ref={wrapRef} className="relative border-t border-white/[0.06] bg-black/40">
+      {replyTo && (
+        <div className="flex items-center gap-2 border-b border-white/[0.05] bg-primary/[0.06] px-4 py-2">
+          <div className="h-7 w-[2px] shrink-0 rounded-full bg-primary" />
+          <div className="min-w-0 flex-1">
+            <div className="font-mono text-[9px] uppercase tracking-[0.18em] text-primary">
+              Ответ
+            </div>
+            <div className="truncate text-[12px] text-foreground/80">@{replyTo.nick}</div>
+          </div>
+          <button
+            type="button"
+            onClick={onClearReply}
+            aria-label="Отменить ответ"
+            className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-muted-foreground hover:text-foreground"
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
+
       {panel && (
         <StickerPanel
           tab={tab}
@@ -460,15 +588,15 @@ function CommentComposer({ postId, large = false }: { postId: string; large?: bo
           activePack={activePack}
           setActivePack={setActivePack}
           large={large}
+          recent={recent}
+          onPickEmoji={insertEmoji}
+          onPickSticker={sendSticker}
         />
       )}
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          if (disabled) return;
-          setValue("");
-          setPanel(null);
-          void postId;
+          submitText(value);
         }}
         className="flex items-end gap-2 px-3 py-2.5"
       >
@@ -478,7 +606,7 @@ function CommentComposer({ postId, large = false }: { postId: string; large?: bo
           <button
             type="button"
             onClick={() => {
-              if (panel) {
+              if (panel === "emoji") {
                 setPanel(null);
               } else {
                 setPanel("emoji");
@@ -497,7 +625,7 @@ function CommentComposer({ postId, large = false }: { postId: string; large?: bo
             value={value}
             onChange={(e) => setValue(e.target.value)}
             onFocus={() => setPanel(null)}
-            placeholder="Написать комментарий…"
+            placeholder={replyTo ? `Ответить @${replyTo.nick}…` : "Написать комментарий…"}
             className="min-w-0 flex-1 bg-transparent px-1 py-1.5 text-[14px] text-foreground placeholder:text-muted-foreground/60 outline-none"
           />
 
@@ -535,6 +663,7 @@ function CommentComposer({ postId, large = false }: { postId: string; large?: bo
             <Send size={18} strokeWidth={2} className="-translate-x-[1px]" />
           </button>
         )}
+
       </form>
     </div>
   );
@@ -546,12 +675,18 @@ function StickerPanel({
   activePack,
   setActivePack,
   large = false,
+  recent,
+  onPickEmoji,
+  onPickSticker,
 }: {
   tab: "recent" | "emoji" | "stickers";
   setTab: (t: "recent" | "emoji" | "stickers") => void;
   activePack: string;
   setActivePack: (id: string) => void;
   large?: boolean;
+  recent: string[];
+  onPickEmoji: (e: string) => void;
+  onPickSticker: (s: string) => void;
 }) {
   const pack = STICKER_PACKS.find((p) => p.id === activePack) ?? STICKER_PACKS[0];
 
@@ -581,6 +716,7 @@ function StickerPanel({
                 <button
                   key={i}
                   type="button"
+                  onClick={() => onPickSticker(s)}
                   className={`grid aspect-square place-items-center rounded-lg transition-transform active:scale-90 hover:bg-white/[0.04] ${large ? "text-6xl sm:text-7xl" : "text-4xl sm:text-[40px]"}`}
                 >
                   <span>{s}</span>
@@ -597,18 +733,33 @@ function StickerPanel({
               <button
                 key={i}
                 type="button"
+                onClick={() => onPickEmoji(e)}
                 className={`grid aspect-square place-items-center rounded-lg transition-transform active:scale-90 hover:bg-white/[0.05] ${large ? "text-4xl" : "text-[26px]"}`}
               >
                 {e}
               </button>
             ))}
           </div>
+        ) : recent.length === 0 ? (
+          <div className="grid h-full place-items-center px-6 text-center text-[12px] text-muted-foreground/60">
+            Здесь появятся стикеры и эмодзи, которые ты используешь
+          </div>
         ) : (
-          <div className="grid h-full place-items-center text-[12px] text-muted-foreground/60">
-            Здесь будут недавние
+          <div className={`grid gap-1 pt-1 ${large ? "grid-cols-4 sm:grid-cols-5" : "grid-cols-5 sm:grid-cols-6"}`}>
+            {recent.map((s, i) => (
+              <button
+                key={`${s}-${i}`}
+                type="button"
+                onClick={() => onPickSticker(s)}
+                className={`grid aspect-square place-items-center rounded-lg transition-transform active:scale-90 hover:bg-white/[0.04] ${large ? "text-5xl sm:text-6xl" : "text-3xl sm:text-4xl"}`}
+              >
+                <span>{s}</span>
+              </button>
+            ))}
           </div>
         )}
       </div>
+
 
       {/* Bottom bar: pack tabs (Telegram-style) */}
       <div className="flex items-center gap-0.5 border-t border-white/[0.06] bg-black/40 px-1.5 py-1.5">

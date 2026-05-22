@@ -114,6 +114,21 @@ export const feedStore = {
     );
     emit();
   },
+  addComment(postId: string, input: { authorSlug: string; text: string }) {
+    const comment: FeedComment = {
+      id: `c${Date.now()}`,
+      authorSlug: input.authorSlug,
+      time: "только что",
+      text: input.text,
+      likes: 0,
+    };
+    POSTS = POSTS.map((p) =>
+      p.id === postId ? { ...p, comments: [...p.comments, comment] } : p,
+    );
+    emit();
+    return comment;
+  },
+
 };
 
 export function useFeedPosts() {
