@@ -133,9 +133,13 @@ function RafflesPage() {
       <ConfirmModal
         open={!!confirm}
         onClose={() => setConfirm(null)}
-        onConfirm={() => confirm && rafflesStore.remove(confirm.id)}
+        onConfirm={() => {
+          if (!confirm) return;
+          rafflesStore.remove(confirm.id);
+          if (activeId === confirm.id) setActiveId(null);
+        }}
         title="Удалить розыгрыш?"
-        message={`«${confirm?.name}» и все его призы будут удалены.`}
+        message={`«${confirm?.name}» и все его призы будут удалены. Розыгрыш пропадёт с сайта.`}
       />
     </div>
   );
