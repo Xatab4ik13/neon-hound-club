@@ -388,3 +388,119 @@ export function setBadgePinned(badgeId: string, pinned: boolean) {
     body: JSON.stringify({ pinned }),
   });
 }
+
+// ---------- FEED / POSTS ----------
+
+export type FeedAuthor = {
+  id: string;
+  nick: string;
+  role: "user" | "admin" | "blogger";
+  avatarUrl: string | null;
+  city: string | null;
+};
+
+export type FeedPollOptionResult = { id: string; text: string; votes: number };
+
+export type FeedPollHydrated = {
+  question: string;
+  anonymous: boolean;
+  multi: boolean;
+  closed: boolean;
+  options: { id: string; text: string }[];
+  results: FeedPollOptionResult[];
+  myVote: string[];
+};
+
+export type FeedPostHydrated = {
+  id: string;
+  author: FeedAuthor;
+  text: string;
+  imageUrl: string | null;
+  pinned: boolean;
+  poll: FeedPollHydrated | null;
+  likes: number;
+  liked: boolean;
+  commentsCount: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type FeedCommentHydrated = {
+  id: string;
+  text: string;
+  likes: number;
+  createdAt: string;
+  authorId: string;
+  nick: string;
+  avatarUrl: string | null;
+};
+
+export type FeedPostDetail = FeedPostHydrated & { comments: FeedCommentHydrated[] };
+
+export type CreatePostInput = {
+  text?: string;
+  imageUrl?: string | null;
+  pinned?: boolean;
+  poll?: {
+    question: string;
+    anonymous: boolean;
+    multi: boolean;
+    closed: boolean;
+    options: { id: string; text: string }[];
+  } | null;
+};
+
+export function fetchFeed(params: { limit?: number; cursor?: string; author?: string } = {}) {
+  const q = new URLSearchParams();
+  if (params.limit) q.set("limit", String(params.limit));
+  if (params.cursor) q.set("cursor", params.cursor);
+  if (params.author) q.set("author", params.author);
+  const qs = q.toString() ? `?${q}` : "";
+  return apiFetch<{ items: FeedPostHydrated[]; nextCursor: string | null }>(`/api/v1/feed${qs}`);
+}
+
+export function fetchPost(id: string) {
+  return apiFetch<FeedPostDetail>(`/api/v1/feed/${id}`);
+}
+
+export function likePost(id: string) {
+  return apiFetch<{ ok: true }>(`/api/v1/feed/${id}/like`, { method: "POST" });
+}
+export function unlikePost(id: string) {
+  return apiFetch<{ ok: true }>(`/api/v1/feed/${id}/like`, { method: "DELETE" });
+}
+
+export function addComment(postId: string, text: string) {
+  return apiFetch<FeedCommentHydrated>(`/api/v1/feed/${postId}/comments`, {
+    method: "POST",
+    body: JSON.stringify({ text }),
+  });
+}
+
+export function deleteComment(commentId: string) {
+  return apiFetch<{ ok: true }>(`/api/v1/feed/comments/${commentId}`, { method: "DELETE" });
+}
+
+export function votePoll(postId: string, optionIds: string[]) {
+  return apiFetch<{ ok: true }>(`/api/v1/feed/${postId}/vote`, {
+    method: "POST",
+    body: JSON.stringify({ optionIds }),
+  });
+}
+
+// Blogger / Admin
+export function createPost(input: CreatePostInput) {
+  return apiFetch<FeedPostHydrated>(`/api/v1/posts`, {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+export function patchPost(id: string, input: Partial<CreatePostInput>) {
+  return apiFetch<FeedPostHydrated>(`/api/v1/posts/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(input),
+  });
+}
+export function deletePost(id: string) {
+  return apiFetch<{ ok: true }>(`/api/v1/posts/${id}`, { method: "DELETE" });
+}

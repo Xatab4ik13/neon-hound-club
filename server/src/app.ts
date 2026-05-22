@@ -92,6 +92,15 @@ export async function buildApp() {
   try {
     const { ensureBucket } = await import("./lib/s3.js");
     await ensureBucket();
+  const { feedRoutes, postsRoutes, adminFeedRoutes } = await import("./routes/feed.js");
+  await app.register(feedRoutes, { prefix: "/api/v1/feed" });
+  await app.register(postsRoutes, { prefix: "/api/v1/posts" });
+  await app.register(adminFeedRoutes, { prefix: "/api/v1/admin/feed" });
+
+  // Создаём S3-бакет, если его ещё нет.
+  try {
+    const { ensureBucket } = await import("./lib/s3.js");
+    await ensureBucket();
     app.log.info("s3 bucket ready");
   } catch (e) {
     app.log.error({ err: e }, "ensureBucket failed");

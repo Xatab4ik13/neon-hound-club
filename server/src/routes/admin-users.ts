@@ -105,7 +105,7 @@ export async function adminUsersRoutes(app: FastifyInstance) {
   // PATCH /api/v1/admin/users/:id — роль / блокировка
   const patchSchema = z
     .object({
-      role: z.enum(["user", "admin"]).optional(),
+      role: z.enum(["user", "admin", "blogger"]).optional(),
       blocked: z.boolean().optional(),
     })
     .refine((v) => v.role !== undefined || v.blocked !== undefined, {
