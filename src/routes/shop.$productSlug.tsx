@@ -92,7 +92,7 @@ export const Route = createFileRoute("/shop/$productSlug")({
   component: ProductPage,
 });
 
-const ACCORDION_KEYS = ["desc", "comp", "care", "ship"] as const;
+const ACCORDION_KEYS = ["desc", "comp", "care", "ship", "returns"] as const;
 type AccordionKey = (typeof ACCORDION_KEYS)[number];
 
 function ProductPage() {
