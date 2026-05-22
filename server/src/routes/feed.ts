@@ -95,7 +95,6 @@ async function hydratePosts(rows: typeof posts.$inferSelect[], viewerId: string 
         id: postComments.id,
         postId: postComments.postId,
         text: postComments.text,
-        likes: postComments.likes,
         createdAt: postComments.createdAt,
         authorId: postComments.authorId,
         nick: users.nick,
@@ -107,6 +106,26 @@ async function hydratePosts(rows: typeof posts.$inferSelect[], viewerId: string 
       .where(and(inArray(postComments.postId, ids), isNull(postComments.deletedAt)))
       .orderBy(postComments.createdAt),
   ]);
+
+  // Лайки комментариев: считаем по таблице commentLikes для всех загруженных комментов.
+  const commentIds = allComments.map((c) => c.id);
+  const [commentLikeCounts, myCommentLikes] = await Promise.all([
+    commentIds.length
+      ? db
+          .select({ commentId: commentLikes.commentId, c: sql<number>`count(*)::int` })
+          .from(commentLikes)
+          .where(inArray(commentLikes.commentId, commentIds))
+          .groupBy(commentLikes.commentId)
+      : Promise.resolve([] as { commentId: string; c: number }[]),
+    viewerId && commentIds.length
+      ? db
+          .select({ commentId: commentLikes.commentId })
+          .from(commentLikes)
+          .where(and(inArray(commentLikes.commentId, commentIds), eq(commentLikes.userId, viewerId)))
+      : Promise.resolve([] as { commentId: string }[]),
+  ]);
+  const commentLikeMap = new Map(commentLikeCounts.map((r) => [r.commentId, r.c]));
+  const myCommentLikeSet = new Set(myCommentLikes.map((r) => r.commentId));
 
   // Группируем комменты по постам, кап 20 последних (oldest-first внутри среза).
   const commentsByPost = new Map<string, typeof allComments>();
