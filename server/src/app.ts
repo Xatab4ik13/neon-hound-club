@@ -75,6 +75,9 @@ export async function buildApp() {
   const { adminUsersRoutes } = await import("./routes/admin-users.js");
   await app.register(adminUsersRoutes, { prefix: "/api/v1/admin/users" });
 
+  const { adminStaffRoutes } = await import("./routes/admin-staff.js");
+  await app.register(adminStaffRoutes, { prefix: "/api/v1/admin/staff" });
+
   const { newsRoutes, adminNewsRoutes } = await import("./routes/news.js");
   await app.register(newsRoutes, { prefix: "/api/v1/news" });
   await app.register(adminNewsRoutes, { prefix: "/api/v1/admin/news" });
