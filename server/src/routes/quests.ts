@@ -205,12 +205,11 @@ export async function adminQuestsRoutes(app: FastifyInstance) {
     const q = z
       .object({ userId: z.string().uuid().optional(), limit: z.coerce.number().int().min(1).max(500).default(100) })
       .parse(req.query);
-    const rows = await db
-      .select()
-      .from(userQuestCompletions)
-      .where(q.userId ? eq(userQuestCompletions.userId, q.userId) : undefined as any)
-      .orderBy(desc(userQuestCompletions.completedAt))
-      .limit(q.limit);
+    const base = db.select().from(userQuestCompletions);
+    const filtered = q.userId
+      ? base.where(eq(userQuestCompletions.userId, q.userId))
+      : base;
+    const rows = await filtered.orderBy(desc(userQuestCompletions.completedAt)).limit(q.limit);
     return { items: rows };
   });
 }
