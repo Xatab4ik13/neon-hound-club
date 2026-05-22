@@ -11,19 +11,22 @@ import {
   LogOut,
   ChevronRight,
   ShoppingBag,
+  ShoppingCart,
   type LucideIcon,
 } from "lucide-react";
 import { Drawer } from "vaul";
+import { useCart } from "@/hooks/use-cart";
 
 type Item = {
   label: string;
   href: string;
   icon: LucideIcon;
   subtitle?: string;
-  external?: boolean;
+  badge?: number;
 };
 
-const GROUPS: { title: string; items: Item[] }[] = [
+function buildGroups(cartCount: number): { title: string; items: Item[] }[] {
+  return [
   {
     title: "Клуб",
     items: [
@@ -40,9 +43,16 @@ const GROUPS: { title: string; items: Item[] }[] = [
       { label: "Ранг и XP", href: "/club/rank", icon: TrendingUp },
       { label: "Пригласить друга", href: "/club/invite", icon: UserPlus },
       { label: "Магазин клуба", href: "/club/shop", icon: ShoppingBag },
+      {
+        label: "Корзина",
+        href: "/cart",
+        icon: ShoppingCart,
+        badge: cartCount > 0 ? cartCount : undefined,
+      },
     ],
   },
-];
+  ];
+}
 
 export function MobileMoreSheet({
   open,
@@ -52,6 +62,8 @@ export function MobileMoreSheet({
   onOpenChange: (v: boolean) => void;
 }) {
   const close = () => onOpenChange(false);
+  const { count: cartCount } = useCart();
+  const GROUPS = buildGroups(cartCount);
 
   return (
     <Drawer.Root open={open} onOpenChange={onOpenChange}>
@@ -102,6 +114,11 @@ export function MobileMoreSheet({
                             </span>
                           ) : null}
                         </span>
+                        {item.badge ? (
+                          <span className="grid h-5 min-w-[20px] place-items-center rounded-full bg-primary px-1.5 font-mono text-[10px] font-bold leading-none text-primary-foreground">
+                            {item.badge > 99 ? "99+" : item.badge}
+                          </span>
+                        ) : null}
                         <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
                       </Link>
                     </li>
