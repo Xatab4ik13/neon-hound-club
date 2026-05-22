@@ -131,7 +131,7 @@ function UserDrawer({
   const [badgeOpen, setBadgeOpen] = useState(false);
 
   const patchMut = useMutation({
-    mutationFn: (patch: { role?: "user" | "admin"; blocked?: boolean }) =>
+    mutationFn: (patch: { role?: "user" | "admin" | "blogger"; blocked?: boolean }) =>
       patchAdminUser(userId, patch),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: adminQk.user(userId) });
