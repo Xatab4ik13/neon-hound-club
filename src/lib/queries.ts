@@ -174,3 +174,34 @@ export async function checkQuest(code: string) {
     | { credited: false; reason: string }
   >(`/api/v1/quests/${encodeURIComponent(code)}/check`, { method: "POST" });
 }
+
+// ---------- SHOP ----------
+
+export async function fetchShopProducts() {
+  return apiFetch<{ items: ShopProductListItem[] }>("/api/v1/shop/products");
+}
+
+export async function fetchShopProduct(slug: string) {
+  return apiFetch<ShopProduct>(`/api/v1/shop/products/${encodeURIComponent(slug)}`);
+}
+
+export async function fetchMyOrders() {
+  return apiFetch<{ items: ShopOrder[] }>("/api/v1/shop/orders");
+}
+
+export async function fetchMyOrder(id: string) {
+  return apiFetch<ShopOrderWithItems>(`/api/v1/shop/orders/${id}`);
+}
+
+export type CreateOrderInput = {
+  items: { productId: string; qty: number }[];
+  shipping: ShopOrderShipping;
+  comment?: string;
+};
+
+export async function createOrder(input: CreateOrderInput) {
+  return apiFetch<ShopOrderWithItems>("/api/v1/shop/orders", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
