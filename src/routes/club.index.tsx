@@ -335,10 +335,41 @@ function RankAvatar({
   );
 }
 
+// Mock packs — позже заменим на данные из БД
+
+type StickerPack = {
+  id: string;
+  title: string;
+  cover: string; // emoji-cover пока, заменим на PNG
+  stickers: string[]; // emoji-заглушки, потом URL картинок
+};
+
+const STICKER_PACKS: StickerPack[] = [
+  {
+    id: "hellhound-og",
+    title: "HELLHOUND OG",
+    cover: "🔥",
+    stickers: ["🔥", "💀", "🤘", "🏁", "🏍️", "⚡", "💯", "👀", "😤", "🥶", "🛠️", "⚙️", "🏆", "🤝", "🫡", "😎"],
+  },
+  {
+    id: "race-pass-s1",
+    title: "Race Pass · S1",
+    cover: "🏁",
+    stickers: ["🏁", "🏍️", "🏆", "⚡", "🔥", "💨", "🛞", "🧰", "📈", "🥇", "🥈", "🥉"],
+  },
+  {
+    id: "moto-mood",
+    title: "Moto Mood",
+    cover: "🤘",
+    stickers: ["😀", "😁", "😂", "🤣", "😊", "😍", "😎", "🤘", "🙏", "👍", "👌", "🤙"],
+  },
+];
+
 function CommentComposer({ postId }: { postId: string }) {
   const [value, setValue] = useState("");
   const [panel, setPanel] = useState<null | "emoji" | "stickers">(null);
   const [tab, setTab] = useState<"recent" | "emoji" | "stickers">("stickers");
+  const [activePack, setActivePack] = useState<string>(STICKER_PACKS[0].id);
   const me = PUBLIC_USERS[ME_SLUG];
   const disabled = value.trim().length === 0;
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -358,11 +389,9 @@ function CommentComposer({ postId }: { postId: string }) {
       {panel && (
         <StickerPanel
           tab={tab}
-          setTab={(t) => {
-            setTab(t);
-            setPanel(t === "stickers" ? "stickers" : "emoji");
-          }}
-          onClose={() => setPanel(null)}
+          setTab={setTab}
+          activePack={activePack}
+          setActivePack={setActivePack}
         />
       )}
       <form
@@ -381,8 +410,12 @@ function CommentComposer({ postId }: { postId: string }) {
           <button
             type="button"
             onClick={() => {
-              setPanel(panel ? null : "emoji");
-              setTab("emoji");
+              if (panel) {
+                setPanel(null);
+              } else {
+                setPanel("emoji");
+                setTab("emoji");
+              }
             }}
             className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-muted-foreground hover:text-foreground"
             aria-label="Эмодзи и стикеры"
@@ -395,6 +428,7 @@ function CommentComposer({ postId }: { postId: string }) {
             type="text"
             value={value}
             onChange={(e) => setValue(e.target.value)}
+            onFocus={() => setPanel(null)}
             placeholder="Написать комментарий…"
             className="min-w-0 flex-1 bg-transparent px-1 py-1.5 text-[14px] text-foreground placeholder:text-muted-foreground/60 outline-none"
           />
@@ -412,8 +446,12 @@ function CommentComposer({ postId }: { postId: string }) {
           <button
             type="button"
             onClick={() => {
-              setPanel(panel === "stickers" ? null : "stickers");
-              setTab("stickers");
+              if (panel === "stickers") {
+                setPanel(null);
+              } else {
+                setPanel("stickers");
+                setTab("stickers");
+              }
             }}
             className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-muted-foreground hover:text-foreground"
             aria-label="Стикеры"
@@ -437,50 +475,59 @@ function CommentComposer({ postId }: { postId: string }) {
 function StickerPanel({
   tab,
   setTab,
-  onClose,
+  activePack,
+  setActivePack,
 }: {
   tab: "recent" | "emoji" | "stickers";
   setTab: (t: "recent" | "emoji" | "stickers") => void;
-  onClose: () => void;
+  activePack: string;
+  setActivePack: (id: string) => void;
 }) {
-  void onClose;
+  const pack = STICKER_PACKS.find((p) => p.id === activePack) ?? STICKER_PACKS[0];
+
   return (
-    <div className="border-b border-white/[0.06] bg-[#0d0d0d]">
+    <div className="flex h-[min(55vh,420px)] flex-col bg-[#0d0d0d]">
       {/* Search */}
-      <div className="flex items-center gap-2 px-3 pt-3 pb-2">
-        <div className="flex flex-1 items-center gap-2 rounded-full bg-white/[0.05] px-3 py-1.5">
+      <div className="px-3 pt-2.5 pb-2">
+        <div className="flex items-center gap-2 rounded-full bg-white/[0.05] px-3 py-1.5">
           <SearchIcon size={14} className="text-muted-foreground" />
           <input
             type="text"
-            placeholder="Поиск стикеров"
+            placeholder={tab === "emoji" ? "Поиск эмодзи" : "Поиск стикеров"}
             className="min-w-0 flex-1 bg-transparent text-[13px] text-foreground placeholder:text-muted-foreground/60 outline-none"
           />
         </div>
       </div>
 
-      {/* Grid placeholder */}
-      <div className="h-[220px] overflow-y-auto px-3 pb-2">
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto overscroll-contain px-2 pb-2">
         {tab === "stickers" ? (
-          <div className="grid grid-cols-5 gap-1.5 py-1">
-            {Array.from({ length: 15 }).map((_, i) => (
-              <div
-                key={i}
-                className="grid aspect-square place-items-center rounded-lg bg-white/[0.03] text-muted-foreground/40"
-              >
-                <Sticker size={22} strokeWidth={1.2} />
-              </div>
-            ))}
-            <div className="col-span-5 pt-3 text-center font-mono text-[10px] uppercase tracking-widest text-muted-foreground/50">
-              стикеры скоро
+          <>
+            <div className="sticky top-0 z-10 -mx-2 mb-1 bg-[#0d0d0d]/95 px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground backdrop-blur">
+              {pack.title}
             </div>
-          </div>
+            <div className="grid grid-cols-4 gap-1 sm:grid-cols-5">
+              {pack.stickers.map((s, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  className="grid aspect-square place-items-center rounded-lg text-4xl transition-transform active:scale-90 hover:bg-white/[0.04] sm:text-[40px]"
+                >
+                  <span>{s}</span>
+                </button>
+              ))}
+              <div className="col-span-full pt-2 text-center font-mono text-[10px] uppercase tracking-widest text-muted-foreground/50">
+                стикеры-заглушки · скоро PNG
+              </div>
+            </div>
+          </>
         ) : tab === "emoji" ? (
-          <div className="grid grid-cols-8 gap-1 py-1 text-2xl">
-            {"😀 😁 😂 🤣 😊 😍 😎 🤘 🔥 💀 🏁 🏍️ ⚙️ 🛠️ 🏆 ⚡ 💯 👀 👍 🙏 🤝 🫡 😤 🥶".split(" ").map((e, i) => (
+          <div className="grid grid-cols-7 gap-1 pt-1 sm:grid-cols-8">
+            {"😀 😁 😂 🤣 😊 😍 😎 🤘 🔥 💀 🏁 🏍️ ⚙️ 🛠️ 🏆 ⚡ 💯 👀 👍 🙏 🤝 🫡 😤 🥶 😅 😉 🥰 😘 🤔 🙄 😴 🤯".split(" ").map((e, i) => (
               <button
                 key={i}
                 type="button"
-                className="grid aspect-square place-items-center rounded-lg hover:bg-white/[0.05]"
+                className="grid aspect-square place-items-center rounded-lg text-[26px] transition-transform active:scale-90 hover:bg-white/[0.05]"
               >
                 {e}
               </button>
@@ -493,11 +540,42 @@ function StickerPanel({
         )}
       </div>
 
-      {/* Tabs */}
-      <div className="flex items-center gap-1 border-t border-white/[0.06] px-2 py-1.5">
-        <PanelTab active={tab === "recent"} onClick={() => setTab("recent")} icon={<Clock size={16} />} />
-        <PanelTab active={tab === "emoji"} onClick={() => setTab("emoji")} icon={<Smile size={16} />} />
-        <PanelTab active={tab === "stickers"} onClick={() => setTab("stickers")} icon={<Sticker size={16} />} />
+      {/* Bottom bar: pack tabs (Telegram-style) */}
+      <div className="flex items-center gap-0.5 border-t border-white/[0.06] bg-black/40 px-1.5 py-1.5">
+        <PanelTab
+          active={tab === "recent"}
+          onClick={() => setTab("recent")}
+          icon={<Clock size={18} />}
+        />
+        <PanelTab
+          active={tab === "emoji"}
+          onClick={() => setTab("emoji")}
+          icon={<Smile size={18} />}
+        />
+
+        <div className="mx-1 h-5 w-px bg-white/[0.08]" />
+
+        <div className="flex flex-1 items-center gap-0.5 overflow-x-auto scrollbar-none">
+          {STICKER_PACKS.map((p) => {
+            const isActive = tab === "stickers" && activePack === p.id;
+            return (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => {
+                  setTab("stickers");
+                  setActivePack(p.id);
+                }}
+                aria-label={p.title}
+                className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg text-[20px] transition-colors ${
+                  isActive ? "bg-primary/15 text-foreground" : "text-muted-foreground hover:bg-white/[0.05] hover:text-foreground"
+                }`}
+              >
+                {p.cover}
+              </button>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
@@ -516,7 +594,7 @@ function PanelTab({
     <button
       type="button"
       onClick={onClick}
-      className={`grid h-8 w-8 place-items-center rounded-lg transition-colors ${
+      className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg transition-colors ${
         active ? "bg-white/[0.08] text-foreground" : "text-muted-foreground hover:text-foreground"
       }`}
     >
@@ -524,6 +602,7 @@ function PanelTab({
     </button>
   );
 }
+
 
 
 // ───────── Utils & icons ─────────
