@@ -175,22 +175,59 @@ function PrimaryButton({ children }: { children: React.ReactNode }) {
 }
 
 // ── Profile + bike ─────────────────────────────────────────────────────────
+const NICK_MAX = 16;
+const NICK_MIN = 3;
+const NICK_ALLOWED = /[^A-Za-z0-9_]/g;
+
 function ProfileTab() {
   const [nick, setNick] = useState(ME.nick);
   const [city, setCity] = useState(ME.city);
   const [bike, setBike] = useState(ME.bike);
+
+  // Чистим запрещённые символы прямо при вводе и режем по NICK_MAX.
+  const onNickChange = (raw: string) => {
+    const cleaned = raw.replace(NICK_ALLOWED, "").slice(0, NICK_MAX);
+    setNick(cleaned);
+  };
+
+  const nickTrim = nick.trim();
+  const nickError =
+    nickTrim.length === 0
+      ? null
+      : nickTrim.length < NICK_MIN
+        ? `Минимум ${NICK_MIN} символа`
+        : null;
+
   return (
     <div className="space-y-8">
       <div>
         <SectionTitle>Профиль</SectionTitle>
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Ник">
-            <Input value={nick} onChange={(e) => setNick(e.target.value)} maxLength={32} />
+            <Input
+              value={nick}
+              onChange={(e) => onNickChange(e.target.value)}
+              maxLength={NICK_MAX}
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+              aria-invalid={nickError ? true : undefined}
+              placeholder="ASPHALT_DOG"
+            />
+            <div className="mt-1 flex items-center justify-between font-mono text-[10px] uppercase tracking-[0.18em]">
+              <span className={nickError ? "text-destructive" : "text-muted-foreground/70"}>
+                {nickError ?? `A–Z, 0–9, _ · ${NICK_MIN}–${NICK_MAX} симв.`}
+              </span>
+              <span className="tabular-nums text-muted-foreground/60">
+                {nick.length}/{NICK_MAX}
+              </span>
+            </div>
           </Field>
           <Field label="Город">
             <Input value={city} onChange={(e) => setCity(e.target.value)} maxLength={64} />
           </Field>
         </div>
+
         <div className="mt-4">
           <Field label="Аватар">
             <button
