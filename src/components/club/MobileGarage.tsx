@@ -75,7 +75,9 @@ export function MobileGarage({
   onAddBike,
   onEditBike,
   onDeleteBike,
+  variant = "mobile",
 }: Props) {
+  const isDesktop = variant === "desktop";
   const [activeIdx, setActiveIdx] = useState(0);
   const [tab, setTab] = useState<"service" | "rides" | "docs">("service");
   const [fabOpen, setFabOpen] = useState(false);
@@ -93,85 +95,21 @@ export function MobileGarage({
     return <EmptyGarage onAdd={onAddBike} />;
   }
 
-  return (
-    <div className="pb-32">
-      {/* Заголовок iOS large title + переключатель байков */}
-      <header className="px-4 pb-3 pt-2">
-        <div className="flex items-end justify-between gap-3">
-          <h1 className="text-[34px] font-bold leading-tight tracking-tight text-foreground">
-            Гараж
-          </h1>
-          {bikes.length > 1 && (
-            <div className="flex gap-1 rounded-full bg-white/[0.06] p-1">
-              {bikes.map((b, i) => (
-                <button
-                  key={b.id}
-                  type="button"
-                  onClick={() => setActiveIdx(i)}
-                  className={`grid h-8 w-8 place-items-center rounded-full text-[12px] font-bold transition-all ${
-                    i === activeIdx
-                      ? "bg-primary text-primary-foreground shadow-sm shadow-primary/40"
-                      : "text-muted-foreground"
-                  }`}
-                  aria-label={`${b.brand} ${b.model}`}
-                >
-                  {i + 1}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      </header>
+  // ─── общий handler для "Добавить" в текущем табе
+  function quickAdd() {
+    if (tab === "service") setServiceSheet(true);
+    else if (tab === "rides") setRideSheet(true);
+    else setDocSheet({ open: true, doc: null });
+  }
 
-      {/* Hero */}
-      <BikeHero bike={active} onEdit={() => onEditBike(active)} />
+  const tabOptions = [
+    { value: "service" as const, label: "Сервис" },
+    { value: "rides" as const, label: "Поездки" },
+    { value: "docs" as const, label: "Документы" },
+  ];
 
-      {/* Статы */}
-      <StatsGrid bike={active} />
-
-      {/* Напоминания */}
-      <ReminderRow bike={active} />
-
-      {/* Segmented control */}
-      <div className="mx-4 mt-5">
-        <Segmented
-          value={tab}
-          onChange={(v) => setTab(v as typeof tab)}
-          options={[
-            { value: "service", label: "Сервис" },
-            { value: "rides", label: "Поездки" },
-            { value: "docs", label: "Документы" },
-          ]}
-        />
-      </div>
-
-      {/* Контент таба */}
-      <div className="mt-4">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={tab}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -4 }}
-            transition={{ duration: 0.18 }}
-          >
-            {tab === "service" && <ServiceList bikeId={active.id} />}
-            {tab === "rides" && <RidesList bikeId={active.id} />}
-            {tab === "docs" && (
-              <DocsList
-                bikeId={active.id}
-                onView={(doc) => setViewDoc(doc)}
-                onAdd={() => setDocSheet({ open: true, doc: null })}
-              />
-            )}
-          </motion.div>
-        </AnimatePresence>
-      </div>
-
-      {/* FAB */}
-      <Fab onClick={() => setFabOpen(true)} />
-
-      {/* Action sheet */}
+  const sheets = (
+    <>
       <IOSSheet
         open={fabOpen}
         onOpenChange={setFabOpen}
@@ -202,7 +140,7 @@ export function MobileGarage({
           <IOSListRow
             icon={<FileText className="h-5 w-5" />}
             label="Документ"
-            description="ОСАГО, ТО, СТС"
+            description="ОСАГО, СТС, ВУ"
             chevron
             onClick={() => {
               setFabOpen(false);
@@ -264,6 +202,196 @@ export function MobileGarage({
           setTimeout(() => setDocSheet({ open: true, doc: d }), 180);
         }}
       />
+    </>
+  );
+
+  // ───────────── Mobile (current) ─────────────
+  if (!isDesktop) {
+    return (
+      <div className="pb-32">
+        <header className="px-4 pb-3 pt-2">
+          <div className="flex items-end justify-between gap-3">
+            <h1 className="text-[34px] font-bold leading-tight tracking-tight text-foreground">
+              Гараж
+            </h1>
+            {bikes.length > 1 && (
+              <BikeSwitch bikes={bikes} active={activeIdx} onChange={setActiveIdx} />
+            )}
+          </div>
+        </header>
+
+        <BikeHero bike={active} onEdit={() => onEditBike(active)} />
+        <StatsGrid bike={active} />
+        <ReminderRow bike={active} />
+
+        <div className="mx-4 mt-5">
+          <Segmented value={tab} onChange={(v) => setTab(v as typeof tab)} options={tabOptions} />
+        </div>
+
+        <div className="mt-4">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={tab}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.18 }}
+            >
+              {tab === "service" && <ServiceList bikeId={active.id} />}
+              {tab === "rides" && <RidesList bikeId={active.id} />}
+              {tab === "docs" && (
+                <DocsList
+                  bikeId={active.id}
+                  onView={(doc) => setViewDoc(doc)}
+                  onAdd={() => setDocSheet({ open: true, doc: null })}
+                />
+              )}
+            </motion.div>
+          </AnimatePresence>
+        </div>
+
+        <Fab onClick={() => setFabOpen(true)} />
+        {sheets}
+      </div>
+    );
+  }
+
+  // ───────────── Desktop: 2-col, no FAB ─────────────
+  return (
+    <div className="mx-auto w-full max-w-[1200px] px-8 py-8">
+      {/* Header */}
+      <header className="mb-6 flex items-end justify-between gap-4">
+        <div>
+          <div className="text-[12px] font-semibold uppercase tracking-[0.2em] text-primary">
+            HELLHOUND · Garage
+          </div>
+          <h1 className="mt-1 text-[40px] font-bold leading-tight tracking-tight text-foreground">
+            Гараж
+          </h1>
+        </div>
+        <div className="flex items-center gap-3">
+          {bikes.length > 1 && (
+            <BikeSwitch bikes={bikes} active={activeIdx} onChange={setActiveIdx} />
+          )}
+          <button
+            type="button"
+            onClick={() => onEditBike(active)}
+            className="flex h-10 items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.04] px-4 text-[13px] font-semibold text-foreground transition-colors hover:bg-white/[0.08]"
+          >
+            <Pencil className="h-3.5 w-3.5" />
+            Редактировать
+          </button>
+          {bikes.length < 2 && (
+            <button
+              type="button"
+              onClick={onAddBike}
+              className="flex h-10 items-center gap-2 rounded-full border border-primary/40 bg-primary/[0.1] px-4 text-[13px] font-semibold text-primary transition-colors hover:bg-primary/[0.18]"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Новый байк
+            </button>
+          )}
+        </div>
+      </header>
+
+      <div className="grid grid-cols-12 gap-6">
+        {/* Left: hero */}
+        <div className="col-span-5">
+          <div className="sticky top-6">
+            <BikeHero bike={active} onEdit={() => onEditBike(active)} size="lg" />
+          </div>
+        </div>
+
+        {/* Right: stats + tabs */}
+        <div className="col-span-7 space-y-5">
+          <StatsGrid bike={active} columns={4} />
+          <ReminderRow bike={active} inset={false} />
+
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <Segmented
+                value={tab}
+                onChange={(v) => setTab(v as typeof tab)}
+                options={tabOptions}
+              />
+            </div>
+            <button
+              type="button"
+              onClick={quickAdd}
+              className="flex h-10 shrink-0 items-center gap-2 rounded-full bg-primary px-4 text-[13px] font-semibold text-primary-foreground shadow-sm shadow-primary/40 transition-transform hover:scale-[1.02] active:scale-95"
+            >
+              <Plus className="h-4 w-4" strokeWidth={2.5} />
+              {tab === "service" ? "Сервис" : tab === "rides" ? "Поездка" : "Документ"}
+            </button>
+          </div>
+
+          <div className="rounded-3xl border border-white/[0.06] bg-card/30 p-4">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={tab}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                transition={{ duration: 0.18 }}
+              >
+                {tab === "service" && <ServiceList bikeId={active.id} flat />}
+                {tab === "rides" && <RidesList bikeId={active.id} flat />}
+                {tab === "docs" && (
+                  <DocsList
+                    bikeId={active.id}
+                    onView={(doc) => setViewDoc(doc)}
+                    onAdd={() => setDocSheet({ open: true, doc: null })}
+                    flat
+                  />
+                )}
+              </motion.div>
+            </AnimatePresence>
+          </div>
+
+          {/* Удаление байка — в подвале правой колонки */}
+          <div className="pt-2">
+            <button
+              type="button"
+              onClick={() => onDeleteBike(active.id)}
+              className="text-[12px] font-medium text-muted-foreground/60 hover:text-red-400 transition-colors"
+            >
+              Удалить этот байк
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {sheets}
+    </div>
+  );
+}
+
+function BikeSwitch({
+  bikes,
+  active,
+  onChange,
+}: {
+  bikes: StoredBike[];
+  active: number;
+  onChange: (i: number) => void;
+}) {
+  return (
+    <div className="flex gap-1 rounded-full bg-white/[0.06] p-1">
+      {bikes.map((b, i) => (
+        <button
+          key={b.id}
+          type="button"
+          onClick={() => onChange(i)}
+          className={`h-8 rounded-full px-3 text-[12px] font-bold transition-all ${
+            i === active
+              ? "bg-primary text-primary-foreground shadow-sm shadow-primary/40"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+          aria-label={`${b.brand} ${b.model}`}
+        >
+          {b.brand}
+        </button>
+      ))}
     </div>
   );
 }
