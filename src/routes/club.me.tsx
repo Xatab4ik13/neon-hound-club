@@ -216,7 +216,8 @@ function PassDesktopRow({ tier }: { tier: ReturnType<typeof usePassState>["tierI
   }
   return (
     <Link
-      to={`/club/hell-pass/${tier.slug}`}
+      to="/club/hell-pass/$tier"
+      params={{ tier: tier.slug }}
       className="group flex w-full items-center gap-4 border border-white/[0.06] bg-card/40 px-4 py-4 text-left transition-colors hover:border-primary/40 hover:bg-white/[0.03] md:px-5"
     >
       <span className="shrink-0" style={{ color: tier.color }}>
