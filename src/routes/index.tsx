@@ -194,25 +194,8 @@ function Index() {
                       </div>
                     );
                   })}
-                  {/* VIP — отдельной плашкой, не в XP-цепочке */}
-                  <div className="flex items-center justify-between rounded-lg border border-dashed border-border bg-surface/50 p-4">
-                    <div className="flex items-center gap-4">
-                      <span className="font-mono text-sm text-muted-foreground">
-                        ★
-                      </span>
-                      <div className="flex flex-col">
-                        <span className="font-display text-base uppercase tracking-widest text-foreground">
-                          VIP
-                        </span>
-                        <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                          Платный · вне XP-лестницы
-                        </span>
-                      </div>
-                    </div>
-                    <span className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
-                      от 4 990 ₽
-                    </span>
-                  </div>
+
+
                 </div>
               </div>
 

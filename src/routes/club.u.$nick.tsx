@@ -69,8 +69,8 @@ function UserProfilePage() {
   const rankIdx = RANKS.findIndex((r) => r.id === user.rank);
   const xpMax = getRankSpan(rankIdx);
   const xp = Math.round((user.xpPct / 100) * xpMax);
-  const nextCandidate = RANKS[rankIdx + 1] ?? null;
-  const next = nextCandidate && !nextCandidate.isPaid ? nextCandidate : null;
+  const next = RANKS[rankIdx + 1] ?? null;
+
   const badges = user.badgeIds
     .map((id) => BADGES.find((b) => b.id === id))
     .filter((b): b is (typeof BADGES)[number] => !!b);
@@ -153,9 +153,9 @@ function UserProfilePage() {
             <div className="mt-5">
               <div className="mb-1.5 flex items-baseline justify-between font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
                 <span>Прогресс</span>
-                {user.rank === "vip" || !next ? (
+                {!next ? (
                   <span className="font-extrabold" style={{ color: rank.accent }}>
-                    {user.rank === "vip" ? "VIP" : "MAX"}
+                    MAX
                   </span>
                 ) : (
                   <span>
@@ -170,6 +170,7 @@ function UserProfilePage() {
                     XP
                   </span>
                 )}
+
               </div>
               <div className="relative h-2.5 overflow-hidden bg-black/55 ring-1 ring-inset ring-white/10">
                 <div

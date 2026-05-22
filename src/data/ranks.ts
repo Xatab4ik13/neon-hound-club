@@ -18,23 +18,22 @@ export type PlaqueBg =
   | "legend-chrome"
   | "legend-molten-gold"
   | "legend-cyber-rune"
-  | "legend-holo-prism"
-  | "vip-platinum";
+  | "legend-holo-prism";
 
 export type RankId =
   | "rookie"
   | "pit-crew"
   | "road-captain"
   | "alpha-hound"
-  | "hell-legend"
-  | "vip";
+  | "hell-legend";
+
 
 export type RankMeta = {
   id: RankId;
   label: string;     // длинное имя для дашборда: "ROAD CAPTAIN"
   short: string;     // короткое для лестницы: "CAPTAIN"
   plaqueBg: PlaqueBg;
-  /** Для рангов с несколькими равноправными визуалами (VIP). Первый = дефолт. */
+  /** Для рангов с несколькими равноправными визуалами. Первый = дефолт. */
   plaqueVariants?: PlaqueBg[];
   /** основной цвет акцента ранга (XP-бар, активный шаг лестницы) */
   accent: string;
@@ -43,11 +42,8 @@ export type RankMeta = {
   /** цвет текста поверх accent (для активного шага лестницы) */
   onAccent: string;
   isMax?: boolean;
-  /** платный ранг — рисуем замок/цену вместо XP-бара */
-  isPaid?: boolean;
-  /** плейсхолдер цены, рисуется на плашке вместо XP */
-  priceLabel?: string;
 };
+
 
 export const RANKS: RankMeta[] = [
   {
@@ -95,24 +91,12 @@ export const RANKS: RankMeta[] = [
     accentSoft: "rgba(255, 182, 72, 0.45)",
     onAccent: "#1a1000",
   },
-  {
-    id: "vip",
-    label: "VIP",
-    short: "VIP",
-    plaqueBg: "vip-platinum",
-    accent: "#e8e4d6",
-    accentSoft: "rgba(232, 228, 214, 0.5)",
-    onAccent: "#0a0a0a",
-    isMax: true,
-    isPaid: true,
-    priceLabel: "от 4 990 ₽",
-  },
 ];
+
 
 /**
  * Пороговые значения XP для каждого ранга по индексу из RANKS.
  * Кривая растущая (~2.5–3×): Pit Crew — быстро, Hell Legend — статус 10–14 мес.
- * VIP сидит в массиве «как максимум», но это платный ранг — XP-логика на него не распространяется.
  */
 export const XP_THRESHOLDS: number[] = [
   0,       // rookie
@@ -120,16 +104,12 @@ export const XP_THRESHOLDS: number[] = [
   2_000,   // road-captain
   6_000,   // alpha-hound
   15_000,  // hell-legend
-  15_000,  // vip (платный, не достигается через XP)
 ];
 
 /** Индекс ранга по абсолютному XP. */
 export function getRankIndexByXp(xp: number): number {
-  // VIP вручную, через XP не выдаётся
-  const maxIdx = RANKS.findIndex((r) => r.isPaid);
-  const limit = maxIdx === -1 ? RANKS.length - 1 : maxIdx - 1;
   let idx = 0;
-  for (let i = 0; i <= limit; i++) {
+  for (let i = 0; i < RANKS.length; i++) {
     if (xp >= XP_THRESHOLDS[i]) idx = i;
   }
   return idx;
@@ -154,7 +134,8 @@ export function getRankProgress(xp: number): {
   const rank = RANKS[rankIndex];
   const nextIndex = rankIndex + 1;
   const next = RANKS[nextIndex];
-  const isMax = !next || !!rank.isMax || !!next.isPaid;
+  const isMax = !next || !!rank.isMax;
+
   if (isMax) {
     return { rankIndex, pct: 100, inRank: 0, span: 0, toNext: 0, isMax: true };
   }

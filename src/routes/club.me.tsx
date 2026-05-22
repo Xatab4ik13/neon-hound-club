@@ -59,8 +59,8 @@ const BG_LABELS: Record<PlaqueBg, string> = {
   "legend-molten-gold": "Жидкое золото",
   "legend-cyber-rune": "Кибер-руна",
   "legend-holo-prism": "Голо-призма",
-  "vip-platinum": "VIP Платина",
 };
+
 
 function MePage() {
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -266,7 +266,7 @@ function BackgroundPickerSheet({
     <IOSSheet open={open} onOpenChange={onOpenChange} title="Фон профиля" fullHeight>
       <div className="space-y-5">
         <p className="px-1 font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-          Выбери визуал плашки. Новые фоны открываются с прокачкой ранга. У VIP — всё.
+          Выбери визуал плашки. Новые фоны открываются с прокачкой ранга.
         </p>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {allBgs.map((bg) => {
@@ -334,7 +334,7 @@ function BackgroundPickerSheet({
 
 function ProfileHero({ onSettings }: { onSettings: () => void }) {
   const { rank, plaqueBg, xp, xpMax, xpPct, isMax, next } = useCurrentRank();
-  const isPaid = !!rank.isPaid;
+
 
   return (
     <section
@@ -405,14 +405,8 @@ function ProfileHero({ onSettings }: { onSettings: () => void }) {
               >
                 {rank.label}
               </Link>
-              {isPaid ? (
-                <span
-                  className="font-mono text-[11px] font-extrabold uppercase tracking-[0.2em]"
-                  style={{ color: rank.accent }}
-                >
-                  {rank.priceLabel}
-                </span>
-              ) : isMax ? (
+              {isMax ? (
+
                 <span
                   className="font-mono text-[11px] font-extrabold uppercase tracking-[0.2em]"
                   style={{ color: rank.accent }}

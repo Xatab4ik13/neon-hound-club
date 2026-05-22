@@ -19,7 +19,7 @@ export const Route = createFileRoute("/club/rank")({
 
 function RankPage() {
   const { rank, next, xp, xpMax, xpPct, isMax } = useCurrentRank();
-  const isPaid = !!rank.isPaid;
+
 
   return (
     <main className="mx-auto w-full max-w-5xl px-4 py-6 md:px-8 md:py-10">
@@ -31,15 +31,12 @@ function RankPage() {
           <span className="font-display text-2xl font-black italic uppercase tracking-tight" style={{ color: rank.accent }}>
             {rank.label}
           </span>
-          {isPaid ? (
-            <span className="font-mono text-xs font-extrabold uppercase tracking-[0.2em]" style={{ color: rank.accent }}>
-              Платный · {rank.priceLabel}
-            </span>
-          ) : isMax ? (
+          {isMax ? (
             <span className="font-mono text-xs font-extrabold uppercase tracking-[0.2em]" style={{ color: rank.accent }}>
               MAX
             </span>
           ) : next ? (
+
             <span className="font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground">
               до{" "}
               <span className="font-bold" style={{ color: rank.accent }}>
@@ -71,7 +68,7 @@ function RankPage() {
             />
           </div>
         </div>
-        {!isPaid && !isMax && (
+        {!isMax && (
           <div className="mt-3 font-mono text-sm tabular-nums text-muted-foreground">
             <span className="font-bold text-foreground">{xp.toLocaleString("ru-RU")}</span>
             <span className="opacity-40"> / </span>
@@ -157,12 +154,8 @@ function RankLadderVertical() {
               >
                 {r.label}
               </div>
-              {r.priceLabel ? (
-                <div className="mt-0.5 font-mono text-xs uppercase tracking-wider text-muted-foreground">
-                  Платный · {r.priceLabel}
-                </div>
-              ) : null}
             </div>
+
             {isActive && (
               <span className="shrink-0 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-primary">
                 Сейчас

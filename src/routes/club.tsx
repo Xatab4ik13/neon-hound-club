@@ -793,60 +793,8 @@ const PLAQUE_BG: Record<PlaqueBg, PlaqueVariant> = {
     ),
   },
 
-  // ---- VIP · 3 «вау» концепта (платный ранг) ----
-  "vip-platinum": {
-    base: "bg-[#050505]",
-    decor: () => (
-      <>
-        {/* глубокая бездна с лёгким холодным свечением */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0"
-          style={{
-            background:
-              "radial-gradient(120% 90% at 50% 110%, rgba(180,200,230,0.35) 0%, rgba(80,90,110,0.15) 30%, transparent 60%)",
-          }}
-        />
-        {/* гранёный бриллиант — медленно вращающийся conic */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -inset-[60%]"
-          style={{
-            background:
-              "conic-gradient(from 0deg, rgba(255,255,255,0.0) 0deg, rgba(220,230,245,0.85) 30deg, rgba(255,255,255,0.0) 60deg, rgba(180,200,230,0.6) 120deg, rgba(255,255,255,0.0) 150deg, rgba(240,245,255,0.95) 210deg, rgba(255,255,255,0.0) 240deg, rgba(200,215,235,0.7) 300deg, rgba(255,255,255,0.0) 330deg)",
-            animation: "plaque-prism-rotate 14s linear infinite",
-            filter: "blur(28px)",
-            mixBlendMode: "screen",
-          }}
-        />
-        {/* чёткие огранённые блики — фасеты */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0"
-          style={{
-            backgroundImage:
-              "linear-gradient(60deg, transparent 40%, rgba(255,255,255,0.18) 49%, rgba(255,255,255,0.55) 50%, rgba(255,255,255,0.18) 51%, transparent 60%), linear-gradient(-50deg, transparent 45%, rgba(220,230,245,0.25) 50%, transparent 55%)",
-            mixBlendMode: "screen",
-          }}
-        />
-        {/* платиновый sweep */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0"
-          style={{
-            backgroundImage:
-              "linear-gradient(110deg, transparent 0%, transparent 35%, rgba(255,255,255,0.5) 48%, rgba(255,255,255,0.95) 50%, rgba(255,255,255,0.5) 52%, transparent 65%, transparent 100%)",
-            backgroundSize: "260% 100%",
-            animation: "plaque-gold-sweep 5s linear infinite",
-            mixBlendMode: "screen",
-          }}
-        />
-        {/* вершинный vignette + чёрная подложка для текста */}
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/55 via-black/20 to-black/55" />
-      </>
-    ),
-  },
 };
+
 
 /**
  * Декоративный фон плашки/дашборда — рендерит base + decor по PlaqueBg.
@@ -872,7 +820,7 @@ export function ProfilePlaque({
   const { rank, plaqueBg, xp, xpMax, xpPct, isMax } = useCurrentRank();
   const variant = PLAQUE_BG[plaqueBg];
   const size = compact ? 44 : 56;
-  const isPaid = !!rank.isPaid;
+
 
   return (
     <Link
@@ -960,19 +908,8 @@ export function ProfilePlaque({
             </div>
           </div>
 
-          {isPaid ? (
-            <div className="flex items-center gap-1 whitespace-nowrap">
-              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ color: rank.accent }}>
-                <path d="M12 2 L15 9 L22 9 L16.5 13.5 L18.5 21 L12 16.5 L5.5 21 L7.5 13.5 L2 9 L9 9 Z" />
-              </svg>
-              <span
-                className="font-mono text-[9px] font-extrabold uppercase tracking-[0.25em]"
-                style={{ color: rank.accent }}
-              >
-                VIP
-              </span>
-            </div>
-          ) : isMax ? (
+          {isMax ? (
+
             <div className="flex items-center whitespace-nowrap">
               <span
                 className="font-mono text-[9px] font-extrabold uppercase tracking-[0.25em]"
