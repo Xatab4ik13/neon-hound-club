@@ -35,7 +35,7 @@ export type AdminUserListItem = {
   id: string;
   email: string;
   nick: string;
-  role: "user" | "admin";
+  role: "user" | "admin" | "blogger";
   emailVerified: boolean;
   blocked: boolean;
   createdAt: string;
