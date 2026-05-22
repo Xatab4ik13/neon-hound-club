@@ -92,8 +92,29 @@ let POSTS: FeedPost[] = [
       { id: "c10", authorSlug: "kuzya_msk", time: "2 д", text: "Я в деле. На R6, средний темп норм?", likes: 3 },
       { id: "c11", authorSlug: "captain_volk", time: "2 д", text: "Если асфальт реально плохой — лучше не на спорте. Возьму твин.", likes: 8 },
     ],
+  {
+    id: "5",
+    authorSlug: "hell",
+    time: "5 ч",
+    text: "Решаем, какой мерч идёт в следующую партию. Голосуйте — что сейчас реально нужно.",
+    poll: {
+      question: "Что заказывать первым?",
+      anonymous: true,
+      options: [
+        { id: "o1", text: "Худи HELLHOUND v2", votes: 612 },
+        { id: "o2", text: "Перчатки v2 — короткий манжет", votes: 284 },
+        { id: "o3", text: "Дождевик на сезон", votes: 197 },
+        { id: "o4", text: "Шейный платок / бафф", votes: 89 },
+      ],
+    },
+    likes: 318,
+    comments: [
+      { id: "c12", authorSlug: "moto_anya", time: "1 ч", text: "Худи, без вариантов. Прошлогоднее уже ушатанное.", likes: 12 },
+      { id: "c13", authorSlug: "captain_volk", time: "30 мин", text: "Дождевик нужен прямо сейчас, апрель на носу.", likes: 7 },
+    ],
   },
 ];
+
 
 const listeners = new Set<() => void>();
 const emit = () => listeners.forEach((l) => l());
