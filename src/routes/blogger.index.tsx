@@ -10,15 +10,20 @@ import { HellhoundAvatar } from "@/components/club/HellhoundPlaque";
 import { useBloggerProfile } from "@/data/blogger-profile";
 import { PostCard } from "@/routes/club.index";
 
-const BLOGGER_SLUG = "hell";
+// Slug автора в ленте формируется на бэке так же, как тут (см. feed-store).
+function makeSlug(nick: string): string {
+  return nick.toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_-]/g, "");
+}
 
 export const Route = createFileRoute("/blogger/")({
   component: BloggerFeedPage,
 });
 
 function BloggerFeedPage() {
+  const profile = useBloggerProfile();
+  const mySlug = makeSlug(profile.nick);
   const all = useFeedPosts();
-  const mine = all.filter((p) => p.authorSlug === BLOGGER_SLUG);
+  const mine = all.filter((p) => p.authorSlug === mySlug);
 
   return (
     <main className="mx-auto w-full max-w-[640px] px-3 py-5 md:px-4 md:py-10">
