@@ -228,31 +228,61 @@ function RaffleModal({
             onChange={(e) => setR({ ...r, name: e.target.value })}
           />
         </Field>
-        <Field label="Описание">
-          <TextArea
-            rows={3}
-            value={r.description ?? ""}
-            onChange={(e) => setR({ ...r, description: e.target.value })}
-            placeholder="Кратко — про серию, тему, период…"
+        <Field label="Подзаголовок (краткое описание под названием)" hint="Видно в карточке и над описанием.">
+          <TextInput
+            value={r.subtitle ?? ""}
+            placeholder="Спортбайк 2024 · 998 cc · из салона"
+            onChange={(e) => setR({ ...r, subtitle: e.target.value })}
           />
         </Field>
-        <Field label="Обложка (картинка для сайта)">
+        <Field label="Описание" hint="Многострочный текст. Абзацы — пустая строка между ними.">
+          <TextArea
+            rows={6}
+            value={r.description ?? ""}
+            onChange={(e) => setR({ ...r, description: e.target.value })}
+            placeholder="Расскажи про приз, серию, бэкграунд…"
+          />
+        </Field>
+        <Field label="Обложка">
           <ImageUploader
             images={r.cover ? [r.cover] : []}
             onChange={(imgs) => setR({ ...r, cover: imgs[0] ?? "" })}
           />
         </Field>
-        <Field label="Дата окончания (запустит таймер на сайте)">
-          <TextInput
-            type="date"
-            value={r.endsAt}
-            onChange={(e) => setR({ ...r, endsAt: e.target.value })}
-          />
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Дата окончания">
+            <TextInput
+              type="date"
+              value={r.endsAt}
+              onChange={(e) => setR({ ...r, endsAt: e.target.value })}
+            />
+          </Field>
+          <Field label="Время окончания (необяз.)" hint="Если задано — таймер тикает с точностью до минут.">
+            <TextInput
+              type="time"
+              value={r.deadlineAt ? r.deadlineAt.slice(11, 16) : ""}
+              onChange={(e) => {
+                const time = e.target.value;
+                if (!time || !r.endsAt) {
+                  setR({ ...r, deadlineAt: "" });
+                  return;
+                }
+                setR({ ...r, deadlineAt: `${r.endsAt}T${time}:00` });
+              }}
+            />
+          </Field>
+        </div>
+        <Field label="Характеристики приза" hint="Например: «Двигатель» / «998 cc, рядная четвёрка». Будут показаны таблицей.">
+          <SpecsEditor specs={r.specs ?? []} onChange={(specs) => setR({ ...r, specs })} />
+        </Field>
+        <Field label="Условия участия" hint="Каждый пункт — отдельная строка. Появятся в блоке «Условия».">
+          <RulesEditor rules={r.rules ?? []} onChange={(rules) => setR({ ...r, rules })} />
         </Field>
         <Field label="Призы">
           <PrizeEditor prizes={r.prizes} onChange={(prizes) => setR({ ...r, prizes })} />
         </Field>
       </div>
+
     </Modal>
   );
 }
