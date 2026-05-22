@@ -334,7 +334,7 @@ function BackgroundPickerSheet({
 
 function ProfileHero({ onSettings }: { onSettings: () => void }) {
   const { rank, plaqueBg, xp, xpMax, xpPct, isMax, next } = useCurrentRank();
-  const isPaid = !!rank.isPaid;
+
 
   return (
     <section
