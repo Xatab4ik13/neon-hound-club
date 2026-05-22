@@ -107,10 +107,9 @@ export function useCurrentRank(): {
 } {
   const { rankIndex, xpPct, customPlaqueBg } = useRankState();
   const rank = RANKS[rankIndex];
-  const nextCandidate = RANKS[rankIndex + 1] ?? null;
-  // VIP — платный, в XP-цепочку не входит как «следующий»
-  const next = nextCandidate && !nextCandidate.isPaid ? nextCandidate : null;
+  const next = RANKS[rankIndex + 1] ?? null;
   const isMax = !!rank.isMax || !next;
+
   const xpMax = getRankSpan(rankIndex);
   const effectivePct = isMax ? 100 : xpPct;
   const xp = Math.round((effectivePct / 100) * xpMax);
