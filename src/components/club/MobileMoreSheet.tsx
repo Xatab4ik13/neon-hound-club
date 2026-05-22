@@ -11,19 +11,22 @@ import {
   LogOut,
   ChevronRight,
   ShoppingBag,
+  ShoppingCart,
   type LucideIcon,
 } from "lucide-react";
 import { Drawer } from "vaul";
+import { useCart } from "@/hooks/use-cart";
 
 type Item = {
   label: string;
   href: string;
   icon: LucideIcon;
   subtitle?: string;
-  external?: boolean;
+  badge?: number;
 };
 
-const GROUPS: { title: string; items: Item[] }[] = [
+function buildGroups(cartCount: number): { title: string; items: Item[] }[] {
+  return [
   {
     title: "Клуб",
     items: [
