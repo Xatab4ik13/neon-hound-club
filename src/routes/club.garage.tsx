@@ -5,8 +5,10 @@ import { HeroBikeCard } from "@/components/club/HeroBikeCard";
 import { BikeFormModal } from "@/components/club/BikeFormModal";
 import { EmptyGarageSlot } from "@/components/club/EmptyGarageSlot";
 import { BikeJournal } from "@/components/club/BikeJournal";
+import { MobileGarage } from "@/components/club/MobileGarage";
 import { loadBikes, saveBikes, type StoredBike } from "@/data/bike-storage";
 import { PageHeader } from "@/components/club/PageHeader";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export const Route = createFileRoute("/club/garage")({
   head: () => ({
@@ -23,6 +25,7 @@ function GaragePage() {
   const [bikes, setBikes] = useState<StoredBike[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<StoredBike | null>(null);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     setBikes(loadBikes());
@@ -48,6 +51,26 @@ function GaragePage() {
   function handleDelete(id: string) {
     if (typeof window !== "undefined" && !window.confirm("Удалить байк?")) return;
     persist(bikes.filter((x) => x.id !== id));
+  }
+
+  if (isMobile) {
+    return (
+      <>
+        <MobileGarage
+          bikes={bikes}
+          onPersist={persist}
+          onAddBike={openAdd}
+          onEditBike={openEdit}
+          onDeleteBike={handleDelete}
+        />
+        <BikeFormModal
+          open={modalOpen}
+          onOpenChange={setModalOpen}
+          bike={editing}
+          onSave={handleSave}
+        />
+      </>
+    );
   }
 
   const [primary, ...rest] = bikes;
