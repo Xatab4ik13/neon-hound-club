@@ -89,6 +89,30 @@ export function PostCard({ post, moderate = false }: { post: Post; moderate?: bo
             {post.time}
           </span>
         </div>
+        {moderate && (
+          <div className="flex shrink-0 items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => feedStore.updatePost(post.id, { pinned: !post.pinned })}
+              aria-label={post.pinned ? "Открепить" : "Закрепить"}
+              title={post.pinned ? "Открепить" : "Закрепить"}
+              className="grid h-8 w-8 place-items-center rounded-full border border-white/10 text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
+            >
+              {post.pinned ? <PinOff className="h-3.5 w-3.5" /> : <Pin className="h-3.5 w-3.5" />}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (confirm("Удалить пост?")) feedStore.removePost(post.id);
+              }}
+              aria-label="Удалить пост"
+              title="Удалить пост"
+              className="grid h-8 w-8 place-items-center rounded-full border border-white/10 text-muted-foreground transition-colors hover:border-destructive/60 hover:text-destructive"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        )}
       </header>
 
       {post.text && (
