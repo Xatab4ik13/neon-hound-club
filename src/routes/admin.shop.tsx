@@ -34,6 +34,8 @@ type Product = {
   sub?: string;
   image: string;
   description?: string;
+  shipping?: string;
+  returns?: string;
   ticketsBonus?: number;
   status: "active" | "draft" | "archived";
 };
@@ -56,6 +58,8 @@ function ShopPage() {
       sub: p.sub,
       image: p.image,
       description: p.description,
+      shipping: p.shipping,
+      returns: p.returns,
       ticketsBonus: p.ticketsBonus,
       status: "active" as const,
     })),
@@ -489,6 +493,28 @@ function ProductModal({
             onChange={(e) =>
               setP({ ...p, ticketsBonus: Math.max(0, Number(e.target.value) || 0) })
             }
+          />
+        </Field>
+        <Field
+          label="Условия доставки"
+          hint="Сроки, способы, стоимость. Покажется отдельным блоком в карточке товара."
+        >
+          <TextArea
+            rows={3}
+            value={p.shipping ?? ""}
+            onChange={(e) => setP({ ...p, shipping: e.target.value })}
+            placeholder="СДЭК / Почта России, 3–10 дней. Бесплатно от 5 000 ₽."
+          />
+        </Field>
+        <Field
+          label="Условия возврата"
+          hint="Срок и условия возврата. Цифровые товары обычно возврату не подлежат."
+        >
+          <TextArea
+            rows={3}
+            value={p.returns ?? ""}
+            onChange={(e) => setP({ ...p, returns: e.target.value })}
+            placeholder="Возврат в течение 14 дней при сохранении ярлыков."
           />
         </Field>
         <div className="grid grid-cols-3 gap-3">

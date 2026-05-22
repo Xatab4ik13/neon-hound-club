@@ -92,7 +92,7 @@ export const Route = createFileRoute("/shop/$productSlug")({
   component: ProductPage,
 });
 
-const ACCORDION_KEYS = ["desc", "comp", "care", "ship"] as const;
+const ACCORDION_KEYS = ["desc", "comp", "care", "ship", "returns"] as const;
 type AccordionKey = (typeof ACCORDION_KEYS)[number];
 
 function ProductPage() {
@@ -337,15 +337,29 @@ function ProductPage() {
                     </Accordion>
                   )}
                   <Accordion
-                    label="Доставка и возврат"
+                    label="Доставка"
                     open={open === "ship"}
                     onToggle={() => setOpen(open === "ship" ? null : "ship")}
                   >
-                    <ul className="space-y-2 text-sm leading-relaxed text-muted-foreground">
-                      <li>· СДЭК и Boxberry по РФ — 2–7 дней.</li>
-                      <li>· Самовывоз из гаража HELLHOUND в Москве.</li>
-                      <li>· Возврат 14 дней, если вещь не носилась.</li>
-                    </ul>
+                    {product.shipping ? (
+                      <p className="whitespace-pre-line text-sm leading-relaxed text-muted-foreground">
+                        {product.shipping}
+                      </p>
+                    ) : (
+                      <ul className="space-y-2 text-sm leading-relaxed text-muted-foreground">
+                        <li>· СДЭК и Boxberry по РФ — 2–7 дней.</li>
+                        <li>· Самовывоз из гаража HELLHOUND в Москве.</li>
+                      </ul>
+                    )}
+                  </Accordion>
+                  <Accordion
+                    label="Возврат"
+                    open={open === "returns"}
+                    onToggle={() => setOpen(open === "returns" ? null : "returns")}
+                  >
+                    <p className="whitespace-pre-line text-sm leading-relaxed text-muted-foreground">
+                      {product.returns ?? "Возврат 14 дней, если вещь не носилась и сохранены ярлыки."}
+                    </p>
                   </Accordion>
                 </div>
               </div>
