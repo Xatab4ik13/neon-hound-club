@@ -516,6 +516,7 @@ function ProductModal({
             onChange={(e) => setP({ ...p, returns: e.target.value })}
             placeholder="Возврат в течение 14 дней при сохранении ярлыков."
           />
+        </Field>
         <div className="grid grid-cols-3 gap-3">
           <Field label="Цена (₽)">
             <TextInput
