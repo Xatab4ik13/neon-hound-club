@@ -1,115 +1,72 @@
-# Перестройка личного кабинета + боковое меню клуба
+# /club как iOS-приложение (HELLHOUND noir)
 
-## Идея
+Десктоп **не трогаем** в этой итерации (оставляем текущий sidebar). Всё новое — только на `useIsMobile()`.
 
-`/club/me` оставляем минимальным: **профиль + значки + настройки**.
-Всё остальное (Гараж, Билеты, Заказы, Ранг, Квесты, Розыгрыши,
-Пригласить, Hell AI) уезжает в **боковое меню-бургер**, доступное со
-всех страниц `/club/*`.
+## Навигация: bottom tabs 4+1
 
-## Боковое меню (главный элемент)
+Анализ всех `/club/*` маршрутов:
+Лента, Профиль (Я), Гараж, Билеты, Заказы, Ранг, Квесты, Розыгрыши, Пригласить, Hell AI, Hell Pass, Школа, Настройки, Выйти.
+
+**14 пунктов в bottom tab не помещаются**. Стандарт iOS — 4–5 табов, остальное в «More». Беру самые частые ежедневные действия в табы, всё остальное — за пятой иконкой «Ещё», открывающей iOS-sheet.
 
 ```text
-┌──────────────────────────────┐
-│  ☰  HELLHOUND        🔔  →   │   ← top bar на каждой club-странице
-├──────────────────────────────┤
-│                              │
-│  (контент текущего экрана)  │
-│                              │
-└──────────────────────────────┘
-
-   ☰ открывает:
-
-┌──────────────────────────────┐
-│  Аватар · ник · ранг          │   ← компактная плашка профиля
-│  Silver · 1240 билетов        │
-├──────────────────────────────┤
-│  🏠  Лента                    │
-│  👤  Профиль                  │
-│  🏍  Гараж                    │
-│  🎫  Билеты                   │
-│  📦  Заказы                   │
-│  📈  Ранг и XP                │
-│  🎯  Квесты                   │
-│  🎰  Розыгрыши                │
-│  👥  Пригласить друга         │
-│  🤖  Hell AI                  │
-├──────────────────────────────┤
-│  ⚙  Настройки                │
-│  ⎋  Выйти                    │
-└──────────────────────────────┘
+┌──────────────────────────────────┐
+│ ⌂        🏍       🎟       👤    ⋯ │
+│ Лента  Гараж  Билеты   Я     Ещё │
+└──────────────────────────────────┘
 ```
 
-### Поведение
+- **Лента** → `/club`
+- **Гараж** → `/club/garage`
+- **Билеты** → `/club/tickets` (главная валюта клуба, нужна часто)
+- **Я** → `/club/me` (профиль + значки)
+- **Ещё** → bottom-sheet со списком: Hell AI, Hell Pass, Розыгрыши, Квесты, Заказы, Ранг и XP, Пригласить, Школа, Настройки, Выйти
 
-- **Мобилка (≤768px)**: drawer слева на 85% ширины, через `vaul` Drawer
-  (уже в проекте). Открывается бургером в top bar, закрывается свайпом
-  или тапом по затемнению. Активный пункт подсвечен primary.
-- **Десктоп (≥768px)**: постоянный sidebar слева на `w-[260px]`,
-  collapsible до `w-14` (только иконки). Через shadcn Sidebar.
-- Меню рендерится в layout-роуте `src/routes/club.tsx` (он уже есть и
-  оборачивает все `/club/*`), доступно на каждой club-странице.
+Активный таб подсвечивается `primary` (red), неактивный — `muted-foreground`. Иконки lucide, под SF-style. Бейдж-точка на «Ещё» если есть незабранные награды/новые квесты.
 
-## Что становится на `/club/me`
+## iOS-паттерны (всё на мобилке)
 
-Только три блока, крупно:
+1. **Large title header** — на каждом экране сверху: большой заголовок `text-[34px] font-black italic`, при скролле уезжает и схлопывается в компактный nav-bar с тонкой границей `border-b`. Слева — back-chevron на вложенных экранах (`/club/hell-pass/$tier`, `/club/raffles/$raffleId`, `/club/u/$nick`), на корневых табах — аватар.
+2. **Push/pop переходы** — обёртка `<AnimatePresence mode="popLayout">` вокруг `<Outlet />` с translateX-анимацией (вперёд: вправо→центр, назад: центр→вправо), 280мс, ease-out. Глубина считается по длине pathname-сегментов.
+3. **Bottom sheets вместо модалок** — `SettingsModal`, `BikeFormModal`, `BloggerProfileModal` переезжают на `vaul` Drawer с drag-handle сверху, snap-points, безопасной зоной.
+4. **List rows вместо карточек** на экранах-списках (Заказы, Билеты-история, Настройки, Ещё): сгруппированные строки на `bg-card/40` с `divide-y divide-white/[0.05]`, иконка слева, тайтл + сабтайтл, chevron справа.
+5. **Safe-area** — `pb-[env(safe-area-inset-bottom)]` под tab-bar, `pt-[env(safe-area-inset-top)]` под header.
+6. **Touch polish** — `active:scale-[0.97]` на всех тач-таргетах, мин. высота 44px, haptic-like микро-анимации.
 
-1. **Hero-плашка профиля** — большой аватар, ник `text-3xl italic
-   black`, ранг + прогресс XP крупной шкалой. Кнопка «Редактировать».
-2. **Значки** — `BadgeCase` как есть, заголовок `text-2xl`.
-3. **Настройки** — кнопка-плашка → `SettingsModal`. Под ней — «Выйти».
+## Типографика и тон под iOS
 
-Никаких билетов, заказов, квестов, гаража, лестницы рангов на этом
-экране — всё через бургер.
+- Large title: `text-[34px] font-black italic uppercase` (HELLHOUND характер сохранён)
+- Section header: `text-[22px] font-black italic`
+- Body: `text-[17px]` (iOS стандарт), не меньше `text-[15px]` нигде
+- Caption: `text-[13px] uppercase tracking-wider font-mono` (наш racing-акцент)
+- Цвет фона остаётся `--background` (noir), primary остаётся red
 
-## Новые страницы (контент переезжает как есть)
+## Изменения в файлах
 
-| Маршрут | Что переезжает |
-|---|---|
-| `/club/garage` | `SectionGarage` + `BikeJournal` |
-| `/club/tickets` | `SectionTickets` + `TicketLedger` |
-| `/club/orders` | `SectionOrders` + `CdekTracking` |
-| `/club/rank` | `RankLadder` + `StatsRow` |
+**Новые:**
+- `src/components/club/MobileTabBar.tsx` — фиксированный bottom tab-bar, 4 таба + «Ещё»
+- `src/components/club/MobileMoreSheet.tsx` — vaul Drawer с остальной навигацией
+- `src/components/club/MobileScreen.tsx` — обёртка экрана: large title + scroll-collapse + safe-area + back-chevron
+- `src/components/club/MobileTransition.tsx` — AnimatePresence + translateX для push/pop
+- `src/components/club/MobileListRow.tsx` — переиспользуемая iOS-list-row
 
-`/club/quests`, `/club/raffles`, `/club/invite`, `/club/hell-ai` — уже
-есть, просто появляются в бургере.
+**Правим:**
+- `src/routes/club.tsx` — на мобилке рендерим `<MobileTransition><Outlet/></MobileTransition>` + `<MobileTabBar/>` вместо текущего drawer/sidebar layout. Десктоп — без изменений.
+- Все `src/routes/club.*.tsx` — оборачиваем контент в `<MobileScreen title="...">` (на мобилке), на десктопе оставляем текущий `<PageHeader>`. Делаем через единый компонент, чтобы не дублировать.
+- `PageHeader.tsx` → расширяем: на мобилке = large-title-режим, на десктопе = как сейчас.
 
-## Типографика (везде в `/club/*`)
+**НЕ трогаем** в этой итерации:
+- Десктопный sidebar и десктопный layout `club.tsx`
+- Контент страниц (только обёртки/шрифты)
+- PWA, manifest, service worker — отдельная следующая задача
+- Бэкенд, данные, бизнес-логику
 
-- Заголовки экранов: `text-2xl md:text-3xl`
-- Имя/метрики: `text-3xl tabular-nums`
-- Body: `text-base` (16px)
-- Подписи: `text-sm` минимум
-- `text-[10px]` оставляем только для chip-меток рангов
+## После этой итерации (следующие шаги)
 
-## Технические детали
+1. Перевод оставшихся модалок на sheets (SettingsModal, BikeFormModal, BloggerProfileModal)
+2. PWA-installable (manifest + icons, без service worker — по правилам Lovable)
+3. Pull-to-refresh на ленте
 
-- Новый компонент `src/components/club/ClubSidebar.tsx` — содержит
-  список пунктов меню, активный пункт через `useRouterState`.
-- Новый компонент `src/components/club/ClubTopBar.tsx` — top bar с
-  бургером (мобилка) или с `SidebarTrigger` (десктоп).
-- `src/routes/club.tsx` оборачивает `<Outlet />` в `SidebarProvider`
-  на десктопе и в `Drawer` на мобилке. Логика выбора —
-  `useIsMobile()` (уже есть в `src/hooks/use-mobile.tsx`).
-- 4 новых route файла: `club.garage.tsx`, `club.tickets.tsx`,
-  `club.orders.tsx`, `club.rank.tsx`. Каждый с `head()` и
-  `robots: noindex`.
-- `club.me.tsx` сокращается с ~670 до ~120 строк.
-- Удаляем неиспользуемые импорты в `club.me.tsx` после переноса.
+---
 
-## Что НЕ трогаем сейчас
-
-- Дизайн ленты `/club` (TG-noir уже сделан)
-- PWA / installable — следующий заход после того как UX утрясём
-- Push/pop переходы между экранами — туда же
-
-## После этого — следующая итерация
-
-1. Дизайн под приложение: bottom tab bar для 3-4 топ-разделов,
-   safe-area, тач-полировка, переходы экранов.
-2. PWA: manifest + иконки, без service worker (правила Lovable).
-
-## Что нужно от тебя
-
-Скажи «погнали» — соберу. Если хочешь поменять порядок/состав пунктов
-меню (например убрать «Ранг» или добавить «Hell Pass») — скажи сейчас.
+Дай добро («погнали») или скажи, что переставить в табах. Например, можно поменять «Билеты» на «Hell Pass» или «Розыгрыши», если ты считаешь их важнее ежедневно.
