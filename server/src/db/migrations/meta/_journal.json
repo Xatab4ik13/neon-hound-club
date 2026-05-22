@@ -50,6 +50,13 @@
       "when": 1779530000000,
       "tag": "0006_quests",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1779540000000,
+      "tag": "0007_bike_extras",
+      "breakpoints": true
     }
   ]
 }
