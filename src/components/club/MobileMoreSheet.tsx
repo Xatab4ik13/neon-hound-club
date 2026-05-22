@@ -39,7 +39,7 @@ const GROUPS: { title: string; items: Item[] }[] = [
       { label: "Заказы", href: "/club/orders", icon: Package },
       { label: "Ранг и XP", href: "/club/rank", icon: TrendingUp },
       { label: "Пригласить друга", href: "/club/invite", icon: UserPlus },
-      { label: "Магазин", href: "/shop", icon: ShoppingBag, external: true },
+      { label: "Магазин клуба", href: "/club/shop", icon: ShoppingBag },
     ],
   },
 ];
