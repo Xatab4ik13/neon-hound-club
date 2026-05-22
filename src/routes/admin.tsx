@@ -9,8 +9,6 @@ import {
   Trophy,
   Target,
   Users,
-  ShoppingBag,
-  Ticket,
   Newspaper,
   Wallet,
   Bot,
