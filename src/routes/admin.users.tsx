@@ -148,7 +148,16 @@ function UserDrawer({
       toast.success("Пользователь удалён");
       onClose();
     },
-    onError: (e) => toast.error(e instanceof ApiError ? e.message : "Ошибка"),
+    onError: (e) => {
+      const raw = e instanceof ApiError ? e.message : "Ошибка";
+      const msg =
+        raw === "cannot_delete_self"
+          ? "Нельзя удалить самого себя. Залогинься под другим админом."
+          : raw === "Bad Request"
+            ? "Нельзя удалить этого юзера (возможно, это ты сам)."
+            : raw;
+      toast.error(msg);
+    },
   });
 
   const u = userQ.data;
