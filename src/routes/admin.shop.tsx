@@ -38,7 +38,10 @@ type Product = {
   returns?: string;
   ticketsBonus?: number;
   status: "active" | "draft" | "archived";
+  /** Тип товара: физический (нужна доставка) или цифровой (только email для чека). */
+  kind: "physical" | "digital";
 };
+
 
 const CATEGORIES_SEED = [
   { id: "apparel", name: "Одежда", subs: ["Худи", "Футболки", "Куртки"] },
@@ -62,8 +65,10 @@ function ShopPage() {
       returns: p.returns,
       ticketsBonus: p.ticketsBonus,
       status: "active" as const,
+      kind: "physical" as const,
     })),
   );
+
   const [editing, setEditing] = useState<Product | null>(null);
   const [productOpen, setProductOpen] = useState(false);
   const [del, setDel] = useState<Product | null>(null);
@@ -80,7 +85,9 @@ function ShopPage() {
       image: "",
       ticketsBonus: 0,
       status: "draft",
+      kind: "physical",
     });
+
     setProductOpen(true);
   };
 
@@ -220,9 +227,17 @@ function ProductsTab({
                           <ImageIcon className="h-4 w-4 text-zinc-400" />
                         </div>
                       )}
-                      <span className="font-medium">{p.name}</span>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className="truncate font-medium">{p.name}</span>
+                          <Badge tone={p.kind === "digital" ? "violet" : "zinc"}>
+                            {p.kind === "digital" ? "Цифровой" : "Физический"}
+                          </Badge>
+                        </div>
+                      </div>
                     </div>
                   </td>
+
                   <td className="px-4 py-2.5 text-zinc-500 dark:text-zinc-400">
                     {p.category} / {p.sub ?? "—"}
                   </td>
@@ -473,6 +488,38 @@ function ProductModal({
           <TextInput value={p.name} onChange={(e) => setP({ ...p, name: e.target.value })} />
         </Field>
         <Field
+          label="Тип товара"
+          hint="«Физический» — на оформлении спросим адрес и контакты для доставки. «Цифровой» — только email для чека (доступ выдаётся автоматически)."
+        >
+          <div className="grid grid-cols-2 gap-2">
+            {([
+              { v: "physical", title: "Физический", sub: "Нужна доставка" },
+              { v: "digital", title: "Цифровой", sub: "Только email для чека" },
+            ] as const).map((opt) => {
+              const active = p.kind === opt.v;
+              return (
+                <button
+                  key={opt.v}
+                  type="button"
+                  onClick={() => setP({ ...p, kind: opt.v })}
+                  className={cn(
+                    "rounded-md border px-3 py-2.5 text-left transition-colors",
+                    active
+                      ? "border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900"
+                      : "border-zinc-200 bg-white hover:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-600",
+                  )}
+                >
+                  <div className="text-sm font-semibold">{opt.title}</div>
+                  <div className={cn("text-[11px]", active ? "opacity-80" : "text-zinc-500 dark:text-zinc-400")}>
+                    {opt.sub}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </Field>
+
+        <Field
           label="Описание"
           hint="Можно отдельно упомянуть, сколько билетов получит покупатель — это будет видно в карточке товара."
         >
@@ -495,28 +542,37 @@ function ProductModal({
             }
           />
         </Field>
-        <Field
-          label="Условия доставки"
-          hint="Сроки, способы, стоимость. Покажется отдельным блоком в карточке товара."
-        >
-          <TextArea
-            rows={3}
-            value={p.shipping ?? ""}
-            onChange={(e) => setP({ ...p, shipping: e.target.value })}
-            placeholder="СДЭК / Почта России, 3–10 дней. Бесплатно от 5 000 ₽."
-          />
-        </Field>
-        <Field
-          label="Условия возврата"
-          hint="Срок и условия возврата. Цифровые товары обычно возврату не подлежат."
-        >
-          <TextArea
-            rows={3}
-            value={p.returns ?? ""}
-            onChange={(e) => setP({ ...p, returns: e.target.value })}
-            placeholder="Возврат в течение 14 дней при сохранении ярлыков."
-          />
-        </Field>
+        {p.kind === "physical" ? (
+          <>
+            <Field
+              label="Условия доставки"
+              hint="Сроки, способы, стоимость. Покажется отдельным блоком в карточке товара."
+            >
+              <TextArea
+                rows={3}
+                value={p.shipping ?? ""}
+                onChange={(e) => setP({ ...p, shipping: e.target.value })}
+                placeholder="СДЭК / Почта России, 3–10 дней. Бесплатно от 5 000 ₽."
+              />
+            </Field>
+            <Field
+              label="Условия возврата"
+              hint="Срок и условия возврата."
+            >
+              <TextArea
+                rows={3}
+                value={p.returns ?? ""}
+                onChange={(e) => setP({ ...p, returns: e.target.value })}
+                placeholder="Возврат в течение 14 дней при сохранении ярлыков."
+              />
+            </Field>
+          </>
+        ) : (
+          <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-800 dark:border-amber-900/40 dark:bg-amber-900/20 dark:text-amber-300">
+            Цифровой товар — на оформлении возьмём только email для чека. Адрес и доставка не спрашиваются.
+          </div>
+        )}
+
         <div className="grid grid-cols-3 gap-3">
           <Field label="Цена (₽)">
             <TextInput

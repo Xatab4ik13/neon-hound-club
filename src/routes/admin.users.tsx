@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
+import { cn } from "@/lib/utils";
+
 import { Ban, Gift, Crown, Save } from "lucide-react";
 import {
   PageHeader,
@@ -27,14 +29,29 @@ type PassTier = "Silver" | "Gold" | "Platinum" | "—";
 // до подключения БД. Считаем 1 раз по slug.
 type UserMeta = {
   fio: string;
+  email: string;
   phone: string;
+  address: string;
   registeredAt: string;
+  lastSeen: string;
   spent: number;
+  ordersCount: number;
+  ticketsBalance: number;
+  ticketsEarned: number;
+  ticketsSpent: number;
+  rafflesEntered: number;
+  rafflesWon: number;
+  referralCode: string;
+  referredCount: number;
   pass: PassTier;
+  passSince?: string;
+  passUntil?: string;
 };
 
 const FIO_FIRST = ["Алексей", "Иван", "Дмитрий", "Сергей", "Павел", "Артём", "Михаил", "Никита", "Роман", "Анна", "Мария", "Олег"];
 const FIO_LAST = ["Иванов", "Петров", "Сидоров", "Кузнецов", "Смирнов", "Соколов", "Попов", "Лебедев", "Козлов", "Новиков"];
+const CITIES = ["Москва", "Санкт-Петербург", "Краснодар", "Казань", "Новосибирск", "Екатеринбург"];
+const STREETS = ["ул. Ленина", "пр. Мира", "ул. Гагарина", "Кутузовский пр.", "Невский пр.", "ул. Лесная"];
 const TIERS: PassTier[] = ["Silver", "Gold", "Platinum", "—"];
 
 function hash(s: string) {
@@ -60,10 +77,48 @@ function metaFor(u: PublicUser): UserMeta {
   const month = ((h >> 4) % 12) + 1;
   const year = 2024 + ((h >> 8) % 3);
   const registeredAt = `${String(day).padStart(2, "0")}.${String(month).padStart(2, "0")}.${year}`;
+  const lastDay = ((h >> 9) % 28) + 1;
+  const lastMonth = ((h >> 13) % 5) + 1;
+  const lastSeen = `${String(lastDay).padStart(2, "0")}.${String(lastMonth).padStart(2, "0")}.2026`;
   const spent = ((h % 90) + 1) * 490 + ((h >> 7) % 30) * 100;
+  const ordersCount = (h % 12) + 1;
   const pass = TIERS[h % TIERS.length];
-  return { fio: `${last} ${first}`, phone, registeredAt, spent, pass };
+  const earned = ((h >> 2) % 400) + 50;
+  const spentTickets = Math.min(earned, ((h >> 6) % earned));
+  const balance = earned - spentTickets;
+  const rafflesEntered = (h % 8) + 1;
+  const rafflesWon = (h >> 4) % 3;
+  const city = CITIES[h % CITIES.length];
+  const street = STREETS[(h >> 5) % STREETS.length];
+  const house = (h % 200) + 1;
+  const flat = ((h >> 7) % 250) + 1;
+  const address = `${city}, ${street}, ${house}, кв. ${flat}`;
+  const emailLocal = (last + first[0]).toLowerCase().replace(/[^a-z]/g, "");
+  const email = `${emailLocal}${(h % 99)}@example.com`;
+  const passSince = pass !== "—" ? `01.${String(((h >> 8) % 5) + 1).padStart(2, "0")}.2026` : undefined;
+  const passUntil = pass !== "—" ? `01.${String(((h >> 8) % 5) + 4).padStart(2, "0")}.2026` : undefined;
+  return {
+    fio: `${last} ${first}`,
+    email,
+    phone,
+    address,
+    registeredAt,
+    lastSeen,
+    spent,
+    ordersCount,
+    ticketsBalance: balance,
+    ticketsEarned: earned,
+    ticketsSpent: spentTickets,
+    rafflesEntered,
+    rafflesWon,
+    referralCode: u.slug,
+    referredCount: (h >> 10) % 7,
+    pass,
+    passSince,
+    passUntil,
+  };
 }
+
 
 function passTone(t: PassTier) {
   if (t === "Silver") return "zinc" as const;
@@ -218,16 +273,20 @@ function UserCard({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-2">
+      <Section title="Контакты">
+        <InfoRow label="Email" value={meta.email} />
         <InfoRow label="Телефон" value={meta.phone} />
-        <InfoRow label="Регистрация" value={meta.registeredAt} />
-      </div>
+        <InfoRow label="Адрес доставки" value={meta.address} full />
+        <InfoRow label="Город" value={user.city ?? "—"} />
+        <InfoRow label="Мото" value={user.bike ?? "—"} />
+      </Section>
 
-      <div className="grid grid-cols-3 gap-2">
-        <Metric label="Билеты" value="124" />
-        <Metric label="XP" value={`${user.xpPct}%`} />
-        <Metric label="Заказов" value="7" />
-      </div>
+      <Section title="Активность">
+        <InfoRow label="Регистрация" value={meta.registeredAt} />
+        <InfoRow label="Последний визит" value={meta.lastSeen} />
+        <InfoRow label="Заказов" value={String(meta.ordersCount)} />
+        <InfoRow label="XP" value={`${user.xpPct}%`} />
+      </Section>
 
       <div className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 dark:border-emerald-900/40 dark:bg-emerald-900/20">
         <div className="text-[10px] uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
@@ -237,6 +296,30 @@ function UserCard({
           {meta.spent.toLocaleString("ru-RU")} ₽
         </div>
       </div>
+
+      <Section title="Билеты">
+        <Metric label="Баланс" value={String(meta.ticketsBalance)} />
+        <Metric label="Заработано" value={String(meta.ticketsEarned)} />
+        <Metric label="Потрачено" value={String(meta.ticketsSpent)} />
+      </Section>
+
+      <Section title="Розыгрыши">
+        <Metric label="Участвует" value={String(meta.rafflesEntered)} />
+        <Metric label="Выиграл" value={String(meta.rafflesWon)} />
+      </Section>
+
+      <Section title="Реферальная программа">
+        <InfoRow label="Промо-код" value={meta.referralCode} />
+        <InfoRow label="Приглашено" value={String(meta.referredCount)} />
+      </Section>
+
+      {meta.pass !== "—" && (
+        <Section title="Hell Pass">
+          <InfoRow label="Тариф" value={meta.pass} />
+          <InfoRow label="С" value={meta.passSince ?? "—"} />
+          <InfoRow label="До" value={meta.passUntil ?? "—"} />
+        </Section>
+      )}
 
       <Field label="Ранг">
         <Select value={rank} onChange={(e) => setRank(e.target.value as typeof rank)}>
@@ -276,40 +359,38 @@ function UserCard({
           История (последние 5)
         </div>
         <ul className="space-y-1.5 text-sm">
-          <li className="flex justify-between">
-            <span>Покупка пакета 50 🎟</span>
-            <span className="text-zinc-500">18.05</span>
-          </li>
-          <li className="flex justify-between">
-            <span>Розыгрыш «Шлем AGV»</span>
-            <span className="text-zinc-500">17.05</span>
-          </li>
-          <li className="flex justify-between">
-            <span>Заказ #1037</span>
-            <span className="text-zinc-500">15.05</span>
-          </li>
-          <li className="flex justify-between">
-            <span>Продление Gold</span>
-            <span className="text-zinc-500">10.05</span>
-          </li>
-          <li className="flex justify-between">
-            <span>Регистрация</span>
-            <span className="text-zinc-500">{meta.registeredAt}</span>
-          </li>
+          <li className="flex justify-between"><span>Покупка пакета 50 🎟</span><span className="text-zinc-500">18.05</span></li>
+          <li className="flex justify-between"><span>Розыгрыш «Шлем AGV»</span><span className="text-zinc-500">17.05</span></li>
+          <li className="flex justify-between"><span>Заказ #1037</span><span className="text-zinc-500">15.05</span></li>
+          <li className="flex justify-between"><span>Продление Gold</span><span className="text-zinc-500">10.05</span></li>
+          <li className="flex justify-between"><span>Регистрация</span><span className="text-zinc-500">{meta.registeredAt}</span></li>
         </ul>
       </div>
     </div>
   );
 }
 
-function InfoRow({ label, value }: { label: string; value: string }) {
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-md border border-zinc-200 bg-zinc-50 px-3 py-2 dark:border-zinc-800 dark:bg-zinc-900/50">
-      <div className="text-[10px] uppercase tracking-wider text-zinc-500">{label}</div>
-      <div className="text-sm font-medium tabular-nums">{value}</div>
+    <div>
+      <div className="mb-2 text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+        {title}
+      </div>
+      <div className="grid grid-cols-2 gap-2">{children}</div>
     </div>
   );
 }
+
+
+function InfoRow({ label, value, full }: { label: string; value: string; full?: boolean }) {
+  return (
+    <div className={cn("rounded-md border border-zinc-200 bg-zinc-50 px-3 py-2 dark:border-zinc-800 dark:bg-zinc-900/50", full && "col-span-2")}>
+      <div className="text-[10px] uppercase tracking-wider text-zinc-500">{label}</div>
+      <div className="text-sm font-medium tabular-nums break-words">{value}</div>
+    </div>
+  );
+}
+
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
