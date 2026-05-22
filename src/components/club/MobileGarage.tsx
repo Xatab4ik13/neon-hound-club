@@ -870,11 +870,12 @@ function DocSheet({
   bikeId: string;
   onOpenChange: (v: boolean) => void;
 }) {
+  const initialPhotos = doc ? docPhotos(doc) : [];
   const [type, setType] = useState<DocType>(doc?.type ?? "osago");
   const [number, setNumber] = useState(doc?.number ?? "");
   const [issueDate, setIssueDate] = useState(doc?.issueDate ?? "");
   const [expiryDate, setExpiryDate] = useState(doc?.expiryDate ?? "");
-  const [photo, setPhoto] = useState<string | undefined>(doc?.photo);
+  const [photos, setPhotos] = useState<string[]>(initialPhotos);
   const [note, setNote] = useState(doc?.note ?? "");
 
   // re-init when doc changes
@@ -885,7 +886,7 @@ function DocSheet({
     setNumber(doc?.number ?? "");
     setIssueDate(doc?.issueDate ?? "");
     setExpiryDate(doc?.expiryDate ?? "");
-    setPhoto(doc?.photo);
+    setPhotos(doc ? docPhotos(doc) : []);
     setNote(doc?.note ?? "");
   }
 
@@ -896,7 +897,8 @@ function DocSheet({
       number: number.trim() || undefined,
       issueDate: issueDate || undefined,
       expiryDate: expiryDate || undefined,
-      photo,
+      photos: photos.length > 0 ? photos : undefined,
+      photo: undefined, // чистим legacy
       note: note.trim() || undefined,
     };
     if (doc) {
@@ -928,7 +930,8 @@ function DocSheet({
         <DateField label="Действует до" value={expiryDate} onChange={setExpiryDate} />
       </FieldGroup>
 
-      <PhotoUpload photo={photo} onChange={setPhoto} />
+      <PhotosUpload photos={photos} onChange={setPhotos} />
+
 
       <FieldGroup className="mt-3">
         <TextField label="Заметка" value={note} onChange={setNote} placeholder="Серия, страховая..." />
