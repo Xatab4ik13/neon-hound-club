@@ -698,7 +698,7 @@ function Segmented<T extends string>({
 
 // ───────────── Service list ─────────────
 
-function ServiceList({ bikeId }: { bikeId: string }) {
+function ServiceList({ bikeId, flat = false }: { bikeId: string; flat?: boolean }) {
   const journal = useBikeJournal();
   const service = useMemo(
     () =>
