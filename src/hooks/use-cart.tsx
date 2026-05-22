@@ -16,6 +16,9 @@ export type CartItem = {
   image: string;
   size: string | null;
   qty: number;
+  /** Цифровые товары: сколько билетов на розыгрыши начисляется за 1 шт. */
+  ticketsBonus?: number;
+
 };
 
 type CartContextValue = {

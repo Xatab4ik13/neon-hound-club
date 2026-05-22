@@ -123,9 +123,11 @@ function ProductPage() {
         price: product.price,
         image: product.image,
         size,
+        ticketsBonus: product.ticketsBonus,
       },
       qty,
     );
+
     hhToast.success("Добавлено в корзину", {
       meta: `${product.name}${size ? ` · ${size}` : ""} × ${qty}`,
     });

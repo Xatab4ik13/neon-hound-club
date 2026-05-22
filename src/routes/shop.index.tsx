@@ -76,7 +76,14 @@ const CATEGORIES: Category[] = [
       { slug: "keychains", name: "Брелоки", count: 1 },
     ],
   },
+  {
+    slug: "digital",
+    name: "Цифровые товары",
+    count: 6,
+    sub: [{ slug: "postcards", name: "Открытки Hell", count: 6 }],
+  },
 ];
+
 
 const SORTS = [
   { id: "new", label: "Новые" },

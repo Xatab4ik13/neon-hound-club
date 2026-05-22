@@ -39,6 +39,11 @@ function CheckoutPage() {
   }, [isAuthed, items.length, navigate]);
 
   const cashback = Math.floor(total / 200);
+  const ticketsFromDigital = items.reduce(
+    (s, i) => s + (i.ticketsBonus ?? 0) * i.qty,
+    0,
+  );
+  const totalTickets = cashback + ticketsFromDigital;
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,9 +51,10 @@ function CheckoutPage() {
     const orderId = `HH-${Date.now().toString(36).toUpperCase().slice(-6)}`;
     setTimeout(() => {
       clear();
-      navigate({ to: "/checkout/success", search: { o: orderId, t: cashback } });
+      navigate({ to: "/checkout/success", search: { o: orderId, t: totalTickets } });
     }, 600);
   };
+
 
   if (!isAuthed || items.length === 0) return null;
 
@@ -152,21 +158,24 @@ function CheckoutPage() {
                 </span>
               </div>
 
-              {cashback > 0 && (
+              {totalTickets > 0 && (
                 <div className="mt-4 flex items-center justify-between gap-2 border border-emerald-500/30 bg-emerald-500/[0.06] px-3 py-2">
                   <div className="flex min-w-0 flex-col">
                     <span className="font-mono text-[9px] font-bold uppercase tracking-[0.2em] text-emerald-300/80">
-                      Кешбэк билетами
+                      Билетов начислится
                     </span>
                     <span className="text-[11px] text-muted-foreground">
-                      зачислится после оплаты
+                      {ticketsFromDigital > 0
+                        ? `${ticketsFromDigital} за открытки + ${cashback} кешбэк`
+                        : "кешбэк 1 билет за 200 ₽"}
                     </span>
                   </div>
                   <span className="whitespace-nowrap font-display text-xl font-black italic tabular-nums text-emerald-300">
-                    +{cashback}
+                    +{totalTickets}
                   </span>
                 </div>
               )}
+
             </div>
             <Button type="submit" className="w-full" disabled={submitting}>
               {submitting ? "Оформляем…" : "Оплатить"}
