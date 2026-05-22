@@ -11,16 +11,36 @@ export type FeedComment = {
   likes: number;
 };
 
+export type FeedPollOption = {
+  id: string;
+  text: string;
+  /** Сколько уже проголосовало за этот вариант (без учёта моего голоса). */
+  votes: number;
+};
+
+export type FeedPoll = {
+  question: string;
+  options: FeedPollOption[];
+  /** Голосование без раскрытия, кто что выбрал. По умолчанию true. */
+  anonymous?: boolean;
+  /** Можно ли выбрать несколько вариантов. */
+  multi?: boolean;
+  /** Закрыто — менять голос нельзя, видны только результаты. */
+  closed?: boolean;
+};
+
 export type FeedPost = {
   id: string;
   authorSlug: string;
   time: string;
   text: string;
   image?: string;
+  poll?: FeedPoll;
   likes: number;
   pinned?: boolean;
   comments: FeedComment[];
 };
+
 
 let POSTS: FeedPost[] = [
   {
@@ -73,7 +93,30 @@ let POSTS: FeedPost[] = [
       { id: "c11", authorSlug: "captain_volk", time: "2 д", text: "Если асфальт реально плохой — лучше не на спорте. Возьму твин.", likes: 8 },
     ],
   },
+  {
+
+    id: "5",
+    authorSlug: "hell",
+    time: "5 ч",
+    text: "Решаем, какой мерч идёт в следующую партию. Голосуйте — что сейчас реально нужно.",
+    poll: {
+      question: "Что заказывать первым?",
+      anonymous: true,
+      options: [
+        { id: "o1", text: "Худи HELLHOUND v2", votes: 612 },
+        { id: "o2", text: "Перчатки v2 — короткий манжет", votes: 284 },
+        { id: "o3", text: "Дождевик на сезон", votes: 197 },
+        { id: "o4", text: "Шейный платок / бафф", votes: 89 },
+      ],
+    },
+    likes: 318,
+    comments: [
+      { id: "c12", authorSlug: "moto_anya", time: "1 ч", text: "Худи, без вариантов. Прошлогоднее уже ушатанное.", likes: 12 },
+      { id: "c13", authorSlug: "captain_volk", time: "30 мин", text: "Дождевик нужен прямо сейчас, апрель на носу.", likes: 7 },
+    ],
+  },
 ];
+
 
 const listeners = new Set<() => void>();
 const emit = () => listeners.forEach((l) => l());
