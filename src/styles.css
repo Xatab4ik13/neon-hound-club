@@ -279,10 +279,8 @@
   100% { transform: rotate(360deg) scale(1.4); }
 }
 
-@keyframes plaque-vip-breathe {
-  0%, 100% { opacity: 0.85; transform: scale(1); }
-  50%      { opacity: 1; transform: scale(1.04); }
-}
+
+
 
 /* ── Badges ────────────────────────────────────────────────────────────── */
 @keyframes badge-float {
