@@ -33,7 +33,7 @@ export type RankMeta = {
   label: string;     // длинное имя для дашборда: "ROAD CAPTAIN"
   short: string;     // короткое для лестницы: "CAPTAIN"
   plaqueBg: PlaqueBg;
-  /** Для рангов с несколькими равноправными визуалами (VIP). Первый = дефолт. */
+  /** Для рангов с несколькими равноправными визуалами. Первый = дефолт. */
   plaqueVariants?: PlaqueBg[];
   /** основной цвет акцента ранга (XP-бар, активный шаг лестницы) */
   accent: string;
@@ -42,11 +42,8 @@ export type RankMeta = {
   /** цвет текста поверх accent (для активного шага лестницы) */
   onAccent: string;
   isMax?: boolean;
-  /** платный ранг — рисуем замок/цену вместо XP-бара */
-  isPaid?: boolean;
-  /** плейсхолдер цены, рисуется на плашке вместо XP */
-  priceLabel?: string;
 };
+
 
 export const RANKS: RankMeta[] = [
   {
