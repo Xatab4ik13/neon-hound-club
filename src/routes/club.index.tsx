@@ -475,27 +475,112 @@ const STICKER_PACKS: StickerPack[] = [
   },
 ];
 
-function CommentComposer({ postId, large = false }: { postId: string; large?: boolean }) {
+const RECENT_STICKERS_KEY = "club:recent-stickers";
+
+function loadRecent(): string[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(RECENT_STICKERS_KEY);
+    return raw ? (JSON.parse(raw) as string[]).slice(0, 24) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveRecent(list: string[]) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(RECENT_STICKERS_KEY, JSON.stringify(list.slice(0, 24)));
+  } catch {
+    /* noop */
+  }
+}
+
+function CommentComposer({
+  postId,
+  large = false,
+  replyTo,
+  onClearReply,
+}: {
+  postId: string;
+  large?: boolean;
+  replyTo?: { nick: string; commentId: string } | null;
+  onClearReply?: () => void;
+}) {
   const [value, setValue] = useState("");
   const [panel, setPanel] = useState<null | "emoji" | "stickers">(null);
   const [tab, setTab] = useState<"recent" | "emoji" | "stickers">("stickers");
   const [activePack, setActivePack] = useState<string>(STICKER_PACKS[0].id);
+  const [recent, setRecent] = useState<string[]>(() => loadRecent());
   const me = PUBLIC_USERS[ME_SLUG];
   const disabled = value.trim().length === 0;
   const wrapRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Когда тыкнули «Ответить» — фокус на ввод
   useEffect(() => {
-    if (!panel) return;
-    const onDoc = (e: MouseEvent) => {
-      if (!wrapRef.current?.contains(e.target as Node)) setPanel(null);
-    };
-    document.addEventListener("mousedown", onDoc);
-    return () => document.removeEventListener("mousedown", onDoc);
-  }, [panel]);
+    if (replyTo) inputRef.current?.focus();
+  }, [replyTo]);
+
+  const pushRecent = useCallback((s: string) => {
+    setRecent((prev) => {
+      const next = [s, ...prev.filter((x) => x !== s)].slice(0, 24);
+      saveRecent(next);
+      return next;
+    });
+  }, []);
+
+  const submitText = useCallback(
+    (text: string) => {
+      const clean = text.trim();
+      if (!clean) return;
+      const prefix = replyTo ? `@${replyTo.nick} ` : "";
+      feedStore.addComment(postId, { authorSlug: ME_SLUG, text: `${prefix}${clean}` });
+      setValue("");
+      setPanel(null);
+      onClearReply?.();
+    },
+    [postId, replyTo, onClearReply],
+  );
+
+  const insertEmoji = useCallback((e: string) => {
+    setValue((v) => v + e);
+    inputRef.current?.focus();
+  }, []);
+
+  const sendSticker = useCallback(
+    (s: string) => {
+      pushRecent(s);
+      const prefix = replyTo ? `@${replyTo.nick} ` : "";
+      feedStore.addComment(postId, { authorSlug: ME_SLUG, text: `${prefix}${s}` });
+      setPanel(null);
+      onClearReply?.();
+    },
+    [postId, replyTo, onClearReply, pushRecent],
+  );
 
   return (
     <div ref={wrapRef} className="relative border-t border-white/[0.06] bg-black/40">
+      {replyTo && (
+        <div className="flex items-center gap-2 border-b border-white/[0.05] bg-primary/[0.06] px-4 py-2">
+          <div className="h-7 w-[2px] shrink-0 rounded-full bg-primary" />
+          <div className="min-w-0 flex-1">
+            <div className="font-mono text-[9px] uppercase tracking-[0.18em] text-primary">
+              Ответ
+            </div>
+            <div className="truncate text-[12px] text-foreground/80">@{replyTo.nick}</div>
+          </div>
+          <button
+            type="button"
+            onClick={onClearReply}
+            aria-label="Отменить ответ"
+            className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-muted-foreground hover:text-foreground"
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
+
       {panel && (
         <StickerPanel
           tab={tab}
@@ -503,15 +588,15 @@ function CommentComposer({ postId, large = false }: { postId: string; large?: bo
           activePack={activePack}
           setActivePack={setActivePack}
           large={large}
+          recent={recent}
+          onPickEmoji={insertEmoji}
+          onPickSticker={sendSticker}
         />
       )}
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          if (disabled) return;
-          setValue("");
-          setPanel(null);
-          void postId;
+          submitText(value);
         }}
         className="flex items-end gap-2 px-3 py-2.5"
       >
@@ -521,7 +606,7 @@ function CommentComposer({ postId, large = false }: { postId: string; large?: bo
           <button
             type="button"
             onClick={() => {
-              if (panel) {
+              if (panel === "emoji") {
                 setPanel(null);
               } else {
                 setPanel("emoji");
@@ -540,7 +625,7 @@ function CommentComposer({ postId, large = false }: { postId: string; large?: bo
             value={value}
             onChange={(e) => setValue(e.target.value)}
             onFocus={() => setPanel(null)}
-            placeholder="Написать комментарий…"
+            placeholder={replyTo ? `Ответить @${replyTo.nick}…` : "Написать комментарий…"}
             className="min-w-0 flex-1 bg-transparent px-1 py-1.5 text-[14px] text-foreground placeholder:text-muted-foreground/60 outline-none"
           />
 
@@ -578,6 +663,7 @@ function CommentComposer({ postId, large = false }: { postId: string; large?: bo
             <Send size={18} strokeWidth={2} className="-translate-x-[1px]" />
           </button>
         )}
+
       </form>
     </div>
   );
