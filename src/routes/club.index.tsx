@@ -30,14 +30,14 @@ const RANK_BY_ID = Object.fromEntries(RANKS.map((r) => [r.id, r])) as Record<
 function ClubFeedPage() {
   const posts = useFeedPosts();
   return (
-    <main className="mx-auto w-full max-w-2xl px-4 py-6 md:px-8 md:py-10">
-      <div className="mb-6 flex items-center justify-between border-b border-white/[0.06] pb-3">
+    <main className="mx-auto w-full max-w-[640px] px-3 py-5 md:px-4 md:py-10">
+      <div className="mb-5 flex items-center justify-between px-2">
         <h1 className="font-display text-lg font-black uppercase italic tracking-tight text-foreground">
           Лента
         </h1>
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-5">
         {posts.map((post) => (
           <PostCard key={post.id} post={post} />
         ))}
@@ -54,7 +54,7 @@ function PostCard({ post }: { post: Post }) {
   const author = PUBLIC_USERS[post.authorSlug];
 
   return (
-    <article className="border border-white/[0.06] bg-card/40 transition-colors hover:border-white/[0.10]">
+    <article className="overflow-hidden rounded-[24px] border border-white/[0.06] bg-card/60 shadow-[0_8px_40px_rgba(0,0,0,0.4)] transition-colors hover:border-white/[0.10]">
       {post.pinned && (
         <div className="flex items-center gap-2 border-b border-white/[0.06] bg-primary/[0.04] px-5 py-2 font-mono text-[10px] uppercase tracking-[0.2em] text-primary">
           <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
@@ -64,18 +64,18 @@ function PostCard({ post }: { post: Post }) {
         </div>
       )}
 
-      <header className="flex items-center gap-3 px-5 pt-5">
+      <header className="flex items-center gap-3 px-4 pt-4 md:px-5 md:pt-5">
         <UserLink slug={post.authorSlug}>
           {isHell(post.authorSlug) ? (
-            <HellhoundAvatar size={48} initials={author?.initials ?? "H"} avatarUrl={author?.avatarUrl} />
+            <HellhoundAvatar size={44} initials={author?.initials ?? "H"} avatarUrl={author?.avatarUrl} />
           ) : (
-            <RankAvatar initials={author?.initials ?? "?"} rankId={author?.rank ?? "rookie"} size={48} />
+            <RankAvatar initials={author?.initials ?? "?"} rankId={author?.rank ?? "rookie"} size={44} />
           )}
         </UserLink>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <UserLink slug={post.authorSlug} className="truncate">
-              <span className="truncate font-display text-[17px] font-black uppercase italic tracking-tight text-foreground transition-colors hover:text-primary">
+              <span className="truncate font-display text-[15px] font-black uppercase italic tracking-tight text-foreground transition-colors hover:text-primary">
                 {author?.nick ?? post.authorSlug}
               </span>
             </UserLink>
@@ -87,21 +87,23 @@ function PostCard({ post }: { post: Post }) {
         </div>
       </header>
 
-      <p className="px-5 pb-4 pt-4 text-[15.5px] leading-[1.55] text-foreground/90">{post.text}</p>
+      <p className="px-4 pb-3 pt-3 text-[15px] leading-[1.55] text-foreground/90 md:px-5">{post.text}</p>
 
       {post.image && (
-        <div className="border-y border-white/[0.06] bg-black">
-          <img
-            src={post.image}
-            alt=""
-            loading="lazy"
-            decoding="async"
-            className="aspect-[16/9] w-full object-cover"
-          />
+        <div className="px-3 pb-3">
+          <div className="overflow-hidden rounded-[16px] border border-white/[0.05] bg-black">
+            <img
+              src={post.image}
+              alt=""
+              loading="lazy"
+              decoding="async"
+              className="aspect-[16/9] w-full object-cover"
+            />
+          </div>
         </div>
       )}
 
-      <div className="flex items-stretch border-b border-white/[0.04]">
+      <div className="flex items-center gap-1 border-t border-white/[0.05] bg-black/30 px-3 py-2 md:px-4">
         <PostAction
           icon={<HeartIcon filled={liked} size={18} />}
           count={likeCount}
@@ -109,10 +111,10 @@ function PostCard({ post }: { post: Post }) {
           active={liked}
           onClick={() => setLiked((v) => !v)}
         />
-        <span aria-hidden className="my-2 w-px bg-white/[0.05]" />
         <PostAction icon={<CommentIcon />} count={post.comments.length} label="Комментарий" />
-        <span aria-hidden className="my-2 w-px bg-white/[0.05]" />
-        <PostAction icon={<ShareIcon />} label="Поделиться" />
+        <div className="ml-auto">
+          <PostAction icon={<ShareIcon />} label="Поделиться" compact />
+        </div>
       </div>
 
       <CommentsBlock postId={post.id} comments={post.comments} />
@@ -126,12 +128,14 @@ function PostAction({
   label,
   active,
   onClick,
+  compact,
 }: {
   icon: React.ReactNode;
   count?: number;
   label: string;
   active?: boolean;
   onClick?: () => void;
+  compact?: boolean;
 }) {
   return (
     <button
@@ -139,12 +143,18 @@ function PostAction({
       onClick={onClick}
       aria-label={label}
       aria-pressed={active}
-      className={`group flex flex-1 items-center justify-center gap-2 px-3 py-3 font-mono text-[12px] font-bold uppercase tracking-wider tabular-nums transition-colors ${
-        active ? "text-primary" : "text-muted-foreground hover:bg-white/[0.02] hover:text-foreground"
+      className={`group flex items-center gap-2 rounded-full px-3 py-1.5 font-mono text-[12px] font-bold uppercase tracking-wider tabular-nums transition-colors ${
+        active
+          ? "text-primary"
+          : "text-muted-foreground hover:bg-white/[0.04] hover:text-foreground"
       }`}
     >
       <span className="transition-transform group-active:scale-90">{icon}</span>
-      {count !== undefined ? <span>{formatCount(count)}</span> : <span>{label}</span>}
+      {count !== undefined ? (
+        <span>{formatCount(count)}</span>
+      ) : compact ? null : (
+        <span>{label}</span>
+      )}
     </button>
   );
 }
@@ -153,7 +163,7 @@ function RoleBadge({ role }: { role: "owner" | "team" | "rider" }) {
   if (role === "rider") return null;
   const label = role === "owner" ? "OWNER" : "TEAM";
   return (
-    <span className="shrink-0 border border-primary/40 bg-primary/10 px-1.5 py-px font-mono text-[9px] font-bold uppercase tracking-wider text-primary">
+    <span className="shrink-0 rounded-md border border-primary/30 bg-primary/10 px-1.5 py-px font-mono text-[9px] font-bold uppercase tracking-wider text-primary">
       {label}
     </span>
   );
@@ -169,22 +179,22 @@ function CommentsBlock({ postId, comments }: { postId: string; comments: Comment
   const hidden = Math.max(0, comments.length - INITIAL_VISIBLE);
 
   return (
-    <div className="bg-black/30">
-      <ul className="divide-y divide-white/[0.04]">
-        {visible.map((c) => (
-          <CommentItem key={c.id} comment={c} />
-        ))}
-      </ul>
+    <div className="border-t border-white/[0.05] bg-[oklch(0.10_0_0)]/60">
+      {visible.length > 0 && (
+        <ul className="space-y-4 px-4 py-4 md:px-5 md:py-5">
+          {visible.map((c) => (
+            <CommentItem key={c.id} comment={c} />
+          ))}
+        </ul>
+      )}
 
       {hidden > 0 && !expanded && (
         <button
           type="button"
           onClick={() => setExpanded(true)}
-          className="flex w-full items-center gap-2 border-t border-white/[0.04] px-5 py-2.5 text-left font-mono text-[11px] uppercase tracking-wider text-muted-foreground transition-colors hover:text-primary"
+          className="flex w-full items-center gap-2 px-5 pb-3 text-left font-mono text-[10px] uppercase tracking-[0.18em] text-primary transition-opacity hover:opacity-80"
         >
-          <span className="h-px flex-1 bg-white/[0.06]" />
           показать ещё {hidden}
-          <span className="h-px flex-1 bg-white/[0.06]" />
         </button>
       )}
 
@@ -200,7 +210,7 @@ function CommentItem({ comment }: { comment: Comment }) {
   const count = comment.likes + (liked ? 1 : 0);
 
   return (
-    <li className="flex gap-3 px-5 py-3.5">
+    <li className="flex gap-3">
       <UserLink slug={comment.authorSlug}>
         {isHell(comment.authorSlug) ? (
           <HellhoundAvatar size={36} initials={user?.initials ?? "H"} avatarUrl={user?.avatarUrl} />
@@ -211,7 +221,10 @@ function CommentItem({ comment }: { comment: Comment }) {
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <UserLink slug={comment.authorSlug} className="min-w-0 truncate">
-            <span className="truncate font-display text-[13px] font-bold uppercase italic tracking-tight text-foreground transition-colors hover:text-primary">
+            <span
+              className="truncate font-display text-[13px] font-bold uppercase italic tracking-tight transition-opacity hover:opacity-80"
+              style={{ color: isHell(comment.authorSlug) ? undefined : rank.accent }}
+            >
               {user?.nick ?? comment.authorSlug}
             </span>
           </UserLink>
@@ -219,36 +232,47 @@ function CommentItem({ comment }: { comment: Comment }) {
             <HellhoundChip size="xs" />
           ) : (
             <span
-              className="shrink-0 border px-1 py-px font-mono text-[8px] font-bold uppercase tracking-wider"
-              style={{ color: rank.accent, borderColor: rank.accentSoft }}
+              className="shrink-0 rounded-md border px-1.5 py-px font-mono text-[8px] font-bold uppercase tracking-wider"
+              style={{ color: rank.accent, borderColor: rank.accentSoft, background: `${rank.accent}10` }}
             >
               {rank.short}
             </span>
           )}
           {!isHell(comment.authorSlug) && user?.role === "owner" && <RoleBadge role="owner" />}
           {!isHell(comment.authorSlug) && user?.role === "team" && <RoleBadge role="team" />}
-          <span className="ml-auto shrink-0 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+          <span className="ml-auto shrink-0 font-mono text-[10px] uppercase tracking-wider text-muted-foreground/70">
             {comment.time}
           </span>
         </div>
-        <p className="mt-1 break-words text-[13.5px] leading-relaxed text-foreground/85">
-          {comment.text}
-        </p>
-        <button
-          type="button"
-          onClick={() => setLiked((v) => !v)}
-          aria-pressed={liked}
-          className={`mt-1.5 flex items-center gap-1.5 font-mono text-[11px] tabular-nums transition-colors ${
-            liked ? "text-primary" : "text-muted-foreground hover:text-primary"
-          }`}
-        >
-          <HeartIcon filled={liked} size={13} />
-          <span>{count}</span>
-        </button>
+        <div className="mt-1 inline-block max-w-full rounded-2xl rounded-tl-sm border border-white/[0.05] bg-white/[0.03] px-3 py-2">
+          <p className="break-words text-[13.5px] leading-relaxed text-foreground/90">
+            {comment.text}
+          </p>
+        </div>
+        <div className="mt-1.5 flex items-center gap-4 pl-1">
+          <button
+            type="button"
+            onClick={() => setLiked((v) => !v)}
+            aria-pressed={liked}
+            className={`flex items-center gap-1.5 font-mono text-[10px] font-bold uppercase tracking-wider tabular-nums transition-colors ${
+              liked ? "text-primary" : "text-muted-foreground/70 hover:text-primary"
+            }`}
+          >
+            <HeartIcon filled={liked} size={12} />
+            <span>{count}</span>
+          </button>
+          <button
+            type="button"
+            className="font-mono text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70 transition-colors hover:text-foreground"
+          >
+            Ответить
+          </button>
+        </div>
       </div>
     </li>
   );
 }
+
 
 function UserLink({
   slug,
