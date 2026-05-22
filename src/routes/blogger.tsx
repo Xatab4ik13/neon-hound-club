@@ -1,9 +1,13 @@
 import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-router";
 import { useState } from "react";
-import { Newspaper, Ticket, type LucideIcon } from "lucide-react";
+import { Newspaper, Ticket, Bot, Settings, type LucideIcon } from "lucide-react";
 import { HellhoundPlaqueLarge } from "@/components/club/HellhoundPlaque";
 import { BloggerProfileModal } from "@/components/blogger/BloggerProfileModal";
+import { BloggerMobileTopBar } from "@/components/blogger/BloggerMobileTopBar";
+import { BloggerMobileTabBar } from "@/components/blogger/BloggerMobileTabBar";
+import { MobileTransition } from "@/components/club/MobileTransition";
 import { bloggerProfileStore, useBloggerProfile } from "@/data/blogger-profile";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export const Route = createFileRoute("/blogger")({
   head: () => ({
@@ -18,7 +22,9 @@ export const Route = createFileRoute("/blogger")({
 
 const NAV: { label: string; href: string; icon: LucideIcon }[] = [
   { label: "Лента", href: "/blogger", icon: Newspaper },
+  { label: "Hell AI", href: "/blogger/hell-ai", icon: Bot },
   { label: "Розыгрыши", href: "/blogger/raffles", icon: Ticket },
+  { label: "Настройки", href: "/blogger/settings", icon: Settings },
 ];
 
 function BloggerLayout() {
@@ -26,6 +32,32 @@ function BloggerLayout() {
   const [profileOpen, setProfileOpen] = useState(false);
   const { pathname } = useLocation();
   const profile = useBloggerProfile();
+  const isMobile = useIsMobile();
+
+  // Mobile shell — iOS-app feel: top bar + push/pop transition + bottom tab bar.
+  if (isMobile) {
+    return (
+      <div className="min-h-screen bg-background text-foreground">
+        <BloggerMobileTopBar onPlaqueClick={() => setProfileOpen(true)} />
+        <main
+          className="relative"
+          style={{ paddingBottom: "calc(52px + env(safe-area-inset-bottom) + 8px)" }}
+        >
+          <MobileTransition>
+            <Outlet />
+          </MobileTransition>
+        </main>
+        <BloggerMobileTabBar />
+
+        <BloggerProfileModal
+          open={profileOpen}
+          onClose={() => setProfileOpen(false)}
+          profile={profile}
+          onChange={(p) => bloggerProfileStore.update(p)}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -193,14 +225,14 @@ function TopBar({ onMenu, onPlaqueClick }: { onMenu: () => void; onPlaqueClick: 
           </svg>
         </button>
 
-        <div className="flex-1" />
-
         <HellhoundPlaqueLarge
           nick={profile.nick}
           initials={profile.initials}
           avatarUrl={profile.avatarUrl}
           onClick={onPlaqueClick}
         />
+
+        <div className="flex-1" />
       </div>
     </header>
   );
