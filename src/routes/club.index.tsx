@@ -675,12 +675,18 @@ function StickerPanel({
   activePack,
   setActivePack,
   large = false,
+  recent,
+  onPickEmoji,
+  onPickSticker,
 }: {
   tab: "recent" | "emoji" | "stickers";
   setTab: (t: "recent" | "emoji" | "stickers") => void;
   activePack: string;
   setActivePack: (id: string) => void;
   large?: boolean;
+  recent: string[];
+  onPickEmoji: (e: string) => void;
+  onPickSticker: (s: string) => void;
 }) {
   const pack = STICKER_PACKS.find((p) => p.id === activePack) ?? STICKER_PACKS[0];
 
@@ -710,6 +716,7 @@ function StickerPanel({
                 <button
                   key={i}
                   type="button"
+                  onClick={() => onPickSticker(s)}
                   className={`grid aspect-square place-items-center rounded-lg transition-transform active:scale-90 hover:bg-white/[0.04] ${large ? "text-6xl sm:text-7xl" : "text-4xl sm:text-[40px]"}`}
                 >
                   <span>{s}</span>
@@ -726,18 +733,33 @@ function StickerPanel({
               <button
                 key={i}
                 type="button"
+                onClick={() => onPickEmoji(e)}
                 className={`grid aspect-square place-items-center rounded-lg transition-transform active:scale-90 hover:bg-white/[0.05] ${large ? "text-4xl" : "text-[26px]"}`}
               >
                 {e}
               </button>
             ))}
           </div>
+        ) : recent.length === 0 ? (
+          <div className="grid h-full place-items-center px-6 text-center text-[12px] text-muted-foreground/60">
+            Здесь появятся стикеры и эмодзи, которые ты используешь
+          </div>
         ) : (
-          <div className="grid h-full place-items-center text-[12px] text-muted-foreground/60">
-            Здесь будут недавние
+          <div className={`grid gap-1 pt-1 ${large ? "grid-cols-4 sm:grid-cols-5" : "grid-cols-5 sm:grid-cols-6"}`}>
+            {recent.map((s, i) => (
+              <button
+                key={`${s}-${i}`}
+                type="button"
+                onClick={() => onPickSticker(s)}
+                className={`grid aspect-square place-items-center rounded-lg transition-transform active:scale-90 hover:bg-white/[0.04] ${large ? "text-5xl sm:text-6xl" : "text-3xl sm:text-4xl"}`}
+              >
+                <span>{s}</span>
+              </button>
+            ))}
           </div>
         )}
       </div>
+
 
       {/* Bottom bar: pack tabs (Telegram-style) */}
       <div className="flex items-center gap-0.5 border-t border-white/[0.06] bg-black/40 px-1.5 py-1.5">
