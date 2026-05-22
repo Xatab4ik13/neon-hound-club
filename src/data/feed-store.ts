@@ -1,7 +1,23 @@
-// Общий стор постов клубной ленты. Используется и в /club (просмотр для всех),
-// и в /blogger (управление: создание, редактирование, удаление + модерация комментов).
+// API-backed адаптер ленты. Снаружи интерфейс совпадает с прежним моком,
+// внутри — реальные вызовы Fastify (см. server/src/routes/feed.ts).
 
-import { useSyncExternalStore } from "react";
+import { useSyncExternalStore, useEffect } from "react";
+import {
+  fetchFeed,
+  createPost,
+  patchPost,
+  deletePost,
+  addComment as addCommentApi,
+  deleteComment as deleteCommentApi,
+  likePost,
+  unlikePost,
+  votePoll,
+  type FeedPostHydrated,
+  type FeedCommentHydrated,
+} from "@/lib/queries";
+import { PUBLIC_USERS, type PublicUser } from "./users";
+
+// ───────── Внешние типы (контракт UI) ─────────
 
 export type FeedComment = {
   id: string;
@@ -11,21 +27,13 @@ export type FeedComment = {
   likes: number;
 };
 
-export type FeedPollOption = {
-  id: string;
-  text: string;
-  /** Сколько уже проголосовало за этот вариант (без учёта моего голоса). */
-  votes: number;
-};
+export type FeedPollOption = { id: string; text: string; votes: number };
 
 export type FeedPoll = {
   question: string;
   options: FeedPollOption[];
-  /** Голосование без раскрытия, кто что выбрал. По умолчанию true. */
   anonymous?: boolean;
-  /** Можно ли выбрать несколько вариантов. */
   multi?: boolean;
-  /** Закрыто — менять голос нельзя, видны только результаты. */
   closed?: boolean;
 };
 
@@ -41,141 +49,229 @@ export type FeedPost = {
   comments: FeedComment[];
 };
 
+// ───────── Маппинг автор → PUBLIC_USERS (runtime) ─────────
 
-let POSTS: FeedPost[] = [
-  {
-    id: "1",
-    authorSlug: "hell",
-    time: "2 ч",
-    pinned: true,
-    text: "Розыгрыш Yamaha R1 закрывается в воскресенье. Осталось 412 билетов из 3000. Кто ещё думает — подумайте быстрее.",
-    image: "https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?w=1200&q=80",
-    likes: 842,
-    comments: [
-      { id: "c1", authorSlug: "asphalt_dog", time: "22 мин", text: "Уже закинул на три билета. В этот раз повезёт больше, чем с Кавасаки.", likes: 18 },
-      { id: "c2", authorSlug: "tankslapper", time: "1 ч", text: "По стате R1 идёт активнее, чем R6 в прошлом сезоне. Логично — модель свежее.", likes: 9 },
-      { id: "c3", authorSlug: "vasya_pit", time: "1 ч", text: "А по доставке выигравшему — забирать самому или привезут?", likes: 4 },
-      { id: "c4", authorSlug: "hell_legend_01", time: "2 ч", text: "Hell, спасибо за честный розыгрыш. Уже третий год подряд участвую.", likes: 27 },
-    ],
-  },
-  {
-    id: "2",
-    authorSlug: "hell",
-    time: "вчера",
-    text: "Снимаем новый ролик про падения. RAW-камеры с трека уйдут только в клуб — за неделю до публики.",
-    likes: 1204,
-    comments: [
-      { id: "c5", authorSlug: "vip_rider", time: "10 ч", text: "Это причина оставаться в клубе. Спасибо.", likes: 33 },
-      { id: "c6", authorSlug: "rookie_max", time: "8 ч", text: "А будет момент с тем выездом на гравий?", likes: 2 },
-    ],
-  },
-  {
-    id: "3",
-    authorSlug: "team_pavel",
-    time: "2 дн",
-    text: "Перчатки HELLHOUND v2 поехали в производство. Первая партия — 300 пар, waitlist открываем в пятницу.",
-    image: "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?w=1200&q=80",
-    likes: 567,
-    comments: [
-      { id: "c7", authorSlug: "moto_anya", time: "1 д", text: "Размерная сетка та же, что у v1, или поменялась? У меня M был впритык.", likes: 11 },
-      { id: "c8", authorSlug: "garage_77", time: "20 ч", text: "Защита костяшек обновилась? На v1 за сезон стёрлась.", likes: 6 },
-      { id: "c9", authorSlug: "wheelie_kid", time: "5 ч", text: "Платина, забирайте перед общим стартом. Иначе разберут.", likes: 14 },
-    ],
-  },
-  {
-    id: "4",
-    authorSlug: "hell",
-    time: "3 дн",
-    text: "Скинул в общий чат маршрут на субботу — Дмитров, 180 км по плохому асфальту. Кто едет — отметьтесь.",
-    likes: 392,
-    comments: [
-      { id: "c10", authorSlug: "kuzya_msk", time: "2 д", text: "Я в деле. На R6, средний темп норм?", likes: 3 },
-      { id: "c11", authorSlug: "captain_volk", time: "2 д", text: "Если асфальт реально плохой — лучше не на спорте. Возьму твин.", likes: 8 },
-    ],
-  },
-  {
+function makeSlug(nick: string): string {
+  return nick
+    .toLowerCase()
+    .replace(/\s+/g, "_")
+    .replace(/[^a-z0-9_-]/g, "");
+}
 
-    id: "5",
-    authorSlug: "hell",
-    time: "5 ч",
-    text: "Решаем, какой мерч идёт в следующую партию. Голосуйте — что сейчас реально нужно.",
-    poll: {
-      question: "Что заказывать первым?",
-      anonymous: true,
-      options: [
-        { id: "o1", text: "Худи HELLHOUND v2", votes: 612 },
-        { id: "o2", text: "Перчатки v2 — короткий манжет", votes: 284 },
-        { id: "o3", text: "Дождевик на сезон", votes: 197 },
-        { id: "o4", text: "Шейный платок / бафф", votes: 89 },
-      ],
-    },
-    likes: 318,
-    comments: [
-      { id: "c12", authorSlug: "moto_anya", time: "1 ч", text: "Худи, без вариантов. Прошлогоднее уже ушатанное.", likes: 12 },
-      { id: "c13", authorSlug: "captain_volk", time: "30 мин", text: "Дождевик нужен прямо сейчас, апрель на носу.", likes: 7 },
-    ],
-  },
-];
+function initialsOf(nick: string): string {
+  const t = nick.trim();
+  if (!t) return "?";
+  const parts = t.split(/\s+/);
+  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+  return t.slice(0, 2).toUpperCase();
+}
 
+function ensurePublicUser(input: {
+  id: string;
+  nick: string;
+  role: string | null;
+  avatarUrl: string | null;
+  city: string | null;
+}): string {
+  const slug = makeSlug(input.nick);
+  if (PUBLIC_USERS[slug]) {
+    // Обновляем аватар если пришёл свежий.
+    if (input.avatarUrl && !PUBLIC_USERS[slug].avatarUrl) {
+      PUBLIC_USERS[slug] = { ...PUBLIC_USERS[slug], avatarUrl: input.avatarUrl };
+    }
+    return slug;
+  }
+  const role: PublicUser["role"] =
+    input.role === "admin" ? "owner" : input.role === "blogger" ? "team" : "rider";
+  PUBLIC_USERS[slug] = {
+    slug,
+    nick: input.nick,
+    initials: initialsOf(input.nick),
+    rank: "rookie",
+    xpPct: 0,
+    role,
+    city: input.city ?? undefined,
+    joined: "",
+    badgeIds: [],
+    wins: [],
+    avatarUrl: input.avatarUrl ?? undefined,
+  };
+  return slug;
+}
+
+// ───────── Относительное время ─────────
+
+function formatRelative(iso: string): string {
+  const d = new Date(iso).getTime();
+  const diff = Math.max(0, Date.now() - d) / 1000;
+  if (diff < 60) return "только что";
+  if (diff < 3600) return `${Math.floor(diff / 60)} мин`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)} ч`;
+  if (diff < 86400 * 2) return "вчера";
+  if (diff < 86400 * 7) return `${Math.floor(diff / 86400)} дн`;
+  return new Date(d).toLocaleDateString("ru-RU", { day: "numeric", month: "short" });
+}
+
+// ───────── Маппинг API → FeedPost ─────────
+
+function mapComment(c: FeedCommentHydrated): FeedComment {
+  const slug = ensurePublicUser({
+    id: c.authorId,
+    nick: c.nick,
+    role: null,
+    avatarUrl: c.avatarUrl,
+    city: null,
+  });
+  return {
+    id: c.id,
+    authorSlug: slug,
+    time: formatRelative(c.createdAt),
+    text: c.text,
+    likes: c.likes,
+  };
+}
+
+type FeedPostWithComments = FeedPostHydrated & { comments?: FeedCommentHydrated[] };
+
+function mapPost(p: FeedPostWithComments): FeedPost {
+  const slug = ensurePublicUser({
+    id: p.author.id,
+    nick: p.author.nick,
+    role: p.author.role,
+    avatarUrl: p.author.avatarUrl,
+    city: p.author.city,
+  });
+  return {
+    id: p.id,
+    authorSlug: slug,
+    time: formatRelative(p.createdAt),
+    text: p.text,
+    image: p.imageUrl ?? undefined,
+    pinned: p.pinned,
+    poll: p.poll
+      ? {
+          question: p.poll.question,
+          anonymous: p.poll.anonymous,
+          multi: p.poll.multi,
+          closed: p.poll.closed,
+          options: p.poll.results.map((o) => ({ id: o.id, text: o.text, votes: o.votes })),
+        }
+      : undefined,
+    likes: p.likes,
+    comments: (p.comments ?? []).map(mapComment),
+  };
+}
+
+// ───────── Reactive store ─────────
+
+let POSTS: FeedPost[] = [];
+let loaded = false;
+let pending: Promise<void> | null = null;
 
 const listeners = new Set<() => void>();
 const emit = () => listeners.forEach((l) => l());
 
+async function refetch(): Promise<void> {
+  if (pending) return pending;
+  pending = (async () => {
+    try {
+      const r = await fetchFeed({ limit: 50 });
+      POSTS = r.items.map(mapPost);
+      loaded = true;
+      emit();
+    } catch {
+      // оставляем предыдущее состояние; UI просто покажет последний снапшот
+    } finally {
+      pending = null;
+    }
+  })();
+  return pending;
+}
+
 export const feedStore = {
   subscribe(l: () => void) {
     listeners.add(l);
-    return () => listeners.delete(l);
+    if (!loaded && !pending) refetch();
+    return () => {
+      listeners.delete(l);
+    };
   },
   getSnapshot() {
     return POSTS;
   },
-  addPost(input: { text: string; image?: string; authorSlug: string; poll?: FeedPoll }) {
-    const post: FeedPost = {
-      id: `p${Date.now()}`,
-      authorSlug: input.authorSlug,
+  /** Принудительно перечитать ленту с бэка. */
+  refresh: refetch,
+
+  async addPost(input: { text: string; image?: string; authorSlug: string; poll?: FeedPoll }) {
+    await createPost({
       text: input.text,
-      image: input.image,
-      poll: input.poll,
-      time: "только что",
-      likes: 0,
-      comments: [],
-    };
-    POSTS = [post, ...POSTS];
-    emit();
-    return post;
+      imageUrl: input.image ?? null,
+      poll: input.poll
+        ? {
+            question: input.poll.question,
+            anonymous: input.poll.anonymous ?? true,
+            multi: input.poll.multi ?? false,
+            closed: input.poll.closed ?? false,
+            options: input.poll.options.map((o) => ({ id: o.id, text: o.text })),
+          }
+        : null,
+    });
+    await refetch();
   },
 
-  updatePost(id: string, patch: Partial<Pick<FeedPost, "text" | "image" | "pinned">>) {
-    POSTS = POSTS.map((p) => (p.id === id ? { ...p, ...patch } : p));
-    emit();
+  async updatePost(id: string, patch: Partial<Pick<FeedPost, "text" | "image" | "pinned">>) {
+    await patchPost(id, {
+      ...(patch.text !== undefined ? { text: patch.text } : {}),
+      ...(patch.image !== undefined ? { imageUrl: patch.image ?? null } : {}),
+      ...(patch.pinned !== undefined ? { pinned: patch.pinned } : {}),
+    });
+    await refetch();
   },
-  removePost(id: string) {
+
+  async removePost(id: string) {
+    await deletePost(id);
     POSTS = POSTS.filter((p) => p.id !== id);
     emit();
   },
-  removeComment(postId: string, commentId: string) {
-    POSTS = POSTS.map((p) =>
-      p.id === postId ? { ...p, comments: p.comments.filter((c) => c.id !== commentId) } : p,
-    );
-    emit();
-  },
-  addComment(postId: string, input: { authorSlug: string; text: string }) {
-    const comment: FeedComment = {
-      id: `c${Date.now()}`,
-      authorSlug: input.authorSlug,
-      time: "только что",
-      text: input.text,
-      likes: 0,
-    };
-    POSTS = POSTS.map((p) =>
-      p.id === postId ? { ...p, comments: [...p.comments, comment] } : p,
-    );
-    emit();
-    return comment;
+
+  async addComment(_postId: string, input: { authorSlug: string; text: string }) {
+    await addCommentApi(_postId, input.text);
+    await refetch();
   },
 
+  async removeComment(_postId: string, commentId: string) {
+    await deleteCommentApi(commentId);
+    POSTS = POSTS.map((p) =>
+      p.id === _postId ? { ...p, comments: p.comments.filter((c) => c.id !== commentId) } : p,
+    );
+    emit();
+  },
+
+  async toggleLike(postId: string, liked: boolean) {
+    // Оптимистично — UI и так держит локальный liked-флаг.
+    try {
+      if (liked) await likePost(postId);
+      else await unlikePost(postId);
+    } catch {
+      /* noop */
+    }
+  },
+
+  async votePoll(postId: string, optionIds: string[]) {
+    try {
+      await votePoll(postId, optionIds);
+      await refetch();
+    } catch {
+      /* noop */
+    }
+  },
 };
 
-export function useFeedPosts() {
-  return useSyncExternalStore(feedStore.subscribe, feedStore.getSnapshot, feedStore.getSnapshot);
+export function useFeedPosts(): FeedPost[] {
+  const snap = useSyncExternalStore(feedStore.subscribe, feedStore.getSnapshot, feedStore.getSnapshot);
+  // На клиенте, если ещё не грузили — триггерим один раз.
+  useEffect(() => {
+    if (!loaded && !pending) refetch();
+  }, []);
+  return snap;
 }
