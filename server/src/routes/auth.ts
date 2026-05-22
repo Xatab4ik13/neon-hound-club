@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { and, eq, gt, isNull, or, sql } from "drizzle-orm";
+import { eq, or, sql } from "drizzle-orm";
 import crypto from "node:crypto";
 import { db } from "../db/client.js";
 import { users } from "../db/schema/users.js";
@@ -153,29 +153,37 @@ export async function authRoutes(app: FastifyInstance) {
     }
     const hash = crypto.createHash("sha256").update(token.data).digest("hex");
 
+    // Берём токен по хешу БЕЗ фильтра usedAt — почтовики (Mail.ru, Yandex,
+    // Gmail) автоматически префетчат ссылку для антифишинг-сканирования
+    // и сжигают её до клика пользователя. Допускаем повторное использование
+    // в течение срока жизни токена (24ч).
     const [row] = await db
       .select()
       .from(emailVerificationTokens)
-      .where(
-        and(
-          eq(emailVerificationTokens.tokenHash, hash),
-          isNull(emailVerificationTokens.usedAt),
-          gt(emailVerificationTokens.expiresAt, new Date()),
-        ),
-      )
+      .where(eq(emailVerificationTokens.tokenHash, hash))
       .limit(1);
 
-    if (!row) {
+    if (!row || row.expiresAt.getTime() < Date.now()) {
       return reply.code(400).send({ error: "invalid_or_expired", message: "Ссылка недействительна или истекла" });
     }
 
-    // помечаем токен использованным + юзера верифицированным
-    await db.update(emailVerificationTokens).set({ usedAt: new Date() }).where(eq(emailVerificationTokens.id, row.id));
-    const [u] = await db
-      .update(users)
-      .set({ emailVerified: true, emailVerifiedAt: new Date(), updatedAt: new Date() })
-      .where(eq(users.id, row.userId))
-      .returning({ id: users.id, email: users.email, nick: users.nick, role: users.role });
+    const wasAlreadyUsed = row.usedAt !== null;
+
+    if (!wasAlreadyUsed) {
+      await db.update(emailVerificationTokens).set({ usedAt: new Date() }).where(eq(emailVerificationTokens.id, row.id));
+    }
+
+    const [u] = wasAlreadyUsed
+      ? await db
+          .select({ id: users.id, email: users.email, nick: users.nick, role: users.role })
+          .from(users)
+          .where(eq(users.id, row.userId))
+          .limit(1)
+      : await db
+          .update(users)
+          .set({ emailVerified: true, emailVerifiedAt: new Date(), updatedAt: new Date() })
+          .where(eq(users.id, row.userId))
+          .returning({ id: users.id, email: users.email, nick: users.nick, role: users.role });
 
     if (!u) return reply.code(404).send({ error: "user_not_found" });
 
@@ -183,22 +191,20 @@ export async function authRoutes(app: FastifyInstance) {
     const payload: SessionPayload = { sub: u.id, role: u.role as SessionPayload["role"], nick: u.nick };
     await setSessionCookie(reply, payload);
 
-    // Квест: подтвердил email.
-    await tryCompleteQuest(u.id, "verify_email");
-
-    // XP за подтверждение email (idempotent по user_id)
-    await awardXp({
-      userId: u.id,
-      amount: 50,
-      source: "verify_email",
-      reason: "Подтверждён email",
-      refType: "user",
-      refId: u.id,
-      idempotent: true,
-    });
-
-    // Активация реферала, если был ?ref= при регистрации.
-    try { await activateReferral(u.id); } catch (e) { req.log.error({ err: e }, "activateReferral failed"); }
+    // Квесты/XP/рефералка — только при первой настоящей активации
+    if (!wasAlreadyUsed) {
+      await tryCompleteQuest(u.id, "verify_email");
+      await awardXp({
+        userId: u.id,
+        amount: 50,
+        source: "verify_email",
+        reason: "Подтверждён email",
+        refType: "user",
+        refId: u.id,
+        idempotent: true,
+      });
+      try { await activateReferral(u.id); } catch (e) { req.log.error({ err: e }, "activateReferral failed"); }
+    }
 
     return reply.send({ ok: true, user: u });
   });
