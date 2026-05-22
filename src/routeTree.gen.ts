@@ -38,6 +38,7 @@ import { Route as ClubMeRouteImport } from './routes/club.me'
 import { Route as ClubInviteRouteImport } from './routes/club.invite'
 import { Route as ClubHellAiRouteImport } from './routes/club.hell-ai'
 import { Route as ClubGarageRouteImport } from './routes/club.garage'
+import { Route as ClubCheckoutRouteImport } from './routes/club.checkout'
 import { Route as ClubCartRouteImport } from './routes/club.cart'
 import { Route as CheckoutSuccessRouteImport } from './routes/checkout.success'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
@@ -205,6 +206,11 @@ const ClubGarageRoute = ClubGarageRouteImport.update({
   path: '/garage',
   getParentRoute: () => ClubRoute,
 } as any)
+const ClubCheckoutRoute = ClubCheckoutRouteImport.update({
+  id: '/checkout',
+  path: '/checkout',
+  getParentRoute: () => ClubRoute,
+} as any)
 const ClubCartRoute = ClubCartRouteImport.update({
   id: '/cart',
   path: '/cart',
@@ -334,6 +340,7 @@ export interface FileRoutesByFullPath {
   '/admin/users': typeof AdminUsersRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/club/cart': typeof ClubCartRoute
+  '/club/checkout': typeof ClubCheckoutRoute
   '/club/garage': typeof ClubGarageRoute
   '/club/hell-ai': typeof ClubHellAiRoute
   '/club/invite': typeof ClubInviteRoute
@@ -383,6 +390,7 @@ export interface FileRoutesByTo {
   '/admin/users': typeof AdminUsersRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/club/cart': typeof ClubCartRoute
+  '/club/checkout': typeof ClubCheckoutRoute
   '/club/garage': typeof ClubGarageRoute
   '/club/hell-ai': typeof ClubHellAiRoute
   '/club/invite': typeof ClubInviteRoute
@@ -436,6 +444,7 @@ export interface FileRoutesById {
   '/admin/users': typeof AdminUsersRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/club/cart': typeof ClubCartRoute
+  '/club/checkout': typeof ClubCheckoutRoute
   '/club/garage': typeof ClubGarageRoute
   '/club/hell-ai': typeof ClubHellAiRoute
   '/club/invite': typeof ClubInviteRoute
@@ -490,6 +499,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/checkout/success'
     | '/club/cart'
+    | '/club/checkout'
     | '/club/garage'
     | '/club/hell-ai'
     | '/club/invite'
@@ -539,6 +549,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/checkout/success'
     | '/club/cart'
+    | '/club/checkout'
     | '/club/garage'
     | '/club/hell-ai'
     | '/club/invite'
@@ -591,6 +602,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/checkout/success'
     | '/club/cart'
+    | '/club/checkout'
     | '/club/garage'
     | '/club/hell-ai'
     | '/club/invite'
@@ -847,6 +859,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ClubGarageRouteImport
       parentRoute: typeof ClubRoute
     }
+    '/club/checkout': {
+      id: '/club/checkout'
+      path: '/checkout'
+      fullPath: '/club/checkout'
+      preLoaderRoute: typeof ClubCheckoutRouteImport
+      parentRoute: typeof ClubRoute
+    }
     '/club/cart': {
       id: '/club/cart'
       path: '/cart'
@@ -1044,6 +1063,7 @@ const BloggerRouteWithChildren =
 
 interface ClubRouteChildren {
   ClubCartRoute: typeof ClubCartRoute
+  ClubCheckoutRoute: typeof ClubCheckoutRoute
   ClubGarageRoute: typeof ClubGarageRoute
   ClubHellAiRoute: typeof ClubHellAiRoute
   ClubInviteRoute: typeof ClubInviteRoute
@@ -1065,6 +1085,7 @@ interface ClubRouteChildren {
 
 const ClubRouteChildren: ClubRouteChildren = {
   ClubCartRoute: ClubCartRoute,
+  ClubCheckoutRoute: ClubCheckoutRoute,
   ClubGarageRoute: ClubGarageRoute,
   ClubHellAiRoute: ClubHellAiRoute,
   ClubInviteRoute: ClubInviteRoute,
