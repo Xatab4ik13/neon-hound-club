@@ -8,7 +8,7 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY package.json tsconfig.json drizzle.config.ts ./
 COPY src ./src
-RUN npx tsc -p tsconfig.json
+RUN npx drizzle-kit generate && npx tsc -p tsconfig.json
 
 FROM node:22-alpine AS runtime
 WORKDIR /app
