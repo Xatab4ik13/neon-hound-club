@@ -34,6 +34,7 @@ type Product = {
   sub?: string;
   image: string;
   description?: string;
+  ticketsBonus?: number;
   status: "active" | "draft" | "archived";
 };
 
@@ -54,6 +55,8 @@ function ShopPage() {
       category: p.category,
       sub: p.sub,
       image: p.image,
+      description: p.description,
+      ticketsBonus: p.ticketsBonus,
       status: "active" as const,
     })),
   );
@@ -71,6 +74,7 @@ function ShopPage() {
       stock: 0,
       category: "apparel",
       image: "",
+      ticketsBonus: 0,
       status: "draft",
     });
     setProductOpen(true);
@@ -464,11 +468,27 @@ function ProductModal({
         <Field label="Название">
           <TextInput value={p.name} onChange={(e) => setP({ ...p, name: e.target.value })} />
         </Field>
-        <Field label="Описание">
+        <Field
+          label="Описание"
+          hint="Можно отдельно упомянуть, сколько билетов получит покупатель — это будет видно в карточке товара."
+        >
           <TextArea
             rows={3}
             value={p.description ?? ""}
             onChange={(e) => setP({ ...p, description: e.target.value })}
+          />
+        </Field>
+        <Field
+          label="Билетов за покупку"
+          hint="Сколько билетов на участие в розыгрышах клуба получит покупатель. 0 — не начислять."
+        >
+          <TextInput
+            type="number"
+            min={0}
+            value={p.ticketsBonus ?? 0}
+            onChange={(e) =>
+              setP({ ...p, ticketsBonus: Math.max(0, Number(e.target.value) || 0) })
+            }
           />
         </Field>
         <div className="grid grid-cols-3 gap-3">

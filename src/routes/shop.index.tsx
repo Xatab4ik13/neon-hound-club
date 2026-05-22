@@ -412,6 +412,14 @@ function ShopPage() {
   );
 }
 
+function ticketsWord(n: number) {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return "билет";
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return "билета";
+  return "билетов";
+}
+
 function ProductCard({ product, index }: { product: Product; index: number }) {
   const [hover, setHover] = useState(false);
 
@@ -479,6 +487,18 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
           {product.price.toLocaleString("ru-RU")} ₽
         </span>
       </div>
+
+      {product.ticketsBonus && product.ticketsBonus > 0 ? (
+        <div className="flex items-center gap-1.5 border-t border-border/60 px-4 py-2.5">
+          <span
+            aria-hidden
+            className="inline-block h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_8px_hsl(var(--primary)/0.7)]"
+          />
+          <span className="font-mono text-[11px] uppercase tracking-widest text-primary">
+            +{product.ticketsBonus} {ticketsWord(product.ticketsBonus)} в подарок
+          </span>
+        </div>
+      ) : null}
 
     </Link>
   );

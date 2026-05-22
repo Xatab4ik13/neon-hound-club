@@ -12,6 +12,15 @@ import { Footer } from "@/components/brand/Footer";
 import { PRODUCTS, SOURCE_LABEL, type Product } from "@/data/products";
 import { useCart } from "@/hooks/use-cart";
 
+function ticketsWordPdp(n: number) {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return "билет";
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return "билета";
+  return "билетов";
+}
+
+
 export const Route = createFileRoute("/shop/$productSlug")({
   loader: ({ params }) => {
     const product = PRODUCTS.find((p) => p.slug === params.productSlug);
@@ -199,6 +208,18 @@ function ProductPage() {
                     </span>
                   )}
                 </div>
+
+                {product.ticketsBonus && product.ticketsBonus > 0 ? (
+                  <div className="mt-4 inline-flex items-center gap-2 border border-primary/40 bg-primary/5 px-3 py-2">
+                    <span
+                      aria-hidden
+                      className="inline-block h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_8px_hsl(var(--primary)/0.7)]"
+                    />
+                    <span className="font-mono text-[11px] uppercase tracking-widest text-primary">
+                      +{product.ticketsBonus} {ticketsWordPdp(product.ticketsBonus)} на розыгрыши клуба
+                    </span>
+                  </div>
+                ) : null}
 
                 {/* SIZES */}
                 {product.sizes && product.sizes.length > 0 && (
