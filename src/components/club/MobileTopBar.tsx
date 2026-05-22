@@ -1,7 +1,8 @@
-import { useRouter, useRouterState } from "@tanstack/react-router";
-import { Bell, ChevronLeft } from "lucide-react";
+import { Link, useRouter, useRouterState } from "@tanstack/react-router";
+import { Bell, ChevronLeft, ShoppingBag } from "lucide-react";
 import { ME } from "@/data/profile";
 import { useCurrentRank } from "@/data/rank-state";
+import { useCart } from "@/hooks/use-cart";
 import { ProfilePlaque } from "@/routes/club";
 
 
@@ -14,6 +15,7 @@ function titleFor(pathname: string): string {
   if (pathname === "/club") return "Лента";
   if (pathname.startsWith("/club/garage")) return "Гараж";
   if (pathname.startsWith("/club/tickets")) return "Билеты";
+  if (pathname.startsWith("/club/shop")) return "Магазин";
   if (pathname.startsWith("/club/orders")) return "Заказы";
   if (pathname.startsWith("/club/rank")) return "Ранг";
   if (pathname.startsWith("/club/quests")) return "Квесты";
@@ -31,7 +33,9 @@ export function MobileTopBar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const router = useRouter();
   const { rank } = useCurrentRank();
+  const { count: cartCount } = useCart();
   const isTab = TAB_PATHS.includes(pathname);
+  const isShop = pathname.startsWith("/club/shop");
   const title = titleFor(pathname);
 
   const handleBack = () => {
@@ -94,7 +98,21 @@ export function MobileTopBar() {
         </h1>
 
 
-        <div className="ml-auto flex w-20 items-center justify-end">
+        <div className="ml-auto flex w-20 items-center justify-end gap-1">
+          {isShop && (
+            <Link
+              to="/cart"
+              aria-label="Корзина"
+              className="relative flex h-8 w-8 items-center justify-center text-foreground active:opacity-60"
+            >
+              <ShoppingBag className="h-[20px] w-[20px]" strokeWidth={1.9} />
+              {cartCount > 0 && (
+                <span className="absolute -right-0.5 -top-0.5 grid h-[16px] min-w-[16px] place-items-center rounded-full bg-primary px-1 font-mono text-[9px] font-bold leading-none text-primary-foreground">
+                  {cartCount > 99 ? "99+" : cartCount}
+                </span>
+              )}
+            </Link>
+          )}
           <button
             type="button"
             aria-label="Уведомления"
