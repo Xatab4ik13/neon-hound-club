@@ -516,10 +516,10 @@ function CommentItem({
   onReply?: () => void;
   onDelete?: () => void;
 }) {
-  const [liked, setLiked] = useState(false);
+  const [liked, setLiked] = useState(comment.liked);
   const user = PUBLIC_USERS[comment.authorSlug];
   const rank = RANK_BY_ID[user?.rank ?? "rookie"];
-  const count = comment.likes + (liked ? 1 : 0);
+  const count = comment.likes + (liked ? 1 : 0) - (comment.liked ? 1 : 0);
 
   return (
     <li className="flex gap-3">
