@@ -193,6 +193,105 @@ function PrizeEditor({
   );
 }
 
+function RulesEditor({
+  rules,
+  onChange,
+}: {
+  rules: string[];
+  onChange: (r: string[]) => void;
+}) {
+  const update = (i: number, v: string) =>
+    onChange(rules.map((x, j) => (j === i ? v : x)));
+  const remove = (i: number) => onChange(rules.filter((_, j) => j !== i));
+  const add = () => onChange([...rules, ""]);
+  const move = (i: number, dir: -1 | 1) => {
+    const j = i + dir;
+    if (j < 0 || j >= rules.length) return;
+    const next = [...rules];
+    [next[i], next[j]] = [next[j], next[i]];
+    onChange(next);
+  };
+  return (
+    <div className="space-y-2">
+      {rules.length === 0 && (
+        <div className="rounded border border-dashed border-zinc-200 px-3 py-6 text-center text-xs text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
+          Условий пока нет
+        </div>
+      )}
+      {rules.map((r, i) => (
+        <div key={i} className="flex items-start gap-2">
+          <span className="mt-2 w-5 select-none text-right text-xs text-zinc-400">{i + 1}.</span>
+          <TextArea
+            rows={1}
+            value={r}
+            onChange={(e) => update(i, e.target.value)}
+            placeholder="Например: Победитель получает приз доставкой по РФ."
+          />
+          <div className="flex flex-col gap-0.5">
+            <Btn variant="ghost" onClick={() => move(i, -1)} aria-label="Вверх">
+              ↑
+            </Btn>
+            <Btn variant="ghost" onClick={() => move(i, 1)} aria-label="Вниз">
+              ↓
+            </Btn>
+          </div>
+          <Btn variant="ghost" onClick={() => remove(i)}>
+            <Trash2 className="h-3.5 w-3.5" />
+          </Btn>
+        </div>
+      ))}
+      <Btn onClick={add}>
+        <Plus className="h-4 w-4" /> Добавить условие
+      </Btn>
+    </div>
+  );
+}
+
+function SpecsEditor({
+  specs,
+  onChange,
+}: {
+  specs: RaffleSpec[];
+  onChange: (s: RaffleSpec[]) => void;
+}) {
+  const update = (i: number, patch: Partial<RaffleSpec>) =>
+    onChange(specs.map((x, j) => (j === i ? { ...x, ...patch } : x)));
+  const remove = (i: number) => onChange(specs.filter((_, j) => j !== i));
+  const add = () => onChange([...specs, { label: "", value: "" }]);
+  return (
+    <div className="space-y-2">
+      {specs.length === 0 && (
+        <div className="rounded border border-dashed border-zinc-200 px-3 py-6 text-center text-xs text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
+          Характеристик пока нет
+        </div>
+      )}
+      {specs.map((s, i) => (
+        <div key={i} className="flex items-center gap-2">
+          <TextInput
+            value={s.label}
+            placeholder="Параметр (например: Двигатель)"
+            onChange={(e) => update(i, { label: e.target.value })}
+            className="flex-1"
+          />
+          <TextInput
+            value={s.value}
+            placeholder="Значение (например: 998 cc)"
+            onChange={(e) => update(i, { value: e.target.value })}
+            className="flex-1"
+          />
+          <Btn variant="ghost" onClick={() => remove(i)}>
+            <Trash2 className="h-3.5 w-3.5" />
+          </Btn>
+        </div>
+      ))}
+      <Btn onClick={add}>
+        <Plus className="h-4 w-4" /> Добавить характеристику
+      </Btn>
+    </div>
+  );
+}
+
+
 function RaffleModal({
   open,
   initial,
