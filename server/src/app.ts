@@ -37,7 +37,8 @@ export async function buildApp() {
 
   app.get("/healthz", async () => ({ ok: true, ts: Date.now() }));
 
-  // TODO (Этап 2+): app.register(authRoutes, { prefix: "/api/v1/auth" }) и т.д.
+  const { authRoutes } = await import("./routes/auth.js");
+  await app.register(authRoutes, { prefix: "/api/v1/auth" });
 
   return app;
 }
