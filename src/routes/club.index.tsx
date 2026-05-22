@@ -239,6 +239,23 @@ function CommentsSheet({
   onOpenChange: (v: boolean) => void;
   post: Post;
 }) {
+  const [replyTo, setReplyTo] = useState<{ nick: string; commentId: string } | null>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+
+  // сбросить reply при закрытии
+  useEffect(() => {
+    if (!open) setReplyTo(null);
+  }, [open]);
+
+  // автоскролл вниз при добавлении
+  const lastCount = useRef(post.comments.length);
+  useEffect(() => {
+    if (post.comments.length > lastCount.current && listRef.current) {
+      listRef.current.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
+    }
+    lastCount.current = post.comments.length;
+  }, [post.comments.length]);
+
   return (
     <IOSSheet
       open={open}
@@ -248,7 +265,7 @@ function CommentsSheet({
       contentClassName="!p-0"
     >
       <div className="flex h-full flex-col">
-        <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-4 md:px-5">
+        <div ref={listRef} className="flex-1 overflow-y-auto overscroll-contain px-4 py-4 md:px-5">
           {post.comments.length === 0 ? (
             <div className="grid h-full place-items-center text-[13px] text-muted-foreground">
               Будь первым — оставь комментарий
@@ -256,13 +273,28 @@ function CommentsSheet({
           ) : (
             <ul className="space-y-5">
               {post.comments.map((c) => (
-                <CommentItem key={c.id} comment={c} large />
+                <CommentItem
+                  key={c.id}
+                  comment={c}
+                  large
+                  onReply={() =>
+                    setReplyTo({
+                      nick: PUBLIC_USERS[c.authorSlug]?.nick ?? c.authorSlug,
+                      commentId: c.id,
+                    })
+                  }
+                />
               ))}
             </ul>
           )}
         </div>
         <div className="shrink-0 border-t border-white/[0.06] bg-[#0d0d0d]">
-          <CommentComposer postId={post.id} large />
+          <CommentComposer
+            postId={post.id}
+            large
+            replyTo={replyTo}
+            onClearReply={() => setReplyTo(null)}
+          />
         </div>
       </div>
     </IOSSheet>
@@ -271,7 +303,15 @@ function CommentsSheet({
 
 // ───────── Comment item ─────────
 
-function CommentItem({ comment, large = false }: { comment: Comment; large?: boolean }) {
+function CommentItem({
+  comment,
+  large = false,
+  onReply,
+}: {
+  comment: Comment;
+  large?: boolean;
+  onReply?: () => void;
+}) {
   const [liked, setLiked] = useState(false);
   const user = PUBLIC_USERS[comment.authorSlug];
   const rank = RANK_BY_ID[user?.rank ?? "rookie"];
@@ -331,7 +371,8 @@ function CommentItem({ comment, large = false }: { comment: Comment; large?: boo
           </button>
           <button
             type="button"
-            className="font-mono text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70 transition-colors hover:text-foreground"
+            onClick={onReply}
+            className="font-mono text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70 transition-colors hover:text-foreground active:opacity-60"
           >
             Ответить
           </button>
@@ -340,6 +381,7 @@ function CommentItem({ comment, large = false }: { comment: Comment; large?: boo
     </li>
   );
 }
+
 
 
 function UserLink({
