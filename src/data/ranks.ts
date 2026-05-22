@@ -91,19 +91,8 @@ export const RANKS: RankMeta[] = [
     accentSoft: "rgba(255, 182, 72, 0.45)",
     onAccent: "#1a1000",
   },
-  {
-    id: "vip",
-    label: "VIP",
-    short: "VIP",
-    plaqueBg: "vip-platinum",
-    accent: "#e8e4d6",
-    accentSoft: "rgba(232, 228, 214, 0.5)",
-    onAccent: "#0a0a0a",
-    isMax: true,
-    isPaid: true,
-    priceLabel: "от 4 990 ₽",
-  },
 ];
+
 
 /**
  * Пороговые значения XP для каждого ранга по индексу из RANKS.
