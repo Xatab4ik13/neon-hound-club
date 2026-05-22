@@ -820,7 +820,7 @@ function DocsList({
 
   if (list.length === 0) {
     return (
-      <div className="px-4">
+      <div className={flat ? "" : "px-4"}>
         <EmptyTab
           icon={<ShieldCheck className="h-6 w-6" />}
           title="Документов пока нет"
