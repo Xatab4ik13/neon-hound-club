@@ -1,36 +1,31 @@
-// Глобальный мок-профиль блогера. Используется в кабинете блогера, в плашке
-// и в постах в ленте (slug "hell").
+// Профиль блогера — обёртка над реальным /profile/me.
+// Раньше тут был in-memory мок; теперь читаем настоящие данные текущего юзера
+// (нужно, чтобы аватар, ник и email в плашке/композере брались из БД,
+// а апдейты сохранялись на бекенде).
 
-import { useSyncExternalStore } from "react";
+import { useViewer } from "@/hooks/use-viewer";
+import { useMyProfile } from "@/lib/garage-api";
 import type { BloggerProfile } from "@/components/blogger/BloggerProfileModal";
 
-let PROFILE: BloggerProfile = {
-  nick: "HELL",
-  initials: "H",
-  email: "hell@hellhound.club",
-  avatarUrl: undefined,
-};
+function initialsFrom(nick: string | null | undefined): string {
+  if (!nick) return "H";
+  const clean = nick.trim();
+  if (!clean) return "H";
+  return clean[0]?.toUpperCase() ?? "H";
+}
 
-const listeners = new Set<() => void>();
+export function useBloggerProfile(): BloggerProfile {
+  const viewer = useViewer();
+  const profileQ = useMyProfile(viewer.isAuthed);
 
-export const bloggerProfileStore = {
-  subscribe(l: () => void) {
-    listeners.add(l);
-    return () => listeners.delete(l);
-  },
-  getSnapshot() {
-    return PROFILE;
-  },
-  update(p: BloggerProfile) {
-    PROFILE = p;
-    listeners.forEach((l) => l());
-  },
-};
+  const nick = profileQ.data?.nick ?? viewer.user?.nick ?? "HELL";
+  const email = profileQ.data?.email ?? viewer.user?.email ?? "";
+  const avatarUrl = profileQ.data?.avatarUrl ?? undefined;
 
-export function useBloggerProfile() {
-  return useSyncExternalStore(
-    bloggerProfileStore.subscribe,
-    bloggerProfileStore.getSnapshot,
-    bloggerProfileStore.getSnapshot,
-  );
+  return {
+    nick,
+    initials: initialsFrom(nick),
+    email,
+    avatarUrl,
+  };
 }
