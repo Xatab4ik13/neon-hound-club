@@ -90,7 +90,12 @@ function PostCard({ post }: { post: Post }) {
         </div>
       </header>
 
-      <p className="px-4 pb-3 pt-3 text-[15px] leading-[1.55] text-foreground/90 md:px-5">{post.text}</p>
+      {post.text && (
+        <p className="px-4 pb-3 pt-3 text-[15px] leading-[1.55] text-foreground/90 md:px-5">{post.text}</p>
+      )}
+
+      {post.poll && <PollBlock poll={post.poll} postId={post.id} />}
+
 
       {post.image && (
         <div className="px-3 pb-3">
