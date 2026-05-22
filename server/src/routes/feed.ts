@@ -70,7 +70,7 @@ async function hydratePosts(rows: typeof posts.$inferSelect[], viewerId: string 
         city: profiles.city,
       })
       .from(users)
-      .leftJoin(profiles, eq(profiles.id, users.id))
+      .leftJoin(profiles, eq(profiles.userId, users.id))
       .where(inArray(users.id, authorIds)),
     db
       .select({ postId: postLikes.postId, c: sql<number>`count(*)::int` })
@@ -102,7 +102,7 @@ async function hydratePosts(rows: typeof posts.$inferSelect[], viewerId: string 
       })
       .from(postComments)
       .innerJoin(users, eq(users.id, postComments.authorId))
-      .leftJoin(profiles, eq(profiles.id, postComments.authorId))
+      .leftJoin(profiles, eq(profiles.userId, postComments.authorId))
       .where(and(inArray(postComments.postId, ids), isNull(postComments.deletedAt)))
       .orderBy(postComments.createdAt),
   ]);
@@ -250,7 +250,7 @@ export async function feedRoutes(app: FastifyInstance) {
       })
       .from(postComments)
       .innerJoin(users, eq(users.id, postComments.authorId))
-      .leftJoin(profiles, eq(profiles.id, postComments.authorId))
+      .leftJoin(profiles, eq(profiles.userId, postComments.authorId))
       .where(and(eq(postComments.postId, req.params.id), isNull(postComments.deletedAt)))
       .orderBy(postComments.createdAt);
     const cids = allRows.map((c) => c.id);
