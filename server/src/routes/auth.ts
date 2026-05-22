@@ -1,8 +1,10 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { eq, or, sql } from "drizzle-orm";
+import { and, eq, gt, isNull, or, sql } from "drizzle-orm";
+import crypto from "node:crypto";
 import { db } from "../db/client.js";
 import { users } from "../db/schema/users.js";
+import { emailVerificationTokens } from "../db/schema/email-verification.js";
 import {
   hashPassword,
   verifyPassword,
@@ -11,6 +13,8 @@ import {
   requireAuth,
   type SessionPayload,
 } from "../lib/auth.js";
+import { sendMail } from "../lib/mailer.js";
+import { verifyEmailTemplate } from "../lib/email-templates/verify.js";
 
 const emailSchema = z.string().trim().toLowerCase().email().max(255);
 const passwordSchema = z.string().min(8).max(128);
@@ -31,6 +35,37 @@ const loginSchema = z.object({
   email: emailSchema,
   password: passwordSchema,
 });
+
+const resendSchema = z.object({ email: emailSchema });
+
+const TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
+
+function frontendBase(): string {
+  return (process.env.FRONTEND_ORIGIN ?? "https://hhr.pro").replace(/\/$/, "");
+}
+
+function makeVerificationToken() {
+  const raw = crypto.randomBytes(32).toString("hex"); // 64 hex chars
+  const hash = crypto.createHash("sha256").update(raw).digest("hex");
+  return { raw, hash };
+}
+
+async function issueAndSendVerification(userId: string, email: string, nick: string) {
+  const { raw, hash } = makeVerificationToken();
+  await db.insert(emailVerificationTokens).values({
+    userId,
+    tokenHash: hash,
+    expiresAt: new Date(Date.now() + TOKEN_TTL_MS),
+  });
+  const verifyUrl = `${frontendBase()}/verify-email?token=${raw}`;
+  const { subject, html, text } = verifyEmailTemplate({ nick, verifyUrl });
+  try {
+    await sendMail({ to: email, subject, html, text });
+  } catch (err) {
+    // не валим регистрацию из-за SMTP; юзер сможет нажать "Отправить заново"
+    console.error("[mailer] send failed", err);
+  }
+}
 
 export async function authRoutes(app: FastifyInstance) {
   app.post("/register", async (req, reply) => {
@@ -55,12 +90,16 @@ export async function authRoutes(app: FastifyInstance) {
     const [created] = await db
       .insert(users)
       .values({ email, passwordHash, nick })
-      .returning({ id: users.id, email: users.email, nick: users.nick, role: users.role });
+      .returning({ id: users.id, email: users.email, nick: users.nick });
 
-    const payload: SessionPayload = { sub: created.id, role: created.role as "user" | "admin", nick: created.nick };
-    await setSessionCookie(reply, payload);
+    await issueAndSendVerification(created.id, created.email, created.nick);
 
-    return reply.code(201).send({ user: created });
+    // Без авто-логина: ждём подтверждения email.
+    return reply.code(201).send({
+      ok: true,
+      pendingVerification: true,
+      email: created.email,
+    });
   });
 
   app.post("/login", async (req, reply) => {
@@ -70,14 +109,18 @@ export async function authRoutes(app: FastifyInstance) {
     }
     const { email, password } = parsed.data;
 
-    const [u] = await db
-      .select()
-      .from(users)
-      .where(eq(users.email, email))
-      .limit(1);
+    const [u] = await db.select().from(users).where(eq(users.email, email)).limit(1);
 
     if (!u || !(await verifyPassword(password, u.passwordHash))) {
       return reply.code(401).send({ error: "invalid_credentials", message: "Неверный email или пароль" });
+    }
+
+    if (!u.emailVerified) {
+      return reply.code(403).send({
+        error: "email_not_verified",
+        message: "Подтверди email — мы отправили ссылку на почту",
+        email: u.email,
+      });
     }
 
     const payload: SessionPayload = { sub: u.id, role: u.role as "user" | "admin", nick: u.nick };
@@ -88,6 +131,61 @@ export async function authRoutes(app: FastifyInstance) {
     });
   });
 
+  // GET чтобы можно было кликать прямо из письма
+  app.get("/verify-email", async (req, reply) => {
+    const token = z.string().length(64).regex(/^[a-f0-9]+$/).safeParse((req.query as { token?: string })?.token);
+    if (!token.success) {
+      return reply.code(400).send({ error: "invalid_token", message: "Неверная ссылка" });
+    }
+    const hash = crypto.createHash("sha256").update(token.data).digest("hex");
+
+    const [row] = await db
+      .select()
+      .from(emailVerificationTokens)
+      .where(
+        and(
+          eq(emailVerificationTokens.tokenHash, hash),
+          isNull(emailVerificationTokens.usedAt),
+          gt(emailVerificationTokens.expiresAt, new Date()),
+        ),
+      )
+      .limit(1);
+
+    if (!row) {
+      return reply.code(400).send({ error: "invalid_or_expired", message: "Ссылка недействительна или истекла" });
+    }
+
+    // помечаем токен использованным + юзера верифицированным
+    await db.update(emailVerificationTokens).set({ usedAt: new Date() }).where(eq(emailVerificationTokens.id, row.id));
+    const [u] = await db
+      .update(users)
+      .set({ emailVerified: true, emailVerifiedAt: new Date(), updatedAt: new Date() })
+      .where(eq(users.id, row.userId))
+      .returning({ id: users.id, email: users.email, nick: users.nick, role: users.role });
+
+    if (!u) return reply.code(404).send({ error: "user_not_found" });
+
+    // авто-логин после подтверждения
+    const payload: SessionPayload = { sub: u.id, role: u.role as "user" | "admin", nick: u.nick };
+    await setSessionCookie(reply, payload);
+    return reply.send({ ok: true, user: u });
+  });
+
+  app.post("/resend-verification", async (req, reply) => {
+    const parsed = resendSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return reply.code(400).send({ error: "invalid_input", message: "Неверный email" });
+    }
+    const { email } = parsed.data;
+
+    // anti-enumeration: всегда ok
+    const [u] = await db.select().from(users).where(eq(users.email, email)).limit(1);
+    if (u && !u.emailVerified) {
+      await issueAndSendVerification(u.id, u.email, u.nick);
+    }
+    return reply.send({ ok: true });
+  });
+
   app.post("/logout", async (_req, reply) => {
     clearSessionCookie(reply);
     return reply.send({ ok: true });
@@ -96,7 +194,14 @@ export async function authRoutes(app: FastifyInstance) {
   app.get("/me", { preHandler: requireAuth }, async (req, reply) => {
     const session = req.user as SessionPayload;
     const [u] = await db
-      .select({ id: users.id, email: users.email, nick: users.nick, role: users.role, createdAt: users.createdAt })
+      .select({
+        id: users.id,
+        email: users.email,
+        nick: users.nick,
+        role: users.role,
+        emailVerified: users.emailVerified,
+        createdAt: users.createdAt,
+      })
       .from(users)
       .where(eq(users.id, session.sub))
       .limit(1);
