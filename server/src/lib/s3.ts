@@ -48,7 +48,8 @@ export const UPLOAD_RULES: Record<
   UploadKind,
   { mimes: readonly string[]; maxSize: number; prefix: string }
 > = {
-  avatar: { mimes: ["image/jpeg", "image/png", "image/webp"], maxSize: 5 * 1024 * 1024, prefix: "avatars" },
+  // Аватар: до 15 МБ — чтобы юзер мог загрузить большое фото с телефона и обрезать кружок на фронте.
+  avatar: { mimes: ["image/jpeg", "image/png", "image/webp"], maxSize: 15 * 1024 * 1024, prefix: "avatars" },
   bike: { mimes: ["image/jpeg", "image/png", "image/webp"], maxSize: 8 * 1024 * 1024, prefix: "bikes" },
   product: { mimes: ["image/jpeg", "image/png", "image/webp"], maxSize: 10 * 1024 * 1024, prefix: "products" },
   raffle: { mimes: ["image/jpeg", "image/png", "image/webp"], maxSize: 10 * 1024 * 1024, prefix: "raffles" },
