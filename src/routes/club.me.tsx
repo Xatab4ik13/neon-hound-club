@@ -1,13 +1,28 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { Bike, Calendar, ChevronRight, LogOut, MapPin, Pencil, Settings } from "lucide-react";
+import {
+  Bike,
+  Bot,
+  ChevronRight,
+  Crown,
+  Gift,
+  LogOut,
+  MapPin,
+  Pencil,
+  Settings,
+  ShoppingBag,
+  Target,
+  Ticket,
+  Trophy,
+  UserPlus,
+} from "lucide-react";
 import { SettingsModal } from "@/components/club/SettingsModal";
 import { BadgeCase } from "@/components/club/BadgeCase";
 import { ME } from "@/data/profile";
 import { useCurrentRank } from "@/data/rank-state";
+import { TICKET_LEDGER, summarizeLedger } from "@/data/tickets-ledger";
 import { PlaqueBackground } from "./club";
 import { IOSListSection, IOSListRow } from "@/components/ios/IOSList";
-import { useIsMobile } from "@/hooks/use-mobile";
 
 export const Route = createFileRoute("/club/me")({
   head: () => ({
@@ -22,7 +37,7 @@ export const Route = createFileRoute("/club/me")({
 
 function MePage() {
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const isMobile = useIsMobile();
+  const balance = summarizeLedger(TICKET_LEDGER).balance;
 
   const handleLogout = () => {
     if (typeof window !== "undefined" && window.confirm("Выйти из клуба?")) {
@@ -31,59 +46,108 @@ function MePage() {
   };
 
   return (
-    <main className="mx-auto w-full max-w-3xl px-4 py-6 md:px-8 md:py-10">
+    <main className="mx-auto w-full max-w-3xl px-4 pb-10 pt-3 md:px-8 md:pt-8">
       <ProfileHero onSettings={() => setSettingsOpen(true)} />
 
-      <section aria-label="Значки" className="mt-8 md:mt-12">
-        <h2 className="mb-4 font-display text-2xl font-black italic uppercase tracking-tight text-foreground md:text-3xl">
+      <StatsTiles balance={balance} />
+
+      <RankCard />
+
+      <IOSListSection title="Клуб">
+        <IOSListRow
+          icon={<Crown className="h-5 w-5" />}
+          label="Hell Pass"
+          description="Подписка и тиры"
+          to="/club/hell-pass"
+          chevron
+        />
+        <IOSListRow
+          icon={<Ticket className="h-5 w-5" />}
+          label="Билеты"
+          description="Баланс и история"
+          to="/club/tickets"
+          value={balance.toLocaleString("ru-RU")}
+          chevron
+        />
+        <IOSListRow
+          icon={<Gift className="h-5 w-5" />}
+          label="Розыгрыши"
+          description="Активные и завершённые"
+          to="/club/raffles"
+          chevron
+        />
+        <IOSListRow
+          icon={<Target className="h-5 w-5" />}
+          label="Квесты"
+          description="Задания и награды"
+          to="/club/quests"
+          chevron
+        />
+      </IOSListSection>
+
+      <IOSListSection title="Гараж и магазин">
+        <IOSListRow
+          icon={<Bike className="h-5 w-5" />}
+          label="Гараж"
+          description="Мото, документы, сервис"
+          to="/club/garage"
+          chevron
+        />
+        <IOSListRow
+          icon={<Bot className="h-5 w-5" />}
+          label="Hell AI"
+          description="AI-механик по своему мото"
+          to="/club/hell-ai"
+          chevron
+        />
+        <IOSListRow
+          icon={<ShoppingBag className="h-5 w-5" />}
+          label="Заказы"
+          description="Мерч HELLHOUND"
+          to="/club/orders"
+          value={ME.totals.orders ? String(ME.totals.orders) : undefined}
+          chevron
+        />
+        <IOSListRow
+          icon={<UserPlus className="h-5 w-5" />}
+          label="Пригласить друга"
+          description="Реферальный бонус"
+          to="/club/invite"
+          chevron
+        />
+      </IOSListSection>
+
+      <section aria-label="Значки" className="mb-5">
+        <h3 className="mb-1.5 px-3 font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
           Значки
-        </h2>
-        <BadgeCase />
+        </h3>
+        <div className="overflow-hidden rounded-2xl border border-white/[0.06] bg-card/40 p-4">
+          <BadgeCase />
+        </div>
       </section>
 
-      <section aria-label="Настройки" className="mt-8 md:mt-12">
-        {isMobile ? (
-          <>
-            <IOSListSection title="Аккаунт">
-              <IOSListRow
-                icon={<Settings className="h-5 w-5" />}
-                label="Профиль и аккаунт"
-                description="Ник, фото, контакты, привязки"
-                chevron
-                onClick={() => setSettingsOpen(true)}
-              />
-            </IOSListSection>
-            <IOSListSection>
-              <IOSListRow
-                icon={<LogOut className="h-5 w-5" />}
-                label="Выйти из клуба"
-                tone="danger"
-                onClick={handleLogout}
-              />
-            </IOSListSection>
-          </>
-        ) : (
-          <>
-            <h2 className="mb-4 font-display text-2xl font-black italic uppercase tracking-tight text-foreground md:text-3xl">
-              Настройки
-            </h2>
-            <div className="space-y-2">
-              <ActionRow
-                icon={<Settings className="h-5 w-5" />}
-                label="Профиль и аккаунт"
-                description="Ник, фото, контакты, привязки"
-                onClick={() => setSettingsOpen(true)}
-              />
-              <ActionRow
-                icon={<LogOut className="h-5 w-5" />}
-                label="Выйти из клуба"
-                tone="danger"
-                onClick={handleLogout}
-              />
-            </div>
-          </>
-        )}
-      </section>
+      <IOSListSection title="Аккаунт">
+        <IOSListRow
+          icon={<Settings className="h-5 w-5" />}
+          label="Настройки профиля"
+          description="Ник, фото, контакты, привязки"
+          onClick={() => setSettingsOpen(true)}
+          chevron
+        />
+      </IOSListSection>
+
+      <IOSListSection>
+        <IOSListRow
+          icon={<LogOut className="h-5 w-5" />}
+          label="Выйти из клуба"
+          tone="danger"
+          onClick={handleLogout}
+        />
+      </IOSListSection>
+
+      <p className="mt-2 text-center font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground/60">
+        HELLHOUND CLUB · v1.0
+      </p>
 
       <SettingsModal open={settingsOpen} onOpenChange={setSettingsOpen} />
     </main>
@@ -91,28 +155,32 @@ function MePage() {
 }
 
 function ProfileHero({ onSettings }: { onSettings: () => void }) {
-  const { rank, plaqueBg, xp, xpMax, xpPct, isMax, next } = useCurrentRank();
-  const isPaid = !!rank.isPaid;
+  const { rank, plaqueBg } = useCurrentRank();
 
   return (
     <section
       aria-label="Профиль"
-      className="relative overflow-hidden border border-white/[0.06] bg-[#0b0b0b]"
+      className="relative mb-5 overflow-hidden rounded-3xl border border-white/[0.06] bg-[#0b0b0b]"
     >
       <PlaqueBackground bg={plaqueBg} />
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/55 via-black/25 to-black/60" />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/40 via-black/30 to-black/70" />
 
-      <div className="relative flex flex-col items-center gap-5 px-5 py-7 text-center md:flex-row md:items-center md:gap-7 md:p-9 md:text-left">
-        {/* Avatar */}
+      <div className="relative flex flex-col items-center gap-3 px-5 pb-6 pt-7 text-center">
         <div className="relative shrink-0">
           <div
             aria-hidden
             className="absolute -inset-1 rounded-full blur-2xl"
-            style={{ backgroundColor: rank.accentSoft, animation: "xp-pulse 3s ease-in-out infinite" }}
+            style={{
+              backgroundColor: rank.accentSoft,
+              animation: "xp-pulse 3s ease-in-out infinite",
+            }}
           />
           <div
-            className="relative h-28 w-28 overflow-hidden rounded-full ring-4 ring-offset-4 ring-offset-[#0b0b0b] md:h-32 md:w-32"
-            style={{ backgroundColor: rank.accent, boxShadow: `0 0 0 4px ${rank.accentSoft}` }}
+            className="relative h-24 w-24 overflow-hidden rounded-full ring-4 ring-offset-2 ring-offset-[#0b0b0b]"
+            style={{
+              backgroundColor: rank.accent,
+              boxShadow: `0 0 0 3px ${rank.accentSoft}`,
+            }}
           >
             <div
               aria-hidden
@@ -125,7 +193,7 @@ function ProfileHero({ onSettings }: { onSettings: () => void }) {
             />
             <div className="absolute inset-0 flex items-center justify-center">
               <span
-                className="font-display text-4xl font-black italic uppercase md:text-5xl"
+                className="font-display text-3xl font-black italic uppercase"
                 style={{ color: rank.onAccent }}
               >
                 {ME.nick.slice(0, 2)}
@@ -134,143 +202,148 @@ function ProfileHero({ onSettings }: { onSettings: () => void }) {
           </div>
         </div>
 
-        {/* Identity */}
-        <div className="min-w-0 flex-1">
-          <h1 className="font-display text-3xl font-black italic uppercase tracking-tight text-foreground md:text-4xl">
+        <div className="min-w-0">
+          <h1 className="font-display text-2xl font-black italic uppercase tracking-tight text-foreground">
             {ME.nick}
           </h1>
-          <div className="mt-2 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 font-mono text-xs uppercase tracking-wider text-muted-foreground md:justify-start">
-            <span className="flex items-center gap-1.5">
+          <div className="mt-1.5 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[12px] text-muted-foreground">
+            <span className="flex items-center gap-1">
               <MapPin className="h-3.5 w-3.5" />
               {ME.city}
             </span>
-            <span className="flex items-center gap-1.5">
+            <span className="text-muted-foreground/40">·</span>
+            <span className="flex items-center gap-1">
               <Bike className="h-3.5 w-3.5" />
               {ME.bike}
             </span>
-            <span className="flex items-center gap-1.5">
-              <Calendar className="h-3.5 w-3.5" />в клубе с {ME.joined}
-            </span>
           </div>
-
-          {/* Rank badge + XP bar */}
-          <div className="mt-5">
-            <div className="mb-2 flex items-baseline justify-between gap-3">
-              <Link
-                to="/club/rank"
-                className="font-display text-lg font-black italic uppercase tracking-tight transition-opacity hover:opacity-80 md:text-xl"
-                style={{ color: rank.accent }}
-              >
-                {rank.label}
-              </Link>
-              {isPaid ? (
-                <span
-                  className="font-mono text-[11px] font-extrabold uppercase tracking-[0.2em]"
-                  style={{ color: rank.accent }}
-                >
-                  {rank.priceLabel}
-                </span>
-              ) : isMax ? (
-                <span
-                  className="font-mono text-[11px] font-extrabold uppercase tracking-[0.2em]"
-                  style={{ color: rank.accent }}
-                >
-                  MAX
-                </span>
-              ) : next ? (
-                <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
-                  до{" "}
-                  <span className="font-bold" style={{ color: rank.accent }}>
-                    {next.label}
-                  </span>{" "}
-                  · <span className="font-bold tabular-nums text-foreground">{xpMax - xp}</span> XP
-                </span>
-              ) : null}
-            </div>
-            <div className="relative h-3 overflow-hidden rounded-sm bg-black/55 ring-1 ring-inset ring-white/10">
-              <div
-                className="absolute inset-y-0 left-0 overflow-hidden rounded-sm"
-                style={{
-                  width: `${xpPct}%`,
-                  backgroundColor: rank.accent,
-                  boxShadow: `0 0 12px ${rank.accentSoft}, 0 0 24px ${rank.accentSoft}`,
-                }}
-              >
-                <div
-                  aria-hidden
-                  className="absolute inset-y-0 w-1/3"
-                  style={{
-                    background:
-                      "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.55) 50%, transparent 100%)",
-                    animation: "xp-shimmer 2.8s ease-in-out infinite",
-                  }}
-                />
-              </div>
-            </div>
+          <div className="mt-1 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground/70">
+            в клубе с {ME.joined}
           </div>
-
-          <button
-            type="button"
-            onClick={onSettings}
-            className="mt-5 inline-flex items-center gap-2 border border-white/[0.12] bg-black/40 px-4 py-2 font-mono text-xs font-bold uppercase tracking-[0.2em] text-foreground transition-colors hover:border-primary/60 hover:text-primary"
-          >
-            <Pencil className="h-4 w-4" />
-            Редактировать профиль
-          </button>
         </div>
+
+        <button
+          type="button"
+          onClick={onSettings}
+          className="mt-1 inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/[0.06] px-4 py-1.5 text-[13px] font-semibold text-foreground backdrop-blur-sm transition-colors active:bg-white/10"
+        >
+          <Pencil className="h-3.5 w-3.5" />
+          Редактировать
+        </button>
       </div>
     </section>
   );
 }
 
-function ActionRow({
-  icon,
-  label,
-  description,
-  onClick,
-  tone = "default",
-}: {
-  icon: React.ReactNode;
-  label: string;
-  description?: string;
-  onClick?: () => void;
-  tone?: "default" | "danger";
-}) {
-  const isDanger = tone === "danger";
+function StatsTiles({ balance }: { balance: number }) {
+  const items = [
+    {
+      to: "/club/tickets" as const,
+      label: "Билеты",
+      value: balance.toLocaleString("ru-RU"),
+      Icon: Ticket,
+    },
+    {
+      to: "/club/raffles" as const,
+      label: "Победы",
+      value: String(ME.totals.wins),
+      Icon: Trophy,
+    },
+    {
+      to: "/club/orders" as const,
+      label: "Заказы",
+      value: String(ME.totals.orders),
+      Icon: ShoppingBag,
+    },
+    {
+      to: "/club/garage" as const,
+      label: "Гараж",
+      value: String(ME.totals.bikes),
+      Icon: Bike,
+    },
+  ];
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`group flex w-full items-center gap-4 border bg-card/40 px-4 py-4 text-left transition-colors md:px-5 ${
-        isDanger
-          ? "border-white/[0.06] hover:border-red-500/40 hover:bg-red-500/[0.04]"
-          : "border-white/[0.06] hover:border-primary/40 hover:bg-white/[0.03]"
-      }`}
-    >
-      <span
-        className={`shrink-0 ${isDanger ? "text-red-400/80 group-hover:text-red-400" : "text-primary"}`}
-      >
-        {icon}
-      </span>
-      <span className="min-w-0 flex-1">
-        <span
-          className={`block font-display text-base font-black italic uppercase tracking-tight md:text-lg ${
-            isDanger ? "text-red-400" : "text-foreground"
-          }`}
+    <div className="mb-5 grid grid-cols-4 gap-2">
+      {items.map(({ to, label, value, Icon }) => (
+        <Link
+          key={label}
+          to={to}
+          className="group flex flex-col items-center gap-1 rounded-2xl border border-white/[0.06] bg-card/40 px-2 py-3 text-center transition-colors active:bg-white/[0.04]"
         >
-          {label}
-        </span>
-        {description ? (
-          <span className="mt-0.5 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
-            {description}
+          <Icon className="h-4 w-4 text-primary" />
+          <span className="font-mono text-base font-bold tabular-nums text-foreground">
+            {value}
           </span>
-        ) : null}
-      </span>
-      <ChevronRight
-        className={`h-5 w-5 shrink-0 transition-transform group-hover:translate-x-0.5 ${
-          isDanger ? "text-red-400/60" : "text-muted-foreground"
-        }`}
-      />
-    </button>
+          <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+            {label}
+          </span>
+        </Link>
+      ))}
+    </div>
+  );
+}
+
+function RankCard() {
+  const { rank, xp, xpMax, xpPct, isMax, next } = useCurrentRank();
+  const isPaid = !!rank.isPaid;
+
+  return (
+    <Link
+      to="/club/rank"
+      aria-label="Открыть страницу ранга"
+      className="mb-5 block overflow-hidden rounded-2xl border border-white/[0.06] bg-card/40 px-4 py-3.5 transition-colors active:bg-white/[0.04]"
+    >
+      <div className="flex items-center gap-3">
+        <span
+          className="grid h-9 w-9 shrink-0 place-items-center rounded-lg"
+          style={{ backgroundColor: rank.accentSoft, color: rank.accent }}
+        >
+          <Crown className="h-5 w-5" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-baseline justify-between gap-2">
+            <span
+              className="font-display text-base font-black italic uppercase tracking-tight"
+              style={{ color: rank.accent }}
+            >
+              {rank.label}
+            </span>
+            {isPaid ? (
+              <span
+                className="font-mono text-[11px] font-extrabold uppercase tracking-[0.18em]"
+                style={{ color: rank.accent }}
+              >
+                {rank.priceLabel}
+              </span>
+            ) : isMax ? (
+              <span
+                className="font-mono text-[11px] font-extrabold uppercase tracking-[0.18em]"
+                style={{ color: rank.accent }}
+              >
+                MAX
+              </span>
+            ) : next ? (
+              <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+                <span className="font-bold tabular-nums text-foreground">
+                  {xpMax - xp}
+                </span>{" "}
+                XP до {next.label}
+              </span>
+            ) : null}
+          </div>
+          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/[0.08]">
+            <div
+              className="h-full rounded-full"
+              style={{
+                width: `${xpPct}%`,
+                backgroundColor: rank.accent,
+                boxShadow: `0 0 8px ${rank.accentSoft}`,
+              }}
+            />
+          </div>
+        </div>
+        <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+      </div>
+    </Link>
   );
 }
