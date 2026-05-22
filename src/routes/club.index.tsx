@@ -164,6 +164,7 @@ export function PostCard({ post, moderate = false }: { post: Post; moderate?: bo
         open={commentsOpen}
         onOpenChange={setCommentsOpen}
         post={post}
+        moderate={moderate}
       />
     </article>
   );
