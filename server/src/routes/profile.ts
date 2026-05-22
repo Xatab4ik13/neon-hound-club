@@ -119,7 +119,7 @@ export async function profileRoutes(app: FastifyInstance) {
   // GET /api/v1/profile/:nick — публичный (для шеринга профиля)
   app.get<{ Params: { nick: string } }>("/:nick", async (req, reply) => {
     const [u] = await db
-      .select({ id: users.id, nick: users.nick })
+      .select({ id: users.id, nick: users.nick, createdAt: users.createdAt, role: users.role })
       .from(users)
       .where(sql`lower(${users.nick}) = lower(${req.params.nick})`)
       .limit(1);
@@ -131,15 +131,22 @@ export async function profileRoutes(app: FastifyInstance) {
       .from(bikes)
       .where(and(eq(bikes.userId, u.id), eq(bikes.isPrimary, true)))
       .limit(1);
+    const [{ bikesCount }] = await db
+      .select({ bikesCount: sql<number>`count(*)::int` })
+      .from(bikes)
+      .where(eq(bikes.userId, u.id));
 
     return {
       nick: u.nick,
+      role: u.role,
+      joinedAt: u.createdAt,
       city: p?.city ?? null,
       avatarUrl: p?.avatarUrl ?? null,
       bio: p?.bio ?? null,
       instagram: p?.instagram ?? null,
       telegram: p?.telegram ?? null,
       youtube: p?.youtube ?? null,
+      bikesCount,
       primaryBike: primary
         ? {
             brand: primary.brand,
