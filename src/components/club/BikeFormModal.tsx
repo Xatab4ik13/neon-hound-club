@@ -87,9 +87,12 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
       setMods([]);
       setPhoto(undefined);
     }
+    setPhotoFile(null);
     setModInput("");
     setPhotoError(null);
+    setSubmitting(false);
   }, [open, bike]);
+
 
   // Загрузка списка марок
   useEffect(() => {
