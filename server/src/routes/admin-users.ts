@@ -187,6 +187,15 @@ export async function adminUsersRoutes(app: FastifyInstance) {
     if (!parsed.success) {
       return reply.code(400).send({ error: "invalid_input", message: parsed.error.issues[0]?.message });
     }
+    // Админами этот endpoint не управляет — они в /api/v1/admin/staff.
+    const [target] = await db
+      .select({ role: users.role })
+      .from(users)
+      .where(eq(users.id, req.params.id))
+      .limit(1);
+    if (!target) return reply.code(404).send({ error: "not_found" });
+    if (target.role === "admin") return reply.code(403).send({ error: "is_admin_use_staff_endpoint" });
+
     const patch: Record<string, unknown> = { updatedAt: new Date() };
     if (parsed.data.role !== undefined) patch.role = parsed.data.role;
     if (parsed.data.blocked !== undefined) {
