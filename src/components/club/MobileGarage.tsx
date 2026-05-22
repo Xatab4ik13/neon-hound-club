@@ -839,7 +839,7 @@ function DocsList({
   }
 
   return (
-    <div className="px-4">
+    <div className={flat ? "" : "px-4"}>
       <IOSListSection>
         {list.map((d) => {
           const { status, daysLeft } = docStatus(d);
