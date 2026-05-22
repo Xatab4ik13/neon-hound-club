@@ -154,11 +154,8 @@ function RankLadderVertical() {
               >
                 {r.label}
               </div>
-              {r.priceLabel ? (
-                <div className="mt-0.5 font-mono text-xs uppercase tracking-wider text-muted-foreground">
-                  Платный · {r.priceLabel}
-                </div>
-              ) : null}
+            </div>
+
             </div>
             {isActive && (
               <span className="shrink-0 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-primary">
