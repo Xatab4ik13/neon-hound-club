@@ -1,10 +1,11 @@
-// Компактный блок сезонных челленджей для /club/me.
-// Показывает summary + 3 ближайших по прогрессу, ведёт на /club/quests.
+// Компактный блок челленджей для дашборда. Показывает summary + 3 ближайших.
+// Использует новую модель Quest с раздельными XP и билетами.
 
 import { Link } from "@tanstack/react-router";
-import { ArrowRight, Flag, Ticket } from "lucide-react";
+import { ArrowRight, Flag, Sparkles, Ticket } from "lucide-react";
 import {
   CURRENT_SEASON,
+  ladderEarnedXp,
   questCompleted,
   questPct,
   seasonSummary,
@@ -12,9 +13,8 @@ import {
 } from "@/data/quests";
 
 function pickTop(quests: Quest[]) {
-  // Берём 3: незаконченные с самым высоким прогрессом + при необходимости любые
   const open = quests
-    .filter((q) => !q.claimed)
+    .filter((q) => !q.claimed && !q.bloggerOnly)
     .sort((a, b) => {
       const da = questCompleted(a) ? -1 : 0;
       const db = questCompleted(b) ? -1 : 0;
@@ -29,7 +29,7 @@ export function QuestsBlock() {
   const s = seasonSummary(CURRENT_SEASON);
 
   return (
-    <section aria-label="Сезонные челленджи" className="mb-10">
+    <section aria-label="Челленджи клуба" className="mb-10">
       <div className="mb-3 flex items-baseline justify-between">
         <div className="flex items-baseline gap-3">
           <h2 className="font-display text-sm font-black uppercase italic tracking-widest text-foreground">
@@ -49,23 +49,31 @@ export function QuestsBlock() {
       </div>
 
       <div className="border border-white/[0.06] bg-card/40">
-        {/* Summary полоса */}
         <div className="flex flex-wrap items-center gap-x-6 gap-y-2 border-b border-white/[0.06] px-4 py-3">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-primary" strokeWidth={1.8} />
+            <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
+              Опыт:{" "}
+              <span className="font-bold text-foreground tabular-nums">
+                +{s.xpEarned}
+              </span>{" "}
+              XP
+            </span>
+          </div>
           <div className="flex items-center gap-2">
             <Flag className="h-4 w-4 text-primary" strokeWidth={1.8} />
             <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-              Заработано:{" "}
+              Билеты:{" "}
               <span className="font-bold text-foreground tabular-nums">
                 {s.ticketsEarned}
-              </span>{" "}
-              билетов
+              </span>
             </span>
           </div>
           {s.ticketsAvailable > 0 && (
-            <div className="flex w-full items-center gap-2 border-t border-white/[0.06] pt-2 sm:w-auto sm:border-l sm:border-t-0 sm:pl-6 sm:pt-0">
+            <div className="flex items-center gap-2">
               <Ticket className="h-4 w-4 text-yellow-400" strokeWidth={1.8} />
               <span className="font-mono text-[11px] uppercase tracking-wider text-yellow-400">
-                Готово к получению:{" "}
+                К получению:{" "}
                 <span className="font-bold tabular-nums">{s.ticketsAvailable}</span>
               </span>
             </div>
@@ -76,6 +84,7 @@ export function QuestsBlock() {
           {top.map((q) => {
             const pct = questPct(q);
             const done = questCompleted(q);
+            const earned = q.ladder ? ladderEarnedXp(q) : 0;
             return (
               <li
                 key={q.id}
@@ -86,11 +95,6 @@ export function QuestsBlock() {
                     <span className="truncate text-sm font-bold text-foreground">
                       {q.title}
                     </span>
-                    {q.requiresPass && (
-                      <span className="shrink-0 border border-yellow-500/40 px-1.5 py-px font-mono text-[8px] font-bold uppercase tracking-wider text-yellow-400">
-                        Pass {q.requiresPass}
-                      </span>
-                    )}
                   </div>
                   <div className="mt-1.5 flex items-center gap-3">
                     <div className="relative h-1.5 flex-1 overflow-hidden rounded-sm bg-black/55 ring-1 ring-inset ring-white/10">
@@ -109,15 +113,15 @@ export function QuestsBlock() {
                     </span>
                   </div>
                 </div>
-                <div className="flex flex-col items-end">
+                <div className="flex flex-col items-end gap-0.5">
                   <div className="flex items-center gap-1 font-mono text-xs font-bold text-foreground">
-                    <Ticket className="h-3 w-3 text-primary" />
-                    +{q.reward}
+                    <Sparkles className="h-3 w-3 text-primary" />
+                    +{q.ladder ? `${earned}/${q.xp}` : q.xp} XP
                   </div>
-                  {q.bonus && (
-                    <span className="mt-0.5 font-mono text-[9px] uppercase tracking-wider text-muted-foreground">
-                      {q.bonus}
-                    </span>
+                  {q.tickets > 0 && (
+                    <div className="flex items-center gap-1 font-mono text-[10px] font-bold text-yellow-400">
+                      <Ticket className="h-3 w-3" />+{q.tickets}
+                    </div>
                   )}
                 </div>
               </li>
