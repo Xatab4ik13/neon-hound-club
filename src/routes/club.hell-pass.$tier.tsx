@@ -88,6 +88,15 @@ function TierDetailPage() {
   const isGold = tier.recommended;
   const isPlatinum = tier.ultimate;
 
+  return (
+    <main className="mx-auto w-full max-w-5xl px-4 py-8 md:px-8 md:py-12">
+      <Link
+        to="/club/hell-pass"
+        className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-widest text-muted-foreground transition-colors hover:text-primary"
+      >
+        <ArrowLeft className="h-3 w-3" />
+        Все тиры
+      </Link>
 
       <div className="mt-6 grid grid-cols-1 gap-8 lg:grid-cols-[1fr_320px]">
         {/* LEFT: контент */}
