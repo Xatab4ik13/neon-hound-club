@@ -213,12 +213,14 @@ function Field({
   onChange,
   type = "text",
   required,
+  placeholder,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   type?: string;
   required?: boolean;
+  placeholder?: string;
 }) {
   return (
     <div className="space-y-1.5">
@@ -230,6 +232,7 @@ function Field({
         onChange={(e) => onChange(e.target.value)}
         type={type}
         required={required}
+        placeholder={placeholder}
       />
     </div>
   );
