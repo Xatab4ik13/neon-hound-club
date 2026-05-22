@@ -36,6 +36,7 @@ import {
 import {
   bikeDocumentsStore,
   DOC_TYPE_LABEL,
+  docPhotos,
   docStatus,
   useBikeDocuments,
   type BikeDocument,
@@ -48,6 +49,7 @@ type Props = {
   onAddBike: () => void;
   onEditBike: (b: StoredBike) => void;
   onDeleteBike: (id: string) => void;
+  variant?: "mobile" | "desktop";
 };
 
 const SERVICE_TYPES: ServiceType[] = ["oil", "chain", "tires", "brakes", "to", "filter", "other"];
@@ -73,7 +75,9 @@ export function MobileGarage({
   onAddBike,
   onEditBike,
   onDeleteBike,
+  variant = "mobile",
 }: Props) {
+  const isDesktop = variant === "desktop";
   const [activeIdx, setActiveIdx] = useState(0);
   const [tab, setTab] = useState<"service" | "rides" | "docs">("service");
   const [fabOpen, setFabOpen] = useState(false);
@@ -83,6 +87,7 @@ export function MobileGarage({
     open: false,
     doc: null,
   });
+  const [viewDoc, setViewDoc] = useState<BikeDocument | null>(null);
 
   const active = bikes[activeIdx];
 
@@ -90,85 +95,21 @@ export function MobileGarage({
     return <EmptyGarage onAdd={onAddBike} />;
   }
 
-  return (
-    <div className="pb-32">
-      {/* Заголовок iOS large title + переключатель байков */}
-      <header className="px-4 pb-3 pt-2">
-        <div className="flex items-end justify-between gap-3">
-          <h1 className="text-[34px] font-bold leading-tight tracking-tight text-foreground">
-            Гараж
-          </h1>
-          {bikes.length > 1 && (
-            <div className="flex gap-1 rounded-full bg-white/[0.06] p-1">
-              {bikes.map((b, i) => (
-                <button
-                  key={b.id}
-                  type="button"
-                  onClick={() => setActiveIdx(i)}
-                  className={`grid h-8 w-8 place-items-center rounded-full text-[12px] font-bold transition-all ${
-                    i === activeIdx
-                      ? "bg-primary text-primary-foreground shadow-sm shadow-primary/40"
-                      : "text-muted-foreground"
-                  }`}
-                  aria-label={`${b.brand} ${b.model}`}
-                >
-                  {i + 1}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      </header>
+  // ─── общий handler для "Добавить" в текущем табе
+  function quickAdd() {
+    if (tab === "service") setServiceSheet(true);
+    else if (tab === "rides") setRideSheet(true);
+    else setDocSheet({ open: true, doc: null });
+  }
 
-      {/* Hero */}
-      <BikeHero bike={active} onEdit={() => onEditBike(active)} />
+  const tabOptions = [
+    { value: "service" as const, label: "Сервис" },
+    { value: "rides" as const, label: "Поездки" },
+    { value: "docs" as const, label: "Документы" },
+  ];
 
-      {/* Статы */}
-      <StatsGrid bike={active} />
-
-      {/* Напоминания */}
-      <ReminderRow bike={active} />
-
-      {/* Segmented control */}
-      <div className="mx-4 mt-5">
-        <Segmented
-          value={tab}
-          onChange={(v) => setTab(v as typeof tab)}
-          options={[
-            { value: "service", label: "Сервис" },
-            { value: "rides", label: "Поездки" },
-            { value: "docs", label: "Документы" },
-          ]}
-        />
-      </div>
-
-      {/* Контент таба */}
-      <div className="mt-4">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={tab}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -4 }}
-            transition={{ duration: 0.18 }}
-          >
-            {tab === "service" && <ServiceList bikeId={active.id} />}
-            {tab === "rides" && <RidesList bikeId={active.id} />}
-            {tab === "docs" && (
-              <DocsList
-                bikeId={active.id}
-                onEdit={(doc) => setDocSheet({ open: true, doc })}
-                onAdd={() => setDocSheet({ open: true, doc: null })}
-              />
-            )}
-          </motion.div>
-        </AnimatePresence>
-      </div>
-
-      {/* FAB */}
-      <Fab onClick={() => setFabOpen(true)} />
-
-      {/* Action sheet */}
+  const sheets = (
+    <>
       <IOSSheet
         open={fabOpen}
         onOpenChange={setFabOpen}
@@ -199,7 +140,7 @@ export function MobileGarage({
           <IOSListRow
             icon={<FileText className="h-5 w-5" />}
             label="Документ"
-            description="ОСАГО, ТО, СТС"
+            description="ОСАГО, СТС, ВУ"
             chevron
             onClick={() => {
               setFabOpen(false);
@@ -253,17 +194,225 @@ export function MobileGarage({
         bikeId={active.id}
         onOpenChange={(v) => setDocSheet({ open: v, doc: docSheet.doc })}
       />
+      <DocViewerSheet
+        doc={viewDoc}
+        onClose={() => setViewDoc(null)}
+        onEdit={(d) => {
+          setViewDoc(null);
+          setTimeout(() => setDocSheet({ open: true, doc: d }), 180);
+        }}
+      />
+    </>
+  );
+
+  // ───────────── Mobile (current) ─────────────
+  if (!isDesktop) {
+    return (
+      <div className="pb-32">
+        <header className="px-4 pb-3 pt-2">
+          <div className="flex items-end justify-between gap-3">
+            <h1 className="text-[34px] font-bold leading-tight tracking-tight text-foreground">
+              Гараж
+            </h1>
+            {bikes.length > 1 && (
+              <BikeSwitch bikes={bikes} active={activeIdx} onChange={setActiveIdx} />
+            )}
+          </div>
+        </header>
+
+        <BikeHero bike={active} onEdit={() => onEditBike(active)} />
+        <StatsGrid bike={active} />
+        <ReminderRow bike={active} />
+
+        <div className="mx-4 mt-5">
+          <Segmented value={tab} onChange={(v) => setTab(v as typeof tab)} options={tabOptions} />
+        </div>
+
+        <div className="mt-4">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={tab}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.18 }}
+            >
+              {tab === "service" && <ServiceList bikeId={active.id} />}
+              {tab === "rides" && <RidesList bikeId={active.id} />}
+              {tab === "docs" && (
+                <DocsList
+                  bikeId={active.id}
+                  onView={(doc) => setViewDoc(doc)}
+                  onAdd={() => setDocSheet({ open: true, doc: null })}
+                />
+              )}
+            </motion.div>
+          </AnimatePresence>
+        </div>
+
+        <Fab onClick={() => setFabOpen(true)} />
+        {sheets}
+      </div>
+    );
+  }
+
+  // ───────────── Desktop: 2-col, no FAB ─────────────
+  return (
+    <div className="mx-auto w-full max-w-[1200px] px-8 py-8">
+      {/* Header */}
+      <header className="mb-6 flex items-end justify-between gap-4">
+        <div>
+          <div className="text-[12px] font-semibold uppercase tracking-[0.2em] text-primary">
+            HELLHOUND · Garage
+          </div>
+          <h1 className="mt-1 text-[40px] font-bold leading-tight tracking-tight text-foreground">
+            Гараж
+          </h1>
+        </div>
+        <div className="flex items-center gap-3">
+          {bikes.length > 1 && (
+            <BikeSwitch bikes={bikes} active={activeIdx} onChange={setActiveIdx} />
+          )}
+          <button
+            type="button"
+            onClick={() => onEditBike(active)}
+            className="flex h-10 items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.04] px-4 text-[13px] font-semibold text-foreground transition-colors hover:bg-white/[0.08]"
+          >
+            <Pencil className="h-3.5 w-3.5" />
+            Редактировать
+          </button>
+          {bikes.length < 2 && (
+            <button
+              type="button"
+              onClick={onAddBike}
+              className="flex h-10 items-center gap-2 rounded-full border border-primary/40 bg-primary/[0.1] px-4 text-[13px] font-semibold text-primary transition-colors hover:bg-primary/[0.18]"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Новый байк
+            </button>
+          )}
+        </div>
+      </header>
+
+      <div className="grid grid-cols-12 gap-6">
+        {/* Left: hero */}
+        <div className="col-span-5">
+          <div className="sticky top-6">
+            <BikeHero bike={active} onEdit={() => onEditBike(active)} size="lg" />
+          </div>
+        </div>
+
+        {/* Right: stats + tabs */}
+        <div className="col-span-7 space-y-5">
+          <StatsGrid bike={active} columns={4} />
+          <ReminderRow bike={active} inset={false} />
+
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <Segmented
+                value={tab}
+                onChange={(v) => setTab(v as typeof tab)}
+                options={tabOptions}
+              />
+            </div>
+            <button
+              type="button"
+              onClick={quickAdd}
+              className="flex h-10 shrink-0 items-center gap-2 rounded-full bg-primary px-4 text-[13px] font-semibold text-primary-foreground shadow-sm shadow-primary/40 transition-transform hover:scale-[1.02] active:scale-95"
+            >
+              <Plus className="h-4 w-4" strokeWidth={2.5} />
+              {tab === "service" ? "Сервис" : tab === "rides" ? "Поездка" : "Документ"}
+            </button>
+          </div>
+
+          <div className="rounded-3xl border border-white/[0.06] bg-card/30 p-4">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={tab}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                transition={{ duration: 0.18 }}
+              >
+                {tab === "service" && <ServiceList bikeId={active.id} flat />}
+                {tab === "rides" && <RidesList bikeId={active.id} flat />}
+                {tab === "docs" && (
+                  <DocsList
+                    bikeId={active.id}
+                    onView={(doc) => setViewDoc(doc)}
+                    onAdd={() => setDocSheet({ open: true, doc: null })}
+                    flat
+                  />
+                )}
+              </motion.div>
+            </AnimatePresence>
+          </div>
+
+          {/* Удаление байка — в подвале правой колонки */}
+          <div className="pt-2">
+            <button
+              type="button"
+              onClick={() => onDeleteBike(active.id)}
+              className="text-[12px] font-medium text-muted-foreground/60 hover:text-red-400 transition-colors"
+            >
+              Удалить этот байк
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {sheets}
+    </div>
+  );
+}
+
+function BikeSwitch({
+  bikes,
+  active,
+  onChange,
+}: {
+  bikes: StoredBike[];
+  active: number;
+  onChange: (i: number) => void;
+}) {
+  return (
+    <div className="flex gap-1 rounded-full bg-white/[0.06] p-1">
+      {bikes.map((b, i) => (
+        <button
+          key={b.id}
+          type="button"
+          onClick={() => onChange(i)}
+          className={`h-8 rounded-full px-3 text-[12px] font-bold transition-all ${
+            i === active
+              ? "bg-primary text-primary-foreground shadow-sm shadow-primary/40"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+          aria-label={`${b.brand} ${b.model}`}
+        >
+          {b.brand}
+        </button>
+      ))}
     </div>
   );
 }
 
 // ───────────── Hero ─────────────
 
-function BikeHero({ bike, onEdit }: { bike: StoredBike; onEdit: () => void }) {
+function BikeHero({
+  bike,
+  onEdit,
+  size = "md",
+}: {
+  bike: StoredBike;
+  onEdit: () => void;
+  size?: "md" | "lg";
+}) {
   const photo = bike.photo || placeholderBike;
+  const isLg = size === "lg";
 
   return (
-    <div className="px-4">
+    <div className={isLg ? "" : "px-4"}>
+
       <div className="relative overflow-hidden rounded-3xl border border-white/[0.06] bg-gradient-to-b from-[#1a0a16] via-[#0e0e0e] to-black">
         {/* розовый glow */}
         <div
@@ -347,7 +496,7 @@ function BikeHero({ bike, onEdit }: { bike: StoredBike; onEdit: () => void }) {
 
 // ───────────── Stats ─────────────
 
-function StatsGrid({ bike }: { bike: StoredBike }) {
+function StatsGrid({ bike, columns = 2 }: { bike: StoredBike; columns?: 2 | 4 }) {
   const journal = useBikeJournal();
   const rides = journal.rides.filter((r) => r.bikeId === bike.id);
   const service = journal.service.filter((s) => s.bikeId === bike.id);
@@ -361,8 +510,14 @@ function StatsGrid({ bike }: { bike: StoredBike }) {
       ? Math.min(nextOil, nextTo)
       : (nextOil ?? nextTo);
 
+  const gridCls =
+    columns === 4
+      ? "grid grid-cols-4 gap-3"
+      : "mt-4 grid grid-cols-2 gap-2.5 px-4";
+
   return (
-    <div className="mt-4 grid grid-cols-2 gap-2.5 px-4">
+    <div className={gridCls}>
+
       <StatTile
         icon={<Gauge className="h-4 w-4" />}
         label="Пробег"
@@ -435,7 +590,7 @@ function StatTile({
 
 // ───────────── Reminders ─────────────
 
-function ReminderRow({ bike }: { bike: StoredBike }) {
+function ReminderRow({ bike, inset = true }: { bike: StoredBike; inset?: boolean }) {
   const docs = useBikeDocuments();
   const journal = useBikeJournal();
   const km = parseMileage(bike.mileage);
@@ -444,7 +599,6 @@ function ReminderRow({ bike }: { bike: StoredBike }) {
   type R = { kind: "doc" | "service"; text: string; severity: "warn" | "danger" };
   const items: R[] = [];
 
-  // Service reminders
   SERVICE_TYPES.forEach((t) => {
     const left = kmUntilNextService(service, t, km);
     if (left === null) return;
@@ -463,7 +617,6 @@ function ReminderRow({ bike }: { bike: StoredBike }) {
     }
   });
 
-  // Document reminders
   docs.docs
     .filter((d) => d.bikeId === bike.id)
     .forEach((d) => {
@@ -486,8 +639,8 @@ function ReminderRow({ bike }: { bike: StoredBike }) {
   if (items.length === 0) return null;
 
   return (
-    <div className="mt-4 space-y-1.5 px-4">
-      {items.slice(0, 3).map((r, i) => (
+    <div className={`space-y-1.5 ${inset ? "mt-4 px-4" : ""}`}>
+      {items.slice(0, inset ? 3 : 4).map((r, i) => (
         <div
           key={i}
           className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 text-[13px] ${
@@ -545,7 +698,7 @@ function Segmented<T extends string>({
 
 // ───────────── Service list ─────────────
 
-function ServiceList({ bikeId }: { bikeId: string }) {
+function ServiceList({ bikeId, flat = false }: { bikeId: string; flat?: boolean }) {
   const journal = useBikeJournal();
   const service = useMemo(
     () =>
@@ -566,7 +719,7 @@ function ServiceList({ bikeId }: { bikeId: string }) {
   }
 
   return (
-    <div className="px-4">
+    <div className={flat ? "" : "px-4"}>
       <IOSListSection>
         {service.map((s) => (
           <IOSListRow
@@ -600,7 +753,7 @@ function ServiceList({ bikeId }: { bikeId: string }) {
 
 // ───────────── Rides list ─────────────
 
-function RidesList({ bikeId }: { bikeId: string }) {
+function RidesList({ bikeId, flat = false }: { bikeId: string; flat?: boolean }) {
   const journal = useBikeJournal();
   const rides = useMemo(
     () =>
@@ -621,7 +774,7 @@ function RidesList({ bikeId }: { bikeId: string }) {
   }
 
   return (
-    <div className="px-4">
+    <div className={flat ? "" : "px-4"}>
       <IOSListSection>
         {rides.map((r) => (
           <IOSListRow
@@ -653,23 +806,25 @@ function RidesList({ bikeId }: { bikeId: string }) {
 
 function DocsList({
   bikeId,
-  onEdit,
+  onView,
   onAdd,
+  flat = false,
 }: {
   bikeId: string;
-  onEdit: (d: BikeDocument) => void;
+  onView: (d: BikeDocument) => void;
   onAdd: () => void;
+  flat?: boolean;
 }) {
   const docs = useBikeDocuments();
   const list = docs.docs.filter((d) => d.bikeId === bikeId);
 
   if (list.length === 0) {
     return (
-      <div className="px-4">
+      <div className={flat ? "" : "px-4"}>
         <EmptyTab
           icon={<ShieldCheck className="h-6 w-6" />}
           title="Документов пока нет"
-          text="Добавь ОСАГО, ТО, СТС — будут напоминания об истечении"
+          text="Добавь ОСАГО, СТС, ВУ — будут под рукой и с напоминаниями"
         />
         <button
           type="button"
@@ -684,7 +839,7 @@ function DocsList({
   }
 
   return (
-    <div className="px-4">
+    <div className={flat ? "" : "px-4"}>
       <IOSListSection>
         {list.map((d) => {
           const { status, daysLeft } = docStatus(d);
@@ -704,12 +859,18 @@ function DocsList({
               : status === "expiring"
                 ? "text-yellow-400"
                 : "text-muted-foreground";
+          const photos = docPhotos(d);
           return (
             <IOSListRow
               key={d.id}
               icon={<DocIcon type={d.type} />}
               label={DOC_TYPE_LABEL[d.type]}
-              description={d.number || (d.issueDate ? fmtDate(d.issueDate) : "Нет данных")}
+              description={
+                <>
+                  {d.number || (d.issueDate ? fmtDate(d.issueDate) : "Нет данных")}
+                  {photos.length > 0 ? ` · 📎 ${photos.length}` : ""}
+                </>
+              }
               trailing={
                 <div className="flex items-center gap-2">
                   <span className={`text-[12px] font-semibold tabular-nums ${tone}`}>
@@ -718,7 +879,7 @@ function DocsList({
                   <ChevronRight className="h-4 w-4 text-muted-foreground/70" />
                 </div>
               }
-              onClick={() => onEdit(d)}
+              onClick={() => onView(d)}
             />
           );
         })}
@@ -854,11 +1015,12 @@ function DocSheet({
   bikeId: string;
   onOpenChange: (v: boolean) => void;
 }) {
+  const initialPhotos = doc ? docPhotos(doc) : [];
   const [type, setType] = useState<DocType>(doc?.type ?? "osago");
   const [number, setNumber] = useState(doc?.number ?? "");
   const [issueDate, setIssueDate] = useState(doc?.issueDate ?? "");
   const [expiryDate, setExpiryDate] = useState(doc?.expiryDate ?? "");
-  const [photo, setPhoto] = useState<string | undefined>(doc?.photo);
+  const [photos, setPhotos] = useState<string[]>(initialPhotos);
   const [note, setNote] = useState(doc?.note ?? "");
 
   // re-init when doc changes
@@ -869,7 +1031,7 @@ function DocSheet({
     setNumber(doc?.number ?? "");
     setIssueDate(doc?.issueDate ?? "");
     setExpiryDate(doc?.expiryDate ?? "");
-    setPhoto(doc?.photo);
+    setPhotos(doc ? docPhotos(doc) : []);
     setNote(doc?.note ?? "");
   }
 
@@ -880,7 +1042,8 @@ function DocSheet({
       number: number.trim() || undefined,
       issueDate: issueDate || undefined,
       expiryDate: expiryDate || undefined,
-      photo,
+      photos: photos.length > 0 ? photos : undefined,
+      photo: undefined, // чистим legacy
       note: note.trim() || undefined,
     };
     if (doc) {
@@ -912,7 +1075,8 @@ function DocSheet({
         <DateField label="Действует до" value={expiryDate} onChange={setExpiryDate} />
       </FieldGroup>
 
-      <PhotoUpload photo={photo} onChange={setPhoto} />
+      <PhotosUpload photos={photos} onChange={setPhotos} />
+
 
       <FieldGroup className="mt-3">
         <TextField label="Заметка" value={note} onChange={setNote} placeholder="Серия, страховая..." />
@@ -1028,69 +1192,203 @@ function SelectField({
   );
 }
 
-function PhotoUpload({
-  photo,
+function PhotosUpload({
+  photos,
   onChange,
 }: {
-  photo?: string;
-  onChange: (v: string | undefined) => void;
+  photos: string[];
+  onChange: (v: string[]) => void;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
 
-  function pick(file: File | undefined) {
-    if (!file) return;
-    if (!/^image\//i.test(file.type)) return;
-    const reader = new FileReader();
-    reader.onload = () => onChange(String(reader.result));
-    reader.readAsDataURL(file);
+  function pick(files: FileList | null) {
+    if (!files) return;
+    const images = Array.from(files).filter((f) => /^image\//i.test(f.type));
+    if (images.length === 0) return;
+    Promise.all(
+      images.map(
+        (f) =>
+          new Promise<string>((resolve) => {
+            const r = new FileReader();
+            r.onload = () => resolve(String(r.result));
+            r.readAsDataURL(f);
+          }),
+      ),
+    ).then((urls) => onChange([...photos, ...urls]));
   }
 
-  if (photo) {
-    return (
-      <div className="mt-3 relative overflow-hidden rounded-2xl border border-white/[0.06] bg-black/40">
-        <img src={photo} alt="Документ" className="max-h-64 w-full object-contain" />
-        <button
-          type="button"
-          onClick={() => onChange(undefined)}
-          className="absolute right-2 top-2 grid h-8 w-8 place-items-center rounded-full bg-black/70 text-foreground active:opacity-70"
-          aria-label="Удалить фото"
-        >
-          <X className="h-4 w-4" />
-        </button>
-        <button
-          type="button"
-          onClick={() => fileRef.current?.click()}
-          className="absolute bottom-2 right-2 rounded-full bg-black/70 px-3 py-1.5 text-[12px] font-semibold text-foreground active:opacity-70"
-        >
-          Заменить
-        </button>
+  return (
+    <div className="mt-3">
+      {photos.length > 0 && (
+        <div className="grid grid-cols-2 gap-2">
+          {photos.map((src, i) => (
+            <div
+              key={i}
+              className="relative aspect-[3/4] overflow-hidden rounded-2xl border border-white/[0.06] bg-black/40"
+            >
+              <img src={src} alt={`Скан ${i + 1}`} className="absolute inset-0 h-full w-full object-cover" />
+              <div className="absolute left-2 top-2 rounded-full bg-black/70 px-2 py-0.5 text-[10px] font-bold text-foreground">
+                {i + 1}
+              </div>
+              <button
+                type="button"
+                onClick={() => onChange(photos.filter((_, j) => j !== i))}
+                className="absolute right-2 top-2 grid h-8 w-8 place-items-center rounded-full bg-black/70 text-foreground active:opacity-70"
+                aria-label="Удалить"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+      <button
+        type="button"
+        onClick={() => fileRef.current?.click()}
+        className={`flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-white/[0.12] bg-black/20 py-5 text-muted-foreground active:opacity-70 ${
+          photos.length > 0 ? "mt-2" : ""
+        }`}
+      >
+        <ImagePlus className="h-5 w-5" />
+        <span className="text-[14px] font-semibold">
+          {photos.length === 0 ? "Прикрепить фото / скан" : "Добавить ещё фото"}
+        </span>
         <input
           ref={fileRef}
           type="file"
           accept="image/*"
+          multiple
           className="hidden"
-          onChange={(e) => pick(e.target.files?.[0] ?? undefined)}
+          onChange={(e) => {
+            pick(e.target.files);
+            e.currentTarget.value = "";
+          }}
         />
-      </div>
-    );
-  }
+      </button>
+    </div>
+  );
+}
+
+// ───────────── DocViewerSheet — режим показа документа ─────────────
+
+function DocViewerSheet({
+  doc,
+  onClose,
+  onEdit,
+}: {
+  doc: BikeDocument | null;
+  onClose: () => void;
+  onEdit: (d: BikeDocument) => void;
+}) {
+  if (!doc) return null;
+  const photos = docPhotos(doc);
+  const { status, daysLeft } = docStatus(doc);
+
+  const statusPill =
+    status === "expired"
+      ? { text: `Просрочен${daysLeft !== null ? ` на ${Math.abs(daysLeft)} дн.` : ""}`, cls: "bg-red-500/15 text-red-300 border-red-500/40" }
+      : status === "expiring"
+        ? { text: `Истекает через ${daysLeft} дн.`, cls: "bg-yellow-500/15 text-yellow-300 border-yellow-500/40" }
+        : status === "ok"
+          ? { text: `Действует${doc.expiryDate ? ` до ${fmtDate(doc.expiryDate)}` : ""}`, cls: "bg-emerald-500/15 text-emerald-300 border-emerald-500/40" }
+          : status === "no-expiry"
+            ? { text: "Бессрочно", cls: "bg-white/[0.06] text-muted-foreground border-white/10" }
+            : { text: "Срок не указан", cls: "bg-white/[0.06] text-muted-foreground border-white/10" };
 
   return (
-    <button
-      type="button"
-      onClick={() => fileRef.current?.click()}
-      className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-white/[0.12] bg-black/20 py-6 text-muted-foreground active:opacity-70"
+    <IOSSheet
+      open={!!doc}
+      onOpenChange={(v) => !v && onClose()}
+      title={DOC_TYPE_LABEL[doc.type]}
+      doneLabel="Закрыть"
+      onDone={onClose}
+      fullHeight
+      headerLeft={
+        <div className="min-w-0">
+          <div className="text-[11px] font-semibold uppercase tracking-wider text-primary">Документ</div>
+          <h2 className="truncate text-[18px] font-bold leading-tight text-foreground">
+            {DOC_TYPE_LABEL[doc.type]}
+          </h2>
+        </div>
+      }
     >
-      <ImagePlus className="h-5 w-5" />
-      <span className="text-[14px] font-semibold">Прикрепить фото</span>
-      <input
-        ref={fileRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={(e) => pick(e.target.files?.[0] ?? undefined)}
-      />
-    </button>
+      {/* статус-плашка */}
+      <div className={`flex items-center gap-2 rounded-2xl border px-4 py-3 ${statusPill.cls}`}>
+        <ShieldCheck className="h-5 w-5 shrink-0" />
+        <span className="text-[14px] font-semibold">{statusPill.text}</span>
+      </div>
+
+      {/* фото */}
+      {photos.length > 0 ? (
+        <div className="mt-3 space-y-2">
+          {photos.map((src, i) => (
+            <div
+              key={i}
+              className="relative overflow-hidden rounded-2xl border border-white/[0.06] bg-black"
+            >
+              <img src={src} alt={`Скан ${i + 1}`} className="w-full object-contain" />
+              {photos.length > 1 && (
+                <div className="absolute left-2 top-2 rounded-full bg-black/70 px-2.5 py-1 text-[11px] font-bold text-foreground">
+                  {i + 1} / {photos.length}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="mt-3 flex flex-col items-center gap-2 rounded-2xl border border-dashed border-white/[0.12] bg-black/20 px-4 py-10 text-center text-muted-foreground">
+          <ImagePlus className="h-6 w-6" />
+          <span className="text-[13px]">Фото документа не прикреплено</span>
+        </div>
+      )}
+
+      {/* данные */}
+      <div className="mt-3 overflow-hidden rounded-2xl border border-white/[0.06] bg-card/40 divide-y divide-white/[0.05]">
+        {doc.number && <DataRow label="Номер" value={doc.number} mono />}
+        {doc.issueDate && <DataRow label="Выдан" value={fmtDate(doc.issueDate)} />}
+        {doc.expiryDate && <DataRow label="Действует до" value={fmtDate(doc.expiryDate)} />}
+        {doc.note && <DataRow label="Заметка" value={doc.note} />}
+        {!doc.number && !doc.issueDate && !doc.expiryDate && !doc.note && (
+          <div className="px-4 py-4 text-[13px] text-muted-foreground">Нет данных</div>
+        )}
+      </div>
+
+      {/* действия */}
+      <div className="mt-4 grid grid-cols-2 gap-2">
+        <button
+          type="button"
+          onClick={() => onEdit(doc)}
+          className="flex items-center justify-center gap-2 rounded-2xl border border-white/[0.08] bg-white/[0.04] py-3 text-[14px] font-semibold text-foreground active:opacity-70"
+        >
+          <Pencil className="h-4 w-4" />
+          Изменить
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            if (confirm("Удалить документ?")) {
+              bikeDocumentsStore.remove(doc.id);
+              onClose();
+            }
+          }}
+          className="flex items-center justify-center gap-2 rounded-2xl border border-red-500/30 bg-red-500/[0.06] py-3 text-[14px] font-semibold text-red-400 active:opacity-70"
+        >
+          <Trash2 className="h-4 w-4" />
+          Удалить
+        </button>
+      </div>
+    </IOSSheet>
+  );
+}
+
+function DataRow({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+  return (
+    <div className="flex items-center justify-between gap-3 px-4 py-3">
+      <span className="text-[13px] text-muted-foreground">{label}</span>
+      <span className={`text-[15px] text-foreground ${mono ? "font-mono tabular-nums" : ""}`}>
+        {value}
+      </span>
+    </div>
   );
 }
 
@@ -1104,7 +1402,7 @@ function Fab({ onClick }: { onClick: () => void }) {
       className="fixed z-30 grid h-14 w-14 place-items-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/40 active:scale-95"
       style={{
         bottom: "calc(env(safe-area-inset-bottom) + 76px)",
-        right: "max(1rem, calc(50vw - 20rem))",
+        right: "max(1rem, env(safe-area-inset-right) + 1rem)",
       }}
       aria-label="Добавить"
     >

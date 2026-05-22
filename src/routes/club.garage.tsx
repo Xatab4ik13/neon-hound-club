@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { BikeFormModal } from "@/components/club/BikeFormModal";
 import { MobileGarage } from "@/components/club/MobileGarage";
 import { loadBikes, saveBikes, type StoredBike } from "@/data/bike-storage";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export const Route = createFileRoute("/club/garage")({
   head: () => ({
@@ -19,7 +20,7 @@ function GaragePage() {
   const [bikes, setBikes] = useState<StoredBike[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<StoredBike | null>(null);
-  
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     setBikes(loadBikes());
@@ -49,15 +50,14 @@ function GaragePage() {
 
   return (
     <>
-      <div className="mx-auto w-full max-w-2xl">
-        <MobileGarage
-          bikes={bikes}
-          onPersist={persist}
-          onAddBike={openAdd}
-          onEditBike={openEdit}
-          onDeleteBike={handleDelete}
-        />
-      </div>
+      <MobileGarage
+        bikes={bikes}
+        onPersist={persist}
+        onAddBike={openAdd}
+        onEditBike={openEdit}
+        onDeleteBike={handleDelete}
+        variant={isMobile ? "mobile" : "desktop"}
+      />
       <BikeFormModal
         open={modalOpen}
         onOpenChange={setModalOpen}
@@ -67,3 +67,4 @@ function GaragePage() {
     </>
   );
 }
+
