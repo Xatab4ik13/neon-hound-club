@@ -284,7 +284,7 @@ function BackgroundPickerSheet({
                   // если выбрали дефолт ранга — сбрасываем кастом
                   setCustomPlaqueBg(bg === rank.plaqueBg ? null : bg);
                 }}
-                className={`group relative aspect-[4/3] overflow-hidden rounded-xl border text-left transition-all ${
+                className={`plaque-frozen group relative aspect-[4/3] overflow-hidden rounded-xl border text-left transition-all [contain:paint] ${
                   isActive
                     ? "border-primary ring-2 ring-primary/50"
                     : unlocked
