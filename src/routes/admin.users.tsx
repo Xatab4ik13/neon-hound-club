@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Ban, Crown, Gift, ShieldCheck } from "lucide-react";
+import { Ban, Crown, Gift, ShieldCheck, Trash2, Sparkles, Award } from "lucide-react";
 import {
   PageHeader,
   Panel,
@@ -17,8 +17,13 @@ import {
 import {
   adminQk,
   creditTickets,
+  deleteAdminUser,
   fetchAdminUser,
   fetchAdminUsers,
+  fetchAdminUserBadges,
+  fetchAdminBadges,
+  grantXp,
+  awardBadge,
   patchAdminUser,
   type AdminUserListItem,
 } from "@/lib/admin-queries";
