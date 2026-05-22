@@ -1,328 +1,222 @@
+// Админка магазина: товары и заказы. Подключено к бэку через admin-queries.
+// Модель упрощённая под server/src/db/schema/shop.ts:
+// product = slug + title + description + priceRub + bonusTickets + images[] + stock(null|int) + active
+// заказы — список со сменой статуса и СДЭК-треком.
+
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import { Plus, Edit, Trash2, Star, Image as ImageIcon } from "lucide-react";
+import { useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Plus, Edit, Trash2, Package, Receipt, X } from "lucide-react";
+import { toast } from "sonner";
 import {
   PageHeader,
   Panel,
+  PanelHeader,
   Btn,
-  DataTable,
   Badge,
   TextInput,
   TextArea,
   Select,
   Field,
-  PanelHeader,
   Modal,
   ConfirmModal,
-  ImageUploader,
+  Drawer,
+  DataTable,
 } from "@/components/admin/ui";
-import { PRODUCTS } from "@/data/products";
+import {
+  adminQk,
+  fetchAdminShopProducts,
+  createAdminProduct,
+  patchAdminProduct,
+  deleteAdminProduct,
+  fetchAdminOrders,
+  fetchAdminOrder,
+  patchAdminOrder,
+  type CreateProductInput,
+} from "@/lib/admin-queries";
+import { ApiError } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import type { ShopOrder, ShopOrderStatus, ShopProduct } from "@/lib/queries";
 
 export const Route = createFileRoute("/admin/shop")({
   component: ShopPage,
 });
 
-type Tab = "products" | "categories" | "showcase";
+type Tab = "products" | "orders";
 
-type Product = {
-  id: string;
-  name: string;
-  price: number;
-  stock: number;
-  category: string;
-  sub?: string;
-  image: string;
-  description?: string;
-  shipping?: string;
-  returns?: string;
-  ticketsBonus?: number;
-  status: "active" | "draft" | "archived";
-  /** Тип товара: физический (нужна доставка) или цифровой (только email для чека). */
-  kind: "physical" | "digital";
+const STATUS_LABEL: Record<ShopOrderStatus, string> = {
+  pending_payment: "Ждёт оплаты",
+  paid: "Оплачен",
+  shipped: "Отправлен",
+  delivered: "Получен",
+  cancelled: "Отменён",
+  refunded: "Возврат",
 };
 
-
-const CATEGORIES_SEED = [
-  { id: "apparel", name: "Одежда", subs: ["Худи", "Футболки", "Куртки"] },
-  { id: "gear", name: "Экипировка", subs: ["Перчатки", "Шлемы", "Защита"] },
-  { id: "accessories", name: "Аксессуары", subs: ["Брелоки", "Стикеры", "Кепки"] },
-];
+const STATUS_TONE: Record<ShopOrderStatus, "zinc" | "emerald" | "amber" | "rose" | "blue"> = {
+  pending_payment: "amber",
+  paid: "blue",
+  shipped: "blue",
+  delivered: "emerald",
+  cancelled: "rose",
+  refunded: "rose",
+};
 
 function ShopPage() {
   const [tab, setTab] = useState<Tab>("products");
-  const [products, setProducts] = useState<Product[]>(
-    PRODUCTS.map((p) => ({
-      id: p.id,
-      name: p.name,
-      price: p.price,
-      stock: 12,
-      category: p.category,
-      sub: p.sub,
-      image: p.image,
-      description: p.description,
-      shipping: p.shipping,
-      returns: p.returns,
-      ticketsBonus: p.ticketsBonus,
-      status: "active" as const,
-      kind: "physical" as const,
-    })),
-  );
-
-  const [editing, setEditing] = useState<Product | null>(null);
-  const [productOpen, setProductOpen] = useState(false);
-  const [del, setDel] = useState<Product | null>(null);
-  const [categories, setCategories] = useState(CATEGORIES_SEED);
-  const [catOpen, setCatOpen] = useState(false);
-
-  const openNew = () => {
-    setEditing({
-      id: "",
-      name: "",
-      price: 0,
-      stock: 0,
-      category: "apparel",
-      image: "",
-      ticketsBonus: 0,
-      status: "draft",
-      kind: "physical",
-    });
-
-    setProductOpen(true);
-  };
-
   return (
     <div>
-      <PageHeader
-        title="Магазин"
-        description="Товары, категории и витрина на главной"
-        actions={
-          tab === "products" ? (
-            <Btn variant="primary" onClick={openNew}>
-              <Plus className="h-4 w-4" /> Новый товар
-            </Btn>
-          ) : null
-        }
-      />
+      <PageHeader title="Магазин" description="Товары и заказы — живые данные с бэка." />
 
       <div className="mb-4 inline-flex rounded-md border border-zinc-200 bg-white p-1 dark:border-zinc-800 dark:bg-zinc-900">
-        {(["products", "categories", "showcase"] as Tab[]).map((t) => (
+        {(["products", "orders"] as Tab[]).map((t) => (
           <button
             key={t}
             type="button"
             onClick={() => setTab(t)}
             className={cn(
-              "rounded px-3 py-1.5 text-sm font-medium transition-colors",
+              "inline-flex items-center gap-1.5 rounded px-3 py-1.5 text-sm font-medium transition-colors",
               tab === t
                 ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
                 : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100",
             )}
           >
-            {t === "products" ? "Товары" : t === "categories" ? "Категории" : "Витрина"}
+            {t === "products" ? (
+              <>
+                <Package className="h-3.5 w-3.5" /> Товары
+              </>
+            ) : (
+              <>
+                <Receipt className="h-3.5 w-3.5" /> Заказы
+              </>
+            )}
           </button>
         ))}
       </div>
 
-      {tab === "products" && (
-        <ProductsTab
-          products={products}
-          onEdit={(p) => {
-            setEditing(p);
-            setProductOpen(true);
-          }}
-          onDelete={setDel}
-        />
-      )}
-      {tab === "categories" && (
-        <CategoriesTab
-          categories={categories}
-          onNew={() => setCatOpen(true)}
-          onUpdate={(c) => setCategories((l) => l.map((x) => (x.id === c.id ? c : x)))}
-          onDelete={(id) => setCategories((l) => l.filter((x) => x.id !== id))}
-        />
-      )}
-      {tab === "showcase" && <ShowcaseTab products={products} />}
-
-      {editing && (
-        <ProductModal
-          open={productOpen}
-          initial={editing}
-          categories={categories}
-          onClose={() => setProductOpen(false)}
-          onSave={(p) => {
-            if (p.id) setProducts((l) => l.map((x) => (x.id === p.id ? p : x)));
-            else setProducts((l) => [{ ...p, id: String(Date.now()) }, ...l]);
-            setProductOpen(false);
-          }}
-        />
-      )}
-
-      <ConfirmModal
-        open={!!del}
-        onClose={() => setDel(null)}
-        onConfirm={() => del && setProducts((l) => l.filter((x) => x.id !== del.id))}
-        title="Удалить товар?"
-        message={`«${del?.name}» будет удалён.`}
-      />
-
-      <CategoryModal
-        open={catOpen}
-        onClose={() => setCatOpen(false)}
-        onSave={(c) => {
-          setCategories((l) => [...l, c]);
-          setCatOpen(false);
-        }}
-      />
+      {tab === "products" ? <ProductsTab /> : <OrdersTab />}
     </div>
   );
 }
 
-function ProductsTab({
-  products,
-  onEdit,
-  onDelete,
-}: {
-  products: Product[];
-  onEdit: (p: Product) => void;
-  onDelete: (p: Product) => void;
-}) {
-  const [q, setQ] = useState("");
-  const filtered = products.filter((p) => p.name.toLowerCase().includes(q.toLowerCase()));
-  return (
-    <>
-      <div className="mb-3 flex gap-2">
-        <TextInput
-          placeholder="Поиск товара…"
-          className="max-w-sm"
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-        />
-      </div>
-      <Panel>
-        <div className="-mx-4 overflow-x-auto px-4 md:mx-0 md:px-0">
-          <table className="w-full min-w-[720px] text-sm">
+// ============== PRODUCTS ==============
 
-            <thead className="bg-zinc-50 dark:bg-zinc-900/50">
-              <tr className="text-left text-xs uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                {["Товар", "Категория", "Цена", "Остаток", "Статус", ""].map((h) => (
-                  <th key={h} className="px-4 py-2.5 font-medium">
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((p) => (
-                <tr
-                  key={p.id}
-                  onClick={() => onEdit(p)}
-                  className="cursor-pointer border-t border-zinc-100 hover:bg-zinc-50/50 dark:border-zinc-800 dark:hover:bg-zinc-800/30"
-                >
-                  <td className="px-4 py-2.5">
-                    <div className="flex items-center gap-2">
-                      {p.image ? (
-                        <img loading="lazy" decoding="async" src={p.image} alt={p.name} className="h-9 w-9 rounded object-cover" />
-                      ) : (
-                        <div className="flex h-9 w-9 items-center justify-center rounded bg-zinc-100 dark:bg-zinc-800">
-                          <ImageIcon className="h-4 w-4 text-zinc-400" />
-                        </div>
-                      )}
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-1.5">
-                          <span className="truncate font-medium">{p.name}</span>
-                          <Badge tone={p.kind === "digital" ? "violet" : "zinc"}>
-                            {p.kind === "digital" ? "Цифровой" : "Физический"}
-                          </Badge>
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-
-                  <td className="px-4 py-2.5 text-zinc-500 dark:text-zinc-400">
-                    {p.category} / {p.sub ?? "—"}
-                  </td>
-                  <td className="px-4 py-2.5">{p.price.toLocaleString("ru-RU")} ₽</td>
-                  <td className="px-4 py-2.5">{p.stock}</td>
-                  <td className="px-4 py-2.5">
-                    <Badge tone={p.status === "active" ? "emerald" : p.status === "draft" ? "zinc" : "rose"}>
-                      {p.status === "active" ? "В продаже" : p.status === "draft" ? "Черновик" : "Архив"}
-                    </Badge>
-                  </td>
-                  <td className="px-4 py-2.5" onClick={(e) => e.stopPropagation()}>
-                    <Btn variant="ghost" onClick={() => onDelete(p)}>
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Btn>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Panel>
-    </>
-  );
+function emptyProduct(): CreateProductInput {
+  return {
+    slug: "",
+    title: "",
+    description: "",
+    priceRub: 0,
+    bonusTickets: 0,
+    images: [],
+    stock: null,
+    active: true,
+  };
 }
 
-type Category = { id: string; name: string; subs: string[] };
+function ProductsTab() {
+  const qc = useQueryClient();
+  const { data, isLoading } = useQuery({
+    queryKey: adminQk.shopProducts,
+    queryFn: fetchAdminShopProducts,
+  });
 
-function CategoriesTab({
-  categories,
-  onNew,
-  onUpdate,
-  onDelete,
-}: {
-  categories: Category[];
-  onNew: () => void;
-  onUpdate: (c: Category) => void;
-  onDelete: (id: string) => void;
-}) {
-  const [editing, setEditing] = useState<Category | null>(null);
-  const [del, setDel] = useState<Category | null>(null);
+  const [editing, setEditing] = useState<ShopProduct | null>(null);
+  const [newOpen, setNewOpen] = useState(false);
+  const [del, setDel] = useState<ShopProduct | null>(null);
+
+  const deleteMut = useMutation({
+    mutationFn: (id: string) => deleteAdminProduct(id),
+    onSuccess: () => {
+      toast.success("Товар удалён");
+      qc.invalidateQueries({ queryKey: adminQk.shopProducts });
+    },
+    onError: (e) => toast.error(e instanceof ApiError ? e.message : "Не получилось"),
+  });
+
+  const items = data?.items ?? [];
 
   return (
-    <Panel>
-      <PanelHeader>
-        <h3 className="text-sm font-semibold">Категории и подкатегории</h3>
-        <Btn variant="primary" onClick={onNew}>
-          <Plus className="h-4 w-4" /> Категория
+    <>
+      <div className="mb-3 flex justify-end">
+        <Btn variant="primary" onClick={() => setNewOpen(true)}>
+          <Plus className="h-4 w-4" /> Новый товар
         </Btn>
-      </PanelHeader>
-      <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
-        {categories.map((c) => (
-          <div key={c.id} className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="font-medium">{c.name}</div>
-              <div className="flex gap-1">
-                <Btn variant="ghost" onClick={() => setEditing(c)} aria-label="Редактировать категорию">
-                  <Edit className="h-3.5 w-3.5" />
-                </Btn>
-                <Btn variant="ghost" onClick={() => setDel(c)} aria-label="Удалить категорию">
-                  <Trash2 className="h-3.5 w-3.5" />
-                </Btn>
-              </div>
-            </div>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {c.subs.length === 0 && (
-                <span className="text-xs text-zinc-500 dark:text-zinc-400">
-                  Подкатегорий пока нет
-                </span>
-              )}
-              {c.subs.map((s) => (
-                <Badge key={s}>{s}</Badge>
-              ))}
-            </div>
-          </div>
-        ))}
       </div>
 
+      <Panel>
+        {isLoading ? (
+          <div className="px-6 py-12 text-center text-sm text-zinc-500">Загрузка…</div>
+        ) : items.length === 0 ? (
+          <div className="px-6 py-12 text-center text-sm text-zinc-500">Товаров пока нет</div>
+        ) : (
+          <DataTable
+            headers={["Товар", "Slug", "Цена", "Билетов", "Остаток", "Статус", ""]}
+            rows={items.map((p) => [
+              <button
+                type="button"
+                onClick={() => setEditing(p)}
+                className="flex items-center gap-2 text-left hover:underline"
+              >
+                {p.images[0] ? (
+                  <img
+                    src={p.images[0]}
+                    alt={p.title}
+                    className="h-9 w-9 rounded object-cover"
+                    loading="lazy"
+                  />
+                ) : (
+                  <div className="h-9 w-9 rounded bg-zinc-100 dark:bg-zinc-800" />
+                )}
+                <span className="font-medium">{p.title}</span>
+              </button>,
+              <code className="text-xs text-zinc-500">{p.slug}</code>,
+              `${p.priceRub.toLocaleString("ru-RU")} ₽`,
+              p.bonusTickets > 0 ? `+${p.bonusTickets} 🎟` : "—",
+              p.stock === null ? "∞" : p.stock,
+              <Badge tone={p.active ? "emerald" : "zinc"}>{p.active ? "Активен" : "Скрыт"}</Badge>,
+              <div className="flex gap-1">
+                <Btn variant="ghost" onClick={() => setEditing(p)}>
+                  <Edit className="h-3.5 w-3.5" />
+                </Btn>
+                <Btn variant="ghost" onClick={() => setDel(p)}>
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Btn>
+              </div>,
+            ])}
+          />
+        )}
+      </Panel>
+
+      {newOpen && (
+        <ProductModal
+          mode="create"
+          initial={emptyProduct()}
+          onClose={() => setNewOpen(false)}
+          onDone={() => {
+            setNewOpen(false);
+            qc.invalidateQueries({ queryKey: adminQk.shopProducts });
+          }}
+        />
+      )}
       {editing && (
-        <CategoryEditModal
-          open={!!editing}
-          initial={editing}
+        <ProductModal
+          mode="edit"
+          productId={editing.id}
+          initial={{
+            slug: editing.slug,
+            title: editing.title,
+            description: editing.description,
+            priceRub: editing.priceRub,
+            bonusTickets: editing.bonusTickets,
+            images: editing.images,
+            stock: editing.stock,
+            active: editing.active,
+          }}
           onClose={() => setEditing(null)}
-          onSave={(c) => {
-            onUpdate(c);
+          onDone={() => {
             setEditing(null);
+            qc.invalidateQueries({ queryKey: adminQk.shopProducts });
           }}
         />
       )}
@@ -330,303 +224,149 @@ function CategoriesTab({
       <ConfirmModal
         open={!!del}
         onClose={() => setDel(null)}
-        onConfirm={() => del && onDelete(del.id)}
-        title="Удалить категорию?"
-        message={`«${del?.name}» и все её подкатегории будут удалены.`}
+        onConfirm={() => del && deleteMut.mutate(del.id)}
+        title="Удалить товар?"
+        message={`«${del?.title}» будет удалён без возможности восстановления.`}
       />
-    </Panel>
-  );
-}
-
-function CategoryEditModal({
-  open,
-  initial,
-  onClose,
-  onSave,
-}: {
-  open: boolean;
-  initial: Category;
-  onClose: () => void;
-  onSave: (c: Category) => void;
-}) {
-  const [name, setName] = useState(initial.name);
-  const [subs, setSubs] = useState<string[]>(initial.subs);
-  const [newSub, setNewSub] = useState("");
-
-  const renameSub = (i: number, v: string) =>
-    setSubs((s) => s.map((x, j) => (j === i ? v : x)));
-  const removeSub = (i: number) => setSubs((s) => s.filter((_, j) => j !== i));
-  const addSub = () => {
-    const v = newSub.trim();
-    if (!v) return;
-    setSubs((s) => [...s, v]);
-    setNewSub("");
-  };
-
-  return (
-    <Modal
-      open={open}
-      onClose={onClose}
-      title="Редактировать категорию"
-      footer={
-        <>
-          <Btn onClick={onClose}>Отмена</Btn>
-          <Btn variant="primary" onClick={() => onSave({ ...initial, name, subs })}>
-            Сохранить
-          </Btn>
-        </>
-      }
-    >
-      <div className="space-y-4">
-        <Field label="Название категории">
-          <TextInput value={name} onChange={(e) => setName(e.target.value)} />
-        </Field>
-        <div>
-          <div className="mb-1.5 text-xs font-medium text-zinc-600 dark:text-zinc-400">
-            Подкатегории
-          </div>
-          <div className="space-y-2">
-            {subs.map((s, i) => (
-              <div key={i} className="flex gap-2">
-                <TextInput value={s} onChange={(e) => renameSub(i, e.target.value)} />
-                <Btn variant="ghost" onClick={() => removeSub(i)}>
-                  <Trash2 className="h-3.5 w-3.5" />
-                </Btn>
-              </div>
-            ))}
-            {subs.length === 0 && (
-              <div className="text-xs text-zinc-500 dark:text-zinc-400">Подкатегорий пока нет.</div>
-            )}
-          </div>
-          <div className="mt-3 flex gap-2">
-            <TextInput
-              value={newSub}
-              onChange={(e) => setNewSub(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addSub())}
-              placeholder="Новая подкатегория"
-            />
-            <Btn onClick={addSub}>
-              <Plus className="h-4 w-4" /> Добавить
-            </Btn>
-          </div>
-        </div>
-      </div>
-    </Modal>
-  );
-}
-
-function ShowcaseTab({ products }: { products: Product[] }) {
-  return (
-    <Panel>
-      <PanelHeader>
-        <h3 className="text-sm font-semibold">Товары на главной (до 6)</h3>
-        <Btn variant="primary">
-          <Plus className="h-4 w-4" /> Добавить
-        </Btn>
-      </PanelHeader>
-      <div className="grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-3">
-        {products.slice(0, 3).map((p, i) => (
-          <div
-            key={p.id}
-            className="flex items-center gap-3 rounded-md border border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-800 dark:bg-zinc-900/50"
-          >
-            <div className="flex h-6 w-6 items-center justify-center rounded bg-amber-100 text-xs font-bold text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
-              {i + 1}
-            </div>
-            <img loading="lazy" decoding="async" src={p.image} alt={p.name} className="h-12 w-12 rounded object-cover" />
-            <div className="min-w-0 flex-1">
-              <div className="truncate text-sm font-medium">{p.name}</div>
-              <div className="text-xs text-zinc-500 dark:text-zinc-400">
-                {p.price.toLocaleString("ru-RU")} ₽
-              </div>
-            </div>
-            <Btn variant="ghost">
-              <Trash2 className="h-3.5 w-3.5" />
-            </Btn>
-          </div>
-        ))}
-      </div>
-      <div className="border-t border-zinc-200 px-4 py-2 text-xs text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
-        <Star className="mr-1 inline h-3 w-3" /> Перетаскивание для сортировки появится со связью с БД
-      </div>
-    </Panel>
+    </>
   );
 }
 
 function ProductModal({
-  open,
+  mode,
+  productId,
   initial,
-  categories,
   onClose,
-  onSave,
+  onDone,
 }: {
-  open: boolean;
-  initial: Product;
-  categories: typeof CATEGORIES_SEED;
+  mode: "create" | "edit";
+  productId?: string;
+  initial: CreateProductInput;
   onClose: () => void;
-  onSave: (p: Product) => void;
+  onDone: () => void;
 }) {
-  const [p, setP] = useState<Product>(initial);
-  const subs = categories.find((c) => c.id === p.category)?.subs ?? [];
+  const [p, setP] = useState<CreateProductInput>(initial);
+  const [imagesText, setImagesText] = useState((initial.images ?? []).join("\n"));
+  const [unlimited, setUnlimited] = useState(initial.stock === null);
+
+  const save = useMutation({
+    mutationFn: () => {
+      const payload: CreateProductInput = {
+        ...p,
+        images: imagesText
+          .split("\n")
+          .map((s) => s.trim())
+          .filter(Boolean),
+        stock: unlimited ? null : Math.max(0, Number(p.stock) || 0),
+      };
+      return mode === "create"
+        ? createAdminProduct(payload)
+        : patchAdminProduct(productId!, payload);
+    },
+    onSuccess: () => {
+      toast.success(mode === "create" ? "Товар создан" : "Сохранено");
+      onDone();
+    },
+    onError: (e) => toast.error(e instanceof ApiError ? e.message : "Не получилось"),
+  });
+
   return (
     <Modal
-      open={open}
+      open
       onClose={onClose}
-      title={initial.id ? "Редактировать товар" : "Новый товар"}
+      title={mode === "create" ? "Новый товар" : "Редактировать товар"}
       size="lg"
       footer={
         <>
           <Btn onClick={onClose}>Отмена</Btn>
-          <Btn variant="primary" onClick={() => onSave(p)}>
-            Сохранить
+          <Btn variant="primary" disabled={save.isPending} onClick={() => save.mutate()}>
+            {save.isPending ? "Сохраняем…" : "Сохранить"}
           </Btn>
         </>
       }
     >
       <div className="space-y-4">
-        <Field label="Название">
-          <TextInput value={p.name} onChange={(e) => setP({ ...p, name: e.target.value })} />
-        </Field>
-        <Field
-          label="Тип товара"
-          hint="«Физический» — на оформлении спросим адрес и контакты для доставки. «Цифровой» — только email для чека (доступ выдаётся автоматически)."
-        >
-          <div className="grid grid-cols-2 gap-2">
-            {([
-              { v: "physical", title: "Физический", sub: "Нужна доставка" },
-              { v: "digital", title: "Цифровой", sub: "Только email для чека" },
-            ] as const).map((opt) => {
-              const active = p.kind === opt.v;
-              return (
-                <button
-                  key={opt.v}
-                  type="button"
-                  onClick={() => setP({ ...p, kind: opt.v })}
-                  className={cn(
-                    "rounded-md border px-3 py-2.5 text-left transition-colors",
-                    active
-                      ? "border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900"
-                      : "border-zinc-200 bg-white hover:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-600",
-                  )}
-                >
-                  <div className="text-sm font-semibold">{opt.title}</div>
-                  <div className={cn("text-[11px]", active ? "opacity-80" : "text-zinc-500 dark:text-zinc-400")}>
-                    {opt.sub}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </Field>
-
-        <Field
-          label="Описание"
-          hint="Можно отдельно упомянуть, сколько билетов получит покупатель — это будет видно в карточке товара."
-        >
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Slug" hint="Латиница, цифры, дефис. Меняется только в крайнем случае.">
+            <TextInput
+              value={p.slug}
+              onChange={(e) =>
+                setP({ ...p, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "") })
+              }
+              placeholder="hoodie-black"
+              disabled={mode === "edit"}
+            />
+          </Field>
+          <Field label="Название">
+            <TextInput value={p.title} onChange={(e) => setP({ ...p, title: e.target.value })} />
+          </Field>
+        </div>
+        <Field label="Описание">
           <TextArea
-            rows={3}
+            rows={4}
             value={p.description ?? ""}
             onChange={(e) => setP({ ...p, description: e.target.value })}
           />
         </Field>
-        <Field
-          label="Билетов за покупку"
-          hint="Сколько билетов на участие в розыгрышах клуба получит покупатель. 0 — не начислять."
-        >
-          <TextInput
-            type="number"
-            min={0}
-            value={p.ticketsBonus ?? 0}
-            onChange={(e) =>
-              setP({ ...p, ticketsBonus: Math.max(0, Number(e.target.value) || 0) })
-            }
-          />
-        </Field>
-        {p.kind === "physical" ? (
-          <>
-            <Field
-              label="Условия доставки"
-              hint="Сроки, способы, стоимость. Покажется отдельным блоком в карточке товара."
-            >
-              <TextArea
-                rows={3}
-                value={p.shipping ?? ""}
-                onChange={(e) => setP({ ...p, shipping: e.target.value })}
-                placeholder="СДЭК / Почта России, 3–10 дней. Бесплатно от 5 000 ₽."
-              />
-            </Field>
-            <Field
-              label="Условия возврата"
-              hint="Срок и условия возврата."
-            >
-              <TextArea
-                rows={3}
-                value={p.returns ?? ""}
-                onChange={(e) => setP({ ...p, returns: e.target.value })}
-                placeholder="Возврат в течение 14 дней при сохранении ярлыков."
-              />
-            </Field>
-          </>
-        ) : (
-          <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-800 dark:border-amber-900/40 dark:bg-amber-900/20 dark:text-amber-300">
-            Цифровой товар — на оформлении возьмём только email для чека. Адрес и доставка не спрашиваются.
-          </div>
-        )}
-
         <div className="grid grid-cols-3 gap-3">
           <Field label="Цена (₽)">
             <TextInput
               type="number"
-              value={p.price}
-              onChange={(e) => setP({ ...p, price: Number(e.target.value) })}
+              min={0}
+              value={p.priceRub}
+              onChange={(e) => setP({ ...p, priceRub: Math.max(0, Number(e.target.value) || 0) })}
             />
           </Field>
-          <Field label="Остаток">
+          <Field label="Билетов за покупку" hint="Сколько 🎟 начислится покупателю при оплате.">
             <TextInput
               type="number"
-              value={p.stock}
-              onChange={(e) => setP({ ...p, stock: Number(e.target.value) })}
+              min={0}
+              value={p.bonusTickets ?? 0}
+              onChange={(e) =>
+                setP({ ...p, bonusTickets: Math.max(0, Number(e.target.value) || 0) })
+              }
             />
           </Field>
           <Field label="Статус">
             <Select
-              value={p.status}
-              onChange={(e) => setP({ ...p, status: e.target.value as Product["status"] })}
+              value={p.active ? "1" : "0"}
+              onChange={(e) => setP({ ...p, active: e.target.value === "1" })}
             >
-              <option value="draft">Черновик</option>
-              <option value="active">В продаже</option>
-              <option value="archived">Архив</option>
+              <option value="1">Активен</option>
+              <option value="0">Скрыт</option>
             </Select>
           </Field>
         </div>
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Категория">
-            <Select
-              value={p.category}
-              onChange={(e) => setP({ ...p, category: e.target.value, sub: undefined })}
-            >
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </Select>
-          </Field>
-          <Field label="Подкатегория">
-            <Select value={p.sub ?? ""} onChange={(e) => setP({ ...p, sub: e.target.value || undefined })}>
-              <option value="">—</option>
-              {subs.map((s) => (
-                <option key={s} value={s}>
-                  {s}
-                </option>
-              ))}
-            </Select>
-          </Field>
-        </div>
-        <Field label="Изображение товара">
-          <ImageUploader
-            images={p.image ? [p.image] : []}
-            onChange={(arr) => setP({ ...p, image: arr[0] ?? "" })}
+        <Field label="Остаток на складе">
+          <div className="flex items-center gap-3">
+            <label className="inline-flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={unlimited}
+                onChange={(e) => setUnlimited(e.target.checked)}
+              />
+              Без учёта остатков (∞)
+            </label>
+            {!unlimited && (
+              <TextInput
+                type="number"
+                min={0}
+                value={p.stock ?? 0}
+                onChange={(e) => setP({ ...p, stock: Math.max(0, Number(e.target.value) || 0) })}
+                className="max-w-[140px]"
+              />
+            )}
+          </div>
+        </Field>
+        <Field
+          label="Картинки (URL'ы, по одной на строку)"
+          hint="Первая — обложка. Грузим в MinIO/сторонний хост, сюда вставляем ссылки."
+        >
+          <TextArea
+            rows={3}
+            value={imagesText}
+            onChange={(e) => setImagesText(e.target.value)}
+            placeholder="https://cdn.hhr.pro/products/hoodie-front.jpg"
           />
         </Field>
       </div>
@@ -634,48 +374,200 @@ function ProductModal({
   );
 }
 
-function CategoryModal({
-  open,
-  onClose,
-  onSave,
-}: {
-  open: boolean;
-  onClose: () => void;
-  onSave: (c: { id: string; name: string; subs: string[] }) => void;
-}) {
-  const [name, setName] = useState("");
-  const [subs, setSubs] = useState("");
+// ============== ORDERS ==============
+
+function OrdersTab() {
+  const [status, setStatus] = useState<ShopOrderStatus | "all">("all");
+  const { data, isLoading } = useQuery({
+    queryKey: adminQk.shopOrders(status),
+    queryFn: () => fetchAdminOrders(status === "all" ? undefined : status),
+  });
+
+  const [openId, setOpenId] = useState<string | null>(null);
+  const items = data?.items ?? [];
+
   return (
-    <Modal
-      open={open}
+    <>
+      <div className="mb-3 flex flex-wrap gap-2">
+        {(["all", "pending_payment", "paid", "shipped", "delivered", "cancelled", "refunded"] as const).map(
+          (s) => (
+            <button
+              key={s}
+              type="button"
+              onClick={() => setStatus(s)}
+              className={cn(
+                "rounded-full border px-3 py-1 text-xs font-medium transition-colors",
+                status === s
+                  ? "border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900"
+                  : "border-zinc-200 bg-white text-zinc-700 hover:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300",
+              )}
+            >
+              {s === "all" ? "Все" : STATUS_LABEL[s]}
+            </button>
+          ),
+        )}
+      </div>
+
+      <Panel>
+        {isLoading ? (
+          <div className="px-6 py-12 text-center text-sm text-zinc-500">Загрузка…</div>
+        ) : items.length === 0 ? (
+          <div className="px-6 py-12 text-center text-sm text-zinc-500">Заказов пока нет</div>
+        ) : (
+          <DataTable
+            headers={["Номер", "Дата", "Покупатель", "Сумма", "Билетов", "Статус", "СДЭК", ""]}
+            rows={items.map((o: ShopOrder) => [
+              <button
+                type="button"
+                onClick={() => setOpenId(o.id)}
+                className="font-mono text-xs hover:underline"
+              >
+                {o.id.slice(0, 8)}
+              </button>,
+              new Date(o.createdAt).toLocaleDateString("ru-RU"),
+              <div className="text-sm">
+                {o.shipping.fio}
+                <div className="text-[11px] text-zinc-500">{o.shipping.city}</div>
+              </div>,
+              `${o.totalRub.toLocaleString("ru-RU")} ₽`,
+              o.bonusTicketsTotal > 0 ? `+${o.bonusTicketsTotal} 🎟` : "—",
+              <Badge tone={STATUS_TONE[o.status]}>{STATUS_LABEL[o.status]}</Badge>,
+              o.cdekTrack ? <code className="text-xs">{o.cdekTrack}</code> : "—",
+              <Btn variant="ghost" onClick={() => setOpenId(o.id)}>
+                Открыть
+              </Btn>,
+            ])}
+          />
+        )}
+      </Panel>
+
+      {openId && <OrderDrawer orderId={openId} onClose={() => setOpenId(null)} />}
+    </>
+  );
+}
+
+function OrderDrawer({ orderId, onClose }: { orderId: string; onClose: () => void }) {
+  const qc = useQueryClient();
+  const { data, isLoading } = useQuery({
+    queryKey: adminQk.shopOrder(orderId),
+    queryFn: () => fetchAdminOrder(orderId),
+  });
+  const [status, setStatus] = useState<ShopOrderStatus | "">("");
+  const [track, setTrack] = useState("");
+
+  const patch = useMutation({
+    mutationFn: () =>
+      patchAdminOrder(orderId, {
+        ...(status ? { status: status as ShopOrderStatus } : {}),
+        ...(track !== "" ? { cdekTrack: track || null } : {}),
+      }),
+    onSuccess: () => {
+      toast.success("Сохранено");
+      qc.invalidateQueries({ queryKey: adminQk.shopOrder(orderId) });
+      qc.invalidateQueries({ queryKey: ["admin", "shop", "orders"] });
+    },
+    onError: (e) => toast.error(e instanceof ApiError ? e.message : "Не получилось"),
+  });
+
+  // Инициализируем поля из загруженных данных один раз.
+  useMemo(() => {
+    if (data) {
+      setStatus(data.status);
+      setTrack(data.cdekTrack ?? "");
+    }
+  }, [data]);
+
+  return (
+    <Drawer
+      open
       onClose={onClose}
-      title="Новая категория"
+      title={`Заказ ${orderId.slice(0, 8)}`}
       footer={
         <>
-          <Btn onClick={onClose}>Отмена</Btn>
-          <Btn
-            variant="primary"
-            onClick={() =>
-              onSave({
-                id: name.toLowerCase().replace(/\s+/g, "-"),
-                name,
-                subs: subs.split(",").map((s) => s.trim()).filter(Boolean),
-              })
-            }
-          >
-            Создать
+          <Btn onClick={onClose}>Закрыть</Btn>
+          <Btn variant="primary" disabled={patch.isPending} onClick={() => patch.mutate()}>
+            {patch.isPending ? "Сохраняем…" : "Сохранить"}
           </Btn>
         </>
       }
     >
-      <div className="space-y-3">
-        <Field label="Название">
-          <TextInput value={name} onChange={(e) => setName(e.target.value)} />
-        </Field>
-        <Field label="Подкатегории (через запятую)" hint="Можно добавить позже">
-          <TextInput value={subs} onChange={(e) => setSubs(e.target.value)} placeholder="Худи, Футболки" />
-        </Field>
-      </div>
-    </Modal>
+      {isLoading || !data ? (
+        <div className="py-8 text-center text-sm text-zinc-500">Загрузка…</div>
+      ) : (
+        <div className="space-y-5 text-sm">
+          <div>
+            <div className="text-xs uppercase text-zinc-500">Покупатель</div>
+            <div className="font-medium">{data.shipping.fio}</div>
+            <div className="text-zinc-500">{data.shipping.phone}</div>
+            <div className="text-zinc-500">
+              {data.shipping.city}, {data.shipping.address}
+              {data.shipping.postalCode ? `, ${data.shipping.postalCode}` : ""}
+            </div>
+            {data.comment && (
+              <div className="mt-2 rounded bg-zinc-100 px-3 py-2 text-xs dark:bg-zinc-800">
+                {data.comment}
+              </div>
+            )}
+          </div>
+
+          <div>
+            <div className="text-xs uppercase text-zinc-500">Позиции</div>
+            <ul className="mt-1 divide-y divide-zinc-200 dark:divide-zinc-800">
+              {data.items.map((it) => (
+                <li key={it.id} className="flex items-center justify-between py-2">
+                  <div>
+                    <div className="font-medium">{it.titleSnapshot}</div>
+                    <div className="text-xs text-zinc-500">
+                      ×{it.qty}
+                      {it.bonusTicketsSnapshot > 0 && ` · +${it.bonusTicketsSnapshot} 🎟 за шт.`}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div>{(it.priceRubSnapshot * it.qty).toLocaleString("ru-RU")} ₽</div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+            <div className="mt-2 flex justify-between border-t border-zinc-200 pt-2 font-semibold dark:border-zinc-800">
+              <span>Итого</span>
+              <span>{data.totalRub.toLocaleString("ru-RU")} ₽</span>
+            </div>
+            {data.bonusTicketsTotal > 0 && (
+              <div className="flex justify-between text-xs text-emerald-600 dark:text-emerald-400">
+                <span>Билетов начислено</span>
+                <span>+{data.bonusTicketsTotal} 🎟</span>
+              </div>
+            )}
+          </div>
+
+          <div className="grid gap-3">
+            <Field label="Статус">
+              <Select value={status} onChange={(e) => setStatus(e.target.value as ShopOrderStatus)}>
+                {(Object.keys(STATUS_LABEL) as ShopOrderStatus[]).map((s) => (
+                  <option key={s} value={s}>
+                    {STATUS_LABEL[s]}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+            <Field label="СДЭК-трек" hint="Появится у клиента в карточке заказа.">
+              <TextInput
+                value={track}
+                onChange={(e) => setTrack(e.target.value)}
+                placeholder="1234567890"
+              />
+            </Field>
+          </div>
+
+          <div className="text-xs text-zinc-500">
+            <div>Создан: {new Date(data.createdAt).toLocaleString("ru-RU")}</div>
+            {data.paidAt && <div>Оплачен: {new Date(data.paidAt).toLocaleString("ru-RU")}</div>}
+            {data.shippedAt && (
+              <div>Отправлен: {new Date(data.shippedAt).toLocaleString("ru-RU")}</div>
+            )}
+          </div>
+        </div>
+      )}
+    </Drawer>
   );
 }
