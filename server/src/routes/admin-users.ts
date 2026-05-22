@@ -28,9 +28,13 @@ export async function adminUsersRoutes(app: FastifyInstance) {
       .parse(req.query ?? {});
 
     const search = q.q?.toLowerCase();
-    const where = search
+    const searchWhere = search
       ? or(ilike(users.email, `%${search}%`), ilike(users.nick, `%${search}%`))
       : undefined;
+    // Админы — не клубные юзеры, они живут в /api/v1/admin/staff.
+    const where = searchWhere
+      ? and(ne(users.role, "admin"), searchWhere)
+      : ne(users.role, "admin");
 
     const rows = await db
       .select({
