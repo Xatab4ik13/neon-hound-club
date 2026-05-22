@@ -159,7 +159,7 @@ export function MobileGarage({
             {tab === "docs" && (
               <DocsList
                 bikeId={active.id}
-                onEdit={(doc) => setDocSheet({ open: true, doc })}
+                onView={(doc) => setViewDoc(doc)}
                 onAdd={() => setDocSheet({ open: true, doc: null })}
               />
             )}
