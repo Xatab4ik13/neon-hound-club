@@ -73,12 +73,38 @@ export function fetchAdminUser(id: string) {
 
 export function patchAdminUser(
   id: string,
-  patch: { role?: "user" | "admin" | "blogger"; blocked?: boolean },
+  patch: { role?: "user" | "blogger"; blocked?: boolean },
 ) {
-  return apiFetch<{ id: string; nick: string; role: "user" | "admin" | "blogger"; blocked: boolean }>(
+  return apiFetch<{ id: string; nick: string; role: "user" | "blogger"; blocked: boolean }>(
     `/api/v1/admin/users/${id}`,
     { method: "PATCH", body: JSON.stringify(patch) },
   );
+}
+
+// ---------- ADMIN STAFF (команда админки) ----------
+
+export type AdminStaffItem = {
+  id: string;
+  email: string;
+  nick: string;
+  role: "admin";
+  blocked: boolean;
+  createdAt: string;
+};
+
+export function fetchAdminStaff() {
+  return apiFetch<{ items: AdminStaffItem[] }>(`/api/v1/admin/staff/`);
+}
+
+export function createAdminStaff(input: { email: string; password: string; nick: string }) {
+  return apiFetch<AdminStaffItem>(`/api/v1/admin/staff/`, {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export function deleteAdminStaff(id: string) {
+  return apiFetch<{ ok: true }>(`/api/v1/admin/staff/${id}`, { method: "DELETE" });
 }
 
 export function deleteAdminUser(id: string) {
