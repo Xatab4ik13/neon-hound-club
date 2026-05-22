@@ -1,6 +1,15 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, Check, Copy, MessageCircle, Send, Share2, Ticket, Users } from "lucide-react";
+import { createFileRoute } from "@tanstack/react-router";
+import {
+  Check,
+  Copy,
+  MessageCircle,
+  Send,
+  Share2,
+  Ticket,
+  Users,
+} from "lucide-react";
 import { useState } from "react";
+import { PageHeader } from "@/components/club/PageHeader";
 import {
   buildReferralUrl,
   myReferralCode,
@@ -42,120 +51,178 @@ function InvitePage() {
   const shareUrl = encodeURIComponent(url);
   const total = friends.reduce((s, f) => s + f.ticketsRewarded, 0);
 
+  async function nativeShare() {
+    if (typeof navigator === "undefined" || !navigator.share) {
+      copy();
+      return;
+    }
+    try {
+      await navigator.share({
+        title: "Клуб HELLHOUND",
+        text: `+${REFERRAL_REWARD_TICKETS} билетов на старте по моей ссылке.`,
+        url,
+      });
+    } catch {
+      /* user cancelled */
+    }
+  }
+
   return (
-    <main className="mx-auto w-full max-w-3xl px-4 py-6 md:px-8 md:py-10">
-      <Link
-        to="/club/me"
-        className="mb-6 inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground transition-colors hover:text-foreground"
-      >
-        <ArrowLeft className="h-3 w-3" />В профиль
-      </Link>
+    <main
+      className="mx-auto w-full max-w-3xl px-4 py-5 md:py-8"
+      style={{ paddingBottom: "calc(40px + env(safe-area-inset-bottom))" }}
+    >
+      <PageHeader title="Пригласить" subtitle="Реферальная программа клуба" />
 
-      <header className="mb-8 border border-white/[0.06] bg-card/40 p-6 md:p-8">
-        <div className="font-mono text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
-          Реферальная программа
+      {/* Reward hero card */}
+      <section className="mb-5 overflow-hidden rounded-2xl border border-primary/25 bg-gradient-to-br from-primary/15 via-card/60 to-black px-5 py-6">
+        <div className="flex items-center gap-2 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-primary">
+          <Ticket className="h-3.5 w-3.5" />
+          Бонус обоим
         </div>
-        <h1 className="mt-2 font-display text-3xl font-black uppercase italic tracking-tight text-foreground md:text-4xl">
-          Пригласи своих
-        </h1>
-        <p className="mt-3 max-w-xl text-sm text-muted-foreground">
-          Поделись ссылкой. Друг регистрируется — обоим прилетает по{" "}
-          <span className="font-bold text-foreground">
-            {REFERRAL_REWARD_TICKETS} билетов
+        <div className="mt-2 flex items-baseline gap-2">
+          <span className="font-display text-5xl font-black italic leading-none tabular-nums text-foreground">
+            +{REFERRAL_REWARD_TICKETS}
           </span>
-          . Без лимитов. Билеты падают в кошелёк сразу после первой активности друга.
+          <span className="font-mono text-[13px] uppercase tracking-wider text-muted-foreground">
+            билетов
+          </span>
+        </div>
+        <p className="mt-3 text-[14px] leading-snug text-muted-foreground">
+          Друг регистрируется по твоей ссылке — обоим прилетает по{" "}
+          <span className="font-semibold text-foreground">
+            {REFERRAL_REWARD_TICKETS} билетов
+          </span>{" "}
+          после первой активности. Без лимитов.
         </p>
+      </section>
 
-        <div className="mt-6 grid gap-3 sm:grid-cols-3">
-          <Stat label="Приведено" value={String(friends.length)} icon={Users} />
-          <Stat label="Билетов заработано" value={String(total)} icon={Ticket} />
-          <div className="border border-white/[0.06] bg-black/30 p-3">
-            <div className="font-mono text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
-              Твой код
-            </div>
-            <div className="mt-2 font-display text-2xl font-black italic uppercase tracking-tight text-primary">
-              {code}
-            </div>
+      {/* Stats: 3 iOS tiles */}
+      <section className="mb-5 grid grid-cols-3 gap-2">
+        <StatTile
+          icon={<Users className="h-4 w-4" />}
+          label="Приведено"
+          value={friends.length}
+        />
+        <StatTile
+          icon={<Ticket className="h-4 w-4" />}
+          label="Билетов"
+          value={total}
+        />
+        <div className="rounded-2xl border border-white/[0.06] bg-card/40 px-3 py-3">
+          <div className="font-mono text-[9px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+            Мой код
+          </div>
+          <div className="mt-1 truncate font-display text-[18px] font-black italic uppercase tracking-tight text-primary">
+            {code}
           </div>
         </div>
-      </header>
+      </section>
 
-      <section className="mb-8 border border-white/[0.06] bg-card/40 p-6">
-        <h2 className="mb-3 font-display text-sm font-black uppercase italic tracking-widest text-foreground">
-          Твоя ссылка
-        </h2>
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <div className="flex min-w-0 flex-1 items-center gap-2 border border-white/[0.08] bg-black/30 px-3 py-2.5 font-mono text-sm">
-            <code className="truncate text-foreground">{url}</code>
-          </div>
+      {/* Link + copy + share */}
+      <section className="mb-5 rounded-2xl border border-white/[0.06] bg-card/40 p-3">
+        <div className="flex items-center gap-2 rounded-xl bg-black/40 px-3 py-2.5">
+          <code className="flex-1 truncate font-mono text-[12px] text-foreground">
+            {url}
+          </code>
           <button
             type="button"
             onClick={copy}
-            className="inline-flex items-center justify-center gap-2 border border-primary bg-primary px-5 py-2.5 font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-primary-foreground transition-opacity hover:opacity-90"
+            aria-label="Скопировать ссылку"
+            className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-primary/15 text-primary active:scale-95"
           >
-            {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-            {copied ? "Готово" : "Скопировать"}
+            {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
           </button>
         </div>
 
-        <div className="mt-4 flex flex-wrap gap-2">
-          <ShareLink
+        <button
+          type="button"
+          onClick={nativeShare}
+          className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 font-display text-[14px] font-black uppercase italic tracking-wider text-primary-foreground active:scale-[0.98]"
+        >
+          <Share2 className="h-4 w-4" />
+          Поделиться
+        </button>
+
+        <div className="mt-3 grid grid-cols-3 gap-2">
+          <ShareTile
             href={`https://t.me/share/url?url=${shareUrl}&text=${shareText}`}
             label="Telegram"
-            icon={Send}
+            icon={<Send className="h-4 w-4" />}
           />
-          <ShareLink
+          <ShareTile
             href={`https://wa.me/?text=${shareText}%20${shareUrl}`}
             label="WhatsApp"
-            icon={MessageCircle}
+            icon={<MessageCircle className="h-4 w-4" />}
           />
-          <ShareLink
+          <ShareTile
             href={`https://vk.com/share.php?url=${shareUrl}`}
             label="VK"
-            icon={Share2}
+            icon={<Share2 className="h-4 w-4" />}
           />
         </div>
       </section>
 
+      {/* How it works */}
+      <section className="mb-5">
+        <h3 className="mb-1.5 px-3 font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+          Как это работает
+        </h3>
+        <ol className="overflow-hidden rounded-2xl border border-white/[0.06] bg-card/40 divide-y divide-white/[0.05]">
+          <Step n={1} text="Поделись ссылкой со своими." />
+          <Step n={2} text="Друг регистрируется в клубе и подтверждает email." />
+          <Step
+            n={3}
+            text={`После первой активности друга оба получаете +${REFERRAL_REWARD_TICKETS} билетов.`}
+          />
+        </ol>
+      </section>
+
+      {/* Friends list */}
       <section>
-        <div className="mb-3 flex items-baseline justify-between">
-          <h2 className="font-display text-sm font-black uppercase italic tracking-widest text-foreground">
-            Уже привёл · {friends.length}
-          </h2>
-          <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-            +{total} билетов
-          </span>
+        <div className="mb-1.5 flex items-end justify-between px-3">
+          <h3 className="font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+            Приведено · {friends.length}
+          </h3>
+          {total > 0 && (
+            <span className="font-mono text-[10px] uppercase tracking-wider text-primary">
+              +{total} билетов
+            </span>
+          )}
         </div>
 
         {friends.length === 0 ? (
-          <div className="border border-dashed border-white/[0.08] bg-card/20 p-6 text-center font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-            Пока никого. Время позвать своих.
+          <div className="grid place-items-center rounded-2xl border border-dashed border-white/[0.08] bg-card/30 px-6 py-10 text-center">
+            <Users className="h-6 w-6 text-muted-foreground/60" />
+            <p className="mt-3 max-w-[26ch] text-[13px] text-muted-foreground">
+              Пока никого. Кинь ссылку в чат — приведи своих.
+            </p>
           </div>
         ) : (
-          <ul className="divide-y divide-white/[0.04] border border-white/[0.06] bg-card/40">
+          <ul className="overflow-hidden rounded-2xl border border-white/[0.06] bg-card/40 divide-y divide-white/[0.05]">
             {friends.map((f) => (
-              <li
-                key={f.id}
-                className="grid grid-cols-[1fr_auto_auto] items-center gap-4 px-4 py-3"
-              >
-                <div className="min-w-0">
-                  <div className="truncate font-display text-sm font-black uppercase italic tracking-wide text-foreground">
+              <li key={f.id} className="flex items-center gap-3 px-4 py-3">
+                <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/15 font-display text-[13px] font-black italic text-primary">
+                  {f.nick.slice(0, 2).toUpperCase()}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-[14px] font-semibold text-foreground">
                     {f.nick}
                   </div>
-                  <div className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-                    регистрация · {f.joinedAt}
+                  <div className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
+                    {f.joinedAt}
                   </div>
                 </div>
                 <span
-                  className={`whitespace-nowrap border px-2 py-0.5 font-mono text-[9px] font-bold uppercase tracking-[0.2em] ${
+                  className={`shrink-0 rounded-full border px-2 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wider ${
                     f.status === "active"
-                      ? "border-green-500/50 text-green-400"
-                      : "border-white/[0.1] text-muted-foreground"
+                      ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-300"
+                      : "border-white/[0.08] bg-white/[0.02] text-muted-foreground"
                   }`}
                 >
-                  {f.status === "active" ? "Активен" : "Зарегался"}
+                  {f.status === "active" ? "Активен" : "Ожидание"}
                 </span>
-                <span className="flex items-center gap-1 font-mono text-sm font-bold tabular-nums text-primary">
+                <span className="flex shrink-0 items-center gap-0.5 font-mono text-[13px] font-bold tabular-nums text-primary">
                   <Ticket className="h-3.5 w-3.5" />+{f.ticketsRewarded}
                 </span>
               </li>
@@ -167,48 +234,59 @@ function InvitePage() {
   );
 }
 
-function Stat({
+function StatTile({
+  icon,
   label,
   value,
-  icon: Icon,
 }: {
+  icon: React.ReactNode;
   label: string;
-  value: string;
-  icon: typeof Users;
+  value: number;
 }) {
   return (
-    <div className="border border-white/[0.06] bg-black/30 p-3">
-      <div className="font-mono text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
+    <div className="rounded-2xl border border-white/[0.06] bg-card/40 px-3 py-3">
+      <div className="flex items-center gap-1.5 font-mono text-[9px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+        <span className="text-primary">{icon}</span>
         {label}
       </div>
-      <div className="mt-2 flex items-center gap-2">
-        <Icon className="h-5 w-5 text-primary" strokeWidth={1.8} />
-        <span className="font-display text-2xl font-black italic leading-none text-foreground tabular-nums">
-          {value}
-        </span>
+      <div className="mt-1 font-display text-2xl font-black italic leading-none tabular-nums text-foreground">
+        {value}
       </div>
     </div>
   );
 }
 
-function ShareLink({
+function ShareTile({
   href,
   label,
-  icon: Icon,
+  icon,
 }: {
   href: string;
   label: string;
-  icon: typeof Send;
+  icon: React.ReactNode;
 }) {
   return (
     <a
       href={href}
       target="_blank"
       rel="noreferrer noopener"
-      className="inline-flex items-center gap-2 border border-white/[0.08] bg-black/30 px-3 py-2 font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-foreground transition-colors hover:border-primary/60 hover:text-primary"
+      className="flex flex-col items-center justify-center gap-1 rounded-xl border border-white/[0.06] bg-white/[0.02] py-2.5 text-foreground active:scale-95"
     >
-      <Icon className="h-3.5 w-3.5" />
-      {label}
+      <span className="text-primary">{icon}</span>
+      <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+        {label}
+      </span>
     </a>
+  );
+}
+
+function Step({ n, text }: { n: number; text: string }) {
+  return (
+    <li className="flex items-start gap-3 px-4 py-3">
+      <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-primary/15 font-mono text-[11px] font-bold text-primary">
+        {n}
+      </span>
+      <span className="text-[14px] text-foreground/85">{text}</span>
+    </li>
   );
 }

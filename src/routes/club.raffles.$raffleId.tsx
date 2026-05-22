@@ -304,12 +304,13 @@ function StakeControls({
 
       {noBalance && (
         <Link
-          to="/shop"
+          to="/club/tickets"
           className="mt-2 block text-center font-mono text-[11px] uppercase tracking-wider text-primary active:opacity-60"
         >
-          Билеты закончились — докупить →
+          Билетов нет — как их набрать →
         </Link>
       )}
+
     </div>
   );
 }
