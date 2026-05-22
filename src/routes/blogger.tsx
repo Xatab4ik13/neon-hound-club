@@ -2,11 +2,10 @@ import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tansta
 import { useEffect, useState } from "react";
 import { Newspaper, Ticket, Bot, Settings, type LucideIcon } from "lucide-react";
 import { HellhoundPlaqueLarge } from "@/components/club/HellhoundPlaque";
-import { BloggerProfileModal } from "@/components/blogger/BloggerProfileModal";
 import { BloggerMobileTopBar } from "@/components/blogger/BloggerMobileTopBar";
 import { BloggerMobileTabBar } from "@/components/blogger/BloggerMobileTabBar";
 import { MobileTransition } from "@/components/club/MobileTransition";
-import { bloggerProfileStore, useBloggerProfile } from "@/data/blogger-profile";
+import { useBloggerProfile } from "@/data/blogger-profile";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useViewer } from "@/hooks/use-viewer";
 
@@ -30,12 +29,12 @@ const NAV: { label: string; href: string; icon: LucideIcon }[] = [
 
 function BloggerLayout() {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [profileOpen, setProfileOpen] = useState(false);
   const { pathname } = useLocation();
-  const profile = useBloggerProfile();
   const isMobile = useIsMobile();
   const viewer = useViewer();
   const navigate = useNavigate();
+
+  const goToSettings = () => navigate({ to: "/blogger/settings" });
 
   // В кабинет блогера пускаем только blogger/admin. Остальных — в /club или /login.
   useEffect(() => {
@@ -57,7 +56,7 @@ function BloggerLayout() {
   if (isMobile) {
     return (
       <div className="min-h-screen bg-background text-foreground">
-        <BloggerMobileTopBar onPlaqueClick={() => setProfileOpen(true)} />
+        <BloggerMobileTopBar onPlaqueClick={goToSettings} />
         <main
           className="relative"
           style={{ paddingBottom: "calc(52px + env(safe-area-inset-bottom) + 8px)" }}
@@ -67,13 +66,6 @@ function BloggerLayout() {
           </MobileTransition>
         </main>
         <BloggerMobileTabBar />
-
-        <BloggerProfileModal
-          open={profileOpen}
-          onClose={() => setProfileOpen(false)}
-          profile={profile}
-          onChange={(p) => bloggerProfileStore.update(p)}
-        />
       </div>
     );
   }
@@ -97,17 +89,10 @@ function BloggerLayout() {
         <MobileDrawer open={menuOpen} onClose={() => setMenuOpen(false)} pathname={pathname} />
 
         <div className="flex min-w-0 flex-1 flex-col">
-          <TopBar onMenu={() => setMenuOpen(true)} onPlaqueClick={() => setProfileOpen(true)} />
+          <TopBar onMenu={() => setMenuOpen(true)} onPlaqueClick={goToSettings} />
           <Outlet />
         </div>
       </div>
-
-      <BloggerProfileModal
-        open={profileOpen}
-        onClose={() => setProfileOpen(false)}
-        profile={profile}
-        onChange={(p) => bloggerProfileStore.update(p)}
-      />
     </div>
   );
 }
