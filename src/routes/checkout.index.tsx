@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { useCart } from "@/hooks/use-cart";
 import { useViewer } from "@/hooks/use-viewer";
 import { ME } from "@/data/profile";
+import { formatRuPhone } from "@/lib/phone";
 
 export const Route = createFileRoute("/checkout/")({
   head: () => ({
@@ -83,8 +84,9 @@ function CheckoutPage() {
                 <Field
                   label="Телефон"
                   value={phone}
-                  onChange={setPhone}
+                  onChange={(v) => setPhone(formatRuPhone(v))}
                   type="tel"
+                  placeholder="+7 (___) ___-__-__"
                   required
                 />
                 <div className="sm:col-span-2">
