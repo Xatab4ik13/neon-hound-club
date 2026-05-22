@@ -1023,10 +1023,11 @@ function DocSheet({
   const [photos, setPhotos] = useState<string[]>(initialPhotos);
   const [note, setNote] = useState(doc?.note ?? "");
 
-  // re-init when doc changes
-  const lastDocId = useRef<string | null>(null);
-  if (open && doc?.id !== lastDocId.current) {
-    lastDocId.current = doc?.id ?? null;
+  // re-init when doc identity changes (используем sentinel, чтобы избежать infinite loop при doc=null)
+  const lastDocKey = useRef<string>("__init__");
+  const currentKey = doc ? `id:${doc.id}` : "new";
+  if (open && currentKey !== lastDocKey.current) {
+    lastDocKey.current = currentKey;
     setType(doc?.type ?? "osago");
     setNumber(doc?.number ?? "");
     setIssueDate(doc?.issueDate ?? "");
