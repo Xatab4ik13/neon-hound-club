@@ -52,11 +52,12 @@ function ClubFeedPage() {
 // ───────── Post ─────────
 
 export function PostCard({ post, moderate = false }: { post: Post; moderate?: boolean }) {
-  const [liked, setLiked] = useState(post.liked);
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const likeCount = post.likes + (liked ? 1 : 0) - (post.liked ? 1 : 0);
+  const liked = post.liked;
+  const likeCount = post.likes;
   const author = PUBLIC_USERS[post.authorSlug];
+
 
   return (
     <article className="overflow-hidden rounded-[24px] border border-white/[0.06] bg-card/60 shadow-[0_8px_40px_rgba(0,0,0,0.4)] transition-colors hover:border-white/[0.10]">
@@ -163,11 +164,10 @@ export function PostCard({ post, moderate = false }: { post: Post; moderate?: bo
           label="Лайк"
           active={liked}
           onClick={() => {
-            const next = !liked;
-            setLiked(next);
-            feedStore.toggleLike(post.id, next);
+            feedStore.toggleLike(post.id, !liked);
           }}
         />
+
         <PostAction
           icon={<CommentIcon />}
           count={post.comments.length}
@@ -197,26 +197,20 @@ export function PostCard({ post, moderate = false }: { post: Post; moderate?: bo
 // ───────── Poll ─────────
 
 function PollBlock({ poll, postId }: { poll: FeedPoll; postId: string }) {
-  const serverVote = poll.myVote && poll.myVote.length > 0 ? poll.myVote[0] : null;
-  const [voted, setVoted] = useState<string | null>(serverVote);
-
-  // votes из server уже включают мой голос; локальный bonus только если выбрал, а сервер ещё не знал.
-  const localBonus = voted && voted !== serverVote ? 1 : 0;
-  const removedFromServer = serverVote && voted !== serverVote ? 1 : 0;
-  const totals = poll.options.reduce((s, o) => s + o.votes, 0) + localBonus - removedFromServer;
+  const voted = poll.myVote && poll.myVote.length > 0 ? poll.myVote[0] : null;
+  const totals = poll.options.reduce((s, o) => s + o.votes, 0);
 
   const onVote = (id: string) => {
     if (poll.closed) return;
-    setVoted(id);
     feedStore.votePoll(postId, [id]);
   };
 
   const onRetract = () => {
-    setVoted(null);
     feedStore.unvotePoll(postId);
   };
 
   const showResults = !!voted || !!poll.closed;
+
 
   return (
     <div className="mx-3 mb-3 rounded-[16px] border border-white/[0.06] bg-black/30 p-4 md:mx-4 md:p-5">
@@ -237,11 +231,10 @@ function PollBlock({ poll, postId }: { poll: FeedPoll; postId: string }) {
 
       <ul className="space-y-2">
         {poll.options.map((opt) => {
-          const addBonus = voted === opt.id && voted !== serverVote ? 1 : 0;
-          const subFromServer = serverVote === opt.id && voted !== serverVote ? 1 : 0;
-          const votes = opt.votes + addBonus - subFromServer;
+          const votes = opt.votes;
           const pct = totals > 0 ? Math.round((votes / totals) * 100) : 0;
           const isMine = voted === opt.id;
+
 
           if (!showResults) {
             return (
@@ -516,10 +509,10 @@ function CommentItem({
   onReply?: () => void;
   onDelete?: () => void;
 }) {
-  const [liked, setLiked] = useState(comment.liked);
+  const liked = comment.liked;
   const user = PUBLIC_USERS[comment.authorSlug];
   const rank = RANK_BY_ID[user?.rank ?? "rookie"];
-  const count = comment.likes + (liked ? 1 : 0) - (comment.liked ? 1 : 0);
+  const count = comment.likes;
 
   return (
     <li className="flex gap-3">
@@ -565,9 +558,7 @@ function CommentItem({
           <button
             type="button"
             onClick={() => {
-              const next = !liked;
-              setLiked(next);
-              feedStore.toggleCommentLike(comment.id, next);
+              feedStore.toggleCommentLike(comment.id, !liked);
             }}
             aria-pressed={liked}
             className={`flex items-center gap-1.5 font-mono text-[10px] font-bold uppercase tracking-wider tabular-nums transition-colors ${
@@ -577,6 +568,7 @@ function CommentItem({
             <HeartIcon filled={liked} size={12} />
             <span>{count}</span>
           </button>
+
           <button
             type="button"
             onClick={onReply}

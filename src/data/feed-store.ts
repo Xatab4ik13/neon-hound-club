@@ -180,6 +180,11 @@ let pending: Promise<void> | null = null;
 const listeners = new Set<() => void>();
 const emit = () => listeners.forEach((l) => l());
 
+function patchPostLocal(id: string, fn: (p: FeedPost) => FeedPost) {
+  POSTS = POSTS.map((p) => (p.id === id ? fn(p) : p));
+  emit();
+}
+
 async function refetch(): Promise<void> {
   if (pending) return pending;
   pending = (async () => {
@@ -229,74 +234,161 @@ export const feedStore = {
   },
 
   async updatePost(id: string, patch: Partial<Pick<FeedPost, "text" | "image" | "pinned">>) {
-    await patchPost(id, {
-      ...(patch.text !== undefined ? { text: patch.text } : {}),
-      ...(patch.image !== undefined ? { imageUrl: patch.image ?? null } : {}),
-      ...(patch.pinned !== undefined ? { pinned: patch.pinned } : {}),
-    });
-    await refetch();
+    const prev = POSTS.find((p) => p.id === id);
+    if (prev) {
+      patchPostLocal(id, (p) => ({
+        ...p,
+        ...(patch.text !== undefined ? { text: patch.text } : {}),
+        ...(patch.image !== undefined ? { image: patch.image } : {}),
+        ...(patch.pinned !== undefined ? { pinned: patch.pinned } : {}),
+      }));
+    }
+    try {
+      await patchPost(id, {
+        ...(patch.text !== undefined ? { text: patch.text } : {}),
+        ...(patch.image !== undefined ? { imageUrl: patch.image ?? null } : {}),
+        ...(patch.pinned !== undefined ? { pinned: patch.pinned } : {}),
+      });
+    } catch {
+      if (prev) patchPostLocal(id, () => prev);
+    }
   },
 
   async removePost(id: string) {
-    await deletePost(id);
+    const prev = POSTS;
     POSTS = POSTS.filter((p) => p.id !== id);
     emit();
+    try {
+      await deletePost(id);
+    } catch {
+      POSTS = prev;
+      emit();
+    }
   },
 
-  async addComment(_postId: string, input: { authorSlug: string; text: string }) {
-    await addCommentApi(_postId, input.text);
-    await refetch();
+  async addComment(postId: string, input: { authorSlug: string; text: string }) {
+    const tempId = `tmp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const optimistic: FeedComment = {
+      id: tempId,
+      authorSlug: input.authorSlug,
+      time: "только что",
+      text: input.text,
+      likes: 0,
+      liked: false,
+    };
+    patchPostLocal(postId, (p) => ({ ...p, comments: [...p.comments, optimistic] }));
+    try {
+      const created = await addCommentApi(postId, input.text);
+      const real = mapComment(created);
+      patchPostLocal(postId, (p) => ({
+        ...p,
+        comments: p.comments.map((c) => (c.id === tempId ? real : c)),
+      }));
+    } catch {
+      patchPostLocal(postId, (p) => ({
+        ...p,
+        comments: p.comments.filter((c) => c.id !== tempId),
+      }));
+    }
   },
 
-  async removeComment(_postId: string, commentId: string) {
-    await deleteCommentApi(commentId);
-    POSTS = POSTS.map((p) =>
-      p.id === _postId ? { ...p, comments: p.comments.filter((c) => c.id !== commentId) } : p,
-    );
-    emit();
+  async removeComment(postId: string, commentId: string) {
+    const prev = POSTS.find((p) => p.id === postId)?.comments ?? [];
+    patchPostLocal(postId, (p) => ({ ...p, comments: p.comments.filter((c) => c.id !== commentId) }));
+    try {
+      await deleteCommentApi(commentId);
+    } catch {
+      patchPostLocal(postId, (p) => ({ ...p, comments: prev }));
+    }
   },
 
   async toggleLike(postId: string, liked: boolean) {
-    // Оптимистично — UI и так держит локальный liked-флаг.
+    const prev = POSTS.find((p) => p.id === postId);
+    if (!prev) return;
+    patchPostLocal(postId, (p) => ({
+      ...p,
+      liked,
+      likes: Math.max(0, prev.likes + (liked ? 1 : 0) - (prev.liked ? 1 : 0)),
+    }));
     try {
       if (liked) await likePost(postId);
       else await unlikePost(postId);
     } catch {
-      /* noop */
+      patchPostLocal(postId, () => prev);
     }
   },
 
   async votePoll(postId: string, optionIds: string[]) {
+    const prev = POSTS.find((p) => p.id === postId);
+    if (!prev || !prev.poll) return;
+    const oldVote = prev.poll.myVote ?? [];
+    const nextPoll: FeedPoll = {
+      ...prev.poll,
+      myVote: optionIds,
+      options: prev.poll.options.map((o) => {
+        const wasMine = oldVote.includes(o.id);
+        const isMine = optionIds.includes(o.id);
+        return { ...o, votes: Math.max(0, o.votes + (isMine ? 1 : 0) - (wasMine ? 1 : 0)) };
+      }),
+    };
+    patchPostLocal(postId, (p) => ({ ...p, poll: nextPoll }));
     try {
       await votePoll(postId, optionIds);
-      await refetch();
     } catch {
-      /* noop */
+      patchPostLocal(postId, () => prev);
     }
   },
 
   async unvotePoll(postId: string) {
+    const prev = POSTS.find((p) => p.id === postId);
+    if (!prev || !prev.poll) return;
+    const oldVote = prev.poll.myVote ?? [];
+    const nextPoll: FeedPoll = {
+      ...prev.poll,
+      myVote: [],
+      options: prev.poll.options.map((o) => ({
+        ...o,
+        votes: Math.max(0, o.votes - (oldVote.includes(o.id) ? 1 : 0)),
+      })),
+    };
+    patchPostLocal(postId, (p) => ({ ...p, poll: nextPoll }));
     try {
       await unvotePoll(postId);
-      await refetch();
     } catch {
-      /* noop */
+      patchPostLocal(postId, () => prev);
     }
   },
 
   async toggleCommentLike(commentId: string, liked: boolean) {
+    const post = POSTS.find((p) => p.comments.some((c) => c.id === commentId));
+    if (!post) return;
+    const prevComment = post.comments.find((c) => c.id === commentId)!;
+    patchPostLocal(post.id, (p) => ({
+      ...p,
+      comments: p.comments.map((c) =>
+        c.id === commentId
+          ? {
+              ...c,
+              liked,
+              likes: Math.max(0, prevComment.likes + (liked ? 1 : 0) - (prevComment.liked ? 1 : 0)),
+            }
+          : c,
+      ),
+    }));
     try {
       if (liked) await likeComment(commentId);
       else await unlikeComment(commentId);
     } catch {
-      /* noop */
+      patchPostLocal(post.id, (p) => ({
+        ...p,
+        comments: p.comments.map((c) => (c.id === commentId ? prevComment : c)),
+      }));
     }
   },
 };
 
 export function useFeedPosts(): FeedPost[] {
   const snap = useSyncExternalStore(feedStore.subscribe, feedStore.getSnapshot, feedStore.getSnapshot);
-  // На клиенте, если ещё не грузили — триггерим один раз.
   useEffect(() => {
     if (!loaded && !pending) refetch();
   }, []);
