@@ -1,0 +1,181 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { RANKS } from "@/data/ranks";
+import { useCurrentRank, useRankState } from "@/data/rank-state";
+import { ME } from "@/data/profile";
+import { Ticket, Trophy, ShoppingBag, Bike } from "lucide-react";
+import { TICKET_LEDGER, summarizeLedger } from "@/data/tickets-ledger";
+import { PageHeader } from "@/components/club/PageHeader";
+
+export const Route = createFileRoute("/club/rank")({
+  head: () => ({
+    meta: [
+      { title: "Ранг и XP — клуб HELLHOUND" },
+      { name: "description", content: "Прогресс по рангам и статистика райдера." },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
+  component: RankPage,
+});
+
+function RankPage() {
+  const { rank, next, xp, xpMax, xpPct, isMax } = useCurrentRank();
+  const isPaid = !!rank.isPaid;
+
+  return (
+    <main className="mx-auto w-full max-w-5xl px-4 py-6 md:px-8 md:py-10">
+      <PageHeader title="Ранг и XP" subtitle={rank.label} />
+
+      {/* XP bar */}
+      <section className="mb-8 border border-white/[0.06] bg-card/40 p-5 md:p-6">
+        <div className="mb-3 flex items-baseline justify-between">
+          <span className="font-display text-2xl font-black italic uppercase tracking-tight" style={{ color: rank.accent }}>
+            {rank.label}
+          </span>
+          {isPaid ? (
+            <span className="font-mono text-xs font-extrabold uppercase tracking-[0.2em]" style={{ color: rank.accent }}>
+              Платный · {rank.priceLabel}
+            </span>
+          ) : isMax ? (
+            <span className="font-mono text-xs font-extrabold uppercase tracking-[0.2em]" style={{ color: rank.accent }}>
+              MAX
+            </span>
+          ) : next ? (
+            <span className="font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground">
+              до{" "}
+              <span className="font-bold" style={{ color: rank.accent }}>
+                {next.label}
+              </span>{" "}
+              ·{" "}
+              <span className="font-bold tabular-nums text-foreground">{xpMax - xp}</span> XP
+            </span>
+          ) : null}
+        </div>
+
+        <div className="relative h-4 overflow-hidden rounded-sm bg-black/55 ring-1 ring-inset ring-white/10">
+          <div
+            className="absolute inset-y-0 left-0 overflow-hidden rounded-sm"
+            style={{
+              width: `${xpPct}%`,
+              backgroundColor: rank.accent,
+              boxShadow: `0 0 12px ${rank.accentSoft}, 0 0 24px ${rank.accentSoft}`,
+            }}
+          >
+            <div
+              aria-hidden
+              className="absolute inset-y-0 w-1/3"
+              style={{
+                background:
+                  "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.55) 50%, transparent 100%)",
+                animation: "xp-shimmer 2.8s ease-in-out infinite",
+              }}
+            />
+          </div>
+        </div>
+        {!isPaid && !isMax && (
+          <div className="mt-3 font-mono text-sm tabular-nums text-muted-foreground">
+            <span className="font-bold text-foreground">{xp.toLocaleString("ru-RU")}</span>
+            <span className="opacity-40"> / </span>
+            <span>{xpMax.toLocaleString("ru-RU")} XP</span>
+          </div>
+        )}
+      </section>
+
+      {/* Stats */}
+      <StatsRow />
+
+      {/* Rank ladder */}
+      <section className="mb-4 mt-10">
+        <h2 className="mb-4 font-display text-xl font-black uppercase italic tracking-tight text-foreground md:text-2xl">
+          Лестница рангов
+        </h2>
+        <RankLadderVertical />
+      </section>
+    </main>
+  );
+}
+
+function StatsRow() {
+  const ticketsBalance = summarizeLedger(TICKET_LEDGER).balance;
+  const items = [
+    { label: "Билеты", value: ticketsBalance, icon: Ticket },
+    { label: "Выигрыши", value: ME.totals.wins, icon: Trophy },
+    { label: "Заказы", value: ME.totals.orders, icon: ShoppingBag },
+    { label: "Байки", value: ME.totals.bikes, icon: Bike },
+  ];
+  return (
+    <section aria-label="Статистика" className="grid grid-cols-2 gap-3 md:grid-cols-4">
+      {items.map(({ label, value, icon: Icon }) => (
+        <div
+          key={label}
+          className="flex items-center gap-3 border border-white/[0.06] bg-card/40 px-4 py-4 transition-colors hover:border-white/[0.12]"
+        >
+          <Icon className="h-6 w-6 text-primary" strokeWidth={1.8} />
+          <div className="flex min-w-0 flex-col">
+            <span className="font-display text-3xl font-black italic leading-none text-foreground tabular-nums">
+              {value}
+            </span>
+            <span className="mt-1 font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+              {label}
+            </span>
+          </div>
+        </div>
+      ))}
+    </section>
+  );
+}
+
+function RankLadderVertical() {
+  const { rankIndex } = useRankState();
+  return (
+    <ul className="flex flex-col gap-2">
+      {RANKS.map((r, i) => {
+        const isPast = i < rankIndex;
+        const isActive = i === rankIndex;
+        const isFuture = i > rankIndex;
+        return (
+          <li
+            key={r.id}
+            className="flex items-center gap-4 border bg-card/40 px-4 py-4 md:px-5"
+            style={{
+              borderColor: isActive ? r.accent : "rgba(255,255,255,0.06)",
+              boxShadow: isActive ? `0 0 0 1px ${r.accentSoft}` : undefined,
+            }}
+          >
+            <div
+              className="grid h-12 w-12 shrink-0 place-items-center font-display text-base font-black italic uppercase"
+              style={{
+                backgroundColor: isActive || isPast ? r.accent : "rgba(255,255,255,0.04)",
+                color: isActive || isPast ? r.onAccent : "rgba(167,167,167,0.6)",
+              }}
+            >
+              {r.short}
+            </div>
+            <div className="min-w-0 flex-1">
+              <div
+                className="font-display text-lg font-black italic uppercase tracking-tight md:text-xl"
+                style={{ color: isFuture ? "rgba(167,167,167,0.7)" : r.accent }}
+              >
+                {r.label}
+              </div>
+              {r.priceLabel ? (
+                <div className="mt-0.5 font-mono text-xs uppercase tracking-wider text-muted-foreground">
+                  Платный · {r.priceLabel}
+                </div>
+              ) : null}
+            </div>
+            {isActive && (
+              <span className="shrink-0 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-primary">
+                Сейчас
+              </span>
+            )}
+            {isPast && (
+              <span className="shrink-0 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                Пройдено
+              </span>
+            )}
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
