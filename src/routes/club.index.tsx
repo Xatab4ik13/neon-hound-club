@@ -335,9 +335,8 @@ function RankAvatar({
   );
 }
 
-function CommentComposer({ postId }: { postId: string }) {
-  const [value, setValue] = useState("");
 // Mock packs — позже заменим на данные из БД
+
 type StickerPack = {
   id: string;
   title: string;
