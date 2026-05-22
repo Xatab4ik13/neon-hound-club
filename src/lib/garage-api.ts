@@ -178,7 +178,7 @@ export function useDeleteBike() {
 
 // ---------- S3 UPLOAD ----------
 
-export type UploadKind = "avatar" | "bike";
+export type UploadKind = "avatar" | "bike" | "post";
 
 type SignResponse = {
   key: string;

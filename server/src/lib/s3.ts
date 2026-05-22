@@ -41,7 +41,7 @@ export async function ensureBucket(): Promise<void> {
   }
 }
 
-export type UploadKind = "avatar" | "bike" | "product" | "raffle" | "shop";
+export type UploadKind = "avatar" | "bike" | "product" | "raffle" | "shop" | "post";
 
 /** Допустимые типы и максимальные размеры по категории. */
 export const UPLOAD_RULES: Record<
@@ -54,6 +54,7 @@ export const UPLOAD_RULES: Record<
   product: { mimes: ["image/jpeg", "image/png", "image/webp"], maxSize: 10 * 1024 * 1024, prefix: "products" },
   raffle: { mimes: ["image/jpeg", "image/png", "image/webp"], maxSize: 10 * 1024 * 1024, prefix: "raffles" },
   shop: { mimes: ["image/jpeg", "image/png", "image/webp", "application/pdf"], maxSize: 10 * 1024 * 1024, prefix: "shop" },
+  post: { mimes: ["image/jpeg", "image/png", "image/webp"], maxSize: 10 * 1024 * 1024, prefix: "posts" },
 };
 
 function extFromMime(mime: string): string {
