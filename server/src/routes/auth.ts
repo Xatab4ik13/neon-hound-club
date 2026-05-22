@@ -77,7 +77,7 @@ export async function authRoutes(app: FastifyInstance) {
     if (!parsed.success) {
       return reply.code(400).send({ error: "invalid_input", message: parsed.error.issues[0]?.message ?? "bad input" });
     }
-    const { email, password, nick } = parsed.data;
+    const { email, password, nick, ref } = parsed.data;
 
     const existing = await db
       .select({ id: users.id, email: users.email, nick: users.nick })
@@ -95,6 +95,12 @@ export async function authRoutes(app: FastifyInstance) {
       .insert(users)
       .values({ email, passwordHash, nick })
       .returning({ id: users.id, email: users.email, nick: users.nick });
+
+    // Создаём реф-код новому юзеру и подвязываем к рефереру, если есть ?ref=.
+    await getOrCreateReferralCode(created.id, created.nick);
+    if (ref) {
+      try { await attachReferral(created.id, ref); } catch (e) { req.log.error({ err: e }, "attachReferral failed"); }
+    }
 
     await issueAndSendVerification(created.id, created.email, created.nick);
 
