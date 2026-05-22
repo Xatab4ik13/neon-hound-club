@@ -12,6 +12,9 @@ import {
   likePost,
   unlikePost,
   votePoll,
+  unvotePoll,
+  likeComment,
+  unlikeComment,
   type FeedPostHydrated,
   type FeedCommentHydrated,
 } from "@/lib/queries";
