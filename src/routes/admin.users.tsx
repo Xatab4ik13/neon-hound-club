@@ -193,9 +193,6 @@ function UserDrawer({
         )
       }
     >
-        )
-      }
-    >
       {userQ.isLoading && <div className="text-sm text-zinc-500">Загрузка…</div>}
       {u && (
         <div className="space-y-5">
