@@ -2,6 +2,7 @@ import { and, eq, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { orders, orderItems, products } from "../db/schema/shop.js";
 import { ticketCredit } from "./tickets.js";
+import { tryCompleteQuest } from "./quests.js";
 
 /**
  * Помечаем заказ оплаченным.
@@ -52,6 +53,10 @@ export async function markOrderPaid(orderId: string): Promise<{ ok: boolean; rea
       idempotent: true,
     });
   }
+
+  // Квест: первый оплаченный заказ.
+  await tryCompleteQuest(order.userId, "first_order");
+
   return { ok: true };
 }
 

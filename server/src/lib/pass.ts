@@ -2,6 +2,7 @@ import { and, desc, eq, gt, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { passPurchases, PASS_CONFIG, PASS_DURATION_DAYS, type PassTier } from "../db/schema/pass.js";
 import { ticketCredit } from "./tickets.js";
+import { tryCompleteQuest } from "./quests.js";
 
 /**
  * Создать запись о покупке пасса (pending_payment).
@@ -53,6 +54,10 @@ export async function activatePassPurchase(purchaseId: string): Promise<{ ok: bo
       idempotent: true,
     });
   }
+
+  // Квест: первая активация пасса любого тира.
+  await tryCompleteQuest(p.userId, "first_pass");
+
   return { ok: true };
 }
 
