@@ -1,5 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
+import { useViewer } from "@/hooks/use-viewer";
+import { ApiError } from "@/lib/api";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
@@ -7,14 +9,12 @@ export const Route = createFileRoute("/login")({
       { title: "Вход в HELLHOUND Racing Club" },
       {
         name: "description",
-        content:
-          "Вход и регистрация в HELLHOUND Racing Club по email или телефону и паролю.",
+        content: "Вход и регистрация в HELLHOUND Racing Club по email и паролю.",
       },
       { property: "og:title", content: "Вход в HELLHOUND Racing Club" },
       {
         property: "og:description",
-        content:
-          "Вход по email или телефону. Регистрация по email и паролю.",
+        content: "Вход по email и паролю. Регистрация по email, нику и паролю.",
       },
     ],
   }),
@@ -26,46 +26,58 @@ type Mode = "login" | "register";
 function isEmail(v: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
 }
-function isPhoneLike(v: string) {
-  const digits = v.replace(/\D/g, "");
-  return digits.length >= 10;
-}
 
 function LoginPage() {
   const navigate = useNavigate();
+  const { signIn, signUp } = useViewer();
   const [mode, setMode] = useState<Mode>("login");
 
   // login state
-  const [identifier, setIdentifier] = useState("");
+  const [loginEmail, setLoginEmail] = useState("");
   const [password, setPassword] = useState("");
 
   // register state
   const [regEmail, setRegEmail] = useState("");
+  const [regNick, setRegNick] = useState("");
   const [regPassword, setRegPassword] = useState("");
   const [regPassword2, setRegPassword2] = useState("");
 
   const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    const id = identifier.trim();
-    if (!id) return setError("Введите email или телефон");
-    if (!isEmail(id) && !isPhoneLike(id))
-      return setError("Это не похоже на email или телефон");
-    if (password.length < 6) return setError("Пароль минимум 6 символов");
-    // Demo: пускаем в клуб
-    setTimeout(() => navigate({ to: "/club" }), 150);
+    if (!isEmail(loginEmail)) return setError("Введите корректный email");
+    if (password.length < 8) return setError("Пароль минимум 8 символов");
+    setBusy(true);
+    try {
+      await signIn(loginEmail, password);
+      navigate({ to: "/club" });
+    } catch (err) {
+      setError(toMessage(err, "Не удалось войти"));
+    } finally {
+      setBusy(false);
+    }
   };
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     if (!isEmail(regEmail)) return setError("Введите корректный email");
-    if (regPassword.length < 6) return setError("Пароль минимум 6 символов");
+    if (!/^[a-zA-Z0-9_]{3,32}$/.test(regNick))
+      return setError("Ник: 3–32 символа, латиница, цифры и _");
+    if (regPassword.length < 8) return setError("Пароль минимум 8 символов");
     if (regPassword !== regPassword2) return setError("Пароли не совпадают");
-    // Demo: пускаем в клуб
-    setTimeout(() => navigate({ to: "/club" }), 150);
+    setBusy(true);
+    try {
+      await signUp(regEmail, regPassword, regNick);
+      navigate({ to: "/club" });
+    } catch (err) {
+      setError(toMessage(err, "Не удалось создать аккаунт"));
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -98,9 +110,7 @@ function LoginPage() {
             {mode === "login" ? "Войти" : "В клуб"}
           </h1>
           <p className="mt-3 font-mono text-[12px] uppercase tracking-[0.2em] text-muted-foreground">
-            {mode === "login"
-              ? "Email или телефон + пароль"
-              : "Регистрация по email и паролю"}
+            {mode === "login" ? "Email и пароль" : "Регистрация: email, ник, пароль"}
           </p>
         </div>
 
@@ -135,13 +145,13 @@ function LoginPage() {
 
         {mode === "login" ? (
           <form onSubmit={handleLogin} className="space-y-5">
-            <FieldLabel label="Email или телефон">
+            <FieldLabel label="Email">
               <input
-                type="text"
-                autoComplete="username"
-                value={identifier}
-                onChange={(e) => setIdentifier(e.target.value)}
-                placeholder="you@example.com или +7 999 123 45 67"
+                type="email"
+                autoComplete="email"
+                value={loginEmail}
+                onChange={(e) => setLoginEmail(e.target.value)}
+                placeholder="you@example.com"
                 className="h-14 w-full border border-white/15 bg-white/[0.02] px-4 font-mono text-base tracking-wider text-white outline-none transition-colors placeholder:text-white/20 focus:border-primary focus:bg-white/[0.04]"
               />
             </FieldLabel>
@@ -168,11 +178,7 @@ function LoginPage() {
 
             {error && <ErrorLine>{error}</ErrorLine>}
 
-            <SubmitButton>Войти</SubmitButton>
-
-            <p className="font-mono text-[11px] leading-relaxed text-muted-foreground">
-              Вход по телефону работает, если номер указан в профиле.
-            </p>
+            <SubmitButton busy={busy}>Войти</SubmitButton>
           </form>
         ) : (
           <form onSubmit={handleRegister} className="space-y-5">
@@ -187,13 +193,24 @@ function LoginPage() {
               />
             </FieldLabel>
 
+            <FieldLabel label="Ник">
+              <input
+                type="text"
+                autoComplete="username"
+                value={regNick}
+                onChange={(e) => setRegNick(e.target.value)}
+                placeholder="asphalt_dog"
+                className="h-14 w-full border border-white/15 bg-white/[0.02] px-4 font-mono text-base tracking-wider text-white outline-none transition-colors placeholder:text-white/20 focus:border-primary focus:bg-white/[0.04]"
+              />
+            </FieldLabel>
+
             <FieldLabel label="Пароль">
               <input
                 type="password"
                 autoComplete="new-password"
                 value={regPassword}
                 onChange={(e) => setRegPassword(e.target.value)}
-                placeholder="минимум 6 символов"
+                placeholder="минимум 8 символов"
                 className="h-14 w-full border border-white/15 bg-white/[0.02] px-4 font-mono text-base tracking-wider text-white outline-none transition-colors placeholder:text-white/20 focus:border-primary focus:bg-white/[0.04]"
               />
             </FieldLabel>
@@ -211,10 +228,10 @@ function LoginPage() {
 
             {error && <ErrorLine>{error}</ErrorLine>}
 
-            <SubmitButton>Создать аккаунт</SubmitButton>
+            <SubmitButton busy={busy}>Создать аккаунт</SubmitButton>
 
             <p className="font-mono text-[11px] leading-relaxed text-muted-foreground">
-              Телефон, ник и адрес доставки заполняются в личном кабинете после регистрации.
+              Телефон и адрес доставки заполняются в личном кабинете после регистрации.
             </p>
           </form>
         )}
@@ -230,6 +247,12 @@ function LoginPage() {
       </div>
     </main>
   );
+}
+
+function toMessage(err: unknown, fallback: string): string {
+  if (err instanceof ApiError) return err.message || fallback;
+  if (err instanceof Error) return err.message || fallback;
+  return fallback;
 }
 
 function FieldLabel({ label, children }: { label: string; children: React.ReactNode }) {
@@ -251,18 +274,19 @@ function ErrorLine({ children }: { children: React.ReactNode }) {
   );
 }
 
-function SubmitButton({ children }: { children: React.ReactNode }) {
+function SubmitButton({ children, busy }: { children: React.ReactNode; busy?: boolean }) {
   return (
     <button
       type="submit"
-      className="group relative block w-full overflow-hidden bg-primary py-6 text-center font-display text-2xl italic uppercase font-bold tracking-widest text-black transition-all duration-300 active:scale-[0.97]"
+      disabled={busy}
+      className="group relative block w-full overflow-hidden bg-primary py-6 text-center font-display text-2xl italic uppercase font-bold tracking-widest text-black transition-all duration-300 active:scale-[0.97] disabled:opacity-60"
       style={{ clipPath: "polygon(0 15%, 100% 0, 100% 100%, 0 85%)" }}
     >
       <span
         aria-hidden
         className="absolute inset-0 bg-white opacity-0 transition-opacity group-hover:opacity-10"
       />
-      <span className="relative z-10">{children}</span>
+      <span className="relative z-10">{busy ? "..." : children}</span>
     </button>
   );
 }
