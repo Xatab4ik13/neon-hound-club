@@ -43,6 +43,13 @@
       "when": 1779520000000,
       "tag": "0005_profile_garage",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1779530000000,
+      "tag": "0006_quests",
+      "breakpoints": true
     }
   ]
 }

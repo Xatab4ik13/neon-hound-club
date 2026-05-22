@@ -5,13 +5,22 @@ import { db } from "../db/client.js";
 import { users } from "../db/schema/users.js";
 import { profiles, bikes } from "../db/schema/profile.js";
 import { requireAuth, type SessionPayload } from "../lib/auth.js";
+import { isOurS3Url, deleteByPublicUrl } from "../lib/s3.js";
+import { tryCompleteQuest } from "../lib/quests.js";
+
+/** Проверка: URL либо null, либо ведёт на наш S3-бакет. */
+const ourS3Url = z
+  .string()
+  .url()
+  .refine((u) => isOurS3Url(u), { message: "Файл нужно загрузить через нашу форму загрузки" });
+
 
 // ---------- PROFILE ----------
 
 const patchProfileSchema = z.object({
   phone: z.string().trim().min(5).max(32).nullable().optional(),
   city: z.string().trim().min(1).max(80).nullable().optional(),
-  avatarUrl: z.string().url().nullable().optional(),
+  avatarUrl: ourS3Url.nullable().optional(),
   bio: z.string().max(1000).nullable().optional(),
   instagram: z
     .string()
@@ -81,10 +90,29 @@ export async function profileRoutes(app: FastifyInstance) {
     const session = req.user as SessionPayload;
     await ensureProfile(session.sub);
 
+    // Если меняется avatarUrl — найдём старый и удалим из S3 после успешного апдейта.
+    let oldAvatarToDelete: string | null = null;
+    if (parsed.data.avatarUrl !== undefined) {
+      const [prev] = await db
+        .select({ avatarUrl: profiles.avatarUrl })
+        .from(profiles)
+        .where(eq(profiles.userId, session.sub))
+        .limit(1);
+      if (prev?.avatarUrl && prev.avatarUrl !== parsed.data.avatarUrl) {
+        oldAvatarToDelete = prev.avatarUrl;
+      }
+    }
+
     await db
       .update(profiles)
       .set({ ...parsed.data, updatedAt: new Date() })
       .where(eq(profiles.userId, session.sub));
+
+    if (oldAvatarToDelete) await deleteByPublicUrl(oldAvatarToDelete);
+
+    // Условный квест: профиль заполнен (аватар + город + телефон + bio >=10).
+    await tryCompleteQuest(session.sub, "profile_complete");
+
     return { ok: true };
   });
 
@@ -135,7 +163,7 @@ const createBikeSchema = z.object({
   color: z.string().trim().max(40).nullable().optional(),
   nickname: z.string().trim().max(60).nullable().optional(),
   notes: z.string().max(5000).nullable().optional(),
-  photos: z.array(z.string().url()).max(20).default([]),
+  photos: z.array(ourS3Url).max(20).default([]),
   isPrimary: z.boolean().default(false),
 });
 
@@ -200,6 +228,10 @@ export async function garageRoutes(app: FastifyInstance) {
         isPrimary: shouldBePrimary,
       })
       .returning();
+
+    // Квест: первая мото в гараже.
+    if (c === 0) await tryCompleteQuest(session.sub, "first_bike");
+
     return reply.code(201).send(row);
   });
 
@@ -221,11 +253,21 @@ export async function garageRoutes(app: FastifyInstance) {
         .where(and(eq(bikes.userId, session.sub), eq(bikes.isPrimary, true)));
     }
 
+    // Если photos обновили — удалим из S3 ушедшие фото.
+    let removedPhotos: string[] = [];
+    if (d.photos !== undefined) {
+      const newSet = new Set(d.photos);
+      removedPhotos = b.photos.filter((u) => !newSet.has(u));
+    }
+
     const [row] = await db
       .update(bikes)
       .set({ ...d, updatedAt: new Date() })
       .where(eq(bikes.id, req.params.id))
       .returning();
+
+    for (const url of removedPhotos) await deleteByPublicUrl(url);
+
     return row;
   });
 
@@ -236,6 +278,10 @@ export async function garageRoutes(app: FastifyInstance) {
     if (!b || b.userId !== session.sub) return reply.code(404).send({ error: "not_found" });
 
     await db.delete(bikes).where(eq(bikes.id, req.params.id));
+
+    // Подчистим фото в S3.
+    for (const url of b.photos ?? []) await deleteByPublicUrl(url);
+
 
     // если удалили primary и остались другие — назначим самого свежего основным
     if (b.isPrimary) {

@@ -66,6 +66,10 @@ export async function buildApp() {
   const { mediaRoutes } = await import("./routes/media.js");
   await app.register(mediaRoutes, { prefix: "/media" });
 
+  const { questsRoutes, adminQuestsRoutes } = await import("./routes/quests.js");
+  await app.register(questsRoutes, { prefix: "/api/v1/quests" });
+  await app.register(adminQuestsRoutes, { prefix: "/api/v1/admin/quests" });
+
   // Создаём S3-бакет, если его ещё нет.
   try {
     const { ensureBucket } = await import("./lib/s3.js");
@@ -73,6 +77,15 @@ export async function buildApp() {
     app.log.info("s3 bucket ready");
   } catch (e) {
     app.log.error({ err: e }, "ensureBucket failed");
+  }
+
+  // Сидим стартовые квесты (идемпотентно по code).
+  try {
+    const { seedQuests } = await import("./lib/quests.js");
+    await seedQuests();
+    app.log.info("quests seeded");
+  } catch (e) {
+    app.log.error({ err: e }, "seedQuests failed");
   }
 
   return app;

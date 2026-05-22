@@ -48,7 +48,8 @@ export const UPLOAD_RULES: Record<
   UploadKind,
   { mimes: readonly string[]; maxSize: number; prefix: string }
 > = {
-  avatar: { mimes: ["image/jpeg", "image/png", "image/webp"], maxSize: 5 * 1024 * 1024, prefix: "avatars" },
+  // Аватар: до 15 МБ — чтобы юзер мог загрузить большое фото с телефона и обрезать кружок на фронте.
+  avatar: { mimes: ["image/jpeg", "image/png", "image/webp"], maxSize: 15 * 1024 * 1024, prefix: "avatars" },
   bike: { mimes: ["image/jpeg", "image/png", "image/webp"], maxSize: 8 * 1024 * 1024, prefix: "bikes" },
   product: { mimes: ["image/jpeg", "image/png", "image/webp"], maxSize: 10 * 1024 * 1024, prefix: "products" },
   raffle: { mimes: ["image/jpeg", "image/png", "image/webp"], maxSize: 10 * 1024 * 1024, prefix: "raffles" },
@@ -108,3 +109,21 @@ export function keyFromPublicUrl(url: string | null | undefined): string | null 
   if (!url.startsWith(prefix)) return null;
   return url.slice(prefix.length);
 }
+
+/** URL принадлежит нашему медиа-хранилищу? */
+export function isOurS3Url(url: string | null | undefined): boolean {
+  if (!url) return false;
+  return url.startsWith(S3_PUBLIC_URL + "/");
+}
+
+/** Удалить объект по публичному URL, если он наш. Молча проглатывает ошибки. */
+export async function deleteByPublicUrl(url: string | null | undefined): Promise<void> {
+  const key = keyFromPublicUrl(url);
+  if (!key) return;
+  try {
+    await deleteObject(key);
+  } catch {
+    // объект мог уже отсутствовать — не падаем
+  }
+}
+

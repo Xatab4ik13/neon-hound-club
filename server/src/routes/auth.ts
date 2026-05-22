@@ -15,6 +15,7 @@ import {
 } from "../lib/auth.js";
 import { sendMail } from "../lib/mailer.js";
 import { verifyEmailTemplate } from "../lib/email-templates/verify.js";
+import { tryCompleteQuest } from "../lib/quests.js";
 
 const emailSchema = z.string().trim().toLowerCase().email().max(255);
 const passwordSchema = z.string().min(8).max(128);
@@ -168,6 +169,10 @@ export async function authRoutes(app: FastifyInstance) {
     // авто-логин после подтверждения
     const payload: SessionPayload = { sub: u.id, role: u.role as "user" | "admin", nick: u.nick };
     await setSessionCookie(reply, payload);
+
+    // Квест: подтвердил email.
+    await tryCompleteQuest(u.id, "verify_email");
+
     return reply.send({ ok: true, user: u });
   });
 
