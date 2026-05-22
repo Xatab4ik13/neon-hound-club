@@ -50,6 +50,16 @@ export type AdminUserDetail = AdminUserListItem & {
   ticketsBalance: number;
   ticketsEarned: number;
   activePass: PassRecord | null;
+  xpTotal: number;
+  rank: {
+    rankIndex: number;
+    rankId: string;
+    rankLabel: string;
+    xpTotal: number;
+    isMax: boolean;
+    inRank: number;
+    pct: number;
+  };
 };
 
 export function fetchAdminUsers(q?: string) {
@@ -69,6 +79,10 @@ export function patchAdminUser(
     `/api/v1/admin/users/${id}`,
     { method: "PATCH", body: JSON.stringify(patch) },
   );
+}
+
+export function deleteAdminUser(id: string) {
+  return apiFetch<{ ok: true }>(`/api/v1/admin/users/${id}`, { method: "DELETE" });
 }
 
 export type CreateAdminUserInput = {
