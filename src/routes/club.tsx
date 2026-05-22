@@ -841,7 +841,7 @@ export function ProfilePlaque({
     <Link
       to="/club/me"
       onClick={onNavigate}
-      aria-label={`Профиль ${ME.nick}, ${rank.label}, ${xp} из ${xpMax} XP`}
+      aria-label={`Профиль ${nick}, ${rank.label}, ${xp} из ${xpMax} XP`}
       className={`group relative flex min-w-0 items-center gap-3 transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98] ${
         compact ? "w-full min-w-0" : "w-full"
       }`}
@@ -870,7 +870,7 @@ export function ProfilePlaque({
             className={`font-display font-black italic uppercase ${compact ? "text-base" : "text-lg"}`}
             style={{ color: rank.onAccent }}
           >
-            {ME.nick.slice(0, 2)}
+            {nick.slice(0, 2)}
           </span>
         </div>
       </div>
@@ -897,7 +897,7 @@ export function ProfilePlaque({
               compact ? "text-[15px]" : "text-[17px]"
             }`}
           >
-            {ME.nick}
+            {nick}
           </span>
         </div>
 
