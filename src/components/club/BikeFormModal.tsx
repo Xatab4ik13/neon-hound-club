@@ -22,11 +22,18 @@ type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   bike: StoredBike | null; // null = create
-  onSave: (bike: StoredBike) => void;
+  /**
+   * Сохранение байка.
+   * - bike: текущая форма (photo — либо http(s) URL уже на S3, либо dataURL-превью)
+   * - photoFile: если юзер выбрал новый файл — передаём File для загрузки в S3.
+   * Возвращает Promise: на время аплоада форма блокируется.
+   */
+  onSave: (bike: StoredBike, photoFile?: File | null) => void | Promise<void>;
 };
 
-const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
+const MAX_PHOTO_BYTES = 15 * 1024 * 1024; // 15 МБ — большие фото для кропа
 const YEARS = getYears();
+
 
 export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
   const [brand, setBrand] = useState("");
