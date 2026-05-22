@@ -1,14 +1,13 @@
 // Компактный блок челленджей для дашборда. Показывает summary + 3 ближайших.
-// Использует новую модель Quest с раздельными XP и билетами.
 
 import { Link } from "@tanstack/react-router";
 import { ArrowRight, Flag, Sparkles, Ticket } from "lucide-react";
 import {
-  CURRENT_SEASON,
+  CLUB_QUESTS,
   ladderEarnedXp,
   questCompleted,
   questPct,
-  seasonSummary,
+  questsSummary,
   type Quest,
 } from "@/data/quests";
 
@@ -25,15 +24,15 @@ function pickTop(quests: Quest[]) {
 }
 
 export function QuestsBlock() {
-  const top = pickTop(CURRENT_SEASON.quests);
-  const s = seasonSummary(CURRENT_SEASON);
+  const top = pickTop(CLUB_QUESTS);
+  const s = questsSummary(CLUB_QUESTS);
 
   return (
     <section aria-label="Челленджи клуба" className="mb-10">
       <div className="mb-3 flex items-baseline justify-between">
         <div className="flex items-baseline gap-3">
           <h2 className="font-display text-sm font-black uppercase italic tracking-widest text-foreground">
-            Челленджи · {CURRENT_SEASON.label}
+            Челленджи клуба
           </h2>
           <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
             {s.done}/{s.total} выполнено
@@ -51,17 +50,16 @@ export function QuestsBlock() {
       <div className="border border-white/[0.06] bg-card/40">
         <div className="flex flex-wrap items-center gap-x-6 gap-y-2 border-b border-white/[0.06] px-4 py-3">
           <div className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-primary" strokeWidth={1.8} />
+            <Flag className="h-4 w-4 text-primary" strokeWidth={1.8} />
             <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-              Опыт:{" "}
+              Выполнено:{" "}
               <span className="font-bold text-foreground tabular-nums">
-                +{s.xpEarned}
-              </span>{" "}
-              XP
+                {s.done}/{s.total}
+              </span>
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <Flag className="h-4 w-4 text-primary" strokeWidth={1.8} />
+            <Ticket className="h-4 w-4 text-primary" strokeWidth={1.8} />
             <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
               Билеты:{" "}
               <span className="font-bold text-foreground tabular-nums">
@@ -71,7 +69,7 @@ export function QuestsBlock() {
           </div>
           {s.ticketsAvailable > 0 && (
             <div className="flex items-center gap-2">
-              <Ticket className="h-4 w-4 text-yellow-400" strokeWidth={1.8} />
+              <Sparkles className="h-4 w-4 text-yellow-400" strokeWidth={1.8} />
               <span className="font-mono text-[11px] uppercase tracking-wider text-yellow-400">
                 К получению:{" "}
                 <span className="font-bold tabular-nums">{s.ticketsAvailable}</span>
