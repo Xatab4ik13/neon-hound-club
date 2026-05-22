@@ -1,10 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { RANKS } from "@/data/ranks";
-import { useCurrentRank, useRankState } from "@/data/rank-state";
-import { ME } from "@/data/profile";
+import { useQuery } from "@tanstack/react-query";
 import { Ticket, Trophy, ShoppingBag, Bike } from "lucide-react";
-import { TICKET_LEDGER, summarizeLedger } from "@/data/tickets-ledger";
+import { RANKS } from "@/data/ranks";
 import { PageHeader } from "@/components/club/PageHeader";
+import { useViewer } from "@/hooks/use-viewer";
+import { useMyProfile, useBikes } from "@/lib/garage-api";
+import {
+  qk,
+  fetchTicketsBalance,
+  fetchMyRaffles,
+  fetchMyOrders,
+} from "@/lib/queries";
 
 export const Route = createFileRoute("/club/rank")({
   head: () => ({
@@ -18,8 +24,18 @@ export const Route = createFileRoute("/club/rank")({
 });
 
 function RankPage() {
-  const { rank, next, xp, xpMax, xpPct, isMax } = useCurrentRank();
+  const viewer = useViewer();
+  const profile = useMyProfile(viewer.isAuthed);
 
+  const r = profile.data?.rank;
+  const rankIndex = r?.rankIndex ?? 0;
+  const rank = RANKS[rankIndex];
+  const next = RANKS[rankIndex + 1] ?? null;
+  const isMax = r?.isMax ?? false;
+  const xp = r?.inRank ?? 0;
+  const xpMax = r?.span ?? 0;
+  const xpPct = r?.pct ?? 0;
+  const toNext = r?.toNext ?? 0;
 
   return (
     <main className="mx-auto w-full max-w-5xl px-4 py-6 md:px-8 md:py-10">
@@ -28,29 +44,34 @@ function RankPage() {
       {/* XP bar */}
       <section className="mb-8 border border-white/[0.06] bg-card/40 p-5 md:p-6">
         <div className="mb-3 flex items-baseline justify-between">
-          <span className="font-display text-2xl font-black italic uppercase tracking-tight" style={{ color: rank.accent }}>
+          <span
+            className="font-display text-2xl font-black italic uppercase tracking-tight"
+            style={{ color: rank.accent }}
+          >
             {rank.label}
           </span>
           {isMax ? (
-            <span className="font-mono text-xs font-extrabold uppercase tracking-[0.2em]" style={{ color: rank.accent }}>
+            <span
+              className="font-mono text-xs font-extrabold uppercase tracking-[0.2em]"
+              style={{ color: rank.accent }}
+            >
               MAX
             </span>
           ) : next ? (
-
             <span className="font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground">
               до{" "}
               <span className="font-bold" style={{ color: rank.accent }}>
                 {next.label}
               </span>{" "}
               ·{" "}
-              <span className="font-bold tabular-nums text-foreground">{xpMax - xp}</span> XP
+              <span className="font-bold tabular-nums text-foreground">{toNext}</span> XP
             </span>
           ) : null}
         </div>
 
         <div className="relative h-4 overflow-hidden rounded-sm bg-black/55 ring-1 ring-inset ring-white/10">
           <div
-            className="absolute inset-y-0 left-0 overflow-hidden rounded-sm"
+            className="absolute inset-y-0 left-0 overflow-hidden rounded-sm transition-[width] duration-500"
             style={{
               width: `${xpPct}%`,
               backgroundColor: rank.accent,
@@ -78,27 +99,63 @@ function RankPage() {
       </section>
 
       {/* Stats */}
-      <StatsRow />
+      <StatsRow isAuthed={viewer.isAuthed} />
 
       {/* Rank ladder */}
       <section className="mb-4 mt-10">
         <h2 className="mb-4 font-display text-xl font-black uppercase italic tracking-tight text-foreground md:text-2xl">
           Лестница рангов
         </h2>
-        <RankLadderVertical />
+        <RankLadderVertical rankIndex={rankIndex} />
       </section>
     </main>
   );
 }
 
-function StatsRow() {
-  const ticketsBalance = summarizeLedger(TICKET_LEDGER).balance;
+function StatsRow({ isAuthed }: { isAuthed: boolean }) {
+  const balanceQ = useQuery({
+    queryKey: qk.ticketsBalance,
+    queryFn: fetchTicketsBalance,
+    enabled: isAuthed,
+    staleTime: 30_000,
+  });
+  const rafflesQ = useQuery({
+    queryKey: qk.myRaffles,
+    queryFn: fetchMyRaffles,
+    enabled: isAuthed,
+    staleTime: 30_000,
+  });
+  const ordersQ = useQuery({
+    queryKey: qk.shopOrders,
+    queryFn: fetchMyOrders,
+    enabled: isAuthed,
+    staleTime: 30_000,
+  });
+  const bikesQ = useBikes(isAuthed);
+
   const items = [
-    { label: "Билеты", value: ticketsBalance, icon: Ticket },
-    { label: "Выигрыши", value: ME.totals.wins, icon: Trophy },
-    { label: "Заказы", value: ME.totals.orders, icon: ShoppingBag },
-    { label: "Байки", value: ME.totals.bikes, icon: Bike },
+    {
+      label: "Билеты",
+      value: balanceQ.data?.balance ?? 0,
+      icon: Ticket,
+    },
+    {
+      label: "Выигрыши",
+      value: rafflesQ.data?.items.filter((r) => r.won).length ?? 0,
+      icon: Trophy,
+    },
+    {
+      label: "Заказы",
+      value: ordersQ.data?.items.length ?? 0,
+      icon: ShoppingBag,
+    },
+    {
+      label: "Байки",
+      value: bikesQ.data?.length ?? 0,
+      icon: Bike,
+    },
   ];
+
   return (
     <section aria-label="Статистика" className="grid grid-cols-2 gap-3 md:grid-cols-4">
       {items.map(({ label, value, icon: Icon }) => (
@@ -121,8 +178,7 @@ function StatsRow() {
   );
 }
 
-function RankLadderVertical() {
-  const { rankIndex } = useRankState();
+function RankLadderVertical({ rankIndex }: { rankIndex: number }) {
   return (
     <ul className="flex flex-col gap-2">
       {RANKS.map((r, i) => {
