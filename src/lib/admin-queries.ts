@@ -71,6 +71,37 @@ export function patchAdminUser(
   );
 }
 
+export type CreateAdminUserInput = {
+  email: string;
+  password: string;
+  nick: string;
+  role?: "user" | "admin" | "blogger";
+  emailVerified?: boolean;
+};
+
+export function createAdminUser(input: CreateAdminUserInput) {
+  return apiFetch<{ id: string; email: string; nick: string; role: string }>(
+    `/api/v1/admin/users/`,
+    { method: "POST", body: JSON.stringify(input) },
+  );
+}
+
+export type AdminUserBadge = {
+  id: string;
+  badgeId: string;
+  code: string;
+  name: string;
+  rarity: AdminBadge["rarity"];
+  category: AdminBadge["category"];
+  awardedAt: string;
+};
+
+export function fetchAdminUserBadges(userId: string) {
+  return apiFetch<{ items: AdminUserBadge[] }>(`/api/v1/admin/users/${userId}/badges`);
+}
+
+
+
 // ---------- SHOP ADMIN ----------
 
 export type CreateProductInput = {
