@@ -18,6 +18,10 @@ import {
 import { ME } from "@/data/profile";
 import { type PlaqueBg } from "@/data/ranks";
 import { useCurrentRank } from "@/data/rank-state";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { MobileTabBar } from "@/components/club/MobileTabBar";
+import { MobileTopBar } from "@/components/club/MobileTopBar";
+import { MobileTransition } from "@/components/club/MobileTransition";
 
 export const Route = createFileRoute("/club")({
   head: () => ({
@@ -54,6 +58,25 @@ const NAV: { label: string; href: string; icon: LucideIcon; final?: boolean }[] 
 function ClubLayout() {
   const [menuOpen, setMenuOpen] = useState(false);
   const { pathname } = useLocation();
+  const isMobile = useIsMobile();
+
+  // Mobile shell — iOS-app feel: top bar + push/pop transition + bottom tab bar.
+  if (isMobile) {
+    return (
+      <div className="min-h-screen bg-background text-foreground">
+        <MobileTopBar />
+        <main
+          className="relative"
+          style={{ paddingBottom: "calc(52px + env(safe-area-inset-bottom) + 8px)" }}
+        >
+          <MobileTransition>
+            <Outlet />
+          </MobileTransition>
+        </main>
+        <MobileTabBar />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background text-foreground">
