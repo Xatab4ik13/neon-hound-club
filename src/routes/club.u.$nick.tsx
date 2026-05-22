@@ -1,4 +1,4 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, Bike, Calendar, MapPin, Trophy } from "lucide-react";
 import { BadgeIcon } from "@/components/club/BadgeIcon";
 import { BADGES, RARITY } from "@/data/badges";
