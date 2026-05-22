@@ -52,11 +52,12 @@ function ClubFeedPage() {
 // ───────── Post ─────────
 
 export function PostCard({ post, moderate = false }: { post: Post; moderate?: boolean }) {
-  const [liked, setLiked] = useState(post.liked);
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const likeCount = post.likes + (liked ? 1 : 0) - (post.liked ? 1 : 0);
+  const liked = post.liked;
+  const likeCount = post.likes;
   const author = PUBLIC_USERS[post.authorSlug];
+
 
   return (
     <article className="overflow-hidden rounded-[24px] border border-white/[0.06] bg-card/60 shadow-[0_8px_40px_rgba(0,0,0,0.4)] transition-colors hover:border-white/[0.10]">
