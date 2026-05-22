@@ -354,4 +354,39 @@ body[data-modal-open="1"] [class*="plaque-"] {
   border-radius: 2px;
 }
 
+/* ── Hide all scrollbars (keep scroll behavior) — iOS-app feel ──────────── */
+* {
+  scrollbar-width: none;          /* Firefox */
+  -ms-overflow-style: none;       /* IE 10+ */
+}
+*::-webkit-scrollbar {
+  width: 0 !important;
+  height: 0 !important;
+  display: none;                  /* Safari / Chrome */
+}
+
+/* ── Mobile: smooth momentum scroll + iOS no-zoom on inputs ─────────────── */
+@media (max-width: 767px) {
+  html, body {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+    text-size-adjust: 100%;
+    -webkit-text-size-adjust: 100%;
+  }
+  /* iOS Safari zooms the page when an input focused has font-size < 16px.
+     Force 16px on every editable element on mobile — это «текст не пишется нормально». */
+  input:not([type="checkbox"]):not([type="radio"]),
+  textarea,
+  select,
+  [contenteditable="true"] {
+    font-size: 16px !important;
+    line-height: 1.35;
+  }
+  /* Kill the iOS gray tap highlight — we already have :active scale states */
+  a, button, [role="button"], [tabindex] {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+
 
