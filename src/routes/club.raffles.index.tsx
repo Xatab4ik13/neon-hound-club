@@ -71,7 +71,7 @@ function RafflesPage() {
     <main className="mx-auto w-full max-w-3xl px-4 py-5 md:py-8">
       <PageHeader title="Розыгрыши" subtitle="Лоты клуба и архив" />
 
-      {/* Balance pill */}
+      {/* Balance pill — без покупки билетов: подсказка ведёт на «как набрать» */}
       <section
         aria-label="Баланс"
         className="mb-5 flex items-center justify-between gap-3 rounded-2xl border border-primary/25 bg-gradient-to-br from-primary/10 via-card/60 to-black px-4 py-3"
@@ -90,12 +90,13 @@ function RafflesPage() {
           </span>
         </Link>
         <Link
-          to="/shop"
+          to="/club/tickets"
           className="shrink-0 rounded-full border border-primary/40 px-3 py-1.5 font-mono text-[11px] font-bold uppercase tracking-wider text-primary active:scale-95"
         >
-          Докупить
+          Как набрать
         </Link>
       </section>
+
 
       {/* Активные — крупные карточки в сетке */}
       <section aria-label="Активные розыгрыши" className="mb-7">
