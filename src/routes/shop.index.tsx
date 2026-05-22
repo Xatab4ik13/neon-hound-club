@@ -480,6 +480,18 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
         </span>
       </div>
 
+      {product.ticketsBonus && product.ticketsBonus > 0 ? (
+        <div className="flex items-center gap-1.5 border-t border-border/60 px-4 py-2.5">
+          <span
+            aria-hidden
+            className="inline-block h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_8px_hsl(var(--primary)/0.7)]"
+          />
+          <span className="font-mono text-[11px] uppercase tracking-widest text-primary">
+            +{product.ticketsBonus} {ticketsWord(product.ticketsBonus)} в подарок
+          </span>
+        </div>
+      ) : null}
+
     </Link>
   );
 }
