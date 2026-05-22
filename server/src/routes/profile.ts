@@ -7,6 +7,7 @@ import { profiles, bikes } from "../db/schema/profile.js";
 import { requireAuth, type SessionPayload } from "../lib/auth.js";
 import { isOurS3Url, deleteByPublicUrl } from "../lib/s3.js";
 import { tryCompleteQuest } from "../lib/quests.js";
+import { getXpTotal, computeRank } from "../lib/xp.js";
 
 /** Проверка: URL либо null, либо ведёт на наш S3-бакет. */
 const ourS3Url = z
@@ -79,7 +80,10 @@ export async function profileRoutes(app: FastifyInstance) {
       .from(bikes)
       .where(eq(bikes.userId, session.sub));
 
-    return { ...row, bikesCount };
+    const xpTotal = await getXpTotal(session.sub);
+    const rank = computeRank(xpTotal);
+
+    return { ...row, bikesCount, xpTotal, rank };
   });
 
   // PATCH /api/v1/profile/me — частичное обновление
@@ -137,6 +141,9 @@ export async function profileRoutes(app: FastifyInstance) {
       .from(bikes)
       .where(eq(bikes.userId, u.id));
 
+    const xpTotal = await getXpTotal(u.id);
+    const rank = computeRank(xpTotal);
+
     return {
       nick: u.nick,
       role: u.role,
@@ -148,6 +155,8 @@ export async function profileRoutes(app: FastifyInstance) {
       telegram: p?.telegram ?? null,
       youtube: p?.youtube ?? null,
       bikesCount,
+      xpTotal,
+      rank,
       primaryBike: primary
         ? {
             brand: primary.brand,
