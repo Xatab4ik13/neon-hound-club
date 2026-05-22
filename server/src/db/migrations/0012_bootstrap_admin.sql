@@ -1,6 +1,7 @@
 -- Bootstrap главного админа Hell. Идемпотентно: если email уже есть — апгрейдим
 -- роль до admin, помечаем email подтверждённым и обновляем хеш пароля.
 -- Email: ez4boost@gmail.com, пароль: Ez360811632 (bcrypt cost 12).
+-- Профиль создаётся лениво при первом GET /profile/me, тут не трогаем.
 
 INSERT INTO users (email, password_hash, nick, role, email_verified, email_verified_at)
 VALUES (
@@ -12,16 +13,9 @@ VALUES (
   now()
 )
 ON CONFLICT (email) DO UPDATE SET
-  password_hash    = EXCLUDED.password_hash,
-  role             = 'admin',
-  email_verified   = true,
+  password_hash     = EXCLUDED.password_hash,
+  role              = 'admin',
+  email_verified    = true,
   email_verified_at = COALESCE(users.email_verified_at, now()),
-  blocked          = false,
-  updated_at       = now();
-
--- Профиль на всякий случай (если триггера/логики авто-создания нет на этом этапе).
-INSERT INTO profiles (user_id, nick, referral_code)
-SELECT u.id, u.nick, u.nick
-FROM users u
-WHERE u.email = 'ez4boost@gmail.com'
-ON CONFLICT (user_id) DO NOTHING;
+  blocked           = false,
+  updated_at        = now();
