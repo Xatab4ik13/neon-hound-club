@@ -2,15 +2,15 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, Check, Flag, Sparkles, Ticket } from "lucide-react";
 import {
   CATEGORY_LABEL,
-  CURRENT_SEASON,
+  CLUB_QUESTS,
   ladderEarnedXp,
   nextLadderStep,
   questCompleted,
   questPct,
-  seasonSummary,
+  questsSummary,
   type Quest,
+  type QuestCategory,
 } from "@/data/quests";
-import { Countdown } from "@/components/club/Countdown";
 
 export const Route = createFileRoute("/club/quests")({
   head: () => ({
@@ -28,10 +28,10 @@ export const Route = createFileRoute("/club/quests")({
 });
 
 function QuestsPage() {
-  const s = seasonSummary(CURRENT_SEASON);
+  const s = questsSummary(CLUB_QUESTS);
   const categories = Array.from(
-    new Set(CURRENT_SEASON.quests.map((q) => q.category)),
-  );
+    new Set(CLUB_QUESTS.map((q) => q.category)),
+  ) as QuestCategory[];
 
   return (
     <main className="mx-auto w-full max-w-5xl px-4 py-6 md:px-8 md:py-10">
@@ -45,10 +45,10 @@ function QuestsPage() {
 
       <header className="mb-8 border border-white/[0.06] bg-card/40 p-6 md:p-8">
         <div className="font-mono text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
-          Сезон · {CURRENT_SEASON.label}
+          Челленджи клуба
         </div>
         <h1 className="mt-2 font-display text-3xl font-black uppercase italic tracking-tight text-foreground md:text-4xl">
-          Челленджи клуба
+          Прокачка
         </h1>
         <p className="mt-2 max-w-xl text-sm text-muted-foreground">
           Выполняй задания — получай XP и билеты. Если пройдёшь все базовые
@@ -58,35 +58,21 @@ function QuestsPage() {
 
         <div className="mt-5 grid gap-4 sm:grid-cols-3">
           <Stat label="Выполнено" value={`${s.done}/${s.total}`} icon={Flag} />
-          <Stat label="Опыт за сезон" value={`+${s.xpEarned} XP`} icon={Sparkles} />
-          <div className="border border-white/[0.06] bg-black/30 p-3">
-            <div className="font-mono text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
-              Сезон закроется через
-            </div>
-            <div className="mt-2">
-              <Countdown deadlineAt={CURRENT_SEASON.endsAt} variant="tactical" />
-            </div>
-          </div>
+          <Stat
+            label="Билетов получено"
+            value={`${s.ticketsEarned}`}
+            icon={Ticket}
+          />
+          <Stat
+            label="К получению"
+            value={`${s.ticketsAvailable}`}
+            icon={Sparkles}
+          />
         </div>
-
-        {(s.ticketsEarned > 0 || s.ticketsAvailable > 0) && (
-          <div className="mt-4 flex flex-wrap items-center gap-4 border-t border-white/[0.06] pt-4 font-mono text-[11px] uppercase tracking-wider">
-            <span className="text-muted-foreground">
-              Билетов заработано:{" "}
-              <span className="font-bold text-foreground">{s.ticketsEarned}</span>
-            </span>
-            {s.ticketsAvailable > 0 && (
-              <span className="text-yellow-400">
-                К получению:{" "}
-                <span className="font-bold">{s.ticketsAvailable}</span>
-              </span>
-            )}
-          </div>
-        )}
       </header>
 
       {categories.map((cat) => {
-        const items = CURRENT_SEASON.quests.filter((q) => q.category === cat);
+        const items = CLUB_QUESTS.filter((q) => q.category === cat);
         return (
           <section key={cat} className="mb-10">
             <h2 className="mb-3 font-display text-sm font-black uppercase italic tracking-widest text-foreground">
