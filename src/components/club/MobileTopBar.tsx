@@ -101,7 +101,7 @@ export function MobileTopBar() {
         <div className="ml-auto flex w-20 items-center justify-end gap-1">
           {isShop && (
             <Link
-              to="/cart"
+              to="/club/cart"
               aria-label="Корзина"
               className="relative flex h-8 w-8 items-center justify-center text-foreground active:opacity-60"
             >

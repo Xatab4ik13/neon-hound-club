@@ -108,7 +108,7 @@ function ProductPage() {
     hhToast.success("Добавлено в корзину", {
       meta: `${product.name}${size ? ` · ${size}` : ""} × ${qty}`,
     });
-    if (goToCart) navigate({ to: "/cart" });
+    if (goToCart) navigate({ to: "/club/cart" });
   };
 
   const next = () => setSlide((s) => (s + 1) % gallery.length);
