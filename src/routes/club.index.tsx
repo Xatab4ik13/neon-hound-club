@@ -564,7 +564,11 @@ function CommentItem({
         <div className="mt-1.5 flex items-center gap-4 pl-1">
           <button
             type="button"
-            onClick={() => setLiked((v) => !v)}
+            onClick={() => {
+              const next = !liked;
+              setLiked(next);
+              feedStore.toggleCommentLike(comment.id, next);
+            }}
             aria-pressed={liked}
             className={`flex items-center gap-1.5 font-mono text-[10px] font-bold uppercase tracking-wider tabular-nums transition-colors ${
               liked ? "text-primary" : "text-muted-foreground/70 hover:text-primary"
