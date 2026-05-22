@@ -55,8 +55,8 @@ export async function markOrderPaid(orderId: string): Promise<{ ok: boolean; rea
     });
   }
 
-  // +XP: 1 XP за 100 ₽ (totalPrice в копейках)
-  const xp = Math.max(10, Math.floor((order.totalPrice ?? 0) / 100 / 100));
+  // +XP: 1 XP за 100 ₽
+  const xp = Math.max(10, Math.floor((order.totalRub ?? 0) / 100));
   await awardXp({
     userId: order.userId,
     amount: xp,
