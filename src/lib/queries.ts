@@ -131,7 +131,62 @@ export const qk = {
   shopProduct: (slug: string) => ["shop", "product", slug] as const,
   shopOrders: ["shop", "orders"] as const,
   shopOrder: (id: string) => ["shop", "order", id] as const,
+  raffles: ["raffles", "list"] as const,
+  raffle: (id: string) => ["raffles", "item", id] as const,
+  myRaffles: ["raffles", "my"] as const,
 };
+
+// ---------- RAFFLES ----------
+
+export type RaffleStatus = "draft" | "active" | "finished" | "cancelled";
+
+export type RaffleListItem = {
+  id: string;
+  title: string;
+  description: string;
+  imageUrl: string | null;
+  prize: string;
+  ticketCost: number;
+  maxEntriesPerUser: number | null;
+  startsAt: string;
+  endsAt: string;
+  status: RaffleStatus;
+  winnerUserId: string | null;
+  winnerEntryId: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type RaffleDetail = RaffleListItem & {
+  totalEntries: number;
+  myEntries: number;
+  winnerNick: string | null;
+};
+
+export type MyRaffleItem = RaffleListItem & {
+  myEntries: number;
+  won: boolean;
+  winnerNick: string | null;
+};
+
+export async function fetchRaffles() {
+  return apiFetch<{ items: RaffleListItem[] }>("/api/v1/raffles/");
+}
+
+export async function fetchRaffle(id: string) {
+  return apiFetch<RaffleDetail>(`/api/v1/raffles/${id}`);
+}
+
+export async function fetchMyRaffles() {
+  return apiFetch<{ items: MyRaffleItem[] }>("/api/v1/raffles/my");
+}
+
+export async function enterRaffle(id: string) {
+  return apiFetch<{ ok: true; entryId: string; balance: number }>(
+    `/api/v1/raffles/${id}/enter`,
+    { method: "POST" },
+  );
+}
 
 // ---------- TICKETS ----------
 
