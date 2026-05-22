@@ -488,6 +488,16 @@ export function votePoll(postId: string, optionIds: string[]) {
     body: JSON.stringify({ optionIds }),
   });
 }
+export function unvotePoll(postId: string) {
+  return apiFetch<{ ok: true }>(`/api/v1/feed/${postId}/vote`, { method: "DELETE" });
+}
+
+export function likeComment(commentId: string) {
+  return apiFetch<{ ok: true }>(`/api/v1/feed/comments/${commentId}/like`, { method: "POST" });
+}
+export function unlikeComment(commentId: string) {
+  return apiFetch<{ ok: true }>(`/api/v1/feed/comments/${commentId}/like`, { method: "DELETE" });
+}
 
 // Blogger / Admin
 export function createPost(input: CreatePostInput) {
