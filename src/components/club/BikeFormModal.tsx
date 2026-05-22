@@ -150,18 +150,19 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
       return;
     }
     if (file.size > MAX_PHOTO_BYTES) {
-      setPhotoError("Файл больше 5 МБ");
+      setPhotoError("Файл больше 15 МБ");
       return;
     }
+    setPhotoFile(file);
     const reader = new FileReader();
     reader.onload = () => setPhoto(String(reader.result));
     reader.onerror = () => setPhotoError("Не удалось прочитать файл");
     reader.readAsDataURL(file);
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!brand.trim() || !model.trim()) return;
+    if (!brand.trim() || !model.trim() || submitting) return;
     const result: StoredBike = {
       id: bike?.id ?? newBikeId(),
       brand: brand.trim(),
@@ -175,9 +176,17 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
       mods: mods.length > 0 ? mods : undefined,
       photo: photo || undefined,
     };
-    onSave(result);
-    onOpenChange(false);
+    try {
+      setSubmitting(true);
+      await onSave(result, photoFile);
+      onOpenChange(false);
+    } catch (err) {
+      setPhotoError(err instanceof Error ? err.message : "Не удалось сохранить");
+    } finally {
+      setSubmitting(false);
+    }
   }
+
 
   const isMobile = useIsMobile();
   const canSubmit = !!brand.trim() && !!model.trim();
