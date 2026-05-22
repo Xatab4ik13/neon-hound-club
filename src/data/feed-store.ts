@@ -134,6 +134,7 @@ function mapComment(c: FeedCommentHydrated): FeedComment {
     time: formatRelative(c.createdAt),
     text: c.text,
     likes: c.likes,
+    liked: c.liked,
   };
 }
 
@@ -160,10 +161,12 @@ function mapPost(p: FeedPostWithComments): FeedPost {
           anonymous: p.poll.anonymous,
           multi: p.poll.multi,
           closed: p.poll.closed,
+          myVote: p.poll.myVote,
           options: p.poll.results.map((o) => ({ id: o.id, text: o.text, votes: o.votes })),
         }
       : undefined,
     likes: p.likes,
+    liked: p.liked,
     comments: (p.comments ?? []).map(mapComment),
   };
 }
