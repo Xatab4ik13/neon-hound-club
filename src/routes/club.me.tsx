@@ -405,14 +405,8 @@ function ProfileHero({ onSettings }: { onSettings: () => void }) {
               >
                 {rank.label}
               </Link>
-              {isPaid ? (
-                <span
-                  className="font-mono text-[11px] font-extrabold uppercase tracking-[0.2em]"
-                  style={{ color: rank.accent }}
-                >
-                  {rank.priceLabel}
-                </span>
-              ) : isMax ? (
+              {isMax ? (
+
                 <span
                   className="font-mono text-[11px] font-extrabold uppercase tracking-[0.2em]"
                   style={{ color: rank.accent }}
