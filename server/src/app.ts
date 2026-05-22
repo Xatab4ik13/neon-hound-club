@@ -40,5 +40,9 @@ export async function buildApp() {
   const { authRoutes } = await import("./routes/auth.js");
   await app.register(authRoutes, { prefix: "/api/v1/auth" });
 
+  const { ticketsRoutes, adminTicketsRoutes } = await import("./routes/tickets.js");
+  await app.register(ticketsRoutes, { prefix: "/api/v1/tickets" });
+  await app.register(adminTicketsRoutes, { prefix: "/api/v1/admin/tickets" });
+
   return app;
 }
