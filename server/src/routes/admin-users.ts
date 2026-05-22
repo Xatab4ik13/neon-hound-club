@@ -6,7 +6,10 @@ import { users } from "../db/schema/users.js";
 import { profiles } from "../db/schema/profile.js";
 import { passPurchases } from "../db/schema/pass.js";
 import { ticketsLedger } from "../db/schema/tickets.js";
-import { requireAdmin } from "../lib/auth.js";
+import { badges, userBadges } from "../db/schema/badges.js";
+import { requireAdmin, hashPassword } from "../lib/auth.js";
+import { getOrCreateReferralCode } from "../lib/referrals.js";
+
 
 /**
  * Админка юзеров: список + поиск, карточка с агрегатами, смена роли, блокировка.
@@ -137,4 +140,72 @@ export async function adminUsersRoutes(app: FastifyInstance) {
     if (!row) return reply.code(404).send({ error: "not_found" });
     return row;
   });
+
+  // POST /api/v1/admin/users — создать юзера вручную (без письма-подтверждения)
+  const createSchema = z.object({
+    email: z.string().trim().toLowerCase().email().max(255),
+    password: z.string().min(8).max(128),
+    nick: z
+      .string()
+      .trim()
+      .min(3)
+      .max(24)
+      .regex(/^[a-zA-Z0-9_]+$/, "Только латиница, цифры и _"),
+    role: z.enum(["user", "admin", "blogger"]).default("user"),
+    emailVerified: z.boolean().default(true),
+  });
+
+  app.post("/", async (req, reply) => {
+    const parsed = createSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return reply.code(400).send({ error: "invalid_input", message: parsed.error.issues[0]?.message });
+    }
+    const { email, password, nick, role, emailVerified } = parsed.data;
+
+    const existing = await db
+      .select({ id: users.id, email: users.email, nick: users.nick })
+      .from(users)
+      .where(or(eq(users.email, email), sql`lower(${users.nick}) = lower(${nick})`))
+      .limit(1);
+    if (existing.length) {
+      const code = existing[0].email === email ? "email_taken" : "nick_taken";
+      return reply.code(409).send({ error: code });
+    }
+
+    const passwordHash = await hashPassword(password);
+    const [created] = await db
+      .insert(users)
+      .values({
+        email,
+        passwordHash,
+        nick,
+        role,
+        emailVerified,
+        emailVerifiedAt: emailVerified ? new Date() : null,
+      })
+      .returning({ id: users.id, email: users.email, nick: users.nick, role: users.role });
+
+    await getOrCreateReferralCode(created.id, created.nick);
+    return reply.code(201).send(created);
+  });
+
+  // GET /api/v1/admin/users/:id/badges — значки конкретного юзера
+  app.get<{ Params: { id: string } }>("/:id/badges", async (req) => {
+    const rows = await db
+      .select({
+        id: userBadges.id,
+        badgeId: badges.id,
+        code: badges.code,
+        name: badges.name,
+        rarity: badges.rarity,
+        category: badges.category,
+        awardedAt: userBadges.awardedAt,
+      })
+      .from(userBadges)
+      .innerJoin(badges, eq(badges.id, userBadges.badgeId))
+      .where(eq(userBadges.userId, req.params.id))
+      .orderBy(desc(userBadges.awardedAt));
+    return { items: rows };
+  });
 }
+
