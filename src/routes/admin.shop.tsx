@@ -480,6 +480,38 @@ function ProductModal({
           <TextInput value={p.name} onChange={(e) => setP({ ...p, name: e.target.value })} />
         </Field>
         <Field
+          label="Тип товара"
+          hint="«Физический» — на оформлении спросим адрес и контакты для доставки. «Цифровой» — только email для чека (доступ выдаётся автоматически)."
+        >
+          <div className="grid grid-cols-2 gap-2">
+            {([
+              { v: "physical", title: "Физический", sub: "Нужна доставка" },
+              { v: "digital", title: "Цифровой", sub: "Только email для чека" },
+            ] as const).map((opt) => {
+              const active = p.kind === opt.v;
+              return (
+                <button
+                  key={opt.v}
+                  type="button"
+                  onClick={() => setP({ ...p, kind: opt.v })}
+                  className={cn(
+                    "rounded-md border px-3 py-2.5 text-left transition-colors",
+                    active
+                      ? "border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900"
+                      : "border-zinc-200 bg-white hover:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-600",
+                  )}
+                >
+                  <div className="text-sm font-semibold">{opt.title}</div>
+                  <div className={cn("text-[11px]", active ? "opacity-80" : "text-zinc-500 dark:text-zinc-400")}>
+                    {opt.sub}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </Field>
+
+        <Field
           label="Описание"
           hint="Можно отдельно упомянуть, сколько билетов получит покупатель — это будет видно в карточке товара."
         >
