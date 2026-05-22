@@ -64,6 +64,19 @@ export const postPollVotes = pgTable(
   (t) => ({ pk: primaryKey({ columns: [t.postId, t.userId, t.optionId] }) }),
 );
 
+export const commentLikes = pgTable(
+  "comment_likes",
+  {
+    commentId: uuid("comment_id").notNull().references(() => postComments.id, { onDelete: "cascade" }),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.commentId, t.userId] }),
+    commentIdx: index("comment_likes_comment_idx").on(t.commentId),
+  }),
+);
+
 export type Post = typeof posts.$inferSelect;
 export type NewPost = typeof posts.$inferInsert;
 export type PostComment = typeof postComments.$inferSelect;
