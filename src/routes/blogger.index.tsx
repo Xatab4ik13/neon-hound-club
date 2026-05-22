@@ -149,13 +149,13 @@ function Composer() {
         />
       </div>
 
-      {image && (
+      {imagePreview && (
         <div className="px-3 pb-3">
           <div className="relative overflow-hidden rounded-[16px] border border-white/[0.05] bg-black">
-            <img loading="lazy" decoding="async" src={image} alt="" className="max-h-[420px] w-full object-contain" />
+            <img loading="lazy" decoding="async" src={imagePreview} alt="" className="max-h-[420px] w-full object-contain" />
             <button
               type="button"
-              onClick={() => setImage(undefined)}
+              onClick={clearImage}
               aria-label="Удалить фото"
               className="absolute right-3 top-3 grid h-8 w-8 place-items-center rounded-full bg-black/70 text-foreground hover:bg-black"
             >
