@@ -403,10 +403,12 @@ function CommentsSheet({
   open,
   onOpenChange,
   post,
+  moderate = false,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   post: Post;
+  moderate?: boolean;
 }) {
   const [replyTo, setReplyTo] = useState<{ nick: string; commentId: string } | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
@@ -451,6 +453,13 @@ function CommentsSheet({
                       nick: PUBLIC_USERS[c.authorSlug]?.nick ?? c.authorSlug,
                       commentId: c.id,
                     })
+                  }
+                  onDelete={
+                    moderate
+                      ? () => {
+                          if (confirm("Удалить комментарий?")) feedStore.removeComment(post.id, c.id);
+                        }
+                      : undefined
                   }
                 />
               ))}
