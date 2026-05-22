@@ -1101,8 +1101,11 @@ function Fab({ onClick }: { onClick: () => void }) {
     <button
       type="button"
       onClick={onClick}
-      className="fixed right-4 z-30 grid h-14 w-14 place-items-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/40 active:scale-95"
-      style={{ bottom: "calc(env(safe-area-inset-bottom) + 76px)" }}
+      className="fixed z-30 grid h-14 w-14 place-items-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/40 active:scale-95"
+      style={{
+        bottom: "calc(env(safe-area-inset-bottom) + 76px)",
+        right: "max(1rem, calc(50vw - 20rem))",
+      }}
       aria-label="Добавить"
     >
       <Plus className="h-6 w-6" strokeWidth={2.5} />
