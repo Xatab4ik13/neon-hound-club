@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import {
   LayoutDashboard,
   Trophy,
+  Target,
   Users,
   ShoppingBag,
   Ticket,
