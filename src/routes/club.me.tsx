@@ -1,12 +1,33 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { Bike, Calendar, ChevronRight, LogOut, MapPin, Pencil, Settings } from "lucide-react";
+import {
+  Bike,
+  Calendar,
+  ChevronRight,
+  Gem,
+  Image as ImageIcon,
+  LogOut,
+  MapPin,
+  Pencil,
+  Settings,
+  Check,
+  Lock,
+} from "lucide-react";
 import { SettingsModal } from "@/components/club/SettingsModal";
 import { BadgeCase } from "@/components/club/BadgeCase";
 import { ME } from "@/data/profile";
-import { useCurrentRank } from "@/data/rank-state";
+import {
+  useCurrentRank,
+  useRankState,
+  setCustomPlaqueBg,
+  getAvailablePlaqueBgs,
+  getPlaqueBgRankIndex,
+} from "@/data/rank-state";
+import { usePassState } from "@/data/pass-state";
+import { RANKS, type PlaqueBg } from "@/data/ranks";
 import { PlaqueBackground } from "./club";
 import { IOSListSection, IOSListRow } from "@/components/ios/IOSList";
+import { IOSSheet } from "@/components/ios/IOSSheet";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 export const Route = createFileRoute("/club/me")({
@@ -20,9 +41,32 @@ export const Route = createFileRoute("/club/me")({
   component: MePage,
 });
 
+// Подписи фонов для выбора. Ключи совпадают с PlaqueBg.
+const BG_LABELS: Record<PlaqueBg, string> = {
+  rider: "Базовый",
+  "pit-diamond": "Алмазы",
+  "pit-carbon": "Карбон",
+  "pit-hazard": "Хазард",
+  "captain-speedlines": "Спидлайны",
+  "captain-sweep": "Хром-свип",
+  "captain-halftone": "Хэлфтон",
+  "alpha-aurora": "Аврора",
+  "alpha-grid": "Сетка",
+  "alpha-claw": "Коготь",
+  "legend-inferno": "Инферно",
+  "legend-storm": "Шторм",
+  "legend-chrome": "Хром",
+  "legend-molten-gold": "Жидкое золото",
+  "legend-cyber-rune": "Кибер-руна",
+  "legend-holo-prism": "Голо-призма",
+  "vip-platinum": "VIP Платина",
+};
+
 function MePage() {
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [bgSheetOpen, setBgSheetOpen] = useState(false);
   const isMobile = useIsMobile();
+  const { tierInfo } = usePassState();
 
   const handleLogout = () => {
     if (typeof window !== "undefined" && window.confirm("Выйти из клуба?")) {
@@ -33,6 +77,37 @@ function MePage() {
   return (
     <main className="mx-auto w-full max-w-3xl px-4 py-6 md:px-8 md:py-10">
       <ProfileHero onSettings={() => setSettingsOpen(true)} />
+
+      {/* Hell Pass */}
+      <section aria-label="Hell Pass" className="mt-6 md:mt-10">
+        {isMobile ? (
+          <IOSListSection title="Подписка">
+            <PassRow tier={tierInfo} />
+            <IOSListRow
+              icon={<ImageIcon className="h-5 w-5" />}
+              label="Фон профиля"
+              description="Открытые визуалы по твоему рангу"
+              chevron
+              onClick={() => setBgSheetOpen(true)}
+            />
+          </IOSListSection>
+        ) : (
+          <>
+            <h2 className="mb-4 font-display text-2xl font-black italic uppercase tracking-tight text-foreground md:text-3xl">
+              Подписка
+            </h2>
+            <div className="space-y-2">
+              <PassDesktopRow tier={tierInfo} />
+              <ActionRow
+                icon={<ImageIcon className="h-5 w-5" />}
+                label="Фон профиля"
+                description="Открытые визуалы по твоему рангу"
+                onClick={() => setBgSheetOpen(true)}
+              />
+            </div>
+          </>
+        )}
+      </section>
 
       <section aria-label="Значки" className="mt-8 md:mt-12">
         <h2 className="mb-4 font-display text-2xl font-black italic uppercase tracking-tight text-foreground md:text-3xl">
@@ -86,7 +161,174 @@ function MePage() {
       </section>
 
       <SettingsModal open={settingsOpen} onOpenChange={setSettingsOpen} />
+      <BackgroundPickerSheet open={bgSheetOpen} onOpenChange={setBgSheetOpen} />
     </main>
+  );
+}
+
+function PassRow({ tier }: { tier: ReturnType<typeof usePassState>["tierInfo"] }) {
+  if (!tier) {
+    return (
+      <IOSListRow
+        icon={<Gem className="h-5 w-5" />}
+        label="Без подписки"
+        description="Открой Hell Pass и забери бонусы"
+        chevron
+        to="/club/hell-pass"
+      />
+    );
+  }
+  return (
+    <IOSListRow
+      icon={<Gem className="h-5 w-5" style={{ color: tier.color }} />}
+      label={
+        <span className="flex items-center gap-2">
+          Hell Pass
+          <span
+            className="inline-flex items-center rounded-md px-1.5 py-0.5 font-mono text-[10px] font-extrabold uppercase tracking-[0.15em]"
+            style={{
+              backgroundColor: `color-mix(in oklab, ${tier.color} 18%, transparent)`,
+              color: tier.color,
+              border: `1px solid color-mix(in oklab, ${tier.color} 40%, transparent)`,
+            }}
+          >
+            {tier.name}
+          </span>
+        </span>
+      }
+      description={tier.tagline}
+      chevron
+      to={`/club/hell-pass/${tier.slug}`}
+    />
+  );
+}
+
+function PassDesktopRow({ tier }: { tier: ReturnType<typeof usePassState>["tierInfo"] }) {
+  if (!tier) {
+    return (
+      <ActionRow
+        icon={<Gem className="h-5 w-5" />}
+        label="Без подписки"
+        description="Открой Hell Pass и забери бонусы"
+        to="/club/hell-pass"
+      />
+    );
+  }
+  return (
+    <Link
+      to="/club/hell-pass/$tier"
+      params={{ tier: tier.slug }}
+      className="group flex w-full items-center gap-4 border border-white/[0.06] bg-card/40 px-4 py-4 text-left transition-colors hover:border-primary/40 hover:bg-white/[0.03] md:px-5"
+    >
+      <span className="shrink-0" style={{ color: tier.color }}>
+        <Gem className="h-5 w-5" />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="flex items-center gap-2">
+          <span className="font-display text-base font-black italic uppercase tracking-tight text-foreground md:text-lg">
+            Hell Pass
+          </span>
+          <span
+            className="inline-flex items-center rounded-md px-2 py-0.5 font-mono text-[11px] font-extrabold uppercase tracking-[0.2em]"
+            style={{
+              backgroundColor: `color-mix(in oklab, ${tier.color} 18%, transparent)`,
+              color: tier.color,
+              border: `1px solid color-mix(in oklab, ${tier.color} 40%, transparent)`,
+            }}
+          >
+            {tier.name}
+          </span>
+        </span>
+        <span className="mt-0.5 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
+          {tier.tagline}
+        </span>
+      </span>
+      <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+    </Link>
+  );
+}
+
+function BackgroundPickerSheet({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+}) {
+  const { rankIndex, customPlaqueBg } = useRankState();
+  const { rank } = useCurrentRank();
+  const available = getAvailablePlaqueBgs(rankIndex);
+  // полный список — чтобы показать заблокированные тоже
+  const allBgs: PlaqueBg[] = Object.keys(BG_LABELS) as PlaqueBg[];
+  const activeBg: PlaqueBg = customPlaqueBg ?? rank.plaqueBg;
+
+  return (
+    <IOSSheet open={open} onOpenChange={onOpenChange} title="Фон профиля" fullHeight>
+      <div className="space-y-5">
+        <p className="px-1 font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
+          Выбери визуал плашки. Новые фоны открываются с прокачкой ранга. У VIP — всё.
+        </p>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          {allBgs.map((bg) => {
+            const unlocked = available.includes(bg);
+            const isActive = bg === activeBg;
+            const requiredRankIdx = getPlaqueBgRankIndex(bg);
+            const requiredRank = RANKS[requiredRankIdx];
+            return (
+              <button
+                key={bg}
+                type="button"
+                disabled={!unlocked}
+                onClick={() => {
+                  if (!unlocked) return;
+                  // если выбрали дефолт ранга — сбрасываем кастом
+                  setCustomPlaqueBg(bg === rank.plaqueBg ? null : bg);
+                }}
+                className={`group relative aspect-[4/3] overflow-hidden rounded-xl border text-left transition-all ${
+                  isActive
+                    ? "border-primary ring-2 ring-primary/50"
+                    : unlocked
+                      ? "border-white/[0.08] hover:border-white/30"
+                      : "border-white/[0.05] opacity-55"
+                }`}
+              >
+                <PlaqueBackground bg={bg} />
+                <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
+                <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 p-2">
+                  <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-foreground">
+                    {BG_LABELS[bg]}
+                  </span>
+                  {isActive ? (
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                      <Check className="h-3 w-3" strokeWidth={3} />
+                    </span>
+                  ) : !unlocked ? (
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-black/70 text-muted-foreground">
+                      <Lock className="h-3 w-3" />
+                    </span>
+                  ) : null}
+                </div>
+                {!unlocked && (
+                  <div className="absolute left-2 top-2 rounded-sm bg-black/70 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider text-muted-foreground">
+                    {requiredRank.short}
+                  </div>
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {customPlaqueBg && (
+          <button
+            type="button"
+            onClick={() => setCustomPlaqueBg(null)}
+            className="w-full rounded-xl border border-white/[0.08] bg-card/40 px-4 py-3 font-mono text-[12px] font-bold uppercase tracking-wider text-muted-foreground transition-colors hover:text-foreground"
+          >
+            Сбросить к фону ранга
+          </button>
+        )}
+      </div>
+    </IOSSheet>
   );
 }
 
@@ -228,25 +470,24 @@ function ActionRow({
   label,
   description,
   onClick,
+  to,
   tone = "default",
 }: {
   icon: React.ReactNode;
   label: string;
   description?: string;
   onClick?: () => void;
+  to?: string;
   tone?: "default" | "danger";
 }) {
   const isDanger = tone === "danger";
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`group flex w-full items-center gap-4 border bg-card/40 px-4 py-4 text-left transition-colors md:px-5 ${
-        isDanger
-          ? "border-white/[0.06] hover:border-red-500/40 hover:bg-red-500/[0.04]"
-          : "border-white/[0.06] hover:border-primary/40 hover:bg-white/[0.03]"
-      }`}
-    >
+  const cls = `group flex w-full items-center gap-4 border bg-card/40 px-4 py-4 text-left transition-colors md:px-5 ${
+    isDanger
+      ? "border-white/[0.06] hover:border-red-500/40 hover:bg-red-500/[0.04]"
+      : "border-white/[0.06] hover:border-primary/40 hover:bg-white/[0.03]"
+  }`;
+  const inner = (
+    <>
       <span
         className={`shrink-0 ${isDanger ? "text-red-400/80 group-hover:text-red-400" : "text-primary"}`}
       >
@@ -271,6 +512,18 @@ function ActionRow({
           isDanger ? "text-red-400/60" : "text-muted-foreground"
         }`}
       />
+    </>
+  );
+  if (to) {
+    return (
+      <Link to={to} className={cls}>
+        {inner}
+      </Link>
+    );
+  }
+  return (
+    <button type="button" onClick={onClick} className={cls}>
+      {inner}
     </button>
   );
 }
