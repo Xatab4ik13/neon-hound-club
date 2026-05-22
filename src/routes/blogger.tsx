@@ -34,6 +34,24 @@ function BloggerLayout() {
   const { pathname } = useLocation();
   const profile = useBloggerProfile();
   const isMobile = useIsMobile();
+  const viewer = useViewer();
+  const navigate = useNavigate();
+
+  // В кабинет блогера пускаем только blogger/admin. Остальных — в /club или /login.
+  useEffect(() => {
+    if (!viewer.hydrated) return;
+    if (!viewer.user) {
+      navigate({ to: "/login", replace: true });
+      return;
+    }
+    if (viewer.user.role !== "blogger" && viewer.user.role !== "admin") {
+      navigate({ to: "/club", replace: true });
+    }
+  }, [viewer.hydrated, viewer.user, navigate]);
+
+  if (!viewer.hydrated || !viewer.user || (viewer.user.role !== "blogger" && viewer.user.role !== "admin")) {
+    return <div className="min-h-screen bg-background" />;
+  }
 
   // Mobile shell — iOS-app feel: top bar + push/pop transition + bottom tab bar.
   if (isMobile) {
