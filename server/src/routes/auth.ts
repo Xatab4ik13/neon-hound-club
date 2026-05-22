@@ -16,6 +16,8 @@ import {
 import { sendMail } from "../lib/mailer.js";
 import { verifyEmailTemplate } from "../lib/email-templates/verify.js";
 import { tryCompleteQuest } from "../lib/quests.js";
+import { attachReferral, activateReferral, getOrCreateReferralCode } from "../lib/referrals.js";
+import { awardXp } from "../lib/xp.js";
 
 const emailSchema = z.string().trim().toLowerCase().email().max(255);
 const passwordSchema = z.string().min(8).max(128);
@@ -30,6 +32,7 @@ const registerSchema = z.object({
   email: emailSchema,
   password: passwordSchema,
   nick: nickSchema,
+  ref: z.string().trim().max(40).optional(),
 });
 
 const loginSchema = z.object({
