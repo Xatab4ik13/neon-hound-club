@@ -10,6 +10,8 @@ import {
 
 export type CartItem = {
   id: string; // slug + size
+  /** uuid товара из бэкенда. Нужен, чтобы оформить заказ. Для исторических локальных позиций может быть undefined. */
+  productId?: string;
   slug: string;
   name: string;
   price: number;
@@ -18,7 +20,6 @@ export type CartItem = {
   qty: number;
   /** Цифровые товары: сколько билетов на розыгрыши начисляется за 1 шт. */
   ticketsBonus?: number;
-
 };
 
 type CartContextValue = {

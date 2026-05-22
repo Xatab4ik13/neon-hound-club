@@ -1,11 +1,14 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, MapPin, Ticket, Truck, User } from "lucide-react";
 import { PageHeader } from "@/components/club/PageHeader";
 import { useCart } from "@/hooks/use-cart";
 import { useViewer } from "@/hooks/use-viewer";
-import { ME } from "@/data/profile";
 import { formatRuPhone } from "@/lib/phone";
+import { createOrder, qk } from "@/lib/queries";
+import { ApiError } from "@/lib/api";
+import { hhToast } from "@/lib/hh-toast";
 
 export const Route = createFileRoute("/club/checkout")({
   head: () => ({
@@ -39,19 +42,19 @@ function readProfile(): Partial<CheckoutProfile> {
 
 function ClubCheckoutPage() {
   const { items, total, clear } = useCart();
-  const { isAuthed } = useViewer();
+  const { isAuthed, user } = useViewer();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const [form, setForm] = useState<CheckoutProfile>({
-    name: ME.nick ?? "",
+    name: user?.nick ?? "",
     phone: "",
-    email: "",
-    city: ME.city ?? "",
+    email: user?.email ?? "",
+    city: "",
     address: "",
   });
-  const [submitting, setSubmitting] = useState(false);
 
-  // Гидрация из ЛК / прошлого заказа
+  // Гидрация из прошлого заказа
   useEffect(() => {
     const saved = readProfile();
     setForm((f) => ({
@@ -62,6 +65,16 @@ function ClubCheckoutPage() {
       address: saved.address || f.address,
     }));
   }, []);
+
+  // Подхватываем актуальный профиль, когда он подгрузится
+  useEffect(() => {
+    if (!user) return;
+    setForm((f) => ({
+      ...f,
+      name: f.name || user.nick || "",
+      email: f.email || user.email || "",
+    }));
+  }, [user]);
 
   // Гард
   useEffect(() => {
@@ -74,34 +87,63 @@ function ClubCheckoutPage() {
     [items],
   );
 
+  const orderableItems = useMemo(
+    () => items.filter((i) => Boolean(i.productId)),
+    [items],
+  );
+  
+
   const set = <K extends keyof CheckoutProfile>(k: K, v: string) =>
     setForm((f) => ({ ...f, [k]: v }));
 
+  const mutation = useMutation({
+    mutationFn: createOrder,
+    onSuccess: (order) => {
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(PROFILE_KEY, JSON.stringify(form));
+      }
+      clear();
+      queryClient.invalidateQueries({ queryKey: qk.shopOrders });
+      queryClient.invalidateQueries({ queryKey: qk.ticketsBalance });
+      const shortId = order.id.slice(0, 8).toUpperCase();
+      navigate({
+        to: "/checkout/success",
+        search: { o: shortId, t: ticketsTotal },
+      });
+    },
+    onError: (err) => {
+      const msg = err instanceof ApiError ? err.message : "Не удалось оформить заказ";
+      hhToast.error("Ошибка оформления", { meta: msg });
+    },
+  });
+
   const canSubmit =
-    form.name.trim() &&
-    form.phone.trim() &&
-    form.email.trim() &&
-    form.city.trim() &&
-    form.address.trim();
+    form.name.trim().length >= 2 &&
+    form.phone.trim().length >= 5 &&
+    form.city.trim().length >= 1 &&
+    form.address.trim().length >= 3 &&
+    orderableItems.length > 0 &&
+    !mutation.isPending;
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!canSubmit) return;
-    setSubmitting(true);
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem(PROFILE_KEY, JSON.stringify(form));
-    }
-    const orderId = `HH-${Date.now().toString(36).toUpperCase().slice(-6)}`;
-    setTimeout(() => {
-      clear();
-      navigate({
-        to: "/checkout/success",
-        search: { o: orderId, t: ticketsTotal },
-      });
-    }, 600);
+    mutation.mutate({
+      items: orderableItems.map((i) => ({ productId: i.productId!, qty: i.qty })),
+      shipping: {
+        fio: form.name.trim(),
+        phone: form.phone.trim(),
+        city: form.city.trim(),
+        address: form.address.trim(),
+      },
+    });
   };
 
+  const submitting = mutation.isPending;
+
   if (!isAuthed || items.length === 0) return null;
+
+  // Если в корзине только старые позиции без productId — оформить нельзя
 
   return (
     <main
