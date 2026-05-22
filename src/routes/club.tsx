@@ -8,6 +8,11 @@ import {
   GraduationCap,
   Gem,
   User,
+  Bike,
+  Package,
+  Target,
+  TrendingUp,
+  UserPlus,
   type LucideIcon,
 } from "lucide-react";
 import { ME } from "@/data/profile";
@@ -30,12 +35,19 @@ export const Route = createFileRoute("/club")({
 const NAV: { label: string; href: string; icon: LucideIcon; final?: boolean }[] = [
   { label: "Лента", href: "/club", icon: Newspaper },
   { label: "Профиль", href: "/club/me", icon: User },
-  { label: "Hell AI", href: "/club/hell-ai", icon: Bot },
+  { label: "Гараж", href: "/club/garage", icon: Bike },
+  { label: "Билеты", href: "/club/tickets", icon: Ticket },
+  { label: "Заказы", href: "/club/orders", icon: Package },
+  { label: "Ранг и XP", href: "/club/rank", icon: TrendingUp },
+  { label: "Квесты", href: "/club/quests", icon: Target },
   { label: "Розыгрыши", href: "/club/raffles", icon: Ticket },
+  { label: "Hell AI", href: "/club/hell-ai", icon: Bot },
+  { label: "Пригласить", href: "/club/invite", icon: UserPlus },
   { label: "Магазин", href: "/shop", icon: ShoppingBag },
   { label: "Школа", href: "/club/school", icon: GraduationCap },
   { label: "Hell Pass", href: "/club/hell-pass", icon: Gem, final: true },
 ];
+
 
 // ---------- Layout ----------
 

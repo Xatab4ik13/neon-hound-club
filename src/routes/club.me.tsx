@@ -1,43 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { Bike, Calendar, ChevronRight, LogOut, MapPin, Pencil, Settings } from "lucide-react";
 import { SettingsModal } from "@/components/club/SettingsModal";
-import { BikeCard } from "@/components/club/BikeCard";
-import { HeroBikeCard } from "@/components/club/HeroBikeCard";
-import { BikeFormModal } from "@/components/club/BikeFormModal";
-import { EmptyGarageSlot } from "@/components/club/EmptyGarageSlot";
-import { Countdown } from "@/components/club/Countdown";
 import { BadgeCase } from "@/components/club/BadgeCase";
-import { TicketLedger } from "@/components/club/TicketLedger";
-import { QuestsBlock } from "@/components/club/QuestsBlock";
-import { BikeJournal } from "@/components/club/BikeJournal";
-import { InviteBlock } from "@/components/club/InviteBlock";
-import { CdekTracking } from "@/components/club/CdekTracking";
-import { TICKET_LEDGER, summarizeLedger } from "@/data/tickets-ledger";
-import { COMPLETED_RAFFLES } from "@/data/my-raffles";
-import {
-  ACTIVE_TICKETS,
-  ME,
-  ORDERS,
-  type Order,
-} from "@/data/profile";
-import {
-  loadBikes,
-  saveBikes,
-  type StoredBike,
-} from "@/data/bike-storage";
-import { PlaqueBackground, ProfilePlaque } from "./club";
-import { RANKS } from "@/data/ranks";
-import { useCurrentRank, useRankState } from "@/data/rank-state";
-import {
-  ArrowRight,
-  Bike,
-  Calendar,
-  MapPin,
-  Settings,
-  ShoppingBag,
-  Ticket,
-  Trophy,
-} from "lucide-react";
+import { ME } from "@/data/profile";
+import { useCurrentRank } from "@/data/rank-state";
+import { PlaqueBackground } from "./club";
 
 export const Route = createFileRoute("/club/me")({
   head: () => ({
@@ -51,157 +19,147 @@ export const Route = createFileRoute("/club/me")({
 });
 
 function MePage() {
+  const [settingsOpen, setSettingsOpen] = useState(false);
+
   return (
-    <main className="mx-auto w-full max-w-5xl px-4 py-6 md:px-8 md:py-10">
-      <Dashboard />
-      <StatsRow />
-      <BadgeCase />
-      <SectionGarage />
-      <SectionTickets />
-      <TicketLedger />
-      <SectionOrders />
-      <QuestsBlock />
-      <InviteBlock />
+    <main className="mx-auto w-full max-w-3xl px-4 py-6 md:px-8 md:py-10">
+      <ProfileHero onSettings={() => setSettingsOpen(true)} />
+
+      <section aria-label="Значки" className="mt-8 md:mt-12">
+        <h2 className="mb-4 font-display text-2xl font-black italic uppercase tracking-tight text-foreground md:text-3xl">
+          Значки
+        </h2>
+        <BadgeCase />
+      </section>
+
+      <section aria-label="Настройки" className="mt-8 md:mt-12">
+        <h2 className="mb-4 font-display text-2xl font-black italic uppercase tracking-tight text-foreground md:text-3xl">
+          Настройки
+        </h2>
+        <div className="space-y-2">
+          <ActionRow
+            icon={<Settings className="h-5 w-5" />}
+            label="Профиль и аккаунт"
+            description="Ник, фото, контакты, привязки"
+            onClick={() => setSettingsOpen(true)}
+          />
+          <ActionRow
+            icon={<LogOut className="h-5 w-5" />}
+            label="Выйти из клуба"
+            tone="danger"
+            onClick={() => {
+              if (typeof window !== "undefined" && window.confirm("Выйти из клуба?")) {
+                // TODO: подключить supabase.auth.signOut
+                window.location.href = "/";
+              }
+            }}
+          />
+        </div>
+      </section>
+
+      <SettingsModal open={settingsOpen} onOpenChange={setSettingsOpen} />
     </main>
   );
 }
 
-// ---------- Dashboard (приборка) ----------
-
-function Dashboard() {
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const { rank, plaqueBg, next, xp, xpMax, xpPct, isMax } = useCurrentRank();
+function ProfileHero({ onSettings }: { onSettings: () => void }) {
+  const { rank, plaqueBg, xp, xpMax, xpPct, isMax, next } = useCurrentRank();
   const isPaid = !!rank.isPaid;
 
   return (
-    <>
     <section
-      aria-label="Прогресс райдера"
-      className="relative mb-8 overflow-hidden border border-white/[0.06] bg-[#0b0b0b]"
+      aria-label="Профиль"
+      className="relative overflow-hidden border border-white/[0.06] bg-[#0b0b0b]"
     >
-      {/* Decor: фон по текущему рангу */}
       <PlaqueBackground bg={plaqueBg} />
-      {/* Тёмная подложка для читаемости текста */}
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/55 via-black/25 to-black/55" />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/55 via-black/25 to-black/60" />
 
-      <div className="relative grid gap-8 p-6 md:grid-cols-[auto_1fr] md:p-8">
-        {/* Left: avatar + identity */}
-        <div className="flex items-center gap-5 md:flex-col md:items-start md:gap-4">
-          <div className="relative">
+      <div className="relative flex flex-col items-center gap-5 px-5 py-7 text-center md:flex-row md:items-center md:gap-7 md:p-9 md:text-left">
+        {/* Avatar */}
+        <div className="relative shrink-0">
+          <div
+            aria-hidden
+            className="absolute -inset-1 rounded-full blur-2xl"
+            style={{ backgroundColor: rank.accentSoft, animation: "xp-pulse 3s ease-in-out infinite" }}
+          />
+          <div
+            className="relative h-28 w-28 overflow-hidden rounded-full ring-4 ring-offset-4 ring-offset-[#0b0b0b] md:h-32 md:w-32"
+            style={{ backgroundColor: rank.accent, boxShadow: `0 0 0 4px ${rank.accentSoft}` }}
+          >
             <div
               aria-hidden
-              className="absolute -inset-1 rounded-full blur-xl"
+              className="absolute inset-0 opacity-20"
               style={{
-                backgroundColor: rank.accentSoft,
-                animation: "xp-pulse 3s ease-in-out infinite",
+                backgroundImage:
+                  "repeating-linear-gradient(45deg, #000 0, #000 1px, transparent 0, transparent 50%)",
+                backgroundSize: "5px 5px",
               }}
             />
-            <div
-              className="relative h-24 w-24 overflow-hidden rounded-full ring-4 ring-offset-4 ring-offset-[#0b0b0b] md:h-28 md:w-28"
-              style={{
-                backgroundColor: rank.accent,
-                boxShadow: `0 0 0 4px ${rank.accentSoft}`,
-              }}
-            >
-              <div
-                aria-hidden
-                className="absolute inset-0 opacity-20"
-                style={{
-                  backgroundImage:
-                    "repeating-linear-gradient(45deg, #000 0, #000 1px, transparent 0, transparent 50%)",
-                  backgroundSize: "5px 5px",
-                }}
-              />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span
-                  className="font-display text-3xl font-black italic uppercase md:text-4xl"
-                  style={{ color: rank.onAccent }}
-                >
-                  {ME.nick.slice(0, 2)}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div className="min-w-0">
-            <h1 className="truncate font-display text-2xl font-black italic uppercase tracking-tight text-foreground md:text-3xl">
-              {ME.nick}
-            </h1>
-            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-              <span className="flex items-center gap-1">
-                <MapPin className="h-3 w-3" />
-                {ME.city}
-              </span>
-              <span className="flex items-center gap-1">
-                <Bike className="h-3 w-3" />
-                {ME.bike}
-              </span>
-              <span className="flex items-center gap-1">
-                <Calendar className="h-3 w-3" />в клубе с {ME.joined}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span
+                className="font-display text-4xl font-black italic uppercase md:text-5xl"
+                style={{ color: rank.onAccent }}
+              >
+                {ME.nick.slice(0, 2)}
               </span>
             </div>
-            <button
-              type="button"
-              onClick={() => setSettingsOpen(true)}
-              className="mt-3 inline-flex items-center gap-1.5 border border-white/[0.08] bg-black/30 px-2.5 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground transition-colors hover:border-white/30 hover:text-foreground"
-            >
-              <Settings className="h-3 w-3" />
-              Настройки
-            </button>
           </div>
         </div>
 
-        {/* Right: rank ladder + xp meter */}
-        <div className="flex flex-col justify-center">
-          <div className="mb-3 flex items-baseline justify-between">
-            <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
-              Ранг
+        {/* Identity */}
+        <div className="min-w-0 flex-1">
+          <h1 className="font-display text-3xl font-black italic uppercase tracking-tight text-foreground md:text-4xl">
+            {ME.nick}
+          </h1>
+          <div className="mt-2 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 font-mono text-xs uppercase tracking-wider text-muted-foreground md:justify-start">
+            <span className="flex items-center gap-1.5">
+              <MapPin className="h-3.5 w-3.5" />
+              {ME.city}
             </span>
-            {isPaid ? (
-              <span
-                className="flex items-center gap-1 font-mono text-[10px] font-extrabold uppercase tracking-[0.25em]"
-                style={{ color: rank.accent }}
-              >
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <rect x="4" y="11" width="16" height="10" rx="1" />
-                  <path d="M8 11V7a4 4 0 0 1 8 0v4" />
-                </svg>
-                Платный · {rank.priceLabel}
-              </span>
-            ) : next ? (
-              <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                до{" "}
-                <span className="font-bold" style={{ color: rank.accent }}>
-                  {next.label}
-                </span>{" "}
-                ·{" "}
-                <span className="font-bold tabular-nums text-foreground">
-                  {xpMax - xp}
-                </span>{" "}
-                XP
-              </span>
-            ) : (
-              <span
-                className="font-mono text-[10px] font-extrabold uppercase tracking-[0.25em]"
-                style={{ color: rank.accent }}
-              >
-                Достигнут максимум
-              </span>
-            )}
+            <span className="flex items-center gap-1.5">
+              <Bike className="h-3.5 w-3.5" />
+              {ME.bike}
+            </span>
+            <span className="flex items-center gap-1.5">
+              <Calendar className="h-3.5 w-3.5" />в клубе с {ME.joined}
+            </span>
           </div>
 
-          <RankLadder />
-
+          {/* Rank badge + XP bar */}
           <div className="mt-5">
+            <div className="mb-2 flex items-baseline justify-between gap-3">
+              <Link
+                to="/club/rank"
+                className="font-display text-lg font-black italic uppercase tracking-tight transition-opacity hover:opacity-80 md:text-xl"
+                style={{ color: rank.accent }}
+              >
+                {rank.label}
+              </Link>
+              {isPaid ? (
+                <span
+                  className="font-mono text-[11px] font-extrabold uppercase tracking-[0.2em]"
+                  style={{ color: rank.accent }}
+                >
+                  {rank.priceLabel}
+                </span>
+              ) : isMax ? (
+                <span
+                  className="font-mono text-[11px] font-extrabold uppercase tracking-[0.2em]"
+                  style={{ color: rank.accent }}
+                >
+                  MAX
+                </span>
+              ) : next ? (
+                <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+                  до{" "}
+                  <span className="font-bold" style={{ color: rank.accent }}>
+                    {next.label}
+                  </span>{" "}
+                  · <span className="font-bold tabular-nums text-foreground">{xpMax - xp}</span> XP
+                </span>
+              ) : null}
+            </div>
             <div className="relative h-3 overflow-hidden rounded-sm bg-black/55 ring-1 ring-inset ring-white/10">
-              <div
-                aria-hidden
-                className="absolute inset-0 opacity-60"
-                style={{
-                  backgroundImage:
-                    "linear-gradient(90deg, transparent 0, rgba(255,255,255,0.05) 50%, transparent 100%)",
-                }}
-              />
               <div
                 className="absolute inset-y-0 left-0 overflow-hidden rounded-sm"
                 style={{
@@ -221,452 +179,70 @@ function Dashboard() {
                 />
               </div>
             </div>
-            <div className="mt-2 flex items-baseline justify-between font-mono text-[11px] tabular-nums">
-              <span
-                className="font-bold uppercase tracking-[0.2em]"
-                style={{ color: rank.accent }}
-              >
-                {rank.label}
-              </span>
-              {isPaid ? (
-                <span
-                  className="flex items-center gap-1.5 font-extrabold uppercase tracking-[0.2em]"
-                  style={{ color: rank.accent }}
-                >
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 2 L15 9 L22 9 L16.5 13.5 L18.5 21 L12 16.5 L5.5 21 L7.5 13.5 L2 9 L9 9 Z" />
-                  </svg>
-                  {rank.priceLabel}
-                </span>
-              ) : isMax ? (
-                <span
-                  className="font-extrabold uppercase tracking-[0.2em]"
-                  style={{ color: rank.accent }}
-                >
-                  MAX
-                </span>
-              ) : (
-                <span className="text-muted-foreground">
-                  <span className="font-bold text-foreground">
-                    {xp.toLocaleString("ru-RU")}
-                  </span>{" "}
-                  <span className="opacity-40">/</span>{" "}
-                  {xpMax.toLocaleString("ru-RU")} XP
-                </span>
-              )}
-            </div>
           </div>
-        </div>
-      </div>
-    </section>
-      <SettingsModal open={settingsOpen} onOpenChange={setSettingsOpen} />
-    </>
-  );
-}
 
-
-function RankLadder() {
-  const { rankIndex } = useRankState();
-  return (
-    <div className="flex items-stretch gap-1.5">
-      {RANKS.map((rank, i) => {
-        const isPast = i < rankIndex;
-        const isActive = i === rankIndex;
-        return (
-          <div
-            key={rank.id}
-            className="group relative flex h-12 flex-1 items-center justify-center"
-            aria-current={isActive ? "step" : undefined}
+          <button
+            type="button"
+            onClick={onSettings}
+            className="mt-5 inline-flex items-center gap-2 border border-white/[0.12] bg-black/40 px-4 py-2 font-mono text-xs font-bold uppercase tracking-[0.2em] text-foreground transition-colors hover:border-primary/60 hover:text-primary"
           >
-            <div
-              aria-hidden
-              className="absolute inset-0 -skew-x-12 transition-all"
-              style={
-                isActive
-                  ? {
-                      backgroundColor: rank.accent,
-                      boxShadow: `0 8px 24px -6px ${rank.accentSoft}`,
-                      animation: "xp-pulse 2.4s ease-in-out infinite",
-                    }
-                  : isPast
-                    ? {
-                        backgroundColor: rank.accentSoft,
-                        boxShadow: `inset 0 0 0 1px ${rank.accentSoft}`,
-                      }
-                    : {
-                        border: "1px solid rgba(255,255,255,0.08)",
-                        backgroundColor: "rgba(255,255,255,0.02)",
-                      }
-              }
-            />
-            <span
-              className="relative font-display text-[11px] font-black uppercase italic tracking-wider md:text-xs"
-              style={{
-                color: isActive
-                  ? rank.onAccent
-                  : isPast
-                    ? rank.accent
-                    : "rgba(167,167,167,0.6)",
-              }}
-            >
-              {rank.short}
-            </span>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-
-// ---------- Stats ----------
-
-function StatsRow() {
-  const ticketsBalance = summarizeLedger(TICKET_LEDGER).balance;
-  const items = [
-    { label: "Билеты", value: ticketsBalance, icon: Ticket },
-    { label: "Выигрыши", value: ME.totals.wins, icon: Trophy },
-    { label: "Заказы", value: ME.totals.orders, icon: ShoppingBag },
-    { label: "Байки", value: ME.totals.bikes, icon: Bike },
-  ];
-  return (
-    <section aria-label="Статистика" className="mb-10 grid grid-cols-2 gap-3 md:grid-cols-4">
-      {items.map(({ label, value, icon: Icon }) => (
-        <div
-          key={label}
-          className="flex items-center gap-3 border border-white/[0.06] bg-card/40 px-4 py-3 transition-colors hover:border-white/[0.12]"
-        >
-          <Icon className="h-5 w-5 text-primary" strokeWidth={1.8} />
-          <div className="flex min-w-0 flex-col">
-            <span className="font-display text-2xl font-black italic leading-none text-foreground tabular-nums">
-              {value}
-            </span>
-            <span className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-              {label}
-            </span>
-          </div>
+            <Pencil className="h-4 w-4" />
+            Редактировать профиль
+          </button>
         </div>
-      ))}
+      </div>
     </section>
   );
 }
 
-// ---------- Sections ----------
-
-function SectionHeader({
-  title,
-  href,
-  hrefLabel = "Все",
+function ActionRow({
+  icon,
+  label,
+  description,
+  onClick,
+  tone = "default",
 }: {
-  title: string;
-  href?: string;
-  hrefLabel?: string;
+  icon: React.ReactNode;
+  label: string;
+  description?: string;
+  onClick?: () => void;
+  tone?: "default" | "danger";
 }) {
+  const isDanger = tone === "danger";
   return (
-    <div className="mb-3 flex items-baseline justify-between">
-      <h2 className="font-display text-sm font-black uppercase italic tracking-widest text-foreground">
-        {title}
-      </h2>
-      {href && (
-        <Link
-          to={href}
-          className="group flex items-center gap-1 font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground transition-colors hover:text-primary"
-        >
-          {hrefLabel}
-          <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
-        </Link>
-      )}
-    </div>
-  );
-}
-
-function SectionTickets() {
-  return (
-    <section aria-label="Мои розыгрыши" className="mb-10">
-      <SectionHeader title="Мои розыгрыши" href="/club/raffles" hrefLabel="Все розыгрыши" />
-
-      <div className="grid gap-4 md:grid-cols-2">
-        {ACTIVE_TICKETS.map((t, idx) => {
-          const code = `${String(idx + 1).padStart(3, "0")}-${t.id.toUpperCase()}`;
-          return (
-            <article
-              key={t.id}
-              className="group relative flex overflow-hidden border border-white/[0.06] bg-card/40 shadow-[0_0_20px_rgba(255,0,127,0.04)] transition-all duration-500 hover:border-primary/60"
-            >
-              {/* Фото */}
-              <div className="relative w-[45%] shrink-0 overflow-hidden border-r border-white/[0.06] bg-black">
-                <img
-                  src={t.image}
-                  alt=""
-                  loading="lazy"
-                  className="h-full w-full object-cover opacity-80 transition-transform duration-700 group-hover:scale-110"
-                />
-                <div
-                  aria-hidden
-                  className="pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-card/90"
-                />
-                {/* LIVE badge */}
-                <div className="absolute left-3 top-3">
-                  <div className="flex items-center gap-2 bg-primary px-2 py-0.5 font-mono text-[10px] font-black uppercase tracking-wider text-primary-foreground shadow-lg shadow-primary/40">
-                    <span className="block h-1.5 w-1.5 animate-pulse rounded-full bg-white" />
-                    LIVE
-                  </div>
-                </div>
-              </div>
-
-              {/* Контент */}
-              <div className="relative flex min-w-0 flex-1 flex-col justify-between gap-4 p-5">
-                <div>
-                  <div className="mb-1 font-mono text-[9px] uppercase tracking-[0.25em] text-muted-foreground/70">
-                    ID: {code}
-                  </div>
-                  <h3 className="truncate font-display text-xl font-black uppercase italic tracking-tight text-foreground transition-colors group-hover:text-primary">
-                    {t.title}
-                  </h3>
-                  <div className="mt-2 flex items-end gap-4">
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-4xl font-bold leading-none tabular-nums tracking-tighter text-foreground">
-                        {t.myTickets}
-                      </span>
-                      <span className="font-mono text-[9px] font-bold uppercase leading-tight text-muted-foreground">
-                        моих
-                        <br />
-                        билетов
-                      </span>
-                    </div>
-                    <div className="ml-auto text-right">
-                      <div className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground/70">
-                        шанс
-                      </div>
-                      <div className="font-mono text-lg font-bold tabular-nums text-primary">
-                        {((t.myTickets / t.totalTickets) * 100).toFixed(2)}%
-                      </div>
-                      <div className="font-mono text-[9px] tabular-nums text-muted-foreground">
-                        из {t.totalTickets.toLocaleString("ru-RU")}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="border-t border-white/[0.06] pt-3">
-                  <div className="mb-2 flex items-center justify-between font-mono text-[9px] uppercase tracking-[0.25em] text-muted-foreground">
-                    <span>до завершения</span>
-                    <span className="font-bold text-primary">● RUNNING</span>
-                  </div>
-                  <Countdown deadlineAt={t.deadlineAt} variant="tactical" />
-                </div>
-              </div>
-            </article>
-          );
-        })}
-      </div>
-
-      {COMPLETED_RAFFLES.length > 0 && (
-        <div className="mt-6">
-          <div className="mb-3 flex items-baseline justify-between">
-            <h3 className="font-display text-xs font-black uppercase italic tracking-widest text-muted-foreground">
-              Завершённые · {COMPLETED_RAFFLES.length}
-            </h3>
-            <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-              {COMPLETED_RAFFLES.filter((r) => r.status === "won").length}{" "}
-              <span className="text-green-400">выиграно</span>
-            </span>
-          </div>
-          <ul className="grid gap-2 md:grid-cols-2">
-            {COMPLETED_RAFFLES.map((r) => {
-              const won = r.status === "won";
-              return (
-                <li
-                  key={r.id}
-                  className={`group flex items-center gap-3 border bg-card/40 p-3 transition-colors ${
-                    won
-                      ? "border-green-500/30 hover:border-green-500/60"
-                      : "border-white/[0.04] hover:border-white/[0.12]"
-                  }`}
-                >
-                  <div className="relative h-14 w-14 shrink-0 overflow-hidden border border-white/[0.06] bg-black">
-                    <img
-                      src={r.image}
-                      alt=""
-                      loading="lazy"
-                      className="h-full w-full object-cover opacity-80"
-                    />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <Trophy
-                        className={`h-3 w-3 shrink-0 ${won ? "text-green-400" : "text-muted-foreground/40"}`}
-                      />
-                      <span className="truncate text-sm font-bold text-foreground">
-                        {r.title}
-                      </span>
-                    </div>
-                    <div className="mt-0.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-                      {r.date} · {r.myTickets} из {r.totalTickets.toLocaleString("ru-RU")} билетов
-                      {!won && r.winnerNick && (
-                        <>
-                          {" · "}
-                          <span className="text-foreground/70">@{r.winnerNick}</span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                  <span
-                    className={`shrink-0 whitespace-nowrap border px-2 py-0.5 font-mono text-[9px] font-bold uppercase tracking-[0.2em] ${
-                      won
-                        ? "border-green-500/50 text-green-400"
-                        : "border-white/[0.1] text-muted-foreground"
-                    }`}
-                  >
-                    {won ? r.delivery ?? "Выигрыш" : "Не выиграл"}
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      )}
-    </section>
-  );
-}
-
-function SectionOrders() {
-  return (
-    <section aria-label="Мои заказы" className="mb-10">
-      <SectionHeader title="Мои заказы" href="/shop" hrefLabel="В магазин" />
-      <div className="border border-white/[0.06] bg-card/40">
-        <ul className="divide-y divide-white/[0.04]">
-          {ORDERS.map((o) => (
-            <li key={o.id}>
-              <div className="grid grid-cols-[1fr_auto_auto] items-center gap-4 px-4 py-3 transition-colors hover:bg-white/[0.02]">
-                <div className="min-w-0">
-                  <div className="truncate text-sm text-foreground">{o.title}</div>
-                  <div className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-                    {o.date}
-                  </div>
-                </div>
-                <div className="font-mono text-[12px] tabular-nums text-foreground">{o.price}</div>
-                <OrderStatus status={o.status} />
-              </div>
-              <CdekTracking orderId={o.id} />
-            </li>
-          ))}
-        </ul>
-      </div>
-    </section>
-  );
-}
-
-function OrderStatus({ status }: { status: Order["status"] }) {
-  const tone: Record<Order["status"], string> = {
-    "В пути": "border-primary/50 text-primary",
-    "Доставлено": "border-white/[0.1] text-muted-foreground",
-    "Waitlist": "border-yellow-500/40 text-yellow-400",
-    "Ожидает оплаты": "border-red-500/40 text-red-400",
-  };
-  return (
-    <span
-      className={`whitespace-nowrap border px-2 py-0.5 font-mono text-[9px] font-bold uppercase tracking-[0.2em] ${tone[status]}`}
+    <button
+      type="button"
+      onClick={onClick}
+      className={`group flex w-full items-center gap-4 border bg-card/40 px-4 py-4 text-left transition-colors md:px-5 ${
+        isDanger
+          ? "border-white/[0.06] hover:border-red-500/40 hover:bg-red-500/[0.04]"
+          : "border-white/[0.06] hover:border-primary/40 hover:bg-white/[0.03]"
+      }`}
     >
-      {status}
-    </span>
-  );
-}
-
-function SectionGarage() {
-  const [bikes, setBikes] = useState<StoredBike[]>([]);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editing, setEditing] = useState<StoredBike | null>(null);
-
-  useEffect(() => {
-    setBikes(loadBikes());
-  }, []);
-
-  function persist(next: StoredBike[]) {
-    setBikes(next);
-    saveBikes(next);
-  }
-
-  function openAdd() {
-    setEditing(null);
-    setModalOpen(true);
-  }
-  function openEdit(b: StoredBike) {
-    setEditing(b);
-    setModalOpen(true);
-  }
-  function handleSave(b: StoredBike) {
-    const exists = bikes.some((x) => x.id === b.id);
-    persist(exists ? bikes.map((x) => (x.id === b.id ? b : x)) : [...bikes, b]);
-  }
-  function handleDelete(id: string) {
-    if (typeof window !== "undefined" && !window.confirm("Удалить байк?")) return;
-    persist(bikes.filter((x) => x.id !== id));
-  }
-
-  const [primary, ...rest] = bikes;
-
-  return (
-    <section aria-label="Мой гараж" className="mb-10">
-      <div className="mb-3 flex items-baseline justify-between border-b border-white/[0.06] pb-2">
-        <h2 className="font-display text-sm font-black uppercase italic tracking-widest text-foreground">
-          Мой гараж
-        </h2>
-        <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-          слотов: {bikes.length}/2
+      <span
+        className={`shrink-0 ${isDanger ? "text-red-400/80 group-hover:text-red-400" : "text-primary"}`}
+      >
+        {icon}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span
+          className={`block font-display text-base font-black italic uppercase tracking-tight md:text-lg ${
+            isDanger ? "text-red-400" : "text-foreground"
+          }`}
+        >
+          {label}
         </span>
-      </div>
-
-      {/* Hero: главный байк + пустой слот */}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
-        {primary ? (
-          <div className="col-span-2 md:col-span-3">
-            <HeroBikeCard
-              bike={primary}
-              onEdit={() => openEdit(primary)}
-              onDelete={() => handleDelete(primary.id)}
-            />
-          </div>
-        ) : (
-          <div className="md:col-span-3">
-            <EmptyGarageSlot onAdd={openAdd} />
-          </div>
-        )}
-        <div className="md:col-span-1">
-          <EmptyGarageSlot onAdd={openAdd} />
-        </div>
-      </div>
-
-      {/* Журнал основного байка */}
-      {primary && (
-        <div className="mt-4">
-          <BikeJournal
-            bikeId={primary.id}
-            currentMileage={parseInt((primary.mileage ?? "").replace(/\D/g, ""), 10) || 0}
-          />
-        </div>
-      )}
-
-      {/* Дополнительные байки — обычные карточки в 2 колонки */}
-      {rest.length > 0 && (
-        <div className="mt-4 grid gap-4 md:grid-cols-2">
-          {rest.map((b) => (
-            <BikeCard
-              key={b.id}
-              bike={b}
-              onEdit={() => openEdit(b)}
-              onDelete={() => handleDelete(b.id)}
-            />
-          ))}
-        </div>
-      )}
-
-      <BikeFormModal
-        open={modalOpen}
-        onOpenChange={setModalOpen}
-        bike={editing}
-        onSave={handleSave}
+        {description ? (
+          <span className="mt-0.5 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
+            {description}
+          </span>
+        ) : null}
+      </span>
+      <ChevronRight
+        className={`h-5 w-5 shrink-0 transition-transform group-hover:translate-x-0.5 ${
+          isDanger ? "text-red-400/60" : "text-muted-foreground"
+        }`}
       />
-    </section>
+    </button>
   );
 }
