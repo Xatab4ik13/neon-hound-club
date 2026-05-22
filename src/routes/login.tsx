@@ -56,8 +56,8 @@ function LoginPage() {
     if (password.length < 8) return setError("Пароль минимум 8 символов");
     setBusy(true);
     try {
-      await signIn(loginEmail, password);
-      navigate({ to: "/club" });
+      const user = await signIn(loginEmail, password);
+      navigate({ to: user.role === "blogger" ? "/blogger" : "/club" });
     } catch (err) {
       if (err instanceof ApiError && err.status === 403) {
         // email_not_verified
