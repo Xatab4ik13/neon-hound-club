@@ -19,7 +19,7 @@ function GaragePage() {
   const [bikes, setBikes] = useState<StoredBike[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<StoredBike | null>(null);
-  const isMobile = useIsMobile();
+  
 
   useEffect(() => {
     setBikes(loadBikes());
