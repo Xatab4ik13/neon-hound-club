@@ -170,10 +170,7 @@ function TicketsPage() {
       )}
 
       {/* Журнал */}
-      <section aria-label="Журнал начислений" className="mb-6">
-        <SectionHeader title="Журнал начислений" />
-        <TicketLedger />
-      </section>
+      <TicketLedger />
 
       {/* Откуда взять билеты */}
       <section aria-label="Как набрать билеты" className="mb-2">
