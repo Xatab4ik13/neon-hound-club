@@ -129,12 +129,13 @@ export const feedStore = {
   getSnapshot() {
     return POSTS;
   },
-  addPost(input: { text: string; image?: string; authorSlug: string }) {
+  addPost(input: { text: string; image?: string; authorSlug: string; poll?: FeedPoll }) {
     const post: FeedPost = {
       id: `p${Date.now()}`,
       authorSlug: input.authorSlug,
       text: input.text,
       image: input.image,
+      poll: input.poll,
       time: "только что",
       likes: 0,
       comments: [],
@@ -143,6 +144,7 @@ export const feedStore = {
     emit();
     return post;
   },
+
   updatePost(id: string, patch: Partial<Pick<FeedPost, "text" | "image" | "pinned">>) {
     POSTS = POSTS.map((p) => (p.id === id ? { ...p, ...patch } : p));
     emit();
