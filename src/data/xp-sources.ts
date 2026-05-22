@@ -41,7 +41,7 @@ export const XP_SOURCES: XpSource[] = [
   { id: "link-yt",        category: "onboarding", title: "Привязать подписку на YouTube HELLHOUND",   xp: "+100 XP" },
 
   // Розыгрыши
-  { id: "buy-ticket",     category: "raffles", title: "Купить билет в розыгрыш", xp: "+5 XP / билет", limit: "макс. 50 XP с одного розыгрыша" },
+  { id: "postcard-buy",   category: "raffles", title: "Покупка цифровой открытки Hell", xp: "+5 XP / билет", limit: "макс. 50 XP с одной открытки" },
   { id: "raffle-1st",     category: "raffles", title: "Победа в розыгрыше (1 место)", xp: "+500 XP" },
   { id: "raffle-2-3",     category: "raffles", title: "Призовое место 2–3", xp: "+150 XP" },
 
