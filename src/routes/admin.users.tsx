@@ -121,7 +121,14 @@ function UserDrawer({
     queryKey: adminQk.user(userId),
     queryFn: () => fetchAdminUser(userId),
   });
+  const badgesQ = useQuery({
+    queryKey: ["admin", "user", userId, "badges"],
+    queryFn: () => fetchAdminUserBadges(userId),
+  });
   const [confirmBlock, setConfirmBlock] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [xpOpen, setXpOpen] = useState(false);
+  const [badgeOpen, setBadgeOpen] = useState(false);
 
   const patchMut = useMutation({
     mutationFn: (patch: { role?: "user" | "admin"; blocked?: boolean }) =>
@@ -130,6 +137,16 @@ function UserDrawer({
       qc.invalidateQueries({ queryKey: adminQk.user(userId) });
       qc.invalidateQueries({ queryKey: ["admin", "users"] });
       toast.success("Обновлено");
+    },
+    onError: (e) => toast.error(e instanceof ApiError ? e.message : "Ошибка"),
+  });
+
+  const deleteMut = useMutation({
+    mutationFn: () => deleteAdminUser(userId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin", "users"] });
+      toast.success("Пользователь удалён");
+      onClose();
     },
     onError: (e) => toast.error(e instanceof ApiError ? e.message : "Ошибка"),
   });
@@ -144,6 +161,9 @@ function UserDrawer({
       footer={
         u && (
           <>
+            <Btn variant="danger" onClick={() => setConfirmDelete(true)}>
+              <Trash2 className="h-4 w-4" /> Удалить
+            </Btn>
             {u.blocked ? (
               <Btn onClick={() => patchMut.mutate({ blocked: false })}>
                 <ShieldCheck className="h-4 w-4" /> Разбанить
@@ -194,6 +214,33 @@ function UserDrawer({
             <Metric label="Всего заработано" value={String(u.ticketsEarned)} />
           </Section>
 
+          <Section title="Ранг / XP">
+            <Metric label="XP" value={String(u.xpTotal)} />
+            <Metric label="Ранг" value={u.rank?.rankLabel ?? "—"} />
+            <div className="col-span-2 flex gap-2">
+              <Btn onClick={() => setXpOpen(true)}>
+                <Sparkles className="h-4 w-4" /> Начислить XP
+              </Btn>
+              <Btn onClick={() => setBadgeOpen(true)}>
+                <Award className="h-4 w-4" /> Выдать значок
+              </Btn>
+            </div>
+          </Section>
+
+          <Section title="Значки">
+            {badgesQ.data?.items?.length ? (
+              <div className="col-span-2 flex flex-wrap gap-1.5">
+                {badgesQ.data.items.map((b) => (
+                  <Badge key={b.id} tone={b.category === "rank" ? "amber" : "zinc"}>
+                    {b.name}
+                  </Badge>
+                ))}
+              </div>
+            ) : (
+              <InfoRow label="—" value="нет значков" />
+            )}
+          </Section>
+
           <Section title="Hell Pass">
             {u.activePass ? (
               <>
@@ -229,6 +276,25 @@ function UserDrawer({
         message={u ? `@${u.nick} потеряет доступ к клубу.` : ""}
         confirmLabel="Забанить"
       />
+
+      <ConfirmModal
+        open={confirmDelete}
+        onClose={() => setConfirmDelete(false)}
+        onConfirm={() => {
+          deleteMut.mutate();
+          setConfirmDelete(false);
+        }}
+        title="Удалить юзера навсегда?"
+        message={u ? `@${u.nick} и все связанные данные будут удалены. Действие необратимо.` : ""}
+        confirmLabel="Удалить"
+      />
+
+      {xpOpen && u && (
+        <GrantXpModal nick={u.nick} userId={userId} onClose={() => setXpOpen(false)} />
+      )}
+      {badgeOpen && u && (
+        <AwardBadgeModal nick={u.nick} userId={userId} onClose={() => setBadgeOpen(false)} />
+      )}
     </Drawer>
   );
 }
