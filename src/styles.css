@@ -354,6 +354,15 @@ body[data-modal-open="1"] [class*="plaque-"] {
   border-radius: 2px;
 }
 
+/* ── Italic-safe truncate ───────────────────────────────────────────────
+   Italic glyphs lean right and get sliced off by `overflow: hidden`
+   (which Tailwind's `truncate` uses). Give every italic+truncated element a
+   tiny right padding so the last letter doesn't get clipped. */
+.truncate.italic,
+.italic.truncate {
+  padding-right: 0.18em;
+}
+
 /* ── Hide all scrollbars (keep scroll behavior) — iOS-app feel ──────────── */
 * {
   scrollbar-width: none;          /* Firefox */
