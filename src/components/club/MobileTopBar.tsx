@@ -2,6 +2,8 @@ import { Link, useRouter, useRouterState } from "@tanstack/react-router";
 import { Bell, ChevronLeft } from "lucide-react";
 import { ME } from "@/data/profile";
 import { useCurrentRank } from "@/data/rank-state";
+import { ProfilePlaque } from "@/routes/club";
+
 
 // Routes that act as primary tabs — no back button, show avatar instead.
 const TAB_PATHS = ["/club", "/club/garage", "/club/tickets", "/club/me"];
