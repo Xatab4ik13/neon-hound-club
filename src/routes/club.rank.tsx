@@ -156,7 +156,6 @@ function RankLadderVertical() {
               </div>
             </div>
 
-            </div>
             {isActive && (
               <span className="shrink-0 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-primary">
                 Сейчас
