@@ -41,13 +41,19 @@ export async function sendMail(opts: {
     return;
   }
 
-  await Promise.race([
-    transport.sendMail({ from, ...opts }),
-    new Promise<never>((_, reject) => {
-      const timer = setTimeout(() => {
-        reject(new Error(`[mailer] SMTP send timeout after ${SMTP_SEND_TIMEOUT_MS}ms`));
-      }, SMTP_SEND_TIMEOUT_MS);
-      timer.unref?.();
-    }),
-  ]);
+  let timer: ReturnType<typeof setTimeout> | undefined;
+
+  try {
+    await Promise.race([
+      transport.sendMail({ from, ...opts }),
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(() => {
+          reject(new Error(`[mailer] SMTP send timeout after ${SMTP_SEND_TIMEOUT_MS}ms`));
+        }, SMTP_SEND_TIMEOUT_MS);
+        timer.unref?.();
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
 }
