@@ -178,9 +178,10 @@ function UsersPage() {
               <span className="font-medium">@{u.nick}</span>,
               <span>{m.fio}</span>,
               <span className="tabular-nums text-zinc-600 dark:text-zinc-300">{m.phone}</span>,
-              <Badge tone={u.rank === "vip" ? "violet" : u.rank === "hell-legend" ? "rose" : "zinc"}>
+              <Badge tone={u.rank === "hell-legend" ? "rose" : "zinc"}>
                 {rank?.label ?? u.rank}
               </Badge>,
+
               <Badge tone={passTone(m.pass)}>{m.pass}</Badge>,
               <span className="tabular-nums text-zinc-500 dark:text-zinc-400">{m.registeredAt}</span>,
               <Btn variant="ghost" onClick={() => setSelected(u)}>
