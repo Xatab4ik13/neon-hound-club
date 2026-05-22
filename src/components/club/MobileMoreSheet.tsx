@@ -114,6 +114,11 @@ export function MobileMoreSheet({
                             </span>
                           ) : null}
                         </span>
+                        {item.badge ? (
+                          <span className="grid h-5 min-w-[20px] place-items-center rounded-full bg-primary px-1.5 font-mono text-[10px] font-bold leading-none text-primary-foreground">
+                            {item.badge > 99 ? "99+" : item.badge}
+                          </span>
+                        ) : null}
                         <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
                       </Link>
                     </li>
