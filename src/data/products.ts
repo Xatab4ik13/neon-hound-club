@@ -1,8 +1,10 @@
 import founderHoodie from "@/assets/founder-hoodie.jpg";
 import pitGloves from "@/assets/pit-gloves.jpg";
 import garageKey from "@/assets/garage-key.jpg";
+import postcardHell from "@/assets/postcard-hell.jpg";
 
 export type ProductSource = "hellhound" | "partner" | "used";
+
 
 export type Product = {
   id: string;
