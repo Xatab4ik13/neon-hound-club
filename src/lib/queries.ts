@@ -429,6 +429,7 @@ export type FeedCommentHydrated = {
   id: string;
   text: string;
   likes: number;
+  liked: boolean;
   createdAt: string;
   authorId: string;
   nick: string;
