@@ -134,8 +134,7 @@ function RaffleDetailContent({
     },
     onError: (e) => {
       if (e instanceof ApiError) {
-        const code = (e.payload as { error?: string } | null)?.error ?? "";
-        toast.error(ENTER_ERRORS[code] ?? "Не удалось участвовать");
+        toast.error(ENTER_ERRORS[e.code] ?? "Не удалось участвовать");
       } else {
         toast.error("Не удалось участвовать");
       }
