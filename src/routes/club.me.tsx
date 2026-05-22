@@ -59,8 +59,8 @@ const BG_LABELS: Record<PlaqueBg, string> = {
   "legend-molten-gold": "Жидкое золото",
   "legend-cyber-rune": "Кибер-руна",
   "legend-holo-prism": "Голо-призма",
-  };
 };
+
 
 function MePage() {
   const [settingsOpen, setSettingsOpen] = useState(false);
