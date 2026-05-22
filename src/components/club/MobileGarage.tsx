@@ -808,10 +808,12 @@ function DocsList({
   bikeId,
   onView,
   onAdd,
+  flat = false,
 }: {
   bikeId: string;
   onView: (d: BikeDocument) => void;
   onAdd: () => void;
+  flat?: boolean;
 }) {
   const docs = useBikeDocuments();
   const list = docs.docs.filter((d) => d.bikeId === bikeId);
