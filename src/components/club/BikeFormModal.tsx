@@ -249,7 +249,7 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
         photo={photo}
         error={photoError}
         onPick={handlePhoto}
-        onClear={() => setPhoto(undefined)}
+        onClear={() => { setPhoto(undefined); setPhotoFile(null); }}
       />
 
       <div className="grid gap-3 sm:grid-cols-2">
