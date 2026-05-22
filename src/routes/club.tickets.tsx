@@ -178,7 +178,7 @@ function TicketsPage() {
         <ul className="overflow-hidden rounded-2xl border border-white/[0.06] bg-card/40 divide-y divide-white/[0.05]">
           <EarnRow
             title="Покупки в магазине"
-            hint="1 билет за каждые 200 ₽ заказа"
+            hint="К каждому товару — свой бонус билетов, указан на карточке"
             to="/shop"
             icon={<ShoppingBag className="h-4 w-4" />}
           />
