@@ -1047,69 +1047,203 @@ function SelectField({
   );
 }
 
-function PhotoUpload({
-  photo,
+function PhotosUpload({
+  photos,
   onChange,
 }: {
-  photo?: string;
-  onChange: (v: string | undefined) => void;
+  photos: string[];
+  onChange: (v: string[]) => void;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
 
-  function pick(file: File | undefined) {
-    if (!file) return;
-    if (!/^image\//i.test(file.type)) return;
-    const reader = new FileReader();
-    reader.onload = () => onChange(String(reader.result));
-    reader.readAsDataURL(file);
+  function pick(files: FileList | null) {
+    if (!files) return;
+    const images = Array.from(files).filter((f) => /^image\//i.test(f.type));
+    if (images.length === 0) return;
+    Promise.all(
+      images.map(
+        (f) =>
+          new Promise<string>((resolve) => {
+            const r = new FileReader();
+            r.onload = () => resolve(String(r.result));
+            r.readAsDataURL(f);
+          }),
+      ),
+    ).then((urls) => onChange([...photos, ...urls]));
   }
 
-  if (photo) {
-    return (
-      <div className="mt-3 relative overflow-hidden rounded-2xl border border-white/[0.06] bg-black/40">
-        <img src={photo} alt="Документ" className="max-h-64 w-full object-contain" />
-        <button
-          type="button"
-          onClick={() => onChange(undefined)}
-          className="absolute right-2 top-2 grid h-8 w-8 place-items-center rounded-full bg-black/70 text-foreground active:opacity-70"
-          aria-label="Удалить фото"
-        >
-          <X className="h-4 w-4" />
-        </button>
-        <button
-          type="button"
-          onClick={() => fileRef.current?.click()}
-          className="absolute bottom-2 right-2 rounded-full bg-black/70 px-3 py-1.5 text-[12px] font-semibold text-foreground active:opacity-70"
-        >
-          Заменить
-        </button>
+  return (
+    <div className="mt-3">
+      {photos.length > 0 && (
+        <div className="grid grid-cols-2 gap-2">
+          {photos.map((src, i) => (
+            <div
+              key={i}
+              className="relative aspect-[3/4] overflow-hidden rounded-2xl border border-white/[0.06] bg-black/40"
+            >
+              <img src={src} alt={`Скан ${i + 1}`} className="absolute inset-0 h-full w-full object-cover" />
+              <div className="absolute left-2 top-2 rounded-full bg-black/70 px-2 py-0.5 text-[10px] font-bold text-foreground">
+                {i + 1}
+              </div>
+              <button
+                type="button"
+                onClick={() => onChange(photos.filter((_, j) => j !== i))}
+                className="absolute right-2 top-2 grid h-8 w-8 place-items-center rounded-full bg-black/70 text-foreground active:opacity-70"
+                aria-label="Удалить"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+      <button
+        type="button"
+        onClick={() => fileRef.current?.click()}
+        className={`flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-white/[0.12] bg-black/20 py-5 text-muted-foreground active:opacity-70 ${
+          photos.length > 0 ? "mt-2" : ""
+        }`}
+      >
+        <ImagePlus className="h-5 w-5" />
+        <span className="text-[14px] font-semibold">
+          {photos.length === 0 ? "Прикрепить фото / скан" : "Добавить ещё фото"}
+        </span>
         <input
           ref={fileRef}
           type="file"
           accept="image/*"
+          multiple
           className="hidden"
-          onChange={(e) => pick(e.target.files?.[0] ?? undefined)}
+          onChange={(e) => {
+            pick(e.target.files);
+            e.currentTarget.value = "";
+          }}
         />
-      </div>
-    );
-  }
+      </button>
+    </div>
+  );
+}
+
+// ───────────── DocViewerSheet — режим показа документа ─────────────
+
+function DocViewerSheet({
+  doc,
+  onClose,
+  onEdit,
+}: {
+  doc: BikeDocument | null;
+  onClose: () => void;
+  onEdit: (d: BikeDocument) => void;
+}) {
+  if (!doc) return null;
+  const photos = docPhotos(doc);
+  const { status, daysLeft } = docStatus(doc);
+
+  const statusPill =
+    status === "expired"
+      ? { text: `Просрочен${daysLeft !== null ? ` на ${Math.abs(daysLeft)} дн.` : ""}`, cls: "bg-red-500/15 text-red-300 border-red-500/40" }
+      : status === "expiring"
+        ? { text: `Истекает через ${daysLeft} дн.`, cls: "bg-yellow-500/15 text-yellow-300 border-yellow-500/40" }
+        : status === "ok"
+          ? { text: `Действует${doc.expiryDate ? ` до ${fmtDate(doc.expiryDate)}` : ""}`, cls: "bg-emerald-500/15 text-emerald-300 border-emerald-500/40" }
+          : status === "no-expiry"
+            ? { text: "Бессрочно", cls: "bg-white/[0.06] text-muted-foreground border-white/10" }
+            : { text: "Срок не указан", cls: "bg-white/[0.06] text-muted-foreground border-white/10" };
 
   return (
-    <button
-      type="button"
-      onClick={() => fileRef.current?.click()}
-      className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-white/[0.12] bg-black/20 py-6 text-muted-foreground active:opacity-70"
+    <IOSSheet
+      open={!!doc}
+      onOpenChange={(v) => !v && onClose()}
+      title={DOC_TYPE_LABEL[doc.type]}
+      doneLabel="Закрыть"
+      onDone={onClose}
+      fullHeight
+      headerLeft={
+        <div className="min-w-0">
+          <div className="text-[11px] font-semibold uppercase tracking-wider text-primary">Документ</div>
+          <h2 className="truncate text-[18px] font-bold leading-tight text-foreground">
+            {DOC_TYPE_LABEL[doc.type]}
+          </h2>
+        </div>
+      }
     >
-      <ImagePlus className="h-5 w-5" />
-      <span className="text-[14px] font-semibold">Прикрепить фото</span>
-      <input
-        ref={fileRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={(e) => pick(e.target.files?.[0] ?? undefined)}
-      />
-    </button>
+      {/* статус-плашка */}
+      <div className={`flex items-center gap-2 rounded-2xl border px-4 py-3 ${statusPill.cls}`}>
+        <ShieldCheck className="h-5 w-5 shrink-0" />
+        <span className="text-[14px] font-semibold">{statusPill.text}</span>
+      </div>
+
+      {/* фото */}
+      {photos.length > 0 ? (
+        <div className="mt-3 space-y-2">
+          {photos.map((src, i) => (
+            <div
+              key={i}
+              className="relative overflow-hidden rounded-2xl border border-white/[0.06] bg-black"
+            >
+              <img src={src} alt={`Скан ${i + 1}`} className="w-full object-contain" />
+              {photos.length > 1 && (
+                <div className="absolute left-2 top-2 rounded-full bg-black/70 px-2.5 py-1 text-[11px] font-bold text-foreground">
+                  {i + 1} / {photos.length}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="mt-3 flex flex-col items-center gap-2 rounded-2xl border border-dashed border-white/[0.12] bg-black/20 px-4 py-10 text-center text-muted-foreground">
+          <ImagePlus className="h-6 w-6" />
+          <span className="text-[13px]">Фото документа не прикреплено</span>
+        </div>
+      )}
+
+      {/* данные */}
+      <div className="mt-3 overflow-hidden rounded-2xl border border-white/[0.06] bg-card/40 divide-y divide-white/[0.05]">
+        {doc.number && <DataRow label="Номер" value={doc.number} mono />}
+        {doc.issueDate && <DataRow label="Выдан" value={fmtDate(doc.issueDate)} />}
+        {doc.expiryDate && <DataRow label="Действует до" value={fmtDate(doc.expiryDate)} />}
+        {doc.note && <DataRow label="Заметка" value={doc.note} />}
+        {!doc.number && !doc.issueDate && !doc.expiryDate && !doc.note && (
+          <div className="px-4 py-4 text-[13px] text-muted-foreground">Нет данных</div>
+        )}
+      </div>
+
+      {/* действия */}
+      <div className="mt-4 grid grid-cols-2 gap-2">
+        <button
+          type="button"
+          onClick={() => onEdit(doc)}
+          className="flex items-center justify-center gap-2 rounded-2xl border border-white/[0.08] bg-white/[0.04] py-3 text-[14px] font-semibold text-foreground active:opacity-70"
+        >
+          <Pencil className="h-4 w-4" />
+          Изменить
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            if (confirm("Удалить документ?")) {
+              bikeDocumentsStore.remove(doc.id);
+              onClose();
+            }
+          }}
+          className="flex items-center justify-center gap-2 rounded-2xl border border-red-500/30 bg-red-500/[0.06] py-3 text-[14px] font-semibold text-red-400 active:opacity-70"
+        >
+          <Trash2 className="h-4 w-4" />
+          Удалить
+        </button>
+      </div>
+    </IOSSheet>
+  );
+}
+
+function DataRow({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+  return (
+    <div className="flex items-center justify-between gap-3 px-4 py-3">
+      <span className="text-[13px] text-muted-foreground">{label}</span>
+      <span className={`text-[15px] text-foreground ${mono ? "font-mono tabular-nums" : ""}`}>
+        {value}
+      </span>
+    </div>
   );
 }
 
@@ -1123,7 +1257,7 @@ function Fab({ onClick }: { onClick: () => void }) {
       className="fixed z-30 grid h-14 w-14 place-items-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/40 active:scale-95"
       style={{
         bottom: "calc(env(safe-area-inset-bottom) + 76px)",
-        right: "max(1rem, calc(50vw - 20rem))",
+        right: "max(1rem, env(safe-area-inset-right) + 1rem)",
       }}
       aria-label="Добавить"
     >
