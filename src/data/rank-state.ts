@@ -60,7 +60,7 @@ export function useRankState(): State {
 
 // ─── Доступные фоны по рангу ────────────────────────────────────────────
 // Чем выше ранг, тем больше визуалов разблокировано. Hell Legend (idx 4)
-// открывает всё, кроме VIP-варианта. VIP (idx 5) — все варианты.
+// открывает все варианты.
 
 const BGS_BY_TIER: PlaqueBg[][] = [
   ["rider"], // 0 rookie
@@ -75,8 +75,8 @@ const BGS_BY_TIER: PlaqueBg[][] = [
     "legend-cyber-rune",
     "legend-holo-prism",
   ], // 4 hell-legend
-  ["vip-platinum"], // 5 vip
 ];
+
 
 export function getAvailablePlaqueBgs(rankIndex: number): PlaqueBg[] {
   const list: PlaqueBg[] = [];
