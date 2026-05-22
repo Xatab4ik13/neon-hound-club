@@ -279,3 +279,110 @@ export function activatePass(purchaseId: string) {
 }
 
 export type { PassTier };
+
+// ============================================================================
+// NEWS (ADMIN)
+// ============================================================================
+
+export type AdminNewsItem = {
+  id: string;
+  slug: string;
+  title: string;
+  excerpt: string;
+  body: string;
+  tag: string;
+  coverUrl: string | null;
+  metaTitle: string;
+  metaDescription: string;
+  ogImage: string | null;
+  status: "draft" | "published";
+  publishedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export function fetchAdminNews(params?: { search?: string; status?: "draft" | "published" | "all" }) {
+  const qs = new URLSearchParams();
+  if (params?.search) qs.set("search", params.search);
+  if (params?.status) qs.set("status", params.status);
+  const s = qs.toString();
+  return apiFetch<{ items: AdminNewsItem[] }>(`/api/v1/admin/news${s ? `?${s}` : ""}`);
+}
+
+export function createAdminNews(data: Partial<AdminNewsItem>) {
+  return apiFetch<AdminNewsItem>(`/api/v1/admin/news`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export function updateAdminNews(id: string, data: Partial<AdminNewsItem>) {
+  return apiFetch<AdminNewsItem>(`/api/v1/admin/news/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+}
+
+export function deleteAdminNews(id: string) {
+  return apiFetch<{ ok: true }>(`/api/v1/admin/news/${id}`, { method: "DELETE" });
+}
+
+// ============================================================================
+// XP / BADGES (ADMIN)
+// ============================================================================
+
+export function grantXp(nick: string, amount: number, reason: string) {
+  return apiFetch<{ ok: true }>(`/api/v1/admin/xp/grant`, {
+    method: "POST",
+    body: JSON.stringify({ nick, amount, reason }),
+  });
+}
+
+export type AdminBadge = {
+  id: string;
+  code: string;
+  name: string;
+  description: string;
+  rarity: "common" | "rare" | "epic" | "legendary" | "mythic";
+  category: "rank" | "club" | "pass" | "event" | "achievement" | "founder";
+  issue: string | null;
+  mintedOf: number | null;
+  active: boolean;
+  createdAt: string;
+};
+
+export function fetchAdminBadges() {
+  return apiFetch<{ items: AdminBadge[] }>(`/api/v1/admin/badges`);
+}
+
+export function createAdminBadge(data: Partial<AdminBadge>) {
+  return apiFetch<AdminBadge>(`/api/v1/admin/badges`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export function updateAdminBadge(id: string, data: Partial<AdminBadge>) {
+  return apiFetch<AdminBadge>(`/api/v1/admin/badges/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+}
+
+export function deleteAdminBadge(id: string) {
+  return apiFetch<{ ok: true }>(`/api/v1/admin/badges/${id}`, { method: "DELETE" });
+}
+
+export function awardBadge(nick: string, badgeCode: string) {
+  return apiFetch<{ ok: true; awarded: boolean }>(`/api/v1/admin/badges/award`, {
+    method: "POST",
+    body: JSON.stringify({ nick, badgeCode }),
+  });
+}
+
+export function revokeBadge(nick: string, badgeCode: string) {
+  return apiFetch<{ ok: true }>(`/api/v1/admin/badges/award`, {
+    method: "DELETE",
+    body: JSON.stringify({ nick, badgeCode }),
+  });
+}

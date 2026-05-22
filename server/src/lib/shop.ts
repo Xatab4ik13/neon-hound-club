@@ -2,6 +2,7 @@ import { and, eq, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { orders, orderItems, products } from "../db/schema/shop.js";
 import { ticketCredit } from "./tickets.js";
+import { awardXp } from "./xp.js";
 import { tryCompleteQuest } from "./quests.js";
 
 /**
@@ -53,6 +54,18 @@ export async function markOrderPaid(orderId: string): Promise<{ ok: boolean; rea
       idempotent: true,
     });
   }
+
+  // +XP: 1 XP за 100 ₽
+  const xp = Math.max(10, Math.floor((order.totalRub ?? 0) / 100));
+  await awardXp({
+    userId: order.userId,
+    amount: xp,
+    source: "merch_purchase",
+    reason: `Покупка мерча #${order.id.slice(0, 8)}`,
+    refType: "order",
+    refId: order.id,
+    idempotent: true,
+  });
 
   // Квест: первый оплаченный заказ.
   await tryCompleteQuest(order.userId, "first_order");

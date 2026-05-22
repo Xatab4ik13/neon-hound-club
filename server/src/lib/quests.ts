@@ -2,6 +2,7 @@ import { and, eq } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { quests, userQuestCompletions, type Quest } from "../db/schema/quests.js";
 import { ticketCredit } from "./tickets.js";
+import { awardXp } from "./xp.js";
 
 /**
  * Стартовый набор квестов — создаётся при первом старте, если ещё нет в БД.
@@ -131,6 +132,18 @@ export async function completeQuest(
       refId: completion!.id,
     });
   }
+
+  // +XP за квест: 10 XP за каждый билет (минимум 25)
+  const xp = Math.max(25, quest.ticketsReward * 10);
+  await awardXp({
+    userId,
+    amount: xp,
+    source: "quest",
+    reason: `Квест: ${quest.title}`,
+    refType: "quest_completion",
+    refId: completion!.id,
+    idempotent: true,
+  });
 
   return { credited: true, completionId: completion!.id, tickets: quest.ticketsReward };
 }

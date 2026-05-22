@@ -2,6 +2,7 @@ import { and, desc, eq, gt, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { passPurchases, PASS_CONFIG, PASS_DURATION_DAYS, type PassTier } from "../db/schema/pass.js";
 import { ticketCredit } from "./tickets.js";
+import { awardXp } from "./xp.js";
 import { tryCompleteQuest } from "./quests.js";
 
 /**
@@ -54,6 +55,19 @@ export async function activatePassPurchase(purchaseId: string): Promise<{ ok: bo
       idempotent: true,
     });
   }
+
+  // +XP за активацию пасса по тиру (idempotent по purchase.id)
+  const tierXp: Record<string, number> = { silver: 50, gold: 150, platinum: 400 };
+  const xp = tierXp[p.tier] ?? 50;
+  await awardXp({
+    userId: p.userId,
+    amount: xp,
+    source: "pass_monthly",
+    reason: `Hell Pass ${p.tier}`,
+    refType: "pass_purchase",
+    refId: p.id,
+    idempotent: true,
+  });
 
   // Квест: первая активация пасса любого тира.
   await tryCompleteQuest(p.userId, "first_pass");

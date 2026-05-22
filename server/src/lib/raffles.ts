@@ -2,6 +2,7 @@ import { and, count, eq, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { raffles, raffleEntries } from "../db/schema/raffles.js";
 import { getTicketBalance, ticketCredit } from "./tickets.js";
+import { awardXp } from "./xp.js";
 
 /**
  * Вход в розыгрыш:
@@ -95,6 +96,17 @@ export async function pickWinner(raffleId: string) {
       updatedAt: new Date(),
     })
     .where(eq(raffles.id, raffleId));
+
+  // +XP победителю
+  await awardXp({
+    userId: winner.userId,
+    amount: 500,
+    source: "raffle_win",
+    reason: "Победа в розыгрыше",
+    refType: "raffle",
+    refId: raffleId,
+    idempotent: true,
+  });
 
   return { ok: true as const, winnerUserId: winner.userId, winnerEntryId: winner.id, alreadyPicked: false };
 }

@@ -16,6 +16,8 @@ import {
 import { sendMail } from "../lib/mailer.js";
 import { verifyEmailTemplate } from "../lib/email-templates/verify.js";
 import { tryCompleteQuest } from "../lib/quests.js";
+import { attachReferral, activateReferral, getOrCreateReferralCode } from "../lib/referrals.js";
+import { awardXp } from "../lib/xp.js";
 
 const emailSchema = z.string().trim().toLowerCase().email().max(255);
 const passwordSchema = z.string().min(8).max(128);
@@ -30,6 +32,7 @@ const registerSchema = z.object({
   email: emailSchema,
   password: passwordSchema,
   nick: nickSchema,
+  ref: z.string().trim().max(40).optional(),
 });
 
 const loginSchema = z.object({
@@ -74,7 +77,7 @@ export async function authRoutes(app: FastifyInstance) {
     if (!parsed.success) {
       return reply.code(400).send({ error: "invalid_input", message: parsed.error.issues[0]?.message ?? "bad input" });
     }
-    const { email, password, nick } = parsed.data;
+    const { email, password, nick, ref } = parsed.data;
 
     const existing = await db
       .select({ id: users.id, email: users.email, nick: users.nick })
@@ -92,6 +95,12 @@ export async function authRoutes(app: FastifyInstance) {
       .insert(users)
       .values({ email, passwordHash, nick })
       .returning({ id: users.id, email: users.email, nick: users.nick });
+
+    // Создаём реф-код новому юзеру и подвязываем к рефереру, если есть ?ref=.
+    await getOrCreateReferralCode(created.id, created.nick);
+    if (ref) {
+      try { await attachReferral(created.id, ref); } catch (e) { req.log.error({ err: e }, "attachReferral failed"); }
+    }
 
     await issueAndSendVerification(created.id, created.email, created.nick);
 
@@ -176,6 +185,20 @@ export async function authRoutes(app: FastifyInstance) {
 
     // Квест: подтвердил email.
     await tryCompleteQuest(u.id, "verify_email");
+
+    // XP за подтверждение email (idempotent по user_id)
+    await awardXp({
+      userId: u.id,
+      amount: 50,
+      source: "verify_email",
+      reason: "Подтверждён email",
+      refType: "user",
+      refId: u.id,
+      idempotent: true,
+    });
+
+    // Активация реферала, если был ?ref= при регистрации.
+    try { await activateReferral(u.id); } catch (e) { req.log.error({ err: e }, "activateReferral failed"); }
 
     return reply.send({ ok: true, user: u });
   });
