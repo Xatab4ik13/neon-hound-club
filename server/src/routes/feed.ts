@@ -237,12 +237,12 @@ export async function feedRoutes(app: FastifyInstance) {
     if (!row) return reply.code(404).send({ error: "not_found" });
     const session = (req.user as SessionPayload | undefined) ?? null;
     const [hydrated] = await hydratePosts([row], session?.sub ?? null);
-
-    const comments = await db
+    // Полный список комментов (hydrated.comments кап 20) — пересоберём вместе с лайками вьюера.
+    const viewerId = session?.sub ?? null;
+    const allRows = await db
       .select({
         id: postComments.id,
         text: postComments.text,
-        likes: postComments.likes,
         createdAt: postComments.createdAt,
         authorId: postComments.authorId,
         nick: users.nick,
@@ -253,8 +253,54 @@ export async function feedRoutes(app: FastifyInstance) {
       .leftJoin(profiles, eq(profiles.id, postComments.authorId))
       .where(and(eq(postComments.postId, req.params.id), isNull(postComments.deletedAt)))
       .orderBy(postComments.createdAt);
-
+    const cids = allRows.map((c) => c.id);
+    const [likeCounts, mine] = await Promise.all([
+      cids.length
+        ? db
+            .select({ commentId: commentLikes.commentId, c: sql<number>`count(*)::int` })
+            .from(commentLikes)
+            .where(inArray(commentLikes.commentId, cids))
+            .groupBy(commentLikes.commentId)
+        : Promise.resolve([] as { commentId: string; c: number }[]),
+      viewerId && cids.length
+        ? db
+            .select({ commentId: commentLikes.commentId })
+            .from(commentLikes)
+            .where(and(inArray(commentLikes.commentId, cids), eq(commentLikes.userId, viewerId)))
+        : Promise.resolve([] as { commentId: string }[]),
+    ]);
+    const lm = new Map(likeCounts.map((r) => [r.commentId, r.c]));
+    const ms = new Set(mine.map((r) => r.commentId));
+    const comments = allRows.map((c) => ({
+      ...c,
+      likes: lm.get(c.id) ?? 0,
+      liked: ms.has(c.id),
+    }));
     return { ...hydrated, comments };
+  });
+
+  // POST /api/v1/feed/comments/:cid/like  /  DELETE → unlike
+  app.post<{ Params: { cid: string } }>("/comments/:cid/like", { preHandler: requireAuth }, async (req, reply) => {
+    const s = req.user as SessionPayload;
+    const [c] = await db.select({ id: postComments.id }).from(postComments).where(and(eq(postComments.id, req.params.cid), isNull(postComments.deletedAt))).limit(1);
+    if (!c) return reply.code(404).send({ error: "not_found" });
+    await db.insert(commentLikes).values({ commentId: req.params.cid, userId: s.sub }).onConflictDoNothing();
+    return { ok: true };
+  });
+  app.delete<{ Params: { cid: string } }>("/comments/:cid/like", { preHandler: requireAuth }, async (req) => {
+    const s = req.user as SessionPayload;
+    await db.delete(commentLikes).where(and(eq(commentLikes.commentId, req.params.cid), eq(commentLikes.userId, s.sub)));
+    return { ok: true };
+  });
+
+  // DELETE /api/v1/feed/:id/vote — снять свой голос
+  app.delete<{ Params: { id: string } }>("/:id/vote", { preHandler: requireAuth }, async (req, reply) => {
+    const s = req.user as SessionPayload;
+    const [p] = await db.select({ id: posts.id, poll: posts.poll }).from(posts).where(and(eq(posts.id, req.params.id), isNull(posts.deletedAt))).limit(1);
+    if (!p || !p.poll) return reply.code(404).send({ error: "not_found" });
+    if (p.poll.closed) return reply.code(409).send({ error: "closed" });
+    await db.delete(postPollVotes).where(and(eq(postPollVotes.postId, p.id), eq(postPollVotes.userId, s.sub)));
+    return { ok: true };
   });
 
   // POST /api/v1/feed/:id/like  /  DELETE → unlike
