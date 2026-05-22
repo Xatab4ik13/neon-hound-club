@@ -22,6 +22,8 @@ export type Product = {
   description?: string;
   composition?: string;
   care?: string;
+  shipping?: string;
+  returns?: string;
   /** Цифровые товары: сколько билетов на участие в розыгрышах начисляется после покупки. */
   ticketsBonus?: number;
 };
