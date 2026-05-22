@@ -64,8 +64,11 @@ function Composer() {
   const profile = useBloggerProfile();
   const fileRef = useRef<HTMLInputElement>(null);
   const [text, setText] = useState("");
-  const [image, setImage] = useState<string | undefined>();
+  const [file, setFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | undefined>();
   const [poll, setPoll] = useState<PollDraft | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const pollValid =
     !!poll &&
@@ -73,38 +76,57 @@ function Composer() {
     poll.options.filter((o) => o.trim().length > 0).length >= 2;
 
   const canPost =
-    (text.trim().length > 0 || !!image || !!poll) && (!poll || pollValid);
+    !busy && (text.trim().length > 0 || !!file || !!poll) && (!poll || pollValid);
 
-  const onFile = (file: File | null) => {
-    if (!file) return;
+  const onFile = (f: File | null) => {
+    if (!f) return;
+    setFile(f);
     const r = new FileReader();
-    r.onload = () => setImage(String(r.result));
-    r.readAsDataURL(file);
+    r.onload = () => setImagePreview(String(r.result));
+    r.readAsDataURL(f);
   };
 
-  const publish = () => {
-    if (!canPost) return;
-    const pollPayload: FeedPoll | undefined = poll
-      ? {
-          question: poll.question.trim(),
-          anonymous: poll.anonymous,
-          multi: poll.multi,
-          options: poll.options
-            .map((t) => t.trim())
-            .filter((t) => t.length > 0)
-            .map((t, i) => ({ id: `o${i + 1}`, text: t, votes: 0 })),
-        }
-      : undefined;
-    feedStore.addPost({
-      text: text.trim(),
-      image,
-      authorSlug: BLOGGER_SLUG,
-      poll: pollPayload,
-    });
-    setText("");
-    setImage(undefined);
-    setPoll(null);
+  const clearImage = () => {
+    setFile(null);
+    setImagePreview(undefined);
     if (fileRef.current) fileRef.current.value = "";
+  };
+
+  const publish = async () => {
+    if (!canPost) return;
+    setBusy(true);
+    setError(null);
+    try {
+      let imageUrl: string | undefined;
+      if (file) {
+        const { uploadFileToS3 } = await import("@/lib/garage-api");
+        imageUrl = await uploadFileToS3(file, "post");
+      }
+      const pollPayload: FeedPoll | undefined = poll
+        ? {
+            question: poll.question.trim(),
+            anonymous: poll.anonymous,
+            multi: poll.multi,
+            options: poll.options
+              .map((t) => t.trim())
+              .filter((t) => t.length > 0)
+              .map((t, i) => ({ id: `o${i + 1}`, text: t, votes: 0 })),
+          }
+        : undefined;
+      await feedStore.addPost({
+        text: text.trim(),
+        image: imageUrl,
+        authorSlug: BLOGGER_SLUG,
+        poll: pollPayload,
+      });
+      setText("");
+      clearImage();
+      setPoll(null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Не получилось опубликовать");
+    } finally {
+      setBusy(false);
+    }
   };
 
   const updateOpt = (i: number, v: string) =>
