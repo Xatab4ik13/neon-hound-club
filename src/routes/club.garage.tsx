@@ -53,9 +53,9 @@ function GaragePage() {
     persist(bikes.filter((x) => x.id !== id));
   }
 
-  if (isMobile) {
-    return (
-      <>
+  return (
+    <>
+      <div className="mx-auto w-full max-w-2xl">
         <MobileGarage
           bikes={bikes}
           onPersist={persist}
@@ -63,69 +63,13 @@ function GaragePage() {
           onEditBike={openEdit}
           onDeleteBike={handleDelete}
         />
-        <BikeFormModal
-          open={modalOpen}
-          onOpenChange={setModalOpen}
-          bike={editing}
-          onSave={handleSave}
-        />
-      </>
-    );
-  }
-
-  const [primary, ...rest] = bikes;
-
-  return (
-    <main className="mx-auto w-full max-w-5xl px-4 py-6 md:px-8 md:py-10">
-      <PageHeader title="Гараж" subtitle={`Слотов: ${bikes.length}/2`} />
-
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
-        {primary ? (
-          <div className="col-span-2 md:col-span-3">
-            <HeroBikeCard
-              bike={primary}
-              onEdit={() => openEdit(primary)}
-              onDelete={() => handleDelete(primary.id)}
-            />
-          </div>
-        ) : (
-          <div className="md:col-span-3">
-            <EmptyGarageSlot onAdd={openAdd} />
-          </div>
-        )}
-        <div className="md:col-span-1">
-          <EmptyGarageSlot onAdd={openAdd} />
-        </div>
       </div>
-
-      {primary && (
-        <div className="mt-6">
-          <BikeJournal
-            bikeId={primary.id}
-            currentMileage={parseInt((primary.mileage ?? "").replace(/\D/g, ""), 10) || 0}
-          />
-        </div>
-      )}
-
-      {rest.length > 0 && (
-        <div className="mt-6 grid gap-4 md:grid-cols-2">
-          {rest.map((b) => (
-            <BikeCard
-              key={b.id}
-              bike={b}
-              onEdit={() => openEdit(b)}
-              onDelete={() => handleDelete(b.id)}
-            />
-          ))}
-        </div>
-      )}
-
       <BikeFormModal
         open={modalOpen}
         onOpenChange={setModalOpen}
         bike={editing}
         onSave={handleSave}
       />
-    </main>
+    </>
   );
 }
