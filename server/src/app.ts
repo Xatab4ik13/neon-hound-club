@@ -70,6 +70,9 @@ export async function buildApp() {
   await app.register(questsRoutes, { prefix: "/api/v1/quests" });
   await app.register(adminQuestsRoutes, { prefix: "/api/v1/admin/quests" });
 
+  const { adminUsersRoutes } = await import("./routes/admin-users.js");
+  await app.register(adminUsersRoutes, { prefix: "/api/v1/admin/users" });
+
   // Создаём S3-бакет, если его ещё нет.
   try {
     const { ensureBucket } = await import("./lib/s3.js");

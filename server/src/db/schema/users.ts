@@ -11,6 +11,8 @@ export const users = pgTable(
     role: varchar("role", { length: 16 }).notNull().default("user"),
     emailVerified: boolean("email_verified").notNull().default(false),
     emailVerifiedAt: timestamp("email_verified_at", { withTimezone: true }),
+    blocked: boolean("blocked").notNull().default(false),
+    blockedAt: timestamp("blocked_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },

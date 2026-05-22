@@ -57,6 +57,13 @@
       "when": 1779540000000,
       "tag": "0007_bike_extras",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1779550000000,
+      "tag": "0008_user_blocked",
+      "breakpoints": true
     }
   ]
 }

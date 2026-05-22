@@ -116,6 +116,10 @@ export async function authRoutes(app: FastifyInstance) {
       return reply.code(401).send({ error: "invalid_credentials", message: "Неверный email или пароль" });
     }
 
+    if (u.blocked) {
+      return reply.code(403).send({ error: "user_blocked", message: "Аккаунт заблокирован" });
+    }
+
     if (!u.emailVerified) {
       return reply.code(403).send({
         error: "email_not_verified",
