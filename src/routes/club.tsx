@@ -1,5 +1,5 @@
-import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import {
   Newspaper,
   Bot,
@@ -61,6 +61,15 @@ function ClubLayout() {
   const [menuOpen, setMenuOpen] = useState(false);
   const { pathname } = useLocation();
   const isMobile = useIsMobile();
+  const viewer = useViewer();
+  const navigate = useNavigate();
+
+  // Блогер живёт в своём кабинете — внутрь клуба не пускаем.
+  useEffect(() => {
+    if (viewer.hydrated && viewer.user?.role === "blogger") {
+      navigate({ to: "/blogger", replace: true });
+    }
+  }, [viewer.hydrated, viewer.user?.role, navigate]);
 
   // Mobile shell — iOS-app feel: top bar + push/pop transition + bottom tab bar.
   if (isMobile) {
