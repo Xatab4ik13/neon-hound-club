@@ -1,10 +1,12 @@
-// Гайд по установке клуба как PWA. Определяем платформу пользователя и
-// показываем подходящую инструкцию. После установки веб-приложения у нас
-// будут работать пуш-уведомления — это и есть «клуб в кармане».
+// Гайд по установке клуба как PWA в iOS-стиле.
+// Показываем только iPhone/iPad и Android. На Android, если браузер
+// поддерживает beforeinstallprompt — даём настоящую кнопку «Установить».
+// Если не поддерживает (или уже установлено) — короткая инструкция.
 
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Smartphone, Monitor, Apple, Bell } from "lucide-react";
+import { Apple, Bell, Check, Download, Share, Smartphone, Sparkles, Ticket } from "lucide-react";
+import { PageHeader } from "@/components/club/PageHeader";
 
 export const Route = createFileRoute("/club/install")({
   head: () => ({
@@ -21,150 +23,260 @@ export const Route = createFileRoute("/club/install")({
   component: InstallPage,
 });
 
-type Platform = "ios" | "android" | "desktop";
+type Platform = "ios" | "android";
 
 function detectPlatform(): Platform {
-  if (typeof navigator === "undefined") return "desktop";
+  if (typeof navigator === "undefined") return "android";
   const ua = navigator.userAgent.toLowerCase();
   if (/iphone|ipad|ipod/.test(ua)) return "ios";
-  // iPadOS 13+ маскируется под Mac, но это touch-устройство
   if (/macintosh/.test(ua) && navigator.maxTouchPoints > 1) return "ios";
-  if (/android/.test(ua)) return "android";
-  return "desktop";
+  return "android";
 }
 
+// beforeinstallprompt: в стандартных типах его нет, описываем минимально.
+type BIPEvent = Event & {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
+};
+
 function InstallPage() {
-  const [platform, setPlatform] = useState<Platform>("desktop");
+  const [platform, setPlatform] = useState<Platform>("android");
+  const [installed, setInstalled] = useState(false);
+  const [deferred, setDeferred] = useState<BIPEvent | null>(null);
 
   useEffect(() => {
     setPlatform(detectPlatform());
+
+    if (typeof window !== "undefined") {
+      const standalone =
+        window.matchMedia?.("(display-mode: standalone)").matches ||
+        (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
+      setInstalled(!!standalone);
+    }
+
+    const onPrompt = (e: Event) => {
+      e.preventDefault();
+      setDeferred(e as BIPEvent);
+    };
+    const onInstalled = () => {
+      setInstalled(true);
+      setDeferred(null);
+    };
+    window.addEventListener("beforeinstallprompt", onPrompt);
+    window.addEventListener("appinstalled", onInstalled);
+    return () => {
+      window.removeEventListener("beforeinstallprompt", onPrompt);
+      window.removeEventListener("appinstalled", onInstalled);
+    };
   }, []);
 
-  return (
-    <main className="mx-auto w-full max-w-3xl px-4 py-6 md:px-8 md:py-10">
-      <Link
-        to="/club/quests"
-        className="mb-6 inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground transition-colors hover:text-foreground"
-      >
-        <ArrowLeft className="h-3 w-3" />К челленджам
-      </Link>
+  async function installNow() {
+    if (!deferred) return;
+    await deferred.prompt();
+    const { outcome } = await deferred.userChoice;
+    if (outcome === "accepted") setInstalled(true);
+    setDeferred(null);
+  }
 
-      <header className="mb-8 border border-white/[0.06] bg-card/40 p-6 md:p-8">
-        <div className="font-mono text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
-          Клуб в кармане
+  return (
+    <main
+      className="mx-auto w-full max-w-md px-4 py-5"
+      style={{ paddingBottom: "calc(40px + env(safe-area-inset-bottom))" }}
+    >
+      <PageHeader title="Установить" subtitle="Клуб в кармане" />
+
+      {/* Reward hero card — единый iOS-стиль как на /club/invite */}
+      <section className="mb-5 overflow-hidden rounded-2xl border border-primary/25 bg-gradient-to-br from-primary/15 via-card/60 to-black px-5 py-6">
+        <div className="flex items-center gap-2 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-primary">
+          <Bell className="h-3.5 w-3.5" />
+          Пуши и быстрый доступ
         </div>
-        <h1 className="mt-2 font-display text-3xl font-black uppercase italic tracking-tight text-foreground md:text-4xl">
-          Установи приложение
-        </h1>
-        <p className="mt-3 max-w-xl text-sm text-muted-foreground">
-          Клуб — это PWA: устанавливается из браузера, без App Store. После
-          установки получишь пуш-уведомления о новых розыгрышах, постах и
-          ответах в комментариях. Награда: <b className="text-foreground">+200 XP</b> и{" "}
-          <b className="text-foreground">1 билет</b>.
+        <div className="mt-2 font-display text-[26px] font-black italic uppercase leading-tight tracking-tight text-foreground">
+          Поставь клуб на&nbsp;экран
+        </div>
+        <p className="mt-2 text-[14px] leading-snug text-muted-foreground">
+          Без App Store — открывается как обычное приложение, присылает пуши о
+          новых розыгрышах, постах и ответах.
         </p>
 
-        <div className="mt-4 inline-flex items-center gap-2 border border-primary/30 bg-primary/10 px-3 py-2 font-mono text-[11px] uppercase tracking-wider text-primary">
-          <Bell className="h-3 w-3" />
-          Уведомления включаются после установки
+        <div className="mt-4 flex flex-wrap gap-2">
+          <Reward icon={<Sparkles className="h-3.5 w-3.5" />} text="+200 XP" />
+          <Reward icon={<Ticket className="h-3.5 w-3.5" />} text="+1 билет" />
         </div>
-      </header>
+      </section>
 
-      <div className="mb-4 flex gap-2 font-mono text-[10px] uppercase tracking-wider">
-        {(
-          [
-            { id: "ios", label: "iPhone / iPad", icon: Apple },
-            { id: "android", label: "Android", icon: Smartphone },
-            { id: "desktop", label: "Десктоп", icon: Monitor },
-          ] as const
-        ).map((tab) => {
-          const active = platform === tab.id;
-          const Icon = tab.icon;
-          return (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setPlatform(tab.id)}
-              className={`flex items-center gap-2 border px-3 py-2 transition-colors ${
-                active
-                  ? "border-primary bg-primary/10 text-primary"
-                  : "border-white/[0.06] text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <Icon className="h-3 w-3" />
-              {tab.label}
-            </button>
-          );
-        })}
+      {/* Platform switcher — iOS segmented control */}
+      <div className="mb-5 grid grid-cols-2 gap-1 rounded-2xl border border-white/[0.06] bg-card/40 p-1">
+        <SegBtn
+          active={platform === "ios"}
+          onClick={() => setPlatform("ios")}
+          icon={<Apple className="h-4 w-4" />}
+          label="iPhone / iPad"
+        />
+        <SegBtn
+          active={platform === "android"}
+          onClick={() => setPlatform("android")}
+          icon={<Smartphone className="h-4 w-4" />}
+          label="Android"
+        />
       </div>
 
+      {installed && (
+        <div className="mb-5 flex items-center gap-3 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3.5">
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-emerald-500/15 text-emerald-300">
+            <Check className="h-4 w-4" />
+          </span>
+          <div className="min-w-0">
+            <div className="text-[15px] font-semibold text-foreground">
+              Уже установлено
+            </div>
+            <div className="text-[12px] text-muted-foreground">
+              Ты открыл клуб из приложения — награда уже зачислена.
+            </div>
+          </div>
+        </div>
+      )}
+
+      {platform === "android" && !installed && (
+        <AndroidInstall canInstall={!!deferred} onInstall={installNow} />
+      )}
+
       {platform === "ios" && <IosGuide />}
-      {platform === "android" && <AndroidGuide />}
-      {platform === "desktop" && <DesktopGuide />}
     </main>
   );
 }
 
-function Guide({ steps, note }: { steps: string[]; note?: string }) {
+function Reward({ icon, text }: { icon: React.ReactNode; text: string }) {
   return (
-    <section className="border border-white/[0.06] bg-card/40 p-6">
-      <ol className="space-y-3">
-        {steps.map((s, i) => (
-          <li key={i} className="flex gap-3 text-sm text-foreground">
-            <span className="grid h-6 w-6 shrink-0 place-items-center border border-primary/40 bg-primary/10 font-mono text-xs font-bold text-primary">
-              {i + 1}
-            </span>
-            <span className="pt-0.5">{s}</span>
-          </li>
-        ))}
-      </ol>
-      {note && (
-        <p className="mt-4 border-t border-white/[0.06] pt-4 font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-          {note}
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-black/30 px-2.5 py-1 font-mono text-[11px] font-bold uppercase tracking-wider text-foreground">
+      <span className="text-primary">{icon}</span>
+      {text}
+    </span>
+  );
+}
+
+function SegBtn({
+  active,
+  onClick,
+  icon,
+  label,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon: React.ReactNode;
+  label: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex items-center justify-center gap-1.5 rounded-xl px-3 py-2 font-mono text-[11px] font-bold uppercase tracking-wider transition-colors active:scale-[0.98] ${
+        active
+          ? "bg-primary text-primary-foreground"
+          : "text-muted-foreground hover:text-foreground"
+      }`}
+    >
+      {icon}
+      {label}
+    </button>
+  );
+}
+
+function AndroidInstall({
+  canInstall,
+  onInstall,
+}: {
+  canInstall: boolean;
+  onInstall: () => void;
+}) {
+  return (
+    <>
+      <section className="mb-5 rounded-2xl border border-white/[0.06] bg-card/40 p-4">
+        <button
+          type="button"
+          onClick={onInstall}
+          disabled={!canInstall}
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3.5 font-display text-[15px] font-black uppercase italic tracking-wider text-primary-foreground transition-opacity active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <Download className="h-4 w-4" />
+          Установить приложение
+        </button>
+        <p className="mt-3 text-center text-[12px] leading-snug text-muted-foreground">
+          {canInstall
+            ? "Жми кнопку — Android спросит разрешение и сам поставит иконку на главный экран."
+            : "Открой эту страницу в Chrome — там появится кнопка автоматической установки. На других браузерах используй пункт «Установить» в меню."}
         </p>
-      )}
-    </section>
+      </section>
+
+      <Steps
+        title="Если кнопка не сработала"
+        steps={[
+          "Открой меню браузера (⋮ в правом верхнем углу).",
+          "Выбери «Установить приложение» или «Добавить на главный экран».",
+          "Подтверди — иконка появится на рабочем столе.",
+          "Запусти с иконки и разреши уведомления.",
+        ]}
+      />
+    </>
   );
 }
 
 function IosGuide() {
   return (
-    <Guide
-      steps={[
-        "Открой клуб в Safari (Chrome на iOS не умеет ставить PWA).",
-        "Нажми кнопку «Поделиться» внизу экрана — квадрат со стрелкой вверх.",
-        "В списке выбери «На экран „Домой“» (Add to Home Screen).",
-        "Подтверди — иконка клуба появится на рабочем столе.",
-        "Открой клуб с иконки и разреши уведомления, когда спросит.",
-      ]}
-      note="Только Safari. На iOS 16.4+ уведомления работают, на более старых — нет."
-    />
+    <>
+      <Steps
+        title="Установка"
+        steps={[
+          "Открой клуб в Safari (Chrome на iOS не умеет ставить PWA).",
+          <>
+            Нажми кнопку{" "}
+            <span className="inline-flex translate-y-[1px] items-center gap-1 align-middle text-primary">
+              <Share className="h-3.5 w-3.5" />
+              «Поделиться»
+            </span>{" "}
+            внизу экрана.
+          </>,
+          'В списке выбери «На экран „Домой"» (Add to Home Screen).',
+          "Подтверди — иконка клуба появится на рабочем столе.",
+          "Открой клуб с иконки и разреши уведомления, когда спросит.",
+        ]}
+        footer="Только Safari. На iOS 16.4 и новее уведомления работают, на старых — нет."
+      />
+    </>
   );
 }
 
-function AndroidGuide() {
+function Steps({
+  title,
+  steps,
+  footer,
+}: {
+  title: string;
+  steps: React.ReactNode[];
+  footer?: string;
+}) {
   return (
-    <Guide
-      steps={[
-        "Открой клуб в Chrome (или другом современном браузере).",
-        "Внизу появится плашка «Установить приложение» — нажми её.",
-        "Если плашки нет, открой меню браузера (⋮) → «Установить приложение».",
-        "Подтверди — иконка появится на рабочем столе.",
-        "Запусти с иконки и разреши уведомления.",
-      ]}
-    />
-  );
-}
-
-function DesktopGuide() {
-  return (
-    <Guide
-      steps={[
-        "Открой клуб в Chrome, Edge или Arc.",
-        "В адресной строке справа появится иконка «Установить» (монитор со стрелкой).",
-        "Нажми её и подтверди установку.",
-        "Клуб откроется в отдельном окне без вкладок — как обычное приложение.",
-      ]}
-      note="На десктопе уведомления работают, пока браузер запущен в фоне."
-    />
+    <section className="mb-5">
+      <h3 className="mb-1.5 px-3 font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+        {title}
+      </h3>
+      <ol className="overflow-hidden rounded-2xl border border-white/[0.06] bg-card/40 divide-y divide-white/[0.05]">
+        {steps.map((s, i) => (
+          <li key={i} className="flex items-start gap-3 px-4 py-3.5">
+            <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-primary/15 font-mono text-[11px] font-bold text-primary">
+              {i + 1}
+            </span>
+            <span className="pt-0.5 text-[14px] leading-snug text-foreground/90">
+              {s}
+            </span>
+          </li>
+        ))}
+      </ol>
+      {footer && (
+        <p className="mt-1.5 px-3 font-mono text-[10px] uppercase tracking-wider text-muted-foreground/80">
+          {footer}
+        </p>
+      )}
+    </section>
   );
 }
