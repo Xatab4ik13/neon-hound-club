@@ -14,8 +14,8 @@ export type InvitedFriend = {
 };
 
 const SEED: InvitedFriend[] = [
-  { id: "i1", nick: "MOSCOW_RAVE", joinedAt: "2026-04-12", ticketsRewarded: 5, status: "active" },
-  { id: "i2", nick: "VLAD_X", joinedAt: "2026-05-02", ticketsRewarded: 5, status: "joined" },
+  { id: "i1", nick: "MOSCOW_RAVE", joinedAt: "2026-04-12", ticketsRewarded: 1, status: "active" },
+  { id: "i2", nick: "VLAD_X", joinedAt: "2026-05-02", ticketsRewarded: 1, status: "joined" },
 ];
 
 let STATE: InvitedFriend[] = SEED;
@@ -71,5 +71,5 @@ export function buildReferralUrl(origin?: string) {
   return `${base}/?ref=${myReferralCode()}`;
 }
 
-/** Награды: +5 билетов мне и +5 другу за регистрацию. */
-export const REFERRAL_REWARD_TICKETS = 5;
+/** Награды: +1 билет мне и +1 другу за регистрацию. */
+export const REFERRAL_REWARD_TICKETS = 1;

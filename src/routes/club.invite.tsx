@@ -46,7 +46,7 @@ function InvitePage() {
   }
 
   const shareText = encodeURIComponent(
-    `Залетай в клуб HELLHOUND. По моей ссылке — +${REFERRAL_REWARD_TICKETS} билетов на старте.`,
+    `Залетай в клуб HELLHOUND. По моей ссылке — +${REFERRAL_REWARD_TICKETS} билет на старте.`,
   );
   const shareUrl = encodeURIComponent(url);
   const total = friends.reduce((s, f) => s + f.ticketsRewarded, 0);
@@ -59,7 +59,7 @@ function InvitePage() {
     try {
       await navigator.share({
         title: "Клуб HELLHOUND",
-        text: `+${REFERRAL_REWARD_TICKETS} билетов на старте по моей ссылке.`,
+        text: `+${REFERRAL_REWARD_TICKETS} билет на старте по моей ссылке.`,
         url,
       });
     } catch {
@@ -85,15 +85,13 @@ function InvitePage() {
             +{REFERRAL_REWARD_TICKETS}
           </span>
           <span className="font-mono text-[13px] uppercase tracking-wider text-muted-foreground">
-            билетов
+            билет
           </span>
         </div>
         <p className="mt-3 text-[14px] leading-snug text-muted-foreground">
           Друг регистрируется по твоей ссылке — обоим прилетает по{" "}
-          <span className="font-semibold text-foreground">
-            {REFERRAL_REWARD_TICKETS} билетов
-          </span>{" "}
-          после первой активности. Без лимитов.
+          <span className="font-semibold text-foreground">1 билету</span> после
+          первой активности. Без лимитов.
         </p>
       </section>
 
@@ -173,7 +171,7 @@ function InvitePage() {
           <Step n={2} text="Друг регистрируется в клубе и подтверждает email." />
           <Step
             n={3}
-            text={`После первой активности друга оба получаете +${REFERRAL_REWARD_TICKETS} билетов.`}
+            text={`После первой активности друга оба получаете +${REFERRAL_REWARD_TICKETS} билет.`}
           />
         </ol>
       </section>
@@ -186,7 +184,7 @@ function InvitePage() {
           </h3>
           {total > 0 && (
             <span className="font-mono text-[10px] uppercase tracking-wider text-primary">
-              +{total} билетов
+              +{total} {total === 1 ? "билет" : total < 5 ? "билета" : "билетов"}
             </span>
           )}
         </div>
