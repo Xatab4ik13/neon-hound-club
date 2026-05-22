@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Ban, Crown, Gift, ShieldCheck, Trash2, Sparkles, Award } from "lucide-react";
+import { Ban, Gift, ShieldCheck, Trash2, Sparkles, Award } from "lucide-react";
 import {
   PageHeader,
   Panel,
@@ -131,7 +131,7 @@ function UserDrawer({
   const [badgeOpen, setBadgeOpen] = useState(false);
 
   const patchMut = useMutation({
-    mutationFn: (patch: { role?: "user" | "admin" | "blogger"; blocked?: boolean }) =>
+    mutationFn: (patch: { role?: "user" | "blogger"; blocked?: boolean }) =>
       patchAdminUser(userId, patch),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: adminQk.user(userId) });
@@ -188,15 +188,6 @@ function UserDrawer({
               }
             >
               {u.role === "blogger" ? "Снять блогера" : "Сделать блогером"}
-            </Btn>
-            <Btn
-              variant="primary"
-              onClick={() =>
-                patchMut.mutate({ role: u.role === "admin" ? "user" : "admin" })
-              }
-            >
-              <Crown className="h-4 w-4" />
-              {u.role === "admin" ? "Снять админа" : "Сделать админом"}
             </Btn>
           </>
         )

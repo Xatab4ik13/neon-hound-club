@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { and, desc, eq, ilike, or, sql } from "drizzle-orm";
+import { and, desc, eq, ilike, ne, or, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { users } from "../db/schema/users.js";
 import { profiles } from "../db/schema/profile.js";
@@ -28,9 +28,13 @@ export async function adminUsersRoutes(app: FastifyInstance) {
       .parse(req.query ?? {});
 
     const search = q.q?.toLowerCase();
-    const where = search
+    const searchWhere = search
       ? or(ilike(users.email, `%${search}%`), ilike(users.nick, `%${search}%`))
       : undefined;
+    // Админы — не клубные юзеры, они живут в /api/v1/admin/staff.
+    const where = searchWhere
+      ? and(ne(users.role, "admin"), searchWhere)
+      : ne(users.role, "admin");
 
     const rows = await db
       .select({
@@ -47,7 +51,7 @@ export async function adminUsersRoutes(app: FastifyInstance) {
       })
       .from(users)
       .leftJoin(profiles, eq(profiles.userId, users.id))
-      .where(where ?? sql`true`)
+      .where(where)
       .orderBy(desc(users.createdAt))
       .limit(q.limit);
 
@@ -171,7 +175,7 @@ export async function adminUsersRoutes(app: FastifyInstance) {
   // PATCH /api/v1/admin/users/:id — роль / блокировка
   const patchSchema = z
     .object({
-      role: z.enum(["user", "admin", "blogger"]).optional(),
+      role: z.enum(["user", "blogger"]).optional(),
       blocked: z.boolean().optional(),
     })
     .refine((v) => v.role !== undefined || v.blocked !== undefined, {
@@ -183,6 +187,15 @@ export async function adminUsersRoutes(app: FastifyInstance) {
     if (!parsed.success) {
       return reply.code(400).send({ error: "invalid_input", message: parsed.error.issues[0]?.message });
     }
+    // Админами этот endpoint не управляет — они в /api/v1/admin/staff.
+    const [target] = await db
+      .select({ role: users.role })
+      .from(users)
+      .where(eq(users.id, req.params.id))
+      .limit(1);
+    if (!target) return reply.code(404).send({ error: "not_found" });
+    if (target.role === "admin") return reply.code(403).send({ error: "is_admin_use_staff_endpoint" });
+
     const patch: Record<string, unknown> = { updatedAt: new Date() };
     if (parsed.data.role !== undefined) patch.role = parsed.data.role;
     if (parsed.data.blocked !== undefined) {
@@ -214,7 +227,7 @@ export async function adminUsersRoutes(app: FastifyInstance) {
       .min(3)
       .max(24)
       .regex(/^[a-zA-Z0-9_]+$/, "Только латиница, цифры и _"),
-    role: z.enum(["user", "admin", "blogger"]).default("user"),
+    role: z.enum(["user", "blogger"]).default("user"),
     emailVerified: z.boolean().default(true),
   });
 
