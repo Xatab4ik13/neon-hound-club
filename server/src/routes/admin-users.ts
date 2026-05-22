@@ -97,12 +97,32 @@ export async function adminUsersRoutes(app: FastifyInstance) {
       .orderBy(desc(passPurchases.paidAt))
       .limit(1);
 
+    const { getXpTotal, computeRank } = await import("../lib/xp.js");
+    const xpTotal = await getXpTotal(u.id);
+    const rank = computeRank(xpTotal);
+
     return {
       ...u,
       ticketsBalance: Number(balance ?? 0),
       ticketsEarned: Number(earned ?? 0),
       activePass: activePass ?? null,
+      xpTotal,
+      rank,
     };
+  });
+
+  // DELETE /api/v1/admin/users/:id — полное удаление
+  app.delete<{ Params: { id: string } }>("/:id", async (req, reply) => {
+    const session = req.user as { sub: string } | undefined;
+    if (session?.sub === req.params.id) {
+      return reply.code(400).send({ error: "cannot_delete_self" });
+    }
+    const [row] = await db
+      .delete(users)
+      .where(eq(users.id, req.params.id))
+      .returning({ id: users.id });
+    if (!row) return reply.code(404).send({ error: "not_found" });
+    return { ok: true };
   });
 
   // PATCH /api/v1/admin/users/:id — роль / блокировка

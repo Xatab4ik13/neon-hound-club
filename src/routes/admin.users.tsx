@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Ban, Crown, Gift, ShieldCheck } from "lucide-react";
+import { Ban, Crown, Gift, ShieldCheck, Trash2, Sparkles, Award } from "lucide-react";
 import {
   PageHeader,
   Panel,
@@ -17,8 +17,13 @@ import {
 import {
   adminQk,
   creditTickets,
+  deleteAdminUser,
   fetchAdminUser,
   fetchAdminUsers,
+  fetchAdminUserBadges,
+  fetchAdminBadges,
+  grantXp,
+  awardBadge,
   patchAdminUser,
   type AdminUserListItem,
 } from "@/lib/admin-queries";
@@ -116,7 +121,14 @@ function UserDrawer({
     queryKey: adminQk.user(userId),
     queryFn: () => fetchAdminUser(userId),
   });
+  const badgesQ = useQuery({
+    queryKey: ["admin", "user", userId, "badges"],
+    queryFn: () => fetchAdminUserBadges(userId),
+  });
   const [confirmBlock, setConfirmBlock] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [xpOpen, setXpOpen] = useState(false);
+  const [badgeOpen, setBadgeOpen] = useState(false);
 
   const patchMut = useMutation({
     mutationFn: (patch: { role?: "user" | "admin"; blocked?: boolean }) =>
@@ -125,6 +137,16 @@ function UserDrawer({
       qc.invalidateQueries({ queryKey: adminQk.user(userId) });
       qc.invalidateQueries({ queryKey: ["admin", "users"] });
       toast.success("Обновлено");
+    },
+    onError: (e) => toast.error(e instanceof ApiError ? e.message : "Ошибка"),
+  });
+
+  const deleteMut = useMutation({
+    mutationFn: () => deleteAdminUser(userId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin", "users"] });
+      toast.success("Пользователь удалён");
+      onClose();
     },
     onError: (e) => toast.error(e instanceof ApiError ? e.message : "Ошибка"),
   });
@@ -139,6 +161,9 @@ function UserDrawer({
       footer={
         u && (
           <>
+            <Btn variant="danger" onClick={() => setConfirmDelete(true)}>
+              <Trash2 className="h-4 w-4" /> Удалить
+            </Btn>
             {u.blocked ? (
               <Btn onClick={() => patchMut.mutate({ blocked: false })}>
                 <ShieldCheck className="h-4 w-4" /> Разбанить
@@ -189,6 +214,33 @@ function UserDrawer({
             <Metric label="Всего заработано" value={String(u.ticketsEarned)} />
           </Section>
 
+          <Section title="Ранг / XP">
+            <Metric label="XP" value={String(u.xpTotal)} />
+            <Metric label="Ранг" value={u.rank?.rankLabel ?? "—"} />
+            <div className="col-span-2 flex gap-2">
+              <Btn onClick={() => setXpOpen(true)}>
+                <Sparkles className="h-4 w-4" /> Начислить XP
+              </Btn>
+              <Btn onClick={() => setBadgeOpen(true)}>
+                <Award className="h-4 w-4" /> Выдать значок
+              </Btn>
+            </div>
+          </Section>
+
+          <Section title="Значки">
+            {badgesQ.data?.items?.length ? (
+              <div className="col-span-2 flex flex-wrap gap-1.5">
+                {badgesQ.data.items.map((b) => (
+                  <Badge key={b.id} tone={b.category === "rank" ? "amber" : "zinc"}>
+                    {b.name}
+                  </Badge>
+                ))}
+              </div>
+            ) : (
+              <InfoRow label="—" value="нет значков" />
+            )}
+          </Section>
+
           <Section title="Hell Pass">
             {u.activePass ? (
               <>
@@ -224,6 +276,25 @@ function UserDrawer({
         message={u ? `@${u.nick} потеряет доступ к клубу.` : ""}
         confirmLabel="Забанить"
       />
+
+      <ConfirmModal
+        open={confirmDelete}
+        onClose={() => setConfirmDelete(false)}
+        onConfirm={() => {
+          deleteMut.mutate();
+          setConfirmDelete(false);
+        }}
+        title="Удалить юзера навсегда?"
+        message={u ? `@${u.nick} и все связанные данные будут удалены. Действие необратимо.` : ""}
+        confirmLabel="Удалить"
+      />
+
+      {xpOpen && u && (
+        <GrantXpModal nick={u.nick} userId={userId} onClose={() => setXpOpen(false)} />
+      )}
+      {badgeOpen && u && (
+        <AwardBadgeModal nick={u.nick} userId={userId} onClose={() => setBadgeOpen(false)} />
+      )}
     </Drawer>
   );
 }
@@ -289,6 +360,119 @@ function GiftModal({ userId, onClose }: { userId: string; onClose: () => void })
           <Btn onClick={onClose}>Отмена</Btn>
           <Btn variant="primary" disabled={mut.isPending || !Number(amount)} onClick={() => mut.mutate()}>
             {mut.isPending ? "…" : "Применить"}
+          </Btn>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+function GrantXpModal({
+  nick,
+  userId,
+  onClose,
+}: {
+  nick: string;
+  userId: string;
+  onClose: () => void;
+}) {
+  const qc = useQueryClient();
+  const [amount, setAmount] = useState("100");
+  const [reason, setReason] = useState("Бонус от админа");
+
+  const mut = useMutation({
+    mutationFn: () => grantXp(nick, Number(amount), reason.trim() || "Бонус"),
+    onSuccess: () => {
+      toast.success("XP начислено");
+      qc.invalidateQueries({ queryKey: adminQk.user(userId) });
+      onClose();
+    },
+    onError: (e) => toast.error(e instanceof ApiError ? e.message : "Ошибка"),
+  });
+
+  return (
+    <Modal open onClose={onClose} title={`Начислить XP — @${nick}`}>
+      <div className="space-y-3">
+        <div className="text-xs text-zinc-500">
+          Ранги вычисляются из XP. Пороги: 0 / 2 000 / 4 000 / 6 000 / 8 000.
+        </div>
+        <Field label="XP (отрицательное = списать)">
+          <TextInput value={amount} onChange={(e) => setAmount(e.target.value)} inputMode="numeric" />
+        </Field>
+        <Field label="Причина">
+          <TextInput value={reason} onChange={(e) => setReason(e.target.value)} />
+        </Field>
+        <div className="flex justify-end gap-2 pt-2">
+          <Btn onClick={onClose}>Отмена</Btn>
+          <Btn variant="primary" disabled={mut.isPending || !Number(amount)} onClick={() => mut.mutate()}>
+            {mut.isPending ? "…" : "Начислить"}
+          </Btn>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+function AwardBadgeModal({
+  nick,
+  userId,
+  onClose,
+}: {
+  nick: string;
+  userId: string;
+  onClose: () => void;
+}) {
+  const qc = useQueryClient();
+  const badgesQ = useQuery({
+    queryKey: ["admin", "badges-all"],
+    queryFn: fetchAdminBadges,
+  });
+  const [code, setCode] = useState("");
+
+  const mut = useMutation({
+    mutationFn: () => awardBadge(nick, code),
+    onSuccess: () => {
+      toast.success("Значок выдан");
+      qc.invalidateQueries({ queryKey: ["admin", "user", userId, "badges"] });
+      onClose();
+    },
+    onError: (e) => toast.error(e instanceof ApiError ? e.message : "Ошибка"),
+  });
+
+  const items = badgesQ.data?.items ?? [];
+
+  return (
+    <Modal open onClose={onClose} title={`Выдать значок — @${nick}`}>
+      <div className="space-y-3">
+        <Field label="Значок">
+          <select
+            className="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+            value={code}
+            onChange={(e) => setCode(e.target.value)}
+          >
+            <option value="">— выбери —</option>
+            {["rank", "club", "pass", "event", "achievement", "founder"].map((cat) => {
+              const group = items.filter((b) => b.category === cat && b.active);
+              if (!group.length) return null;
+              return (
+                <optgroup key={cat} label={cat}>
+                  {group.map((b) => (
+                    <option key={b.id} value={b.code}>
+                      {b.name} ({b.rarity})
+                    </option>
+                  ))}
+                </optgroup>
+              );
+            })}
+          </select>
+        </Field>
+        <div className="text-xs text-zinc-500">
+          Категория <b>rank</b> — ранговые значки (Rookie, Pit Crew, Road Captain, Alpha Hound, Hell Legend).
+        </div>
+        <div className="flex justify-end gap-2 pt-2">
+          <Btn onClick={onClose}>Отмена</Btn>
+          <Btn variant="primary" disabled={mut.isPending || !code} onClick={() => mut.mutate()}>
+            {mut.isPending ? "…" : "Выдать"}
           </Btn>
         </div>
       </div>
