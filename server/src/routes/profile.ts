@@ -90,10 +90,29 @@ export async function profileRoutes(app: FastifyInstance) {
     const session = req.user as SessionPayload;
     await ensureProfile(session.sub);
 
+    // Если меняется avatarUrl — найдём старый и удалим из S3 после успешного апдейта.
+    let oldAvatarToDelete: string | null = null;
+    if (parsed.data.avatarUrl !== undefined) {
+      const [prev] = await db
+        .select({ avatarUrl: profiles.avatarUrl })
+        .from(profiles)
+        .where(eq(profiles.userId, session.sub))
+        .limit(1);
+      if (prev?.avatarUrl && prev.avatarUrl !== parsed.data.avatarUrl) {
+        oldAvatarToDelete = prev.avatarUrl;
+      }
+    }
+
     await db
       .update(profiles)
       .set({ ...parsed.data, updatedAt: new Date() })
       .where(eq(profiles.userId, session.sub));
+
+    if (oldAvatarToDelete) await deleteByPublicUrl(oldAvatarToDelete);
+
+    // Условный квест: профиль заполнен (аватар + город + телефон + bio >=10).
+    await tryCompleteQuest(session.sub, "profile_complete");
+
     return { ok: true };
   });
 
