@@ -209,7 +209,7 @@ function ClubCartPage() {
           <button
             type="button"
             onClick={() =>
-              isAuthed ? navigate({ to: "/checkout" }) : navigate({ to: "/login" })
+              isAuthed ? navigate({ to: "/club/checkout" }) : navigate({ to: "/login" })
             }
             className="ml-auto flex flex-1 items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 font-display text-sm font-black uppercase tracking-wider text-primary-foreground active:scale-[0.98]"
           >
