@@ -1,17 +1,19 @@
 // Hell AI — AI-механик клуба HELLHOUND.
-// Минималистичный центрированный композер в духе референса: бэкграунд с
-// мягкими «лава-блобами» в фирменных primary-тонах, glass-карточка ввода,
-// command-палитра по «/», переключатель активного байка (контекст ответа).
+// Десктоп: центрированный композер на лава-фоне.
+// Мобайл (iOS-стиль): экран-чат — история сообщений + липкий композер над таб-баром,
+// переключатель байка и команды открываются bottom-sheet'ом (vaul).
 
 import { createFileRoute } from "@tanstack/react-router";
 import {
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { Drawer } from "vaul";
 import {
   Bike as BikeIcon,
   Check,
@@ -23,10 +25,13 @@ import {
   Wrench,
   Zap,
   Lightbulb,
+  ChevronDown,
+  Plus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { apiFetch, ApiError } from "@/lib/api";
 import { loadBikes, saveBikes, type StoredBike } from "@/data/bike-storage";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export const Route = createFileRoute("/club/hell-ai")({
   head: () => ({
@@ -95,8 +100,6 @@ function bikeLabel(b: StoredBike) {
   return `${b.brand} ${b.model}${b.year ? ` ${b.year}` : ""}`;
 }
 
-// Реальный вызов бэкенда. Бэк сам подставит контекст байка (по primary или bikeId)
-// и проверит лимит по тиру Hell Pass.
 async function askHellAi(question: string, bikeId?: string): Promise<string> {
   const res = await apiFetch<{ answer: string }>("/hell-ai/ask", {
     method: "POST",
@@ -105,9 +108,29 @@ async function askHellAi(question: string, bikeId?: string): Promise<string> {
   return res.answer;
 }
 
+function errorToMessage(err: unknown): string {
+  if (err instanceof ApiError) {
+    if (err.status === 401) return "Войди в аккаунт, чтобы пользоваться Hell AI.";
+    if (err.status === 403) return "Hell AI доступен с Hell Pass. Активируй любой тир.";
+    if (err.status === 429) return err.message || "Лимит вопросов на этот месяц исчерпан.";
+    return err.message || "Hell AI временно недоступен.";
+  }
+  return "Не удалось связаться с Hell AI. Попробуй ещё раз.";
+}
 
+// ─────────────────────────────────────────────────────────────────────────
 function HellAiPage() {
-  // байки
+  const isMobile = useIsMobile();
+  return isMobile ? <HellAiMobile /> : <HellAiDesktop />;
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// MOBILE — iOS-стиль чата
+// ═══════════════════════════════════════════════════════════════════════
+
+type Msg = { id: string; q: string; a?: string; error?: boolean };
+
+function HellAiMobile() {
   const [bikes, setBikes] = useState<StoredBike[]>([]);
   const [activeBikeId, setActiveBikeId] = useState<string>("");
   useEffect(() => {
@@ -118,12 +141,489 @@ function HellAiPage() {
   const activeBike = bikes.find((b) => b.id === activeBikeId);
   const bikeStr = activeBike ? bikeLabel(activeBike) : "твой мото";
 
-  // композер
+  const [value, setValue] = useState("");
+  const [messages, setMessages] = useState<Msg[]>([]);
+  const [isThinking, setIsThinking] = useState(false);
+  const [used, setUsed] = useState(0);
+  const [bikeSheetOpen, setBikeSheetOpen] = useState(false);
+  const [cmdSheetOpen, setCmdSheetOpen] = useState(false);
+
+  const { ref: taRef, adjust } = useAutoResize(40, 140);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const quota = QUOTA_BY_TIER[CURRENT_TIER];
+  const isUnlimited = quota === "∞";
+  const isGuest = CURRENT_TIER === "guest";
+  const left = isUnlimited ? Infinity : (quota as number) - used;
+  const canAsk = !isGuest && (isUnlimited || left > 0) && !!activeBike;
+
+  // авто-скролл вниз при новых сообщениях / typing
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    requestAnimationFrame(() => {
+      el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+    });
+  }, [messages.length, isThinking]);
+
+  function send() {
+    const text = value.trim();
+    if (!text || !canAsk || isThinking) return;
+    const id = String(Date.now());
+    setMessages((m) => [...m, { id, q: text }]);
+    setValue("");
+    adjust(true);
+    setIsThinking(true);
+    setUsed((n) => n + 1);
+    askHellAi(text, activeBike?.id)
+      .then((a) => {
+        setMessages((m) => m.map((msg) => (msg.id === id ? { ...msg, a } : msg)));
+      })
+      .catch((err: unknown) => {
+        setMessages((m) =>
+          m.map((msg) => (msg.id === id ? { ...msg, a: errorToMessage(err), error: true } : msg)),
+        );
+        setUsed((n) => Math.max(0, n - 1));
+      })
+      .finally(() => setIsThinking(false));
+  }
+
+  function onKey(e: ReactKeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      send();
+    }
+  }
+
+  function pickCommand(c: Cmd) {
+    setValue(c.prefix + " ");
+    setCmdSheetOpen(false);
+    requestAnimationFrame(() => {
+      taRef.current?.focus();
+      adjust();
+    });
+  }
+
+  // высота композера ≈ 56 + textarea, плюс таб-бар 52 + safe-area
+  const composerOffset = "calc(52px + env(safe-area-inset-bottom))";
+
+  return (
+    <div className="relative flex min-h-[calc(100vh-3.25rem)] flex-col">
+      {/* фоновое свечение */}
+      <div aria-hidden className="pointer-events-none fixed inset-x-0 top-14 -z-10 h-72 overflow-hidden">
+        <div className="absolute left-1/4 top-0 h-72 w-72 animate-pulse rounded-full bg-primary/[0.08] blur-[110px]" />
+        <div className="absolute right-1/4 top-10 h-56 w-56 animate-pulse rounded-full bg-primary/[0.06] blur-[90px] [animation-delay:700ms]" />
+      </div>
+
+      {/* контекст-чип */}
+      <div className="sticky top-14 z-20 -mt-px border-b border-white/[0.05] bg-background/80 px-4 py-2 backdrop-blur-xl">
+        <button
+          type="button"
+          onClick={() => setBikeSheetOpen(true)}
+          className="group flex w-full items-center gap-2.5 rounded-full border border-white/[0.06] bg-white/[0.03] py-1.5 pl-2 pr-3 text-[13px] text-foreground/85 active:scale-[0.98] active:opacity-80"
+        >
+          <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-primary/15 text-primary">
+            <BikeIcon className="h-3.5 w-3.5" />
+          </span>
+          <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+            контекст
+          </span>
+          <span className="min-w-0 flex-1 truncate text-left font-medium">
+            {activeBike ? bikeLabel(activeBike) : "выбрать байк"}
+          </span>
+          <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+        </button>
+      </div>
+
+      {/* лента сообщений */}
+      <div
+        ref={scrollRef}
+        className="flex-1 overflow-y-auto px-4 pb-4 pt-4"
+        style={{ paddingBottom: `calc(${composerOffset} + 110px)` }}
+      >
+        {messages.length === 0 ? (
+          <EmptyChat bikeStr={bikeStr} onPick={pickCommand} disabled={!canAsk} />
+        ) : (
+          <ul className="space-y-3">
+            <AnimatePresence initial={false}>
+              {messages.map((m) => (
+                <li key={m.id} className="space-y-2">
+                  {/* вопрос — пузырь справа */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 8, scale: 0.96 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    transition={{ type: "spring", stiffness: 520, damping: 32 }}
+                    className="flex justify-end"
+                  >
+                    <div className="max-w-[82%] rounded-[20px] rounded-br-md bg-primary px-3.5 py-2 text-[15px] leading-snug text-primary-foreground shadow-sm">
+                      {m.q}
+                    </div>
+                  </motion.div>
+
+                  {/* ответ — пузырь слева */}
+                  {m.a !== undefined && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 8, scale: 0.96 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      transition={{ type: "spring", stiffness: 520, damping: 32, delay: 0.04 }}
+                      className="flex justify-start"
+                    >
+                      <div
+                        className={cn(
+                          "max-w-[86%] rounded-[20px] rounded-bl-md px-3.5 py-2.5 text-[15px] leading-relaxed shadow-sm",
+                          m.error
+                            ? "border border-red-500/25 bg-red-500/[0.06] text-red-200"
+                            : "border border-white/[0.06] bg-white/[0.04] text-foreground",
+                        )}
+                      >
+                        {m.a}
+                      </div>
+                    </motion.div>
+                  )}
+                </li>
+              ))}
+            </AnimatePresence>
+
+            {isThinking && (
+              <li>
+                <motion.div
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex justify-start"
+                >
+                  <div className="rounded-[20px] rounded-bl-md border border-white/[0.06] bg-white/[0.04] px-4 py-3 shadow-sm">
+                    <TypingDots />
+                  </div>
+                </motion.div>
+              </li>
+            )}
+          </ul>
+        )}
+      </div>
+
+      {/* липкий композер */}
+      <div
+        className="fixed inset-x-0 z-30 border-t border-white/[0.06] bg-background/85 backdrop-blur-xl"
+        style={{ bottom: composerOffset }}
+      >
+        {/* квота */}
+        <div className="flex items-center justify-between px-4 pb-1.5 pt-2">
+          <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+            {TIER_LABEL[CURRENT_TIER]} ·{" "}
+            <span className="tabular-nums text-foreground/70">
+              {isUnlimited ? "∞" : `${used}/${quota}`}
+            </span>
+          </span>
+          {!canAsk && !isGuest && (
+            <span className="font-mono text-[10px] uppercase tracking-wider text-red-400/80">
+              {!activeBike ? "добавь байк" : "лимит"}
+            </span>
+          )}
+        </div>
+
+        <div className="flex items-end gap-2 px-3 pb-2">
+          <button
+            type="button"
+            onClick={() => setCmdSheetOpen(true)}
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/[0.08] bg-white/[0.03] text-muted-foreground active:scale-95"
+            aria-label="команды"
+          >
+            <Plus className="h-[18px] w-[18px]" />
+          </button>
+
+          <div className="flex min-w-0 flex-1 items-end rounded-[22px] border border-white/[0.08] bg-white/[0.03]">
+            <textarea
+              ref={taRef}
+              value={value}
+              onChange={(e) => {
+                setValue(e.target.value);
+                adjust();
+              }}
+              onKeyDown={onKey}
+              disabled={!canAsk}
+              rows={1}
+              placeholder={
+                isGuest
+                  ? "Hell AI доступен с Hell Pass"
+                  : !activeBike
+                    ? "добавь байк в гараж"
+                    : !canAsk
+                      ? "лимит на месяц исчерпан"
+                      : `спроси про ${bikeStr}…`
+              }
+              className="min-h-[40px] w-full resize-none border-none bg-transparent px-3.5 py-2.5 text-[15px] leading-snug text-foreground placeholder:text-muted-foreground/45 focus:outline-none disabled:cursor-not-allowed"
+              style={{ overflow: "hidden" }}
+            />
+          </div>
+
+          <motion.button
+            type="button"
+            onClick={send}
+            whileTap={{ scale: 0.92 }}
+            disabled={isThinking || !value.trim() || !canAsk}
+            className={cn(
+              "grid h-9 w-9 shrink-0 place-items-center rounded-full transition-colors",
+              value.trim() && canAsk
+                ? "bg-primary text-primary-foreground shadow-[0_4px_14px_-4px_color-mix(in_oklab,var(--primary)_60%,transparent)]"
+                : "bg-white/[0.06] text-muted-foreground",
+            )}
+            aria-label="Отправить"
+          >
+            {isThinking ? (
+              <LoaderIcon className="h-[18px] w-[18px] animate-spin" />
+            ) : (
+              <SendIcon className="h-[16px] w-[16px]" />
+            )}
+          </motion.button>
+        </div>
+      </div>
+
+      {/* sheet: выбор байка */}
+      <BikeSheet
+        open={bikeSheetOpen}
+        onOpenChange={setBikeSheetOpen}
+        bikes={bikes}
+        activeId={activeBikeId}
+        onPick={(id) => {
+          setActiveBikeId(id);
+          const next = [...bikes].sort((a, b) => (a.id === id ? -1 : b.id === id ? 1 : 0));
+          setBikes(next);
+          saveBikes(next);
+          setBikeSheetOpen(false);
+        }}
+      />
+
+      {/* sheet: команды */}
+      <CommandSheet open={cmdSheetOpen} onOpenChange={setCmdSheetOpen} onPick={pickCommand} />
+    </div>
+  );
+}
+
+function EmptyChat({
+  bikeStr,
+  onPick,
+  disabled,
+}: {
+  bikeStr: string;
+  onPick: (c: Cmd) => void;
+  disabled: boolean;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: "easeOut" }}
+      className="flex flex-col items-center px-2 pt-8 text-center"
+    >
+      <div className="mb-3 inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
+        <span className="relative flex h-1.5 w-1.5">
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-60" />
+          <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary" />
+        </span>
+        hell ai · online
+      </div>
+      <h1 className="bg-gradient-to-r from-foreground to-foreground/40 bg-clip-text font-display text-[26px] font-medium leading-tight tracking-tight text-transparent">
+        Чем помочь по&nbsp;твоему мото?
+      </h1>
+      <p className="mt-2 max-w-[280px] text-[13px] text-muted-foreground">
+        Спрашивай про {bikeStr}: затяжка, давление, масло, болячки.
+      </p>
+
+      <div className="mt-6 w-full">
+        <div className="mb-2 px-1 text-left font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+          быстрый старт
+        </div>
+        <ul className="grid grid-cols-2 gap-2">
+          {COMMANDS.slice(0, 4).map((c) => (
+            <li key={c.prefix}>
+              <button
+                type="button"
+                onClick={() => onPick(c)}
+                disabled={disabled}
+                className="flex w-full items-center gap-2 rounded-2xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5 text-left text-[13px] text-foreground/85 active:scale-[0.97] active:bg-white/[0.06] disabled:opacity-50"
+              >
+                <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-primary/12 text-primary">
+                  {c.icon}
+                </span>
+                <span className="min-w-0">
+                  <span className="block truncate font-medium">{c.label}</span>
+                  <span className="block truncate text-[11px] text-muted-foreground">
+                    {c.description}
+                  </span>
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </motion.div>
+  );
+}
+
+function BikeSheet({
+  open,
+  onOpenChange,
+  bikes,
+  activeId,
+  onPick,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  bikes: StoredBike[];
+  activeId: string;
+  onPick: (id: string) => void;
+}) {
+  return (
+    <Drawer.Root open={open} onOpenChange={onOpenChange}>
+      <Drawer.Portal>
+        <Drawer.Overlay className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm" />
+        <Drawer.Content
+          className="fixed inset-x-0 bottom-0 z-50 flex max-h-[70vh] flex-col rounded-t-[20px] border-t border-white/[0.08] bg-[#0d0d0d] outline-none"
+          style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+        >
+          <Drawer.Title className="sr-only">Выбор байка</Drawer.Title>
+          <div className="mx-auto mt-2.5 h-1 w-10 shrink-0 rounded-full bg-white/15" />
+
+          <div className="flex items-center justify-between px-5 pb-3 pt-3">
+            <h2 className="font-display text-xl font-black italic uppercase tracking-tight">Байк</h2>
+            <button
+              type="button"
+              onClick={() => onOpenChange(false)}
+              className="font-mono text-[12px] font-bold uppercase tracking-wider text-primary active:opacity-60"
+            >
+              Готово
+            </button>
+          </div>
+
+          <div className="flex-1 overflow-y-auto overscroll-contain px-4 pb-4">
+            {bikes.length === 0 ? (
+              <div className="rounded-2xl border border-white/[0.06] bg-card/40 px-4 py-6 text-center text-[13px] text-muted-foreground">
+                В гараже пусто — добавь байк в профиле.
+              </div>
+            ) : (
+              <ul className="overflow-hidden rounded-2xl border border-white/[0.06] bg-card/40 divide-y divide-white/[0.05]">
+                {bikes.map((b) => {
+                  const active = b.id === activeId;
+                  return (
+                    <li key={b.id}>
+                      <button
+                        type="button"
+                        onClick={() => onPick(b.id)}
+                        className="flex w-full items-center gap-3 px-4 py-3.5 text-left active:bg-white/[0.04]"
+                      >
+                        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
+                          <BikeIcon className="h-[18px] w-[18px]" />
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-[15px] font-semibold text-foreground">
+                            {bikeLabel(b)}
+                          </span>
+                          {b.mileage && (
+                            <span className="mt-0.5 block truncate font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
+                              {b.mileage}
+                            </span>
+                          )}
+                        </span>
+                        {active && <Check className="h-5 w-5 shrink-0 text-primary" />}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+        </Drawer.Content>
+      </Drawer.Portal>
+    </Drawer.Root>
+  );
+}
+
+function CommandSheet({
+  open,
+  onOpenChange,
+  onPick,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  onPick: (c: Cmd) => void;
+}) {
+  return (
+    <Drawer.Root open={open} onOpenChange={onOpenChange}>
+      <Drawer.Portal>
+        <Drawer.Overlay className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm" />
+        <Drawer.Content
+          className="fixed inset-x-0 bottom-0 z-50 flex max-h-[70vh] flex-col rounded-t-[20px] border-t border-white/[0.08] bg-[#0d0d0d] outline-none"
+          style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+        >
+          <Drawer.Title className="sr-only">Команды Hell AI</Drawer.Title>
+          <div className="mx-auto mt-2.5 h-1 w-10 shrink-0 rounded-full bg-white/15" />
+
+          <div className="flex items-center justify-between px-5 pb-3 pt-3">
+            <h2 className="font-display text-xl font-black italic uppercase tracking-tight">
+              Команды
+            </h2>
+            <button
+              type="button"
+              onClick={() => onOpenChange(false)}
+              className="font-mono text-[12px] font-bold uppercase tracking-wider text-primary active:opacity-60"
+            >
+              Закрыть
+            </button>
+          </div>
+
+          <div className="flex-1 overflow-y-auto overscroll-contain px-4 pb-4">
+            <ul className="overflow-hidden rounded-2xl border border-white/[0.06] bg-card/40 divide-y divide-white/[0.05]">
+              {COMMANDS.map((c) => (
+                <li key={c.prefix}>
+                  <button
+                    type="button"
+                    onClick={() => onPick(c)}
+                    className="flex w-full items-center gap-3 px-4 py-3.5 text-left active:bg-white/[0.04]"
+                  >
+                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
+                      {c.icon}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-[15px] font-semibold text-foreground">
+                        {c.label}
+                      </span>
+                      <span className="mt-0.5 block truncate text-[12px] text-muted-foreground">
+                        {c.description}
+                      </span>
+                    </span>
+                    <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
+                      {c.prefix}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </Drawer.Content>
+      </Drawer.Portal>
+    </Drawer.Root>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// DESKTOP — оригинальный композер на лава-фоне
+// ═══════════════════════════════════════════════════════════════════════
+
+function HellAiDesktop() {
+  const [bikes, setBikes] = useState<StoredBike[]>([]);
+  const [activeBikeId, setActiveBikeId] = useState<string>("");
+  useEffect(() => {
+    const list = loadBikes();
+    setBikes(list);
+    setActiveBikeId(list[0]?.id ?? "");
+  }, []);
+  const activeBike = bikes.find((b) => b.id === activeBikeId);
+  const bikeStr = activeBike ? bikeLabel(activeBike) : "твой мото";
+
   const [value, setValue] = useState("");
   const [showCmd, setShowCmd] = useState(false);
   const [activeCmd, setActiveCmd] = useState(-1);
   const [isThinking, setIsThinking] = useState(false);
-  
   const [used, setUsed] = useState(0);
   const [lastAnswer, setLastAnswer] = useState<{ q: string; a: string } | null>(null);
   const { ref: taRef, adjust } = useAutoResize(60, 200);
@@ -135,7 +635,6 @@ function HellAiPage() {
   const left = isUnlimited ? Infinity : (quota as number) - used;
   const canAsk = !isGuest && (isUnlimited || left > 0) && !!activeBike;
 
-  // мышь — для подсветки за курсором
   const [mouse, setMouse] = useState({ x: 0, y: 0 });
   const [focused, setFocused] = useState(false);
   useEffect(() => {
@@ -144,7 +643,6 @@ function HellAiPage() {
     return () => window.removeEventListener("mousemove", h);
   }, []);
 
-  // команды по слешу
   useEffect(() => {
     if (value.startsWith("/") && !value.includes(" ")) {
       setShowCmd(true);
@@ -155,7 +653,6 @@ function HellAiPage() {
     }
   }, [value]);
 
-  // клик вне палитры
   useEffect(() => {
     const h = (e: MouseEvent) => {
       const t = e.target as Node;
@@ -187,17 +684,7 @@ function HellAiPage() {
     askHellAi(q, activeBike?.id)
       .then((a) => setLastAnswer({ q, a }))
       .catch((err: unknown) => {
-        const msg =
-          err instanceof ApiError
-            ? err.status === 401
-              ? "Войди в аккаунт, чтобы пользоваться Hell AI."
-              : err.status === 403
-                ? "Hell AI доступен с Hell Pass. Активируй любой тир."
-                : err.status === 429
-                  ? err.message || "Лимит вопросов на этот месяц исчерпан."
-                  : err.message || "Hell AI временно недоступен."
-            : "Не удалось связаться с Hell AI. Попробуй ещё раз.";
-        setLastAnswer({ q, a: msg });
+        setLastAnswer({ q, a: errorToMessage(err) });
         setUsed((n) => Math.max(0, n - 1));
       })
       .finally(() => setIsThinking(false));
@@ -226,7 +713,6 @@ function HellAiPage() {
 
   return (
     <div className="relative flex min-h-[calc(100vh-4rem)] w-full items-center justify-center overflow-hidden px-4 py-10">
-      {/* фоновые блобы в фирменном цвете */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute left-1/4 top-0 h-96 w-96 animate-pulse rounded-full bg-primary/15 blur-[128px]" />
         <div className="absolute bottom-0 right-1/4 h-96 w-96 animate-pulse rounded-full bg-primary/10 blur-[128px] [animation-delay:700ms]" />
@@ -240,7 +726,6 @@ function HellAiPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: "easeOut" }}
         >
-          {/* заголовок */}
           <div className="space-y-4 text-center">
             <motion.div
               initial={{ opacity: 0, y: 10 }}
@@ -275,22 +760,17 @@ function HellAiPage() {
             </motion.p>
           </div>
 
-          {/* переключатель байка */}
           <BikeSwitcher
             bikes={bikes}
             activeId={activeBikeId}
             onPick={(id) => {
               setActiveBikeId(id);
-              // переставим активный байк в начало и сохраним
-              const next = [...bikes].sort((a, b) =>
-                a.id === id ? -1 : b.id === id ? 1 : 0,
-              );
+              const next = [...bikes].sort((a, b) => (a.id === id ? -1 : b.id === id ? 1 : 0));
               setBikes(next);
               saveBikes(next);
             }}
           />
 
-          {/* последний ответ */}
           <AnimatePresence mode="wait">
             {lastAnswer && (
               <motion.div
@@ -315,7 +795,6 @@ function HellAiPage() {
             )}
           </AnimatePresence>
 
-          {/* композер */}
           <motion.div
             className="relative rounded-2xl border border-white/[0.06] bg-white/[0.02] shadow-2xl backdrop-blur-2xl"
             initial={{ scale: 0.98 }}
@@ -438,7 +917,6 @@ function HellAiPage() {
         </motion.div>
       </div>
 
-      {/* thinking pill */}
       <AnimatePresence>
         {isThinking && (
           <motion.div
@@ -449,9 +927,7 @@ function HellAiPage() {
           >
             <div className="flex items-center gap-3">
               <div className="flex h-7 w-8 items-center justify-center rounded-full bg-primary/15">
-                <span className="font-mono text-[10px] font-bold uppercase text-primary">
-                  hell
-                </span>
+                <span className="font-mono text-[10px] font-bold uppercase text-primary">hell</span>
               </div>
               <div className="flex items-center gap-2 text-sm text-foreground/70">
                 <span>думаю</span>
@@ -462,7 +938,6 @@ function HellAiPage() {
         )}
       </AnimatePresence>
 
-      {/* подсветка за курсором при фокусе */}
       {focused && (
         <motion.div
           className="pointer-events-none fixed z-0 h-[40rem] w-[40rem] rounded-full bg-primary opacity-[0.04] blur-[96px]"
@@ -474,7 +949,6 @@ function HellAiPage() {
   );
 }
 
-// ── переключатель байка ──────────────────────────────────────────────────
 function BikeSwitcher({
   bikes,
   activeId,
@@ -495,7 +969,10 @@ function BikeSwitcher({
     return () => document.removeEventListener("mousedown", h);
   }, []);
 
-  if (bikes.length === 0) {
+  // нужно, чтобы useMemo не выбивал линтер из-за bikes ссылочного типа
+  const sorted = useMemo(() => bikes, [bikes]);
+
+  if (sorted.length === 0) {
     return (
       <div className="mx-auto flex w-fit items-center gap-2 rounded-full border border-white/[0.06] bg-white/[0.02] px-3 py-1.5 text-xs text-muted-foreground backdrop-blur-xl">
         <BikeIcon className="h-3.5 w-3.5" />
@@ -531,7 +1008,7 @@ function BikeSwitcher({
             className="absolute left-1/2 top-full z-30 mt-2 w-72 -translate-x-1/2 overflow-hidden rounded-xl border border-white/10 bg-background/95 shadow-2xl backdrop-blur-xl"
           >
             <div className="py-1">
-              {bikes.map((b) => {
+              {sorted.map((b) => {
                 const isActive = b.id === activeId;
                 return (
                   <button
@@ -551,9 +1028,7 @@ function BikeSwitcher({
                       <BikeIcon className="h-4 w-4" />
                     </span>
                     <span className="flex-1 truncate">
-                      <span className="block truncate text-[13px] font-medium">
-                        {bikeLabel(b)}
-                      </span>
+                      <span className="block truncate text-[13px] font-medium">{bikeLabel(b)}</span>
                       {b.mileage && (
                         <span className="block truncate font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
                           {b.mileage}
@@ -574,7 +1049,7 @@ function BikeSwitcher({
 
 function TypingDots() {
   return (
-    <div className="ml-1 flex items-center">
+    <div className="flex items-center">
       {[0, 1, 2].map((i) => (
         <motion.div
           key={i}
