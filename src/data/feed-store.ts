@@ -28,6 +28,7 @@ export type FeedComment = {
   time: string;
   text: string;
   likes: number;
+  liked: boolean;
 };
 
 export type FeedPollOption = { id: string; text: string; votes: number };
@@ -38,6 +39,7 @@ export type FeedPoll = {
   anonymous?: boolean;
   multi?: boolean;
   closed?: boolean;
+  myVote?: string[];
 };
 
 export type FeedPost = {
@@ -48,6 +50,7 @@ export type FeedPost = {
   image?: string;
   poll?: FeedPoll;
   likes: number;
+  liked: boolean;
   pinned?: boolean;
   comments: FeedComment[];
 };
