@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { Input } from "@/components/ui/input";
+import { PhoneInput } from "@/components/ui/phone-input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { ME } from "@/data/profile";
@@ -409,7 +410,7 @@ function AddressTab({ mobile }: { mobile?: boolean }) {
       <>
         <IOSListSection title="Получатель">
           <IOSField label="ФИО"><Input placeholder="Иванов Иван Иванович" /></IOSField>
-          <IOSField label="Телефон"><Input type="tel" placeholder="+7 999 000 00 00" /></IOSField>
+          <IOSField label="Телефон"><PhoneInput /></IOSField>
         </IOSListSection>
 
         <IOSListSection title="Адрес СДЭК" footer="Доставка только СДЭК. Используется для мерча и призов.">
@@ -434,7 +435,7 @@ function AddressTab({ mobile }: { mobile?: boolean }) {
         </p>
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="ФИО получателя"><Input placeholder="Иванов Иван Иванович" /></Field>
-          <Field label="Телефон"><Input type="tel" placeholder="+7 999 000 00 00" /></Field>
+          <Field label="Телефон"><PhoneInput /></Field>
           <Field label="Город"><Input placeholder="Москва" /></Field>
           <Field label="Индекс"><Input placeholder="101000" inputMode="numeric" /></Field>
         </div>
@@ -569,7 +570,7 @@ function AccountTab({ mobile, onClose }: { mobile?: boolean; onClose?: () => voi
       <>
         <IOSListSection title="Контакты" footer="Если телефон указан — войти можно по email или по телефону.">
           <IOSField label="Email"><Input type="email" defaultValue="hellhound@example.com" /></IOSField>
-          <IOSField label="Телефон"><Input type="tel" placeholder="+7 999 000 00 00" /></IOSField>
+          <IOSField label="Телефон"><PhoneInput /></IOSField>
           <IOSField label="Telegram"><Input placeholder="@username" /></IOSField>
         </IOSListSection>
 
@@ -647,7 +648,7 @@ function AccountTab({ mobile, onClose }: { mobile?: boolean; onClose?: () => voi
             <Input type="email" defaultValue="hellhound@example.com" />
           </Field>
           <Field label="Телефон (для входа)">
-            <Input type="tel" placeholder="+7 999 000 00 00" />
+            <PhoneInput />
           </Field>
           <Field label="Telegram"><Input placeholder="@username" /></Field>
         </div>

@@ -5,6 +5,7 @@ import { PageHeader } from "@/components/club/PageHeader";
 import { useCart } from "@/hooks/use-cart";
 import { useViewer } from "@/hooks/use-viewer";
 import { ME } from "@/data/profile";
+import { formatRuPhone } from "@/lib/phone";
 
 export const Route = createFileRoute("/club/checkout")({
   head: () => ({
@@ -116,10 +117,10 @@ function ClubCheckoutPage() {
           <Field
             label="Телефон"
             value={form.phone}
-            onChange={(v) => set("phone", v)}
+            onChange={(v) => set("phone", formatRuPhone(v))}
             type="tel"
             inputMode="tel"
-            placeholder="+7 ___ ___-__-__"
+            placeholder="+7 (___) ___-__-__"
             required
           />
           <Field
