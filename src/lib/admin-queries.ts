@@ -241,6 +241,22 @@ export function creditTickets(input: CreditInput) {
   });
 }
 
+export type AdminLedgerRow = {
+  id: string;
+  userId: string;
+  nick: string | null;
+  amount: number;
+  source: string;
+  reason: string;
+  refType: string | null;
+  refId: string | null;
+  createdAt: string;
+};
+
+export function fetchAdminTicketsJournal(limit = 50) {
+  return apiFetch<{ items: AdminLedgerRow[] }>(`/api/v1/admin/tickets/journal?limit=${limit}`);
+}
+
 // ---------- PASS ADMIN ----------
 
 export function fetchAdminPassList(status?: PassRecord["status"]) {
