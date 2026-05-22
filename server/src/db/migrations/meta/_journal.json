@@ -29,6 +29,13 @@
       "when": 1779500000000,
       "tag": "0003_shop",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1779510000000,
+      "tag": "0004_pass_raffles",
+      "breakpoints": true
     }
   ]
 }
