@@ -22,7 +22,10 @@ export type Product = {
   description?: string;
   composition?: string;
   care?: string;
+  /** Цифровые товары: сколько билетов на участие в розыгрышах начисляется после покупки. */
+  ticketsBonus?: number;
 };
+
 
 export const PRODUCTS: Product[] = [
   {
