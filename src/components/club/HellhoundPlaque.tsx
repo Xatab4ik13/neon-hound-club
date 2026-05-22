@@ -31,7 +31,7 @@ export function HellhoundAvatar({
         style={{ background: HELL_GRADIENT }}
       />
       <div
-        className="relative flex h-full w-full items-center justify-center overflow-hidden"
+        className={`relative flex h-full w-full items-center justify-center ${avatarUrl ? "overflow-hidden" : ""}`}
         style={{
           background: "#0a0a0a",
           boxShadow: "inset 0 0 0 1.5px #ff2d4a, 0 0 12px -2px rgba(255,45,74,0.6)",
@@ -41,9 +41,11 @@ export function HellhoundAvatar({
           <img loading="lazy" decoding="async" src={avatarUrl} alt="" className="h-full w-full object-cover" />
         ) : (
           <span
-            className="font-display font-black italic uppercase"
+            className="font-display font-black italic uppercase leading-none"
             style={{
-              fontSize: Math.round(size * 0.42),
+              fontSize: Math.round(size * 0.46),
+              lineHeight: 1,
+              paddingRight: Math.max(1, Math.round(size * 0.04)),
               background: HELL_GRADIENT,
               WebkitBackgroundClip: "text",
               backgroundClip: "text",
@@ -54,6 +56,7 @@ export function HellhoundAvatar({
           </span>
         )}
       </div>
+
     </div>
   );
 }
