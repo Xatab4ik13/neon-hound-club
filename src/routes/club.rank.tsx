@@ -31,15 +31,12 @@ function RankPage() {
           <span className="font-display text-2xl font-black italic uppercase tracking-tight" style={{ color: rank.accent }}>
             {rank.label}
           </span>
-          {isPaid ? (
-            <span className="font-mono text-xs font-extrabold uppercase tracking-[0.2em]" style={{ color: rank.accent }}>
-              Платный · {rank.priceLabel}
-            </span>
-          ) : isMax ? (
+          {isMax ? (
             <span className="font-mono text-xs font-extrabold uppercase tracking-[0.2em]" style={{ color: rank.accent }}>
               MAX
             </span>
           ) : next ? (
+
             <span className="font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground">
               до{" "}
               <span className="font-bold" style={{ color: rank.accent }}>
