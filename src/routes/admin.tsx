@@ -74,7 +74,7 @@ function AdminLogin({ reason }: { reason: "guest" | "not_admin" }) {
     } catch (err) {
       const msg =
         err instanceof ApiError
-          ? (err.body as { message?: string } | null)?.message ?? "Неверный email или пароль"
+          ? err.message || "Неверный email или пароль"
           : "Не удалось войти";
       setError(msg);
     } finally {
