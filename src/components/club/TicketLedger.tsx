@@ -1,41 +1,69 @@
 import { useMemo, useState } from "react";
 import { ArrowDown, ArrowUp, Ticket } from "lucide-react";
-import {
-  SOURCE_META,
-  TICKET_LEDGER,
-  summarizeLedger,
-  type TicketSource,
-} from "@/data/tickets-ledger";
+import type { LedgerEntry, BackendTicketSource } from "@/lib/queries";
 
 /**
- * Журнал билетов. Полностью на фронт-моках сейчас (data/tickets-ledger).
- * Контракт DTO стабильный — потом подменим источник на server fn.
+ * Журнал билетов. Получает реальные записи с бэка через проп `entries`.
+ * Источники соответствуют server/src/db/schema/tickets.ts → TICKET_SOURCES.
  */
-export function TicketLedger() {
-  const [filter, setFilter] = useState<TicketSource | "all">("all");
+
+const SOURCE_META: Record<
+  BackendTicketSource,
+  { label: string; tone: "green" | "pink" | "amber" | "violet" | "neutral" | "red" }
+> = {
+  pass_monthly:  { label: "Hell Pass",      tone: "violet"  },
+  quest:         { label: "Квест",          tone: "green"   },
+  product_bonus: { label: "Бонус за товар", tone: "pink"    },
+  raffle_entry:  { label: "Розыгрыш",       tone: "amber"   },
+  admin:         { label: "Админ",          tone: "neutral" },
+  refund:        { label: "Возврат",        tone: "neutral" },
+};
+
+const ALL_SOURCES: BackendTicketSource[] = [
+  "pass_monthly",
+  "quest",
+  "product_bonus",
+  "raffle_entry",
+  "admin",
+  "refund",
+];
+
+function summarize(entries: LedgerEntry[]) {
+  let income = 0;
+  let outcome = 0;
+  for (const e of entries) {
+    if (e.amount > 0) income += e.amount;
+    else outcome += -e.amount;
+  }
+  return { balance: income - outcome, income, outcome };
+}
+
+export function TicketLedger({
+  entries,
+  isLoading,
+}: {
+  entries: LedgerEntry[];
+  isLoading?: boolean;
+}) {
+  const [filter, setFilter] = useState<BackendTicketSource | "all">("all");
   const [expanded, setExpanded] = useState(false);
 
-  const all = TICKET_LEDGER;
   const filtered = useMemo(
-    () => (filter === "all" ? all : all.filter((e) => e.source === filter)),
-    [all, filter],
+    () => (filter === "all" ? entries : entries.filter((e) => e.source === filter)),
+    [entries, filter],
   );
   const COLLAPSED = 6;
   const visible = expanded ? filtered : filtered.slice(0, COLLAPSED);
   const hiddenCount = Math.max(0, filtered.length - visible.length);
 
-  const totals = useMemo(() => summarizeLedger(all), [all]);
-  const visibleTotals = useMemo(() => summarizeLedger(filtered), [filtered]);
+  const totals = useMemo(() => summarize(entries), [entries]);
+  const visibleTotals = useMemo(() => summarize(filtered), [filtered]);
 
-  const sources: (TicketSource | "all")[] = [
-    "all",
-    "pass",
-    "cashback",
-    "purchase",
-    "raffle",
-    "reward",
-    "admin",
-  ];
+  // Показываем фильтр только по тем источникам, что фактически встречаются в журнале + "all".
+  const presentSources = useMemo(() => {
+    const set = new Set(entries.map((e) => e.source));
+    return ["all", ...ALL_SOURCES.filter((s) => set.has(s))] as Array<BackendTicketSource | "all">;
+  }, [entries]);
 
   return (
     <section aria-label="Журнал билетов" className="mb-10">
@@ -44,7 +72,7 @@ export function TicketLedger() {
           Журнал билетов
         </h2>
         <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-          всего операций: {all.length}
+          всего операций: {entries.length}
         </span>
       </div>
 
@@ -72,40 +100,44 @@ export function TicketLedger() {
         />
       </div>
 
-      {/* Фильтр по источнику */}
-      <div
-        className="-mx-4 mb-3 flex gap-1.5 overflow-x-auto px-4 [scrollbar-width:none] md:mx-0 md:flex-wrap md:px-0 [&::-webkit-scrollbar]:hidden"
-        role="tablist"
-        aria-label="Фильтр по источнику"
-      >
-        {sources.map((s) => {
-          const isActive = filter === s;
-          const label = s === "all" ? "Все" : SOURCE_META[s].label;
-          return (
-            <button
-              key={s}
-              type="button"
-              role="tab"
-              aria-selected={isActive}
-              onClick={() => setFilter(s)}
-              className={
-                "shrink-0 border px-2.5 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.2em] transition-colors " +
-                (isActive
-                  ? "border-primary/60 bg-primary/15 text-primary"
-                  : "border-white/[0.08] bg-card/40 text-muted-foreground hover:border-white/30 hover:text-foreground")
-              }
-            >
-              {label}
-            </button>
-          );
-        })}
-      </div>
+      {presentSources.length > 1 && (
+        <div
+          className="-mx-4 mb-3 flex gap-1.5 overflow-x-auto px-4 [scrollbar-width:none] md:mx-0 md:flex-wrap md:px-0 [&::-webkit-scrollbar]:hidden"
+          role="tablist"
+          aria-label="Фильтр по источнику"
+        >
+          {presentSources.map((s) => {
+            const isActive = filter === s;
+            const label = s === "all" ? "Все" : SOURCE_META[s].label;
+            return (
+              <button
+                key={s}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                onClick={() => setFilter(s)}
+                className={
+                  "shrink-0 border px-2.5 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.2em] transition-colors " +
+                  (isActive
+                    ? "border-primary/60 bg-primary/15 text-primary"
+                    : "border-white/[0.08] bg-card/40 text-muted-foreground hover:border-white/30 hover:text-foreground")
+                }
+              >
+                {label}
+              </button>
+            );
+          })}
+        </div>
+      )}
 
-      {/* Таблица */}
       <div className="overflow-hidden border border-white/[0.06] bg-card/40">
-        {filtered.length === 0 ? (
+        {isLoading && entries.length === 0 ? (
           <div className="px-4 py-10 text-center font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
-            нет операций по фильтру
+            загрузка…
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="px-4 py-10 text-center font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+            {entries.length === 0 ? "пока пусто" : "нет операций по фильтру"}
           </div>
         ) : (
           <ul className="divide-y divide-white/[0.04]">
@@ -134,7 +166,6 @@ export function TicketLedger() {
           </button>
         )}
 
-        {/* Подсумма по фильтру (когда применён) */}
         {filter !== "all" && filtered.length > 0 && (
           <div className="flex items-baseline justify-between border-t border-white/[0.06] bg-black/30 px-4 py-2.5 font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
             <span>Итог по фильтру</span>
@@ -200,39 +231,26 @@ function SummaryCard({
   );
 }
 
-function LedgerRow({
-  entry,
-}: {
-  entry: (typeof TICKET_LEDGER)[number];
-}) {
-  const isPositive = entry.delta > 0;
-  const meta = SOURCE_META[entry.source];
+function LedgerRow({ entry }: { entry: LedgerEntry }) {
+  const isPositive = entry.amount > 0;
+  const meta = SOURCE_META[entry.source] ?? SOURCE_META.admin;
 
   return (
     <li className="grid grid-cols-[1fr_auto] items-center gap-3 px-3 py-2.5 transition-colors hover:bg-white/[0.02] sm:grid-cols-[auto_1fr_auto] sm:gap-4 sm:px-4 sm:py-3">
-      {/* Источник — на десктопе отдельной колонкой, на мобиле в шапке строки */}
       <div className="col-span-2 -mb-0.5 flex items-center gap-2 sm:col-span-1 sm:mb-0">
         <SourceTag tone={meta.tone}>{meta.label}</SourceTag>
         <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-muted-foreground/80 sm:hidden">
-          {formatDate(entry.at)}
+          {formatDate(entry.createdAt)}
         </span>
       </div>
 
-      {/* Описание */}
       <div className="min-w-0">
-        <div className="truncate text-sm text-foreground">{entry.note}</div>
+        <div className="truncate text-sm text-foreground">{entry.reason}</div>
         <div className="hidden font-mono text-[10px] uppercase tracking-wider text-muted-foreground sm:block">
-          {formatDate(entry.at)}
-          {entry.ref?.label && (
-            <>
-              <span className="mx-1.5 opacity-40">·</span>
-              <span className="text-muted-foreground/80">{entry.ref.label}</span>
-            </>
-          )}
+          {formatDate(entry.createdAt)}
         </div>
       </div>
 
-      {/* Сумма */}
       <div
         className={
           "whitespace-nowrap text-right font-mono text-sm font-bold tabular-nums " +
@@ -240,7 +258,7 @@ function LedgerRow({
         }
       >
         {isPositive ? "+" : "−"}
-        {Math.abs(entry.delta)}
+        {Math.abs(entry.amount)}
         <span className="ml-1 font-normal text-muted-foreground/70 text-[10px] uppercase tracking-wider">
           бил.
         </span>

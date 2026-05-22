@@ -1,13 +1,16 @@
 // Hell Pass — список тиров. Живёт внутри club-layout (с левым меню).
-// На странице только: hero + 3 карточки тиров с кнопкой «Подробнее».
+// На странице: hero + бейдж активного пасса + 3 карточки тиров.
 
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { TIERS, type Perk, type Tier } from "@/data/hell-pass";
+import { fetchPassMe, qk } from "@/lib/queries";
+import { useViewer } from "@/hooks/use-viewer";
 
 export const Route = createFileRoute("/club/hell-pass/")({
   head: () => ({
     meta: [
-      { title: "Hell Pass — подписка клуба HELLHOUND" },
+      { title: "Hell Pass — клуб HELLHOUND" },
       {
         name: "description",
         content:
@@ -20,9 +23,33 @@ export const Route = createFileRoute("/club/hell-pass/")({
 });
 
 function HellPassPage() {
+  const { isAuthed } = useViewer();
+  const passQ = useQuery({
+    queryKey: qk.passMe,
+    queryFn: fetchPassMe,
+    enabled: isAuthed,
+  });
+  const active = passQ.data?.active ?? null;
+
   return (
     <main className="mx-auto w-full max-w-5xl px-4 py-8 md:px-8 md:py-12">
       <Hero />
+
+      {active && (
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border border-primary/30 bg-primary/[0.05] px-4 py-3">
+          <div className="font-mono text-[11px] uppercase tracking-widest text-foreground">
+            Активен: <span className="text-primary">{active.tier.toUpperCase()}</span>
+            {active.expiresAt && (
+              <span className="ml-2 text-muted-foreground">
+                до {new Date(active.expiresAt).toLocaleDateString("ru-RU")}
+              </span>
+            )}
+          </div>
+          <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+            Можно купить ещё один — продлит срок
+          </span>
+        </div>
+      )}
 
       <div className="mt-10 grid grid-cols-1 gap-5 md:gap-6">
         {TIERS.map((tier, i) => (

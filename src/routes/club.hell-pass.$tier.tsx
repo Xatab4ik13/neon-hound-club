@@ -1,9 +1,15 @@
 // Детальная страница одного тира Hell Pass.
-// Полное описание каждого преимущества + кнопка «Купить» → /checkout.
+// Полное описание каждого преимущества + кнопка «Купить».
 
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { ArrowLeft, Check } from "lucide-react";
+import { useState } from "react";
+import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { ArrowLeft, Check, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { getTier, type Perk, type Tier } from "@/data/hell-pass";
+import { purchasePass, qk, type PassTier } from "@/lib/queries";
+import { useViewer } from "@/hooks/use-viewer";
+import { ApiError } from "@/lib/api";
 
 export const Route = createFileRoute("/club/hell-pass/$tier")({
   loader: ({ params }) => {
@@ -55,6 +61,30 @@ function ErrorPage({ error }: { error: Error }) {
 
 function TierDetailPage() {
   const { tier } = Route.useLoaderData() as { tier: Tier };
+  const { isAuthed } = useViewer();
+  const navigate = useNavigate();
+  const qc = useQueryClient();
+  const [purchaseId, setPurchaseId] = useState<string | null>(null);
+
+  const purchaseM = useMutation({
+    mutationFn: () => purchasePass(tier.slug as PassTier),
+    onSuccess: (res) => {
+      setPurchaseId(res.purchase.id);
+      qc.invalidateQueries({ queryKey: qk.passMe });
+      if (res.paymentUrl) {
+        window.location.href = res.paymentUrl;
+      } else {
+        toast.success(
+          `Заявка №${res.purchase.id.slice(0, 8)} создана. Ожидает оплаты — пока активирует админ.`,
+        );
+      }
+    },
+    onError: (e) => {
+      const msg = e instanceof ApiError ? e.message : "Не удалось создать заявку";
+      toast.error(msg);
+    },
+  });
+
   const isGold = tier.recommended;
   const isPlatinum = tier.ultimate;
 
@@ -152,7 +182,7 @@ function TierDetailPage() {
             />
             <div className="relative">
               <div className="font-mono text-[10px] font-bold uppercase tracking-widest text-white/50">
-                Стоимость подписки
+                Стоимость
               </div>
               <div className="mt-2 flex items-baseline gap-2">
                 <span
@@ -162,13 +192,21 @@ function TierDetailPage() {
                   {tier.price.toLocaleString("ru-RU")} ₽
                 </span>
                 <span className="font-mono text-xs uppercase tracking-widest text-white/40">
-                  / мес
+                  / 30 дней
                 </span>
               </div>
 
               <button
                 type="button"
-                className="mt-6 block w-full px-6 py-3.5 text-center font-display text-sm font-bold uppercase tracking-widest transition-all hover:scale-[1.02]"
+                disabled={!isAuthed || purchaseM.isPending}
+                onClick={() => {
+                  if (!isAuthed) {
+                    navigate({ to: "/login", search: { redirect: `/club/hell-pass/${tier.slug}` } });
+                    return;
+                  }
+                  purchaseM.mutate();
+                }}
+                className="mt-6 flex w-full items-center justify-center gap-2 px-6 py-3.5 text-center font-display text-sm font-bold uppercase tracking-widest transition-all hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100"
                 style={{
                   background: isGold
                     ? "linear-gradient(135deg, #ffb648 0%, #925f1b 100%)"
@@ -182,11 +220,16 @@ function TierDetailPage() {
                     : undefined,
                 }}
               >
-                Купить {tier.name}
+                {purchaseM.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+                {!isAuthed
+                  ? "Войти и купить"
+                  : purchaseId
+                    ? "Заявка создана"
+                    : `Купить ${tier.name}`}
               </button>
 
               <div className="mt-4 font-mono text-[10px] uppercase tracking-widest text-white/40">
-                Списание раз в месяц. Отмена в один клик из личного кабинета.
+                Разовый доступ на 30 дней с момента активации. Без автопродления.
               </div>
             </div>
           </div>
