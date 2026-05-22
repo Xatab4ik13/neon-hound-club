@@ -27,7 +27,11 @@ import {
   Lightbulb,
   ChevronDown,
   Plus,
+  History as HistoryIcon,
+  MessageSquarePlus,
+  Trash2,
 } from "lucide-react";
+
 import { cn } from "@/lib/utils";
 import { apiFetch, ApiError } from "@/lib/api";
 import { loadBikes, saveBikes, type StoredBike } from "@/data/bike-storage";
