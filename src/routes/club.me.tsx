@@ -68,12 +68,17 @@ function MePage() {
   const [bgSheetOpen, setBgSheetOpen] = useState(false);
   const isMobile = useIsMobile();
   const { tierInfo } = usePassState();
+  const { signOut } = useViewer();
 
-  const handleLogout = () => {
-    if (typeof window !== "undefined" && window.confirm("Выйти из клуба?")) {
+  const handleLogout = async () => {
+    if (typeof window !== "undefined" && !window.confirm("Выйти из клуба?")) return;
+    try {
+      await signOut();
+    } finally {
       window.location.href = "/";
     }
   };
+
 
   return (
     <main className="mx-auto w-full max-w-3xl px-4 py-6 md:px-8 md:py-10">
