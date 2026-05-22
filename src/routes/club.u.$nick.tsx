@@ -69,8 +69,8 @@ function UserProfilePage() {
   const rankIdx = RANKS.findIndex((r) => r.id === user.rank);
   const xpMax = getRankSpan(rankIdx);
   const xp = Math.round((user.xpPct / 100) * xpMax);
-  const nextCandidate = RANKS[rankIdx + 1] ?? null;
-  const next = nextCandidate && !nextCandidate.isPaid ? nextCandidate : null;
+  const next = RANKS[rankIdx + 1] ?? null;
+
   const badges = user.badgeIds
     .map((id) => BADGES.find((b) => b.id === id))
     .filter((b): b is (typeof BADGES)[number] => !!b);
