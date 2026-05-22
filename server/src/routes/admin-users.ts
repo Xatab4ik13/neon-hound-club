@@ -6,7 +6,10 @@ import { users } from "../db/schema/users.js";
 import { profiles } from "../db/schema/profile.js";
 import { passPurchases } from "../db/schema/pass.js";
 import { ticketsLedger } from "../db/schema/tickets.js";
-import { requireAdmin } from "../lib/auth.js";
+import { badges, userBadges } from "../db/schema/badges.js";
+import { requireAdmin, hashPassword } from "../lib/auth.js";
+import { getOrCreateReferralCode } from "../lib/referrals.js";
+
 
 /**
  * Админка юзеров: список + поиск, карточка с агрегатами, смена роли, блокировка.
