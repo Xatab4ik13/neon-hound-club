@@ -164,11 +164,10 @@ export function PostCard({ post, moderate = false }: { post: Post; moderate?: bo
           label="Лайк"
           active={liked}
           onClick={() => {
-            const next = !liked;
-            setLiked(next);
-            feedStore.toggleLike(post.id, next);
+            feedStore.toggleLike(post.id, !liked);
           }}
         />
+
         <PostAction
           icon={<CommentIcon />}
           count={post.comments.length}
