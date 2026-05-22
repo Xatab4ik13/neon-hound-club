@@ -51,7 +51,7 @@ export async function adminUsersRoutes(app: FastifyInstance) {
       })
       .from(users)
       .leftJoin(profiles, eq(profiles.userId, users.id))
-      .where(where ?? sql`true`)
+      .where(where)
       .orderBy(desc(users.createdAt))
       .limit(q.limit);
 
