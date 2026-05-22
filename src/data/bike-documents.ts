@@ -33,9 +33,19 @@ export type BikeDocument = {
   number?: string;
   issueDate?: string; // ISO
   expiryDate?: string; // ISO, для срочных
-  photo?: string; // dataURL
+  /** @deprecated используй photos */
+  photo?: string;
+  /** Несколько фото: лицевая/обратная и т.д. dataURL. */
+  photos?: string[];
   note?: string;
 };
+
+/** Возвращает массив фото из документа (поддержка старого поля `photo`). */
+export function docPhotos(d: BikeDocument): string[] {
+  if (d.photos && d.photos.length > 0) return d.photos;
+  if (d.photo) return [d.photo];
+  return [];
+}
 
 type State = { docs: BikeDocument[] };
 
