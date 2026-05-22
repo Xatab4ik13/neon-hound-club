@@ -6,7 +6,7 @@ const TOKEN_TTL_DAYS = 30;
 
 export interface SessionPayload {
   sub: string; // user id
-  role: "user" | "admin";
+  role: "user" | "admin" | "blogger";
   nick: string;
 }
 
