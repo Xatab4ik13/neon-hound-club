@@ -11,16 +11,36 @@ export type FeedComment = {
   likes: number;
 };
 
+export type FeedPollOption = {
+  id: string;
+  text: string;
+  /** Сколько уже проголосовало за этот вариант (без учёта моего голоса). */
+  votes: number;
+};
+
+export type FeedPoll = {
+  question: string;
+  options: FeedPollOption[];
+  /** Голосование без раскрытия, кто что выбрал. По умолчанию true. */
+  anonymous?: boolean;
+  /** Можно ли выбрать несколько вариантов. */
+  multi?: boolean;
+  /** Закрыто — менять голос нельзя, видны только результаты. */
+  closed?: boolean;
+};
+
 export type FeedPost = {
   id: string;
   authorSlug: string;
   time: string;
   text: string;
   image?: string;
+  poll?: FeedPoll;
   likes: number;
   pinned?: boolean;
   comments: FeedComment[];
 };
+
 
 let POSTS: FeedPost[] = [
   {
