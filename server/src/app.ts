@@ -60,5 +60,20 @@ export async function buildApp() {
   await app.register(profileRoutes, { prefix: "/api/v1/profile" });
   await app.register(garageRoutes, { prefix: "/api/v1/garage" });
 
+  const { uploadsRoutes } = await import("./routes/uploads.js");
+  await app.register(uploadsRoutes, { prefix: "/api/v1/uploads" });
+
+  const { mediaRoutes } = await import("./routes/media.js");
+  await app.register(mediaRoutes, { prefix: "/media" });
+
+  // Создаём S3-бакет, если его ещё нет.
+  try {
+    const { ensureBucket } = await import("./lib/s3.js");
+    await ensureBucket();
+    app.log.info("s3 bucket ready");
+  } catch (e) {
+    app.log.error({ err: e }, "ensureBucket failed");
+  }
+
   return app;
 }
