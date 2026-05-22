@@ -54,7 +54,6 @@ export const Route = createFileRoute("/club/hell-ai")({
 
 // ── Тариф / квоты ─────────────────────────────────────────────────────────
 type PassTier = "guest" | "silver" | "gold" | "platinum";
-const CURRENT_TIER: PassTier = "gold";
 const QUOTA_BY_TIER: Record<PassTier, number | "∞"> = {
   guest: 0,
   silver: 20,
@@ -67,6 +66,14 @@ const TIER_LABEL: Record<PassTier, string> = {
   gold: "Gold",
   platinum: "Platinum",
 };
+// Для блогера лимит снят — это его собственный инструмент.
+function getCurrentTier(): PassTier {
+  if (typeof window !== "undefined" && window.location.pathname.startsWith("/blogger")) {
+    return "platinum";
+  }
+  return "gold";
+}
+
 
 // ── Команды ──────────────────────────────────────────────────────────────
 type Cmd = { icon: React.ReactNode; label: string; description: string; prefix: string };
