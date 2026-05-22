@@ -227,9 +227,17 @@ function ProductsTab({
                           <ImageIcon className="h-4 w-4 text-zinc-400" />
                         </div>
                       )}
-                      <span className="font-medium">{p.name}</span>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className="truncate font-medium">{p.name}</span>
+                          <Badge tone={p.kind === "digital" ? "violet" : "zinc"}>
+                            {p.kind === "digital" ? "Цифровой" : "Физический"}
+                          </Badge>
+                        </div>
+                      </div>
                     </div>
                   </td>
+
                   <td className="px-4 py-2.5 text-zinc-500 dark:text-zinc-400">
                     {p.category} / {p.sub ?? "—"}
                   </td>
