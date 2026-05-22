@@ -92,49 +92,12 @@ function RafflesPage() {
   const [selectedId, setSelectedId] = useState<string>(ACTIVE_TICKETS[0].id);
   const [stake, setStake] = useState<number>(0);
   const [flash, setFlash] = useState<string | null>(null);
-  const [cart, setCart] = useState<Record<string, number>>({});
 
   const featured = ACTIVE_TICKETS[0];
   const others = ACTIVE_TICKETS.slice(1);
   const selected =
     ACTIVE_TICKETS.find((r) => r.id === selectedId) ?? featured;
 
-  const cartTotalTickets = useMemo(() => {
-    return Object.entries(cart).reduce((sum, [id, qty]) => {
-      const pack = TICKET_PACKS.find((p) => p.id === id);
-      return sum + (pack ? pack.count * qty : 0);
-    }, 0);
-  }, [cart]);
-
-  const cartTotalPrice = useMemo(() => {
-    return Object.entries(cart).reduce((sum, [id, qty]) => {
-      const pack = TICKET_PACKS.find((p) => p.id === id);
-      return sum + (pack ? pack.price * qty : 0);
-    }, 0);
-  }, [cart]);
-
-  const handleAddPack = (id: string) => {
-    setCart((prev) => ({ ...prev, [id]: (prev[id] || 0) + 1 }));
-  };
-
-  const handleRemovePack = (id: string) => {
-    setCart((prev) => {
-      const next = { ...prev };
-      if (next[id] > 1) next[id] -= 1;
-      else delete next[id];
-      return next;
-    });
-  };
-
-  const handleCheckout = () => {
-    if (cartTotalTickets <= 0) return;
-    setBalance((b) => b + cartTotalTickets);
-    setFlash(
-      `+${cartTotalTickets} билет${cartTotalTickets === 1 ? "" : cartTotalTickets < 5 ? "а" : "ов"} куплено`
-    );
-    setCart({});
-    setTimeout(() => setFlash(null), 2000);
-  };
 
   const handleStake = () => {
     if (stake <= 0 || stake > balance) return;
