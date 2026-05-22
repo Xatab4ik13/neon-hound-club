@@ -19,7 +19,7 @@ export const Route = createFileRoute("/club/rank")({
 
 function RankPage() {
   const { rank, next, xp, xpMax, xpPct, isMax } = useCurrentRank();
-  const isPaid = !!rank.isPaid;
+
 
   return (
     <main className="mx-auto w-full max-w-5xl px-4 py-6 md:px-8 md:py-10">
