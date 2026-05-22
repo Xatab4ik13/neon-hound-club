@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { Smile, Paperclip, Send, Search as SearchIcon, Clock, Sticker } from "lucide-react";
 import { RANKS, type RankId } from "@/data/ranks";
 import { ME_SLUG, PUBLIC_USERS } from "@/data/users";
 import { useFeedPosts, type FeedComment, type FeedPost } from "@/data/feed-store";
