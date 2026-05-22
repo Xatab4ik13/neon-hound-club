@@ -41,6 +41,8 @@ import { Route as ClubGarageRouteImport } from './routes/club.garage'
 import { Route as ClubCheckoutRouteImport } from './routes/club.checkout'
 import { Route as ClubCartRouteImport } from './routes/club.cart'
 import { Route as CheckoutSuccessRouteImport } from './routes/checkout.success'
+import { Route as BloggerSettingsRouteImport } from './routes/blogger.settings'
+import { Route as BloggerHellAiRouteImport } from './routes/blogger.hell-ai'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminTicketsRouteImport } from './routes/admin.tickets'
 import { Route as AdminShopRouteImport } from './routes/admin.shop'
@@ -221,6 +223,16 @@ const CheckoutSuccessRoute = CheckoutSuccessRouteImport.update({
   path: '/checkout/success',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BloggerSettingsRoute = BloggerSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => BloggerRoute,
+} as any)
+const BloggerHellAiRoute = BloggerHellAiRouteImport.update({
+  id: '/hell-ai',
+  path: '/hell-ai',
+  getParentRoute: () => BloggerRoute,
+} as any)
 const AdminUsersRoute = AdminUsersRouteImport.update({
   id: '/users',
   path: '/users',
@@ -338,6 +350,8 @@ export interface FileRoutesByFullPath {
   '/admin/shop': typeof AdminShopRoute
   '/admin/tickets': typeof AdminTicketsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/blogger/hell-ai': typeof BloggerHellAiRoute
+  '/blogger/settings': typeof BloggerSettingsRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/club/cart': typeof ClubCartRoute
   '/club/checkout': typeof ClubCheckoutRoute
@@ -388,6 +402,8 @@ export interface FileRoutesByTo {
   '/admin/shop': typeof AdminShopRoute
   '/admin/tickets': typeof AdminTicketsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/blogger/hell-ai': typeof BloggerHellAiRoute
+  '/blogger/settings': typeof BloggerSettingsRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/club/cart': typeof ClubCartRoute
   '/club/checkout': typeof ClubCheckoutRoute
@@ -442,6 +458,8 @@ export interface FileRoutesById {
   '/admin/shop': typeof AdminShopRoute
   '/admin/tickets': typeof AdminTicketsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/blogger/hell-ai': typeof BloggerHellAiRoute
+  '/blogger/settings': typeof BloggerSettingsRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/club/cart': typeof ClubCartRoute
   '/club/checkout': typeof ClubCheckoutRoute
@@ -497,6 +515,8 @@ export interface FileRouteTypes {
     | '/admin/shop'
     | '/admin/tickets'
     | '/admin/users'
+    | '/blogger/hell-ai'
+    | '/blogger/settings'
     | '/checkout/success'
     | '/club/cart'
     | '/club/checkout'
@@ -547,6 +567,8 @@ export interface FileRouteTypes {
     | '/admin/shop'
     | '/admin/tickets'
     | '/admin/users'
+    | '/blogger/hell-ai'
+    | '/blogger/settings'
     | '/checkout/success'
     | '/club/cart'
     | '/club/checkout'
@@ -600,6 +622,8 @@ export interface FileRouteTypes {
     | '/admin/shop'
     | '/admin/tickets'
     | '/admin/users'
+    | '/blogger/hell-ai'
+    | '/blogger/settings'
     | '/checkout/success'
     | '/club/cart'
     | '/club/checkout'
@@ -880,6 +904,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CheckoutSuccessRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/blogger/settings': {
+      id: '/blogger/settings'
+      path: '/settings'
+      fullPath: '/blogger/settings'
+      preLoaderRoute: typeof BloggerSettingsRouteImport
+      parentRoute: typeof BloggerRoute
+    }
+    '/blogger/hell-ai': {
+      id: '/blogger/hell-ai'
+      path: '/hell-ai'
+      fullPath: '/blogger/hell-ai'
+      preLoaderRoute: typeof BloggerHellAiRouteImport
+      parentRoute: typeof BloggerRoute
+    }
     '/admin/users': {
       id: '/admin/users'
       path: '/users'
@@ -1047,12 +1085,16 @@ const AdminRouteChildren: AdminRouteChildren = {
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 interface BloggerRouteChildren {
+  BloggerHellAiRoute: typeof BloggerHellAiRoute
+  BloggerSettingsRoute: typeof BloggerSettingsRoute
   BloggerIndexRoute: typeof BloggerIndexRoute
   BloggerRafflesRaffleIdRoute: typeof BloggerRafflesRaffleIdRoute
   BloggerRafflesIndexRoute: typeof BloggerRafflesIndexRoute
 }
 
 const BloggerRouteChildren: BloggerRouteChildren = {
+  BloggerHellAiRoute: BloggerHellAiRoute,
+  BloggerSettingsRoute: BloggerSettingsRoute,
   BloggerIndexRoute: BloggerIndexRoute,
   BloggerRafflesRaffleIdRoute: BloggerRafflesRaffleIdRoute,
   BloggerRafflesIndexRoute: BloggerRafflesIndexRoute,

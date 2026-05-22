@@ -54,7 +54,6 @@ export const Route = createFileRoute("/club/hell-ai")({
 
 // ── Тариф / квоты ─────────────────────────────────────────────────────────
 type PassTier = "guest" | "silver" | "gold" | "platinum";
-const CURRENT_TIER: PassTier = "gold";
 const QUOTA_BY_TIER: Record<PassTier, number | "∞"> = {
   guest: 0,
   silver: 20,
@@ -67,6 +66,14 @@ const TIER_LABEL: Record<PassTier, string> = {
   gold: "Gold",
   platinum: "Platinum",
 };
+// Для блогера лимит снят — это его собственный инструмент.
+function getCurrentTier(): PassTier {
+  if (typeof window !== "undefined" && window.location.pathname.startsWith("/blogger")) {
+    return "platinum";
+  }
+  return "gold";
+}
+
 
 // ── Команды ──────────────────────────────────────────────────────────────
 type Cmd = { icon: React.ReactNode; label: string; description: string; prefix: string };
@@ -123,7 +130,7 @@ function errorToMessage(err: unknown): string {
 }
 
 // ─────────────────────────────────────────────────────────────────────────
-function HellAiPage() {
+export function HellAiPage() {
   const isMobile = useIsMobile();
   return isMobile ? <HellAiMobile /> : <HellAiDesktop />;
 }
@@ -247,9 +254,9 @@ function HellAiMobile() {
   const { ref: taRef, adjust } = useAutoResize(40, 140);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const quota = QUOTA_BY_TIER[CURRENT_TIER];
+  const quota = QUOTA_BY_TIER[getCurrentTier()];
   const isUnlimited = quota === "∞";
-  const isGuest = CURRENT_TIER === "guest";
+  const isGuest = getCurrentTier() === "guest";
   const left = isUnlimited ? Infinity : (quota as number) - used;
   const canAsk = !isGuest && (isUnlimited || left > 0) && !!activeBike;
 
@@ -477,7 +484,7 @@ function HellAiMobile() {
         {/* квота */}
         <div className="flex items-center justify-between px-4 pb-1.5 pt-2">
           <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-            {TIER_LABEL[CURRENT_TIER]} ·{" "}
+            {TIER_LABEL[getCurrentTier()]} ·{" "}
             <span className="tabular-nums text-foreground/70">
               {isUnlimited ? "∞" : `${used}/${quota}`}
             </span>
@@ -943,9 +950,9 @@ function HellAiDesktop() {
   const { ref: taRef, adjust } = useAutoResize(60, 200);
   const cmdRef = useRef<HTMLDivElement>(null);
 
-  const quota = QUOTA_BY_TIER[CURRENT_TIER];
+  const quota = QUOTA_BY_TIER[getCurrentTier()];
   const isUnlimited = quota === "∞";
-  const isGuest = CURRENT_TIER === "guest";
+  const isGuest = getCurrentTier() === "guest";
   const left = isUnlimited ? Infinity : (quota as number) - used;
   const canAsk = !isGuest && (isUnlimited || left > 0) && !!activeBike;
 
@@ -1199,7 +1206,7 @@ function HellAiDesktop() {
                   <CommandIcon className="h-4 w-4" />
                 </motion.button>
                 <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                  {TIER_LABEL[CURRENT_TIER]} ·{" "}
+                  {TIER_LABEL[getCurrentTier()]} ·{" "}
                   <span className="tabular-nums text-foreground/80">
                     {isUnlimited ? "∞" : `${used}/${quota}`}
                   </span>
