@@ -197,26 +197,20 @@ export function PostCard({ post, moderate = false }: { post: Post; moderate?: bo
 // ───────── Poll ─────────
 
 function PollBlock({ poll, postId }: { poll: FeedPoll; postId: string }) {
-  const serverVote = poll.myVote && poll.myVote.length > 0 ? poll.myVote[0] : null;
-  const [voted, setVoted] = useState<string | null>(serverVote);
-
-  // votes из server уже включают мой голос; локальный bonus только если выбрал, а сервер ещё не знал.
-  const localBonus = voted && voted !== serverVote ? 1 : 0;
-  const removedFromServer = serverVote && voted !== serverVote ? 1 : 0;
-  const totals = poll.options.reduce((s, o) => s + o.votes, 0) + localBonus - removedFromServer;
+  const voted = poll.myVote && poll.myVote.length > 0 ? poll.myVote[0] : null;
+  const totals = poll.options.reduce((s, o) => s + o.votes, 0);
 
   const onVote = (id: string) => {
     if (poll.closed) return;
-    setVoted(id);
     feedStore.votePoll(postId, [id]);
   };
 
   const onRetract = () => {
-    setVoted(null);
     feedStore.unvotePoll(postId);
   };
 
   const showResults = !!voted || !!poll.closed;
+
 
   return (
     <div className="mx-3 mb-3 rounded-[16px] border border-white/[0.06] bg-black/30 p-4 md:mx-4 md:p-5">
