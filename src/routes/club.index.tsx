@@ -211,6 +211,7 @@ function PollBlock({ poll, postId }: { poll: FeedPoll; postId: string }) {
     if (poll.closed || voted) return;
     setVoted(id);
     if (typeof window !== "undefined") window.localStorage.setItem(storageKey, id);
+    feedStore.votePoll(postId, [id]);
   };
 
   const onRetract = () => {
