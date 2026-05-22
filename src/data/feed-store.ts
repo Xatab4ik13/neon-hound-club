@@ -12,6 +12,9 @@ import {
   likePost,
   unlikePost,
   votePoll,
+  unvotePoll,
+  likeComment,
+  unlikeComment,
   type FeedPostHydrated,
   type FeedCommentHydrated,
 } from "@/lib/queries";
@@ -25,6 +28,7 @@ export type FeedComment = {
   time: string;
   text: string;
   likes: number;
+  liked: boolean;
 };
 
 export type FeedPollOption = { id: string; text: string; votes: number };
@@ -35,6 +39,7 @@ export type FeedPoll = {
   anonymous?: boolean;
   multi?: boolean;
   closed?: boolean;
+  myVote?: string[];
 };
 
 export type FeedPost = {
@@ -45,6 +50,7 @@ export type FeedPost = {
   image?: string;
   poll?: FeedPoll;
   likes: number;
+  liked: boolean;
   pinned?: boolean;
   comments: FeedComment[];
 };
@@ -128,6 +134,7 @@ function mapComment(c: FeedCommentHydrated): FeedComment {
     time: formatRelative(c.createdAt),
     text: c.text,
     likes: c.likes,
+    liked: c.liked,
   };
 }
 
@@ -154,10 +161,12 @@ function mapPost(p: FeedPostWithComments): FeedPost {
           anonymous: p.poll.anonymous,
           multi: p.poll.multi,
           closed: p.poll.closed,
+          myVote: p.poll.myVote,
           options: p.poll.results.map((o) => ({ id: o.id, text: o.text, votes: o.votes })),
         }
       : undefined,
     likes: p.likes,
+    liked: p.liked,
     comments: (p.comments ?? []).map(mapComment),
   };
 }
@@ -261,6 +270,24 @@ export const feedStore = {
     try {
       await votePoll(postId, optionIds);
       await refetch();
+    } catch {
+      /* noop */
+    }
+  },
+
+  async unvotePoll(postId: string) {
+    try {
+      await unvotePoll(postId);
+      await refetch();
+    } catch {
+      /* noop */
+    }
+  },
+
+  async toggleCommentLike(commentId: string, liked: boolean) {
+    try {
+      if (liked) await likeComment(commentId);
+      else await unlikeComment(commentId);
     } catch {
       /* noop */
     }

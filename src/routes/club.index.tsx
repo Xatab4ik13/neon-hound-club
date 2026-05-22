@@ -52,10 +52,10 @@ function ClubFeedPage() {
 // ───────── Post ─────────
 
 export function PostCard({ post, moderate = false }: { post: Post; moderate?: boolean }) {
-  const [liked, setLiked] = useState(false);
+  const [liked, setLiked] = useState(post.liked);
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const likeCount = post.likes + (liked ? 1 : 0);
+  const likeCount = post.likes + (liked ? 1 : 0) - (post.liked ? 1 : 0);
   const author = PUBLIC_USERS[post.authorSlug];
 
   return (
@@ -197,26 +197,23 @@ export function PostCard({ post, moderate = false }: { post: Post; moderate?: bo
 // ───────── Poll ─────────
 
 function PollBlock({ poll, postId }: { poll: FeedPoll; postId: string }) {
-  // Локальное состояние голоса — пока без бэкенда, на пост.
-  const storageKey = `hh:poll:vote:${postId}`;
-  const [voted, setVoted] = useState<string | null>(() => {
-    if (typeof window === "undefined") return null;
-    return window.localStorage.getItem(storageKey);
-  });
+  const serverVote = poll.myVote && poll.myVote.length > 0 ? poll.myVote[0] : null;
+  const [voted, setVoted] = useState<string | null>(serverVote);
 
-  const myVoteBonus = voted ? 1 : 0;
-  const totals = poll.options.reduce((s, o) => s + o.votes, 0) + myVoteBonus;
+  // votes из server уже включают мой голос; локальный bonus только если выбрал, а сервер ещё не знал.
+  const localBonus = voted && voted !== serverVote ? 1 : 0;
+  const removedFromServer = serverVote && voted !== serverVote ? 1 : 0;
+  const totals = poll.options.reduce((s, o) => s + o.votes, 0) + localBonus - removedFromServer;
 
   const onVote = (id: string) => {
-    if (poll.closed || voted) return;
+    if (poll.closed) return;
     setVoted(id);
-    if (typeof window !== "undefined") window.localStorage.setItem(storageKey, id);
     feedStore.votePoll(postId, [id]);
   };
 
   const onRetract = () => {
     setVoted(null);
-    if (typeof window !== "undefined") window.localStorage.removeItem(storageKey);
+    feedStore.unvotePoll(postId);
   };
 
   const showResults = !!voted || !!poll.closed;
@@ -240,7 +237,9 @@ function PollBlock({ poll, postId }: { poll: FeedPoll; postId: string }) {
 
       <ul className="space-y-2">
         {poll.options.map((opt) => {
-          const votes = opt.votes + (voted === opt.id ? 1 : 0);
+          const addBonus = voted === opt.id && voted !== serverVote ? 1 : 0;
+          const subFromServer = serverVote === opt.id && voted !== serverVote ? 1 : 0;
+          const votes = opt.votes + addBonus - subFromServer;
           const pct = totals > 0 ? Math.round((votes / totals) * 100) : 0;
           const isMine = voted === opt.id;
 
@@ -517,10 +516,10 @@ function CommentItem({
   onReply?: () => void;
   onDelete?: () => void;
 }) {
-  const [liked, setLiked] = useState(false);
+  const [liked, setLiked] = useState(comment.liked);
   const user = PUBLIC_USERS[comment.authorSlug];
   const rank = RANK_BY_ID[user?.rank ?? "rookie"];
-  const count = comment.likes + (liked ? 1 : 0);
+  const count = comment.likes + (liked ? 1 : 0) - (comment.liked ? 1 : 0);
 
   return (
     <li className="flex gap-3">
@@ -565,7 +564,11 @@ function CommentItem({
         <div className="mt-1.5 flex items-center gap-4 pl-1">
           <button
             type="button"
-            onClick={() => setLiked((v) => !v)}
+            onClick={() => {
+              const next = !liked;
+              setLiked(next);
+              feedStore.toggleCommentLike(comment.id, next);
+            }}
             aria-pressed={liked}
             className={`flex items-center gap-1.5 font-mono text-[10px] font-bold uppercase tracking-wider tabular-nums transition-colors ${
               liked ? "text-primary" : "text-muted-foreground/70 hover:text-primary"

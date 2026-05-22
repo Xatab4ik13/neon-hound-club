@@ -43,7 +43,7 @@ export async function adminUsersRoutes(app: FastifyInstance) {
         phone: profiles.phone,
       })
       .from(users)
-      .leftJoin(profiles, eq(profiles.id, users.id))
+      .leftJoin(profiles, eq(profiles.userId, users.id))
       .where(where ?? sql`true`)
       .orderBy(desc(users.createdAt))
       .limit(q.limit);
@@ -69,7 +69,7 @@ export async function adminUsersRoutes(app: FastifyInstance) {
         bio: profiles.bio,
       })
       .from(users)
-      .leftJoin(profiles, eq(profiles.id, users.id))
+      .leftJoin(profiles, eq(profiles.userId, users.id))
       .where(eq(users.id, req.params.id))
       .limit(1);
 

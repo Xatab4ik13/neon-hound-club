@@ -2,7 +2,7 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
-import { posts, postLikes, postComments, postPollVotes, type PollDef } from "../db/schema/posts.js";
+import { posts, postLikes, postComments, postPollVotes, commentLikes, type PollDef } from "../db/schema/posts.js";
 import { users } from "../db/schema/users.js";
 import { profiles } from "../db/schema/profile.js";
 import { loadSession, requireAuth, requireAdmin, type SessionPayload } from "../lib/auth.js";
@@ -70,7 +70,7 @@ async function hydratePosts(rows: typeof posts.$inferSelect[], viewerId: string 
         city: profiles.city,
       })
       .from(users)
-      .leftJoin(profiles, eq(profiles.id, users.id))
+      .leftJoin(profiles, eq(profiles.userId, users.id))
       .where(inArray(users.id, authorIds)),
     db
       .select({ postId: postLikes.postId, c: sql<number>`count(*)::int` })
@@ -95,7 +95,6 @@ async function hydratePosts(rows: typeof posts.$inferSelect[], viewerId: string 
         id: postComments.id,
         postId: postComments.postId,
         text: postComments.text,
-        likes: postComments.likes,
         createdAt: postComments.createdAt,
         authorId: postComments.authorId,
         nick: users.nick,
@@ -103,10 +102,30 @@ async function hydratePosts(rows: typeof posts.$inferSelect[], viewerId: string 
       })
       .from(postComments)
       .innerJoin(users, eq(users.id, postComments.authorId))
-      .leftJoin(profiles, eq(profiles.id, postComments.authorId))
+      .leftJoin(profiles, eq(profiles.userId, postComments.authorId))
       .where(and(inArray(postComments.postId, ids), isNull(postComments.deletedAt)))
       .orderBy(postComments.createdAt),
   ]);
+
+  // Лайки комментариев: считаем по таблице commentLikes для всех загруженных комментов.
+  const commentIds = allComments.map((c) => c.id);
+  const [commentLikeCounts, myCommentLikes] = await Promise.all([
+    commentIds.length
+      ? db
+          .select({ commentId: commentLikes.commentId, c: sql<number>`count(*)::int` })
+          .from(commentLikes)
+          .where(inArray(commentLikes.commentId, commentIds))
+          .groupBy(commentLikes.commentId)
+      : Promise.resolve([] as { commentId: string; c: number }[]),
+    viewerId && commentIds.length
+      ? db
+          .select({ commentId: commentLikes.commentId })
+          .from(commentLikes)
+          .where(and(inArray(commentLikes.commentId, commentIds), eq(commentLikes.userId, viewerId)))
+      : Promise.resolve([] as { commentId: string }[]),
+  ]);
+  const commentLikeMap = new Map(commentLikeCounts.map((r) => [r.commentId, r.c]));
+  const myCommentLikeSet = new Set(myCommentLikes.map((r) => r.commentId));
 
   // Группируем комменты по постам, кап 20 последних (oldest-first внутри среза).
   const commentsByPost = new Map<string, typeof allComments>();
@@ -167,7 +186,8 @@ async function hydratePosts(rows: typeof posts.$inferSelect[], viewerId: string 
       comments: (commentsByPost.get(r.id) ?? []).map((c) => ({
         id: c.id,
         text: c.text,
-        likes: c.likes,
+        likes: commentLikeMap.get(c.id) ?? 0,
+        liked: myCommentLikeSet.has(c.id),
         createdAt: c.createdAt,
         authorId: c.authorId,
         nick: c.nick,
@@ -217,12 +237,12 @@ export async function feedRoutes(app: FastifyInstance) {
     if (!row) return reply.code(404).send({ error: "not_found" });
     const session = (req.user as SessionPayload | undefined) ?? null;
     const [hydrated] = await hydratePosts([row], session?.sub ?? null);
-
-    const comments = await db
+    // Полный список комментов (hydrated.comments кап 20) — пересоберём вместе с лайками вьюера.
+    const viewerId = session?.sub ?? null;
+    const allRows = await db
       .select({
         id: postComments.id,
         text: postComments.text,
-        likes: postComments.likes,
         createdAt: postComments.createdAt,
         authorId: postComments.authorId,
         nick: users.nick,
@@ -230,11 +250,57 @@ export async function feedRoutes(app: FastifyInstance) {
       })
       .from(postComments)
       .innerJoin(users, eq(users.id, postComments.authorId))
-      .leftJoin(profiles, eq(profiles.id, postComments.authorId))
+      .leftJoin(profiles, eq(profiles.userId, postComments.authorId))
       .where(and(eq(postComments.postId, req.params.id), isNull(postComments.deletedAt)))
       .orderBy(postComments.createdAt);
-
+    const cids = allRows.map((c) => c.id);
+    const [likeCounts, mine] = await Promise.all([
+      cids.length
+        ? db
+            .select({ commentId: commentLikes.commentId, c: sql<number>`count(*)::int` })
+            .from(commentLikes)
+            .where(inArray(commentLikes.commentId, cids))
+            .groupBy(commentLikes.commentId)
+        : Promise.resolve([] as { commentId: string; c: number }[]),
+      viewerId && cids.length
+        ? db
+            .select({ commentId: commentLikes.commentId })
+            .from(commentLikes)
+            .where(and(inArray(commentLikes.commentId, cids), eq(commentLikes.userId, viewerId)))
+        : Promise.resolve([] as { commentId: string }[]),
+    ]);
+    const lm = new Map(likeCounts.map((r) => [r.commentId, r.c]));
+    const ms = new Set(mine.map((r) => r.commentId));
+    const comments = allRows.map((c) => ({
+      ...c,
+      likes: lm.get(c.id) ?? 0,
+      liked: ms.has(c.id),
+    }));
     return { ...hydrated, comments };
+  });
+
+  // POST /api/v1/feed/comments/:cid/like  /  DELETE → unlike
+  app.post<{ Params: { cid: string } }>("/comments/:cid/like", { preHandler: requireAuth }, async (req, reply) => {
+    const s = req.user as SessionPayload;
+    const [c] = await db.select({ id: postComments.id }).from(postComments).where(and(eq(postComments.id, req.params.cid), isNull(postComments.deletedAt))).limit(1);
+    if (!c) return reply.code(404).send({ error: "not_found" });
+    await db.insert(commentLikes).values({ commentId: req.params.cid, userId: s.sub }).onConflictDoNothing();
+    return { ok: true };
+  });
+  app.delete<{ Params: { cid: string } }>("/comments/:cid/like", { preHandler: requireAuth }, async (req) => {
+    const s = req.user as SessionPayload;
+    await db.delete(commentLikes).where(and(eq(commentLikes.commentId, req.params.cid), eq(commentLikes.userId, s.sub)));
+    return { ok: true };
+  });
+
+  // DELETE /api/v1/feed/:id/vote — снять свой голос
+  app.delete<{ Params: { id: string } }>("/:id/vote", { preHandler: requireAuth }, async (req, reply) => {
+    const s = req.user as SessionPayload;
+    const [p] = await db.select({ id: posts.id, poll: posts.poll }).from(posts).where(and(eq(posts.id, req.params.id), isNull(posts.deletedAt))).limit(1);
+    if (!p || !p.poll) return reply.code(404).send({ error: "not_found" });
+    if (p.poll.closed) return reply.code(409).send({ error: "closed" });
+    await db.delete(postPollVotes).where(and(eq(postPollVotes.postId, p.id), eq(postPollVotes.userId, s.sub)));
+    return { ok: true };
   });
 
   // POST /api/v1/feed/:id/like  /  DELETE → unlike
