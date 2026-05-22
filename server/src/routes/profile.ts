@@ -163,7 +163,7 @@ const createBikeSchema = z.object({
   color: z.string().trim().max(40).nullable().optional(),
   nickname: z.string().trim().max(60).nullable().optional(),
   notes: z.string().max(5000).nullable().optional(),
-  photos: z.array(z.string().url()).max(20).default([]),
+  photos: z.array(ourS3Url).max(20).default([]),
   isPrimary: z.boolean().default(false),
 });
 
