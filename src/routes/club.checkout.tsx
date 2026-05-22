@@ -91,7 +91,7 @@ function ClubCheckoutPage() {
     () => items.filter((i) => Boolean(i.productId)),
     [items],
   );
-  const hasLegacyItems = orderableItems.length !== items.length;
+  
 
   const set = <K extends keyof CheckoutProfile>(k: K, v: string) =>
     setForm((f) => ({ ...f, [k]: v }));
