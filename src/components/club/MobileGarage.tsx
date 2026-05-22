@@ -36,6 +36,7 @@ import {
 import {
   bikeDocumentsStore,
   DOC_TYPE_LABEL,
+  docPhotos,
   docStatus,
   useBikeDocuments,
   type BikeDocument,
