@@ -144,6 +144,144 @@ function PostCard({ post }: { post: Post }) {
   );
 }
 
+// ───────── Poll ─────────
+
+function PollBlock({ poll, postId }: { poll: FeedPoll; postId: string }) {
+  // Локальное состояние голоса — пока без бэкенда, на пост.
+  const storageKey = `hh:poll:vote:${postId}`;
+  const [voted, setVoted] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    return window.localStorage.getItem(storageKey);
+  });
+
+  const myVoteBonus = voted ? 1 : 0;
+  const totals = poll.options.reduce((s, o) => s + o.votes, 0) + myVoteBonus;
+
+  const onVote = (id: string) => {
+    if (poll.closed || voted) return;
+    setVoted(id);
+    if (typeof window !== "undefined") window.localStorage.setItem(storageKey, id);
+  };
+
+  const onRetract = () => {
+    setVoted(null);
+    if (typeof window !== "undefined") window.localStorage.removeItem(storageKey);
+  };
+
+  const showResults = !!voted || !!poll.closed;
+
+  return (
+    <div className="mx-3 mb-3 rounded-[16px] border border-white/[0.06] bg-black/30 p-4 md:mx-4 md:p-5">
+      <div className="mb-1 flex items-start justify-between gap-3">
+        <h3 className="font-display text-[15px] font-black uppercase italic leading-tight tracking-tight text-foreground">
+          {poll.question}
+        </h3>
+        {poll.closed && (
+          <span className="shrink-0 font-mono text-[9px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+            Закрыто
+          </span>
+        )}
+      </div>
+      <p className="mb-3 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+        {poll.anonymous ? "Анонимный опрос" : "Открытый опрос"}
+        {poll.multi ? " · можно несколько" : ""}
+      </p>
+
+      <ul className="space-y-2">
+        {poll.options.map((opt) => {
+          const votes = opt.votes + (voted === opt.id ? 1 : 0);
+          const pct = totals > 0 ? Math.round((votes / totals) * 100) : 0;
+          const isMine = voted === opt.id;
+
+          if (!showResults) {
+            return (
+              <li key={opt.id}>
+                <button
+                  type="button"
+                  onClick={() => onVote(opt.id)}
+                  className="group flex w-full items-center gap-3 rounded-[12px] border border-white/[0.08] bg-card/40 px-3 py-3 text-left transition-colors hover:border-primary/40 hover:bg-primary/[0.04] active:scale-[0.99]"
+                >
+                  <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full border border-white/20 transition-colors group-hover:border-primary" />
+                  <span className="flex-1 text-[14px] leading-tight text-foreground/90">
+                    {opt.text}
+                  </span>
+                </button>
+              </li>
+            );
+          }
+
+          return (
+            <li key={opt.id} className="relative">
+              <div className="relative overflow-hidden rounded-[12px] border border-white/[0.06] bg-black/40 px-3 py-2.5">
+                <div
+                  aria-hidden
+                  className="absolute inset-y-0 left-0 rounded-[12px]"
+                  style={{
+                    width: `${pct}%`,
+                    backgroundColor: isMine
+                      ? "color-mix(in oklab, var(--primary) 22%, transparent)"
+                      : "rgba(255,255,255,0.05)",
+                    transition: "width 400ms ease-out",
+                  }}
+                />
+                <div className="relative flex items-center gap-3">
+                  <span
+                    className={`grid h-5 w-5 shrink-0 place-items-center rounded-full border ${
+                      isMine ? "border-primary bg-primary" : "border-white/20"
+                    }`}
+                  >
+                    {isMine && (
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" className="text-primary-foreground">
+                        <path d="M5 12l5 5L20 7" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    )}
+                  </span>
+                  <span className="flex-1 truncate text-[14px] text-foreground/95">
+                    {opt.text}
+                  </span>
+                  <span
+                    className={`shrink-0 font-mono text-[12px] font-bold tabular-nums ${
+                      isMine ? "text-primary" : "text-foreground/80"
+                    }`}
+                  >
+                    {pct}%
+                  </span>
+                </div>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+
+      <div className="mt-3 flex items-center justify-between font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+        <span>
+          <span className="font-bold text-foreground/80 tabular-nums">{totals}</span>{" "}
+          {totalsLabel(totals)}
+        </span>
+        {voted && !poll.closed && (
+          <button
+            type="button"
+            onClick={onRetract}
+            className="font-bold tracking-[0.2em] text-primary transition-opacity hover:opacity-80"
+          >
+            Отменить голос
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function totalsLabel(n: number) {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return "голос";
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return "голоса";
+  return "голосов";
+}
+
+
+
 function PostAction({
   icon,
   count,
