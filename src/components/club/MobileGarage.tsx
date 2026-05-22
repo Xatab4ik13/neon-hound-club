@@ -496,7 +496,7 @@ function BikeHero({
 
 // ───────────── Stats ─────────────
 
-function StatsGrid({ bike }: { bike: StoredBike }) {
+function StatsGrid({ bike, columns = 2 }: { bike: StoredBike; columns?: 2 | 4 }) {
   const journal = useBikeJournal();
   const rides = journal.rides.filter((r) => r.bikeId === bike.id);
   const service = journal.service.filter((s) => s.bikeId === bike.id);
@@ -510,8 +510,14 @@ function StatsGrid({ bike }: { bike: StoredBike }) {
       ? Math.min(nextOil, nextTo)
       : (nextOil ?? nextTo);
 
+  const gridCls =
+    columns === 4
+      ? "grid grid-cols-4 gap-3"
+      : "mt-4 grid grid-cols-2 gap-2.5 px-4";
+
   return (
-    <div className="mt-4 grid grid-cols-2 gap-2.5 px-4">
+    <div className={gridCls}>
+
       <StatTile
         icon={<Gauge className="h-4 w-4" />}
         label="Пробег"
