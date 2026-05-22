@@ -38,7 +38,10 @@ type Product = {
   returns?: string;
   ticketsBonus?: number;
   status: "active" | "draft" | "archived";
+  /** Тип товара: физический (нужна доставка) или цифровой (только email для чека). */
+  kind: "physical" | "digital";
 };
+
 
 const CATEGORIES_SEED = [
   { id: "apparel", name: "Одежда", subs: ["Худи", "Футболки", "Куртки"] },
