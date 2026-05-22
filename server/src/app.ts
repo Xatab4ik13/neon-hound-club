@@ -73,6 +73,21 @@ export async function buildApp() {
   const { adminUsersRoutes } = await import("./routes/admin-users.js");
   await app.register(adminUsersRoutes, { prefix: "/api/v1/admin/users" });
 
+  const { newsRoutes, adminNewsRoutes } = await import("./routes/news.js");
+  await app.register(newsRoutes, { prefix: "/api/v1/news" });
+  await app.register(adminNewsRoutes, { prefix: "/api/v1/admin/news" });
+
+  const { invitesRoutes } = await import("./routes/invites.js");
+  await app.register(invitesRoutes, { prefix: "/api/v1/invites" });
+
+  const { xpRoutes, adminXpRoutes } = await import("./routes/xp.js");
+  await app.register(xpRoutes, { prefix: "/api/v1/xp" });
+  await app.register(adminXpRoutes, { prefix: "/api/v1/admin/xp" });
+
+  const { badgesRoutes, adminBadgesRoutes } = await import("./routes/badges.js");
+  await app.register(badgesRoutes, { prefix: "/api/v1/badges" });
+  await app.register(adminBadgesRoutes, { prefix: "/api/v1/admin/badges" });
+
   // Создаём S3-бакет, если его ещё нет.
   try {
     const { ensureBucket } = await import("./lib/s3.js");
