@@ -255,6 +255,14 @@ export function MobileGarage({
         bikeId={active.id}
         onOpenChange={(v) => setDocSheet({ open: v, doc: docSheet.doc })}
       />
+      <DocViewerSheet
+        doc={viewDoc}
+        onClose={() => setViewDoc(null)}
+        onEdit={(d) => {
+          setViewDoc(null);
+          setTimeout(() => setDocSheet({ open: true, doc: d }), 180);
+        }}
+      />
     </div>
   );
 }
