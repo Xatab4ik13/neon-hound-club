@@ -92,7 +92,9 @@ let POSTS: FeedPost[] = [
       { id: "c10", authorSlug: "kuzya_msk", time: "2 д", text: "Я в деле. На R6, средний темп норм?", likes: 3 },
       { id: "c11", authorSlug: "captain_volk", time: "2 д", text: "Если асфальт реально плохой — лучше не на спорте. Возьму твин.", likes: 8 },
     ],
+  },
   {
+
     id: "5",
     authorSlug: "hell",
     time: "5 ч",
