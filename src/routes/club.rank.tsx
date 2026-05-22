@@ -68,7 +68,7 @@ function RankPage() {
             />
           </div>
         </div>
-        {!isPaid && !isMax && (
+        {!isMax && (
           <div className="mt-3 font-mono text-sm tabular-nums text-muted-foreground">
             <span className="font-bold text-foreground">{xp.toLocaleString("ru-RU")}</span>
             <span className="opacity-40"> / </span>
