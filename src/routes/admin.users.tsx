@@ -380,14 +380,15 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 
-function InfoRow({ label, value }: { label: string; value: string }) {
+function InfoRow({ label, value, full }: { label: string; value: string; full?: boolean }) {
   return (
-    <div className="rounded-md border border-zinc-200 bg-zinc-50 px-3 py-2 dark:border-zinc-800 dark:bg-zinc-900/50">
+    <div className={cn("rounded-md border border-zinc-200 bg-zinc-50 px-3 py-2 dark:border-zinc-800 dark:bg-zinc-900/50", full && "col-span-2")}>
       <div className="text-[10px] uppercase tracking-wider text-zinc-500">{label}</div>
-      <div className="text-sm font-medium tabular-nums">{value}</div>
+      <div className="text-sm font-medium tabular-nums break-words">{value}</div>
     </div>
   );
 }
+
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
