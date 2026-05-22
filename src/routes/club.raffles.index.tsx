@@ -13,7 +13,9 @@ import {
   ChevronRight,
   Zap,
   ExternalLink,
+  ShoppingBag,
 } from "lucide-react";
+
 import { Countdown } from "@/components/club/Countdown";
 import { ACTIVE_TICKETS, ME } from "@/data/profile";
 import { PUBLIC_USERS } from "@/data/users";
