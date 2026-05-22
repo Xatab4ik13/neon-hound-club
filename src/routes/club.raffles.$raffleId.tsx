@@ -1,23 +1,28 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Calendar, Check, Minus, Plus, Ticket, Zap } from "lucide-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { ArrowLeft, Calendar, Check, Minus, Plus, Ticket, Trophy, Zap } from "lucide-react";
 import { Countdown } from "@/components/club/Countdown";
-import { ACTIVE_TICKETS, type ActiveTicket } from "@/data/profile";
-import { TICKET_LEDGER, summarizeLedger } from "@/data/tickets-ledger";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useViewer } from "@/hooks/use-viewer";
+import {
+  enterRaffle,
+  fetchRaffle,
+  fetchTicketsBalance,
+  qk,
+  type RaffleDetail,
+} from "@/lib/queries";
+import { ApiError } from "@/lib/api";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/club/raffles/$raffleId")({
-  head: ({ params }) => {
-    const raffle = ACTIVE_TICKETS.find((r) => r.id === params.raffleId);
-    return {
-      meta: [
-        { title: `${raffle?.title ?? "Розыгрыш"} · HELLHOUND` },
-        { name: "description", content: raffle?.subtitle ?? "Розыгрыш клуба HELLHOUND Racing." },
-        { name: "robots", content: "noindex" },
-      ],
-    };
-  },
-  notFoundComponent: () => <NotFound />,
+  head: () => ({
+    meta: [
+      { title: "Розыгрыш · HELLHOUND" },
+      { name: "description", content: "Розыгрыш клуба HELLHOUND Racing." },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
   component: RaffleDetailPage,
 });
 
@@ -39,9 +44,36 @@ function NotFound() {
 
 function RaffleDetailPage() {
   const { raffleId } = Route.useParams();
-  const raffle = ACTIVE_TICKETS.find((r) => r.id === raffleId);
-  if (!raffle) return <NotFound />;
-  return <RaffleDetailContent raffle={raffle} />;
+  const { isAuthed } = useViewer();
+
+  const raffleQ = useQuery({
+    queryKey: qk.raffle(raffleId),
+    queryFn: () => fetchRaffle(raffleId),
+    retry: false,
+  });
+
+  const balanceQ = useQuery({
+    queryKey: qk.ticketsBalance,
+    queryFn: fetchTicketsBalance,
+    enabled: isAuthed,
+  });
+
+  if (raffleQ.isLoading) {
+    return (
+      <main className="mx-auto w-full max-w-3xl px-4 py-8">
+        <div className="h-64 animate-pulse rounded-2xl border border-white/[0.06] bg-card/40" />
+      </main>
+    );
+  }
+  if (raffleQ.isError || !raffleQ.data) return <NotFound />;
+
+  return (
+    <RaffleDetailContent
+      raffle={raffleQ.data}
+      balance={balanceQ.data?.balance ?? 0}
+      isAuthed={isAuthed}
+    />
+  );
 }
 
 function formatDeadline(iso: string) {
@@ -57,13 +89,57 @@ function formatDeadline(iso: string) {
   }
 }
 
-function RaffleDetailContent({ raffle }: { raffle: ActiveTicket }) {
-  const initialBalance = summarizeLedger(TICKET_LEDGER).balance;
-  const [balance, setBalance] = useState(initialBalance);
-  const [myTickets, setMyTickets] = useState(raffle.myTickets);
+const ENTER_ERRORS: Record<string, string> = {
+  insufficient_tickets: "Не хватает билетов",
+  limit_reached: "Достигнут лимит заявок",
+  not_active: "Розыгрыш не активен",
+  not_started: "Розыгрыш ещё не начался",
+  ended: "Розыгрыш закончился",
+  not_found: "Розыгрыш не найден",
+};
+
+function RaffleDetailContent({
+  raffle,
+  balance,
+  isAuthed,
+}: {
+  raffle: RaffleDetail;
+  balance: number;
+  isAuthed: boolean;
+}) {
+  const qc = useQueryClient();
+  const navigate = useNavigate();
   const [stake, setStake] = useState(0);
   const [flash, setFlash] = useState<string | null>(null);
   const isMobile = useIsMobile();
+  const finished = raffle.status === "finished";
+
+  const enterMut = useMutation({
+    mutationFn: async () => {
+      // N последовательных заявок (каждая = 1 билет = ticketCost)
+      let lastBalance = balance;
+      for (let i = 0; i < stake; i++) {
+        const r = await enterRaffle(raffle.id);
+        lastBalance = r.balance;
+      }
+      return lastBalance;
+    },
+    onSuccess: () => {
+      setFlash(`Поставлено ×${stake}`);
+      setStake(0);
+      qc.invalidateQueries({ queryKey: qk.raffle(raffle.id) });
+      qc.invalidateQueries({ queryKey: qk.ticketsBalance });
+      qc.invalidateQueries({ queryKey: qk.ticketsHistory() });
+      qc.invalidateQueries({ queryKey: qk.myRaffles });
+    },
+    onError: (e) => {
+      if (e instanceof ApiError) {
+        toast.error(ENTER_ERRORS[e.code] ?? "Не удалось участвовать");
+      } else {
+        toast.error("Не удалось участвовать");
+      }
+    },
+  });
 
   useEffect(() => {
     if (!flash) return;
@@ -72,16 +148,25 @@ function RaffleDetailContent({ raffle }: { raffle: ActiveTicket }) {
   }, [flash]);
 
   const handleStake = () => {
-    if (stake <= 0 || stake > balance) return;
-    setBalance((b) => b - stake);
-    setMyTickets((m) => m + stake);
-    setFlash(`Поставлено ×${stake}`);
-    setStake(0);
+    if (!isAuthed) {
+      navigate({ to: "/login" });
+      return;
+    }
+    if (stake <= 0 || stake * raffle.ticketCost > balance) return;
+    enterMut.mutate();
   };
+
+  // максимум сколько заявок юзер может купить за текущий баланс
+  const maxByBalance = Math.floor(balance / raffle.ticketCost);
+  // c учётом лимита
+  const remainingByLimit =
+    raffle.maxEntriesPerUser != null
+      ? Math.max(0, raffle.maxEntriesPerUser - raffle.myEntries)
+      : Infinity;
+  const maxStake = Math.min(maxByBalance, remainingByLimit);
 
   return (
     <main className="relative mx-auto w-full max-w-3xl px-4 py-5 md:py-8">
-      {/* back link */}
       <Link
         to="/club/raffles"
         className="inline-flex items-center gap-1.5 font-mono text-[11px] font-bold uppercase tracking-wider text-muted-foreground active:opacity-60"
@@ -89,7 +174,6 @@ function RaffleDetailContent({ raffle }: { raffle: ActiveTicket }) {
         <ArrowLeft className="h-3.5 w-3.5" />к розыгрышам
       </Link>
 
-      {/* flash */}
       {flash && (
         <div className="fixed left-1/2 top-16 z-50 -translate-x-1/2 rounded-xl border border-emerald-500/40 bg-black/85 px-4 py-2 font-mono text-[12px] uppercase tracking-wider text-emerald-300 shadow-lg backdrop-blur">
           <Check className="mr-1.5 inline h-3.5 w-3.5" />
@@ -97,66 +181,93 @@ function RaffleDetailContent({ raffle }: { raffle: ActiveTicket }) {
         </div>
       )}
 
-      {/* image */}
       <div className="mt-4 overflow-hidden rounded-2xl border border-white/[0.08] bg-card/40">
         <div className="relative aspect-[16/10] overflow-hidden bg-black">
-          <img
-            src={raffle.image}
-            alt={raffle.title}
-            className="absolute inset-0 h-full w-full object-cover"
-          />
+          {raffle.imageUrl && (
+            <img
+              src={raffle.imageUrl}
+              alt={raffle.title}
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+          )}
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
-          <span className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-primary px-2.5 py-1 font-mono text-[10px] font-black uppercase tracking-wider text-primary-foreground">
-            <span className="h-1 w-1 animate-pulse rounded-full bg-white" />
-            LIVE
+          <span
+            className={`absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-mono text-[10px] font-black uppercase tracking-wider ${
+              finished
+                ? "bg-white/10 text-foreground"
+                : "bg-primary text-primary-foreground"
+            }`}
+          >
+            {!finished && <span className="h-1 w-1 animate-pulse rounded-full bg-white" />}
+            {finished ? "Завершён" : "LIVE"}
           </span>
         </div>
       </div>
 
-      {/* title + meta */}
       <section className="mt-5">
         <h1 className="font-display text-3xl font-black uppercase italic leading-tight tracking-tight text-foreground md:text-4xl">
           {raffle.title}
         </h1>
-        {raffle.subtitle && (
-          <p className="mt-1.5 text-[14px] text-muted-foreground">{raffle.subtitle}</p>
+        {raffle.prize && (
+          <p className="mt-1.5 text-[14px] text-muted-foreground">{raffle.prize}</p>
         )}
         <div className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/[0.08] px-3 py-1 font-mono text-[11px] uppercase tracking-wider text-primary">
           <Calendar className="h-3 w-3" />
-          до {formatDeadline(raffle.deadlineAt)}
+          до {formatDeadline(raffle.endsAt)}
         </div>
       </section>
 
-      {/* status row — мои билеты + countdown */}
       <section className="mt-4 grid grid-cols-2 gap-2">
         <StatTile
           label="Мои билеты"
           value={
             <span className="flex items-baseline gap-1.5">
               <Ticket className="h-4 w-4 self-center text-primary" />
-              <span className="tabular-nums">{myTickets}</span>
+              <span className="tabular-nums">{raffle.myEntries}</span>
             </span>
           }
         />
         <StatTile
-          label="До закрытия"
-          value={<Countdown deadlineAt={raffle.deadlineAt} compact />}
+          label={finished ? "Всего заявок" : "До закрытия"}
+          value={
+            finished ? (
+              <span className="tabular-nums">{raffle.totalEntries}</span>
+            ) : (
+              <Countdown deadlineAt={raffle.endsAt} compact />
+            )
+          }
         />
       </section>
 
-      {/* desktop stake panel */}
-      {!isMobile && (
+      {finished && raffle.winnerNick && (
+        <section className="mt-4 flex items-center gap-3 rounded-2xl border border-emerald-500/30 bg-emerald-500/[0.05] px-4 py-3">
+          <Trophy className="h-5 w-5 text-emerald-400" />
+          <div className="min-w-0 flex-1">
+            <div className="font-mono text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+              Победитель
+            </div>
+            <div className="truncate font-display text-lg font-black italic text-foreground">
+              @{raffle.winnerNick}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {!finished && !isMobile && (
         <section className="mt-5 rounded-2xl border border-primary/30 bg-card/40 p-4">
           <StakeControls
+            ticketCost={raffle.ticketCost}
             balance={balance}
             stake={stake}
-            onStakeChange={(v) => setStake(Math.max(0, Math.min(balance, v)))}
+            maxStake={maxStake}
+            isAuthed={isAuthed}
+            isPending={enterMut.isPending}
+            onStakeChange={(v) => setStake(Math.max(0, Math.min(maxStake, v)))}
             onStake={handleStake}
           />
         </section>
       )}
 
-      {/* description */}
       {raffle.description && (
         <section className="mt-6 space-y-3.5 text-[15px] leading-relaxed">
           {raffle.description.split("\n\n").map((p, i) => (
@@ -167,56 +278,21 @@ function RaffleDetailContent({ raffle }: { raffle: ActiveTicket }) {
         </section>
       )}
 
-      {/* specs */}
-      {raffle.specs && raffle.specs.length > 0 && (
-        <section className="mt-6">
-          <h2 className="mb-2 px-1 font-display text-sm font-black uppercase italic tracking-widest text-foreground">
-            Характеристики
-          </h2>
-          <ul className="overflow-hidden rounded-2xl border border-white/[0.06] bg-card/40 divide-y divide-white/[0.05]">
-            {raffle.specs.map((s) => (
-              <li key={s.label} className="flex items-center justify-between gap-3 px-4 py-3 text-[14px]">
-                <span className="text-muted-foreground">{s.label}</span>
-                <span className="text-right font-semibold text-foreground">{s.value}</span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+      {!finished && isMobile && <div aria-hidden className="h-44" />}
 
-      {/* rules */}
-      {raffle.rules && raffle.rules.length > 0 && (
-        <section className="mt-6">
-          <h2 className="mb-2 px-1 font-display text-sm font-black uppercase italic tracking-widest text-foreground">
-            Условия
-          </h2>
-          <ul className="overflow-hidden rounded-2xl border border-white/[0.06] bg-card/40 divide-y divide-white/[0.05]">
-            {raffle.rules.map((r, i) => (
-              <li key={i} className="flex items-start gap-3 px-4 py-3 text-[14px]">
-                <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-400" />
-                <span className="text-foreground/85">{r}</span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      {/* mobile padding so sticky bar doesn't cover content */}
-      {isMobile && <div aria-hidden className="h-44" />}
-
-      {/* mobile sticky stake bar */}
-      {isMobile && (
+      {!finished && isMobile && (
         <div
           className="fixed inset-x-0 z-30 border-t border-white/[0.08] bg-[#0d0d0d]/95 px-4 py-3 backdrop-blur"
-          style={{
-            bottom: "calc(52px + env(safe-area-inset-bottom))",
-            paddingBottom: "calc(12px + env(safe-area-inset-bottom) * 0)",
-          }}
+          style={{ bottom: "calc(52px + env(safe-area-inset-bottom))" }}
         >
           <StakeControls
+            ticketCost={raffle.ticketCost}
             balance={balance}
             stake={stake}
-            onStakeChange={(v) => setStake(Math.max(0, Math.min(balance, v)))}
+            maxStake={maxStake}
+            isAuthed={isAuthed}
+            isPending={enterMut.isPending}
+            onStakeChange={(v) => setStake(Math.max(0, Math.min(maxStake, v)))}
             onStake={handleStake}
             compact
           />
@@ -240,25 +316,35 @@ function StatTile({ label, value }: { label: string; value: React.ReactNode }) {
 }
 
 function StakeControls({
+  ticketCost,
   balance,
   stake,
+  maxStake,
+  isAuthed,
+  isPending,
   onStakeChange,
   onStake,
   compact = false,
 }: {
+  ticketCost: number;
   balance: number;
   stake: number;
+  maxStake: number;
+  isAuthed: boolean;
+  isPending: boolean;
   onStakeChange: (v: number) => void;
   onStake: () => void;
   compact?: boolean;
 }) {
-  const presets = [1, 5, balance].filter((v, i, arr) => v > 0 && arr.indexOf(v) === i);
-  const noBalance = balance <= 0;
+  const presets = [1, 5, maxStake].filter((v, i, arr) => v > 0 && arr.indexOf(v) === i);
+  const noBalance = isAuthed && maxStake <= 0;
+  const totalCost = stake * ticketCost;
+
   return (
     <div>
       <div className="flex items-center justify-between">
         <div className="font-mono text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-          Поставить билеты
+          Поставить заявок · {ticketCost} билет(а)/шт
         </div>
         <div className="flex items-center gap-1 font-mono text-[11px] uppercase tracking-wider text-foreground">
           <Ticket className="h-3.5 w-3.5 text-primary" />
@@ -273,33 +359,35 @@ function StakeControls({
         <div className="flex-1 text-center font-display text-3xl font-black italic leading-none tabular-nums text-foreground">
           {stake}
         </div>
-        <StepBtn onClick={() => onStakeChange(stake + 1)} disabled={stake >= balance}>
+        <StepBtn onClick={() => onStakeChange(stake + 1)} disabled={stake >= maxStake}>
           <Plus className="h-4 w-4" />
         </StepBtn>
       </div>
 
-      <div className="mt-2 flex gap-1.5">
-        {presets.map((v, i) => (
-          <button
-            key={`${v}-${i}`}
-            type="button"
-            onClick={() => onStakeChange(v)}
-            disabled={v > balance}
-            className="flex-1 rounded-lg border border-white/[0.08] bg-white/[0.02] py-1.5 font-mono text-[11px] font-bold uppercase tracking-wider text-muted-foreground transition-colors active:bg-white/[0.06] disabled:opacity-30"
-          >
-            {i === presets.length - 1 && v === balance && v > 1 ? "MAX" : `×${v}`}
-          </button>
-        ))}
-      </div>
+      {presets.length > 0 && (
+        <div className="mt-2 flex gap-1.5">
+          {presets.map((v, i) => (
+            <button
+              key={`${v}-${i}`}
+              type="button"
+              onClick={() => onStakeChange(v)}
+              disabled={v > maxStake}
+              className="flex-1 rounded-lg border border-white/[0.08] bg-white/[0.02] py-1.5 font-mono text-[11px] font-bold uppercase tracking-wider text-muted-foreground transition-colors active:bg-white/[0.06] disabled:opacity-30"
+            >
+              {i === presets.length - 1 && v === maxStake && v > 1 ? "MAX" : `×${v}`}
+            </button>
+          ))}
+        </div>
+      )}
 
       <button
         type="button"
         onClick={onStake}
-        disabled={stake <= 0 || stake > balance}
+        disabled={!isAuthed || stake <= 0 || stake > maxStake || isPending}
         className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 font-display text-[15px] font-black uppercase italic tracking-wider text-primary-foreground transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"
       >
         <Zap className="h-4 w-4" />
-        Поставить
+        {!isAuthed ? "Войти" : isPending ? "..." : `Поставить · ${totalCost}`}
       </button>
 
       {noBalance && (
@@ -307,10 +395,9 @@ function StakeControls({
           to="/club/tickets"
           className="mt-2 block text-center font-mono text-[11px] uppercase tracking-wider text-primary active:opacity-60"
         >
-          Билетов нет — как их набрать →
+          Билетов не хватает — как их набрать →
         </Link>
       )}
-
     </div>
   );
 }
