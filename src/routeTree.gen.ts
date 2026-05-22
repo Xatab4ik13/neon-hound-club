@@ -29,11 +29,15 @@ import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as ShopProductSlugRouteImport } from './routes/shop.$productSlug'
 import { Route as NewsSlugRouteImport } from './routes/news.$slug'
 import { Route as HellPassTierRouteImport } from './routes/hell-pass.$tier'
+import { Route as ClubTicketsRouteImport } from './routes/club.tickets'
 import { Route as ClubSchoolRouteImport } from './routes/club.school'
+import { Route as ClubRankRouteImport } from './routes/club.rank'
 import { Route as ClubQuestsRouteImport } from './routes/club.quests'
+import { Route as ClubOrdersRouteImport } from './routes/club.orders'
 import { Route as ClubMeRouteImport } from './routes/club.me'
 import { Route as ClubInviteRouteImport } from './routes/club.invite'
 import { Route as ClubHellAiRouteImport } from './routes/club.hell-ai'
+import { Route as ClubGarageRouteImport } from './routes/club.garage'
 import { Route as CheckoutSuccessRouteImport } from './routes/checkout.success'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminTicketsRouteImport } from './routes/admin.tickets'
@@ -153,14 +157,29 @@ const HellPassTierRoute = HellPassTierRouteImport.update({
   path: '/hell-pass/$tier',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ClubTicketsRoute = ClubTicketsRouteImport.update({
+  id: '/tickets',
+  path: '/tickets',
+  getParentRoute: () => ClubRoute,
+} as any)
 const ClubSchoolRoute = ClubSchoolRouteImport.update({
   id: '/school',
   path: '/school',
   getParentRoute: () => ClubRoute,
 } as any)
+const ClubRankRoute = ClubRankRouteImport.update({
+  id: '/rank',
+  path: '/rank',
+  getParentRoute: () => ClubRoute,
+} as any)
 const ClubQuestsRoute = ClubQuestsRouteImport.update({
   id: '/quests',
   path: '/quests',
+  getParentRoute: () => ClubRoute,
+} as any)
+const ClubOrdersRoute = ClubOrdersRouteImport.update({
+  id: '/orders',
+  path: '/orders',
   getParentRoute: () => ClubRoute,
 } as any)
 const ClubMeRoute = ClubMeRouteImport.update({
@@ -176,6 +195,11 @@ const ClubInviteRoute = ClubInviteRouteImport.update({
 const ClubHellAiRoute = ClubHellAiRouteImport.update({
   id: '/hell-ai',
   path: '/hell-ai',
+  getParentRoute: () => ClubRoute,
+} as any)
+const ClubGarageRoute = ClubGarageRouteImport.update({
+  id: '/garage',
+  path: '/garage',
   getParentRoute: () => ClubRoute,
 } as any)
 const CheckoutSuccessRoute = CheckoutSuccessRouteImport.update({
@@ -291,11 +315,15 @@ export interface FileRoutesByFullPath {
   '/admin/tickets': typeof AdminTicketsRoute
   '/admin/users': typeof AdminUsersRoute
   '/checkout/success': typeof CheckoutSuccessRoute
+  '/club/garage': typeof ClubGarageRoute
   '/club/hell-ai': typeof ClubHellAiRoute
   '/club/invite': typeof ClubInviteRoute
   '/club/me': typeof ClubMeRoute
+  '/club/orders': typeof ClubOrdersRoute
   '/club/quests': typeof ClubQuestsRoute
+  '/club/rank': typeof ClubRankRoute
   '/club/school': typeof ClubSchoolRoute
+  '/club/tickets': typeof ClubTicketsRoute
   '/hell-pass/$tier': typeof HellPassTierRoute
   '/news/$slug': typeof NewsSlugRoute
   '/shop/$productSlug': typeof ShopProductSlugRoute
@@ -333,11 +361,15 @@ export interface FileRoutesByTo {
   '/admin/tickets': typeof AdminTicketsRoute
   '/admin/users': typeof AdminUsersRoute
   '/checkout/success': typeof CheckoutSuccessRoute
+  '/club/garage': typeof ClubGarageRoute
   '/club/hell-ai': typeof ClubHellAiRoute
   '/club/invite': typeof ClubInviteRoute
   '/club/me': typeof ClubMeRoute
+  '/club/orders': typeof ClubOrdersRoute
   '/club/quests': typeof ClubQuestsRoute
+  '/club/rank': typeof ClubRankRoute
   '/club/school': typeof ClubSchoolRoute
+  '/club/tickets': typeof ClubTicketsRoute
   '/hell-pass/$tier': typeof HellPassTierRoute
   '/news/$slug': typeof NewsSlugRoute
   '/shop/$productSlug': typeof ShopProductSlugRoute
@@ -379,11 +411,15 @@ export interface FileRoutesById {
   '/admin/tickets': typeof AdminTicketsRoute
   '/admin/users': typeof AdminUsersRoute
   '/checkout/success': typeof CheckoutSuccessRoute
+  '/club/garage': typeof ClubGarageRoute
   '/club/hell-ai': typeof ClubHellAiRoute
   '/club/invite': typeof ClubInviteRoute
   '/club/me': typeof ClubMeRoute
+  '/club/orders': typeof ClubOrdersRoute
   '/club/quests': typeof ClubQuestsRoute
+  '/club/rank': typeof ClubRankRoute
   '/club/school': typeof ClubSchoolRoute
+  '/club/tickets': typeof ClubTicketsRoute
   '/hell-pass/$tier': typeof HellPassTierRoute
   '/news/$slug': typeof NewsSlugRoute
   '/shop/$productSlug': typeof ShopProductSlugRoute
@@ -426,11 +462,15 @@ export interface FileRouteTypes {
     | '/admin/tickets'
     | '/admin/users'
     | '/checkout/success'
+    | '/club/garage'
     | '/club/hell-ai'
     | '/club/invite'
     | '/club/me'
+    | '/club/orders'
     | '/club/quests'
+    | '/club/rank'
     | '/club/school'
+    | '/club/tickets'
     | '/hell-pass/$tier'
     | '/news/$slug'
     | '/shop/$productSlug'
@@ -468,11 +508,15 @@ export interface FileRouteTypes {
     | '/admin/tickets'
     | '/admin/users'
     | '/checkout/success'
+    | '/club/garage'
     | '/club/hell-ai'
     | '/club/invite'
     | '/club/me'
+    | '/club/orders'
     | '/club/quests'
+    | '/club/rank'
     | '/club/school'
+    | '/club/tickets'
     | '/hell-pass/$tier'
     | '/news/$slug'
     | '/shop/$productSlug'
@@ -513,11 +557,15 @@ export interface FileRouteTypes {
     | '/admin/tickets'
     | '/admin/users'
     | '/checkout/success'
+    | '/club/garage'
     | '/club/hell-ai'
     | '/club/invite'
     | '/club/me'
+    | '/club/orders'
     | '/club/quests'
+    | '/club/rank'
     | '/club/school'
+    | '/club/tickets'
     | '/hell-pass/$tier'
     | '/news/$slug'
     | '/shop/$productSlug'
@@ -700,6 +748,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HellPassTierRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/club/tickets': {
+      id: '/club/tickets'
+      path: '/tickets'
+      fullPath: '/club/tickets'
+      preLoaderRoute: typeof ClubTicketsRouteImport
+      parentRoute: typeof ClubRoute
+    }
     '/club/school': {
       id: '/club/school'
       path: '/school'
@@ -707,11 +762,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ClubSchoolRouteImport
       parentRoute: typeof ClubRoute
     }
+    '/club/rank': {
+      id: '/club/rank'
+      path: '/rank'
+      fullPath: '/club/rank'
+      preLoaderRoute: typeof ClubRankRouteImport
+      parentRoute: typeof ClubRoute
+    }
     '/club/quests': {
       id: '/club/quests'
       path: '/quests'
       fullPath: '/club/quests'
       preLoaderRoute: typeof ClubQuestsRouteImport
+      parentRoute: typeof ClubRoute
+    }
+    '/club/orders': {
+      id: '/club/orders'
+      path: '/orders'
+      fullPath: '/club/orders'
+      preLoaderRoute: typeof ClubOrdersRouteImport
       parentRoute: typeof ClubRoute
     }
     '/club/me': {
@@ -733,6 +802,13 @@ declare module '@tanstack/react-router' {
       path: '/hell-ai'
       fullPath: '/club/hell-ai'
       preLoaderRoute: typeof ClubHellAiRouteImport
+      parentRoute: typeof ClubRoute
+    }
+    '/club/garage': {
+      id: '/club/garage'
+      path: '/garage'
+      fullPath: '/club/garage'
+      preLoaderRoute: typeof ClubGarageRouteImport
       parentRoute: typeof ClubRoute
     }
     '/checkout/success': {
@@ -910,11 +986,15 @@ const BloggerRouteWithChildren =
   BloggerRoute._addFileChildren(BloggerRouteChildren)
 
 interface ClubRouteChildren {
+  ClubGarageRoute: typeof ClubGarageRoute
   ClubHellAiRoute: typeof ClubHellAiRoute
   ClubInviteRoute: typeof ClubInviteRoute
   ClubMeRoute: typeof ClubMeRoute
+  ClubOrdersRoute: typeof ClubOrdersRoute
   ClubQuestsRoute: typeof ClubQuestsRoute
+  ClubRankRoute: typeof ClubRankRoute
   ClubSchoolRoute: typeof ClubSchoolRoute
+  ClubTicketsRoute: typeof ClubTicketsRoute
   ClubIndexRoute: typeof ClubIndexRoute
   ClubHellPassTierRoute: typeof ClubHellPassTierRoute
   ClubRafflesRaffleIdRoute: typeof ClubRafflesRaffleIdRoute
@@ -924,11 +1004,15 @@ interface ClubRouteChildren {
 }
 
 const ClubRouteChildren: ClubRouteChildren = {
+  ClubGarageRoute: ClubGarageRoute,
   ClubHellAiRoute: ClubHellAiRoute,
   ClubInviteRoute: ClubInviteRoute,
   ClubMeRoute: ClubMeRoute,
+  ClubOrdersRoute: ClubOrdersRoute,
   ClubQuestsRoute: ClubQuestsRoute,
+  ClubRankRoute: ClubRankRoute,
   ClubSchoolRoute: ClubSchoolRoute,
+  ClubTicketsRoute: ClubTicketsRoute,
   ClubIndexRoute: ClubIndexRoute,
   ClubHellPassTierRoute: ClubHellPassTierRoute,
   ClubRafflesRaffleIdRoute: ClubRafflesRaffleIdRoute,
