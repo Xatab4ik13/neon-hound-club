@@ -254,9 +254,9 @@ function HellAiMobile() {
   const { ref: taRef, adjust } = useAutoResize(40, 140);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const quota = QUOTA_BY_TIER[CURRENT_TIER];
+  const quota = QUOTA_BY_TIER[getCurrentTier()];
   const isUnlimited = quota === "∞";
-  const isGuest = CURRENT_TIER === "guest";
+  const isGuest = getCurrentTier() === "guest";
   const left = isUnlimited ? Infinity : (quota as number) - used;
   const canAsk = !isGuest && (isUnlimited || left > 0) && !!activeBike;
 
@@ -484,7 +484,7 @@ function HellAiMobile() {
         {/* квота */}
         <div className="flex items-center justify-between px-4 pb-1.5 pt-2">
           <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-            {TIER_LABEL[CURRENT_TIER]} ·{" "}
+            {TIER_LABEL[getCurrentTier()]} ·{" "}
             <span className="tabular-nums text-foreground/70">
               {isUnlimited ? "∞" : `${used}/${quota}`}
             </span>
@@ -950,9 +950,9 @@ function HellAiDesktop() {
   const { ref: taRef, adjust } = useAutoResize(60, 200);
   const cmdRef = useRef<HTMLDivElement>(null);
 
-  const quota = QUOTA_BY_TIER[CURRENT_TIER];
+  const quota = QUOTA_BY_TIER[getCurrentTier()];
   const isUnlimited = quota === "∞";
-  const isGuest = CURRENT_TIER === "guest";
+  const isGuest = getCurrentTier() === "guest";
   const left = isUnlimited ? Infinity : (quota as number) - used;
   const canAsk = !isGuest && (isUnlimited || left > 0) && !!activeBike;
 
@@ -1206,7 +1206,7 @@ function HellAiDesktop() {
                   <CommandIcon className="h-4 w-4" />
                 </motion.button>
                 <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                  {TIER_LABEL[CURRENT_TIER]} ·{" "}
+                  {TIER_LABEL[getCurrentTier()]} ·{" "}
                   <span className="tabular-nums text-foreground/80">
                     {isUnlimited ? "∞" : `${used}/${quota}`}
                   </span>
