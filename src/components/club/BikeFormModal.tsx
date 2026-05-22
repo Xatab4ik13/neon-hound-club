@@ -15,6 +15,8 @@ import {
   getYears,
 } from "@/lib/nhtsa";
 import { newBikeId, type StoredBike } from "@/data/bike-storage";
+import { IOSSheet } from "@/components/ios/IOSSheet";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 type Props = {
   open: boolean;
@@ -164,6 +166,181 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
     onOpenChange(false);
   }
 
+  const isMobile = useIsMobile();
+  const canSubmit = !!brand.trim() && !!model.trim();
+
+  const formBody = (
+    <form id="bike-form" onSubmit={handleSubmit} className="space-y-5 pt-2">
+      {/* Марка / Год / Модель */}
+      <div className="grid gap-3 sm:grid-cols-[1fr_120px]">
+        <Field label="Марка">
+          <ComboboxWithCustom
+            value={brand}
+            onChange={(v, custom) => {
+              setBrand(v);
+              setBrandCustom(custom);
+              setModel("");
+              setModelCustom(false);
+            }}
+            options={makes}
+            loading={makesLoading}
+            placeholder="Yamaha, Honda..."
+            isCustom={brandCustom}
+          />
+        </Field>
+        <Field label="Год">
+          <select
+            value={year}
+            onChange={(e) => setYear(Number(e.target.value))}
+            className="w-full border border-white/[0.08] bg-black/30 px-3 py-2 text-sm text-foreground transition-colors hover:border-white/20 focus:border-primary/60 focus:outline-none"
+          >
+            {YEARS.map((y) => (
+              <option key={y} value={y} className="bg-[#0b0b0b]">
+                {y}
+              </option>
+            ))}
+          </select>
+        </Field>
+      </div>
+
+      <Field label="Модель">
+        <ComboboxWithCustom
+          value={model}
+          onChange={(v, custom) => {
+            setModel(v);
+            setModelCustom(custom);
+          }}
+          options={models}
+          loading={modelsLoading}
+          placeholder={brand ? "Выбрать модель..." : "Сначала выбери марку"}
+          disabled={!brand}
+          isCustom={modelCustom}
+          emptyHint={
+            brandCustom
+              ? "Кастомная марка — введи модель вручную"
+              : "Моделей не найдено — введи вручную"
+          }
+        />
+      </Field>
+
+      <PhotoField
+        photo={photo}
+        error={photoError}
+        onPick={handlePhoto}
+        onClear={() => setPhoto(undefined)}
+      />
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Field label="Цвет">
+          <TextInput value={color} onChange={setColor} placeholder="Чёрный мат, розовый..." />
+        </Field>
+        <Field label="Прозвище">
+          <TextInput value={nickname} onChange={setNickname} placeholder="Гончая, Чёрная вдова..." />
+        </Field>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Field label="Пробег">
+          <TextInput value={mileage} onChange={setMileage} placeholder="18 400 км" />
+        </Field>
+        <Field label="Дата покупки">
+          <input
+            type="date"
+            value={purchaseDate}
+            onChange={(e) => setPurchaseDate(e.target.value)}
+            className="w-full border border-white/[0.08] bg-black/30 px-3 py-2 text-sm text-foreground transition-colors hover:border-white/20 focus:border-primary/60 focus:outline-none"
+          />
+        </Field>
+      </div>
+
+      <Field label="Тюнинг / модификации">
+        <div className="space-y-2">
+          <div className="flex gap-2">
+            <Input
+              value={modInput}
+              onChange={(e) => setModInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  addMod();
+                }
+              }}
+              placeholder="Akrapovič, Pazzo levers... (Enter)"
+              className="border-white/[0.08] bg-black/30"
+            />
+            <button
+              type="button"
+              onClick={addMod}
+              disabled={!modInput.trim()}
+              className="border border-white/[0.08] bg-black/30 px-3 font-mono text-[11px] uppercase tracking-wider text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary disabled:opacity-40"
+            >
+              + Добавить
+            </button>
+          </div>
+          {mods.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {mods.map((m) => (
+                <span
+                  key={m}
+                  className="inline-flex items-center gap-1 border border-primary/30 bg-primary/[0.06] px-2 py-1 font-mono text-[10px] uppercase tracking-wider text-primary"
+                >
+                  {m}
+                  <button
+                    type="button"
+                    onClick={() => removeMod(m)}
+                    aria-label={`Удалить ${m}`}
+                    className="opacity-60 hover:opacity-100"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      </Field>
+
+      {/* Десктоп: footer actions. Мобайл: Сохранить — в шапке IOSSheet. */}
+      {!isMobile && (
+        <div className="flex items-center justify-end gap-2 border-t border-white/[0.06] pt-4">
+          <button
+            type="button"
+            onClick={() => onOpenChange(false)}
+            className="border border-white/[0.08] bg-transparent px-4 py-2 font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground transition-colors hover:border-white/30 hover:text-foreground"
+          >
+            Отмена
+          </button>
+          <button
+            type="submit"
+            disabled={!canSubmit}
+            className="border border-primary bg-primary px-4 py-2 font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {bike ? "Сохранить" : "Добавить"}
+          </button>
+        </div>
+      )}
+    </form>
+  );
+
+  if (isMobile) {
+    return (
+      <IOSSheet
+        open={open}
+        onOpenChange={onOpenChange}
+        title={bike ? "Редактировать байк" : "Добавить байк"}
+        fullHeight
+        doneLabel={bike ? "Сохранить" : "Добавить"}
+        onDone={() => {
+          if (!canSubmit) return;
+          const form = document.getElementById("bike-form") as HTMLFormElement | null;
+          form?.requestSubmit();
+        }}
+      >
+        {formBody}
+      </IOSSheet>
+    );
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[92vh] overflow-y-auto border-white/[0.08] bg-[#0b0b0b] sm:max-w-2xl">
@@ -175,167 +352,7 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
             База NHTSA · если нет в списке — введи вручную
           </DialogDescription>
         </DialogHeader>
-
-        <form onSubmit={handleSubmit} className="space-y-5 pt-2">
-          {/* Марка / Год / Модель */}
-          <div className="grid gap-3 sm:grid-cols-[1fr_120px]">
-            <Field label="Марка">
-              <ComboboxWithCustom
-                value={brand}
-                onChange={(v, custom) => {
-                  setBrand(v);
-                  setBrandCustom(custom);
-                  setModel("");
-                  setModelCustom(false);
-                }}
-                options={makes}
-                loading={makesLoading}
-                placeholder="Yamaha, Honda..."
-                isCustom={brandCustom}
-              />
-            </Field>
-            <Field label="Год">
-              <select
-                value={year}
-                onChange={(e) => setYear(Number(e.target.value))}
-                className="w-full border border-white/[0.08] bg-black/30 px-3 py-2 text-sm text-foreground transition-colors hover:border-white/20 focus:border-primary/60 focus:outline-none"
-              >
-                {YEARS.map((y) => (
-                  <option key={y} value={y} className="bg-[#0b0b0b]">
-                    {y}
-                  </option>
-                ))}
-              </select>
-            </Field>
-          </div>
-
-          <Field label="Модель">
-            <ComboboxWithCustom
-              value={model}
-              onChange={(v, custom) => {
-                setModel(v);
-                setModelCustom(custom);
-              }}
-              options={models}
-              loading={modelsLoading}
-              placeholder={brand ? "Выбрать модель..." : "Сначала выбери марку"}
-              disabled={!brand}
-              isCustom={modelCustom}
-              emptyHint={
-                brandCustom
-                  ? "Кастомная марка — введи модель вручную"
-                  : "Моделей не найдено — введи вручную"
-              }
-            />
-          </Field>
-
-          <PhotoField
-            photo={photo}
-            error={photoError}
-            onPick={handlePhoto}
-            onClear={() => setPhoto(undefined)}
-          />
-
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Цвет">
-              <TextInput
-                value={color}
-                onChange={setColor}
-                placeholder="Чёрный мат, розовый..."
-              />
-            </Field>
-            <Field label="Прозвище">
-              <TextInput
-                value={nickname}
-                onChange={setNickname}
-                placeholder="Гончая, Чёрная вдова..."
-              />
-            </Field>
-          </div>
-
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Пробег">
-              <TextInput
-                value={mileage}
-                onChange={setMileage}
-                placeholder="18 400 км"
-              />
-            </Field>
-            <Field label="Дата покупки">
-              <input
-                type="date"
-                value={purchaseDate}
-                onChange={(e) => setPurchaseDate(e.target.value)}
-                className="w-full border border-white/[0.08] bg-black/30 px-3 py-2 text-sm text-foreground transition-colors hover:border-white/20 focus:border-primary/60 focus:outline-none"
-              />
-            </Field>
-          </div>
-
-          <Field label="Тюнинг / модификации">
-            <div className="space-y-2">
-              <div className="flex gap-2">
-                <Input
-                  value={modInput}
-                  onChange={(e) => setModInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      addMod();
-                    }
-                  }}
-                  placeholder="Akrapovič, Pazzo levers... (Enter)"
-                  className="border-white/[0.08] bg-black/30"
-                />
-                <button
-                  type="button"
-                  onClick={addMod}
-                  disabled={!modInput.trim()}
-                  className="border border-white/[0.08] bg-black/30 px-3 font-mono text-[11px] uppercase tracking-wider text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary disabled:opacity-40"
-                >
-                  + Добавить
-                </button>
-              </div>
-              {mods.length > 0 && (
-                <div className="flex flex-wrap gap-1.5">
-                  {mods.map((m) => (
-                    <span
-                      key={m}
-                      className="inline-flex items-center gap-1 border border-primary/30 bg-primary/[0.06] px-2 py-1 font-mono text-[10px] uppercase tracking-wider text-primary"
-                    >
-                      {m}
-                      <button
-                        type="button"
-                        onClick={() => removeMod(m)}
-                        aria-label={`Удалить ${m}`}
-                        className="opacity-60 hover:opacity-100"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-          </Field>
-
-          {/* Действия */}
-          <div className="flex items-center justify-end gap-2 border-t border-white/[0.06] pt-4">
-            <button
-              type="button"
-              onClick={() => onOpenChange(false)}
-              className="border border-white/[0.08] bg-transparent px-4 py-2 font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground transition-colors hover:border-white/30 hover:text-foreground"
-            >
-              Отмена
-            </button>
-            <button
-              type="submit"
-              disabled={!brand.trim() || !model.trim()}
-              className="border border-primary bg-primary px-4 py-2 font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              {bike ? "Сохранить" : "Добавить"}
-            </button>
-          </div>
-        </form>
+        {formBody}
       </DialogContent>
     </Dialog>
   );
