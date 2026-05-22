@@ -60,7 +60,7 @@ async function hydratePosts(rows: typeof posts.$inferSelect[], viewerId: string 
   const ids = rows.map((r) => r.id);
   const authorIds = Array.from(new Set(rows.map((r) => r.authorId)));
 
-  const [authors, likeCounts, commentCounts, myLikes, pollVotes] = await Promise.all([
+  const [authors, likeCounts, commentCounts, myLikes, pollVotes, allComments] = await Promise.all([
     db
       .select({
         id: users.id,
@@ -90,7 +90,31 @@ async function hydratePosts(rows: typeof posts.$inferSelect[], viewerId: string 
       .from(postPollVotes)
       .where(inArray(postPollVotes.postId, ids))
       .groupBy(postPollVotes.postId, postPollVotes.optionId),
+    db
+      .select({
+        id: postComments.id,
+        postId: postComments.postId,
+        text: postComments.text,
+        likes: postComments.likes,
+        createdAt: postComments.createdAt,
+        authorId: postComments.authorId,
+        nick: users.nick,
+        avatarUrl: profiles.avatarUrl,
+      })
+      .from(postComments)
+      .innerJoin(users, eq(users.id, postComments.authorId))
+      .leftJoin(profiles, eq(profiles.id, postComments.authorId))
+      .where(and(inArray(postComments.postId, ids), isNull(postComments.deletedAt)))
+      .orderBy(postComments.createdAt),
   ]);
+
+  // Группируем комменты по постам, кап 20 последних (oldest-first внутри среза).
+  const commentsByPost = new Map<string, typeof allComments>();
+  for (const c of allComments) {
+    if (!commentsByPost.has(c.postId)) commentsByPost.set(c.postId, []);
+    commentsByPost.get(c.postId)!.push(c);
+  }
+  for (const [pid, list] of commentsByPost) commentsByPost.set(pid, list.slice(-20));
 
   const authorMap = new Map(authors.map((a) => [a.id, a]));
   const likeMap = new Map(likeCounts.map((r) => [r.postId, r.c]));
