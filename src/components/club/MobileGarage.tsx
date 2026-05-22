@@ -719,7 +719,7 @@ function ServiceList({ bikeId, flat = false }: { bikeId: string; flat?: boolean 
   }
 
   return (
-    <div className="px-4">
+    <div className={flat ? "" : "px-4"}>
       <IOSListSection>
         {service.map((s) => (
           <IOSListRow
