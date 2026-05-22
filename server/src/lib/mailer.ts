@@ -28,21 +28,22 @@ function getMailProvider(): "auto" | "smtp" | "resend" | "unisender" {
 }
 
 function getMailFrom(): MailFrom {
-  const raw = process.env.MAIL_FROM ?? '"HELLHOUND Racing" <no-reply@hhr.pro>';
-  const match = raw.match(/^(?:"?([^<"]+)"?\s*)?<([^>]+)>$/);
+  const raw = process.env.MAIL_FROM ?? 'HELLHOUND Racing <no-reply@hhr.pro>';
+  const normalized = raw.trim().replace(/^['"](.*)['"]$/, "$1");
+  const match = normalized.match(/^(?:"?([^<"]+)"?\s*)?<([^>]+)>$/);
 
   if (match) {
     return {
-      raw,
+      raw: normalized,
       name: match[1]?.trim() || "HELLHOUND Racing",
       email: match[2].trim(),
     };
   }
 
   return {
-    raw,
+    raw: normalized,
     name: "HELLHOUND Racing",
-    email: raw.trim(),
+    email: normalized,
   };
 }
 
