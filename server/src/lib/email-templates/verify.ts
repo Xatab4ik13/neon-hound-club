@@ -1,4 +1,4 @@
-// HTML-шаблон письма верификации. Чёрный фон, primary-акцент = #FF3B30-ish.
+// HTML-шаблон письма верификации. Чёрный фон, primary-акцент = #FF2D95 (бренд-розовый).
 // Стили инлайн — иначе Gmail/Mail.ru их вырежут.
 
 export function verifyEmailTemplate(opts: { nick: string; verifyUrl: string }) {
@@ -29,7 +29,7 @@ export function verifyEmailTemplate(opts: { nick: string; verifyUrl: string }) {
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:520px;background:#111;border:1px solid #1f1f1f;">
         <tr><td style="padding:32px 32px 8px;">
           <div style="font-family:'Arial Black',Impact,sans-serif;font-style:italic;font-weight:900;font-size:28px;letter-spacing:0.04em;color:#fff;text-transform:uppercase;">
-            HELL<span style="color:#ff3b30;">HOUND</span> RACING
+            HELL<span style="color:#ff2d95;">HOUND</span> RACING
           </div>
           <div style="font-family:'SFMono-Regular',Menlo,Consolas,monospace;font-size:11px;letter-spacing:0.22em;color:#777;text-transform:uppercase;margin-top:6px;">
             Подтверждение email
@@ -47,9 +47,9 @@ export function verifyEmailTemplate(opts: { nick: string; verifyUrl: string }) {
 
         <tr><td style="padding:0 32px 28px;">
           <table role="presentation" cellpadding="0" cellspacing="0" border="0">
-            <tr><td bgcolor="#ff3b30" style="background:#ff3b30;">
+            <tr><td bgcolor="#ff2d95" style="background:#ff2d95;">
               <a href="${verifyUrl}" target="_blank"
-                 style="display:inline-block;padding:18px 36px;font-family:'Arial Black',Impact,sans-serif;font-style:italic;font-weight:900;font-size:16px;letter-spacing:0.14em;color:#000;text-decoration:none;text-transform:uppercase;">
+                 style="display:inline-block;padding:18px 36px;font-family:'Arial Black',Impact,sans-serif;font-style:italic;font-weight:900;font-size:16px;letter-spacing:0.14em;color:#fff;text-decoration:none;text-transform:uppercase;">
                 Подтвердить email
               </a>
             </td></tr>
@@ -61,7 +61,7 @@ export function verifyEmailTemplate(opts: { nick: string; verifyUrl: string }) {
             Или открой ссылку
           </p>
           <p style="margin:0;word-break:break-all;font-family:'SFMono-Regular',Menlo,Consolas,monospace;font-size:12px;color:#999;">
-            <a href="${verifyUrl}" style="color:#ff3b30;text-decoration:none;">${verifyUrl}</a>
+            <a href="${verifyUrl}" style="color:#ff2d95;text-decoration:none;">${verifyUrl}</a>
           </p>
         </td></tr>
 
