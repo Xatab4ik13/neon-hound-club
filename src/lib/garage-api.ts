@@ -44,6 +44,7 @@ export type MyProfile = {
   nick: string;
   role: "user" | "admin";
   emailVerified: boolean;
+  joinedAt: string;
   phone: string | null;
   city: string | null;
   avatarUrl: string | null;
