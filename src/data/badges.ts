@@ -206,15 +206,8 @@ export const BADGES: Badge[] = [
     category: "rank",
     owned: false,
   },
-  {
-    id: "rank-vip",
-    name: "VIP",
-    description:
-      "VIP-ранг по платной подписке. Выдаётся, пока активна VIP-подписка клуба.",
-    rarity: "mythic",
-    category: "rank",
-    owned: false,
-  },
+
+
 
   // ── Клуб ──────────────────────────────────────────────────────────────
   {
