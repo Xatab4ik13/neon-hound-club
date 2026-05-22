@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { and, eq, gt, isNull, or, sql } from "drizzle-orm";
+import { eq, or, sql } from "drizzle-orm";
 import crypto from "node:crypto";
 import { db } from "../db/client.js";
 import { users } from "../db/schema/users.js";
