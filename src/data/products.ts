@@ -187,7 +187,94 @@ export const PRODUCTS: Product[] = [
     sub: "posters",
     source: "hellhound",
   },
+
+  // ───────── Цифровые открытки с подписью Hell ─────────
+  // После оплаты приходят на email + начисляются билеты для участия в розыгрышах клуба.
+  {
+    id: "d1",
+    slug: "postcard-hell-1",
+    name: "Открытка Hell · одиночная",
+    price: 300,
+    image: postcardHell,
+    category: "digital",
+    sub: "postcards",
+    source: "hellhound",
+    ticketsBonus: 1,
+    description:
+      "Цифровая открытка с автографом Hell. Приходит на email после оплаты. В подарок — 1 билет на участие в розыгрышах клуба.",
+  },
+  {
+    id: "d2",
+    slug: "postcard-hell-3",
+    name: "Открытка Hell · набор 3",
+    price: 500,
+    image: postcardHell,
+    badge: { label: "−45%", tone: "primary" },
+    category: "digital",
+    sub: "postcards",
+    source: "hellhound",
+    ticketsBonus: 3,
+    description:
+      "Набор из 3 цифровых открыток с автографом Hell. Приходит на email после оплаты. В подарок — 3 билета на участие в розыгрышах клуба.",
+  },
+  {
+    id: "d3",
+    slug: "postcard-hell-5",
+    name: "Открытка Hell · набор 5",
+    price: 700,
+    image: postcardHell,
+    badge: { label: "−54%", tone: "primary" },
+    category: "digital",
+    sub: "postcards",
+    source: "hellhound",
+    ticketsBonus: 5,
+    description:
+      "Набор из 5 цифровых открыток с автографом Hell. Приходит на email после оплаты. В подарок — 5 билетов на участие в розыгрышах клуба.",
+  },
+  {
+    id: "d4",
+    slug: "postcard-hell-10",
+    name: "Открытка Hell · набор 10",
+    price: 1000,
+    image: postcardHell,
+    badge: { label: "Hot · −67%", tone: "danger" },
+    category: "digital",
+    sub: "postcards",
+    source: "hellhound",
+    ticketsBonus: 10,
+    description:
+      "Набор из 10 цифровых открыток с автографом Hell. Приходит на email после оплаты. В подарок — 10 билетов на участие в розыгрышах клуба.",
+  },
+  {
+    id: "d5",
+    slug: "postcard-hell-20",
+    name: "Открытка Hell · набор 20",
+    price: 1500,
+    image: postcardHell,
+    badge: { label: "−75%", tone: "primary" },
+    category: "digital",
+    sub: "postcards",
+    source: "hellhound",
+    ticketsBonus: 20,
+    description:
+      "Набор из 20 цифровых открыток с автографом Hell. Приходит на email после оплаты. В подарок — 20 билетов на участие в розыгрышах клуба.",
+  },
+  {
+    id: "d6",
+    slug: "postcard-hell-50",
+    name: "Открытка Hell · набор 50",
+    price: 3000,
+    image: postcardHell,
+    badge: { label: "−80%", tone: "primary" },
+    category: "digital",
+    sub: "postcards",
+    source: "hellhound",
+    ticketsBonus: 50,
+    description:
+      "Набор из 50 цифровых открыток с автографом Hell. Приходит на email после оплаты. В подарок — 50 билетов на участие в розыгрышах клуба.",
+  },
 ];
+
 
 export const SOURCE_LABEL: Record<ProductSource, string> = {
   hellhound: "HELLHOUND",
