@@ -129,10 +129,73 @@ function HellAiPage() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════
-// MOBILE — iOS-стиль чата
+// MOBILE — iOS-стиль чата + история обращений
 // ═══════════════════════════════════════════════════════════════════════
 
 type Msg = { id: string; q: string; a?: string; error?: boolean };
+type Chat = {
+  id: string;
+  title: string;
+  bikeId?: string;
+  messages: Msg[];
+  createdAt: number;
+  updatedAt: number;
+};
+
+const CHATS_KEY = "hh:hellai:chats:v1";
+const ACTIVE_KEY = "hh:hellai:active:v1";
+
+function loadChats(): Chat[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(CHATS_KEY);
+    if (!raw) return [];
+    const data = JSON.parse(raw);
+    return Array.isArray(data) ? data : [];
+  } catch {
+    return [];
+  }
+}
+function saveChats(chats: Chat[]) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(CHATS_KEY, JSON.stringify(chats));
+  } catch {
+    /* ignore */
+  }
+}
+function loadActiveId(): string {
+  if (typeof window === "undefined") return "";
+  return localStorage.getItem(ACTIVE_KEY) ?? "";
+}
+function saveActiveId(id: string) {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(ACTIVE_KEY, id);
+}
+
+function newChat(bikeId?: string): Chat {
+  const now = Date.now();
+  return {
+    id: `c_${now}_${Math.random().toString(36).slice(2, 7)}`,
+    title: "Новый чат",
+    bikeId,
+    messages: [],
+    createdAt: now,
+    updatedAt: now,
+  };
+}
+
+function formatRelative(ts: number): string {
+  const diff = Date.now() - ts;
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return "только что";
+  if (m < 60) return `${m} мин`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h} ч`;
+  const d = Math.floor(h / 24);
+  if (d < 7) return `${d} дн`;
+  return new Date(ts).toLocaleDateString("ru-RU", { day: "2-digit", month: "short" });
+}
 
 function HellAiMobile() {
   const [bikes, setBikes] = useState<StoredBike[]>([]);
@@ -145,12 +208,41 @@ function HellAiMobile() {
   const activeBike = bikes.find((b) => b.id === activeBikeId);
   const bikeStr = activeBike ? bikeLabel(activeBike) : "твой мото";
 
+  // история чатов
+  const [chats, setChats] = useState<Chat[]>([]);
+  const [activeChatId, setActiveChatId] = useState<string>("");
+  const hydrated = useRef(false);
+
+  useEffect(() => {
+    const list = loadChats();
+    const aid = loadActiveId();
+    if (list.length === 0) {
+      const c = newChat();
+      setChats([c]);
+      setActiveChatId(c.id);
+    } else {
+      setChats(list);
+      setActiveChatId(list.find((c) => c.id === aid)?.id ?? list[0].id);
+    }
+    hydrated.current = true;
+  }, []);
+
+  useEffect(() => {
+    if (hydrated.current) saveChats(chats);
+  }, [chats]);
+  useEffect(() => {
+    if (hydrated.current && activeChatId) saveActiveId(activeChatId);
+  }, [activeChatId]);
+
+  const activeChat = chats.find((c) => c.id === activeChatId);
+  const messages = activeChat?.messages ?? [];
+
   const [value, setValue] = useState("");
-  const [messages, setMessages] = useState<Msg[]>([]);
   const [isThinking, setIsThinking] = useState(false);
   const [used, setUsed] = useState(0);
   const [bikeSheetOpen, setBikeSheetOpen] = useState(false);
   const [cmdSheetOpen, setCmdSheetOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   const { ref: taRef, adjust } = useAutoResize(40, 140);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -168,25 +260,44 @@ function HellAiMobile() {
     requestAnimationFrame(() => {
       el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
     });
-  }, [messages.length, isThinking]);
+  }, [messages.length, isThinking, activeChatId]);
+
+  function updateChat(id: string, updater: (c: Chat) => Chat) {
+    setChats((prev) => prev.map((c) => (c.id === id ? updater(c) : c)));
+  }
 
   function send() {
     const text = value.trim();
-    if (!text || !canAsk || isThinking) return;
+    if (!text || !canAsk || isThinking || !activeChatId) return;
     const id = String(Date.now());
-    setMessages((m) => [...m, { id, q: text }]);
+    const chatId = activeChatId;
+    updateChat(chatId, (c) => ({
+      ...c,
+      messages: [...c.messages, { id, q: text }],
+      title: c.messages.length === 0 ? text.slice(0, 60) : c.title,
+      bikeId: c.bikeId ?? activeBike?.id,
+      updatedAt: Date.now(),
+    }));
     setValue("");
     adjust(true);
     setIsThinking(true);
     setUsed((n) => n + 1);
     askHellAi(text, activeBike?.id)
       .then((a) => {
-        setMessages((m) => m.map((msg) => (msg.id === id ? { ...msg, a } : msg)));
+        updateChat(chatId, (c) => ({
+          ...c,
+          messages: c.messages.map((m) => (m.id === id ? { ...m, a } : m)),
+          updatedAt: Date.now(),
+        }));
       })
       .catch((err: unknown) => {
-        setMessages((m) =>
-          m.map((msg) => (msg.id === id ? { ...msg, a: errorToMessage(err), error: true } : msg)),
-        );
+        updateChat(chatId, (c) => ({
+          ...c,
+          messages: c.messages.map((m) =>
+            m.id === id ? { ...m, a: errorToMessage(err), error: true } : m,
+          ),
+          updatedAt: Date.now(),
+        }));
         setUsed((n) => Math.max(0, n - 1));
       })
       .finally(() => setIsThinking(false));
@@ -208,6 +319,42 @@ function HellAiMobile() {
     });
   }
 
+  function startNewChat() {
+    // если активный пуст — переиспользуем
+    if (activeChat && activeChat.messages.length === 0) {
+      setHistoryOpen(false);
+      requestAnimationFrame(() => taRef.current?.focus());
+      return;
+    }
+    const c = newChat(activeBike?.id);
+    setChats((prev) => [c, ...prev]);
+    setActiveChatId(c.id);
+    setHistoryOpen(false);
+    setValue("");
+    adjust(true);
+    requestAnimationFrame(() => taRef.current?.focus());
+  }
+
+  function pickChat(id: string) {
+    setActiveChatId(id);
+    setHistoryOpen(false);
+  }
+
+  function deleteChat(id: string) {
+    setChats((prev) => {
+      const next = prev.filter((c) => c.id !== id);
+      if (id === activeChatId) {
+        if (next.length === 0) {
+          const c = newChat(activeBike?.id);
+          setActiveChatId(c.id);
+          return [c];
+        }
+        setActiveChatId(next[0].id);
+      }
+      return next;
+    });
+  }
+
   // высота композера ≈ 56 + textarea, плюс таб-бар 52 + safe-area
   const composerOffset = "calc(52px + env(safe-area-inset-bottom))";
 
@@ -219,24 +366,41 @@ function HellAiMobile() {
         <div className="absolute right-1/4 top-10 h-56 w-56 animate-pulse rounded-full bg-primary/[0.06] blur-[90px] [animation-delay:700ms]" />
       </div>
 
-      {/* контекст-чип */}
-      <div className="sticky top-14 z-20 -mt-px border-b border-white/[0.05] bg-background/80 px-4 py-2 backdrop-blur-xl">
-        <button
-          type="button"
-          onClick={() => setBikeSheetOpen(true)}
-          className="group flex w-full items-center gap-2.5 rounded-full border border-white/[0.06] bg-white/[0.03] py-1.5 pl-2 pr-3 text-[13px] text-foreground/85 active:scale-[0.98] active:opacity-80"
-        >
-          <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-primary/15 text-primary">
-            <BikeIcon className="h-3.5 w-3.5" />
-          </span>
-          <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-            контекст
-          </span>
-          <span className="min-w-0 flex-1 truncate text-left font-medium">
-            {activeBike ? bikeLabel(activeBike) : "выбрать байк"}
-          </span>
-          <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
-        </button>
+      {/* верхняя панель: история + контекст + новый чат */}
+      <div className="sticky top-14 z-20 -mt-px border-b border-white/[0.05] bg-background/80 px-3 py-2 backdrop-blur-xl">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setHistoryOpen(true)}
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/[0.06] bg-white/[0.03] text-foreground/80 active:scale-95 active:opacity-80"
+            aria-label="История"
+          >
+            <HistoryIcon className="h-[18px] w-[18px]" />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setBikeSheetOpen(true)}
+            className="group flex min-w-0 flex-1 items-center gap-2 rounded-full border border-white/[0.06] bg-white/[0.03] py-1.5 pl-2 pr-3 text-[13px] text-foreground/85 active:scale-[0.98] active:opacity-80"
+          >
+            <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-primary/15 text-primary">
+              <BikeIcon className="h-3.5 w-3.5" />
+            </span>
+            <span className="min-w-0 flex-1 truncate text-left font-medium">
+              {activeBike ? bikeLabel(activeBike) : "выбрать байк"}
+            </span>
+            <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+          </button>
+
+          <button
+            type="button"
+            onClick={startNewChat}
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/[0.06] bg-white/[0.03] text-foreground/80 active:scale-95 active:opacity-80"
+            aria-label="Новый чат"
+          >
+            <MessageSquarePlus className="h-[18px] w-[18px]" />
+          </button>
+        </div>
       </div>
 
       {/* лента сообщений */}
@@ -399,9 +563,155 @@ function HellAiMobile() {
 
       {/* sheet: команды */}
       <CommandSheet open={cmdSheetOpen} onOpenChange={setCmdSheetOpen} onPick={pickCommand} />
+
+      {/* sheet: история */}
+      <HistorySheet
+        open={historyOpen}
+        onOpenChange={setHistoryOpen}
+        chats={chats}
+        activeId={activeChatId}
+        onPick={pickChat}
+        onDelete={deleteChat}
+        onNew={startNewChat}
+      />
     </div>
   );
 }
+
+function HistorySheet({
+  open,
+  onOpenChange,
+  chats,
+  activeId,
+  onPick,
+  onDelete,
+  onNew,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  chats: Chat[];
+  activeId: string;
+  onPick: (id: string) => void;
+  onDelete: (id: string) => void;
+  onNew: () => void;
+}) {
+  const sorted = [...chats].sort((a, b) => b.updatedAt - a.updatedAt);
+  return (
+    <Drawer.Root open={open} onOpenChange={onOpenChange}>
+      <Drawer.Portal>
+        <Drawer.Overlay className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm" />
+        <Drawer.Content
+          className="fixed inset-x-0 bottom-0 z-50 flex max-h-[85vh] flex-col rounded-t-[20px] border-t border-white/[0.08] bg-[#0d0d0d] outline-none"
+          style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+        >
+          <Drawer.Title className="sr-only">История чатов</Drawer.Title>
+          <div className="mx-auto mt-2.5 h-1 w-10 shrink-0 rounded-full bg-white/15" />
+
+          <div className="flex items-center justify-between px-5 pb-3 pt-3">
+            <h2 className="font-display text-xl font-black italic uppercase tracking-tight">
+              История
+            </h2>
+            <button
+              type="button"
+              onClick={() => onOpenChange(false)}
+              className="font-mono text-[12px] font-bold uppercase tracking-wider text-primary active:opacity-60"
+            >
+              Готово
+            </button>
+          </div>
+
+          <div className="px-4 pb-3">
+            <button
+              type="button"
+              onClick={onNew}
+              className="flex w-full items-center gap-3 rounded-2xl border border-primary/30 bg-primary/10 px-4 py-3 text-left text-primary active:scale-[0.98]"
+            >
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary/15">
+                <MessageSquarePlus className="h-[18px] w-[18px]" />
+              </span>
+              <span className="text-[15px] font-semibold">Новый чат</span>
+            </button>
+          </div>
+
+          <div className="flex-1 overflow-y-auto overscroll-contain px-4 pb-4">
+            {sorted.length === 0 ? (
+              <div className="rounded-2xl border border-white/[0.06] bg-card/40 px-4 py-6 text-center text-[13px] text-muted-foreground">
+                Истории пока нет.
+              </div>
+            ) : (
+              <>
+                <div className="mb-2 px-1 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+                  обращения · {sorted.length}
+                </div>
+                <ul className="overflow-hidden rounded-2xl border border-white/[0.06] bg-card/40 divide-y divide-white/[0.05]">
+                  {sorted.map((c) => {
+                    const active = c.id === activeId;
+                    const count = c.messages.length;
+                    const preview =
+                      c.messages.length === 0
+                        ? "Пустой чат"
+                        : c.title;
+                    return (
+                      <li key={c.id} className="relative">
+                        <button
+                          type="button"
+                          onClick={() => onPick(c.id)}
+                          className="flex w-full items-start gap-3 px-4 py-3 pr-12 text-left active:bg-white/[0.04]"
+                        >
+                          <span
+                            className={cn(
+                              "mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-lg",
+                              active
+                                ? "bg-primary/15 text-primary"
+                                : "bg-white/[0.05] text-muted-foreground",
+                            )}
+                          >
+                            <Sparkles className="h-[18px] w-[18px]" />
+                          </span>
+                          <span className="min-w-0 flex-1">
+                            <span className="flex items-center gap-2">
+                              <span className="min-w-0 flex-1 truncate text-[15px] font-semibold text-foreground">
+                                {preview}
+                              </span>
+                              {active && (
+                                <span className="font-mono text-[9px] uppercase tracking-wider text-primary">
+                                  активный
+                                </span>
+                              )}
+                            </span>
+                            <span className="mt-0.5 flex items-center gap-2 font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
+                              <span>{formatRelative(c.updatedAt)}</span>
+                              <span className="opacity-50">·</span>
+                              <span className="tabular-nums">
+                                {count} {count === 1 ? "сообщ." : "сообщ."}
+                              </span>
+                            </span>
+                          </span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onDelete(c.id);
+                          }}
+                          className="absolute right-2 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full text-red-400/80 active:scale-90 active:bg-red-500/10"
+                          aria-label="Удалить"
+                        >
+                          <Trash2 className="h-[16px] w-[16px]" />
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </>
+            )}
+          </div>
+        </Drawer.Content>
+      </Drawer.Portal>
+    </Drawer.Root>
+  );
+}
+
 
 function EmptyChat({
   bikeStr,
