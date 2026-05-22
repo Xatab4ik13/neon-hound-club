@@ -820,7 +820,7 @@ export function ProfilePlaque({
   const { rank, plaqueBg, xp, xpMax, xpPct, isMax } = useCurrentRank();
   const variant = PLAQUE_BG[plaqueBg];
   const size = compact ? 44 : 56;
-  const isPaid = !!rank.isPaid;
+
 
   return (
     <Link
