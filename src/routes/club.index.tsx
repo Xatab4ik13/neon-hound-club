@@ -5,6 +5,7 @@ import { RANKS, type RankId } from "@/data/ranks";
 import { ME_SLUG, PUBLIC_USERS } from "@/data/users";
 import { useFeedPosts, type FeedComment, type FeedPost } from "@/data/feed-store";
 import { HellhoundAvatar, HellhoundChip, isHell } from "@/components/club/HellhoundPlaque";
+import { IOSSheet } from "@/components/ios/IOSSheet";
 
 export const Route = createFileRoute("/club/")({
   head: () => ({
@@ -50,6 +51,7 @@ function ClubFeedPage() {
 
 function PostCard({ post }: { post: Post }) {
   const [liked, setLiked] = useState(false);
+  const [commentsOpen, setCommentsOpen] = useState(false);
   const likeCount = post.likes + (liked ? 1 : 0);
   const author = PUBLIC_USERS[post.authorSlug];
 
@@ -111,13 +113,27 @@ function PostCard({ post }: { post: Post }) {
           active={liked}
           onClick={() => setLiked((v) => !v)}
         />
-        <PostAction icon={<CommentIcon />} count={post.comments.length} label="Комментарий" />
+        <PostAction
+          icon={<CommentIcon />}
+          count={post.comments.length}
+          label="Комментарий"
+          onClick={() => setCommentsOpen(true)}
+        />
         <div className="ml-auto">
           <PostAction icon={<ShareIcon />} label="Поделиться" compact />
         </div>
       </div>
 
-      <CommentsBlock postId={post.id} comments={post.comments} />
+      <CommentsPreview
+        comments={post.comments}
+        onOpen={() => setCommentsOpen(true)}
+      />
+
+      <CommentsSheet
+        open={commentsOpen}
+        onOpenChange={setCommentsOpen}
+        post={post}
+      />
     </article>
   );
 }
@@ -169,41 +185,92 @@ function RoleBadge({ role }: { role: "owner" | "team" | "rider" }) {
   );
 }
 
-// ───────── Comments ─────────
+// ───────── Comments preview (под постом) ─────────
 
-const INITIAL_VISIBLE = 2;
-
-function CommentsBlock({ postId, comments }: { postId: string; comments: Comment[] }) {
-  const [expanded, setExpanded] = useState(false);
-  const visible = expanded ? comments : comments.slice(0, INITIAL_VISIBLE);
-  const hidden = Math.max(0, comments.length - INITIAL_VISIBLE);
-
+function CommentsPreview({
+  comments,
+  onOpen,
+}: {
+  comments: Comment[];
+  onOpen: () => void;
+}) {
+  if (comments.length === 0) {
+    return (
+      <button
+        type="button"
+        onClick={onOpen}
+        className="flex w-full items-center gap-2 border-t border-white/[0.05] bg-[oklch(0.10_0_0)]/60 px-4 py-3 text-left font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground transition-colors hover:text-primary md:px-5"
+      >
+        Написать комментарий
+      </button>
+    );
+  }
+  const last = comments[comments.length - 1];
+  const user = PUBLIC_USERS[last.authorSlug];
   return (
-    <div className="border-t border-white/[0.05] bg-[oklch(0.10_0_0)]/60">
-      {visible.length > 0 && (
-        <ul className="space-y-4 px-4 py-4 md:px-5 md:py-5">
-          {visible.map((c) => (
-            <CommentItem key={c.id} comment={c} />
-          ))}
-        </ul>
-      )}
-
-      {hidden > 0 && !expanded && (
-        <button
-          type="button"
-          onClick={() => setExpanded(true)}
-          className="flex w-full items-center gap-2 px-5 pb-3 text-left font-mono text-[10px] uppercase tracking-[0.18em] text-primary transition-opacity hover:opacity-80"
-        >
-          показать ещё {hidden}
-        </button>
-      )}
-
-      <CommentComposer postId={postId} />
-    </div>
+    <button
+      type="button"
+      onClick={onOpen}
+      className="flex w-full flex-col gap-2 border-t border-white/[0.05] bg-[oklch(0.10_0_0)]/60 px-4 py-3 text-left transition-colors active:bg-white/[0.02] md:px-5"
+    >
+      <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.18em] text-primary">
+        Все комментарии · {comments.length}
+        <span className="text-muted-foreground">→</span>
+      </div>
+      <div className="flex items-start gap-2">
+        <span className="truncate font-display text-[12px] font-bold uppercase italic tracking-tight text-foreground/80">
+          {user?.nick ?? last.authorSlug}
+        </span>
+        <span className="line-clamp-1 flex-1 text-[13px] text-foreground/70">{last.text}</span>
+      </div>
+    </button>
   );
 }
 
-function CommentItem({ comment }: { comment: Comment }) {
+// ───────── Comments sheet (Telegram-style full-screen) ─────────
+
+function CommentsSheet({
+  open,
+  onOpenChange,
+  post,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  post: Post;
+}) {
+  return (
+    <IOSSheet
+      open={open}
+      onOpenChange={onOpenChange}
+      title={`Комментарии · ${post.comments.length}`}
+      fullHeight
+      contentClassName="!p-0"
+    >
+      <div className="flex h-full flex-col">
+        <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-4 md:px-5">
+          {post.comments.length === 0 ? (
+            <div className="grid h-full place-items-center text-[13px] text-muted-foreground">
+              Будь первым — оставь комментарий
+            </div>
+          ) : (
+            <ul className="space-y-5">
+              {post.comments.map((c) => (
+                <CommentItem key={c.id} comment={c} large />
+              ))}
+            </ul>
+          )}
+        </div>
+        <div className="shrink-0 border-t border-white/[0.06] bg-[#0d0d0d]">
+          <CommentComposer postId={post.id} large />
+        </div>
+      </div>
+    </IOSSheet>
+  );
+}
+
+// ───────── Comment item ─────────
+
+function CommentItem({ comment, large = false }: { comment: Comment; large?: boolean }) {
   const [liked, setLiked] = useState(false);
   const user = PUBLIC_USERS[comment.authorSlug];
   const rank = RANK_BY_ID[user?.rank ?? "rookie"];
@@ -213,16 +280,16 @@ function CommentItem({ comment }: { comment: Comment }) {
     <li className="flex gap-3">
       <UserLink slug={comment.authorSlug}>
         {isHell(comment.authorSlug) ? (
-          <HellhoundAvatar size={36} initials={user?.initials ?? "H"} avatarUrl={user?.avatarUrl} />
+          <HellhoundAvatar size={large ? 40 : 36} initials={user?.initials ?? "H"} avatarUrl={user?.avatarUrl} />
         ) : (
-          <RankAvatar initials={user?.initials ?? "?"} rankId={user?.rank ?? "rookie"} size={36} />
+          <RankAvatar initials={user?.initials ?? "?"} rankId={user?.rank ?? "rookie"} size={large ? 40 : 36} />
         )}
       </UserLink>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <UserLink slug={comment.authorSlug} className="min-w-0 truncate">
             <span
-              className="truncate font-display text-[13px] font-bold uppercase italic tracking-tight transition-opacity hover:opacity-80"
+              className={`truncate font-display font-bold uppercase italic tracking-tight transition-opacity hover:opacity-80 ${large ? "text-[14px]" : "text-[13px]"}`}
               style={{ color: isHell(comment.authorSlug) ? undefined : rank.accent }}
             >
               {user?.nick ?? comment.authorSlug}
@@ -245,7 +312,7 @@ function CommentItem({ comment }: { comment: Comment }) {
           </span>
         </div>
         <div className="mt-1 inline-block max-w-full rounded-2xl rounded-tl-sm border border-white/[0.05] bg-white/[0.03] px-3 py-2">
-          <p className="break-words text-[13.5px] leading-relaxed text-foreground/90">
+          <p className={`break-words leading-relaxed text-foreground/90 ${large ? "text-[14.5px]" : "text-[13.5px]"}`}>
             {comment.text}
           </p>
         </div>
@@ -365,7 +432,7 @@ const STICKER_PACKS: StickerPack[] = [
   },
 ];
 
-function CommentComposer({ postId }: { postId: string }) {
+function CommentComposer({ postId, large = false }: { postId: string; large?: boolean }) {
   const [value, setValue] = useState("");
   const [panel, setPanel] = useState<null | "emoji" | "stickers">(null);
   const [tab, setTab] = useState<"recent" | "emoji" | "stickers">("stickers");
@@ -392,6 +459,7 @@ function CommentComposer({ postId }: { postId: string }) {
           setTab={setTab}
           activePack={activePack}
           setActivePack={setActivePack}
+          large={large}
         />
       )}
       <form
@@ -477,16 +545,18 @@ function StickerPanel({
   setTab,
   activePack,
   setActivePack,
+  large = false,
 }: {
   tab: "recent" | "emoji" | "stickers";
   setTab: (t: "recent" | "emoji" | "stickers") => void;
   activePack: string;
   setActivePack: (id: string) => void;
+  large?: boolean;
 }) {
   const pack = STICKER_PACKS.find((p) => p.id === activePack) ?? STICKER_PACKS[0];
 
   return (
-    <div className="flex h-[min(55vh,420px)] flex-col bg-[#0d0d0d]">
+    <div className={`flex flex-col bg-[#0d0d0d] ${large ? "h-[min(70vh,560px)]" : "h-[min(55vh,420px)]"}`}>
       {/* Search */}
       <div className="px-3 pt-2.5 pb-2">
         <div className="flex items-center gap-2 rounded-full bg-white/[0.05] px-3 py-1.5">
@@ -506,12 +576,12 @@ function StickerPanel({
             <div className="sticky top-0 z-10 -mx-2 mb-1 bg-[#0d0d0d]/95 px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground backdrop-blur">
               {pack.title}
             </div>
-            <div className="grid grid-cols-4 gap-1 sm:grid-cols-5">
+            <div className={`grid gap-1 ${large ? "grid-cols-3 sm:grid-cols-4" : "grid-cols-4 sm:grid-cols-5"}`}>
               {pack.stickers.map((s, i) => (
                 <button
                   key={i}
                   type="button"
-                  className="grid aspect-square place-items-center rounded-lg text-4xl transition-transform active:scale-90 hover:bg-white/[0.04] sm:text-[40px]"
+                  className={`grid aspect-square place-items-center rounded-lg transition-transform active:scale-90 hover:bg-white/[0.04] ${large ? "text-6xl sm:text-7xl" : "text-4xl sm:text-[40px]"}`}
                 >
                   <span>{s}</span>
                 </button>
@@ -522,12 +592,12 @@ function StickerPanel({
             </div>
           </>
         ) : tab === "emoji" ? (
-          <div className="grid grid-cols-7 gap-1 pt-1 sm:grid-cols-8">
+          <div className={`grid gap-1 pt-1 ${large ? "grid-cols-6 sm:grid-cols-7" : "grid-cols-7 sm:grid-cols-8"}`}>
             {"😀 😁 😂 🤣 😊 😍 😎 🤘 🔥 💀 🏁 🏍️ ⚙️ 🛠️ 🏆 ⚡ 💯 👀 👍 🙏 🤝 🫡 😤 🥶 😅 😉 🥰 😘 🤔 🙄 😴 🤯".split(" ").map((e, i) => (
               <button
                 key={i}
                 type="button"
-                className="grid aspect-square place-items-center rounded-lg text-[26px] transition-transform active:scale-90 hover:bg-white/[0.05]"
+                className={`grid aspect-square place-items-center rounded-lg transition-transform active:scale-90 hover:bg-white/[0.05] ${large ? "text-4xl" : "text-[26px]"}`}
               >
                 {e}
               </button>
