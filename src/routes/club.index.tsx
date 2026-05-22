@@ -516,10 +516,10 @@ function CommentItem({
   onReply?: () => void;
   onDelete?: () => void;
 }) {
-  const [liked, setLiked] = useState(comment.liked);
+  const liked = comment.liked;
   const user = PUBLIC_USERS[comment.authorSlug];
   const rank = RANK_BY_ID[user?.rank ?? "rookie"];
-  const count = comment.likes + (liked ? 1 : 0) - (comment.liked ? 1 : 0);
+  const count = comment.likes;
 
   return (
     <li className="flex gap-3">
@@ -565,9 +565,7 @@ function CommentItem({
           <button
             type="button"
             onClick={() => {
-              const next = !liked;
-              setLiked(next);
-              feedStore.toggleCommentLike(comment.id, next);
+              feedStore.toggleCommentLike(comment.id, !liked);
             }}
             aria-pressed={liked}
             className={`flex items-center gap-1.5 font-mono text-[10px] font-bold uppercase tracking-wider tabular-nums transition-colors ${
@@ -577,6 +575,7 @@ function CommentItem({
             <HeartIcon filled={liked} size={12} />
             <span>{count}</span>
           </button>
+
           <button
             type="button"
             onClick={onReply}
