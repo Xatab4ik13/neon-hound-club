@@ -1,9 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Ticket, Zap, Plus, Minus, Sparkles, Calendar } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ArrowLeft, Calendar, Check, Minus, Plus, Ticket, Zap } from "lucide-react";
 import { Countdown } from "@/components/club/Countdown";
-import { ACTIVE_TICKETS, ME, type ActiveTicket } from "@/data/profile";
+import { ACTIVE_TICKETS, type ActiveTicket } from "@/data/profile";
+import { TICKET_LEDGER, summarizeLedger } from "@/data/tickets-ledger";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export const Route = createFileRoute("/club/raffles/$raffleId")({
   head: ({ params }) => {
@@ -28,7 +29,7 @@ function NotFound() {
       </h1>
       <Link
         to="/club/raffles"
-        className="mt-6 inline-flex items-center gap-2 border border-primary/40 px-4 py-2 font-mono text-xs uppercase tracking-[0.22em] text-primary hover:bg-primary/10"
+        className="mt-6 inline-flex items-center gap-2 rounded-xl border border-primary/40 px-4 py-2 font-mono text-xs uppercase tracking-wider text-primary active:scale-95"
       >
         <ArrowLeft className="h-3 w-3" />к розыгрышам
       </Link>
@@ -48,7 +49,6 @@ function formatDeadline(iso: string) {
     return new Date(iso).toLocaleString("ru-RU", {
       day: "2-digit",
       month: "long",
-      year: "numeric",
       hour: "2-digit",
       minute: "2-digit",
     });
@@ -58,223 +58,263 @@ function formatDeadline(iso: string) {
 }
 
 function RaffleDetailContent({ raffle }: { raffle: ActiveTicket }) {
-  const [balance, setBalance] = useState(ME.totals.tickets);
+  const initialBalance = summarizeLedger(TICKET_LEDGER).balance;
+  const [balance, setBalance] = useState(initialBalance);
+  const [myTickets, setMyTickets] = useState(raffle.myTickets);
   const [stake, setStake] = useState(0);
   const [flash, setFlash] = useState<string | null>(null);
+  const isMobile = useIsMobile();
 
-  const odds = useMemo(() => {
-    const mine = raffle.myTickets + stake;
-    if (mine <= 0) return 0;
-    return (mine / raffle.totalTickets) * 100;
-  }, [raffle, stake]);
+  useEffect(() => {
+    if (!flash) return;
+    const id = setTimeout(() => setFlash(null), 2000);
+    return () => clearTimeout(id);
+  }, [flash]);
 
   const handleStake = () => {
     if (stake <= 0 || stake > balance) return;
     setBalance((b) => b - stake);
+    setMyTickets((m) => m + stake);
     setFlash(`Поставлено ×${stake}`);
     setStake(0);
-    setTimeout(() => setFlash(null), 2200);
   };
 
   return (
-    <main className="relative mx-auto w-full max-w-5xl px-4 py-6 md:px-8 md:py-10">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[520px] overflow-hidden"
-      >
-        <motion.div
-          initial={{ opacity: 0.4 }}
-          animate={{ opacity: [0.4, 0.7, 0.4] }}
-          transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute -top-32 left-1/2 h-[420px] w-[820px] -translate-x-1/2 rounded-full bg-primary/30 blur-[140px]"
-        />
-      </div>
-
+    <main className="relative mx-auto w-full max-w-3xl px-4 py-5 md:py-8">
+      {/* back link */}
       <Link
         to="/club/raffles"
-        className="inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.24em] text-muted-foreground transition-colors hover:text-primary"
+        className="inline-flex items-center gap-1.5 font-mono text-[11px] font-bold uppercase tracking-wider text-muted-foreground active:opacity-60"
       >
-        <ArrowLeft className="h-3 w-3" />к розыгрышам
+        <ArrowLeft className="h-3.5 w-3.5" />к розыгрышам
       </Link>
 
-      <AnimatePresence>
-        {flash && (
-          <motion.div
-            initial={{ y: -8, opacity: 0, scale: 0.95 }}
-            animate={{ y: 0, opacity: 1, scale: 1 }}
-            exit={{ y: -8, opacity: 0 }}
-            className="fixed left-1/2 top-20 z-50 -translate-x-1/2 border border-primary/40 bg-black/80 px-5 py-2 font-mono text-[11px] uppercase tracking-[0.22em] text-primary shadow-[0_0_36px_-8px_var(--primary)] backdrop-blur"
-          >
-            <Sparkles className="mr-2 inline h-3 w-3" />
-            {flash}
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <div className="mt-4 grid grid-cols-1 gap-6 lg:grid-cols-[1fr_360px]">
-        <div className="min-w-0 space-y-6">
-          {/* one photo */}
-          <motion.div
-            initial={{ opacity: 0, scale: 1.02 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
-            className="relative h-[280px] overflow-hidden border border-white/[0.08] bg-card/40 md:h-[460px]"
-          >
-            <img
-              src={raffle.image}
-              alt={raffle.title}
-              className="absolute inset-0 h-full w-full object-cover"
-            />
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent" />
-            <div
-              aria-hidden
-              className="pointer-events-none absolute inset-0 opacity-[0.06]"
-              style={{
-                backgroundImage:
-                  "repeating-linear-gradient(0deg, white 0 1px, transparent 1px 3px)",
-              }}
-            />
-          </motion.div>
-
-          {/* title + deadline */}
-          <section>
-            <h1 className="font-display text-4xl font-black uppercase italic leading-none tracking-tight text-foreground md:text-5xl">
-              {raffle.title}
-            </h1>
-            <div className="mt-3 inline-flex items-center gap-2 border border-primary/30 bg-primary/[0.06] px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.2em] text-primary">
-              <Calendar className="h-3 w-3" />
-              до {formatDeadline(raffle.deadlineAt)}
-            </div>
-          </section>
-
-          {/* description */}
-          {raffle.description && (
-            <section className="space-y-4 text-[15px] leading-relaxed">
-              {raffle.description.split("\n\n").map((p, i) => (
-                <p key={i} className="text-foreground/85">
-                  {p}
-                </p>
-              ))}
-            </section>
-          )}
+      {/* flash */}
+      {flash && (
+        <div className="fixed left-1/2 top-16 z-50 -translate-x-1/2 rounded-xl border border-emerald-500/40 bg-black/85 px-4 py-2 font-mono text-[12px] uppercase tracking-wider text-emerald-300 shadow-lg backdrop-blur">
+          <Check className="mr-1.5 inline h-3.5 w-3.5" />
+          {flash}
         </div>
+      )}
 
-        {/* stake panel */}
-        <aside className="lg:sticky lg:top-20 lg:self-start">
-          <StakePanel
-            raffle={raffle}
+      {/* image */}
+      <div className="mt-4 overflow-hidden rounded-2xl border border-white/[0.08] bg-card/40">
+        <div className="relative aspect-[16/10] overflow-hidden bg-black">
+          <img
+            src={raffle.image}
+            alt={raffle.title}
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+          <span className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-primary px-2.5 py-1 font-mono text-[10px] font-black uppercase tracking-wider text-primary-foreground">
+            <span className="h-1 w-1 animate-pulse rounded-full bg-white" />
+            LIVE
+          </span>
+        </div>
+      </div>
+
+      {/* title + meta */}
+      <section className="mt-5">
+        <h1 className="font-display text-3xl font-black uppercase italic leading-tight tracking-tight text-foreground md:text-4xl">
+          {raffle.title}
+        </h1>
+        {raffle.subtitle && (
+          <p className="mt-1.5 text-[14px] text-muted-foreground">{raffle.subtitle}</p>
+        )}
+        <div className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/[0.08] px-3 py-1 font-mono text-[11px] uppercase tracking-wider text-primary">
+          <Calendar className="h-3 w-3" />
+          до {formatDeadline(raffle.deadlineAt)}
+        </div>
+      </section>
+
+      {/* status row — мои билеты + countdown */}
+      <section className="mt-4 grid grid-cols-2 gap-2">
+        <StatTile
+          label="Мои билеты"
+          value={
+            <span className="flex items-baseline gap-1.5">
+              <Ticket className="h-4 w-4 self-center text-primary" />
+              <span className="tabular-nums">{myTickets}</span>
+            </span>
+          }
+        />
+        <StatTile
+          label="До закрытия"
+          value={<Countdown deadlineAt={raffle.deadlineAt} compact />}
+        />
+      </section>
+
+      {/* desktop stake panel */}
+      {!isMobile && (
+        <section className="mt-5 rounded-2xl border border-primary/30 bg-card/40 p-4">
+          <StakeControls
             balance={balance}
             stake={stake}
-            odds={odds}
             onStakeChange={(v) => setStake(Math.max(0, Math.min(balance, v)))}
             onStake={handleStake}
           />
-        </aside>
-      </div>
+        </section>
+      )}
+
+      {/* description */}
+      {raffle.description && (
+        <section className="mt-6 space-y-3.5 text-[15px] leading-relaxed">
+          {raffle.description.split("\n\n").map((p, i) => (
+            <p key={i} className="text-foreground/85">
+              {p}
+            </p>
+          ))}
+        </section>
+      )}
+
+      {/* specs */}
+      {raffle.specs && raffle.specs.length > 0 && (
+        <section className="mt-6">
+          <h2 className="mb-2 px-1 font-display text-sm font-black uppercase italic tracking-widest text-foreground">
+            Характеристики
+          </h2>
+          <ul className="overflow-hidden rounded-2xl border border-white/[0.06] bg-card/40 divide-y divide-white/[0.05]">
+            {raffle.specs.map((s) => (
+              <li key={s.label} className="flex items-center justify-between gap-3 px-4 py-3 text-[14px]">
+                <span className="text-muted-foreground">{s.label}</span>
+                <span className="text-right font-semibold text-foreground">{s.value}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {/* rules */}
+      {raffle.rules && raffle.rules.length > 0 && (
+        <section className="mt-6">
+          <h2 className="mb-2 px-1 font-display text-sm font-black uppercase italic tracking-widest text-foreground">
+            Условия
+          </h2>
+          <ul className="overflow-hidden rounded-2xl border border-white/[0.06] bg-card/40 divide-y divide-white/[0.05]">
+            {raffle.rules.map((r, i) => (
+              <li key={i} className="flex items-start gap-3 px-4 py-3 text-[14px]">
+                <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-400" />
+                <span className="text-foreground/85">{r}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {/* mobile padding so sticky bar doesn't cover content */}
+      {isMobile && <div aria-hidden className="h-44" />}
+
+      {/* mobile sticky stake bar */}
+      {isMobile && (
+        <div
+          className="fixed inset-x-0 z-30 border-t border-white/[0.08] bg-[#0d0d0d]/95 px-4 py-3 backdrop-blur"
+          style={{
+            bottom: "calc(52px + env(safe-area-inset-bottom))",
+            paddingBottom: "calc(12px + env(safe-area-inset-bottom) * 0)",
+          }}
+        >
+          <StakeControls
+            balance={balance}
+            stake={stake}
+            onStakeChange={(v) => setStake(Math.max(0, Math.min(balance, v)))}
+            onStake={handleStake}
+            compact
+          />
+        </div>
+      )}
     </main>
   );
 }
 
-function StakePanel({
-  raffle,
-  balance,
-  stake,
-  odds,
-  onStakeChange,
-  onStake,
-}: {
-  raffle: ActiveTicket;
-  balance: number;
-  stake: number;
-  odds: number;
-  onStakeChange: (v: number) => void;
-  onStake: () => void;
-}) {
+function StatTile({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="relative overflow-hidden border border-primary/30 bg-card/40 p-5">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -right-12 -top-12 h-32 w-32 rounded-full bg-primary/40 blur-3xl"
-      />
-      <div className="relative">
-        <div className="flex items-center justify-between">
-          <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
-            поставить билеты
-          </div>
-          <div className="flex items-center gap-1 font-mono text-[10px] uppercase tracking-[0.2em] text-foreground">
-            <Ticket className="h-3 w-3 text-primary" />
-            {balance}
-          </div>
-        </div>
-
-        <div className="mt-3 flex items-center gap-2">
-          <StakeBtn onClick={() => onStakeChange(stake - 1)} disabled={stake <= 0}>
-            <Minus className="h-4 w-4" />
-          </StakeBtn>
-          <div className="flex-1 text-center font-display text-4xl font-black italic tabular-nums text-foreground">
-            {stake}
-          </div>
-          <StakeBtn onClick={() => onStakeChange(stake + 1)} disabled={stake >= balance}>
-            <Plus className="h-4 w-4" />
-          </StakeBtn>
-        </div>
-
-        <div className="mt-2 flex justify-between gap-2">
-          {[1, 5, balance].map((v, i) => (
-            <button
-              key={i}
-              type="button"
-              onClick={() => onStakeChange(v)}
-              disabled={v <= 0 || v > balance}
-              className="flex-1 border border-white/[0.08] py-1 font-mono text-[10px] uppercase tracking-wider text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary disabled:opacity-30"
-            >
-              {i === 2 ? "max" : `×${v}`}
-            </button>
-          ))}
-        </div>
-
-        <button
-          type="button"
-          onClick={onStake}
-          disabled={stake <= 0 || stake > balance}
-          className="group/btn relative mt-4 flex w-full items-center justify-center gap-2 overflow-hidden bg-primary py-3 font-display text-sm font-black uppercase italic tracking-widest text-primary-foreground transition-all hover:shadow-[0_0_32px_-4px_var(--primary)] disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
-        >
-          <span className="relative z-10 flex items-center gap-2">
-            <Zap className="h-4 w-4" />
-            поставить
-          </span>
-          <motion.div
-            aria-hidden
-            className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent"
-            animate={stake > 0 && stake <= balance ? { x: ["-100%", "200%"] } : {}}
-            transition={{ duration: 1.6, repeat: Infinity, ease: "linear" }}
-          />
-        </button>
-
-        <div className="mt-4 grid grid-cols-2 gap-2">
-          <div className="border border-white/[0.06] bg-black/30 px-3 py-2">
-            <div className="font-mono text-[9px] uppercase tracking-[0.2em] text-muted-foreground">
-              мой шанс
-            </div>
-            <div className="mt-0.5 font-display text-lg font-black tabular-nums text-primary">
-              {odds.toFixed(odds < 1 ? 2 : 1)}%
-            </div>
-          </div>
-          <div className="border border-white/[0.06] bg-black/30 px-3 py-2">
-            <div className="font-mono text-[9px] uppercase tracking-[0.2em] text-muted-foreground">
-              до закрытия
-            </div>
-            <div className="mt-0.5 font-display text-lg font-black tabular-nums text-foreground">
-              <Countdown deadlineAt={raffle.deadlineAt} compact />
-            </div>
-          </div>
-        </div>
+    <div className="rounded-2xl border border-white/[0.06] bg-card/40 px-4 py-3">
+      <div className="font-mono text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+        {label}
+      </div>
+      <div className="mt-1 font-display text-xl font-black italic tabular-nums text-foreground">
+        {value}
       </div>
     </div>
   );
 }
 
-function StakeBtn({
+function StakeControls({
+  balance,
+  stake,
+  onStakeChange,
+  onStake,
+  compact = false,
+}: {
+  balance: number;
+  stake: number;
+  onStakeChange: (v: number) => void;
+  onStake: () => void;
+  compact?: boolean;
+}) {
+  const presets = [1, 5, balance].filter((v, i, arr) => v > 0 && arr.indexOf(v) === i);
+  const noBalance = balance <= 0;
+  return (
+    <div>
+      <div className="flex items-center justify-between">
+        <div className="font-mono text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+          Поставить билеты
+        </div>
+        <div className="flex items-center gap-1 font-mono text-[11px] uppercase tracking-wider text-foreground">
+          <Ticket className="h-3.5 w-3.5 text-primary" />
+          <span className="tabular-nums">{balance}</span>
+        </div>
+      </div>
+
+      <div className={`mt-2 flex items-center gap-3 ${compact ? "" : "py-1"}`}>
+        <StepBtn onClick={() => onStakeChange(stake - 1)} disabled={stake <= 0}>
+          <Minus className="h-4 w-4" />
+        </StepBtn>
+        <div className="flex-1 text-center font-display text-3xl font-black italic leading-none tabular-nums text-foreground">
+          {stake}
+        </div>
+        <StepBtn onClick={() => onStakeChange(stake + 1)} disabled={stake >= balance}>
+          <Plus className="h-4 w-4" />
+        </StepBtn>
+      </div>
+
+      <div className="mt-2 flex gap-1.5">
+        {presets.map((v, i) => (
+          <button
+            key={`${v}-${i}`}
+            type="button"
+            onClick={() => onStakeChange(v)}
+            disabled={v > balance}
+            className="flex-1 rounded-lg border border-white/[0.08] bg-white/[0.02] py-1.5 font-mono text-[11px] font-bold uppercase tracking-wider text-muted-foreground transition-colors active:bg-white/[0.06] disabled:opacity-30"
+          >
+            {i === presets.length - 1 && v === balance && v > 1 ? "MAX" : `×${v}`}
+          </button>
+        ))}
+      </div>
+
+      <button
+        type="button"
+        onClick={onStake}
+        disabled={stake <= 0 || stake > balance}
+        className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 font-display text-[15px] font-black uppercase italic tracking-wider text-primary-foreground transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"
+      >
+        <Zap className="h-4 w-4" />
+        Поставить
+      </button>
+
+      {noBalance && (
+        <Link
+          to="/shop"
+          className="mt-2 block text-center font-mono text-[11px] uppercase tracking-wider text-primary active:opacity-60"
+        >
+          Билеты закончились — докупить →
+        </Link>
+      )}
+    </div>
+  );
+}
+
+function StepBtn({
   children,
   onClick,
   disabled,
@@ -288,7 +328,7 @@ function StakeBtn({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="flex h-10 w-10 items-center justify-center border border-white/[0.10] text-muted-foreground transition-all hover:border-primary/60 hover:bg-primary/10 hover:text-primary active:scale-90 disabled:opacity-30"
+      className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/[0.1] bg-white/[0.02] text-foreground transition-all active:scale-90 disabled:opacity-30"
     >
       {children}
     </button>
