@@ -200,6 +200,18 @@ function ProductPage() {
                   )}
                 </div>
 
+                {product.ticketsBonus && product.ticketsBonus > 0 ? (
+                  <div className="mt-4 inline-flex items-center gap-2 border border-primary/40 bg-primary/5 px-3 py-2">
+                    <span
+                      aria-hidden
+                      className="inline-block h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_8px_hsl(var(--primary)/0.7)]"
+                    />
+                    <span className="font-mono text-[11px] uppercase tracking-widest text-primary">
+                      +{product.ticketsBonus} {ticketsWordPdp(product.ticketsBonus)} на розыгрыши клуба
+                    </span>
+                  </div>
+                ) : null}
+
                 {/* SIZES */}
                 {product.sizes && product.sizes.length > 0 && (
                   <div className="mt-8">
