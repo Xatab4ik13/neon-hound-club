@@ -114,7 +114,7 @@ export function usePublicProfile(nick: string) {
 export function useUpdateMyProfile() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (patch: Partial<Omit<MyProfile, "userId" | "email" | "nick" | "role" | "emailVerified" | "bikesCount">>) =>
+    mutationFn: (patch: Partial<Omit<MyProfile, "userId" | "email" | "nick" | "role" | "emailVerified" | "joinedAt" | "bikesCount">>) =>
       apiFetch<{ ok: true }>("/api/v1/profile/me", {
         method: "PATCH",
         body: JSON.stringify(patch),
