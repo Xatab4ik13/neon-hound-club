@@ -174,6 +174,13 @@ function UserDrawer({
               </Btn>
             )}
             <Btn
+              onClick={() =>
+                patchMut.mutate({ role: u.role === "blogger" ? "user" : "blogger" })
+              }
+            >
+              {u.role === "blogger" ? "Снять блогера" : "Сделать блогером"}
+            </Btn>
+            <Btn
               variant="primary"
               onClick={() =>
                 patchMut.mutate({ role: u.role === "admin" ? "user" : "admin" })
