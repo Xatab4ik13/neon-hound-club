@@ -34,7 +34,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 export const Route = createFileRoute("/club/me")({
   head: () => ({
     meta: [
-      { title: `Профиль ${ME.nick} — клуб HELLHOUND` },
+      { title: `Профиль — клуб HELLHOUND` },
       { name: "description", content: "Личный кабинет райдера HELLHOUND." },
       { name: "robots", content: "noindex" },
     ],
