@@ -485,10 +485,12 @@ function CommentItem({
   comment,
   large = false,
   onReply,
+  onDelete,
 }: {
   comment: Comment;
   large?: boolean;
   onReply?: () => void;
+  onDelete?: () => void;
 }) {
   const [liked, setLiked] = useState(false);
   const user = PUBLIC_USERS[comment.authorSlug];
