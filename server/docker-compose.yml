@@ -1,0 +1,46 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: hellhound
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-hellhound}
+      POSTGRES_DB: hellhound
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5432:5432"
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6379:6379"
+
+  minio:
+    image: minio/minio:latest
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY:-hellhound}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:-hellhound-secret}
+    volumes:
+      - miniodata:/data
+    ports:
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
+
+  api:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    depends_on:
+      - postgres
+      - redis
+      - minio
+    ports:
+      - "127.0.0.1:3000:3000"
+
+volumes:
+  pgdata:
+  miniodata:
