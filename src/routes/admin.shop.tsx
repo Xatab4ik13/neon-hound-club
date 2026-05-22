@@ -65,8 +65,10 @@ function ShopPage() {
       returns: p.returns,
       ticketsBonus: p.ticketsBonus,
       status: "active" as const,
+      kind: "physical" as const,
     })),
   );
+
   const [editing, setEditing] = useState<Product | null>(null);
   const [productOpen, setProductOpen] = useState(false);
   const [del, setDel] = useState<Product | null>(null);
