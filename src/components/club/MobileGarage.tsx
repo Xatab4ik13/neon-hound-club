@@ -84,6 +84,7 @@ export function MobileGarage({
     open: false,
     doc: null,
   });
+  const [viewDoc, setViewDoc] = useState<BikeDocument | null>(null);
 
   const active = bikes[activeIdx];
 
