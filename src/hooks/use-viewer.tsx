@@ -1,9 +1,14 @@
 import { createContext, useCallback, useContext, useMemo, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ME } from "@/data/profile";
 import { apiFetch, ApiError } from "@/lib/api";
+import {
+  fetchPassMe,
+  fetchTicketsBalance,
+  qk,
+  type PassTier,
+} from "@/lib/queries";
 
-type Tier = "silver" | "gold" | "platinum" | null;
+type Tier = PassTier | null;
 
 type SessionUser = {
   id: string;
@@ -57,6 +62,25 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
     retry: false,
   });
 
+  const isAuthed = !!meQ.data;
+
+  // Подтягиваем реальный pass и баланс — но только для залогиненных.
+  const passQ = useQuery({
+    queryKey: qk.passMe,
+    queryFn: fetchPassMe,
+    enabled: isAuthed,
+    staleTime: 30_000,
+    retry: false,
+  });
+
+  const balanceQ = useQuery({
+    queryKey: qk.ticketsBalance,
+    queryFn: fetchTicketsBalance,
+    enabled: isAuthed,
+    staleTime: 30_000,
+    retry: false,
+  });
+
   const signIn = useCallback(
     async (email: string, password: string) => {
       const { user } = await apiFetch<{ user: SessionUser }>("/api/v1/auth/login", {
@@ -64,6 +88,9 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify({ email, password }),
       });
       qc.setQueryData(ME_KEY, user);
+      // После логина — освежить зависящие данные.
+      qc.invalidateQueries({ queryKey: qk.passMe });
+      qc.invalidateQueries({ queryKey: qk.ticketsBalance });
       return user;
     },
     [qc],
@@ -71,7 +98,6 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
 
   const signUp = useCallback(
     async (email: string, password: string, nick: string) => {
-      // Бэкенд НЕ логинит сразу — ждём подтверждения email.
       const res = await apiFetch<{ ok: true; pendingVerification: true; email: string }>(
         "/api/v1/auth/register",
         { method: "POST", body: JSON.stringify({ email, password, nick }) },
@@ -93,6 +119,8 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
     onSettled: () => {
       qc.setQueryData(ME_KEY, null);
       qc.invalidateQueries({ queryKey: ME_KEY });
+      qc.removeQueries({ queryKey: qk.passMe });
+      qc.removeQueries({ queryKey: qk.ticketsBalance });
     },
   });
 
@@ -101,26 +129,30 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
   }, [signOutMutation]);
 
   const user = meQ.data ?? null;
-  const isAuthed = !!user;
+  const tier: Tier = passQ.data?.active?.tier ?? null;
+  const tickets = balanceQ.data?.balance ?? 0;
 
   const value = useMemo<ViewerContextValue>(
     () => ({
       isAuthed,
       user,
       nick: user?.nick ?? null,
-      // Tier и tickets подменим, когда поднимем эндпоинты Hell Pass. Пока — мок только для залогиненных.
-      tier: isAuthed ? "gold" : null,
-      tickets: isAuthed ? ME.totals.tickets : 0,
+      tier,
+      tickets,
       hydrated: meQ.isFetched,
       signIn,
       signUp,
       resendVerification,
       refetchMe: async () => {
-        await qc.invalidateQueries({ queryKey: ME_KEY });
+        await Promise.all([
+          qc.invalidateQueries({ queryKey: ME_KEY }),
+          qc.invalidateQueries({ queryKey: qk.passMe }),
+          qc.invalidateQueries({ queryKey: qk.ticketsBalance }),
+        ]);
       },
       signOut,
     }),
-    [isAuthed, user, meQ.isFetched, signIn, signUp, resendVerification, signOut, qc],
+    [isAuthed, user, tier, tickets, meQ.isFetched, signIn, signUp, resendVerification, signOut, qc],
   );
 
   return <ViewerContext.Provider value={value}>{children}</ViewerContext.Provider>;
