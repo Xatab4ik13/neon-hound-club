@@ -48,7 +48,10 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
   const [mods, setMods] = useState<string[]>([]);
   const [modInput, setModInput] = useState("");
   const [photo, setPhoto] = useState<string | undefined>(undefined);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoError, setPhotoError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
 
   // Источники данных
   const [makes, setMakes] = useState<string[]>([]);
