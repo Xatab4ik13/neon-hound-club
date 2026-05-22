@@ -495,6 +495,27 @@ function ProductModal({
             }
           />
         </Field>
+        <Field
+          label="Условия доставки"
+          hint="Сроки, способы, стоимость. Покажется отдельным блоком в карточке товара."
+        >
+          <TextArea
+            rows={3}
+            value={p.shipping ?? ""}
+            onChange={(e) => setP({ ...p, shipping: e.target.value })}
+            placeholder="СДЭК / Почта России, 3–10 дней. Бесплатно от 5 000 ₽."
+          />
+        </Field>
+        <Field
+          label="Условия возврата"
+          hint="Срок и условия возврата. Цифровые товары обычно возврату не подлежат."
+        >
+          <TextArea
+            rows={3}
+            value={p.returns ?? ""}
+            onChange={(e) => setP({ ...p, returns: e.target.value })}
+            placeholder="Возврат в течение 14 дней при сохранении ярлыков."
+          />
         <div className="grid grid-cols-3 gap-3">
           <Field label="Цена (₽)">
             <TextInput
