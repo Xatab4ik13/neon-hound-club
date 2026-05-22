@@ -366,3 +366,116 @@ function GiftModal({ userId, onClose }: { userId: string; onClose: () => void })
     </Modal>
   );
 }
+
+function GrantXpModal({
+  nick,
+  userId,
+  onClose,
+}: {
+  nick: string;
+  userId: string;
+  onClose: () => void;
+}) {
+  const qc = useQueryClient();
+  const [amount, setAmount] = useState("100");
+  const [reason, setReason] = useState("Бонус от админа");
+
+  const mut = useMutation({
+    mutationFn: () => grantXp(nick, Number(amount), reason.trim() || "Бонус"),
+    onSuccess: () => {
+      toast.success("XP начислено");
+      qc.invalidateQueries({ queryKey: adminQk.user(userId) });
+      onClose();
+    },
+    onError: (e) => toast.error(e instanceof ApiError ? e.message : "Ошибка"),
+  });
+
+  return (
+    <Modal open onClose={onClose} title={`Начислить XP — @${nick}`}>
+      <div className="space-y-3">
+        <div className="text-xs text-zinc-500">
+          Ранги вычисляются из XP. Пороги: 0 / 2 000 / 4 000 / 6 000 / 8 000.
+        </div>
+        <Field label="XP (отрицательное = списать)">
+          <TextInput value={amount} onChange={(e) => setAmount(e.target.value)} inputMode="numeric" />
+        </Field>
+        <Field label="Причина">
+          <TextInput value={reason} onChange={(e) => setReason(e.target.value)} />
+        </Field>
+        <div className="flex justify-end gap-2 pt-2">
+          <Btn onClick={onClose}>Отмена</Btn>
+          <Btn variant="primary" disabled={mut.isPending || !Number(amount)} onClick={() => mut.mutate()}>
+            {mut.isPending ? "…" : "Начислить"}
+          </Btn>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+function AwardBadgeModal({
+  nick,
+  userId,
+  onClose,
+}: {
+  nick: string;
+  userId: string;
+  onClose: () => void;
+}) {
+  const qc = useQueryClient();
+  const badgesQ = useQuery({
+    queryKey: ["admin", "badges-all"],
+    queryFn: fetchAdminBadges,
+  });
+  const [code, setCode] = useState("");
+
+  const mut = useMutation({
+    mutationFn: () => awardBadge(nick, code),
+    onSuccess: () => {
+      toast.success("Значок выдан");
+      qc.invalidateQueries({ queryKey: ["admin", "user", userId, "badges"] });
+      onClose();
+    },
+    onError: (e) => toast.error(e instanceof ApiError ? e.message : "Ошибка"),
+  });
+
+  const items = badgesQ.data?.items ?? [];
+
+  return (
+    <Modal open onClose={onClose} title={`Выдать значок — @${nick}`}>
+      <div className="space-y-3">
+        <Field label="Значок">
+          <select
+            className="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+            value={code}
+            onChange={(e) => setCode(e.target.value)}
+          >
+            <option value="">— выбери —</option>
+            {["rank", "club", "pass", "event", "achievement", "founder"].map((cat) => {
+              const group = items.filter((b) => b.category === cat && b.active);
+              if (!group.length) return null;
+              return (
+                <optgroup key={cat} label={cat}>
+                  {group.map((b) => (
+                    <option key={b.id} value={b.code}>
+                      {b.name} ({b.rarity})
+                    </option>
+                  ))}
+                </optgroup>
+              );
+            })}
+          </select>
+        </Field>
+        <div className="text-xs text-zinc-500">
+          Категория <b>rank</b> — ранговые значки (Rookie, Pit Crew, Road Captain, Alpha Hound, Hell Legend).
+        </div>
+        <div className="flex justify-end gap-2 pt-2">
+          <Btn onClick={onClose}>Отмена</Btn>
+          <Btn variant="primary" disabled={mut.isPending || !code} onClick={() => mut.mutate()}>
+            {mut.isPending ? "…" : "Выдать"}
+          </Btn>
+        </div>
+      </div>
+    </Modal>
+  );
+}
