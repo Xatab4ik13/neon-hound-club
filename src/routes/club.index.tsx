@@ -197,26 +197,23 @@ export function PostCard({ post, moderate = false }: { post: Post; moderate?: bo
 // ───────── Poll ─────────
 
 function PollBlock({ poll, postId }: { poll: FeedPoll; postId: string }) {
-  // Локальное состояние голоса — пока без бэкенда, на пост.
-  const storageKey = `hh:poll:vote:${postId}`;
-  const [voted, setVoted] = useState<string | null>(() => {
-    if (typeof window === "undefined") return null;
-    return window.localStorage.getItem(storageKey);
-  });
+  const serverVote = poll.myVote && poll.myVote.length > 0 ? poll.myVote[0] : null;
+  const [voted, setVoted] = useState<string | null>(serverVote);
 
-  const myVoteBonus = voted ? 1 : 0;
-  const totals = poll.options.reduce((s, o) => s + o.votes, 0) + myVoteBonus;
+  // votes из server уже включают мой голос; локальный bonus только если выбрал, а сервер ещё не знал.
+  const localBonus = voted && voted !== serverVote ? 1 : 0;
+  const removedFromServer = serverVote && voted !== serverVote ? 1 : 0;
+  const totals = poll.options.reduce((s, o) => s + o.votes, 0) + localBonus - removedFromServer;
 
   const onVote = (id: string) => {
-    if (poll.closed || voted) return;
+    if (poll.closed) return;
     setVoted(id);
-    if (typeof window !== "undefined") window.localStorage.setItem(storageKey, id);
     feedStore.votePoll(postId, [id]);
   };
 
   const onRetract = () => {
     setVoted(null);
-    if (typeof window !== "undefined") window.localStorage.removeItem(storageKey);
+    feedStore.unvotePoll(postId);
   };
 
   const showResults = !!voted || !!poll.closed;
