@@ -228,6 +228,10 @@ export async function garageRoutes(app: FastifyInstance) {
         isPrimary: shouldBePrimary,
       })
       .returning();
+
+    // Квест: первая мото в гараже.
+    if (c === 0) await tryCompleteQuest(session.sub, "first_bike");
+
     return reply.code(201).send(row);
   });
 
@@ -249,11 +253,21 @@ export async function garageRoutes(app: FastifyInstance) {
         .where(and(eq(bikes.userId, session.sub), eq(bikes.isPrimary, true)));
     }
 
+    // Если photos обновили — удалим из S3 ушедшие фото.
+    let removedPhotos: string[] = [];
+    if (d.photos !== undefined) {
+      const newSet = new Set(d.photos);
+      removedPhotos = b.photos.filter((u) => !newSet.has(u));
+    }
+
     const [row] = await db
       .update(bikes)
       .set({ ...d, updatedAt: new Date() })
       .where(eq(bikes.id, req.params.id))
       .returning();
+
+    for (const url of removedPhotos) await deleteByPublicUrl(url);
+
     return row;
   });
 
