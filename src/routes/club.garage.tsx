@@ -1,9 +1,20 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
 import { BikeFormModal } from "@/components/club/BikeFormModal";
 import { MobileGarage } from "@/components/club/MobileGarage";
-import { loadBikes, saveBikes, type StoredBike } from "@/data/bike-storage";
+import { type StoredBike } from "@/data/bike-storage";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useViewer } from "@/hooks/use-viewer";
+import {
+  useBikes,
+  useCreateBike,
+  useDeleteBike,
+  useUpdateBike,
+  uploadFileToS3,
+  type BikePayload,
+  type ServerBike,
+} from "@/lib/garage-api";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/club/garage")({
   head: () => ({
@@ -16,19 +27,68 @@ export const Route = createFileRoute("/club/garage")({
   component: GaragePage,
 });
 
+// Бэк → клиент: StoredBike-форма для существующих UI-компонентов.
+function toStored(b: ServerBike): StoredBike {
+  return {
+    id: b.id,
+    brand: b.brand,
+    model: b.model,
+    year: b.year ?? new Date().getFullYear(),
+    color: b.color ?? undefined,
+    nickname: b.nickname ?? undefined,
+    mileage: b.mileage ?? undefined,
+    purchaseDate: b.purchaseDate ?? undefined,
+    mods: b.mods.length > 0 ? b.mods : undefined,
+    photo: b.photos[0] ?? undefined,
+  };
+}
+
+// Клиент → бэк: StoredBike → payload без поля photo (фото грузим отдельно).
+function toPayload(b: StoredBike, photoUrl?: string | null): BikePayload {
+  return {
+    brand: b.brand,
+    model: b.model,
+    year: b.year,
+    color: b.color ?? null,
+    nickname: b.nickname ?? null,
+    mileage: b.mileage ?? null,
+    purchaseDate: b.purchaseDate ?? null,
+    mods: b.mods ?? [],
+    photos: photoUrl ? [photoUrl] : [],
+  };
+}
+
 function GaragePage() {
-  const [bikes, setBikes] = useState<StoredBike[]>([]);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editing, setEditing] = useState<StoredBike | null>(null);
+  const { isAuthed, hydrated } = useViewer();
   const isMobile = useIsMobile();
 
-  useEffect(() => {
-    setBikes(loadBikes());
-  }, []);
+  const bikesQ = useBikes(isAuthed);
+  const createMut = useCreateBike();
+  const updateMut = useUpdateBike();
+  const deleteMut = useDeleteBike();
 
-  function persist(next: StoredBike[]) {
-    setBikes(next);
-    saveBikes(next);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editing, setEditing] = useState<StoredBike | null>(null);
+
+  const bikes = useMemo(() => (bikesQ.data ?? []).map(toStored), [bikesQ.data]);
+
+  if (hydrated && !isAuthed) {
+    return (
+      <main className="mx-auto w-full max-w-2xl px-4 py-16 text-center">
+        <h1 className="font-display text-2xl font-black uppercase italic text-foreground">
+          Войди в клуб
+        </h1>
+        <p className="mt-2 font-mono text-[12px] uppercase tracking-wider text-muted-foreground">
+          Гараж доступен только участникам.
+        </p>
+        <Link
+          to="/login"
+          className="mt-6 inline-flex items-center gap-2 border border-primary/60 px-4 py-2 font-mono text-[11px] font-bold uppercase tracking-widest text-primary hover:bg-primary/10"
+        >
+          Войти
+        </Link>
+      </main>
+    );
   }
 
   function openAdd() {
@@ -39,20 +99,65 @@ function GaragePage() {
     setEditing(b);
     setModalOpen(true);
   }
-  function handleSave(b: StoredBike) {
-    const exists = bikes.some((x) => x.id === b.id);
-    persist(exists ? bikes.map((x) => (x.id === b.id ? b : x)) : [...bikes, b]);
+
+  async function handleSave(b: StoredBike, photoFile?: File | null) {
+    const isNew = !bikesQ.data?.some((x) => x.id === b.id);
+    const existing = bikesQ.data?.find((x) => x.id === b.id) ?? null;
+
+    let photoUrl: string | null | undefined = undefined;
+    if (photoFile) {
+      // Новый файл — грузим в S3.
+      try {
+        photoUrl = await uploadFileToS3(photoFile, "bike", existing?.id);
+      } catch (err) {
+        toast.error("Не удалось загрузить фото", {
+          description: err instanceof Error ? err.message : String(err),
+        });
+        throw err;
+      }
+    } else if (existing) {
+      // Файл не меняли — оставляем что было.
+      photoUrl = existing.photos[0] ?? null;
+    } else {
+      photoUrl = null;
+    }
+
+    const payload = toPayload(b, photoUrl);
+
+    try {
+      if (isNew) {
+        await createMut.mutateAsync(payload);
+        toast.success("Байк добавлен");
+      } else {
+        await updateMut.mutateAsync({ id: b.id, patch: payload });
+        toast.success("Изменения сохранены");
+      }
+    } catch (err) {
+      toast.error("Не удалось сохранить", {
+        description: err instanceof Error ? err.message : String(err),
+      });
+      throw err;
+    }
   }
+
   function handleDelete(id: string) {
     if (typeof window !== "undefined" && !window.confirm("Удалить байк?")) return;
-    persist(bikes.filter((x) => x.id !== id));
+    deleteMut.mutate(id, {
+      onSuccess: () => toast.success("Байк удалён"),
+      onError: (err) =>
+        toast.error("Не удалось удалить", {
+          description: err instanceof Error ? err.message : String(err),
+        }),
+    });
   }
 
   return (
     <>
       <MobileGarage
         bikes={bikes}
-        onPersist={persist}
+        onPersist={() => {
+          /* persist делается per-mutation, общий callback не нужен */
+        }}
         onAddBike={openAdd}
         onEditBike={openEdit}
         onDeleteBike={handleDelete}
@@ -67,4 +172,3 @@ function GaragePage() {
     </>
   );
 }
-

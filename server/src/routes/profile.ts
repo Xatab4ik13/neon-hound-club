@@ -60,6 +60,7 @@ export async function profileRoutes(app: FastifyInstance) {
         nick: users.nick,
         role: users.role,
         emailVerified: users.emailVerified,
+        joinedAt: users.createdAt,
         phone: profiles.phone,
         city: profiles.city,
         avatarUrl: profiles.avatarUrl,
@@ -119,7 +120,7 @@ export async function profileRoutes(app: FastifyInstance) {
   // GET /api/v1/profile/:nick — публичный (для шеринга профиля)
   app.get<{ Params: { nick: string } }>("/:nick", async (req, reply) => {
     const [u] = await db
-      .select({ id: users.id, nick: users.nick })
+      .select({ id: users.id, nick: users.nick, createdAt: users.createdAt, role: users.role })
       .from(users)
       .where(sql`lower(${users.nick}) = lower(${req.params.nick})`)
       .limit(1);
@@ -131,15 +132,22 @@ export async function profileRoutes(app: FastifyInstance) {
       .from(bikes)
       .where(and(eq(bikes.userId, u.id), eq(bikes.isPrimary, true)))
       .limit(1);
+    const [{ bikesCount }] = await db
+      .select({ bikesCount: sql<number>`count(*)::int` })
+      .from(bikes)
+      .where(eq(bikes.userId, u.id));
 
     return {
       nick: u.nick,
+      role: u.role,
+      joinedAt: u.createdAt,
       city: p?.city ?? null,
       avatarUrl: p?.avatarUrl ?? null,
       bio: p?.bio ?? null,
       instagram: p?.instagram ?? null,
       telegram: p?.telegram ?? null,
       youtube: p?.youtube ?? null,
+      bikesCount,
       primaryBike: primary
         ? {
             brand: primary.brand,
@@ -163,6 +171,13 @@ const createBikeSchema = z.object({
   color: z.string().trim().max(40).nullable().optional(),
   nickname: z.string().trim().max(60).nullable().optional(),
   notes: z.string().max(5000).nullable().optional(),
+  mileage: z.string().trim().max(40).nullable().optional(),
+  purchaseDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "ожидается yyyy-mm-dd")
+    .nullable()
+    .optional(),
+  mods: z.array(z.string().trim().min(1).max(80)).max(50).default([]),
   photos: z.array(ourS3Url).max(20).default([]),
   isPrimary: z.boolean().default(false),
 });
@@ -224,6 +239,9 @@ export async function garageRoutes(app: FastifyInstance) {
         color: d.color ?? null,
         nickname: d.nickname ?? null,
         notes: d.notes ?? null,
+        mileage: d.mileage ?? null,
+        purchaseDate: d.purchaseDate ?? null,
+        mods: d.mods,
         photos: d.photos,
         isPrimary: shouldBePrimary,
       })

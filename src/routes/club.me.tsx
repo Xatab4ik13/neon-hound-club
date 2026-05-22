@@ -15,7 +15,8 @@ import {
 } from "lucide-react";
 import { SettingsModal } from "@/components/club/SettingsModal";
 import { BadgeCase } from "@/components/club/BadgeCase";
-import { ME } from "@/data/profile";
+import { useMyProfile } from "@/lib/garage-api";
+import { useViewer } from "@/hooks/use-viewer";
 import {
   useCurrentRank,
   useRankState,
@@ -33,7 +34,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 export const Route = createFileRoute("/club/me")({
   head: () => ({
     meta: [
-      { title: `Профиль ${ME.nick} — клуб HELLHOUND` },
+      { title: `Профиль — клуб HELLHOUND` },
       { name: "description", content: "Личный кабинет райдера HELLHOUND." },
       { name: "robots", content: "noindex" },
     ],
@@ -67,12 +68,17 @@ function MePage() {
   const [bgSheetOpen, setBgSheetOpen] = useState(false);
   const isMobile = useIsMobile();
   const { tierInfo } = usePassState();
+  const { signOut } = useViewer();
 
-  const handleLogout = () => {
-    if (typeof window !== "undefined" && window.confirm("Выйти из клуба?")) {
+  const handleLogout = async () => {
+    if (typeof window !== "undefined" && !window.confirm("Выйти из клуба?")) return;
+    try {
+      await signOut();
+    } finally {
       window.location.href = "/";
     }
   };
+
 
   return (
     <main className="mx-auto w-full max-w-3xl px-4 py-6 md:px-8 md:py-10">
@@ -334,7 +340,16 @@ function BackgroundPickerSheet({
 
 function ProfileHero({ onSettings }: { onSettings: () => void }) {
   const { rank, plaqueBg, xp, xpMax, xpPct, isMax, next } = useCurrentRank();
+  const { nick: viewerNick } = useViewer();
+  const profileQ = useMyProfile();
+  const profile = profileQ.data;
 
+  const nick = profile?.nick ?? viewerNick ?? "RIDER";
+  const city = profile?.city ?? null;
+  const joinedDate = profile?.joinedAt ? new Date(profile.joinedAt) : null;
+  const joinedLabel = joinedDate
+    ? joinedDate.toLocaleDateString("ru-RU", { month: "long", year: "numeric" })
+    : null;
 
   return (
     <section
@@ -356,44 +371,61 @@ function ProfileHero({ onSettings }: { onSettings: () => void }) {
             className="relative h-28 w-28 overflow-hidden rounded-full ring-4 ring-offset-4 ring-offset-[#0b0b0b] md:h-32 md:w-32"
             style={{ backgroundColor: rank.accent, boxShadow: `0 0 0 4px ${rank.accentSoft}` }}
           >
-            <div
-              aria-hidden
-              className="absolute inset-0 opacity-20"
-              style={{
-                backgroundImage:
-                  "repeating-linear-gradient(45deg, #000 0, #000 1px, transparent 0, transparent 50%)",
-                backgroundSize: "5px 5px",
-              }}
-            />
-            <div className="absolute inset-0 flex items-center justify-center">
-              <span
-                className="font-display text-4xl font-black italic uppercase md:text-5xl"
-                style={{ color: rank.onAccent }}
-              >
-                {ME.nick.slice(0, 2)}
-              </span>
-            </div>
+            {profile?.avatarUrl ? (
+              <img
+                src={profile.avatarUrl}
+                alt={nick}
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+            ) : (
+              <>
+                <div
+                  aria-hidden
+                  className="absolute inset-0 opacity-20"
+                  style={{
+                    backgroundImage:
+                      "repeating-linear-gradient(45deg, #000 0, #000 1px, transparent 0, transparent 50%)",
+                    backgroundSize: "5px 5px",
+                  }}
+                />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span
+                    className="font-display text-4xl font-black italic uppercase md:text-5xl"
+                    style={{ color: rank.onAccent }}
+                  >
+                    {nick.slice(0, 2)}
+                  </span>
+                </div>
+              </>
+            )}
           </div>
         </div>
 
         {/* Identity */}
         <div className="min-w-0 flex-1">
           <h1 className="font-display text-3xl font-black italic uppercase tracking-tight text-foreground md:text-4xl">
-            {ME.nick}
+            {nick}
           </h1>
           <div className="mt-2 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 font-mono text-xs uppercase tracking-wider text-muted-foreground md:justify-start">
-            <span className="flex items-center gap-1.5">
-              <MapPin className="h-3.5 w-3.5" />
-              {ME.city}
-            </span>
-            <span className="flex items-center gap-1.5">
-              <Bike className="h-3.5 w-3.5" />
-              {ME.bike}
-            </span>
-            <span className="flex items-center gap-1.5">
-              <Calendar className="h-3.5 w-3.5" />в клубе с {ME.joined}
-            </span>
+            {city && (
+              <span className="flex items-center gap-1.5">
+                <MapPin className="h-3.5 w-3.5" />
+                {city}
+              </span>
+            )}
+            {profile && profile.bikesCount > 0 && (
+              <span className="flex items-center gap-1.5">
+                <Bike className="h-3.5 w-3.5" />
+                {profile.bikesCount} мото
+              </span>
+            )}
+            {joinedLabel && (
+              <span className="flex items-center gap-1.5">
+                <Calendar className="h-3.5 w-3.5" />в клубе с {joinedLabel}
+              </span>
+            )}
           </div>
+
 
           {/* Rank badge + XP bar */}
           <div className="mt-5">

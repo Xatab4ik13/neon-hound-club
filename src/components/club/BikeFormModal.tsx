@@ -22,11 +22,18 @@ type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   bike: StoredBike | null; // null = create
-  onSave: (bike: StoredBike) => void;
+  /**
+   * Сохранение байка.
+   * - bike: текущая форма (photo — либо http(s) URL уже на S3, либо dataURL-превью)
+   * - photoFile: если юзер выбрал новый файл — передаём File для загрузки в S3.
+   * Возвращает Promise: на время аплоада форма блокируется.
+   */
+  onSave: (bike: StoredBike, photoFile?: File | null) => void | Promise<void>;
 };
 
-const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
+const MAX_PHOTO_BYTES = 15 * 1024 * 1024; // 15 МБ — большие фото для кропа
 const YEARS = getYears();
+
 
 export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
   const [brand, setBrand] = useState("");
@@ -41,7 +48,10 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
   const [mods, setMods] = useState<string[]>([]);
   const [modInput, setModInput] = useState("");
   const [photo, setPhoto] = useState<string | undefined>(undefined);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoError, setPhotoError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
 
   // Источники данных
   const [makes, setMakes] = useState<string[]>([]);
@@ -77,9 +87,12 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
       setMods([]);
       setPhoto(undefined);
     }
+    setPhotoFile(null);
     setModInput("");
     setPhotoError(null);
+    setSubmitting(false);
   }, [open, bike]);
+
 
   // Загрузка списка марок
   useEffect(() => {
@@ -137,18 +150,19 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
       return;
     }
     if (file.size > MAX_PHOTO_BYTES) {
-      setPhotoError("Файл больше 5 МБ");
+      setPhotoError("Файл больше 15 МБ");
       return;
     }
+    setPhotoFile(file);
     const reader = new FileReader();
     reader.onload = () => setPhoto(String(reader.result));
     reader.onerror = () => setPhotoError("Не удалось прочитать файл");
     reader.readAsDataURL(file);
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!brand.trim() || !model.trim()) return;
+    if (!brand.trim() || !model.trim() || submitting) return;
     const result: StoredBike = {
       id: bike?.id ?? newBikeId(),
       brand: brand.trim(),
@@ -162,12 +176,20 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
       mods: mods.length > 0 ? mods : undefined,
       photo: photo || undefined,
     };
-    onSave(result);
-    onOpenChange(false);
+    try {
+      setSubmitting(true);
+      await onSave(result, photoFile);
+      onOpenChange(false);
+    } catch (err) {
+      setPhotoError(err instanceof Error ? err.message : "Не удалось сохранить");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
+
   const isMobile = useIsMobile();
-  const canSubmit = !!brand.trim() && !!model.trim();
+  const canSubmit = !!brand.trim() && !!model.trim() && !submitting;
 
   const formBody = (
     <form id="bike-form" onSubmit={handleSubmit} className="space-y-5 pt-2">
@@ -227,7 +249,7 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
         photo={photo}
         error={photoError}
         onPick={handlePhoto}
-        onClear={() => setPhoto(undefined)}
+        onClear={() => { setPhoto(undefined); setPhotoFile(null); }}
       />
 
       <div className="grid gap-3 sm:grid-cols-2">
@@ -315,7 +337,7 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
             disabled={!canSubmit}
             className="border border-primary bg-primary px-4 py-2 font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40"
           >
-            {bike ? "Сохранить" : "Добавить"}
+            {submitting ? "Сохраняем…" : bike ? "Сохранить" : "Добавить"}
           </button>
         </div>
       )}

@@ -7,6 +7,7 @@ import {
   integer,
   boolean,
   jsonb,
+  date,
   index,
 } from "drizzle-orm/pg-core";
 import { users } from "./users.js";
@@ -59,6 +60,9 @@ export const bikes = pgTable(
     nickname: varchar("nickname", { length: 60 }), // прозвище мота, опционально
     notes: text("notes"), // свободный текст: тюнинг, особенности
     photos: jsonb("photos").$type<string[]>().notNull().default([]),
+    mileage: varchar("mileage", { length: 40 }), // свободный текст: "18 400 км"
+    purchaseDate: date("purchase_date"), // ISO yyyy-mm-dd
+    mods: jsonb("mods").$type<string[]>().notNull().default([]),
     isPrimary: boolean("is_primary").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
