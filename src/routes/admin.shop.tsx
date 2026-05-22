@@ -55,6 +55,8 @@ function ShopPage() {
       category: p.category,
       sub: p.sub,
       image: p.image,
+      description: p.description,
+      ticketsBonus: p.ticketsBonus,
       status: "active" as const,
     })),
   );
@@ -72,6 +74,7 @@ function ShopPage() {
       stock: 0,
       category: "apparel",
       image: "",
+      ticketsBonus: 0,
       status: "draft",
     });
     setProductOpen(true);
