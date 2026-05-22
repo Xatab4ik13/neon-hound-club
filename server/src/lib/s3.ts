@@ -109,3 +109,21 @@ export function keyFromPublicUrl(url: string | null | undefined): string | null 
   if (!url.startsWith(prefix)) return null;
   return url.slice(prefix.length);
 }
+
+/** URL принадлежит нашему медиа-хранилищу? */
+export function isOurS3Url(url: string | null | undefined): boolean {
+  if (!url) return false;
+  return url.startsWith(S3_PUBLIC_URL + "/");
+}
+
+/** Удалить объект по публичному URL, если он наш. Молча проглатывает ошибки. */
+export async function deleteByPublicUrl(url: string | null | undefined): Promise<void> {
+  const key = keyFromPublicUrl(url);
+  if (!key) return;
+  try {
+    await deleteObject(key);
+  } catch {
+    // объект мог уже отсутствовать — не падаем
+  }
+}
+
