@@ -39,6 +39,11 @@ function CheckoutPage() {
   }, [isAuthed, items.length, navigate]);
 
   const cashback = Math.floor(total / 200);
+  const ticketsFromDigital = items.reduce(
+    (s, i) => s + (i.ticketsBonus ?? 0) * i.qty,
+    0,
+  );
+  const totalTickets = cashback + ticketsFromDigital;
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,9 +51,10 @@ function CheckoutPage() {
     const orderId = `HH-${Date.now().toString(36).toUpperCase().slice(-6)}`;
     setTimeout(() => {
       clear();
-      navigate({ to: "/checkout/success", search: { o: orderId, t: cashback } });
+      navigate({ to: "/checkout/success", search: { o: orderId, t: totalTickets } });
     }, 600);
   };
+
 
   if (!isAuthed || items.length === 0) return null;
 
