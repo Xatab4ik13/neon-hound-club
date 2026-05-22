@@ -1,66 +1,115 @@
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useMemo, type ReactNode } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ME } from "@/data/profile";
+import { apiFetch, ApiError } from "@/lib/api";
 
 type Tier = "silver" | "gold" | "platinum" | null;
 
+type SessionUser = {
+  id: string;
+  email: string;
+  nick: string;
+  role: "user" | "admin";
+};
+
 type Viewer = {
   isAuthed: boolean;
+  user: SessionUser | null;
   nick: string | null;
   tier: Tier;
   tickets: number;
-  /** false до тех пор пока не прочитали localStorage — нужно чтобы хедер не «прыгал». */
+  /** false пока React Query не успела сходить за /me — нужно чтобы хедер не «прыгал». */
   hydrated: boolean;
 };
 
 type ViewerContextValue = Viewer & {
-  /** Dev-only: переключатель «гость / участник». Удалить, когда подключим реальный auth. */
-  toggleAuth: () => void;
-  signOut: () => void;
+  signIn: (email: string, password: string) => Promise<SessionUser>;
+  signUp: (email: string, password: string, nick: string) => Promise<SessionUser>;
+  signOut: () => Promise<void>;
 };
-
-const STORAGE_KEY = "hh:viewer:isAuthed";
 
 const ViewerContext = createContext<ViewerContextValue | null>(null);
 
-function readInitial(): boolean {
-  if (typeof window === "undefined") return false;
-  return window.localStorage.getItem(STORAGE_KEY) === "1";
+const ME_KEY = ["auth", "me"] as const;
+
+async function fetchMe(): Promise<SessionUser | null> {
+  try {
+    const res = await apiFetch<{ user: SessionUser }>("/api/v1/auth/me");
+    return res.user;
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 401) return null;
+    throw e;
+  }
 }
 
 export function ViewerProvider({ children }: { children: ReactNode }) {
-  const [isAuthed, setIsAuthed] = useState<boolean>(false);
-  const [hydrated, setHydrated] = useState<boolean>(false);
+  const qc = useQueryClient();
 
-  // Hydrate after mount, чтобы не ломать SSR.
-  useEffect(() => {
-    setIsAuthed(readInitial());
-    setHydrated(true);
-  }, []);
+  const meQ = useQuery({
+    queryKey: ME_KEY,
+    queryFn: fetchMe,
+    enabled: typeof window !== "undefined",
+    staleTime: 60_000,
+    retry: false,
+  });
 
-  const persist = useCallback((value: boolean) => {
-    setIsAuthed(value);
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem(STORAGE_KEY, value ? "1" : "0");
-    }
-  }, []);
+  const signIn = useCallback(
+    async (email: string, password: string) => {
+      const { user } = await apiFetch<{ user: SessionUser }>("/api/v1/auth/login", {
+        method: "POST",
+        body: JSON.stringify({ email, password }),
+      });
+      qc.setQueryData(ME_KEY, user);
+      return user;
+    },
+    [qc],
+  );
 
-  const toggleAuth = useCallback(() => persist(!isAuthed), [isAuthed, persist]);
-  const signOut = useCallback(() => persist(false), [persist]);
+  const signUp = useCallback(
+    async (email: string, password: string, nick: string) => {
+      const { user } = await apiFetch<{ user: SessionUser }>("/api/v1/auth/register", {
+        method: "POST",
+        body: JSON.stringify({ email, password, nick }),
+      });
+      qc.setQueryData(ME_KEY, user);
+      return user;
+    },
+    [qc],
+  );
 
-  const value: ViewerContextValue = {
-    isAuthed,
-    nick: isAuthed ? ME.nick : null,
-    // Тир пока хардкодим — у профиля нет поля. Подменим, когда появится.
-    tier: isAuthed ? "gold" : null,
-    tickets: isAuthed ? ME.totals.tickets : 0,
-    hydrated,
-    toggleAuth,
-    signOut,
-  };
+  const signOutMutation = useMutation({
+    mutationFn: () => apiFetch<{ ok: true }>("/api/v1/auth/logout", { method: "POST" }),
+    onSettled: () => {
+      qc.setQueryData(ME_KEY, null);
+      qc.invalidateQueries({ queryKey: ME_KEY });
+    },
+  });
+
+  const signOut = useCallback(async () => {
+    await signOutMutation.mutateAsync();
+  }, [signOutMutation]);
+
+  const user = meQ.data ?? null;
+  const isAuthed = !!user;
+
+  const value = useMemo<ViewerContextValue>(
+    () => ({
+      isAuthed,
+      user,
+      nick: user?.nick ?? null,
+      // Tier и tickets подменим, когда поднимем эндпоинты Hell Pass. Пока — мок только для залогиненных.
+      tier: isAuthed ? "gold" : null,
+      tickets: isAuthed ? ME.totals.tickets : 0,
+      hydrated: meQ.isFetched,
+      signIn,
+      signUp,
+      signOut,
+    }),
+    [isAuthed, user, meQ.isFetched, signIn, signUp, signOut],
+  );
 
   return <ViewerContext.Provider value={value}>{children}</ViewerContext.Provider>;
 }
-
 
 export function useViewer() {
   const ctx = useContext(ViewerContext);
