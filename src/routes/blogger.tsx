@@ -2,11 +2,10 @@ import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tansta
 import { useEffect, useState } from "react";
 import { Newspaper, Ticket, Bot, Settings, type LucideIcon } from "lucide-react";
 import { HellhoundPlaqueLarge } from "@/components/club/HellhoundPlaque";
-import { BloggerProfileModal } from "@/components/blogger/BloggerProfileModal";
 import { BloggerMobileTopBar } from "@/components/blogger/BloggerMobileTopBar";
 import { BloggerMobileTabBar } from "@/components/blogger/BloggerMobileTabBar";
 import { MobileTransition } from "@/components/club/MobileTransition";
-import { bloggerProfileStore, useBloggerProfile } from "@/data/blogger-profile";
+import { useBloggerProfile } from "@/data/blogger-profile";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useViewer } from "@/hooks/use-viewer";
 
