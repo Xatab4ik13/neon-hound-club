@@ -55,7 +55,7 @@ export function PostCard({ post, moderate = false }: { post: Post; moderate?: bo
   const [liked, setLiked] = useState(post.liked);
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const likeCount = post.likes + (liked ? 1 : 0);
+  const likeCount = post.likes + (liked ? 1 : 0) - (post.liked ? 1 : 0);
   const author = PUBLIC_USERS[post.authorSlug];
 
   return (
