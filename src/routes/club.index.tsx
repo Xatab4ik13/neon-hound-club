@@ -1,11 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Smile, Paperclip, Send, Search as SearchIcon, Clock, Sticker, X } from "lucide-react";
+import { Smile, Paperclip, Send, Search as SearchIcon, Clock, Sticker, X, Pin, PinOff, Trash2 } from "lucide-react";
 import { RANKS, type RankId } from "@/data/ranks";
 import { ME_SLUG, PUBLIC_USERS } from "@/data/users";
 import { useFeedPosts, feedStore, type FeedComment, type FeedPost, type FeedPoll } from "@/data/feed-store";
 import { HellhoundAvatar, HellhoundChip, isHell } from "@/components/club/HellhoundPlaque";
 import { IOSSheet } from "@/components/ios/IOSSheet";
+
 
 
 export const Route = createFileRoute("/club/")({
