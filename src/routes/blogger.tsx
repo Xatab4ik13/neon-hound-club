@@ -30,7 +30,6 @@ const NAV: { label: string; href: string; icon: LucideIcon }[] = [
 function BloggerLayout() {
   const [menuOpen, setMenuOpen] = useState(false);
   const { pathname } = useLocation();
-  const profile = useBloggerProfile();
   const isMobile = useIsMobile();
   const viewer = useViewer();
   const navigate = useNavigate();
