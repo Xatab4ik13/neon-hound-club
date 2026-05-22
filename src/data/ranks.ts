@@ -18,16 +18,15 @@ export type PlaqueBg =
   | "legend-chrome"
   | "legend-molten-gold"
   | "legend-cyber-rune"
-  | "legend-holo-prism"
-  | "vip-platinum";
+  | "legend-holo-prism";
 
 export type RankId =
   | "rookie"
   | "pit-crew"
   | "road-captain"
   | "alpha-hound"
-  | "hell-legend"
-  | "vip";
+  | "hell-legend";
+
 
 export type RankMeta = {
   id: RankId;
