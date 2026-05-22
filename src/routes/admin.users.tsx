@@ -131,7 +131,7 @@ function UserDrawer({
   const [badgeOpen, setBadgeOpen] = useState(false);
 
   const patchMut = useMutation({
-    mutationFn: (patch: { role?: "user" | "admin"; blocked?: boolean }) =>
+    mutationFn: (patch: { role?: "user" | "admin" | "blogger"; blocked?: boolean }) =>
       patchAdminUser(userId, patch),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: adminQk.user(userId) });
@@ -173,6 +173,13 @@ function UserDrawer({
                 <Ban className="h-4 w-4" /> Забанить
               </Btn>
             )}
+            <Btn
+              onClick={() =>
+                patchMut.mutate({ role: u.role === "blogger" ? "user" : "blogger" })
+              }
+            >
+              {u.role === "blogger" ? "Снять блогера" : "Сделать блогером"}
+            </Btn>
             <Btn
               variant="primary"
               onClick={() =>

@@ -35,7 +35,7 @@ export type AdminUserListItem = {
   id: string;
   email: string;
   nick: string;
-  role: "user" | "admin";
+  role: "user" | "admin" | "blogger";
   emailVerified: boolean;
   blocked: boolean;
   createdAt: string;
@@ -73,9 +73,9 @@ export function fetchAdminUser(id: string) {
 
 export function patchAdminUser(
   id: string,
-  patch: { role?: "user" | "admin"; blocked?: boolean },
+  patch: { role?: "user" | "admin" | "blogger"; blocked?: boolean },
 ) {
-  return apiFetch<{ id: string; nick: string; role: "user" | "admin"; blocked: boolean }>(
+  return apiFetch<{ id: string; nick: string; role: "user" | "admin" | "blogger"; blocked: boolean }>(
     `/api/v1/admin/users/${id}`,
     { method: "PATCH", body: JSON.stringify(patch) },
   );
