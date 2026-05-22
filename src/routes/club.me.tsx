@@ -266,7 +266,7 @@ function BackgroundPickerSheet({
     <IOSSheet open={open} onOpenChange={onOpenChange} title="Фон профиля" fullHeight>
       <div className="space-y-5">
         <p className="px-1 font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-          Выбери визуал плашки. Новые фоны открываются с прокачкой ранга. У VIP — всё.
+          Выбери визуал плашки. Новые фоны открываются с прокачкой ранга.
         </p>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {allBgs.map((bg) => {
