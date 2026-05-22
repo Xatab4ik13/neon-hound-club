@@ -51,7 +51,7 @@ function ClubFeedPage() {
 
 // ───────── Post ─────────
 
-function PostCard({ post }: { post: Post }) {
+export function PostCard({ post, moderate = false }: { post: Post; moderate?: boolean }) {
   const [liked, setLiked] = useState(false);
   const [commentsOpen, setCommentsOpen] = useState(false);
   const likeCount = post.likes + (liked ? 1 : 0);
