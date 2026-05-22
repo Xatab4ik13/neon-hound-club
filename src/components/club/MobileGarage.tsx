@@ -49,6 +49,7 @@ type Props = {
   onAddBike: () => void;
   onEditBike: (b: StoredBike) => void;
   onDeleteBike: (id: string) => void;
+  variant?: "mobile" | "desktop";
 };
 
 const SERVICE_TYPES: ServiceType[] = ["oil", "chain", "tires", "brakes", "to", "filter", "other"];
