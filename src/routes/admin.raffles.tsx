@@ -396,10 +396,12 @@ function RaffleDetail({
   raffle,
   onBack,
   onUpdate,
+  onDelete,
 }: {
   raffle: Raffle;
   onBack: () => void;
   onUpdate: (r: Raffle) => void;
+  onDelete: () => void;
 }) {
   const setPrizes = (prizes: Prize[]) => onUpdate({ ...raffle, prizes });
 
@@ -416,7 +418,13 @@ function RaffleDetail({
       <PageHeader
         title={raffle.name}
         description={raffle.description ?? "Управление призами этого розыгрыша"}
+        actions={
+          <Btn variant="danger" onClick={onDelete}>
+            <Trash2 className="h-4 w-4" /> Удалить розыгрыш
+          </Btn>
+        }
       />
+
 
       <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Участников" value={raffle.participants.length.toLocaleString("ru-RU")} />
