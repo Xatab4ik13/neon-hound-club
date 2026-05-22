@@ -19,6 +19,8 @@ export async function buildApp() {
   await app.register(cors, {
     origin: process.env.FRONTEND_ORIGIN ?? "https://hhr.pro",
     credentials: true,
+    methods: ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
   });
 
   await app.register(cookie);
