@@ -399,3 +399,10 @@ body[data-modal-open="1"] [class*="plaque-"] {
 
 
 
+
+/* Freeze decorative animations inside plaque previews (perf: 17 thumbs at once). */
+.plaque-frozen *,
+.plaque-frozen *::before,
+.plaque-frozen *::after {
+  animation: none !important;
+}
