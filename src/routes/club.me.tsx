@@ -6,6 +6,8 @@ import { BadgeCase } from "@/components/club/BadgeCase";
 import { ME } from "@/data/profile";
 import { useCurrentRank } from "@/data/rank-state";
 import { PlaqueBackground } from "./club";
+import { IOSListSection, IOSListRow } from "@/components/ios/IOSList";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export const Route = createFileRoute("/club/me")({
   head: () => ({
@@ -20,6 +22,13 @@ export const Route = createFileRoute("/club/me")({
 
 function MePage() {
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const isMobile = useIsMobile();
+
+  const handleLogout = () => {
+    if (typeof window !== "undefined" && window.confirm("Выйти из клуба?")) {
+      window.location.href = "/";
+    }
+  };
 
   return (
     <main className="mx-auto w-full max-w-3xl px-4 py-6 md:px-8 md:py-10">
@@ -33,28 +42,47 @@ function MePage() {
       </section>
 
       <section aria-label="Настройки" className="mt-8 md:mt-12">
-        <h2 className="mb-4 font-display text-2xl font-black italic uppercase tracking-tight text-foreground md:text-3xl">
-          Настройки
-        </h2>
-        <div className="space-y-2">
-          <ActionRow
-            icon={<Settings className="h-5 w-5" />}
-            label="Профиль и аккаунт"
-            description="Ник, фото, контакты, привязки"
-            onClick={() => setSettingsOpen(true)}
-          />
-          <ActionRow
-            icon={<LogOut className="h-5 w-5" />}
-            label="Выйти из клуба"
-            tone="danger"
-            onClick={() => {
-              if (typeof window !== "undefined" && window.confirm("Выйти из клуба?")) {
-                // TODO: подключить supabase.auth.signOut
-                window.location.href = "/";
-              }
-            }}
-          />
-        </div>
+        {isMobile ? (
+          <>
+            <IOSListSection title="Аккаунт">
+              <IOSListRow
+                icon={<Settings className="h-5 w-5" />}
+                label="Профиль и аккаунт"
+                description="Ник, фото, контакты, привязки"
+                chevron
+                onClick={() => setSettingsOpen(true)}
+              />
+            </IOSListSection>
+            <IOSListSection>
+              <IOSListRow
+                icon={<LogOut className="h-5 w-5" />}
+                label="Выйти из клуба"
+                tone="danger"
+                onClick={handleLogout}
+              />
+            </IOSListSection>
+          </>
+        ) : (
+          <>
+            <h2 className="mb-4 font-display text-2xl font-black italic uppercase tracking-tight text-foreground md:text-3xl">
+              Настройки
+            </h2>
+            <div className="space-y-2">
+              <ActionRow
+                icon={<Settings className="h-5 w-5" />}
+                label="Профиль и аккаунт"
+                description="Ник, фото, контакты, привязки"
+                onClick={() => setSettingsOpen(true)}
+              />
+              <ActionRow
+                icon={<LogOut className="h-5 w-5" />}
+                label="Выйти из клуба"
+                tone="danger"
+                onClick={handleLogout}
+              />
+            </div>
+          </>
+        )}
       </section>
 
       <SettingsModal open={settingsOpen} onOpenChange={setSettingsOpen} />
