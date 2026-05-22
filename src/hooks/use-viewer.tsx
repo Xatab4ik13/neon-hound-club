@@ -67,15 +67,22 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
 
   const signUp = useCallback(
     async (email: string, password: string, nick: string) => {
-      const { user } = await apiFetch<{ user: SessionUser }>("/api/v1/auth/register", {
-        method: "POST",
-        body: JSON.stringify({ email, password, nick }),
-      });
-      qc.setQueryData(ME_KEY, user);
-      return user;
+      // Бэкенд НЕ логинит сразу — ждём подтверждения email.
+      const res = await apiFetch<{ ok: true; pendingVerification: true; email: string }>(
+        "/api/v1/auth/register",
+        { method: "POST", body: JSON.stringify({ email, password, nick }) },
+      );
+      return res;
     },
-    [qc],
+    [],
   );
+
+  const resendVerification = useCallback(async (email: string) => {
+    await apiFetch<{ ok: true }>("/api/v1/auth/resend-verification", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    });
+  }, []);
 
   const signOutMutation = useMutation({
     mutationFn: () => apiFetch<{ ok: true }>("/api/v1/auth/logout", { method: "POST" }),
