@@ -260,3 +260,131 @@ export async function createOrder(input: CreateOrderInput) {
     body: JSON.stringify(input),
   });
 }
+
+// ============================================================================
+// NEWS (public)
+// ============================================================================
+
+export type NewsListItem = {
+  slug: string;
+  title: string;
+  excerpt: string;
+  tag: string;
+  coverUrl: string | null;
+  publishedAt: string | null;
+};
+
+export type NewsArticle = NewsListItem & {
+  id: string;
+  body: string;
+  metaTitle: string;
+  metaDescription: string;
+  ogImage: string | null;
+  status: "draft" | "published";
+};
+
+export function fetchNewsList(limit = 20) {
+  return apiFetch<{ items: NewsListItem[] }>(`/api/v1/news?limit=${limit}`);
+}
+
+export function fetchNewsArticle(slug: string) {
+  return apiFetch<NewsArticle>(`/api/v1/news/${slug}`);
+}
+
+// ============================================================================
+// INVITES
+// ============================================================================
+
+export type InvitedFriend = {
+  id: string;
+  nick: string;
+  status: "joined" | "active";
+  ticketsRewarded: number;
+  joinedAt: string;
+  activatedAt: string | null;
+};
+
+export type MyInvitesResponse = {
+  code: string;
+  rewardTickets: number;
+  totals: { total: number; active: number; tickets: number };
+  items: InvitedFriend[];
+};
+
+export function fetchMyInvites() {
+  return apiFetch<MyInvitesResponse>(`/api/v1/invites/me`);
+}
+
+// ============================================================================
+// XP / RANK
+// ============================================================================
+
+export type RankInfo = {
+  xp: number;
+  rankIndex: number;
+  rankId: string;
+  rankLabel: string;
+  nextLabel: string | null;
+  pct: number;
+  inRank: number;
+  span: number;
+  toNext: number;
+  isMax: boolean;
+};
+
+export type XpEvent = {
+  id: string;
+  amount: number;
+  source: string;
+  reason: string;
+  refType: string | null;
+  refId: string | null;
+  createdAt: string;
+};
+
+export function fetchMyRank() {
+  return apiFetch<RankInfo>(`/api/v1/xp/me`);
+}
+
+export function fetchMyXpHistory(limit = 50) {
+  return apiFetch<{ items: XpEvent[] }>(`/api/v1/xp/history?limit=${limit}`);
+}
+
+// ============================================================================
+// BADGES
+// ============================================================================
+
+export type BadgeRarity = "common" | "rare" | "epic" | "legendary" | "mythic";
+export type BadgeCategory = "rank" | "club" | "pass" | "event" | "achievement" | "founder";
+
+export type CatalogBadge = {
+  id: string;
+  code: string;
+  name: string;
+  description: string;
+  rarity: BadgeRarity;
+  category: BadgeCategory;
+  issue: string | null;
+  mintedOf: number | null;
+};
+
+export type MyBadge = CatalogBadge & {
+  badgeId: string;
+  pinned: boolean;
+  awardedAt: string;
+};
+
+export function fetchBadgesCatalog() {
+  return apiFetch<{ items: CatalogBadge[] }>(`/api/v1/badges`);
+}
+
+export function fetchMyBadges() {
+  return apiFetch<{ items: MyBadge[] }>(`/api/v1/badges/me`);
+}
+
+export function setBadgePinned(badgeId: string, pinned: boolean) {
+  return apiFetch<MyBadge>(`/api/v1/badges/me/${badgeId}`, {
+    method: "PATCH",
+    body: JSON.stringify({ pinned }),
+  });
+}
