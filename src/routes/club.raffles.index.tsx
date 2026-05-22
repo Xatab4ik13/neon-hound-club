@@ -33,14 +33,9 @@ export const Route = createFileRoute("/club/raffles/")({
 
 // ───────── Mock data ─────────
 
-const TICKET_PACKS = [
-  { id: "p1", count: 1, price: 300 },
-  { id: "p2", count: 3, price: 500, tag: "−45%" },
-  { id: "p3", count: 5, price: 700, tag: "−54%" },
-  { id: "p4", count: 10, price: 1000, hot: true, tag: "−67%" },
-  { id: "p5", count: 20, price: 1500, tag: "−75%" },
-  { id: "p6", count: 50, price: 3000, tag: "−80%" },
-];
+// ───────── Mock data ─────────
+
+
 
 type Past = {
   id: string;
