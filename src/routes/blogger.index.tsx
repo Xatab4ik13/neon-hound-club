@@ -3,11 +3,12 @@
 
 import { createFileRoute } from "@tanstack/react-router";
 import { useRef, useState } from "react";
-import { Image as ImageIcon, Send, Trash2, X, Pin, PinOff } from "lucide-react";
-import { feedStore, useFeedPosts, type FeedPost } from "@/data/feed-store";
+import { Image as ImageIcon, Send, Trash2, X, Pin, PinOff, BarChart3, Plus } from "lucide-react";
+import { feedStore, useFeedPosts, type FeedPost, type FeedPoll } from "@/data/feed-store";
 import { PUBLIC_USERS } from "@/data/users";
 import { HellhoundAvatar, HellhoundChip } from "@/components/club/HellhoundPlaque";
 import { useBloggerProfile } from "@/data/blogger-profile";
+
 
 const BLOGGER_SLUG = "hell";
 
