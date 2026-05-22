@@ -313,37 +313,194 @@ function RankAvatar({
 
 function CommentComposer({ postId }: { postId: string }) {
   const [value, setValue] = useState("");
+  const [panel, setPanel] = useState<null | "emoji" | "stickers">(null);
+  const [tab, setTab] = useState<"recent" | "emoji" | "stickers">("stickers");
   const me = PUBLIC_USERS[ME_SLUG];
   const disabled = value.trim().length === 0;
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!panel) return;
+    const onDoc = (e: MouseEvent) => {
+      if (!wrapRef.current?.contains(e.target as Node)) setPanel(null);
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [panel]);
 
   return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        if (disabled) return;
-        setValue("");
-        void postId;
-      }}
-      className="flex items-center gap-2 border-t border-white/[0.06] bg-black/40 px-3 py-2.5"
-    >
-      <RankAvatar initials={me.initials} rankId={me.rank} size={32} />
-      <input
-        type="text"
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        placeholder="Написать комментарий…"
-        className="min-w-0 flex-1 border border-white/[0.06] bg-black/40 px-3 py-2 text-[13px] text-foreground placeholder:text-muted-foreground/60 outline-none focus:border-primary/50"
-      />
-      <button
-        type="submit"
-        disabled={disabled}
-        className="px-3 py-2 font-mono text-[10px] font-bold uppercase tracking-widest text-primary transition-opacity disabled:opacity-30"
+    <div ref={wrapRef} className="relative border-t border-white/[0.06] bg-black/40">
+      {panel && (
+        <StickerPanel
+          tab={tab}
+          setTab={(t) => {
+            setTab(t);
+            setPanel(t === "stickers" ? "stickers" : "emoji");
+          }}
+          onClose={() => setPanel(null)}
+        />
+      )}
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (disabled) return;
+          setValue("");
+          setPanel(null);
+          void postId;
+        }}
+        className="flex items-end gap-2 px-3 py-2.5"
       >
-        отпр.
-      </button>
-    </form>
+        <RankAvatar initials={me.initials} rankId={me.rank} size={32} />
+
+        <div className="flex min-w-0 flex-1 items-center gap-1 rounded-3xl border border-white/[0.08] bg-black/60 pl-2 pr-1 py-1 focus-within:border-primary/40">
+          <button
+            type="button"
+            onClick={() => {
+              setPanel(panel ? null : "emoji");
+              setTab("emoji");
+            }}
+            className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-muted-foreground hover:text-foreground"
+            aria-label="Эмодзи и стикеры"
+          >
+            <Smile size={20} strokeWidth={1.6} />
+          </button>
+
+          <input
+            ref={inputRef}
+            type="text"
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            placeholder="Написать комментарий…"
+            className="min-w-0 flex-1 bg-transparent px-1 py-1.5 text-[14px] text-foreground placeholder:text-muted-foreground/60 outline-none"
+          />
+
+          <button
+            type="button"
+            className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-muted-foreground hover:text-foreground"
+            aria-label="Прикрепить"
+          >
+            <Paperclip size={18} strokeWidth={1.6} />
+          </button>
+        </div>
+
+        {disabled ? (
+          <button
+            type="button"
+            onClick={() => {
+              setPanel(panel === "stickers" ? null : "stickers");
+              setTab("stickers");
+            }}
+            className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-muted-foreground hover:text-foreground"
+            aria-label="Стикеры"
+          >
+            <Sticker size={22} strokeWidth={1.6} />
+          </button>
+        ) : (
+          <button
+            type="submit"
+            className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground transition-transform active:scale-95"
+            aria-label="Отправить"
+          >
+            <Send size={18} strokeWidth={2} className="-translate-x-[1px]" />
+          </button>
+        )}
+      </form>
+    </div>
   );
 }
+
+function StickerPanel({
+  tab,
+  setTab,
+  onClose,
+}: {
+  tab: "recent" | "emoji" | "stickers";
+  setTab: (t: "recent" | "emoji" | "stickers") => void;
+  onClose: () => void;
+}) {
+  void onClose;
+  return (
+    <div className="border-b border-white/[0.06] bg-[#0d0d0d]">
+      {/* Search */}
+      <div className="flex items-center gap-2 px-3 pt-3 pb-2">
+        <div className="flex flex-1 items-center gap-2 rounded-full bg-white/[0.05] px-3 py-1.5">
+          <SearchIcon size={14} className="text-muted-foreground" />
+          <input
+            type="text"
+            placeholder="Поиск стикеров"
+            className="min-w-0 flex-1 bg-transparent text-[13px] text-foreground placeholder:text-muted-foreground/60 outline-none"
+          />
+        </div>
+      </div>
+
+      {/* Grid placeholder */}
+      <div className="h-[220px] overflow-y-auto px-3 pb-2">
+        {tab === "stickers" ? (
+          <div className="grid grid-cols-5 gap-1.5 py-1">
+            {Array.from({ length: 15 }).map((_, i) => (
+              <div
+                key={i}
+                className="grid aspect-square place-items-center rounded-lg bg-white/[0.03] text-muted-foreground/40"
+              >
+                <Sticker size={22} strokeWidth={1.2} />
+              </div>
+            ))}
+            <div className="col-span-5 pt-3 text-center font-mono text-[10px] uppercase tracking-widest text-muted-foreground/50">
+              стикеры скоро
+            </div>
+          </div>
+        ) : tab === "emoji" ? (
+          <div className="grid grid-cols-8 gap-1 py-1 text-2xl">
+            {"😀 😁 😂 🤣 😊 😍 😎 🤘 🔥 💀 🏁 🏍️ ⚙️ 🛠️ 🏆 ⚡ 💯 👀 👍 🙏 🤝 🫡 😤 🥶".split(" ").map((e, i) => (
+              <button
+                key={i}
+                type="button"
+                className="grid aspect-square place-items-center rounded-lg hover:bg-white/[0.05]"
+              >
+                {e}
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div className="grid h-full place-items-center text-[12px] text-muted-foreground/60">
+            Здесь будут недавние
+          </div>
+        )}
+      </div>
+
+      {/* Tabs */}
+      <div className="flex items-center gap-1 border-t border-white/[0.06] px-2 py-1.5">
+        <PanelTab active={tab === "recent"} onClick={() => setTab("recent")} icon={<Clock size={16} />} />
+        <PanelTab active={tab === "emoji"} onClick={() => setTab("emoji")} icon={<Smile size={16} />} />
+        <PanelTab active={tab === "stickers"} onClick={() => setTab("stickers")} icon={<Sticker size={16} />} />
+      </div>
+    </div>
+  );
+}
+
+function PanelTab({
+  active,
+  onClick,
+  icon,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`grid h-8 w-8 place-items-center rounded-lg transition-colors ${
+        active ? "bg-white/[0.08] text-foreground" : "text-muted-foreground hover:text-foreground"
+      }`}
+    >
+      {icon}
+    </button>
+  );
+}
+
 
 // ───────── Utils & icons ─────────
 
