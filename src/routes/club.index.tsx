@@ -162,7 +162,11 @@ export function PostCard({ post, moderate = false }: { post: Post; moderate?: bo
           count={likeCount}
           label="Лайк"
           active={liked}
-          onClick={() => setLiked((v) => !v)}
+          onClick={() => {
+            const next = !liked;
+            setLiked(next);
+            feedStore.toggleLike(post.id, next);
+          }}
         />
         <PostAction
           icon={<CommentIcon />}
@@ -207,6 +211,7 @@ function PollBlock({ poll, postId }: { poll: FeedPoll; postId: string }) {
     if (poll.closed || voted) return;
     setVoted(id);
     if (typeof window !== "undefined") window.localStorage.setItem(storageKey, id);
+    feedStore.votePoll(postId, [id]);
   };
 
   const onRetract = () => {
