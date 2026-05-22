@@ -16,8 +16,10 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { ME } from "@/data/profile";
-import { type PlaqueBg } from "@/data/ranks";
+import { RANKS, getRankSpan, type PlaqueBg, type RankId } from "@/data/ranks";
 import { useCurrentRank } from "@/data/rank-state";
+import { useViewer } from "@/hooks/use-viewer";
+import { useMyProfile } from "@/lib/garage-api";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { MobileTabBar } from "@/components/club/MobileTabBar";
 import { MobileTopBar } from "@/components/club/MobileTopBar";
@@ -817,7 +819,19 @@ export function ProfilePlaque({
   compact?: boolean;
   onNavigate?: () => void;
 }) {
-  const { rank, plaqueBg, xp, xpMax, xpPct, isMax } = useCurrentRank();
+  const viewer = useViewer();
+  const myProfile = useMyProfile(viewer.isAuthed);
+  const mockRank = useCurrentRank();
+
+  // Реальный ник/ранг/xp с бэка, если есть. Иначе fallback на мок.
+  const nick = viewer.nick ?? ME.nick;
+  const realRankId = myProfile.data?.rank.rankId as RankId | undefined;
+  const realRankIdx = realRankId ? RANKS.findIndex((r) => r.id === realRankId) : -1;
+  const rank = realRankIdx >= 0 ? RANKS[realRankIdx] : mockRank.rank;
+  const xpPct = myProfile.data ? myProfile.data.rank.pct : mockRank.xpPct;
+  const xp = myProfile.data ? myProfile.data.rank.inRank : mockRank.xp;
+  const xpMax = realRankIdx >= 0 ? getRankSpan(realRankIdx) : mockRank.xpMax;
+  const plaqueBg = mockRank.plaqueBg; // выбор фона остаётся пользовательским
   const variant = PLAQUE_BG[plaqueBg];
   const size = compact ? 44 : 56;
 
