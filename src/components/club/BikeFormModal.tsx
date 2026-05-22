@@ -337,7 +337,7 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
             disabled={!canSubmit}
             className="border border-primary bg-primary px-4 py-2 font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40"
           >
-            {bike ? "Сохранить" : "Добавить"}
+            {submitting ? "Сохраняем…" : bike ? "Сохранить" : "Добавить"}
           </button>
         </div>
       )}
