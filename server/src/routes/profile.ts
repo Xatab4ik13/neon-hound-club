@@ -279,6 +279,10 @@ export async function garageRoutes(app: FastifyInstance) {
 
     await db.delete(bikes).where(eq(bikes.id, req.params.id));
 
+    // Подчистим фото в S3.
+    for (const url of b.photos ?? []) await deleteByPublicUrl(url);
+
+
     // если удалили primary и остались другие — назначим самого свежего основным
     if (b.isPrimary) {
       const [next] = await db
