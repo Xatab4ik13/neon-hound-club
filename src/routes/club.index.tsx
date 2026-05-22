@@ -101,20 +101,39 @@ export function PostCard({ post, moderate = false }: { post: Post; moderate?: bo
             >
               {post.pinned ? <PinOff className="h-3.5 w-3.5" /> : <Pin className="h-3.5 w-3.5" />}
             </button>
-            <button
-              type="button"
-              onClick={() => {
-                if (confirm("Удалить пост?")) feedStore.removePost(post.id);
-              }}
-              aria-label="Удалить пост"
-              title="Удалить пост"
-              className="grid h-8 w-8 place-items-center rounded-full border border-white/10 text-muted-foreground transition-colors hover:border-destructive/60 hover:text-destructive"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </button>
+            {confirmDelete ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => feedStore.removePost(post.id)}
+                  className="inline-flex h-8 items-center gap-1 rounded-full border border-destructive/50 bg-destructive/10 px-3 font-mono text-[10px] font-bold uppercase tracking-wider text-destructive"
+                >
+                  <Trash2 className="h-3 w-3" /> Удалить
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setConfirmDelete(false)}
+                  aria-label="Отмена"
+                  className="grid h-8 w-8 place-items-center rounded-full border border-white/10 text-muted-foreground hover:border-white/20 hover:text-foreground"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setConfirmDelete(true)}
+                aria-label="Удалить пост"
+                title="Удалить пост"
+                className="grid h-8 w-8 place-items-center rounded-full border border-white/10 text-muted-foreground transition-colors hover:border-destructive/60 hover:text-destructive"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
+            )}
           </div>
         )}
       </header>
+
 
       {post.text && (
         <p className="px-4 pb-3 pt-3 text-[15px] leading-[1.55] text-foreground/90 md:px-5">{post.text}</p>
