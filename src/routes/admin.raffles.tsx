@@ -61,6 +61,7 @@ function RafflesPage() {
         raffle={active}
         onBack={() => setActiveId(null)}
         onUpdate={(r) => rafflesStore.upsert(r)}
+        onDelete={() => setConfirm(active)}
       />
     );
   }
