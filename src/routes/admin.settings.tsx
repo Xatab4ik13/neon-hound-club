@@ -66,9 +66,6 @@ function SettingsPage() {
             <h3 className="text-sm font-semibold">Общие</h3>
           </PanelHeader>
           <div className="space-y-3 p-4">
-            <Field label="Кешбэк (рублей за 1 билет)" hint="Базовая ставка: 200 ₽ за билет">
-              <TextInput type="number" defaultValue={200} />
-            </Field>
             <Field label="Лимит товаров на главной">
               <TextInput type="number" defaultValue={6} />
             </Field>
