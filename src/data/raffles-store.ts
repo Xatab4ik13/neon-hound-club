@@ -18,16 +18,29 @@ export type RaffleParticipant = {
   tickets: number;
 };
 
+export type RaffleSpec = { label: string; value: string };
+
 export type Raffle = {
   id: string;
   name: string;
+  /** Короткий подзаголовок под заголовком (например "Спортбайк 2024 · 998 cc · из салона"). */
+  subtitle?: string;
+  /** Основное описание, многострочное (абзацы через пустую строку). */
   description?: string;
   cover?: string;
+  /** Дата окончания в формате YYYY-MM-DD (совместимо со старой версией). */
   endsAt: string;
+  /** Полная дата+время окончания ISO. Если задано — приоритетнее endsAt. */
+  deadlineAt?: string;
   createdAt: string;
+  /** Характеристики приза (для физических — спецификации мото/железа). */
+  specs?: RaffleSpec[];
+  /** Условия участия — список пунктов. */
+  rules?: string[];
   participants: RaffleParticipant[];
   prizes: RafflePrize[];
 };
+
 
 /** Сгенерировать список участников с распределением билетов по логнормальному паттерну. */
 function mockParticipants(slugs: string[], totalTickets: number): RaffleParticipant[] {
