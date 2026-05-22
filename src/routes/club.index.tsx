@@ -54,6 +54,7 @@ function ClubFeedPage() {
 export function PostCard({ post, moderate = false }: { post: Post; moderate?: boolean }) {
   const [liked, setLiked] = useState(false);
   const [commentsOpen, setCommentsOpen] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const likeCount = post.likes + (liked ? 1 : 0);
   const author = PUBLIC_USERS[post.authorSlug];
 
