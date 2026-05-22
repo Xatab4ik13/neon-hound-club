@@ -350,22 +350,8 @@ function Glyph({ id, color, glow }: { id: string; color: string; glow: string })
           <circle cx="30" cy="33.5" r="0.9" fill="#0a0a0a" />
         </g>
       );
-    case "rank-vip":
-      // Платиновая звезда с лавром
-      return (
-        <g>
-          {/* лавровые ветки */}
-          <path d="M12 30 Q14 22 18 18" stroke={c} strokeWidth="1.3" fill="none" strokeLinecap="round" />
-          <path d="M36 30 Q34 22 30 18" stroke={c} strokeWidth="1.3" fill="none" strokeLinecap="round" />
-          <path d="M13 28 L15 27 M13 25 L15 24 M14 22 L16 21" stroke={c} strokeWidth="1" strokeLinecap="round" opacity="0.85" />
-          <path d="M35 28 L33 27 M35 25 L33 24 M34 22 L32 21" stroke={c} strokeWidth="1" strokeLinecap="round" opacity="0.85" />
-          {/* звезда */}
-          <path d="M24 12 L26.6 19 L34 19.5 L28.3 24 L30.3 31 L24 27 L17.7 31 L19.7 24 L14 19.5 L21.4 19 Z"
-            fill="#0a0a0a" stroke={c} strokeWidth="1.4" strokeLinejoin="round" />
-          <path d="M24 16 L25.6 19.8 L29.5 20 L26.5 22.5 L27.5 26 L24 23.8 L20.5 26 L21.5 22.5 L18.5 20 L22.4 19.8 Z"
-            fill={c} opacity="0.4" />
-        </g>
-      );
+
+
     default:
       return (
         <g>
