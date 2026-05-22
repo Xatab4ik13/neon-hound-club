@@ -27,14 +27,29 @@ type PassTier = "Silver" | "Gold" | "Platinum" | "—";
 // до подключения БД. Считаем 1 раз по slug.
 type UserMeta = {
   fio: string;
+  email: string;
   phone: string;
+  address: string;
   registeredAt: string;
+  lastSeen: string;
   spent: number;
+  ordersCount: number;
+  ticketsBalance: number;
+  ticketsEarned: number;
+  ticketsSpent: number;
+  rafflesEntered: number;
+  rafflesWon: number;
+  referralCode: string;
+  referredCount: number;
   pass: PassTier;
+  passSince?: string;
+  passUntil?: string;
 };
 
 const FIO_FIRST = ["Алексей", "Иван", "Дмитрий", "Сергей", "Павел", "Артём", "Михаил", "Никита", "Роман", "Анна", "Мария", "Олег"];
 const FIO_LAST = ["Иванов", "Петров", "Сидоров", "Кузнецов", "Смирнов", "Соколов", "Попов", "Лебедев", "Козлов", "Новиков"];
+const CITIES = ["Москва", "Санкт-Петербург", "Краснодар", "Казань", "Новосибирск", "Екатеринбург"];
+const STREETS = ["ул. Ленина", "пр. Мира", "ул. Гагарина", "Кутузовский пр.", "Невский пр.", "ул. Лесная"];
 const TIERS: PassTier[] = ["Silver", "Gold", "Platinum", "—"];
 
 function hash(s: string) {
@@ -60,10 +75,48 @@ function metaFor(u: PublicUser): UserMeta {
   const month = ((h >> 4) % 12) + 1;
   const year = 2024 + ((h >> 8) % 3);
   const registeredAt = `${String(day).padStart(2, "0")}.${String(month).padStart(2, "0")}.${year}`;
+  const lastDay = ((h >> 9) % 28) + 1;
+  const lastMonth = ((h >> 13) % 5) + 1;
+  const lastSeen = `${String(lastDay).padStart(2, "0")}.${String(lastMonth).padStart(2, "0")}.2026`;
   const spent = ((h % 90) + 1) * 490 + ((h >> 7) % 30) * 100;
+  const ordersCount = (h % 12) + 1;
   const pass = TIERS[h % TIERS.length];
-  return { fio: `${last} ${first}`, phone, registeredAt, spent, pass };
+  const earned = ((h >> 2) % 400) + 50;
+  const spentTickets = Math.min(earned, ((h >> 6) % earned));
+  const balance = earned - spentTickets;
+  const rafflesEntered = (h % 8) + 1;
+  const rafflesWon = (h >> 4) % 3;
+  const city = CITIES[h % CITIES.length];
+  const street = STREETS[(h >> 5) % STREETS.length];
+  const house = (h % 200) + 1;
+  const flat = ((h >> 7) % 250) + 1;
+  const address = `${city}, ${street}, ${house}, кв. ${flat}`;
+  const emailLocal = (last + first[0]).toLowerCase().replace(/[^a-z]/g, "");
+  const email = `${emailLocal}${(h % 99)}@example.com`;
+  const passSince = pass !== "—" ? `01.${String(((h >> 8) % 5) + 1).padStart(2, "0")}.2026` : undefined;
+  const passUntil = pass !== "—" ? `01.${String(((h >> 8) % 5) + 4).padStart(2, "0")}.2026` : undefined;
+  return {
+    fio: `${last} ${first}`,
+    email,
+    phone,
+    address,
+    registeredAt,
+    lastSeen,
+    spent,
+    ordersCount,
+    ticketsBalance: balance,
+    ticketsEarned: earned,
+    ticketsSpent: spentTickets,
+    rafflesEntered,
+    rafflesWon,
+    referralCode: u.slug,
+    referredCount: (h >> 10) % 7,
+    pass,
+    passSince,
+    passUntil,
+  };
 }
+
 
 function passTone(t: PassTier) {
   if (t === "Silver") return "zinc" as const;
