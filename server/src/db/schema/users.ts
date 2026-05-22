@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, timestamp, index } from "drizzle-orm/pg-core";
+import { pgTable, uuid, varchar, timestamp, boolean, index } from "drizzle-orm/pg-core";
 
 export const users = pgTable(
   "users",
@@ -9,6 +9,8 @@ export const users = pgTable(
     nick: varchar("nick", { length: 32 }).notNull().unique(),
     // 'user' | 'admin'. Hell сам выдаёт admin вручную через SQL/админку.
     role: varchar("role", { length: 16 }).notNull().default("user"),
+    emailVerified: boolean("email_verified").notNull().default(false),
+    emailVerifiedAt: timestamp("email_verified_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },

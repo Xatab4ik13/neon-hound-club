@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as VerifyEmailRouteImport } from './routes/verify-email'
 import { Route as SchoolRouteImport } from './routes/school'
 import { Route as LogosRouteImport } from './routes/logos'
 import { Route as LoginRouteImport } from './routes/login'
@@ -65,6 +66,11 @@ import { Route as ClubRafflesRaffleIdRouteImport } from './routes/club.raffles.$
 import { Route as ClubHellPassTierRouteImport } from './routes/club.hell-pass.$tier'
 import { Route as BloggerRafflesRaffleIdRouteImport } from './routes/blogger.raffles.$raffleId'
 
+const VerifyEmailRoute = VerifyEmailRouteImport.update({
+  id: '/verify-email',
+  path: '/verify-email',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SchoolRoute = SchoolRouteImport.update({
   id: '/school',
   path: '/school',
@@ -352,6 +358,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/logos': typeof LogosRoute
   '/school': typeof SchoolRoute
+  '/verify-email': typeof VerifyEmailRoute
   '/admin/cdek': typeof AdminCdekRoute
   '/admin/economy': typeof AdminEconomyRoute
   '/admin/hell-ai': typeof AdminHellAiRoute
@@ -406,6 +413,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/logos': typeof LogosRoute
   '/school': typeof SchoolRoute
+  '/verify-email': typeof VerifyEmailRoute
   '/admin/cdek': typeof AdminCdekRoute
   '/admin/economy': typeof AdminEconomyRoute
   '/admin/hell-ai': typeof AdminHellAiRoute
@@ -464,6 +472,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/logos': typeof LogosRoute
   '/school': typeof SchoolRoute
+  '/verify-email': typeof VerifyEmailRoute
   '/admin/cdek': typeof AdminCdekRoute
   '/admin/economy': typeof AdminEconomyRoute
   '/admin/hell-ai': typeof AdminHellAiRoute
@@ -523,6 +532,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/logos'
     | '/school'
+    | '/verify-email'
     | '/admin/cdek'
     | '/admin/economy'
     | '/admin/hell-ai'
@@ -577,6 +587,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/logos'
     | '/school'
+    | '/verify-email'
     | '/admin/cdek'
     | '/admin/economy'
     | '/admin/hell-ai'
@@ -634,6 +645,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/logos'
     | '/school'
+    | '/verify-email'
     | '/admin/cdek'
     | '/admin/economy'
     | '/admin/hell-ai'
@@ -692,6 +704,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   LogosRoute: typeof LogosRoute
   SchoolRoute: typeof SchoolRoute
+  VerifyEmailRoute: typeof VerifyEmailRoute
   CheckoutSuccessRoute: typeof CheckoutSuccessRoute
   HellPassTierRoute: typeof HellPassTierRoute
   NewsSlugRoute: typeof NewsSlugRoute
@@ -704,6 +717,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/verify-email': {
+      id: '/verify-email'
+      path: '/verify-email'
+      fullPath: '/verify-email'
+      preLoaderRoute: typeof VerifyEmailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/school': {
       id: '/school'
       path: '/school'
@@ -1202,6 +1222,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   LogosRoute: LogosRoute,
   SchoolRoute: SchoolRoute,
+  VerifyEmailRoute: VerifyEmailRoute,
   CheckoutSuccessRoute: CheckoutSuccessRoute,
   HellPassTierRoute: HellPassTierRoute,
   NewsSlugRoute: NewsSlugRoute,

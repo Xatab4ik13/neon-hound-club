@@ -29,7 +29,7 @@ function isEmail(v: string) {
 
 function LoginPage() {
   const navigate = useNavigate();
-  const { signIn, signUp } = useViewer();
+  const { signIn, signUp, resendVerification } = useViewer();
   const [mode, setMode] = useState<Mode>("login");
 
   // login state
@@ -45,6 +45,10 @@ function LoginPage() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
+  // экран «проверьте почту» — общий для register-flow и login-of-unverified
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
+  const [resendMsg, setResendMsg] = useState("");
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -55,7 +59,12 @@ function LoginPage() {
       await signIn(loginEmail, password);
       navigate({ to: "/club" });
     } catch (err) {
-      setError(toMessage(err, "Не удалось войти"));
+      if (err instanceof ApiError && err.status === 403) {
+        // email_not_verified
+        setPendingEmail(loginEmail.trim().toLowerCase());
+      } else {
+        setError(toMessage(err, "Не удалось войти"));
+      }
     } finally {
       setBusy(false);
     }
@@ -71,14 +80,88 @@ function LoginPage() {
     if (regPassword !== regPassword2) return setError("Пароли не совпадают");
     setBusy(true);
     try {
-      await signUp(regEmail, regPassword, regNick);
-      navigate({ to: "/club" });
+      const res = await signUp(regEmail, regPassword, regNick);
+      setPendingEmail(res.email);
     } catch (err) {
       setError(toMessage(err, "Не удалось создать аккаунт"));
     } finally {
       setBusy(false);
     }
   };
+
+  const handleResend = async () => {
+    if (!pendingEmail) return;
+    setResendMsg("");
+    setBusy(true);
+    try {
+      await resendVerification(pendingEmail);
+      setResendMsg("Письмо отправлено — проверь почту");
+    } catch (err) {
+      setResendMsg(toMessage(err, "Не получилось отправить"));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (pendingEmail) {
+    return (
+      <main className="relative min-h-screen overflow-hidden bg-black pt-20">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute left-1/2 top-1/3 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-30 blur-[120px]"
+          style={{ background: "var(--primary)" }}
+        />
+        <div
+          className="relative z-10 mx-auto flex min-h-[calc(100vh-5rem)] w-full max-w-[480px] flex-col px-6 py-10 md:py-16"
+          style={{ animation: "page-fade-zoom 500ms cubic-bezier(0.16, 1, 0.3, 1) both" }}
+        >
+          <h1 className="font-display text-5xl italic uppercase font-bold leading-none tracking-tight text-white md:text-6xl">
+            Проверь почту
+          </h1>
+          <p className="mt-4 font-mono text-[12px] uppercase tracking-[0.2em] text-muted-foreground">
+            Письмо ушло
+          </p>
+          <p className="mt-6 text-base leading-relaxed text-white/80">
+            Мы отправили ссылку для подтверждения на{" "}
+            <span className="font-mono text-primary">{pendingEmail}</span>. Открой письмо и нажми
+            кнопку — после этого зайдёшь в клуб.
+          </p>
+          <p className="mt-4 font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+            Не пришло? Проверь «Спам». Ссылка живёт 24 часа.
+          </p>
+
+          {resendMsg && (
+            <p className="mt-6 border border-primary/30 bg-primary/[0.06] px-3 py-2 font-mono text-[11px] uppercase tracking-wider text-primary">
+              {resendMsg}
+            </p>
+          )}
+
+          <div className="mt-8 space-y-3">
+            <button
+              type="button"
+              onClick={handleResend}
+              disabled={busy}
+              className="block w-full border border-white/15 bg-white/[0.02] py-4 font-mono text-[12px] uppercase tracking-[0.22em] text-white transition-colors hover:border-primary hover:text-primary disabled:opacity-60"
+            >
+              {busy ? "..." : "Отправить ещё раз"}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setPendingEmail(null);
+                setResendMsg("");
+                setError("");
+              }}
+              className="block w-full py-3 font-mono text-[11px] uppercase tracking-[0.22em] text-muted-foreground hover:text-white"
+            >
+              ← Назад
+            </button>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-black pt-20">

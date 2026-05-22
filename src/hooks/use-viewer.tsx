@@ -22,9 +22,13 @@ type Viewer = {
   hydrated: boolean;
 };
 
+export type SignUpResult = { ok: true; pendingVerification: true; email: string };
+
 type ViewerContextValue = Viewer & {
   signIn: (email: string, password: string) => Promise<SessionUser>;
-  signUp: (email: string, password: string, nick: string) => Promise<SessionUser>;
+  signUp: (email: string, password: string, nick: string) => Promise<SignUpResult>;
+  resendVerification: (email: string) => Promise<void>;
+  refetchMe: () => Promise<void>;
   signOut: () => Promise<void>;
 };
 
@@ -67,15 +71,22 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
 
   const signUp = useCallback(
     async (email: string, password: string, nick: string) => {
-      const { user } = await apiFetch<{ user: SessionUser }>("/api/v1/auth/register", {
-        method: "POST",
-        body: JSON.stringify({ email, password, nick }),
-      });
-      qc.setQueryData(ME_KEY, user);
-      return user;
+      // Бэкенд НЕ логинит сразу — ждём подтверждения email.
+      const res = await apiFetch<{ ok: true; pendingVerification: true; email: string }>(
+        "/api/v1/auth/register",
+        { method: "POST", body: JSON.stringify({ email, password, nick }) },
+      );
+      return res;
     },
-    [qc],
+    [],
   );
+
+  const resendVerification = useCallback(async (email: string) => {
+    await apiFetch<{ ok: true }>("/api/v1/auth/resend-verification", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    });
+  }, []);
 
   const signOutMutation = useMutation({
     mutationFn: () => apiFetch<{ ok: true }>("/api/v1/auth/logout", { method: "POST" }),
@@ -103,9 +114,13 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
       hydrated: meQ.isFetched,
       signIn,
       signUp,
+      resendVerification,
+      refetchMe: async () => {
+        await qc.invalidateQueries({ queryKey: ME_KEY });
+      },
       signOut,
     }),
-    [isAuthed, user, meQ.isFetched, signIn, signUp, signOut],
+    [isAuthed, user, meQ.isFetched, signIn, signUp, resendVerification, signOut, qc],
   );
 
   return <ViewerContext.Provider value={value}>{children}</ViewerContext.Provider>;
