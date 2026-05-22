@@ -116,10 +116,10 @@ function ClubCheckoutPage() {
           <Field
             label="Телефон"
             value={form.phone}
-            onChange={(v) => set("phone", v)}
+            onChange={(v) => set("phone", formatRuPhone(v))}
             type="tel"
             inputMode="tel"
-            placeholder="+7 ___ ___-__-__"
+            placeholder="+7 (___) ___-__-__"
             required
           />
           <Field
