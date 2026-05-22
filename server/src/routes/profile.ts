@@ -5,13 +5,22 @@ import { db } from "../db/client.js";
 import { users } from "../db/schema/users.js";
 import { profiles, bikes } from "../db/schema/profile.js";
 import { requireAuth, type SessionPayload } from "../lib/auth.js";
+import { isOurS3Url, deleteByPublicUrl } from "../lib/s3.js";
+import { tryCompleteQuest } from "../lib/quests.js";
+
+/** Проверка: URL либо null, либо ведёт на наш S3-бакет. */
+const ourS3Url = z
+  .string()
+  .url()
+  .refine((u) => isOurS3Url(u), { message: "Файл нужно загрузить через нашу форму загрузки" });
+
 
 // ---------- PROFILE ----------
 
 const patchProfileSchema = z.object({
   phone: z.string().trim().min(5).max(32).nullable().optional(),
   city: z.string().trim().min(1).max(80).nullable().optional(),
-  avatarUrl: z.string().url().nullable().optional(),
+  avatarUrl: ourS3Url.nullable().optional(),
   bio: z.string().max(1000).nullable().optional(),
   instagram: z
     .string()
