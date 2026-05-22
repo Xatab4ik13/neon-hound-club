@@ -753,7 +753,7 @@ function ServiceList({ bikeId, flat = false }: { bikeId: string; flat?: boolean 
 
 // ───────────── Rides list ─────────────
 
-function RidesList({ bikeId }: { bikeId: string }) {
+function RidesList({ bikeId, flat = false }: { bikeId: string; flat?: boolean }) {
   const journal = useBikeJournal();
   const rides = useMemo(
     () =>
