@@ -1,6 +1,5 @@
 import { Link } from "@tanstack/react-router";
 import {
-  Bot,
   Gem,
   Ticket,
   Target,
@@ -28,7 +27,6 @@ const GROUPS: { title: string; items: Item[] }[] = [
   {
     title: "Клуб",
     items: [
-      { label: "Hell AI", href: "/club/hell-ai", icon: Bot, subtitle: "AI-механик по твоему мото" },
       { label: "Hell Pass", href: "/club/hell-pass", icon: Gem, subtitle: "Подписка клуба" },
       { label: "Розыгрыши", href: "/club/raffles", icon: Ticket },
       { label: "Квесты", href: "/club/quests", icon: Target },
