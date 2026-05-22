@@ -85,7 +85,9 @@ function ShopPage() {
       image: "",
       ticketsBonus: 0,
       status: "draft",
+      kind: "physical",
     });
+
     setProductOpen(true);
   };
 
