@@ -61,6 +61,7 @@ function RafflesPage() {
         raffle={active}
         onBack={() => setActiveId(null)}
         onUpdate={(r) => rafflesStore.upsert(r)}
+        onDelete={() => setConfirm(active)}
       />
     );
   }
@@ -132,9 +133,13 @@ function RafflesPage() {
       <ConfirmModal
         open={!!confirm}
         onClose={() => setConfirm(null)}
-        onConfirm={() => confirm && rafflesStore.remove(confirm.id)}
+        onConfirm={() => {
+          if (!confirm) return;
+          rafflesStore.remove(confirm.id);
+          if (activeId === confirm.id) setActiveId(null);
+        }}
         title="Удалить розыгрыш?"
-        message={`«${confirm?.name}» и все его призы будут удалены.`}
+        message={`«${confirm?.name}» и все его призы будут удалены. Розыгрыш пропадёт с сайта.`}
       />
     </div>
   );
@@ -391,10 +396,12 @@ function RaffleDetail({
   raffle,
   onBack,
   onUpdate,
+  onDelete,
 }: {
   raffle: Raffle;
   onBack: () => void;
   onUpdate: (r: Raffle) => void;
+  onDelete: () => void;
 }) {
   const setPrizes = (prizes: Prize[]) => onUpdate({ ...raffle, prizes });
 
@@ -411,7 +418,13 @@ function RaffleDetail({
       <PageHeader
         title={raffle.name}
         description={raffle.description ?? "Управление призами этого розыгрыша"}
+        actions={
+          <Btn variant="danger" onClick={onDelete}>
+            <Trash2 className="h-4 w-4" /> Удалить розыгрыш
+          </Btn>
+        }
       />
+
 
       <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Участников" value={raffle.participants.length.toLocaleString("ru-RU")} />
