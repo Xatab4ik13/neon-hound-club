@@ -60,6 +60,7 @@ export async function profileRoutes(app: FastifyInstance) {
         nick: users.nick,
         role: users.role,
         emailVerified: users.emailVerified,
+        joinedAt: users.createdAt,
         phone: profiles.phone,
         city: profiles.city,
         avatarUrl: profiles.avatarUrl,
