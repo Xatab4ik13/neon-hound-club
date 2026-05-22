@@ -89,9 +89,10 @@ export function MobileTopBar() {
           </button>
         </div>
 
-        <h1 className="pointer-events-none absolute left-1/2 -translate-x-1/2 truncate font-display text-[16px] font-black italic uppercase tracking-tight">
+        <h1 className="pointer-events-none absolute left-1/2 max-w-[55%] -translate-x-1/2 overflow-hidden text-ellipsis whitespace-nowrap pr-[3px] font-display text-[16px] font-black italic uppercase tracking-tight">
           {title}
         </h1>
+
 
         <div className="ml-auto flex w-20 items-center justify-end">
           <button
