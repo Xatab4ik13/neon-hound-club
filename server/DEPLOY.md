@@ -184,6 +184,52 @@ docker compose logs -f api   # Ctrl+C чтобы выйти
 
 ---
 
+## Почта на VPS, если SMTP заблокирован
+
+На некоторых VPS исходящий SMTP (465/587) режется провайдером. Для этого в API уже добавлена отправка писем по HTTP через 443 порт.
+
+Рекомендуемый вариант — Unisender Go:
+
+1. В панели Unisender Go добавь и подтверди домен `hhr.pro` или поддомен отправителя.
+2. Создай API key.
+3. На VPS в `server/.env` укажи:
+
+```env
+MAIL_PROVIDER=unisender
+MAIL_FROM="HELLHOUND Racing <no-reply@hhr.pro>"
+UNISENDER_API_KEY=...твой_ключ...
+UNISENDER_BASE_URL=https://goapi.unisender.ru/ru/transactional/api/v1
+```
+
+Если хочешь Resend вместо Unisender:
+
+```env
+MAIL_PROVIDER=resend
+MAIL_FROM="HELLHOUND Racing <no-reply@hhr.pro>"
+RESEND_API_KEY=re_...
+```
+
+После изменения `.env`:
+
+```bash
+cd /opt/hhr/server
+docker compose up -d --build api
+docker compose logs -f api
+```
+
+Проверка повторной отправки письма:
+
+```bash
+curl -i -X POST https://api.hhr.pro/api/v1/auth/resend-verification \
+  -H "Origin: https://hhr.pro" \
+  -H "Content-Type: application/json" \
+  -d '{"email":"mrstek13@yandex.ru"}'
+```
+
+Если ключ задан верно и домен подтверждён у провайдера, письмо уйдёт без SMTP.
+
+---
+
 ## Что дальше (этап 2)
 
 После того как `curl https://api.hhr.pro/healthz` вернёт `{"ok":true}` — пиши «healthz ок», и я делаю этап 2: таблицы users/sessions, эндпоинты `/auth/signup` `/auth/login` `/auth/logout` `/auth/me`, и переключаю фронт `/login` и `/signup` со старого Supabase-кода на новый бекенд.
