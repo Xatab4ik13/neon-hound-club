@@ -82,6 +82,42 @@ export async function rafflesRoutes(app: FastifyInstance) {
       .orderBy(desc(raffleEntries.createdAt));
     return { items: rows };
   });
+
+  // GET /api/v1/raffles/my — все розыгрыши, в которых юзер участвовал (для «Я участвовал»)
+  app.get("/my", { preHandler: requireAuth }, async (req) => {
+    const session = req.user as SessionPayload;
+    const rows = await db
+      .select({
+        raffle: raffles,
+        entries: count(raffleEntries.id),
+      })
+      .from(raffleEntries)
+      .innerJoin(raffles, eq(raffles.id, raffleEntries.raffleId))
+      .where(eq(raffleEntries.userId, session.sub))
+      .groupBy(raffles.id)
+      .orderBy(desc(raffles.endsAt));
+
+    const items = await Promise.all(
+      rows.map(async (row) => {
+        let winnerNick: string | null = null;
+        if (row.raffle.winnerUserId) {
+          const [u] = await db
+            .select({ nick: users.nick })
+            .from(users)
+            .where(eq(users.id, row.raffle.winnerUserId))
+            .limit(1);
+          winnerNick = u?.nick ?? null;
+        }
+        return {
+          ...row.raffle,
+          myEntries: row.entries,
+          won: row.raffle.winnerUserId === session.sub,
+          winnerNick,
+        };
+      }),
+    );
+    return { items };
+  });
 }
 
 // ---------- ADMIN ----------
