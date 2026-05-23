@@ -333,10 +333,12 @@ export async function feedRoutes(app: FastifyInstance) {
     ]);
     const lm = new Map(likeCounts.map((r) => [r.commentId, r.c]));
     const ms = new Set(mine.map((r) => r.commentId));
+    const ranksMap = await getRanksMap(Array.from(new Set(allRows.map((c) => c.authorId))));
     const comments = allRows.map((c) => ({
       ...c,
       likes: lm.get(c.id) ?? 0,
       liked: ms.has(c.id),
+      rankId: ranksMap.get(c.authorId) ?? "rookie",
     }));
     return { ...hydrated, comments };
   });
