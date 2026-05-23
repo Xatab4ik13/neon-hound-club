@@ -565,7 +565,7 @@ function CommentItem({
                   loading="lazy"
                   decoding="async"
                   draggable={false}
-                  className="h-32 w-32 select-none object-contain md:h-36 md:w-36"
+                  className="h-48 w-48 select-none object-contain md:h-52 md:w-52"
                 />
               </div>
             );
