@@ -88,12 +88,15 @@ export function buildSystemPrompt(opts: {
   bannedTopics: string | null;
   garage: GarageBike[];
   activeBikeId?: string | null;
+  isStaff?: boolean;
 }): string {
   const parts: string[] = [opts.basePrompt.trim()];
 
   if (opts.garage.length === 0) {
     parts.push(
-      "\n[GARAGE]\nУ юзера пока нет мото в гараже — сначала попроси добавить через раздел Гараж, чтобы советы были по делу.\n[/GARAGE]",
+      opts.isStaff
+        ? "\n[GARAGE]\nУ юзера сейчас нет байка в гараже. Не отправляй его заполнять профиль. Отвечай по делу и, если для точности нужно, сначала уточни модель, год и симптомы прямо в диалоге.\n[/GARAGE]"
+        : "\n[GARAGE]\nУ юзера пока нет мото в гараже — сначала попроси добавить через раздел Гараж, чтобы советы были по делу.\n[/GARAGE]",
     );
   } else {
     const active = opts.activeBikeId
