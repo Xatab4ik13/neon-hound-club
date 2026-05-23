@@ -168,6 +168,103 @@ export async function profileRoutes(app: FastifyInstance) {
         : null,
     };
   });
+
+  // ============================================================
+  // DELIVERY ADDRESS (СДЭК)
+  // ============================================================
+
+  const addressSchema = z.object({
+    fullName: z.string().trim().max(120).default(""),
+    phone: z.string().trim().max(32).default(""),
+    city: z.string().trim().max(80).default(""),
+    postalCode: z.string().trim().max(16).default(""),
+    pickupPoint: z.string().trim().max(500).default(""),
+    comment: z.string().trim().max(500).default(""),
+  });
+
+  app.get("/me/address", { preHandler: requireAuth }, async (req) => {
+    const session = req.user as SessionPayload;
+    const [row] = await db
+      .select()
+      .from(deliveryAddresses)
+      .where(eq(deliveryAddresses.userId, session.sub))
+      .limit(1);
+    return (
+      row ?? {
+        userId: session.sub,
+        fullName: "",
+        phone: "",
+        city: "",
+        postalCode: "",
+        pickupPoint: "",
+        comment: "",
+      }
+    );
+  });
+
+  app.put("/me/address", { preHandler: requireAuth }, async (req, reply) => {
+    const parsed = addressSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return reply.code(400).send({ error: "invalid_input", message: parsed.error.issues[0]?.message });
+    }
+    const session = req.user as SessionPayload;
+    await db
+      .insert(deliveryAddresses)
+      .values({ userId: session.sub, ...parsed.data })
+      .onConflictDoUpdate({
+        target: deliveryAddresses.userId,
+        set: { ...parsed.data, updatedAt: new Date() },
+      });
+    return { ok: true };
+  });
+
+  // ============================================================
+  // NOTIFICATION PREFS
+  // ============================================================
+
+  const notifSchema = z.object({
+    emailRaffles: z.boolean().optional(),
+    emailOrders: z.boolean().optional(),
+    emailNews: z.boolean().optional(),
+    pushRaffles: z.boolean().optional(),
+    pushOrders: z.boolean().optional(),
+    pushNews: z.boolean().optional(),
+  });
+
+  const defaultPrefs = {
+    emailRaffles: true,
+    emailOrders: true,
+    emailNews: false,
+    pushRaffles: true,
+    pushOrders: true,
+    pushNews: false,
+  };
+
+  app.get("/me/notifications", { preHandler: requireAuth }, async (req) => {
+    const session = req.user as SessionPayload;
+    const [row] = await db
+      .select()
+      .from(notificationPrefs)
+      .where(eq(notificationPrefs.userId, session.sub))
+      .limit(1);
+    return row ?? { userId: session.sub, ...defaultPrefs };
+  });
+
+  app.put("/me/notifications", { preHandler: requireAuth }, async (req, reply) => {
+    const parsed = notifSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return reply.code(400).send({ error: "invalid_input", message: parsed.error.issues[0]?.message });
+    }
+    const session = req.user as SessionPayload;
+    await db
+      .insert(notificationPrefs)
+      .values({ userId: session.sub, ...defaultPrefs, ...parsed.data })
+      .onConflictDoUpdate({
+        target: notificationPrefs.userId,
+        set: { ...parsed.data, updatedAt: new Date() },
+      });
+    return { ok: true };
+  });
 }
 
 // ---------- GARAGE ----------
