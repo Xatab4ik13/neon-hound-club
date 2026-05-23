@@ -164,15 +164,7 @@ export function MobileMoreSheet({
                 <li>
                   <button
                     type="button"
-                    onClick={async () => {
-                      if (typeof window !== "undefined" && !window.confirm("Выйти из клуба?")) return;
-                      try {
-                        await signOut();
-                      } finally {
-                        onOpenChange(false);
-                        window.location.href = "/";
-                      }
-                    }}
+                    onClick={() => setConfirmLogout(true)}
                     className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors active:bg-white/[0.04]"
                   >
                     <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-red-500/10 text-red-400">
@@ -186,6 +178,16 @@ export function MobileMoreSheet({
           </div>
         </Drawer.Content>
       </Drawer.Portal>
+
+      <IOSConfirm
+        open={confirmLogout}
+        onOpenChange={setConfirmLogout}
+        title="Выйти из клуба?"
+        description="Чтобы вернуться, нужно будет войти заново."
+        confirmLabel="Выйти"
+        destructive
+        onConfirm={doLogout}
+      />
     </Drawer.Root>
   );
 }
