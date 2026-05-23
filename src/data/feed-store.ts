@@ -422,6 +422,39 @@ export function useFeedPosts(): FeedPost[] {
   const snap = useSyncExternalStore(feedStore.subscribe, feedStore.getSnapshot, feedStore.getSnapshot);
   useEffect(() => {
     if (!loaded && !pending) refetch();
+
+    // Polling в фоне: тихо обновляем ленту, пока вкладка активна.
+    let timer: ReturnType<typeof setInterval> | null = null;
+    const start = () => {
+      if (timer != null) return;
+      timer = setInterval(() => {
+        if (document.visibilityState === "visible") refetch();
+      }, 7000);
+    };
+    const stop = () => {
+      if (timer != null) {
+        clearInterval(timer);
+        timer = null;
+      }
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") {
+        refetch();
+        start();
+      } else {
+        stop();
+      }
+    };
+    const onFocus = () => refetch();
+
+    start();
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("focus", onFocus);
+    return () => {
+      stop();
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("focus", onFocus);
+    };
   }, []);
   return snap;
 }
