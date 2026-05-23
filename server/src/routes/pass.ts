@@ -79,7 +79,7 @@ export async function adminPassRoutes(app: FastifyInstance) {
   app.get("/list", { preHandler: requireAdmin }, async (req) => {
     const q = z
       .object({
-        status: z.enum(["pending_payment", "active", "expired", "cancelled"]).optional(),
+        status: z.enum(["pending_payment", "active", "expired", "cancelled", "superseded"]).optional(),
         limit: z.coerce.number().int().min(1).max(200).default(50),
       })
       .parse(req.query ?? {});
