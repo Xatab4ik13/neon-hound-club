@@ -321,6 +321,7 @@ export async function feedRoutes(app: FastifyInstance) {
     if (!p || !p.poll) return reply.code(404).send({ error: "not_found" });
     if (p.poll.closed) return reply.code(409).send({ error: "closed" });
     await db.delete(postPollVotes).where(and(eq(postPollVotes.postId, p.id), eq(postPollVotes.userId, s.sub)));
+    publishFeedEvent("poll.voted", { postId: p.id });
     return { ok: true };
   });
 
