@@ -75,3 +75,41 @@ export const bikes = pgTable(
 
 export type Bike = typeof bikes.$inferSelect;
 export type NewBike = typeof bikes.$inferInsert;
+
+/**
+ * Адрес доставки СДЭК. 1:1 к users. Пустые строки = "не заполнено".
+ */
+export const deliveryAddresses = pgTable("delivery_addresses", {
+  userId: uuid("user_id")
+    .primaryKey()
+    .references(() => users.id, { onDelete: "cascade" }),
+  fullName: varchar("full_name", { length: 120 }).notNull().default(""),
+  phone: varchar("phone", { length: 32 }).notNull().default(""),
+  city: varchar("city", { length: 80 }).notNull().default(""),
+  postalCode: varchar("postal_code", { length: 16 }).notNull().default(""),
+  pickupPoint: text("pickup_point").notNull().default(""),
+  comment: text("comment").notNull().default(""),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export type DeliveryAddress = typeof deliveryAddresses.$inferSelect;
+
+/**
+ * Настройки уведомлений. 1:1 к users. Дефолты: важное (розыгрыши/заказы) включено.
+ */
+export const notificationPrefs = pgTable("notification_prefs", {
+  userId: uuid("user_id")
+    .primaryKey()
+    .references(() => users.id, { onDelete: "cascade" }),
+  emailRaffles: boolean("email_raffles").notNull().default(true),
+  emailOrders: boolean("email_orders").notNull().default(true),
+  emailNews: boolean("email_news").notNull().default(false),
+  pushRaffles: boolean("push_raffles").notNull().default(true),
+  pushOrders: boolean("push_orders").notNull().default(true),
+  pushNews: boolean("push_news").notNull().default(false),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export type NotificationPref = typeof notificationPrefs.$inferSelect;
