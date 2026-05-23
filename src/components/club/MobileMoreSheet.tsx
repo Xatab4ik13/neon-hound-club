@@ -68,6 +68,16 @@ export function MobileMoreSheet({
   const { count: cartCount } = useCart();
   const { signOut } = useViewer();
   const GROUPS = buildGroups(cartCount);
+  const [confirmLogout, setConfirmLogout] = useState(false);
+
+  const doLogout = async () => {
+    try {
+      await signOut();
+    } finally {
+      onOpenChange(false);
+      window.location.href = "/";
+    }
+  };
 
   return (
     <Drawer.Root open={open} onOpenChange={onOpenChange}>
