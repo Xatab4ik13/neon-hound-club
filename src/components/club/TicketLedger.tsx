@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { ArrowDown, ArrowUp, Ticket } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { LedgerEntry, BackendTicketSource } from "@/lib/queries";
 
 /**
