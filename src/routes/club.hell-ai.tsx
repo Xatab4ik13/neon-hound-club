@@ -12,6 +12,7 @@ import {
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 import { Drawer } from "vaul";
 import {
@@ -34,8 +35,10 @@ import {
 
 import { cn } from "@/lib/utils";
 import { apiFetch, ApiError } from "@/lib/api";
-import { loadBikes, saveBikes, type StoredBike } from "@/data/bike-storage";
+import { type StoredBike } from "@/data/bike-storage";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useViewer } from "@/hooks/use-viewer";
+import { useBikes, type ServerBike } from "@/lib/garage-api";
 
 export const Route = createFileRoute("/club/hell-ai")({
   head: () => ({
@@ -53,25 +56,94 @@ export const Route = createFileRoute("/club/hell-ai")({
 });
 
 // ── Тариф / квоты ─────────────────────────────────────────────────────────
-type PassTier = "guest" | "silver" | "gold" | "platinum";
-const QUOTA_BY_TIER: Record<PassTier, number | "∞"> = {
-  guest: 0,
-  silver: 20,
-  gold: 100,
-  platinum: "∞",
+type PassTier = "guest" | "silver" | "gold" | "platinum" | "staff";
+type HellAiStatus = {
+  tier: "silver" | "gold" | "platinum" | "staff" | null;
+  limit: number;
+  used: number;
+  left: number;
+  unlimited: boolean;
+  expiresAt: string | null;
 };
+
 const TIER_LABEL: Record<PassTier, string> = {
   guest: "Без Hell Pass",
   silver: "Silver",
   gold: "Gold",
   platinum: "Platinum",
+  staff: "STAFF",
 };
-// Для блогера лимит снят — это его собственный инструмент.
-function getCurrentTier(): PassTier {
-  if (typeof window !== "undefined" && window.location.pathname.startsWith("/blogger")) {
-    return "platinum";
-  }
-  return "gold";
+
+function toStoredBike(b: ServerBike): StoredBike {
+  return {
+    id: b.id,
+    brand: b.brand,
+    model: b.model,
+    year: b.year ?? new Date().getFullYear(),
+    color: b.color ?? undefined,
+    nickname: b.nickname ?? undefined,
+    mileage: b.mileage ?? undefined,
+    purchaseDate: b.purchaseDate ?? undefined,
+    mods: b.mods.length > 0 ? b.mods : undefined,
+    photo: b.photos[0] ?? undefined,
+  };
+}
+
+function useHellAiRuntime() {
+  const viewer = useViewer();
+  const bikesQ = useBikes(viewer.isAuthed);
+  const statusQ = useQuery({
+    queryKey: ["hell-ai", "status", viewer.user?.id ?? "guest"],
+    queryFn: () => apiFetch<HellAiStatus>("/api/v1/hell-ai/status"),
+    enabled: viewer.isAuthed,
+    staleTime: 10_000,
+    retry: false,
+  });
+
+  const bikes = useMemo(() => (bikesQ.data ?? []).map(toStoredBike), [bikesQ.data]);
+  const [activeBikeId, setActiveBikeId] = useState("");
+
+  useEffect(() => {
+    if (bikes.length === 0) {
+      setActiveBikeId("");
+      return;
+    }
+    setActiveBikeId((current) => (bikes.some((b) => b.id === current) ? current : bikes[0]!.id));
+  }, [bikes]);
+
+  const activeBike = bikes.find((b) => b.id === activeBikeId);
+  const isStaff = viewer.user?.role === "admin" || viewer.user?.role === "blogger";
+  const tier: PassTier = statusQ.data?.tier ?? (isStaff ? "staff" : viewer.isAuthed ? "guest" : "guest");
+  const used = statusQ.data?.used ?? 0;
+  const isUnlimited = statusQ.data?.unlimited ?? isStaff;
+  const quota: number | "∞" = !viewer.isAuthed || tier === "guest"
+    ? 0
+    : isUnlimited
+      ? "∞"
+      : Math.max(0, statusQ.data?.limit ?? 0);
+  const left = isUnlimited ? Infinity : Math.max(0, statusQ.data?.left ?? 0);
+  const isGuest = !viewer.isAuthed || tier === "guest";
+  const bikeStr = activeBike ? bikeLabel(activeBike) : isStaff ? "своего мото" : "твой мото";
+  const canAsk =
+    viewer.isAuthed &&
+    (!statusQ.isPending || isStaff) &&
+    (isStaff || (!isGuest && (isUnlimited || left > 0) && !!activeBike));
+
+  return {
+    bikes,
+    activeBike,
+    activeBikeId,
+    setActiveBikeId,
+    bikeStr,
+    canAsk,
+    isGuest,
+    isStaff,
+    isUnlimited,
+    quota,
+    used,
+    tierLabel: TIER_LABEL[tier],
+    refreshStatus: () => statusQ.refetch(),
+  };
 }
 
 
