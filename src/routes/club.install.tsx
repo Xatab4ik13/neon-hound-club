@@ -14,6 +14,10 @@ import {
   subscribeToPush,
   unsubscribeFromPush,
 } from "@/lib/push";
+import { confirmPwaInstall } from "@/lib/queries";
+import { useViewer } from "@/hooks/use-viewer";
+import { useQueryClient } from "@tanstack/react-query";
+import { qk } from "@/lib/queries";
 
 export const Route = createFileRoute("/club/install")({
   head: () => ({
