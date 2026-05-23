@@ -368,7 +368,45 @@ function ProductModal({
   onDone: () => void;
 }) {
   const [p, setP] = useState<CreateProductInput>(initial);
-  const [imagesText, setImagesText] = useState((initial.images ?? []).join("\n"));
+  const [images, setImages] = useState<string[]>(initial.images ?? []);
+  const [uploadingIdx, setUploadingIdx] = useState<number | null>(null);
+
+  const handleUpload = async (file: File, replaceIdx?: number) => {
+    if (file.size > 8 * 1024 * 1024) {
+      toast.error("Файл больше 8 МБ");
+      return;
+    }
+    const idx = replaceIdx ?? images.length;
+    setUploadingIdx(idx);
+    try {
+      const { uploadFileToS3 } = await import("@/lib/garage-api");
+      const url = await uploadFileToS3(file, "shop");
+      setImages((prev) => {
+        const next = [...prev];
+        if (replaceIdx !== undefined) next[replaceIdx] = url;
+        else next.push(url);
+        return next.slice(0, 5);
+      });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Не загрузилось");
+    } finally {
+      setUploadingIdx(null);
+    }
+  };
+
+  const removeImage = (idx: number) => {
+    setImages((prev) => prev.filter((_, i) => i !== idx));
+  };
+
+  const moveImage = (idx: number, dir: -1 | 1) => {
+    setImages((prev) => {
+      const next = [...prev];
+      const j = idx + dir;
+      if (j < 0 || j >= next.length) return prev;
+      [next[idx], next[j]] = [next[j], next[idx]];
+      return next;
+    });
+  };
   const [unlimited, setUnlimited] = useState(initial.stock === null);
 
   // ISO datetime <-> input[type=datetime-local] (yyyy-MM-ddTHH:mm)
@@ -387,10 +425,7 @@ function ProductModal({
     mutationFn: () => {
       const payload: CreateProductInput = {
         ...p,
-        images: imagesText
-          .split("\n")
-          .map((s) => s.trim())
-          .filter(Boolean),
+        images: images.filter(Boolean).slice(0, 5),
         stock: p.kind === "digital" ? null : unlimited ? null : Math.max(0, Number(p.stock) || 0),
         categoryId: p.categoryId || null,
         subcategoryId: p.subcategoryId || null,
@@ -601,15 +636,94 @@ function ProductModal({
         )}
 
         <Field
-          label="Картинки (URL'ы, по одной на строку)"
-          hint="Первая — обложка. Грузим в MinIO, сюда вставляем ссылки."
+          label={`Фото товара (до 5, первое — обложка) — ${images.length}/5`}
+          hint="JPG/PNG/WebP, до 8 МБ. Можно менять порядок стрелками."
         >
-          <TextArea
-            rows={3}
-            value={imagesText}
-            onChange={(e) => setImagesText(e.target.value)}
-            placeholder="https://cdn.hhr.pro/products/hoodie-front.jpg"
-          />
+          <div className="grid grid-cols-5 gap-2">
+            {Array.from({ length: 5 }).map((_, idx) => {
+              const url = images[idx];
+              const isUploading = uploadingIdx === idx;
+              if (url) {
+                return (
+                  <div
+                    key={idx}
+                    className="group relative aspect-square overflow-hidden rounded-md border border-white/10 bg-black/40"
+                  >
+                    <img src={url} alt="" className="h-full w-full object-cover" />
+                    {idx === 0 && (
+                      <span className="absolute left-1 top-1 rounded bg-primary px-1.5 py-0.5 text-[9px] font-bold uppercase text-primary-foreground">
+                        Обложка
+                      </span>
+                    )}
+                    <div className="absolute inset-x-1 bottom-1 flex items-center justify-between gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                      <div className="flex gap-0.5">
+                        <button
+                          type="button"
+                          onClick={() => moveImage(idx, -1)}
+                          disabled={idx === 0}
+                          className="grid h-6 w-6 place-items-center rounded bg-black/70 text-foreground disabled:opacity-30"
+                          aria-label="Левее"
+                        >
+                          ‹
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => moveImage(idx, 1)}
+                          disabled={idx === images.length - 1}
+                          className="grid h-6 w-6 place-items-center rounded bg-black/70 text-foreground disabled:opacity-30"
+                          aria-label="Правее"
+                        >
+                          ›
+                        </button>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeImage(idx)}
+                        className="grid h-6 w-6 place-items-center rounded bg-red-600/90 text-white"
+                        aria-label="Удалить"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              }
+              if (idx > images.length) {
+                return (
+                  <div
+                    key={idx}
+                    className="aspect-square rounded-md border border-dashed border-white/5 bg-black/20"
+                  />
+                );
+              }
+              return (
+                <label
+                  key={idx}
+                  className="grid aspect-square cursor-pointer place-items-center rounded-md border border-dashed border-white/15 bg-black/20 text-xs text-muted-foreground transition-colors hover:border-primary/60 hover:text-foreground"
+                >
+                  {isUploading ? (
+                    <span className="font-mono text-[10px] uppercase">…</span>
+                  ) : (
+                    <span className="flex flex-col items-center gap-1">
+                      <Plus className="h-5 w-5" />
+                      <span className="font-mono text-[10px] uppercase">Фото</span>
+                    </span>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    disabled={isUploading}
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) handleUpload(f);
+                      e.target.value = "";
+                    }}
+                  />
+                </label>
+              );
+            })}
+          </div>
         </Field>
       </div>
     </Modal>
