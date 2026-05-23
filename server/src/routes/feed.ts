@@ -508,6 +508,14 @@ export async function postsRoutes(app: FastifyInstance) {
       idempotent: true,
     }).catch(() => null);
     publishFeedEvent("post.created", { postId: row.id });
+    void import("../lib/push.js").then(({ pushToAll }) =>
+      pushToAll({
+        title: "Новый пост в ленте",
+        body: row.text.slice(0, 140),
+        url: "/club",
+        tag: `post:${row.id}`,
+      }),
+    );
     return row;
   });
 

@@ -128,6 +128,9 @@ export async function buildApp() {
   await app.register(postsRoutes, { prefix: "/api/v1/posts" });
   await app.register(adminFeedRoutes, { prefix: "/api/v1/admin/feed" });
 
+  const { pushRoutes } = await import("./routes/push.js");
+  await app.register(pushRoutes, { prefix: "/api/v1/push" });
+
   // Создаём S3-бакет, если его ещё нет.
   try {
     const { ensureBucket } = await import("./lib/s3.js");

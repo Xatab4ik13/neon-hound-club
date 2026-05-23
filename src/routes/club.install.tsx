@@ -5,8 +5,15 @@
 
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Apple, Bell, Check, Download, Share, Smartphone, Sparkles, Ticket } from "lucide-react";
+import { Apple, Bell, BellOff, Check, Download, Share, Smartphone, Sparkles, Ticket } from "lucide-react";
 import { PageHeader } from "@/components/club/PageHeader";
+import {
+  getPushPermission,
+  getPushSubscription,
+  isPushSupported,
+  subscribeToPush,
+  unsubscribeFromPush,
+} from "@/lib/push";
 
 export const Route = createFileRoute("/club/install")({
   head: () => ({
@@ -142,7 +149,94 @@ function InstallPage() {
       )}
 
       {platform === "ios" && <IosGuide />}
+
+      <PushBlock />
     </main>
+  );
+}
+
+function PushBlock() {
+  const [supported, setSupported] = useState(false);
+  const [permission, setPermission] = useState<NotificationPermission>("default");
+  const [subscribed, setSubscribed] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setSupported(isPushSupported());
+    void getPushPermission().then(setPermission);
+    void getPushSubscription().then((s) => setSubscribed(!!s));
+  }, []);
+
+  async function enable() {
+    setBusy(true);
+    setError(null);
+    const res = await subscribeToPush();
+    setBusy(false);
+    if (!res.ok) {
+      setError(res.reason ?? "Не удалось включить уведомления.");
+      return;
+    }
+    setSubscribed(true);
+    setPermission("granted");
+  }
+
+  async function disable() {
+    setBusy(true);
+    await unsubscribeFromPush();
+    setSubscribed(false);
+    setBusy(false);
+  }
+
+  if (!supported) {
+    return (
+      <section className="mb-5 rounded-2xl border border-white/[0.06] bg-card/40 p-4 text-[13px] text-muted-foreground">
+        Этот браузер не умеет пуш-уведомления. Открой клуб в установленном
+        приложении (домашний экран) — там пуши работают.
+      </section>
+    );
+  }
+
+  return (
+    <section className="mb-5 rounded-2xl border border-white/[0.06] bg-card/40 p-4">
+      <div className="mb-3 flex items-center gap-2 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-primary">
+        <Bell className="h-3.5 w-3.5" />
+        Пуш-уведомления
+      </div>
+      <p className="mb-4 text-[13px] leading-snug text-muted-foreground">
+        Узнавай первым про новые розыгрыши, посты в ленте и поступившие товары.
+        Без спама — только важное.
+      </p>
+      {subscribed ? (
+        <button
+          type="button"
+          onClick={disable}
+          disabled={busy}
+          className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/[0.08] py-3 font-mono text-[12px] font-bold uppercase tracking-wider text-foreground active:scale-[0.98] disabled:opacity-50"
+        >
+          <BellOff className="h-4 w-4" />
+          Отключить уведомления
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={enable}
+          disabled={busy || permission === "denied"}
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 font-display text-[14px] font-black uppercase italic tracking-wider text-primary-foreground active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <Bell className="h-4 w-4" />
+          {permission === "denied" ? "Уведомления заблокированы" : "Включить уведомления"}
+        </button>
+      )}
+      {permission === "denied" && (
+        <p className="mt-3 text-[12px] text-muted-foreground">
+          Разреши уведомления в настройках сайта в браузере, а затем вернись.
+        </p>
+      )}
+      {error && (
+        <p className="mt-3 text-[12px] text-red-300">{error}</p>
+      )}
+    </section>
   );
 }
 

@@ -319,6 +319,16 @@ export async function adminShopRoutes(app: FastifyInstance) {
     };
     try {
       const [row] = await db.insert(products).values(values).returning();
+      if (row.active) {
+        void import("../lib/push.js").then(({ pushToAll }) =>
+          pushToAll({
+            title: "Новинка в магазине",
+            body: row.title,
+            url: `/club/shop/${row.slug}`,
+            tag: `product:${row.id}`,
+          }),
+        );
+      }
       return reply.code(201).send(row);
     } catch (e: any) {
       if (String(e?.code) === "23505") {

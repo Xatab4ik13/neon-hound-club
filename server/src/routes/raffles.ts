@@ -221,6 +221,16 @@ export async function adminRafflesRoutes(app: FastifyInstance) {
         status: d.status,
       })
       .returning();
+    if (row.status === "active") {
+      void import("../lib/push.js").then(({ pushToAll }) =>
+        pushToAll({
+          title: "Новый розыгрыш",
+          body: row.title,
+          url: `/club/raffles/${row.id}`,
+          tag: `raffle:${row.id}`,
+        }),
+      );
+    }
     return reply.code(201).send(row);
   });
 

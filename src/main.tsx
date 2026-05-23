@@ -5,8 +5,16 @@ import { createRoot } from "react-dom/client";
 import { RouterProvider } from "@tanstack/react-router";
 
 import { getRouter } from "./router";
+import { registerPushSW } from "./lib/push";
 
 const router = getRouter();
+
+// Регистрируем push-SW (внутри сам пропускает iframe / lovable preview).
+if (typeof window !== "undefined") {
+  window.addEventListener("load", () => {
+    void registerPushSW();
+  });
+}
 
 declare module "@tanstack/react-router" {
   interface Register {
