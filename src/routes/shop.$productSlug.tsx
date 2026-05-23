@@ -6,11 +6,13 @@ import {
   useRouter,
 } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { hhToast } from "@/lib/hh-toast";
 import { Header } from "@/components/brand/Header";
 import { Footer } from "@/components/brand/Footer";
-import { PRODUCTS, SOURCE_LABEL, type Product } from "@/data/products";
 import { useCart } from "@/hooks/use-cart";
+import { ApiError } from "@/lib/api";
+import { fetchShopProduct, qk, type ShopProduct } from "@/lib/queries";
 
 function ticketsWordPdp(n: number) {
   const mod10 = n % 10;
@@ -22,29 +24,13 @@ function ticketsWordPdp(n: number) {
 
 
 export const Route = createFileRoute("/shop/$productSlug")({
-  loader: ({ params }) => {
-    const product = PRODUCTS.find((p) => p.slug === params.productSlug);
-    if (!product) throw notFound();
-    return { product };
-  },
-  head: ({ loaderData }) => {
-    const p = loaderData?.product as Product | undefined;
-    if (!p) return { meta: [{ title: "Товар — HELLHOUND" }] };
-    const title = `${p.name} — HELLHOUND Racing Club`;
-    const desc =
-      p.description?.slice(0, 155) ??
-      `${p.name}. ${p.price.toLocaleString("ru-RU")} ₽.`;
-    return {
-      meta: [
-        { title },
-        { name: "description", content: desc },
-        { property: "og:title", content: title },
-        { property: "og:description", content: desc },
-        { property: "og:image", content: p.image },
-        { property: "twitter:image", content: p.image },
-      ],
-    };
-  },
+  head: ({ params }) => ({
+    meta: [
+      { title: `Товар — HELLHOUND Racing Club` },
+      { property: "og:title", content: `Товар — HELLHOUND Racing Club` },
+      { name: "robots", content: params.productSlug ? undefined : "noindex" } as never,
+    ].filter(Boolean) as never,
+  }),
   notFoundComponent: () => (
     <div className="min-h-screen bg-background text-foreground">
       <Header />
@@ -92,56 +78,76 @@ export const Route = createFileRoute("/shop/$productSlug")({
   component: ProductPage,
 });
 
-const ACCORDION_KEYS = ["desc", "comp", "care", "ship", "returns"] as const;
+const ACCORDION_KEYS = ["desc", "ship", "returns"] as const;
 type AccordionKey = (typeof ACCORDION_KEYS)[number];
 
 function ProductPage() {
-  const { product } = Route.useLoaderData() as { product: Product };
-  const gallery: string[] = product.gallery?.length
-    ? product.gallery
-    : [product.image];
+  const { productSlug } = Route.useParams();
+  const { data: product, isLoading, isError, error } = useQuery({
+    queryKey: qk.shopProduct(productSlug),
+    queryFn: () => fetchShopProduct(productSlug),
+    retry: (count, err) => {
+      if (err instanceof ApiError && err.status === 404) return false;
+      return count < 2;
+    },
+  });
 
-  const [size, setSize] = useState<string | null>(
-    product.sizes?.[Math.min(1, product.sizes.length - 1)] ?? null,
-  );
+  if (isError && error instanceof ApiError && error.status === 404) {
+    throw notFound();
+  }
+
+  if (isLoading || !product) {
+    return (
+      <div className="min-h-screen bg-background text-foreground">
+        <Header />
+        <main className="mx-auto max-w-7xl px-6 py-32">
+          <div className="aspect-[3/4] w-full animate-pulse rounded-xl bg-surface" />
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  return <ProductView product={product} />;
+}
+
+function ProductView({ product }: { product: ShopProduct }) {
+  const gallery: string[] = product.images.length > 0 ? product.images : [];
+
   const [qty, setQty] = useState(1);
   const [open, setOpen] = useState<AccordionKey | null>("desc");
-  const [sizeGuide, setSizeGuide] = useState(false);
 
-  const sourceTone =
-    product.source === "hellhound"
-      ? "bg-primary text-primary-foreground"
-      : product.source === "partner"
-        ? "border border-primary/60 text-primary"
-        : "border border-border text-muted-foreground";
+  const isSold = product.stock !== null && product.stock <= 0;
+  const isPreorder = product.kind === "preorder";
+  const isDigital = product.kind === "digital";
 
-  const isSold = product.badge?.label.toLowerCase() === "распродано";
+  const sourceTone = "bg-primary text-primary-foreground";
+  const sourceLabel = isPreorder ? "ПРЕДЗАКАЗ" : isDigital ? "ЦИФРОВОЙ" : "HELLHOUND";
 
   const { add } = useCart();
   const navigate = useNavigate();
   const handleAdd = (goToCart = false) => {
     if (isSold) return;
-    if (product.sizes && product.sizes.length > 0 && !size) {
-      hhToast.error("Выберите размер", { meta: "HRC // SIZE_REQUIRED" });
-      return;
-    }
     add(
       {
+        productId: product.id,
         slug: product.slug,
-        name: product.name,
-        price: product.price,
-        image: product.image,
-        size,
-        ticketsBonus: product.ticketsBonus,
+        name: product.title,
+        price: product.priceRub,
+        image: gallery[0] ?? "",
+        size: null,
+        ticketsBonus: product.bonusTickets,
       },
       qty,
     );
 
     hhToast.success("Добавлено в корзину", {
-      meta: `${product.name}${size ? ` · ${size}` : ""} × ${qty}`,
+      meta: `${product.title} × ${qty}`,
     });
     if (goToCart) navigate({ to: "/cart" });
   };
+
+
 
   return (
     <div className="min-h-screen bg-background pb-24 text-foreground lg:pb-0">
