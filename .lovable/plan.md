@@ -1,76 +1,78 @@
-## Что делаем
+# План: Клуб как настоящее iOS PWA
 
-В iOS-PWA внутри «Настройки» сейчас 4 строки: Профиль и байк / Доставка / Уведомления / Аккаунт. Внешний список выглядит ок, но внутренние подэкраны частично мок (`ME` из `src/data/profile.ts`, хардкод email, тогглы без сохранения, кнопки без эффекта). Делаем каждый подэкран как нормальную iOS-страницу и подключаем к бекенду на `api.hhr.pro`.
+## Этап 1 — Полировка iOS-ощущения (UX/анимации)
 
-## 1. Профиль и байк
+Сейчас mobile-клуб «выглядит как iOS, но ведёт себя как сайт». Чиним базу.
 
-**Что показываем (в `IOSListSection`):**
-- Аватар (тап → загрузка через `uploadFileToS3('avatar')` → `PATCH /profile/me { avatarUrl }`)
-- Ник (read-only с подписью «менять нельзя» — ник смены в бекенде сейчас нет, не выдумываем)
-- Город, Bio, Telegram, Instagram, YouTube — `PATCH /profile/me`
-- Телефон — `PATCH /profile/me`
-- Блок «Основной байк» — берём primary из `useBikes()`. Кнопка «Изменить» открывает существующий `BikeFormModal`. Кнопка «Все байки» → `/club/garage`.
+### 1.1 Тач-фидбек и жесты
+- Убрать hover-эффекты на тач-устройствах (`@media (hover: hover)` гварды на всех `hover:` классах в клубных компонентах).
+- Добавить `active:scale-[0.97]` + `transition-transform` на все интерактивные карточки/кнопки (товар, миссия, билет, кнопки в Tab Bar).
+- `-webkit-tap-highlight-color: transparent` глобально для `.club-*`.
+- `touch-action: manipulation` чтобы убрать 300ms задержку.
+- `user-select: none` на UI-чрому (Tab Bar, заголовки), оставить только на контенте.
 
-**Источник:** `useMyProfile()` + `useUpdateMyProfile()` + `useBikes()` (всё уже есть).
-Сохранение — debounce on blur + явная кнопка «Сохранить» с toast (sonner).
+### 1.2 Скролл по-эпловски
+- `-webkit-overflow-scrolling: touch` + `overscroll-behavior-y: contain` на основных скролл-контейнерах.
+- Sticky header клуба: blur backdrop (`backdrop-blur-xl bg-background/70`), тонкая нижняя граница только при скролле > 0.
+- Безопасные зоны: `env(safe-area-inset-top/bottom)` для header и Tab Bar (сейчас Tab Bar налезает на home indicator на iPhone).
+- Pull-to-refresh отключить на статичных экранах (`overscroll-behavior: none` на body) — иначе бесит «резиновый» баунс на странице, где рефреша нет.
 
-## 2. Доставка (СДЭК)
+### 1.3 Переходы между экранами
+- Лёгкие fade+slide переходы между табами клуба через `motion/react` (`AnimatePresence` на `<Outlet/>` уровне `club.tsx`).
+- Карточка товара → детальный экран: shared layout transition (или хотя бы push-slide справа налево как в iOS).
+- Bottom sheets (MobileMoreSheet, корзина): springy spring-анимация, drag-to-dismiss.
 
-Сейчас в бекенде нет. Добавляем:
+### 1.4 Производительность (главная причина «лагает»)
+- Аудит ре-рендеров в `club.tsx` и Tab Bar (часто рендерится из-за useViewer/useQuery без `select`).
+- `content-visibility: auto` на длинных списках (товары, миссии).
+- Lazy-load изображений товаров (`loading="lazy"` + правильные размеры, без полноразмерных JPEG).
+- Code-split тяжёлых роутов клуба (`shop`, `raffles`, `profile`) — TanStack уже умеет, проверить что не тянем всё в один бандл.
 
-- Таблица `delivery_addresses` (1:1 к юзеру): `fullName`, `phone`, `city`, `postalCode`, `pickupPoint`, `comment`.
-- `GET /api/v1/profile/me/address` и `PUT /api/v1/profile/me/address` (Zod-валидация, RLS не нужна — Fastify+JWT cookie).
-- Хук `useMyAddress` / `useSaveMyAddress` в `src/lib/garage-api.ts`.
-- Подэкран: те же поля что сейчас в моке, но привязанные к стейту + кнопка «Сохранить адрес» → мутация.
+## Этап 2 — PWA (installable + standalone)
 
-## 3. Уведомления
+### 2.1 Manifest
+- `public/manifest.webmanifest`: `display: "standalone"`, `start_url: "/club"`, `scope: "/"`, тема под наш `--background`.
+- Иконки 192/512/maskable + apple-touch-icon 180×180.
+- `<link rel="manifest">` + `apple-mobile-web-app-capable` + `apple-mobile-web-app-status-bar-style="black-translucent"` в `__root.tsx`.
+- Splash screens для iOS (генерим набор PNG под популярные iPhone).
 
-В бекенде нет. Добавляем:
+### 2.2 Service Worker (по правилам Lovable)
+- `vite-plugin-pwa` с `devOptions.enabled: false`.
+- Гард регистрации SW: не регать в iframe/preview-домене (иначе сломает редактор).
+- `NetworkFirst` для HTML, `CacheFirst` для статики/картинок.
+- `navigateFallbackDenylist` для `/api`, `/~oauth`.
 
-- Таблица `notification_prefs` (1:1 к юзеру): jsonb-флаги `{ emailRaffles, emailOrders, emailNews, pushRaffles, pushOrders, pushNews }`.
-- `GET /api/v1/profile/me/notifications` и `PUT /api/v1/profile/me/notifications`.
-- Хуки + подэкран на `IOSToggleRow` (уже есть). Тоггл сохраняется сразу (optimistic).
-- Push-секцию помечаем «работает в установленной PWA» — без реальной web-push инфры пока (это отдельный большой проект, не в этой задаче).
+### 2.3 Install prompt
+- Кнопка «Установить приложение» в профиле клуба (Android — `beforeinstallprompt`, iOS — модалка с инструкцией «Поделиться → На экран Домой»).
 
-## 4. Аккаунт
+## Этап 3 — Push-уведомления
 
-- **Email** — показываем read-only из `me.email` (смена email требует verify-flow, в бекенде нет — не выдумываем, помечаем «обратиться в поддержку»).
-- **Пароль** — добавляем `POST /api/v1/auth/change-password { current, next }` (есть `verifyPassword` + `hashPassword`). Подэкран с тремя полями и тостом.
-- **Выйти** — уже работает (`POST /auth/logout` + redirect).
-- **Удалить аккаунт** — добавляем `DELETE /api/v1/auth/me` (cascade по `users.id`). На клиенте — confirm-модал с вводом ника для подтверждения, потом мутация + logout.
+iOS поддерживает Web Push **только** для установленных PWA (iOS 16.4+). Это диктует поток:
 
-## 5. Iframe / iOS-стиль
+### 3.1 Бэкенд (`server/`)
+- Таблица `push_subscriptions` (user_id, endpoint, p256dh, auth, platform, created_at).
+- Эндпоинты: `POST /api/v1/push/subscribe`, `POST /api/v1/push/unsubscribe`.
+- Сервис отправки через `web-push` (VAPID). Секреты: `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`.
+- Хуки на события: новый розыгрыш, победа в розыгрыше, ответ Hell AI/админа, новый мерч/Race Pass, статус заказа.
 
-Все 4 подэкрана живут внутри того же `SettingsMobile` `IOSSheet` (drill-in, как сейчас), но содержимое полностью переписываем на `IOSListSection` + `IOSListRow` + `IOSField` чтобы выглядело как нативные настройки iOS: серые подложки полей, разделители hairline, описания снизу секций, без рамок и хардкорных бордеров.
+### 3.2 Фронт
+- В `sw.js`: обработчики `push` (показать notification с иконкой/бейджем) и `notificationclick` (открыть нужный роут клуба).
+- На экране профиля клуба — toggle «Уведомления»: запрос permission → `pushManager.subscribe({ applicationServerKey })` → отправка на бек.
+- На iOS показывать toggle **только если** `display-mode: standalone` (иначе объяснить что нужно установить PWA сначала).
 
-## Технические детали
+### 3.3 Админка
+- На странице розыгрыша/мерча — чекбокс «Отправить пуш всем участникам клуба» при создании.
+- Простой broadcast-эндпоинт `POST /api/v1/admin/push/broadcast` (только для admin role).
 
-**Файлы бекенда (новые / правки):**
-```text
-server/src/db/schema/profile.ts        +deliveryAddresses, notificationPrefs
-server/src/routes/profile.ts           +GET/PUT /me/address, /me/notifications
-server/src/routes/auth.ts              +POST /auth/change-password, DELETE /auth/me
-server/drizzle/<timestamp>_settings.sql  миграция (после `pnpm db:generate`)
-```
+## Порядок работ (рекомендую делать раздельными апдейтами)
 
-**Файлы фронта:**
-```text
-src/lib/garage-api.ts                  +useMyAddress, useSaveMyAddress, useMyNotifications, useSaveMyNotifications, useChangePassword, useDeleteAccount
-src/components/club/SettingsModal.tsx  переписать 4 *Tab компонента на live-данные
-src/data/profile.ts                    оставить только типы; убрать мок ME
-```
+1. **Этап 1.1–1.2** — тач-фидбек, safe-area, отключить «резину». Быстро, сразу почувствуешь разницу.
+2. **Этап 1.3–1.4** — переходы и перф.
+3. **Этап 2** — manifest + SW + install prompt. После этого можно ставить на home screen.
+4. **Этап 3** — VAPID, подписки, пуши. Это уже отдельная работа с бэком и миграцией.
 
-**Миграция БД** запускается юзером на VPS как обычно:
-```bash
-cd /opt/hhr/server && git pull && docker compose up -d --build api
-```
-Drizzle применит миграцию при старте контейнера (entrypoint уже делает `pnpm db:migrate`, проверю).
+## Открытые вопросы
 
-## Что НЕ делаем в этой итерации
-
-- Реальные Web Push (нужна инфра + VAPID + SW pусk-handler).
-- Смену email (нужен verify-flow на новый email).
-- Смену ника (нужна проверка занятости + история ников).
-- Интеграцию с СДЭК-API (адрес сейчас просто хранится).
-
-Если что-то из этого нужно — добиваем отдельной задачей после.
+1. Иконку/splash берём из существующего лого HHR, или нужна отдельная иконка приложения (закруглённый квадрат под iOS)?
+2. На какие события точно хотим пуши в MVP? (мой дефолт: победа в розыгрыше + новый розыгрыш + ответ Hell AI).
+3. Делаем install prompt сразу для всех, или только после N посещений / в профиле кнопкой?
