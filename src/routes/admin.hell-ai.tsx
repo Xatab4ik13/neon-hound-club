@@ -65,9 +65,9 @@ function HellAiAdminPage() {
     setError(null);
     try {
       const [s, st, l] = await Promise.all([
-        apiFetch<{ settings: Settings; allowedModels: string[] }>("/admin/hell-ai/settings"),
-        apiFetch<{ stats: Stats }>("/admin/hell-ai/stats"),
-        apiFetch<{ messages: LogRow[] }>("/admin/hell-ai/log?limit=40"),
+        apiFetch<{ settings: Settings; allowedModels: string[] }>("/api/v1/admin/hell-ai/settings"),
+        apiFetch<{ stats: Stats }>("/api/v1/admin/hell-ai/stats"),
+        apiFetch<{ messages: LogRow[] }>("/api/v1/admin/hell-ai/log?limit=40"),
       ]);
       setSettings(s.settings);
       setAllowedModels(s.allowedModels);
@@ -98,7 +98,7 @@ function HellAiAdminPage() {
     setError(null);
     setSaved(false);
     try {
-      const res = await apiFetch<{ settings: Settings }>("/admin/hell-ai/settings", {
+      const res = await apiFetch<{ settings: Settings }>("/api/v1/admin/hell-ai/settings", {
         method: "PUT",
         body: JSON.stringify({
           systemPrompt: settings.systemPrompt,
