@@ -369,7 +369,7 @@ export async function feedRoutes(app: FastifyInstance) {
       .leftJoin(profiles, eq(profiles.userId, users.id))
       .where(eq(users.id, s.sub))
       .limit(1);
-    return {
+    const result = {
       id: row.id,
       postId: row.postId,
       authorId: row.authorId,
@@ -381,6 +381,8 @@ export async function feedRoutes(app: FastifyInstance) {
       likes: 0,
       liked: false,
     };
+    publishFeedEvent("comment.created", { postId: req.params.id, commentId: row.id });
+    return result;
   });
 
   // DELETE /api/v1/feed/comments/:cid — автор коммента или автор поста или admin/blogger
