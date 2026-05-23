@@ -53,7 +53,7 @@ export const UPLOAD_RULES: Record<
   bike: { mimes: ["image/jpeg", "image/png", "image/webp"], maxSize: 8 * 1024 * 1024, prefix: "bikes" },
   product: { mimes: ["image/jpeg", "image/png", "image/webp"], maxSize: 10 * 1024 * 1024, prefix: "products" },
   raffle: { mimes: ["image/jpeg", "image/png", "image/webp"], maxSize: 10 * 1024 * 1024, prefix: "raffles" },
-  shop: { mimes: ["image/jpeg", "image/png", "image/webp", "application/pdf"], maxSize: 10 * 1024 * 1024, prefix: "shop" },
+  shop: { mimes: ["image/jpeg", "image/png", "image/webp", "application/pdf", "application/zip", "application/x-zip-compressed"], maxSize: 50 * 1024 * 1024, prefix: "shop" },
   post: { mimes: ["image/jpeg", "image/png", "image/webp"], maxSize: 10 * 1024 * 1024, prefix: "posts" },
 };
 
@@ -63,6 +63,8 @@ function extFromMime(mime: string): string {
     case "image/png": return "png";
     case "image/webp": return "webp";
     case "application/pdf": return "pdf";
+    case "application/zip":
+    case "application/x-zip-compressed": return "zip";
     default: return "bin";
   }
 }

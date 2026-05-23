@@ -8,8 +8,51 @@ import {
   boolean,
   jsonb,
   index,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { users } from "./users.js";
+
+/**
+ * Категории и подкатегории магазина. Создаёт админ.
+ * subcategories.slug уникален в рамках своей категории.
+ */
+export const shopCategories = pgTable("shop_categories", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  slug: varchar("slug", { length: 64 }).notNull().unique(),
+  name: varchar("name", { length: 120 }).notNull(),
+  sort: integer("sort").notNull().default(0),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const shopSubcategories = pgTable(
+  "shop_subcategories",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    categoryId: uuid("category_id")
+      .notNull()
+      .references(() => shopCategories.id, { onDelete: "cascade" }),
+    slug: varchar("slug", { length: 64 }).notNull(),
+    name: varchar("name", { length: 120 }).notNull(),
+    sort: integer("sort").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    catIdx: index("shop_subcategories_cat_idx").on(t.categoryId),
+    catSlugUniq: uniqueIndex("shop_subcategories_cat_slug_uniq").on(t.categoryId, t.slug),
+  }),
+);
+
+export type ShopCategory = typeof shopCategories.$inferSelect;
+export type ShopSubcategory = typeof shopSubcategories.$inferSelect;
+
+/**
+ * Тип товара:
+ *   physical — обычный, доставляется СДЭКом, есть stock и shipping.
+ *   digital  — файл (PDF/JPG/ZIP) в MinIO. После оплаты — ссылка в кабинете покупателя.
+ *   preorder — оплата сразу, отгрузка с указанной даты (preorder_expected_at).
+ */
+export const PRODUCT_KINDS = ["physical", "digital", "preorder"] as const;
+export type ProductKind = (typeof PRODUCT_KINDS)[number];
 
 /**
  * Каталог товаров. Создаёт админ (Hell).
@@ -17,6 +60,9 @@ import { users } from "./users.js";
  * bonus_tickets — сколько билетов начислится покупателю при оплате (задаёт админ на товаре).
  * images — массив URL картинок (первая — обложка). Грузим в MinIO, тут только ссылки.
  * stock — null = без учёта остатков. 0 = нет в наличии. >0 — резервируем при заказе.
+ *         У digital — stock игнорируется (всегда null).
+ * digital_file_url / digital_file_name — только для kind='digital'.
+ * preorder_expected_at — только для kind='preorder'. Дата, с которой ожидается отгрузка.
  */
 export const products = pgTable(
   "products",
@@ -30,16 +76,44 @@ export const products = pgTable(
     images: jsonb("images").$type<string[]>().notNull().default([]),
     stock: integer("stock"), // nullable = unlimited
     active: boolean("active").notNull().default(true),
+    kind: varchar("kind", { length: 16 }).notNull().default("physical").$type<ProductKind>(),
+    categoryId: uuid("category_id").references(() => shopCategories.id, { onDelete: "set null" }),
+    subcategoryId: uuid("subcategory_id").references(() => shopSubcategories.id, { onDelete: "set null" }),
+    digitalFileUrl: text("digital_file_url"),
+    digitalFileName: varchar("digital_file_name", { length: 200 }),
+    preorderExpectedAt: timestamp("preorder_expected_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => ({
     activeIdx: index("products_active_idx").on(t.active),
+    categoryIdx: index("products_category_idx").on(t.categoryId),
+    kindIdx: index("products_kind_idx").on(t.kind),
   }),
 );
 
 export type Product = typeof products.$inferSelect;
 export type NewProduct = typeof products.$inferInsert;
+
+/**
+ * Витрина — ручная подборка товаров на главной/клубе (до 6 шт.).
+ * Один товар = одна строка. Сортировка через `sort` (по возрастанию).
+ */
+export const shopShowcase = pgTable(
+  "shop_showcase",
+  {
+    productId: uuid("product_id")
+      .primaryKey()
+      .references(() => products.id, { onDelete: "cascade" }),
+    sort: integer("sort").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    sortIdx: index("shop_showcase_sort_idx").on(t.sort),
+  }),
+);
+
+export type ShopShowcaseRow = typeof shopShowcase.$inferSelect;
 
 /**
  * Заказ.

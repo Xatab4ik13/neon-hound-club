@@ -113,6 +113,13 @@
       "when": 1779620000000,
       "tag": "0015_raffle_prizes",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1779630000000,
+      "tag": "0016_shop_categories_kind",
+      "breakpoints": true
     }
   ]
 }
