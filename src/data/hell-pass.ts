@@ -239,22 +239,15 @@ const PLATINUM_GROUPS: { title: string; perks: Perk[] }[] = [
     ],
   },
   {
-    title: "Клуб и влияние",
+    title: "Клуб",
     perks: [
-      {
-        icon: Vote,
-        value: "×5",
-        label: "Вес голоса за следующее видео",
-        detail:
-          "Один голос Platinum = пять обычных. Реальный вес в решении, куда движется канал.",
-      },
       {
         icon: Zap,
         value: "×2.0",
         accent: true,
         label: "Буст XP клуба",
         detail:
-          "Удвоенный опыт. Ранг Alpha Hound и Hell Legend становятся реально достижимыми за сезон.",
+          "Удвоенный опыт за челленджи. Ранг Alpha Hound и Hell Legend становятся реально достижимыми за сезон.",
       },
     ],
   },
@@ -276,18 +269,6 @@ const PLATINUM_GROUPS: { title: string; perks: Perk[] }[] = [
         label: "Лимитированный мерч в подарок",
         detail:
           "Раз в сезон — отдельный лимитированный предмет, который доступен только Platinum-подписчикам. В магазине его не купить.",
-      },
-    ],
-  },
-  {
-    title: "Коллекция",
-    perks: [
-      {
-        icon: Crown,
-        accent: true,
-        label: "Значок «Platinum S01» + Founder в первый месяц",
-        detail:
-          "Сезонный Legendary-значок Platinum + Mythic-значок Founder, если оформил подписку в первый месяц запуска. Founder выдаётся один раз — потом исчезает навсегда.",
       },
     ],
   },
