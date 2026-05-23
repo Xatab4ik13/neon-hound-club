@@ -195,6 +195,15 @@ function MePage() {
 
       <SettingsModal open={settingsOpen} onOpenChange={setSettingsOpen} />
       <BackgroundPickerSheet open={bgSheetOpen} onOpenChange={setBgSheetOpen} />
+      <IOSConfirm
+        open={confirmLogout}
+        onOpenChange={setConfirmLogout}
+        title="Выйти из клуба?"
+        description="Чтобы вернуться, нужно будет войти заново."
+        confirmLabel="Выйти"
+        destructive
+        onConfirm={doLogout}
+      />
     </main>
   );
 }
