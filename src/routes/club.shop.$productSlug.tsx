@@ -134,7 +134,7 @@ function ProductView({ product }: { product: ShopProduct }) {
 
   return (
     <main
-      className="mx-auto w-full max-w-3xl pb-[calc(108px+env(safe-area-inset-bottom))] md:pb-12"
+      className="mx-auto w-full max-w-3xl pb-[calc(160px+env(safe-area-inset-bottom))] md:pb-12"
     >
       <div className="flex items-center justify-between px-4 pt-4">
         <Link
