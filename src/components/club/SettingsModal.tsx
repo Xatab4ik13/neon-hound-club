@@ -965,6 +965,15 @@ function AccountTab({ mobile, onClose }: { mobile?: boolean; onClose?: () => voi
             </>
           )}
         </IOSListSection>
+        <IOSConfirm
+          open={confirmLogout}
+          onOpenChange={setConfirmLogout}
+          title="Выйти из аккаунта?"
+          description="Чтобы вернуться, нужно будет войти заново."
+          confirmLabel="Выйти"
+          destructive
+          onConfirm={doLogoutNow}
+        />
       </>
     );
   }
