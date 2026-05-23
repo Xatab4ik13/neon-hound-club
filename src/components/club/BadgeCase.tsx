@@ -1,43 +1,31 @@
-// Витрина значков в профиле. Сверху — закреплённые 4 слота (как pinned
-// items в CS-инвентаре). Ниже — полная коллекция: по умолчанию показываются
-// только полученные значки (owned). Админ / владелец может включить showLocked.
+// Витрина значков в профиле. Источник данных — бекенд (/api/v1/badges/me).
+// Если у юзера нет значков — показываем пустые слоты с подсказкой.
 
 import { useState } from "react";
-import {
-  BADGES,
-  PINNED_BADGE_IDS,
-  RARITY,
-  type Badge,
-  type BadgeCategory,
-} from "@/data/badges";
-import { BadgeIcon } from "./BadgeIcon";
+import { useQuery } from "@tanstack/react-query";
 import { Lock } from "lucide-react";
+import { BadgeIcon } from "./BadgeIcon";
+import { fetchMyBadges, type MyBadge, type BadgeRarity } from "@/lib/queries";
 
-const CATEGORY_LABEL: Record<BadgeCategory, string> = {
-  pass: "Hell Pass · сезонные",
-  founder: "Founder",
-  rank: "Ранги",
-  achievement: "Достижения",
-  event: "Эвенты",
-  club: "Клуб",
+const RARITY: Record<BadgeRarity, { label: string; color: string; soft: string }> = {
+  common: { label: "common", color: "#9aa0a6", soft: "rgba(154,160,166,0.35)" },
+  rare: { label: "rare", color: "#3aa0ff", soft: "rgba(58,160,255,0.4)" },
+  epic: { label: "epic", color: "#b48dff", soft: "rgba(180,141,255,0.45)" },
+  legendary: { label: "legendary", color: "#ffb648", soft: "rgba(255,182,72,0.5)" },
+  mythic: { label: "mythic", color: "#ff3344", soft: "rgba(255,51,68,0.55)" },
 };
 
-const CATEGORY_ORDER: BadgeCategory[] = [
-  "founder",
-  "pass",
-  "rank",
-  "achievement",
-  "event",
-  "club",
-];
-
-export function BadgeCase({ showLocked = false }: { showLocked?: boolean }) {
-  const [selected, setSelected] = useState<Badge | null>(null);
-  const visibleBadges = showLocked ? BADGES : BADGES.filter((b) => b.owned);
-  const ownedCount = visibleBadges.length;
-  const pinned = PINNED_BADGE_IDS.map((id) => BADGES.find((b) => b.id === id)).filter(
-    (b): b is Badge => !!b && b.owned,
-  );
+export function BadgeCase() {
+  const [selected, setSelected] = useState<MyBadge | null>(null);
+  const q = useQuery({
+    queryKey: ["badges", "me"],
+    queryFn: fetchMyBadges,
+    staleTime: 60_000,
+    retry: false,
+  });
+  const all = q.data?.items ?? [];
+  const pinned = all.filter((b) => b.pinned).slice(0, 4);
+  const ownedCount = all.length;
 
   return (
     <section aria-label="Витрина значков" className="mb-10">
@@ -62,21 +50,20 @@ export function BadgeCase({ showLocked = false }: { showLocked?: boolean }) {
         </div>
       </div>
 
-      {/* Витрина: 4 pinned */}
+      {/* Витрина: 4 pinned (или пустые слоты) */}
       <div className="grid grid-cols-2 gap-2 border border-white/[0.06] bg-[#0b0b0b] p-3 sm:grid-cols-4 md:gap-3 md:p-4">
         {Array.from({ length: 4 }).map((_, i) => {
           const b = pinned[i];
           if (!b) return <EmptyPinned key={i} />;
-          return (
-            <PinnedSlot
-              key={b.id}
-              badge={b}
-              onClick={() => setSelected(b)}
-            />
-          );
+          return <PinnedSlot key={b.badgeId} badge={b} onClick={() => setSelected(b)} />;
         })}
       </div>
 
+      {ownedCount === 0 && (
+        <p className="mt-3 text-center font-mono text-[10px] uppercase tracking-wider text-muted-foreground/70">
+          Значков пока нет — появятся за активность и эвенты
+        </p>
+      )}
 
       {/* Деталь выбранного значка */}
       {selected && <BadgeDetail badge={selected} onClose={() => setSelected(null)} />}
@@ -96,7 +83,7 @@ function EmptyPinned() {
   );
 }
 
-function PinnedSlot({ badge, onClick }: { badge: Badge; onClick: () => void }) {
+function PinnedSlot({ badge, onClick }: { badge: MyBadge; onClick: () => void }) {
   const r = RARITY[badge.rarity];
   const premium = badge.rarity === "legendary" || badge.rarity === "mythic";
   return (
@@ -124,17 +111,11 @@ function PinnedSlot({ badge, onClick }: { badge: Badge; onClick: () => void }) {
             "repeating-linear-gradient(45deg, transparent, transparent 6px, #fff 6px, #fff 7px)",
         }}
       />
-      {/* Sweep блик на hover */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 overflow-hidden"
-      >
-        <div
-          className="absolute top-0 h-full w-1/3 -translate-x-[120%] skew-x-[-20deg] bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-[260%]"
-        />
+      <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute top-0 h-full w-1/3 -translate-x-[120%] skew-x-[-20deg] bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-[260%]" />
       </div>
       <div className="relative">
-        <BadgeIcon id={badge.id} color={r.color} soft={r.soft} size={56} animated premium={premium} />
+        <BadgeIcon id={badge.code} color={r.color} soft={r.soft} size={56} animated premium={premium} />
       </div>
       <div className="relative mt-2 font-display text-[10px] font-black uppercase italic tracking-wider text-foreground md:text-[11px]">
         {badge.name}
@@ -149,82 +130,10 @@ function PinnedSlot({ badge, onClick }: { badge: Badge; onClick: () => void }) {
   );
 }
 
-function BadgeTile({ badge, onClick }: { badge: Badge; onClick: () => void }) {
-  const r = RARITY[badge.rarity];
-  const locked = !badge.owned;
-  const premium = badge.rarity === "legendary" || badge.rarity === "mythic";
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="group relative flex aspect-square flex-col items-center justify-center overflow-hidden border bg-[#0b0b0b] p-2 text-center transition-all hover:-translate-y-0.5 hover:scale-[1.04]"
-      style={{
-        borderColor: locked ? "rgba(255,255,255,0.05)" : r.soft,
-      }}
-      aria-label={badge.name}
-    >
-      {/* rarity glow только если owned */}
-      {!locked && (
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 opacity-30 transition-opacity group-hover:opacity-60"
-          style={{
-            background: `radial-gradient(120% 80% at 50% 110%, ${r.color}55 0%, transparent 65%)`,
-          }}
-        />
-      )}
-      {/* Sweep на hover */}
-      {!locked && (
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 overflow-hidden"
-        >
-          <div className="absolute top-0 h-full w-1/3 -translate-x-[120%] skew-x-[-20deg] bg-gradient-to-r from-transparent via-white/15 to-transparent transition-transform duration-700 group-hover:translate-x-[260%]" />
-        </div>
-      )}
-      <div
-        className="relative transition-transform"
-        style={{
-          filter: locked ? "grayscale(1) brightness(0.32) opacity(0.85)" : "none",
-        }}
-      >
-        <BadgeIcon
-          id={badge.id}
-          color={locked ? "#3a3a3a" : r.color}
-          soft={r.soft}
-          size={40}
-          animated={!locked}
-          premium={!locked && premium}
-        />
-      </div>
-      <div
-        className="relative mt-1.5 line-clamp-1 font-mono text-[9px] uppercase tracking-wider"
-        style={{ color: locked ? "rgba(167,167,167,0.4)" : "rgba(255,255,255,0.78)" }}
-      >
-        {badge.name}
-      </div>
-      {locked && (
-        <div className="absolute right-1 top-1 rounded-sm bg-black/70 p-0.5">
-          <Lock className="h-2.5 w-2.5 text-muted-foreground" />
-        </div>
-      )}
-      {badge.issue && !locked && (
-        <div
-          className="absolute left-1 top-1 px-1 font-mono text-[8px] font-bold tracking-wider"
-          style={{ color: r.color, background: "rgba(0,0,0,0.55)" }}
-        >
-          {badge.issue}
-        </div>
-      )}
-    </button>
-  );
-}
-
 // ── Modal ─────────────────────────────────────────────────────────────────
 
-function BadgeDetail({ badge, onClose }: { badge: Badge; onClose: () => void }) {
+function BadgeDetail({ badge, onClose }: { badge: MyBadge; onClose: () => void }) {
   const r = RARITY[badge.rarity];
-  const locked = !badge.owned;
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 animate-fade-in"
@@ -244,19 +153,14 @@ function BadgeDetail({ badge, onClose }: { badge: Badge; onClose: () => void }) 
           }}
         />
         <div className="relative flex flex-col items-center text-center">
-          <div
-            className="flex h-28 w-28 items-center justify-center"
-            style={{
-              filter: locked ? "grayscale(1) brightness(0.4)" : "none",
-            }}
-          >
+          <div className="flex h-28 w-28 items-center justify-center">
             <BadgeIcon
-              id={badge.id}
-              color={locked ? "#444" : r.color}
+              id={badge.code}
+              color={r.color}
               soft={r.soft}
               size={104}
-              animated={!locked}
-              premium={!locked && (badge.rarity === "legendary" || badge.rarity === "mythic")}
+              animated
+              premium={badge.rarity === "legendary" || badge.rarity === "mythic"}
             />
           </div>
           <div
@@ -269,18 +173,10 @@ function BadgeDetail({ badge, onClose }: { badge: Badge; onClose: () => void }) 
           <h3 className="mt-2 font-display text-2xl font-black uppercase italic tracking-tighter text-foreground">
             {badge.name}
           </h3>
-          <p className="mt-2 max-w-sm text-sm text-muted-foreground">
-            {badge.description}
-          </p>
+          <p className="mt-2 max-w-sm text-sm text-muted-foreground">{badge.description}</p>
           {badge.mintedOf && (
             <div className="mt-3 font-mono text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
               выдано: <span className="font-bold tabular-nums text-foreground">{badge.mintedOf}</span>
-            </div>
-          )}
-          {locked && (
-            <div className="mt-4 flex items-center gap-2 border border-white/10 bg-black/40 px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-              <Lock className="h-3 w-3" />
-              ещё не получен
             </div>
           )}
         </div>
