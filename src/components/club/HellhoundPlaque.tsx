@@ -1,12 +1,15 @@
-// Уникальная плашка для Hell. Используется вместо ранговой плашки/аватара
-// везде, где автор/комментатор — slug "hell". Ни у кого больше её не будет.
+// Уникальная плашка для аккаунта блогера-владельца клуба. Используется вместо
+// ранговой плашки/аватара везде, где автор/комментатор — единственный блогер.
 
 import type { CSSProperties } from "react";
+import { PUBLIC_USERS } from "@/data/users";
 
 const HELL_GRADIENT = "linear-gradient(135deg, #ff2d4a 0%, #ff8a3d 50%, #ffd166 100%)";
 
 export function isHell(slug?: string) {
-  return slug?.toLowerCase() === "hell";
+  if (!slug) return false;
+  const s = slug.toLowerCase();
+  return PUBLIC_USERS[s]?.isBlogger === true;
 }
 
 /** Аватар-шеврон с анимированным красно-золотым свечением. */

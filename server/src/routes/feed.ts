@@ -98,6 +98,7 @@ async function hydratePosts(rows: typeof posts.$inferSelect[], viewerId: string 
         createdAt: postComments.createdAt,
         authorId: postComments.authorId,
         nick: users.nick,
+        role: users.role,
         avatarUrl: profiles.avatarUrl,
       })
       .from(postComments)
@@ -191,6 +192,7 @@ async function hydratePosts(rows: typeof posts.$inferSelect[], viewerId: string 
         createdAt: c.createdAt,
         authorId: c.authorId,
         nick: c.nick,
+        role: c.role,
         avatarUrl: c.avatarUrl,
       })),
       createdAt: r.createdAt,
@@ -246,6 +248,7 @@ export async function feedRoutes(app: FastifyInstance) {
         createdAt: postComments.createdAt,
         authorId: postComments.authorId,
         nick: users.nick,
+        role: users.role,
         avatarUrl: profiles.avatarUrl,
       })
       .from(postComments)
@@ -340,7 +343,7 @@ export async function feedRoutes(app: FastifyInstance) {
     }).catch(() => null);
     // Возвращаем hydrated-форму (как ждёт фронт: FeedCommentHydrated)
     const [author] = await db
-      .select({ nick: users.nick, avatarUrl: profiles.avatarUrl })
+      .select({ nick: users.nick, role: users.role, avatarUrl: profiles.avatarUrl })
       .from(users)
       .leftJoin(profiles, eq(profiles.userId, users.id))
       .where(eq(users.id, s.sub))
@@ -350,6 +353,7 @@ export async function feedRoutes(app: FastifyInstance) {
       postId: row.postId,
       authorId: row.authorId,
       nick: author?.nick ?? "",
+      role: author?.role ?? "user",
       avatarUrl: author?.avatarUrl ?? null,
       text: row.text,
       createdAt: row.createdAt,

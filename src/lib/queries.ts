@@ -433,6 +433,7 @@ export type FeedCommentHydrated = {
   createdAt: string;
   authorId: string;
   nick: string;
+  role: "user" | "admin" | "blogger";
   avatarUrl: string | null;
 };
 
