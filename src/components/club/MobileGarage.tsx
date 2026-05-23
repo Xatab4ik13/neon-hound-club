@@ -1432,7 +1432,7 @@ function Fab({ onClick }: { onClick: () => void }) {
 function EmptyGarage({ onAdd }: { onAdd: () => void }) {
   return (
     <div className="px-4 pb-32 pt-8">
-      <h1 className="text-[34px] font-bold tracking-tight text-foreground">Гараж</h1>
+      <h1 className="font-display text-[34px] font-black italic uppercase leading-none tracking-tight text-foreground">Гараж</h1>
       <div className="mt-8 rounded-3xl border border-dashed border-white/[0.12] bg-card/30 p-10 text-center">
         <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-primary/10 text-primary">
           <Bike className="h-7 w-7" />
