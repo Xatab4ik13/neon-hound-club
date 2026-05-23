@@ -3,7 +3,12 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Search, X, ShoppingBag, Ticket } from "lucide-react";
 import { PageHeader } from "@/components/club/PageHeader";
-import { fetchShopProducts, qk, type ShopProductListItem } from "@/lib/queries";
+import {
+  fetchShopCategories,
+  fetchShopProducts,
+  qk,
+  type ShopProductListItem,
+} from "@/lib/queries";
 
 export const Route = createFileRoute("/club/shop/")({
   head: () => ({
@@ -26,20 +31,49 @@ const SORTS: { id: Sort; label: string }[] = [
 function ClubShopPage() {
   const [q, setQ] = useState("");
   const [sort, setSort] = useState<Sort>("new");
+  const [activeCat, setActiveCat] = useState<string>("all"); // "all" | categoryId
+  const [activeSub, setActiveSub] = useState<string | null>(null);
 
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: qk.shopProducts,
     queryFn: fetchShopProducts,
   });
+  const { data: catsData } = useQuery({
+    queryKey: qk.shopCategories,
+    queryFn: fetchShopCategories,
+  });
+
+  const products = data?.items ?? [];
+  const categories = catsData?.items ?? [];
+
+  const activeCatObj = categories.find((c) => c.id === activeCat);
+  const subs = activeCatObj?.subs ?? [];
 
   const filtered = useMemo(() => {
-    const list = (data?.items ?? []).slice();
+    let list = products.slice();
+
+    // Фильтр по категории / подкатегории
+    if (activeCat !== "all") {
+      list = list.filter((p) => {
+        if (activeSub) return p.categoryId === activeCat && p.subcategoryId === activeSub;
+        return p.categoryId === activeCat;
+      });
+    }
+
+    // Поиск
     const needle = q.trim().toLowerCase();
-    const out = needle ? list.filter((p) => p.title.toLowerCase().includes(needle)) : list;
-    if (sort === "price-asc") out.sort((a, b) => a.priceRub - b.priceRub);
-    if (sort === "price-desc") out.sort((a, b) => b.priceRub - a.priceRub);
-    return out;
-  }, [data, q, sort]);
+    if (needle) list = list.filter((p) => p.title.toLowerCase().includes(needle));
+
+    // Сортировка
+    if (sort === "price-asc") list.sort((a, b) => a.priceRub - b.priceRub);
+    if (sort === "price-desc") list.sort((a, b) => b.priceRub - a.priceRub);
+    return list;
+  }, [products, q, sort, activeCat, activeSub]);
+
+  const selectCat = (id: string) => {
+    setActiveCat(id);
+    setActiveSub(null);
+  };
 
   return (
     <main className="mx-auto w-full max-w-5xl px-4 py-5 md:py-8">
@@ -68,7 +102,41 @@ function ClubShopPage() {
         </div>
       </div>
 
-      {/* Sort chips */}
+      {/* Категории — основной ряд чипов */}
+      <div className="-mx-4 mb-3 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <CatChip active={activeCat === "all"} onClick={() => selectCat("all")}>
+          Все
+        </CatChip>
+        {categories.map((c) => (
+          <CatChip
+            key={c.id}
+            active={activeCat === c.id}
+            onClick={() => selectCat(c.id)}
+          >
+            {c.name}
+          </CatChip>
+        ))}
+      </div>
+
+      {/* Подкатегории — мелкие чипы, появляются только если есть */}
+      {subs.length > 0 && (
+        <div className="-mx-4 mb-4 flex gap-1.5 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <SubChip active={activeSub === null} onClick={() => setActiveSub(null)}>
+            Всё в «{activeCatObj?.name}»
+          </SubChip>
+          {subs.map((s) => (
+            <SubChip
+              key={s.id}
+              active={activeSub === s.id}
+              onClick={() => setActiveSub(s.id)}
+            >
+              {s.name}
+            </SubChip>
+          ))}
+        </div>
+      )}
+
+      {/* Сортировка */}
       <div className="-mx-4 mb-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {SORTS.map((s) => {
           const active = s.id === sort;
@@ -110,6 +178,54 @@ function ClubShopPage() {
         </div>
       )}
     </main>
+  );
+}
+
+function CatChip({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`shrink-0 rounded-full px-4 py-2 font-mono text-[12px] font-bold uppercase tracking-wider transition-all active:scale-95 ${
+        active
+          ? "bg-primary text-primary-foreground"
+          : "border border-white/[0.08] bg-white/[0.03] text-muted-foreground"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function SubChip({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`shrink-0 rounded-full px-3 py-1.5 text-[11px] font-medium transition-all active:scale-95 ${
+        active
+          ? "bg-primary/15 text-primary"
+          : "bg-white/[0.03] text-muted-foreground/80 hover:text-foreground"
+      }`}
+    >
+      {children}
+    </button>
   );
 }
 
@@ -160,12 +276,12 @@ function EmptyState({ hasQuery }: { hasQuery: boolean }) {
         <ShoppingBag className="h-5 w-5" />
       </div>
       <div className="mt-4 font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
-        {hasQuery ? "Ничего не нашли" : "Магазин пуст"}
+        {hasQuery ? "Ничего не нашли" : "Пусто"}
       </div>
       <p className="mt-2 max-w-[34ch] text-sm text-muted-foreground/80">
         {hasQuery
           ? "Попробуй другой запрос."
-          : "Hell ещё ничего не добавил. Заглядывай позже — мерч появится здесь."}
+          : "В этой категории пока ничего нет. Загляни позже."}
       </p>
     </div>
   );
