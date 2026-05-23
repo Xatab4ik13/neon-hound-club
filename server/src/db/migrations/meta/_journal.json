@@ -24,6 +24,8 @@
     { "idx": 19, "version": "7", "when": 1779660000000, "tag": "0019_push_subscriptions", "breakpoints": true },
     { "idx": 20, "version": "7", "when": 1779670000000, "tag": "0020_quests_v2", "breakpoints": true },
     { "idx": 21, "version": "7", "when": 1779680000000, "tag": "0021_economy_settings", "breakpoints": true },
-    { "idx": 22, "version": "7", "when": 1779690000000, "tag": "0022_hell_ai", "breakpoints": true }
+    { "idx": 22, "version": "7", "when": 1779690000000, "tag": "0022_hell_ai", "breakpoints": true },
+    { "idx": 23, "version": "7", "when": 1779700000000, "tag": "0023_hell_ai_default_model", "breakpoints": true },
+    { "idx": 24, "version": "7", "when": 1779710000000, "tag": "0024_pass_perks", "breakpoints": true }
   ]
 }
