@@ -26,6 +26,7 @@ import { MobileTabBar } from "@/components/club/MobileTabBar";
 import { MobileTopBar } from "@/components/club/MobileTopBar";
 import { MobileTransition } from "@/components/club/MobileTransition";
 import { PullToRefresh } from "@/components/club/PullToRefresh";
+import { OfflineBanner } from "@/components/club/OfflineBanner";
 
 export const Route = createFileRoute("/club")({
   head: () => ({
