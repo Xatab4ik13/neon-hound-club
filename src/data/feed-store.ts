@@ -80,10 +80,14 @@ function ensurePublicUser(input: {
   city: string | null;
 }): string {
   const slug = makeSlug(input.nick);
+  const isBlogger = input.role === "blogger" || input.role === "admin";
   if (PUBLIC_USERS[slug]) {
-    // Всегда синхронизируем аватар с сервером (может смениться или сброситься).
-    if (PUBLIC_USERS[slug].avatarUrl !== (input.avatarUrl ?? undefined)) {
-      PUBLIC_USERS[slug] = { ...PUBLIC_USERS[slug], avatarUrl: input.avatarUrl ?? undefined };
+    const cur = PUBLIC_USERS[slug];
+    const nextAvatar = input.avatarUrl ?? undefined;
+    // Если есть свежий сигнал роли — поднимаем флаг блогера (не гасим существующий true).
+    const nextBlogger = cur.isBlogger || isBlogger;
+    if (cur.avatarUrl !== nextAvatar || cur.isBlogger !== nextBlogger) {
+      PUBLIC_USERS[slug] = { ...cur, avatarUrl: nextAvatar, isBlogger: nextBlogger };
     }
     return slug;
   }
@@ -96,6 +100,7 @@ function ensurePublicUser(input: {
     rank: "rookie",
     xpPct: 0,
     role,
+    isBlogger,
     city: input.city ?? undefined,
     joined: "",
     badgeIds: [],
@@ -124,7 +129,7 @@ function mapComment(c: FeedCommentHydrated): FeedComment {
   const slug = ensurePublicUser({
     id: c.authorId,
     nick: c.nick,
-    role: null,
+    role: c.role,
     avatarUrl: c.avatarUrl,
     city: null,
   });
