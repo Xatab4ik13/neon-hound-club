@@ -1039,16 +1039,23 @@ function StickerPanel({
           </div>
         ) : (
           <div className={`grid gap-1 pt-1 ${large ? "grid-cols-4 sm:grid-cols-5" : "grid-cols-5 sm:grid-cols-6"}`}>
-            {recent.map((s, i) => (
-              <button
-                key={`${s}-${i}`}
-                type="button"
-                onClick={() => onPickSticker(s)}
-                className={`grid aspect-square place-items-center rounded-lg transition-transform active:scale-90 hover:bg-white/[0.04] ${large ? "text-5xl sm:text-6xl" : "text-3xl sm:text-4xl"}`}
-              >
-                <span>{s}</span>
-              </button>
-            ))}
+            {recent.map((s, i) => {
+              const url = parseSticker(s);
+              return (
+                <button
+                  key={`${s}-${i}`}
+                  type="button"
+                  onClick={() => onPickSticker(s)}
+                  className={`grid aspect-square place-items-center rounded-lg transition-transform active:scale-90 hover:bg-white/[0.04] ${url ? "p-1.5" : large ? "text-5xl sm:text-6xl" : "text-3xl sm:text-4xl"}`}
+                >
+                  {url ? (
+                    <img src={url} alt="" loading="lazy" decoding="async" draggable={false} className="h-full w-full select-none object-contain" />
+                  ) : (
+                    <span>{s}</span>
+                  )}
+                </button>
+              );
+            })}
           </div>
         )}
       </div>
