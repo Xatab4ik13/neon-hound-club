@@ -515,7 +515,7 @@ function CommentItem({
 
   return (
     <li className="flex gap-3">
-      <UserLink slug={comment.authorSlug}>
+      <UserLink slug={comment.authorSlug} disabled={authorIsBlogger}>
         {authorIsBlogger ? (
           <HellhoundAvatar size={large ? 40 : 36} initials={user?.initials ?? "H"} avatarUrl={user?.avatarUrl} />
         ) : (
@@ -529,7 +529,7 @@ function CommentItem({
       </UserLink>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <UserLink slug={comment.authorSlug} className="min-w-0 truncate">
+          <UserLink slug={comment.authorSlug} disabled={authorIsBlogger} className="min-w-0 truncate">
             <span
               className={`truncate font-display font-bold uppercase italic tracking-tight transition-opacity hover:opacity-80 ${large ? "text-[14px]" : "text-[13px]"}`}
               style={{ color: authorIsBlogger ? undefined : rank.accent }}
