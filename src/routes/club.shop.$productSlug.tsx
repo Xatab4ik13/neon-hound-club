@@ -12,6 +12,7 @@ import { hhToast } from "@/lib/hh-toast";
 import { useCart } from "@/hooks/use-cart";
 import { haptic } from "@/hooks/use-haptic";
 import { ApiError } from "@/lib/api";
+import { LazyImage } from "@/components/ui/lazy-image";
 import { fetchShopProduct, qk, type ShopProduct } from "@/lib/queries";
 
 export const Route = createFileRoute("/club/shop/$productSlug")({
@@ -151,11 +152,12 @@ function ProductView({ product }: { product: ShopProduct }) {
 
       <section className="relative mt-3 aspect-square w-full overflow-hidden bg-surface">
         {cover ? (
-          <img
+          <LazyImage
+            key={cover}
             src={cover}
             alt={product.title}
-            loading="eager"
-            className="h-full w-full object-cover"
+            eager
+            className="absolute inset-0 h-full w-full object-cover"
           />
         ) : (
           <div className="grid h-full w-full place-items-center text-muted-foreground/40">
