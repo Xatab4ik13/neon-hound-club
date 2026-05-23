@@ -425,10 +425,7 @@ function ProductModal({
     mutationFn: () => {
       const payload: CreateProductInput = {
         ...p,
-        images: imagesText
-          .split("\n")
-          .map((s) => s.trim())
-          .filter(Boolean),
+        images: images.filter(Boolean).slice(0, 5),
         stock: p.kind === "digital" ? null : unlimited ? null : Math.max(0, Number(p.stock) || 0),
         categoryId: p.categoryId || null,
         subcategoryId: p.subcategoryId || null,
