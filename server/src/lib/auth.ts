@@ -85,10 +85,10 @@ export async function requireAuth(req: FastifyRequest, reply: FastifyReply): Pro
     await req.jwtVerify();
     const fresh = await hydrateFreshSession(req);
     if (!fresh) {
-      reply.code(401).send({ error: "unauthorized", message: "Сессия устарела" });
+      return reply.code(401).send({ error: "unauthorized", message: "Сессия устарела" });
     }
   } catch {
-    reply.code(401).send({ error: "unauthorized", message: "Требуется вход" });
+    return reply.code(401).send({ error: "unauthorized", message: "Требуется вход" });
   }
 }
 
@@ -98,14 +98,13 @@ export async function requireAdmin(req: FastifyRequest, reply: FastifyReply): Pr
     await req.jwtVerify();
     const u = await hydrateFreshSession(req);
     if (!u) {
-      reply.code(401).send({ error: "unauthorized", message: "Сессия устарела" });
-      return;
+      return reply.code(401).send({ error: "unauthorized", message: "Сессия устарела" });
     }
     if (u.role !== "admin") {
-      reply.code(403).send({ error: "forbidden", message: "Только для админа" });
+      return reply.code(403).send({ error: "forbidden", message: "Только для админа" });
     }
   } catch {
-    reply.code(401).send({ error: "unauthorized", message: "Требуется вход" });
+    return reply.code(401).send({ error: "unauthorized", message: "Требуется вход" });
   }
 }
 
@@ -115,13 +114,12 @@ export async function requireBloggerOrAdmin(req: FastifyRequest, reply: FastifyR
     await req.jwtVerify();
     const u = await hydrateFreshSession(req);
     if (!u) {
-      reply.code(401).send({ error: "unauthorized", message: "Сессия устарела" });
-      return;
+      return reply.code(401).send({ error: "unauthorized", message: "Сессия устарела" });
     }
     if (u.role !== "admin" && u.role !== "blogger") {
-      reply.code(403).send({ error: "forbidden", message: "Только для блогера" });
+      return reply.code(403).send({ error: "forbidden", message: "Только для блогера" });
     }
   } catch {
-    reply.code(401).send({ error: "unauthorized", message: "Требуется вход" });
+    return reply.code(401).send({ error: "unauthorized", message: "Требуется вход" });
   }
 }
