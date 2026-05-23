@@ -98,6 +98,16 @@ function RafflesPage() {
   const [confirmPick, setConfirmPick] = useState<RaffleListItem | null>(null);
   const [confirmCancel, setConfirmCancel] = useState<RaffleListItem | null>(null);
   const [winnersOf, setWinnersOf] = useState<RaffleListItem | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<RaffleListItem | null>(null);
+
+  const del = useMutation({
+    mutationFn: (id: string) => deleteAdminRaffle(id),
+    onSuccess: () => {
+      toast.success("Розыгрыш удалён");
+      qc.invalidateQueries({ queryKey: adminQk.raffles });
+    },
+    onError: (e) => toast.error(e instanceof ApiError ? e.message : "Не получилось"),
+  });
 
   const pick = useMutation({
     mutationFn: (id: string) => pickRaffleWinner(id),
