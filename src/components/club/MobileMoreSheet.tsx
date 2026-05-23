@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { Drawer } from "vaul";
 import { useCart } from "@/hooks/use-cart";
+import { useViewer } from "@/hooks/use-viewer";
 
 type Item = {
   label: string;
