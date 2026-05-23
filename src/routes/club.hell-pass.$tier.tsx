@@ -3,13 +3,15 @@
 
 import { useState } from "react";
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Check, Loader2 } from "lucide-react";
 import { hhToast as toast } from "@/lib/hh-toast";
 import { getTier, type Perk, type Tier } from "@/data/hell-pass";
-import { purchasePass, qk, type PassTier } from "@/lib/queries";
+import { fetchPassMe, purchasePass, qk, type PassTier } from "@/lib/queries";
 import { useViewer } from "@/hooks/use-viewer";
 import { ApiError } from "@/lib/api";
+
+const TIER_RANK: Record<PassTier, number> = { silver: 1, gold: 2, platinum: 3 };
 
 export const Route = createFileRoute("/club/hell-pass/$tier")({
   loader: ({ params }) => {
