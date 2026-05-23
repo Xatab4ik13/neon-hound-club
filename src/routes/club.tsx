@@ -21,6 +21,7 @@ import { useCurrentRank } from "@/data/rank-state";
 import { useViewer } from "@/hooks/use-viewer";
 import { useMyProfile } from "@/lib/garage-api";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useCart } from "@/hooks/use-cart";
 import { MobileTabBar } from "@/components/club/MobileTabBar";
 import { MobileTopBar } from "@/components/club/MobileTopBar";
 import { MobileTransition } from "@/components/club/MobileTransition";
