@@ -10,6 +10,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { users } from "./users.js";
 
+
 /**
  * Розыгрыш.
  * ticketCost — сколько билетов списывается за одну заявку (entry).
