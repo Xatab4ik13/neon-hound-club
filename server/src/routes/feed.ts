@@ -338,7 +338,24 @@ export async function feedRoutes(app: FastifyInstance) {
       refId: row.id,
       idempotent: true,
     }).catch(() => null);
-    return row;
+    // Возвращаем hydrated-форму (как ждёт фронт: FeedCommentHydrated)
+    const [author] = await db
+      .select({ nick: users.nick, avatarUrl: profiles.avatarUrl })
+      .from(users)
+      .leftJoin(profiles, eq(profiles.userId, users.id))
+      .where(eq(users.id, s.sub))
+      .limit(1);
+    return {
+      id: row.id,
+      postId: row.postId,
+      authorId: row.authorId,
+      nick: author?.nick ?? "",
+      avatarUrl: author?.avatarUrl ?? null,
+      text: row.text,
+      createdAt: row.createdAt,
+      likes: 0,
+      liked: false,
+    };
   });
 
   // DELETE /api/v1/feed/comments/:cid — автор коммента или автор поста или admin/blogger
