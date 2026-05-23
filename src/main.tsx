@@ -32,3 +32,13 @@ createRoot(rootEl).render(
     <RouterProvider router={router} />
   </StrictMode>,
 );
+
+// Снимаем boot-сплеш (из index.html) после первого кадра React
+if (typeof window !== "undefined") {
+  requestAnimationFrame(() => {
+    const boot = document.getElementById("hh-boot");
+    if (!boot) return;
+    boot.setAttribute("data-hide", "1");
+    setTimeout(() => boot.remove(), 350);
+  });
+}

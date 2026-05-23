@@ -53,9 +53,72 @@
       rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap"
     />
+    <style>
+      /* Boot splash — рисуется ещё до загрузки React-бандла */
+      #hh-boot {
+        position: fixed; inset: 0; z-index: 2147483647;
+        background: #050505; color: #EDEDED;
+        display: flex; align-items: center; justify-content: center;
+        font-family: ui-sans-serif, system-ui, sans-serif;
+        overflow: hidden;
+        background-image:
+          linear-gradient(rgba(255,45,149,0.05) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255,45,149,0.05) 1px, transparent 1px);
+        background-size: 30px 30px;
+        -webkit-mask-image: radial-gradient(circle at 50% 50%, #000 30%, transparent 70%);
+        mask-image: radial-gradient(circle at 50% 50%, #000 30%, transparent 70%);
+        transition: opacity .25s ease;
+      }
+      #hh-boot[data-hide="1"] { opacity: 0; pointer-events: none; }
+      #hh-boot .tach {
+        position: relative; width: 55vw; max-width: 220px; aspect-ratio: 1/1;
+        border-radius: 50%; border: 1px solid #1a1a1a;
+      }
+      #hh-boot .tach::before {
+        content: ""; position: absolute; inset: 8px;
+        border-radius: 50%; border: 1px dashed #222;
+      }
+      #hh-boot .ring {
+        position: absolute; inset: 0; border-radius: 50%;
+        border: 2px solid transparent;
+        border-top-color: #FF2D95; border-right-color: #FF2D95;
+        filter: drop-shadow(0 0 8px #FF2D95);
+        animation: hh-spin 1s linear infinite;
+      }
+      #hh-boot .h {
+        position: absolute; inset: 0;
+        display: flex; align-items: center; justify-content: center;
+        color: #FF2D95; font-weight: 700; font-size: 56px; line-height: 1;
+        letter-spacing: -1px;
+      }
+      #hh-boot .lbl {
+        position: absolute; bottom: 22%; left: 0; right: 0; text-align: center;
+        font-size: 10px; letter-spacing: .5em; text-transform: uppercase; color: #777;
+      }
+      #hh-boot .rpm {
+        position: absolute; bottom: 16%; left: 0; right: 0; text-align: center;
+        font-size: 14px; letter-spacing: .3em; color: #EDEDED;
+      }
+      #hh-boot .foot {
+        position: absolute; bottom: 6%; left: 24px; right: 24px;
+        display: flex; justify-content: space-between;
+        font-size: 9px; letter-spacing: .25em; color: #444;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      }
+      @keyframes hh-spin { to { transform: rotate(360deg); } }
+    </style>
   </head>
   <body>
     <div id="root"></div>
+    <div id="hh-boot" aria-hidden="true">
+      <div class="tach">
+        <div class="ring"></div>
+        <div class="h">H</div>
+      </div>
+      <div class="lbl">прогрев двигателя</div>
+      <div class="rpm">—— 6 200 RPM ——</div>
+      <div class="foot"><span>HHR.PRO</span><span>SYSTEM // BOOT</span></div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
