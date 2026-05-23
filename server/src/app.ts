@@ -147,6 +147,9 @@ export async function buildApp() {
   const { adminHellAiRoutes } = await import("./routes/admin-hell-ai.js");
   await app.register(adminHellAiRoutes, { prefix: "/api/v1/admin/hell-ai" });
 
+  const { stickersRoutes } = await import("./routes/stickers.js");
+  await app.register(stickersRoutes, { prefix: "/api/v1/stickers" });
+
   // Создаём S3-бакет, если его ещё нет.
   try {
     const { ensureBucket } = await import("./lib/s3.js");
