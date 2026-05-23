@@ -88,7 +88,7 @@ function ClubCartPage() {
         }
         style={
           isMobile
-            ? { paddingBottom: "calc(96px + env(safe-area-inset-bottom))" }
+            ? { paddingBottom: "calc(108px + env(safe-area-inset-bottom))" }
             : undefined
         }
       >
@@ -201,7 +201,7 @@ function ClubCartPage() {
   return (
     <main
       className="mx-auto w-full max-w-3xl px-4 py-5"
-      style={{ paddingBottom: "calc(112px + env(safe-area-inset-bottom))" }}
+      style={{ paddingBottom: "calc(124px + env(safe-area-inset-bottom))" }}
     >
       <PageHeader
         title="Корзина"
@@ -326,7 +326,7 @@ function ClubCartPage() {
 
       <div
         className="fixed inset-x-0 z-30 border-t border-white/[0.06] bg-black/85 px-4 py-3 backdrop-blur-xl"
-        style={{ bottom: "calc(52px + env(safe-area-inset-bottom))" }}
+        style={{ bottom: "calc(64px + env(safe-area-inset-bottom))" }}
       >
         <div className="mx-auto flex max-w-3xl items-center gap-3">
           <div className="flex flex-col">

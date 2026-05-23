@@ -62,7 +62,7 @@ function BloggerLayout() {
         <BloggerMobileTopBar onPlaqueClick={goToSettings} />
         <main
           className="relative"
-          style={{ paddingBottom: "calc(52px + env(safe-area-inset-bottom) + 8px)" }}
+          style={{ paddingBottom: "calc(64px + env(safe-area-inset-bottom) + 8px)" }}
         >
           <PullToRefresh>
             <MobileTransition>
