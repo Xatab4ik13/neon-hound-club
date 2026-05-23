@@ -7,6 +7,7 @@ import { useFeedPosts, feedStore, type FeedComment, type FeedPost, type FeedPoll
 import { HellhoundAvatar, HellhoundChip } from "@/components/club/HellhoundPlaque";
 import { IOSSheet } from "@/components/ios/IOSSheet";
 import { useMyProfile } from "@/lib/garage-api";
+import { useMyStickerPacks, STICKER_PACK_PRODUCT_SLUGS } from "@/lib/stickers-api";
 import { SPECIAL_PACK_STICKERS, SPECIAL_PACK_COVER } from "@/assets/stickers/special";
 
 
@@ -565,7 +566,7 @@ function CommentItem({
                   loading="lazy"
                   decoding="async"
                   draggable={false}
-                  className="h-32 w-32 select-none object-contain md:h-36 md:w-36"
+                  className="h-48 w-48 select-none object-contain md:h-52 md:w-52"
                 />
               </div>
             );
@@ -711,6 +712,12 @@ type StickerPack = {
   cover: string; // emoji-cover ИЛИ url картинки
   coverIsImage?: boolean;
   stickers: string[]; // emoji-строка ИЛИ "::sticker::<url>"
+  /** Если задан — пак закрыт, пока юзер не купит товар с этим slug в магазине. */
+  lockSlug?: string;
+  /** Slug товара в магазине для покупки (используется в ссылке "Купить"). */
+  productSlug?: string;
+  /** Цена в рублях — для подписи на оверлее. */
+  priceRub?: number;
 };
 
 const STICKER_PACKS: StickerPack[] = [
@@ -720,6 +727,9 @@ const STICKER_PACKS: StickerPack[] = [
     cover: SPECIAL_PACK_COVER,
     coverIsImage: true,
     stickers: SPECIAL_PACK_STICKERS.map(asStickerText),
+    lockSlug: "special",
+    productSlug: STICKER_PACK_PRODUCT_SLUGS.special,
+    priceRub: 300,
   },
   {
     id: "hellhound-og",
@@ -780,6 +790,8 @@ function CommentComposer({
   const [recent, setRecent] = useState<string[]>(() => loadRecent());
   const myProfileQ = useMyProfile();
   const myProfile = myProfileQ.data;
+  const ownedPacksQ = useMyStickerPacks(!!myProfile);
+  const ownedPacks = ownedPacksQ.data ?? [];
   const meNick = myProfile?.nick ?? PUBLIC_USERS[ME_SLUG]?.nick ?? "";
   const meInitials = (() => {
     const t = meNick.trim();
@@ -867,6 +879,7 @@ function CommentComposer({
           setActivePack={setActivePack}
           large={large}
           recent={recent}
+          ownedPacks={ownedPacks}
           onPickEmoji={insertEmoji}
           onPickSticker={sendSticker}
         />
@@ -958,6 +971,7 @@ function StickerPanel({
   setActivePack,
   large = false,
   recent,
+  ownedPacks,
   onPickEmoji,
   onPickSticker,
 }: {
@@ -967,10 +981,12 @@ function StickerPanel({
   setActivePack: (id: string) => void;
   large?: boolean;
   recent: string[];
+  ownedPacks: string[];
   onPickEmoji: (e: string) => void;
   onPickSticker: (s: string) => void;
 }) {
   const pack = STICKER_PACKS.find((p) => p.id === activePack) ?? STICKER_PACKS[0];
+  const isLocked = !!pack.lockSlug && !ownedPacks.includes(pack.lockSlug);
 
   return (
     <div className={`flex flex-col bg-[#0d0d0d] ${large ? "h-[min(70vh,560px)]" : "h-[min(55vh,420px)]"}`}>
@@ -993,31 +1009,57 @@ function StickerPanel({
             <div className="sticky top-0 z-10 -mx-2 mb-1 bg-[#0d0d0d]/95 px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground backdrop-blur">
               {pack.title}
             </div>
-            <div className={`grid gap-1 ${large ? "grid-cols-3 sm:grid-cols-4" : "grid-cols-4 sm:grid-cols-5"}`}>
-              {pack.stickers.map((s, i) => {
-                const url = parseSticker(s);
-                return (
-                  <button
-                    key={i}
-                    type="button"
-                    onClick={() => onPickSticker(s)}
-                    className={`grid aspect-square place-items-center rounded-lg transition-transform active:scale-90 hover:bg-white/[0.04] ${url ? "p-1.5" : large ? "text-6xl sm:text-7xl" : "text-4xl sm:text-[40px]"}`}
-                  >
-                    {url ? (
-                      <img
-                        src={url}
-                        alt=""
-                        loading="lazy"
-                        decoding="async"
-                        draggable={false}
-                        className="h-full w-full select-none object-contain"
-                      />
-                    ) : (
-                      <span>{s}</span>
+            <div className="relative">
+              <div
+                className={`grid gap-1 ${large ? "grid-cols-3 sm:grid-cols-4" : "grid-cols-4 sm:grid-cols-5"} ${isLocked ? "pointer-events-none select-none blur-[3px] opacity-60" : ""}`}
+              >
+                {pack.stickers.map((s, i) => {
+                  const url = parseSticker(s);
+                  return (
+                    <button
+                      key={i}
+                      type="button"
+                      disabled={isLocked}
+                      onClick={() => onPickSticker(s)}
+                      className={`grid aspect-square place-items-center rounded-lg transition-transform active:scale-90 hover:bg-white/[0.04] ${url ? "p-1.5" : large ? "text-6xl sm:text-7xl" : "text-4xl sm:text-[40px]"}`}
+                    >
+                      {url ? (
+                        <img
+                          src={url}
+                          alt=""
+                          loading="lazy"
+                          decoding="async"
+                          draggable={false}
+                          className="h-full w-full select-none object-contain"
+                        />
+                      ) : (
+                        <span>{s}</span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+              {isLocked && (
+                <div className="absolute inset-0 z-20 grid place-items-center px-4">
+                  <div className="flex max-w-[280px] flex-col items-center gap-3 rounded-2xl border border-white/[0.08] bg-black/80 px-5 py-4 text-center shadow-xl backdrop-blur">
+                    <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-primary">
+                      Закрытый пак
+                    </div>
+                    <div className="text-[13px] leading-snug text-foreground/90">
+                      {pack.title} открывается после покупки в магазине.
+                    </div>
+                    {pack.productSlug && (
+                      <Link
+                        to="/club/shop/$productSlug"
+                        params={{ productSlug: pack.productSlug }}
+                        className="inline-flex items-center justify-center rounded-full bg-primary px-4 py-1.5 text-[12px] font-semibold text-primary-foreground"
+                      >
+                        Купить{pack.priceRub ? ` · ${pack.priceRub} ₽` : ""}
+                      </Link>
                     )}
-                  </button>
-                );
-              })}
+                  </div>
+                </div>
+              )}
             </div>
           </>
         ) : tab === "emoji" ? (

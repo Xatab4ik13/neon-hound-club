@@ -85,6 +85,7 @@ export const products = pgTable(
     shippingInfo: text("shipping_info").notNull().default(""),
     returnPolicy: text("return_policy").notNull().default(""),
     sizes: jsonb("sizes").$type<string[]>().notNull().default([]),
+    stickerPackSlug: varchar("sticker_pack_slug", { length: 64 }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -92,6 +93,7 @@ export const products = pgTable(
     activeIdx: index("products_active_idx").on(t.active),
     categoryIdx: index("products_category_idx").on(t.categoryId),
     kindIdx: index("products_kind_idx").on(t.kind),
+    stickerPackSlugIdx: index("products_sticker_pack_slug_idx").on(t.stickerPackSlug),
   }),
 );
 

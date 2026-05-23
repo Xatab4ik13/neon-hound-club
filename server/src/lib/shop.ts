@@ -1,9 +1,35 @@
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { orders, orderItems, products } from "../db/schema/shop.js";
+import { userStickerPacks } from "../db/schema/stickers.js";
 import { ticketCredit } from "./tickets.js";
 import { awardXp } from "./xp.js";
 import { tryCompleteQuest } from "./quests.js";
+
+/**
+ * После оплаты — выдаём пользователю все стикер-паки, привязанные к товарам заказа.
+ * Идемпотентно (uniq на user_id+pack_slug).
+ */
+async function grantStickerPacksFromOrder(orderId: string, userId: string): Promise<void> {
+  const items = await db
+    .select({ productId: orderItems.productId })
+    .from(orderItems)
+    .where(eq(orderItems.orderId, orderId));
+  const productIds = items.map((i) => i.productId).filter((x): x is string => !!x);
+  if (productIds.length === 0) return;
+  const rows = await db
+    .select({ slug: products.stickerPackSlug })
+    .from(products)
+    .where(and(inArray(products.id, productIds), sql`${products.stickerPackSlug} IS NOT NULL`));
+  for (const r of rows) {
+    if (!r.slug) continue;
+    await db
+      .insert(userStickerPacks)
+      .values({ userId, packSlug: r.slug, source: "purchase", refOrderId: orderId })
+      .onConflictDoNothing();
+  }
+}
+
 
 /**
  * Помечаем заказ оплаченным.
@@ -32,6 +58,7 @@ export async function markOrderPaid(orderId: string): Promise<{ ok: boolean; rea
         idempotent: true,
       });
     }
+    await grantStickerPacksFromOrder(order.id, order.userId);
     return { ok: true };
   }
   if (order.status === "cancelled" || order.status === "refunded") {
@@ -69,6 +96,9 @@ export async function markOrderPaid(orderId: string): Promise<{ ok: boolean; rea
 
   // Квест: оплаченный заказ за месяц (monthly).
   await tryCompleteQuest(order.userId, "shop_order");
+
+  // Выдаём стикер-паки за товары заказа.
+  await grantStickerPacksFromOrder(order.id, order.userId);
 
   return { ok: true };
 }
