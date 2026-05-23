@@ -316,7 +316,7 @@ export async function fetchPassTiers() {
 }
 
 export async function fetchPassMe() {
-  return apiFetch<{ active: PassRecord | null; history: PassRecord[] }>("/api/v1/pass/me");
+  return apiFetch<{ active: PassRecord | null; history: PassRecord[]; daysLeft: number | null; durationDays: number }>("/api/v1/pass/me");
 }
 
 export async function purchasePass(tier: PassTier) {
