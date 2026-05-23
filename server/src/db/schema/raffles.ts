@@ -10,6 +10,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { users } from "./users.js";
 
+
 /**
  * Розыгрыш.
  * ticketCost — сколько билетов списывается за одну заявку (entry).
@@ -76,3 +77,57 @@ export const raffleEntries = pgTable(
 
 export type RaffleEntry = typeof raffleEntries.$inferSelect;
 export type NewRaffleEntry = typeof raffleEntries.$inferInsert;
+
+/**
+ * Призы внутри розыгрыша. Один раффл = несколько призов, каждый со своим qty.
+ * Победители фиксируются в raffle_prize_winners.
+ */
+export const rafflePrizes = pgTable(
+  "raffle_prizes",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    raffleId: uuid("raffle_id")
+      .notNull()
+      .references(() => raffles.id, { onDelete: "cascade" }),
+    name: varchar("name", { length: 200 }).notNull(),
+    qty: integer("qty").notNull().default(1),
+    position: integer("position").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    raffleIdx: index("raffle_prizes_raffle_idx").on(t.raffleId),
+  }),
+);
+
+export type RafflePrize = typeof rafflePrizes.$inferSelect;
+export type NewRafflePrize = typeof rafflePrizes.$inferInsert;
+
+/**
+ * Одна строка на один разыгранный слот приза. entry_id уникален —
+ * одна заявка-билет может выиграть только один раз во всём раффле.
+ */
+export const rafflePrizeWinners = pgTable(
+  "raffle_prize_winners",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    raffleId: uuid("raffle_id")
+      .notNull()
+      .references(() => raffles.id, { onDelete: "cascade" }),
+    prizeId: uuid("prize_id")
+      .notNull()
+      .references(() => rafflePrizes.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    entryId: uuid("entry_id").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    entryUnique: uniqueIndex("raffle_prize_winners_entry_unique").on(t.entryId),
+    raffleIdx: index("raffle_prize_winners_raffle_idx").on(t.raffleId),
+    prizeIdx: index("raffle_prize_winners_prize_idx").on(t.prizeId),
+  }),
+);
+
+export type RafflePrizeWinner = typeof rafflePrizeWinners.$inferSelect;
+export type NewRafflePrizeWinner = typeof rafflePrizeWinners.$inferInsert;

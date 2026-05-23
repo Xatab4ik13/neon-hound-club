@@ -1,29 +1,27 @@
-// Рандомайзер для стрима. CS:GO-роллер: горизонтальная лента карточек,
-// плавно тормозит под центральным маркером. Виртуализованная полоса —
-// рендерим ~90 карточек на спин, не зависит от числа участников (10k+ ок).
-//
-// Логика честности: 1) сэмплируем победителя взвешенно по билетам,
-// 2) собираем полосу: 80 случайных взвешенных карточек + карточка победителя
-// на индексе 80 + 9 хвостовых для красивого проезда, 3) сдвигаем полосу так,
-// чтобы центр карточки победителя пришёл к маркеру (±jitter для живости),
-// 4) после остановки списываем билет и фиксируем приз.
+// Блогерская рулетка. Полностью на бекенде:
+// - GET /board → реальные участники (вес = число entries), призы, зафиксированные победители
+// - POST /draw → бекенд возвращает кандидата (без записи), фронт строит ленту и крутит
+// - POST /confirm → фиксация в БД; когда все слоты призов разыграны — раффл становится finished
+// Блогер может крутить независимо от endsAt — бекенд не проверяет окно для draw/confirm.
 
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Play, RotateCcw, Trophy, Volume2, VolumeX } from "lucide-react";
+import { toast } from "sonner";
 import { playSpin, playWin } from "@/lib/roller-sfx";
 import {
-  rafflesStore,
-  useRaffles,
-  totalTickets,
-  prizeRemaining,
-  type Raffle,
-  type RafflePrize,
-  type RaffleParticipant,
-} from "@/data/raffles-store";
-import { PUBLIC_USERS } from "@/data/users";
+  bloggerQk,
+  fetchRaffleBoard,
+  drawPrizeWinner,
+  confirmPrizeWinner,
+  type RaffleBoard,
+  type RafflePrizeDto,
+  type RaffleParticipantDto,
+  type DrawResult,
+} from "@/lib/blogger-raffles";
 import { RANKS, type RankId } from "@/data/ranks";
-import { HellhoundChip, isHell } from "@/components/club/HellhoundPlaque";
+import { ApiError } from "@/lib/api";
 
 export const Route = createFileRoute("/blogger/raffles/$raffleId")({
   component: BloggerRaffleDetailPage,
@@ -37,28 +35,101 @@ const RANK_BY_ID = Object.fromEntries(RANKS.map((r) => [r.id, r])) as Record<
 // Геометрия роллера
 const CARD_W = 168;
 const CARD_GAP = 10;
-const STEP = CARD_W + CARD_GAP; // шаг между центрами карточек
-const STRIP_LEN = 90;            // всего карточек на полосе
-const WINNER_INDEX = 80;          // индекс победителя в полосе
+const STEP = CARD_W + CARD_GAP;
+const STRIP_LEN = 90;
+const WINNER_INDEX = 80;
 const SPIN_MS = 6500;
+
+type StripCard = {
+  userId: string;
+  nick: string;
+  avatarUrl: string | null;
+  rankId: string;
+};
+
+function initialsFromNick(nick: string): string {
+  return nick.slice(0, 2).toUpperCase();
+}
+
+function partToStripCard(p: RaffleParticipantDto): StripCard {
+  return { userId: p.userId, nick: p.nick, avatarUrl: p.avatarUrl, rankId: p.rankId };
+}
+function drawToStripCard(d: DrawResult): StripCard {
+  return { userId: d.userId, nick: d.nick, avatarUrl: d.avatarUrl, rankId: d.rankId };
+}
+
+function pickWeighted(participants: RaffleParticipantDto[], total: number): RaffleParticipantDto | null {
+  if (participants.length === 0 || total <= 0) return null;
+  const r = Math.random() * total;
+  let cum = 0;
+  for (const p of participants) {
+    cum += p.tickets;
+    if (r < cum) return p;
+  }
+  return participants[participants.length - 1];
+}
 
 function BloggerRaffleDetailPage() {
   const { raffleId } = Route.useParams();
-  const raffles = useRaffles();
   const navigate = useNavigate();
-  const raffle = raffles.find((r) => r.id === raffleId);
+  const qc = useQueryClient();
+
+  const { data, isLoading, isError } = useQuery({
+    queryKey: bloggerQk.board(raffleId),
+    queryFn: () => fetchRaffleBoard(raffleId),
+  });
 
   const [selectedPrizeId, setSelectedPrizeId] = useState<string | null>(null);
   const [spinning, setSpinning] = useState(false);
-  const [strip, setStrip] = useState<string[]>([]);
+  const [strip, setStrip] = useState<StripCard[]>([]);
   const [offsetPx, setOffsetPx] = useState(0);
-  const [winner, setWinner] = useState<string | null>(null);
-  const [recorded, setRecorded] = useState(false);
+  const [candidate, setCandidate] = useState<DrawResult | null>(null);
   const [muted, setMuted] = useState(false);
   const mutedRef = useRef(muted);
   mutedRef.current = muted;
 
-  if (!raffle) {
+  const drawMu = useMutation({
+    mutationFn: ({ prizeId }: { prizeId: string }) => drawPrizeWinner(raffleId, prizeId),
+    onError: (e) => {
+      const msg = e instanceof ApiError
+        ? e.code === "no_entries"
+          ? "Нет участников"
+          : e.code === "prize_exhausted"
+            ? "Все слоты приза разыграны"
+            : e.message
+        : "Не получилось";
+      toast.error(msg);
+    },
+  });
+
+  const confirmMu = useMutation({
+    mutationFn: ({ prizeId, entryId }: { prizeId: string; entryId: string }) =>
+      confirmPrizeWinner(raffleId, prizeId, entryId),
+    onSuccess: (r) => {
+      qc.invalidateQueries({ queryKey: bloggerQk.board(raffleId) });
+      qc.invalidateQueries({ queryKey: bloggerQk.list });
+      if (r.raffleFinished) toast.success("Розыгрыш завершён — все призы разыграны");
+      else toast.success("Победитель зафиксирован");
+    },
+    onError: (e) => {
+      toast.error(e instanceof ApiError ? e.message : "Не получилось зафиксировать");
+    },
+  });
+
+  const board: RaffleBoard | undefined = data;
+  const totalT = useMemo(
+    () => (board ? board.participants.reduce((s, p) => s + p.tickets, 0) : 0),
+    [board],
+  );
+
+  if (isLoading) {
+    return (
+      <main className="px-4 py-10 md:px-8">
+        <p className="text-muted-foreground">Загрузка…</p>
+      </main>
+    );
+  }
+  if (isError || !board) {
     return (
       <main className="px-4 py-10 md:px-8">
         <p className="text-muted-foreground">Розыгрыш не найден.</p>
@@ -69,49 +140,61 @@ function BloggerRaffleDetailPage() {
     );
   }
 
-  const totalT = totalTickets(raffle);
-  const prizes = raffle.prizes;
+  const winnersByPrize = new Map<string, number>();
+  for (const w of board.winners) {
+    winnersByPrize.set(w.prizeId, (winnersByPrize.get(w.prizeId) ?? 0) + 1);
+  }
+  const prizeRemaining = (p: RafflePrizeDto) => p.qty - (winnersByPrize.get(p.id) ?? 0);
+
   const availablePrize =
-    (selectedPrizeId && prizes.find((p) => p.id === selectedPrizeId && prizeRemaining(p) > 0)) ||
+    (selectedPrizeId && board.prizes.find((p) => p.id === selectedPrizeId && prizeRemaining(p) > 0)) ||
     null;
 
-  const canSpin = !!availablePrize && totalT > 0 && !spinning && !winner;
-  const canRespin = !!availablePrize && totalT > 0 && !spinning && !!winner && !recorded;
+  const canSpin =
+    !!availablePrize && totalT > 0 && !spinning && !candidate && !drawMu.isPending;
+  const canRespin =
+    !!availablePrize && totalT > 0 && !spinning && !!candidate && !confirmMu.isPending;
 
-  const startSpin = () => {
+  const startSpin = async () => {
     if (!availablePrize || totalT <= 0 || spinning) return;
-    if (winner && recorded) return;
 
-    // 1) Честный выбор победителя по весам билетов
-    const winnerSlug = pickWeighted(raffle.participants, totalT);
-
-    // 2) Собираем полосу
-    const newStrip: string[] = new Array(STRIP_LEN);
-    for (let i = 0; i < STRIP_LEN; i++) {
-      newStrip[i] = pickWeighted(raffle.participants, totalT);
+    // 1) Получаем кандидата с бекенда
+    let drawn: DrawResult;
+    try {
+      drawn = await drawMu.mutateAsync({ prizeId: availablePrize.id });
+    } catch {
+      return;
     }
-    newStrip[WINNER_INDEX] = winnerSlug;
-    // защита от случайного повтора рядом (визуально некрасиво)
-    if (newStrip[WINNER_INDEX - 1] === winnerSlug && raffle.participants.length > 1) {
-      let other = winnerSlug;
-      while (other === winnerSlug) other = pickWeighted(raffle.participants, totalT);
-      newStrip[WINNER_INDEX - 1] = other;
+
+    // 2) Собираем полосу: 80 случайных взвешенных карточек + карточка победителя на 80 + хвост
+    const winnerCard = drawToStripCard(drawn);
+    const newStrip: StripCard[] = new Array(STRIP_LEN);
+    for (let i = 0; i < STRIP_LEN; i++) {
+      const p = pickWeighted(board.participants, totalT);
+      newStrip[i] = p ? partToStripCard(p) : winnerCard;
+    }
+    newStrip[WINNER_INDEX] = winnerCard;
+    if (
+      board.participants.length > 1 &&
+      newStrip[WINNER_INDEX - 1]?.userId === winnerCard.userId
+    ) {
+      let other = board.participants[0];
+      while (other.userId === winnerCard.userId) {
+        other = pickWeighted(board.participants, totalT) ?? other;
+      }
+      newStrip[WINNER_INDEX - 1] = partToStripCard(other);
     }
 
     setStrip(newStrip);
-    setWinner(null);
-    setRecorded(false);
-
-    // 3) Стартовая позиция — почти в начале (чуть смещение для динамики)
+    setCandidate(null);
     setOffsetPx(0);
     setSpinning(false);
 
-    // requestAnimationFrame → задаём конечный offset с transition
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         const containerEl = document.getElementById("roller-viewport");
         const containerW = containerEl?.clientWidth ?? 900;
-        const jitter = (Math.random() - 0.5) * (CARD_W - 40); // ±64px
+        const jitter = (Math.random() - 0.5) * (CARD_W - 40);
         const winnerCenter = WINNER_INDEX * STEP + CARD_W / 2;
         const target = containerW / 2 - winnerCenter + jitter;
         setSpinning(true);
@@ -122,29 +205,36 @@ function BloggerRaffleDetailPage() {
 
     window.setTimeout(() => {
       setSpinning(false);
-      setWinner(winnerSlug);
+      setCandidate(drawn);
       if (!mutedRef.current) playWin();
     }, SPIN_MS + 80);
   };
 
-  const confirmAndContinue = () => {
-    if (!winner || !availablePrize || recorded) return;
-    rafflesStore.recordWinner(raffle.id, availablePrize.id, winner);
-    rafflesStore.consumeTicket(raffle.id, winner);
-    setRecorded(true);
+  const confirmAndContinue = async () => {
+    if (!candidate || !availablePrize) return;
+    try {
+      await confirmMu.mutateAsync({ prizeId: availablePrize.id, entryId: candidate.entryId });
+    } catch {
+      return;
+    }
   };
 
   const resetForNext = () => {
-    setWinner(null);
-    setRecorded(false);
+    setCandidate(null);
     setStrip([]);
     setOffsetPx(0);
-    const fresh = rafflesStore.getSnapshot().find((x) => x.id === raffle.id);
+    // если у текущего приза не осталось слотов — снимаем выделение
+    const fresh = qc.getQueryData<RaffleBoard>(bloggerQk.board(raffleId));
     if (fresh && availablePrize) {
-      const stillAvail = fresh.prizes.find((p) => p.id === availablePrize.id);
-      if (!stillAvail || prizeRemaining(stillAvail) === 0) setSelectedPrizeId(null);
+      const taken =
+        fresh.winners.filter((w) => w.prizeId === availablePrize.id).length;
+      const totalQty = fresh.prizes.find((p) => p.id === availablePrize.id)?.qty ?? 0;
+      if (taken >= totalQty) setSelectedPrizeId(null);
     }
   };
+
+  const finished = board.raffle.status === "finished";
+  const recorded = !!candidate && confirmMu.isSuccess;
 
   return (
     <main className="relative flex-1 px-4 py-6 md:px-8 md:py-8">
@@ -159,11 +249,12 @@ function BloggerRaffleDetailPage() {
         <div className="flex items-start justify-between gap-4">
           <div>
             <h1 className="font-display text-3xl font-black italic uppercase tracking-tight md:text-4xl">
-              {raffle.name}
+              {board.raffle.title}
             </h1>
             <p className="mt-1.5 text-sm text-muted-foreground">
-              {raffle.participants.length.toLocaleString("ru-RU")} участников ·{" "}
+              {board.participants.length.toLocaleString("ru-RU")} участников ·{" "}
               {totalT.toLocaleString("ru-RU")} билетов в пуле
+              {finished && <span className="ml-2 text-primary">· завершён</span>}
             </p>
           </div>
           <button
@@ -177,13 +268,12 @@ function BloggerRaffleDetailPage() {
         </div>
 
         <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-          {/* Роллер */}
           <div className="flex min-w-0 flex-col">
-            <PrizeBanner prize={availablePrize} winner={winner} />
-            <Roller strip={strip} offsetPx={offsetPx} spinning={spinning} winner={winner} />
+            <PrizeBanner prize={availablePrize} candidate={candidate} />
+            <Roller strip={strip} offsetPx={offsetPx} spinning={spinning} hasCandidate={!!candidate} />
 
             <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-              {!winner ? (
+              {!candidate ? (
                 <button
                   type="button"
                   onClick={startSpin}
@@ -191,7 +281,7 @@ function BloggerRaffleDetailPage() {
                   className="inline-flex items-center gap-2 border border-primary bg-primary px-6 py-3 font-display text-lg font-black italic uppercase tracking-tight text-primary-foreground transition-all hover:shadow-[0_0_28px_-4px_rgba(255,45,74,0.6)] disabled:opacity-30"
                 >
                   <Play className="h-5 w-5" />
-                  Крутить
+                  {drawMu.isPending ? "…" : "Крутить"}
                 </button>
               ) : !recorded ? (
                 <>
@@ -206,9 +296,10 @@ function BloggerRaffleDetailPage() {
                   <button
                     type="button"
                     onClick={confirmAndContinue}
-                    className="inline-flex items-center gap-2 border border-primary bg-primary px-6 py-3 font-display text-lg font-black italic uppercase tracking-tight text-primary-foreground transition-all hover:shadow-[0_0_28px_-4px_rgba(255,45,74,0.6)]"
+                    disabled={confirmMu.isPending}
+                    className="inline-flex items-center gap-2 border border-primary bg-primary px-6 py-3 font-display text-lg font-black italic uppercase tracking-tight text-primary-foreground transition-all hover:shadow-[0_0_28px_-4px_rgba(255,45,74,0.6)] disabled:opacity-50"
                   >
-                    <Trophy className="h-5 w-5" /> Зафиксировать
+                    <Trophy className="h-5 w-5" /> {confirmMu.isPending ? "Фиксируем…" : "Зафиксировать"}
                   </button>
                 </>
               ) : (
@@ -222,17 +313,18 @@ function BloggerRaffleDetailPage() {
               )}
             </div>
 
-            {winner && <WinnerCard slug={winner} prize={availablePrize} recorded={recorded} />}
+            {candidate && (
+              <WinnerCard candidate={candidate} prize={availablePrize} recorded={recorded} />
+            )}
           </div>
 
-          {/* Призы и история */}
           <aside className="space-y-4">
             <div className="border border-white/[0.08] bg-card/40">
               <div className="border-b border-white/[0.06] px-4 py-3 font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
                 Призы
               </div>
               <ul className="divide-y divide-white/[0.04]">
-                {prizes.map((p) => {
+                {board.prizes.map((p) => {
                   const remain = prizeRemaining(p);
                   const isSel = selectedPrizeId === p.id;
                   const out = remain === 0;
@@ -261,13 +353,15 @@ function BloggerRaffleDetailPage() {
                     </li>
                   );
                 })}
-                {prizes.length === 0 && (
-                  <li className="px-4 py-6 text-center text-sm text-muted-foreground">Нет призов</li>
+                {board.prizes.length === 0 && (
+                  <li className="px-4 py-6 text-center text-sm text-muted-foreground">
+                    Нет призов — добавь их в админке
+                  </li>
                 )}
               </ul>
             </div>
 
-            <WinnersLog raffle={raffle} />
+            <WinnersLog board={board} />
           </aside>
         </div>
       </div>
@@ -277,27 +371,16 @@ function BloggerRaffleDetailPage() {
 
 // ───────── Roller ─────────
 
-function pickWeighted(participants: RaffleParticipant[], total: number): string {
-  if (participants.length === 0 || total <= 0) return "";
-  const r = Math.random() * total;
-  let cum = 0;
-  for (const p of participants) {
-    cum += p.tickets;
-    if (r < cum) return p.slug;
-  }
-  return participants[participants.length - 1].slug;
-}
-
 function Roller({
   strip,
   offsetPx,
   spinning,
-  winner,
+  hasCandidate,
 }: {
-  strip: string[];
+  strip: StripCard[];
   offsetPx: number;
   spinning: boolean;
-  winner: string | null;
+  hasCandidate: boolean;
 }) {
   const idle = strip.length === 0;
 
@@ -311,11 +394,9 @@ function Roller({
           "linear-gradient(to right, transparent 0, #000 12%, #000 88%, transparent 100%)",
         maskImage:
           "linear-gradient(to right, transparent 0, #000 12%, #000 88%, transparent 100%)",
-        boxShadow:
-          "inset 0 1px 0 rgba(255,255,255,0.04), inset 0 -1px 0 rgba(255,255,255,0.04)",
+        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04), inset 0 -1px 0 rgba(255,255,255,0.04)",
       }}
     >
-      {/* фоновый scanline-блик */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 opacity-[0.06]"
@@ -325,7 +406,6 @@ function Roller({
         }}
       />
 
-      {/* лента — абсолютная, центрирована по вертикали через flex h-full items-center */}
       <div
         className="absolute inset-y-0 left-0 flex h-full items-center will-change-transform"
         style={{
@@ -339,13 +419,12 @@ function Roller({
         {idle ? (
           <RollerIdle />
         ) : (
-          strip.map((slug, i) => (
-            <RollerCard key={i} slug={slug} highlight={!!winner && i === WINNER_INDEX} />
+          strip.map((c, i) => (
+            <RollerCard key={i} card={c} highlight={hasCandidate && i === WINNER_INDEX} />
           ))
         )}
       </div>
 
-      {/* центральный маркер — поверх ленты */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-y-0 left-1/2 z-20 -translate-x-1/2"
@@ -386,7 +465,6 @@ function Roller({
 }
 
 function RollerIdle() {
-  // 12 пустых заглушек, чтобы лента не выглядела пустой до спина
   return (
     <>
       {Array.from({ length: 12 }).map((_, i) => (
@@ -400,11 +478,10 @@ function RollerIdle() {
   );
 }
 
-function RollerCard({ slug, highlight }: { slug: string; highlight: boolean }) {
-  const u = PUBLIC_USERS[slug];
-  const rank = RANK_BY_ID[u?.rank ?? "rookie"];
-  const hell = isHell(slug);
-  const accent = hell ? "#ff2d4a" : rank.accent;
+function RollerCard({ card, highlight }: { card: StripCard; highlight: boolean }) {
+  const rank = RANK_BY_ID[(card.rankId as RankId) ?? "rookie"] ?? RANK_BY_ID.rookie;
+  const accent = rank.accent;
+  const initials = initialsFromNick(card.nick);
 
   return (
     <div
@@ -418,31 +495,39 @@ function RollerCard({ slug, highlight }: { slug: string; highlight: boolean }) {
           : `inset 0 1px 0 rgba(255,255,255,0.04)`,
       }}
     >
-      {/* верхняя цветная полоска ранга */}
       <div
         aria-hidden
         className="absolute inset-x-0 top-0 h-[3px]"
         style={{ background: `linear-gradient(90deg, transparent, ${accent}, transparent)` }}
       />
 
-      {/* инициалы */}
       <div className="flex h-full flex-col items-center justify-center gap-2 px-2 pt-2">
         <div
-          className="flex h-14 w-14 items-center justify-center"
+          className="flex h-14 w-14 items-center justify-center overflow-hidden"
           style={{
             background: "#0a0a0a",
             boxShadow: `inset 0 0 0 1.5px ${accent}`,
           }}
         >
-          <span
-            className="font-display text-2xl font-black italic uppercase leading-none"
-            style={{ color: accent }}
-          >
-            {u?.initials ?? "?"}
-          </span>
+          {card.avatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={card.avatarUrl}
+              alt={card.nick}
+              className="h-full w-full object-cover"
+              loading="lazy"
+            />
+          ) : (
+            <span
+              className="font-display text-2xl font-black italic uppercase leading-none"
+              style={{ color: accent }}
+            >
+              {initials}
+            </span>
+          )}
         </div>
         <div className="w-full truncate text-center font-display text-[13px] font-black italic uppercase leading-tight tracking-tight">
-          {u?.nick ?? slug}
+          {card.nick}
         </div>
         <div
           className="border px-1.5 py-[1px] font-mono text-[8px] font-bold uppercase tracking-wider"
@@ -452,7 +537,7 @@ function RollerCard({ slug, highlight }: { slug: string; highlight: boolean }) {
             background: `${accent}10`,
           }}
         >
-          {hell ? "HELLHOUND" : rank.short}
+          {rank.short}
         </div>
       </div>
     </div>
@@ -461,11 +546,17 @@ function RollerCard({ slug, highlight }: { slug: string; highlight: boolean }) {
 
 // ───────── Side widgets ─────────
 
-function PrizeBanner({ prize, winner }: { prize: RafflePrize | null; winner: string | null }) {
+function PrizeBanner({
+  prize,
+  candidate,
+}: {
+  prize: RafflePrizeDto | null;
+  candidate: DrawResult | null;
+}) {
   return (
     <div className="mb-5 w-full border border-primary/30 bg-primary/[0.05] px-5 py-3 text-center">
       <div className="font-mono text-[10px] font-bold uppercase tracking-[0.25em] text-primary">
-        {winner ? "Победитель приза" : prize ? "Разыгрываем" : "Выбери приз справа"}
+        {candidate ? "Победитель приза" : prize ? "Разыгрываем" : "Выбери приз справа"}
       </div>
       <div className="mt-1 font-display text-xl font-black italic uppercase tracking-tight">
         {prize?.name ?? "—"}
@@ -475,16 +566,16 @@ function PrizeBanner({ prize, winner }: { prize: RafflePrize | null; winner: str
 }
 
 function WinnerCard({
-  slug,
+  candidate,
   prize,
   recorded,
 }: {
-  slug: string;
-  prize: RafflePrize | null;
+  candidate: DrawResult;
+  prize: RafflePrizeDto | null;
   recorded: boolean;
 }) {
-  const u = PUBLIC_USERS[slug];
-  const rank = RANK_BY_ID[u?.rank ?? "rookie"];
+  const rank = RANK_BY_ID[(candidate.rankId as RankId) ?? "rookie"] ?? RANK_BY_ID.rookie;
+  const initials = initialsFromNick(candidate.nick);
   return (
     <div
       className="mt-6 w-full border border-primary/50 bg-gradient-to-br from-primary/[0.12] to-primary/[0.02] p-5 text-center animate-scale-in"
@@ -495,37 +586,38 @@ function WinnerCard({
       </div>
       <div className="mt-3 flex items-center justify-center gap-3">
         <div
-          className="flex h-14 w-14 shrink-0 items-center justify-center"
+          className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden"
           style={{
             background: "#0a0a0a",
             boxShadow: `inset 0 0 0 2px ${rank.accent}`,
           }}
         >
-          <span
-            className="font-display text-2xl font-black italic uppercase"
-            style={{ color: rank.accent }}
-          >
-            {u?.initials ?? "?"}
-          </span>
+          {candidate.avatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={candidate.avatarUrl} alt={candidate.nick} className="h-full w-full object-cover" />
+          ) : (
+            <span
+              className="font-display text-2xl font-black italic uppercase"
+              style={{ color: rank.accent }}
+            >
+              {initials}
+            </span>
+          )}
         </div>
         <div className="text-left">
           <div className="font-display text-2xl font-black italic uppercase tracking-tight">
-            {u?.nick ?? slug}
+            {candidate.nick}
           </div>
           <div className="mt-1 flex items-center gap-2">
-            {isHell(slug) ? (
-              <HellhoundChip size="sm" />
-            ) : (
-              <span
-                className="border px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wider"
-                style={{ color: rank.accent, borderColor: `${rank.accent}66` }}
-              >
-                {rank.short}
-              </span>
-            )}
-            {u?.city && (
+            <span
+              className="border px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wider"
+              style={{ color: rank.accent, borderColor: `${rank.accent}66` }}
+            >
+              {rank.short}
+            </span>
+            {candidate.city && (
               <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-                {u.city}
+                {candidate.city}
               </span>
             )}
           </div>
@@ -540,30 +632,25 @@ function WinnerCard({
   );
 }
 
-function WinnersLog({ raffle }: { raffle: Raffle }) {
-  const all = raffle.prizes.flatMap((p) =>
-    (p.winners ?? []).map((slug, i) => ({ key: `${p.id}-${i}`, slug, prize: p.name })),
-  );
-  if (all.length === 0) return null;
+function WinnersLog({ board }: { board: RaffleBoard }) {
+  if (board.winners.length === 0) return null;
+  const prizeById = new Map(board.prizes.map((p) => [p.id, p]));
   return (
     <div className="border border-white/[0.08] bg-card/40">
       <div className="border-b border-white/[0.06] px-4 py-3 font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
         Победители
       </div>
       <ul className="divide-y divide-white/[0.04]">
-        {all.map((w) => {
-          const u = PUBLIC_USERS[w.slug];
-          return (
-            <li key={w.key} className="flex items-center justify-between gap-2 px-4 py-2.5">
-              <span className="truncate font-display text-[13px] font-bold uppercase italic">
-                {u?.nick ?? w.slug}
-              </span>
-              <span className="shrink-0 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-                {w.prize}
-              </span>
-            </li>
-          );
-        })}
+        {board.winners.map((w) => (
+          <li key={w.id} className="flex items-center justify-between gap-2 px-4 py-2.5">
+            <span className="truncate font-display text-[13px] font-bold uppercase italic">
+              {w.nick}
+            </span>
+            <span className="shrink-0 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+              {prizeById.get(w.prizeId)?.name ?? "—"}
+            </span>
+          </li>
+        ))}
       </ul>
     </div>
   );

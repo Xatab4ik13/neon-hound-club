@@ -76,3 +76,16 @@ export async function requireAdmin(req: FastifyRequest, reply: FastifyReply): Pr
     reply.code(401).send({ error: "unauthorized", message: "Требуется вход" });
   }
 }
+
+/** preHandler: требует роль blogger или admin. */
+export async function requireBloggerOrAdmin(req: FastifyRequest, reply: FastifyReply): Promise<void> {
+  try {
+    await req.jwtVerify();
+    const u = req.user as SessionPayload;
+    if (u.role !== "admin" && u.role !== "blogger") {
+      reply.code(403).send({ error: "forbidden", message: "Только для блогера" });
+    }
+  } catch {
+    reply.code(401).send({ error: "unauthorized", message: "Требуется вход" });
+  }
+}

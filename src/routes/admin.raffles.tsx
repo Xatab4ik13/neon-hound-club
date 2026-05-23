@@ -30,8 +30,16 @@ import {
   cancelRaffle,
   type CreateRaffleInput,
 } from "@/lib/admin-queries";
+import {
+  fetchRafflePrizes,
+  createRafflePrize,
+  patchRafflePrize,
+  deleteRafflePrize,
+  type RafflePrizeDto,
+} from "@/lib/blogger-raffles";
 import { ApiError } from "@/lib/api";
 import type { RaffleListItem, RaffleStatus } from "@/lib/queries";
+import { Trash2 } from "lucide-react";
 
 export const Route = createFileRoute("/admin/raffles")({
   component: RafflesPage,
@@ -362,7 +370,122 @@ function RaffleModal({
             <option value="cancelled">Отменён</option>
           </Select>
         </Field>
+
+        {mode === "edit" && raffleId && <PrizesEditor raffleId={raffleId} />}
       </div>
     </Modal>
+  );
+}
+
+// ───────── Управление призами раффла ─────────
+// Призы — отдельная таблица raffle_prizes. Каждый приз = название + qty (сколько слотов).
+// Блогер по одному «крутит» каждый слот, как только все слоты разыграны — раффл finished.
+
+function PrizesEditor({ raffleId }: { raffleId: string }) {
+  const qc = useQueryClient();
+  const prizesQk = ["admin", "raffles", raffleId, "prizes"] as const;
+  const { data } = useQuery({
+    queryKey: prizesQk,
+    queryFn: () => fetchRafflePrizes(raffleId),
+  });
+
+  const [draftName, setDraftName] = useState("");
+  const [draftQty, setDraftQty] = useState(1);
+
+  const add = useMutation({
+    mutationFn: () =>
+      createRafflePrize(raffleId, { name: draftName.trim(), qty: Math.max(1, draftQty) }),
+    onSuccess: () => {
+      setDraftName("");
+      setDraftQty(1);
+      qc.invalidateQueries({ queryKey: prizesQk });
+    },
+    onError: (e) => toast.error(e instanceof ApiError ? e.message : "Не получилось"),
+  });
+
+  const patch = useMutation({
+    mutationFn: ({ id, patch }: { id: string; patch: { name?: string; qty?: number } }) =>
+      patchRafflePrize(id, patch),
+    onSuccess: () => qc.invalidateQueries({ queryKey: prizesQk }),
+    onError: (e) => toast.error(e instanceof ApiError ? e.message : "Не получилось"),
+  });
+
+  const del = useMutation({
+    mutationFn: (id: string) => deleteRafflePrize(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: prizesQk }),
+    onError: (e) => {
+      if (e instanceof ApiError && e.code === "has_winners") {
+        toast.error("Нельзя удалить — по этому призу уже есть зафиксированные победители");
+      } else {
+        toast.error(e instanceof ApiError ? e.message : "Не получилось");
+      }
+    },
+  });
+
+  const items: RafflePrizeDto[] = data?.items ?? [];
+
+  return (
+    <div className="border-t border-zinc-200 pt-4 dark:border-zinc-800">
+      <div className="mb-3 text-sm font-medium">Призы рулетки</div>
+      <p className="mb-3 text-xs text-zinc-500">
+        Каждый приз — отдельная строка. qty = сколько раз блогер крутит этот приз.
+        Раффл считается завершённым, когда зафиксированы все слоты.
+      </p>
+
+      <ul className="space-y-2">
+        {items.map((p) => (
+          <li key={p.id} className="flex items-center gap-2">
+            <TextInput
+              value={p.name}
+              onChange={(e) => patch.mutate({ id: p.id, patch: { name: e.target.value } })}
+              className="flex-1"
+            />
+            <TextInput
+              type="number"
+              min={1}
+              value={p.qty}
+              onChange={(e) =>
+                patch.mutate({ id: p.id, patch: { qty: Math.max(1, Number(e.target.value) || 1) } })
+              }
+              className="w-20"
+            />
+            <Btn variant="ghost" onClick={() => del.mutate(p.id)} aria-label="Удалить приз">
+              <Trash2 className="h-3.5 w-3.5" />
+            </Btn>
+          </li>
+        ))}
+        {items.length === 0 && (
+          <li className="text-xs text-zinc-500">Пока нет призов — добавьте ниже.</li>
+        )}
+      </ul>
+
+      <div className="mt-3 flex items-end gap-2">
+        <div className="flex-1">
+          <Field label="Название приза">
+            <TextInput
+              value={draftName}
+              onChange={(e) => setDraftName(e.target.value)}
+              placeholder="Шлем AGV K6"
+            />
+          </Field>
+        </div>
+        <Field label="qty">
+          <TextInput
+            type="number"
+            min={1}
+            value={draftQty}
+            onChange={(e) => setDraftQty(Math.max(1, Number(e.target.value) || 1))}
+            className="w-20"
+          />
+        </Field>
+        <Btn
+          variant="primary"
+          disabled={!draftName.trim() || add.isPending}
+          onClick={() => add.mutate()}
+        >
+          Добавить
+        </Btn>
+      </div>
+    </div>
   );
 }
