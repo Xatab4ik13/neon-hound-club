@@ -423,6 +423,7 @@ export async function feedRoutes(app: FastifyInstance) {
       .insert(postPollVotes)
       .values(picked.map((optionId) => ({ postId: p.id, userId: s.sub, optionId })))
       .onConflictDoNothing();
+    publishFeedEvent("poll.voted", { postId: p.id });
     return { ok: true };
   });
 }
