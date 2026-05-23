@@ -4,10 +4,10 @@
 
 import { apiFetch } from "@/lib/api";
 
-// Публичный VAPID-ключ. Не секрет — генерируется в паре с приватным на бэке.
+// Публичный VAPID-кей. Не секрет — генерируется в паре с приватным на бэке.
 // При смене ключа надо обновить и здесь, и в env бэка (VAPID_PUBLIC_KEY).
 export const VAPID_PUBLIC_KEY =
-  "BJxzCeOtUX6ZnmDD5EE-3ex9oJBn0nqpkA7tmKp_6pvU-3q1dJjSmXCNChsB3jLNNOEHM_H4XfcxnGpdexncJoU";
+  "BD8l8vZ77J9_OF1QOEaJcnxNPVcZeMJLZ35DeBcIt182HLEp6eas2geTodtysDCLU4g6PT3HfQ128lLMyscvGkQ";
 
 export function isPushSupported(): boolean {
   if (typeof window === "undefined") return false;
