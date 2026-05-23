@@ -125,7 +125,11 @@ function BloggerRaffleDetailPage() {
   if (isLoading) {
     return (
       <main className="px-4 py-10 md:px-8">
-        <p className="text-muted-foreground">Загрузка…</p>
+        <div className="mx-auto max-w-3xl space-y-4">
+          <div className="h-8 w-1/3 animate-pulse rounded-lg bg-white/[0.04]" />
+          <div className="h-64 animate-pulse rounded-2xl bg-white/[0.04]" />
+          <div className="h-40 animate-pulse rounded-2xl bg-white/[0.04]" />
+        </div>
       </main>
     );
   }
