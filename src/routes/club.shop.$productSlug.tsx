@@ -91,14 +91,22 @@ function ProductView({ product }: { product: ShopProduct }) {
   const [slide, setSlide] = useState(0);
   const [qty, setQty] = useState(1);
   const [open, setOpen] = useState<"desc" | "ship" | "returns" | null>("desc");
+  const sizes = product.sizes ?? [];
+  const [size, setSize] = useState<string | null>(null);
   const { add } = useCart();
   const navigate = useNavigate();
 
   const sold = product.stock !== null && product.stock <= 0;
+  const needsSize = sizes.length > 0;
+  const sizeMissing = needsSize && !size;
   const cover = gallery[slide] ?? gallery[0];
 
   const handleAdd = (goToCart = false) => {
     if (sold) return;
+    if (sizeMissing) {
+      hhToast.error("Выбери размер");
+      return;
+    }
     add(
       {
         productId: product.id,
@@ -106,13 +114,13 @@ function ProductView({ product }: { product: ShopProduct }) {
         name: product.title,
         price: product.priceRub,
         image: cover ?? "",
-        size: null,
+        size,
         ticketsBonus: product.bonusTickets,
       },
       qty,
     );
     hhToast.success("Добавлено в корзину", {
-      meta: `${product.title} × ${qty}`,
+      meta: `${product.title}${size ? ` · ${size}` : ""} × ${qty}`,
     });
     if (goToCart) navigate({ to: "/club/cart" });
   };
