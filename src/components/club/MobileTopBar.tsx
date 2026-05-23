@@ -3,7 +3,9 @@ import { Bell, ChevronLeft, ShoppingBag } from "lucide-react";
 import { ME } from "@/data/profile";
 import { useCurrentRank } from "@/data/rank-state";
 import { useCart } from "@/hooks/use-cart";
+import { haptic } from "@/hooks/use-haptic";
 import { ProfilePlaque } from "@/routes/club";
+
 
 
 
