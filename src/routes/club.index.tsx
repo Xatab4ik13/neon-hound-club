@@ -678,8 +678,6 @@ function RankAvatar({
 
 // Mock packs — позже заменим на данные из БД
 
-import { SPECIAL_PACK_STICKERS, SPECIAL_PACK_COVER } from "@/assets/stickers/special";
-
 /** Префикс-маркер: текст комментария = стикер-картинка. */
 const STICKER_PREFIX = "::sticker::";
 const asStickerText = (url: string) => `${STICKER_PREFIX}${url}`;
