@@ -1,4 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useMemo } from "react";
+import { ShoppingBag, Ticket } from "lucide-react";
 import { Header } from "@/components/brand/Header";
 import { Footer } from "@/components/brand/Footer";
 import { Button } from "@/components/ui/button";
@@ -15,10 +17,24 @@ export const Route = createFileRoute("/cart")({
   component: CartPage,
 });
 
+function ticketsWord(n: number) {
+  const m10 = n % 10;
+  const m100 = n % 100;
+  if (m10 === 1 && m100 !== 11) return "билет";
+  if (m10 >= 2 && m10 <= 4 && (m100 < 10 || m100 >= 20)) return "билета";
+  return "билетов";
+}
+
 function CartPage() {
   const { items, total, setQty, remove } = useCart();
   const { isAuthed } = useViewer();
   const navigate = useNavigate();
+
+  // Билеты считаем ТОЛЬКО по бонусу, заданному на товаре.
+  const ticketsTotal = useMemo(
+    () => items.reduce((s, i) => s + (i.ticketsBonus ?? 0) * i.qty, 0),
+    [items],
+  );
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -57,11 +73,17 @@ function CartPage() {
                       params={{ productSlug: i.slug }}
                       className="block size-16 shrink-0 overflow-hidden rounded bg-surface sm:size-20"
                     >
-                      <img
-                        src={i.image}
-                        alt={i.name}
-                        className="size-full object-cover"
-                      />
+                      {i.image ? (
+                        <img
+                          src={i.image}
+                          alt={i.name}
+                          className="size-full object-cover"
+                        />
+                      ) : (
+                        <div className="grid size-full place-items-center text-muted-foreground/60">
+                          <ShoppingBag className="h-6 w-6" />
+                        </div>
+                      )}
                     </Link>
                     <div className="min-w-0 flex-1">
                       <Link
@@ -120,19 +142,17 @@ function CartPage() {
                 </span>
               </div>
 
-              {/* Кешбэк-бейдж */}
-              {total > 0 && (
-                <div className="mt-4 flex items-center justify-between gap-2 border border-emerald-500/30 bg-emerald-500/[0.06] px-3 py-2">
-                  <div className="flex min-w-0 flex-col">
-                    <span className="font-mono text-[9px] font-bold uppercase tracking-[0.2em] text-emerald-300/80">
-                      Кешбэк билетами
-                    </span>
-                    <span className="text-[11px] text-muted-foreground">
-                      1 билет за каждые 200 ₽
+              {/* Бонус билетов — только из ticketsBonus на товарах */}
+              {ticketsTotal > 0 && (
+                <div className="mt-4 flex items-center justify-between gap-2 rounded-md border border-primary/30 bg-primary/[0.08] px-3 py-2">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <Ticket className="h-4 w-4 shrink-0 text-primary" />
+                    <span className="font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-primary">
+                      Бонус билетов
                     </span>
                   </div>
-                  <span className="whitespace-nowrap font-display text-xl font-black italic tabular-nums text-emerald-300">
-                    +{Math.floor(total / 200)}
+                  <span className="whitespace-nowrap font-display text-xl font-black italic tabular-nums text-primary">
+                    +{ticketsTotal} {ticketsWord(ticketsTotal)}
                   </span>
                 </div>
               )}
