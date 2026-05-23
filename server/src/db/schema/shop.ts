@@ -138,6 +138,9 @@ export const orders = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     status: varchar("status", { length: 24 }).notNull().default("pending_payment"),
+    subtotalRub: integer("subtotal_rub").notNull(),
+    discountPct: integer("discount_pct").notNull().default(0),
+    discountRub: integer("discount_rub").notNull().default(0),
     totalRub: integer("total_rub").notNull(),
     bonusTicketsTotal: integer("bonus_tickets_total").notNull().default(0),
     shipping: jsonb("shipping")

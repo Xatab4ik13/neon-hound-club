@@ -8,6 +8,7 @@ import {
 } from "../db/schema/quests.js";
 import { ticketCredit } from "./tickets.js";
 import { awardXp } from "./xp.js";
+import { getActivePassPerks } from "./pass.js";
 
 /**
  * Зафиксированная сетка квестов (см. .lovable/plan.md).
@@ -248,6 +249,10 @@ export async function completeQuest(
     .limit(1);
   if (exists) return { credited: false, reason: "already_completed" };
 
+  // XP-множитель по активному Hell Pass (×1.25 / ×1.5 / ×2). Без пасса — ×1.
+  const perks = await getActivePassPerks(userId);
+  const xpAwardedFinal = Math.round(quest.xpReward * perks.xpMultiplier);
+
   const [completion] = await db
     .insert(userQuestCompletions)
     .values({
@@ -255,7 +260,7 @@ export async function completeQuest(
       questId: quest.id,
       periodKey,
       ticketsAwarded: quest.ticketsReward,
-      xpAwarded: quest.xpReward,
+      xpAwarded: xpAwardedFinal,
     })
     .returning();
 
@@ -269,12 +274,13 @@ export async function completeQuest(
       refId: completion!.id,
     });
   }
-  if (quest.xpReward > 0) {
+  if (xpAwardedFinal > 0) {
+    const boostNote = perks.tier ? ` (×${perks.xpMultiplier} Hell Pass ${perks.tier})` : "";
     await awardXp({
       userId,
-      amount: quest.xpReward,
+      amount: xpAwardedFinal,
       source: "quest",
-      reason: `Квест: ${quest.title}`,
+      reason: `Квест: ${quest.title}${boostNote}`,
       refType: "quest_completion",
       refId: completion!.id,
       idempotent: true,
@@ -285,7 +291,7 @@ export async function completeQuest(
     credited: true,
     completionId: completion!.id,
     tickets: quest.ticketsReward,
-    xp: quest.xpReward,
+    xp: xpAwardedFinal,
   };
 }
 
@@ -354,7 +360,10 @@ export async function addQuestProgress(
     const newSteps = reached.slice(row.lastLadderStep);
     if (newSteps.length === 0) return;
 
+    const perks = await getActivePassPerks(userId);
+
     for (const step of newSteps) {
+      const stepXp = Math.round(step.xp * perks.xpMultiplier);
       // completion per step (для лога), period_key = `step:${step.at}`
       const stepKey = `step:${step.at}`;
       const [stepCompletion] = await db
@@ -364,16 +373,17 @@ export async function addQuestProgress(
           questId: quest.id,
           periodKey: stepKey,
           ticketsAwarded: 0,
-          xpAwarded: step.xp,
+          xpAwarded: stepXp,
         })
         .onConflictDoNothing()
         .returning();
       if (!stepCompletion) continue;
+      const boostNote = perks.tier ? ` (×${perks.xpMultiplier} Hell Pass ${perks.tier})` : "";
       await awardXp({
         userId,
-        amount: step.xp,
+        amount: stepXp,
         source: "quest",
-        reason: `${quest.title}: ступень ${step.at}`,
+        reason: `${quest.title}: ступень ${step.at}${boostNote}`,
         refType: "quest_ladder",
         refId: stepCompletion.id,
         idempotent: true,

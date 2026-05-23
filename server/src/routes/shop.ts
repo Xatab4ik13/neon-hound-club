@@ -19,6 +19,7 @@ import {
   markOrderPaid,
   refundOrder,
 } from "../lib/shop.js";
+import { getActivePassPerks } from "../lib/pass.js";
 
 // ---------- PUBLIC / USER ----------
 
@@ -144,11 +145,11 @@ export async function shopRoutes(app: FastifyInstance) {
 
     // считаем тоталы (снапшоты)
     const productMap = new Map(dbProducts.map((p) => [p.id, p]));
-    let totalRub = 0;
+    let subtotalRub = 0;
     let bonusTotal = 0;
     const itemSnapshots = items.map((i) => {
       const p = productMap.get(i.productId)!;
-      totalRub += p.priceRub * i.qty;
+      subtotalRub += p.priceRub * i.qty;
       bonusTotal += p.bonusTickets * i.qty;
       return {
         productId: p.id,
@@ -158,6 +159,12 @@ export async function shopRoutes(app: FastifyInstance) {
         qty: i.qty,
       };
     });
+
+    // Скидка по активному Hell Pass (5/10/15%). Без пасса — 0.
+    const perks = await getActivePassPerks(session.sub);
+    const discountPct = perks.shopDiscountPct;
+    const discountRub = Math.floor((subtotalRub * discountPct) / 100);
+    const totalRub = Math.max(0, subtotalRub - discountRub);
 
     // резерв остатков (для товаров с stock != null)
     for (const i of items) {
@@ -183,6 +190,9 @@ export async function shopRoutes(app: FastifyInstance) {
       .values({
         userId: session.sub,
         status: "pending_payment",
+        subtotalRub,
+        discountPct,
+        discountRub,
         totalRub,
         bonusTicketsTotal: bonusTotal,
         shipping,
