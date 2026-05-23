@@ -161,6 +161,9 @@ function RafflesPage() {
                 <Btn variant="ghost" onClick={() => setEditingId(r.id)} aria-label="Править">
                   <Edit className="h-3.5 w-3.5" />
                 </Btn>
+                <Btn variant="ghost" onClick={() => setWinnersOf(r)} aria-label="Победители">
+                  <Users className="h-3.5 w-3.5" />
+                </Btn>
                 {(r.status === "active" || r.status === "finished") && !r.winnerUserId && (
                   <Btn variant="ghost" onClick={() => setConfirmPick(r)} aria-label="Выбрать победителя">
                     <Trophy className="h-3.5 w-3.5" />
