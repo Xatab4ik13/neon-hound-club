@@ -60,6 +60,7 @@ export async function shopRoutes(app: FastifyInstance) {
         categoryId: products.categoryId,
         subcategoryId: products.subcategoryId,
         preorderExpectedAt: products.preorderExpectedAt,
+        sizes: products.sizes,
       })
       .from(products)
       .where(eq(products.active, true))
