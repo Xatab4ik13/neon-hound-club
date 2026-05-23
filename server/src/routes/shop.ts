@@ -240,6 +240,9 @@ const createProductSchema = z
     digitalFileUrl: z.string().url().max(1000).nullable().optional(),
     digitalFileName: z.string().trim().max(200).nullable().optional(),
     preorderExpectedAt: z.string().datetime().nullable().optional(),
+    shippingInfo: z.string().max(4000).default(""),
+    returnPolicy: z.string().max(4000).default(""),
+    sizes: z.array(z.string().trim().min(1).max(24)).max(40).default([]),
   })
   .superRefine((v, ctx) => {
     if (v.kind === "digital" && !v.digitalFileUrl) {
@@ -266,6 +269,9 @@ const patchProductSchema = z
     digitalFileUrl: z.string().url().max(1000).nullable(),
     digitalFileName: z.string().trim().max(200).nullable(),
     preorderExpectedAt: z.string().datetime().nullable(),
+    shippingInfo: z.string().max(4000),
+    returnPolicy: z.string().max(4000),
+    sizes: z.array(z.string().trim().min(1).max(24)).max(40),
   })
   .partial();
 
