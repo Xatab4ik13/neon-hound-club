@@ -556,8 +556,6 @@ function CommentItem({
               {rank.short}
             </span>
           )}
-          {!authorIsBlogger && user?.role === "owner" && <RoleBadge role="owner" />}
-          {!authorIsBlogger && user?.role === "team" && <RoleBadge role="team" />}
           <span className="ml-auto shrink-0 font-mono text-[10px] uppercase tracking-wider text-muted-foreground/70">
             {comment.time}
           </span>
