@@ -72,6 +72,7 @@ export type ShopProductListItem = {
   categoryId: string | null;
   subcategoryId: string | null;
   preorderExpectedAt: string | null;
+  sizes: string[];
 };
 
 export type ShopProduct = ShopProductListItem & {
@@ -79,6 +80,8 @@ export type ShopProduct = ShopProductListItem & {
   active: boolean;
   digitalFileUrl: string | null;
   digitalFileName: string | null;
+  shippingInfo: string;
+  returnPolicy: string;
   createdAt: string;
   updatedAt: string;
 };
