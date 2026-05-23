@@ -58,6 +58,7 @@ export async function markOrderPaid(orderId: string): Promise<{ ok: boolean; rea
         idempotent: true,
       });
     }
+    await grantStickerPacksFromOrder(order.id, order.userId);
     return { ok: true };
   }
   if (order.status === "cancelled" || order.status === "refunded") {
