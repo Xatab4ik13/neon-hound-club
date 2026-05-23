@@ -22,6 +22,7 @@ import {
   fetchAdminUsers,
   fetchAdminUserBadges,
   fetchAdminBadges,
+  giftPass,
   grantXp,
   awardBadge,
   patchAdminUser,
