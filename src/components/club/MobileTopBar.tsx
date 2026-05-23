@@ -41,12 +41,14 @@ export function MobileTopBar() {
   const title = titleFor(pathname);
 
   const handleBack = () => {
+    haptic("light");
     if (typeof window !== "undefined" && window.history.length > 1) {
       router.history.back();
     } else {
       router.navigate({ to: "/club" });
     }
   };
+
 
   // On primary tabs — show the full branded plaque (avatar + nick + XP bar) like in settings.
   // Tapping it opens the profile/settings screen.
