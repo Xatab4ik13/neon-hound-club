@@ -36,7 +36,7 @@ export function IOSSheet({
   return (
     <Drawer.Root open={open} onOpenChange={onOpenChange}>
       <Drawer.Portal>
-        <Drawer.Overlay className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm" />
+        <Drawer.Overlay className="fixed inset-0 z-[80] bg-black/80" />
         <Drawer.Content
           className={cn(
             "fixed inset-x-0 bottom-0 z-[81] flex flex-col rounded-t-[20px] border-t border-white/[0.08] bg-[#0d0d0d] outline-none",
