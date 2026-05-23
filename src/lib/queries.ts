@@ -166,6 +166,7 @@ export type RaffleDetail = RaffleListItem & {
 export type MyRaffleItem = RaffleListItem & {
   myEntries: number;
   won: boolean;
+  wonPrizes: string[];
   winnerNick: string | null;
 };
 
