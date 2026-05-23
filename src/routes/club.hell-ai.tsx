@@ -289,7 +289,7 @@ function HellAiMobile() {
     adjust(true);
     setIsThinking(true);
     setUsed((n) => n + 1);
-    askHellAi(text, activeBike?.id)
+    askHellAi(text, activeBike?.id, chatId)
       .then((a) => {
         updateChat(chatId, (c) => ({
           ...c,
