@@ -408,6 +408,8 @@ export async function feedRoutes(app: FastifyInstance) {
       refId: row.id,
       idempotent: true,
     }).catch(() => null);
+    // Квест: 5 комментариев в ленте за месяц.
+    await addQuestProgress(s.sub, "comments_5", 1).catch(() => null);
     // Возвращаем hydrated-форму (как ждёт фронт: FeedCommentHydrated)
     const [author] = await db
       .select({ nick: users.nick, role: users.role, avatarUrl: profiles.avatarUrl })
