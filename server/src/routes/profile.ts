@@ -115,8 +115,8 @@ export async function profileRoutes(app: FastifyInstance) {
 
     if (oldAvatarToDelete) await deleteByPublicUrl(oldAvatarToDelete);
 
-    // Условный квест: профиль заполнен (аватар + город + телефон + bio >=10).
-    await tryCompleteQuest(session.sub, "profile_complete");
+    // Квест: профиль заполнен + есть мото в гараже.
+    await tryCompleteQuest(session.sub, "profile_and_bike");
 
     return { ok: true };
   });
@@ -353,8 +353,8 @@ export async function garageRoutes(app: FastifyInstance) {
       })
       .returning();
 
-    // Квест: первая мото в гараже.
-    if (c === 0) await tryCompleteQuest(session.sub, "first_bike");
+    // Квест: профиль заполнен + есть мото в гараже.
+    await tryCompleteQuest(session.sub, "profile_and_bike");
 
     return reply.code(201).send(row);
   });
