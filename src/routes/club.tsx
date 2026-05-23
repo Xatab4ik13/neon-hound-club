@@ -25,6 +25,7 @@ import { useCart } from "@/hooks/use-cart";
 import { MobileTabBar } from "@/components/club/MobileTabBar";
 import { MobileTopBar } from "@/components/club/MobileTopBar";
 import { MobileTransition } from "@/components/club/MobileTransition";
+import { PullToRefresh } from "@/components/club/PullToRefresh";
 
 export const Route = createFileRoute("/club")({
   head: () => ({
@@ -81,9 +82,11 @@ function ClubLayout() {
           className="relative"
           style={{ paddingBottom: "calc(52px + env(safe-area-inset-bottom) + 8px)" }}
         >
-          <MobileTransition>
-            <Outlet />
-          </MobileTransition>
+          <PullToRefresh>
+            <MobileTransition>
+              <Outlet />
+            </MobileTransition>
+          </PullToRefresh>
         </main>
         <MobileTabBar />
       </div>
