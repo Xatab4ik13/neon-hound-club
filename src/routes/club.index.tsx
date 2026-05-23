@@ -407,7 +407,9 @@ function CommentsPreview({
         <span className="truncate font-display text-[12px] font-bold uppercase italic tracking-tight text-foreground/80">
           {user?.nick ?? last.authorSlug}
         </span>
-        <span className="line-clamp-1 flex-1 text-[13px] text-foreground/70">{last.text}</span>
+        <span className="line-clamp-1 flex-1 text-[13px] text-foreground/70">
+          {last.text.startsWith("::sticker::") ? "🖼 Стикер" : last.text}
+        </span>
       </div>
     </button>
   );
