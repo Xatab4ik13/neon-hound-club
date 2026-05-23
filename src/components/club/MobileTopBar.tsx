@@ -3,7 +3,9 @@ import { Bell, ChevronLeft, ShoppingBag } from "lucide-react";
 import { ME } from "@/data/profile";
 import { useCurrentRank } from "@/data/rank-state";
 import { useCart } from "@/hooks/use-cart";
+import { haptic } from "@/hooks/use-haptic";
 import { ProfilePlaque } from "@/routes/club";
+
 
 
 
@@ -39,6 +41,7 @@ export function MobileTopBar() {
   const title = titleFor(pathname);
 
   const handleBack = () => {
+    haptic("light");
     if (typeof window !== "undefined" && window.history.length > 1) {
       router.history.back();
     } else {
@@ -46,12 +49,13 @@ export function MobileTopBar() {
     }
   };
 
+
   // On primary tabs — show the full branded plaque (avatar + nick + XP bar) like in settings.
   // Tapping it opens the profile/settings screen.
   if (isTab) {
     return (
       <header
-        className="sticky top-0 z-30 border-b border-white/[0.06] bg-background/85 backdrop-blur-xl lg:hidden"
+        className="sticky top-0 z-30 border-b border-white/[0.06] bg-background/70 backdrop-blur-2xl backdrop-saturate-150 lg:hidden"
         style={{ paddingTop: "env(safe-area-inset-top)" }}
       >
         <div className="flex items-center gap-2 px-3 py-2">
@@ -77,7 +81,7 @@ export function MobileTopBar() {
 
   return (
     <header
-      className="sticky top-0 z-30 border-b border-white/[0.06] bg-background/85 backdrop-blur-xl lg:hidden"
+      className="sticky top-0 z-30 border-b border-white/[0.06] bg-background/70 backdrop-blur-2xl backdrop-saturate-150 lg:hidden"
       style={{ paddingTop: "env(safe-area-inset-top)" }}
     >
       <div className="relative flex h-11 items-center px-3">

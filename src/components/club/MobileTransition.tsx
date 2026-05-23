@@ -25,20 +25,25 @@ export function MobileTransition({ children }: { children: React.ReactNode }) {
         key={pathname}
         initial={
           direction === 0
-            ? { opacity: 0 }
-            : { x: direction === 1 ? "100%" : "-30%", opacity: direction === 1 ? 1 : 0.6 }
+            ? { opacity: 0, scale: 0.985 }
+            : { x: direction === 1 ? "100%" : "-25%", opacity: direction === 1 ? 1 : 0.7 }
         }
-        animate={{ x: 0, opacity: 1 }}
+        animate={{ x: 0, opacity: 1, scale: 1 }}
         exit={
           direction === 0
-            ? { opacity: 0 }
-            : { x: direction === 1 ? "-30%" : "100%", opacity: direction === 1 ? 0.6 : 1 }
+            ? { opacity: 0, scale: 0.985 }
+            : { x: direction === 1 ? "-25%" : "100%", opacity: direction === 1 ? 0.7 : 1 }
         }
-        transition={{ duration: 0.28, ease: [0.32, 0.72, 0, 1] }}
-        className="min-h-full"
+        transition={
+          direction === 0
+            ? { duration: 0.18, ease: [0.32, 0.72, 0, 1] }
+            : { type: "spring", stiffness: 380, damping: 38, mass: 0.9 }
+        }
+        className="min-h-full will-change-transform"
       >
         {children}
       </motion.div>
     </AnimatePresence>
   );
 }
+

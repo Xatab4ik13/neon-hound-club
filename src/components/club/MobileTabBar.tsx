@@ -2,6 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { Newspaper, Bot, Ticket, Bike, MoreHorizontal, type LucideIcon } from "lucide-react";
 import { useState } from "react";
 import { MobileMoreSheet } from "./MobileMoreSheet";
+import { haptic } from "@/hooks/use-haptic";
 
 type Tab = {
   label: string;
@@ -41,10 +42,14 @@ export function MobileTabBar() {
     <>
       <nav
         aria-label="Основная навигация"
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-white/[0.06] bg-black/85 backdrop-blur-xl lg:hidden"
-        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+        // iOS translucent tab bar: насыщённый backdrop-blur + тонкая верхняя линия.
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-white/[0.05] bg-black/70 backdrop-blur-2xl backdrop-saturate-150 lg:hidden"
+        style={{
+          paddingBottom: "env(safe-area-inset-bottom)",
+          WebkitBackdropFilter: "saturate(180%) blur(24px)",
+        }}
       >
-        <ul className="mx-auto flex h-[52px] max-w-xl items-stretch">
+        <ul className="mx-auto flex h-[50px] max-w-xl items-stretch">
           {TABS.map((tab) => {
             const active = isTabActive(tab);
             const Icon = tab.icon;
@@ -52,7 +57,10 @@ export function MobileTabBar() {
               <li key={tab.href} className="flex-1">
                 <Link
                   to={tab.href}
-                  className={`flex h-full flex-col items-center justify-center gap-0.5 transition-colors active:scale-[0.95] ${
+                  onClick={() => {
+                    if (!active) haptic("selection");
+                  }}
+                  className={`relative flex h-full flex-col items-center justify-center gap-0.5 transition-transform active:scale-[0.92] ${
                     active ? "text-primary" : "text-muted-foreground"
                   }`}
                 >
@@ -60,6 +68,12 @@ export function MobileTabBar() {
                   <span className="font-mono text-[10px] font-bold uppercase tracking-wider">
                     {tab.label}
                   </span>
+                  {active && (
+                    <span
+                      aria-hidden
+                      className="pointer-events-none absolute bottom-0.5 h-[3px] w-[3px] rounded-full bg-primary shadow-[0_0_6px_color-mix(in_oklab,var(--primary)_70%,transparent)]"
+                    />
+                  )}
                 </Link>
               </li>
             );
@@ -67,14 +81,23 @@ export function MobileTabBar() {
           <li className="flex-1">
             <button
               type="button"
-              onClick={() => setMoreOpen(true)}
-              className={`flex h-full w-full flex-col items-center justify-center gap-0.5 transition-colors active:scale-[0.95] ${
+              onClick={() => {
+                haptic("light");
+                setMoreOpen(true);
+              }}
+              className={`relative flex h-full w-full flex-col items-center justify-center gap-0.5 transition-transform active:scale-[0.92] ${
                 moreActive || moreOpen ? "text-primary" : "text-muted-foreground"
               }`}
               aria-label="Открыть остальную навигацию"
             >
               <MoreHorizontal className="h-[22px] w-[22px]" strokeWidth={moreActive ? 2.4 : 1.9} />
               <span className="font-mono text-[10px] font-bold uppercase tracking-wider">Ещё</span>
+              {(moreActive || moreOpen) && (
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute bottom-0.5 h-[3px] w-[3px] rounded-full bg-primary shadow-[0_0_6px_color-mix(in_oklab,var(--primary)_70%,transparent)]"
+                />
+              )}
             </button>
           </li>
         </ul>
