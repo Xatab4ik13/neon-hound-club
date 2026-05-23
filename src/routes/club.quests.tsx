@@ -1,10 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Check, Loader2, Ticket } from "lucide-react";
+import { ArrowLeft, Check, Download, Loader2, Smartphone, Ticket } from "lucide-react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { checkQuest, fetchQuests, qk, type QuestItem } from "@/lib/queries";
 import { useViewer } from "@/hooks/use-viewer";
 import { ApiError } from "@/lib/api";
+
 
 export const Route = createFileRoute("/club/quests")({
   head: () => ({
