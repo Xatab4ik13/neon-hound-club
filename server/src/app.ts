@@ -16,8 +16,33 @@ export async function buildApp() {
     trustProxy: true,
   });
 
+  // Разрешённые источники:
+  // - прод (hhr.pro и поддомены)
+  // - Lovable preview / lovableproject домены
+  // - localhost для разработки
+  // - всё, что явно задано в FRONTEND_ORIGIN / EXTRA_CORS_ORIGINS (через запятую)
+  const envOrigins = [
+    process.env.FRONTEND_ORIGIN,
+    ...(process.env.EXTRA_CORS_ORIGINS?.split(",") ?? []),
+  ]
+    .map((s) => s?.trim())
+    .filter((s): s is string => !!s);
+  const allowedHostPatterns = [
+    /^https?:\/\/(.+\.)?hhr\.pro$/,
+    /^https?:\/\/(.+\.)?lovable\.app$/,
+    /^https?:\/\/(.+\.)?lovableproject\.com$/,
+    /^https?:\/\/localhost(:\d+)?$/,
+    /^https?:\/\/127\.0\.0\.1(:\d+)?$/,
+  ];
+
   await app.register(cors, {
-    origin: process.env.FRONTEND_ORIGIN ?? "https://hhr.pro",
+    origin: (origin, cb) => {
+      // Запросы без Origin (curl, server-to-server) пропускаем.
+      if (!origin) return cb(null, true);
+      if (envOrigins.includes(origin)) return cb(null, true);
+      if (allowedHostPatterns.some((rx) => rx.test(origin))) return cb(null, true);
+      return cb(null, false);
+    },
     credentials: true,
     methods: ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
