@@ -68,6 +68,19 @@ function TierDetailPage() {
   const qc = useQueryClient();
   const [purchaseId, setPurchaseId] = useState<string | null>(null);
 
+  const passQ = useQuery({
+    queryKey: qk.passMe,
+    queryFn: fetchPassMe,
+    enabled: isAuthed,
+  });
+  const active = passQ.data?.active ?? null;
+  const daysLeft = passQ.data?.daysLeft ?? null;
+  const activeRank = active ? TIER_RANK[active.tier] : 0;
+  const targetRank = TIER_RANK[tier.slug as PassTier];
+  const isSameTier = active?.tier === tier.slug;
+  const isUpgrade = active && targetRank > activeRank;
+  const isDowngrade = active && targetRank < activeRank;
+
   const purchaseM = useMutation({
     mutationFn: () => purchasePass(tier.slug as PassTier),
     onSuccess: (res) => {
@@ -89,6 +102,20 @@ function TierDetailPage() {
 
   const isGold = tier.recommended;
   const isPlatinum = tier.ultimate;
+
+  const ctaLabel = !isAuthed
+    ? "Войти и купить"
+    : purchaseId
+      ? "Заявка создана"
+      : isDowngrade
+        ? `У тебя уже выше — ${active!.tier.toUpperCase()}`
+        : isSameTier
+          ? "Продлить на 30 дней"
+          : isUpgrade
+            ? `Апгрейд до ${tier.name}`
+            : `Купить ${tier.name}`;
+  const ctaDisabled = !isAuthed || purchaseM.isPending || Boolean(isDowngrade);
+
 
   return (
     <main className="mx-auto w-full max-w-5xl px-4 py-8 md:px-8 md:py-12">
