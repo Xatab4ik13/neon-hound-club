@@ -304,6 +304,7 @@ export async function feedRoutes(app: FastifyInstance) {
     const [c] = await db.select({ id: postComments.id }).from(postComments).where(and(eq(postComments.id, req.params.cid), isNull(postComments.deletedAt))).limit(1);
     if (!c) return reply.code(404).send({ error: "not_found" });
     await db.insert(commentLikes).values({ commentId: req.params.cid, userId: s.sub }).onConflictDoNothing();
+    publishFeedEvent("comment.liked", { commentId: req.params.cid, liked: true });
     return { ok: true };
   });
   app.delete<{ Params: { cid: string } }>("/comments/:cid/like", { preHandler: requireAuth }, async (req) => {
