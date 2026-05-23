@@ -414,6 +414,7 @@ export async function feedRoutes(app: FastifyInstance) {
       .leftJoin(profiles, eq(profiles.userId, users.id))
       .where(eq(users.id, s.sub))
       .limit(1);
+    const ranksMap = await getRanksMap([s.sub]);
     const result = {
       id: row.id,
       postId: row.postId,
@@ -421,6 +422,7 @@ export async function feedRoutes(app: FastifyInstance) {
       nick: author?.nick ?? "",
       role: author?.role ?? "user",
       avatarUrl: author?.avatarUrl ?? null,
+      rankId: ranksMap.get(s.sub) ?? "rookie",
       text: row.text,
       createdAt: row.createdAt,
       likes: 0,
