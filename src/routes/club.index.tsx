@@ -748,7 +748,19 @@ function CommentComposer({
   const [tab, setTab] = useState<"recent" | "emoji" | "stickers">("stickers");
   const [activePack, setActivePack] = useState<string>(STICKER_PACKS[0].id);
   const [recent, setRecent] = useState<string[]>(() => loadRecent());
-  const me = PUBLIC_USERS[ME_SLUG];
+  const myProfileQ = useMyProfile();
+  const myProfile = myProfileQ.data;
+  const meNick = myProfile?.nick ?? PUBLIC_USERS[ME_SLUG]?.nick ?? "";
+  const meInitials = (() => {
+    const t = meNick.trim();
+    if (!t) return "?";
+    const parts = t.split(/\s+/);
+    if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+    return t.slice(0, 2).toUpperCase();
+  })();
+  const meRank = (myProfile?.rank?.rankId as RankId | undefined) ?? PUBLIC_USERS[ME_SLUG]?.rank ?? "rookie";
+  const meAvatar = myProfile?.avatarUrl ?? PUBLIC_USERS[ME_SLUG]?.avatarUrl;
+  const meIsBlogger = myProfile?.role === "blogger";
   const disabled = value.trim().length === 0;
   const wrapRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
