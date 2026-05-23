@@ -5,8 +5,15 @@
 
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Apple, Bell, Check, Download, Share, Smartphone, Sparkles, Ticket } from "lucide-react";
+import { Apple, Bell, BellOff, Check, Download, Share, Smartphone, Sparkles, Ticket } from "lucide-react";
 import { PageHeader } from "@/components/club/PageHeader";
+import {
+  getPushPermission,
+  getPushSubscription,
+  isPushSupported,
+  subscribeToPush,
+  unsubscribeFromPush,
+} from "@/lib/push";
 
 export const Route = createFileRoute("/club/install")({
   head: () => ({
