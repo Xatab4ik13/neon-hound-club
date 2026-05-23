@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   Bike,
   Calendar,
@@ -18,14 +19,14 @@ import { BadgeCase } from "@/components/club/BadgeCase";
 import { useMyProfile } from "@/lib/garage-api";
 import { useViewer } from "@/hooks/use-viewer";
 import {
-  useCurrentRank,
   useRankState,
   setCustomPlaqueBg,
   getAvailablePlaqueBgs,
   getPlaqueBgRankIndex,
 } from "@/data/rank-state";
-import { usePassState } from "@/data/pass-state";
-import { RANKS, type PlaqueBg } from "@/data/ranks";
+import { fetchMyBadges, fetchPassMe, type RankInfo, type MyBadge } from "@/lib/queries";
+import { TIERS, type Tier } from "@/data/hell-pass";
+import { RANKS, type PlaqueBg, type RankId, type RankMeta } from "@/data/ranks";
 import { PlaqueBackground } from "./club";
 import { IOSListSection, IOSListRow } from "@/components/ios/IOSList";
 import { IOSSheet } from "@/components/ios/IOSSheet";
