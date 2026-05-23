@@ -113,19 +113,36 @@ export async function rafflesRoutes(app: FastifyInstance) {
 
     const items = await Promise.all(
       rows.map(async (row) => {
+        // Мои выигранные призы в этом раффле (новая модель — много призов).
+        const myWins = await db
+          .select({ prizeName: rafflePrizes.name })
+          .from(rafflePrizeWinners)
+          .innerJoin(rafflePrizes, eq(rafflePrizes.id, rafflePrizeWinners.prizeId))
+          .where(
+            and(
+              eq(rafflePrizeWinners.raffleId, row.raffle.id),
+              eq(rafflePrizeWinners.userId, session.sub),
+            ),
+          );
+        const wonPrizes = myWins.map((w) => w.prizeName);
+        const won = wonPrizes.length > 0;
+
+        // Победители раффла (для строки «забрал @nick» если я не выиграл).
         let winnerNick: string | null = null;
-        if (row.raffle.winnerUserId) {
-          const [u] = await db
+        if (!won) {
+          const [w] = await db
             .select({ nick: users.nick })
-            .from(users)
-            .where(eq(users.id, row.raffle.winnerUserId))
+            .from(rafflePrizeWinners)
+            .innerJoin(users, eq(users.id, rafflePrizeWinners.userId))
+            .where(eq(rafflePrizeWinners.raffleId, row.raffle.id))
             .limit(1);
-          winnerNick = u?.nick ?? null;
+          winnerNick = w?.nick ?? null;
         }
         return {
           ...row.raffle,
           myEntries: row.entries,
-          won: row.raffle.winnerUserId === session.sub,
+          won,
+          wonPrizes,
           winnerNick,
         };
       }),
