@@ -2,7 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { desc, eq } from "drizzle-orm";
 import { db } from "../db/client.js";
-import { passPurchases, PASS_CONFIG, PASS_TIERS } from "../db/schema/pass.js";
+import { passPurchases, PASS_CONFIG, PASS_DURATION_DAYS, PASS_TIERS } from "../db/schema/pass.js";
 import { requireAuth, requireAdmin, type SessionPayload } from "../lib/auth.js";
 import {
   activatePassPurchase,
@@ -10,6 +10,7 @@ import {
   expireOldPasses,
   getActivePass,
   getPassHistory,
+  PassPurchaseError,
 } from "../lib/pass.js";
 
 // ---------- USER ----------
