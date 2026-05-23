@@ -152,8 +152,12 @@ export function MobileMoreSheet({
                 <li>
                   <button
                     type="button"
-                    onClick={() => {
-                      if (typeof window !== "undefined" && window.confirm("Выйти из клуба?")) {
+                    onClick={async () => {
+                      if (typeof window !== "undefined" && !window.confirm("Выйти из клуба?")) return;
+                      try {
+                        await signOut();
+                      } finally {
+                        onOpenChange(false);
                         window.location.href = "/";
                       }
                     }}
