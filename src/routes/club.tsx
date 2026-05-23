@@ -27,6 +27,7 @@ import { MobileTopBar } from "@/components/club/MobileTopBar";
 import { MobileTransition } from "@/components/club/MobileTransition";
 import { PullToRefresh } from "@/components/club/PullToRefresh";
 import { OfflineBanner } from "@/components/club/OfflineBanner";
+import { useEdgeSwipeBack } from "@/hooks/use-edge-swipe-back";
 
 export const Route = createFileRoute("/club")({
   head: () => ({
