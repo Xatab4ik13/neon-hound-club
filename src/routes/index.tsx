@@ -173,40 +173,32 @@ function Index() {
                   мерча, подписка Hell Pass. Без накруток.
                 </p>
                 <div className="space-y-3">
-                  {RANK_LADDER.map((r, i) => {
-                    const next = RANK_LADDER[i + 1];
-                    const rangeLabel = next
-                      ? `${r.from.toLocaleString("ru-RU")} — ${(next.from - 1).toLocaleString("ru-RU")} XP`
-                      : `${r.from.toLocaleString("ru-RU")}+ XP`;
-                    return (
-                      <div
-                        key={r.num}
-                        className="flex items-center justify-between rounded-lg border border-border bg-surface p-4"
-                      >
-                        <div className="flex items-center gap-4">
-                          <span className="font-mono text-sm text-muted-foreground">
-                            {r.num}
-                          </span>
-                          <div className="flex flex-col">
-                            <span
-                              className="font-display text-base uppercase tracking-widest"
-                              style={{ color: r.accent }}
-                            >
-                              {r.label}
-                            </span>
-                            <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                              {r.short} · {r.hint}
-                            </span>
-                          </div>
-                        </div>
-                        <span className="font-mono text-xs tabular-nums text-muted-foreground">
-                          {rangeLabel}
+                  {RANK_LADDER.map((r) => (
+                    <div
+                      key={r.num}
+                      className="flex items-center justify-between rounded-lg border border-border bg-surface p-4"
+                    >
+                      <div className="flex items-center gap-4">
+                        <span className="font-mono text-sm text-muted-foreground">
+                          {r.num}
                         </span>
+                        <div className="flex flex-col">
+                          <span
+                            className="font-display text-base uppercase tracking-widest"
+                            style={{ color: r.accent }}
+                          >
+                            {r.label}
+                          </span>
+                          <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                            {r.tag} · {r.hint}
+                          </span>
+                        </div>
                       </div>
-                    );
-                  })}
-
-
+                      <span className="font-mono text-xs tabular-nums text-muted-foreground">
+                        {r.rangeLabel}
+                      </span>
+                    </div>
+                  ))}
                 </div>
               </div>
 
