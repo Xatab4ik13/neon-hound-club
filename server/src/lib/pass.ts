@@ -111,3 +111,26 @@ export async function expireOldPasses(): Promise<number> {
     .returning({ id: passPurchases.id });
   return res.length;
 }
+
+/**
+ * Перки активного Hell Pass на момент действия.
+ *  - xpMultiplier: множитель XP за челленджи/квесты (1.0 без пасса)
+ *  - shopDiscountPct: % скидки на мерч (0 без пасса)
+ */
+export const PASS_PERKS: Record<PassTier, { xpMultiplier: number; shopDiscountPct: number }> = {
+  silver: { xpMultiplier: 1.25, shopDiscountPct: 5 },
+  gold: { xpMultiplier: 1.5, shopDiscountPct: 10 },
+  platinum: { xpMultiplier: 2, shopDiscountPct: 15 },
+};
+
+export async function getActivePassPerks(userId: string): Promise<{
+  tier: PassTier | null;
+  xpMultiplier: number;
+  shopDiscountPct: number;
+}> {
+  const pass = await getActivePass(userId);
+  if (!pass) return { tier: null, xpMultiplier: 1, shopDiscountPct: 0 };
+  const tier = pass.tier as PassTier;
+  const perks = PASS_PERKS[tier];
+  return { tier, ...perks };
+}
