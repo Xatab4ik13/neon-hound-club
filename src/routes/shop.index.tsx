@@ -9,6 +9,7 @@ import {
   qk,
   type ShopProductListItem,
 } from "@/lib/queries";
+import { SPECIAL_PACK_COVER } from "@/assets/stickers/special";
 
 export const Route = createFileRoute("/shop/")({
   head: () => ({
