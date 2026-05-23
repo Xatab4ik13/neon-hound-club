@@ -1,31 +1,44 @@
-// Компактный блок челленджей для дашборда. Показывает summary + 3 ближайших.
-
+// Компактный блок челленджей для дашборда. Реальные данные с бэка.
 import { Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { ArrowRight, Flag, Sparkles, Ticket } from "lucide-react";
-import {
-  CLUB_QUESTS,
-  ladderEarnedXp,
-  questCompleted,
-  questPct,
-  questsSummary,
-  type Quest,
-} from "@/data/quests";
+import { fetchQuests, qk, type QuestItem } from "@/lib/queries";
+import { useViewer } from "@/hooks/use-viewer";
 
-function pickTop(quests: Quest[]) {
-  const open = quests
-    .filter((q) => !q.claimed && !q.bloggerOnly)
-    .sort((a, b) => {
-      const da = questCompleted(a) ? -1 : 0;
-      const db = questCompleted(b) ? -1 : 0;
-      if (da !== db) return da - db;
-      return questPct(b) - questPct(a);
-    });
-  return open.slice(0, 3);
+function questPct(q: QuestItem): number {
+  if (q.completed) return 100;
+  if (q.kind === "monthly" || q.kind === "ladder") {
+    return Math.min(100, Math.round((q.progress / Math.max(1, q.goal)) * 100));
+  }
+  return 0;
+}
+
+function ladderEarnedXp(q: QuestItem): number {
+  if (!q.ladder) return 0;
+  return q.ladder.slice(0, q.lastLadderStep).reduce((s, st) => s + st.xp, 0);
+}
+
+function pickTop(items: QuestItem[]): QuestItem[] {
+  return items
+    .filter((q) => !q.completed)
+    .sort((a, b) => questPct(b) - questPct(a))
+    .slice(0, 3);
 }
 
 export function QuestsBlock() {
-  const top = pickTop(CLUB_QUESTS);
-  const s = questsSummary(CLUB_QUESTS);
+  const { isAuthed } = useViewer();
+  const q = useQuery({ queryKey: qk.quests, queryFn: fetchQuests, enabled: isAuthed });
+  const items = q.data?.items ?? [];
+  const top = pickTop(items);
+  const done = items.filter((i) => i.completed).length;
+  const ticketsEarned = items
+    .filter((i) => i.completed)
+    .reduce((s, i) => s + i.ticketsReward, 0);
+  const ticketsAvailable = items
+    .filter((i) => !i.completed)
+    .reduce((s, i) => s + i.ticketsReward, 0);
+
+  if (!isAuthed || items.length === 0) return null;
 
   return (
     <section aria-label="Челленджи клуба" className="mb-10">
@@ -35,7 +48,7 @@ export function QuestsBlock() {
             Челленджи клуба
           </h2>
           <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-            {s.done}/{s.total} выполнено
+            {done}/{items.length} выполнено
           </span>
         </div>
         <Link
@@ -54,7 +67,7 @@ export function QuestsBlock() {
             <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
               Выполнено:{" "}
               <span className="font-bold text-foreground tabular-nums">
-                {s.done}/{s.total}
+                {done}/{items.length}
               </span>
             </span>
           </div>
@@ -62,63 +75,57 @@ export function QuestsBlock() {
             <Ticket className="h-4 w-4 text-primary" strokeWidth={1.8} />
             <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
               Билеты:{" "}
-              <span className="font-bold text-foreground tabular-nums">
-                {s.ticketsEarned}
-              </span>
+              <span className="font-bold text-foreground tabular-nums">{ticketsEarned}</span>
             </span>
           </div>
-          {s.ticketsAvailable > 0 && (
+          {ticketsAvailable > 0 && (
             <div className="flex items-center gap-2">
               <Sparkles className="h-4 w-4 text-yellow-400" strokeWidth={1.8} />
               <span className="font-mono text-[11px] uppercase tracking-wider text-yellow-400">
                 К получению:{" "}
-                <span className="font-bold tabular-nums">{s.ticketsAvailable}</span>
+                <span className="font-bold tabular-nums">{ticketsAvailable}</span>
               </span>
             </div>
           )}
         </div>
 
         <ul className="divide-y divide-white/[0.04]">
-          {top.map((q) => {
-            const pct = questPct(q);
-            const done = questCompleted(q);
-            const earned = q.ladder ? ladderEarnedXp(q) : 0;
+          {top.map((quest) => {
+            const pct = questPct(quest);
+            const earned = quest.ladder ? ladderEarnedXp(quest) : 0;
             return (
               <li
-                key={q.id}
+                key={quest.id}
                 className="grid grid-cols-[1fr_auto] items-center gap-4 px-4 py-3"
               >
                 <div className="min-w-0">
                   <div className="flex items-baseline gap-2">
                     <span className="truncate text-sm font-bold text-foreground">
-                      {q.title}
+                      {quest.title}
                     </span>
                   </div>
                   <div className="mt-1.5 flex items-center gap-3">
                     <div className="relative h-1.5 flex-1 overflow-hidden rounded-sm bg-black/55 ring-1 ring-inset ring-white/10">
                       <div
                         className="absolute inset-y-0 left-0 rounded-sm transition-all"
-                        style={{
-                          width: `${pct}%`,
-                          backgroundColor: done
-                            ? "rgb(74, 222, 128)"
-                            : "var(--primary)",
-                        }}
+                        style={{ width: `${pct}%`, backgroundColor: "var(--primary)" }}
                       />
                     </div>
                     <span className="shrink-0 font-mono text-[10px] tabular-nums text-muted-foreground">
-                      {q.progress}/{q.goal} {q.unit}
+                      {quest.progress}/{quest.goal} {quest.unit}
                     </span>
                   </div>
                 </div>
                 <div className="flex flex-col items-end gap-0.5">
-                  <div className="flex items-center gap-1 font-mono text-xs font-bold text-foreground">
-                    <Sparkles className="h-3 w-3 text-primary" />
-                    +{q.ladder ? `${earned}/${q.xp}` : q.xp} XP
-                  </div>
-                  {q.tickets > 0 && (
+                  {quest.xpReward > 0 && (
+                    <div className="flex items-center gap-1 font-mono text-xs font-bold text-foreground">
+                      <Sparkles className="h-3 w-3 text-primary" />
+                      +{quest.ladder ? `${earned}/${quest.xpReward}` : quest.xpReward} XP
+                    </div>
+                  )}
+                  {quest.ticketsReward > 0 && (
                     <div className="flex items-center gap-1 font-mono text-[10px] font-bold text-yellow-400">
-                      <Ticket className="h-3 w-3" />+{q.tickets}
+                      <Ticket className="h-3 w-3" />+{quest.ticketsReward}
                     </div>
                   )}
                 </div>
