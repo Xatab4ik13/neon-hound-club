@@ -259,6 +259,44 @@ function UserView({ user }: { user: ProfileView }) {
         </div>
       </section>
 
+      {/* Мотоцикл */}
+      {user.bike && (
+        <section className="mb-8">
+          <SectionTitle title="Мотоцикл" />
+          <div className="overflow-hidden border border-white/[0.06] bg-card/40">
+            {user.bikePhoto ? (
+              <img
+                src={user.bikePhoto}
+                alt={user.bike}
+                className="aspect-[16/10] w-full object-cover"
+                loading="lazy"
+              />
+            ) : (
+              <div className="flex aspect-[16/10] w-full items-center justify-center bg-black/40">
+                <Bike className="h-10 w-10 text-muted-foreground/40" />
+              </div>
+            )}
+            <div className="flex flex-wrap items-baseline justify-between gap-2 border-t border-white/[0.06] px-4 py-3">
+              <div className="min-w-0">
+                <div className="truncate font-display text-base font-black uppercase italic text-foreground">
+                  {user.bike}
+                </div>
+                {user.bikeNickname && (
+                  <div className="truncate font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
+                    «{user.bikeNickname}»
+                  </div>
+                )}
+              </div>
+              {user.bikeYear && (
+                <span className="font-mono text-[11px] tabular-nums uppercase tracking-[0.2em] text-muted-foreground">
+                  {user.bikeYear}
+                </span>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* Значки */}
       <section className="mb-8">
         <SectionTitle title="Значки" right={`${badges.length}`} />
