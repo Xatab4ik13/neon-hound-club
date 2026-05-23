@@ -30,8 +30,16 @@ import {
   cancelRaffle,
   type CreateRaffleInput,
 } from "@/lib/admin-queries";
+import {
+  fetchRafflePrizes,
+  createRafflePrize,
+  patchRafflePrize,
+  deleteRafflePrize,
+  type RafflePrizeDto,
+} from "@/lib/blogger-raffles";
 import { ApiError } from "@/lib/api";
 import type { RaffleListItem, RaffleStatus } from "@/lib/queries";
+import { Trash2 } from "lucide-react";
 
 export const Route = createFileRoute("/admin/raffles")({
   component: RafflesPage,
