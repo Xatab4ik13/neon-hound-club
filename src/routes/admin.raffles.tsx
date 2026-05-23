@@ -28,6 +28,7 @@ import {
   pickRaffleWinner,
   cancelRaffle,
   fetchAdminRaffleWinners,
+  deleteAdminRaffle,
   type CreateRaffleInput,
 } from "@/lib/admin-queries";
 import {
