@@ -460,13 +460,15 @@ function PrizesEditor({ raffleId }: { raffleId: string }) {
       </ul>
 
       <div className="mt-3 flex items-end gap-2">
-        <Field label="Название приза" className="flex-1">
-          <TextInput
-            value={draftName}
-            onChange={(e) => setDraftName(e.target.value)}
-            placeholder="Шлем AGV K6"
-          />
-        </Field>
+        <div className="flex-1">
+          <Field label="Название приза">
+            <TextInput
+              value={draftName}
+              onChange={(e) => setDraftName(e.target.value)}
+              placeholder="Шлем AGV K6"
+            />
+          </Field>
+        </div>
         <Field label="qty">
           <TextInput
             type="number"
