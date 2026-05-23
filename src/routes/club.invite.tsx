@@ -208,7 +208,7 @@ function InvitePage() {
                     {f.nick}
                   </div>
                   <div className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-                    {f.joinedAt}
+                    {f.joinedAt.slice(0, 10)}
                   </div>
                 </div>
                 <span
