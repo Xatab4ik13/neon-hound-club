@@ -148,8 +148,6 @@ export async function cancelRaffleWithRefund(raffleId: string) {
   return { ok: true as const, refunded: entries.length };
 }
 
-import { rafflePrizes, rafflePrizeWinners } from "../db/schema/raffles.js";
-import { profiles } from "../db/schema/profile.js";
 import { getXpTotal, computeRank } from "./xp.js";
 
 /**
