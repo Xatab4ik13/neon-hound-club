@@ -131,7 +131,7 @@ function MePage() {
               Подписка
             </h2>
             <div className="space-y-2">
-              <PassDesktopRow tier={tierInfo} />
+              <PassDesktopRow tier={tierInfo} daysLeft={passDaysLeft} />
               <ActionRow
                 icon={<ImageIcon className="h-5 w-5" />}
                 label="Фон профиля"
