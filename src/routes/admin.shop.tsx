@@ -368,7 +368,45 @@ function ProductModal({
   onDone: () => void;
 }) {
   const [p, setP] = useState<CreateProductInput>(initial);
-  const [imagesText, setImagesText] = useState((initial.images ?? []).join("\n"));
+  const [images, setImages] = useState<string[]>(initial.images ?? []);
+  const [uploadingIdx, setUploadingIdx] = useState<number | null>(null);
+
+  const handleUpload = async (file: File, replaceIdx?: number) => {
+    if (file.size > 8 * 1024 * 1024) {
+      toast.error("Файл больше 8 МБ");
+      return;
+    }
+    const idx = replaceIdx ?? images.length;
+    setUploadingIdx(idx);
+    try {
+      const { uploadFileToS3 } = await import("@/lib/garage-api");
+      const url = await uploadFileToS3(file, "shop");
+      setImages((prev) => {
+        const next = [...prev];
+        if (replaceIdx !== undefined) next[replaceIdx] = url;
+        else next.push(url);
+        return next.slice(0, 5);
+      });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Не загрузилось");
+    } finally {
+      setUploadingIdx(null);
+    }
+  };
+
+  const removeImage = (idx: number) => {
+    setImages((prev) => prev.filter((_, i) => i !== idx));
+  };
+
+  const moveImage = (idx: number, dir: -1 | 1) => {
+    setImages((prev) => {
+      const next = [...prev];
+      const j = idx + dir;
+      if (j < 0 || j >= next.length) return prev;
+      [next[idx], next[j]] = [next[j], next[idx]];
+      return next;
+    });
+  };
   const [unlimited, setUnlimited] = useState(initial.stock === null);
 
   // ISO datetime <-> input[type=datetime-local] (yyyy-MM-ddTHH:mm)
