@@ -646,6 +646,7 @@ function AddressTab({ mobile }: { mobile?: boolean }) {
   };
 
   if (q.isLoading) return <LoadingBlock />;
+  if (q.isError) return <ErrorBlock error={q.error} onRetry={() => q.refetch()} />;
 
   if (mobile) {
     return (
