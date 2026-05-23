@@ -33,12 +33,17 @@ export async function passRoutes(app: FastifyInstance) {
     };
   });
 
-  // GET /api/v1/pass/me — текущий активный пасс + история
+  // GET /api/v1/pass/me — текущий активный пасс + история + daysLeft
   app.get("/me", { preHandler: requireAuth }, async (req) => {
     const session = req.user as SessionPayload;
     const active = await getActivePass(session.sub);
     const history = await getPassHistory(session.sub, 20);
-    return { active, history };
+    let daysLeft: number | null = null;
+    if (active?.expiresAt) {
+      const ms = new Date(active.expiresAt).getTime() - Date.now();
+      daysLeft = Math.max(0, Math.ceil(ms / (24 * 60 * 60 * 1000)));
+    }
+    return { active, history, daysLeft, durationDays: PASS_DURATION_DAYS };
   });
 
   // POST /api/v1/pass/purchase — создать запись pending_payment
@@ -49,12 +54,19 @@ export async function passRoutes(app: FastifyInstance) {
       return reply.code(400).send({ error: "invalid_input", message: parsed.error.issues[0]?.message });
     }
     const session = req.user as SessionPayload;
-    const purchase = await createPassPurchase(session.sub, parsed.data.tier);
-    return reply.code(201).send({
-      purchase,
-      // TODO: тут вернём ссылку на оплату, когда подключим ЮKassa / CloudPayments
-      paymentUrl: null,
-    });
+    try {
+      const purchase = await createPassPurchase(session.sub, parsed.data.tier);
+      return reply.code(201).send({
+        purchase,
+        // TODO: тут вернём ссылку на оплату, когда подключим ЮKassa / CloudPayments
+        paymentUrl: null,
+      });
+    } catch (e) {
+      if (e instanceof PassPurchaseError) {
+        return reply.code(409).send({ error: e.code, message: e.message });
+      }
+      throw e;
+    }
   });
 }
 
