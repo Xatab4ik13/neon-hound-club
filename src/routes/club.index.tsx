@@ -369,15 +369,6 @@ function PostAction({
   );
 }
 
-function RoleBadge({ role }: { role: "owner" | "team" | "rider" }) {
-  if (role === "rider") return null;
-  const label = role === "owner" ? "OWNER" : "TEAM";
-  return (
-    <span className="shrink-0 rounded-md border border-primary/30 bg-primary/10 px-1.5 py-px font-mono text-[9px] font-bold uppercase tracking-wider text-primary">
-      {label}
-    </span>
-  );
-}
 
 // ───────── Comments preview (под постом) ─────────
 
