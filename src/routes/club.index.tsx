@@ -1097,6 +1097,8 @@ function StickerPanel({
                 ) : (
                   p.cover
                 )}
+              </button>
+            );
           })}
         </div>
       </div>
