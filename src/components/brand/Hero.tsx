@@ -1,23 +1,23 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { useViewer } from "@/hooks/use-viewer";
+import { fetchHomeRaffles, type HomeRaffleItem } from "@/lib/queries";
 import pinkR6 from "@/assets/pink-r6.jpg";
 
 /**
  * Hero — HELLHOUND Racing Club.
  * Слева: имя клуба + слоган + CTA.
- * Справа: плашка активного конкурса (мотоцикл + таймер).
+ * Справа: плашка активного конкурса (мотоцикл + таймер) — данные из бекенда.
  */
 
-// Целевая дата розыгрыша. Поменять при необходимости.
-const RAFFLE_END = new Date("2026-07-01T20:00:00+03:00");
-
-function useCountdown(target: Date) {
+function useCountdown(target: Date | null) {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
   }, []);
+  if (!target) return { days: 0, hours: 0, minutes: 0, seconds: 0 };
   const diff = Math.max(0, target.getTime() - now);
   const days = Math.floor(diff / 86_400_000);
   const hours = Math.floor((diff % 86_400_000) / 3_600_000);
@@ -29,8 +29,28 @@ function useCountdown(target: Date) {
 const pad = (n: number) => n.toString().padStart(2, "0");
 
 export function Hero() {
-  const { days, hours, minutes, seconds } = useCountdown(RAFFLE_END);
   const { isAuthed } = useViewer();
+
+  const { data } = useQuery({
+    queryKey: ["raffles", "home"],
+    queryFn: fetchHomeRaffles,
+    staleTime: 60_000,
+  });
+
+  const raffle: HomeRaffleItem | undefined = data?.items?.[0];
+  const endsAt = raffle ? new Date(raffle.endsAt) : null;
+  const { days, hours, minutes, seconds } = useCountdown(endsAt);
+
+  const prizeLabel =
+    raffle?.prizes?.[0]?.name ?? raffle?.prize ?? raffle?.title ?? "";
+  const image = raffle?.imageUrl || pinkR6;
+  const raffleHref = raffle
+    ? isAuthed
+      ? `/club/raffles/${raffle.id}`
+      : "/login"
+    : isAuthed
+      ? "/club/raffles"
+      : "/login";
 
   return (
     <section className="relative overflow-hidden px-6 py-20 md:px-12 md:py-28">
@@ -84,79 +104,81 @@ export function Hero() {
         </div>
 
         {/* RIGHT — RAFFLE CARD */}
-        <aside className="lg:col-span-4">
-          <Link
-            to={isAuthed ? "/club/raffles" : "/login"}
-            className="group relative block overflow-hidden border border-border bg-card transition-colors hover:border-primary/50"
-          >
-            {/* Header */}
-            <div className="flex items-center justify-between border-b border-border px-5 py-3">
-              <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.2em] text-primary">
-                <span className="relative flex h-2 w-2">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/60" />
-                  <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
+        {raffle ? (
+          <aside className="lg:col-span-4">
+            <Link
+              to={raffleHref}
+              className="group relative block overflow-hidden border border-border bg-card transition-colors hover:border-primary/50"
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between border-b border-border px-5 py-3">
+                <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.2em] text-primary">
+                  <span className="relative flex h-2 w-2">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/60" />
+                    <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
+                  </span>
+                  Конкурс / LIVE
+                </div>
+                <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+                  №{raffle.id.slice(0, 2).toUpperCase()}
                 </span>
-                Конкурс / LIVE
               </div>
-              <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                №01
-              </span>
-            </div>
 
-            {/* Image */}
-            <div className="relative aspect-[4/3] overflow-hidden bg-surface">
-              <img
-                src={pinkR6}
-                alt="Yamaha YZF-R6 Pink Edition — приз розыгрыша"
-                width={1200}
-                height={900}
-                className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-card via-card/30 to-transparent" />
-              <div className="absolute bottom-4 left-5 right-5">
-                <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                  Приз
-                </div>
-                <div className="font-display text-2xl uppercase tracking-tight text-foreground md:text-3xl">
-                  Yamaha YZF-R6
-                </div>
-              </div>
-            </div>
-
-            {/* Countdown */}
-            <div className="px-5 py-5">
-              <div className="mb-3 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                До конца конкурса
-              </div>
-              <div className="grid grid-cols-4 gap-2">
-                {[
-                  { v: days, l: "дни" },
-                  { v: hours, l: "часы" },
-                  { v: minutes, l: "мин" },
-                  { v: seconds, l: "сек" },
-                ].map((u) => (
-                  <div
-                    key={u.l}
-                    className="flex flex-col items-center border border-border bg-background py-3"
-                  >
-                    <span className="font-display text-3xl tabular-nums leading-none text-foreground">
-                      {pad(u.v)}
-                    </span>
-                    <span className="mt-1 font-mono text-[9px] uppercase tracking-[0.2em] text-muted-foreground">
-                      {u.l}
-                    </span>
+              {/* Image */}
+              <div className="relative aspect-[4/3] overflow-hidden bg-surface">
+                <img
+                  src={image}
+                  alt={prizeLabel ? `${prizeLabel} — приз розыгрыша` : "Приз розыгрыша"}
+                  width={1200}
+                  height={900}
+                  className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-card via-card/30 to-transparent" />
+                <div className="absolute bottom-4 left-5 right-5">
+                  <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+                    Приз
                   </div>
-                ))}
+                  <div className="font-display text-2xl uppercase tracking-tight text-foreground md:text-3xl">
+                    {prizeLabel}
+                  </div>
+                </div>
               </div>
 
-              <div className="mt-5 flex items-center justify-end border-t border-border pt-4">
-                <span className="text-sm font-medium uppercase tracking-[0.15em] text-primary transition-transform group-hover:translate-x-1">
-                  Участвовать →
-                </span>
+              {/* Countdown */}
+              <div className="px-5 py-5">
+                <div className="mb-3 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+                  До конца конкурса
+                </div>
+                <div className="grid grid-cols-4 gap-2">
+                  {[
+                    { v: days, l: "дни" },
+                    { v: hours, l: "часы" },
+                    { v: minutes, l: "мин" },
+                    { v: seconds, l: "сек" },
+                  ].map((u) => (
+                    <div
+                      key={u.l}
+                      className="flex flex-col items-center border border-border bg-background py-3"
+                    >
+                      <span className="font-display text-3xl tabular-nums leading-none text-foreground">
+                        {pad(u.v)}
+                      </span>
+                      <span className="mt-1 font-mono text-[9px] uppercase tracking-[0.2em] text-muted-foreground">
+                        {u.l}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-5 flex items-center justify-end border-t border-border pt-4">
+                  <span className="text-sm font-medium uppercase tracking-[0.15em] text-primary transition-transform group-hover:translate-x-1">
+                    Участвовать →
+                  </span>
+                </div>
               </div>
-            </div>
-          </Link>
-        </aside>
+            </Link>
+          </aside>
+        ) : null}
       </div>
     </section>
   );
