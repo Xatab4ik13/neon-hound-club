@@ -8,6 +8,7 @@ import { HellhoundAvatar, HellhoundChip } from "@/components/club/HellhoundPlaqu
 import { useBloggerProfile } from "@/data/blogger-profile";
 import { useUpdateMyProfile, uploadFileToS3 } from "@/lib/garage-api";
 import { useViewer } from "@/hooks/use-viewer";
+import { IOSConfirm } from "@/components/ios/IOSConfirm";
 
 export const Route = createFileRoute("/blogger/settings")({
   head: () => ({
