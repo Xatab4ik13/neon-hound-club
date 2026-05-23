@@ -9,6 +9,8 @@ import {
 import { ViewerProvider } from "@/hooks/use-viewer";
 import { CartProvider } from "@/hooks/use-cart";
 import { Toaster } from "@/components/ui/sonner";
+import { useEffect } from "react";
+import { captureRefFromUrl } from "@/data/referral";
 
 function NotFoundComponent() {
   return (
