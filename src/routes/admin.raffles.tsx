@@ -96,6 +96,7 @@ function RafflesPage() {
   const [newOpen, setNewOpen] = useState(false);
   const [confirmPick, setConfirmPick] = useState<RaffleListItem | null>(null);
   const [confirmCancel, setConfirmCancel] = useState<RaffleListItem | null>(null);
+  const [winnersOf, setWinnersOf] = useState<RaffleListItem | null>(null);
 
   const pick = useMutation({
     mutationFn: (id: string) => pickRaffleWinner(id),
