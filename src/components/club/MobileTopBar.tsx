@@ -55,7 +55,7 @@ export function MobileTopBar() {
   if (isTab) {
     return (
       <header
-        className="sticky top-0 z-30 border-b border-white/[0.06] bg-background/85 backdrop-blur-xl lg:hidden"
+        className="sticky top-0 z-30 border-b border-white/[0.06] bg-background/70 backdrop-blur-2xl backdrop-saturate-150 lg:hidden"
         style={{ paddingTop: "env(safe-area-inset-top)" }}
       >
         <div className="flex items-center gap-2 px-3 py-2">
@@ -81,7 +81,7 @@ export function MobileTopBar() {
 
   return (
     <header
-      className="sticky top-0 z-30 border-b border-white/[0.06] bg-background/85 backdrop-blur-xl lg:hidden"
+      className="sticky top-0 z-30 border-b border-white/[0.06] bg-background/70 backdrop-blur-2xl backdrop-saturate-150 lg:hidden"
       style={{ paddingTop: "env(safe-area-inset-top)" }}
     >
       <div className="relative flex h-11 items-center px-3">
