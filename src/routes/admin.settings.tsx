@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Trash2, KeyRound } from "lucide-react";
+import { Plus, Trash2, KeyRound, Loader2 } from "lucide-react";
 import {
   PageHeader,
   Panel,
@@ -11,6 +11,7 @@ import {
   Badge,
   Field,
   TextInput,
+  TextArea,
   Switch,
   Modal,
   ConfirmModal,
@@ -19,7 +20,10 @@ import {
   fetchAdminStaff,
   createAdminStaff,
   deleteAdminStaff,
+  fetchAdminSettings,
+  putAdminSetting,
   type AdminStaffItem,
+  type SystemSettings,
 } from "@/lib/admin-queries";
 import { ApiError } from "@/lib/api";
 import { hhToast as toast } from "@/lib/hh-toast";
@@ -28,20 +32,20 @@ export const Route = createFileRoute("/admin/settings")({
   component: SettingsPage,
 });
 
+function apiErr(e: unknown, fallback = "Ошибка") {
+  return e instanceof ApiError ? e.message : fallback;
+}
+
 function SettingsPage() {
   const qc = useQueryClient();
-  const staffQ = useQuery({
-    queryKey: ["admin", "staff"],
-    queryFn: fetchAdminStaff,
-  });
+
+  // ---- staff ----
+  const staffQ = useQuery({ queryKey: ["admin", "staff"], queryFn: fetchAdminStaff });
   const staff = staffQ.data?.items ?? [];
 
   const [inviteOpen, setInviteOpen] = useState(false);
   const [pwdOpen, setPwdOpen] = useState(false);
   const [del, setDel] = useState<AdminStaffItem | null>(null);
-
-  const [maintenance, setMaintenance] = useState(false);
-  const [emailNotif, setEmailNotif] = useState(true);
 
   const delMut = useMutation({
     mutationFn: (id: string) => deleteAdminStaff(id),
@@ -50,48 +54,43 @@ function SettingsPage() {
       toast.success("Админ удалён");
       setDel(null);
     },
-    onError: (e) => {
-      const raw = e instanceof ApiError ? e.message : "Ошибка";
+    onError: (e) =>
       toast.error(
-        raw === "cannot_delete_self"
+        apiErr(e) === "cannot_delete_self"
           ? "Нельзя удалить самого себя. Сделай это под другим админом."
-          : raw,
-      );
-    },
+          : apiErr(e),
+      ),
   });
 
   const createMut = useMutation({
-    mutationFn: (input: { email: string; password: string; nick: string }) =>
-      createAdminStaff(input),
+    mutationFn: (input: { email: string; password: string; nick: string }) => createAdminStaff(input),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin", "staff"] });
       toast.success("Админ добавлен");
       setInviteOpen(false);
     },
     onError: (e) => {
-      const raw = e instanceof ApiError ? e.message : "Ошибка";
+      const raw = apiErr(e);
       const msg =
-        raw === "email_taken"
-          ? "Этот email уже занят"
-          : raw === "nick_taken"
-            ? "Этот ник уже занят"
-            : raw;
+        raw === "email_taken" ? "Этот email уже занят" : raw === "nick_taken" ? "Этот ник уже занят" : raw;
       toast.error(msg);
     },
   });
 
+  // ---- system settings ----
+  const settingsQ = useQuery({ queryKey: ["admin", "settings"], queryFn: fetchAdminSettings });
+
   return (
     <div>
-      <PageHeader title="Настройки" description="Команда, безопасность и общие параметры" />
+      <PageHeader title="Настройки" description="Команда, общие параметры клуба, обслуживание, AI-лимиты" />
 
       <div className="grid gap-4 lg:grid-cols-2">
+        {/* Team */}
         <Panel>
           <PanelHeader>
             <div>
               <h3 className="text-sm font-semibold">Команда</h3>
-              <p className="mt-0.5 text-xs text-zinc-500">
-                Доступ к админке. У этих аккаунтов нет клубного профиля.
-              </p>
+              <p className="mt-0.5 text-xs text-zinc-500">Доступ к админке. У этих аккаунтов нет клубного профиля.</p>
             </div>
             <Btn variant="primary" onClick={() => setInviteOpen(true)}>
               <Plus className="h-4 w-4" /> Добавить
@@ -103,48 +102,67 @@ function SettingsPage() {
               <span className="font-medium">{t.email}</span>,
               <span className="text-zinc-600 dark:text-zinc-300">@{t.nick}</span>,
               <Badge tone="violet">{t.role}</Badge>,
-              <span className="text-xs text-zinc-500">
-                {new Date(t.createdAt).toLocaleDateString("ru-RU")}
-              </span>,
+              <span className="text-xs text-zinc-500">{new Date(t.createdAt).toLocaleDateString("ru-RU")}</span>,
               <Btn variant="ghost" onClick={() => setDel(t)}>
                 <Trash2 className="h-3.5 w-3.5" />
               </Btn>,
             ])}
           />
-          {staffQ.isLoading && (
-            <div className="p-4 text-center text-xs text-zinc-500">Загрузка…</div>
-          )}
+          {staffQ.isLoading && <div className="p-4 text-center text-xs text-zinc-500">Загрузка…</div>}
           {!staffQ.isLoading && staff.length === 0 && (
             <div className="p-4 text-center text-xs text-zinc-500">Админов нет</div>
           )}
         </Panel>
 
-        <Panel>
-          <PanelHeader>
-            <h3 className="text-sm font-semibold">Общие</h3>
-          </PanelHeader>
-          <div className="space-y-3 p-4">
-            <Field label="Лимит товаров на главной">
-              <TextInput type="number" defaultValue={6} />
-            </Field>
-            <div className="flex items-center justify-between rounded-md border border-zinc-200 p-3 dark:border-zinc-800">
-              <div>
-                <div className="text-sm font-medium">Email-уведомления</div>
-                <div className="text-xs text-zinc-500">Заказы, новые подписки</div>
-              </div>
-              <Switch checked={emailNotif} onChange={setEmailNotif} />
-            </div>
-            <div className="flex items-center justify-between rounded-md border border-zinc-200 p-3 dark:border-zinc-800">
-              <div>
-                <div className="text-sm font-medium">Режим обслуживания</div>
-                <div className="text-xs text-zinc-500">Сайт покажет заглушку всем, кроме админов</div>
-              </div>
-              <Switch checked={maintenance} onChange={setMaintenance} />
-            </div>
-            <Btn variant="primary">Сохранить</Btn>
-          </div>
-        </Panel>
+        {/* Club */}
+        {settingsQ.data ? (
+          <ClubPanel data={settingsQ.data} />
+        ) : (
+          <Panel>
+            <PanelHeader>
+              <h3 className="text-sm font-semibold">Клуб</h3>
+            </PanelHeader>
+            <SettingsLoading />
+          </Panel>
+        )}
 
+        {/* Maintenance */}
+        {settingsQ.data ? (
+          <MaintenancePanel data={settingsQ.data} />
+        ) : (
+          <Panel>
+            <PanelHeader>
+              <h3 className="text-sm font-semibold">Обслуживание</h3>
+            </PanelHeader>
+            <SettingsLoading />
+          </Panel>
+        )}
+
+        {/* Hell AI */}
+        {settingsQ.data ? (
+          <HellAiPanel data={settingsQ.data} />
+        ) : (
+          <Panel>
+            <PanelHeader>
+              <h3 className="text-sm font-semibold">Hell AI — лимиты</h3>
+            </PanelHeader>
+            <SettingsLoading />
+          </Panel>
+        )}
+
+        {/* Admin alerts */}
+        {settingsQ.data ? (
+          <AlertsPanel data={settingsQ.data} />
+        ) : (
+          <Panel>
+            <PanelHeader>
+              <h3 className="text-sm font-semibold">Уведомления админам</h3>
+            </PanelHeader>
+            <SettingsLoading />
+          </Panel>
+        )}
+
+        {/* Security */}
         <Panel>
           <PanelHeader>
             <h3 className="text-sm font-semibold">Безопасность</h3>
@@ -153,9 +171,7 @@ function SettingsPage() {
             <Btn onClick={() => setPwdOpen(true)}>
               <KeyRound className="h-4 w-4" /> Сменить пароль
             </Btn>
-            <div className="text-xs text-zinc-500 dark:text-zinc-400">
-              2FA подключим на этапе 2.
-            </div>
+            <div className="text-xs text-zinc-500 dark:text-zinc-400">2FA подключим на этапе 2.</div>
           </div>
         </Panel>
       </div>
@@ -166,9 +182,7 @@ function SettingsPage() {
         onSave={(m) => createMut.mutate(m)}
         loading={createMut.isPending}
       />
-
       <PasswordModal open={pwdOpen} onClose={() => setPwdOpen(false)} />
-
       <ConfirmModal
         open={!!del}
         onClose={() => setDel(null)}
@@ -178,6 +192,184 @@ function SettingsPage() {
         confirmLabel="Удалить"
       />
     </div>
+  );
+}
+
+function SettingsLoading() {
+  return (
+    <div className="flex h-24 items-center justify-center text-xs text-zinc-500">
+      <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Загрузка…
+    </div>
+  );
+}
+
+function useSettingMutation<K extends keyof SystemSettings>(key: K) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (value: SystemSettings[K]) => putAdminSetting(key, value),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin", "settings"] });
+      toast.success("Сохранено");
+    },
+    onError: (e) => toast.error(apiErr(e)),
+  });
+}
+
+function ClubPanel({ data }: { data: SystemSettings }) {
+  const [name, setName] = useState(data.club.name);
+  const [email, setEmail] = useState(data.club.contact_email);
+  const [url, setUrl] = useState(data.club.support_url);
+  useEffect(() => {
+    setName(data.club.name);
+    setEmail(data.club.contact_email);
+    setUrl(data.club.support_url);
+  }, [data]);
+  const mut = useSettingMutation("club");
+  return (
+    <Panel>
+      <PanelHeader>
+        <h3 className="text-sm font-semibold">Клуб</h3>
+      </PanelHeader>
+      <div className="space-y-3 p-4">
+        <Field label="Название">
+          <TextInput value={name} onChange={(e) => setName(e.target.value)} />
+        </Field>
+        <Field label="Контактный email">
+          <TextInput value={email} onChange={(e) => setEmail(e.target.value)} placeholder="hello@hhr.pro" />
+        </Field>
+        <Field label="Ссылка на поддержку">
+          <TextInput value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://t.me/..." />
+        </Field>
+        <Btn
+          variant="primary"
+          disabled={mut.isPending}
+          onClick={() => mut.mutate({ name, contact_email: email, support_url: url })}
+        >
+          {mut.isPending ? "Сохраняем…" : "Сохранить"}
+        </Btn>
+      </div>
+    </Panel>
+  );
+}
+
+function MaintenancePanel({ data }: { data: SystemSettings }) {
+  const [enabled, setEnabled] = useState(data.maintenance.enabled);
+  const [message, setMessage] = useState(data.maintenance.message);
+  useEffect(() => {
+    setEnabled(data.maintenance.enabled);
+    setMessage(data.maintenance.message);
+  }, [data]);
+  const mut = useSettingMutation("maintenance");
+  return (
+    <Panel>
+      <PanelHeader>
+        <h3 className="text-sm font-semibold">Обслуживание</h3>
+      </PanelHeader>
+      <div className="space-y-3 p-4">
+        <div className="flex items-center justify-between rounded-md border border-zinc-200 p-3 dark:border-zinc-800">
+          <div>
+            <div className="text-sm font-medium">Режим обслуживания</div>
+            <div className="text-xs text-zinc-500">Сайт покажет заглушку всем, кроме админов</div>
+          </div>
+          <Switch checked={enabled} onChange={setEnabled} />
+        </div>
+        <Field label="Сообщение для пользователей">
+          <TextArea
+            rows={3}
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            placeholder="Скоро вернёмся"
+          />
+        </Field>
+        <Btn variant="primary" disabled={mut.isPending} onClick={() => mut.mutate({ enabled, message })}>
+          {mut.isPending ? "Сохраняем…" : "Сохранить"}
+        </Btn>
+      </div>
+    </Panel>
+  );
+}
+
+function HellAiPanel({ data }: { data: SystemSettings }) {
+  const [silver, setSilver] = useState(data.hell_ai.limit_silver);
+  const [gold, setGold] = useState(data.hell_ai.limit_gold);
+  const [platinum, setPlatinum] = useState(data.hell_ai.limit_platinum);
+  useEffect(() => {
+    setSilver(data.hell_ai.limit_silver);
+    setGold(data.hell_ai.limit_gold);
+    setPlatinum(data.hell_ai.limit_platinum);
+  }, [data]);
+  const mut = useSettingMutation("hell_ai");
+  return (
+    <Panel>
+      <PanelHeader>
+        <h3 className="text-sm font-semibold">Hell AI — лимиты</h3>
+      </PanelHeader>
+      <div className="space-y-3 p-4">
+        <p className="text-xs text-zinc-500">
+          Лимит вопросов на 30 дней действия Pass. Для Platinum −1 = безлимит.
+        </p>
+        <div className="grid grid-cols-3 gap-3">
+          <Field label="Silver">
+            <TextInput type="number" value={silver} onChange={(e) => setSilver(Number(e.target.value))} />
+          </Field>
+          <Field label="Gold">
+            <TextInput type="number" value={gold} onChange={(e) => setGold(Number(e.target.value))} />
+          </Field>
+          <Field label="Platinum">
+            <TextInput type="number" value={platinum} onChange={(e) => setPlatinum(Number(e.target.value))} />
+          </Field>
+        </div>
+        <Btn
+          variant="primary"
+          disabled={mut.isPending}
+          onClick={() =>
+            mut.mutate({ limit_silver: silver, limit_gold: gold, limit_platinum: platinum })
+          }
+        >
+          {mut.isPending ? "Сохраняем…" : "Сохранить"}
+        </Btn>
+      </div>
+    </Panel>
+  );
+}
+
+function AlertsPanel({ data }: { data: SystemSettings }) {
+  const [orders, setOrders] = useState(data.admin_alerts.new_orders);
+  const [users, setUsers] = useState(data.admin_alerts.new_users);
+  useEffect(() => {
+    setOrders(data.admin_alerts.new_orders);
+    setUsers(data.admin_alerts.new_users);
+  }, [data]);
+  const mut = useSettingMutation("admin_alerts");
+  return (
+    <Panel>
+      <PanelHeader>
+        <h3 className="text-sm font-semibold">Уведомления админам</h3>
+      </PanelHeader>
+      <div className="space-y-3 p-4">
+        <div className="flex items-center justify-between rounded-md border border-zinc-200 p-3 dark:border-zinc-800">
+          <div>
+            <div className="text-sm font-medium">Новые заказы</div>
+            <div className="text-xs text-zinc-500">Email при каждом оплаченном заказе</div>
+          </div>
+          <Switch checked={orders} onChange={setOrders} />
+        </div>
+        <div className="flex items-center justify-between rounded-md border border-zinc-200 p-3 dark:border-zinc-800">
+          <div>
+            <div className="text-sm font-medium">Новые пользователи</div>
+            <div className="text-xs text-zinc-500">Email при регистрации</div>
+          </div>
+          <Switch checked={users} onChange={setUsers} />
+        </div>
+        <Btn
+          variant="primary"
+          disabled={mut.isPending}
+          onClick={() => mut.mutate({ new_orders: orders, new_users: users })}
+        >
+          {mut.isPending ? "Сохраняем…" : "Сохранить"}
+        </Btn>
+      </div>
+    </Panel>
   );
 }
 
@@ -215,25 +407,13 @@ function InviteModal({
     >
       <div className="space-y-3">
         <Field label="Email">
-          <TextInput
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="name@hellhound.club"
-          />
+          <TextInput value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@hellhound.club" />
         </Field>
         <Field label="Ник (латиница, цифры, _)">
-          <TextInput
-            value={nick}
-            onChange={(e) => setNick(e.target.value)}
-            placeholder="admin_pavel"
-          />
+          <TextInput value={nick} onChange={(e) => setNick(e.target.value)} placeholder="admin_pavel" />
         </Field>
         <Field label="Пароль (минимум 8 символов)">
-          <TextInput
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
+          <TextInput type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
         </Field>
         <p className="text-xs text-zinc-500">
           У админа нет клубного аккаунта — в списке Пользователи он не появится.
