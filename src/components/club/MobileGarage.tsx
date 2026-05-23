@@ -1078,7 +1078,7 @@ function DocSheet({
         <DateField label="Действует до" value={expiryDate} onChange={setExpiryDate} />
       </FieldGroup>
 
-      <PhotosUpload photos={photos} onChange={setPhotos} />
+      <PhotosUpload photos={photos} onChange={setPhotos} bikeId={bikeId} />
 
 
       <FieldGroup className="mt-3">
