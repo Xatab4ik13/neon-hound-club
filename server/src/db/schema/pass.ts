@@ -55,14 +55,18 @@ export type PassTier = (typeof PASS_TIERS)[number];
 /**
  * Прайс и пакет билетов по тирам. Если захотим менять — правим здесь.
  * AI-лимит на 30 дней действия пасса:
- *   silver   — 20 вопросов
- *   gold     — 100 вопросов
- *   platinum — без лимита
+ *   silver   — 30 вопросов (быстрая модель)
+ *   gold     — 200 вопросов (быстрая модель)
+ *   platinum — 300 вопросов на умной модели, далее безлимит на быстрой
+ *
+ * В aiQuestions хранится лимит для ОСНОВНОЙ модели тира.
+ * Для platinum после превышения лимита роут /ask переключает модель на быструю
+ * и продолжает отвечать без счётчика.
  */
-export const PASS_CONFIG: Record<PassTier, { priceRub: number; tickets: number; aiQuestions: number | null }> = {
-  silver: { priceRub: 490, tickets: 30, aiQuestions: 20 },
-  gold: { priceRub: 1290, tickets: 100, aiQuestions: 100 },
-  platinum: { priceRub: 2990, tickets: 300, aiQuestions: null },
+export const PASS_CONFIG: Record<PassTier, { priceRub: number; tickets: number; aiQuestions: number }> = {
+  silver: { priceRub: 490, tickets: 3, aiQuestions: 30 },
+  gold: { priceRub: 1290, tickets: 10, aiQuestions: 200 },
+  platinum: { priceRub: 2990, tickets: 30, aiQuestions: 300 },
 };
 
 export const PASS_DURATION_DAYS = 30;

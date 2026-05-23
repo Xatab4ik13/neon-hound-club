@@ -8,7 +8,7 @@ import { requireAuth, type SessionPayload } from "../lib/auth.js";
 import { aiMessages } from "../db/schema/hell-ai.js";
 import { passPurchases } from "../db/schema/pass.js";
 import { systemSettings } from "../db/schema/economy.js";
-import { loadAiSettings, loadUserGarage, buildSystemPrompt, AI_LIMITS_DEFAULT, type AiLimits } from "../lib/hell-ai.js";
+import { loadAiSettings, loadUserGarage, buildSystemPrompt, AI_LIMITS_DEFAULT, TIER_PRIMARY_MODEL, PLATINUM_FALLBACK_MODEL, type AiLimits } from "../lib/hell-ai.js";
 import { chatCompletion, OpenRouterError, type ChatMessage } from "../lib/openrouter.js";
 
 const askSchema = z.object({
@@ -68,8 +68,9 @@ export async function hellAiRoutes(app: FastifyInstance) {
     const tier = pass.tier as TierKey;
     const limit = limits[tier];
     const since = pass.paidAt ?? pass.createdAt;
-    const unlimited = limit < 0;
     const used = await countUsed(session.sub, since);
+    // Platinum: после лимита фолбэк на быструю модель — для клиента это «безлимит».
+    const unlimited = tier === "platinum";
     return {
       tier,
       limit: unlimited ? -1 : limit,
@@ -93,6 +94,8 @@ export async function hellAiRoutes(app: FastifyInstance) {
 
     // 1. Проверка активного Pass (стафф пропускает).
     let pass: Awaited<ReturnType<typeof getActivePass>> | null = null;
+    // Модель для этого запроса — выбираем по тиру, с учётом лимита (для platinum).
+    let modelForRequest: string = TIER_PRIMARY_MODEL.silver;
     if (!isStaff) {
       pass = await getActivePass(session.sub);
       if (!pass) {
@@ -102,13 +105,17 @@ export async function hellAiRoutes(app: FastifyInstance) {
         });
       }
 
-      // 2. Лимит за период действия пасса.
       const limits = await loadLimits();
       const tier = pass.tier as TierKey;
       const limit = limits[tier];
       const since = pass.paidAt ?? pass.createdAt;
-      if (limit >= 0) {
-        const used = await countUsed(session.sub, since);
+      const used = await countUsed(session.sub, since);
+
+      if (tier === "platinum") {
+        // Platinum: после лимита переключаемся на быструю модель, отвечаем без счётчика.
+        modelForRequest = used >= limit ? PLATINUM_FALLBACK_MODEL : TIER_PRIMARY_MODEL.platinum;
+      } else {
+        modelForRequest = TIER_PRIMARY_MODEL[tier];
         if (used >= limit) {
           return reply.code(429).send({
             error: "limit_reached",
@@ -116,6 +123,9 @@ export async function hellAiRoutes(app: FastifyInstance) {
           });
         }
       }
+    } else {
+      // Стафф — основная модель из настроек админки (резерв на «потестить»).
+      modelForRequest = TIER_PRIMARY_MODEL.platinum;
     }
 
     // 3. Контекст и system prompt.
@@ -150,20 +160,20 @@ export async function hellAiRoutes(app: FastifyInstance) {
       { role: "user", content: question },
     ];
 
-    // 5. Логируем вопрос (учитывается в лимите).
+    // 5. Логируем вопрос (учитывается в лимите). model для аналитики, наружу не отдаём.
     await db.insert(aiMessages).values({
       userId: session.sub,
       chatId: chatId ?? null,
       role: "user",
       content: question,
       bikeId: bikeId ?? null,
-      model: settings.model,
+      model: modelForRequest,
     });
 
-    // 6. Вызов модели.
+    // 6. Вызов модели. Клиенту НЕ возвращаем имя модели — для него это «Hell AI».
     try {
       const result = await chatCompletion({
-        model: settings.model,
+        model: modelForRequest,
         messages,
         temperature: 0.6,
         maxTokens: 900,
@@ -180,7 +190,7 @@ export async function hellAiRoutes(app: FastifyInstance) {
         tokensOut: result.tokensOut,
       });
 
-      return { answer: result.answer, model: result.model };
+      return { answer: result.answer };
     } catch (e) {
       const err = e as OpenRouterError;
       const status = err.status ?? 502;
@@ -192,7 +202,7 @@ export async function hellAiRoutes(app: FastifyInstance) {
         role: "assistant",
         content: `[ERROR] ${message}`,
         bikeId: bikeId ?? null,
-        model: settings.model,
+        model: modelForRequest,
         error: true,
       });
       // Откатываем счётчик: удаляем последний user-вопрос за последние 10 сек.
