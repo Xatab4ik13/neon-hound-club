@@ -216,9 +216,11 @@ export type RaffleListItem = {
   title: string;
   description: string;
   imageUrl: string | null;
-  prize: string;
+  /** legacy подпись к карточке, не редактируется в новой админке. Может быть null. */
+  prize: string | null;
   ticketCost: number;
   maxEntriesPerUser: number | null;
+  showOnHome: boolean;
   startsAt: string;
   endsAt: string;
   status: RaffleStatus;
@@ -241,8 +243,17 @@ export type MyRaffleItem = RaffleListItem & {
   winnerNick: string | null;
 };
 
+export type HomeRaffleItem = RaffleListItem & {
+  totalEntries: number;
+  prizes: { name: string; qty: number }[];
+};
+
 export async function fetchRaffles() {
   return apiFetch<{ items: RaffleListItem[] }>("/api/v1/raffles/");
+}
+
+export async function fetchHomeRaffles() {
+  return apiFetch<{ items: HomeRaffleItem[] }>("/api/v1/raffles/home");
 }
 
 export async function fetchRaffle(id: string) {
