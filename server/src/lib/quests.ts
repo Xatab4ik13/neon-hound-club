@@ -249,6 +249,10 @@ export async function completeQuest(
     .limit(1);
   if (exists) return { credited: false, reason: "already_completed" };
 
+  // XP-множитель по активному Hell Pass (×1.25 / ×1.5 / ×2). Без пасса — ×1.
+  const perks = await getActivePassPerks(userId);
+  const xpAwardedFinal = Math.round(quest.xpReward * perks.xpMultiplier);
+
   const [completion] = await db
     .insert(userQuestCompletions)
     .values({
@@ -256,7 +260,7 @@ export async function completeQuest(
       questId: quest.id,
       periodKey,
       ticketsAwarded: quest.ticketsReward,
-      xpAwarded: quest.xpReward,
+      xpAwarded: xpAwardedFinal,
     })
     .returning();
 
@@ -270,12 +274,13 @@ export async function completeQuest(
       refId: completion!.id,
     });
   }
-  if (quest.xpReward > 0) {
+  if (xpAwardedFinal > 0) {
+    const boostNote = perks.tier ? ` (×${perks.xpMultiplier} Hell Pass ${perks.tier})` : "";
     await awardXp({
       userId,
-      amount: quest.xpReward,
+      amount: xpAwardedFinal,
       source: "quest",
-      reason: `Квест: ${quest.title}`,
+      reason: `Квест: ${quest.title}${boostNote}`,
       refType: "quest_completion",
       refId: completion!.id,
       idempotent: true,
@@ -286,7 +291,7 @@ export async function completeQuest(
     credited: true,
     completionId: completion!.id,
     tickets: quest.ticketsReward,
-    xp: quest.xpReward,
+    xp: xpAwardedFinal,
   };
 }
 
