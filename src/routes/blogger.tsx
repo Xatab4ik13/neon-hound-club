@@ -58,6 +58,7 @@ function BloggerLayout() {
   if (isMobile) {
     return (
       <div className="min-h-screen bg-background text-foreground">
+        <OfflineBanner />
         <BloggerMobileTopBar onPlaqueClick={goToSettings} />
         <main
           className="relative"
