@@ -225,9 +225,16 @@ function TierDetailPage() {
                 </span>
               </div>
 
+              {active && (
+                <div className="mt-4 border border-white/10 bg-white/[0.03] px-3 py-2 font-mono text-[10px] uppercase tracking-widest text-white/70">
+                  Сейчас активен <span className="text-primary">{active.tier.toUpperCase()}</span>
+                  {daysLeft != null && <> · осталось {daysLeft} дн.</>}
+                </div>
+              )}
+
               <button
                 type="button"
-                disabled={!isAuthed || purchaseM.isPending}
+                disabled={ctaDisabled}
                 onClick={() => {
                   if (!isAuthed) {
                     navigate({ to: "/login", search: { redirect: `/club/hell-pass/${tier.slug}` } });
@@ -235,7 +242,7 @@ function TierDetailPage() {
                   }
                   purchaseM.mutate();
                 }}
-                className="mt-6 flex w-full items-center justify-center gap-2 px-6 py-3.5 text-center font-display text-sm font-bold uppercase tracking-widest transition-all hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100"
+                className="mt-4 flex w-full items-center justify-center gap-2 px-6 py-3.5 text-center font-display text-sm font-bold uppercase tracking-widest transition-all hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100"
                 style={{
                   background: isGold
                     ? "linear-gradient(135deg, #ffb648 0%, #925f1b 100%)"
@@ -250,15 +257,17 @@ function TierDetailPage() {
                 }}
               >
                 {purchaseM.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-                {!isAuthed
-                  ? "Войти и купить"
-                  : purchaseId
-                    ? "Заявка создана"
-                    : `Купить ${tier.name}`}
+                {ctaLabel}
               </button>
 
               <div className="mt-4 font-mono text-[10px] uppercase tracking-widest text-white/40">
-                Разовый доступ на 30 дней с момента активации. Без автопродления.
+                {isDowngrade
+                  ? "Тир ниже текущего недоступен. Дождись окончания активного пасса."
+                  : isSameTier
+                    ? "+30 дней к остатку и новый пакет билетов."
+                    : isUpgrade
+                      ? "Полная цена нового тира. +30 дней к остатку и пакет билетов нового тира."
+                      : "Разовый доступ на 30 дней с момента активации. Без автопродления."}
               </div>
             </div>
           </div>
