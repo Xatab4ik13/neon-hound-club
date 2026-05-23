@@ -201,7 +201,7 @@ export function MobileGarage({
         onClose={() => setViewDoc(null)}
         onEdit={(d) => {
           setViewDoc(null);
-          setTimeout(() => setDocSheet({ open: true, doc: d }), 180);
+          setDocSheet({ open: true, doc: d });
         }}
       />
     </>
