@@ -1,17 +1,29 @@
-// Админка магазина: товары и заказы. Подключено к бэку через admin-queries.
-// Модель упрощённая под server/src/db/schema/shop.ts:
-// product = slug + title + description + priceRub + bonusTickets + images[] + stock(null|int) + active
-// заказы — список со сменой статуса и СДЭК-треком.
+// Админка магазина. 4 вкладки:
+//   • Товары     — CRUD с типами: physical / digital / preorder
+//   • Категории  — категории + подкатегории, CRUD
+//   • Витрина    — ручная подборка до 6 товаров на главную/клуб
+//   • Заказы     — список + смена статуса + СДЭК-трек
+//
+// Подключено к бэку через src/lib/admin-queries.ts.
 
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Edit, Trash2, Package, Receipt } from "lucide-react";
+import {
+  Plus,
+  Edit,
+  Trash2,
+  Package,
+  Receipt,
+  FolderTree,
+  Star,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
 import { toast } from "sonner";
 import {
   PageHeader,
   Panel,
-  PanelHeader,
   Btn,
   Badge,
   TextInput,
@@ -32,17 +44,51 @@ import {
   fetchAdminOrders,
   fetchAdminOrder,
   patchAdminOrder,
+  fetchAdminShopCategories,
+  createAdminShopCategory,
+  patchAdminShopCategory,
+  deleteAdminShopCategory,
+  createAdminShopSubcategory,
+  patchAdminShopSubcategory,
+  deleteAdminShopSubcategory,
+  fetchAdminShopShowcase,
+  putAdminShopShowcase,
   type CreateProductInput,
 } from "@/lib/admin-queries";
 import { ApiError } from "@/lib/api";
 import { cn } from "@/lib/utils";
-import type { ShopOrder, ShopOrderStatus, ShopProduct } from "@/lib/queries";
+import type {
+  ProductKind,
+  ShopCategoryWithSubs,
+  ShopOrder,
+  ShopOrderStatus,
+  ShopProduct,
+} from "@/lib/queries";
 
 export const Route = createFileRoute("/admin/shop")({
   component: ShopPage,
 });
 
-type Tab = "products" | "orders";
+type Tab = "products" | "categories" | "showcase" | "orders";
+
+const TABS: { key: Tab; label: string; icon: typeof Package }[] = [
+  { key: "products", label: "Товары", icon: Package },
+  { key: "categories", label: "Категории", icon: FolderTree },
+  { key: "showcase", label: "Витрина", icon: Star },
+  { key: "orders", label: "Заказы", icon: Receipt },
+];
+
+const KIND_LABEL: Record<ProductKind, string> = {
+  physical: "Физический",
+  digital: "Цифровой",
+  preorder: "Предзаказ",
+};
+
+const KIND_TONE: Record<ProductKind, "zinc" | "emerald" | "amber" | "blue"> = {
+  physical: "zinc",
+  digital: "emerald",
+  preorder: "amber",
+};
 
 const STATUS_LABEL: Record<ShopOrderStatus, string> = {
   pending_payment: "Ждёт оплаты",
@@ -66,40 +112,43 @@ function ShopPage() {
   const [tab, setTab] = useState<Tab>("products");
   return (
     <div>
-      <PageHeader title="Магазин" description="Товары и заказы — живые данные с бэка." />
+      <PageHeader
+        title="Магазин"
+        description="Товары, категории, витрина и заказы — живые данные с бэка."
+      />
 
-      <div className="mb-4 inline-flex rounded-md border border-zinc-200 bg-white p-1 dark:border-zinc-800 dark:bg-zinc-900">
-        {(["products", "orders"] as Tab[]).map((t) => (
-          <button
-            key={t}
-            type="button"
-            onClick={() => setTab(t)}
-            className={cn(
-              "inline-flex items-center gap-1.5 rounded px-3 py-1.5 text-sm font-medium transition-colors",
-              tab === t
-                ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
-                : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100",
-            )}
-          >
-            {t === "products" ? (
-              <>
-                <Package className="h-3.5 w-3.5" /> Товары
-              </>
-            ) : (
-              <>
-                <Receipt className="h-3.5 w-3.5" /> Заказы
-              </>
-            )}
-          </button>
-        ))}
+      <div className="mb-4 inline-flex flex-wrap rounded-md border border-zinc-200 bg-white p-1 dark:border-zinc-800 dark:bg-zinc-900">
+        {TABS.map((t) => {
+          const Icon = t.icon;
+          return (
+            <button
+              key={t.key}
+              type="button"
+              onClick={() => setTab(t.key)}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded px-3 py-1.5 text-sm font-medium transition-colors",
+                tab === t.key
+                  ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
+                  : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100",
+              )}
+            >
+              <Icon className="h-3.5 w-3.5" /> {t.label}
+            </button>
+          );
+        })}
       </div>
 
-      {tab === "products" ? <ProductsTab /> : <OrdersTab />}
+      {tab === "products" && <ProductsTab />}
+      {tab === "categories" && <CategoriesTab />}
+      {tab === "showcase" && <ShowcaseTab />}
+      {tab === "orders" && <OrdersTab />}
     </div>
   );
 }
 
-// ============== PRODUCTS ==============
+// ============================================================================
+// PRODUCTS
+// ============================================================================
 
 function emptyProduct(): CreateProductInput {
   return {
@@ -111,6 +160,12 @@ function emptyProduct(): CreateProductInput {
     images: [],
     stock: null,
     active: true,
+    kind: "physical",
+    categoryId: null,
+    subcategoryId: null,
+    digitalFileUrl: null,
+    digitalFileName: null,
+    preorderExpectedAt: null,
   };
 }
 
@@ -120,25 +175,48 @@ function ProductsTab() {
     queryKey: adminQk.shopProducts,
     queryFn: fetchAdminShopProducts,
   });
+  const { data: catsData } = useQuery({
+    queryKey: adminQk.shopCategories,
+    queryFn: fetchAdminShopCategories,
+  });
 
   const [editing, setEditing] = useState<ShopProduct | null>(null);
   const [newOpen, setNewOpen] = useState(false);
   const [del, setDel] = useState<ShopProduct | null>(null);
+  const [kindFilter, setKindFilter] = useState<ProductKind | "all">("all");
 
   const deleteMut = useMutation({
     mutationFn: (id: string) => deleteAdminProduct(id),
     onSuccess: () => {
-      toast.success("Товар удалён");
+      toast.success("Товар скрыт");
       qc.invalidateQueries({ queryKey: adminQk.shopProducts });
     },
     onError: (e) => toast.error(e instanceof ApiError ? e.message : "Не получилось"),
   });
 
-  const items = data?.items ?? [];
+  const cats = catsData?.items ?? [];
+  const items = (data?.items ?? []).filter((p) => kindFilter === "all" || p.kind === kindFilter);
 
   return (
     <>
-      <div className="mb-3 flex justify-end">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap gap-2">
+          {(["all", "physical", "digital", "preorder"] as const).map((k) => (
+            <button
+              key={k}
+              type="button"
+              onClick={() => setKindFilter(k)}
+              className={cn(
+                "rounded-full border px-3 py-1 text-xs font-medium transition-colors",
+                kindFilter === k
+                  ? "border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900"
+                  : "border-zinc-200 bg-white text-zinc-700 hover:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300",
+              )}
+            >
+              {k === "all" ? "Все" : KIND_LABEL[k]}
+            </button>
+          ))}
+        </div>
         <Btn variant="primary" onClick={() => setNewOpen(true)}>
           <Plus className="h-4 w-4" /> Новый товар
         </Btn>
@@ -151,39 +229,56 @@ function ProductsTab() {
           <div className="px-6 py-12 text-center text-sm text-zinc-500">Товаров пока нет</div>
         ) : (
           <DataTable
-            headers={["Товар", "Slug", "Цена", "Билетов", "Остаток", "Статус", ""]}
-            rows={items.map((p) => [
-              <button
-                type="button"
-                onClick={() => setEditing(p)}
-                className="flex items-center gap-2 text-left hover:underline"
-              >
-                {p.images[0] ? (
-                  <img
-                    src={p.images[0]}
-                    alt={p.title}
-                    className="h-9 w-9 rounded object-cover"
-                    loading="lazy"
-                  />
+            headers={["Товар", "Тип", "Категория", "Цена", "Билетов", "Остаток", "Статус", ""]}
+            rows={items.map((p) => {
+              const cat = cats.find((c) => c.id === p.categoryId);
+              const sub = cat?.subs.find((s) => s.id === p.subcategoryId);
+              return [
+                <button
+                  type="button"
+                  onClick={() => setEditing(p)}
+                  className="flex items-center gap-2 text-left hover:underline"
+                >
+                  {p.images[0] ? (
+                    <img
+                      src={p.images[0]}
+                      alt={p.title}
+                      className="h-9 w-9 rounded object-cover"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="h-9 w-9 rounded bg-zinc-100 dark:bg-zinc-800" />
+                  )}
+                  <div>
+                    <div className="font-medium">{p.title}</div>
+                    <code className="text-[11px] text-zinc-500">{p.slug}</code>
+                  </div>
+                </button>,
+                <Badge tone={KIND_TONE[p.kind]}>{KIND_LABEL[p.kind]}</Badge>,
+                cat ? (
+                  <div className="text-xs">
+                    {cat.name}
+                    {sub && <span className="text-zinc-500"> / {sub.name}</span>}
+                  </div>
                 ) : (
-                  <div className="h-9 w-9 rounded bg-zinc-100 dark:bg-zinc-800" />
-                )}
-                <span className="font-medium">{p.title}</span>
-              </button>,
-              <code className="text-xs text-zinc-500">{p.slug}</code>,
-              `${p.priceRub.toLocaleString("ru-RU")} ₽`,
-              p.bonusTickets > 0 ? `+${p.bonusTickets} 🎟` : "—",
-              p.stock === null ? "∞" : p.stock,
-              <Badge tone={p.active ? "emerald" : "zinc"}>{p.active ? "Активен" : "Скрыт"}</Badge>,
-              <div className="flex gap-1">
-                <Btn variant="ghost" onClick={() => setEditing(p)}>
-                  <Edit className="h-3.5 w-3.5" />
-                </Btn>
-                <Btn variant="ghost" onClick={() => setDel(p)}>
-                  <Trash2 className="h-3.5 w-3.5" />
-                </Btn>
-              </div>,
-            ])}
+                  <span className="text-xs text-zinc-400">—</span>
+                ),
+                `${p.priceRub.toLocaleString("ru-RU")} ₽`,
+                p.bonusTickets > 0 ? `+${p.bonusTickets} 🎟` : "—",
+                p.kind === "digital" ? "∞" : p.stock === null ? "∞" : p.stock,
+                <Badge tone={p.active ? "emerald" : "zinc"}>
+                  {p.active ? "Активен" : "Скрыт"}
+                </Badge>,
+                <div className="flex gap-1">
+                  <Btn variant="ghost" onClick={() => setEditing(p)}>
+                    <Edit className="h-3.5 w-3.5" />
+                  </Btn>
+                  <Btn variant="ghost" onClick={() => setDel(p)}>
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Btn>
+                </div>,
+              ];
+            })}
           />
         )}
       </Panel>
@@ -192,6 +287,7 @@ function ProductsTab() {
         <ProductModal
           mode="create"
           initial={emptyProduct()}
+          categories={cats}
           onClose={() => setNewOpen(false)}
           onDone={() => {
             setNewOpen(false);
@@ -203,6 +299,7 @@ function ProductsTab() {
         <ProductModal
           mode="edit"
           productId={editing.id}
+          categories={cats}
           initial={{
             slug: editing.slug,
             title: editing.title,
@@ -212,6 +309,12 @@ function ProductsTab() {
             images: editing.images,
             stock: editing.stock,
             active: editing.active,
+            kind: editing.kind,
+            categoryId: editing.categoryId,
+            subcategoryId: editing.subcategoryId,
+            digitalFileUrl: editing.digitalFileUrl,
+            digitalFileName: editing.digitalFileName,
+            preorderExpectedAt: editing.preorderExpectedAt,
           }}
           onClose={() => setEditing(null)}
           onDone={() => {
@@ -225,8 +328,8 @@ function ProductsTab() {
         open={!!del}
         onClose={() => setDel(null)}
         onConfirm={() => del && deleteMut.mutate(del.id)}
-        title="Удалить товар?"
-        message={`«${del?.title}» будет удалён без возможности восстановления.`}
+        title="Скрыть товар?"
+        message={`«${del?.title}» будет скрыт из каталога (мягкое удаление — заказы не сломаются).`}
       />
     </>
   );
@@ -236,18 +339,32 @@ function ProductModal({
   mode,
   productId,
   initial,
+  categories,
   onClose,
   onDone,
 }: {
   mode: "create" | "edit";
   productId?: string;
   initial: CreateProductInput;
+  categories: ShopCategoryWithSubs[];
   onClose: () => void;
   onDone: () => void;
 }) {
   const [p, setP] = useState<CreateProductInput>(initial);
   const [imagesText, setImagesText] = useState((initial.images ?? []).join("\n"));
   const [unlimited, setUnlimited] = useState(initial.stock === null);
+
+  // ISO datetime <-> input[type=datetime-local] (yyyy-MM-ddTHH:mm)
+  const preorderLocal = useMemo(() => {
+    if (!p.preorderExpectedAt) return "";
+    const d = new Date(p.preorderExpectedAt);
+    if (Number.isNaN(d.getTime())) return "";
+    const off = d.getTimezoneOffset();
+    return new Date(d.getTime() - off * 60_000).toISOString().slice(0, 16);
+  }, [p.preorderExpectedAt]);
+
+  const cat = categories.find((c) => c.id === p.categoryId);
+  const subs = cat?.subs ?? [];
 
   const save = useMutation({
     mutationFn: () => {
@@ -257,7 +374,12 @@ function ProductModal({
           .split("\n")
           .map((s) => s.trim())
           .filter(Boolean),
-        stock: unlimited ? null : Math.max(0, Number(p.stock) || 0),
+        stock: p.kind === "digital" ? null : unlimited ? null : Math.max(0, Number(p.stock) || 0),
+        categoryId: p.categoryId || null,
+        subcategoryId: p.subcategoryId || null,
+        digitalFileUrl: p.kind === "digital" ? p.digitalFileUrl || null : null,
+        digitalFileName: p.kind === "digital" ? p.digitalFileName || null : null,
+        preorderExpectedAt: p.kind === "preorder" ? p.preorderExpectedAt || null : null,
       };
       return mode === "create"
         ? createAdminProduct(payload)
@@ -287,7 +409,7 @@ function ProductModal({
     >
       <div className="space-y-4">
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Slug" hint="Латиница, цифры, дефис. Меняется только в крайнем случае.">
+          <Field label="Slug" hint="Латиница, цифры, дефис. Не менять у существующих.">
             <TextInput
               value={p.slug}
               onChange={(e) =>
@@ -301,6 +423,7 @@ function ProductModal({
             <TextInput value={p.title} onChange={(e) => setP({ ...p, title: e.target.value })} />
           </Field>
         </div>
+
         <Field label="Описание">
           <TextArea
             rows={4}
@@ -308,6 +431,53 @@ function ProductModal({
             onChange={(e) => setP({ ...p, description: e.target.value })}
           />
         </Field>
+
+        <div className="grid grid-cols-3 gap-3">
+          <Field label="Тип товара">
+            <Select
+              value={p.kind ?? "physical"}
+              onChange={(e) => setP({ ...p, kind: e.target.value as ProductKind })}
+            >
+              <option value="physical">Физический</option>
+              <option value="digital">Цифровой (файл)</option>
+              <option value="preorder">Предзаказ</option>
+            </Select>
+          </Field>
+          <Field label="Категория">
+            <Select
+              value={p.categoryId ?? ""}
+              onChange={(e) =>
+                setP({
+                  ...p,
+                  categoryId: e.target.value || null,
+                  subcategoryId: null,
+                })
+              }
+            >
+              <option value="">— Без категории —</option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </Select>
+          </Field>
+          <Field label="Подкатегория">
+            <Select
+              value={p.subcategoryId ?? ""}
+              onChange={(e) => setP({ ...p, subcategoryId: e.target.value || null })}
+              disabled={!p.categoryId || subs.length === 0}
+            >
+              <option value="">— Без подкатегории —</option>
+              {subs.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
+            </Select>
+          </Field>
+        </div>
+
         <div className="grid grid-cols-3 gap-3">
           <Field label="Цена (₽)">
             <TextInput
@@ -317,7 +487,7 @@ function ProductModal({
               onChange={(e) => setP({ ...p, priceRub: Math.max(0, Number(e.target.value) || 0) })}
             />
           </Field>
-          <Field label="Билетов за покупку" hint="Сколько 🎟 начислится покупателю при оплате.">
+          <Field label="Билетов за покупку" hint="Сколько 🎟 начислится при оплате.">
             <TextInput
               type="number"
               min={0}
@@ -337,30 +507,85 @@ function ProductModal({
             </Select>
           </Field>
         </div>
-        <Field label="Остаток на складе">
-          <div className="flex items-center gap-3">
-            <label className="inline-flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={unlimited}
-                onChange={(e) => setUnlimited(e.target.checked)}
-              />
-              Без учёта остатков (∞)
-            </label>
-            {!unlimited && (
+
+        {p.kind !== "digital" && (
+          <Field label="Остаток на складе">
+            <div className="flex items-center gap-3">
+              <label className="inline-flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={unlimited}
+                  onChange={(e) => setUnlimited(e.target.checked)}
+                />
+                Без учёта остатков (∞)
+              </label>
+              {!unlimited && (
+                <TextInput
+                  type="number"
+                  min={0}
+                  value={p.stock ?? 0}
+                  onChange={(e) =>
+                    setP({ ...p, stock: Math.max(0, Number(e.target.value) || 0) })
+                  }
+                  className="max-w-[140px]"
+                />
+              )}
+            </div>
+          </Field>
+        )}
+
+        {p.kind === "digital" && (
+          <div className="space-y-3 rounded-md border border-emerald-200 bg-emerald-50 p-3 dark:border-emerald-900/40 dark:bg-emerald-950/30">
+            <div className="text-xs font-semibold uppercase text-emerald-700 dark:text-emerald-300">
+              Цифровой товар
+            </div>
+            <Field
+              label="Ссылка на файл (PDF / JPG / ZIP)"
+              hint="После оплаты покупатель увидит её в своём кабинете."
+            >
               <TextInput
-                type="number"
-                min={0}
-                value={p.stock ?? 0}
-                onChange={(e) => setP({ ...p, stock: Math.max(0, Number(e.target.value) || 0) })}
-                className="max-w-[140px]"
+                value={p.digitalFileUrl ?? ""}
+                onChange={(e) => setP({ ...p, digitalFileUrl: e.target.value })}
+                placeholder="https://cdn.hhr.pro/digital/manual.pdf"
               />
-            )}
+            </Field>
+            <Field label="Имя файла (как показывать покупателю)">
+              <TextInput
+                value={p.digitalFileName ?? ""}
+                onChange={(e) => setP({ ...p, digitalFileName: e.target.value })}
+                placeholder="manual.pdf"
+              />
+            </Field>
           </div>
-        </Field>
+        )}
+
+        {p.kind === "preorder" && (
+          <div className="space-y-3 rounded-md border border-amber-200 bg-amber-50 p-3 dark:border-amber-900/40 dark:bg-amber-950/30">
+            <div className="text-xs font-semibold uppercase text-amber-700 dark:text-amber-300">
+              Предзаказ
+            </div>
+            <Field
+              label="Ожидаемая дата отгрузки"
+              hint="Покупатель оплачивает сразу, отгрузка с этой даты."
+            >
+              <TextInput
+                type="datetime-local"
+                value={preorderLocal}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setP({
+                    ...p,
+                    preorderExpectedAt: v ? new Date(v).toISOString() : null,
+                  });
+                }}
+              />
+            </Field>
+          </div>
+        )}
+
         <Field
           label="Картинки (URL'ы, по одной на строку)"
-          hint="Первая — обложка. Грузим в MinIO/сторонний хост, сюда вставляем ссылки."
+          hint="Первая — обложка. Грузим в MinIO, сюда вставляем ссылки."
         >
           <TextArea
             rows={3}
@@ -374,7 +599,532 @@ function ProductModal({
   );
 }
 
-// ============== ORDERS ==============
+// ============================================================================
+// CATEGORIES
+// ============================================================================
+
+function CategoriesTab() {
+  const qc = useQueryClient();
+  const { data, isLoading } = useQuery({
+    queryKey: adminQk.shopCategories,
+    queryFn: fetchAdminShopCategories,
+  });
+
+  const [editingCat, setEditingCat] = useState<ShopCategoryWithSubs | null>(null);
+  const [newCatOpen, setNewCatOpen] = useState(false);
+  const [delCat, setDelCat] = useState<ShopCategoryWithSubs | null>(null);
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+
+  const [subParent, setSubParent] = useState<ShopCategoryWithSubs | null>(null);
+  const [editingSub, setEditingSub] = useState<{
+    categoryId: string;
+    id: string;
+    slug: string;
+    name: string;
+    sort: number;
+  } | null>(null);
+  const [delSubId, setDelSubId] = useState<string | null>(null);
+
+  const deleteCatMut = useMutation({
+    mutationFn: (id: string) => deleteAdminShopCategory(id),
+    onSuccess: () => {
+      toast.success("Категория удалена");
+      qc.invalidateQueries({ queryKey: adminQk.shopCategories });
+    },
+    onError: (e) => toast.error(e instanceof ApiError ? e.message : "Не получилось"),
+  });
+
+  const deleteSubMut = useMutation({
+    mutationFn: (id: string) => deleteAdminShopSubcategory(id),
+    onSuccess: () => {
+      toast.success("Подкатегория удалена");
+      qc.invalidateQueries({ queryKey: adminQk.shopCategories });
+    },
+    onError: (e) => toast.error(e instanceof ApiError ? e.message : "Не получилось"),
+  });
+
+  const items = data?.items ?? [];
+
+  function toggle(id: string) {
+    setExpanded((s) => {
+      const n = new Set(s);
+      n.has(id) ? n.delete(id) : n.add(id);
+      return n;
+    });
+  }
+
+  return (
+    <>
+      <div className="mb-3 flex justify-end">
+        <Btn variant="primary" onClick={() => setNewCatOpen(true)}>
+          <Plus className="h-4 w-4" /> Новая категория
+        </Btn>
+      </div>
+
+      <Panel>
+        {isLoading ? (
+          <div className="px-6 py-12 text-center text-sm text-zinc-500">Загрузка…</div>
+        ) : items.length === 0 ? (
+          <div className="px-6 py-12 text-center text-sm text-zinc-500">
+            Категорий пока нет. Создай первую — потом сможешь привязывать товары.
+          </div>
+        ) : (
+          <ul className="divide-y divide-zinc-200 dark:divide-zinc-800">
+            {items.map((c) => {
+              const open = expanded.has(c.id);
+              return (
+                <li key={c.id} className="px-4 py-3">
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => toggle(c.id)}
+                      className="rounded p-1 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                      aria-label="Развернуть"
+                    >
+                      {open ? (
+                        <ChevronUp className="h-4 w-4" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4" />
+                      )}
+                    </button>
+                    <div className="flex-1">
+                      <div className="font-medium">{c.name}</div>
+                      <code className="text-xs text-zinc-500">
+                        {c.slug} · sort {c.sort} · {c.subs.length} подкат.
+                      </code>
+                    </div>
+                    <Btn variant="ghost" onClick={() => setSubParent(c)}>
+                      <Plus className="h-3.5 w-3.5" /> Подкат.
+                    </Btn>
+                    <Btn variant="ghost" onClick={() => setEditingCat(c)}>
+                      <Edit className="h-3.5 w-3.5" />
+                    </Btn>
+                    <Btn variant="ghost" onClick={() => setDelCat(c)}>
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Btn>
+                  </div>
+
+                  {open && c.subs.length > 0 && (
+                    <ul className="mt-2 ml-8 divide-y divide-zinc-100 dark:divide-zinc-800/60">
+                      {c.subs.map((s) => (
+                        <li key={s.id} className="flex items-center gap-2 py-2 text-sm">
+                          <div className="flex-1">
+                            <div>{s.name}</div>
+                            <code className="text-xs text-zinc-500">
+                              {s.slug} · sort {s.sort}
+                            </code>
+                          </div>
+                          <Btn
+                            variant="ghost"
+                            onClick={() =>
+                              setEditingSub({
+                                categoryId: c.id,
+                                id: s.id,
+                                slug: s.slug,
+                                name: s.name,
+                                sort: s.sort,
+                              })
+                            }
+                          >
+                            <Edit className="h-3.5 w-3.5" />
+                          </Btn>
+                          <Btn variant="ghost" onClick={() => setDelSubId(s.id)}>
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Btn>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </Panel>
+
+      {newCatOpen && (
+        <CategoryModal
+          mode="create"
+          initial={{ slug: "", name: "", sort: 0 }}
+          onClose={() => setNewCatOpen(false)}
+          onDone={() => {
+            setNewCatOpen(false);
+            qc.invalidateQueries({ queryKey: adminQk.shopCategories });
+          }}
+        />
+      )}
+      {editingCat && (
+        <CategoryModal
+          mode="edit"
+          categoryId={editingCat.id}
+          initial={{ slug: editingCat.slug, name: editingCat.name, sort: editingCat.sort }}
+          onClose={() => setEditingCat(null)}
+          onDone={() => {
+            setEditingCat(null);
+            qc.invalidateQueries({ queryKey: adminQk.shopCategories });
+          }}
+        />
+      )}
+
+      {subParent && (
+        <SubcategoryModal
+          mode="create"
+          categoryId={subParent.id}
+          categoryName={subParent.name}
+          initial={{ slug: "", name: "", sort: 0 }}
+          onClose={() => setSubParent(null)}
+          onDone={() => {
+            setSubParent(null);
+            qc.invalidateQueries({ queryKey: adminQk.shopCategories });
+          }}
+        />
+      )}
+      {editingSub && (
+        <SubcategoryModal
+          mode="edit"
+          subId={editingSub.id}
+          categoryId={editingSub.categoryId}
+          initial={{ slug: editingSub.slug, name: editingSub.name, sort: editingSub.sort }}
+          onClose={() => setEditingSub(null)}
+          onDone={() => {
+            setEditingSub(null);
+            qc.invalidateQueries({ queryKey: adminQk.shopCategories });
+          }}
+        />
+      )}
+
+      <ConfirmModal
+        open={!!delCat}
+        onClose={() => setDelCat(null)}
+        onConfirm={() => delCat && deleteCatMut.mutate(delCat.id)}
+        title="Удалить категорию?"
+        message={`«${delCat?.name}» и все её подкатегории будут удалены. У товаров категория обнулится.`}
+      />
+      <ConfirmModal
+        open={!!delSubId}
+        onClose={() => setDelSubId(null)}
+        onConfirm={() => delSubId && deleteSubMut.mutate(delSubId)}
+        title="Удалить подкатегорию?"
+        message="У товаров в этой подкатегории привязка обнулится."
+      />
+    </>
+  );
+}
+
+function CategoryModal({
+  mode,
+  categoryId,
+  initial,
+  onClose,
+  onDone,
+}: {
+  mode: "create" | "edit";
+  categoryId?: string;
+  initial: { slug: string; name: string; sort: number };
+  onClose: () => void;
+  onDone: () => void;
+}) {
+  const [c, setC] = useState(initial);
+  const save = useMutation({
+    mutationFn: () =>
+      mode === "create"
+        ? createAdminShopCategory(c)
+        : patchAdminShopCategory(categoryId!, c),
+    onSuccess: () => {
+      toast.success(mode === "create" ? "Категория создана" : "Сохранено");
+      onDone();
+    },
+    onError: (e) => toast.error(e instanceof ApiError ? e.message : "Не получилось"),
+  });
+
+  return (
+    <Modal
+      open
+      onClose={onClose}
+      title={mode === "create" ? "Новая категория" : "Редактировать категорию"}
+      footer={
+        <>
+          <Btn onClick={onClose}>Отмена</Btn>
+          <Btn variant="primary" disabled={save.isPending} onClick={() => save.mutate()}>
+            {save.isPending ? "Сохраняем…" : "Сохранить"}
+          </Btn>
+        </>
+      }
+    >
+      <div className="space-y-3">
+        <Field label="Slug" hint="Латиница, цифры, дефис.">
+          <TextInput
+            value={c.slug}
+            onChange={(e) =>
+              setC({ ...c, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "") })
+            }
+            placeholder="apparel"
+            disabled={mode === "edit"}
+          />
+        </Field>
+        <Field label="Название">
+          <TextInput value={c.name} onChange={(e) => setC({ ...c, name: e.target.value })} />
+        </Field>
+        <Field label="Сортировка" hint="Чем меньше — тем выше.">
+          <TextInput
+            type="number"
+            min={0}
+            value={c.sort}
+            onChange={(e) => setC({ ...c, sort: Math.max(0, Number(e.target.value) || 0) })}
+          />
+        </Field>
+      </div>
+    </Modal>
+  );
+}
+
+function SubcategoryModal({
+  mode,
+  subId,
+  categoryId,
+  categoryName,
+  initial,
+  onClose,
+  onDone,
+}: {
+  mode: "create" | "edit";
+  subId?: string;
+  categoryId: string;
+  categoryName?: string;
+  initial: { slug: string; name: string; sort: number };
+  onClose: () => void;
+  onDone: () => void;
+}) {
+  const [s, setS] = useState(initial);
+  const save = useMutation({
+    mutationFn: () =>
+      mode === "create"
+        ? createAdminShopSubcategory({ categoryId, ...s })
+        : patchAdminShopSubcategory(subId!, s),
+    onSuccess: () => {
+      toast.success(mode === "create" ? "Подкатегория создана" : "Сохранено");
+      onDone();
+    },
+    onError: (e) => toast.error(e instanceof ApiError ? e.message : "Не получилось"),
+  });
+
+  return (
+    <Modal
+      open
+      onClose={onClose}
+      title={
+        mode === "create"
+          ? `Новая подкатегория${categoryName ? ` в «${categoryName}»` : ""}`
+          : "Редактировать подкатегорию"
+      }
+      footer={
+        <>
+          <Btn onClick={onClose}>Отмена</Btn>
+          <Btn variant="primary" disabled={save.isPending} onClick={() => save.mutate()}>
+            {save.isPending ? "Сохраняем…" : "Сохранить"}
+          </Btn>
+        </>
+      }
+    >
+      <div className="space-y-3">
+        <Field label="Slug" hint="Уникален в рамках категории.">
+          <TextInput
+            value={s.slug}
+            onChange={(e) =>
+              setS({ ...s, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "") })
+            }
+            placeholder="hoodies"
+            disabled={mode === "edit"}
+          />
+        </Field>
+        <Field label="Название">
+          <TextInput value={s.name} onChange={(e) => setS({ ...s, name: e.target.value })} />
+        </Field>
+        <Field label="Сортировка">
+          <TextInput
+            type="number"
+            min={0}
+            value={s.sort}
+            onChange={(e) => setS({ ...s, sort: Math.max(0, Number(e.target.value) || 0) })}
+          />
+        </Field>
+      </div>
+    </Modal>
+  );
+}
+
+// ============================================================================
+// SHOWCASE — ручная подборка до 6 товаров
+// ============================================================================
+
+function ShowcaseTab() {
+  const qc = useQueryClient();
+  const { data: showcaseData, isLoading } = useQuery({
+    queryKey: adminQk.shopShowcase,
+    queryFn: fetchAdminShopShowcase,
+  });
+  const { data: productsData } = useQuery({
+    queryKey: adminQk.shopProducts,
+    queryFn: fetchAdminShopProducts,
+  });
+
+  const [picked, setPicked] = useState<string[]>([]);
+  const initialKey = useMemo(
+    () => (showcaseData?.items ?? []).map((i) => i.productId).join("|"),
+    [showcaseData],
+  );
+  useEffect(() => {
+    if (showcaseData) {
+      const sorted = [...showcaseData.items].sort((a, b) => a.sort - b.sort);
+      setPicked(sorted.map((i) => i.productId));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialKey]);
+
+  const products = productsData?.items ?? [];
+  const productById = useMemo(() => new Map(products.map((p) => [p.id, p])), [products]);
+
+  const save = useMutation({
+    mutationFn: () =>
+      putAdminShopShowcase(picked.map((productId, i) => ({ productId, sort: i }))),
+    onSuccess: () => {
+      toast.success("Витрина обновлена");
+      qc.invalidateQueries({ queryKey: adminQk.shopShowcase });
+    },
+    onError: (e) => toast.error(e instanceof ApiError ? e.message : "Не получилось"),
+  });
+
+  function add(id: string) {
+    if (picked.includes(id)) return;
+    if (picked.length >= 6) {
+      toast.error("Максимум 6 товаров на витрине");
+      return;
+    }
+    setPicked([...picked, id]);
+  }
+  function remove(id: string) {
+    setPicked(picked.filter((x) => x !== id));
+  }
+  function move(id: string, dir: -1 | 1) {
+    const i = picked.indexOf(id);
+    const j = i + dir;
+    if (i < 0 || j < 0 || j >= picked.length) return;
+    const next = [...picked];
+    [next[i], next[j]] = [next[j], next[i]];
+    setPicked(next);
+  }
+
+  const availableProducts = products.filter((p) => p.active && !picked.includes(p.id));
+
+  return (
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <Panel>
+        <div className="border-b border-zinc-200 px-4 py-3 dark:border-zinc-800">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="font-medium">На витрине ({picked.length}/6)</div>
+              <div className="text-xs text-zinc-500">
+                Порядок сверху вниз = слева направо на главной/клубе.
+              </div>
+            </div>
+            <Btn variant="primary" disabled={save.isPending} onClick={() => save.mutate()}>
+              {save.isPending ? "Сохраняем…" : "Сохранить"}
+            </Btn>
+          </div>
+        </div>
+        {isLoading ? (
+          <div className="px-6 py-12 text-center text-sm text-zinc-500">Загрузка…</div>
+        ) : picked.length === 0 ? (
+          <div className="px-6 py-12 text-center text-sm text-zinc-500">
+            Пусто. Добавь товары справа.
+          </div>
+        ) : (
+          <ul className="divide-y divide-zinc-200 dark:divide-zinc-800">
+            {picked.map((id, i) => {
+              const p = productById.get(id);
+              return (
+                <li key={id} className="flex items-center gap-3 px-4 py-3">
+                  <div className="w-6 text-center text-xs text-zinc-500">{i + 1}</div>
+                  {p?.images[0] ? (
+                    <img
+                      src={p.images[0]}
+                      alt={p.title}
+                      className="h-10 w-10 rounded object-cover"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="h-10 w-10 rounded bg-zinc-100 dark:bg-zinc-800" />
+                  )}
+                  <div className="flex-1">
+                    <div className="font-medium">{p?.title ?? "(удалён)"}</div>
+                    <div className="text-xs text-zinc-500">
+                      {p ? `${p.priceRub.toLocaleString("ru-RU")} ₽` : id}
+                    </div>
+                  </div>
+                  <Btn variant="ghost" onClick={() => move(id, -1)} disabled={i === 0}>
+                    <ChevronUp className="h-3.5 w-3.5" />
+                  </Btn>
+                  <Btn
+                    variant="ghost"
+                    onClick={() => move(id, 1)}
+                    disabled={i === picked.length - 1}
+                  >
+                    <ChevronDown className="h-3.5 w-3.5" />
+                  </Btn>
+                  <Btn variant="ghost" onClick={() => remove(id)}>
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Btn>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </Panel>
+
+      <Panel>
+        <div className="border-b border-zinc-200 px-4 py-3 dark:border-zinc-800">
+          <div className="font-medium">Доступные товары</div>
+          <div className="text-xs text-zinc-500">Только активные. Клик — добавить на витрину.</div>
+        </div>
+        {availableProducts.length === 0 ? (
+          <div className="px-6 py-12 text-center text-sm text-zinc-500">
+            Нет товаров для добавления.
+          </div>
+        ) : (
+          <ul className="divide-y divide-zinc-200 dark:divide-zinc-800">
+            {availableProducts.map((p) => (
+              <li key={p.id} className="flex items-center gap-3 px-4 py-3">
+                {p.images[0] ? (
+                  <img
+                    src={p.images[0]}
+                    alt={p.title}
+                    className="h-10 w-10 rounded object-cover"
+                    loading="lazy"
+                  />
+                ) : (
+                  <div className="h-10 w-10 rounded bg-zinc-100 dark:bg-zinc-800" />
+                )}
+                <div className="flex-1">
+                  <div className="font-medium">{p.title}</div>
+                  <div className="text-xs text-zinc-500">
+                    {p.priceRub.toLocaleString("ru-RU")} ₽ · {KIND_LABEL[p.kind]}
+                  </div>
+                </div>
+                <Btn variant="ghost" onClick={() => add(p.id)}>
+                  <Plus className="h-3.5 w-3.5" /> На витрину
+                </Btn>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Panel>
+    </div>
+  );
+}
+
+// ============================================================================
+// ORDERS
+// ============================================================================
 
 function OrdersTab() {
   const [status, setStatus] = useState<ShopOrderStatus | "all">("all");
@@ -389,23 +1139,23 @@ function OrdersTab() {
   return (
     <>
       <div className="mb-3 flex flex-wrap gap-2">
-        {(["all", "pending_payment", "paid", "shipped", "delivered", "cancelled", "refunded"] as const).map(
-          (s) => (
-            <button
-              key={s}
-              type="button"
-              onClick={() => setStatus(s)}
-              className={cn(
-                "rounded-full border px-3 py-1 text-xs font-medium transition-colors",
-                status === s
-                  ? "border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900"
-                  : "border-zinc-200 bg-white text-zinc-700 hover:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300",
-              )}
-            >
-              {s === "all" ? "Все" : STATUS_LABEL[s]}
-            </button>
-          ),
-        )}
+        {(
+          ["all", "pending_payment", "paid", "shipped", "delivered", "cancelled", "refunded"] as const
+        ).map((s) => (
+          <button
+            key={s}
+            type="button"
+            onClick={() => setStatus(s)}
+            className={cn(
+              "rounded-full border px-3 py-1 text-xs font-medium transition-colors",
+              status === s
+                ? "border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900"
+                : "border-zinc-200 bg-white text-zinc-700 hover:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300",
+            )}
+          >
+            {s === "all" ? "Все" : STATUS_LABEL[s]}
+          </button>
+        ))}
       </div>
 
       <Panel>
@@ -455,6 +1205,15 @@ function OrderDrawer({ orderId, onClose }: { orderId: string; onClose: () => voi
   const [status, setStatus] = useState<ShopOrderStatus | "">("");
   const [track, setTrack] = useState("");
 
+  // Заполняем поля при загрузке данных (один раз на orderId).
+  useEffect(() => {
+    if (data) {
+      setStatus(data.status);
+      setTrack(data.cdekTrack ?? "");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data?.id]);
+
   const patch = useMutation({
     mutationFn: () =>
       patchAdminOrder(orderId, {
@@ -468,14 +1227,6 @@ function OrderDrawer({ orderId, onClose }: { orderId: string; onClose: () => voi
     },
     onError: (e) => toast.error(e instanceof ApiError ? e.message : "Не получилось"),
   });
-
-  // Инициализируем поля из загруженных данных один раз.
-  useMemo(() => {
-    if (data) {
-      setStatus(data.status);
-      setTrack(data.cdekTrack ?? "");
-    }
-  }, [data]);
 
   return (
     <Drawer
@@ -540,31 +1291,35 @@ function OrderDrawer({ orderId, onClose }: { orderId: string; onClose: () => voi
             )}
           </div>
 
-          <div className="grid gap-3">
+          <div className="space-y-3">
             <Field label="Статус">
-              <Select value={status} onChange={(e) => setStatus(e.target.value as ShopOrderStatus)}>
-                {(Object.keys(STATUS_LABEL) as ShopOrderStatus[]).map((s) => (
+              <Select
+                value={status}
+                onChange={(e) => setStatus(e.target.value as ShopOrderStatus | "")}
+              >
+                {(
+                  [
+                    "pending_payment",
+                    "paid",
+                    "shipped",
+                    "delivered",
+                    "cancelled",
+                    "refunded",
+                  ] as const
+                ).map((s) => (
                   <option key={s} value={s}>
                     {STATUS_LABEL[s]}
                   </option>
                 ))}
               </Select>
             </Field>
-            <Field label="СДЭК-трек" hint="Появится у клиента в карточке заказа.">
+            <Field label="СДЭК-трек">
               <TextInput
                 value={track}
                 onChange={(e) => setTrack(e.target.value)}
                 placeholder="1234567890"
               />
             </Field>
-          </div>
-
-          <div className="text-xs text-zinc-500">
-            <div>Создан: {new Date(data.createdAt).toLocaleString("ru-RU")}</div>
-            {data.paidAt && <div>Оплачен: {new Date(data.paidAt).toLocaleString("ru-RU")}</div>}
-            {data.shippedAt && (
-              <div>Отправлен: {new Date(data.shippedAt).toLocaleString("ru-RU")}</div>
-            )}
           </div>
         </div>
       )}
