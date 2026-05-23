@@ -870,12 +870,14 @@ function BikeSheet({
   onOpenChange,
   bikes,
   activeId,
+  emptyText,
   onPick,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   bikes: StoredBike[];
   activeId: string;
+  emptyText?: string;
   onPick: (id: string) => void;
 }) {
   return (
@@ -903,7 +905,7 @@ function BikeSheet({
           <div className="flex-1 overflow-y-auto overscroll-contain px-4 pb-4">
             {bikes.length === 0 ? (
               <div className="rounded-2xl border border-white/[0.06] bg-card/40 px-4 py-6 text-center text-[13px] text-muted-foreground">
-                В гараже пусто — добавь байк в профиле.
+                {emptyText ?? "В гараже пусто — добавь байк в профиле."}
               </div>
             ) : (
               <ul className="overflow-hidden rounded-2xl border border-white/[0.06] bg-card/40 divide-y divide-white/[0.05]">
