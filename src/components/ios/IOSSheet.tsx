@@ -5,6 +5,7 @@
 import { Drawer } from "vaul";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { useThemeColor } from "@/hooks/use-theme-color";
 
 type Props = {
   open: boolean;
@@ -33,6 +34,7 @@ export function IOSSheet({
   contentClassName,
 }: Props) {
   const close = () => onOpenChange(false);
+  useThemeColor(open ? "#0d0d0d" : null);
   return (
     <Drawer.Root open={open} onOpenChange={onOpenChange}>
       <Drawer.Portal>
