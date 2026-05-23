@@ -1,18 +1,10 @@
-// Журнал байка: сервисные записи + поездки. localStorage, без бэка.
-// Привязка к bikeId.
+// Журнал байка: сервисные записи + поездки. Бэкенд (Fastify + Postgres).
+// Привязка к bikeId. Внешний API совместим со старой версией (subscribe/getSnapshot).
 
 import { useSyncExternalStore } from "react";
+import { apiFetch } from "@/lib/api";
 
-const STORAGE_KEY = "hellhound:bike-journal";
-
-export type ServiceType =
-  | "oil"
-  | "chain"
-  | "tires"
-  | "brakes"
-  | "to"
-  | "filter"
-  | "other";
+export type ServiceType = "oil" | "chain" | "tires" | "brakes" | "to" | "filter" | "other";
 
 export const SERVICE_TYPE_LABEL: Record<ServiceType, string> = {
   oil: "Замена масла",
@@ -39,122 +31,121 @@ export type ServiceEntry = {
   id: string;
   bikeId: string;
   type: ServiceType;
-  date: string; // ISO yyyy-mm-dd
-  mileage: number; // км на одометре в момент работ
-  note?: string;
+  date: string;
+  mileage: number;
+  note?: string | null;
 };
 
 export type Ride = {
   id: string;
   bikeId: string;
-  date: string; // ISO yyyy-mm-dd
+  date: string;
   km: number;
-  note?: string;
+  note?: string | null;
 };
 
-type JournalState = {
-  service: ServiceEntry[];
-  rides: Ride[];
-};
+type JournalState = { service: ServiceEntry[]; rides: Ride[] };
+type ServerResp = { service: ServiceEntry[]; rides: Ride[] };
 
-const SEED: JournalState = {
-  service: [
-    {
-      id: "s_seed_1",
-      bikeId: "b1",
-      type: "oil",
-      date: "2026-03-14",
-      mileage: 15800,
-      note: "Motul 7100 10W-40, фильтр K&N",
-    },
-    {
-      id: "s_seed_2",
-      bikeId: "b1",
-      type: "chain",
-      date: "2026-04-02",
-      mileage: 16500,
-      note: "Чистка + смазка Motul Chain Lube",
-    },
-    {
-      id: "s_seed_3",
-      bikeId: "b1",
-      type: "tires",
-      date: "2026-04-22",
-      mileage: 17200,
-      note: "Michelin Power 5 переднее/заднее",
-    },
-  ],
-  rides: [
-    { id: "r_seed_1", bikeId: "b1", date: "2026-05-04", km: 120, note: "Каширка → Серпухов" },
-    { id: "r_seed_2", bikeId: "b1", date: "2026-05-10", km: 75, note: "МКАД покатушка" },
-    { id: "r_seed_3", bikeId: "b1", date: "2026-05-15", km: 210, note: "Поездка на трек" },
-  ],
-};
-
-let STATE: JournalState = SEED;
+let STATE: JournalState = { service: [], rides: [] };
 let loaded = false;
-
-function load() {
-  if (loaded || typeof window === "undefined") return;
-  loaded = true;
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(SEED));
-      STATE = SEED;
-    } else {
-      STATE = JSON.parse(raw) as JournalState;
-    }
-  } catch {
-    STATE = SEED;
-  }
-}
-
-function persist() {
-  if (typeof window === "undefined") return;
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(STATE));
-  } catch {
-    /* ignore quota */
-  }
-}
+let loading: Promise<void> | null = null;
 
 const listeners = new Set<() => void>();
 const emit = () => listeners.forEach((l) => l());
 
-function newId(prefix: string) {
-  return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
+function setState(next: JournalState) {
+  STATE = next;
+  emit();
+}
+
+async function loadFromServer() {
+  if (typeof window === "undefined") return;
+  if (loading) return loading;
+  loading = (async () => {
+    try {
+      const r = await apiFetch<ServerResp>("/api/v1/garage/journal");
+      setState({ service: r.service ?? [], rides: r.rides ?? [] });
+    } catch {
+      // молча — пусть будет пусто, UI сам покажет «пока пусто»
+    } finally {
+      loaded = true;
+      loading = null;
+    }
+  })();
+  return loading;
+}
+
+function tempId(prefix: string) {
+  return `${prefix}_tmp_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
 }
 
 export const bikeJournalStore = {
   subscribe(l: () => void) {
-    load();
+    if (!loaded) loadFromServer();
     listeners.add(l);
     return () => listeners.delete(l);
   },
-  getSnapshot() {
-    load();
+  getSnapshot(): JournalState {
     return STATE;
   },
-  addService(input: Omit<ServiceEntry, "id">) {
-    STATE = { ...STATE, service: [{ id: newId("s"), ...input }, ...STATE.service] };
-    persist();
-    emit();
+  refresh() {
+    loaded = false;
+    return loadFromServer();
   },
-  removeService(id: string) {
-    STATE = { ...STATE, service: STATE.service.filter((s) => s.id !== id) };
-    persist();
-    emit();
+  async addService(input: Omit<ServiceEntry, "id">) {
+    const optimistic: ServiceEntry = { id: tempId("s"), ...input };
+    setState({ ...STATE, service: [optimistic, ...STATE.service] });
+    try {
+      const row = await apiFetch<ServiceEntry>("/api/v1/garage/service", {
+        method: "POST",
+        body: JSON.stringify(input),
+      });
+      setState({
+        ...STATE,
+        service: STATE.service.map((s) => (s.id === optimistic.id ? row : s)),
+      });
+    } catch (e) {
+      setState({ ...STATE, service: STATE.service.filter((s) => s.id !== optimistic.id) });
+      throw e;
+    }
   },
-  addRide(input: Omit<Ride, "id">) {
-    STATE = { ...STATE, rides: [{ id: newId("r"), ...input }, ...STATE.rides] };
-    persist();
-    emit();
+  async removeService(id: string) {
+    const prev = STATE.service;
+    setState({ ...STATE, service: prev.filter((s) => s.id !== id) });
+    try {
+      await apiFetch(`/api/v1/garage/service/${id}`, { method: "DELETE" });
+    } catch (e) {
+      setState({ ...STATE, service: prev });
+      throw e;
+    }
   },
-  removeRide(id: string) {
-    STATE = { ...STATE, rides: STATE.rides.filter((r) => r.id !== id) };
-    persist();
-    emit();
+  async addRide(input: Omit<Ride, "id">) {
+    const optimistic: Ride = { id: tempId("r"), ...input };
+    setState({ ...STATE, rides: [optimistic, ...STATE.rides] });
+    try {
+      const row = await apiFetch<Ride>("/api/v1/garage/rides", {
+        method: "POST",
+        body: JSON.stringify(input),
+      });
+      setState({
+        ...STATE,
+        rides: STATE.rides.map((r) => (r.id === optimistic.id ? row : r)),
+      });
+    } catch (e) {
+      setState({ ...STATE, rides: STATE.rides.filter((r) => r.id !== optimistic.id) });
+      throw e;
+    }
+  },
+  async removeRide(id: string) {
+    const prev = STATE.rides;
+    setState({ ...STATE, rides: prev.filter((r) => r.id !== id) });
+    try {
+      await apiFetch(`/api/v1/garage/rides/${id}`, { method: "DELETE" });
+    } catch (e) {
+      setState({ ...STATE, rides: prev });
+      throw e;
+    }
   },
 };
 

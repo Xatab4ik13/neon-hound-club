@@ -73,7 +73,7 @@ export function PostCard({ post, moderate = false }: { post: Post; moderate?: bo
       )}
 
       <header className="flex items-center gap-3 px-4 pt-4 md:px-5 md:pt-5">
-        <UserLink slug={post.authorSlug}>
+        <UserLink slug={post.authorSlug} disabled={authorIsBlogger}>
           {authorIsBlogger ? (
             <HellhoundAvatar size={44} initials={author?.initials ?? "H"} avatarUrl={author?.avatarUrl} />
           ) : (
@@ -87,7 +87,7 @@ export function PostCard({ post, moderate = false }: { post: Post; moderate?: bo
         </UserLink>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <UserLink slug={post.authorSlug} className="truncate">
+            <UserLink slug={post.authorSlug} disabled={authorIsBlogger} className="truncate">
               <span className="truncate font-display text-[15px] font-black uppercase italic tracking-tight text-foreground transition-colors hover:text-primary">
                 {author?.nick ?? post.authorSlug}
               </span>
@@ -515,7 +515,7 @@ function CommentItem({
 
   return (
     <li className="flex gap-3">
-      <UserLink slug={comment.authorSlug}>
+      <UserLink slug={comment.authorSlug} disabled={authorIsBlogger}>
         {authorIsBlogger ? (
           <HellhoundAvatar size={large ? 40 : 36} initials={user?.initials ?? "H"} avatarUrl={user?.avatarUrl} />
         ) : (
@@ -529,7 +529,7 @@ function CommentItem({
       </UserLink>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <UserLink slug={comment.authorSlug} className="min-w-0 truncate">
+          <UserLink slug={comment.authorSlug} disabled={authorIsBlogger} className="min-w-0 truncate">
             <span
               className={`truncate font-display font-bold uppercase italic tracking-tight transition-opacity hover:opacity-80 ${large ? "text-[14px]" : "text-[13px]"}`}
               style={{ color: authorIsBlogger ? undefined : rank.accent }}
@@ -599,13 +599,18 @@ function CommentItem({
 
 function UserLink({
   slug,
+  disabled = false,
   children,
   className = "",
 }: {
   slug: string;
+  disabled?: boolean;
   children: React.ReactNode;
   className?: string;
 }) {
+  if (disabled) {
+    return <span className={`shrink-0 ${className}`}>{children}</span>;
+  }
   return (
     <Link
       to="/club/u/$nick"

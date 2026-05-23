@@ -87,6 +87,9 @@ export async function buildApp() {
   await app.register(profileRoutes, { prefix: "/api/v1/profile" });
   await app.register(garageRoutes, { prefix: "/api/v1/garage" });
 
+  const { bikeJournalRoutes } = await import("./routes/bike-journal.js");
+  await app.register(bikeJournalRoutes, { prefix: "/api/v1/garage" });
+
   const { uploadsRoutes } = await import("./routes/uploads.js");
   await app.register(uploadsRoutes, { prefix: "/api/v1/uploads" });
 
