@@ -4,6 +4,7 @@ import { ME } from "@/data/profile";
 import { useCurrentRank } from "@/data/rank-state";
 import { useCart } from "@/hooks/use-cart";
 import { haptic } from "@/hooks/use-haptic";
+import { useScrollCollapse } from "@/hooks/use-scroll-collapse";
 import { ProfilePlaque } from "@/routes/club";
 
 
@@ -39,6 +40,8 @@ export function MobileTopBar() {
   const isTab = TAB_PATHS.includes(pathname);
   const isShop = pathname.startsWith("/club/shop");
   const title = titleFor(pathname);
+  // iOS-style: titlle в навбаре появляется только после скролла большого заголовка.
+  const scrolled = useScrollCollapse(40);
 
   const handleBack = () => {
     haptic("light");
@@ -97,7 +100,13 @@ export function MobileTopBar() {
           </button>
         </div>
 
-        <h1 className="pointer-events-none absolute left-1/2 max-w-[55%] -translate-x-1/2 overflow-hidden text-ellipsis whitespace-nowrap pr-[3px] font-display text-[16px] font-black italic uppercase tracking-tight">
+        <h1
+          className="pointer-events-none absolute left-1/2 max-w-[55%] -translate-x-1/2 overflow-hidden text-ellipsis whitespace-nowrap pr-[3px] font-display text-[16px] font-black italic uppercase tracking-tight transition-all duration-200"
+          style={{
+            opacity: scrolled ? 1 : 0,
+            transform: `translate(-50%, ${scrolled ? "0" : "4px"})`,
+          }}
+        >
           {title}
         </h1>
 
