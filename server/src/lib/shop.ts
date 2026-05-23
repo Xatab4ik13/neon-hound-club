@@ -97,6 +97,9 @@ export async function markOrderPaid(orderId: string): Promise<{ ok: boolean; rea
   // Квест: оплаченный заказ за месяц (monthly).
   await tryCompleteQuest(order.userId, "shop_order");
 
+  // Выдаём стикер-паки за товары заказа.
+  await grantStickerPacksFromOrder(order.id, order.userId);
+
   return { ok: true };
 }
 
