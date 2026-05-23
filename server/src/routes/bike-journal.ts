@@ -127,6 +127,10 @@ export async function bikeJournalRoutes(app: FastifyInstance) {
         note: parsed.data.note ?? null,
       })
       .returning();
+    // Квест: 500 км за месяц (monthly).
+    if (parsed.data.km > 0) {
+      await addQuestProgress(session.sub, "ride_500km", parsed.data.km).catch(() => null);
+    }
     return reply.code(201).send(row);
   });
 
