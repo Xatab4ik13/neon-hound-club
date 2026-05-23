@@ -24,11 +24,13 @@ import { PUBLIC_USERS, type PublicUser } from "./users";
 
 export type FeedComment = {
   id: string;
+  authorId: string;
   authorSlug: string;
   time: string;
   text: string;
   likes: number;
   liked: boolean;
+  isBlogger: boolean;
 };
 
 export type FeedPollOption = { id: string; text: string; votes: number };
@@ -44,6 +46,7 @@ export type FeedPoll = {
 
 export type FeedPost = {
   id: string;
+  authorId: string;
   authorSlug: string;
   time: string;
   text: string;
@@ -52,6 +55,7 @@ export type FeedPost = {
   likes: number;
   liked: boolean;
   pinned?: boolean;
+  isBlogger: boolean;
   comments: FeedComment[];
 };
 
@@ -151,11 +155,13 @@ function mapComment(c: FeedCommentHydrated): FeedComment {
   });
   return {
     id: c.id,
+    authorId: c.authorId,
     authorSlug: slug,
     time: formatRelative(c.createdAt),
     text: c.text,
     likes: c.likes,
     liked: c.liked,
+    isBlogger: c.role === "blogger",
   };
 }
 
@@ -171,6 +177,7 @@ function mapPost(p: FeedPostWithComments): FeedPost {
   });
   return {
     id: p.id,
+    authorId: p.author.id,
     authorSlug: slug,
     time: formatRelative(p.createdAt),
     text: p.text,
@@ -188,6 +195,7 @@ function mapPost(p: FeedPostWithComments): FeedPost {
       : undefined,
     likes: p.likes,
     liked: p.liked,
+    isBlogger: p.author.role === "blogger",
     comments: (p.comments ?? []).map(mapComment),
   };
 }
@@ -291,11 +299,13 @@ export const feedStore = {
     const tempId = `tmp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     const optimistic: FeedComment = {
       id: tempId,
+      authorId: "me",
       authorSlug: input.authorSlug,
       time: "только что",
       text: input.text,
       likes: 0,
       liked: false,
+      isBlogger: false,
     };
     patchPostLocal(postId, (p) => ({ ...p, comments: [...p.comments, optimistic] }));
     try {
