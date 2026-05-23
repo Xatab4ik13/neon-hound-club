@@ -6,6 +6,7 @@ import { BloggerMobileTopBar } from "@/components/blogger/BloggerMobileTopBar";
 import { BloggerMobileTabBar } from "@/components/blogger/BloggerMobileTabBar";
 import { MobileTransition } from "@/components/club/MobileTransition";
 import { PullToRefresh } from "@/components/club/PullToRefresh";
+import { OfflineBanner } from "@/components/club/OfflineBanner";
 import { useBloggerProfile } from "@/data/blogger-profile";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useViewer } from "@/hooks/use-viewer";

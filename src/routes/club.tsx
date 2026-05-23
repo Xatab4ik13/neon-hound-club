@@ -78,6 +78,7 @@ function ClubLayout() {
   if (isMobile) {
     return (
       <div className="min-h-screen bg-background text-foreground">
+        <OfflineBanner />
         <MobileTopBar />
         <main
           className="relative"
