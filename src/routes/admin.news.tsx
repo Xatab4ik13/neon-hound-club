@@ -166,11 +166,15 @@ function NewsPage() {
 
   return (
     <div>
-      <PageHeader title="Новости" description="CRUD клубных новостей">
-        <Btn variant="primary" onClick={openCreate}>
-          <Plus className="h-4 w-4" /> Новость
-        </Btn>
-      </PageHeader>
+      <PageHeader
+        title="Новости"
+        description="CRUD клубных новостей"
+        actions={
+          <Btn variant="primary" onClick={openCreate}>
+            <Plus className="h-4 w-4" /> Новость
+          </Btn>
+        }
+      />
 
       <Panel>
         {isLoading ? (
@@ -253,7 +257,7 @@ function NewsPage() {
         onClose={() => setDel(null)}
         onConfirm={() => del && deleteMut.mutate(del.id)}
         title="Удалить новость?"
-        body={del ? `«${del.title}» будет удалена безвозвратно.` : ""}
+        message={del ? `«${del.title}» будет удалена безвозвратно.` : ""}
         confirmLabel="Удалить"
         danger
       />
