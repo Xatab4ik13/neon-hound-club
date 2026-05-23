@@ -184,6 +184,12 @@ async function hydratePosts(rows: typeof posts.$inferSelect[], viewerId: string 
     myVoteMap.get(v.postId)!.push(v.optionId);
   }
 
+  // rankId батчем для всех уникальных юзеров (авторы + комментаторы).
+  const allUserIds = Array.from(
+    new Set([...authorIds, ...allComments.map((c) => c.authorId)]),
+  );
+  const ranksMap = await getRanksMap(allUserIds);
+
   return rows.map((r) => {
     const a = authorMap.get(r.authorId);
     const votes = voteMap.get(r.id);
@@ -198,8 +204,22 @@ async function hydratePosts(rows: typeof posts.$inferSelect[], viewerId: string 
     return {
       id: r.id,
       author: a
-        ? { id: a.id, nick: a.nick, role: a.role, avatarUrl: a.avatarUrl, city: a.city }
-        : { id: r.authorId, nick: "unknown", role: "user", avatarUrl: null, city: null },
+        ? {
+            id: a.id,
+            nick: a.nick,
+            role: a.role,
+            avatarUrl: a.avatarUrl,
+            city: a.city,
+            rankId: ranksMap.get(a.id) ?? "rookie",
+          }
+        : {
+            id: r.authorId,
+            nick: "unknown",
+            role: "user",
+            avatarUrl: null,
+            city: null,
+            rankId: "rookie",
+          },
       text: r.text,
       imageUrl: r.imageUrl,
       pinned: r.pinned,
@@ -217,6 +237,7 @@ async function hydratePosts(rows: typeof posts.$inferSelect[], viewerId: string 
         nick: c.nick,
         role: c.role,
         avatarUrl: c.avatarUrl,
+        rankId: ranksMap.get(c.authorId) ?? "rookie",
       })),
       createdAt: r.createdAt,
       updatedAt: r.updatedAt,
