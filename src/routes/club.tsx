@@ -67,6 +67,7 @@ function ClubLayout() {
   const isMobile = useIsMobile();
   const viewer = useViewer();
   const navigate = useNavigate();
+  useEdgeSwipeBack(true);
 
   // Блогер живёт в своём кабинете — внутрь клуба не пускаем.
   useEffect(() => {
