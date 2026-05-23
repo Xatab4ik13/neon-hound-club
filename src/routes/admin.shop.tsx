@@ -958,18 +958,30 @@ function SubcategoryModal({
       }
     >
       <div className="space-y-3">
-        <Field label="Slug" hint="Уникален в рамках категории.">
+        <Field label="Название">
+          <TextInput
+            value={s.name}
+            onChange={(e) => {
+              const name = e.target.value;
+              setS((prev) => ({
+                ...prev,
+                name,
+                slug: mode === "create" && !slugTouched ? slugify(name) : prev.slug,
+              }));
+            }}
+            placeholder="Худи"
+          />
+        </Field>
+        <Field label="Slug" hint="Технический id для URL. Заполняется автоматически.">
           <TextInput
             value={s.slug}
-            onChange={(e) =>
-              setS({ ...s, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "") })
-            }
+            onChange={(e) => {
+              setSlugTouched(true);
+              setS({ ...s, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "") });
+            }}
             placeholder="hoodies"
             disabled={mode === "edit"}
           />
-        </Field>
-        <Field label="Название">
-          <TextInput value={s.name} onChange={(e) => setS({ ...s, name: e.target.value })} />
         </Field>
         <Field label="Сортировка">
           <TextInput
