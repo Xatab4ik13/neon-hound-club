@@ -130,8 +130,7 @@ function ProductView({ product }: { product: ShopProduct }) {
 
   return (
     <main
-      className="mx-auto w-full max-w-3xl"
-      style={{ paddingBottom: "calc(96px + env(safe-area-inset-bottom))" }}
+      className="mx-auto w-full max-w-3xl pb-[calc(96px+env(safe-area-inset-bottom))] md:pb-12"
     >
       <div className="flex items-center justify-between px-4 pt-4">
         <Link
@@ -316,10 +315,37 @@ function ProductView({ product }: { product: ShopProduct }) {
             </p>
           </Accordion>
         </div>
+
+        {/* Desktop inline CTA */}
+        <div className="mt-6 hidden items-center gap-4 rounded-2xl border border-white/[0.06] bg-card/40 p-4 md:flex">
+          <div className="flex flex-col">
+            <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+              Итого
+            </span>
+            <span className="font-display text-2xl font-black tabular-nums text-primary">
+              {(product.priceRub * qty).toLocaleString("ru-RU")} ₽
+            </span>
+          </div>
+          <button
+            type="button"
+            disabled={sold}
+            onClick={() => handleAdd(false)}
+            className="ml-auto inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-8 py-3.5 font-display text-sm font-black uppercase tracking-wider text-primary-foreground transition-all hover:scale-[1.02] active:scale-[0.98] disabled:bg-muted disabled:text-muted-foreground"
+          >
+            {sold ? "Распродано" : sizeMissing ? "Выбери размер" : "В корзину"}
+          </button>
+          <Link
+            to="/club/cart"
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/[0.1] px-5 py-3.5 font-mono text-[12px] font-bold uppercase tracking-wider text-foreground transition-colors hover:border-primary/60 hover:text-primary"
+          >
+            <ShoppingBag className="h-4 w-4" /> Корзина
+          </Link>
+        </div>
       </section>
 
+      {/* Mobile sticky CTA */}
       <div
-        className="fixed inset-x-0 z-30 border-t border-white/[0.06] bg-black/85 px-4 py-3 backdrop-blur-xl"
+        className="fixed inset-x-0 z-30 border-t border-white/[0.06] bg-black/85 px-4 py-3 backdrop-blur-xl md:hidden"
         style={{ bottom: "calc(52px + env(safe-area-inset-bottom))" }}
       >
         <div className="mx-auto flex max-w-3xl items-center gap-3">
