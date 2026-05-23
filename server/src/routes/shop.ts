@@ -19,6 +19,7 @@ import {
   markOrderPaid,
   refundOrder,
 } from "../lib/shop.js";
+import { getActivePassPerks } from "../lib/pass.js";
 
 // ---------- PUBLIC / USER ----------
 
