@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Bell, BellOff, Download, Share, Plus, Check, AlertCircle } from "lucide-react";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { IOSSheet } from "@/components/ios/IOSSheet";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import {
