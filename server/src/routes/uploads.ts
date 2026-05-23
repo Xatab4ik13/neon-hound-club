@@ -1,13 +1,17 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
+import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { requireAuth, type SessionPayload } from "../lib/auth.js";
 import {
+  S3_BUCKET,
   UPLOAD_RULES,
   buildObjectKey,
   presignPutUrl,
   publicUrl,
+  s3,
   type UploadKind,
 } from "../lib/s3.js";
+
 
 const KINDS: UploadKind[] = ["avatar", "bike", "product", "raffle", "shop", "post"];
 
