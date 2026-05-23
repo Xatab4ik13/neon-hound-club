@@ -3,7 +3,7 @@ import { z } from "zod";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { users } from "../db/schema/users.js";
-import { profiles, bikes } from "../db/schema/profile.js";
+import { profiles, bikes, deliveryAddresses, notificationPrefs } from "../db/schema/profile.js";
 import { requireAuth, type SessionPayload } from "../lib/auth.js";
 import { isOurS3Url, deleteByPublicUrl } from "../lib/s3.js";
 import { tryCompleteQuest } from "../lib/quests.js";
