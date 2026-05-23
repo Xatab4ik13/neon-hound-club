@@ -677,14 +677,30 @@ function RankAvatar({
 
 // Mock packs — позже заменим на данные из БД
 
+import { SPECIAL_PACK_STICKERS, SPECIAL_PACK_COVER } from "@/assets/stickers/special";
+
+/** Префикс-маркер: текст комментария = стикер-картинка. */
+const STICKER_PREFIX = "::sticker::";
+const asStickerText = (url: string) => `${STICKER_PREFIX}${url}`;
+const parseSticker = (text: string): string | null =>
+  text.startsWith(STICKER_PREFIX) ? text.slice(STICKER_PREFIX.length) : null;
+
 type StickerPack = {
   id: string;
   title: string;
-  cover: string; // emoji-cover пока, заменим на PNG
-  stickers: string[]; // emoji-заглушки, потом URL картинок
+  cover: string; // emoji-cover ИЛИ url картинки
+  coverIsImage?: boolean;
+  stickers: string[]; // emoji-строка ИЛИ "::sticker::<url>"
 };
 
 const STICKER_PACKS: StickerPack[] = [
+  {
+    id: "special",
+    title: "Special pack",
+    cover: SPECIAL_PACK_COVER,
+    coverIsImage: true,
+    stickers: SPECIAL_PACK_STICKERS.map(asStickerText),
+  },
   {
     id: "hellhound-og",
     title: "HELLHOUND OG",
