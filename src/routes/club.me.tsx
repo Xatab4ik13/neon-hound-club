@@ -68,7 +68,9 @@ function MePage() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [bgSheetOpen, setBgSheetOpen] = useState(false);
   const isMobile = useIsMobile();
-  const { tierInfo } = usePassState();
+  const passQ = useQuery({ queryKey: ["pass", "me"], queryFn: fetchPassMe, staleTime: 30_000, retry: false });
+  const activeTierSlug = passQ.data?.active?.status === "active" ? passQ.data.active.tier : null;
+  const tierInfo: Tier | null = activeTierSlug ? TIERS.find((t) => t.slug === activeTierSlug) ?? null : null;
   const { signOut } = useViewer();
 
   const handleLogout = async () => {
