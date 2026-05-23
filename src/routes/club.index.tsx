@@ -971,6 +971,7 @@ function StickerPanel({
   setActivePack,
   large = false,
   recent,
+  ownedPacks,
   onPickEmoji,
   onPickSticker,
 }: {
@@ -980,10 +981,12 @@ function StickerPanel({
   setActivePack: (id: string) => void;
   large?: boolean;
   recent: string[];
+  ownedPacks: string[];
   onPickEmoji: (e: string) => void;
   onPickSticker: (s: string) => void;
 }) {
   const pack = STICKER_PACKS.find((p) => p.id === activePack) ?? STICKER_PACKS[0];
+  const isLocked = !!pack.lockSlug && !ownedPacks.includes(pack.lockSlug);
 
   return (
     <div className={`flex flex-col bg-[#0d0d0d] ${large ? "h-[min(70vh,560px)]" : "h-[min(55vh,420px)]"}`}>
