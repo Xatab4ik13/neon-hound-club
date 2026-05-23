@@ -179,8 +179,6 @@ function UserView({ user }: { user: PublicUser }) {
               <h1 className="truncate font-display text-2xl font-black uppercase italic tracking-tight text-foreground md:text-3xl">
                 {user.nick}
               </h1>
-              {user.role === "owner" && <Tag tone="primary">OWNER</Tag>}
-              {user.role === "team" && <Tag tone="primary">TEAM</Tag>}
               <span
                 className="border px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wider"
                 style={{ color: rank.accent, borderColor: rank.accentSoft }}

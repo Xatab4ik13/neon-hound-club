@@ -92,7 +92,7 @@ export function PostCard({ post, moderate = false }: { post: Post; moderate?: bo
                 {author?.nick ?? post.authorSlug}
               </span>
             </UserLink>
-            {authorIsBlogger ? <HellhoundChip size="sm" /> : <RoleBadge role={author?.role ?? "rider"} />}
+            {authorIsBlogger && <HellhoundChip size="sm" />}
           </div>
           <span className="mt-0.5 block font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
             {post.time}
@@ -369,15 +369,6 @@ function PostAction({
   );
 }
 
-function RoleBadge({ role }: { role: "owner" | "team" | "rider" }) {
-  if (role === "rider") return null;
-  const label = role === "owner" ? "OWNER" : "TEAM";
-  return (
-    <span className="shrink-0 rounded-md border border-primary/30 bg-primary/10 px-1.5 py-px font-mono text-[9px] font-bold uppercase tracking-wider text-primary">
-      {label}
-    </span>
-  );
-}
 
 // ───────── Comments preview (под постом) ─────────
 
@@ -556,8 +547,6 @@ function CommentItem({
               {rank.short}
             </span>
           )}
-          {!authorIsBlogger && user?.role === "owner" && <RoleBadge role="owner" />}
-          {!authorIsBlogger && user?.role === "team" && <RoleBadge role="team" />}
           <span className="ml-auto shrink-0 font-mono text-[10px] uppercase tracking-wider text-muted-foreground/70">
             {comment.time}
           </span>
