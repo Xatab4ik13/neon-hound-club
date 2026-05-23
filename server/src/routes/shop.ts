@@ -218,23 +218,74 @@ export async function shopRoutes(app: FastifyInstance) {
 
 // ---------- ADMIN ----------
 
-const createProductSchema = z.object({
-  slug: z
-    .string()
-    .trim()
-    .min(2)
-    .max(64)
-    .regex(/^[a-z0-9-]+$/, "slug: только a-z, 0-9, -"),
-  title: z.string().trim().min(1).max(200),
-  description: z.string().max(10_000).default(""),
-  priceRub: z.number().int().min(0).max(10_000_000),
-  bonusTickets: z.number().int().min(0).max(100_000).default(0),
-  images: z.array(z.string().url()).max(20).default([]),
-  stock: z.number().int().min(0).max(1_000_000).nullable().default(null),
-  active: z.boolean().default(true),
+const createProductSchema = z
+  .object({
+    slug: z
+      .string()
+      .trim()
+      .min(2)
+      .max(64)
+      .regex(/^[a-z0-9-]+$/, "slug: только a-z, 0-9, -"),
+    title: z.string().trim().min(1).max(200),
+    description: z.string().max(10_000).default(""),
+    priceRub: z.number().int().min(0).max(10_000_000),
+    bonusTickets: z.number().int().min(0).max(100_000).default(0),
+    images: z.array(z.string().url()).max(20).default([]),
+    stock: z.number().int().min(0).max(1_000_000).nullable().default(null),
+    active: z.boolean().default(true),
+    kind: z.enum(PRODUCT_KINDS).default("physical"),
+    categoryId: z.string().uuid().nullable().optional(),
+    subcategoryId: z.string().uuid().nullable().optional(),
+    digitalFileUrl: z.string().url().max(1000).nullable().optional(),
+    digitalFileName: z.string().trim().max(200).nullable().optional(),
+    preorderExpectedAt: z.string().datetime().nullable().optional(),
+  })
+  .superRefine((v, ctx) => {
+    if (v.kind === "digital" && !v.digitalFileUrl) {
+      ctx.addIssue({ code: "custom", message: "Для цифрового товара нужен файл", path: ["digitalFileUrl"] });
+    }
+    if (v.kind === "preorder" && !v.preorderExpectedAt) {
+      ctx.addIssue({ code: "custom", message: "Для предзаказа нужна дата ожидания", path: ["preorderExpectedAt"] });
+    }
+  });
+
+const patchProductSchema = z
+  .object({
+    slug: z.string().trim().min(2).max(64).regex(/^[a-z0-9-]+$/),
+    title: z.string().trim().min(1).max(200),
+    description: z.string().max(10_000),
+    priceRub: z.number().int().min(0).max(10_000_000),
+    bonusTickets: z.number().int().min(0).max(100_000),
+    images: z.array(z.string().url()).max(20),
+    stock: z.number().int().min(0).max(1_000_000).nullable(),
+    active: z.boolean(),
+    kind: z.enum(PRODUCT_KINDS),
+    categoryId: z.string().uuid().nullable(),
+    subcategoryId: z.string().uuid().nullable(),
+    digitalFileUrl: z.string().url().max(1000).nullable(),
+    digitalFileName: z.string().trim().max(200).nullable(),
+    preorderExpectedAt: z.string().datetime().nullable(),
+  })
+  .partial();
+
+const categorySchema = z.object({
+  slug: z.string().trim().min(2).max(64).regex(/^[a-z0-9-]+$/, "slug: только a-z, 0-9, -"),
+  name: z.string().trim().min(1).max(120),
+  sort: z.number().int().min(0).max(10_000).default(0),
 });
 
-const patchProductSchema = createProductSchema.partial();
+const subcategorySchema = z.object({
+  categoryId: z.string().uuid(),
+  slug: z.string().trim().min(2).max(64).regex(/^[a-z0-9-]+$/, "slug: только a-z, 0-9, -"),
+  name: z.string().trim().min(1).max(120),
+  sort: z.number().int().min(0).max(10_000).default(0),
+});
+
+const showcaseSchema = z.object({
+  items: z
+    .array(z.object({ productId: z.string().uuid(), sort: z.number().int().min(0).max(10_000) }))
+    .max(6),
+});
 
 const patchOrderSchema = z.object({
   status: z.enum(ORDER_STATUSES).optional(),
