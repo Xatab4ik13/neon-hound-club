@@ -201,7 +201,7 @@ export async function hellAiRoutes(app: FastifyInstance) {
         role: "assistant",
         content: `[ERROR] ${message}`,
         bikeId: bikeId ?? null,
-        model: settings.model,
+        model: modelForRequest,
         error: true,
       });
       // Откатываем счётчик: удаляем последний user-вопрос за последние 10 сек.
