@@ -69,8 +69,7 @@ export async function activatePassPurchase(purchaseId: string): Promise<{ ok: bo
     idempotent: true,
   });
 
-  // Квест: первая активация пасса любого тира.
-  await tryCompleteQuest(p.userId, "first_pass");
+  // first_pass больше не квест — активация пасса даёт билеты + бонусный XP выше.
 
   return { ok: true };
 }
