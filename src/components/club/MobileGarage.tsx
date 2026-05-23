@@ -213,7 +213,7 @@ export function MobileGarage({
       <div className="pb-32">
         <header className="px-4 pb-3 pt-2">
           <div className="flex items-end justify-between gap-3">
-            <h1 className="text-[34px] font-bold leading-tight tracking-tight text-foreground">
+            <h1 className="font-display text-[34px] font-black italic uppercase leading-none tracking-tight text-foreground">
               Гараж
             </h1>
             {bikes.length > 1 && (
