@@ -7,6 +7,7 @@ import { useFeedPosts, feedStore, type FeedComment, type FeedPost, type FeedPoll
 import { HellhoundAvatar, HellhoundChip } from "@/components/club/HellhoundPlaque";
 import { IOSSheet } from "@/components/ios/IOSSheet";
 import { useMyProfile } from "@/lib/garage-api";
+import { SPECIAL_PACK_STICKERS, SPECIAL_PACK_COVER } from "@/assets/stickers/special";
 
 
 
@@ -406,7 +407,9 @@ function CommentsPreview({
         <span className="truncate font-display text-[12px] font-bold uppercase italic tracking-tight text-foreground/80">
           {user?.nick ?? last.authorSlug}
         </span>
-        <span className="line-clamp-1 flex-1 text-[13px] text-foreground/70">{last.text}</span>
+        <span className="line-clamp-1 flex-1 text-[13px] text-foreground/70">
+          {last.text.startsWith("::sticker::") ? "🖼 Стикер" : last.text}
+        </span>
       </div>
     </button>
   );
@@ -551,11 +554,30 @@ function CommentItem({
             {comment.time}
           </span>
         </div>
-        <div className="mt-1 inline-block max-w-full rounded-2xl rounded-tl-sm border border-white/[0.05] bg-white/[0.03] px-3 py-2">
-          <p className={`break-words leading-relaxed text-foreground/90 ${large ? "text-[14.5px]" : "text-[13.5px]"}`}>
-            {comment.text}
-          </p>
-        </div>
+        {(() => {
+          const stickerUrl = parseSticker(comment.text);
+          if (stickerUrl) {
+            return (
+              <div className="mt-1">
+                <img
+                  src={stickerUrl}
+                  alt="стикер"
+                  loading="lazy"
+                  decoding="async"
+                  draggable={false}
+                  className="h-32 w-32 select-none object-contain md:h-36 md:w-36"
+                />
+              </div>
+            );
+          }
+          return (
+            <div className="mt-1 inline-block max-w-full rounded-2xl rounded-tl-sm border border-white/[0.05] bg-white/[0.03] px-3 py-2">
+              <p className={`break-words leading-relaxed text-foreground/90 ${large ? "text-[14.5px]" : "text-[13.5px]"}`}>
+                {comment.text}
+              </p>
+            </div>
+          );
+        })()}
         <div className="mt-1.5 flex items-center gap-4 pl-1">
           <button
             type="button"
@@ -677,14 +699,28 @@ function RankAvatar({
 
 // Mock packs — позже заменим на данные из БД
 
+/** Префикс-маркер: текст комментария = стикер-картинка. */
+const STICKER_PREFIX = "::sticker::";
+const asStickerText = (url: string) => `${STICKER_PREFIX}${url}`;
+const parseSticker = (text: string): string | null =>
+  text.startsWith(STICKER_PREFIX) ? text.slice(STICKER_PREFIX.length) : null;
+
 type StickerPack = {
   id: string;
   title: string;
-  cover: string; // emoji-cover пока, заменим на PNG
-  stickers: string[]; // emoji-заглушки, потом URL картинок
+  cover: string; // emoji-cover ИЛИ url картинки
+  coverIsImage?: boolean;
+  stickers: string[]; // emoji-строка ИЛИ "::sticker::<url>"
 };
 
 const STICKER_PACKS: StickerPack[] = [
+  {
+    id: "special",
+    title: "Special pack",
+    cover: SPECIAL_PACK_COVER,
+    coverIsImage: true,
+    stickers: SPECIAL_PACK_STICKERS.map(asStickerText),
+  },
   {
     id: "hellhound-og",
     title: "HELLHOUND OG",
@@ -958,19 +994,30 @@ function StickerPanel({
               {pack.title}
             </div>
             <div className={`grid gap-1 ${large ? "grid-cols-3 sm:grid-cols-4" : "grid-cols-4 sm:grid-cols-5"}`}>
-              {pack.stickers.map((s, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => onPickSticker(s)}
-                  className={`grid aspect-square place-items-center rounded-lg transition-transform active:scale-90 hover:bg-white/[0.04] ${large ? "text-6xl sm:text-7xl" : "text-4xl sm:text-[40px]"}`}
-                >
-                  <span>{s}</span>
-                </button>
-              ))}
-              <div className="col-span-full pt-2 text-center font-mono text-[10px] uppercase tracking-widest text-muted-foreground/50">
-                стикеры-заглушки · скоро PNG
-              </div>
+              {pack.stickers.map((s, i) => {
+                const url = parseSticker(s);
+                return (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => onPickSticker(s)}
+                    className={`grid aspect-square place-items-center rounded-lg transition-transform active:scale-90 hover:bg-white/[0.04] ${url ? "p-1.5" : large ? "text-6xl sm:text-7xl" : "text-4xl sm:text-[40px]"}`}
+                  >
+                    {url ? (
+                      <img
+                        src={url}
+                        alt=""
+                        loading="lazy"
+                        decoding="async"
+                        draggable={false}
+                        className="h-full w-full select-none object-contain"
+                      />
+                    ) : (
+                      <span>{s}</span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           </>
         ) : tab === "emoji" ? (
@@ -992,16 +1039,23 @@ function StickerPanel({
           </div>
         ) : (
           <div className={`grid gap-1 pt-1 ${large ? "grid-cols-4 sm:grid-cols-5" : "grid-cols-5 sm:grid-cols-6"}`}>
-            {recent.map((s, i) => (
-              <button
-                key={`${s}-${i}`}
-                type="button"
-                onClick={() => onPickSticker(s)}
-                className={`grid aspect-square place-items-center rounded-lg transition-transform active:scale-90 hover:bg-white/[0.04] ${large ? "text-5xl sm:text-6xl" : "text-3xl sm:text-4xl"}`}
-              >
-                <span>{s}</span>
-              </button>
-            ))}
+            {recent.map((s, i) => {
+              const url = parseSticker(s);
+              return (
+                <button
+                  key={`${s}-${i}`}
+                  type="button"
+                  onClick={() => onPickSticker(s)}
+                  className={`grid aspect-square place-items-center rounded-lg transition-transform active:scale-90 hover:bg-white/[0.04] ${url ? "p-1.5" : large ? "text-5xl sm:text-6xl" : "text-3xl sm:text-4xl"}`}
+                >
+                  {url ? (
+                    <img src={url} alt="" loading="lazy" decoding="async" draggable={false} className="h-full w-full select-none object-contain" />
+                  ) : (
+                    <span>{s}</span>
+                  )}
+                </button>
+              );
+            })}
           </div>
         )}
       </div>
@@ -1038,7 +1092,11 @@ function StickerPanel({
                   isActive ? "bg-primary/15 text-foreground" : "text-muted-foreground hover:bg-white/[0.05] hover:text-foreground"
                 }`}
               >
-                {p.cover}
+                {p.coverIsImage ? (
+                  <img src={p.cover} alt="" draggable={false} className="h-7 w-7 select-none object-contain" />
+                ) : (
+                  p.cover
+                )}
               </button>
             );
           })}
