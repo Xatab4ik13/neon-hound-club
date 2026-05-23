@@ -400,16 +400,24 @@ function ticketsWord(n: number) {
   return "билетов";
 }
 
-function ProductCard({ product, index }: { product: Product; index: number }) {
+function ProductCard({ product, index }: { product: ShopProductListItem; index: number }) {
   const [hover, setHover] = useState(false);
 
-  const tone = product.badge?.tone ?? "primary";
-  const badgeClass =
-    tone === "primary"
-      ? "bg-primary text-primary-foreground"
-      : tone === "danger"
-        ? "bg-foreground text-background"
-        : "bg-background/80 text-muted-foreground border border-border";
+  const sold = product.stock !== null && product.stock <= 0;
+  const badgeLabel = sold
+    ? "Распродано"
+    : product.kind === "preorder"
+      ? "Предзаказ"
+      : product.kind === "digital"
+        ? "Цифровой"
+        : null;
+  const badgeClass = sold
+    ? "bg-background/80 text-muted-foreground border border-border"
+    : product.kind === "preorder"
+      ? "bg-foreground text-background"
+      : "bg-primary text-primary-foreground";
+
+  const cover = product.images[0];
 
   return (
     <Link
@@ -424,19 +432,23 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
       className="group relative block overflow-hidden rounded-xl border border-border bg-card transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-[0_20px_40px_-20px_hsl(var(--primary)/0.3)]"
     >
       <div className="relative aspect-[4/5] overflow-hidden bg-surface">
-        <img
-          src={product.image}
-          alt={product.name}
-          loading="lazy"
-          className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
-        />
+        {cover ? (
+          <img
+            src={cover}
+            alt={product.title}
+            loading="lazy"
+            className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+          />
+        ) : (
+          <div className="h-full w-full bg-surface" />
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-card/90 via-transparent to-transparent opacity-60" />
 
-        {product.badge && (
+        {badgeLabel && (
           <span
             className={`absolute left-3 top-3 rounded-full px-2.5 py-1 font-mono text-[10px] font-medium uppercase tracking-widest ${badgeClass}`}
           >
-            {product.badge.label}
+            {badgeLabel}
           </span>
         )}
 
@@ -447,7 +459,7 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
             e.preventDefault();
             e.stopPropagation();
           }}
-          aria-label={`Добавить ${product.name} в корзину`}
+          aria-label={`Добавить ${product.title} в корзину`}
           className={`absolute bottom-3 left-3 right-3 flex items-center justify-center gap-2 rounded-full bg-primary py-2.5 text-xs font-semibold uppercase tracking-widest text-primary-foreground transition-all duration-300 ${
             hover
               ? "translate-y-0 opacity-100"
@@ -461,21 +473,21 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
 
       <div className="flex flex-col gap-1 px-4 py-4 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3">
         <h3 className="text-sm font-medium uppercase tracking-wider">
-          {product.name}
+          {product.title}
         </h3>
         <span className="whitespace-nowrap font-mono text-sm text-foreground">
-          {product.price.toLocaleString("ru-RU")} ₽
+          {product.priceRub.toLocaleString("ru-RU")} ₽
         </span>
       </div>
 
-      {product.ticketsBonus && product.ticketsBonus > 0 ? (
+      {product.bonusTickets > 0 ? (
         <div className="flex items-center gap-1.5 border-t border-border/60 px-4 py-2.5">
           <span
             aria-hidden
             className="inline-block h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_8px_hsl(var(--primary)/0.7)]"
           />
           <span className="font-mono text-[11px] uppercase tracking-widest text-primary">
-            +{product.ticketsBonus} {ticketsWord(product.ticketsBonus)} в подарок
+            +{product.bonusTickets} {ticketsWord(product.bonusTickets)} в подарок
           </span>
         </div>
       ) : null}
