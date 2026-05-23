@@ -1017,30 +1017,38 @@ function CommandSheet({
 // ═══════════════════════════════════════════════════════════════════════
 
 function HellAiDesktop() {
-  const [bikes, setBikes] = useState<StoredBike[]>([]);
-  const [activeBikeId, setActiveBikeId] = useState<string>("");
-  useEffect(() => {
-    const list = loadBikes();
-    setBikes(list);
-    setActiveBikeId(list[0]?.id ?? "");
-  }, []);
-  const activeBike = bikes.find((b) => b.id === activeBikeId);
-  const bikeStr = activeBike ? bikeLabel(activeBike) : "твой мото";
+  const {
+    bikes,
+    activeBike,
+    activeBikeId,
+    setActiveBikeId,
+    bikeStr,
+    canAsk: runtimeCanAsk,
+    isGuest,
+    isStaff,
+    isUnlimited,
+    quota,
+    used: serverUsed,
+    tierLabel,
+    refreshStatus,
+  } = useHellAiRuntime();
 
   const [value, setValue] = useState("");
   const [showCmd, setShowCmd] = useState(false);
   const [activeCmd, setActiveCmd] = useState(-1);
   const [isThinking, setIsThinking] = useState(false);
-  const [used, setUsed] = useState(0);
+  const [usedDelta, setUsedDelta] = useState(0);
   const [lastAnswer, setLastAnswer] = useState<{ q: string; a: string } | null>(null);
   const { ref: taRef, adjust } = useAutoResize(60, 200);
   const cmdRef = useRef<HTMLDivElement>(null);
 
-  const quota = QUOTA_BY_TIER[getCurrentTier()];
-  const isUnlimited = quota === "∞";
-  const isGuest = getCurrentTier() === "guest";
-  const left = isUnlimited ? Infinity : (quota as number) - used;
-  const canAsk = !isGuest && (isUnlimited || left > 0) && !!activeBike;
+  const used = serverUsed + usedDelta;
+  const left = isUnlimited ? Infinity : Math.max(0, (quota as number) - used);
+  const canAsk = runtimeCanAsk && (isUnlimited || left > 0 || isStaff);
+
+  useEffect(() => {
+    setUsedDelta(0);
+  }, [serverUsed]);
 
   const [mouse, setMouse] = useState({ x: 0, y: 0 });
   const [focused, setFocused] = useState(false);
@@ -1087,12 +1095,16 @@ function HellAiDesktop() {
     setValue("");
     adjust(true);
     setIsThinking(true);
-    setUsed((n) => n + 1);
+    setUsedDelta((n) => n + 1);
     askHellAi(q, activeBike?.id)
-      .then((a) => setLastAnswer({ q, a }))
+      .then((a) => {
+        setLastAnswer({ q, a });
+        refreshStatus();
+      })
       .catch((err: unknown) => {
         setLastAnswer({ q, a: errorToMessage(err) });
-        setUsed((n) => Math.max(0, n - 1));
+        setUsedDelta((n) => Math.max(0, n - 1));
+        refreshStatus();
       })
       .finally(() => setIsThinking(false));
   }
@@ -1170,11 +1182,13 @@ function HellAiDesktop() {
           <BikeSwitcher
             bikes={bikes}
             activeId={activeBikeId}
+            emptyText={
+              isStaff
+                ? "У блогера может не быть байка в профиле — просто укажи модель в вопросе."
+                : "В гараже пусто — добавь байк в профиле"
+            }
             onPick={(id) => {
               setActiveBikeId(id);
-              const next = [...bikes].sort((a, b) => (a.id === id ? -1 : b.id === id ? 1 : 0));
-              setBikes(next);
-              saveBikes(next);
             }}
           />
 
@@ -1262,7 +1276,7 @@ function HellAiDesktop() {
                 placeholder={
                   isGuest
                     ? "Hell AI доступен с Hell Pass"
-                    : !activeBike
+                    : !activeBike && !isStaff
                       ? "добавь байк в гараж"
                       : !canAsk
                         ? "лимит на месяц исчерпан"
@@ -1292,7 +1306,7 @@ function HellAiDesktop() {
                   <CommandIcon className="h-4 w-4" />
                 </motion.button>
                 <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                  {TIER_LABEL[getCurrentTier()]} ·{" "}
+                  {tierLabel} ·{" "}
                   <span className="tabular-nums text-foreground/80">
                     {isUnlimited ? "∞" : `${used}/${quota}`}
                   </span>
