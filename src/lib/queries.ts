@@ -312,6 +312,15 @@ export async function fetchShopProduct(slug: string) {
   return apiFetch<ShopProduct>(`/api/v1/shop/products/${encodeURIComponent(slug)}`);
 }
 
+export async function fetchShopCategories() {
+  return apiFetch<{ items: ShopCategoryWithSubs[] }>("/api/v1/shop/categories");
+}
+
+export async function fetchShopShowcase() {
+  return apiFetch<{ items: ShopShowcaseItem[] }>("/api/v1/shop/showcase");
+}
+
+
 export async function fetchMyOrders() {
   return apiFetch<{ items: ShopOrder[] }>("/api/v1/shop/orders");
 }
