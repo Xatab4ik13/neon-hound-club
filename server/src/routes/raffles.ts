@@ -218,3 +218,134 @@ export async function adminRafflesRoutes(app: FastifyInstance) {
     return r;
   });
 }
+
+// ---------- ADMIN: PRIZES CRUD ----------
+
+const prizeSchema = z.object({
+  name: z.string().trim().min(1).max(200),
+  qty: z.number().int().min(1).max(10_000).default(1),
+  position: z.number().int().min(0).max(10_000).default(0),
+});
+
+export async function adminRafflePrizesRoutes(app: FastifyInstance) {
+  // GET /api/v1/admin/raffles/:id/prizes
+  app.get<{ Params: { id: string } }>("/:id/prizes", { preHandler: requireAdmin }, async (req) => {
+    return { items: await listRafflePrizes(req.params.id) };
+  });
+
+  // POST /api/v1/admin/raffles/:id/prizes
+  app.post<{ Params: { id: string } }>("/:id/prizes", { preHandler: requireAdmin }, async (req, reply) => {
+    const parsed = prizeSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return reply.code(400).send({ error: "invalid_input", message: parsed.error.issues[0]?.message });
+    }
+    const [r] = await db.select({ id: raffles.id }).from(raffles).where(eq(raffles.id, req.params.id)).limit(1);
+    if (!r) return reply.code(404).send({ error: "not_found" });
+    const [row] = await db
+      .insert(rafflePrizes)
+      .values({ ...parsed.data, raffleId: req.params.id })
+      .returning();
+    return reply.code(201).send(row);
+  });
+
+  // PATCH /api/v1/admin/raffles/prizes/:prizeId
+  app.patch<{ Params: { prizeId: string } }>("/prizes/:prizeId", { preHandler: requireAdmin }, async (req, reply) => {
+    const parsed = prizeSchema.partial().safeParse(req.body);
+    if (!parsed.success) return reply.code(400).send({ error: "invalid_input" });
+    const [row] = await db
+      .update(rafflePrizes)
+      .set(parsed.data)
+      .where(eq(rafflePrizes.id, req.params.prizeId))
+      .returning();
+    if (!row) return reply.code(404).send({ error: "not_found" });
+    return row;
+  });
+
+  // DELETE /api/v1/admin/raffles/prizes/:prizeId
+  app.delete<{ Params: { prizeId: string } }>("/prizes/:prizeId", { preHandler: requireAdmin }, async (req, reply) => {
+    // нельзя удалить приз, по которому уже есть зафиксированные победители
+    const [{ c }] = await db
+      .select({ c: count() })
+      .from(rafflePrizeWinners)
+      .where(eq(rafflePrizeWinners.prizeId, req.params.prizeId));
+    if (c > 0) return reply.code(409).send({ error: "has_winners" });
+    await db.delete(rafflePrizes).where(eq(rafflePrizes.id, req.params.prizeId));
+    return reply.code(204).send();
+  });
+}
+
+// ---------- BLOGGER: ROULETTE ----------
+
+export async function bloggerRafflesRoutes(app: FastifyInstance) {
+  // GET /api/v1/blogger/raffles — список (черновики тоже видны блогеру)
+  app.get("/", { preHandler: requireBloggerOrAdmin }, async () => {
+    const rows = await db.select().from(raffles).orderBy(desc(raffles.createdAt));
+    // для списка добавим totalEntries и totalSlots/totalWinners
+    const items = await Promise.all(
+      rows.map(async (r) => {
+        const [{ totalEntries }] = await db
+          .select({ totalEntries: count() })
+          .from(raffleEntries)
+          .where(eq(raffleEntries.raffleId, r.id));
+        const slots = await db
+          .select({ qty: rafflePrizes.qty })
+          .from(rafflePrizes)
+          .where(eq(rafflePrizes.raffleId, r.id));
+        const totalSlots = slots.reduce((s, p) => s + p.qty, 0);
+        const [{ totalWinners }] = await db
+          .select({ totalWinners: count() })
+          .from(rafflePrizeWinners)
+          .where(eq(rafflePrizeWinners.raffleId, r.id));
+        return { ...r, totalEntries, totalSlots, totalWinners };
+      }),
+    );
+    return { items };
+  });
+
+  // GET /api/v1/blogger/raffles/:id/board — всё для рулетки
+  app.get<{ Params: { id: string } }>("/:id/board", { preHandler: requireBloggerOrAdmin }, async (req, reply) => {
+    const board = await getRaffleBoard(req.params.id);
+    if (!board) return reply.code(404).send({ error: "not_found" });
+    return board;
+  });
+
+  // POST /api/v1/blogger/raffles/:id/prizes/:prizeId/draw — превью кандидата (без сохранения)
+  app.post<{ Params: { id: string; prizeId: string } }>(
+    "/:id/prizes/:prizeId/draw",
+    { preHandler: requireBloggerOrAdmin },
+    async (req, reply) => {
+      const r = await drawRafflePrizeWinner({ raffleId: req.params.id, prizeId: req.params.prizeId });
+      if (!r.ok) {
+        const code = r.reason === "prize_not_found" ? 404 : r.reason === "no_entries" ? 409 : 400;
+        return reply.code(code).send({ error: r.reason });
+      }
+      return r;
+    },
+  );
+
+  // POST /api/v1/blogger/raffles/:id/prizes/:prizeId/confirm — фиксация
+  const confirmSchema = z.object({ entryId: z.string().uuid() });
+  app.post<{ Params: { id: string; prizeId: string } }>(
+    "/:id/prizes/:prizeId/confirm",
+    { preHandler: requireBloggerOrAdmin },
+    async (req, reply) => {
+      const parsed = confirmSchema.safeParse(req.body);
+      if (!parsed.success) return reply.code(400).send({ error: "invalid_input" });
+      const r = await confirmRafflePrizeWinner({
+        raffleId: req.params.id,
+        prizeId: req.params.prizeId,
+        entryId: parsed.data.entryId,
+      });
+      if (!r.ok) {
+        const code =
+          r.reason === "prize_not_found" || r.reason === "entry_not_found"
+            ? 404
+            : r.reason === "prize_exhausted" || r.reason === "entry_already_won"
+              ? 409
+              : 400;
+        return reply.code(code).send({ error: r.reason });
+      }
+      return r;
+    },
+  );
+}
