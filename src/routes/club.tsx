@@ -272,6 +272,7 @@ function MobileDrawer({
 // ---------- Top bar ----------
 
 function TopBar({ onMenu }: { onMenu: () => void }) {
+  const { count: cartCount } = useCart();
   return (
     <header className="sticky top-0 z-40 border-b border-white/[0.06] bg-background/80 backdrop-blur-md">
       <div className="flex h-16 items-center gap-3 px-4 md:px-8">
@@ -296,6 +297,19 @@ function TopBar({ onMenu }: { onMenu: () => void }) {
           </svg>
           <span aria-hidden className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-primary" />
         </button>
+
+        <Link
+          to="/club/cart"
+          aria-label="Корзина"
+          className="relative hidden h-10 w-10 items-center justify-center border border-white/[0.08] text-muted-foreground transition-colors hover:text-primary md:flex"
+        >
+          <ShoppingBag className="h-[18px] w-[18px]" strokeWidth={1.8} />
+          {cartCount > 0 && (
+            <span className="absolute -right-1.5 -top-1.5 grid h-5 min-w-[20px] place-items-center rounded-full bg-primary px-1 font-mono text-[10px] font-bold leading-none text-primary-foreground">
+              {cartCount > 99 ? "99+" : cartCount}
+            </span>
+          )}
+        </Link>
 
         <div className="hidden flex-1 md:block" />
 
