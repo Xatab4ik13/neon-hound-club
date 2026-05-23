@@ -175,7 +175,7 @@ function MePage() {
   );
 }
 
-function PassRow({ tier }: { tier: ReturnType<typeof usePassState>["tierInfo"] }) {
+function PassRow({ tier }: { tier: Tier | null }) {
   if (!tier) {
     return (
       <IOSListRow
