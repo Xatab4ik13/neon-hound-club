@@ -1,8 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Header } from "@/components/brand/Header";
 import { Footer } from "@/components/brand/Footer";
-import { PRODUCTS, type Product } from "@/data/products";
+import {
+  fetchShopCategories,
+  fetchShopProducts,
+  qk,
+  type ShopProductListItem,
+} from "@/lib/queries";
 
 export const Route = createFileRoute("/shop/")({
   head: () => ({
@@ -24,66 +30,13 @@ export const Route = createFileRoute("/shop/")({
   component: ShopPage,
 });
 
-type Subcategory = { slug: string; name: string; count: number };
-type Category = {
-  slug: string;
+type SubcategoryView = { slug: string; name: string; count: number };
+type CategoryView = {
+  slug: string; // category id (или "all")
   name: string;
   count: number;
-  sub: Subcategory[];
+  sub: SubcategoryView[];
 };
-
-const CATEGORIES: Category[] = [
-  { slug: "all", name: "Всё", count: 24, sub: [] },
-  {
-    slug: "apparel",
-    name: "Одежда",
-    count: 12,
-    sub: [
-      { slug: "hoodies", name: "Худи", count: 4 },
-      { slug: "tees", name: "Футболки", count: 5 },
-      { slug: "longsleeves", name: "Лонгсливы", count: 2 },
-      { slug: "jackets", name: "Куртки", count: 1 },
-    ],
-  },
-  {
-    slug: "gear",
-    name: "Экипировка",
-    count: 7,
-    sub: [
-      { slug: "gloves", name: "Перчатки", count: 3 },
-      { slug: "elbows", name: "Налокотники", count: 2 },
-      { slug: "back", name: "Защита спины", count: 1 },
-      { slug: "helmets", name: "Шлемы", count: 1 },
-    ],
-  },
-  {
-    slug: "accessories",
-    name: "Аксессуары",
-    count: 5,
-    sub: [
-      { slug: "caps", name: "Кепки", count: 2 },
-      { slug: "socks", name: "Носки", count: 1 },
-      { slug: "bags", name: "Сумки", count: 2 },
-    ],
-  },
-  {
-    slug: "garage",
-    name: "Гараж",
-    count: 6,
-    sub: [
-      { slug: "posters", name: "Постеры", count: 2 },
-      { slug: "stickers", name: "Стикеры", count: 3 },
-      { slug: "keychains", name: "Брелоки", count: 1 },
-    ],
-  },
-  {
-    slug: "digital",
-    name: "Цифровые товары",
-    count: 6,
-    sub: [{ slug: "postcards", name: "Открытки Hell", count: 6 }],
-  },
-];
-
 
 const SORTS = [
   { id: "new", label: "Новые" },
@@ -94,11 +47,36 @@ const SORTS = [
 function ShopPage() {
   const [activeCat, setActiveCat] = useState<string>("all");
   const [activeSub, setActiveSub] = useState<string | null>(null);
-  const [openCats, setOpenCats] = useState<Record<string, boolean>>({
-    apparel: true,
-  });
+  const [openCats, setOpenCats] = useState<Record<string, boolean>>({});
   const [sort, setSort] = useState("new");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const { data: productsData } = useQuery({
+    queryKey: qk.shopProducts,
+    queryFn: fetchShopProducts,
+  });
+  const { data: catsData } = useQuery({
+    queryKey: qk.shopCategories,
+    queryFn: fetchShopCategories,
+  });
+
+  const products = productsData?.items ?? [];
+
+  // Категории дерево из бэка + "Всё" сверху
+  const CATEGORIES: CategoryView[] = useMemo(() => {
+    const list = catsData?.items ?? [];
+    const byCat = (catId: string) => products.filter((p) => p.categoryId === catId);
+    const bySub = (subId: string) => products.filter((p) => p.subcategoryId === subId);
+    return [
+      { slug: "all", name: "Всё", count: products.length, sub: [] },
+      ...list.map((c) => ({
+        slug: c.id,
+        name: c.name,
+        count: byCat(c.id).length,
+        sub: c.subs.map((s) => ({ slug: s.id, name: s.name, count: bySub(s.id).length })),
+      })),
+    ];
+  }, [catsData, products]);
 
   useEffect(() => {
     if (!sidebarOpen) return;
@@ -110,15 +88,15 @@ function ShopPage() {
   }, [sidebarOpen]);
 
   const filtered = useMemo(() => {
-    let list = PRODUCTS.filter((p) => {
+    let list = products.filter((p) => {
       if (activeCat === "all") return true;
-      if (activeSub) return p.category === activeCat && p.sub === activeSub;
-      return p.category === activeCat;
+      if (activeSub) return p.categoryId === activeCat && p.subcategoryId === activeSub;
+      return p.categoryId === activeCat;
     });
-    if (sort === "price-asc") list = [...list].sort((a, b) => a.price - b.price);
-    if (sort === "price-desc") list = [...list].sort((a, b) => b.price - a.price);
+    if (sort === "price-asc") list = [...list].sort((a, b) => a.priceRub - b.priceRub);
+    if (sort === "price-desc") list = [...list].sort((a, b) => b.priceRub - a.priceRub);
     return list;
-  }, [activeCat, activeSub, sort]);
+  }, [products, activeCat, activeSub, sort]);
 
   const toggleCat = (slug: string) => {
     setOpenCats((s) => ({ ...s, [slug]: !s[slug] }));
@@ -139,6 +117,8 @@ function ShopPage() {
 
   const activeCategoryObj = CATEGORIES.find((c) => c.slug === activeCat);
   const activeSubObj = activeCategoryObj?.sub.find((s) => s.slug === activeSub);
+
+
 
   return (
     <div className="min-h-screen bg-background text-foreground">
