@@ -417,7 +417,7 @@ function ProductCard({ product, index }: { product: ShopProductListItem; index: 
       ? "bg-foreground text-background"
       : "bg-primary text-primary-foreground";
 
-  const cover = product.images[0];
+  const cover = product.images[0] ?? (product.slug === "stickerpack-special" ? SPECIAL_PACK_COVER : undefined);
 
   return (
     <Link
