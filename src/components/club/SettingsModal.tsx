@@ -337,7 +337,7 @@ function ProfileTab({ mobile }: { mobile?: boolean }) {
   const updateMut = useUpdateMyProfile();
 
   const me = meQ.data;
-  const primary = bikesQ.data?.find((b) => b.isPrimary) ?? bikesQ.data?.[0] ?? null;
+  const bikes = bikesQ.data ?? [];
 
   const [city, setCity] = useState("");
   const [phone, setPhone] = useState("");
@@ -345,6 +345,9 @@ function ProfileTab({ mobile }: { mobile?: boolean }) {
   const [telegram, setTelegram] = useState("");
   const [instagram, setInstagram] = useState("");
   const [youtube, setYoutube] = useState("");
+
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement | null>(null);
 
   const hydrated = useRef(false);
   useEffect(() => {
@@ -357,6 +360,32 @@ function ProfileTab({ mobile }: { mobile?: boolean }) {
     setYoutube(me.youtube ?? "");
     hydrated.current = true;
   }, [me]);
+
+  const onPickAvatar = () => fileRef.current?.click();
+
+  const onAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Нужен файл-изображение");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Максимум 10 МБ");
+      return;
+    }
+    setAvatarUploading(true);
+    try {
+      const url = await uploadFileToS3(file, "avatar");
+      await updateMut.mutateAsync({ avatarUrl: url });
+      toast.success("Аватар обновлён");
+    } catch (err) {
+      toast.error((err as Error).message || "Не удалось загрузить аватар");
+    } finally {
+      setAvatarUploading(false);
+    }
+  };
 
   const onSave = async () => {
     try {
@@ -375,11 +404,40 @@ function ProfileTab({ mobile }: { mobile?: boolean }) {
   };
 
   if (meQ.isLoading) return <LoadingBlock />;
-  if (!me) return <div className="px-4 py-6 text-sm text-muted-foreground">Не удалось загрузить профиль.</div>;
+  if (meQ.isError || !me) return <ErrorBlock error={meQ.error} onRetry={() => meQ.refetch()} />;
+
+  // Скрытый input для выбора файла — общий для mobile и desktop.
+  const hiddenFileInput = (
+    <input
+      ref={fileRef}
+      type="file"
+      accept="image/*"
+      className="hidden"
+      onChange={onAvatarChange}
+    />
+  );
 
   if (mobile) {
     return (
       <>
+        {hiddenFileInput}
+
+        <IOSListSection title="Фото профиля" footer="JPG/PNG до 10 МБ.">
+          <IOSListRow
+            label={me.avatarUrl ? "Заменить фото" : "Загрузить фото"}
+            description={avatarUploading ? "Загружаем…" : "Видно другим в профиле"}
+            trailing={
+              avatarUploading ? (
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              ) : (
+                <Avatar url={me.avatarUrl} size={44} />
+              )
+            }
+            chevron={!avatarUploading}
+            onClick={avatarUploading ? undefined : onPickAvatar}
+          />
+        </IOSListSection>
+
         <IOSListSection title="Профиль" footer="Ник менять нельзя. Остальное — в любой момент.">
           <IOSField label="Ник">
             <Input value={me.nick} readOnly disabled />
@@ -408,25 +466,40 @@ function ProfileTab({ mobile }: { mobile?: boolean }) {
         </IOSListSection>
 
         <IOSListSection
-          title="Основной байк"
-          footer="Полное управление гаражом — на странице «Гараж»."
+          title="Мои байки"
+          footer="Тап по байку — открывается «Гараж» для редактирования."
         >
-          {primary ? (
+          {bikes.length === 0 ? (
             <IOSListRow
-              icon={<Bike className="h-[18px] w-[18px]" />}
-              label={`${primary.brand} ${primary.model}`}
-              description={primary.year ? `${primary.year}` : "Год не указан"}
-              to="/club/garage"
-              chevron
-            />
-          ) : (
-            <IOSListRow
-              icon={<Bike className="h-[18px] w-[18px]" />}
+              icon={<Plus className="h-[18px] w-[18px]" />}
               label="Добавить байк"
               description="В гараже пока пусто"
               to="/club/garage"
               chevron
             />
+          ) : (
+            <>
+              {bikes.map((b: ServerBike) => (
+                <IOSListRow
+                  key={b.id}
+                  icon={<Bike className="h-[18px] w-[18px]" />}
+                  label={`${b.brand} ${b.model}`}
+                  description={
+                    [b.isPrimary ? "Основной" : null, b.year ? String(b.year) : null]
+                      .filter(Boolean)
+                      .join(" · ") || undefined
+                  }
+                  to="/club/garage"
+                  chevron
+                />
+              ))}
+              <IOSListRow
+                icon={<Plus className="h-[18px] w-[18px]" />}
+                label="Добавить байк"
+                to="/club/garage"
+                chevron
+              />
+            </>
           )}
         </IOSListSection>
 
@@ -441,7 +514,30 @@ function ProfileTab({ mobile }: { mobile?: boolean }) {
 
   return (
     <div className="space-y-8">
+      {hiddenFileInput}
+
       <div>
+        <SectionTitle>Фото профиля</SectionTitle>
+        <div className="flex items-center gap-4">
+          <Avatar url={me.avatarUrl} size={72} />
+          <div className="flex flex-col gap-2">
+            <button
+              type="button"
+              onClick={onPickAvatar}
+              disabled={avatarUploading}
+              className="inline-flex items-center gap-2 border border-white/15 px-4 py-2 font-mono text-[10px] font-bold uppercase tracking-widest text-foreground hover:bg-white/[0.04] disabled:opacity-50"
+            >
+              {avatarUploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Camera className="h-3 w-3" />}
+              {me.avatarUrl ? "Заменить" : "Загрузить"}
+            </button>
+            <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+              JPG/PNG, до 10 МБ
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="border-t border-white/[0.06] pt-6">
         <SectionTitle>Профиль</SectionTitle>
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Ник">
@@ -469,15 +565,41 @@ function ProfileTab({ mobile }: { mobile?: boolean }) {
       </div>
 
       <div className="border-t border-white/[0.06] pt-6">
-        <SectionTitle>Основной байк</SectionTitle>
-        {primary ? (
-          <p className="text-sm text-foreground">{primary.brand} {primary.model}{primary.year ? ` · ${primary.year}` : ""}</p>
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <SectionTitle>Мои байки</SectionTitle>
+          <Link
+            to="/club/garage"
+            className="font-mono text-[10px] font-bold uppercase tracking-widest text-primary hover:opacity-80"
+          >
+            Открыть гараж →
+          </Link>
+        </div>
+        {bikes.length === 0 ? (
+          <p className="text-sm text-muted-foreground">В гараже пока пусто. Добавь первый байк в «Гараже».</p>
         ) : (
-          <p className="text-sm text-muted-foreground">В гараже пока пусто.</p>
+          <ul className="divide-y divide-white/[0.06] border border-white/[0.06]">
+            {bikes.map((b) => (
+              <li key={b.id} className="flex items-center justify-between gap-3 px-4 py-3">
+                <div className="min-w-0">
+                  <div className="truncate text-sm text-foreground">
+                    {b.brand} {b.model}{b.year ? ` · ${b.year}` : ""}
+                  </div>
+                  {b.isPrimary && (
+                    <div className="font-mono text-[10px] uppercase tracking-wider text-primary">
+                      Основной
+                    </div>
+                  )}
+                </div>
+                <Link
+                  to="/club/garage"
+                  className="font-mono text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground"
+                >
+                  Изменить
+                </Link>
+              </li>
+            ))}
+          </ul>
         )}
-        <p className="mt-3 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-          Управление гаражом — на странице <Bike className="-mt-0.5 inline h-3 w-3" /> «Мой гараж».
-        </p>
       </div>
 
       <div className="flex justify-end border-t border-white/[0.06] pt-5">
