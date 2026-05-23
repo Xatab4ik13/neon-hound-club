@@ -790,6 +790,8 @@ function CommentComposer({
   const [recent, setRecent] = useState<string[]>(() => loadRecent());
   const myProfileQ = useMyProfile();
   const myProfile = myProfileQ.data;
+  const ownedPacksQ = useMyStickerPacks(!!myProfile);
+  const ownedPacks = ownedPacksQ.data ?? [];
   const meNick = myProfile?.nick ?? PUBLIC_USERS[ME_SLUG]?.nick ?? "";
   const meInitials = (() => {
     const t = meNick.trim();
