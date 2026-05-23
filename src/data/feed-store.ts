@@ -181,6 +181,7 @@ function mapPost(p: FeedPostWithComments): FeedPost {
     role: p.author.role,
     avatarUrl: p.author.avatarUrl,
     city: p.author.city,
+    rankId: p.author.rankId,
   });
   return {
     id: p.id,
