@@ -460,6 +460,7 @@ export async function postsRoutes(app: FastifyInstance) {
       refId: row.id,
       idempotent: true,
     }).catch(() => null);
+    publishFeedEvent("post.created", { postId: row.id });
     return row;
   });
 
