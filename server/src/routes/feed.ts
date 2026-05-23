@@ -98,6 +98,7 @@ async function hydratePosts(rows: typeof posts.$inferSelect[], viewerId: string 
         createdAt: postComments.createdAt,
         authorId: postComments.authorId,
         nick: users.nick,
+        role: users.role,
         avatarUrl: profiles.avatarUrl,
       })
       .from(postComments)
