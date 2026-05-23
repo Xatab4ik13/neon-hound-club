@@ -1,8 +1,17 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { and, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
-import { products, orders, orderItems, ORDER_STATUSES } from "../db/schema/shop.js";
+import {
+  products,
+  orders,
+  orderItems,
+  ORDER_STATUSES,
+  PRODUCT_KINDS,
+  shopCategories,
+  shopSubcategories,
+  shopShowcase,
+} from "../db/schema/shop.js";
 import { requireAuth, requireAdmin, type SessionPayload } from "../lib/auth.js";
 import {
   decrementStockIfTracked,
