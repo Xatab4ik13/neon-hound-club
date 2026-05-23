@@ -1373,10 +1373,12 @@ function HellAiDesktop() {
 function BikeSwitcher({
   bikes,
   activeId,
+  emptyText,
   onPick,
 }: {
   bikes: StoredBike[];
   activeId: string;
+  emptyText?: string;
   onPick: (id: string) => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -1397,7 +1399,7 @@ function BikeSwitcher({
     return (
       <div className="mx-auto flex w-fit items-center gap-2 rounded-full border border-white/[0.06] bg-white/[0.02] px-3 py-1.5 text-xs text-muted-foreground backdrop-blur-xl">
         <BikeIcon className="h-3.5 w-3.5" />
-        В гараже пусто — добавь байк в профиле
+        {emptyText ?? "В гараже пусто — добавь байк в профиле"}
       </div>
     );
   }
