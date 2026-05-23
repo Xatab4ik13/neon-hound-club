@@ -55,7 +55,11 @@ export async function createPassPurchase(userId: string, tier: PassTier) {
 
 /**
  * Активировать пасс (после оплаты).
- * - status -> 'active', paid_at = now(), expires_at = now() + 30 дней.
+ * - status -> 'active', paid_at = now()
+ * - expires_at = max(active.expires_at, now) + 30 дней
+ *   (если у юзера уже есть активный пасс — продлеваем от его остатка;
+ *    апгрейд = тот же механизм, плюс новый пакет билетов)
+ * - предыдущий активный пасс юзера помечается как 'superseded'
  * - начислить tickets_granted в ledger идемпотентно (refType='pass_purchase', refId=purchase.id).
  * Безопасно вызывать повторно (двойной вебхук).
  */
@@ -66,12 +70,38 @@ export async function activatePassPurchase(purchaseId: string): Promise<{ ok: bo
 
   if (p.status !== "active") {
     const now = new Date();
-    const expiresAt = new Date(now.getTime() + PASS_DURATION_DAYS * 24 * 60 * 60 * 1000);
+    // База для отсчёта: остаток текущего активного пасса (если есть), иначе сейчас.
+    const [otherActive] = await db
+      .select()
+      .from(passPurchases)
+      .where(
+        and(
+          eq(passPurchases.userId, p.userId),
+          eq(passPurchases.status, "active"),
+          gt(passPurchases.expiresAt, now),
+          ne(passPurchases.id, p.id),
+        ),
+      )
+      .orderBy(desc(passPurchases.expiresAt))
+      .limit(1);
+
+    const base = otherActive?.expiresAt && otherActive.expiresAt > now ? otherActive.expiresAt : now;
+    const expiresAt = new Date(base.getTime() + PASS_DURATION_DAYS * 24 * 60 * 60 * 1000);
+
     await db
       .update(passPurchases)
       .set({ status: "active", paidAt: now, expiresAt })
       .where(eq(passPurchases.id, purchaseId));
+
+    // Старый активный пасс помечаем как замещённый.
+    if (otherActive) {
+      await db
+        .update(passPurchases)
+        .set({ status: "superseded" })
+        .where(eq(passPurchases.id, otherActive.id));
+    }
   }
+
 
   if (p.ticketsGranted > 0) {
     await ticketCredit({
