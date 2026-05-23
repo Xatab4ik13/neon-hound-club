@@ -16,4 +16,7 @@ export const SPECIAL_PACK_STICKERS: string[] = [
   s01, s02, s03, s04, s05, s07, s09, s11, s12, s13,
 ];
 
-export const SPECIAL_PACK_COVER = s01;
+import cover from "./cover.webp";
+
+// Превью-обложка пака (сетка 3×3 из стикеров) — лёгкий webp ~50 KB.
+export const SPECIAL_PACK_COVER = cover;
