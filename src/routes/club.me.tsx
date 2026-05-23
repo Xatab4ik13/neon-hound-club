@@ -93,6 +93,7 @@ function MePage() {
   const passQ = useQuery({ queryKey: ["pass", "me"], queryFn: fetchPassMe, staleTime: 30_000, retry: false });
   const activeTierSlug = passQ.data?.active?.status === "active" ? passQ.data.active.tier : null;
   const tierInfo: Tier | null = activeTierSlug ? TIERS.find((t) => t.slug === activeTierSlug) ?? null : null;
+  const passDaysLeft = passQ.data?.daysLeft ?? null;
   const { signOut } = useViewer();
 
   const [confirmLogout, setConfirmLogout] = useState(false);
@@ -115,7 +116,7 @@ function MePage() {
       <section aria-label="Hell Pass" className="mt-6 md:mt-10">
         {isMobile ? (
           <IOSListSection title="Подписка">
-            <PassRow tier={tierInfo} />
+            <PassRow tier={tierInfo} daysLeft={passDaysLeft} />
             <IOSListRow
               icon={<ImageIcon className="h-5 w-5" />}
               label="Фон профиля"
@@ -130,7 +131,7 @@ function MePage() {
               Подписка
             </h2>
             <div className="space-y-2">
-              <PassDesktopRow tier={tierInfo} />
+              <PassDesktopRow tier={tierInfo} daysLeft={passDaysLeft} />
               <ActionRow
                 icon={<ImageIcon className="h-5 w-5" />}
                 label="Фон профиля"
@@ -208,7 +209,15 @@ function MePage() {
   );
 }
 
-function PassRow({ tier }: { tier: Tier | null }) {
+function pluralDays(n: number) {
+  const m10 = n % 10;
+  const m100 = n % 100;
+  if (m10 === 1 && m100 !== 11) return "день";
+  if (m10 >= 2 && m10 <= 4 && (m100 < 10 || m100 >= 20)) return "дня";
+  return "дней";
+}
+
+function PassRow({ tier, daysLeft }: { tier: Tier | null; daysLeft: number | null }) {
   if (!tier) {
     return (
       <IOSListRow
@@ -220,6 +229,10 @@ function PassRow({ tier }: { tier: Tier | null }) {
       />
     );
   }
+  const desc =
+    daysLeft != null
+      ? `Осталось ${daysLeft} ${pluralDays(daysLeft)} · ${tier.tagline}`
+      : tier.tagline;
   return (
     <IOSListRow
       icon={<Gem className="h-5 w-5" style={{ color: tier.color }} />}
@@ -238,14 +251,14 @@ function PassRow({ tier }: { tier: Tier | null }) {
           </span>
         </span>
       }
-      description={tier.tagline}
+      description={desc}
       chevron
       to={`/club/hell-pass/${tier.slug}`}
     />
   );
 }
 
-function PassDesktopRow({ tier }: { tier: Tier | null }) {
+function PassDesktopRow({ tier, daysLeft }: { tier: Tier | null; daysLeft: number | null }) {
   if (!tier) {
     return (
       <ActionRow
@@ -280,6 +293,11 @@ function PassDesktopRow({ tier }: { tier: Tier | null }) {
           >
             {tier.name}
           </span>
+          {daysLeft != null && (
+            <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
+              · осталось {daysLeft} {pluralDays(daysLeft)}
+            </span>
+          )}
         </span>
         <span className="mt-0.5 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
           {tier.tagline}

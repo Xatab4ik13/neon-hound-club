@@ -2,7 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { desc, eq } from "drizzle-orm";
 import { db } from "../db/client.js";
-import { passPurchases, PASS_CONFIG, PASS_TIERS } from "../db/schema/pass.js";
+import { passPurchases, PASS_CONFIG, PASS_DURATION_DAYS, PASS_TIERS } from "../db/schema/pass.js";
 import { requireAuth, requireAdmin, type SessionPayload } from "../lib/auth.js";
 import {
   activatePassPurchase,
@@ -10,6 +10,7 @@ import {
   expireOldPasses,
   getActivePass,
   getPassHistory,
+  PassPurchaseError,
 } from "../lib/pass.js";
 
 // ---------- USER ----------
@@ -32,12 +33,17 @@ export async function passRoutes(app: FastifyInstance) {
     };
   });
 
-  // GET /api/v1/pass/me — текущий активный пасс + история
+  // GET /api/v1/pass/me — текущий активный пасс + история + daysLeft
   app.get("/me", { preHandler: requireAuth }, async (req) => {
     const session = req.user as SessionPayload;
     const active = await getActivePass(session.sub);
     const history = await getPassHistory(session.sub, 20);
-    return { active, history };
+    let daysLeft: number | null = null;
+    if (active?.expiresAt) {
+      const ms = new Date(active.expiresAt).getTime() - Date.now();
+      daysLeft = Math.max(0, Math.ceil(ms / (24 * 60 * 60 * 1000)));
+    }
+    return { active, history, daysLeft, durationDays: PASS_DURATION_DAYS };
   });
 
   // POST /api/v1/pass/purchase — создать запись pending_payment
@@ -48,12 +54,19 @@ export async function passRoutes(app: FastifyInstance) {
       return reply.code(400).send({ error: "invalid_input", message: parsed.error.issues[0]?.message });
     }
     const session = req.user as SessionPayload;
-    const purchase = await createPassPurchase(session.sub, parsed.data.tier);
-    return reply.code(201).send({
-      purchase,
-      // TODO: тут вернём ссылку на оплату, когда подключим ЮKassa / CloudPayments
-      paymentUrl: null,
-    });
+    try {
+      const purchase = await createPassPurchase(session.sub, parsed.data.tier);
+      return reply.code(201).send({
+        purchase,
+        // TODO: тут вернём ссылку на оплату, когда подключим ЮKassa / CloudPayments
+        paymentUrl: null,
+      });
+    } catch (e) {
+      if (e instanceof PassPurchaseError) {
+        return reply.code(409).send({ error: e.code, message: e.message });
+      }
+      throw e;
+    }
   });
 }
 
@@ -66,7 +79,7 @@ export async function adminPassRoutes(app: FastifyInstance) {
   app.get("/list", { preHandler: requireAdmin }, async (req) => {
     const q = z
       .object({
-        status: z.enum(["pending_payment", "active", "expired", "cancelled"]).optional(),
+        status: z.enum(["pending_payment", "active", "expired", "cancelled", "superseded"]).optional(),
         limit: z.coerce.number().int().min(1).max(200).default(50),
       })
       .parse(req.query ?? {});

@@ -1,15 +1,44 @@
-import { and, desc, eq, gt, sql } from "drizzle-orm";
+import { and, desc, eq, gt, ne, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { passPurchases, PASS_CONFIG, PASS_DURATION_DAYS, type PassTier } from "../db/schema/pass.js";
 import { ticketCredit } from "./tickets.js";
 import { awardXp } from "./xp.js";
-import { tryCompleteQuest } from "./quests.js";
+
+/** Иерархия тиров. Чем выше число — тем выше тир. Используется для запрета даунгрейда. */
+export const TIER_RANK: Record<PassTier, number> = {
+  silver: 1,
+  gold: 2,
+  platinum: 3,
+};
+
+export class PassPurchaseError extends Error {
+  code: string;
+  constructor(code: string, message: string) {
+    super(message);
+    this.code = code;
+  }
+}
 
 /**
  * Создать запись о покупке пасса (pending_payment).
+ * Правила:
+ *  - если у юзера активен пасс ВЫШЕ тиром — запрещаем (downgrade_not_allowed).
+ *  - тот же тир разрешён = продление (+30 дней к остатку при активации).
+ *  - тир выше разрешён = апгрейд (+30 дней к остатку, новый пакет билетов).
  * Реальная оплата подключится позже — пока админ активирует руками или вебхуком.
  */
 export async function createPassPurchase(userId: string, tier: PassTier) {
+  const active = await getActivePass(userId);
+  if (active) {
+    const activeRank = TIER_RANK[active.tier as PassTier] ?? 0;
+    const newRank = TIER_RANK[tier];
+    if (newRank < activeRank) {
+      throw new PassPurchaseError(
+        "downgrade_not_allowed",
+        `У тебя уже активен ${(active.tier as string).toUpperCase()} — нельзя купить тир ниже. Дождись окончания текущего пасса.`,
+      );
+    }
+  }
   const cfg = PASS_CONFIG[tier];
   const [row] = await db
     .insert(passPurchases)
@@ -26,7 +55,11 @@ export async function createPassPurchase(userId: string, tier: PassTier) {
 
 /**
  * Активировать пасс (после оплаты).
- * - status -> 'active', paid_at = now(), expires_at = now() + 30 дней.
+ * - status -> 'active', paid_at = now()
+ * - expires_at = max(active.expires_at, now) + 30 дней
+ *   (если у юзера уже есть активный пасс — продлеваем от его остатка;
+ *    апгрейд = тот же механизм, плюс новый пакет билетов)
+ * - предыдущий активный пасс юзера помечается как 'superseded'
  * - начислить tickets_granted в ledger идемпотентно (refType='pass_purchase', refId=purchase.id).
  * Безопасно вызывать повторно (двойной вебхук).
  */
@@ -37,12 +70,38 @@ export async function activatePassPurchase(purchaseId: string): Promise<{ ok: bo
 
   if (p.status !== "active") {
     const now = new Date();
-    const expiresAt = new Date(now.getTime() + PASS_DURATION_DAYS * 24 * 60 * 60 * 1000);
+    // База для отсчёта: остаток текущего активного пасса (если есть), иначе сейчас.
+    const [otherActive] = await db
+      .select()
+      .from(passPurchases)
+      .where(
+        and(
+          eq(passPurchases.userId, p.userId),
+          eq(passPurchases.status, "active"),
+          gt(passPurchases.expiresAt, now),
+          ne(passPurchases.id, p.id),
+        ),
+      )
+      .orderBy(desc(passPurchases.expiresAt))
+      .limit(1);
+
+    const base = otherActive?.expiresAt && otherActive.expiresAt > now ? otherActive.expiresAt : now;
+    const expiresAt = new Date(base.getTime() + PASS_DURATION_DAYS * 24 * 60 * 60 * 1000);
+
     await db
       .update(passPurchases)
       .set({ status: "active", paidAt: now, expiresAt })
       .where(eq(passPurchases.id, purchaseId));
+
+    // Старый активный пасс помечаем как замещённый.
+    if (otherActive) {
+      await db
+        .update(passPurchases)
+        .set({ status: "superseded" })
+        .where(eq(passPurchases.id, otherActive.id));
+    }
   }
+
 
   if (p.ticketsGranted > 0) {
     await ticketCredit({

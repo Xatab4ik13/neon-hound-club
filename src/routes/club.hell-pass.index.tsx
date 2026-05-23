@@ -39,14 +39,21 @@ function HellPassPage() {
         <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border border-primary/30 bg-primary/[0.05] px-4 py-3">
           <div className="font-mono text-[11px] uppercase tracking-widest text-foreground">
             Активен: <span className="text-primary">{active.tier.toUpperCase()}</span>
-            {active.expiresAt && (
+            {passQ.data?.daysLeft != null && (
               <span className="ml-2 text-muted-foreground">
-                до {new Date(active.expiresAt).toLocaleDateString("ru-RU")}
+                осталось {passQ.data.daysLeft} {pluralDays(passQ.data.daysLeft)}
+              </span>
+            )}
+            {active.expiresAt && (
+              <span className="ml-2 text-muted-foreground/70">
+                · до {new Date(active.expiresAt).toLocaleDateString("ru-RU")}
               </span>
             )}
           </div>
           <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-            Можно купить ещё один — продлит срок
+            {active.tier === "platinum"
+              ? "Платинум — выше уже некуда. Можно продлить."
+              : "Тот же тир продлит срок, выше — апгрейд с продлением."}
           </span>
         </div>
       )}
@@ -58,6 +65,14 @@ function HellPassPage() {
       </div>
     </main>
   );
+}
+
+function pluralDays(n: number) {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return "день";
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return "дня";
+  return "дней";
 }
 
 // ---------- Hero ----------

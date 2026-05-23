@@ -3,13 +3,15 @@
 
 import { useState } from "react";
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Check, Loader2 } from "lucide-react";
 import { hhToast as toast } from "@/lib/hh-toast";
 import { getTier, type Perk, type Tier } from "@/data/hell-pass";
-import { purchasePass, qk, type PassTier } from "@/lib/queries";
+import { fetchPassMe, purchasePass, qk, type PassTier } from "@/lib/queries";
 import { useViewer } from "@/hooks/use-viewer";
 import { ApiError } from "@/lib/api";
+
+const TIER_RANK: Record<PassTier, number> = { silver: 1, gold: 2, platinum: 3 };
 
 export const Route = createFileRoute("/club/hell-pass/$tier")({
   loader: ({ params }) => {
@@ -66,6 +68,19 @@ function TierDetailPage() {
   const qc = useQueryClient();
   const [purchaseId, setPurchaseId] = useState<string | null>(null);
 
+  const passQ = useQuery({
+    queryKey: qk.passMe,
+    queryFn: fetchPassMe,
+    enabled: isAuthed,
+  });
+  const active = passQ.data?.active ?? null;
+  const daysLeft = passQ.data?.daysLeft ?? null;
+  const activeRank = active ? TIER_RANK[active.tier] : 0;
+  const targetRank = TIER_RANK[tier.slug as PassTier];
+  const isSameTier = active?.tier === tier.slug;
+  const isUpgrade = active && targetRank > activeRank;
+  const isDowngrade = active && targetRank < activeRank;
+
   const purchaseM = useMutation({
     mutationFn: () => purchasePass(tier.slug as PassTier),
     onSuccess: (res) => {
@@ -87,6 +102,20 @@ function TierDetailPage() {
 
   const isGold = tier.recommended;
   const isPlatinum = tier.ultimate;
+
+  const ctaLabel = !isAuthed
+    ? "Войти и купить"
+    : purchaseId
+      ? "Заявка создана"
+      : isDowngrade
+        ? `У тебя уже выше — ${active!.tier.toUpperCase()}`
+        : isSameTier
+          ? "Продлить на 30 дней"
+          : isUpgrade
+            ? `Апгрейд до ${tier.name}`
+            : `Купить ${tier.name}`;
+  const ctaDisabled = !isAuthed || purchaseM.isPending || Boolean(isDowngrade);
+
 
   return (
     <main className="mx-auto w-full max-w-5xl px-4 py-8 md:px-8 md:py-12">
@@ -196,9 +225,16 @@ function TierDetailPage() {
                 </span>
               </div>
 
+              {active && (
+                <div className="mt-4 border border-white/10 bg-white/[0.03] px-3 py-2 font-mono text-[10px] uppercase tracking-widest text-white/70">
+                  Сейчас активен <span className="text-primary">{active.tier.toUpperCase()}</span>
+                  {daysLeft != null && <> · осталось {daysLeft} дн.</>}
+                </div>
+              )}
+
               <button
                 type="button"
-                disabled={!isAuthed || purchaseM.isPending}
+                disabled={ctaDisabled}
                 onClick={() => {
                   if (!isAuthed) {
                     navigate({ to: "/login", search: { redirect: `/club/hell-pass/${tier.slug}` } });
@@ -206,7 +242,7 @@ function TierDetailPage() {
                   }
                   purchaseM.mutate();
                 }}
-                className="mt-6 flex w-full items-center justify-center gap-2 px-6 py-3.5 text-center font-display text-sm font-bold uppercase tracking-widest transition-all hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100"
+                className="mt-4 flex w-full items-center justify-center gap-2 px-6 py-3.5 text-center font-display text-sm font-bold uppercase tracking-widest transition-all hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100"
                 style={{
                   background: isGold
                     ? "linear-gradient(135deg, #ffb648 0%, #925f1b 100%)"
@@ -221,15 +257,17 @@ function TierDetailPage() {
                 }}
               >
                 {purchaseM.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-                {!isAuthed
-                  ? "Войти и купить"
-                  : purchaseId
-                    ? "Заявка создана"
-                    : `Купить ${tier.name}`}
+                {ctaLabel}
               </button>
 
               <div className="mt-4 font-mono text-[10px] uppercase tracking-widest text-white/40">
-                Разовый доступ на 30 дней с момента активации. Без автопродления.
+                {isDowngrade
+                  ? "Тир ниже текущего недоступен. Дождись окончания активного пасса."
+                  : isSameTier
+                    ? "+30 дней к остатку и новый пакет билетов."
+                    : isUpgrade
+                      ? "Полная цена нового тира. +30 дней к остатку и пакет билетов нового тира."
+                      : "Разовый доступ на 30 дней с момента активации. Без автопродления."}
               </div>
             </div>
           </div>
