@@ -842,6 +842,7 @@ function CategoryModal({
   onDone: () => void;
 }) {
   const [c, setC] = useState(initial);
+  const [slugTouched, setSlugTouched] = useState(mode === "edit");
   const save = useMutation({
     mutationFn: () =>
       mode === "create"
