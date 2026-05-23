@@ -879,6 +879,7 @@ function CommentComposer({
           setActivePack={setActivePack}
           large={large}
           recent={recent}
+          ownedPacks={ownedPacks}
           onPickEmoji={insertEmoji}
           onPickSticker={sendSticker}
         />
