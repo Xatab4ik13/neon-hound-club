@@ -157,6 +157,13 @@ export type CreateProductInput = {
   images?: string[];
   stock?: number | null;
   active?: boolean;
+  kind?: ProductKind;
+  categoryId?: string | null;
+  subcategoryId?: string | null;
+  digitalFileUrl?: string | null;
+  digitalFileName?: string | null;
+  /** ISO datetime, only for kind === 'preorder' */
+  preorderExpectedAt?: string | null;
 };
 
 export function fetchAdminShopProducts() {
@@ -197,6 +204,74 @@ export function patchAdminOrder(
   return apiFetch<ShopOrderWithItems>(`/api/v1/admin/shop/orders/${id}`, {
     method: "PATCH",
     body: JSON.stringify(patch),
+  });
+}
+
+// ---------- SHOP: CATEGORIES ----------
+
+export function fetchAdminShopCategories() {
+  return apiFetch<{ items: ShopCategoryWithSubs[] }>("/api/v1/admin/shop/categories");
+}
+
+export function createAdminShopCategory(input: { slug: string; name: string; sort?: number }) {
+  return apiFetch<{ id: string }>("/api/v1/admin/shop/categories", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export function patchAdminShopCategory(
+  id: string,
+  patch: { slug?: string; name?: string; sort?: number },
+) {
+  return apiFetch<{ id: string }>(`/api/v1/admin/shop/categories/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(patch),
+  });
+}
+
+export function deleteAdminShopCategory(id: string) {
+  return apiFetch<{ ok: true }>(`/api/v1/admin/shop/categories/${id}`, { method: "DELETE" });
+}
+
+export function createAdminShopSubcategory(input: {
+  categoryId: string;
+  slug: string;
+  name: string;
+  sort?: number;
+}) {
+  return apiFetch<{ id: string }>("/api/v1/admin/shop/subcategories", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export function patchAdminShopSubcategory(
+  id: string,
+  patch: { slug?: string; name?: string; sort?: number },
+) {
+  return apiFetch<{ id: string }>(`/api/v1/admin/shop/subcategories/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(patch),
+  });
+}
+
+export function deleteAdminShopSubcategory(id: string) {
+  return apiFetch<{ ok: true }>(`/api/v1/admin/shop/subcategories/${id}`, { method: "DELETE" });
+}
+
+// ---------- SHOP: SHOWCASE ----------
+
+export function fetchAdminShopShowcase() {
+  return apiFetch<{ items: { productId: string; sort: number }[] }>(
+    "/api/v1/admin/shop/showcase",
+  );
+}
+
+export function putAdminShopShowcase(items: { productId: string; sort: number }[]) {
+  return apiFetch<{ ok: true; count: number }>("/api/v1/admin/shop/showcase", {
+    method: "PUT",
+    body: JSON.stringify({ items }),
   });
 }
 
