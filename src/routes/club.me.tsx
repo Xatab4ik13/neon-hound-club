@@ -95,14 +95,16 @@ function MePage() {
   const tierInfo: Tier | null = activeTierSlug ? TIERS.find((t) => t.slug === activeTierSlug) ?? null : null;
   const { signOut } = useViewer();
 
-  const handleLogout = async () => {
-    if (typeof window !== "undefined" && !window.confirm("Выйти из клуба?")) return;
+  const [confirmLogout, setConfirmLogout] = useState(false);
+  const doLogout = async () => {
     try {
       await signOut();
     } finally {
       window.location.href = "/";
     }
   };
+  const handleLogout = () => setConfirmLogout(true);
+
 
 
   return (
