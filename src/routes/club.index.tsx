@@ -92,7 +92,7 @@ export function PostCard({ post, moderate = false }: { post: Post; moderate?: bo
                 {author?.nick ?? post.authorSlug}
               </span>
             </UserLink>
-            {authorIsBlogger ? <HellhoundChip size="sm" /> : <RoleBadge role={author?.role ?? "rider"} />}
+            {authorIsBlogger && <HellhoundChip size="sm" />}
           </div>
           <span className="mt-0.5 block font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
             {post.time}
