@@ -4,8 +4,6 @@ export const BACKEND_URL =
   ((import.meta.env.VITE_BACKEND_URL as string | undefined)?.replace(/\/$/, "") ||
     "https://api.hhr.pro");
 
-const BACKEND_URL_INTERNAL = BACKEND_URL;
-
 export class ApiError extends Error {
   constructor(public status: number, public code: string, message: string) {
     super(message);
