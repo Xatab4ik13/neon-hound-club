@@ -267,7 +267,7 @@ export function MobileGarage({
           <div className="text-[12px] font-semibold uppercase tracking-[0.2em] text-primary">
             HELLHOUND · Garage
           </div>
-          <h1 className="mt-1 text-[40px] font-bold leading-tight tracking-tight text-foreground">
+          <h1 className="mt-1 font-display text-[44px] font-black italic uppercase leading-none tracking-tight text-foreground">
             Гараж
           </h1>
         </div>
