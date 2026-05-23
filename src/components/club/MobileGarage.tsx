@@ -1198,26 +1198,34 @@ function SelectField({
 function PhotosUpload({
   photos,
   onChange,
+  bikeId,
 }: {
   photos: string[];
   onChange: (v: string[]) => void;
+  bikeId: string;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
 
-  function pick(files: FileList | null) {
+  async function pick(files: FileList | null) {
     if (!files) return;
     const images = Array.from(files).filter((f) => /^image\//i.test(f.type));
     if (images.length === 0) return;
-    Promise.all(
-      images.map(
-        (f) =>
-          new Promise<string>((resolve) => {
-            const r = new FileReader();
-            r.onload = () => resolve(String(r.result));
-            r.readAsDataURL(f);
-          }),
-      ),
-    ).then((urls) => onChange([...photos, ...urls]));
+    setUploading(true);
+    try {
+      const urls: string[] = [];
+      for (const f of images) {
+        const url = await uploadFileToS3(f, "bike", bikeId);
+        urls.push(url);
+      }
+      onChange([...photos, ...urls]);
+    } catch (err) {
+      toast.error("Не удалось загрузить фото", {
+        description: err instanceof Error ? err.message : String(err),
+      });
+    } finally {
+      setUploading(false);
+    }
   }
 
   return (
@@ -1248,13 +1256,18 @@ function PhotosUpload({
       <button
         type="button"
         onClick={() => fileRef.current?.click()}
-        className={`flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-white/[0.12] bg-black/20 py-5 text-muted-foreground active:opacity-70 ${
+        disabled={uploading}
+        className={`flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-white/[0.12] bg-black/20 py-5 text-muted-foreground active:opacity-70 disabled:opacity-50 ${
           photos.length > 0 ? "mt-2" : ""
         }`}
       >
         <ImagePlus className="h-5 w-5" />
         <span className="text-[14px] font-semibold">
-          {photos.length === 0 ? "Прикрепить фото / скан" : "Добавить ещё фото"}
+          {uploading
+            ? "Загрузка…"
+            : photos.length === 0
+              ? "Прикрепить фото / скан"
+              : "Добавить ещё фото"}
         </span>
         <input
           ref={fileRef}
