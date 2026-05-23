@@ -10,7 +10,7 @@ import {
   MessageSquare,
   Trophy,
   Coins,
-  Gift,
+  
   Infinity as InfinityIcon,
   type LucideIcon,
 } from "lucide-react";
