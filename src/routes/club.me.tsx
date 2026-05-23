@@ -93,6 +93,7 @@ function MePage() {
   const passQ = useQuery({ queryKey: ["pass", "me"], queryFn: fetchPassMe, staleTime: 30_000, retry: false });
   const activeTierSlug = passQ.data?.active?.status === "active" ? passQ.data.active.tier : null;
   const tierInfo: Tier | null = activeTierSlug ? TIERS.find((t) => t.slug === activeTierSlug) ?? null : null;
+  const passDaysLeft = passQ.data?.daysLeft ?? null;
   const { signOut } = useViewer();
 
   const [confirmLogout, setConfirmLogout] = useState(false);
