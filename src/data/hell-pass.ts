@@ -224,7 +224,7 @@ const PLATINUM_GROUPS: { title: string; perks: Perk[] }[] = [
     ],
   },
   {
-    title: "Мерч и подарки",
+    title: "Мерч",
     perks: [
       {
         icon: Percent,
@@ -233,14 +233,6 @@ const PLATINUM_GROUPS: { title: string; perks: Perk[] }[] = [
         label: "Скидка на мерч HELLHOUND",
         detail:
           "15% — максимальная скидка в магазине. Действует на всё, включая лимитированный мерч.",
-      },
-      {
-        icon: Gift,
-        value: "1 / сезон",
-        accent: true,
-        label: "Лимитированный мерч в подарок",
-        detail:
-          "Раз в сезон — отдельный лимитированный предмет, который доступен только Platinum-подписчикам. В магазине его не купить.",
       },
     ],
   },
