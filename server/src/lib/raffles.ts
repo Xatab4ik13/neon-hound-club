@@ -1,6 +1,8 @@
 import { and, count, eq, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
-import { raffles, raffleEntries } from "../db/schema/raffles.js";
+import { raffles, raffleEntries, rafflePrizes, rafflePrizeWinners } from "../db/schema/raffles.js";
+import { users } from "../db/schema/users.js";
+import { profiles } from "../db/schema/profile.js";
 import { getTicketBalance, ticketCredit } from "./tickets.js";
 import { awardXp } from "./xp.js";
 
@@ -146,8 +148,6 @@ export async function cancelRaffleWithRefund(raffleId: string) {
   return { ok: true as const, refunded: entries.length };
 }
 
-import { rafflePrizes, rafflePrizeWinners } from "../db/schema/raffles.js";
-import { profiles } from "../db/schema/profile.js";
 import { getXpTotal, computeRank } from "./xp.js";
 
 /**
