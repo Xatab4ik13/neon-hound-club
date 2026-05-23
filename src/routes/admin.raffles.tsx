@@ -28,6 +28,7 @@ import {
   pickRaffleWinner,
   cancelRaffle,
   fetchAdminRaffleWinners,
+  deleteAdminRaffle,
   type CreateRaffleInput,
 } from "@/lib/admin-queries";
 import {
@@ -97,6 +98,16 @@ function RafflesPage() {
   const [confirmPick, setConfirmPick] = useState<RaffleListItem | null>(null);
   const [confirmCancel, setConfirmCancel] = useState<RaffleListItem | null>(null);
   const [winnersOf, setWinnersOf] = useState<RaffleListItem | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<RaffleListItem | null>(null);
+
+  const del = useMutation({
+    mutationFn: (id: string) => deleteAdminRaffle(id),
+    onSuccess: () => {
+      toast.success("Розыгрыш удалён");
+      qc.invalidateQueries({ queryKey: adminQk.raffles });
+    },
+    onError: (e) => toast.error(e instanceof ApiError ? e.message : "Не получилось"),
+  });
 
   const pick = useMutation({
     mutationFn: (id: string) => pickRaffleWinner(id),
@@ -174,6 +185,9 @@ function RafflesPage() {
                     <Ban className="h-3.5 w-3.5" />
                   </Btn>
                 )}
+                <Btn variant="ghost" onClick={() => setConfirmDelete(r)} aria-label="Удалить">
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Btn>
               </div>,
             ])}
           />
@@ -236,6 +250,18 @@ function RafflesPage() {
         title="Отменить розыгрыш?"
         message={`«${confirmCancel?.title}» будет отменён. Всем участникам вернутся потраченные билеты.`}
         confirmLabel="Отменить розыгрыш"
+      />
+
+      <ConfirmModal
+        open={!!confirmDelete}
+        onClose={() => setConfirmDelete(null)}
+        onConfirm={() => {
+          if (confirmDelete) del.mutate(confirmDelete.id);
+          setConfirmDelete(null);
+        }}
+        title="Удалить розыгрыш?"
+        message={`«${confirmDelete?.title}» и все его призы, заявки и победители будут удалены навсегда. Билеты участникам НЕ возвращаются — если нужно вернуть, сначала отмени розыгрыш.`}
+        confirmLabel="Удалить"
       />
 
       {winnersOf && (

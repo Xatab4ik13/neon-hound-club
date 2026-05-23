@@ -252,6 +252,17 @@ export async function adminRafflesRoutes(app: FastifyInstance) {
     return r;
   });
 
+  // DELETE /api/v1/admin/raffles/:id — полное удаление розыгрыша
+  // Призы / заявки / победители удаляются каскадом (FK ON DELETE CASCADE).
+  app.delete<{ Params: { id: string } }>("/:id", { preHandler: requireAdmin }, async (req, reply) => {
+    const [row] = await db
+      .delete(raffles)
+      .where(eq(raffles.id, req.params.id))
+      .returning({ id: raffles.id });
+    if (!row) return reply.code(404).send({ error: "not_found" });
+    return { ok: true };
+  });
+
   // POST /api/v1/admin/raffles/:id/cancel — отменить с возвратом билетов всем
   app.post<{ Params: { id: string } }>("/:id/cancel", { preHandler: requireAdmin }, async (req, reply) => {
     const r = await cancelRaffleWithRefund(req.params.id);

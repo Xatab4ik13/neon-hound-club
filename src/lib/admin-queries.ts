@@ -399,6 +399,10 @@ export function fetchAdminRaffleWinners(id: string) {
   );
 }
 
+export function deleteAdminRaffle(id: string) {
+  return apiFetch<{ ok: true }>(`/api/v1/admin/raffles/${id}`, { method: "DELETE" });
+}
+
 // ---------- TICKETS ADMIN ----------
 
 export type CreditInput = {

@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { Drawer } from "vaul";
 import { useCart } from "@/hooks/use-cart";
+import { useViewer } from "@/hooks/use-viewer";
 
 type Item = {
   label: string;
@@ -63,6 +64,7 @@ export function MobileMoreSheet({
 }) {
   const close = () => onOpenChange(false);
   const { count: cartCount } = useCart();
+  const { signOut } = useViewer();
   const GROUPS = buildGroups(cartCount);
 
   return (
@@ -150,8 +152,12 @@ export function MobileMoreSheet({
                 <li>
                   <button
                     type="button"
-                    onClick={() => {
-                      if (typeof window !== "undefined" && window.confirm("Выйти из клуба?")) {
+                    onClick={async () => {
+                      if (typeof window !== "undefined" && !window.confirm("Выйти из клуба?")) return;
+                      try {
+                        await signOut();
+                      } finally {
+                        onOpenChange(false);
                         window.location.href = "/";
                       }
                     }}
