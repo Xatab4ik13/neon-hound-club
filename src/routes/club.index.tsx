@@ -73,7 +73,7 @@ export function PostCard({ post, moderate = false }: { post: Post; moderate?: bo
       )}
 
       <header className="flex items-center gap-3 px-4 pt-4 md:px-5 md:pt-5">
-        <UserLink slug={post.authorSlug}>
+        <UserLink slug={post.authorSlug} disabled={authorIsBlogger}>
           {authorIsBlogger ? (
             <HellhoundAvatar size={44} initials={author?.initials ?? "H"} avatarUrl={author?.avatarUrl} />
           ) : (
@@ -87,7 +87,7 @@ export function PostCard({ post, moderate = false }: { post: Post; moderate?: bo
         </UserLink>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <UserLink slug={post.authorSlug} className="truncate">
+            <UserLink slug={post.authorSlug} disabled={authorIsBlogger} className="truncate">
               <span className="truncate font-display text-[15px] font-black uppercase italic tracking-tight text-foreground transition-colors hover:text-primary">
                 {author?.nick ?? post.authorSlug}
               </span>
