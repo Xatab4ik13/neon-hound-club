@@ -397,6 +397,7 @@ export type FeedAuthor = {
   role: "user" | "admin" | "blogger";
   avatarUrl: string | null;
   city: string | null;
+  rankId: string;
 };
 
 export type FeedPollOptionResult = { id: string; text: string; votes: number };
@@ -435,6 +436,7 @@ export type FeedCommentHydrated = {
   nick: string;
   role: "user" | "admin" | "blogger";
   avatarUrl: string | null;
+  rankId: string;
 };
 
 export type FeedPostDetail = FeedPostHydrated & { comments: FeedCommentHydrated[] };

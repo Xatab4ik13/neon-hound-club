@@ -6,6 +6,7 @@ import { ME_SLUG, PUBLIC_USERS } from "@/data/users";
 import { useFeedPosts, feedStore, type FeedComment, type FeedPost, type FeedPoll } from "@/data/feed-store";
 import { HellhoundAvatar, HellhoundChip } from "@/components/club/HellhoundPlaque";
 import { IOSSheet } from "@/components/ios/IOSSheet";
+import { useMyProfile } from "@/lib/garage-api";
 
 
 
@@ -747,7 +748,19 @@ function CommentComposer({
   const [tab, setTab] = useState<"recent" | "emoji" | "stickers">("stickers");
   const [activePack, setActivePack] = useState<string>(STICKER_PACKS[0].id);
   const [recent, setRecent] = useState<string[]>(() => loadRecent());
-  const me = PUBLIC_USERS[ME_SLUG];
+  const myProfileQ = useMyProfile();
+  const myProfile = myProfileQ.data;
+  const meNick = myProfile?.nick ?? PUBLIC_USERS[ME_SLUG]?.nick ?? "";
+  const meInitials = (() => {
+    const t = meNick.trim();
+    if (!t) return "?";
+    const parts = t.split(/\s+/);
+    if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+    return t.slice(0, 2).toUpperCase();
+  })();
+  const meRank = (myProfile?.rank?.rankId as RankId | undefined) ?? PUBLIC_USERS[ME_SLUG]?.rank ?? "rookie";
+  const meAvatar = myProfile?.avatarUrl ?? PUBLIC_USERS[ME_SLUG]?.avatarUrl;
+  const meIsBlogger = myProfile?.role === "blogger";
   const disabled = value.trim().length === 0;
   const wrapRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -835,7 +848,11 @@ function CommentComposer({
         }}
         className="flex items-end gap-2 px-3 py-2.5"
       >
-        <RankAvatar initials={me.initials} rankId={me.rank} size={32} />
+        {meIsBlogger ? (
+          <HellhoundAvatar size={32} initials={meInitials} avatarUrl={meAvatar} />
+        ) : (
+          <RankAvatar initials={meInitials} rankId={meRank} avatarUrl={meAvatar} size={32} />
+        )}
 
         <div className="flex min-w-0 flex-1 items-center gap-1 rounded-3xl border border-white/[0.08] bg-black/60 pl-2 pr-1 py-1 focus-within:border-primary/40">
           <button

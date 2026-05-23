@@ -6,8 +6,30 @@ import { posts, postLikes, postComments, postPollVotes, commentLikes, type PollD
 import { users } from "../db/schema/users.js";
 import { profiles } from "../db/schema/profile.js";
 import { loadSession, requireAuth, requireAdmin, type SessionPayload } from "../lib/auth.js";
-import { awardXp } from "../lib/xp.js";
+import { awardXp, computeRank } from "../lib/xp.js";
+import { xpEvents } from "../db/schema/xp.js";
 import { addClient, removeClient, publish as publishFeedEvent } from "../lib/feed-bus.js";
+
+// Считает rankId батчем для набора пользователей. Возвращает Map<userId, rankId>.
+// Пустой набор → пустая Map. Юзеры без событий получают rookie.
+async function getRanksMap(userIds: string[]): Promise<Map<string, string>> {
+  const out = new Map<string, string>();
+  if (userIds.length === 0) return out;
+  const rows = await db
+    .select({
+      userId: xpEvents.userId,
+      total: sql<number>`coalesce(sum(${xpEvents.amount}), 0)::int`,
+    })
+    .from(xpEvents)
+    .where(inArray(xpEvents.userId, userIds))
+    .groupBy(xpEvents.userId);
+  const totals = new Map(rows.map((r) => [r.userId, r.total ?? 0]));
+  for (const id of userIds) {
+    const t = totals.get(id) ?? 0;
+    out.set(id, computeRank(t).rankId);
+  }
+  return out;
+}
 
 // ───────── helpers ─────────
 
@@ -162,6 +184,12 @@ async function hydratePosts(rows: typeof posts.$inferSelect[], viewerId: string 
     myVoteMap.get(v.postId)!.push(v.optionId);
   }
 
+  // rankId батчем для всех уникальных юзеров (авторы + комментаторы).
+  const allUserIds = Array.from(
+    new Set([...authorIds, ...allComments.map((c) => c.authorId)]),
+  );
+  const ranksMap = await getRanksMap(allUserIds);
+
   return rows.map((r) => {
     const a = authorMap.get(r.authorId);
     const votes = voteMap.get(r.id);
@@ -176,8 +204,22 @@ async function hydratePosts(rows: typeof posts.$inferSelect[], viewerId: string 
     return {
       id: r.id,
       author: a
-        ? { id: a.id, nick: a.nick, role: a.role, avatarUrl: a.avatarUrl, city: a.city }
-        : { id: r.authorId, nick: "unknown", role: "user", avatarUrl: null, city: null },
+        ? {
+            id: a.id,
+            nick: a.nick,
+            role: a.role,
+            avatarUrl: a.avatarUrl,
+            city: a.city,
+            rankId: ranksMap.get(a.id) ?? "rookie",
+          }
+        : {
+            id: r.authorId,
+            nick: "unknown",
+            role: "user",
+            avatarUrl: null,
+            city: null,
+            rankId: "rookie",
+          },
       text: r.text,
       imageUrl: r.imageUrl,
       pinned: r.pinned,
@@ -195,6 +237,7 @@ async function hydratePosts(rows: typeof posts.$inferSelect[], viewerId: string 
         nick: c.nick,
         role: c.role,
         avatarUrl: c.avatarUrl,
+        rankId: ranksMap.get(c.authorId) ?? "rookie",
       })),
       createdAt: r.createdAt,
       updatedAt: r.updatedAt,
@@ -290,10 +333,12 @@ export async function feedRoutes(app: FastifyInstance) {
     ]);
     const lm = new Map(likeCounts.map((r) => [r.commentId, r.c]));
     const ms = new Set(mine.map((r) => r.commentId));
+    const ranksMap = await getRanksMap(Array.from(new Set(allRows.map((c) => c.authorId))));
     const comments = allRows.map((c) => ({
       ...c,
       likes: lm.get(c.id) ?? 0,
       liked: ms.has(c.id),
+      rankId: ranksMap.get(c.authorId) ?? "rookie",
     }));
     return { ...hydrated, comments };
   });
@@ -369,6 +414,7 @@ export async function feedRoutes(app: FastifyInstance) {
       .leftJoin(profiles, eq(profiles.userId, users.id))
       .where(eq(users.id, s.sub))
       .limit(1);
+    const ranksMap = await getRanksMap([s.sub]);
     const result = {
       id: row.id,
       postId: row.postId,
@@ -376,6 +422,7 @@ export async function feedRoutes(app: FastifyInstance) {
       nick: author?.nick ?? "",
       role: author?.role ?? "user",
       avatarUrl: author?.avatarUrl ?? null,
+      rankId: ranksMap.get(s.sub) ?? "rookie",
       text: row.text,
       createdAt: row.createdAt,
       likes: 0,
