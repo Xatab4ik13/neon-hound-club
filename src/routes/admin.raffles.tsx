@@ -1,12 +1,11 @@
-// Админка розыгрышей. Подключено к бэку через admin-queries.
-// Модель упрощённая под server/src/db/schema/raffles.ts:
-// raffle = title + description + imageUrl + prize + ticketCost + maxEntriesPerUser + startsAt + endsAt + status
-// Действия: создание/правка, выбор победителя, отмена (с возвратом билетов всем).
+// Админка розыгрышей. 1 билет = 1 заявка (хардкод на бэке). Призы — отдельный список.
+// Картинка обложки грузится файлом в MinIO через /api/v1/uploads/direct (kind=raffle).
+// Флаг showOnHome — попадание в hero-блок главной.
 
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Edit, Trophy, Ban } from "lucide-react";
+import { Plus, Edit, Trophy, Ban, Upload, X, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   PageHeader,
@@ -38,8 +37,8 @@ import {
   type RafflePrizeDto,
 } from "@/lib/blogger-raffles";
 import { ApiError } from "@/lib/api";
+import { uploadFileToS3 } from "@/lib/garage-api";
 import type { RaffleListItem, RaffleStatus } from "@/lib/queries";
-import { Trash2 } from "lucide-react";
 
 export const Route = createFileRoute("/admin/raffles")({
   component: RafflesPage,
@@ -59,7 +58,6 @@ const STATUS_TONE: Record<RaffleStatus, "zinc" | "emerald" | "amber" | "rose"> =
 };
 
 function toDatetimeLocal(iso: string): string {
-  // ISO → значение для <input type="datetime-local">
   if (!iso) return "";
   const d = new Date(iso);
   const pad = (n: number) => String(n).padStart(2, "0");
@@ -67,7 +65,6 @@ function toDatetimeLocal(iso: string): string {
 }
 
 function fromDatetimeLocal(v: string): string {
-  // Принимаем локальное время как локальное, превращаем в ISO.
   if (!v) return "";
   return new Date(v).toISOString();
 }
@@ -79,9 +76,8 @@ function emptyRaffle(): CreateRaffleInput {
     title: "",
     description: "",
     imageUrl: null,
-    prize: "",
-    ticketCost: 1,
     maxEntriesPerUser: null,
+    showOnHome: false,
     startsAt: now.toISOString(),
     endsAt: week.toISOString(),
     status: "draft",
@@ -95,7 +91,7 @@ function RafflesPage() {
     queryFn: fetchAdminRaffles,
   });
 
-  const [editing, setEditing] = useState<RaffleListItem | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [newOpen, setNewOpen] = useState(false);
   const [confirmPick, setConfirmPick] = useState<RaffleListItem | null>(null);
   const [confirmCancel, setConfirmCancel] = useState<RaffleListItem | null>(null);
@@ -121,12 +117,13 @@ function RafflesPage() {
   });
 
   const items = data?.items ?? [];
+  const editing = items.find((r) => r.id === editingId) ?? null;
 
   return (
     <div>
       <PageHeader
         title="Розыгрыши"
-        description="Создавай розыгрыши, выбирай победителей, отменяй с возвратом билетов."
+        description="1 билет = 1 заявка. Призы добавляются списком. Картинка грузится файлом."
         actions={
           <Btn variant="primary" onClick={() => setNewOpen(true)}>
             <Plus className="h-4 w-4" /> Новый розыгрыш
@@ -141,17 +138,16 @@ function RafflesPage() {
           <div className="px-6 py-12 text-center text-sm text-zinc-500">Розыгрышей пока нет</div>
         ) : (
           <DataTable
-            headers={["Название", "Приз", "Цена 🎟", "Окончание", "Статус", "Победитель", ""]}
+            headers={["Название", "На главной", "Окончание", "Статус", "Победитель", ""]}
             rows={items.map((r) => [
               <button
                 type="button"
-                onClick={() => setEditing(r)}
+                onClick={() => setEditingId(r.id)}
                 className="text-left font-medium hover:underline"
               >
                 {r.title}
               </button>,
-              <span className="text-sm text-zinc-600 dark:text-zinc-300">{r.prize}</span>,
-              `${r.ticketCost} 🎟`,
+              r.showOnHome ? <Badge tone="emerald">Да</Badge> : <span className="text-zinc-400">—</span>,
               new Date(r.endsAt).toLocaleString("ru-RU"),
               <Badge tone={STATUS_TONE[r.status]}>{STATUS_LABEL[r.status]}</Badge>,
               r.winnerUserId ? (
@@ -160,7 +156,7 @@ function RafflesPage() {
                 "—"
               ),
               <div className="flex gap-1">
-                <Btn variant="ghost" onClick={() => setEditing(r)} aria-label="Править">
+                <Btn variant="ghost" onClick={() => setEditingId(r.id)} aria-label="Править">
                   <Edit className="h-3.5 w-3.5" />
                 </Btn>
                 {(r.status === "active" || r.status === "finished") && !r.winnerUserId && (
@@ -184,6 +180,12 @@ function RafflesPage() {
           mode="create"
           initial={emptyRaffle()}
           onClose={() => setNewOpen(false)}
+          onCreated={(id) => {
+            setNewOpen(false);
+            qc.invalidateQueries({ queryKey: adminQk.raffles });
+            // Сразу открываем созданный раффл — там доступен блок призов.
+            setEditingId(id);
+          }}
           onDone={() => {
             setNewOpen(false);
             qc.invalidateQueries({ queryKey: adminQk.raffles });
@@ -198,16 +200,15 @@ function RafflesPage() {
             title: editing.title,
             description: editing.description,
             imageUrl: editing.imageUrl,
-            prize: editing.prize,
-            ticketCost: editing.ticketCost,
             maxEntriesPerUser: editing.maxEntriesPerUser,
+            showOnHome: editing.showOnHome,
             startsAt: editing.startsAt,
             endsAt: editing.endsAt,
             status: editing.status,
           }}
-          onClose={() => setEditing(null)}
+          onClose={() => setEditingId(null)}
           onDone={() => {
-            setEditing(null);
+            setEditingId(null);
             qc.invalidateQueries({ queryKey: adminQk.raffles });
           }}
         />
@@ -241,15 +242,19 @@ function RaffleModal({
   initial,
   onClose,
   onDone,
+  onCreated,
 }: {
   mode: "create" | "edit";
   raffleId?: string;
   initial: CreateRaffleInput;
   onClose: () => void;
   onDone: () => void;
+  onCreated?: (id: string) => void;
 }) {
   const [r, setR] = useState<CreateRaffleInput>(initial);
   const [unlimited, setUnlimited] = useState(initial.maxEntriesPerUser == null);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const save = useMutation({
     mutationFn: () => {
@@ -260,12 +265,27 @@ function RaffleModal({
       };
       return mode === "create" ? createAdminRaffle(payload) : patchAdminRaffle(raffleId!, payload);
     },
-    onSuccess: () => {
-      toast.success(mode === "create" ? "Розыгрыш создан" : "Сохранено");
-      onDone();
+    onSuccess: (row) => {
+      toast.success(mode === "create" ? "Розыгрыш создан — теперь добавь призы" : "Сохранено");
+      if (mode === "create" && onCreated) onCreated(row.id);
+      else onDone();
     },
     onError: (e) => toast.error(e instanceof ApiError ? e.message : "Не получилось"),
   });
+
+  async function handleFile(file: File) {
+    setUploading(true);
+    try {
+      const url = await uploadFileToS3(file, "raffle", raffleId || "new");
+      setR((cur) => ({ ...cur, imageUrl: url }));
+      toast.success("Картинка загружена");
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : "Не получилось загрузить");
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  }
 
   return (
     <Modal
@@ -275,7 +295,7 @@ function RaffleModal({
       size="lg"
       footer={
         <>
-          <Btn onClick={onClose}>Отмена</Btn>
+          <Btn onClick={onClose}>{mode === "create" ? "Отмена" : "Закрыть"}</Btn>
           <Btn variant="primary" disabled={save.isPending} onClick={() => save.mutate()}>
             {save.isPending ? "Сохраняем…" : "Сохранить"}
           </Btn>
@@ -286,13 +306,6 @@ function RaffleModal({
         <Field label="Название">
           <TextInput value={r.title} onChange={(e) => setR({ ...r, title: e.target.value })} />
         </Field>
-        <Field label="Приз" hint="Короткое название приза. Покажется в карточке.">
-          <TextInput
-            value={r.prize}
-            onChange={(e) => setR({ ...r, prize: e.target.value })}
-            placeholder="Шлем AGV Pista GP RR"
-          />
-        </Field>
         <Field label="Описание">
           <TextArea
             rows={4}
@@ -300,47 +313,76 @@ function RaffleModal({
             onChange={(e) => setR({ ...r, description: e.target.value })}
           />
         </Field>
-        <Field label="URL обложки" hint="Грузим в MinIO/сторонний хост, сюда вставляем ссылку.">
-          <TextInput
-            value={r.imageUrl ?? ""}
-            onChange={(e) => setR({ ...r, imageUrl: e.target.value })}
-            placeholder="https://cdn.hhr.pro/raffles/helmet.jpg"
-          />
+
+        <Field label="Обложка" hint="JPG/PNG/WEBP, до 10 МБ. Грузится в MinIO.">
+          <div className="flex items-start gap-3">
+            {r.imageUrl ? (
+              <div className="relative">
+                <img
+                  src={r.imageUrl}
+                  alt=""
+                  className="h-24 w-24 rounded-md object-cover ring-1 ring-zinc-200 dark:ring-zinc-800"
+                />
+                <button
+                  type="button"
+                  onClick={() => setR({ ...r, imageUrl: null })}
+                  className="absolute -right-2 -top-2 rounded-full bg-zinc-900 p-1 text-white shadow"
+                  aria-label="Убрать"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            ) : (
+              <div className="flex h-24 w-24 items-center justify-center rounded-md border border-dashed border-zinc-300 text-xs text-zinc-400 dark:border-zinc-700">
+                Нет
+              </div>
+            )}
+            <div className="flex-1">
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                hidden
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) void handleFile(f);
+                }}
+              />
+              <Btn
+                onClick={() => fileRef.current?.click()}
+                disabled={uploading}
+                aria-label="Загрузить картинку"
+              >
+                <Upload className="h-4 w-4" />
+                {uploading ? "Загружаем…" : r.imageUrl ? "Заменить файл" : "Загрузить файл"}
+              </Btn>
+            </div>
+          </div>
         </Field>
 
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Цена входа (🎟)">
-            <TextInput
-              type="number"
-              min={1}
-              value={r.ticketCost}
-              onChange={(e) => setR({ ...r, ticketCost: Math.max(1, Number(e.target.value) || 1) })}
-            />
-          </Field>
-          <Field label="Лимит участий с одного юзера">
-            <div className="flex items-center gap-3">
-              <label className="inline-flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={unlimited}
-                  onChange={(e) => setUnlimited(e.target.checked)}
-                />
-                Без лимита
-              </label>
-              {!unlimited && (
-                <TextInput
-                  type="number"
-                  min={1}
-                  value={r.maxEntriesPerUser ?? 1}
-                  onChange={(e) =>
-                    setR({ ...r, maxEntriesPerUser: Math.max(1, Number(e.target.value) || 1) })
-                  }
-                  className="max-w-[120px]"
-                />
-              )}
-            </div>
-          </Field>
-        </div>
+        <Field label="Лимит участий с одного юзера" hint="1 билет = 1 заявка. Без лимита — можно сколько угодно билетов из одного аккаунта.">
+          <div className="flex items-center gap-3">
+            <label className="inline-flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={unlimited}
+                onChange={(e) => setUnlimited(e.target.checked)}
+              />
+              Без лимита
+            </label>
+            {!unlimited && (
+              <TextInput
+                type="number"
+                min={1}
+                value={r.maxEntriesPerUser ?? 1}
+                onChange={(e) =>
+                  setR({ ...r, maxEntriesPerUser: Math.max(1, Number(e.target.value) || 1) })
+                }
+                className="max-w-[120px]"
+              />
+            )}
+          </div>
+        </Field>
 
         <div className="grid grid-cols-2 gap-3">
           <Field label="Старт">
@@ -359,27 +401,44 @@ function RaffleModal({
           </Field>
         </div>
 
-        <Field label="Статус">
-          <Select
-            value={r.status ?? "draft"}
-            onChange={(e) => setR({ ...r, status: e.target.value as RaffleStatus })}
-          >
-            <option value="draft">Черновик (на сайте не виден)</option>
-            <option value="active">Активен (можно участвовать)</option>
-            <option value="finished">Завершён</option>
-            <option value="cancelled">Отменён</option>
-          </Select>
-        </Field>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Статус">
+            <Select
+              value={r.status ?? "draft"}
+              onChange={(e) => setR({ ...r, status: e.target.value as RaffleStatus })}
+            >
+              <option value="draft">Черновик (на сайте не виден)</option>
+              <option value="active">Активен (можно участвовать)</option>
+              <option value="finished">Завершён</option>
+              <option value="cancelled">Отменён</option>
+            </Select>
+          </Field>
+          <Field label="Показать на главной" hint="Попадёт в hero-блок (только если статус «Активен»).">
+            <label className="inline-flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={!!r.showOnHome}
+                onChange={(e) => setR({ ...r, showOnHome: e.target.checked })}
+              />
+              На главной
+            </label>
+          </Field>
+        </div>
 
         {mode === "edit" && raffleId && <PrizesEditor raffleId={raffleId} />}
+        {mode === "create" && (
+          <div className="rounded-md border border-dashed border-zinc-300 p-3 text-xs text-zinc-500 dark:border-zinc-700">
+            Призы добавляются после сохранения розыгрыша.
+          </div>
+        )}
       </div>
     </Modal>
   );
 }
 
 // ───────── Управление призами раффла ─────────
-// Призы — отдельная таблица raffle_prizes. Каждый приз = название + qty (сколько слотов).
-// Блогер по одному «крутит» каждый слот, как только все слоты разыграны — раффл finished.
+// Призы — отдельная таблица raffle_prizes. Один раффл = много призов, у каждого qty слотов.
+// Победители фиксируются блогером в рулетке. 1 заявка может выиграть только 1 раз во всём раффле.
 
 function PrizesEditor({ raffleId }: { raffleId: string }) {
   const qc = useQueryClient();
@@ -426,10 +485,10 @@ function PrizesEditor({ raffleId }: { raffleId: string }) {
 
   return (
     <div className="border-t border-zinc-200 pt-4 dark:border-zinc-800">
-      <div className="mb-3 text-sm font-medium">Призы рулетки</div>
+      <div className="mb-3 text-sm font-medium">Призы</div>
       <p className="mb-3 text-xs text-zinc-500">
-        Каждый приз — отдельная строка. qty = сколько раз блогер крутит этот приз.
-        Раффл считается завершённым, когда зафиксированы все слоты.
+        Один приз — одна строка. qty = сколько слотов этого приза разыгрывается.
+        Раффл завершится, когда зафиксированы все слоты.
       </p>
 
       <ul className="space-y-2">

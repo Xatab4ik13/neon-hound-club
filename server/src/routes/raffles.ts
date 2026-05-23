@@ -34,6 +34,32 @@ export async function rafflesRoutes(app: FastifyInstance) {
     return { items: rows };
   });
 
+  // GET /api/v1/raffles/home — активные с флагом show_on_home, с превью призов.
+  // Используется для hero-блока на главной.
+  app.get("/home", async () => {
+    const rows = await db
+      .select()
+      .from(raffles)
+      .where(and(eq(raffles.showOnHome, true), eq(raffles.status, "active")))
+      .orderBy(desc(raffles.endsAt));
+
+    const items = await Promise.all(
+      rows.map(async (r) => {
+        const prizes = await db
+          .select({ name: rafflePrizes.name, qty: rafflePrizes.qty })
+          .from(rafflePrizes)
+          .where(eq(rafflePrizes.raffleId, r.id))
+          .orderBy(rafflePrizes.position);
+        const [{ totalEntries }] = await db
+          .select({ totalEntries: count() })
+          .from(raffleEntries)
+          .where(eq(raffleEntries.raffleId, r.id));
+        return { ...r, prizes, totalEntries };
+      }),
+    );
+    return { items };
+  });
+
   // GET /api/v1/raffles/:id — карточка + (если auth) кол-во моих заявок
   app.get<{ Params: { id: string } }>("/:id", async (req, reply) => {
     const [r] = await db
@@ -157,9 +183,8 @@ const createRaffleSchema = z.object({
   title: z.string().trim().min(1).max(200),
   description: z.string().max(10_000).default(""),
   imageUrl: z.string().url().nullable().optional(),
-  prize: z.string().trim().min(1).max(200),
-  ticketCost: z.number().int().min(1).max(100_000),
   maxEntriesPerUser: z.number().int().min(1).max(10_000).nullable().default(null),
+  showOnHome: z.boolean().default(false),
   startsAt: z.string().datetime(),
   endsAt: z.string().datetime(),
   status: z.enum(RAFFLE_STATUSES).default("draft"),
@@ -188,9 +213,9 @@ export async function adminRafflesRoutes(app: FastifyInstance) {
         title: d.title,
         description: d.description,
         imageUrl: d.imageUrl ?? null,
-        prize: d.prize,
-        ticketCost: d.ticketCost,
+        ticketCost: 1,
         maxEntriesPerUser: d.maxEntriesPerUser ?? null,
+        showOnHome: d.showOnHome,
         startsAt: new Date(d.startsAt),
         endsAt: new Date(d.endsAt),
         status: d.status,
@@ -209,9 +234,8 @@ export async function adminRafflesRoutes(app: FastifyInstance) {
     if (d.title !== undefined) patch.title = d.title;
     if (d.description !== undefined) patch.description = d.description;
     if (d.imageUrl !== undefined) patch.imageUrl = d.imageUrl;
-    if (d.prize !== undefined) patch.prize = d.prize;
-    if (d.ticketCost !== undefined) patch.ticketCost = d.ticketCost;
     if (d.maxEntriesPerUser !== undefined) patch.maxEntriesPerUser = d.maxEntriesPerUser;
+    if (d.showOnHome !== undefined) patch.showOnHome = d.showOnHome;
     if (d.startsAt !== undefined) patch.startsAt = new Date(d.startsAt);
     if (d.endsAt !== undefined) patch.endsAt = new Date(d.endsAt);
     if (d.status !== undefined) patch.status = d.status;

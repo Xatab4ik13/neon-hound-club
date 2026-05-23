@@ -120,6 +120,13 @@
       "when": 1779630000000,
       "tag": "0016_shop_categories_kind",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1779640000000,
+      "tag": "0017_raffles_home_drop_prize",
+      "breakpoints": true
     }
   ]
 }
