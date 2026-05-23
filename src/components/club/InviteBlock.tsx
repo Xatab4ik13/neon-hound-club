@@ -6,23 +6,25 @@ import { useState } from "react";
 import {
   buildReferralUrl,
   REFERRAL_REWARD_TICKETS,
-  useReferrals,
+  useInvitesMe,
 } from "@/data/referral";
 
 export function InviteBlock() {
-  const friends = useReferrals();
-  const url = buildReferralUrl();
+  const { data } = useInvitesMe();
+  const friends = data?.items ?? [];
+  const code = data?.code ?? "";
+  const url = code ? buildReferralUrl(code) : "";
   const [copied, setCopied] = useState(false);
 
   function copy() {
-    if (typeof navigator === "undefined" || !navigator.clipboard) return;
+    if (!url || typeof navigator === "undefined" || !navigator.clipboard) return;
     navigator.clipboard.writeText(url).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     });
   }
 
-  const totalTickets = friends.reduce((s, f) => s + f.ticketsRewarded, 0);
+  const totalTickets = data?.totals.tickets ?? 0;
 
   return (
     <section aria-label="Пригласить друга" className="mb-10">
