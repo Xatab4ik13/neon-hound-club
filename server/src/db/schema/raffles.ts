@@ -5,6 +5,7 @@ import {
   integer,
   text,
   timestamp,
+  boolean,
   index,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
@@ -13,11 +14,11 @@ import { users } from "./users.js";
 
 /**
  * Розыгрыш.
- * ticketCost — сколько билетов списывается за одну заявку (entry).
- * maxEntriesPerUser — null = без лимита, иначе максимум заявок от одного юзера.
+ * ticketCost — оставлен в БД для совместимости, фиксирован = 1 (1 билет = 1 заявка).
+ * prize — legacy текстовое поле, не редактируется; для отображения берём первый prize из rafflePrizes.
+ * showOnHome — флаг «показывать в hero-блоке на главной».
  * startsAt/endsAt — окно подачи заявок.
  * status: 'draft' | 'active' | 'finished' | 'cancelled'.
- * Когда выбран победитель — заполняются winnerUserId и winnerEntryId.
  */
 export const raffles = pgTable(
   "raffles",
@@ -26,9 +27,10 @@ export const raffles = pgTable(
     title: varchar("title", { length: 200 }).notNull(),
     description: text("description").notNull().default(""),
     imageUrl: text("image_url"),
-    prize: varchar("prize", { length: 200 }).notNull(),
-    ticketCost: integer("ticket_cost").notNull(),
+    prize: varchar("prize", { length: 200 }),
+    ticketCost: integer("ticket_cost").notNull().default(1),
     maxEntriesPerUser: integer("max_entries_per_user"),
+    showOnHome: boolean("show_on_home").notNull().default(false),
     startsAt: timestamp("starts_at", { withTimezone: true }).notNull(),
     endsAt: timestamp("ends_at", { withTimezone: true }).notNull(),
     status: varchar("status", { length: 16 }).notNull().default("draft"),
@@ -40,6 +42,7 @@ export const raffles = pgTable(
   (t) => ({
     statusIdx: index("raffles_status_idx").on(t.status),
     endsIdx: index("raffles_ends_idx").on(t.endsAt),
+    showHomeIdx: index("raffles_show_home_idx").on(t.showOnHome),
   }),
 );
 
