@@ -994,19 +994,30 @@ function StickerPanel({
               {pack.title}
             </div>
             <div className={`grid gap-1 ${large ? "grid-cols-3 sm:grid-cols-4" : "grid-cols-4 sm:grid-cols-5"}`}>
-              {pack.stickers.map((s, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => onPickSticker(s)}
-                  className={`grid aspect-square place-items-center rounded-lg transition-transform active:scale-90 hover:bg-white/[0.04] ${large ? "text-6xl sm:text-7xl" : "text-4xl sm:text-[40px]"}`}
-                >
-                  <span>{s}</span>
-                </button>
-              ))}
-              <div className="col-span-full pt-2 text-center font-mono text-[10px] uppercase tracking-widest text-muted-foreground/50">
-                стикеры-заглушки · скоро PNG
-              </div>
+              {pack.stickers.map((s, i) => {
+                const url = parseSticker(s);
+                return (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => onPickSticker(s)}
+                    className={`grid aspect-square place-items-center rounded-lg transition-transform active:scale-90 hover:bg-white/[0.04] ${url ? "p-1.5" : large ? "text-6xl sm:text-7xl" : "text-4xl sm:text-[40px]"}`}
+                  >
+                    {url ? (
+                      <img
+                        src={url}
+                        alt=""
+                        loading="lazy"
+                        decoding="async"
+                        draggable={false}
+                        className="h-full w-full select-none object-contain"
+                      />
+                    ) : (
+                      <span>{s}</span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           </>
         ) : tab === "emoji" ? (
