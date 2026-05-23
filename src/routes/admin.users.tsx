@@ -40,11 +40,10 @@ function UsersPage() {
   const [debounced, setDebounced] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [giftOpen, setGiftOpen] = useState(false);
+  const [giftPassOpen, setGiftPassOpen] = useState(false);
 
   // дебаунс поиска
   if (query !== debounced) {
-    // простая задержка через setTimeout снаружи рендера не сделать без эффекта;
-    // ставим сразу, и пусть запрос ходит. 200 строк не страшно.
     setTimeout(() => setDebounced(query), 250);
   }
 
@@ -98,11 +97,15 @@ function UsersPage() {
           userId={selectedId}
           onClose={() => setSelectedId(null)}
           onGift={() => setGiftOpen(true)}
+          onGiftPass={() => setGiftPassOpen(true)}
         />
       )}
 
       {selectedId && giftOpen && (
         <GiftModal userId={selectedId} onClose={() => setGiftOpen(false)} />
+      )}
+      {selectedId && giftPassOpen && (
+        <GiftPassModal userId={selectedId} onClose={() => setGiftPassOpen(false)} />
       )}
     </div>
   );
