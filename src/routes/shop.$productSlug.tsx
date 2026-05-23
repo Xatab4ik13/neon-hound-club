@@ -161,7 +161,7 @@ function ProductView({ product }: { product: ShopProduct }) {
               Магазин
             </Link>
             <span aria-hidden>/</span>
-            <span className="text-foreground">{product.name}</span>
+            <span className="text-foreground">{product.title}</span>
           </nav>
 
           <div className="relative grid grid-cols-1 gap-0 overflow-visible lg:grid-cols-12">
@@ -169,8 +169,8 @@ function ProductView({ product }: { product: ShopProduct }) {
             <section className="relative lg:col-span-7">
               <StoriesGallery
                 images={gallery}
-                name={product.name}
-                badge={product.badge?.label}
+                name={product.title}
+                badge={isSold ? "Распродано" : isPreorder ? "Предзаказ" : undefined}
               />
               {/* Diagonal slash motif — cuts gallery edge into panel */}
               <div
@@ -188,25 +188,22 @@ function ProductView({ product }: { product: ShopProduct }) {
                   <span
                     className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 font-mono text-[10px] font-semibold uppercase tracking-widest ${sourceTone}`}
                   >
-                    {SOURCE_LABEL[product.source]}
-                    {product.sourceLabel && (
-                      <>
-                        <span className="opacity-50">·</span>
-                        <span className="font-medium normal-case tracking-normal">
-                          {product.sourceLabel}
-                        </span>
-                      </>
-                    )}
+                    {sourceLabel}
                   </span>
+                  {isPreorder && product.preorderExpectedAt && (
+                    <span className="inline-flex items-center rounded-full border border-border px-3 py-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                      Ожидаем · {new Date(product.preorderExpectedAt).toLocaleDateString("ru-RU")}
+                    </span>
+                  )}
                 </div>
 
                 <h1 className="font-display text-4xl uppercase leading-[0.95] tracking-tighter md:text-5xl">
-                  {product.name}
+                  {product.title}
                 </h1>
 
                 <div className="mt-6 flex items-baseline gap-3">
                   <span className="font-display text-3xl tracking-tight text-primary">
-                    {product.price.toLocaleString("ru-RU")} ₽
+                    {product.priceRub.toLocaleString("ru-RU")} ₽
                   </span>
                   {isSold && (
                     <span className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
@@ -215,52 +212,17 @@ function ProductView({ product }: { product: ShopProduct }) {
                   )}
                 </div>
 
-                {product.ticketsBonus && product.ticketsBonus > 0 ? (
+                {product.bonusTickets > 0 ? (
                   <div className="mt-4 inline-flex items-center gap-2 border border-primary/40 bg-primary/5 px-3 py-2">
                     <span
                       aria-hidden
                       className="inline-block h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_8px_hsl(var(--primary)/0.7)]"
                     />
                     <span className="font-mono text-[11px] uppercase tracking-widest text-primary">
-                      +{product.ticketsBonus} {ticketsWordPdp(product.ticketsBonus)} на розыгрыши клуба
+                      +{product.bonusTickets} {ticketsWordPdp(product.bonusTickets)} на розыгрыши клуба
                     </span>
                   </div>
                 ) : null}
-
-                {/* SIZES */}
-                {product.sizes && product.sizes.length > 0 && (
-                  <div className="mt-8">
-                    <div className="mb-3 flex items-center justify-between">
-                      <span className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
-                        Размер
-                      </span>
-                      <button
-                        onClick={() => setSizeGuide(true)}
-                        className="font-mono text-[11px] uppercase tracking-widest text-foreground underline-offset-4 hover:text-primary hover:underline"
-                      >
-                        Таблица размеров →
-                      </button>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {product.sizes.map((s) => {
-                        const active = s === size;
-                        return (
-                          <button
-                            key={s}
-                            onClick={() => setSize(s)}
-                            className={`min-w-[52px] border px-4 py-2.5 font-display text-sm uppercase tracking-wider transition-all ${
-                              active
-                                ? "border-primary bg-primary text-primary-foreground shadow-[0_0_18px_-4px_hsl(var(--primary)/0.6)]"
-                                : "border-border text-foreground hover:border-primary hover:text-primary"
-                            }`}
-                          >
-                            {s}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
 
                 {/* QTY + CTA (desktop) */}
                 <div className="mt-8 hidden items-stretch gap-3 lg:flex">
@@ -289,7 +251,7 @@ function ProductView({ product }: { product: ShopProduct }) {
                     onClick={() => handleAdd(false)}
                     className="group relative flex flex-1 items-center justify-center gap-2 overflow-hidden bg-primary px-6 py-3 font-display text-base uppercase tracking-widest text-primary-foreground shadow-[0_10px_30px_-10px_hsl(var(--primary)/0.6)] transition-all hover:shadow-[0_15px_40px_-10px_hsl(var(--primary)/0.8)] disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground disabled:shadow-none"
                   >
-                    {isSold ? "Распродано" : "В корзину"}
+                    {isSold ? "Распродано" : isPreorder ? "Оформить предзаказ" : "В корзину"}
                     {!isSold && (
                       <span
                         aria-hidden
@@ -316,40 +278,14 @@ function ProductView({ product }: { product: ShopProduct }) {
                       </p>
                     </Accordion>
                   )}
-                  {product.composition && (
-                    <Accordion
-                      label="Состав"
-                      open={open === "comp"}
-                      onToggle={() =>
-                        setOpen(open === "comp" ? null : "comp")
-                      }
-                    >
-                      <p className="text-sm leading-relaxed text-muted-foreground">
-                        {product.composition}
-                      </p>
-                    </Accordion>
-                  )}
-                  {product.care && (
-                    <Accordion
-                      label="Уход"
-                      open={open === "care"}
-                      onToggle={() =>
-                        setOpen(open === "care" ? null : "care")
-                      }
-                    >
-                      <p className="text-sm leading-relaxed text-muted-foreground">
-                        {product.care}
-                      </p>
-                    </Accordion>
-                  )}
                   <Accordion
                     label="Доставка"
                     open={open === "ship"}
                     onToggle={() => setOpen(open === "ship" ? null : "ship")}
                   >
-                    {product.shipping ? (
-                      <p className="whitespace-pre-line text-sm leading-relaxed text-muted-foreground">
-                        {product.shipping}
+                    {isDigital ? (
+                      <p className="text-sm leading-relaxed text-muted-foreground">
+                        Цифровой товар. После оплаты придёт ссылка на скачивание на email.
                       </p>
                     ) : (
                       <ul className="space-y-2 text-sm leading-relaxed text-muted-foreground">
@@ -364,7 +300,7 @@ function ProductView({ product }: { product: ShopProduct }) {
                     onToggle={() => setOpen(open === "returns" ? null : "returns")}
                   >
                     <p className="whitespace-pre-line text-sm leading-relaxed text-muted-foreground">
-                      {product.returns ?? "Возврат 14 дней, если вещь не носилась и сохранены ярлыки."}
+                      Возврат 14 дней, если вещь не носилась и сохранены ярлыки.
                     </p>
                   </Accordion>
                 </div>
@@ -380,10 +316,10 @@ function ProductView({ product }: { product: ShopProduct }) {
         <div className="flex items-center gap-3">
           <div className="flex flex-col">
             <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-              {size ? `Размер ${size}` : "Цена"}
+              Цена
             </span>
             <span className="font-display text-lg text-primary">
-              {product.price.toLocaleString("ru-RU")} ₽
+              {product.priceRub.toLocaleString("ru-RU")} ₽
             </span>
           </div>
           <button
@@ -391,11 +327,12 @@ function ProductView({ product }: { product: ShopProduct }) {
             onClick={() => handleAdd(false)}
             className="ml-auto flex flex-1 items-center justify-center gap-2 bg-primary px-5 py-3 font-display text-sm uppercase tracking-widest text-primary-foreground shadow-[0_10px_30px_-10px_hsl(var(--primary)/0.6)] disabled:bg-muted disabled:text-muted-foreground disabled:shadow-none"
           >
-            {isSold ? "Распродано" : "В корзину"}
+            {isSold ? "Распродано" : isPreorder ? "Предзаказ" : "В корзину"}
             {!isSold && <span aria-hidden>→</span>}
           </button>
         </div>
       </div>
+
 
       {/* SIZE GUIDE MODAL */}
       {sizeGuide && (
