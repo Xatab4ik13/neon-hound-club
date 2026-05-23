@@ -189,6 +189,11 @@ function MyRaffleRow({ raffle }: { raffle: MyRaffleItem }) {
           {won && <Trophy className="h-3 w-3 shrink-0 text-emerald-400" />}
           <span className="truncate text-[15px] font-semibold text-foreground">{raffle.title}</span>
         </div>
+        {won && raffle.wonPrizes.length > 0 && (
+          <div className="mt-0.5 truncate text-[12px] font-semibold text-emerald-300">
+            🏆 {raffle.wonPrizes.join(" · ")}
+          </div>
+        )}
         <div className="mt-0.5 text-[12px] text-muted-foreground">
           {formatMonth(raffle.endsAt)} · мои билеты: {raffle.myEntries}
           {finished && !won && raffle.winnerNick ? ` · забрал @${raffle.winnerNick}` : ""}
