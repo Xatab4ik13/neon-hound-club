@@ -7,6 +7,12 @@ import { getUser, type PublicUser } from "@/data/users";
 import { PlaqueBackground } from "./club";
 import { usePublicProfile, type PublicProfile } from "@/lib/garage-api";
 
+type ProfileView = PublicUser & {
+  bikeYear?: number | null;
+  bikeNickname?: string | null;
+  bikePhoto?: string | null;
+};
+
 export const Route = createFileRoute("/club/u/$nick")({
   head: ({ params }) => {
     const user = getUser(params.nick);
