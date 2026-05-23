@@ -56,32 +56,14 @@ const XP_HOW: Array<{ title: string; value: string }> = [
   { title: "Hell Pass (ежемесячно)", value: "+50…400 XP" },
 ];
 
-const PRODUCTS = [
-  {
-    name: "Худи Founder v1",
-    price: "12 990 ₽",
-    status: "Распродано",
-    statusColor: "text-muted-foreground",
-    image: founderHoodie,
-  },
-  {
-    name: "Перчатки Пит-крю",
-    price: "8 490 ₽",
-    status: "Осталось 24",
-    statusColor: "text-primary",
-    image: pitGloves,
-  },
-  {
-    name: "Ключ от гаража",
-    price: "2 490 ₽",
-    status: "В наличии",
-    statusColor: "text-muted-foreground",
-    image: garageKey,
-  },
-];
-
 function Index() {
   const { isAuthed } = useViewer();
+  const { data: showcase } = useQuery({
+    queryKey: qk.shopShowcase,
+    queryFn: fetchShopShowcase,
+  });
+  const showcaseItems = (showcase?.items ?? []).slice(0, 3);
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Header />
