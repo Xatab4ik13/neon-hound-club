@@ -599,13 +599,18 @@ function CommentItem({
 
 function UserLink({
   slug,
+  disabled = false,
   children,
   className = "",
 }: {
   slug: string;
+  disabled?: boolean;
   children: React.ReactNode;
   className?: string;
 }) {
+  if (disabled) {
+    return <span className={`shrink-0 ${className}`}>{children}</span>;
+  }
   return (
     <Link
       to="/club/u/$nick"
