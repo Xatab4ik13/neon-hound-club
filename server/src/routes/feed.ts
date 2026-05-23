@@ -192,6 +192,7 @@ async function hydratePosts(rows: typeof posts.$inferSelect[], viewerId: string 
         createdAt: c.createdAt,
         authorId: c.authorId,
         nick: c.nick,
+        role: c.role,
         avatarUrl: c.avatarUrl,
       })),
       createdAt: r.createdAt,
