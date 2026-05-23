@@ -714,7 +714,9 @@ function NotifyTab({ mobile }: { mobile?: boolean }) {
     saveMut.mutate({ [key]: v });
   };
 
-  if (q.isLoading || !q.data) return <LoadingBlock />;
+  if (q.isLoading) return <LoadingBlock />;
+  if (q.isError) return <ErrorBlock error={q.error} onRetry={() => q.refetch()} />;
+  if (!q.data) return <LoadingBlock />;
   const p = q.data;
 
   if (mobile) {
