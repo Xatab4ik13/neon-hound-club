@@ -258,6 +258,40 @@ export async function adminRafflesRoutes(app: FastifyInstance) {
     if (!r.ok) return reply.code(400).send({ error: r.reason });
     return r;
   });
+
+  // GET /api/v1/admin/raffles/:id/winners — полный список победителей с контактами,
+  // чтобы админ мог связаться. Подтягиваем nick/email/phone/city/avatar и название приза.
+  app.get<{ Params: { id: string } }>(
+    "/:id/winners",
+    { preHandler: requireAdmin },
+    async (req, reply) => {
+      const { profiles } = await import("../db/schema/profile.js");
+      const [r] = await db.select({ id: raffles.id, title: raffles.title }).from(raffles).where(eq(raffles.id, req.params.id)).limit(1);
+      if (!r) return reply.code(404).send({ error: "not_found" });
+
+      const rows = await db
+        .select({
+          id: rafflePrizeWinners.id,
+          createdAt: rafflePrizeWinners.createdAt,
+          prizeId: rafflePrizes.id,
+          prizeName: rafflePrizes.name,
+          userId: users.id,
+          nick: users.nick,
+          email: users.email,
+          phone: profiles.phone,
+          city: profiles.city,
+          avatarUrl: profiles.avatarUrl,
+        })
+        .from(rafflePrizeWinners)
+        .innerJoin(rafflePrizes, eq(rafflePrizes.id, rafflePrizeWinners.prizeId))
+        .innerJoin(users, eq(users.id, rafflePrizeWinners.userId))
+        .leftJoin(profiles, eq(profiles.userId, rafflePrizeWinners.userId))
+        .where(eq(rafflePrizeWinners.raffleId, req.params.id))
+        .orderBy(rafflePrizes.position, rafflePrizeWinners.createdAt);
+
+      return { raffle: r, items: rows };
+    },
+  );
 }
 
 // ---------- ADMIN: PRIZES CRUD ----------

@@ -6,6 +6,7 @@ import { users } from "../db/schema/users.js";
 import { profiles } from "../db/schema/profile.js";
 import { passPurchases } from "../db/schema/pass.js";
 import { ticketsLedger } from "../db/schema/tickets.js";
+import { orders } from "../db/schema/shop.js";
 import { badges, userBadges } from "../db/schema/badges.js";
 import { requireAdmin, hashPassword } from "../lib/auth.js";
 import { getOrCreateReferralCode } from "../lib/referrals.js";
@@ -101,6 +102,20 @@ export async function adminUsersRoutes(app: FastifyInstance) {
       .orderBy(desc(passPurchases.paidAt))
       .limit(1);
 
+    // Сумма потраченного в магазине: только оплаченные/отправленные/доставленные заказы.
+    const [{ totalSpentRub, ordersCount }] = await db
+      .select({
+        totalSpentRub: sql<number>`coalesce(sum(${orders.totalRub}), 0)::int`,
+        ordersCount: sql<number>`count(*)::int`,
+      })
+      .from(orders)
+      .where(
+        and(
+          eq(orders.userId, u.id),
+          sql`${orders.status} in ('paid','shipped','delivered')`,
+        ),
+      );
+
     const { getXpTotal, computeRank } = await import("../lib/xp.js");
     const xpTotal = await getXpTotal(u.id);
     const rank = computeRank(xpTotal);
@@ -109,6 +124,8 @@ export async function adminUsersRoutes(app: FastifyInstance) {
       ...u,
       ticketsBalance: Number(balance ?? 0),
       ticketsEarned: Number(earned ?? 0),
+      totalSpentRub: Number(totalSpentRub ?? 0),
+      ordersCount: Number(ordersCount ?? 0),
       activePass: activePass ?? null,
       xpTotal,
       rank,
