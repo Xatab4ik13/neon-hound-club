@@ -1,107 +1,107 @@
 import { Link } from "@tanstack/react-router";
 import { Logo } from "./Logo";
+import { LEGAL } from "@/data/legal";
+
+const SOCIALS = [
+  { label: "YouTube",  href: "https://www.youtube.com/@HELLHOUNDRacing" },
+  { label: "Telegram", href: "https://t.me/hell666hound" },
+  { label: "Twitch",   href: "https://www.twitch.tv/hellhound" },
+] as const;
 
 export function Footer() {
+  const year = new Date().getFullYear();
+
   return (
-    <footer className="border-t border-border bg-background py-10 md:py-12">
-      <div className="mx-auto max-w-7xl px-6">
-        <div className="grid gap-10 md:grid-cols-3 md:gap-12">
-          <div>
+    <footer className="relative border-t border-border bg-background">
+      {/* верхний тонкий неоновый штрих */}
+      <div className="h-px w-full bg-gradient-to-r from-transparent via-primary/60 to-transparent" />
+
+      <div className="mx-auto max-w-7xl px-6 pt-14 pb-8">
+        {/* верхний блок */}
+        <div className="grid gap-12 md:grid-cols-12">
+          {/* бренд */}
+          <div className="md:col-span-4">
             <Logo className="mb-4" />
-            <p className="text-xs uppercase leading-relaxed tracking-widest text-muted-foreground">
-              HELLHOUND Racing Club
-              <br />
-              Мото-комьюнити Hell
+            <p className="max-w-[34ch] text-sm leading-relaxed text-muted-foreground">
+              Андеграундный мото-клуб HELLHOUND. Лимитированный мерч,
+              Hell Pass, ранги, гараж и розыгрыши — без накруток.
             </p>
-          </div>
-          <div className="grid grid-cols-2 gap-8 md:flex md:gap-12">
-            <div className="space-y-3">
-              <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
-                Клуб
-              </div>
-              <ul className="space-y-2 text-xs uppercase tracking-wider">
-                <li>
-                  <Link to="/shop" className="transition-colors hover:text-primary">
-                    Магазин
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/hell-pass" className="transition-colors hover:text-primary">
-                    Hell Pass
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/school" className="transition-colors hover:text-primary">
-                    Школа
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/about" className="transition-colors hover:text-primary">
-                    О клубе
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/news" className="transition-colors hover:text-primary">
-                    Новости
-                  </Link>
-                </li>
-              </ul>
-            </div>
-            <div className="space-y-3">
-              <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
-                Соцсети
-              </div>
-              <ul className="space-y-2 text-xs uppercase tracking-wider">
-                <li>
-                  <a
-                    href="https://www.youtube.com/@HELLHOUNDRacing"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="transition-colors hover:text-primary"
-                  >
-                    YouTube
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="https://t.me/hellhound_racing"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="transition-colors hover:text-primary"
-                  >
-                    Telegram
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="https://www.instagram.com/hellhound.racing"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="transition-colors hover:text-primary"
-                  >
-                    Instagram
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="https://www.twitch.tv/hellhoundracing"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="transition-colors hover:text-primary"
-                  >
-                    Twitch
-                  </a>
-                </li>
-              </ul>
+            <div className="mt-6 inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1.5 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />
+              в&nbsp;сети · пинг 14&nbsp;ms
             </div>
           </div>
-          <div className="flex flex-col justify-between gap-3 text-left md:text-right">
-            <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
-              © 2026 HELLHOUND RACING CLUB. Все права защищены.
+
+          {/* навигация */}
+          <div className="md:col-span-2">
+            <div className="mb-4 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+              Клуб
             </div>
-            <div className="font-mono text-[10px] text-primary">
-              ПИНГ: 14MS // СТАТУС: В СЕТИ
+            <ul className="space-y-2.5 text-sm">
+              <li><Link to="/shop" className="transition-colors hover:text-primary">Магазин</Link></li>
+              <li><Link to="/hell-pass" className="transition-colors hover:text-primary">Hell Pass</Link></li>
+              <li><Link to="/school" className="transition-colors hover:text-primary">Школа</Link></li>
+              <li><Link to="/news" className="transition-colors hover:text-primary">Новости</Link></li>
+              <li><Link to="/about" className="transition-colors hover:text-primary">О клубе</Link></li>
+            </ul>
+          </div>
+
+          {/* соцсети */}
+          <div className="md:col-span-2">
+            <div className="mb-4 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+              Соцсети
             </div>
+            <ul className="space-y-2.5 text-sm">
+              {SOCIALS.map((s) => (
+                <li key={s.label}>
+                  <a
+                    href={s.href}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-2 transition-colors hover:text-primary"
+                  >
+                    {s.label}
+                    <span aria-hidden className="text-[10px] text-muted-foreground">↗</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* документы */}
+          <div className="md:col-span-4">
+            <div className="mb-4 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+              Документы
+            </div>
+            <ul className="grid grid-cols-1 gap-2.5 text-sm sm:grid-cols-2">
+              <li><Link to="/legal/terms" className="transition-colors hover:text-primary">Пользовательское соглашение</Link></li>
+              <li><Link to="/legal/privacy" className="transition-colors hover:text-primary">Политика ПДн</Link></li>
+              <li><Link to="/legal/offer" className="transition-colors hover:text-primary">Публичная оферта</Link></li>
+              <li><Link to="/legal/requisites" className="transition-colors hover:text-primary">Реквизиты</Link></li>
+            </ul>
+
+            <a
+              href={LEGAL.contactTelegram}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-6 inline-flex items-center gap-2 rounded-md border border-border bg-surface px-4 py-2 font-mono text-[11px] font-bold uppercase tracking-widest transition-colors hover:border-primary/60 hover:text-primary"
+            >
+              Поддержка · Telegram →
+            </a>
+          </div>
+        </div>
+
+        {/* разделитель */}
+        <div className="mt-12 border-t border-border/60" />
+
+        {/* нижняя строка: реквизиты ИП по 152-ФЗ */}
+        <div className="mt-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div className="font-mono text-[11px] leading-relaxed text-muted-foreground">
+            {LEGAL.shortName} · ОГРНИП {LEGAL.ogrnip} · ИНН {LEGAL.inn}
+            <span className="hidden md:inline"> · {LEGAL.region}</span>
+          </div>
+          <div className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+            © {year} {LEGAL.brand}
           </div>
         </div>
       </div>

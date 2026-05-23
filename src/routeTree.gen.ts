@@ -29,6 +29,10 @@ import { Route as BloggerIndexRouteImport } from './routes/blogger.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as ShopProductSlugRouteImport } from './routes/shop.$productSlug'
 import { Route as NewsSlugRouteImport } from './routes/news.$slug'
+import { Route as LegalTermsRouteImport } from './routes/legal.terms'
+import { Route as LegalRequisitesRouteImport } from './routes/legal.requisites'
+import { Route as LegalPrivacyRouteImport } from './routes/legal.privacy'
+import { Route as LegalOfferRouteImport } from './routes/legal.offer'
 import { Route as HellPassTierRouteImport } from './routes/hell-pass.$tier'
 import { Route as ClubTicketsRouteImport } from './routes/club.tickets'
 import { Route as ClubSchoolRouteImport } from './routes/club.school'
@@ -164,6 +168,26 @@ const ShopProductSlugRoute = ShopProductSlugRouteImport.update({
 const NewsSlugRoute = NewsSlugRouteImport.update({
   id: '/news/$slug',
   path: '/news/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LegalTermsRoute = LegalTermsRouteImport.update({
+  id: '/legal/terms',
+  path: '/legal/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LegalRequisitesRoute = LegalRequisitesRouteImport.update({
+  id: '/legal/requisites',
+  path: '/legal/requisites',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LegalPrivacyRoute = LegalPrivacyRouteImport.update({
+  id: '/legal/privacy',
+  path: '/legal/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LegalOfferRoute = LegalOfferRouteImport.update({
+  id: '/legal/offer',
+  path: '/legal/offer',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HellPassTierRoute = HellPassTierRouteImport.update({
@@ -386,6 +410,10 @@ export interface FileRoutesByFullPath {
   '/club/school': typeof ClubSchoolRoute
   '/club/tickets': typeof ClubTicketsRoute
   '/hell-pass/$tier': typeof HellPassTierRoute
+  '/legal/offer': typeof LegalOfferRoute
+  '/legal/privacy': typeof LegalPrivacyRoute
+  '/legal/requisites': typeof LegalRequisitesRoute
+  '/legal/terms': typeof LegalTermsRoute
   '/news/$slug': typeof NewsSlugRoute
   '/shop/$productSlug': typeof ShopProductSlugRoute
   '/admin/': typeof AdminIndexRoute
@@ -441,6 +469,10 @@ export interface FileRoutesByTo {
   '/club/school': typeof ClubSchoolRoute
   '/club/tickets': typeof ClubTicketsRoute
   '/hell-pass/$tier': typeof HellPassTierRoute
+  '/legal/offer': typeof LegalOfferRoute
+  '/legal/privacy': typeof LegalPrivacyRoute
+  '/legal/requisites': typeof LegalRequisitesRoute
+  '/legal/terms': typeof LegalTermsRoute
   '/news/$slug': typeof NewsSlugRoute
   '/shop/$productSlug': typeof ShopProductSlugRoute
   '/admin': typeof AdminIndexRoute
@@ -500,6 +532,10 @@ export interface FileRoutesById {
   '/club/school': typeof ClubSchoolRoute
   '/club/tickets': typeof ClubTicketsRoute
   '/hell-pass/$tier': typeof HellPassTierRoute
+  '/legal/offer': typeof LegalOfferRoute
+  '/legal/privacy': typeof LegalPrivacyRoute
+  '/legal/requisites': typeof LegalRequisitesRoute
+  '/legal/terms': typeof LegalTermsRoute
   '/news/$slug': typeof NewsSlugRoute
   '/shop/$productSlug': typeof ShopProductSlugRoute
   '/admin/': typeof AdminIndexRoute
@@ -560,6 +596,10 @@ export interface FileRouteTypes {
     | '/club/school'
     | '/club/tickets'
     | '/hell-pass/$tier'
+    | '/legal/offer'
+    | '/legal/privacy'
+    | '/legal/requisites'
+    | '/legal/terms'
     | '/news/$slug'
     | '/shop/$productSlug'
     | '/admin/'
@@ -615,6 +655,10 @@ export interface FileRouteTypes {
     | '/club/school'
     | '/club/tickets'
     | '/hell-pass/$tier'
+    | '/legal/offer'
+    | '/legal/privacy'
+    | '/legal/requisites'
+    | '/legal/terms'
     | '/news/$slug'
     | '/shop/$productSlug'
     | '/admin'
@@ -673,6 +717,10 @@ export interface FileRouteTypes {
     | '/club/school'
     | '/club/tickets'
     | '/hell-pass/$tier'
+    | '/legal/offer'
+    | '/legal/privacy'
+    | '/legal/requisites'
+    | '/legal/terms'
     | '/news/$slug'
     | '/shop/$productSlug'
     | '/admin/'
@@ -707,6 +755,10 @@ export interface RootRouteChildren {
   VerifyEmailRoute: typeof VerifyEmailRoute
   CheckoutSuccessRoute: typeof CheckoutSuccessRoute
   HellPassTierRoute: typeof HellPassTierRoute
+  LegalOfferRoute: typeof LegalOfferRoute
+  LegalPrivacyRoute: typeof LegalPrivacyRoute
+  LegalRequisitesRoute: typeof LegalRequisitesRoute
+  LegalTermsRoute: typeof LegalTermsRoute
   NewsSlugRoute: typeof NewsSlugRoute
   ShopProductSlugRoute: typeof ShopProductSlugRoute
   CheckoutIndexRoute: typeof CheckoutIndexRoute
@@ -855,6 +907,34 @@ declare module '@tanstack/react-router' {
       path: '/news/$slug'
       fullPath: '/news/$slug'
       preLoaderRoute: typeof NewsSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/legal/terms': {
+      id: '/legal/terms'
+      path: '/legal/terms'
+      fullPath: '/legal/terms'
+      preLoaderRoute: typeof LegalTermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/legal/requisites': {
+      id: '/legal/requisites'
+      path: '/legal/requisites'
+      fullPath: '/legal/requisites'
+      preLoaderRoute: typeof LegalRequisitesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/legal/privacy': {
+      id: '/legal/privacy'
+      path: '/legal/privacy'
+      fullPath: '/legal/privacy'
+      preLoaderRoute: typeof LegalPrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/legal/offer': {
+      id: '/legal/offer'
+      path: '/legal/offer'
+      fullPath: '/legal/offer'
+      preLoaderRoute: typeof LegalOfferRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/hell-pass/$tier': {
@@ -1225,6 +1305,10 @@ const rootRouteChildren: RootRouteChildren = {
   VerifyEmailRoute: VerifyEmailRoute,
   CheckoutSuccessRoute: CheckoutSuccessRoute,
   HellPassTierRoute: HellPassTierRoute,
+  LegalOfferRoute: LegalOfferRoute,
+  LegalPrivacyRoute: LegalPrivacyRoute,
+  LegalRequisitesRoute: LegalRequisitesRoute,
+  LegalTermsRoute: LegalTermsRoute,
   NewsSlugRoute: NewsSlugRoute,
   ShopProductSlugRoute: ShopProductSlugRoute,
   CheckoutIndexRoute: CheckoutIndexRoute,
