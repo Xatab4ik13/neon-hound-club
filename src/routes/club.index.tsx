@@ -1092,9 +1092,11 @@ function StickerPanel({
                   isActive ? "bg-primary/15 text-foreground" : "text-muted-foreground hover:bg-white/[0.05] hover:text-foreground"
                 }`}
               >
-                {p.cover}
-              </button>
-            );
+                {p.coverIsImage ? (
+                  <img src={p.cover} alt="" draggable={false} className="h-7 w-7 select-none object-contain" />
+                ) : (
+                  p.cover
+                )}
           })}
         </div>
       </div>
