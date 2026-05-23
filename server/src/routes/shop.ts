@@ -304,8 +304,14 @@ export async function adminShopRoutes(app: FastifyInstance) {
     if (!parsed.success) {
       return reply.code(400).send({ error: "invalid_input", message: parsed.error.issues[0]?.message });
     }
+    const d = parsed.data;
+    const values = {
+      ...d,
+      preorderExpectedAt: d.preorderExpectedAt ? new Date(d.preorderExpectedAt) : null,
+      stock: d.kind === "digital" ? null : d.stock,
+    };
     try {
-      const [row] = await db.insert(products).values(parsed.data).returning();
+      const [row] = await db.insert(products).values(values).returning();
       return reply.code(201).send(row);
     } catch (e: any) {
       if (String(e?.code) === "23505") {
@@ -320,9 +326,14 @@ export async function adminShopRoutes(app: FastifyInstance) {
     if (!parsed.success) {
       return reply.code(400).send({ error: "invalid_input", message: parsed.error.issues[0]?.message });
     }
+    const d = parsed.data;
+    const patch: Record<string, unknown> = { ...d, updatedAt: new Date() };
+    if (d.preorderExpectedAt !== undefined) {
+      patch.preorderExpectedAt = d.preorderExpectedAt ? new Date(d.preorderExpectedAt) : null;
+    }
     const [row] = await db
       .update(products)
-      .set({ ...parsed.data, updatedAt: new Date() })
+      .set(patch)
       .where(eq(products.id, req.params.id))
       .returning();
     if (!row) return reply.code(404).send({ error: "not_found" });
