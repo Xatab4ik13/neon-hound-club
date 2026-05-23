@@ -337,7 +337,7 @@ function ProductView({ product }: { product: ShopProduct }) {
             onClick={() => handleAdd(false)}
             className="ml-auto flex flex-1 items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 font-display text-sm font-black uppercase tracking-wider text-primary-foreground transition-all active:scale-[0.98] disabled:bg-muted disabled:text-muted-foreground"
           >
-            {sold ? "Распродано" : "В корзину"}
+            {sold ? "Распродано" : sizeMissing ? "Выбери размер" : "В корзину"}
           </button>
         </div>
       </div>
