@@ -58,6 +58,8 @@ export type QuestItem = {
 
 // ---------- SHOP TYPES ----------
 
+export type ProductKind = "physical" | "digital" | "preorder";
+
 export type ShopProductListItem = {
   id: string;
   slug: string;
@@ -66,13 +68,51 @@ export type ShopProductListItem = {
   bonusTickets: number;
   images: string[];
   stock: number | null;
+  kind: ProductKind;
+  categoryId: string | null;
+  subcategoryId: string | null;
+  preorderExpectedAt: string | null;
 };
 
 export type ShopProduct = ShopProductListItem & {
   description: string;
   active: boolean;
+  digitalFileUrl: string | null;
+  digitalFileName: string | null;
   createdAt: string;
   updatedAt: string;
+};
+
+export type ShopCategory = {
+  id: string;
+  slug: string;
+  name: string;
+  sort: number;
+  createdAt: string;
+};
+
+export type ShopSubcategory = {
+  id: string;
+  categoryId: string;
+  slug: string;
+  name: string;
+  sort: number;
+  createdAt: string;
+};
+
+export type ShopCategoryWithSubs = ShopCategory & { subs: ShopSubcategory[] };
+
+export type ShopShowcaseItem = {
+  id: string;
+  slug: string;
+  title: string;
+  priceRub: number;
+  bonusTickets: number;
+  images: string[];
+  stock: number | null;
+  kind: ProductKind;
+  preorderExpectedAt: string | null;
+  sort: number;
 };
 
 export type ShopOrderStatus =

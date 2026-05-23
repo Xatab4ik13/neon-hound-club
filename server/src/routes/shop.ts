@@ -401,8 +401,6 @@ export async function adminShopRoutes(app: FastifyInstance) {
 
     const full = await getOrderWithItems(req.params.id);
     if (!full) return reply.code(404).send({ error: "not_found" });
-    const full = await getOrderWithItems(req.params.id);
-    if (!full) return reply.code(404).send({ error: "not_found" });
     return full;
   });
 
