@@ -438,6 +438,9 @@ function ProductModal({
         digitalFileUrl: p.kind === "digital" ? p.digitalFileUrl || null : null,
         digitalFileName: p.kind === "digital" ? p.digitalFileName || null : null,
         preorderExpectedAt: p.kind === "preorder" ? p.preorderExpectedAt || null : null,
+        shippingInfo: (p.shippingInfo ?? "").trim(),
+        returnPolicy: (p.returnPolicy ?? "").trim(),
+        sizes: (p.sizes ?? []).map((s) => s.trim()).filter(Boolean),
       };
       return mode === "create"
         ? createAdminProduct(payload)
