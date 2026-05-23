@@ -130,8 +130,7 @@ function ProductView({ product }: { product: ShopProduct }) {
 
   return (
     <main
-      className="mx-auto w-full max-w-3xl"
-      style={{ paddingBottom: "calc(96px + env(safe-area-inset-bottom))" }}
+      className="mx-auto w-full max-w-3xl pb-[calc(96px+env(safe-area-inset-bottom))] md:pb-12"
     >
       <div className="flex items-center justify-between px-4 pt-4">
         <Link
