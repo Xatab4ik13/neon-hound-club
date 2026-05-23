@@ -636,15 +636,94 @@ function ProductModal({
         )}
 
         <Field
-          label="Картинки (URL'ы, по одной на строку)"
-          hint="Первая — обложка. Грузим в MinIO, сюда вставляем ссылки."
+          label={`Фото товара (до 5, первое — обложка) — ${images.length}/5`}
+          hint="JPG/PNG/WebP, до 8 МБ. Можно менять порядок стрелками."
         >
-          <TextArea
-            rows={3}
-            value={imagesText}
-            onChange={(e) => setImagesText(e.target.value)}
-            placeholder="https://cdn.hhr.pro/products/hoodie-front.jpg"
-          />
+          <div className="grid grid-cols-5 gap-2">
+            {Array.from({ length: 5 }).map((_, idx) => {
+              const url = images[idx];
+              const isUploading = uploadingIdx === idx;
+              if (url) {
+                return (
+                  <div
+                    key={idx}
+                    className="group relative aspect-square overflow-hidden rounded-md border border-white/10 bg-black/40"
+                  >
+                    <img src={url} alt="" className="h-full w-full object-cover" />
+                    {idx === 0 && (
+                      <span className="absolute left-1 top-1 rounded bg-primary px-1.5 py-0.5 text-[9px] font-bold uppercase text-primary-foreground">
+                        Обложка
+                      </span>
+                    )}
+                    <div className="absolute inset-x-1 bottom-1 flex items-center justify-between gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                      <div className="flex gap-0.5">
+                        <button
+                          type="button"
+                          onClick={() => moveImage(idx, -1)}
+                          disabled={idx === 0}
+                          className="grid h-6 w-6 place-items-center rounded bg-black/70 text-foreground disabled:opacity-30"
+                          aria-label="Левее"
+                        >
+                          ‹
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => moveImage(idx, 1)}
+                          disabled={idx === images.length - 1}
+                          className="grid h-6 w-6 place-items-center rounded bg-black/70 text-foreground disabled:opacity-30"
+                          aria-label="Правее"
+                        >
+                          ›
+                        </button>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeImage(idx)}
+                        className="grid h-6 w-6 place-items-center rounded bg-red-600/90 text-white"
+                        aria-label="Удалить"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              }
+              if (idx > images.length) {
+                return (
+                  <div
+                    key={idx}
+                    className="aspect-square rounded-md border border-dashed border-white/5 bg-black/20"
+                  />
+                );
+              }
+              return (
+                <label
+                  key={idx}
+                  className="grid aspect-square cursor-pointer place-items-center rounded-md border border-dashed border-white/15 bg-black/20 text-xs text-muted-foreground transition-colors hover:border-primary/60 hover:text-foreground"
+                >
+                  {isUploading ? (
+                    <span className="font-mono text-[10px] uppercase">…</span>
+                  ) : (
+                    <span className="flex flex-col items-center gap-1">
+                      <Plus className="h-5 w-5" />
+                      <span className="font-mono text-[10px] uppercase">Фото</span>
+                    </span>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    disabled={isUploading}
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) handleUpload(f);
+                      e.target.value = "";
+                    }}
+                  />
+                </label>
+              );
+            })}
+          </div>
         </Field>
       </div>
     </Modal>
