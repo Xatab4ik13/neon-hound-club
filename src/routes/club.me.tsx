@@ -30,6 +30,7 @@ import { RANKS, type PlaqueBg, type RankMeta } from "@/data/ranks";
 import { PlaqueBackground } from "./club";
 import { IOSListSection, IOSListRow } from "@/components/ios/IOSList";
 import { IOSSheet } from "@/components/ios/IOSSheet";
+import { IOSConfirm } from "@/components/ios/IOSConfirm";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 export const Route = createFileRoute("/club/me")({
