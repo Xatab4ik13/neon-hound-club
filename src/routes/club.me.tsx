@@ -285,8 +285,11 @@ function BackgroundPickerSheet({
   open: boolean;
   onOpenChange: (v: boolean) => void;
 }) {
-  const { rankIndex, customPlaqueBg } = useRankState();
-  const { rank } = useCurrentRank();
+  const { customPlaqueBg } = useRankState();
+  const profileQ = useMyProfile();
+  const view = deriveRankView(profileQ.data?.rank, customPlaqueBg);
+  const rankIndex = view.rankIndex;
+  const rank = view.rank;
   const available = getAvailablePlaqueBgs(rankIndex);
   // полный список — чтобы показать заблокированные тоже
   const allBgs: PlaqueBg[] = Object.keys(BG_LABELS) as PlaqueBg[];
