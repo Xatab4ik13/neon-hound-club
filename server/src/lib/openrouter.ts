@@ -38,7 +38,7 @@ export async function chatCompletion(opts: {
       Authorization: `Bearer ${key}`,
       // OpenRouter рекомендует прислать referer и title для аналитики.
       "HTTP-Referer": process.env.OPENROUTER_REFERER || "https://hhr.pro",
-      "X-Title": "HELLHOUND Racing — Hell AI",
+      "X-Title": "HELLHOUND Racing - Hell AI",
     },
     body: JSON.stringify({
       model: opts.model,
