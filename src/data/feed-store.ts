@@ -83,6 +83,7 @@ function ensurePublicUser(input: {
   role: string | null;
   avatarUrl: string | null;
   city: string | null;
+  rankId?: string | null;
 }): string {
   const slug = makeSlug(input.nick);
   const isBlogger = input.role === "blogger";
@@ -91,16 +92,19 @@ function ensurePublicUser(input: {
   const nextAvatar = input.avatarUrl ?? undefined;
   const nextCity = input.city ?? undefined;
   const nextInitials = initialsOf(input.nick);
+  const nextRank = (input.rankId ?? null) as PublicUser["rank"] | null;
   if (PUBLIC_USERS[slug]) {
     const cur = PUBLIC_USERS[slug];
     const nextBlogger = input.role == null ? cur.isBlogger === true : isBlogger;
+    const resolvedRank = nextRank ?? cur.rank;
     if (
       cur.nick !== input.nick ||
       cur.initials !== nextInitials ||
       cur.role !== role ||
       cur.city !== nextCity ||
       cur.avatarUrl !== nextAvatar ||
-      cur.isBlogger !== nextBlogger
+      cur.isBlogger !== nextBlogger ||
+      cur.rank !== resolvedRank
     ) {
       PUBLIC_USERS[slug] = {
         ...cur,
@@ -110,6 +114,7 @@ function ensurePublicUser(input: {
         city: nextCity,
         avatarUrl: nextAvatar,
         isBlogger: nextBlogger,
+        rank: resolvedRank,
       };
     }
     return slug;
@@ -118,7 +123,7 @@ function ensurePublicUser(input: {
     slug,
     nick: input.nick,
     initials: nextInitials,
-    rank: "rookie",
+    rank: nextRank ?? "rookie",
     xpPct: 0,
     role,
     isBlogger,
