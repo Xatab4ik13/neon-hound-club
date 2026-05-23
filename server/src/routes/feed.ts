@@ -310,6 +310,7 @@ export async function feedRoutes(app: FastifyInstance) {
   app.delete<{ Params: { cid: string } }>("/comments/:cid/like", { preHandler: requireAuth }, async (req) => {
     const s = req.user as SessionPayload;
     await db.delete(commentLikes).where(and(eq(commentLikes.commentId, req.params.cid), eq(commentLikes.userId, s.sub)));
+    publishFeedEvent("comment.liked", { commentId: req.params.cid, liked: false });
     return { ok: true };
   });
 
