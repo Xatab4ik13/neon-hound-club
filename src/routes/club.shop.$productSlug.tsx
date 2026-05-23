@@ -14,6 +14,7 @@ import { haptic } from "@/hooks/use-haptic";
 import { ApiError } from "@/lib/api";
 import { LazyImage } from "@/components/ui/lazy-image";
 import { fetchShopProduct, qk, type ShopProduct } from "@/lib/queries";
+import { SPECIAL_PACK_COVER } from "@/assets/stickers/special";
 
 export const Route = createFileRoute("/club/shop/$productSlug")({
   head: ({ params }) => ({
@@ -89,7 +90,12 @@ function ProductPage() {
 }
 
 function ProductView({ product }: { product: ShopProduct }) {
-  const gallery = product.images.length > 0 ? product.images : [];
+  const gallery =
+    product.images.length > 0
+      ? product.images
+      : product.slug === "stickerpack-special"
+        ? [SPECIAL_PACK_COVER]
+        : [];
   const [slide, setSlide] = useState(0);
   const [qty, setQty] = useState(1);
   const [open, setOpen] = useState<"desc" | "ship" | "returns" | null>("desc");

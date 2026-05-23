@@ -13,6 +13,7 @@ import { Footer } from "@/components/brand/Footer";
 import { useCart } from "@/hooks/use-cart";
 import { ApiError } from "@/lib/api";
 import { fetchShopProduct, qk, type ShopProduct } from "@/lib/queries";
+import { SPECIAL_PACK_COVER } from "@/assets/stickers/special";
 
 function ticketsWordPdp(n: number) {
   const mod10 = n % 10;
@@ -112,7 +113,11 @@ function ProductPage() {
 }
 
 function ProductView({ product }: { product: ShopProduct }) {
-  const gallery: string[] = product.images.length > 0 ? product.images : [];
+  const fallback =
+    product.images.length === 0 && product.slug === "stickerpack-special"
+      ? [SPECIAL_PACK_COVER]
+      : [];
+  const gallery: string[] = product.images.length > 0 ? product.images : fallback;
 
   const [qty, setQty] = useState(1);
   const [open, setOpen] = useState<AccordionKey | null>("desc");
