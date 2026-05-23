@@ -36,6 +36,7 @@ function BloggerLayout() {
   const isMobile = useIsMobile();
   const viewer = useViewer();
   const navigate = useNavigate();
+  useEdgeSwipeBack(true);
 
   const goToSettings = () => navigate({ to: "/blogger/settings" });
 
