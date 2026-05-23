@@ -291,8 +291,6 @@ function LoadingBlock() {
 // PROFILE TAB
 // ════════════════════════════════════════════════════════════════════
 
-const NICK_MAX = 16;
-const NICK_MIN = 3;
 
 function ProfileTab({ mobile }: { mobile?: boolean }) {
   const meQ = useMyProfile();
