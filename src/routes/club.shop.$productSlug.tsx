@@ -10,6 +10,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight, Minus, Plus, ShoppingBag, Ticket } from "lucide-react";
 import { hhToast } from "@/lib/hh-toast";
 import { useCart } from "@/hooks/use-cart";
+import { haptic } from "@/hooks/use-haptic";
 import { ApiError } from "@/lib/api";
 import { fetchShopProduct, qk, type ShopProduct } from "@/lib/queries";
 
@@ -104,9 +105,11 @@ function ProductView({ product }: { product: ShopProduct }) {
   const handleAdd = (goToCart = false) => {
     if (sold) return;
     if (sizeMissing) {
+      haptic("warning");
       hhToast.error("Выбери размер");
       return;
     }
+    haptic("success");
     add(
       {
         productId: product.id,
