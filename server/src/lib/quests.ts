@@ -8,6 +8,7 @@ import {
 } from "../db/schema/quests.js";
 import { ticketCredit } from "./tickets.js";
 import { awardXp } from "./xp.js";
+import { getActivePassPerks } from "./pass.js";
 
 /**
  * Зафиксированная сетка квестов (см. .lovable/plan.md).
