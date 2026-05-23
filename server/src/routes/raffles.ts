@@ -2,10 +2,24 @@ import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { and, count, desc, eq, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
-import { raffles, raffleEntries, RAFFLE_STATUSES } from "../db/schema/raffles.js";
+import {
+  raffles,
+  raffleEntries,
+  rafflePrizes,
+  rafflePrizeWinners,
+  RAFFLE_STATUSES,
+} from "../db/schema/raffles.js";
 import { users } from "../db/schema/users.js";
-import { requireAuth, requireAdmin, type SessionPayload } from "../lib/auth.js";
-import { cancelRaffleWithRefund, enterRaffle, pickWinner } from "../lib/raffles.js";
+import { requireAuth, requireAdmin, requireBloggerOrAdmin, type SessionPayload } from "../lib/auth.js";
+import {
+  cancelRaffleWithRefund,
+  confirmRafflePrizeWinner,
+  drawRafflePrizeWinner,
+  enterRaffle,
+  getRaffleBoard,
+  listRafflePrizes,
+  pickWinner,
+} from "../lib/raffles.js";
 
 // ---------- USER / PUBLIC ----------
 
