@@ -75,7 +75,12 @@ export function PostCard({ post, moderate = false }: { post: Post; moderate?: bo
           {isHell(post.authorSlug) ? (
             <HellhoundAvatar size={44} initials={author?.initials ?? "H"} avatarUrl={author?.avatarUrl} />
           ) : (
-            <RankAvatar initials={author?.initials ?? "?"} rankId={author?.rank ?? "rookie"} size={44} />
+            <RankAvatar
+              initials={author?.initials ?? "?"}
+              rankId={author?.rank ?? "rookie"}
+              avatarUrl={author?.avatarUrl}
+              size={44}
+            />
           )}
         </UserLink>
         <div className="min-w-0 flex-1">
@@ -520,7 +525,12 @@ function CommentItem({
         {isHell(comment.authorSlug) ? (
           <HellhoundAvatar size={large ? 40 : 36} initials={user?.initials ?? "H"} avatarUrl={user?.avatarUrl} />
         ) : (
-          <RankAvatar initials={user?.initials ?? "?"} rankId={user?.rank ?? "rookie"} size={large ? 40 : 36} />
+          <RankAvatar
+            initials={user?.initials ?? "?"}
+            rankId={user?.rank ?? "rookie"}
+            avatarUrl={user?.avatarUrl}
+            size={large ? 40 : 36}
+          />
         )}
       </UserLink>
       <div className="min-w-0 flex-1">
@@ -618,16 +628,18 @@ function UserLink({
 function RankAvatar({
   initials,
   rankId,
+  avatarUrl,
   size = 36,
 }: {
   initials: string;
   rankId: RankId;
+  avatarUrl?: string;
   size?: number;
 }) {
   const rank = RANK_BY_ID[rankId];
   return (
     <div
-      className="relative flex shrink-0 items-center justify-center"
+      className="relative flex shrink-0 items-center justify-center overflow-hidden"
       style={{
         height: size,
         width: size,
@@ -646,12 +658,22 @@ function RankAvatar({
           background: `linear-gradient(135deg, ${rank.accent} 0%, transparent 70%)`,
         }}
       />
-      <span
-        className="relative font-display font-black uppercase italic"
-        style={{ color: rank.accent, fontSize: Math.round(size * 0.32) }}
-      >
-        {initials}
-      </span>
+      {avatarUrl ? (
+        <img
+          src={avatarUrl}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+      ) : (
+        <span
+          className="relative font-display font-black uppercase italic"
+          style={{ color: rank.accent, fontSize: Math.round(size * 0.32) }}
+        >
+          {initials}
+        </span>
+      )}
     </div>
   );
 }
