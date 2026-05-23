@@ -78,6 +78,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
+  useEffect(() => {
+    captureRefFromUrl();
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <ViewerProvider>
