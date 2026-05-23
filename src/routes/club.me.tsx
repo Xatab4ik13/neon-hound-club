@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   Bike,
   Calendar,
@@ -18,14 +19,14 @@ import { BadgeCase } from "@/components/club/BadgeCase";
 import { useMyProfile } from "@/lib/garage-api";
 import { useViewer } from "@/hooks/use-viewer";
 import {
-  useCurrentRank,
   useRankState,
   setCustomPlaqueBg,
   getAvailablePlaqueBgs,
   getPlaqueBgRankIndex,
 } from "@/data/rank-state";
-import { usePassState } from "@/data/pass-state";
-import { RANKS, type PlaqueBg } from "@/data/ranks";
+import { fetchPassMe, type RankInfo } from "@/lib/queries";
+import { TIERS, type Tier } from "@/data/hell-pass";
+import { RANKS, type PlaqueBg, type RankMeta } from "@/data/ranks";
 import { PlaqueBackground } from "./club";
 import { IOSListSection, IOSListRow } from "@/components/ios/IOSList";
 import { IOSSheet } from "@/components/ios/IOSSheet";
@@ -62,12 +63,35 @@ const BG_LABELS: Record<PlaqueBg, string> = {
   "legend-holo-prism": "Голо-призма",
 };
 
+// Сводим backend-ранг (RankInfo) + кастомный фон → данные для UI плашки.
+function deriveRankView(rank: RankInfo | null | undefined, customBg: PlaqueBg | null) {
+  const rankIndex = Math.max(0, Math.min(RANKS.length - 1, rank?.rankIndex ?? 0));
+  const meta: RankMeta = RANKS[rankIndex];
+  const next: RankMeta | null = RANKS[rankIndex + 1] ?? null;
+  const allowed = getAvailablePlaqueBgs(rankIndex);
+  const plaqueBg: PlaqueBg =
+    customBg && allowed.includes(customBg) ? customBg : meta.plaqueBg;
+  const isMax = !!rank?.isMax;
+  return {
+    rank: meta,
+    plaqueBg,
+    next,
+    xp: rank?.inRank ?? 0,
+    xpMax: rank?.span ?? 0,
+    xpPct: isMax ? 100 : (rank?.pct ?? 0),
+    toNext: rank?.toNext ?? 0,
+    isMax,
+    rankIndex,
+  };
+}
 
 function MePage() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [bgSheetOpen, setBgSheetOpen] = useState(false);
   const isMobile = useIsMobile();
-  const { tierInfo } = usePassState();
+  const passQ = useQuery({ queryKey: ["pass", "me"], queryFn: fetchPassMe, staleTime: 30_000, retry: false });
+  const activeTierSlug = passQ.data?.active?.status === "active" ? passQ.data.active.tier : null;
+  const tierInfo: Tier | null = activeTierSlug ? TIERS.find((t) => t.slug === activeTierSlug) ?? null : null;
   const { signOut } = useViewer();
 
   const handleLogout = async () => {
@@ -172,7 +196,7 @@ function MePage() {
   );
 }
 
-function PassRow({ tier }: { tier: ReturnType<typeof usePassState>["tierInfo"] }) {
+function PassRow({ tier }: { tier: Tier | null }) {
   if (!tier) {
     return (
       <IOSListRow
@@ -209,7 +233,7 @@ function PassRow({ tier }: { tier: ReturnType<typeof usePassState>["tierInfo"] }
   );
 }
 
-function PassDesktopRow({ tier }: { tier: ReturnType<typeof usePassState>["tierInfo"] }) {
+function PassDesktopRow({ tier }: { tier: Tier | null }) {
   if (!tier) {
     return (
       <ActionRow
@@ -261,8 +285,11 @@ function BackgroundPickerSheet({
   open: boolean;
   onOpenChange: (v: boolean) => void;
 }) {
-  const { rankIndex, customPlaqueBg } = useRankState();
-  const { rank } = useCurrentRank();
+  const { customPlaqueBg } = useRankState();
+  const profileQ = useMyProfile();
+  const view = deriveRankView(profileQ.data?.rank, customPlaqueBg);
+  const rankIndex = view.rankIndex;
+  const rank = view.rank;
   const available = getAvailablePlaqueBgs(rankIndex);
   // полный список — чтобы показать заблокированные тоже
   const allBgs: PlaqueBg[] = Object.keys(BG_LABELS) as PlaqueBg[];
@@ -339,10 +366,14 @@ function BackgroundPickerSheet({
 }
 
 function ProfileHero({ onSettings }: { onSettings: () => void }) {
-  const { rank, plaqueBg, xp, xpMax, xpPct, isMax, next } = useCurrentRank();
+  const { customPlaqueBg } = useRankState();
   const { nick: viewerNick } = useViewer();
   const profileQ = useMyProfile();
   const profile = profileQ.data;
+  const { rank, plaqueBg, xp, xpMax, xpPct, isMax, next } = deriveRankView(
+    profile?.rank,
+    customPlaqueBg,
+  );
 
   const nick = profile?.nick ?? viewerNick ?? "RIDER";
   const city = profile?.city ?? null;
