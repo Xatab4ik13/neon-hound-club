@@ -5,6 +5,7 @@
 import { Drawer } from "vaul";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { useThemeColor } from "@/hooks/use-theme-color";
 
 type Props = {
   open: boolean;
