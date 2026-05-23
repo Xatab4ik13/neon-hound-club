@@ -37,7 +37,6 @@ export const PUBLIC_USERS: Record<string, PublicUser> = {
     rank: "hell-legend",
     xpPct: 100,
     role: "owner",
-    isBlogger: true,
     city: "Москва",
     bike: "Yamaha R1 / Kawasaki H2",
     joined: "май 2024",
