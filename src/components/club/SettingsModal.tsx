@@ -844,8 +844,8 @@ function AccountTab({ mobile, onClose }: { mobile?: boolean; onClose?: () => voi
     }
   };
 
-  const onLogout = async () => {
-    if (typeof window !== "undefined" && !window.confirm("Выйти из аккаунта?")) return;
+  const [confirmLogout, setConfirmLogout] = useState(false);
+  const doLogoutNow = async () => {
     try {
       await signOut();
     } finally {
@@ -853,6 +853,8 @@ function AccountTab({ mobile, onClose }: { mobile?: boolean; onClose?: () => voi
       window.location.href = "/";
     }
   };
+  const onLogout = () => setConfirmLogout(true);
+
 
   const onDelete = async () => {
     try {
