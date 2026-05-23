@@ -12,9 +12,8 @@ import { useState } from "react";
 import { PageHeader } from "@/components/club/PageHeader";
 import {
   buildReferralUrl,
-  myReferralCode,
   REFERRAL_REWARD_TICKETS,
-  useReferrals,
+  useInvitesMe,
 } from "@/data/referral";
 
 export const Route = createFileRoute("/club/invite")({
@@ -32,13 +31,14 @@ export const Route = createFileRoute("/club/invite")({
 });
 
 function InvitePage() {
-  const friends = useReferrals();
-  const url = buildReferralUrl();
-  const code = myReferralCode();
+  const { data } = useInvitesMe();
+  const friends = data?.items ?? [];
+  const code = data?.code ?? "";
+  const url = code ? buildReferralUrl(code) : "";
   const [copied, setCopied] = useState(false);
 
   function copy() {
-    if (typeof navigator === "undefined" || !navigator.clipboard) return;
+    if (!url || typeof navigator === "undefined" || !navigator.clipboard) return;
     navigator.clipboard.writeText(url).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
@@ -49,7 +49,7 @@ function InvitePage() {
     `Залетай в клуб HELLHOUND. По моей ссылке — +${REFERRAL_REWARD_TICKETS} билет на старте.`,
   );
   const shareUrl = encodeURIComponent(url);
-  const total = friends.reduce((s, f) => s + f.ticketsRewarded, 0);
+  const total = data?.totals.tickets ?? 0;
 
   async function nativeShare() {
     if (typeof navigator === "undefined" || !navigator.share) {
@@ -208,7 +208,7 @@ function InvitePage() {
                     {f.nick}
                   </div>
                   <div className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-                    {f.joinedAt}
+                    {f.joinedAt.slice(0, 10)}
                   </div>
                 </div>
                 <span

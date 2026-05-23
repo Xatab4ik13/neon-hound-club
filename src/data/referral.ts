@@ -1,75 +1,67 @@
-// Рефералка. Без бэка: код — slug ника, список приглашённых — в localStorage.
+// Реферальная программа — поверх бекенда (/api/v1/invites/me).
+// Реф-код сохраняем при заходе по ?ref=... в localStorage,
+// чтобы прокинуть на /api/v1/auth/register.
 
-import { useSyncExternalStore } from "react";
-import { ME } from "./profile";
+import { useQuery } from "@tanstack/react-query";
+import { useViewer } from "@/hooks/use-viewer";
+import { fetchInvitesMe, qk, type InvitedFriendApi } from "@/lib/queries";
 
-const STORAGE_KEY = "hellhound:referrals";
+const PENDING_REF_KEY = "hellhound:pending_ref";
 
-export type InvitedFriend = {
-  id: string;
-  nick: string;
-  joinedAt: string; // ISO yyyy-mm-dd
-  ticketsRewarded: number;
-  status: "joined" | "active";
-};
+/** Сколько билетов выдаётся обоим (статика для UI; источник истины — бекенд). */
+export const REFERRAL_REWARD_TICKETS = 1;
 
-const SEED: InvitedFriend[] = [
-  { id: "i1", nick: "MOSCOW_RAVE", joinedAt: "2026-04-12", ticketsRewarded: 1, status: "active" },
-  { id: "i2", nick: "VLAD_X", joinedAt: "2026-05-02", ticketsRewarded: 1, status: "joined" },
-];
-
-let STATE: InvitedFriend[] = SEED;
-let loaded = false;
-
-function load() {
-  if (loaded || typeof window === "undefined") return;
-  loaded = true;
+/** Захватываем ?ref=... из URL и кладём в localStorage. Вызывается один раз при загрузке приложения. */
+export function captureRefFromUrl() {
+  if (typeof window === "undefined") return;
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(SEED));
-      STATE = SEED;
-    } else {
-      STATE = JSON.parse(raw) as InvitedFriend[];
+    const url = new URL(window.location.href);
+    const ref = url.searchParams.get("ref");
+    if (ref) {
+      const clean = ref.toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 40);
+      if (clean) localStorage.setItem(PENDING_REF_KEY, clean);
     }
   } catch {
-    STATE = SEED;
+    /* noop */
   }
 }
 
-const listeners = new Set<() => void>();
-
-export const referralStore = {
-  subscribe(l: () => void) {
-    load();
-    listeners.add(l);
-    return () => listeners.delete(l);
-  },
-  getSnapshot() {
-    load();
-    return STATE;
-  },
-};
-
-export function useReferrals() {
-  return useSyncExternalStore(
-    referralStore.subscribe,
-    referralStore.getSnapshot,
-    referralStore.getSnapshot,
-  );
+export function getPendingRef(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return localStorage.getItem(PENDING_REF_KEY);
+  } catch {
+    return null;
+  }
 }
 
-/** Реферальный код = lowercase ник, без подчёркиваний и спецсимволов. */
-export function myReferralCode() {
-  return ME.nick.toLowerCase().replace(/[^a-z0-9]/g, "");
+export function clearPendingRef() {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.removeItem(PENDING_REF_KEY);
+  } catch {
+    /* noop */
+  }
 }
 
-export function buildReferralUrl(origin?: string) {
+export function buildReferralUrl(code: string, origin?: string) {
   const base =
     origin ??
-    (typeof window !== "undefined" ? window.location.origin : "https://hellhound.racing");
-  return `${base}/?ref=${myReferralCode()}`;
+    (typeof window !== "undefined"
+      ? window.location.origin
+      : "https://hhr.pro");
+  return `${base}/?ref=${code}`;
 }
 
-/** Награды: +1 билет мне и +1 другу за регистрацию. */
-export const REFERRAL_REWARD_TICKETS = 1;
+export type InvitedFriend = InvitedFriendApi;
+
+/** Хук: мой реф-код, список приглашённых, статы. Без авторизации — пусто. */
+export function useInvitesMe() {
+  const { isAuthed } = useViewer();
+  return useQuery({
+    queryKey: qk.invitesMe,
+    queryFn: fetchInvitesMe,
+    enabled: isAuthed,
+    staleTime: 60_000,
+  });
+}

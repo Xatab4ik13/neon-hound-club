@@ -134,7 +134,36 @@ export const qk = {
   raffles: ["raffles", "list"] as const,
   raffle: (id: string) => ["raffles", "item", id] as const,
   myRaffles: ["raffles", "my"] as const,
+  invitesMe: ["invites", "me"] as const,
 };
+
+// ---------- INVITES / REFERRALS ----------
+
+export type InvitedFriendApi = {
+  id: string;
+  nick: string;
+  status: "joined" | "active";
+  ticketsRewarded: number;
+  joinedAt: string;
+  activatedAt: string | null;
+};
+
+export type InvitesMeResponse = {
+  code: string;
+  rewardTickets: number;
+  totals: { total: number; active: number; tickets: number };
+  items: InvitedFriendApi[];
+};
+
+export async function fetchInvitesMe() {
+  return apiFetch<InvitesMeResponse>("/api/v1/invites/me");
+}
+
+export async function checkRefCode(code: string) {
+  return apiFetch<{ valid: boolean }>(
+    `/api/v1/invites/check?code=${encodeURIComponent(code)}`,
+  );
+}
 
 // ---------- RAFFLES ----------
 
