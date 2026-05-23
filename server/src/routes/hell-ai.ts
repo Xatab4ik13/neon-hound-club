@@ -159,20 +159,20 @@ export async function hellAiRoutes(app: FastifyInstance) {
       { role: "user", content: question },
     ];
 
-    // 5. Логируем вопрос (учитывается в лимите).
+    // 5. Логируем вопрос (учитывается в лимите). model для аналитики, наружу не отдаём.
     await db.insert(aiMessages).values({
       userId: session.sub,
       chatId: chatId ?? null,
       role: "user",
       content: question,
       bikeId: bikeId ?? null,
-      model: settings.model,
+      model: modelForRequest,
     });
 
-    // 6. Вызов модели.
+    // 6. Вызов модели. Клиенту НЕ возвращаем имя модели — для него это «Hell AI».
     try {
       const result = await chatCompletion({
-        model: settings.model,
+        model: modelForRequest,
         messages,
         temperature: 0.6,
         maxTokens: 900,
@@ -189,7 +189,7 @@ export async function hellAiRoutes(app: FastifyInstance) {
         tokensOut: result.tokensOut,
       });
 
-      return { answer: result.answer, model: result.model };
+      return { answer: result.answer };
     } catch (e) {
       const err = e as OpenRouterError;
       const status = err.status ?? 502;
