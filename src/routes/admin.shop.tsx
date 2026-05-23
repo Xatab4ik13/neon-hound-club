@@ -65,6 +65,23 @@ import type {
   ShopProduct,
 } from "@/lib/queries";
 
+// Кириллица → латиница для slug-ов
+const TRANSLIT: Record<string, string> = {
+  а: "a", б: "b", в: "v", г: "g", д: "d", е: "e", ё: "e", ж: "zh", з: "z",
+  и: "i", й: "y", к: "k", л: "l", м: "m", н: "n", о: "o", п: "p", р: "r",
+  с: "s", т: "t", у: "u", ф: "f", х: "h", ц: "c", ч: "ch", ш: "sh", щ: "sch",
+  ъ: "", ы: "y", ь: "", э: "e", ю: "yu", я: "ya",
+};
+function slugify(input: string): string {
+  return input
+    .toLowerCase()
+    .split("")
+    .map((ch) => (ch in TRANSLIT ? TRANSLIT[ch] : ch))
+    .join("")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 export const Route = createFileRoute("/admin/shop")({
   component: ShopPage,
 });
@@ -825,6 +842,7 @@ function CategoryModal({
   onDone: () => void;
 }) {
   const [c, setC] = useState(initial);
+  const [slugTouched, setSlugTouched] = useState(mode === "edit");
   const save = useMutation({
     mutationFn: () =>
       mode === "create"
@@ -852,18 +870,30 @@ function CategoryModal({
       }
     >
       <div className="space-y-3">
-        <Field label="Slug" hint="Латиница, цифры, дефис.">
+        <Field label="Название">
+          <TextInput
+            value={c.name}
+            onChange={(e) => {
+              const name = e.target.value;
+              setC((prev) => ({
+                ...prev,
+                name,
+                slug: mode === "create" && !slugTouched ? slugify(name) : prev.slug,
+              }));
+            }}
+            placeholder="Одежда"
+          />
+        </Field>
+        <Field label="Slug" hint="Технический id для URL. Заполняется автоматически.">
           <TextInput
             value={c.slug}
-            onChange={(e) =>
-              setC({ ...c, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "") })
-            }
+            onChange={(e) => {
+              setSlugTouched(true);
+              setC({ ...c, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "") });
+            }}
             placeholder="apparel"
             disabled={mode === "edit"}
           />
-        </Field>
-        <Field label="Название">
-          <TextInput value={c.name} onChange={(e) => setC({ ...c, name: e.target.value })} />
         </Field>
         <Field label="Сортировка" hint="Чем меньше — тем выше.">
           <TextInput
@@ -896,6 +926,7 @@ function SubcategoryModal({
   onDone: () => void;
 }) {
   const [s, setS] = useState(initial);
+  const [slugTouched, setSlugTouched] = useState(mode === "edit");
   const save = useMutation({
     mutationFn: () =>
       mode === "create"
@@ -927,18 +958,30 @@ function SubcategoryModal({
       }
     >
       <div className="space-y-3">
-        <Field label="Slug" hint="Уникален в рамках категории.">
+        <Field label="Название">
+          <TextInput
+            value={s.name}
+            onChange={(e) => {
+              const name = e.target.value;
+              setS((prev) => ({
+                ...prev,
+                name,
+                slug: mode === "create" && !slugTouched ? slugify(name) : prev.slug,
+              }));
+            }}
+            placeholder="Худи"
+          />
+        </Field>
+        <Field label="Slug" hint="Технический id для URL. Заполняется автоматически.">
           <TextInput
             value={s.slug}
-            onChange={(e) =>
-              setS({ ...s, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "") })
-            }
+            onChange={(e) => {
+              setSlugTouched(true);
+              setS({ ...s, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "") });
+            }}
             placeholder="hoodies"
             disabled={mode === "edit"}
           />
-        </Field>
-        <Field label="Название">
-          <TextInput value={s.name} onChange={(e) => setS({ ...s, name: e.target.value })} />
         </Field>
         <Field label="Сортировка">
           <TextInput
