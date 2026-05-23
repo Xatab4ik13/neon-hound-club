@@ -366,10 +366,14 @@ function BackgroundPickerSheet({
 }
 
 function ProfileHero({ onSettings }: { onSettings: () => void }) {
-  const { rank, plaqueBg, xp, xpMax, xpPct, isMax, next } = useCurrentRank();
+  const { customPlaqueBg } = useRankState();
   const { nick: viewerNick } = useViewer();
   const profileQ = useMyProfile();
   const profile = profileQ.data;
+  const { rank, plaqueBg, xp, xpMax, xpPct, isMax, next } = deriveRankView(
+    profile?.rank,
+    customPlaqueBg,
+  );
 
   const nick = profile?.nick ?? viewerNick ?? "RIDER";
   const city = profile?.city ?? null;
