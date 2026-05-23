@@ -6,8 +6,30 @@ import { posts, postLikes, postComments, postPollVotes, commentLikes, type PollD
 import { users } from "../db/schema/users.js";
 import { profiles } from "../db/schema/profile.js";
 import { loadSession, requireAuth, requireAdmin, type SessionPayload } from "../lib/auth.js";
-import { awardXp } from "../lib/xp.js";
+import { awardXp, computeRank } from "../lib/xp.js";
+import { xpEvents } from "../db/schema/xp.js";
 import { addClient, removeClient, publish as publishFeedEvent } from "../lib/feed-bus.js";
+
+// Считает rankId батчем для набора пользователей. Возвращает Map<userId, rankId>.
+// Пустой набор → пустая Map. Юзеры без событий получают rookie.
+async function getRanksMap(userIds: string[]): Promise<Map<string, string>> {
+  const out = new Map<string, string>();
+  if (userIds.length === 0) return out;
+  const rows = await db
+    .select({
+      userId: xpEvents.userId,
+      total: sql<number>`coalesce(sum(${xpEvents.amount}), 0)::int`,
+    })
+    .from(xpEvents)
+    .where(inArray(xpEvents.userId, userIds))
+    .groupBy(xpEvents.userId);
+  const totals = new Map(rows.map((r) => [r.userId, r.total ?? 0]));
+  for (const id of userIds) {
+    const t = totals.get(id) ?? 0;
+    out.set(id, computeRank(t).rankId);
+  }
+  return out;
+}
 
 // ───────── helpers ─────────
 
