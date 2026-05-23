@@ -1,12 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { Header } from "@/components/brand/Header";
 import { Footer } from "@/components/brand/Footer";
 import { Hero } from "@/components/brand/Hero";
 import { useViewer } from "@/hooks/use-viewer";
+import { fetchShopShowcase, qk } from "@/lib/queries";
 import pinkR6 from "@/assets/pink-r6.jpg";
-import founderHoodie from "@/assets/founder-hoodie.jpg";
-import pitGloves from "@/assets/pit-gloves.jpg";
-import garageKey from "@/assets/garage-key.jpg";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
