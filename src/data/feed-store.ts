@@ -2,6 +2,7 @@
 // внутри — реальные вызовы Fastify (см. server/src/routes/feed.ts).
 
 import { useSyncExternalStore, useEffect } from "react";
+import { BACKEND_URL } from "@/lib/api";
 import {
   fetchFeed,
   createPost,
