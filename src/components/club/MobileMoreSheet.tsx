@@ -64,6 +64,7 @@ export function MobileMoreSheet({
 }) {
   const close = () => onOpenChange(false);
   const { count: cartCount } = useCart();
+  const { signOut } = useViewer();
   const GROUPS = buildGroups(cartCount);
 
   return (
