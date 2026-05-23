@@ -1,9 +1,10 @@
 // Документы по байку: ОСАГО, КАСКО, ТО, ПТС/СТС, ВУ.
-// localStorage, без бэка. Привязка к bikeId.
+// Бэкенд (Fastify + Postgres + S3/MinIO).
 
 import { useSyncExternalStore } from "react";
+import { apiFetch } from "@/lib/api";
 
-const STORAGE_KEY = "hellhound:bike-documents";
+const ENDPOINT = "/api/v1/garage/documents";
 
 export type DocType = "osago" | "kasko" | "to" | "sts" | "pts" | "license";
 
@@ -30,106 +31,119 @@ export type BikeDocument = {
   id: string;
   bikeId: string;
   type: DocType;
-  number?: string;
-  issueDate?: string; // ISO
-  expiryDate?: string; // ISO, для срочных
-  /** @deprecated используй photos */
-  photo?: string;
-  /** Несколько фото: лицевая/обратная и т.д. dataURL. */
+  number?: string | null;
+  issueDate?: string | null;
+  expiryDate?: string | null;
+  /** Несколько фото: лицевая/обратная и т.д. Это публичные URL из нашего S3. */
   photos?: string[];
-  note?: string;
+  note?: string | null;
 };
 
-/** Возвращает массив фото из документа (поддержка старого поля `photo`). */
+/** Возвращает массив фото из документа. */
 export function docPhotos(d: BikeDocument): string[] {
-  if (d.photos && d.photos.length > 0) return d.photos;
-  if (d.photo) return [d.photo];
-  return [];
+  return d.photos ?? [];
 }
 
 type State = { docs: BikeDocument[] };
 
-const SEED: State = {
-  docs: [
-    {
-      id: "d_seed_1",
-      bikeId: "b1",
-      type: "osago",
-      number: "ХХХ 0123456789",
-      issueDate: "2025-08-01",
-      expiryDate: "2026-07-31",
-    },
-    {
-      id: "d_seed_2",
-      bikeId: "b1",
-      type: "sts",
-      number: "9999 123456",
-      issueDate: "2023-04-12",
-    },
-  ],
-};
-
-let STATE: State = SEED;
+let STATE: State = { docs: [] };
 let loaded = false;
-
-function load() {
-  if (loaded || typeof window === "undefined") return;
-  loaded = true;
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(SEED));
-      STATE = SEED;
-    } else {
-      STATE = JSON.parse(raw) as State;
-    }
-  } catch {
-    STATE = SEED;
-  }
-}
-
-function persist() {
-  if (typeof window === "undefined") return;
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(STATE));
-  } catch {
-    /* ignore quota */
-  }
-}
+let loading: Promise<void> | null = null;
 
 const listeners = new Set<() => void>();
 const emit = () => listeners.forEach((l) => l());
 
-function newId() {
-  return `d_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
+function setState(next: State) {
+  STATE = next;
+  emit();
+}
+
+async function loadFromServer() {
+  if (typeof window === "undefined") return;
+  if (loading) return loading;
+  loading = (async () => {
+    try {
+      const r = await apiFetch<{ docs: BikeDocument[] }>(ENDPOINT);
+      setState({ docs: r.docs ?? [] });
+    } catch {
+      // молча
+    } finally {
+      loaded = true;
+      loading = null;
+    }
+  })();
+  return loading;
+}
+
+function tempId() {
+  return `d_tmp_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
 }
 
 export const bikeDocumentsStore = {
   subscribe(l: () => void) {
-    load();
+    if (!loaded) loadFromServer();
     listeners.add(l);
     return () => listeners.delete(l);
   },
-  getSnapshot() {
-    load();
+  getSnapshot(): State {
     return STATE;
   },
-  add(input: Omit<BikeDocument, "id">) {
-    STATE = { docs: [{ id: newId(), ...input }, ...STATE.docs] };
-    persist();
-    emit();
+  refresh() {
+    loaded = false;
+    return loadFromServer();
   },
-  update(id: string, patch: Partial<BikeDocument>) {
-    STATE = {
-      docs: STATE.docs.map((d) => (d.id === id ? { ...d, ...patch } : d)),
-    };
-    persist();
-    emit();
+  async add(input: Omit<BikeDocument, "id">) {
+    const optimistic: BikeDocument = { id: tempId(), ...input };
+    setState({ docs: [optimistic, ...STATE.docs] });
+    try {
+      const row = await apiFetch<BikeDocument>(ENDPOINT, {
+        method: "POST",
+        body: JSON.stringify({
+          bikeId: input.bikeId,
+          type: input.type,
+          number: input.number ?? null,
+          issueDate: input.issueDate ?? null,
+          expiryDate: input.expiryDate ?? null,
+          photos: input.photos ?? [],
+          note: input.note ?? null,
+        }),
+      });
+      setState({ docs: STATE.docs.map((d) => (d.id === optimistic.id ? row : d)) });
+    } catch (e) {
+      setState({ docs: STATE.docs.filter((d) => d.id !== optimistic.id) });
+      throw e;
+    }
   },
-  remove(id: string) {
-    STATE = { docs: STATE.docs.filter((d) => d.id !== id) };
-    persist();
-    emit();
+  async update(id: string, patch: Partial<BikeDocument>) {
+    const prev = STATE.docs;
+    setState({ docs: prev.map((d) => (d.id === id ? { ...d, ...patch } : d)) });
+    try {
+      const body: Record<string, unknown> = {};
+      if (patch.type !== undefined) body.type = patch.type;
+      if (patch.number !== undefined) body.number = patch.number ?? null;
+      if (patch.issueDate !== undefined) body.issueDate = patch.issueDate ?? null;
+      if (patch.expiryDate !== undefined) body.expiryDate = patch.expiryDate ?? null;
+      if (patch.photos !== undefined) body.photos = patch.photos ?? [];
+      if (patch.note !== undefined) body.note = patch.note ?? null;
+      const row = await apiFetch<BikeDocument>(`${ENDPOINT}/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify(body),
+      });
+      setState({ docs: STATE.docs.map((d) => (d.id === id ? row : d)) });
+    } catch (e) {
+      setState({ docs: prev });
+      throw e;
+    }
+  },
+  async remove(id: string) {
+    const prev = STATE.docs;
+    setState({ docs: prev.filter((d) => d.id !== id) });
+    try {
+      await apiFetch(`${ENDPOINT}/${id}`, { method: "DELETE" });
+    } catch (e) {
+      setState({ docs: prev });
+      throw e;
+    }
   },
 };
 
