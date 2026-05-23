@@ -61,7 +61,7 @@ function RaffleDetailPage() {
   if (raffleQ.isLoading) {
     return (
       <main className="mx-auto w-full max-w-3xl px-4 py-8">
-        <div className="h-64 animate-pulse rounded-2xl border border-white/[0.06] bg-card/40" />
+        <div className="skeleton-shimmer h-64 rounded-2xl" />
       </main>
     );
   }

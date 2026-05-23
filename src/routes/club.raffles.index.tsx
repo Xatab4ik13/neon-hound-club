@@ -163,7 +163,7 @@ function SkeletonGrid() {
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
       {[0, 1].map((i) => (
-        <div key={i} className="aspect-[16/10] animate-pulse rounded-2xl border border-white/[0.06] bg-card/40" />
+        <div key={i} className="skeleton-shimmer aspect-[16/10] rounded-2xl" />
       ))}
     </div>
   );

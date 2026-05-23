@@ -75,7 +75,7 @@ function QuestsPage() {
           {Array.from({ length: 4 }).map((_, i) => (
             <div
               key={i}
-              className="h-[88px] animate-pulse rounded-2xl border border-white/[0.05] bg-white/[0.03]"
+              className="skeleton-shimmer h-[88px] rounded-2xl"
             />
           ))}
         </div>
