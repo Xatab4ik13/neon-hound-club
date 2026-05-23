@@ -71,7 +71,7 @@ function OrdersPage() {
       className="mx-auto w-full max-w-3xl px-4 py-5 md:py-8"
       style={{ paddingBottom: "calc(40px + env(safe-area-inset-bottom))" }}
     >
-      <PageHeader title="Заказы" subtitle={isLoading ? "Загрузка…" : `Всего: ${items.length}`} />
+      <PageHeader title="Заказы" subtitle={isLoading ? undefined : `Всего: ${items.length}`} />
 
       <div className="mb-4 inline-flex w-full rounded-xl bg-white/[0.04] p-1">
         <SegBtn active={filter === "all"} onClick={() => setFilter("all")}>Все</SegBtn>

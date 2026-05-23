@@ -28,7 +28,11 @@ function BloggerRafflesPage() {
         </p>
 
         {isLoading ? (
-          <p className="mt-10 text-sm text-muted-foreground">Загрузка…</p>
+          <div className="mt-10 grid gap-4 sm:grid-cols-2">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="h-40 animate-pulse rounded-2xl bg-white/[0.04]" />
+            ))}
+          </div>
         ) : items.length === 0 ? (
           <p className="mt-10 text-sm text-muted-foreground">Розыгрышей пока нет</p>
         ) : (
