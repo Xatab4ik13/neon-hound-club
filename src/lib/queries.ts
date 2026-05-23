@@ -436,6 +436,7 @@ export type FeedCommentHydrated = {
   nick: string;
   role: "user" | "admin" | "blogger";
   avatarUrl: string | null;
+  rankId: string;
 };
 
 export type FeedPostDetail = FeedPostHydrated & { comments: FeedCommentHydrated[] };
