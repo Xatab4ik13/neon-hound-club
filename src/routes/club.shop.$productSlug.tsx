@@ -243,6 +243,40 @@ function ProductView({ product }: { product: ShopProduct }) {
           </div>
         </div>
 
+        {needsSize && (
+          <div className="mt-6">
+            <div className="mb-2 flex items-center justify-between">
+              <span className="font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                Размер
+              </span>
+              {size && (
+                <span className="font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-foreground">
+                  {size}
+                </span>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {sizes.map((s) => {
+                const isActive = s === size;
+                return (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => setSize(s)}
+                    className={`min-w-[44px] rounded-xl border px-4 py-2 font-mono text-xs font-bold uppercase tracking-wider transition-colors active:scale-95 ${
+                      isActive
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-white/[0.08] bg-white/[0.03] text-foreground"
+                    }`}
+                  >
+                    {s}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         <div className="mt-8 overflow-hidden rounded-2xl border border-white/[0.06] bg-card/40 divide-y divide-white/[0.05]">
           {product.description && (
             <Accordion
@@ -260,18 +294,25 @@ function ProductView({ product }: { product: ShopProduct }) {
             open={open === "ship"}
             onToggle={() => setOpen(open === "ship" ? null : "ship")}
           >
-            <ul className="space-y-2 text-[14px] leading-relaxed text-muted-foreground">
-              <li>· СДЭК по РФ — 2–7 дней.</li>
-              <li>· Самовывоз из гаража HELLHOUND в Москве.</li>
-            </ul>
+            {product.shippingInfo?.trim() ? (
+              <p className="whitespace-pre-line text-[14px] leading-relaxed text-muted-foreground">
+                {product.shippingInfo}
+              </p>
+            ) : (
+              <ul className="space-y-2 text-[14px] leading-relaxed text-muted-foreground">
+                <li>· СДЭК по РФ — 2–7 дней.</li>
+                <li>· Самовывоз из гаража HELLHOUND в Москве.</li>
+              </ul>
+            )}
           </Accordion>
           <Accordion
             label="Возврат"
             open={open === "returns"}
             onToggle={() => setOpen(open === "returns" ? null : "returns")}
           >
-            <p className="text-[14px] leading-relaxed text-muted-foreground">
-              Возврат 14 дней, если вещь не носилась и сохранены ярлыки.
+            <p className="whitespace-pre-line text-[14px] leading-relaxed text-muted-foreground">
+              {product.returnPolicy?.trim() ||
+                "Возврат 14 дней, если вещь не носилась и сохранены ярлыки."}
             </p>
           </Accordion>
         </div>
