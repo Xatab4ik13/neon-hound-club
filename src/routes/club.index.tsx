@@ -848,7 +848,11 @@ function CommentComposer({
         }}
         className="flex items-end gap-2 px-3 py-2.5"
       >
-        <RankAvatar initials={me.initials} rankId={me.rank} size={32} />
+        {meIsBlogger ? (
+          <HellhoundAvatar size={32} initials={meInitials} avatarUrl={meAvatar} />
+        ) : (
+          <RankAvatar initials={meInitials} rankId={meRank} avatarUrl={meAvatar} size={32} />
+        )}
 
         <div className="flex min-w-0 flex-1 items-center gap-1 rounded-3xl border border-white/[0.08] bg-black/60 pl-2 pr-1 py-1 focus-within:border-primary/40">
           <button
