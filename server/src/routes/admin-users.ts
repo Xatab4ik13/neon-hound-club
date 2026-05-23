@@ -301,5 +301,37 @@ export async function adminUsersRoutes(app: FastifyInstance) {
       .orderBy(desc(userBadges.awardedAt));
     return { items: rows };
   });
+
+  // POST /api/v1/admin/users/:id/gift-pass — подарить Hell Pass (priceRub=0)
+  const giftPassSchema = z.object({
+    tier: z.enum(PASS_TIERS),
+  });
+  app.post<{ Params: { id: string } }>("/:id/gift-pass", async (req, reply) => {
+    const parsed = giftPassSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return reply.code(400).send({ error: "invalid_input", message: parsed.error.issues[0]?.message });
+    }
+    const [u] = await db.select({ id: users.id }).from(users).where(eq(users.id, req.params.id)).limit(1);
+    if (!u) return reply.code(404).send({ error: "not_found" });
+
+    const tier = parsed.data.tier as PassTier;
+    const cfg = PASS_CONFIG[tier];
+    const [purchase] = await db
+      .insert(passPurchases)
+      .values({
+        userId: u.id,
+        tier,
+        priceRub: 0, // подарок
+        ticketsGranted: cfg.tickets,
+        status: "pending_payment",
+      })
+      .returning();
+    const res = await activatePassPurchase(purchase!.id);
+    if (!res.ok) {
+      return reply.code(500).send({ error: "activation_failed", reason: res.reason });
+    }
+    return { ok: true, tier, purchaseId: purchase!.id };
+  });
 }
+
 
