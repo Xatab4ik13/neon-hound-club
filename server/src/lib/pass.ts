@@ -1,15 +1,44 @@
-import { and, desc, eq, gt, sql } from "drizzle-orm";
+import { and, desc, eq, gt, ne, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { passPurchases, PASS_CONFIG, PASS_DURATION_DAYS, type PassTier } from "../db/schema/pass.js";
 import { ticketCredit } from "./tickets.js";
 import { awardXp } from "./xp.js";
-import { tryCompleteQuest } from "./quests.js";
+
+/** Иерархия тиров. Чем выше число — тем выше тир. Используется для запрета даунгрейда. */
+export const TIER_RANK: Record<PassTier, number> = {
+  silver: 1,
+  gold: 2,
+  platinum: 3,
+};
+
+export class PassPurchaseError extends Error {
+  code: string;
+  constructor(code: string, message: string) {
+    super(message);
+    this.code = code;
+  }
+}
 
 /**
  * Создать запись о покупке пасса (pending_payment).
+ * Правила:
+ *  - если у юзера активен пасс ВЫШЕ тиром — запрещаем (downgrade_not_allowed).
+ *  - тот же тир разрешён = продление (+30 дней к остатку при активации).
+ *  - тир выше разрешён = апгрейд (+30 дней к остатку, новый пакет билетов).
  * Реальная оплата подключится позже — пока админ активирует руками или вебхуком.
  */
 export async function createPassPurchase(userId: string, tier: PassTier) {
+  const active = await getActivePass(userId);
+  if (active) {
+    const activeRank = TIER_RANK[active.tier as PassTier] ?? 0;
+    const newRank = TIER_RANK[tier];
+    if (newRank < activeRank) {
+      throw new PassPurchaseError(
+        "downgrade_not_allowed",
+        `У тебя уже активен ${(active.tier as string).toUpperCase()} — нельзя купить тир ниже. Дождись окончания текущего пасса.`,
+      );
+    }
+  }
   const cfg = PASS_CONFIG[tier];
   const [row] = await db
     .insert(passPurchases)
