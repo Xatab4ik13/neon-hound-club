@@ -979,6 +979,7 @@ function AccountTab({ mobile, onClose }: { mobile?: boolean; onClose?: () => voi
   }
 
   return (
+    <>
     <div className="space-y-8">
       <div>
         <SectionTitle>Аккаунт</SectionTitle>
