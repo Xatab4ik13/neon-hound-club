@@ -54,6 +54,25 @@ function InstallPage() {
   const [platform, setPlatform] = useState<Platform>("android");
   const [installed, setInstalled] = useState(false);
   const [deferred, setDeferred] = useState<BIPEvent | null>(null);
+  const { isAuthed } = useViewer();
+  const qc = useQueryClient();
+
+  // Зачёт квеста pwa_install — один раз при обнаружении standalone-режима.
+  useEffect(() => {
+    if (!installed || !isAuthed) return;
+    let cancelled = false;
+    const key = "hh:pwa_install_confirmed";
+    if (typeof window !== "undefined" && window.localStorage?.getItem(key)) return;
+    void confirmPwaInstall()
+      .then(() => {
+        if (cancelled) return;
+        try { window.localStorage?.setItem(key, "1"); } catch { /* ignore */ }
+        qc.invalidateQueries({ queryKey: qk.quests });
+        qc.invalidateQueries({ queryKey: qk.ticketsBalance });
+      })
+      .catch(() => null);
+    return () => { cancelled = true; };
+  }, [installed, isAuthed, qc]);
 
   useEffect(() => {
     setPlatform(detectPlatform());
