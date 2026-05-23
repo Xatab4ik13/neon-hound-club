@@ -102,6 +102,20 @@ export async function adminUsersRoutes(app: FastifyInstance) {
       .orderBy(desc(passPurchases.paidAt))
       .limit(1);
 
+    // Сумма потраченного в магазине: только оплаченные/отправленные/доставленные заказы.
+    const [{ totalSpentRub, ordersCount }] = await db
+      .select({
+        totalSpentRub: sql<number>`coalesce(sum(${orders.totalRub}), 0)::int`,
+        ordersCount: sql<number>`count(*)::int`,
+      })
+      .from(orders)
+      .where(
+        and(
+          eq(orders.userId, u.id),
+          sql`${orders.status} in ('paid','shipped','delivered')`,
+        ),
+      );
+
     const { getXpTotal, computeRank } = await import("../lib/xp.js");
     const xpTotal = await getXpTotal(u.id);
     const rank = computeRank(xpTotal);
@@ -110,6 +124,8 @@ export async function adminUsersRoutes(app: FastifyInstance) {
       ...u,
       ticketsBalance: Number(balance ?? 0),
       ticketsEarned: Number(earned ?? 0),
+      totalSpentRub: Number(totalSpentRub ?? 0),
+      ordersCount: Number(ordersCount ?? 0),
       activePass: activePass ?? null,
       xpTotal,
       rank,
