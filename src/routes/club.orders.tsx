@@ -82,7 +82,7 @@ function OrdersPage() {
       {isLoading ? (
         <ul className="space-y-3">
           {Array.from({ length: 3 }).map((_, i) => (
-            <li key={i} className="h-20 animate-pulse rounded-2xl border border-white/[0.05] bg-white/[0.03]" />
+            <li key={i} className="skeleton-shimmer h-20 rounded-2xl" />
           ))}
         </ul>
       ) : isError ? (
