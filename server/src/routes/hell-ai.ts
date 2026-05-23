@@ -92,7 +92,7 @@ export async function hellAiRoutes(app: FastifyInstance) {
     const isStaff = session.role === "admin" || session.role === "blogger";
 
     // 1. Проверка активного Pass (стафф пропускает).
-    let pass: Awaited<ReturnType<typeof getActivePass>> = null;
+    let pass: Awaited<ReturnType<typeof getActivePass>> | null = null;
     if (!isStaff) {
       pass = await getActivePass(session.sub);
       if (!pass) {
