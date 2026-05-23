@@ -17,10 +17,12 @@ export async function apiFetch<T = unknown>(
   // Content-Type ставим только если реально есть body — иначе Fastify
   // отвечает 400 FST_ERR_CTP_EMPTY_JSON на DELETE/GET без тела.
   const hasBody = init.body !== undefined && init.body !== null;
+  const isFormData = typeof FormData !== "undefined" && init.body instanceof FormData;
   const headers: Record<string, string> = { ...(init.headers as Record<string, string> | undefined) };
-  if (hasBody && !Object.keys(headers).some((k) => k.toLowerCase() === "content-type")) {
+  if (hasBody && !isFormData && !Object.keys(headers).some((k) => k.toLowerCase() === "content-type")) {
     headers["Content-Type"] = "application/json";
   }
+
   const res = await fetch(`${BACKEND_URL}${path}`, {
     credentials: "include",
     ...init,

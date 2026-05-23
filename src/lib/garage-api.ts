@@ -206,31 +206,23 @@ type SignResponse = {
   expiresIn: number;
 };
 
-/** Загружает файл в наш S3 через presigned PUT и возвращает публичный URL. */
+/** Загружает файл через бекенд (он положит в S3/MinIO) и возвращает публичный URL. */
 export async function uploadFileToS3(
   file: File,
   kind: UploadKind,
   scope?: string,
 ): Promise<string> {
-  const sign = await apiFetch<SignResponse>("/api/v1/uploads/sign", {
-    method: "POST",
-    body: JSON.stringify({
-      kind,
-      contentType: file.type,
-      size: file.size,
-      scope,
-    }),
-  });
-  const res = await fetch(sign.uploadUrl, {
-    method: "PUT",
-    headers: sign.headers,
-    body: file,
-  });
-  if (!res.ok) {
-    throw new Error(`S3 upload failed: ${res.status}`);
-  }
-  return sign.publicUrl;
+  const fd = new FormData();
+  fd.append("kind", kind);
+  if (scope) fd.append("scope", scope);
+  fd.append("file", file, file.name);
+  const res = await apiFetch<{ key: string; publicUrl: string }>(
+    "/api/v1/uploads/direct",
+    { method: "POST", body: fd },
+  );
+  return res.publicUrl;
 }
+
 
 // ---------- DELIVERY ADDRESS ----------
 
