@@ -109,6 +109,8 @@ export async function activateReferral(invitedUserId: string): Promise<void> {
     refId: invitedUserId,
     idempotent: true,
   });
+  // Квест: «Пригласи друга» — засчитываем рефереру (one-time).
+  await tryCompleteQuest(row.referrerId, "invite_friend");
 }
 
 export async function listMyReferrals(userId: string) {
