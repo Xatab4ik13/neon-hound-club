@@ -119,7 +119,7 @@ function NotFoundUser({ nick }: { nick: string }) {
   );
 }
 
-function UserView({ user }: { user: PublicUser }) {
+function UserView({ user }: { user: ProfileView }) {
   const rank = RANK_BY_ID[user.rank];
   const rankIdx = RANKS.findIndex((r) => r.id === user.rank);
   const xpMax = getRankSpan(rankIdx);
