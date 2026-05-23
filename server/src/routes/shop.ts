@@ -56,10 +56,57 @@ export async function shopRoutes(app: FastifyInstance) {
         bonusTickets: products.bonusTickets,
         images: products.images,
         stock: products.stock,
+        kind: products.kind,
+        categoryId: products.categoryId,
+        subcategoryId: products.subcategoryId,
+        preorderExpectedAt: products.preorderExpectedAt,
       })
       .from(products)
       .where(eq(products.active, true))
       .orderBy(desc(products.createdAt));
+    return { items: rows };
+  });
+
+  // GET /api/v1/shop/categories — публичное дерево категорий с подкатегориями
+  app.get("/categories", async () => {
+    const cats = await db
+      .select()
+      .from(shopCategories)
+      .orderBy(asc(shopCategories.sort), asc(shopCategories.name));
+    const subs = await db
+      .select()
+      .from(shopSubcategories)
+      .orderBy(asc(shopSubcategories.sort), asc(shopSubcategories.name));
+    const byCat = new Map<string, typeof subs>();
+    for (const s of subs) {
+      const arr = byCat.get(s.categoryId) ?? [];
+      arr.push(s);
+      byCat.set(s.categoryId, arr);
+    }
+    return {
+      items: cats.map((c) => ({ ...c, subs: byCat.get(c.id) ?? [] })),
+    };
+  });
+
+  // GET /api/v1/shop/showcase — товары на витрине (для главной/клуба)
+  app.get("/showcase", async () => {
+    const rows = await db
+      .select({
+        id: products.id,
+        slug: products.slug,
+        title: products.title,
+        priceRub: products.priceRub,
+        bonusTickets: products.bonusTickets,
+        images: products.images,
+        stock: products.stock,
+        kind: products.kind,
+        preorderExpectedAt: products.preorderExpectedAt,
+        sort: shopShowcase.sort,
+      })
+      .from(shopShowcase)
+      .innerJoin(products, eq(products.id, shopShowcase.productId))
+      .where(eq(products.active, true))
+      .orderBy(asc(shopShowcase.sort));
     return { items: rows };
   });
 
