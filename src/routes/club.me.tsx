@@ -116,7 +116,7 @@ function MePage() {
       <section aria-label="Hell Pass" className="mt-6 md:mt-10">
         {isMobile ? (
           <IOSListSection title="Подписка">
-            <PassRow tier={tierInfo} />
+            <PassRow tier={tierInfo} daysLeft={passDaysLeft} />
             <IOSListRow
               icon={<ImageIcon className="h-5 w-5" />}
               label="Фон профиля"
