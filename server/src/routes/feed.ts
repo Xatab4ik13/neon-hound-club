@@ -510,6 +510,8 @@ export async function postsRoutes(app: FastifyInstance) {
       refId: row.id,
       idempotent: true,
     }).catch(() => null);
+    // Квест блогеров: 5 постов в ленту за месяц.
+    await addQuestProgress(s.sub, "posts_5_blogger", 1).catch(() => null);
     publishFeedEvent("post.created", { postId: row.id });
     void import("../lib/push.js").then(({ pushToAll }) =>
       pushToAll({
