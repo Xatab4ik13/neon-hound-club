@@ -160,9 +160,19 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
     reader.readAsDataURL(file);
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!brand.trim() || !model.trim() || submitting) return;
+  async function handleSubmit(e?: React.FormEvent) {
+    e?.preventDefault();
+    // eslint-disable-next-line no-console
+    console.log("[BikeFormModal] submit click", { brand, model, submitting });
+    if (!brand.trim() || !model.trim() || submitting) {
+      // eslint-disable-next-line no-console
+      console.warn("[BikeFormModal] submit blocked", {
+        brand,
+        model,
+        submitting,
+      });
+      return;
+    }
     const result: StoredBike = {
       id: bike?.id ?? newBikeId(),
       brand: brand.trim(),
@@ -333,7 +343,8 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
             Отмена
           </button>
           <button
-            type="submit"
+            type="button"
+            onClick={() => handleSubmit()}
             disabled={!canSubmit}
             className="border border-primary bg-primary px-4 py-2 font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40"
           >
