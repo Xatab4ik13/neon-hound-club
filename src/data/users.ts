@@ -17,6 +17,8 @@ export type PublicUser = {
   /** Доля прогресса XP внутри текущего ранга (0..100). */
   xpPct: number;
   role: PublicUserRole;
+  /** Единственный аккаунт блогера-владельца клуба (Hell). Включает аватар-плашку и красный чип. */
+  isBlogger?: boolean;
   city?: string;
   bike?: string;
   joined: string;
