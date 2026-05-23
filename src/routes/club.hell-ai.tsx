@@ -111,10 +111,10 @@ function bikeLabel(b: StoredBike) {
   return `${b.brand} ${b.model}${b.year ? ` ${b.year}` : ""}`;
 }
 
-async function askHellAi(question: string, bikeId?: string): Promise<string> {
-  const res = await apiFetch<{ answer: string }>("/hell-ai/ask", {
+async function askHellAi(question: string, bikeId?: string, chatId?: string): Promise<string> {
+  const res = await apiFetch<{ answer: string }>("/api/v1/hell-ai/ask", {
     method: "POST",
-    body: JSON.stringify({ question, bikeId }),
+    body: JSON.stringify({ question, bikeId, chatId }),
   });
   return res.answer;
 }
@@ -289,7 +289,7 @@ function HellAiMobile() {
     adjust(true);
     setIsThinking(true);
     setUsed((n) => n + 1);
-    askHellAi(text, activeBike?.id)
+    askHellAi(text, activeBike?.id, chatId)
       .then((a) => {
         updateChat(chatId, (c) => ({
           ...c,

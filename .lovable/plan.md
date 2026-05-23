@@ -1,108 +1,150 @@
-## Цель
 
-Привести бэкенд квестов в полное соответствие с зафиксированной сеткой:
+# Hell AI — полный план запуска
 
-| Код | Заголовок | Тип | XP | Билеты | Триггер |
-|---|---|---|---|---|---|
-| `profile_and_bike` | Заполнить профиль + добавить мото | one-time | 300 | 0 | profile_complete && first_bike |
-| `ride_500km` | Накатать 500 км | monthly | 200 | 0 | сумма км из bike-journal за месяц ≥ 500 |
-| `comments_5` | 5 комментариев в ленте | monthly | 100 | 0 | счётчик комментариев за месяц ≥ 5 |
-| `posts_5_blogger` | 5 постов в ленту | monthly, bloggerOnly | 100 | 0 | счётчик постов автора за месяц ≥ 5 |
-| `shop_order` | Заказ из магазина | monthly | 250 | 1 | оплаченный заказ в текущем месяце |
-| `invite_friend` | Пригласи друга | one-time | 400 | 1 (+1 другу) | реферал друг зарегистрирован И активен |
-| `pwa_install` | Установи приложение | one-time | 200 | 1 | beforeinstallprompt принят (или iOS — ручное подтверждение фронтом) |
-| `hell_ai_ladder` | Общайся с Hell AI | ladder | до 600 (50/100/150/150/150) | 0 | количество вопросов к AI: ступени 5/10/20/35/50 |
+## 1. Регистрация и оплата (гайд для чайников)
 
-Итого по всем разовым+первая итерация ежемесячных+полная лестница ≈ **2050 XP** → ровно порог **Road Captain**.
+### Шаг 1. OpenRouter аккаунт
+1. Открой **https://openrouter.ai** → Sign up через Google (1 минута).
+2. Зайди в **Settings → Privacy** → выключи галку «Enable input/output logging» (чтобы провайдеры не использовали наши данные для тренировки).
+3. **Settings → Keys** → Create Key → имя `hellhound-prod` → скопируй ключ `sk-or-v1-...`. **Это единственный ключ, который мне нужен.**
 
-## Что меняется на бэке
+### Шаг 2. Пополнение баланса (без РФ-карты)
+OpenRouter РФ-карты не принимает. Три рабочих варианта:
+- **Крипта (USDT, рекомендую)**: Settings → Credits → Add Credits → Crypto → выбери USDT (TRC-20 дешевле). Пополнить можно через любую крипто-биржу или обменник типа bestchange.ru.
+- **Зарубежная карта** (если есть карта Казахстана/Грузии/UAE/Турции) — просто Stripe Checkout.
+- **Виртуальная карта** через сервисы вроде Pyypl / Wise / Payeer.
 
-### 1. Schema (`server/src/db/schema/quests.ts`)
+Стартовый депозит — **$20**. Этого хватит на ~2-3 месяца теста при 50-100 юзерах. Дальше топим по факту.
 
-Добавить поля в `quests`:
-- `xpReward integer NOT NULL DEFAULT 0` — XP за выполнение (или сумма по всей лестнице).
-- `kind` расширить значениями: `auto` → заменить на `one_time | monthly | ladder | manual`.
-- `bloggerOnly boolean NOT NULL DEFAULT false`.
-- `goal integer NOT NULL DEFAULT 1` — цель (км, шт, заказов).
-- `unit varchar(32) NOT NULL DEFAULT ''` — для UI («км», «комментариев»…).
-- `actionLabel varchar(64)` / `actionTo varchar(128)` — кнопка-CTA.
-- `bonusNote varchar(120)` — например «+1 билет другу».
-- `ladder jsonb` — массив `[{at, xp}]` для `kind=ladder` (NULL для остальных).
+### Шаг 3. Сколько будет стоить (реальные цифры на сегодня)
+| Модель | Input / 1M ток | Output / 1M ток | Цена 1 ответа* |
+|---|---|---|---|
+| **GPT-5** | $1.25 | $10 | ~$0.012 |
+| **Claude Sonnet 4.5** | $3 | $15 | ~$0.020 |
 
-Новая таблица `quest_progress` для ежемесячных и ladder:
-```
-id, user_id, quest_id, period_key text NOT NULL,  -- '2026-05' для monthly, 'all' для ladder/one-time
-progress int NOT NULL DEFAULT 0,
-last_ladder_step int NOT NULL DEFAULT 0,  -- индекс последней зачтённой ступени
-updated_at timestamptz
-UNIQUE (user_id, quest_id, period_key)
-```
+\* при ~3к токенов контекста (промпт + история + гараж) и ~500 токенов ответа.
 
-Таблица `user_quest_completions` остаётся (лог), но смысл «уже зачтено» теперь:
-- one-time: запись существует.
-- monthly: запись существует за текущий `period_key` (YYYY-MM).
-- ladder: количество записей = пройденные ступени.
+**Маржа по тирам Pass на 30 дней:**
+- Silver 490₽ / 20 вопросов → себестоимость ~$0.24 = ~22₽ → маржа **96%**.
+- Gold 1290₽ / 100 вопросов → ~$1.2 = ~110₽ → маржа **91%**.
+- Platinum 2990₽ / ∞ (реалистично 200-400 в месяц) → ~$2.4-4.8 = 220-440₽ → маржа **85-93%**.
 
-### 2. Lib (`server/src/lib/quests.ts`)
+Экономика здоровая даже на топовой модели. **Рекомендую дефолт = GPT-5** (немного дешевле и лучше следует инструкциям). Claude Sonnet 4.5 оставим как опцию в админке — переключается одним селектом, без передеплоя.
 
-Переписать SEED под таблицу выше. Переписать `completeQuest`:
-- Берёт XP из `quest.xpReward`, билеты из `quest.ticketsReward` — убрать формулу `max(25, tickets*10)`.
-- Для `monthly` — period_key = текущий месяц UTC; повторное прохождение разрешено в следующем месяце.
-- Для `ladder` — принимает `progress: number`, начисляет XP за каждую новую пройденную ступень и пишет по completion на ступень.
-- Для `one_time` — старая логика.
+### Шаг 4. Что ты делаешь, когда я готов кодить
+1. Даёшь мне ключ `sk-or-v1-...` через секреты Lovable (я подскажу как).
+2. Я добавлю его в `.env` бекенда на VPS.
+3. Дальше всё работает автоматически.
 
-Новые хелперы:
-- `addQuestProgress(userId, code, delta)` — для счётчиков (комментарии, км, AI-вопросы, посты блогера). Атомарно обновляет `quest_progress`, если цель достигнута — вызывает `completeQuest`.
-- `addAiLadderProgress(userId, delta=1)` — отдельный для лестницы Hell AI.
+---
 
-### 3. Триггеры в существующих роутах
+## 2. Архитектура
 
-- `auth.ts` (register с реферальным кодом) → после создания юзера и привязки реферала вызвать `tryCompleteQuest(referrerUserId, "invite_friend")`. (`+1 билет другу` уже идёт через существующую логику рефералов — проверить, не задвоится.)
-- `profile.ts` после `PATCH /profile/me` и `POST /garage` → если профиль полный И есть хотя бы один байк → `tryCompleteQuest(userId, "profile_and_bike")`. (Удалить старые `profile_complete` и `first_bike`.)
-- `shop.ts` при переводе заказа в `paid` → `tryCompleteQuest(userId, "shop_order")` (теперь monthly, не first_order).
-- `bike-journal.ts` при добавлении записи о поездке → `addQuestProgress(userId, "ride_500km", km)`.
-- `feed.ts` при создании комментария → `addQuestProgress(userId, "comments_5", 1)`. При создании поста блогером → `addQuestProgress(userId, "posts_5_blogger", 1)`.
-- Hell AI роут (где-то в `routes/`, проверить наличие; если нет — создать заглушку-каунтер) → при каждом вопросе `addAiLadderProgress(userId)`.
-- Новый эндпоинт `POST /api/v1/quests/pwa_install/confirm` — фронт дёргает после успешного `beforeinstallprompt` или после подтверждения юзером на iOS. Делает `completeQuest(userId, "pwa_install")`.
-- Удалить триггеры `verify_email` и `first_pass` (не входят в новую сетку — или оставить как отдельные «бонусные», если хочешь; см. вопрос ниже).
+### Бекенд (server/) — новые файлы
+- `server/src/db/schema/hell-ai.ts` — таблицы:
+  - `ai_threads` (id, user_id, title, last_message_at, created_at)
+  - `ai_messages` (id, thread_id, role: 'user'|'assistant'|'system', content, tokens_in, tokens_out, model, created_at)
+  - `ai_usage` (id, user_id, pass_id, period_start, period_end, used_count) — счётчик вопросов в текущем 30-дневном окне Pass
+- `server/src/lib/openrouter.ts` — клиент OpenRouter (fetch + SSE стриминг, OpenAI-совместимый формат).
+- `server/src/lib/hell-ai-prompt.ts` — сборка system prompt из:
+  - базового промпта (правила из `mem://hell-ai-rules.md` + редактируется в админке),
+  - гаража юзера (модель/год/пробег всех мото),
+  - подписи «Псы» и фишек тона.
+- `server/src/routes/hell-ai.ts` — API:
+  - `GET /api/v1/ai/threads` — список тредов юзера.
+  - `POST /api/v1/ai/threads` — создать новый.
+  - `PATCH /api/v1/ai/threads/:id` — переименовать.
+  - `DELETE /api/v1/ai/threads/:id`.
+  - `GET /api/v1/ai/threads/:id/messages` — история.
+  - `POST /api/v1/ai/threads/:id/messages` — отправить вопрос, **отвечает SSE-стримом**. Внутри:
+    1. Проверка активного Pass + лимита (из `ai_usage` + лимиты из system_settings).
+    2. Сборка контекста: system prompt + последние N сообщений (окно ~20, далее обрезка).
+    3. Стрим из OpenRouter → проксируем клиенту.
+    4. По окончании: insert message в БД, инкремент `ai_usage.used_count`.
+  - `GET /api/v1/ai/status` — текущий тир, лимит, остаток вопросов, модель.
 
-### 4. Routes (`server/src/routes/quests.ts`)
+### База — миграция `0022_hell_ai.sql`
+3 таблицы выше + индексы по `user_id`/`thread_id`. Окно лимита привязано к `pass_purchases` (period_start = дата активации Pass, period_end = +30 дней).
 
-`GET /api/v1/quests/` теперь возвращает на каждый квест:
-```
-{ id, code, title, description, kind, xpReward, ticketsReward, goal, unit,
-  bloggerOnly, actionLabel, actionTo, bonusNote, ladder,
-  progress, periodKey, completed, completedAt }
-```
-- `progress` — из `quest_progress` за текущий period_key.
-- Для blogger-only квестов — отдаём только если у юзера роль `blogger` или `admin`.
+### Фронт (src/) — новые/изменённые файлы
+- `src/routes/club.ai.tsx` — главная страница Hell AI (мобайл-first, layout в стиле текущего клуба):
+  - Слева (или выдвижной sheet на мобиле): список тредов, кнопка «Новый чат».
+  - Справа: сам чат — пузырьки сообщений, рендер markdown, стрим токенов в real-time, индикатор «печатает», скролл-в-низ, плашка «осталось N вопросов».
+  - Если Pass нет / закончились вопросы — заглушка с кнопкой «Купить Pass» / «Продлить».
+- `src/components/club/ai/ChatMessage.tsx` — пузырёк с markdown (react-markdown уже стоит).
+- `src/components/club/ai/ChatInput.tsx` — поле ввода + кнопка отправки, отключается при стриминге.
+- `src/components/club/ai/ThreadsList.tsx` — сайдбар с тредами, переименование, удаление.
+- `src/lib/queries.ts` — хуки `useAiThreads`, `useAiMessages`, `useAiStatus`.
+- `src/lib/ai-stream.ts` — fetch + SSE-парсер (depth-tracking, как в knowledge о gateway), пушит токены в стейт.
+- Точка входа в навигации клуба: иконка/пункт «Hell AI».
 
-Админка `/api/v1/admin/quests/` — обновить Zod-схемы под новые поля.
+### Админка — `src/routes/admin.hell-ai.tsx` + бек
+- Редактирование `base_system_prompt` (textarea, сохраняется в `system_settings`).
+- Выбор модели: `openai/gpt-5` / `anthropic/claude-sonnet-4.5` / `openai/gpt-5-mini` (на случай экономии).
+- Лимиты по тирам (Silver/Gold/Platinum) — уже есть в settings, просто подключим.
+- Список заблокированных тем (banned_topics, массив строк) — добавляются в system prompt.
+- Аналитика: total questions / total cost (по `tokens_in/out` × цене) / топ-юзеров за последние 30 дней.
 
-### 5. Migration
+---
 
-Один файл `0007_quests_v2.sql`:
-- `ALTER TABLE quests ADD COLUMN xp_reward int NOT NULL DEFAULT 0`, `kind varchar(16) NOT NULL DEFAULT 'one_time'`, `blogger_only boolean NOT NULL DEFAULT false`, `goal int NOT NULL DEFAULT 1`, `unit varchar(32) NOT NULL DEFAULT ''`, `action_label varchar(64)`, `action_to varchar(128)`, `bonus_note varchar(120)`, `ladder jsonb`.
-- `CREATE TABLE quest_progress (...)`.
-- На старте `seedQuests()` сделает `INSERT ... ON CONFLICT (code) DO UPDATE` — затрёт текущие 5 квестов на новые 8.
+## 3. System prompt — тон HELLHOUND
 
-## Что меняется на фронте
+Базовый промпт, который сохраним в `system_settings.hell_ai_prompt` (редактируется из админки):
 
-- `src/lib/queries.ts` — расширить тип `QuestItem` новыми полями. Убрать локальный seed `CLUB_QUESTS` из `src/data/quests.ts` (или оставить только хелперы `questPct`, `ladderEarnedXp`, `nextLadderStep`, `CATEGORY_LABEL` — они переиспользуются).
-- `src/routes/club.quests.tsx` и `src/components/club/QuestsBlock.tsx` — уже умеют рендерить XP/билеты/лестницу/bloggerOnly, надо просто пробросить новые поля из API вместо мока.
-- `src/routes/club.install.tsx` — после `installNow()` дёрнуть новый эндпоинт `POST /quests/pwa_install/confirm`.
+> Ты — AI-механик клуба HELLHOUND Racing. Помогаешь Псам с их мото: диагностика, ТО, тюнинг, моменты затяжки, масла, прошивки.
+>
+> Тон:
+> — На «ты», коротко, без воды и эмодзи.
+> — Без морализаторства и фраз про «обратитесь к специалисту». Если что-то реально опасно (тормоза, рама, топливная) — скажи это одной фразой и переходи к делу.
+> — Технические единицы СИ: Н·м, мл, °C, км/ч.
+> — Раз в 3-4 ответа можно сказать «по-нашему» или «по-хелхаундовски», но не имитируй личность Hell.
+> — Обращение «Псы» — ок.
+>
+> Что можно:
+> — Тюнинг без ограничений: де-кат, прямоток, прошивка без ограничителя, удаление DRL, чип — обсуждаем как нормальную тему.
+> — Конкретные запчасти, бренды масел, артикулы — называй, если уверен.
+>
+> Что нельзя:
+> — Не помогать с темами вне мото (код, домашка, юр/мед, общие чаты) — короткий отказ: «Это не моя тема. Я по мото».
+> — Не имитировать личность Hell, не говорить от его имени.
+>
+> Контекст юзера (подставляется автоматически):
+> [GARAGE]
+> — Мото 1: Yamaha MT-09 2021, пробег 18 000 км
+> — Мото 2: ...
+> [/GARAGE]
+>
+> Если у юзера нет мото в гараже — попроси добавить.
 
-## Деплой
+Этот текст ты сможешь править из админки в любой момент — без передеплоя.
 
-После мёрджа — стандартная команда:
-```
-cd /opt/hhr/server && git pull && docker compose up -d --build api
-```
-Миграция `0007_quests_v2.sql` накатится автоматически на старте.
+---
 
-## Уточняющие вопросы (перед стартом)
+## 4. Что НЕ делаем в MVP (по твоему выбору)
 
-1. **`verify_email` и `first_pass`** в новой сетке отсутствуют. Сейчас они дают билеты (10 и 30). Удалить полностью или оставить как «бонусные» вне основного списка (видны юзеру, но не считаются в формулу 2050 XP)?
-2. **Период для monthly** — календарный месяц UTC или скользящие 30 дней с момента активации Pass?
-3. **`invite_friend` — one-time или повторяемый?** В оригинале (#680) сказано `(one-time)`, но в брифе реферальная программа выглядит бессрочной (приглашаешь 10 человек — получаешь 10 билетов). Оставить one-time как договаривались, или сделать повторяемым (по 400 XP + 1 билет за каждого друга)?
-4. **`shop_order` monthly** — даёт +1 билет в месяц независимо от числа заказов; параллельно у тебя уже работают бонус-билеты на каждый товар. Так и было задумано? (Я понял из #647 что да.)
+- Картинки на вход (vision) — оставляем на v2.
+- Загрузка PDF-мануалов / RAG — на v2.
+- Голосовой ввод — на v3.
+- Имитация Hell — не делаем никогда (правило бренда).
+
+---
+
+## 5. Порядок реализации (когда переключим на build)
+
+1. Миграция `0022_hell_ai.sql` (3 таблицы).
+2. `openrouter.ts` + `hell-ai-prompt.ts` + роуты `/api/v1/ai/*` со стримингом.
+3. Подключение лимитов к существующим тирам Pass.
+4. Фронт: страница `club.ai`, ThreadsList, ChatMessage, ChatInput, стрим-парсер.
+5. Админ-страница `admin.hell-ai` (prompt + модель + аналитика).
+6. Точка входа в навигации клуба + плашка остатка вопросов.
+7. Деплой: `cd /opt/hhr/server && git pull && docker compose up -d --build api` + добавить `OPENROUTER_API_KEY` в `.env`.
+
+---
+
+## 6. Что мне нужно от тебя перед стартом кода
+
+1. **Ключ OpenRouter** `sk-or-v1-...` — после регистрации.
+2. Подтверждение дефолтной модели: **GPT-5** (моя рекомендация) или Claude Sonnet 4.5.
+3. Финальный текст system prompt — можешь утвердить мой выше или прислать свой / правки. Это потом всё равно правится в админке, так что стартуем с моего и доводим в проде.
+
+Жду ключ и «ок по модели» — дальше иду кодить.
