@@ -183,6 +183,9 @@ function emptyProduct(): CreateProductInput {
     digitalFileUrl: null,
     digitalFileName: null,
     preorderExpectedAt: null,
+    shippingInfo: "",
+    returnPolicy: "",
+    sizes: [],
   };
 }
 
