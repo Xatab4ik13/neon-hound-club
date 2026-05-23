@@ -43,7 +43,7 @@ import {
   type DocType,
 } from "@/data/bike-documents";
 import { uploadFileToS3 } from "@/lib/garage-api";
-import { toast } from "sonner";
+import { hhToast as toast } from "@/lib/hh-toast";
 
 type Props = {
   bikes: StoredBike[];

@@ -14,7 +14,7 @@ import {
   type BikePayload,
   type ServerBike,
 } from "@/lib/garage-api";
-import { toast } from "sonner";
+import { hhToast as toast } from "@/lib/hh-toast";
 
 export const Route = createFileRoute("/club/garage")({
   head: () => ({

@@ -5,7 +5,7 @@ import { useState } from "react";
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Check, Loader2 } from "lucide-react";
-import { toast } from "sonner";
+import { hhToast as toast } from "@/lib/hh-toast";
 import { getTier, type Perk, type Tier } from "@/data/hell-pass";
 import { purchasePass, qk, type PassTier } from "@/lib/queries";
 import { useViewer } from "@/hooks/use-viewer";

@@ -20,7 +20,7 @@ import {
   ChevronDown,
   ChevronUp,
 } from "lucide-react";
-import { toast } from "sonner";
+import { hhToast as toast } from "@/lib/hh-toast";
 import {
   PageHeader,
   Panel,

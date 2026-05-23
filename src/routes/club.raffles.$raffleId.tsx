@@ -13,7 +13,7 @@ import {
   type RaffleDetail,
 } from "@/lib/queries";
 import { ApiError } from "@/lib/api";
-import { toast } from "sonner";
+import { hhToast as toast } from "@/lib/hh-toast";
 
 export const Route = createFileRoute("/club/raffles/$raffleId")({
   head: () => ({

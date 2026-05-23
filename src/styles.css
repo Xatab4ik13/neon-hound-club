@@ -485,3 +485,9 @@ body[data-modal-open="1"] [class*="plaque-"] {
 .plaque-frozen *::after {
   animation: none !important;
 }
+
+/* HHR toast — прогресс-полоска auto-dismiss */
+@keyframes hh-toast-bar {
+  from { transform: scaleX(1); }
+  to   { transform: scaleX(0); }
+}

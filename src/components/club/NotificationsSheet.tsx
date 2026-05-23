@@ -12,7 +12,7 @@ import {
 } from "@/lib/push";
 import { useInstallPrompt, isStandalone } from "@/hooks/use-install-prompt";
 import { haptic } from "@/hooks/use-haptic";
-import { toast } from "sonner";
+import { hhToast as toast } from "@/lib/hh-toast";
 
 type Props = {
   open: boolean;
