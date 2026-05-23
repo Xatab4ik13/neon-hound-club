@@ -46,7 +46,7 @@ const RANK_BY_ID = Object.fromEntries(RANKS.map((r) => [r.id, r])) as Record<
 // Бэк отдаёт реальный rank/xpPct в `p.rank`. Маппим id 1:1.
 const DEFAULT_RANK: RankId = "rookie";
 
-function fromServer(p: PublicProfile, fallbackMock: PublicUser | undefined): PublicUser {
+function fromServer(p: PublicProfile): ProfileView {
   const initials = (p.nick.match(/[A-Za-zА-Яа-я0-9]/g) ?? [p.nick[0] ?? "?"])
     .slice(0, 2)
     .join("")
@@ -63,21 +63,23 @@ function fromServer(p: PublicProfile, fallbackMock: PublicUser | undefined): Pub
     initials,
     rank: rankId,
     xpPct: p.rank.pct,
-    role: p.role === "admin" ? "owner" : p.role === "blogger" ? "team" : fallbackMock?.role ?? "rider",
+    role: p.role === "admin" ? "owner" : p.role === "blogger" ? "team" : "rider",
     isBlogger: p.role === "blogger",
     city: p.city ?? undefined,
     bike: bikeStr,
     joined,
-    badgeIds: fallbackMock?.badgeIds ?? [],
-    wins: fallbackMock?.wins ?? [],
+    badgeIds: [],
+    wins: [],
     avatarUrl: p.avatarUrl ?? undefined,
+    bikeYear: p.primaryBike?.year ?? null,
+    bikeNickname: p.primaryBike?.nickname ?? null,
+    bikePhoto: p.primaryBike?.photo ?? null,
   };
 }
 
 function UserProfilePage() {
   const { nick } = Route.useParams();
   const q = usePublicProfile(nick);
-  const mock = getUser(nick);
 
   if (q.isLoading) {
     return (
@@ -89,14 +91,13 @@ function UserProfilePage() {
     );
   }
 
-  // Если бэк отдал 404 — пробуем mock (для seeded-ников). Если и там пусто — not found.
-  const user: PublicUser | null = q.data ? fromServer(q.data, mock) : mock ?? null;
-  if (!user) {
+  if (!q.data) {
     if (q.isError) throw q.error;
     return <NotFoundUser nick={nick} />;
   }
-  return <UserView user={user} />;
+  return <UserView user={fromServer(q.data)} />;
 }
+
 
 function NotFoundUser({ nick }: { nick: string }) {
   return (
