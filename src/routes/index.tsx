@@ -1,12 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { Header } from "@/components/brand/Header";
 import { Footer } from "@/components/brand/Footer";
 import { Hero } from "@/components/brand/Hero";
 import { useViewer } from "@/hooks/use-viewer";
+import { fetchShopShowcase, qk } from "@/lib/queries";
 import pinkR6 from "@/assets/pink-r6.jpg";
-import founderHoodie from "@/assets/founder-hoodie.jpg";
-import pitGloves from "@/assets/pit-gloves.jpg";
-import garageKey from "@/assets/garage-key.jpg";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -56,32 +56,14 @@ const XP_HOW: Array<{ title: string; value: string }> = [
   { title: "Hell Pass (ежемесячно)", value: "+50…400 XP" },
 ];
 
-const PRODUCTS = [
-  {
-    name: "Худи Founder v1",
-    price: "12 990 ₽",
-    status: "Распродано",
-    statusColor: "text-muted-foreground",
-    image: founderHoodie,
-  },
-  {
-    name: "Перчатки Пит-крю",
-    price: "8 490 ₽",
-    status: "Осталось 24",
-    statusColor: "text-primary",
-    image: pitGloves,
-  },
-  {
-    name: "Ключ от гаража",
-    price: "2 490 ₽",
-    status: "В наличии",
-    statusColor: "text-muted-foreground",
-    image: garageKey,
-  },
-];
-
 function Index() {
   const { isAuthed } = useViewer();
+  const { data: showcase } = useQuery({
+    queryKey: qk.shopShowcase,
+    queryFn: fetchShopShowcase,
+  });
+  const showcaseItems = (showcase?.items ?? []).slice(0, 3);
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Header />
@@ -92,58 +74,74 @@ function Index() {
         <Hero />
 
         {/* POPULAR PRODUCTS */}
-        <section id="drop" className="bg-surface py-24">
-          <div className="mx-auto max-w-7xl px-6">
-            <div className="mb-12 flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
-              <div>
-                <div className="mb-3 font-mono text-xs uppercase tracking-widest text-primary">
-                  Магазин
+        {showcaseItems.length > 0 && (
+          <section id="drop" className="bg-surface py-24">
+            <div className="mx-auto max-w-7xl px-6">
+              <div className="mb-12 flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
+                <div>
+                  <div className="mb-3 font-mono text-xs uppercase tracking-widest text-primary">
+                    Магазин
+                  </div>
+                  <h2 className="text-balance font-display text-4xl uppercase tracking-tight md:text-5xl">
+                    Популярные товары
+                  </h2>
                 </div>
-                <h2 className="text-balance font-display text-4xl uppercase tracking-tight md:text-5xl">
-                  Популярные товары
-                </h2>
-              </div>
-              <Link
-                to="/shop"
-                className="inline-flex items-center gap-2 border border-border px-5 py-2.5 font-mono text-[11px] font-bold uppercase tracking-widest text-muted-foreground transition-colors hover:border-foreground/40 hover:text-foreground"
-              >
-                Смотреть больше
-                <span className="text-[10px]">→</span>
-              </Link>
-            </div>
-
-            <div className="grid gap-6 md:grid-cols-3">
-              {PRODUCTS.map((p) => (
-                <article
-                  key={p.name}
-                  className="group rounded-xl border border-border bg-card p-2 ring-1 ring-black/5 transition-colors hover:border-primary/40"
+                <Link
+                  to="/shop"
+                  className="inline-flex items-center gap-2 border border-border px-5 py-2.5 font-mono text-[11px] font-bold uppercase tracking-widest text-muted-foreground transition-colors hover:border-foreground/40 hover:text-foreground"
                 >
-                  <div className="mb-4 overflow-hidden rounded-lg border border-border">
-                    <img
-                      src={p.image}
-                      alt={p.name}
-                      width={768}
-                      height={1024}
-                      loading="lazy"
-                      className="aspect-[3/4] w-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
-                    />
-                  </div>
-                  <div className="px-2 pb-2">
-                    <div className="mb-1 flex items-baseline justify-between gap-2 text-sm font-medium uppercase">
-                      <span>{p.name}</span>
-                      <span className="font-mono">{p.price}</span>
-                    </div>
-                    <div
-                      className={`text-[10px] uppercase tracking-widest ${p.statusColor}`}
+                  Смотреть больше
+                  <span className="text-[10px]">→</span>
+                </Link>
+              </div>
+
+              <div className="grid gap-6 md:grid-cols-3">
+                {showcaseItems.map((p) => {
+                  const sold = p.stock !== null && p.stock <= 0;
+                  const statusLabel = sold
+                    ? "Распродано"
+                    : p.kind === "preorder"
+                      ? "Предзаказ"
+                      : p.stock !== null && p.stock <= 24
+                        ? `Осталось ${p.stock}`
+                        : "В наличии";
+                  const statusColor = sold || p.kind !== "preorder" && (p.stock === null || p.stock > 24)
+                    ? "text-muted-foreground"
+                    : "text-primary";
+                  return (
+                    <Link
+                      key={p.id}
+                      to="/shop/$productSlug"
+                      params={{ productSlug: p.slug }}
+                      className="group rounded-xl border border-border bg-card p-2 ring-1 ring-black/5 transition-colors hover:border-primary/40"
                     >
-                      {p.status}
-                    </div>
-                  </div>
-                </article>
-              ))}
+                      <div className="mb-4 overflow-hidden rounded-lg border border-border">
+                        <img
+                          src={p.images[0] ?? pinkR6}
+                          alt={p.title}
+                          width={768}
+                          height={1024}
+                          loading="lazy"
+                          className="aspect-[3/4] w-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+                        />
+                      </div>
+                      <div className="px-2 pb-2">
+                        <div className="mb-1 flex items-baseline justify-between gap-2 text-sm font-medium uppercase">
+                          <span>{p.title}</span>
+                          <span className="font-mono">{p.priceRub.toLocaleString("ru-RU")} ₽</span>
+                        </div>
+                        <div className={`text-[10px] uppercase tracking-widest ${statusColor}`}>
+                          {statusLabel}
+                        </div>
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
+        )}
+
 
         {/* CLUB / HIERARCHY */}
         <section id="club" className="px-6 py-24">

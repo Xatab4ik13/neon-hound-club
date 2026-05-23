@@ -6,11 +6,13 @@ import {
   useRouter,
 } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { hhToast } from "@/lib/hh-toast";
 import { Header } from "@/components/brand/Header";
 import { Footer } from "@/components/brand/Footer";
-import { PRODUCTS, SOURCE_LABEL, type Product } from "@/data/products";
 import { useCart } from "@/hooks/use-cart";
+import { ApiError } from "@/lib/api";
+import { fetchShopProduct, qk, type ShopProduct } from "@/lib/queries";
 
 function ticketsWordPdp(n: number) {
   const mod10 = n % 10;
@@ -22,29 +24,13 @@ function ticketsWordPdp(n: number) {
 
 
 export const Route = createFileRoute("/shop/$productSlug")({
-  loader: ({ params }) => {
-    const product = PRODUCTS.find((p) => p.slug === params.productSlug);
-    if (!product) throw notFound();
-    return { product };
-  },
-  head: ({ loaderData }) => {
-    const p = loaderData?.product as Product | undefined;
-    if (!p) return { meta: [{ title: "Товар — HELLHOUND" }] };
-    const title = `${p.name} — HELLHOUND Racing Club`;
-    const desc =
-      p.description?.slice(0, 155) ??
-      `${p.name}. ${p.price.toLocaleString("ru-RU")} ₽.`;
-    return {
-      meta: [
-        { title },
-        { name: "description", content: desc },
-        { property: "og:title", content: title },
-        { property: "og:description", content: desc },
-        { property: "og:image", content: p.image },
-        { property: "twitter:image", content: p.image },
-      ],
-    };
-  },
+  head: ({ params }) => ({
+    meta: [
+      { title: `Товар — HELLHOUND Racing Club` },
+      { property: "og:title", content: `Товар — HELLHOUND Racing Club` },
+      { name: "robots", content: params.productSlug ? undefined : "noindex" } as never,
+    ].filter(Boolean) as never,
+  }),
   notFoundComponent: () => (
     <div className="min-h-screen bg-background text-foreground">
       <Header />
@@ -92,56 +78,76 @@ export const Route = createFileRoute("/shop/$productSlug")({
   component: ProductPage,
 });
 
-const ACCORDION_KEYS = ["desc", "comp", "care", "ship", "returns"] as const;
+const ACCORDION_KEYS = ["desc", "ship", "returns"] as const;
 type AccordionKey = (typeof ACCORDION_KEYS)[number];
 
 function ProductPage() {
-  const { product } = Route.useLoaderData() as { product: Product };
-  const gallery: string[] = product.gallery?.length
-    ? product.gallery
-    : [product.image];
+  const { productSlug } = Route.useParams();
+  const { data: product, isLoading, isError, error } = useQuery({
+    queryKey: qk.shopProduct(productSlug),
+    queryFn: () => fetchShopProduct(productSlug),
+    retry: (count, err) => {
+      if (err instanceof ApiError && err.status === 404) return false;
+      return count < 2;
+    },
+  });
 
-  const [size, setSize] = useState<string | null>(
-    product.sizes?.[Math.min(1, product.sizes.length - 1)] ?? null,
-  );
+  if (isError && error instanceof ApiError && error.status === 404) {
+    throw notFound();
+  }
+
+  if (isLoading || !product) {
+    return (
+      <div className="min-h-screen bg-background text-foreground">
+        <Header />
+        <main className="mx-auto max-w-7xl px-6 py-32">
+          <div className="aspect-[3/4] w-full animate-pulse rounded-xl bg-surface" />
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  return <ProductView product={product} />;
+}
+
+function ProductView({ product }: { product: ShopProduct }) {
+  const gallery: string[] = product.images.length > 0 ? product.images : [];
+
   const [qty, setQty] = useState(1);
   const [open, setOpen] = useState<AccordionKey | null>("desc");
-  const [sizeGuide, setSizeGuide] = useState(false);
 
-  const sourceTone =
-    product.source === "hellhound"
-      ? "bg-primary text-primary-foreground"
-      : product.source === "partner"
-        ? "border border-primary/60 text-primary"
-        : "border border-border text-muted-foreground";
+  const isSold = product.stock !== null && product.stock <= 0;
+  const isPreorder = product.kind === "preorder";
+  const isDigital = product.kind === "digital";
 
-  const isSold = product.badge?.label.toLowerCase() === "распродано";
+  const sourceTone = "bg-primary text-primary-foreground";
+  const sourceLabel = isPreorder ? "ПРЕДЗАКАЗ" : isDigital ? "ЦИФРОВОЙ" : "HELLHOUND";
 
   const { add } = useCart();
   const navigate = useNavigate();
   const handleAdd = (goToCart = false) => {
     if (isSold) return;
-    if (product.sizes && product.sizes.length > 0 && !size) {
-      hhToast.error("Выберите размер", { meta: "HRC // SIZE_REQUIRED" });
-      return;
-    }
     add(
       {
+        productId: product.id,
         slug: product.slug,
-        name: product.name,
-        price: product.price,
-        image: product.image,
-        size,
-        ticketsBonus: product.ticketsBonus,
+        name: product.title,
+        price: product.priceRub,
+        image: gallery[0] ?? "",
+        size: null,
+        ticketsBonus: product.bonusTickets,
       },
       qty,
     );
 
     hhToast.success("Добавлено в корзину", {
-      meta: `${product.name}${size ? ` · ${size}` : ""} × ${qty}`,
+      meta: `${product.title} × ${qty}`,
     });
     if (goToCart) navigate({ to: "/cart" });
   };
+
+
 
   return (
     <div className="min-h-screen bg-background pb-24 text-foreground lg:pb-0">
@@ -155,7 +161,7 @@ function ProductPage() {
               Магазин
             </Link>
             <span aria-hidden>/</span>
-            <span className="text-foreground">{product.name}</span>
+            <span className="text-foreground">{product.title}</span>
           </nav>
 
           <div className="relative grid grid-cols-1 gap-0 overflow-visible lg:grid-cols-12">
@@ -163,8 +169,8 @@ function ProductPage() {
             <section className="relative lg:col-span-7">
               <StoriesGallery
                 images={gallery}
-                name={product.name}
-                badge={product.badge?.label}
+                name={product.title}
+                badge={isSold ? "Распродано" : isPreorder ? "Предзаказ" : undefined}
               />
               {/* Diagonal slash motif — cuts gallery edge into panel */}
               <div
@@ -182,25 +188,22 @@ function ProductPage() {
                   <span
                     className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 font-mono text-[10px] font-semibold uppercase tracking-widest ${sourceTone}`}
                   >
-                    {SOURCE_LABEL[product.source]}
-                    {product.sourceLabel && (
-                      <>
-                        <span className="opacity-50">·</span>
-                        <span className="font-medium normal-case tracking-normal">
-                          {product.sourceLabel}
-                        </span>
-                      </>
-                    )}
+                    {sourceLabel}
                   </span>
+                  {isPreorder && product.preorderExpectedAt && (
+                    <span className="inline-flex items-center rounded-full border border-border px-3 py-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                      Ожидаем · {new Date(product.preorderExpectedAt).toLocaleDateString("ru-RU")}
+                    </span>
+                  )}
                 </div>
 
                 <h1 className="font-display text-4xl uppercase leading-[0.95] tracking-tighter md:text-5xl">
-                  {product.name}
+                  {product.title}
                 </h1>
 
                 <div className="mt-6 flex items-baseline gap-3">
                   <span className="font-display text-3xl tracking-tight text-primary">
-                    {product.price.toLocaleString("ru-RU")} ₽
+                    {product.priceRub.toLocaleString("ru-RU")} ₽
                   </span>
                   {isSold && (
                     <span className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
@@ -209,52 +212,17 @@ function ProductPage() {
                   )}
                 </div>
 
-                {product.ticketsBonus && product.ticketsBonus > 0 ? (
+                {product.bonusTickets > 0 ? (
                   <div className="mt-4 inline-flex items-center gap-2 border border-primary/40 bg-primary/5 px-3 py-2">
                     <span
                       aria-hidden
                       className="inline-block h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_8px_hsl(var(--primary)/0.7)]"
                     />
                     <span className="font-mono text-[11px] uppercase tracking-widest text-primary">
-                      +{product.ticketsBonus} {ticketsWordPdp(product.ticketsBonus)} на розыгрыши клуба
+                      +{product.bonusTickets} {ticketsWordPdp(product.bonusTickets)} на розыгрыши клуба
                     </span>
                   </div>
                 ) : null}
-
-                {/* SIZES */}
-                {product.sizes && product.sizes.length > 0 && (
-                  <div className="mt-8">
-                    <div className="mb-3 flex items-center justify-between">
-                      <span className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
-                        Размер
-                      </span>
-                      <button
-                        onClick={() => setSizeGuide(true)}
-                        className="font-mono text-[11px] uppercase tracking-widest text-foreground underline-offset-4 hover:text-primary hover:underline"
-                      >
-                        Таблица размеров →
-                      </button>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {product.sizes.map((s) => {
-                        const active = s === size;
-                        return (
-                          <button
-                            key={s}
-                            onClick={() => setSize(s)}
-                            className={`min-w-[52px] border px-4 py-2.5 font-display text-sm uppercase tracking-wider transition-all ${
-                              active
-                                ? "border-primary bg-primary text-primary-foreground shadow-[0_0_18px_-4px_hsl(var(--primary)/0.6)]"
-                                : "border-border text-foreground hover:border-primary hover:text-primary"
-                            }`}
-                          >
-                            {s}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
 
                 {/* QTY + CTA (desktop) */}
                 <div className="mt-8 hidden items-stretch gap-3 lg:flex">
@@ -283,7 +251,7 @@ function ProductPage() {
                     onClick={() => handleAdd(false)}
                     className="group relative flex flex-1 items-center justify-center gap-2 overflow-hidden bg-primary px-6 py-3 font-display text-base uppercase tracking-widest text-primary-foreground shadow-[0_10px_30px_-10px_hsl(var(--primary)/0.6)] transition-all hover:shadow-[0_15px_40px_-10px_hsl(var(--primary)/0.8)] disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground disabled:shadow-none"
                   >
-                    {isSold ? "Распродано" : "В корзину"}
+                    {isSold ? "Распродано" : isPreorder ? "Оформить предзаказ" : "В корзину"}
                     {!isSold && (
                       <span
                         aria-hidden
@@ -310,40 +278,14 @@ function ProductPage() {
                       </p>
                     </Accordion>
                   )}
-                  {product.composition && (
-                    <Accordion
-                      label="Состав"
-                      open={open === "comp"}
-                      onToggle={() =>
-                        setOpen(open === "comp" ? null : "comp")
-                      }
-                    >
-                      <p className="text-sm leading-relaxed text-muted-foreground">
-                        {product.composition}
-                      </p>
-                    </Accordion>
-                  )}
-                  {product.care && (
-                    <Accordion
-                      label="Уход"
-                      open={open === "care"}
-                      onToggle={() =>
-                        setOpen(open === "care" ? null : "care")
-                      }
-                    >
-                      <p className="text-sm leading-relaxed text-muted-foreground">
-                        {product.care}
-                      </p>
-                    </Accordion>
-                  )}
                   <Accordion
                     label="Доставка"
                     open={open === "ship"}
                     onToggle={() => setOpen(open === "ship" ? null : "ship")}
                   >
-                    {product.shipping ? (
-                      <p className="whitespace-pre-line text-sm leading-relaxed text-muted-foreground">
-                        {product.shipping}
+                    {isDigital ? (
+                      <p className="text-sm leading-relaxed text-muted-foreground">
+                        Цифровой товар. После оплаты придёт ссылка на скачивание на email.
                       </p>
                     ) : (
                       <ul className="space-y-2 text-sm leading-relaxed text-muted-foreground">
@@ -358,7 +300,7 @@ function ProductPage() {
                     onToggle={() => setOpen(open === "returns" ? null : "returns")}
                   >
                     <p className="whitespace-pre-line text-sm leading-relaxed text-muted-foreground">
-                      {product.returns ?? "Возврат 14 дней, если вещь не носилась и сохранены ярлыки."}
+                      Возврат 14 дней, если вещь не носилась и сохранены ярлыки.
                     </p>
                   </Accordion>
                 </div>
@@ -374,10 +316,10 @@ function ProductPage() {
         <div className="flex items-center gap-3">
           <div className="flex flex-col">
             <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-              {size ? `Размер ${size}` : "Цена"}
+              Цена
             </span>
             <span className="font-display text-lg text-primary">
-              {product.price.toLocaleString("ru-RU")} ₽
+              {product.priceRub.toLocaleString("ru-RU")} ₽
             </span>
           </div>
           <button
@@ -385,65 +327,14 @@ function ProductPage() {
             onClick={() => handleAdd(false)}
             className="ml-auto flex flex-1 items-center justify-center gap-2 bg-primary px-5 py-3 font-display text-sm uppercase tracking-widest text-primary-foreground shadow-[0_10px_30px_-10px_hsl(var(--primary)/0.6)] disabled:bg-muted disabled:text-muted-foreground disabled:shadow-none"
           >
-            {isSold ? "Распродано" : "В корзину"}
+            {isSold ? "Распродано" : isPreorder ? "Предзаказ" : "В корзину"}
             {!isSold && <span aria-hidden>→</span>}
           </button>
         </div>
       </div>
 
-      {/* SIZE GUIDE MODAL */}
-      {sizeGuide && (
-        <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-background/80 backdrop-blur sm:items-center"
-          onClick={() => setSizeGuide(false)}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-lg border border-border bg-card p-6 shadow-2xl"
-            style={{ animation: "shop-card-in 0.3s ease-out" }}
-          >
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="font-display text-xl uppercase tracking-tight">
-                Таблица размеров
-              </h3>
-              <button
-                onClick={() => setSizeGuide(false)}
-                className="text-muted-foreground hover:text-primary"
-                aria-label="Закрыть"
-              >
-                ✕
-              </button>
-            </div>
-            <table className="w-full border-collapse text-sm">
-              <thead>
-                <tr className="border-b border-border text-left font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
-                  <th className="py-2">Размер</th>
-                  <th className="py-2">Грудь, см</th>
-                  <th className="py-2">Длина, см</th>
-                </tr>
-              </thead>
-              <tbody className="font-mono">
-                {[
-                  ["S", "96–100", "68"],
-                  ["M", "100–104", "70"],
-                  ["L", "104–110", "72"],
-                  ["XL", "110–116", "74"],
-                  ["XXL", "116–122", "76"],
-                ].map((row) => (
-                  <tr key={row[0]} className="border-b border-border/50">
-                    <td className="py-2.5 text-primary">{row[0]}</td>
-                    <td className="py-2.5">{row[1]}</td>
-                    <td className="py-2.5">{row[2]}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            <p className="mt-4 text-xs text-muted-foreground">
-              Замеры по изделию в свободном виде. Допуск ± 2 см.
-            </p>
-          </div>
-        </div>
-      )}
+
+
 
       <Footer />
     </div>
@@ -495,32 +386,8 @@ function Accordion({
   );
 }
 
-function RelatedCard({ product }: { product: Product }) {
-  return (
-    <Link
-      to="/shop/$productSlug"
-      params={{ productSlug: product.slug }}
-      className="group block border border-border bg-card transition-all hover:-translate-y-1 hover:border-primary/40"
-    >
-      <div className="relative aspect-[4/5] overflow-hidden bg-surface">
-        <img
-          src={product.image}
-          alt={product.name}
-          loading="lazy"
-          className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
-        />
-      </div>
-      <div className="flex items-baseline justify-between gap-2 px-3 py-3">
-        <span className="text-xs font-medium uppercase tracking-wider">
-          {product.name}
-        </span>
-        <span className="font-mono text-xs">
-          {product.price.toLocaleString("ru-RU")} ₽
-        </span>
-      </div>
-    </Link>
-  );
-}
+
+
 
 /* ---------------- Stories Gallery ---------------- */
 

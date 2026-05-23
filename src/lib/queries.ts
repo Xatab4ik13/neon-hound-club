@@ -169,6 +169,8 @@ export const qk = {
   quests: ["quests", "list"] as const,
   shopProducts: ["shop", "products"] as const,
   shopProduct: (slug: string) => ["shop", "product", slug] as const,
+  shopCategories: ["shop", "categories"] as const,
+  shopShowcase: ["shop", "showcase"] as const,
   shopOrders: ["shop", "orders"] as const,
   shopOrder: (id: string) => ["shop", "order", id] as const,
   raffles: ["raffles", "list"] as const,
@@ -309,6 +311,15 @@ export async function fetchShopProducts() {
 export async function fetchShopProduct(slug: string) {
   return apiFetch<ShopProduct>(`/api/v1/shop/products/${encodeURIComponent(slug)}`);
 }
+
+export async function fetchShopCategories() {
+  return apiFetch<{ items: ShopCategoryWithSubs[] }>("/api/v1/shop/categories");
+}
+
+export async function fetchShopShowcase() {
+  return apiFetch<{ items: ShopShowcaseItem[] }>("/api/v1/shop/showcase");
+}
+
 
 export async function fetchMyOrders() {
   return apiFetch<{ items: ShopOrder[] }>("/api/v1/shop/orders");
