@@ -71,8 +71,13 @@ function QuestsPage() {
       <InstallAppQuest />
 
       {q.isLoading ? (
-        <div className="py-20 text-center font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
-          загрузка…
+        <div className="grid gap-3 md:grid-cols-2">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div
+              key={i}
+              className="h-[88px] animate-pulse rounded-2xl border border-white/[0.05] bg-white/[0.03]"
+            />
+          ))}
         </div>
       ) : items.length === 0 ? (
         <div className="border border-white/[0.06] bg-card/40 py-16 text-center font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
