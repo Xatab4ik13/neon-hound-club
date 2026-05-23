@@ -207,6 +207,21 @@ async function hydratePosts(rows: typeof posts.$inferSelect[], viewerId: string 
 export async function feedRoutes(app: FastifyInstance) {
   app.addHook("preHandler", loadSession);
 
+  // GET /api/v1/feed/stream — SSE-канал live-обновлений ленты.
+  // Шлёт компактные события (post.created, post.updated, post.deleted,
+  // comment.created, comment.deleted, post.liked, comment.liked, poll.voted),
+  // фронт по событию делает точечный refetch.
+  app.get("/stream", async (req, reply) => {
+    reply.raw.setHeader("Content-Type", "text/event-stream");
+    reply.raw.setHeader("Cache-Control", "no-cache, no-transform");
+    reply.raw.setHeader("Connection", "keep-alive");
+    reply.raw.setHeader("X-Accel-Buffering", "no");
+    reply.raw.flushHeaders?.();
+    reply.raw.write(`event: hello\ndata: {"ts":${Date.now()}}\n\n`);
+    const client = addClient(reply);
+    req.raw.on("close", () => removeClient(client));
+  });
+
   // GET /api/v1/feed?limit=&cursor= — лента (закреп сверху, потом по дате)
   app.get("/", async (req) => {
     const q = z
