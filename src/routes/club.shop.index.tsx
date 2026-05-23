@@ -183,7 +183,7 @@ function ClubShopPage() {
                 {Array.from({ length: 6 }).map((_, i) => (
                   <div
                     key={i}
-                    className="aspect-square animate-pulse rounded-2xl border border-white/[0.05] bg-white/[0.03]"
+                    className="skeleton-shimmer aspect-square rounded-2xl"
                   />
                 ))}
               </div>
