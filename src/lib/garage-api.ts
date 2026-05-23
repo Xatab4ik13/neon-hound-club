@@ -55,7 +55,7 @@ export type MyProfile = {
   userId: string;
   email: string;
   nick: string;
-  role: "user" | "admin";
+  role: "user" | "admin" | "blogger";
   emailVerified: boolean;
   joinedAt: string;
   phone: string | null;
@@ -72,7 +72,7 @@ export type MyProfile = {
 
 export type PublicProfile = {
   nick: string;
-  role: "user" | "admin";
+  role: "user" | "admin" | "blogger";
   joinedAt: string;
   city: string | null;
   avatarUrl: string | null;
