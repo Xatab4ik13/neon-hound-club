@@ -398,6 +398,7 @@ export async function feedRoutes(app: FastifyInstance) {
     const canModerate = c.postAuthorId === s.sub || s.role === "admin";
     if (c.authorId !== s.sub && !canModerate) return reply.code(403).send({ error: "forbidden" });
     await db.update(postComments).set({ deletedAt: new Date() }).where(eq(postComments.id, req.params.cid));
+    publishFeedEvent("comment.deleted", { commentId: req.params.cid });
     return { ok: true };
   });
 
