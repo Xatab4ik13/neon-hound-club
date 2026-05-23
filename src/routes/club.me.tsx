@@ -209,7 +209,15 @@ function MePage() {
   );
 }
 
-function PassRow({ tier }: { tier: Tier | null }) {
+function pluralDays(n: number) {
+  const m10 = n % 10;
+  const m100 = n % 100;
+  if (m10 === 1 && m100 !== 11) return "день";
+  if (m10 >= 2 && m10 <= 4 && (m100 < 10 || m100 >= 20)) return "дня";
+  return "дней";
+}
+
+function PassRow({ tier, daysLeft }: { tier: Tier | null; daysLeft: number | null }) {
   if (!tier) {
     return (
       <IOSListRow
@@ -221,6 +229,10 @@ function PassRow({ tier }: { tier: Tier | null }) {
       />
     );
   }
+  const desc =
+    daysLeft != null
+      ? `Осталось ${daysLeft} ${pluralDays(daysLeft)} · ${tier.tagline}`
+      : tier.tagline;
   return (
     <IOSListRow
       icon={<Gem className="h-5 w-5" style={{ color: tier.color }} />}
@@ -239,7 +251,7 @@ function PassRow({ tier }: { tier: Tier | null }) {
           </span>
         </span>
       }
-      description={tier.tagline}
+      description={desc}
       chevron
       to={`/club/hell-pass/${tier.slug}`}
     />
