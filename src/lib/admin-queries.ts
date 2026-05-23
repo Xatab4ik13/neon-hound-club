@@ -53,6 +53,8 @@ export type AdminUserDetail = AdminUserListItem & {
   bio: string | null;
   ticketsBalance: number;
   ticketsEarned: number;
+  totalSpentRub: number;
+  ordersCount: number;
   activePass: PassRecord | null;
   xpTotal: number;
   rank: {
@@ -64,6 +66,19 @@ export type AdminUserDetail = AdminUserListItem & {
     inRank: number;
     pct: number;
   };
+};
+
+export type AdminRaffleWinner = {
+  id: string;
+  createdAt: string;
+  prizeId: string;
+  prizeName: string;
+  userId: string;
+  nick: string;
+  email: string;
+  phone: string | null;
+  city: string | null;
+  avatarUrl: string | null;
 };
 
 export function fetchAdminUsers(q?: string) {
