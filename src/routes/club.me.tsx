@@ -85,6 +85,8 @@ function deriveRankView(rank: RankInfo | null | undefined, customBg: PlaqueBg | 
   };
 }
 
+function MePage() {
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [bgSheetOpen, setBgSheetOpen] = useState(false);
   const isMobile = useIsMobile();
   const passQ = useQuery({ queryKey: ["pass", "me"], queryFn: fetchPassMe, staleTime: 30_000, retry: false });
