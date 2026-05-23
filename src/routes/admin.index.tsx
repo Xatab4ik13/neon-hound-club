@@ -1,27 +1,74 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { TrendingUp, Users, Ticket, Trophy, ShoppingBag, Crown } from "lucide-react";
-import { PRODUCTS } from "@/data/products";
-import { PUBLIC_USERS } from "@/data/users";
+import { useQuery } from "@tanstack/react-query";
+import { TrendingUp, Users, Ticket, Trophy, ShoppingBag, Crown, Loader2 } from "lucide-react";
+import { fetchAdminDashboard } from "@/lib/admin-queries";
 
 export const Route = createFileRoute("/admin/")({
   component: Dashboard,
 });
 
+const ORDER_STATUS_RU: Record<string, string> = {
+  pending_payment: "Ожидает оплаты",
+  paid: "Оплачен",
+  shipped: "Отправлен",
+  delivered: "Доставлен",
+  cancelled: "Отменён",
+  refunded: "Возврат",
+};
+
+function fmtRub(n: number): string {
+  return `${n.toLocaleString("ru-RU")} ₽`;
+}
+
+function fmtDate(iso: string): string {
+  const d = new Date(iso);
+  return d.toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit" });
+}
+
+function fmtRemain(iso: string): string {
+  const ms = new Date(iso).getTime() - Date.now();
+  if (ms <= 0) return "истёк";
+  const h = Math.floor(ms / 3_600_000);
+  const m = Math.floor((ms % 3_600_000) / 60_000);
+  if (h >= 24) {
+    const d = Math.floor(h / 24);
+    return `${d}д ${h % 24}ч`;
+  }
+  return `${h}ч ${m}м`;
+}
+
 function Dashboard() {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["admin", "dashboard"],
+    queryFn: fetchAdminDashboard,
+    refetchInterval: 60_000,
+  });
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center p-12 text-zinc-500">
+        <Loader2 className="h-5 w-5 animate-spin" />
+      </div>
+    );
+  }
+  if (error || !data) {
+    return <div className="rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950 dark:text-rose-300">Не удалось загрузить дашборд</div>;
+  }
+
   const stats = [
-    { label: "Выручка за месяц", value: "284 500 ₽", delta: "+12%", icon: TrendingUp, tone: "emerald" },
-    { label: "Активных подписок Pass", value: "412", delta: "+38", icon: Crown, tone: "violet" },
-    { label: "Новых пользователей / 7д", value: "67", delta: "+9", icon: Users, tone: "blue" },
-    { label: "Билетов в обороте", value: "18 240", delta: "−320", icon: Ticket, tone: "amber" },
-    { label: "Активных розыгрышей", value: "3", delta: "5 480 ₽ в банке", icon: Trophy, tone: "rose" },
-    { label: "Заказов за неделю", value: "29", delta: "+4", icon: ShoppingBag, tone: "cyan" },
+    { label: "Выручка за 30 дней", value: fmtRub(data.kpi.revenue30d), icon: TrendingUp },
+    { label: "Активных Hell Pass", value: String(data.kpi.passActive), icon: Crown },
+    { label: "Новых пользователей / 7д", value: String(data.kpi.newUsers7d), icon: Users },
+    { label: "Билетов в обороте", value: data.kpi.ticketsInCirculation.toLocaleString("ru-RU"), icon: Ticket },
+    { label: "Активных розыгрышей", value: String(data.kpi.rafflesActive), delta: `${data.kpi.rafflesBankTickets.toLocaleString("ru-RU")} билетов в банке`, icon: Trophy },
+    { label: "Заказов за 7 дней", value: String(data.kpi.orders7d), icon: ShoppingBag },
   ];
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Дашборд</h1>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">Сводка за последние 30 дней</p>
+        <p className="text-sm text-zinc-500 dark:text-zinc-400">Сводка по реальным данным</p>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -37,54 +84,59 @@ function Dashboard() {
               <s.icon className="h-4 w-4 text-zinc-400" />
             </div>
             <div className="mt-2 text-2xl font-bold">{s.value}</div>
-            <div className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">{s.delta}</div>
+            {s.delta && <div className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">{s.delta}</div>}
           </div>
         ))}
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card title="Последние заказы">
-          <Table
-            headers={["№", "Клиент", "Сумма", "Статус"]}
-            rows={[
-              ["#1042", "ASPHALT_DOG", "12 990 ₽", "Оплачен"],
-              ["#1041", "vasya_pit", "8 490 ₽", "В сборке"],
-              ["#1040", "moto_anya", "3 290 ₽", "Доставлен"],
-              ["#1039", "wheelie_kid", "5 980 ₽", "Оплачен"],
-              ["#1038", "captain_volk", "12 990 ₽", "Отменён"],
-            ]}
-          />
+          {data.lastOrders.length === 0 ? (
+            <Empty>Заказов пока нет</Empty>
+          ) : (
+            <Table
+              headers={["№", "Клиент", "Сумма", "Статус"]}
+              rows={data.lastOrders.map((o) => [
+                `#${o.id.slice(0, 8)}`,
+                o.nick,
+                fmtRub(o.totalRub),
+                ORDER_STATUS_RU[o.status] ?? o.status,
+              ])}
+            />
+          )}
         </Card>
 
         <Card title="Розыгрыши, осталось <48ч">
-          <Table
-            headers={["Приз", "До конца", "Участников"]}
-            rows={[
-              ["Шлем AGV K6", "12ч 40м", "284"],
-              ["Перчатки v3", "1д 8ч", "127"],
-              ["Худи Founder", "1д 22ч", "412"],
-            ]}
-          />
+          {data.rafflesSoon.length === 0 ? (
+            <Empty>Нет розыгрышей в ближайшие 48 часов</Empty>
+          ) : (
+            <Table
+              headers={["Приз", "До конца", "Заявок"]}
+              rows={data.rafflesSoon.map((r) => [r.prize ?? r.title, fmtRemain(r.endsAt), String(r.entries)])}
+            />
+          )}
         </Card>
 
-        <Card title="Подписки, истекают за 7 дней">
-          <Table
-            headers={["Юзер", "Тир", "Истекает"]}
-            rows={Object.values(PUBLIC_USERS)
-              .slice(0, 5)
-              .map((u) => [u.nick, ["Silver", "Gold", "Platinum"][u.xpPct % 3], "через 3д"])}
-          />
+        <Card title="Pass истекают за 7 дней">
+          {data.passExpiring.length === 0 ? (
+            <Empty>Ни один Pass не истекает в ближайшую неделю</Empty>
+          ) : (
+            <Table
+              headers={["Юзер", "Тир", "Истекает"]}
+              rows={data.passExpiring.map((p) => [p.nick, p.tier, fmtDate(p.expiresAt)])}
+            />
+          )}
         </Card>
 
-        <Card title="Топ товаров">
-          <Table
-            headers={["Товар", "Продаж", "Выручка"]}
-            rows={PRODUCTS.slice(0, 5).map((p, i) => [
-              p.name,
-              String(20 - i * 3),
-              `${(p.price * (20 - i * 3)).toLocaleString("ru-RU")} ₽`,
-            ])}
-          />
+        <Card title="Топ товаров за 30 дней">
+          {data.topProducts.length === 0 ? (
+            <Empty>Нет продаж за 30 дней</Empty>
+          ) : (
+            <Table
+              headers={["Товар", "Продаж", "Выручка"]}
+              rows={data.topProducts.map((p) => [p.title, String(p.qty), fmtRub(p.revenue)])}
+            />
+          )}
         </Card>
       </div>
     </div>
@@ -102,11 +154,14 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
   );
 }
 
+function Empty({ children }: { children: React.ReactNode }) {
+  return <div className="px-3 py-6 text-center text-sm text-zinc-500 dark:text-zinc-400">{children}</div>;
+}
+
 function Table({ headers, rows }: { headers: string[]; rows: (string | number)[][] }) {
   return (
     <div className="-mx-4 overflow-x-auto px-4 md:mx-0 md:px-0">
       <table className="w-full min-w-[480px] text-sm">
-
         <thead>
           <tr className="text-left text-xs uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
             {headers.map((h) => (
