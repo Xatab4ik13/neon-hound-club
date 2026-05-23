@@ -386,32 +386,8 @@ function Accordion({
   );
 }
 
-function RelatedCard({ product }: { product: Product }) {
-  return (
-    <Link
-      to="/shop/$productSlug"
-      params={{ productSlug: product.slug }}
-      className="group block border border-border bg-card transition-all hover:-translate-y-1 hover:border-primary/40"
-    >
-      <div className="relative aspect-[4/5] overflow-hidden bg-surface">
-        <img
-          src={product.image}
-          alt={product.name}
-          loading="lazy"
-          className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
-        />
-      </div>
-      <div className="flex items-baseline justify-between gap-2 px-3 py-3">
-        <span className="text-xs font-medium uppercase tracking-wider">
-          {product.name}
-        </span>
-        <span className="font-mono text-xs">
-          {product.price.toLocaleString("ru-RU")} ₽
-        </span>
-      </div>
-    </Link>
-  );
-}
+
+
 
 /* ---------------- Stories Gallery ---------------- */
 
