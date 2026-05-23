@@ -80,32 +80,48 @@ function ensurePublicUser(input: {
   city: string | null;
 }): string {
   const slug = makeSlug(input.nick);
-  const isBlogger = input.role === "blogger" || input.role === "admin";
+  const isBlogger = input.role === "blogger";
+  const role: PublicUser["role"] =
+    input.role === "admin" ? "owner" : input.role === "blogger" ? "team" : "rider";
+  const nextAvatar = input.avatarUrl ?? undefined;
+  const nextCity = input.city ?? undefined;
+  const nextInitials = initialsOf(input.nick);
   if (PUBLIC_USERS[slug]) {
     const cur = PUBLIC_USERS[slug];
-    const nextAvatar = input.avatarUrl ?? undefined;
-    // Если есть свежий сигнал роли — поднимаем флаг блогера (не гасим существующий true).
-    const nextBlogger = cur.isBlogger || isBlogger;
-    if (cur.avatarUrl !== nextAvatar || cur.isBlogger !== nextBlogger) {
-      PUBLIC_USERS[slug] = { ...cur, avatarUrl: nextAvatar, isBlogger: nextBlogger };
+    const nextBlogger = input.role == null ? cur.isBlogger === true : isBlogger;
+    if (
+      cur.nick !== input.nick ||
+      cur.initials !== nextInitials ||
+      cur.role !== role ||
+      cur.city !== nextCity ||
+      cur.avatarUrl !== nextAvatar ||
+      cur.isBlogger !== nextBlogger
+    ) {
+      PUBLIC_USERS[slug] = {
+        ...cur,
+        nick: input.nick,
+        initials: nextInitials,
+        role,
+        city: nextCity,
+        avatarUrl: nextAvatar,
+        isBlogger: nextBlogger,
+      };
     }
     return slug;
   }
-  const role: PublicUser["role"] =
-    input.role === "admin" ? "owner" : input.role === "blogger" ? "team" : "rider";
   PUBLIC_USERS[slug] = {
     slug,
     nick: input.nick,
-    initials: initialsOf(input.nick),
+    initials: nextInitials,
     rank: "rookie",
     xpPct: 0,
     role,
     isBlogger,
-    city: input.city ?? undefined,
+    city: nextCity,
     joined: "",
     badgeIds: [],
     wins: [],
-    avatarUrl: input.avatarUrl ?? undefined,
+    avatarUrl: nextAvatar,
   };
   return slug;
 }
