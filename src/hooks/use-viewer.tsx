@@ -98,10 +98,16 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
 
   const signUp = useCallback(
     async (email: string, password: string, nick: string) => {
+      const { getPendingRef, clearPendingRef } = await import("@/data/referral");
+      const ref = getPendingRef();
       const res = await apiFetch<{ ok: true; pendingVerification: true; email: string }>(
         "/api/v1/auth/register",
-        { method: "POST", body: JSON.stringify({ email, password, nick }) },
+        {
+          method: "POST",
+          body: JSON.stringify(ref ? { email, password, nick, ref } : { email, password, nick }),
+        },
       );
+      if (ref) clearPendingRef();
       return res;
     },
     [],
