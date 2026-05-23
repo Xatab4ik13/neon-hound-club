@@ -481,6 +481,7 @@ export async function postsRoutes(app: FastifyInstance) {
     if (parsed.data.poll !== undefined) data.poll = parsed.data.poll;
 
     const [row] = await db.update(posts).set(data).where(eq(posts.id, req.params.id)).returning();
+    publishFeedEvent("post.updated", { postId: req.params.id });
     return row;
   });
 
