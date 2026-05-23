@@ -34,6 +34,32 @@ export async function rafflesRoutes(app: FastifyInstance) {
     return { items: rows };
   });
 
+  // GET /api/v1/raffles/home — активные с флагом show_on_home, с превью призов.
+  // Используется для hero-блока на главной.
+  app.get("/home", async () => {
+    const rows = await db
+      .select()
+      .from(raffles)
+      .where(and(eq(raffles.showOnHome, true), eq(raffles.status, "active")))
+      .orderBy(desc(raffles.endsAt));
+
+    const items = await Promise.all(
+      rows.map(async (r) => {
+        const prizes = await db
+          .select({ name: rafflePrizes.name, qty: rafflePrizes.qty })
+          .from(rafflePrizes)
+          .where(eq(rafflePrizes.raffleId, r.id))
+          .orderBy(rafflePrizes.position);
+        const [{ totalEntries }] = await db
+          .select({ totalEntries: count() })
+          .from(raffleEntries)
+          .where(eq(raffleEntries.raffleId, r.id));
+        return { ...r, prizes, totalEntries };
+      }),
+    );
+    return { items };
+  });
+
   // GET /api/v1/raffles/:id — карточка + (если auth) кол-во моих заявок
   app.get<{ Params: { id: string } }>("/:id", async (req, reply) => {
     const [r] = await db
