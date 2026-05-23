@@ -116,10 +116,14 @@ function ProductView({ product }: { product: ShopProduct }) {
 
   const [qty, setQty] = useState(1);
   const [open, setOpen] = useState<AccordionKey | null>("desc");
+  const sizes = product.sizes ?? [];
+  const [size, setSize] = useState<string | null>(sizes.length > 0 ? null : null);
 
   const isSold = product.stock !== null && product.stock <= 0;
   const isPreorder = product.kind === "preorder";
   const isDigital = product.kind === "digital";
+  const needsSize = sizes.length > 0;
+  const sizeMissing = needsSize && !size;
 
   const sourceTone = "bg-primary text-primary-foreground";
   const sourceLabel = isPreorder ? "ПРЕДЗАКАЗ" : isDigital ? "ЦИФРОВОЙ" : "HELLHOUND";
@@ -128,6 +132,10 @@ function ProductView({ product }: { product: ShopProduct }) {
   const navigate = useNavigate();
   const handleAdd = (goToCart = false) => {
     if (isSold) return;
+    if (sizeMissing) {
+      hhToast.error("Выбери размер");
+      return;
+    }
     add(
       {
         productId: product.id,
@@ -135,14 +143,14 @@ function ProductView({ product }: { product: ShopProduct }) {
         name: product.title,
         price: product.priceRub,
         image: gallery[0] ?? "",
-        size: null,
+        size,
         ticketsBonus: product.bonusTickets,
       },
       qty,
     );
 
     hhToast.success("Добавлено в корзину", {
-      meta: `${product.title} × ${qty}`,
+      meta: `${product.title}${size ? ` · ${size}` : ""} × ${qty}`,
     });
     if (goToCart) navigate({ to: "/cart" });
   };
