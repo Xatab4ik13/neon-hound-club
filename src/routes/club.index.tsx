@@ -57,6 +57,7 @@ export function PostCard({ post, moderate = false }: { post: Post; moderate?: bo
   const liked = post.liked;
   const likeCount = post.likes;
   const author = PUBLIC_USERS[post.authorSlug];
+  const authorIsBlogger = post.isBlogger;
 
 
   return (
@@ -72,7 +73,7 @@ export function PostCard({ post, moderate = false }: { post: Post; moderate?: bo
 
       <header className="flex items-center gap-3 px-4 pt-4 md:px-5 md:pt-5">
         <UserLink slug={post.authorSlug}>
-          {isHell(post.authorSlug) ? (
+          {authorIsBlogger ? (
             <HellhoundAvatar size={44} initials={author?.initials ?? "H"} avatarUrl={author?.avatarUrl} />
           ) : (
             <RankAvatar
@@ -90,7 +91,7 @@ export function PostCard({ post, moderate = false }: { post: Post; moderate?: bo
                 {author?.nick ?? post.authorSlug}
               </span>
             </UserLink>
-            {isHell(post.authorSlug) ? <HellhoundChip size="sm" /> : <RoleBadge role={author?.role ?? "rider"} />}
+            {authorIsBlogger ? <HellhoundChip size="sm" /> : <RoleBadge role={author?.role ?? "rider"} />}
           </div>
           <span className="mt-0.5 block font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
             {post.time}
@@ -518,11 +519,12 @@ function CommentItem({
   const user = PUBLIC_USERS[comment.authorSlug];
   const rank = RANK_BY_ID[user?.rank ?? "rookie"];
   const count = comment.likes;
+  const authorIsBlogger = comment.isBlogger;
 
   return (
     <li className="flex gap-3">
       <UserLink slug={comment.authorSlug}>
-        {isHell(comment.authorSlug) ? (
+        {authorIsBlogger ? (
           <HellhoundAvatar size={large ? 40 : 36} initials={user?.initials ?? "H"} avatarUrl={user?.avatarUrl} />
         ) : (
           <RankAvatar
@@ -538,12 +540,12 @@ function CommentItem({
           <UserLink slug={comment.authorSlug} className="min-w-0 truncate">
             <span
               className={`truncate font-display font-bold uppercase italic tracking-tight transition-opacity hover:opacity-80 ${large ? "text-[14px]" : "text-[13px]"}`}
-              style={{ color: isHell(comment.authorSlug) ? undefined : rank.accent }}
+              style={{ color: authorIsBlogger ? undefined : rank.accent }}
             >
               {user?.nick ?? comment.authorSlug}
             </span>
           </UserLink>
-          {isHell(comment.authorSlug) ? (
+          {authorIsBlogger ? (
             <HellhoundChip size="xs" />
           ) : (
             <span
@@ -553,8 +555,8 @@ function CommentItem({
               {rank.short}
             </span>
           )}
-          {!isHell(comment.authorSlug) && user?.role === "owner" && <RoleBadge role="owner" />}
-          {!isHell(comment.authorSlug) && user?.role === "team" && <RoleBadge role="team" />}
+          {!authorIsBlogger && user?.role === "owner" && <RoleBadge role="owner" />}
+          {!authorIsBlogger && user?.role === "team" && <RoleBadge role="team" />}
           <span className="ml-auto shrink-0 font-mono text-[10px] uppercase tracking-wider text-muted-foreground/70">
             {comment.time}
           </span>
