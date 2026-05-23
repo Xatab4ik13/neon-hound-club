@@ -334,9 +334,16 @@ export async function fetchQuests() {
 
 export async function checkQuest(code: string) {
   return apiFetch<
-    | { credited: true; completionId: string; tickets: number }
+    | { credited: true; completionId: string; tickets: number; xp: number }
     | { credited: false; reason: string }
   >(`/api/v1/quests/${encodeURIComponent(code)}/check`, { method: "POST" });
+}
+
+export async function confirmPwaInstall() {
+  return apiFetch<
+    | { credited: true; completionId: string; tickets: number; xp: number }
+    | { credited: false; reason: string }
+  >(`/api/v1/quests/pwa_install/confirm`, { method: "POST" });
 }
 
 // ---------- SHOP ----------
