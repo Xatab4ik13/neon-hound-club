@@ -7,6 +7,7 @@ import { useFeedPosts, feedStore, type FeedComment, type FeedPost, type FeedPoll
 import { HellhoundAvatar, HellhoundChip } from "@/components/club/HellhoundPlaque";
 import { IOSSheet } from "@/components/ios/IOSSheet";
 import { useMyProfile } from "@/lib/garage-api";
+import { useMyStickerPacks, STICKER_PACK_PRODUCT_SLUGS } from "@/lib/stickers-api";
 import { SPECIAL_PACK_STICKERS, SPECIAL_PACK_COVER } from "@/assets/stickers/special";
 
 
