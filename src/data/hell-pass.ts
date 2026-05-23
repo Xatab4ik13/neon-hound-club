@@ -1,16 +1,10 @@
-// Каталог тиров Hell Pass. Используется и на /club/hell-pass (список),
-// и на /club/hell-pass/$tier (детальная страница с полным описанием).
+// Каталог тиров Hell Pass. Используется и на /hell-pass, и на /club/hell-pass.
 
 import {
   Ticket,
   Percent,
   Sparkles,
   Zap,
-  GraduationCap,
-  MessageSquare,
-  Trophy,
-  Coins,
-  
   Infinity as InfinityIcon,
   type LucideIcon,
 } from "lucide-react";
@@ -52,25 +46,19 @@ export type Tier = {
 
 const SILVER_GROUPS: { title: string; perks: Perk[] }[] = [
   {
-    title: "Розыгрыши и билеты",
+    title: "Билеты",
     perks: [
       {
         icon: Ticket,
         value: "3",
-        label: "билета в месяц в любой розыгрыш",
+        label: "билета в месяц",
         detail:
           "Каждый месяц на счёт падает 3 билета. Можно потратить на один розыгрыш или раскидать по разным. Билеты копятся и не сгорают.",
-      },
-      {
-        icon: Trophy,
-        label: "Доступ к эксклюзивным розыгрышам",
-        detail:
-          "Раз в месяц закрытый розыгрыш только для подписчиков Hell Pass — туда не пускают тех, кто покупает билеты разово.",
       },
     ],
   },
   {
-    title: "AI-механик и клуб",
+    title: "Hell AI и клуб",
     perks: [
       {
         icon: Sparkles,
@@ -78,12 +66,6 @@ const SILVER_GROUPS: { title: string; perks: Perk[] }[] = [
         label: "Hell AI-вопросов про твой мото в месяц",
         detail:
           "Hell AI знает твой байк из профиля. 30 вопросов в месяц — от «что за стук» до «какое масло».",
-      },
-      {
-        icon: MessageSquare,
-        label: "Комментарии в ленте клуба",
-        detail:
-          "Без подписки лента работает только на чтение. Silver открывает комментарии под постами Hell и других райдеров.",
       },
       {
         icon: Zap,
@@ -95,7 +77,7 @@ const SILVER_GROUPS: { title: string; perks: Perk[] }[] = [
     ],
   },
   {
-    title: "Мерч и школа",
+    title: "Мерч",
     perks: [
       {
         icon: Percent,
@@ -103,20 +85,6 @@ const SILVER_GROUPS: { title: string; perks: Perk[] }[] = [
         label: "Скидка на мерч HELLHOUND",
         detail:
           "Стандартная скидка в магазине. Считается до промокодов и распродаж — не складывается с ними, берётся максимальная.",
-      },
-      {
-        icon: GraduationCap,
-        value: "−20%",
-        label: "Скидка на школу HELLHOUND",
-        detail:
-          "−20% на любой курс школы — от базового тренинга до трек-дней. Скидка применяется автоматически при оплате из личного кабинета.",
-      },
-      {
-        icon: Coins,
-        value: "1 / 200 ₽",
-        label: "Кешбэк билетами с мерча",
-        detail:
-          "За каждые 200 ₽ потраченные на мерч начисляется 1 билет в розыгрыш. Автоматически, через 14 дней после доставки.",
       },
     ],
   },
@@ -126,7 +94,7 @@ const SILVER_GROUPS: { title: string; perks: Perk[] }[] = [
 
 const GOLD_GROUPS: { title: string; perks: Perk[] }[] = [
   {
-    title: "Розыгрыши и билеты",
+    title: "Билеты",
     perks: [
       {
         icon: Ticket,
@@ -139,7 +107,7 @@ const GOLD_GROUPS: { title: string; perks: Perk[] }[] = [
     ],
   },
   {
-    title: "AI-механик и клуб",
+    title: "Hell AI и клуб",
     perks: [
       {
         icon: Sparkles,
@@ -178,7 +146,7 @@ const GOLD_GROUPS: { title: string; perks: Perk[] }[] = [
 
 const PLATINUM_GROUPS: { title: string; perks: Perk[] }[] = [
   {
-    title: "Розыгрыши и билеты",
+    title: "Билеты и розыгрыши",
     perks: [
       {
         icon: Ticket,
@@ -191,14 +159,14 @@ const PLATINUM_GROUPS: { title: string; perks: Perk[] }[] = [
       {
         icon: Sparkles,
         accent: true,
-        label: "Закрытый Platinum-розыгрыш раз в сезон",
+        label: "Закрытый Platinum-розыгрыш раз в месяц",
         detail:
-          "Раз в 3 месяца — отдельный розыгрыш только для Platinum. Маленький пул участников, крупные лоты (тур, гир, иногда мотоцикл).",
+          "Раз в месяц — отдельный розыгрыш только для Platinum. Маленький пул участников, крупные лоты.",
       },
     ],
   },
   {
-    title: "Hell AI",
+    title: "Hell AI и клуб",
     perks: [
       {
         icon: InfinityIcon,
@@ -208,11 +176,6 @@ const PLATINUM_GROUPS: { title: string; perks: Perk[] }[] = [
         detail:
           "Спрашивай Hell AI сколько надо — без лимита по количеству вопросов. Хоть каждый день перед выездом.",
       },
-    ],
-  },
-  {
-    title: "Клуб",
-    perks: [
       {
         icon: Zap,
         value: "×2.0",
@@ -251,7 +214,7 @@ export const TIERS: Tier[] = [
     name: "Silver",
     price: 490,
     color: "#b8a48a",
-    tagline: "Вход в клуб. Билеты, AI-помощник, скидки.",
+    tagline: "Вход в клуб. Билеты, Hell AI, скидка 5%.",
     forWhom:
       "Для тех, кто катает в удовольствие и хочет участвовать в розыгрышах без переплаты. Минимум обязательств — максимум выгоды против разовых покупок.",
     groups: SILVER_GROUPS,
@@ -264,7 +227,7 @@ export const TIERS: Tier[] = [
     price: 1290,
     color: "#ffb648",
     inheritsFrom: "Silver",
-    tagline: "Серьёзная подписка. Больше билетов и AI-вопросов, скидка 10%.",
+    tagline: "Больше билетов и Hell AI-вопросов, скидка 10%.",
     forWhom:
       "Для активных райдеров и коллекционеров мерча. Если хоть раз пожалел, что не успел купить лимитку — Gold решает.",
     groups: GOLD_GROUPS,
@@ -278,9 +241,9 @@ export const TIERS: Tier[] = [
     price: 2990,
     color: "#e8e4d6",
     inheritsFrom: "Gold",
-    tagline: "Максимум. Hell AI без ограничений, закрытые розыгрыши, скидка 15%.",
+    tagline: "Hell AI без ограничений, закрытый розыгрыш раз в месяц, скидка 15%.",
     forWhom:
-      "Для тех, кто живёт мото и хочет быть в центре клуба. Самые крупные лоты, реальное влияние на канал, эксклюзивные предметы, недоступные нигде ещё.",
+      "Для тех, кто живёт мото и хочет быть в центре клуба. Самые крупные лоты и эксклюзивные розыгрыши только для Platinum.",
     groups: PLATINUM_GROUPS,
     perks: flat(PLATINUM_GROUPS),
     ultimate: true,
