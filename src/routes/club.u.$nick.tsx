@@ -58,6 +58,7 @@ function fromServer(p: PublicProfile, fallbackMock: PublicUser | undefined): Pub
     rank: rankId,
     xpPct: p.rank.pct,
     role: p.role === "admin" ? "owner" : fallbackMock?.role ?? "rider",
+    isBlogger: p.role === "blogger",
     city: p.city ?? undefined,
     bike: bikeStr,
     joined,
