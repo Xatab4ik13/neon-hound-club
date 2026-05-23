@@ -15,6 +15,8 @@ import {
   User,
   X,
   Loader2,
+  Camera,
+  Plus,
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useViewer } from "@/hooks/use-viewer";
