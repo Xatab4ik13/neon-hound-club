@@ -158,6 +158,7 @@ function mapComment(c: FeedCommentHydrated): FeedComment {
     role: c.role,
     avatarUrl: c.avatarUrl,
     city: null,
+    rankId: c.rankId,
   });
   return {
     id: c.id,
