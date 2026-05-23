@@ -91,14 +91,22 @@ function ProductView({ product }: { product: ShopProduct }) {
   const [slide, setSlide] = useState(0);
   const [qty, setQty] = useState(1);
   const [open, setOpen] = useState<"desc" | "ship" | "returns" | null>("desc");
+  const sizes = product.sizes ?? [];
+  const [size, setSize] = useState<string | null>(null);
   const { add } = useCart();
   const navigate = useNavigate();
 
   const sold = product.stock !== null && product.stock <= 0;
+  const needsSize = sizes.length > 0;
+  const sizeMissing = needsSize && !size;
   const cover = gallery[slide] ?? gallery[0];
 
   const handleAdd = (goToCart = false) => {
     if (sold) return;
+    if (sizeMissing) {
+      hhToast.error("Выбери размер");
+      return;
+    }
     add(
       {
         productId: product.id,
@@ -106,13 +114,13 @@ function ProductView({ product }: { product: ShopProduct }) {
         name: product.title,
         price: product.priceRub,
         image: cover ?? "",
-        size: null,
+        size,
         ticketsBonus: product.bonusTickets,
       },
       qty,
     );
     hhToast.success("Добавлено в корзину", {
-      meta: `${product.title} × ${qty}`,
+      meta: `${product.title}${size ? ` · ${size}` : ""} × ${qty}`,
     });
     if (goToCart) navigate({ to: "/club/cart" });
   };
@@ -235,6 +243,40 @@ function ProductView({ product }: { product: ShopProduct }) {
           </div>
         </div>
 
+        {needsSize && (
+          <div className="mt-6">
+            <div className="mb-2 flex items-center justify-between">
+              <span className="font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                Размер
+              </span>
+              {size && (
+                <span className="font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-foreground">
+                  {size}
+                </span>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {sizes.map((s) => {
+                const isActive = s === size;
+                return (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => setSize(s)}
+                    className={`min-w-[44px] rounded-xl border px-4 py-2 font-mono text-xs font-bold uppercase tracking-wider transition-colors active:scale-95 ${
+                      isActive
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-white/[0.08] bg-white/[0.03] text-foreground"
+                    }`}
+                  >
+                    {s}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         <div className="mt-8 overflow-hidden rounded-2xl border border-white/[0.06] bg-card/40 divide-y divide-white/[0.05]">
           {product.description && (
             <Accordion
@@ -252,18 +294,25 @@ function ProductView({ product }: { product: ShopProduct }) {
             open={open === "ship"}
             onToggle={() => setOpen(open === "ship" ? null : "ship")}
           >
-            <ul className="space-y-2 text-[14px] leading-relaxed text-muted-foreground">
-              <li>· СДЭК по РФ — 2–7 дней.</li>
-              <li>· Самовывоз из гаража HELLHOUND в Москве.</li>
-            </ul>
+            {product.shippingInfo?.trim() ? (
+              <p className="whitespace-pre-line text-[14px] leading-relaxed text-muted-foreground">
+                {product.shippingInfo}
+              </p>
+            ) : (
+              <ul className="space-y-2 text-[14px] leading-relaxed text-muted-foreground">
+                <li>· СДЭК по РФ — 2–7 дней.</li>
+                <li>· Самовывоз из гаража HELLHOUND в Москве.</li>
+              </ul>
+            )}
           </Accordion>
           <Accordion
             label="Возврат"
             open={open === "returns"}
             onToggle={() => setOpen(open === "returns" ? null : "returns")}
           >
-            <p className="text-[14px] leading-relaxed text-muted-foreground">
-              Возврат 14 дней, если вещь не носилась и сохранены ярлыки.
+            <p className="whitespace-pre-line text-[14px] leading-relaxed text-muted-foreground">
+              {product.returnPolicy?.trim() ||
+                "Возврат 14 дней, если вещь не носилась и сохранены ярлыки."}
             </p>
           </Accordion>
         </div>
@@ -288,7 +337,7 @@ function ProductView({ product }: { product: ShopProduct }) {
             onClick={() => handleAdd(false)}
             className="ml-auto flex flex-1 items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 font-display text-sm font-black uppercase tracking-wider text-primary-foreground transition-all active:scale-[0.98] disabled:bg-muted disabled:text-muted-foreground"
           >
-            {sold ? "Распродано" : "В корзину"}
+            {sold ? "Распродано" : sizeMissing ? "Выбери размер" : "В корзину"}
           </button>
         </div>
       </div>

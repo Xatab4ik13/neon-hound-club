@@ -116,10 +116,14 @@ function ProductView({ product }: { product: ShopProduct }) {
 
   const [qty, setQty] = useState(1);
   const [open, setOpen] = useState<AccordionKey | null>("desc");
+  const sizes = product.sizes ?? [];
+  const [size, setSize] = useState<string | null>(sizes.length > 0 ? null : null);
 
   const isSold = product.stock !== null && product.stock <= 0;
   const isPreorder = product.kind === "preorder";
   const isDigital = product.kind === "digital";
+  const needsSize = sizes.length > 0;
+  const sizeMissing = needsSize && !size;
 
   const sourceTone = "bg-primary text-primary-foreground";
   const sourceLabel = isPreorder ? "ПРЕДЗАКАЗ" : isDigital ? "ЦИФРОВОЙ" : "HELLHOUND";
@@ -128,6 +132,10 @@ function ProductView({ product }: { product: ShopProduct }) {
   const navigate = useNavigate();
   const handleAdd = (goToCart = false) => {
     if (isSold) return;
+    if (sizeMissing) {
+      hhToast.error("Выбери размер");
+      return;
+    }
     add(
       {
         productId: product.id,
@@ -135,14 +143,14 @@ function ProductView({ product }: { product: ShopProduct }) {
         name: product.title,
         price: product.priceRub,
         image: gallery[0] ?? "",
-        size: null,
+        size,
         ticketsBonus: product.bonusTickets,
       },
       qty,
     );
 
     hhToast.success("Добавлено в корзину", {
-      meta: `${product.title} × ${qty}`,
+      meta: `${product.title}${size ? ` · ${size}` : ""} × ${qty}`,
     });
     if (goToCart) navigate({ to: "/cart" });
   };
@@ -224,6 +232,40 @@ function ProductView({ product }: { product: ShopProduct }) {
                   </div>
                 ) : null}
 
+                {needsSize && (
+                  <div className="mt-8">
+                    <div className="mb-3 flex items-center justify-between">
+                      <span className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+                        Размер
+                      </span>
+                      {size && (
+                        <span className="font-mono text-[11px] uppercase tracking-widest text-foreground">
+                          {size}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {sizes.map((s) => {
+                        const isActive = s === size;
+                        return (
+                          <button
+                            key={s}
+                            type="button"
+                            onClick={() => setSize(s)}
+                            className={`min-w-[48px] border px-4 py-2 font-mono text-xs uppercase tracking-widest transition-colors ${
+                              isActive
+                                ? "border-primary bg-primary text-primary-foreground"
+                                : "border-border text-foreground hover:border-primary hover:text-primary"
+                            }`}
+                          >
+                            {s}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
                 {/* QTY + CTA (desktop) */}
                 <div className="mt-8 hidden items-stretch gap-3 lg:flex">
                   <div className="flex items-center border border-border">
@@ -251,8 +293,14 @@ function ProductView({ product }: { product: ShopProduct }) {
                     onClick={() => handleAdd(false)}
                     className="group relative flex flex-1 items-center justify-center gap-2 overflow-hidden bg-primary px-6 py-3 font-display text-base uppercase tracking-widest text-primary-foreground shadow-[0_10px_30px_-10px_hsl(var(--primary)/0.6)] transition-all hover:shadow-[0_15px_40px_-10px_hsl(var(--primary)/0.8)] disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground disabled:shadow-none"
                   >
-                    {isSold ? "Распродано" : isPreorder ? "Оформить предзаказ" : "В корзину"}
-                    {!isSold && (
+                    {isSold
+                      ? "Распродано"
+                      : sizeMissing
+                        ? "Выбери размер"
+                        : isPreorder
+                          ? "Оформить предзаказ"
+                          : "В корзину"}
+                    {!isSold && !sizeMissing && (
                       <span
                         aria-hidden
                         className="transition-transform group-hover:translate-x-1"
@@ -273,7 +321,7 @@ function ProductView({ product }: { product: ShopProduct }) {
                         setOpen(open === "desc" ? null : "desc")
                       }
                     >
-                      <p className="text-sm leading-relaxed text-muted-foreground">
+                      <p className="whitespace-pre-line text-sm leading-relaxed text-muted-foreground">
                         {product.description}
                       </p>
                     </Accordion>
@@ -283,7 +331,11 @@ function ProductView({ product }: { product: ShopProduct }) {
                     open={open === "ship"}
                     onToggle={() => setOpen(open === "ship" ? null : "ship")}
                   >
-                    {isDigital ? (
+                    {product.shippingInfo?.trim() ? (
+                      <p className="whitespace-pre-line text-sm leading-relaxed text-muted-foreground">
+                        {product.shippingInfo}
+                      </p>
+                    ) : isDigital ? (
                       <p className="text-sm leading-relaxed text-muted-foreground">
                         Цифровой товар. После оплаты придёт ссылка на скачивание на email.
                       </p>
@@ -300,7 +352,8 @@ function ProductView({ product }: { product: ShopProduct }) {
                     onToggle={() => setOpen(open === "returns" ? null : "returns")}
                   >
                     <p className="whitespace-pre-line text-sm leading-relaxed text-muted-foreground">
-                      Возврат 14 дней, если вещь не носилась и сохранены ярлыки.
+                      {product.returnPolicy?.trim() ||
+                        "Возврат 14 дней, если вещь не носилась и сохранены ярлыки."}
                     </p>
                   </Accordion>
                 </div>

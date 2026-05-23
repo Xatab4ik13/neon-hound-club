@@ -164,6 +164,9 @@ export type CreateProductInput = {
   digitalFileName?: string | null;
   /** ISO datetime, only for kind === 'preorder' */
   preorderExpectedAt?: string | null;
+  shippingInfo?: string;
+  returnPolicy?: string;
+  sizes?: string[];
 };
 
 export function fetchAdminShopProducts() {

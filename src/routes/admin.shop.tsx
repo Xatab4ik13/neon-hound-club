@@ -183,6 +183,9 @@ function emptyProduct(): CreateProductInput {
     digitalFileUrl: null,
     digitalFileName: null,
     preorderExpectedAt: null,
+    shippingInfo: "",
+    returnPolicy: "",
+    sizes: [],
   };
 }
 
@@ -332,6 +335,9 @@ function ProductsTab() {
             digitalFileUrl: editing.digitalFileUrl,
             digitalFileName: editing.digitalFileName,
             preorderExpectedAt: editing.preorderExpectedAt,
+            shippingInfo: editing.shippingInfo ?? "",
+            returnPolicy: editing.returnPolicy ?? "",
+            sizes: editing.sizes ?? [],
           }}
           onClose={() => setEditing(null)}
           onDone={() => {
@@ -432,6 +438,9 @@ function ProductModal({
         digitalFileUrl: p.kind === "digital" ? p.digitalFileUrl || null : null,
         digitalFileName: p.kind === "digital" ? p.digitalFileName || null : null,
         preorderExpectedAt: p.kind === "preorder" ? p.preorderExpectedAt || null : null,
+        shippingInfo: (p.shippingInfo ?? "").trim(),
+        returnPolicy: (p.returnPolicy ?? "").trim(),
+        sizes: (p.sizes ?? []).map((s) => s.trim()).filter(Boolean),
       };
       return mode === "create"
         ? createAdminProduct(payload)
@@ -725,8 +734,97 @@ function ProductModal({
             })}
           </div>
         </Field>
+
+        {p.kind !== "digital" && (
+          <Field
+            label="Размеры"
+            hint="Через запятую или Enter: S, M, L, XL или 42, 44, 46. Если пусто — селектор размера не показываем."
+          >
+            <SizesInput
+              value={p.sizes ?? []}
+              onChange={(next) => setP({ ...p, sizes: next })}
+            />
+          </Field>
+        )}
+
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+          <Field label="Доставка" hint="Текст для аккордеона «Доставка» на карточке товара.">
+            <TextArea
+              rows={4}
+              value={p.shippingInfo ?? ""}
+              onChange={(e) => setP({ ...p, shippingInfo: e.target.value })}
+              placeholder="· СДЭК и Boxberry по РФ — 2–7 дней.&#10;· Самовывоз из гаража HELLHOUND в Москве."
+            />
+          </Field>
+          <Field label="Возврат" hint="Текст для аккордеона «Возврат» на карточке товара.">
+            <TextArea
+              rows={4}
+              value={p.returnPolicy ?? ""}
+              onChange={(e) => setP({ ...p, returnPolicy: e.target.value })}
+              placeholder="Возврат 14 дней, если вещь не носилась и сохранены ярлыки."
+            />
+          </Field>
+        </div>
       </div>
     </Modal>
+  );
+}
+
+function SizesInput({
+  value,
+  onChange,
+}: {
+  value: string[];
+  onChange: (next: string[]) => void;
+}) {
+  const [draft, setDraft] = useState("");
+  const commit = (raw: string) => {
+    const parts = raw
+      .split(/[,\n]/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (parts.length === 0) return;
+    const next = [...value];
+    for (const part of parts) {
+      if (!next.includes(part) && next.length < 40) next.push(part);
+    }
+    onChange(next);
+    setDraft("");
+  };
+  return (
+    <div className="flex flex-wrap items-center gap-2 rounded-md border border-zinc-200 bg-white p-2 dark:border-zinc-800 dark:bg-zinc-900">
+      {value.map((s, i) => (
+        <span
+          key={`${s}-${i}`}
+          className="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-medium dark:bg-zinc-800"
+        >
+          {s}
+          <button
+            type="button"
+            onClick={() => onChange(value.filter((_, j) => j !== i))}
+            className="text-zinc-500 hover:text-rose-500"
+            aria-label="Удалить"
+          >
+            ×
+          </button>
+        </span>
+      ))}
+      <input
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === ",") {
+            e.preventDefault();
+            commit(draft);
+          } else if (e.key === "Backspace" && draft === "" && value.length > 0) {
+            onChange(value.slice(0, -1));
+          }
+        }}
+        onBlur={() => draft && commit(draft)}
+        placeholder={value.length === 0 ? "S, M, L, XL" : ""}
+        className="min-w-[80px] flex-1 bg-transparent text-sm outline-none"
+      />
+    </div>
   );
 }
 

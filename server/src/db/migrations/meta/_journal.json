@@ -127,6 +127,13 @@
       "when": 1779640000000,
       "tag": "0017_raffles_home_drop_prize",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1779650000000,
+      "tag": "0018_shop_shipping_returns_sizes",
+      "breakpoints": true
     }
   ]
 }
