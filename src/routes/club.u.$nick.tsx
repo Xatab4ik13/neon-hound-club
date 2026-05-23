@@ -7,6 +7,12 @@ import { getUser, type PublicUser } from "@/data/users";
 import { PlaqueBackground } from "./club";
 import { usePublicProfile, type PublicProfile } from "@/lib/garage-api";
 
+type ProfileView = PublicUser & {
+  bikeYear?: number | null;
+  bikeNickname?: string | null;
+  bikePhoto?: string | null;
+};
+
 export const Route = createFileRoute("/club/u/$nick")({
   head: ({ params }) => {
     const user = getUser(params.nick);
@@ -40,7 +46,7 @@ const RANK_BY_ID = Object.fromEntries(RANKS.map((r) => [r.id, r])) as Record<
 // Бэк отдаёт реальный rank/xpPct в `p.rank`. Маппим id 1:1.
 const DEFAULT_RANK: RankId = "rookie";
 
-function fromServer(p: PublicProfile, fallbackMock: PublicUser | undefined): PublicUser {
+function fromServer(p: PublicProfile): ProfileView {
   const initials = (p.nick.match(/[A-Za-zА-Яа-я0-9]/g) ?? [p.nick[0] ?? "?"])
     .slice(0, 2)
     .join("")
@@ -57,21 +63,23 @@ function fromServer(p: PublicProfile, fallbackMock: PublicUser | undefined): Pub
     initials,
     rank: rankId,
     xpPct: p.rank.pct,
-    role: p.role === "admin" ? "owner" : p.role === "blogger" ? "team" : fallbackMock?.role ?? "rider",
+    role: p.role === "admin" ? "owner" : p.role === "blogger" ? "team" : "rider",
     isBlogger: p.role === "blogger",
     city: p.city ?? undefined,
     bike: bikeStr,
     joined,
-    badgeIds: fallbackMock?.badgeIds ?? [],
-    wins: fallbackMock?.wins ?? [],
+    badgeIds: [],
+    wins: [],
     avatarUrl: p.avatarUrl ?? undefined,
+    bikeYear: p.primaryBike?.year ?? null,
+    bikeNickname: p.primaryBike?.nickname ?? null,
+    bikePhoto: p.primaryBike?.photo ?? null,
   };
 }
 
 function UserProfilePage() {
   const { nick } = Route.useParams();
   const q = usePublicProfile(nick);
-  const mock = getUser(nick);
 
   if (q.isLoading) {
     return (
@@ -83,14 +91,13 @@ function UserProfilePage() {
     );
   }
 
-  // Если бэк отдал 404 — пробуем mock (для seeded-ников). Если и там пусто — not found.
-  const user: PublicUser | null = q.data ? fromServer(q.data, mock) : mock ?? null;
-  if (!user) {
+  if (!q.data) {
     if (q.isError) throw q.error;
     return <NotFoundUser nick={nick} />;
   }
-  return <UserView user={user} />;
+  return <UserView user={fromServer(q.data)} />;
 }
+
 
 function NotFoundUser({ nick }: { nick: string }) {
   return (
@@ -112,7 +119,7 @@ function NotFoundUser({ nick }: { nick: string }) {
   );
 }
 
-function UserView({ user }: { user: PublicUser }) {
+function UserView({ user }: { user: ProfileView }) {
   const rank = RANK_BY_ID[user.rank];
   const rankIdx = RANKS.findIndex((r) => r.id === user.rank);
   const xpMax = getRankSpan(rankIdx);
@@ -251,6 +258,44 @@ function UserView({ user }: { user: PublicUser }) {
           </div>
         </div>
       </section>
+
+      {/* Мотоцикл */}
+      {user.bike && (
+        <section className="mb-8">
+          <SectionTitle title="Мотоцикл" />
+          <div className="overflow-hidden border border-white/[0.06] bg-card/40">
+            {user.bikePhoto ? (
+              <img
+                src={user.bikePhoto}
+                alt={user.bike}
+                className="aspect-[16/10] w-full object-cover"
+                loading="lazy"
+              />
+            ) : (
+              <div className="flex aspect-[16/10] w-full items-center justify-center bg-black/40">
+                <Bike className="h-10 w-10 text-muted-foreground/40" />
+              </div>
+            )}
+            <div className="flex flex-wrap items-baseline justify-between gap-2 border-t border-white/[0.06] px-4 py-3">
+              <div className="min-w-0">
+                <div className="truncate font-display text-base font-black uppercase italic text-foreground">
+                  {user.bike}
+                </div>
+                {user.bikeNickname && (
+                  <div className="truncate font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
+                    «{user.bikeNickname}»
+                  </div>
+                )}
+              </div>
+              {user.bikeYear && (
+                <span className="font-mono text-[11px] tabular-nums uppercase tracking-[0.2em] text-muted-foreground">
+                  {user.bikeYear}
+                </span>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Значки */}
       <section className="mb-8">
