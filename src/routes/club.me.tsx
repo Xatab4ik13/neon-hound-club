@@ -26,7 +26,7 @@ import {
 } from "@/data/rank-state";
 import { fetchPassMe, type RankInfo } from "@/lib/queries";
 import { TIERS, type Tier } from "@/data/hell-pass";
-import { RANKS, type PlaqueBg, type RankId, type RankMeta } from "@/data/ranks";
+import { RANKS, type PlaqueBg, type RankMeta } from "@/data/ranks";
 import { PlaqueBackground } from "./club";
 import { IOSListSection, IOSListRow } from "@/components/ios/IOSList";
 import { IOSSheet } from "@/components/ios/IOSSheet";
