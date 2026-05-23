@@ -401,6 +401,96 @@ export async function adminShopRoutes(app: FastifyInstance) {
 
     const full = await getOrderWithItems(req.params.id);
     if (!full) return reply.code(404).send({ error: "not_found" });
+    const full = await getOrderWithItems(req.params.id);
+    if (!full) return reply.code(404).send({ error: "not_found" });
     return full;
+  });
+
+  // ----- CATEGORIES -----
+  app.get("/categories", { preHandler: requireAdmin }, async () => {
+    const cats = await db.select().from(shopCategories).orderBy(asc(shopCategories.sort), asc(shopCategories.name));
+    const subs = await db.select().from(shopSubcategories).orderBy(asc(shopSubcategories.sort), asc(shopSubcategories.name));
+    const byCat = new Map<string, typeof subs>();
+    for (const s of subs) {
+      const arr = byCat.get(s.categoryId) ?? [];
+      arr.push(s);
+      byCat.set(s.categoryId, arr);
+    }
+    return { items: cats.map((c) => ({ ...c, subs: byCat.get(c.id) ?? [] })) };
+  });
+
+  app.post("/categories", { preHandler: requireAdmin }, async (req, reply) => {
+    const parsed = categorySchema.safeParse(req.body);
+    if (!parsed.success) return reply.code(400).send({ error: "invalid_input", message: parsed.error.issues[0]?.message });
+    try {
+      const [row] = await db.insert(shopCategories).values(parsed.data).returning();
+      return reply.code(201).send(row);
+    } catch (e: any) {
+      if (String(e?.code) === "23505") return reply.code(409).send({ error: "slug_taken" });
+      throw e;
+    }
+  });
+
+  app.patch<{ Params: { id: string } }>("/categories/:id", { preHandler: requireAdmin }, async (req, reply) => {
+    const parsed = categorySchema.partial().safeParse(req.body);
+    if (!parsed.success) return reply.code(400).send({ error: "invalid_input", message: parsed.error.issues[0]?.message });
+    const [row] = await db.update(shopCategories).set(parsed.data).where(eq(shopCategories.id, req.params.id)).returning();
+    if (!row) return reply.code(404).send({ error: "not_found" });
+    return row;
+  });
+
+  app.delete<{ Params: { id: string } }>("/categories/:id", { preHandler: requireAdmin }, async (req, reply) => {
+    const [row] = await db.delete(shopCategories).where(eq(shopCategories.id, req.params.id)).returning({ id: shopCategories.id });
+    if (!row) return reply.code(404).send({ error: "not_found" });
+    return { ok: true };
+  });
+
+  // ----- SUBCATEGORIES -----
+  app.post("/subcategories", { preHandler: requireAdmin }, async (req, reply) => {
+    const parsed = subcategorySchema.safeParse(req.body);
+    if (!parsed.success) return reply.code(400).send({ error: "invalid_input", message: parsed.error.issues[0]?.message });
+    try {
+      const [row] = await db.insert(shopSubcategories).values(parsed.data).returning();
+      return reply.code(201).send(row);
+    } catch (e: any) {
+      if (String(e?.code) === "23505") return reply.code(409).send({ error: "slug_taken" });
+      throw e;
+    }
+  });
+
+  app.patch<{ Params: { id: string } }>("/subcategories/:id", { preHandler: requireAdmin }, async (req, reply) => {
+    const parsed = subcategorySchema.partial().safeParse(req.body);
+    if (!parsed.success) return reply.code(400).send({ error: "invalid_input", message: parsed.error.issues[0]?.message });
+    const [row] = await db.update(shopSubcategories).set(parsed.data).where(eq(shopSubcategories.id, req.params.id)).returning();
+    if (!row) return reply.code(404).send({ error: "not_found" });
+    return row;
+  });
+
+  app.delete<{ Params: { id: string } }>("/subcategories/:id", { preHandler: requireAdmin }, async (req, reply) => {
+    const [row] = await db.delete(shopSubcategories).where(eq(shopSubcategories.id, req.params.id)).returning({ id: shopSubcategories.id });
+    if (!row) return reply.code(404).send({ error: "not_found" });
+    return { ok: true };
+  });
+
+  // ----- SHOWCASE -----
+  app.get("/showcase", { preHandler: requireAdmin }, async () => {
+    const rows = await db
+      .select({ productId: shopShowcase.productId, sort: shopShowcase.sort })
+      .from(shopShowcase)
+      .orderBy(asc(shopShowcase.sort));
+    return { items: rows };
+  });
+
+  // PUT — заменяет всю витрину целиком (макс 6 товаров)
+  app.put("/showcase", { preHandler: requireAdmin }, async (req, reply) => {
+    const parsed = showcaseSchema.safeParse(req.body);
+    if (!parsed.success) return reply.code(400).send({ error: "invalid_input", message: parsed.error.issues[0]?.message });
+    await db.transaction(async (tx) => {
+      await tx.delete(shopShowcase);
+      if (parsed.data.items.length > 0) {
+        await tx.insert(shopShowcase).values(parsed.data.items);
+      }
+    });
+    return { ok: true, count: parsed.data.items.length };
   });
 }
