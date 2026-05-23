@@ -552,11 +552,30 @@ function CommentItem({
             {comment.time}
           </span>
         </div>
-        <div className="mt-1 inline-block max-w-full rounded-2xl rounded-tl-sm border border-white/[0.05] bg-white/[0.03] px-3 py-2">
-          <p className={`break-words leading-relaxed text-foreground/90 ${large ? "text-[14.5px]" : "text-[13.5px]"}`}>
-            {comment.text}
-          </p>
-        </div>
+        {(() => {
+          const stickerUrl = parseSticker(comment.text);
+          if (stickerUrl) {
+            return (
+              <div className="mt-1">
+                <img
+                  src={stickerUrl}
+                  alt="стикер"
+                  loading="lazy"
+                  decoding="async"
+                  draggable={false}
+                  className="h-32 w-32 select-none object-contain md:h-36 md:w-36"
+                />
+              </div>
+            );
+          }
+          return (
+            <div className="mt-1 inline-block max-w-full rounded-2xl rounded-tl-sm border border-white/[0.05] bg-white/[0.03] px-3 py-2">
+              <p className={`break-words leading-relaxed text-foreground/90 ${large ? "text-[14.5px]" : "text-[13.5px]"}`}>
+                {comment.text}
+              </p>
+            </div>
+          );
+        })()}
         <div className="mt-1.5 flex items-center gap-4 pl-1">
           <button
             type="button"
