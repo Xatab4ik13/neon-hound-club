@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Search, X, ShoppingBag, Ticket } from "lucide-react";
 import { PageHeader } from "@/components/club/PageHeader";
+import { LazyImage } from "@/components/ui/lazy-image";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
   fetchShopCategories,
@@ -389,11 +390,10 @@ function ProductCard({ product }: { product: ShopProductListItem }) {
     >
       <div className="relative aspect-square overflow-hidden bg-surface">
         {cover ? (
-          <img
+          <LazyImage
             src={cover}
             alt={product.title}
-            loading="lazy"
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+            className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
           />
         ) : (
           <div className="grid h-full w-full place-items-center text-muted-foreground/60">
