@@ -65,4 +65,56 @@ export async function uploadsRoutes(app: FastifyInstance) {
       expiresIn: 300,
     };
   });
+
+  /**
+   * POST /api/v1/uploads/direct — фронт шлёт multipart/form-data с полем `file`
+   * и query/field `kind` (+ опционально `scope`). Бек кладёт файл в S3/MinIO
+   * сам и возвращает публичный URL. Нужен, когда presigned PUT недоступен
+   * из браузера (внутренний хост MinIO, mixed content и т.п.).
+   */
+  app.post("/direct", { preHandler: requireAuth }, async (req, reply) => {
+    const user = req.user as SessionPayload;
+    const mp = await req.file();
+    if (!mp) {
+      return reply.code(400).send({ error: "bad_request", message: "Файл не пришёл" });
+    }
+
+    const kindRaw = (mp.fields?.kind as { value?: string } | undefined)?.value
+      ?? (req.query as { kind?: string }).kind;
+    const scopeRaw = (mp.fields?.scope as { value?: string } | undefined)?.value
+      ?? (req.query as { scope?: string }).scope;
+
+    if (!kindRaw || !KINDS.includes(kindRaw as UploadKind)) {
+      return reply.code(400).send({ error: "bad_request", message: "Неверный kind" });
+    }
+    const kind = kindRaw as UploadKind;
+
+    if ((kind === "product" || kind === "raffle" || kind === "shop") && user.role !== "admin") {
+      return reply.code(403).send({ error: "forbidden", message: "Только для админа" });
+    }
+
+    const rules = UPLOAD_RULES[kind];
+    const contentType = mp.mimetype || "application/octet-stream";
+    if (!rules.mimes.includes(contentType)) {
+      return reply.code(400).send({ error: "bad_mime", message: `Недопустимый тип файла: ${contentType}` });
+    }
+
+    const buf = await mp.toBuffer();
+    if (buf.length > rules.maxSize) {
+      const mb = Math.round(rules.maxSize / (1024 * 1024));
+      return reply.code(400).send({ error: "too_large", message: `Файл больше ${mb} МБ` });
+    }
+
+    const key = buildObjectKey(kind, scopeRaw || user.sub, contentType);
+    await s3.send(new PutObjectCommand({
+      Bucket: S3_BUCKET,
+      Key: key,
+      Body: buf,
+      ContentType: contentType,
+      ContentLength: buf.length,
+    }));
+
+    return { key, publicUrl: publicUrl(key) };
+  });
 }
+
