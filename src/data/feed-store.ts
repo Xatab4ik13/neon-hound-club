@@ -81,9 +81,9 @@ function ensurePublicUser(input: {
 }): string {
   const slug = makeSlug(input.nick);
   if (PUBLIC_USERS[slug]) {
-    // Обновляем аватар если пришёл свежий.
-    if (input.avatarUrl && !PUBLIC_USERS[slug].avatarUrl) {
-      PUBLIC_USERS[slug] = { ...PUBLIC_USERS[slug], avatarUrl: input.avatarUrl };
+    // Всегда синхронизируем аватар с сервером (может смениться или сброситься).
+    if (PUBLIC_USERS[slug].avatarUrl !== (input.avatarUrl ?? undefined)) {
+      PUBLIC_USERS[slug] = { ...PUBLIC_USERS[slug], avatarUrl: input.avatarUrl ?? undefined };
     }
     return slug;
   }

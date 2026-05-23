@@ -844,6 +844,7 @@ export function ProfilePlaque({
   const variant = PLAQUE_BG[plaqueBg];
   const isMax = realRankIdx >= 0 ? realRankIdx === RANKS.length - 1 : mockRank.isMax;
   const size = compact ? 44 : 56;
+  const avatarUrl = myProfile.data?.avatarUrl ?? null;
 
 
   return (
@@ -856,7 +857,7 @@ export function ProfilePlaque({
       }`}
     >
       <div
-        className="relative shrink-0 rounded-full ring-2 ring-offset-2 ring-offset-background transition-all"
+        className="relative shrink-0 overflow-hidden rounded-full ring-2 ring-offset-2 ring-offset-background transition-all"
         style={{
           height: `${size}px`,
           width: `${size}px`,
@@ -865,24 +866,37 @@ export function ProfilePlaque({
           boxShadow: `0 0 0 2px ${rank.accentSoft}`,
         }}
       >
-        <div
-          aria-hidden
-          className="absolute inset-0 rounded-full opacity-25"
-          style={{
-            backgroundImage:
-              "repeating-linear-gradient(45deg, #000 0, #000 1px, transparent 0, transparent 50%)",
-            backgroundSize: "4px 4px",
-          }}
-        />
-        <div className="absolute inset-0 flex items-center justify-center">
-          <span
-            className={`font-display font-black italic uppercase ${compact ? "text-base" : "text-lg"}`}
-            style={{ color: rank.onAccent }}
-          >
-            {nick.slice(0, 2)}
-          </span>
-        </div>
+        {avatarUrl ? (
+          <img
+            src={avatarUrl}
+            alt=""
+            loading="lazy"
+            decoding="async"
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+        ) : (
+          <>
+            <div
+              aria-hidden
+              className="absolute inset-0 rounded-full opacity-25"
+              style={{
+                backgroundImage:
+                  "repeating-linear-gradient(45deg, #000 0, #000 1px, transparent 0, transparent 50%)",
+                backgroundSize: "4px 4px",
+              }}
+            />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span
+                className={`font-display font-black italic uppercase ${compact ? "text-base" : "text-lg"}`}
+                style={{ color: rank.onAccent }}
+              >
+                {nick.slice(0, 2)}
+              </span>
+            </div>
+          </>
+        )}
       </div>
+
 
       <div
         className={`relative flex h-full min-w-0 flex-1 flex-col justify-center overflow-hidden ${variant.base} py-2 pl-3 pr-4 sm:pl-4 sm:pr-6`}
