@@ -331,11 +331,13 @@ export async function feedRoutes(app: FastifyInstance) {
     const [exists] = await db.select({ id: posts.id }).from(posts).where(and(eq(posts.id, req.params.id), isNull(posts.deletedAt))).limit(1);
     if (!exists) return reply.code(404).send({ error: "not_found" });
     await db.insert(postLikes).values({ postId: req.params.id, userId: s.sub }).onConflictDoNothing();
+    publishFeedEvent("post.liked", { postId: req.params.id, liked: true });
     return { ok: true };
   });
   app.delete<{ Params: { id: string } }>("/:id/like", { preHandler: requireAuth }, async (req) => {
     const s = req.user as SessionPayload;
     await db.delete(postLikes).where(and(eq(postLikes.postId, req.params.id), eq(postLikes.userId, s.sub)));
+    publishFeedEvent("post.liked", { postId: req.params.id, liked: false });
     return { ok: true };
   });
 
