@@ -360,7 +360,10 @@ export async function addQuestProgress(
     const newSteps = reached.slice(row.lastLadderStep);
     if (newSteps.length === 0) return;
 
+    const perks = await getActivePassPerks(userId);
+
     for (const step of newSteps) {
+      const stepXp = Math.round(step.xp * perks.xpMultiplier);
       // completion per step (для лога), period_key = `step:${step.at}`
       const stepKey = `step:${step.at}`;
       const [stepCompletion] = await db
@@ -370,16 +373,17 @@ export async function addQuestProgress(
           questId: quest.id,
           periodKey: stepKey,
           ticketsAwarded: 0,
-          xpAwarded: step.xp,
+          xpAwarded: stepXp,
         })
         .onConflictDoNothing()
         .returning();
       if (!stepCompletion) continue;
+      const boostNote = perks.tier ? ` (×${perks.xpMultiplier} Hell Pass ${perks.tier})` : "";
       await awardXp({
         userId,
-        amount: step.xp,
+        amount: stepXp,
         source: "quest",
-        reason: `${quest.title}: ступень ${step.at}`,
+        reason: `${quest.title}: ступень ${step.at}${boostNote}`,
         refType: "quest_ladder",
         refId: stepCompletion.id,
         idempotent: true,
