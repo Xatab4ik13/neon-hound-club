@@ -34,6 +34,7 @@ export function IOSSheet({
   contentClassName,
 }: Props) {
   const close = () => onOpenChange(false);
+  useThemeColor(open ? "#0d0d0d" : null);
   return (
     <Drawer.Root open={open} onOpenChange={onOpenChange}>
       <Drawer.Portal>
