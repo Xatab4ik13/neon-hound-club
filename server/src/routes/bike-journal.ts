@@ -10,6 +10,7 @@ import {
 } from "../db/schema/bike-journal.js";
 import { requireAuth, type SessionPayload } from "../lib/auth.js";
 import { isOurS3Url, deleteByPublicUrl } from "../lib/s3.js";
+import { addQuestProgress } from "../lib/quests.js";
 
 const SERVICE_TYPES = ["oil", "chain", "tires", "brakes", "to", "filter", "other"] as const;
 const DOC_TYPES = ["osago", "kasko", "to", "sts", "pts", "license"] as const;

@@ -9,6 +9,7 @@ import { loadSession, requireAuth, requireAdmin, type SessionPayload } from "../
 import { awardXp, computeRank } from "../lib/xp.js";
 import { xpEvents } from "../db/schema/xp.js";
 import { addClient, removeClient, publish as publishFeedEvent } from "../lib/feed-bus.js";
+import { addQuestProgress } from "../lib/quests.js";
 
 // Считает rankId батчем для набора пользователей. Возвращает Map<userId, rankId>.
 // Пустой набор → пустая Map. Юзеры без событий получают rookie.
@@ -407,6 +408,8 @@ export async function feedRoutes(app: FastifyInstance) {
       refId: row.id,
       idempotent: true,
     }).catch(() => null);
+    // Квест: 5 комментариев в ленте за месяц.
+    await addQuestProgress(s.sub, "comments_5", 1).catch(() => null);
     // Возвращаем hydrated-форму (как ждёт фронт: FeedCommentHydrated)
     const [author] = await db
       .select({ nick: users.nick, role: users.role, avatarUrl: profiles.avatarUrl })
@@ -507,6 +510,8 @@ export async function postsRoutes(app: FastifyInstance) {
       refId: row.id,
       idempotent: true,
     }).catch(() => null);
+    // Квест блогеров: 5 постов в ленту за месяц.
+    await addQuestProgress(s.sub, "posts_5_blogger", 1).catch(() => null);
     publishFeedEvent("post.created", { postId: row.id });
     void import("../lib/push.js").then(({ pushToAll }) =>
       pushToAll({

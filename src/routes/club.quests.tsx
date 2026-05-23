@@ -1,9 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Check, Download, Loader2, Smartphone, Ticket } from "lucide-react";
+import { ArrowLeft, Check, Download, Loader2, Smartphone, Sparkles, Ticket } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { checkQuest, fetchQuests, qk, type QuestItem } from "@/lib/queries";
+import { checkQuest, confirmPwaInstall, fetchQuests, qk, type QuestItem } from "@/lib/queries";
 import { useViewer } from "@/hooks/use-viewer";
 import { ApiError } from "@/lib/api";
 
@@ -156,14 +156,21 @@ function InstallAppQuest() {
 
 function QuestCard({ q }: { q: QuestItem }) {
   const qc = useQueryClient();
+  const invalidateAll = () => {
+    qc.invalidateQueries({ queryKey: qk.quests });
+    qc.invalidateQueries({ queryKey: qk.ticketsBalance });
+    qc.invalidateQueries({ queryKey: ["tickets", "history"] });
+  };
   const check = useMutation({
     mutationFn: () => checkQuest(q.code),
     onSuccess: (res) => {
       if ("credited" in res && res.credited) {
-        toast.success(`+${res.tickets} билетов · ${q.title}`);
-        qc.invalidateQueries({ queryKey: qk.quests });
-        qc.invalidateQueries({ queryKey: qk.ticketsBalance });
-        qc.invalidateQueries({ queryKey: ["tickets", "history"] });
+        toast.success(
+          res.tickets > 0
+            ? `+${res.tickets} билетов · ${q.title}`
+            : `+${res.xp} XP · ${q.title}`,
+        );
+        invalidateAll();
       } else {
         const reason = (res as { reason?: string }).reason ?? "condition_not_met";
         toast.info(reasonLabel(reason));
@@ -176,6 +183,28 @@ function QuestCard({ q }: { q: QuestItem }) {
   });
 
   const done = q.completed;
+  const pct =
+    q.kind === "ladder"
+      ? Math.min(100, Math.round((q.progress / q.goal) * 100))
+      : q.kind === "monthly"
+        ? Math.min(100, Math.round((q.progress / q.goal) * 100))
+        : done
+          ? 100
+          : 0;
+  const earnedLadderXp = q.ladder
+    ? q.ladder
+        .slice(0, q.lastLadderStep)
+        .reduce((s, step) => s + step.xp, 0)
+    : 0;
+
+  const kindBadge =
+    q.kind === "monthly"
+      ? "за месяц"
+      : q.kind === "ladder"
+        ? "ступени"
+        : q.kind === "manual"
+          ? "ручное"
+          : null;
 
   return (
     <article
@@ -191,33 +220,67 @@ function QuestCard({ q }: { q: QuestItem }) {
             <h3 className="font-display text-base font-black uppercase italic tracking-tight text-foreground">
               {q.title}
             </h3>
-            {q.kind === "manual" && (
+            {kindBadge && (
               <span className="border border-white/[0.08] px-1.5 py-px font-mono text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
-                ручное
+                {kindBadge}
               </span>
             )}
-            {q.repeatable && (
+            {q.bloggerOnly && (
               <span className="border border-primary/40 px-1.5 py-px font-mono text-[9px] font-bold uppercase tracking-wider text-primary">
-                повторяемое
+                blogger
               </span>
             )}
           </div>
           <p className="mt-1 text-xs text-muted-foreground">{q.description}</p>
         </div>
-        {q.ticketsReward > 0 && (
-          <div className="flex shrink-0 items-center gap-1 border border-yellow-500/30 bg-yellow-500/10 px-2 py-1 font-mono text-xs font-bold text-yellow-400">
-            <Ticket className="h-3 w-3" />+{q.ticketsReward}
-          </div>
-        )}
+        <div className="flex shrink-0 flex-col items-end gap-1">
+          {q.xpReward > 0 && (
+            <div className="flex items-center gap-1 font-mono text-xs font-bold text-foreground">
+              <Sparkles className="h-3 w-3 text-primary" />
+              +{q.ladder ? `${earnedLadderXp}/${q.xpReward}` : q.xpReward} XP
+            </div>
+          )}
+          {q.ticketsReward > 0 && (
+            <div className="flex items-center gap-1 border border-yellow-500/30 bg-yellow-500/10 px-2 py-0.5 font-mono text-[10px] font-bold text-yellow-400">
+              <Ticket className="h-3 w-3" />+{q.ticketsReward}
+            </div>
+          )}
+        </div>
       </div>
 
-      <div className="flex items-center justify-end gap-3">
+      {(q.kind === "monthly" || q.kind === "ladder") && (
+        <div className="flex items-center gap-3">
+          <div className="relative h-1.5 flex-1 overflow-hidden rounded-sm bg-black/55 ring-1 ring-inset ring-white/10">
+            <div
+              className="absolute inset-y-0 left-0 rounded-sm transition-all"
+              style={{
+                width: `${pct}%`,
+                backgroundColor: done ? "rgb(74, 222, 128)" : "var(--primary)",
+              }}
+            />
+          </div>
+          <span className="shrink-0 font-mono text-[10px] tabular-nums text-muted-foreground">
+            {q.progress}/{q.goal} {q.unit}
+          </span>
+        </div>
+      )}
+
+      <div className="flex items-center justify-between gap-3">
+        {q.actionTo ? (
+          <Link
+            to={q.actionTo}
+            className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground transition-colors hover:text-primary"
+          >
+            {q.actionLabel ?? "Открыть"} →
+          </Link>
+        ) : <span />}
+
         {done ? (
           <span className="inline-flex items-center gap-1 font-mono text-[10px] font-bold uppercase tracking-wider text-green-400">
             <Check className="h-3 w-3" />
             Выполнено
           </span>
-        ) : q.kind === "auto" ? (
+        ) : q.kind === "one_time" ? (
           <button
             type="button"
             disabled={check.isPending}
@@ -227,9 +290,13 @@ function QuestCard({ q }: { q: QuestItem }) {
             {check.isPending && <Loader2 className="h-3 w-3 animate-spin" />}
             Проверить
           </button>
-        ) : (
+        ) : q.kind === "manual" ? (
           <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
             Засчитывает админ
+          </span>
+        ) : (
+          <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+            {q.kind === "monthly" ? "автозачёт за месяц" : "автозачёт по ступеням"}
           </span>
         )}
       </div>

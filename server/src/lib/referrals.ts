@@ -4,6 +4,7 @@ import { referralCodes, referrals } from "../db/schema/referrals.js";
 import { users } from "../db/schema/users.js";
 import { ticketCredit } from "./tickets.js";
 import { awardXp } from "./xp.js";
+import { tryCompleteQuest } from "./quests.js";
 
 const REFERRAL_REWARD_TICKETS = 1;
 const REFERRAL_JOINED_XP = 50;
@@ -108,6 +109,8 @@ export async function activateReferral(invitedUserId: string): Promise<void> {
     refId: invitedUserId,
     idempotent: true,
   });
+  // Квест: «Пригласи друга» — засчитываем рефереру (one-time).
+  await tryCompleteQuest(row.referrerId, "invite_friend");
 }
 
 export async function listMyReferrals(userId: string) {

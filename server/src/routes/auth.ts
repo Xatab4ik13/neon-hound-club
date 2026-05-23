@@ -193,7 +193,7 @@ export async function authRoutes(app: FastifyInstance) {
 
     // Квесты/XP/рефералка — только при первой настоящей активации
     if (!wasAlreadyUsed) {
-      await tryCompleteQuest(u.id, "verify_email");
+      // verify_email больше не квест — оставляем только бонусный XP ниже.
       await awardXp({
         userId: u.id,
         amount: 50,
