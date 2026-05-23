@@ -131,6 +131,16 @@ export async function buildApp() {
   const { pushRoutes } = await import("./routes/push.js");
   await app.register(pushRoutes, { prefix: "/api/v1/push" });
 
+  const { adminDashboardRoutes } = await import("./routes/admin-dashboard.js");
+  await app.register(adminDashboardRoutes, { prefix: "/api/v1/admin/dashboard" });
+
+  const { adminEconomyRoutes } = await import("./routes/admin-economy.js");
+  await app.register(adminEconomyRoutes, { prefix: "/api/v1/admin/economy" });
+
+  const { adminSettingsRoutes, systemRoutes } = await import("./routes/admin-settings.js");
+  await app.register(adminSettingsRoutes, { prefix: "/api/v1/admin/settings" });
+  await app.register(systemRoutes, { prefix: "/api/v1/system" });
+
   // Создаём S3-бакет, если его ещё нет.
   try {
     const { ensureBucket } = await import("./lib/s3.js");
