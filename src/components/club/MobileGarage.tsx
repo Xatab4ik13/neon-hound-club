@@ -126,7 +126,7 @@ export function MobileGarage({
             chevron
             onClick={() => {
               setFabOpen(false);
-              setTimeout(() => setServiceSheet(true), 180);
+              setServiceSheet(true);
             }}
           />
           <IOSListRow
@@ -136,7 +136,7 @@ export function MobileGarage({
             chevron
             onClick={() => {
               setFabOpen(false);
-              setTimeout(() => setRideSheet(true), 180);
+              setRideSheet(true);
             }}
           />
           <IOSListRow
@@ -146,7 +146,7 @@ export function MobileGarage({
             chevron
             onClick={() => {
               setFabOpen(false);
-              setTimeout(() => setDocSheet({ open: true, doc: null }), 180);
+              setDocSheet({ open: true, doc: null });
             }}
           />
         </IOSListSection>
