@@ -712,6 +712,12 @@ type StickerPack = {
   cover: string; // emoji-cover ИЛИ url картинки
   coverIsImage?: boolean;
   stickers: string[]; // emoji-строка ИЛИ "::sticker::<url>"
+  /** Если задан — пак закрыт, пока юзер не купит товар с этим slug в магазине. */
+  lockSlug?: string;
+  /** Slug товара в магазине для покупки (используется в ссылке "Купить"). */
+  productSlug?: string;
+  /** Цена в рублях — для подписи на оверлее. */
+  priceRub?: number;
 };
 
 const STICKER_PACKS: StickerPack[] = [
@@ -721,6 +727,9 @@ const STICKER_PACKS: StickerPack[] = [
     cover: SPECIAL_PACK_COVER,
     coverIsImage: true,
     stickers: SPECIAL_PACK_STICKERS.map(asStickerText),
+    lockSlug: "special",
+    productSlug: STICKER_PACK_PRODUCT_SLUGS.special,
+    priceRub: 300,
   },
   {
     id: "hellhound-og",
