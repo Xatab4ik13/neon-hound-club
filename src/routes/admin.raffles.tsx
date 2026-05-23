@@ -5,7 +5,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Edit, Trophy, Ban, Upload, X, Trash2 } from "lucide-react";
+import { Plus, Edit, Trophy, Ban, Upload, X, Trash2, Users } from "lucide-react";
 import { toast } from "sonner";
 import {
   PageHeader,
