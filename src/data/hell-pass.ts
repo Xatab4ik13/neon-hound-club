@@ -239,11 +239,11 @@ const PLATINUM_GROUPS: { title: string; perks: Perk[] }[] = [
     perks: [
       {
         icon: Ticket,
-        value: "25",
+        value: "30",
         accent: true,
         label: "билетов в месяц (вместо 10)",
         detail:
-          "25 билетов каждый месяц. По цене это самая выгодная пачка билетов в клубе.",
+          "30 билетов каждый месяц. Самая выгодная пачка билетов в клубе.",
       },
       {
         icon: Trophy,
