@@ -869,18 +869,30 @@ function CategoryModal({
       }
     >
       <div className="space-y-3">
-        <Field label="Slug" hint="Латиница, цифры, дефис.">
+        <Field label="Название">
+          <TextInput
+            value={c.name}
+            onChange={(e) => {
+              const name = e.target.value;
+              setC((prev) => ({
+                ...prev,
+                name,
+                slug: mode === "create" && !slugTouched ? slugify(name) : prev.slug,
+              }));
+            }}
+            placeholder="Одежда"
+          />
+        </Field>
+        <Field label="Slug" hint="Технический id для URL. Заполняется автоматически.">
           <TextInput
             value={c.slug}
-            onChange={(e) =>
-              setC({ ...c, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "") })
-            }
+            onChange={(e) => {
+              setSlugTouched(true);
+              setC({ ...c, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "") });
+            }}
             placeholder="apparel"
             disabled={mode === "edit"}
           />
-        </Field>
-        <Field label="Название">
-          <TextInput value={c.name} onChange={(e) => setC({ ...c, name: e.target.value })} />
         </Field>
         <Field label="Сортировка" hint="Чем меньше — тем выше.">
           <TextInput
@@ -913,6 +925,7 @@ function SubcategoryModal({
   onDone: () => void;
 }) {
   const [s, setS] = useState(initial);
+  const [slugTouched, setSlugTouched] = useState(mode === "edit");
   const save = useMutation({
     mutationFn: () =>
       mode === "create"
