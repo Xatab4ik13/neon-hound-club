@@ -248,6 +248,7 @@ export async function feedRoutes(app: FastifyInstance) {
         createdAt: postComments.createdAt,
         authorId: postComments.authorId,
         nick: users.nick,
+        role: users.role,
         avatarUrl: profiles.avatarUrl,
       })
       .from(postComments)
