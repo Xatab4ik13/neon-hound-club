@@ -38,7 +38,7 @@ export type PassRecord = {
   tier: PassTier;
   priceRub: number;
   ticketsGranted: number;
-  status: "pending_payment" | "active" | "expired" | "cancelled";
+  status: "pending_payment" | "active" | "expired" | "cancelled" | "superseded";
   paidAt: string | null;
   expiresAt: string | null;
   createdAt: string;
