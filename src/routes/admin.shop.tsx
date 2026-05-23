@@ -335,6 +335,9 @@ function ProductsTab() {
             digitalFileUrl: editing.digitalFileUrl,
             digitalFileName: editing.digitalFileName,
             preorderExpectedAt: editing.preorderExpectedAt,
+            shippingInfo: editing.shippingInfo ?? "",
+            returnPolicy: editing.returnPolicy ?? "",
+            sizes: editing.sizes ?? [],
           }}
           onClose={() => setEditing(null)}
           onDone={() => {
