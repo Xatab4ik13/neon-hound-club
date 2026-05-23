@@ -24,7 +24,7 @@ import {
   getAvailablePlaqueBgs,
   getPlaqueBgRankIndex,
 } from "@/data/rank-state";
-import { fetchMyBadges, fetchPassMe, type RankInfo, type MyBadge } from "@/lib/queries";
+import { fetchPassMe, type RankInfo } from "@/lib/queries";
 import { TIERS, type Tier } from "@/data/hell-pass";
 import { RANKS, type PlaqueBg, type RankId, type RankMeta } from "@/data/ranks";
 import { PlaqueBackground } from "./club";
