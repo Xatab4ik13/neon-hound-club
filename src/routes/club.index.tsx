@@ -6,6 +6,7 @@ import { ME_SLUG, PUBLIC_USERS } from "@/data/users";
 import { useFeedPosts, feedStore, type FeedComment, type FeedPost, type FeedPoll } from "@/data/feed-store";
 import { HellhoundAvatar, HellhoundChip } from "@/components/club/HellhoundPlaque";
 import { IOSSheet } from "@/components/ios/IOSSheet";
+import { useMyProfile } from "@/lib/garage-api";
 
 
 
