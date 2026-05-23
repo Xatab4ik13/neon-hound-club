@@ -28,6 +28,7 @@ function BloggerSettingsPage() {
   const [uploading, setUploading] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [confirmLogout, setConfirmLogout] = useState(false);
 
   const flash = (m: string) => {
     setMsg(m);
