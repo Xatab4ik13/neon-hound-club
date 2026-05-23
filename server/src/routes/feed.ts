@@ -7,6 +7,7 @@ import { users } from "../db/schema/users.js";
 import { profiles } from "../db/schema/profile.js";
 import { loadSession, requireAuth, requireAdmin, type SessionPayload } from "../lib/auth.js";
 import { awardXp } from "../lib/xp.js";
+import { addClient, removeClient, publish as publishFeedEvent } from "../lib/feed-bus.js";
 
 // ───────── helpers ─────────
 
