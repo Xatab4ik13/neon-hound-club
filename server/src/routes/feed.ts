@@ -7,6 +7,7 @@ import { users } from "../db/schema/users.js";
 import { profiles } from "../db/schema/profile.js";
 import { loadSession, requireAuth, requireAdmin, type SessionPayload } from "../lib/auth.js";
 import { awardXp } from "../lib/xp.js";
+import { addClient, removeClient, publish as publishFeedEvent } from "../lib/feed-bus.js";
 
 // ───────── helpers ─────────
 
@@ -206,6 +207,21 @@ async function hydratePosts(rows: typeof posts.$inferSelect[], viewerId: string 
 export async function feedRoutes(app: FastifyInstance) {
   app.addHook("preHandler", loadSession);
 
+  // GET /api/v1/feed/stream — SSE-канал live-обновлений ленты.
+  // Шлёт компактные события (post.created, post.updated, post.deleted,
+  // comment.created, comment.deleted, post.liked, comment.liked, poll.voted),
+  // фронт по событию делает точечный refetch.
+  app.get("/stream", async (req, reply) => {
+    reply.raw.setHeader("Content-Type", "text/event-stream");
+    reply.raw.setHeader("Cache-Control", "no-cache, no-transform");
+    reply.raw.setHeader("Connection", "keep-alive");
+    reply.raw.setHeader("X-Accel-Buffering", "no");
+    reply.raw.flushHeaders?.();
+    reply.raw.write(`event: hello\ndata: {"ts":${Date.now()}}\n\n`);
+    const client = addClient(reply);
+    req.raw.on("close", () => removeClient(client));
+  });
+
   // GET /api/v1/feed?limit=&cursor= — лента (закреп сверху, потом по дате)
   app.get("/", async (req) => {
     const q = z
@@ -288,11 +304,13 @@ export async function feedRoutes(app: FastifyInstance) {
     const [c] = await db.select({ id: postComments.id }).from(postComments).where(and(eq(postComments.id, req.params.cid), isNull(postComments.deletedAt))).limit(1);
     if (!c) return reply.code(404).send({ error: "not_found" });
     await db.insert(commentLikes).values({ commentId: req.params.cid, userId: s.sub }).onConflictDoNothing();
+    publishFeedEvent("comment.liked", { commentId: req.params.cid, liked: true });
     return { ok: true };
   });
   app.delete<{ Params: { cid: string } }>("/comments/:cid/like", { preHandler: requireAuth }, async (req) => {
     const s = req.user as SessionPayload;
     await db.delete(commentLikes).where(and(eq(commentLikes.commentId, req.params.cid), eq(commentLikes.userId, s.sub)));
+    publishFeedEvent("comment.liked", { commentId: req.params.cid, liked: false });
     return { ok: true };
   });
 
@@ -303,6 +321,7 @@ export async function feedRoutes(app: FastifyInstance) {
     if (!p || !p.poll) return reply.code(404).send({ error: "not_found" });
     if (p.poll.closed) return reply.code(409).send({ error: "closed" });
     await db.delete(postPollVotes).where(and(eq(postPollVotes.postId, p.id), eq(postPollVotes.userId, s.sub)));
+    publishFeedEvent("poll.voted", { postId: p.id });
     return { ok: true };
   });
 
@@ -312,11 +331,13 @@ export async function feedRoutes(app: FastifyInstance) {
     const [exists] = await db.select({ id: posts.id }).from(posts).where(and(eq(posts.id, req.params.id), isNull(posts.deletedAt))).limit(1);
     if (!exists) return reply.code(404).send({ error: "not_found" });
     await db.insert(postLikes).values({ postId: req.params.id, userId: s.sub }).onConflictDoNothing();
+    publishFeedEvent("post.liked", { postId: req.params.id, liked: true });
     return { ok: true };
   });
   app.delete<{ Params: { id: string } }>("/:id/like", { preHandler: requireAuth }, async (req) => {
     const s = req.user as SessionPayload;
     await db.delete(postLikes).where(and(eq(postLikes.postId, req.params.id), eq(postLikes.userId, s.sub)));
+    publishFeedEvent("post.liked", { postId: req.params.id, liked: false });
     return { ok: true };
   });
 
@@ -348,7 +369,7 @@ export async function feedRoutes(app: FastifyInstance) {
       .leftJoin(profiles, eq(profiles.userId, users.id))
       .where(eq(users.id, s.sub))
       .limit(1);
-    return {
+    const result = {
       id: row.id,
       postId: row.postId,
       authorId: row.authorId,
@@ -360,6 +381,8 @@ export async function feedRoutes(app: FastifyInstance) {
       likes: 0,
       liked: false,
     };
+    publishFeedEvent("comment.created", { postId: req.params.id, commentId: row.id });
+    return result;
   });
 
   // DELETE /api/v1/feed/comments/:cid — автор коммента или автор поста или admin/blogger
@@ -375,6 +398,7 @@ export async function feedRoutes(app: FastifyInstance) {
     const canModerate = c.postAuthorId === s.sub || s.role === "admin";
     if (c.authorId !== s.sub && !canModerate) return reply.code(403).send({ error: "forbidden" });
     await db.update(postComments).set({ deletedAt: new Date() }).where(eq(postComments.id, req.params.cid));
+    publishFeedEvent("comment.deleted", { commentId: req.params.cid });
     return { ok: true };
   });
 
@@ -399,6 +423,7 @@ export async function feedRoutes(app: FastifyInstance) {
       .insert(postPollVotes)
       .values(picked.map((optionId) => ({ postId: p.id, userId: s.sub, optionId })))
       .onConflictDoNothing();
+    publishFeedEvent("poll.voted", { postId: p.id });
     return { ok: true };
   });
 }
@@ -435,6 +460,7 @@ export async function postsRoutes(app: FastifyInstance) {
       refId: row.id,
       idempotent: true,
     }).catch(() => null);
+    publishFeedEvent("post.created", { postId: row.id });
     return row;
   });
 
@@ -455,6 +481,7 @@ export async function postsRoutes(app: FastifyInstance) {
     if (parsed.data.poll !== undefined) data.poll = parsed.data.poll;
 
     const [row] = await db.update(posts).set(data).where(eq(posts.id, req.params.id)).returning();
+    publishFeedEvent("post.updated", { postId: req.params.id });
     return row;
   });
 
@@ -465,6 +492,7 @@ export async function postsRoutes(app: FastifyInstance) {
     if (!p || p.deletedAt) return reply.code(404).send({ error: "not_found" });
     if (p.authorId !== s.sub && s.role !== "admin") return reply.code(403).send({ error: "forbidden" });
     await db.update(posts).set({ deletedAt: new Date() }).where(eq(posts.id, req.params.id));
+    publishFeedEvent("post.deleted", { postId: req.params.id });
     return { ok: true };
   });
 }

@@ -2,6 +2,7 @@
 // внутри — реальные вызовы Fastify (см. server/src/routes/feed.ts).
 
 import { useSyncExternalStore, useEffect } from "react";
+import { BACKEND_URL } from "@/lib/api";
 import {
   fetchFeed,
   createPost,
@@ -418,40 +419,81 @@ export const feedStore = {
   },
 };
 
+// Дебаунс-рефетча, чтобы пачку событий от бэка склеивать в один запрос.
+let refetchTimer: ReturnType<typeof setTimeout> | null = null;
+function scheduleRefetch(delay = 120) {
+  if (refetchTimer != null) clearTimeout(refetchTimer);
+  refetchTimer = setTimeout(() => {
+    refetchTimer = null;
+    if (document.visibilityState !== "hidden") refetch();
+  }, delay);
+}
+
 export function useFeedPosts(): FeedPost[] {
   const snap = useSyncExternalStore(feedStore.subscribe, feedStore.getSnapshot, feedStore.getSnapshot);
   useEffect(() => {
     if (!loaded && !pending) refetch();
 
-    // Polling в фоне: тихо обновляем ленту, пока вкладка активна.
-    let timer: ReturnType<typeof setInterval> | null = null;
-    const start = () => {
-      if (timer != null) return;
-      timer = setInterval(() => {
+    // ─── Live: SSE-подписка на /api/v1/feed/stream ───
+    // На любое событие (post/comment/like/poll) делаем дебаунс-рефетч.
+    // Если SSE недоступен — fallback на редкий polling (раз в 20с).
+    let es: EventSource | null = null;
+    let pollTimer: ReturnType<typeof setInterval> | null = null;
+    let stopped = false;
+
+    const startPolling = () => {
+      if (pollTimer != null) return;
+      pollTimer = setInterval(() => {
         if (document.visibilityState === "visible") refetch();
-      }, 7000);
+      }, 20_000);
     };
-    const stop = () => {
-      if (timer != null) {
-        clearInterval(timer);
-        timer = null;
+    const stopPolling = () => {
+      if (pollTimer != null) {
+        clearInterval(pollTimer);
+        pollTimer = null;
       }
     };
+
+    const connect = () => {
+      if (stopped) return;
+      try {
+        es = new EventSource(`${BACKEND_URL}/api/v1/feed/stream`, { withCredentials: true });
+      } catch {
+        startPolling();
+        return;
+      }
+      const onAny = () => scheduleRefetch();
+      es.addEventListener("post.created", onAny);
+      es.addEventListener("post.updated", onAny);
+      es.addEventListener("post.deleted", onAny);
+      es.addEventListener("comment.created", onAny);
+      es.addEventListener("comment.deleted", onAny);
+      es.addEventListener("post.liked", onAny);
+      es.addEventListener("comment.liked", onAny);
+      es.addEventListener("poll.voted", onAny);
+      es.onopen = () => stopPolling();
+      es.onerror = () => {
+        // EventSource сам переподключится; на всякий случай подстрахуемся polling-ом.
+        startPolling();
+      };
+    };
+
     const onVisibility = () => {
-      if (document.visibilityState === "visible") {
-        refetch();
-        start();
-      } else {
-        stop();
-      }
+      if (document.visibilityState === "visible") refetch();
     };
     const onFocus = () => refetch();
 
-    start();
+    connect();
     document.addEventListener("visibilitychange", onVisibility);
     window.addEventListener("focus", onFocus);
+
     return () => {
-      stop();
+      stopped = true;
+      if (es) {
+        es.close();
+        es = null;
+      }
+      stopPolling();
       document.removeEventListener("visibilitychange", onVisibility);
       window.removeEventListener("focus", onFocus);
     };
