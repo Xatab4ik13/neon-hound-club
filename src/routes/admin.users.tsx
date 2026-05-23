@@ -22,6 +22,7 @@ import {
   fetchAdminUsers,
   fetchAdminUserBadges,
   fetchAdminBadges,
+  giftPass,
   grantXp,
   awardBadge,
   patchAdminUser,
@@ -39,11 +40,10 @@ function UsersPage() {
   const [debounced, setDebounced] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [giftOpen, setGiftOpen] = useState(false);
+  const [giftPassOpen, setGiftPassOpen] = useState(false);
 
   // дебаунс поиска
   if (query !== debounced) {
-    // простая задержка через setTimeout снаружи рендера не сделать без эффекта;
-    // ставим сразу, и пусть запрос ходит. 200 строк не страшно.
     setTimeout(() => setDebounced(query), 250);
   }
 
@@ -97,11 +97,15 @@ function UsersPage() {
           userId={selectedId}
           onClose={() => setSelectedId(null)}
           onGift={() => setGiftOpen(true)}
+          onGiftPass={() => setGiftPassOpen(true)}
         />
       )}
 
       {selectedId && giftOpen && (
         <GiftModal userId={selectedId} onClose={() => setGiftOpen(false)} />
+      )}
+      {selectedId && giftPassOpen && (
+        <GiftPassModal userId={selectedId} onClose={() => setGiftPassOpen(false)} />
       )}
     </div>
   );
@@ -111,10 +115,12 @@ function UserDrawer({
   userId,
   onClose,
   onGift,
+  onGiftPass,
 }: {
   userId: string;
   onClose: () => void;
   onGift: () => void;
+  onGiftPass: () => void;
 }) {
   const qc = useQueryClient();
   const userQ = useQuery({
@@ -271,9 +277,14 @@ function UserDrawer({
             )}
           </Section>
 
-          <Btn onClick={onGift}>
-            <Gift className="h-4 w-4" /> Начислить билеты
-          </Btn>
+          <div className="flex flex-wrap gap-2">
+            <Btn onClick={onGift}>
+              <Gift className="h-4 w-4" /> Начислить билеты
+            </Btn>
+            <Btn onClick={onGiftPass}>
+              <Gift className="h-4 w-4" /> Подарить Hell Pass
+            </Btn>
+          </div>
         </div>
       )}
 
@@ -485,6 +496,61 @@ function AwardBadgeModal({
           <Btn onClick={onClose}>Отмена</Btn>
           <Btn variant="primary" disabled={mut.isPending || !code} onClick={() => mut.mutate()}>
             {mut.isPending ? "…" : "Выдать"}
+          </Btn>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+function GiftPassModal({ userId, onClose }: { userId: string; onClose: () => void }) {
+  const qc = useQueryClient();
+  const [tier, setTier] = useState<"silver" | "gold" | "platinum">("silver");
+
+  const mut = useMutation({
+    mutationFn: () => giftPass(userId, tier),
+    onSuccess: () => {
+      toast.success(`Hell Pass ${tier} подарен на 30 дней`);
+      qc.invalidateQueries({ queryKey: adminQk.user(userId) });
+      qc.invalidateQueries({ queryKey: ["admin", "users"] });
+      onClose();
+    },
+    onError: (e) => toast.error(e instanceof ApiError ? e.message : "Ошибка"),
+  });
+
+  const tiers: Array<{ key: "silver" | "gold" | "platinum"; label: string; hint: string }> = [
+    { key: "silver", label: "Silver", hint: "30 билетов · 20 вопросов AI" },
+    { key: "gold", label: "Gold", hint: "100 билетов · 100 вопросов AI" },
+    { key: "platinum", label: "Platinum", hint: "300 билетов · безлимит AI" },
+  ];
+
+  return (
+    <Modal open onClose={onClose} title="Подарить Hell Pass">
+      <div className="space-y-3">
+        <div className="text-xs text-zinc-500">
+          Пасс активируется сразу на 30 дней. Цена = 0 ₽ (подарок). Билеты и XP начислятся автоматически.
+        </div>
+        <div className="space-y-2">
+          {tiers.map((t) => (
+            <button
+              key={t.key}
+              type="button"
+              onClick={() => setTier(t.key)}
+              className={`w-full rounded-md border px-3 py-2 text-left text-sm transition ${
+                tier === t.key
+                  ? "border-amber-500 bg-amber-50 dark:bg-amber-950/30"
+                  : "border-zinc-200 hover:border-zinc-400 dark:border-zinc-800 dark:hover:border-zinc-600"
+              }`}
+            >
+              <div className="font-semibold">{t.label}</div>
+              <div className="text-xs text-zinc-500">{t.hint}</div>
+            </button>
+          ))}
+        </div>
+        <div className="flex justify-end gap-2 pt-2">
+          <Btn onClick={onClose}>Отмена</Btn>
+          <Btn variant="primary" disabled={mut.isPending} onClick={() => mut.mutate()}>
+            {mut.isPending ? "…" : "Подарить"}
           </Btn>
         </div>
       </div>

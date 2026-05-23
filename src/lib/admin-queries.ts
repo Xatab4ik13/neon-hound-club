@@ -425,6 +425,13 @@ export function creditTickets(input: CreditInput) {
   });
 }
 
+export function giftPass(userId: string, tier: "silver" | "gold" | "platinum") {
+  return apiFetch<{ ok: true; tier: string; purchaseId: string }>(
+    `/api/v1/admin/users/${userId}/gift-pass`,
+    { method: "POST", body: JSON.stringify({ tier }) },
+  );
+}
+
 export type AdminLedgerRow = {
   id: string;
   userId: string;

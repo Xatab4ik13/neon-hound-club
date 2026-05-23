@@ -58,6 +58,10 @@ export async function hellAiRoutes(app: FastifyInstance) {
   // Статус: текущий тир, лимит, осталось.
   app.get("/status", { preHandler: requireAuth }, async (req) => {
     const session = req.user as SessionPayload;
+    // admin / blogger — безлимит без пасса
+    if (session.role === "admin" || session.role === "blogger") {
+      return { tier: "staff", limit: -1, used: 0, left: -1, unlimited: true, expiresAt: null };
+    }
     const pass = await getActivePass(session.sub);
     const limits = await loadLimits();
     if (!pass) return { tier: null, limit: 0, used: 0, left: 0, unlimited: false };
@@ -85,27 +89,32 @@ export async function hellAiRoutes(app: FastifyInstance) {
     }
     const { question, bikeId, chatId } = parsed.data;
 
-    // 1. Проверка активного Pass.
-    const pass = await getActivePass(session.sub);
-    if (!pass) {
-      return reply.code(403).send({
-        error: "no_pass",
-        message: "Hell AI доступен с активным Hell Pass. Активируй любой тир.",
-      });
-    }
+    const isStaff = session.role === "admin" || session.role === "blogger";
 
-    // 2. Лимит за период действия пасса.
-    const limits = await loadLimits();
-    const tier = pass.tier as TierKey;
-    const limit = limits[tier];
-    const since = pass.paidAt ?? pass.createdAt;
-    if (limit >= 0) {
-      const used = await countUsed(session.sub, since);
-      if (used >= limit) {
-        return reply.code(429).send({
-          error: "limit_reached",
-          message: `Лимит ${limit} вопросов на этот период исчерпан. Обновится при покупке следующего Pass.`,
+    // 1. Проверка активного Pass (стафф пропускает).
+    let pass: Awaited<ReturnType<typeof getActivePass>> = null;
+    if (!isStaff) {
+      pass = await getActivePass(session.sub);
+      if (!pass) {
+        return reply.code(403).send({
+          error: "no_pass",
+          message: "Hell AI доступен с активным Hell Pass. Активируй любой тир.",
         });
+      }
+
+      // 2. Лимит за период действия пасса.
+      const limits = await loadLimits();
+      const tier = pass.tier as TierKey;
+      const limit = limits[tier];
+      const since = pass.paidAt ?? pass.createdAt;
+      if (limit >= 0) {
+        const used = await countUsed(session.sub, since);
+        if (used >= limit) {
+          return reply.code(429).send({
+            error: "limit_reached",
+            message: `Лимит ${limit} вопросов на этот период исчерпан. Обновится при покупке следующего Pass.`,
+          });
+        }
       }
     }
 

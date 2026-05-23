@@ -4,12 +4,13 @@ import { and, desc, eq, ilike, ne, or, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { users } from "../db/schema/users.js";
 import { profiles } from "../db/schema/profile.js";
-import { passPurchases } from "../db/schema/pass.js";
+import { passPurchases, PASS_CONFIG, PASS_TIERS, type PassTier } from "../db/schema/pass.js";
 import { ticketsLedger } from "../db/schema/tickets.js";
 import { orders } from "../db/schema/shop.js";
 import { badges, userBadges } from "../db/schema/badges.js";
 import { requireAdmin, hashPassword } from "../lib/auth.js";
 import { getOrCreateReferralCode } from "../lib/referrals.js";
+import { activatePassPurchase } from "../lib/pass.js";
 
 
 /**
@@ -300,5 +301,37 @@ export async function adminUsersRoutes(app: FastifyInstance) {
       .orderBy(desc(userBadges.awardedAt));
     return { items: rows };
   });
+
+  // POST /api/v1/admin/users/:id/gift-pass — подарить Hell Pass (priceRub=0)
+  const giftPassSchema = z.object({
+    tier: z.enum(PASS_TIERS),
+  });
+  app.post<{ Params: { id: string } }>("/:id/gift-pass", async (req, reply) => {
+    const parsed = giftPassSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return reply.code(400).send({ error: "invalid_input", message: parsed.error.issues[0]?.message });
+    }
+    const [u] = await db.select({ id: users.id }).from(users).where(eq(users.id, req.params.id)).limit(1);
+    if (!u) return reply.code(404).send({ error: "not_found" });
+
+    const tier = parsed.data.tier as PassTier;
+    const cfg = PASS_CONFIG[tier];
+    const [purchase] = await db
+      .insert(passPurchases)
+      .values({
+        userId: u.id,
+        tier,
+        priceRub: 0, // подарок
+        ticketsGranted: cfg.tickets,
+        status: "pending_payment",
+      })
+      .returning();
+    const res = await activatePassPurchase(purchase!.id);
+    if (!res.ok) {
+      return reply.code(500).send({ error: "activation_failed", reason: res.reason });
+    }
+    return { ok: true, tier, purchaseId: purchase!.id };
+  });
 }
+
 
