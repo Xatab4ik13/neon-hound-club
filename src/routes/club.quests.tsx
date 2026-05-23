@@ -1,10 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Check, Loader2, Ticket } from "lucide-react";
+import { ArrowLeft, Check, Download, Loader2, Smartphone, Ticket } from "lucide-react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { checkQuest, fetchQuests, qk, type QuestItem } from "@/lib/queries";
 import { useViewer } from "@/hooks/use-viewer";
 import { ApiError } from "@/lib/api";
+
 
 export const Route = createFileRoute("/club/quests")({
   head: () => ({
@@ -66,6 +68,8 @@ function QuestsPage() {
         </div>
       </header>
 
+      <InstallAppQuest />
+
       {q.isLoading ? (
         <div className="py-20 text-center font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
           загрузка…
@@ -84,6 +88,66 @@ function QuestsPage() {
     </main>
   );
 }
+
+function InstallAppQuest() {
+  const [installed, setInstalled] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const check = () => {
+      const standalone =
+        window.matchMedia?.("(display-mode: standalone)").matches ||
+        (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
+      setInstalled(!!standalone);
+    };
+    check();
+    const mq = window.matchMedia?.("(display-mode: standalone)");
+    mq?.addEventListener?.("change", check);
+    return () => mq?.removeEventListener?.("change", check);
+  }, []);
+
+  return (
+    <Link
+      to="/club/install"
+      className="mb-3 block overflow-hidden rounded-2xl border border-primary/25 bg-gradient-to-br from-primary/15 via-card/60 to-black p-4 transition-transform active:scale-[0.99] md:p-5"
+    >
+      <div className="flex items-start gap-4">
+        <span
+          className={`grid h-12 w-12 shrink-0 place-items-center rounded-xl ${
+            installed
+              ? "bg-emerald-500/15 text-emerald-300"
+              : "bg-primary/15 text-primary"
+          }`}
+        >
+          {installed ? (
+            <Check className="h-5 w-5" />
+          ) : (
+            <Smartphone className="h-5 w-5" strokeWidth={1.8} />
+          )}
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-primary">
+            <Download className="h-3 w-3" />
+            Квест · клуб в кармане
+          </div>
+          <div className="mt-1 font-display text-[18px] font-black italic uppercase leading-tight tracking-tight text-foreground md:text-[20px]">
+            Установи приложение
+          </div>
+          <p className="mt-1 text-[13px] leading-snug text-muted-foreground">
+            {installed
+              ? "Готово — клуб открыт из приложения. Награда зачислится автоматически."
+              : "Поставь клуб на главный экран. Получай пуши о новых розыгрышах, постах и поступлениях."}
+          </p>
+        </div>
+        <div className="hidden shrink-0 items-center gap-1 self-center rounded-full border border-white/[0.08] bg-black/30 px-2.5 py-1 font-mono text-[11px] font-bold uppercase tracking-wider text-foreground sm:inline-flex">
+          <Ticket className="h-3 w-3 text-primary" />
+          +1
+        </div>
+      </div>
+    </Link>
+  );
+}
+
 
 function QuestCard({ q }: { q: QuestItem }) {
   const qc = useQueryClient();
