@@ -185,6 +185,9 @@ function RafflesPage() {
                     <Ban className="h-3.5 w-3.5" />
                   </Btn>
                 )}
+                <Btn variant="ghost" onClick={() => setConfirmDelete(r)} aria-label="Удалить">
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Btn>
               </div>,
             ])}
           />
