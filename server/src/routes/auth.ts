@@ -250,4 +250,45 @@ export async function authRoutes(app: FastifyInstance) {
     }
     return reply.send({ user: u });
   });
+
+  // POST /auth/change-password — смена пароля авторизованного юзера
+  app.post("/change-password", { preHandler: requireAuth }, async (req, reply) => {
+    const schema = z.object({
+      currentPassword: z.string().min(1).max(128),
+      newPassword: passwordSchema,
+    });
+    const parsed = schema.safeParse(req.body);
+    if (!parsed.success) {
+      return reply.code(400).send({ error: "invalid_input", message: parsed.error.issues[0]?.message });
+    }
+    const session = req.user as SessionPayload;
+    const [u] = await db.select().from(users).where(eq(users.id, session.sub)).limit(1);
+    if (!u) return reply.code(401).send({ error: "unauthorized" });
+    const ok = await verifyPassword(parsed.data.currentPassword, u.passwordHash);
+    if (!ok) return reply.code(400).send({ error: "wrong_password", message: "Текущий пароль неверный" });
+    const newHash = await hashPassword(parsed.data.newPassword);
+    await db
+      .update(users)
+      .set({ passwordHash: newHash, updatedAt: new Date() })
+      .where(eq(users.id, session.sub));
+    return reply.send({ ok: true });
+  });
+
+  // DELETE /auth/me — удалить свой аккаунт (cascade удалит профиль/байки/адрес/прочее)
+  app.delete("/me", { preHandler: requireAuth }, async (req, reply) => {
+    const schema = z.object({ confirmNick: z.string().min(1).max(64) });
+    const parsed = schema.safeParse(req.body);
+    if (!parsed.success) {
+      return reply.code(400).send({ error: "invalid_input", message: "Нужно подтверждение ника" });
+    }
+    const session = req.user as SessionPayload;
+    const [u] = await db.select().from(users).where(eq(users.id, session.sub)).limit(1);
+    if (!u) return reply.code(401).send({ error: "unauthorized" });
+    if (u.nick.toLowerCase() !== parsed.data.confirmNick.trim().toLowerCase()) {
+      return reply.code(400).send({ error: "nick_mismatch", message: "Ник не совпадает" });
+    }
+    await db.delete(users).where(eq(users.id, session.sub));
+    clearSessionCookie(reply);
+    return reply.send({ ok: true });
+  });
 }
