@@ -492,6 +492,7 @@ export async function postsRoutes(app: FastifyInstance) {
     if (!p || p.deletedAt) return reply.code(404).send({ error: "not_found" });
     if (p.authorId !== s.sub && s.role !== "admin") return reply.code(403).send({ error: "forbidden" });
     await db.update(posts).set({ deletedAt: new Date() }).where(eq(posts.id, req.params.id));
+    publishFeedEvent("post.deleted", { postId: req.params.id });
     return { ok: true };
   });
 }
