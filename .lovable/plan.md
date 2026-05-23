@@ -1,72 +1,76 @@
-# /club как iOS-приложение (HELLHOUND noir)
+## Что делаем
 
-Десктоп **не трогаем** в этой итерации (оставляем текущий sidebar). Всё новое — только на `useIsMobile()`.
+В iOS-PWA внутри «Настройки» сейчас 4 строки: Профиль и байк / Доставка / Уведомления / Аккаунт. Внешний список выглядит ок, но внутренние подэкраны частично мок (`ME` из `src/data/profile.ts`, хардкод email, тогглы без сохранения, кнопки без эффекта). Делаем каждый подэкран как нормальную iOS-страницу и подключаем к бекенду на `api.hhr.pro`.
 
-## Навигация: bottom tabs 4+1
+## 1. Профиль и байк
 
-Анализ всех `/club/*` маршрутов:
-Лента, Профиль (Я), Гараж, Билеты, Заказы, Ранг, Квесты, Розыгрыши, Пригласить, Hell AI, Hell Pass, Школа, Настройки, Выйти.
+**Что показываем (в `IOSListSection`):**
+- Аватар (тап → загрузка через `uploadFileToS3('avatar')` → `PATCH /profile/me { avatarUrl }`)
+- Ник (read-only с подписью «менять нельзя» — ник смены в бекенде сейчас нет, не выдумываем)
+- Город, Bio, Telegram, Instagram, YouTube — `PATCH /profile/me`
+- Телефон — `PATCH /profile/me`
+- Блок «Основной байк» — берём primary из `useBikes()`. Кнопка «Изменить» открывает существующий `BikeFormModal`. Кнопка «Все байки» → `/club/garage`.
 
-**14 пунктов в bottom tab не помещаются**. Стандарт iOS — 4–5 табов, остальное в «More». Беру самые частые ежедневные действия в табы, всё остальное — за пятой иконкой «Ещё», открывающей iOS-sheet.
+**Источник:** `useMyProfile()` + `useUpdateMyProfile()` + `useBikes()` (всё уже есть).
+Сохранение — debounce on blur + явная кнопка «Сохранить» с toast (sonner).
 
+## 2. Доставка (СДЭК)
+
+Сейчас в бекенде нет. Добавляем:
+
+- Таблица `delivery_addresses` (1:1 к юзеру): `fullName`, `phone`, `city`, `postalCode`, `pickupPoint`, `comment`.
+- `GET /api/v1/profile/me/address` и `PUT /api/v1/profile/me/address` (Zod-валидация, RLS не нужна — Fastify+JWT cookie).
+- Хук `useMyAddress` / `useSaveMyAddress` в `src/lib/garage-api.ts`.
+- Подэкран: те же поля что сейчас в моке, но привязанные к стейту + кнопка «Сохранить адрес» → мутация.
+
+## 3. Уведомления
+
+В бекенде нет. Добавляем:
+
+- Таблица `notification_prefs` (1:1 к юзеру): jsonb-флаги `{ emailRaffles, emailOrders, emailNews, pushRaffles, pushOrders, pushNews }`.
+- `GET /api/v1/profile/me/notifications` и `PUT /api/v1/profile/me/notifications`.
+- Хуки + подэкран на `IOSToggleRow` (уже есть). Тоггл сохраняется сразу (optimistic).
+- Push-секцию помечаем «работает в установленной PWA» — без реальной web-push инфры пока (это отдельный большой проект, не в этой задаче).
+
+## 4. Аккаунт
+
+- **Email** — показываем read-only из `me.email` (смена email требует verify-flow, в бекенде нет — не выдумываем, помечаем «обратиться в поддержку»).
+- **Пароль** — добавляем `POST /api/v1/auth/change-password { current, next }` (есть `verifyPassword` + `hashPassword`). Подэкран с тремя полями и тостом.
+- **Выйти** — уже работает (`POST /auth/logout` + redirect).
+- **Удалить аккаунт** — добавляем `DELETE /api/v1/auth/me` (cascade по `users.id`). На клиенте — confirm-модал с вводом ника для подтверждения, потом мутация + logout.
+
+## 5. Iframe / iOS-стиль
+
+Все 4 подэкрана живут внутри того же `SettingsMobile` `IOSSheet` (drill-in, как сейчас), но содержимое полностью переписываем на `IOSListSection` + `IOSListRow` + `IOSField` чтобы выглядело как нативные настройки iOS: серые подложки полей, разделители hairline, описания снизу секций, без рамок и хардкорных бордеров.
+
+## Технические детали
+
+**Файлы бекенда (новые / правки):**
 ```text
-┌──────────────────────────────────┐
-│ ⌂        🏍       🎟       👤    ⋯ │
-│ Лента  Гараж  Билеты   Я     Ещё │
-└──────────────────────────────────┘
+server/src/db/schema/profile.ts        +deliveryAddresses, notificationPrefs
+server/src/routes/profile.ts           +GET/PUT /me/address, /me/notifications
+server/src/routes/auth.ts              +POST /auth/change-password, DELETE /auth/me
+server/drizzle/<timestamp>_settings.sql  миграция (после `pnpm db:generate`)
 ```
 
-- **Лента** → `/club`
-- **Гараж** → `/club/garage`
-- **Билеты** → `/club/tickets` (главная валюта клуба, нужна часто)
-- **Я** → `/club/me` (профиль + значки)
-- **Ещё** → bottom-sheet со списком: Hell AI, Hell Pass, Розыгрыши, Квесты, Заказы, Ранг и XP, Пригласить, Школа, Настройки, Выйти
+**Файлы фронта:**
+```text
+src/lib/garage-api.ts                  +useMyAddress, useSaveMyAddress, useMyNotifications, useSaveMyNotifications, useChangePassword, useDeleteAccount
+src/components/club/SettingsModal.tsx  переписать 4 *Tab компонента на live-данные
+src/data/profile.ts                    оставить только типы; убрать мок ME
+```
 
-Активный таб подсвечивается `primary` (red), неактивный — `muted-foreground`. Иконки lucide, под SF-style. Бейдж-точка на «Ещё» если есть незабранные награды/новые квесты.
+**Миграция БД** запускается юзером на VPS как обычно:
+```bash
+cd /opt/hhr/server && git pull && docker compose up -d --build api
+```
+Drizzle применит миграцию при старте контейнера (entrypoint уже делает `pnpm db:migrate`, проверю).
 
-## iOS-паттерны (всё на мобилке)
+## Что НЕ делаем в этой итерации
 
-1. **Large title header** — на каждом экране сверху: большой заголовок `text-[34px] font-black italic`, при скролле уезжает и схлопывается в компактный nav-bar с тонкой границей `border-b`. Слева — back-chevron на вложенных экранах (`/club/hell-pass/$tier`, `/club/raffles/$raffleId`, `/club/u/$nick`), на корневых табах — аватар.
-2. **Push/pop переходы** — обёртка `<AnimatePresence mode="popLayout">` вокруг `<Outlet />` с translateX-анимацией (вперёд: вправо→центр, назад: центр→вправо), 280мс, ease-out. Глубина считается по длине pathname-сегментов.
-3. **Bottom sheets вместо модалок** — `SettingsModal`, `BikeFormModal`, `BloggerProfileModal` переезжают на `vaul` Drawer с drag-handle сверху, snap-points, безопасной зоной.
-4. **List rows вместо карточек** на экранах-списках (Заказы, Билеты-история, Настройки, Ещё): сгруппированные строки на `bg-card/40` с `divide-y divide-white/[0.05]`, иконка слева, тайтл + сабтайтл, chevron справа.
-5. **Safe-area** — `pb-[env(safe-area-inset-bottom)]` под tab-bar, `pt-[env(safe-area-inset-top)]` под header.
-6. **Touch polish** — `active:scale-[0.97]` на всех тач-таргетах, мин. высота 44px, haptic-like микро-анимации.
+- Реальные Web Push (нужна инфра + VAPID + SW pусk-handler).
+- Смену email (нужен verify-flow на новый email).
+- Смену ника (нужна проверка занятости + история ников).
+- Интеграцию с СДЭК-API (адрес сейчас просто хранится).
 
-## Типографика и тон под iOS
-
-- Large title: `text-[34px] font-black italic uppercase` (HELLHOUND характер сохранён)
-- Section header: `text-[22px] font-black italic`
-- Body: `text-[17px]` (iOS стандарт), не меньше `text-[15px]` нигде
-- Caption: `text-[13px] uppercase tracking-wider font-mono` (наш racing-акцент)
-- Цвет фона остаётся `--background` (noir), primary остаётся red
-
-## Изменения в файлах
-
-**Новые:**
-- `src/components/club/MobileTabBar.tsx` — фиксированный bottom tab-bar, 4 таба + «Ещё»
-- `src/components/club/MobileMoreSheet.tsx` — vaul Drawer с остальной навигацией
-- `src/components/club/MobileScreen.tsx` — обёртка экрана: large title + scroll-collapse + safe-area + back-chevron
-- `src/components/club/MobileTransition.tsx` — AnimatePresence + translateX для push/pop
-- `src/components/club/MobileListRow.tsx` — переиспользуемая iOS-list-row
-
-**Правим:**
-- `src/routes/club.tsx` — на мобилке рендерим `<MobileTransition><Outlet/></MobileTransition>` + `<MobileTabBar/>` вместо текущего drawer/sidebar layout. Десктоп — без изменений.
-- Все `src/routes/club.*.tsx` — оборачиваем контент в `<MobileScreen title="...">` (на мобилке), на десктопе оставляем текущий `<PageHeader>`. Делаем через единый компонент, чтобы не дублировать.
-- `PageHeader.tsx` → расширяем: на мобилке = large-title-режим, на десктопе = как сейчас.
-
-**НЕ трогаем** в этой итерации:
-- Десктопный sidebar и десктопный layout `club.tsx`
-- Контент страниц (только обёртки/шрифты)
-- PWA, manifest, service worker — отдельная следующая задача
-- Бэкенд, данные, бизнес-логику
-
-## После этой итерации (следующие шаги)
-
-1. Перевод оставшихся модалок на sheets (SettingsModal, BikeFormModal, BloggerProfileModal)
-2. PWA-installable (manifest + icons, без service worker — по правилам Lovable)
-3. Pull-to-refresh на ленте
-
----
-
-Дай добро («погнали») или скажи, что переставить в табах. Например, можно поменять «Билеты» на «Hell Pass» или «Розыгрыши», если ты считаешь их важнее ежедневно.
+Если что-то из этого нужно — добиваем отдельной задачей после.

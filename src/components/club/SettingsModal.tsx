@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { ME } from "@/data/profile";
 import {
   Bike,
   MapPin,
@@ -14,10 +14,24 @@ import {
   Trash2,
   User,
   X,
+  Loader2,
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useViewer } from "@/hooks/use-viewer";
 import { IOSSheet } from "@/components/ios/IOSSheet";
 import { IOSListSection, IOSListRow } from "@/components/ios/IOSList";
+import {
+  useMyProfile,
+  useUpdateMyProfile,
+  useBikes,
+  useMyAddress,
+  useSaveMyAddress,
+  useMyNotifications,
+  useSaveMyNotifications,
+  useChangePassword,
+  useDeleteAccount,
+  type NotificationPrefs,
+} from "@/lib/garage-api";
 
 type Props = { open: boolean; onOpenChange: (v: boolean) => void };
 
@@ -40,13 +54,12 @@ export function SettingsModal({ open, onOpenChange }: Props) {
 }
 
 // ════════════════════════════════════════════════════════════════════
-// MOBILE — iOS Settings: список секций → drill-in в подэкран в том же sheet
+// MOBILE — iOS-style drill-in
 // ════════════════════════════════════════════════════════════════════
 
 function SettingsMobile({ open, onOpenChange }: Props) {
   const [tab, setTab] = useState<TabId | null>(null);
 
-  // при открытии sheet — всегда возвращаемся в корень
   useEffect(() => {
     if (open) setTab(null);
   }, [open]);
@@ -105,7 +118,7 @@ function SettingsMobile({ open, onOpenChange }: Props) {
 }
 
 // ════════════════════════════════════════════════════════════════════
-// DESKTOP — оригинальная модалка
+// DESKTOP
 // ════════════════════════════════════════════════════════════════════
 
 function SettingsDesktop({ open, onOpenChange }: Props) {
@@ -193,7 +206,7 @@ function SettingsDesktop({ open, onOpenChange }: Props) {
 }
 
 // ════════════════════════════════════════════════════════════════════
-// shared field bricks (десктоп-стиль)
+// shared bricks
 // ════════════════════════════════════════════════════════════════════
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
@@ -215,22 +228,37 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
   );
 }
 
-function PrimaryButton({ children, onClick, full }: { children: React.ReactNode; onClick?: () => void; full?: boolean }) {
+function PrimaryButton({
+  children,
+  onClick,
+  full,
+  disabled,
+  loading,
+  type = "button",
+}: {
+  children: React.ReactNode;
+  onClick?: () => void;
+  full?: boolean;
+  disabled?: boolean;
+  loading?: boolean;
+  type?: "button" | "submit";
+}) {
   return (
     <button
-      type="button"
+      type={type}
       onClick={onClick}
+      disabled={disabled || loading}
       className={
-        "inline-flex items-center justify-center gap-2 bg-primary px-5 py-3 font-mono text-[10px] font-bold uppercase tracking-[0.25em] text-primary-foreground transition-opacity hover:opacity-90 active:opacity-80 sm:py-2 " +
+        "inline-flex items-center justify-center gap-2 bg-primary px-5 py-3 font-mono text-[10px] font-bold uppercase tracking-[0.25em] text-primary-foreground transition-opacity hover:opacity-90 active:opacity-80 disabled:cursor-not-allowed disabled:opacity-50 sm:py-2 " +
         (full ? "w-full" : "w-full sm:w-auto")
       }
     >
+      {loading && <Loader2 className="h-3 w-3 animate-spin" />}
       {children}
     </button>
   );
 }
 
-// iOS-«поле в строке списка»: лейбл слева, инпут справа, без рамки
 function IOSField({
   label,
   children,
@@ -251,87 +279,122 @@ function IOSField({
   );
 }
 
+function LoadingBlock() {
+  return (
+    <div className="flex items-center justify-center py-12 text-muted-foreground">
+      <Loader2 className="h-5 w-5 animate-spin" />
+    </div>
+  );
+}
+
 // ════════════════════════════════════════════════════════════════════
-// Tabs (mobile = grouped sections, desktop = старый layout)
+// PROFILE TAB
 // ════════════════════════════════════════════════════════════════════
 
-const NICK_MAX = 16;
-const NICK_MIN = 3;
-const NICK_ALLOWED = /[^A-Za-z0-9_]/g;
 
 function ProfileTab({ mobile }: { mobile?: boolean }) {
-  const [nick, setNick] = useState(ME.nick);
-  const [city, setCity] = useState(ME.city);
-  const [bike, setBike] = useState(ME.bike);
+  const meQ = useMyProfile();
+  const bikesQ = useBikes();
+  const updateMut = useUpdateMyProfile();
 
-  const onNickChange = (raw: string) => {
-    const cleaned = raw.replace(NICK_ALLOWED, "").slice(0, NICK_MAX);
-    setNick(cleaned);
+  const me = meQ.data;
+  const primary = bikesQ.data?.find((b) => b.isPrimary) ?? bikesQ.data?.[0] ?? null;
+
+  const [city, setCity] = useState("");
+  const [phone, setPhone] = useState("");
+  const [bio, setBio] = useState("");
+  const [telegram, setTelegram] = useState("");
+  const [instagram, setInstagram] = useState("");
+  const [youtube, setYoutube] = useState("");
+
+  const hydrated = useRef(false);
+  useEffect(() => {
+    if (!me || hydrated.current) return;
+    setCity(me.city ?? "");
+    setPhone(me.phone ?? "");
+    setBio(me.bio ?? "");
+    setTelegram(me.telegram ?? "");
+    setInstagram(me.instagram ?? "");
+    setYoutube(me.youtube ?? "");
+    hydrated.current = true;
+  }, [me]);
+
+  const onSave = async () => {
+    try {
+      await updateMut.mutateAsync({
+        city: city.trim() || null,
+        phone: phone.trim() || null,
+        bio: bio.trim() || null,
+        telegram: telegram.trim() || null,
+        instagram: instagram.trim() || null,
+        youtube: youtube.trim() || null,
+      });
+      toast.success("Профиль сохранён");
+    } catch (e) {
+      toast.error((e as Error).message || "Не удалось сохранить");
+    }
   };
 
-  const nickTrim = nick.trim();
-  const nickError =
-    nickTrim.length === 0
-      ? null
-      : nickTrim.length < NICK_MIN
-        ? `Минимум ${NICK_MIN} символа`
-        : null;
+  if (meQ.isLoading) return <LoadingBlock />;
+  if (!me) return <div className="px-4 py-6 text-sm text-muted-foreground">Не удалось загрузить профиль.</div>;
 
   if (mobile) {
     return (
       <>
-        <IOSListSection title="Профиль" footer="Латиница, цифры и нижнее подчёркивание.">
-          <IOSField
-            label="Ник"
-            hint={
-              <div className="flex items-center justify-between">
-                <span className={nickError ? "text-destructive" : ""}>
-                  {nickError ?? `A–Z, 0–9, _ · ${NICK_MIN}–${NICK_MAX} симв.`}
-                </span>
-                <span className="font-mono tabular-nums text-muted-foreground/60">
-                  {nick.length}/{NICK_MAX}
-                </span>
-              </div>
-            }
-          >
-            <Input
-              value={nick}
-              onChange={(e) => onNickChange(e.target.value)}
-              maxLength={NICK_MAX}
-              autoCapitalize="none"
-              autoCorrect="off"
-              spellCheck={false}
-              aria-invalid={nickError ? true : undefined}
-              placeholder="ASPHALT_DOG"
-            />
+        <IOSListSection title="Профиль" footer="Ник менять нельзя. Остальное — в любой момент.">
+          <IOSField label="Ник">
+            <Input value={me.nick} readOnly disabled />
           </IOSField>
           <IOSField label="Город">
             <Input value={city} onChange={(e) => setCity(e.target.value)} maxLength={64} placeholder="Москва" />
           </IOSField>
-          <IOSField label="Аватар">
-            <button
-              type="button"
-              className="flex w-full items-center gap-3 rounded-lg border border-dashed border-white/10 bg-card/30 px-3 py-2.5 text-left text-[13px] text-muted-foreground active:bg-white/[0.04]"
-            >
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-primary/20 font-display text-sm font-black italic uppercase text-primary">
-                {nick.slice(0, 2)}
-              </span>
-              Загрузить новое фото
-            </button>
+          <IOSField label="Телефон">
+            <PhoneInput value={phone} onChange={(v) => setPhone(v ?? "")} />
+          </IOSField>
+          <IOSField label="О себе" hint={`${bio.length}/300`}>
+            <Input value={bio} onChange={(e) => setBio(e.target.value)} maxLength={300} placeholder="Райдер. Москва. R6." />
           </IOSField>
         </IOSListSection>
 
-        <IOSListSection title="Текущий байк" footer={<>Управление гаражом — на вкладке Гараж.</>}>
-          <IOSField label="Марка и модель">
-            <Input value={bike} onChange={(e) => setBike(e.target.value)} placeholder="Yamaha MT-09" />
+        <IOSListSection title="Соцсети" footer="Только логины, без https://.">
+          <IOSField label="Telegram">
+            <Input value={telegram} onChange={(e) => setTelegram(e.target.value)} maxLength={80} placeholder="username" />
           </IOSField>
-          <IOSField label="Год">
-            <Input type="number" defaultValue={2022} min={1950} max={2026} />
+          <IOSField label="Instagram">
+            <Input value={instagram} onChange={(e) => setInstagram(e.target.value)} maxLength={80} placeholder="username" />
           </IOSField>
+          <IOSField label="YouTube">
+            <Input value={youtube} onChange={(e) => setYoutube(e.target.value)} maxLength={120} placeholder="@channel" />
+          </IOSField>
+        </IOSListSection>
+
+        <IOSListSection
+          title="Основной байк"
+          footer="Полное управление гаражом — на странице «Гараж»."
+        >
+          {primary ? (
+            <IOSListRow
+              icon={<Bike className="h-[18px] w-[18px]" />}
+              label={`${primary.brand} ${primary.model}`}
+              description={primary.year ? `${primary.year}` : "Год не указан"}
+              to="/club/garage"
+              chevron
+            />
+          ) : (
+            <IOSListRow
+              icon={<Bike className="h-[18px] w-[18px]" />}
+              label="Добавить байк"
+              description="В гараже пока пусто"
+              to="/club/garage"
+              chevron
+            />
+          )}
         </IOSListSection>
 
         <div className="px-1 pt-1">
-          <PrimaryButton full>Сохранить</PrimaryButton>
+          <PrimaryButton full onClick={onSave} loading={updateMut.isPending}>
+            Сохранить
+          </PrimaryButton>
         </div>
       </>
     );
@@ -343,85 +406,103 @@ function ProfileTab({ mobile }: { mobile?: boolean }) {
         <SectionTitle>Профиль</SectionTitle>
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Ник">
-            <Input
-              value={nick}
-              onChange={(e) => onNickChange(e.target.value)}
-              maxLength={NICK_MAX}
-              autoCapitalize="none"
-              autoCorrect="off"
-              spellCheck={false}
-              aria-invalid={nickError ? true : undefined}
-              placeholder="ASPHALT_DOG"
-            />
-            <div className="mt-1 flex items-center justify-between font-mono text-[10px] uppercase tracking-[0.18em]">
-              <span className={nickError ? "text-destructive" : "text-muted-foreground/70"}>
-                {nickError ?? `A–Z, 0–9, _ · ${NICK_MIN}–${NICK_MAX} симв.`}
-              </span>
-              <span className="tabular-nums text-muted-foreground/60">
-                {nick.length}/{NICK_MAX}
-              </span>
-            </div>
+            <Input value={me.nick} readOnly disabled />
           </Field>
           <Field label="Город">
             <Input value={city} onChange={(e) => setCity(e.target.value)} maxLength={64} />
           </Field>
-        </div>
-
-        <div className="mt-4">
-          <Field label="Аватар">
-            <button
-              type="button"
-              className="flex w-full items-center gap-3 border border-dashed border-white/10 bg-card/30 px-4 py-3 text-left text-sm text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground"
-            >
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center bg-primary/20 font-display text-base font-black italic uppercase text-primary">
-                {nick.slice(0, 2)}
-              </span>
-              Загрузить новое фото
-            </button>
+          <Field label="Телефон">
+            <PhoneInput value={phone} onChange={(v) => setPhone(v ?? "")} />
+          </Field>
+          <Field label="О себе">
+            <Input value={bio} onChange={(e) => setBio(e.target.value)} maxLength={300} />
           </Field>
         </div>
       </div>
 
       <div className="border-t border-white/[0.06] pt-6">
-        <SectionTitle>Текущий байк</SectionTitle>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Марка и модель">
-            <Input value={bike} onChange={(e) => setBike(e.target.value)} placeholder="Yamaha MT-09" />
-          </Field>
-          <Field label="Год">
-            <Input type="number" defaultValue={2022} min={1950} max={2026} />
-          </Field>
+        <SectionTitle>Соцсети</SectionTitle>
+        <div className="grid gap-4 sm:grid-cols-3">
+          <Field label="Telegram"><Input value={telegram} onChange={(e) => setTelegram(e.target.value)} maxLength={80} placeholder="username" /></Field>
+          <Field label="Instagram"><Input value={instagram} onChange={(e) => setInstagram(e.target.value)} maxLength={80} placeholder="username" /></Field>
+          <Field label="YouTube"><Input value={youtube} onChange={(e) => setYoutube(e.target.value)} maxLength={120} placeholder="@channel" /></Field>
         </div>
+      </div>
+
+      <div className="border-t border-white/[0.06] pt-6">
+        <SectionTitle>Основной байк</SectionTitle>
+        {primary ? (
+          <p className="text-sm text-foreground">{primary.brand} {primary.model}{primary.year ? ` · ${primary.year}` : ""}</p>
+        ) : (
+          <p className="text-sm text-muted-foreground">В гараже пока пусто.</p>
+        )}
         <p className="mt-3 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
           Управление гаражом — на странице <Bike className="-mt-0.5 inline h-3 w-3" /> «Мой гараж».
         </p>
       </div>
 
       <div className="flex justify-end border-t border-white/[0.06] pt-5">
-        <PrimaryButton>Сохранить</PrimaryButton>
+        <PrimaryButton onClick={onSave} loading={updateMut.isPending}>Сохранить</PrimaryButton>
       </div>
     </div>
   );
 }
 
+// ════════════════════════════════════════════════════════════════════
+// ADDRESS TAB
+// ════════════════════════════════════════════════════════════════════
+
 function AddressTab({ mobile }: { mobile?: boolean }) {
+  const q = useMyAddress();
+  const saveMut = useSaveMyAddress();
+
+  const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [city, setCity] = useState("");
+  const [postalCode, setPostalCode] = useState("");
+  const [pickupPoint, setPickupPoint] = useState("");
+  const [comment, setComment] = useState("");
+
+  const hydrated = useRef(false);
+  useEffect(() => {
+    if (!q.data || hydrated.current) return;
+    setFullName(q.data.fullName);
+    setPhone(q.data.phone);
+    setCity(q.data.city);
+    setPostalCode(q.data.postalCode);
+    setPickupPoint(q.data.pickupPoint);
+    setComment(q.data.comment);
+    hydrated.current = true;
+  }, [q.data]);
+
+  const onSave = async () => {
+    try {
+      await saveMut.mutateAsync({ fullName, phone, city, postalCode, pickupPoint, comment });
+      toast.success("Адрес сохранён");
+    } catch (e) {
+      toast.error((e as Error).message || "Не удалось сохранить");
+    }
+  };
+
+  if (q.isLoading) return <LoadingBlock />;
+
   if (mobile) {
     return (
       <>
         <IOSListSection title="Получатель">
-          <IOSField label="ФИО"><Input placeholder="Иванов Иван Иванович" /></IOSField>
-          <IOSField label="Телефон"><PhoneInput /></IOSField>
+          <IOSField label="ФИО"><Input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Иванов Иван Иванович" /></IOSField>
+          <IOSField label="Телефон"><PhoneInput value={phone} onChange={(v) => setPhone(v ?? "")} /></IOSField>
         </IOSListSection>
 
         <IOSListSection title="Адрес СДЭК" footer="Доставка только СДЭК. Используется для мерча и призов.">
-          <IOSField label="Город"><Input placeholder="Москва" /></IOSField>
-          <IOSField label="Индекс"><Input placeholder="101000" inputMode="numeric" /></IOSField>
-          <IOSField label="Пункт выдачи или адрес"><Input placeholder="ПВЗ MSK123, ул. Тверская 1" /></IOSField>
-          <IOSField label="Комментарий"><Input placeholder="Код домофона, этаж…" /></IOSField>
+          <IOSField label="Город"><Input value={city} onChange={(e) => setCity(e.target.value)} placeholder="Москва" /></IOSField>
+          <IOSField label="Индекс"><Input value={postalCode} onChange={(e) => setPostalCode(e.target.value)} placeholder="101000" inputMode="numeric" /></IOSField>
+          <IOSField label="Пункт выдачи или адрес"><Input value={pickupPoint} onChange={(e) => setPickupPoint(e.target.value)} placeholder="ПВЗ MSK123, ул. Тверская 1" /></IOSField>
+          <IOSField label="Комментарий"><Input value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Код домофона, этаж…" /></IOSField>
         </IOSListSection>
 
         <div className="px-1 pt-1">
-          <PrimaryButton full>Сохранить адрес</PrimaryButton>
+          <PrimaryButton full onClick={onSave} loading={saveMut.isPending}>Сохранить адрес</PrimaryButton>
         </div>
       </>
     );
@@ -434,59 +515,74 @@ function AddressTab({ mobile }: { mobile?: boolean }) {
           Доставка только СДЭК. Используется для мерча и призов.
         </p>
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="ФИО получателя"><Input placeholder="Иванов Иван Иванович" /></Field>
-          <Field label="Телефон"><PhoneInput /></Field>
-          <Field label="Город"><Input placeholder="Москва" /></Field>
-          <Field label="Индекс"><Input placeholder="101000" inputMode="numeric" /></Field>
+          <Field label="ФИО получателя"><Input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Иванов Иван Иванович" /></Field>
+          <Field label="Телефон"><PhoneInput value={phone} onChange={(v) => setPhone(v ?? "")} /></Field>
+          <Field label="Город"><Input value={city} onChange={(e) => setCity(e.target.value)} placeholder="Москва" /></Field>
+          <Field label="Индекс"><Input value={postalCode} onChange={(e) => setPostalCode(e.target.value)} placeholder="101000" inputMode="numeric" /></Field>
         </div>
         <div className="mt-4">
           <Field label="Пункт выдачи СДЭК или адрес курьера">
-            <Input placeholder="ПВЗ MSK123, ул. Тверская 1" />
+            <Input value={pickupPoint} onChange={(e) => setPickupPoint(e.target.value)} placeholder="ПВЗ MSK123, ул. Тверская 1" />
           </Field>
         </div>
         <div className="mt-4">
           <Field label="Комментарий">
-            <Input placeholder="Код домофона, этаж…" />
+            <Input value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Код домофона, этаж…" />
           </Field>
         </div>
       </div>
 
       <div className="flex justify-end border-t border-white/[0.06] pt-5">
-        <PrimaryButton>Сохранить адрес</PrimaryButton>
+        <PrimaryButton onClick={onSave} loading={saveMut.isPending}>Сохранить адрес</PrimaryButton>
       </div>
     </div>
   );
 }
 
+// ════════════════════════════════════════════════════════════════════
+// NOTIFICATIONS TAB
+// ════════════════════════════════════════════════════════════════════
+
 function NotifyTab({ mobile }: { mobile?: boolean }) {
+  const q = useMyNotifications();
+  const saveMut = useSaveMyNotifications();
+  const meQ = useMyProfile();
+
+  const toggle = (key: keyof Omit<NotificationPrefs, "userId">) => (v: boolean) => {
+    saveMut.mutate({ [key]: v });
+  };
+
+  if (q.isLoading || !q.data) return <LoadingBlock />;
+  const p = q.data;
+
   if (mobile) {
     return (
       <>
-        <IOSListSection title="Email" footer="hellhound@example.com">
-          <IOSToggleRow label="Розыгрыши и итоги" description="Запуск, последний день, победитель" defaultChecked />
-          <IOSToggleRow label="Заказы" description="Оплата, отправка, доставка" defaultChecked />
-          <IOSToggleRow label="Новости клуба" description="Анонсы мерча и видео" />
+        <IOSListSection title="Email" footer={meQ.data?.email}>
+          <IOSToggleRow label="Розыгрыши и итоги" description="Запуск, последний день, победитель" checked={p.emailRaffles} onChange={toggle("emailRaffles")} />
+          <IOSToggleRow label="Заказы" description="Оплата, отправка, доставка" checked={p.emailOrders} onChange={toggle("emailOrders")} />
+          <IOSToggleRow label="Новости клуба" description="Анонсы мерча и видео" checked={p.emailNews} onChange={toggle("emailNews")} />
         </IOSListSection>
-        <IOSListSection title="Push в браузере" footer="Уведомления на устройство">
-          <IOSToggleRow label="Розыгрыши и итоги" defaultChecked />
-          <IOSToggleRow label="Заказы" defaultChecked />
-          <IOSToggleRow label="Новости клуба" />
+        <IOSListSection title="Push в браузере" footer="Работает в установленной PWA после разрешения уведомлений.">
+          <IOSToggleRow label="Розыгрыши и итоги" checked={p.pushRaffles} onChange={toggle("pushRaffles")} />
+          <IOSToggleRow label="Заказы" checked={p.pushOrders} onChange={toggle("pushOrders")} />
+          <IOSToggleRow label="Новости клуба" checked={p.pushNews} onChange={toggle("pushNews")} />
         </IOSListSection>
       </>
     );
   }
   return (
     <div className="space-y-8">
-      <ChannelBlock title="Email" desc="hellhound@example.com">
-        <ToggleRow label="Розыгрыши и итоги" desc="Запуск, последний день, объявление победителя" defaultChecked />
-        <ToggleRow label="Заказы" desc="Оплата, отправка, статус доставки" defaultChecked />
-        <ToggleRow label="Новости клуба" desc="Анонсы мерча, события, видео" />
+      <ChannelBlock title="Email" desc={meQ.data?.email ?? ""}>
+        <ToggleRow label="Розыгрыши и итоги" desc="Запуск, последний день, объявление победителя" checked={p.emailRaffles} onChange={toggle("emailRaffles")} />
+        <ToggleRow label="Заказы" desc="Оплата, отправка, статус доставки" checked={p.emailOrders} onChange={toggle("emailOrders")} />
+        <ToggleRow label="Новости клуба" desc="Анонсы мерча, события, видео" checked={p.emailNews} onChange={toggle("emailNews")} />
       </ChannelBlock>
 
       <ChannelBlock title="Push в браузере" desc="Уведомления на устройство">
-        <ToggleRow label="Розыгрыши и итоги" defaultChecked />
-        <ToggleRow label="Заказы" defaultChecked />
-        <ToggleRow label="Новости клуба" />
+        <ToggleRow label="Розыгрыши и итоги" checked={p.pushRaffles} onChange={toggle("pushRaffles")} />
+        <ToggleRow label="Заказы" checked={p.pushOrders} onChange={toggle("pushOrders")} />
+        <ToggleRow label="Новости клуба" checked={p.pushNews} onChange={toggle("pushNews")} />
       </ChannelBlock>
     </div>
   );
@@ -504,14 +600,24 @@ function ChannelBlock({ title, desc, children }: { title: string; desc: string; 
   );
 }
 
-function ToggleRow({ label, desc, defaultChecked }: { label: string; desc?: string; defaultChecked?: boolean }) {
+function ToggleRow({
+  label,
+  desc,
+  checked,
+  onChange,
+}: {
+  label: string;
+  desc?: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}) {
   return (
     <div className="flex items-center justify-between gap-4 py-3">
       <div className="min-w-0">
         <div className="text-sm text-foreground">{label}</div>
         {desc && <div className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">{desc}</div>}
       </div>
-      <Switch defaultChecked={defaultChecked} />
+      <Switch checked={checked} onCheckedChange={onChange} />
     </div>
   );
 }
@@ -519,64 +625,92 @@ function ToggleRow({ label, desc, defaultChecked }: { label: string; desc?: stri
 function IOSToggleRow({
   label,
   description,
-  defaultChecked,
+  checked,
+  onChange,
 }: {
   label: string;
   description?: string;
-  defaultChecked?: boolean;
+  checked: boolean;
+  onChange: (v: boolean) => void;
 }) {
   return (
     <IOSListRow
       label={label}
       description={description}
-      trailing={<Switch defaultChecked={defaultChecked} />}
+      trailing={<Switch checked={checked} onCheckedChange={onChange} />}
     />
   );
 }
 
-// ── Account / danger ─────────────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════════════
+// ACCOUNT TAB
+// ════════════════════════════════════════════════════════════════════
+
 function AccountTab({ mobile, onClose }: { mobile?: boolean; onClose?: () => void }) {
+  const meQ = useMyProfile();
+  const changePwMut = useChangePassword();
+  const deleteMut = useDeleteAccount();
+  const { signOut } = useViewer();
+
   const [pwOpen, setPwOpen] = useState(false);
   const [pwCurrent, setPwCurrent] = useState("");
   const [pwNew, setPwNew] = useState("");
   const [pwNew2, setPwNew2] = useState("");
   const [pwMsg, setPwMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
 
-  const handleSavePassword = () => {
+  const [delOpen, setDelOpen] = useState(false);
+  const [delConfirm, setDelConfirm] = useState("");
+
+  const handleSavePassword = async () => {
     setPwMsg(null);
-    if (pwCurrent.length < 6) return setPwMsg({ kind: "err", text: "Введите текущий пароль" });
-    if (pwNew.length < 6) return setPwMsg({ kind: "err", text: "Новый пароль минимум 6 символов" });
+    if (pwCurrent.length < 1) return setPwMsg({ kind: "err", text: "Введите текущий пароль" });
+    if (pwNew.length < 8) return setPwMsg({ kind: "err", text: "Новый пароль минимум 8 символов" });
     if (pwNew !== pwNew2) return setPwMsg({ kind: "err", text: "Новые пароли не совпадают" });
-    setPwMsg({ kind: "ok", text: "Пароль обновлён" });
-    setPwCurrent("");
-    setPwNew("");
-    setPwNew2("");
+    try {
+      await changePwMut.mutateAsync({ currentPassword: pwCurrent, newPassword: pwNew });
+      setPwMsg({ kind: "ok", text: "Пароль обновлён" });
+      setPwCurrent("");
+      setPwNew("");
+      setPwNew2("");
+      toast.success("Пароль обновлён");
+    } catch (e) {
+      const msg = (e as { message?: string }).message ?? "Не удалось обновить пароль";
+      setPwMsg({ kind: "err", text: msg });
+    }
   };
 
-  const onLogout = () => {
-    if (typeof window !== "undefined" && window.confirm("Выйти из аккаунта?")) {
+  const onLogout = async () => {
+    if (typeof window !== "undefined" && !window.confirm("Выйти из аккаунта?")) return;
+    try {
+      await signOut();
+    } finally {
       onClose?.();
       window.location.href = "/";
     }
   };
-  const onDelete = () => {
-    if (typeof window !== "undefined" && window.confirm("Удалить аккаунт навсегда?")) {
-      // TODO
+
+  const onDelete = async () => {
+    try {
+      await deleteMut.mutateAsync({ confirmNick: delConfirm });
+      toast.success("Аккаунт удалён");
+      onClose?.();
+      window.location.href = "/";
+    } catch (e) {
+      toast.error((e as Error).message || "Не удалось удалить аккаунт");
     }
   };
+
+  const myNick = meQ.data?.nick ?? "";
+  const delMatch = delConfirm.trim().toLowerCase() === myNick.toLowerCase() && myNick.length > 0;
 
   if (mobile) {
     return (
       <>
-        <IOSListSection title="Контакты" footer="Если телефон указан — войти можно по email или по телефону.">
-          <IOSField label="Email"><Input type="email" defaultValue="hellhound@example.com" /></IOSField>
-          <IOSField label="Телефон"><PhoneInput /></IOSField>
-          <IOSField label="Telegram"><Input placeholder="@username" /></IOSField>
+        <IOSListSection title="Контакты" footer="Email — для входа. Смена email пока через поддержку.">
+          <IOSField label="Email">
+            <Input type="email" value={meQ.data?.email ?? ""} readOnly disabled />
+          </IOSField>
         </IOSListSection>
-
-        <div className="mb-5 px-1">
-          <PrimaryButton full>Сохранить</PrimaryButton>
-        </div>
 
         <IOSListSection title="Пароль">
           {!pwOpen ? (
@@ -608,9 +742,10 @@ function AccountTab({ mobile, onClose }: { mobile?: boolean; onClose?: () => voi
                 <button
                   type="button"
                   onClick={handleSavePassword}
-                  className="flex-1 rounded-lg bg-primary py-2 font-mono text-[11px] font-bold uppercase tracking-wider text-primary-foreground active:opacity-80"
+                  disabled={changePwMut.isPending}
+                  className="flex-1 rounded-lg bg-primary py-2 font-mono text-[11px] font-bold uppercase tracking-wider text-primary-foreground active:opacity-80 disabled:opacity-50"
                 >
-                  Сохранить
+                  {changePwMut.isPending ? "…" : "Сохранить"}
                 </button>
               </div>
             </>
@@ -626,14 +761,42 @@ function AccountTab({ mobile, onClose }: { mobile?: boolean; onClose?: () => voi
             chevron
             onClick={onLogout}
           />
-          <IOSListRow
-            icon={<Trash2 className="h-[18px] w-[18px]" />}
-            label="Удалить аккаунт"
-            description="Билеты, заказы и история обнулятся"
-            tone="danger"
-            chevron
-            onClick={onDelete}
-          />
+          {!delOpen ? (
+            <IOSListRow
+              icon={<Trash2 className="h-[18px] w-[18px]" />}
+              label="Удалить аккаунт"
+              description="Билеты, заказы и история обнулятся"
+              tone="danger"
+              chevron
+              onClick={() => setDelOpen(true)}
+            />
+          ) : (
+            <>
+              <IOSField
+                label={`Введи свой ник «${myNick}» для подтверждения`}
+                hint="Действие необратимо. Все данные будут стёрты."
+              >
+                <Input value={delConfirm} onChange={(e) => setDelConfirm(e.target.value)} autoCapitalize="none" autoCorrect="off" spellCheck={false} />
+              </IOSField>
+              <div className="flex items-center gap-2 px-4 py-3">
+                <button
+                  type="button"
+                  onClick={() => { setDelOpen(false); setDelConfirm(""); }}
+                  className="flex-1 rounded-lg bg-white/[0.05] py-2 font-mono text-[11px] font-bold uppercase tracking-wider text-muted-foreground active:opacity-70"
+                >
+                  Отмена
+                </button>
+                <button
+                  type="button"
+                  onClick={onDelete}
+                  disabled={!delMatch || deleteMut.isPending}
+                  className="flex-1 rounded-lg bg-red-500 py-2 font-mono text-[11px] font-bold uppercase tracking-wider text-white active:opacity-80 disabled:opacity-40"
+                >
+                  {deleteMut.isPending ? "…" : "Удалить"}
+                </button>
+              </div>
+            </>
+          )}
         </IOSListSection>
       </>
     );
@@ -645,19 +808,15 @@ function AccountTab({ mobile, onClose }: { mobile?: boolean; onClose?: () => voi
         <SectionTitle>Аккаунт</SectionTitle>
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Email (для входа)">
-            <Input type="email" defaultValue="hellhound@example.com" />
+            <Input type="email" value={meQ.data?.email ?? ""} readOnly disabled />
           </Field>
-          <Field label="Телефон (для входа)">
-            <PhoneInput />
+          <Field label="Ник">
+            <Input value={meQ.data?.nick ?? ""} readOnly disabled />
           </Field>
-          <Field label="Telegram"><Input placeholder="@username" /></Field>
         </div>
         <p className="mt-3 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-          Если телефон указан — войти можно по email или по телефону. Пароль один.
+          Смена email и ника пока через поддержку.
         </p>
-        <div className="mt-4 flex justify-end">
-          <PrimaryButton>Сохранить</PrimaryButton>
-        </div>
       </div>
 
       <div className="border-t border-white/[0.06] pt-6">
@@ -699,9 +858,10 @@ function AccountTab({ mobile, onClose }: { mobile?: boolean; onClose?: () => voi
               <button
                 type="button"
                 onClick={handleSavePassword}
-                className="inline-flex items-center gap-1.5 bg-primary px-4 py-2 font-mono text-[10px] font-bold uppercase tracking-[0.25em] text-primary-foreground transition-opacity hover:opacity-90"
+                disabled={changePwMut.isPending}
+                className="inline-flex items-center gap-1.5 bg-primary px-4 py-2 font-mono text-[10px] font-bold uppercase tracking-[0.25em] text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
               >
-                Сохранить пароль
+                {changePwMut.isPending ? "…" : "Сохранить пароль"}
               </button>
             </div>
           </div>
@@ -730,20 +890,48 @@ function AccountTab({ mobile, onClose }: { mobile?: boolean; onClose?: () => voi
             <LogOut className="h-3 w-3" /> Выйти
           </button>
         </div>
-        <div className="flex flex-col items-start justify-between gap-3 py-3 sm:flex-row sm:items-center sm:gap-4">
+        <div className="flex flex-col items-start gap-3 py-3 sm:gap-4">
           <div className="min-w-0">
             <div className="text-sm text-foreground">Удалить аккаунт</div>
             <div className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
               Все билеты, заказы и история обнулятся. Отменить нельзя.
             </div>
           </div>
-          <button
-            type="button"
-            onClick={onDelete}
-            className="inline-flex items-center gap-1.5 border border-red-500/40 bg-red-500/10 px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.25em] text-red-400 transition-colors hover:bg-red-500/20"
-          >
-            <Trash2 className="h-3 w-3" /> Удалить
-          </button>
+          {!delOpen ? (
+            <button
+              type="button"
+              onClick={() => setDelOpen(true)}
+              className="inline-flex items-center gap-1.5 border border-red-500/40 bg-red-500/10 px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.25em] text-red-400 transition-colors hover:bg-red-500/20"
+            >
+              <Trash2 className="h-3 w-3" /> Удалить
+            </button>
+          ) : (
+            <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-end">
+              <div className="flex-1">
+                <Label className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+                  Введи свой ник «{myNick}» для подтверждения
+                </Label>
+                <Input value={delConfirm} onChange={(e) => setDelConfirm(e.target.value)} autoCapitalize="none" autoCorrect="off" spellCheck={false} />
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => { setDelOpen(false); setDelConfirm(""); }}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.25em] text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  Отмена
+                </button>
+                <button
+                  type="button"
+                  onClick={onDelete}
+                  disabled={!delMatch || deleteMut.isPending}
+                  className="inline-flex items-center gap-1.5 bg-red-500 px-4 py-2 font-mono text-[10px] font-bold uppercase tracking-[0.25em] text-white transition-opacity hover:opacity-90 disabled:opacity-40"
+                >
+                  {deleteMut.isPending ? "…" : "Удалить навсегда"}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

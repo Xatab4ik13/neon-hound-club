@@ -231,3 +231,105 @@ export async function uploadFileToS3(
   }
   return sign.publicUrl;
 }
+
+// ---------- DELIVERY ADDRESS ----------
+
+export type DeliveryAddress = {
+  userId: string;
+  fullName: string;
+  phone: string;
+  city: string;
+  postalCode: string;
+  pickupPoint: string;
+  comment: string;
+};
+
+export const settingsKeys = {
+  address: ["settings", "address"] as const,
+  notifications: ["settings", "notifications"] as const,
+};
+
+export function useMyAddress() {
+  return useQuery({
+    queryKey: settingsKeys.address,
+    queryFn: () => apiFetch<DeliveryAddress>("/api/v1/profile/me/address"),
+    staleTime: 30_000,
+    retry: false,
+  });
+}
+
+export function useSaveMyAddress() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (patch: Omit<DeliveryAddress, "userId">) =>
+      apiFetch<{ ok: true }>("/api/v1/profile/me/address", {
+        method: "PUT",
+        body: JSON.stringify(patch),
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: settingsKeys.address }),
+  });
+}
+
+// ---------- NOTIFICATIONS ----------
+
+export type NotificationPrefs = {
+  userId: string;
+  emailRaffles: boolean;
+  emailOrders: boolean;
+  emailNews: boolean;
+  pushRaffles: boolean;
+  pushOrders: boolean;
+  pushNews: boolean;
+};
+
+export function useMyNotifications() {
+  return useQuery({
+    queryKey: settingsKeys.notifications,
+    queryFn: () => apiFetch<NotificationPrefs>("/api/v1/profile/me/notifications"),
+    staleTime: 30_000,
+    retry: false,
+  });
+}
+
+export function useSaveMyNotifications() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (patch: Partial<Omit<NotificationPrefs, "userId">>) =>
+      apiFetch<{ ok: true }>("/api/v1/profile/me/notifications", {
+        method: "PUT",
+        body: JSON.stringify(patch),
+      }),
+    onMutate: async (patch) => {
+      await qc.cancelQueries({ queryKey: settingsKeys.notifications });
+      const prev = qc.getQueryData<NotificationPrefs>(settingsKeys.notifications);
+      if (prev) qc.setQueryData(settingsKeys.notifications, { ...prev, ...patch });
+      return { prev };
+    },
+    onError: (_e, _v, ctx) => {
+      if (ctx?.prev) qc.setQueryData(settingsKeys.notifications, ctx.prev);
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: settingsKeys.notifications }),
+  });
+}
+
+// ---------- ACCOUNT ----------
+
+export function useChangePassword() {
+  return useMutation({
+    mutationFn: (body: { currentPassword: string; newPassword: string }) =>
+      apiFetch<{ ok: true }>("/api/v1/auth/change-password", {
+        method: "POST",
+        body: JSON.stringify(body),
+      }),
+  });
+}
+
+export function useDeleteAccount() {
+  return useMutation({
+    mutationFn: (body: { confirmNick: string }) =>
+      apiFetch<{ ok: true }>("/api/v1/auth/me", {
+        method: "DELETE",
+        body: JSON.stringify(body),
+      }),
+  });
+}
