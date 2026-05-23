@@ -1,5 +1,8 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import bcrypt from "bcryptjs";
+import { eq } from "drizzle-orm";
+import { db } from "../db/client.js";
+import { users } from "../db/schema/users.js";
 
 const COOKIE_NAME = "hh_sid";
 const TOKEN_TTL_DAYS = 30;
@@ -46,10 +49,31 @@ function cookieOptions() {
   };
 }
 
+async function hydrateFreshSession(req: FastifyRequest): Promise<SessionPayload | null> {
+  const tokenUser = req.user as SessionPayload;
+  const [row] = await db
+    .select({ id: users.id, role: users.role, nick: users.nick })
+    .from(users)
+    .where(eq(users.id, tokenUser.sub))
+    .limit(1);
+
+  if (!row) return null;
+
+  const fresh: SessionPayload = {
+    sub: row.id,
+    role: row.role as SessionPayload["role"],
+    nick: row.nick,
+  };
+
+  (req as FastifyRequest & { user: SessionPayload }).user = fresh;
+  return fresh;
+}
+
 /** preHandler: подгружает сессию из cookie. Не падает, если её нет. */
 export async function loadSession(req: FastifyRequest): Promise<void> {
   try {
     await req.jwtVerify();
+    await hydrateFreshSession(req);
   } catch {
     // нет/невалидная — оставляем req.user undefined
   }
@@ -59,8 +83,12 @@ export async function loadSession(req: FastifyRequest): Promise<void> {
 export async function requireAuth(req: FastifyRequest, reply: FastifyReply): Promise<void> {
   try {
     await req.jwtVerify();
+    const fresh = await hydrateFreshSession(req);
+    if (!fresh) {
+      return reply.code(401).send({ error: "unauthorized", message: "Сессия устарела" });
+    }
   } catch {
-    reply.code(401).send({ error: "unauthorized", message: "Требуется вход" });
+    return reply.code(401).send({ error: "unauthorized", message: "Требуется вход" });
   }
 }
 
@@ -68,12 +96,15 @@ export async function requireAuth(req: FastifyRequest, reply: FastifyReply): Pro
 export async function requireAdmin(req: FastifyRequest, reply: FastifyReply): Promise<void> {
   try {
     await req.jwtVerify();
-    const u = req.user as SessionPayload;
+    const u = await hydrateFreshSession(req);
+    if (!u) {
+      return reply.code(401).send({ error: "unauthorized", message: "Сессия устарела" });
+    }
     if (u.role !== "admin") {
-      reply.code(403).send({ error: "forbidden", message: "Только для админа" });
+      return reply.code(403).send({ error: "forbidden", message: "Только для админа" });
     }
   } catch {
-    reply.code(401).send({ error: "unauthorized", message: "Требуется вход" });
+    return reply.code(401).send({ error: "unauthorized", message: "Требуется вход" });
   }
 }
 
@@ -81,11 +112,14 @@ export async function requireAdmin(req: FastifyRequest, reply: FastifyReply): Pr
 export async function requireBloggerOrAdmin(req: FastifyRequest, reply: FastifyReply): Promise<void> {
   try {
     await req.jwtVerify();
-    const u = req.user as SessionPayload;
+    const u = await hydrateFreshSession(req);
+    if (!u) {
+      return reply.code(401).send({ error: "unauthorized", message: "Сессия устарела" });
+    }
     if (u.role !== "admin" && u.role !== "blogger") {
-      reply.code(403).send({ error: "forbidden", message: "Только для блогера" });
+      return reply.code(403).send({ error: "forbidden", message: "Только для блогера" });
     }
   } catch {
-    reply.code(401).send({ error: "unauthorized", message: "Требуется вход" });
+    return reply.code(401).send({ error: "unauthorized", message: "Требуется вход" });
   }
 }
