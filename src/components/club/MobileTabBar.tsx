@@ -38,18 +38,29 @@ export function MobileTabBar() {
     tab.exact ? pathname === tab.href : pathname === tab.href || pathname.startsWith(tab.href + "/");
   const moreActive = MORE_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/"));
 
+  const itemClass = (active: boolean) =>
+    `relative flex h-full w-full flex-col items-center justify-center gap-1 transition-transform active:scale-[0.9] ${
+      active ? "text-primary" : "text-muted-foreground"
+    }`;
+
+  const pillClass = (active: boolean) =>
+    `flex h-9 w-14 items-center justify-center rounded-2xl transition-all duration-200 ${
+      active
+        ? "bg-[color-mix(in_oklab,var(--primary)_18%,transparent)] shadow-[inset_0_0_0_1px_color-mix(in_oklab,var(--primary)_35%,transparent)]"
+        : "bg-transparent"
+    }`;
+
   return (
     <>
       <nav
         aria-label="Основная навигация"
-        // iOS translucent tab bar: насыщённый backdrop-blur + тонкая верхняя линия.
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-white/[0.05] bg-black/70 backdrop-blur-2xl backdrop-saturate-150 lg:hidden"
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-white/[0.06] bg-black/75 backdrop-blur-2xl backdrop-saturate-150 lg:hidden"
         style={{
           paddingBottom: "env(safe-area-inset-bottom)",
           WebkitBackdropFilter: "saturate(180%) blur(24px)",
         }}
       >
-        <ul className="mx-auto flex h-[50px] max-w-xl items-stretch">
+        <ul className="mx-auto flex h-[64px] max-w-xl items-stretch px-1">
           {TABS.map((tab) => {
             const active = isTabActive(tab);
             const Icon = tab.icon;
@@ -60,20 +71,21 @@ export function MobileTabBar() {
                   onClick={() => {
                     if (!active) haptic("selection");
                   }}
-                  className={`relative flex h-full flex-col items-center justify-center gap-0.5 transition-transform active:scale-[0.92] ${
-                    active ? "text-primary" : "text-muted-foreground"
-                  }`}
+                  className={itemClass(active)}
                 >
-                  <Icon className="h-[22px] w-[22px]" strokeWidth={active ? 2.4 : 1.9} />
-                  <span className="font-mono text-[10px] font-bold uppercase tracking-wider">
+                  <span className={pillClass(active)}>
+                    <Icon
+                      className="h-[24px] w-[24px]"
+                      strokeWidth={active ? 2.6 : 2}
+                    />
+                  </span>
+                  <span
+                    className={`font-mono text-[10px] uppercase tracking-wider ${
+                      active ? "font-bold" : "font-semibold"
+                    }`}
+                  >
                     {tab.label}
                   </span>
-                  {active && (
-                    <span
-                      aria-hidden
-                      className="pointer-events-none absolute bottom-0.5 h-[3px] w-[3px] rounded-full bg-primary shadow-[0_0_6px_color-mix(in_oklab,var(--primary)_70%,transparent)]"
-                    />
-                  )}
                 </Link>
               </li>
             );
@@ -85,19 +97,22 @@ export function MobileTabBar() {
                 haptic("light");
                 setMoreOpen(true);
               }}
-              className={`relative flex h-full w-full flex-col items-center justify-center gap-0.5 transition-transform active:scale-[0.92] ${
-                moreActive || moreOpen ? "text-primary" : "text-muted-foreground"
-              }`}
+              className={itemClass(moreActive || moreOpen)}
               aria-label="Открыть остальную навигацию"
             >
-              <MoreHorizontal className="h-[22px] w-[22px]" strokeWidth={moreActive ? 2.4 : 1.9} />
-              <span className="font-mono text-[10px] font-bold uppercase tracking-wider">Ещё</span>
-              {(moreActive || moreOpen) && (
-                <span
-                  aria-hidden
-                  className="pointer-events-none absolute bottom-0.5 h-[3px] w-[3px] rounded-full bg-primary shadow-[0_0_6px_color-mix(in_oklab,var(--primary)_70%,transparent)]"
+              <span className={pillClass(moreActive || moreOpen)}>
+                <MoreHorizontal
+                  className="h-[24px] w-[24px]"
+                  strokeWidth={moreActive || moreOpen ? 2.6 : 2}
                 />
-              )}
+              </span>
+              <span
+                className={`font-mono text-[10px] uppercase tracking-wider ${
+                  moreActive || moreOpen ? "font-bold" : "font-semibold"
+                }`}
+              >
+                Ещё
+              </span>
             </button>
           </li>
         </ul>
