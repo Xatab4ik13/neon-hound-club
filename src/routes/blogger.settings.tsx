@@ -8,6 +8,7 @@ import { HellhoundAvatar, HellhoundChip } from "@/components/club/HellhoundPlaqu
 import { useBloggerProfile } from "@/data/blogger-profile";
 import { useUpdateMyProfile, uploadFileToS3 } from "@/lib/garage-api";
 import { useViewer } from "@/hooks/use-viewer";
+import { IOSConfirm } from "@/components/ios/IOSConfirm";
 
 export const Route = createFileRoute("/blogger/settings")({
   head: () => ({
@@ -27,6 +28,7 @@ function BloggerSettingsPage() {
   const [uploading, setUploading] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [confirmLogout, setConfirmLogout] = useState(false);
 
   const flash = (m: string) => {
     setMsg(m);
@@ -139,16 +141,24 @@ function BloggerSettingsPage() {
 
         <button
           type="button"
-          onClick={async () => {
-            if (typeof window !== "undefined" && window.confirm("Выйти из кабинета?")) {
-              await signOut();
-              window.location.href = "/";
-            }
-          }}
+          onClick={() => setConfirmLogout(true)}
           className="inline-flex w-full items-center justify-center gap-2 border border-white/10 bg-black/40 px-3 py-3 font-mono text-[11px] font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground"
         >
           <LogOut className="h-3.5 w-3.5" /> Выйти
         </button>
+
+        <IOSConfirm
+          open={confirmLogout}
+          onOpenChange={setConfirmLogout}
+          title="Выйти из кабинета?"
+          description="Чтобы вернуться, нужно будет войти заново."
+          confirmLabel="Выйти"
+          destructive
+          onConfirm={async () => {
+            await signOut();
+            window.location.href = "/";
+          }}
+        />
       </div>
     </main>
   );

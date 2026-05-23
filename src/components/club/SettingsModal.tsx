@@ -21,6 +21,7 @@ import {
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useViewer } from "@/hooks/use-viewer";
 import { IOSSheet } from "@/components/ios/IOSSheet";
+import { IOSConfirm } from "@/components/ios/IOSConfirm";
 import { IOSListSection, IOSListRow } from "@/components/ios/IOSList";
 import {
   useMyProfile,
@@ -843,8 +844,8 @@ function AccountTab({ mobile, onClose }: { mobile?: boolean; onClose?: () => voi
     }
   };
 
-  const onLogout = async () => {
-    if (typeof window !== "undefined" && !window.confirm("Выйти из аккаунта?")) return;
+  const [confirmLogout, setConfirmLogout] = useState(false);
+  const doLogoutNow = async () => {
     try {
       await signOut();
     } finally {
@@ -852,6 +853,8 @@ function AccountTab({ mobile, onClose }: { mobile?: boolean; onClose?: () => voi
       window.location.href = "/";
     }
   };
+  const onLogout = () => setConfirmLogout(true);
+
 
   const onDelete = async () => {
     try {
@@ -962,11 +965,21 @@ function AccountTab({ mobile, onClose }: { mobile?: boolean; onClose?: () => voi
             </>
           )}
         </IOSListSection>
+        <IOSConfirm
+          open={confirmLogout}
+          onOpenChange={setConfirmLogout}
+          title="Выйти из аккаунта?"
+          description="Чтобы вернуться, нужно будет войти заново."
+          confirmLabel="Выйти"
+          destructive
+          onConfirm={doLogoutNow}
+        />
       </>
     );
   }
 
   return (
+    <>
     <div className="space-y-8">
       <div>
         <SectionTitle>Аккаунт</SectionTitle>
@@ -1099,5 +1112,15 @@ function AccountTab({ mobile, onClose }: { mobile?: boolean; onClose?: () => voi
         </div>
       </div>
     </div>
+    <IOSConfirm
+      open={confirmLogout}
+      onOpenChange={setConfirmLogout}
+      title="Выйти из аккаунта?"
+      description="Чтобы вернуться, нужно будет войти заново."
+      confirmLabel="Выйти"
+      destructive
+      onConfirm={doLogoutNow}
+    />
+    </>
   );
 }

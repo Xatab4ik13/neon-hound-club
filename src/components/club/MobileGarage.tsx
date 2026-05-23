@@ -126,7 +126,7 @@ export function MobileGarage({
             chevron
             onClick={() => {
               setFabOpen(false);
-              setTimeout(() => setServiceSheet(true), 180);
+              setServiceSheet(true);
             }}
           />
           <IOSListRow
@@ -136,7 +136,7 @@ export function MobileGarage({
             chevron
             onClick={() => {
               setFabOpen(false);
-              setTimeout(() => setRideSheet(true), 180);
+              setRideSheet(true);
             }}
           />
           <IOSListRow
@@ -146,7 +146,7 @@ export function MobileGarage({
             chevron
             onClick={() => {
               setFabOpen(false);
-              setTimeout(() => setDocSheet({ open: true, doc: null }), 180);
+              setDocSheet({ open: true, doc: null });
             }}
           />
         </IOSListSection>
@@ -201,7 +201,7 @@ export function MobileGarage({
         onClose={() => setViewDoc(null)}
         onEdit={(d) => {
           setViewDoc(null);
-          setTimeout(() => setDocSheet({ open: true, doc: d }), 180);
+          setDocSheet({ open: true, doc: d });
         }}
       />
     </>
@@ -213,7 +213,7 @@ export function MobileGarage({
       <div className="pb-32">
         <header className="px-4 pb-3 pt-2">
           <div className="flex items-end justify-between gap-3">
-            <h1 className="text-[34px] font-bold leading-tight tracking-tight text-foreground">
+            <h1 className="font-display text-[34px] font-black italic uppercase leading-none tracking-tight text-foreground">
               Гараж
             </h1>
             {bikes.length > 1 && (
@@ -267,7 +267,7 @@ export function MobileGarage({
           <div className="text-[12px] font-semibold uppercase tracking-[0.2em] text-primary">
             HELLHOUND · Garage
           </div>
-          <h1 className="mt-1 text-[40px] font-bold leading-tight tracking-tight text-foreground">
+          <h1 className="mt-1 font-display text-[44px] font-black italic uppercase leading-none tracking-tight text-foreground">
             Гараж
           </h1>
         </div>
@@ -1432,7 +1432,7 @@ function Fab({ onClick }: { onClick: () => void }) {
 function EmptyGarage({ onAdd }: { onAdd: () => void }) {
   return (
     <div className="px-4 pb-32 pt-8">
-      <h1 className="text-[34px] font-bold tracking-tight text-foreground">Гараж</h1>
+      <h1 className="font-display text-[34px] font-black italic uppercase leading-none tracking-tight text-foreground">Гараж</h1>
       <div className="mt-8 rounded-3xl border border-dashed border-white/[0.12] bg-card/30 p-10 text-center">
         <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-primary/10 text-primary">
           <Bike className="h-7 w-7" />
