@@ -147,7 +147,7 @@ export async function cancelRaffleWithRefund(raffleId: string) {
 }
 
 import { rafflePrizes, rafflePrizeWinners } from "../db/schema/raffles.js";
-import { profiles } from "../db/schema/profile-garage.js";
+import { profiles } from "../db/schema/profile.js";
 import { getXpTotal, computeRank } from "./xp.js";
 
 /**
