@@ -21,6 +21,7 @@ import {
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useViewer } from "@/hooks/use-viewer";
 import { IOSSheet } from "@/components/ios/IOSSheet";
+import { IOSConfirm } from "@/components/ios/IOSConfirm";
 import { IOSListSection, IOSListRow } from "@/components/ios/IOSList";
 import {
   useMyProfile,
