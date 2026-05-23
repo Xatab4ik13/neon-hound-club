@@ -63,9 +63,28 @@ const BG_LABELS: Record<PlaqueBg, string> = {
   "legend-holo-prism": "Голо-призма",
 };
 
+// Сводим backend-ранг (RankInfo) + кастомный фон → данные для UI плашки.
+function deriveRankView(rank: RankInfo | null | undefined, customBg: PlaqueBg | null) {
+  const rankIndex = Math.max(0, Math.min(RANKS.length - 1, rank?.rankIndex ?? 0));
+  const meta: RankMeta = RANKS[rankIndex];
+  const next: RankMeta | null = RANKS[rankIndex + 1] ?? null;
+  const allowed = getAvailablePlaqueBgs(rankIndex);
+  const plaqueBg: PlaqueBg =
+    customBg && allowed.includes(customBg) ? customBg : meta.plaqueBg;
+  const isMax = !!rank?.isMax;
+  return {
+    rank: meta,
+    plaqueBg,
+    next,
+    xp: rank?.inRank ?? 0,
+    xpMax: rank?.span ?? 0,
+    xpPct: isMax ? 100 : (rank?.pct ?? 0),
+    toNext: rank?.toNext ?? 0,
+    isMax,
+    rankIndex,
+  };
+}
 
-function MePage() {
-  const [settingsOpen, setSettingsOpen] = useState(false);
   const [bgSheetOpen, setBgSheetOpen] = useState(false);
   const isMobile = useIsMobile();
   const passQ = useQuery({ queryKey: ["pass", "me"], queryFn: fetchPassMe, staleTime: 30_000, retry: false });
