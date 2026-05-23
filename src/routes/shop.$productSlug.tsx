@@ -334,59 +334,7 @@ function ProductView({ product }: { product: ShopProduct }) {
       </div>
 
 
-      {/* SIZE GUIDE MODAL */}
-      {sizeGuide && (
-        <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-background/80 backdrop-blur sm:items-center"
-          onClick={() => setSizeGuide(false)}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-lg border border-border bg-card p-6 shadow-2xl"
-            style={{ animation: "shop-card-in 0.3s ease-out" }}
-          >
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="font-display text-xl uppercase tracking-tight">
-                Таблица размеров
-              </h3>
-              <button
-                onClick={() => setSizeGuide(false)}
-                className="text-muted-foreground hover:text-primary"
-                aria-label="Закрыть"
-              >
-                ✕
-              </button>
-            </div>
-            <table className="w-full border-collapse text-sm">
-              <thead>
-                <tr className="border-b border-border text-left font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
-                  <th className="py-2">Размер</th>
-                  <th className="py-2">Грудь, см</th>
-                  <th className="py-2">Длина, см</th>
-                </tr>
-              </thead>
-              <tbody className="font-mono">
-                {[
-                  ["S", "96–100", "68"],
-                  ["M", "100–104", "70"],
-                  ["L", "104–110", "72"],
-                  ["XL", "110–116", "74"],
-                  ["XXL", "116–122", "76"],
-                ].map((row) => (
-                  <tr key={row[0]} className="border-b border-border/50">
-                    <td className="py-2.5 text-primary">{row[0]}</td>
-                    <td className="py-2.5">{row[1]}</td>
-                    <td className="py-2.5">{row[2]}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            <p className="mt-4 text-xs text-muted-foreground">
-              Замеры по изделию в свободном виде. Допуск ± 2 см.
-            </p>
-          </div>
-        </div>
-      )}
+
 
       <Footer />
     </div>
