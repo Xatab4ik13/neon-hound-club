@@ -212,7 +212,7 @@ function PassRow({ tier }: { tier: Tier | null }) {
   );
 }
 
-function PassDesktopRow({ tier }: { tier: ReturnType<typeof usePassState>["tierInfo"] }) {
+function PassDesktopRow({ tier }: { tier: Tier | null }) {
   if (!tier) {
     return (
       <ActionRow
