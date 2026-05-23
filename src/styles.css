@@ -110,11 +110,15 @@
 @layer base {
   * {
     border-color: var(--color-border);
+    -webkit-tap-highlight-color: transparent;
   }
 
   html {
     background-color: var(--color-background);
     color-scheme: dark;
+    /* Disable iOS text auto-resize on rotate */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
   }
 
   body {
@@ -122,6 +126,47 @@
     color: var(--color-foreground);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
+    /* Kill the iOS rubber-band bounce on the body — feels native */
+    overscroll-behavior-y: none;
+    /* Remove 300ms tap delay & pinch zoom on UI chrome */
+    touch-action: manipulation;
+  }
+
+  /* PWA standalone tweaks (iOS home-screen install) */
+  @media all and (display-mode: standalone) {
+    html, body {
+      /* Prevent scroll chaining onto Safari overlay */
+      overscroll-behavior: none;
+    }
+  }
+
+  /* Disable hover effects on touch devices — fixes "stuck hover" on iOS */
+  @media (hover: none) {
+    *:hover {
+      /* let active: states win */
+    }
+  }
+
+  /* Make all interactive elements feel like iOS — non-selectable chrome */
+  button,
+  a,
+  [role="button"],
+  [role="tab"],
+  [role="menuitem"] {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  /* But keep content selectable inside main */
+  main p,
+  main span,
+  main h1,
+  main h2,
+  main h3,
+  main h4 {
+    -webkit-user-select: text;
+    user-select: text;
   }
 
   ::selection {
@@ -129,6 +174,22 @@
     color: var(--color-primary-foreground);
   }
 }
+
+/* Helper: smooth momentum scroll containers (lists, sheets) */
+.ios-scroll {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+/* Helper: press-down feedback like UIKit */
+.ios-press {
+  transition: transform 120ms cubic-bezier(0.32, 0.72, 0, 1), opacity 120ms ease;
+}
+.ios-press:active {
+  transform: scale(0.97);
+  opacity: 0.85;
+}
+
 
 @keyframes shop-card-in {
   from {
