@@ -8,7 +8,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, useRef, useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Play, RotateCcw, Trophy, Volume2, VolumeX } from "lucide-react";
-import { toast } from "sonner";
+import { hhToast as toast } from "@/lib/hh-toast";
 import { playSpin, playWin } from "@/lib/roller-sfx";
 import {
   bloggerQk,

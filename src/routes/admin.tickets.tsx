@@ -14,7 +14,7 @@ import {
 } from "@/components/admin/ui";
 import { adminQk, creditTickets, fetchAdminTicketsJournal } from "@/lib/admin-queries";
 import { ApiError } from "@/lib/api";
-import { toast } from "sonner";
+import { hhToast as toast } from "@/lib/hh-toast";
 
 export const Route = createFileRoute("/admin/tickets")({
   component: TicketsPage,
