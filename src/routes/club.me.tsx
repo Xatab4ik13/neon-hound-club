@@ -258,7 +258,7 @@ function PassRow({ tier, daysLeft }: { tier: Tier | null; daysLeft: number | nul
   );
 }
 
-function PassDesktopRow({ tier }: { tier: Tier | null }) {
+function PassDesktopRow({ tier, daysLeft }: { tier: Tier | null; daysLeft: number | null }) {
   if (!tier) {
     return (
       <ActionRow
@@ -293,6 +293,11 @@ function PassDesktopRow({ tier }: { tier: Tier | null }) {
           >
             {tier.name}
           </span>
+          {daysLeft != null && (
+            <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
+              · осталось {daysLeft} {pluralDays(daysLeft)}
+            </span>
+          )}
         </span>
         <span className="mt-0.5 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
           {tier.tagline}
