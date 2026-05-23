@@ -30,8 +30,11 @@ import {
   useSaveMyNotifications,
   useChangePassword,
   useDeleteAccount,
+  uploadFileToS3,
   type NotificationPrefs,
+  type ServerBike,
 } from "@/lib/garage-api";
+import { Link } from "@tanstack/react-router";
 
 type Props = { open: boolean; onOpenChange: (v: boolean) => void };
 
