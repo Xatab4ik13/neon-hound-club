@@ -7,6 +7,7 @@ import { BloggerMobileTabBar } from "@/components/blogger/BloggerMobileTabBar";
 import { MobileTransition } from "@/components/club/MobileTransition";
 import { PullToRefresh } from "@/components/club/PullToRefresh";
 import { OfflineBanner } from "@/components/club/OfflineBanner";
+import { useEdgeSwipeBack } from "@/hooks/use-edge-swipe-back";
 import { useBloggerProfile } from "@/data/blogger-profile";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useViewer } from "@/hooks/use-viewer";
@@ -35,6 +36,7 @@ function BloggerLayout() {
   const isMobile = useIsMobile();
   const viewer = useViewer();
   const navigate = useNavigate();
+  useEdgeSwipeBack(true);
 
   const goToSettings = () => navigate({ to: "/blogger/settings" });
 

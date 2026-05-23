@@ -126,9 +126,9 @@ function BloggerRaffleDetailPage() {
     return (
       <main className="px-4 py-10 md:px-8">
         <div className="mx-auto max-w-3xl space-y-4">
-          <div className="h-8 w-1/3 animate-pulse rounded-lg bg-white/[0.04]" />
-          <div className="h-64 animate-pulse rounded-2xl bg-white/[0.04]" />
-          <div className="h-40 animate-pulse rounded-2xl bg-white/[0.04]" />
+          <div className="skeleton-shimmer h-8 w-1/3 rounded-lg" />
+          <div className="skeleton-shimmer h-64 rounded-2xl" />
+          <div className="skeleton-shimmer h-40 rounded-2xl" />
         </div>
       </main>
     );

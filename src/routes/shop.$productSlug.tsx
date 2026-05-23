@@ -101,7 +101,7 @@ function ProductPage() {
       <div className="min-h-screen bg-background text-foreground">
         <Header />
         <main className="mx-auto max-w-7xl px-6 py-32">
-          <div className="aspect-[3/4] w-full animate-pulse rounded-xl bg-surface" />
+          <div className="skeleton-shimmer aspect-[3/4] w-full rounded-xl" />
         </main>
         <Footer />
       </div>

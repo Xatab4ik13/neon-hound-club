@@ -77,9 +77,9 @@ function ProductPage() {
   if (isLoading || !product) {
     return (
       <main className="mx-auto w-full max-w-3xl px-4 py-10">
-        <div className="aspect-square w-full animate-pulse rounded-2xl bg-white/[0.04]" />
-        <div className="mt-4 h-6 w-2/3 animate-pulse rounded bg-white/[0.04]" />
-        <div className="mt-2 h-4 w-1/3 animate-pulse rounded bg-white/[0.04]" />
+        <div className="skeleton-shimmer aspect-square w-full rounded-2xl" />
+        <div className="mt-4 skeleton-shimmer h-6 w-2/3 rounded" />
+        <div className="mt-2 skeleton-shimmer h-4 w-1/3 rounded" />
       </main>
     );
   }

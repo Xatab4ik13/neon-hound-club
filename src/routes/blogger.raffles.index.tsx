@@ -30,7 +30,7 @@ function BloggerRafflesPage() {
         {isLoading ? (
           <div className="mt-10 grid gap-4 sm:grid-cols-2">
             {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="h-40 animate-pulse rounded-2xl bg-white/[0.04]" />
+              <div key={i} className="skeleton-shimmer h-40 rounded-2xl" />
             ))}
           </div>
         ) : items.length === 0 ? (
