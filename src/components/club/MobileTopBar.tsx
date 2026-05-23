@@ -44,6 +44,12 @@ export function MobileTopBar() {
   const title = titleFor(pathname);
   // iOS-style: titlle в навбаре появляется только после скролла большого заголовка.
   const scrolled = useScrollCollapse(40);
+  const [notifOpen, setNotifOpen] = useState(false);
+
+  const openNotif = () => {
+    haptic("light");
+    setNotifOpen(true);
+  };
 
   const handleBack = () => {
     haptic("light");
@@ -69,13 +75,15 @@ export function MobileTopBar() {
           </div>
           <button
             type="button"
+            onClick={openNotif}
             aria-label="Уведомления"
-            className="relative flex h-10 w-10 shrink-0 items-center justify-center text-foreground active:opacity-60"
+            className="relative flex h-10 w-10 shrink-0 items-center justify-center text-foreground transition-transform active:scale-[0.9] active:opacity-60"
           >
             <Bell className="h-[20px] w-[20px]" strokeWidth={1.9} />
             <span aria-hidden className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-primary" />
           </button>
         </div>
+        <NotificationsSheet open={notifOpen} onOpenChange={setNotifOpen} />
       </header>
     );
   }
@@ -130,14 +138,16 @@ export function MobileTopBar() {
           )}
           <button
             type="button"
+            onClick={openNotif}
             aria-label="Уведомления"
-            className="relative flex h-8 w-8 items-center justify-center text-foreground active:opacity-60"
+            className="relative flex h-8 w-8 items-center justify-center text-foreground transition-transform active:scale-[0.9] active:opacity-60"
           >
             <Bell className="h-[20px] w-[20px]" strokeWidth={1.9} />
             <span aria-hidden className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-primary" />
           </button>
         </div>
       </div>
+      <NotificationsSheet open={notifOpen} onOpenChange={setNotifOpen} />
     </header>
   );
 }
