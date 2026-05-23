@@ -119,15 +119,34 @@ export function buildSystemPrompt(opts: {
   return parts.join("\n");
 }
 
-/** Лимит вопросов на тир. -1 / null = безлимит. */
+/** Лимит вопросов на тир за период действия Pass (30 дней). */
 export type AiLimits = {
   silver: number;
   gold: number;
-  platinum: number; // -1 = ∞
+  platinum: number;
 };
 
+/**
+ * Лимиты ОСНОВНОЙ модели тира.
+ * silver/gold — после лимита /ask возвращает 429.
+ * platinum — после лимита /ask продолжает работать на быстрой модели (без счётчика).
+ */
 export const AI_LIMITS_DEFAULT: AiLimits = {
-  silver: 20,
-  gold: 100,
-  platinum: -1,
+  silver: 30,
+  gold: 200,
+  platinum: 300,
 };
+
+/**
+ * Модель по тиру. Для silver/gold — быстрая. Для platinum — умная,
+ * после превышения лимита роут переключает её на быструю.
+ * Имя модели НЕ возвращается клиенту — клиент видит только "Hell AI".
+ */
+export const TIER_PRIMARY_MODEL: Record<"silver" | "gold" | "platinum", string> = {
+  silver: "google/gemini-2.5-flash",
+  gold: "google/gemini-2.5-flash",
+  platinum: "openai/gpt-5",
+};
+
+/** Модель для platinum после превышения лимита умной модели. */
+export const PLATINUM_FALLBACK_MODEL = "openai/gpt-5-mini";
