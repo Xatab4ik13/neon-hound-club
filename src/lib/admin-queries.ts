@@ -393,6 +393,12 @@ export function cancelRaffle(id: string) {
   });
 }
 
+export function fetchAdminRaffleWinners(id: string) {
+  return apiFetch<{ raffle: { id: string; title: string }; items: AdminRaffleWinner[] }>(
+    `/api/v1/admin/raffles/${id}/winners`,
+  );
+}
+
 // ---------- TICKETS ADMIN ----------
 
 export type CreditInput = {
