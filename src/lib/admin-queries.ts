@@ -337,9 +337,8 @@ export type CreateRaffleInput = {
   title: string;
   description?: string;
   imageUrl?: string | null;
-  prize: string;
-  ticketCost: number;
   maxEntriesPerUser?: number | null;
+  showOnHome?: boolean;
   startsAt: string;
   endsAt: string;
   status?: RaffleStatus;
