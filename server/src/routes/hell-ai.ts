@@ -68,8 +68,9 @@ export async function hellAiRoutes(app: FastifyInstance) {
     const tier = pass.tier as TierKey;
     const limit = limits[tier];
     const since = pass.paidAt ?? pass.createdAt;
-    const unlimited = limit < 0;
     const used = await countUsed(session.sub, since);
+    // Platinum: после лимита фолбэк на быструю модель — для клиента это «безлимит».
+    const unlimited = tier === "platinum";
     return {
       tier,
       limit: unlimited ? -1 : limit,
