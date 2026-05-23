@@ -133,7 +133,7 @@ function ProductView({ product }: { product: ShopProduct }) {
 
   return (
     <main
-      className="mx-auto w-full max-w-3xl pb-[calc(96px+env(safe-area-inset-bottom))] md:pb-12"
+      className="mx-auto w-full max-w-3xl pb-[calc(108px+env(safe-area-inset-bottom))] md:pb-12"
     >
       <div className="flex items-center justify-between px-4 pt-4">
         <Link
@@ -349,7 +349,7 @@ function ProductView({ product }: { product: ShopProduct }) {
       {/* Mobile sticky CTA */}
       <div
         className="fixed inset-x-0 z-30 border-t border-white/[0.06] bg-black/85 px-4 py-3 backdrop-blur-xl md:hidden"
-        style={{ bottom: "calc(52px + env(safe-area-inset-bottom))" }}
+        style={{ bottom: "calc(64px + env(safe-area-inset-bottom))" }}
       >
         <div className="mx-auto flex max-w-3xl items-center gap-3">
           <div className="flex flex-col">

@@ -283,7 +283,7 @@ function RaffleDetailContent({
       {!finished && isMobile && (
         <div
           className="fixed inset-x-0 z-30 border-t border-white/[0.08] bg-[#0d0d0d]/95 px-4 py-3 backdrop-blur"
-          style={{ bottom: "calc(52px + env(safe-area-inset-bottom))" }}
+          style={{ bottom: "calc(64px + env(safe-area-inset-bottom))" }}
         >
           <StakeControls
             ticketCost={raffle.ticketCost}
