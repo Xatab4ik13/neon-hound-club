@@ -252,6 +252,18 @@ function RafflesPage() {
         confirmLabel="Отменить розыгрыш"
       />
 
+      <ConfirmModal
+        open={!!confirmDelete}
+        onClose={() => setConfirmDelete(null)}
+        onConfirm={() => {
+          if (confirmDelete) del.mutate(confirmDelete.id);
+          setConfirmDelete(null);
+        }}
+        title="Удалить розыгрыш?"
+        message={`«${confirmDelete?.title}» и все его призы, заявки и победители будут удалены навсегда. Билеты участникам НЕ возвращаются — если нужно вернуть, сначала отмени розыгрыш.`}
+        confirmLabel="Удалить"
+      />
+
       {winnersOf && (
         <WinnersModal raffle={winnersOf} onClose={() => setWinnersOf(null)} />
       )}
