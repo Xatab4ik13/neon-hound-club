@@ -93,6 +93,8 @@ export async function hellAiRoutes(app: FastifyInstance) {
 
     // 1. Проверка активного Pass (стафф пропускает).
     let pass: Awaited<ReturnType<typeof getActivePass>> | null = null;
+    // Модель для этого запроса — выбираем по тиру, с учётом лимита (для platinum).
+    let modelForRequest: string = TIER_PRIMARY_MODEL.silver;
     if (!isStaff) {
       pass = await getActivePass(session.sub);
       if (!pass) {
@@ -102,13 +104,17 @@ export async function hellAiRoutes(app: FastifyInstance) {
         });
       }
 
-      // 2. Лимит за период действия пасса.
       const limits = await loadLimits();
       const tier = pass.tier as TierKey;
       const limit = limits[tier];
       const since = pass.paidAt ?? pass.createdAt;
-      if (limit >= 0) {
-        const used = await countUsed(session.sub, since);
+      const used = await countUsed(session.sub, since);
+
+      if (tier === "platinum") {
+        // Platinum: после лимита переключаемся на быструю модель, отвечаем без счётчика.
+        modelForRequest = used >= limit ? PLATINUM_FALLBACK_MODEL : TIER_PRIMARY_MODEL.platinum;
+      } else {
+        modelForRequest = TIER_PRIMARY_MODEL[tier];
         if (used >= limit) {
           return reply.code(429).send({
             error: "limit_reached",
@@ -116,6 +122,9 @@ export async function hellAiRoutes(app: FastifyInstance) {
           });
         }
       }
+    } else {
+      // Стафф — основная модель из настроек админки (резерв на «потестить»).
+      modelForRequest = TIER_PRIMARY_MODEL.platinum;
     }
 
     // 3. Контекст и system prompt.
