@@ -127,6 +127,7 @@ export async function hellAiRoutes(app: FastifyInstance) {
       bannedTopics: settings.bannedTopics,
       garage,
       activeBikeId: bikeId ?? null,
+      isStaff,
     });
 
     // 4. История последних 10 пар сообщений в рамках текущего chatId (если задан).

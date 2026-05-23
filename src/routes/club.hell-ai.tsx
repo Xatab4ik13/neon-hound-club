@@ -12,6 +12,7 @@ import {
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 import { Drawer } from "vaul";
 import {
@@ -34,8 +35,10 @@ import {
 
 import { cn } from "@/lib/utils";
 import { apiFetch, ApiError } from "@/lib/api";
-import { loadBikes, saveBikes, type StoredBike } from "@/data/bike-storage";
+import { type StoredBike } from "@/data/bike-storage";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useViewer } from "@/hooks/use-viewer";
+import { useBikes, type ServerBike } from "@/lib/garage-api";
 
 export const Route = createFileRoute("/club/hell-ai")({
   head: () => ({
@@ -53,25 +56,94 @@ export const Route = createFileRoute("/club/hell-ai")({
 });
 
 // ── Тариф / квоты ─────────────────────────────────────────────────────────
-type PassTier = "guest" | "silver" | "gold" | "platinum";
-const QUOTA_BY_TIER: Record<PassTier, number | "∞"> = {
-  guest: 0,
-  silver: 20,
-  gold: 100,
-  platinum: "∞",
+type PassTier = "guest" | "silver" | "gold" | "platinum" | "staff";
+type HellAiStatus = {
+  tier: "silver" | "gold" | "platinum" | "staff" | null;
+  limit: number;
+  used: number;
+  left: number;
+  unlimited: boolean;
+  expiresAt: string | null;
 };
+
 const TIER_LABEL: Record<PassTier, string> = {
   guest: "Без Hell Pass",
   silver: "Silver",
   gold: "Gold",
   platinum: "Platinum",
+  staff: "STAFF",
 };
-// Для блогера лимит снят — это его собственный инструмент.
-function getCurrentTier(): PassTier {
-  if (typeof window !== "undefined" && window.location.pathname.startsWith("/blogger")) {
-    return "platinum";
-  }
-  return "gold";
+
+function toStoredBike(b: ServerBike): StoredBike {
+  return {
+    id: b.id,
+    brand: b.brand,
+    model: b.model,
+    year: b.year ?? new Date().getFullYear(),
+    color: b.color ?? undefined,
+    nickname: b.nickname ?? undefined,
+    mileage: b.mileage ?? undefined,
+    purchaseDate: b.purchaseDate ?? undefined,
+    mods: b.mods.length > 0 ? b.mods : undefined,
+    photo: b.photos[0] ?? undefined,
+  };
+}
+
+function useHellAiRuntime() {
+  const viewer = useViewer();
+  const bikesQ = useBikes(viewer.isAuthed);
+  const statusQ = useQuery({
+    queryKey: ["hell-ai", "status", viewer.user?.id ?? "guest"],
+    queryFn: () => apiFetch<HellAiStatus>("/api/v1/hell-ai/status"),
+    enabled: viewer.isAuthed,
+    staleTime: 10_000,
+    retry: false,
+  });
+
+  const bikes = useMemo(() => (bikesQ.data ?? []).map(toStoredBike), [bikesQ.data]);
+  const [activeBikeId, setActiveBikeId] = useState("");
+
+  useEffect(() => {
+    if (bikes.length === 0) {
+      setActiveBikeId("");
+      return;
+    }
+    setActiveBikeId((current) => (bikes.some((b) => b.id === current) ? current : bikes[0]!.id));
+  }, [bikes]);
+
+  const activeBike = bikes.find((b) => b.id === activeBikeId);
+  const isStaff = viewer.user?.role === "admin" || viewer.user?.role === "blogger";
+  const tier: PassTier = statusQ.data?.tier ?? (isStaff ? "staff" : viewer.isAuthed ? "guest" : "guest");
+  const used = statusQ.data?.used ?? 0;
+  const isUnlimited = statusQ.data?.unlimited ?? isStaff;
+  const quota: number | "∞" = !viewer.isAuthed || tier === "guest"
+    ? 0
+    : isUnlimited
+      ? "∞"
+      : Math.max(0, statusQ.data?.limit ?? 0);
+  const left = isUnlimited ? Infinity : Math.max(0, statusQ.data?.left ?? 0);
+  const isGuest = !viewer.isAuthed || tier === "guest";
+  const bikeStr = activeBike ? bikeLabel(activeBike) : isStaff ? "своего мото" : "твой мото";
+  const canAsk =
+    viewer.isAuthed &&
+    (!statusQ.isPending || isStaff) &&
+    (isStaff || (!isGuest && (isUnlimited || left > 0) && !!activeBike));
+
+  return {
+    bikes,
+    activeBike,
+    activeBikeId,
+    setActiveBikeId,
+    bikeStr,
+    canAsk,
+    isGuest,
+    isStaff,
+    isUnlimited,
+    quota,
+    used,
+    tierLabel: TIER_LABEL[tier],
+    refreshStatus: () => statusQ.refetch(),
+  };
 }
 
 
@@ -205,15 +277,21 @@ function formatRelative(ts: number): string {
 }
 
 function HellAiMobile() {
-  const [bikes, setBikes] = useState<StoredBike[]>([]);
-  const [activeBikeId, setActiveBikeId] = useState<string>("");
-  useEffect(() => {
-    const list = loadBikes();
-    setBikes(list);
-    setActiveBikeId(list[0]?.id ?? "");
-  }, []);
-  const activeBike = bikes.find((b) => b.id === activeBikeId);
-  const bikeStr = activeBike ? bikeLabel(activeBike) : "твой мото";
+  const {
+    bikes,
+    activeBike,
+    activeBikeId,
+    setActiveBikeId,
+    bikeStr,
+    canAsk: runtimeCanAsk,
+    isGuest,
+    isStaff,
+    isUnlimited,
+    quota,
+    used: serverUsed,
+    tierLabel,
+    refreshStatus,
+  } = useHellAiRuntime();
 
   // история чатов
   const [chats, setChats] = useState<Chat[]>([]);
@@ -246,7 +324,7 @@ function HellAiMobile() {
 
   const [value, setValue] = useState("");
   const [isThinking, setIsThinking] = useState(false);
-  const [used, setUsed] = useState(0);
+  const [usedDelta, setUsedDelta] = useState(0);
   const [bikeSheetOpen, setBikeSheetOpen] = useState(false);
   const [cmdSheetOpen, setCmdSheetOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -254,11 +332,13 @@ function HellAiMobile() {
   const { ref: taRef, adjust } = useAutoResize(40, 140);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const quota = QUOTA_BY_TIER[getCurrentTier()];
-  const isUnlimited = quota === "∞";
-  const isGuest = getCurrentTier() === "guest";
-  const left = isUnlimited ? Infinity : (quota as number) - used;
-  const canAsk = !isGuest && (isUnlimited || left > 0) && !!activeBike;
+  const used = serverUsed + usedDelta;
+  const left = isUnlimited ? Infinity : Math.max(0, (quota as number) - used);
+  const canAsk = runtimeCanAsk && (isUnlimited || left > 0 || isStaff);
+
+  useEffect(() => {
+    setUsedDelta(0);
+  }, [serverUsed]);
 
   // авто-скролл вниз при новых сообщениях / typing
   useEffect(() => {
@@ -288,7 +368,7 @@ function HellAiMobile() {
     setValue("");
     adjust(true);
     setIsThinking(true);
-    setUsed((n) => n + 1);
+    setUsedDelta((n) => n + 1);
     askHellAi(text, activeBike?.id, chatId)
       .then((a) => {
         updateChat(chatId, (c) => ({
@@ -296,6 +376,7 @@ function HellAiMobile() {
           messages: c.messages.map((m) => (m.id === id ? { ...m, a } : m)),
           updatedAt: Date.now(),
         }));
+        refreshStatus();
       })
       .catch((err: unknown) => {
         updateChat(chatId, (c) => ({
@@ -305,7 +386,8 @@ function HellAiMobile() {
           ),
           updatedAt: Date.now(),
         }));
-        setUsed((n) => Math.max(0, n - 1));
+        setUsedDelta((n) => Math.max(0, n - 1));
+        refreshStatus();
       })
       .finally(() => setIsThinking(false));
   }
@@ -484,14 +566,14 @@ function HellAiMobile() {
         {/* квота */}
         <div className="flex items-center justify-between px-4 pb-1.5 pt-2">
           <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-            {TIER_LABEL[getCurrentTier()]} ·{" "}
+            {tierLabel} ·{" "}
             <span className="tabular-nums text-foreground/70">
               {isUnlimited ? "∞" : `${used}/${quota}`}
             </span>
           </span>
           {!canAsk && !isGuest && (
             <span className="font-mono text-[10px] uppercase tracking-wider text-red-400/80">
-              {!activeBike ? "добавь байк" : "лимит"}
+              {!activeBike && !isStaff ? "добавь байк" : "лимит"}
             </span>
           )}
         </div>
@@ -520,7 +602,7 @@ function HellAiMobile() {
               placeholder={
                 isGuest
                   ? "Hell AI доступен с Hell Pass"
-                  : !activeBike
+                  : !activeBike && !isStaff
                     ? "добавь байк в гараж"
                     : !canAsk
                       ? "лимит на месяц исчерпан"
@@ -559,11 +641,13 @@ function HellAiMobile() {
         onOpenChange={setBikeSheetOpen}
         bikes={bikes}
         activeId={activeBikeId}
+        emptyText={
+          isStaff
+            ? "Можно спрашивать и без байка — для точности лучше выбрать модель прямо в вопросе."
+            : "В гараже пусто — добавь байк в профиле."
+        }
         onPick={(id) => {
           setActiveBikeId(id);
-          const next = [...bikes].sort((a, b) => (a.id === id ? -1 : b.id === id ? 1 : 0));
-          setBikes(next);
-          saveBikes(next);
           setBikeSheetOpen(false);
         }}
       />
@@ -786,12 +870,14 @@ function BikeSheet({
   onOpenChange,
   bikes,
   activeId,
+  emptyText,
   onPick,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   bikes: StoredBike[];
   activeId: string;
+  emptyText?: string;
   onPick: (id: string) => void;
 }) {
   return (
@@ -819,7 +905,7 @@ function BikeSheet({
           <div className="flex-1 overflow-y-auto overscroll-contain px-4 pb-4">
             {bikes.length === 0 ? (
               <div className="rounded-2xl border border-white/[0.06] bg-card/40 px-4 py-6 text-center text-[13px] text-muted-foreground">
-                В гараже пусто — добавь байк в профиле.
+                {emptyText ?? "В гараже пусто — добавь байк в профиле."}
               </div>
             ) : (
               <ul className="overflow-hidden rounded-2xl border border-white/[0.06] bg-card/40 divide-y divide-white/[0.05]">
@@ -931,30 +1017,38 @@ function CommandSheet({
 // ═══════════════════════════════════════════════════════════════════════
 
 function HellAiDesktop() {
-  const [bikes, setBikes] = useState<StoredBike[]>([]);
-  const [activeBikeId, setActiveBikeId] = useState<string>("");
-  useEffect(() => {
-    const list = loadBikes();
-    setBikes(list);
-    setActiveBikeId(list[0]?.id ?? "");
-  }, []);
-  const activeBike = bikes.find((b) => b.id === activeBikeId);
-  const bikeStr = activeBike ? bikeLabel(activeBike) : "твой мото";
+  const {
+    bikes,
+    activeBike,
+    activeBikeId,
+    setActiveBikeId,
+    bikeStr,
+    canAsk: runtimeCanAsk,
+    isGuest,
+    isStaff,
+    isUnlimited,
+    quota,
+    used: serverUsed,
+    tierLabel,
+    refreshStatus,
+  } = useHellAiRuntime();
 
   const [value, setValue] = useState("");
   const [showCmd, setShowCmd] = useState(false);
   const [activeCmd, setActiveCmd] = useState(-1);
   const [isThinking, setIsThinking] = useState(false);
-  const [used, setUsed] = useState(0);
+  const [usedDelta, setUsedDelta] = useState(0);
   const [lastAnswer, setLastAnswer] = useState<{ q: string; a: string } | null>(null);
   const { ref: taRef, adjust } = useAutoResize(60, 200);
   const cmdRef = useRef<HTMLDivElement>(null);
 
-  const quota = QUOTA_BY_TIER[getCurrentTier()];
-  const isUnlimited = quota === "∞";
-  const isGuest = getCurrentTier() === "guest";
-  const left = isUnlimited ? Infinity : (quota as number) - used;
-  const canAsk = !isGuest && (isUnlimited || left > 0) && !!activeBike;
+  const used = serverUsed + usedDelta;
+  const left = isUnlimited ? Infinity : Math.max(0, (quota as number) - used);
+  const canAsk = runtimeCanAsk && (isUnlimited || left > 0 || isStaff);
+
+  useEffect(() => {
+    setUsedDelta(0);
+  }, [serverUsed]);
 
   const [mouse, setMouse] = useState({ x: 0, y: 0 });
   const [focused, setFocused] = useState(false);
@@ -1001,12 +1095,16 @@ function HellAiDesktop() {
     setValue("");
     adjust(true);
     setIsThinking(true);
-    setUsed((n) => n + 1);
+    setUsedDelta((n) => n + 1);
     askHellAi(q, activeBike?.id)
-      .then((a) => setLastAnswer({ q, a }))
+      .then((a) => {
+        setLastAnswer({ q, a });
+        refreshStatus();
+      })
       .catch((err: unknown) => {
         setLastAnswer({ q, a: errorToMessage(err) });
-        setUsed((n) => Math.max(0, n - 1));
+        setUsedDelta((n) => Math.max(0, n - 1));
+        refreshStatus();
       })
       .finally(() => setIsThinking(false));
   }
@@ -1084,11 +1182,13 @@ function HellAiDesktop() {
           <BikeSwitcher
             bikes={bikes}
             activeId={activeBikeId}
+            emptyText={
+              isStaff
+                ? "У блогера может не быть байка в профиле — просто укажи модель в вопросе."
+                : "В гараже пусто — добавь байк в профиле"
+            }
             onPick={(id) => {
               setActiveBikeId(id);
-              const next = [...bikes].sort((a, b) => (a.id === id ? -1 : b.id === id ? 1 : 0));
-              setBikes(next);
-              saveBikes(next);
             }}
           />
 
@@ -1176,7 +1276,7 @@ function HellAiDesktop() {
                 placeholder={
                   isGuest
                     ? "Hell AI доступен с Hell Pass"
-                    : !activeBike
+                    : !activeBike && !isStaff
                       ? "добавь байк в гараж"
                       : !canAsk
                         ? "лимит на месяц исчерпан"
@@ -1206,7 +1306,7 @@ function HellAiDesktop() {
                   <CommandIcon className="h-4 w-4" />
                 </motion.button>
                 <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                  {TIER_LABEL[getCurrentTier()]} ·{" "}
+                  {tierLabel} ·{" "}
                   <span className="tabular-nums text-foreground/80">
                     {isUnlimited ? "∞" : `${used}/${quota}`}
                   </span>
@@ -1273,10 +1373,12 @@ function HellAiDesktop() {
 function BikeSwitcher({
   bikes,
   activeId,
+  emptyText,
   onPick,
 }: {
   bikes: StoredBike[];
   activeId: string;
+  emptyText?: string;
   onPick: (id: string) => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -1297,7 +1399,7 @@ function BikeSwitcher({
     return (
       <div className="mx-auto flex w-fit items-center gap-2 rounded-full border border-white/[0.06] bg-white/[0.02] px-3 py-1.5 text-xs text-muted-foreground backdrop-blur-xl">
         <BikeIcon className="h-3.5 w-3.5" />
-        В гараже пусто — добавь байк в профиле
+        {emptyText ?? "В гараже пусто — добавь байк в профиле"}
       </div>
     );
   }
