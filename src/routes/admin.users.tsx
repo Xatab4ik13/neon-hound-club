@@ -221,6 +221,11 @@ function UserDrawer({
             <Metric label="Всего заработано" value={String(u.ticketsEarned)} />
           </Section>
 
+          <Section title="Магазин">
+            <Metric label="Потрачено" value={`${u.totalSpentRub.toLocaleString("ru-RU")} ₽`} />
+            <Metric label="Заказов" value={String(u.ordersCount)} />
+          </Section>
+
           <Section title="Ранг / XP">
             <Metric label="XP" value={String(u.xpTotal)} />
             <Metric label="Ранг" value={u.rank?.rankLabel ?? "—"} />
