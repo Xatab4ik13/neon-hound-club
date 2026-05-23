@@ -563,3 +563,194 @@ export function revokeBadge(nick: string, badgeCode: string) {
     body: JSON.stringify({ nick, badgeCode }),
   });
 }
+
+// ============================================================================
+// DASHBOARD
+// ============================================================================
+
+export type AdminDashboard = {
+  kpi: {
+    revenue30d: number;
+    passActive: number;
+    newUsers7d: number;
+    ticketsInCirculation: number;
+    rafflesActive: number;
+    rafflesBankTickets: number;
+    orders7d: number;
+  };
+  lastOrders: { id: string; status: string; totalRub: number; createdAt: string; nick: string }[];
+  rafflesSoon: { id: string; title: string; prize: string | null; endsAt: string; entries: number }[];
+  passExpiring: { id: string; tier: string; expiresAt: string; nick: string }[];
+  topProducts: { productId: string | null; title: string; qty: number; revenue: number }[];
+};
+
+export function fetchAdminDashboard() {
+  return apiFetch<AdminDashboard>(`/api/v1/admin/dashboard/`);
+}
+
+// ============================================================================
+// NEWS
+// ============================================================================
+
+export type AdminNewsItem = {
+  id: string;
+  slug: string;
+  title: string;
+  excerpt: string;
+  body: string;
+  tag: string;
+  coverUrl: string | null;
+  metaTitle: string;
+  metaDescription: string;
+  ogImage: string | null;
+  status: "draft" | "published";
+  publishedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export function fetchAdminNews(params?: { search?: string; status?: "draft" | "published" | "all" }) {
+  const qs = new URLSearchParams();
+  if (params?.search) qs.set("search", params.search);
+  if (params?.status) qs.set("status", params.status);
+  const s = qs.toString();
+  return apiFetch<{ items: AdminNewsItem[] }>(`/api/v1/admin/news/${s ? `?${s}` : ""}`);
+}
+
+export function createAdminNews(data: Partial<AdminNewsItem>) {
+  return apiFetch<AdminNewsItem>(`/api/v1/admin/news/`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export function patchAdminNews(id: string, data: Partial<AdminNewsItem>) {
+  return apiFetch<AdminNewsItem>(`/api/v1/admin/news/${id}`, { method: "PATCH", body: JSON.stringify(data) });
+}
+
+export function deleteAdminNews(id: string) {
+  return apiFetch<{ ok: true }>(`/api/v1/admin/news/${id}`, { method: "DELETE" });
+}
+
+// ============================================================================
+// ECONOMY
+// ============================================================================
+
+export type EconomyOperation = {
+  id: string;
+  occurredAt: string;
+  type: "income" | "expense";
+  category: string;
+  amountRub: number;
+  note: string;
+  source: "manual" | "auto";
+  refType: string | null;
+  refId: string | null;
+  createdAt: string;
+};
+
+export type EconomyCategory = {
+  id: string;
+  name: string;
+  kind: "income" | "expense";
+  isSystem: boolean;
+};
+
+export type EconomyPartner = {
+  id: string;
+  name: string;
+  share: number;
+  sort: number;
+};
+
+export type EconomyOverview = {
+  income: number;
+  expense: number;
+  profit: number;
+  monthly: { month: string; income: number; expense: number }[];
+};
+
+export function fetchEconomyOverview() {
+  return apiFetch<EconomyOverview>(`/api/v1/admin/economy/overview`);
+}
+export function fetchEconomyOperations(params?: { type?: "income" | "expense" | "all"; category?: string }) {
+  const qs = new URLSearchParams();
+  if (params?.type && params.type !== "all") qs.set("type", params.type);
+  if (params?.category) qs.set("category", params.category);
+  const s = qs.toString();
+  return apiFetch<{ items: EconomyOperation[] }>(`/api/v1/admin/economy/operations${s ? `?${s}` : ""}`);
+}
+export function createEconomyOperation(data: {
+  type: "income" | "expense";
+  category: string;
+  amountRub: number;
+  note?: string;
+  occurredAt?: string;
+}) {
+  return apiFetch<EconomyOperation>(`/api/v1/admin/economy/operations`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+export function patchEconomyOperation(id: string, data: Partial<EconomyOperation>) {
+  return apiFetch<EconomyOperation>(`/api/v1/admin/economy/operations/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+}
+export function deleteEconomyOperation(id: string) {
+  return apiFetch<{ ok: true }>(`/api/v1/admin/economy/operations/${id}`, { method: "DELETE" });
+}
+
+export function fetchEconomyCategories() {
+  return apiFetch<{ items: EconomyCategory[] }>(`/api/v1/admin/economy/categories`);
+}
+export function createEconomyCategory(data: { name: string; kind: "income" | "expense" }) {
+  return apiFetch<EconomyCategory>(`/api/v1/admin/economy/categories`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+export function deleteEconomyCategory(id: string) {
+  return apiFetch<{ ok: true }>(`/api/v1/admin/economy/categories/${id}`, { method: "DELETE" });
+}
+
+export function fetchEconomyPartners() {
+  return apiFetch<{ items: EconomyPartner[]; totalShare: number }>(`/api/v1/admin/economy/partners`);
+}
+export function createEconomyPartner(data: { name: string; share: number }) {
+  return apiFetch<EconomyPartner>(`/api/v1/admin/economy/partners`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+export function patchEconomyPartner(id: string, data: { name?: string; share?: number }) {
+  return apiFetch<EconomyPartner>(`/api/v1/admin/economy/partners/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+}
+export function deleteEconomyPartner(id: string) {
+  return apiFetch<{ ok: true }>(`/api/v1/admin/economy/partners/${id}`, { method: "DELETE" });
+}
+
+// ============================================================================
+// SYSTEM SETTINGS
+// ============================================================================
+
+export type SystemSettings = {
+  maintenance: { enabled: boolean; message: string };
+  club: { name: string; contact_email: string; support_url: string };
+  hell_ai: { limit_silver: number; limit_gold: number; limit_platinum: number };
+  admin_alerts: { new_orders: boolean; new_users: boolean };
+};
+
+export function fetchAdminSettings() {
+  return apiFetch<SystemSettings>(`/api/v1/admin/settings/`);
+}
+export function putAdminSetting<K extends keyof SystemSettings>(
+  key: K,
+  value: SystemSettings[K],
+) {
+  return apiFetch(`/api/v1/admin/settings/${key}`, {
+    method: "PUT",
+    body: JSON.stringify(value),
+  });
+}
