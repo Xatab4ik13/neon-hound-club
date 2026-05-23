@@ -292,6 +292,40 @@ function LoadingBlock() {
   );
 }
 
+function ErrorBlock({ error, onRetry }: { error: unknown; onRetry?: () => void }) {
+  const msg = (error as { message?: string })?.message || "Не удалось загрузить данные";
+  return (
+    <div className="mx-3 my-3 rounded-xl border border-red-500/30 bg-red-500/[0.04] p-4">
+      <div className="text-[13px] font-semibold text-red-400">Сервер недоступен</div>
+      <div className="mt-1 text-[12px] text-muted-foreground break-words">{msg}</div>
+      {onRetry && (
+        <button
+          type="button"
+          onClick={onRetry}
+          className="mt-3 inline-flex items-center gap-1.5 rounded-md bg-white/[0.06] px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-wider text-foreground active:opacity-70"
+        >
+          Повторить
+        </button>
+      )}
+    </div>
+  );
+}
+
+function Avatar({ url, size = 64 }: { url: string | null | undefined; size?: number }) {
+  return (
+    <span
+      className="grid shrink-0 place-items-center overflow-hidden rounded-full bg-white/[0.06] text-muted-foreground"
+      style={{ width: size, height: size }}
+    >
+      {url ? (
+        <img src={url} alt="" className="h-full w-full object-cover" />
+      ) : (
+        <User className="h-1/2 w-1/2" />
+      )}
+    </span>
+  );
+}
+
 // ════════════════════════════════════════════════════════════════════
 // PROFILE TAB
 // ════════════════════════════════════════════════════════════════════
