@@ -69,10 +69,23 @@ export async function attachReferral(invitedUserId: string, rawCode: string): Pr
   });
 }
 
-/** Активировать реферала (например, после verify_email) — обоим по билету + XP рефереру. */
+/** Активировать реферала — обоим по билету + XP рефереру.
+ *  Активируем ТОЛЬКО когда у приглашённого заполнен (и нормализован) телефон —
+ *  это защита от мультиаков: фейковые акки без реального номера не приносят бонусов.
+ */
 export async function activateReferral(invitedUserId: string): Promise<void> {
   const [row] = await db.select().from(referrals).where(eq(referrals.invitedUserId, invitedUserId)).limit(1);
   if (!row || row.status === "active") return;
+
+  // Гейт: телефон должен быть подтверждён в profiles.phone_e164
+  const { profiles } = await import("../db/schema/profile.js");
+  const [prof] = await db
+    .select({ phoneE164: profiles.phoneE164 })
+    .from(profiles)
+    .where(eq(profiles.userId, invitedUserId))
+    .limit(1);
+  if (!prof?.phoneE164) return;
+
 
   await db
     .update(referrals)
