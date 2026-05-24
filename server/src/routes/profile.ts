@@ -95,6 +95,31 @@ export async function profileRoutes(app: FastifyInstance) {
     const session = req.user as SessionPayload;
     await ensureProfile(session.sub);
 
+    // Если меняется phone — валидируем формат (российский, 11 цифр с 7/8).
+    if (parsed.data.phone !== undefined && parsed.data.phone !== null) {
+      const digits = parsed.data.phone.replace(/\D/g, "");
+      const normalized =
+        digits.length === 11 && (digits[0] === "7" || digits[0] === "8")
+          ? "7" + digits.slice(1)
+          : null;
+      if (!normalized) {
+        return reply
+          .code(400)
+          .send({ error: "invalid_input", message: "Укажи корректный номер: +7 (XXX) XXX-XX-XX" });
+      }
+      // Проверка уникальности (телефон один на аккаунт — защита от мультиаков).
+      const [dup] = await db
+        .select({ userId: profiles.userId })
+        .from(profiles)
+        .where(and(eq(profiles.phoneE164, normalized), sql`${profiles.userId} <> ${session.sub}`))
+        .limit(1);
+      if (dup) {
+        return reply
+          .code(409)
+          .send({ error: "phone_taken", message: "Этот номер уже привязан к другому аккаунту" });
+      }
+    }
+
     // Если меняется avatarUrl — найдём старый и удалим из S3 после успешного апдейта.
     let oldAvatarToDelete: string | null = null;
     if (parsed.data.avatarUrl !== undefined) {
@@ -108,15 +133,37 @@ export async function profileRoutes(app: FastifyInstance) {
       }
     }
 
-    await db
-      .update(profiles)
-      .set({ ...parsed.data, updatedAt: new Date() })
-      .where(eq(profiles.userId, session.sub));
+    try {
+      await db
+        .update(profiles)
+        .set({ ...parsed.data, updatedAt: new Date() })
+        .where(eq(profiles.userId, session.sub));
+    } catch (e: unknown) {
+      // На случай гонки: уникальный индекс БД поймает дубль.
+      const msg = (e as { message?: string })?.message ?? "";
+      if (msg.includes("profiles_phone_e164_uniq")) {
+        return reply
+          .code(409)
+          .send({ error: "phone_taken", message: "Этот номер уже привязан к другому аккаунту" });
+      }
+      throw e;
+    }
 
     if (oldAvatarToDelete) await deleteByPublicUrl(oldAvatarToDelete);
 
     // Квест: профиль заполнен + есть мото в гараже.
     await tryCompleteQuest(session.sub, "profile_and_bike");
+
+    // Если телефон только что появился — пробуем активировать реферал
+    // (бонусы рефереру идут только за «настоящего» друга с телефоном).
+    if (parsed.data.phone) {
+      try {
+        const { activateReferral } = await import("../lib/referrals.js");
+        await activateReferral(session.sub);
+      } catch (e) {
+        req.log.error({ err: e }, "activateReferral on phone fill failed");
+      }
+    }
 
     return { ok: true };
   });
