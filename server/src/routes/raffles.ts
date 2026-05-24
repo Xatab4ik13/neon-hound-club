@@ -104,9 +104,11 @@ export async function rafflesRoutes(app: FastifyInstance) {
       const status =
         r.code === "not_found"
           ? 404
-          : r.code === "insufficient_tickets" || r.code === "limit_reached"
-            ? 409
-            : 400;
+          : r.code === "phone_required"
+            ? 403
+            : r.code === "insufficient_tickets" || r.code === "limit_reached"
+              ? 409
+              : 400;
       return reply.code(status).send({ error: r.code });
     }
     return reply.code(201).send(r);
