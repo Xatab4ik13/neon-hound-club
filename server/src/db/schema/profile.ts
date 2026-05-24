@@ -26,6 +26,9 @@ export const profiles = pgTable(
       .primaryKey()
       .references(() => users.id, { onDelete: "cascade" }),
     phone: varchar("phone", { length: 32 }),
+    // Нормализованная форма "7XXXXXXXXXX" — поддерживается триггером в БД,
+    // используется для уникальности (анти-мультиак).
+    phoneE164: varchar("phone_e164", { length: 16 }),
     city: varchar("city", { length: 80 }),
     avatarUrl: text("avatar_url"),
     bio: text("bio"),
