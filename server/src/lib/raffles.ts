@@ -22,11 +22,21 @@ export async function enterRaffle(opts: {
   userId: string;
 }): Promise<
   | { ok: true; entryId: string; balance: number }
-  | { ok: false; code: "not_found" | "not_active" | "not_started" | "ended" | "limit_reached" | "insufficient_tickets" }
+  | { ok: false; code: "not_found" | "not_active" | "not_started" | "ended" | "limit_reached" | "insufficient_tickets" | "phone_required" }
 > {
   const [r] = await db.select().from(raffles).where(eq(raffles.id, opts.raffleId)).limit(1);
   if (!r) return { ok: false, code: "not_found" };
   if (r.status !== "active") return { ok: false, code: "not_active" };
+
+  // Анти-мультиак: участвовать можно только с подтверждённым (уникальным в БД) телефоном.
+  const [prof] = await db
+    .select({ phoneE164: profiles.phoneE164 })
+    .from(profiles)
+    .where(eq(profiles.userId, opts.userId))
+    .limit(1);
+  if (!prof?.phoneE164) return { ok: false, code: "phone_required" };
+
+
 
   const now = new Date();
   if (now < r.startsAt) return { ok: false, code: "not_started" };
