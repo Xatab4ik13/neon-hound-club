@@ -96,7 +96,10 @@ const ENTER_ERRORS: Record<string, string> = {
   not_started: "Розыгрыш ещё не начался",
   ended: "Розыгрыш закончился",
   not_found: "Розыгрыш не найден",
+  phone_required: "Укажи номер телефона в профиле — без него участвовать нельзя",
+  phone_taken: "Этот номер уже привязан к другому аккаунту",
 };
+
 
 function RaffleDetailContent({
   raffle,
