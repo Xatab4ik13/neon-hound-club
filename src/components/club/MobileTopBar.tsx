@@ -64,8 +64,6 @@ export function MobileTopBar() {
   // On primary tabs — компактная плашка как на скрине:
   // круглая розовая лапка + капсула HELL/XP + колокольчик.
   if (isTab) {
-    const xp = rank.xp;
-    const xpMax = rank.xpMax;
     return (
       <header
         className="sticky top-0 z-30 border-b border-white/[0.06] bg-background/70 backdrop-blur-2xl backdrop-saturate-150 lg:hidden"
