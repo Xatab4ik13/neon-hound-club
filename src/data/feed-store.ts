@@ -276,6 +276,8 @@ export const feedStore = {
   },
   /** Принудительно перечитать ленту с бэка. */
   refresh: refetch,
+  /** Подгрузить следующую страницу (для infinite scroll). */
+  loadMore,
 
   async addPost(input: { text: string; image?: string; authorSlug: string; poll?: FeedPoll }) {
     await createPost({
