@@ -66,10 +66,67 @@ function ClubFeedPage() {
 export function PostCard({ post, moderate = false }: { post: Post; moderate?: boolean }) {
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const navigate = useNavigate();
   const liked = post.liked;
   const likeCount = post.likes;
   const author = PUBLIC_USERS[post.authorSlug];
   const authorIsBlogger = post.isBlogger;
+
+  const postUrl = typeof window !== "undefined" ? `${window.location.origin}/club/p/${post.id}` : `/club/p/${post.id}`;
+
+  const handleShare = useCallback(async () => {
+    haptic("light");
+    const text = author?.nick ? `${author.nick} — HELLHOUND` : "HELLHOUND";
+    const nav = typeof navigator !== "undefined" ? navigator : null;
+    if (nav && typeof nav.share === "function") {
+      try {
+        await nav.share({ title: text, url: postUrl });
+        return;
+      } catch (e) {
+        // пользователь отменил — молча
+        if ((e as Error)?.name === "AbortError") return;
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(postUrl);
+      hhToast.success("Ссылка скопирована");
+    } catch {
+      hhToast.error("Не удалось скопировать");
+    }
+  }, [postUrl, author?.nick]);
+
+  const openPost = useCallback(() => {
+    navigate({ to: "/club/p/$postId", params: { postId: post.id } });
+  }, [navigate, post.id]);
+
+  // Тап по «свободному» месту карточки → открыть пост.
+  // Игнорируем клики по интерактивным детям (кнопки, ссылки, инпуты, формы).
+  const onCardClick = useCallback((e: React.MouseEvent<HTMLElement>) => {
+    const target = e.target as HTMLElement;
+    if (target.closest("button,a,input,form,textarea,select,[role='button']")) return;
+    openPost();
+  }, [openPost]);
+
+  // Дабл-тап по картинке = лайк (если ещё не лайкнут).
+  const lastImgTap = useRef(0);
+  const onImageTap = useCallback(() => {
+    const now = Date.now();
+    if (now - lastImgTap.current < 280) {
+      if (!liked) {
+        haptic("success");
+        feedStore.toggleLike(post.id, true);
+      }
+      lastImgTap.current = 0;
+    } else {
+      lastImgTap.current = now;
+      // Одиночный тап с задержкой — откроем вьюер, если за это время не пришёл второй.
+      setTimeout(() => {
+        if (lastImgTap.current === now) setViewerOpen(true);
+      }, 290);
+    }
+  }, [liked, post.id]);
+
 
 
   return (
