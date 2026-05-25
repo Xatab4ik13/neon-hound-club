@@ -1011,7 +1011,7 @@ function StickerPanel({
           <SearchIcon size={14} className="text-muted-foreground" />
           <input
             type="text"
-            placeholder={tab === "emoji" ? "Поиск эмодзи" : "Поиск стикеров"}
+            placeholder="Поиск стикеров"
             className="min-w-0 flex-1 bg-transparent text-[13px] text-foreground placeholder:text-muted-foreground/60 outline-none"
           />
         </div>
