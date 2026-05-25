@@ -131,7 +131,7 @@ export function MobileTopBar() {
 
   // Nested routes — iOS-style back chevron + centered title + bell.
   // Suppress rank reference so we don't warn about unused vars on this branch.
-  void rank;
+  void rank; void xp; void xpMax;
 
   return (
     <header
