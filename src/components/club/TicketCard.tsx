@@ -6,6 +6,7 @@
 import { Link } from "@tanstack/react-router";
 import { Ticket } from "lucide-react";
 
+
 function pluralTickets(n: number): string {
   const mod10 = n % 10;
   const mod100 = n % 100;
@@ -97,20 +98,17 @@ export function TicketCard({
           />
         </div>
 
-        {/* «корешок» — только иконка и декоративные точки */}
+        {/* «корешок» — только декоративные точки */}
         <div
-          className="relative z-10 flex shrink-0 flex-col items-center justify-center gap-3 py-5"
+          className="relative z-10 flex shrink-0 flex-col items-center justify-center gap-1.5 py-5"
           style={{ width: STUB_W }}
         >
-          <Ticket className="h-4 w-4 text-primary/80" strokeWidth={1.8} />
-          <div className="flex flex-col gap-1.5">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <span
-                key={i}
-                className="h-1 w-1 rounded-full bg-muted-foreground/40"
-              />
-            ))}
-          </div>
+          {Array.from({ length: 4 }).map((_, i) => (
+            <span
+              key={i}
+              className="h-1 w-1 rounded-full bg-muted-foreground/40"
+            />
+          ))}
         </div>
 
         {/* перфорация — полукруглые вырезы в цвет фона страницы */}
