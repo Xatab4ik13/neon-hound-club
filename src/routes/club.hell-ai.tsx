@@ -863,62 +863,72 @@ function EmptyChat({
   bikeStr,
   onPick,
   disabled,
+  isGuest,
 }: {
   bikeStr: string;
   onPick: (c: Cmd) => void;
   disabled: boolean;
+  isGuest: boolean;
 }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: "easeOut" }}
-      className="flex flex-col items-center px-2 pt-8 text-center"
+      className="flex flex-col items-center px-2 pt-6 text-center"
     >
-      <div className="mb-3 inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
+      <div className="mb-4 inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
         <span className="relative flex h-1.5 w-1.5">
           <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-60" />
           <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary" />
         </span>
         hell ai · online
       </div>
-      <h1 className="bg-gradient-to-r from-foreground to-foreground/40 bg-clip-text font-display text-[26px] font-medium leading-tight tracking-tight text-transparent">
-        Чем помочь по&nbsp;твоему мото?
+      <h1 className="bg-gradient-to-r from-foreground to-foreground/40 bg-clip-text font-display text-[34px] font-black italic uppercase leading-[0.95] tracking-tight text-transparent">
+        Чем помочь<br />по&nbsp;твоему мото?
       </h1>
-      <p className="mt-2 max-w-[280px] text-[13px] text-muted-foreground">
-        Спрашивай про {bikeStr}: затяжка, давление, масло, болячки.
+      <p className="mt-3 max-w-[300px] text-[15px] leading-snug text-muted-foreground">
+        {isGuest
+          ? "AI-механик по твоему байку: моменты затяжки, давление, масла, типичные болячки модели."
+          : <>Спрашивай про {bikeStr}: затяжка, давление, масло, болячки.</>}
       </p>
 
-      <div className="mt-6 w-full">
-        <div className="mb-2 px-1 text-left font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-          быстрый старт
-        </div>
-        <ul className="grid grid-cols-2 gap-2">
-          {COMMANDS.slice(0, 4).map((c) => (
-            <li key={c.prefix}>
-              <button
-                type="button"
-                onClick={() => onPick(c)}
-                disabled={disabled}
-                className="flex w-full items-center gap-2 rounded-2xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5 text-left text-[13px] text-foreground/85 active:scale-[0.97] active:bg-white/[0.06] disabled:opacity-50"
-              >
-                <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-primary/12 text-primary">
-                  {c.icon}
-                </span>
-                <span className="min-w-0">
-                  <span className="block truncate font-medium">{c.label}</span>
-                  <span className="block truncate text-[11px] text-muted-foreground">
-                    {c.description}
+      {!isGuest && (
+        <div className="mt-7 w-full">
+          <div className="mb-2 px-1 text-left font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+            быстрый старт
+          </div>
+          <ul className="space-y-2">
+            {COMMANDS.slice(0, 4).map((c) => (
+              <li key={c.prefix}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    haptic("selection");
+                    onPick(c);
+                  }}
+                  disabled={disabled}
+                  className="flex w-full items-center gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.03] px-3.5 py-3 text-left active:scale-[0.98] active:bg-white/[0.06] disabled:opacity-50"
+                >
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/12 text-primary">
+                    {c.icon}
                   </span>
-                </span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      </div>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-[16px] font-semibold text-foreground">{c.label}</span>
+                    <span className="block text-[13px] text-muted-foreground">
+                      {c.description}
+                    </span>
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </motion.div>
   );
 }
+
 
 function BikeSheet({
   open,
