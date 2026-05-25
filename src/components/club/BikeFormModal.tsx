@@ -425,7 +425,7 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
 
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={requestClose}>
       <DialogContent className="max-h-[92vh] overflow-y-auto border-white/[0.08] bg-[#0b0b0b] sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle className="font-display text-xl font-black uppercase italic tracking-tight">
