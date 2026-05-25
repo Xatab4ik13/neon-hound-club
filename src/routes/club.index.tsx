@@ -295,6 +295,7 @@ export function PostCard({ post, moderate = false }: { post: Post; moderate?: bo
 
         <button
           type="button"
+          onClick={handleShare}
           aria-label="Поделиться"
           className="ml-auto grid h-9 w-9 place-items-center rounded-full border border-white/[0.08] bg-white/[0.04] text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary active:scale-95"
         >
