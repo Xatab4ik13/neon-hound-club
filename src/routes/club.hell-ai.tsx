@@ -289,6 +289,22 @@ function formatRelative(ts: number): string {
   return new Date(ts).toLocaleDateString("ru-RU", { day: "2-digit", month: "short" });
 }
 
+function formatDayGroup(ts: number): string {
+  const d = new Date(ts);
+  const today = new Date();
+  const yest = new Date();
+  yest.setDate(today.getDate() - 1);
+  const same = (a: Date, b: Date) =>
+    a.getDate() === b.getDate() &&
+    a.getMonth() === b.getMonth() &&
+    a.getFullYear() === b.getFullYear();
+  if (same(d, today)) return "Сегодня";
+  if (same(d, yest)) return "Вчера";
+  const diffDays = Math.floor((today.getTime() - d.getTime()) / 86400000);
+  if (diffDays < 7) return d.toLocaleDateString("ru-RU", { weekday: "long" });
+  return d.toLocaleDateString("ru-RU", { day: "2-digit", month: "long" });
+}
+
 function HellAiMobile() {
   const {
     bikes,
