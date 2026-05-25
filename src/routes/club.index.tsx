@@ -194,15 +194,39 @@ export function PostCard({ post, moderate = false }: { post: Post; moderate?: bo
           }}
         />
 
-        <PostAction
-          icon={<CommentIcon />}
-          count={post.comments.length}
-          label="Комментарий"
+      <div className="flex items-center gap-2 px-4 py-3 md:px-5">
+        <button
+          type="button"
+          onClick={() => feedStore.toggleLike(post.id, !liked)}
+          aria-label="Лайк"
+          aria-pressed={liked}
+          className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 font-mono text-[12px] font-bold tabular-nums transition-all active:scale-95 ${
+            liked
+              ? "bg-primary text-primary-foreground shadow-[0_4px_14px_rgba(255,45,149,0.35)]"
+              : "border border-white/[0.08] bg-white/[0.04] text-foreground hover:border-primary/40 hover:text-primary"
+          }`}
+        >
+          <Heart className="h-4 w-4" fill={liked ? "currentColor" : "none"} strokeWidth={2} />
+          <span>{formatCount(likeCount)}</span>
+        </button>
+
+        <button
+          type="button"
           onClick={() => setCommentsOpen(true)}
-        />
-        <div className="ml-auto">
-          <PostAction icon={<ShareIcon />} label="Поделиться" compact />
-        </div>
+          aria-label="Комментарий"
+          className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 font-mono text-[12px] font-bold tabular-nums text-foreground transition-all hover:border-primary/40 hover:text-primary active:scale-95"
+        >
+          <MessageCircle className="h-4 w-4" strokeWidth={2} />
+          <span>{formatCount(post.comments.length)}</span>
+        </button>
+
+        <button
+          type="button"
+          aria-label="Поделиться"
+          className="ml-auto grid h-9 w-9 place-items-center rounded-full border border-white/[0.08] bg-white/[0.04] text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary active:scale-95"
+        >
+          <Share2 className="h-4 w-4" strokeWidth={2} />
+        </button>
       </div>
 
       <CommentsPreview
