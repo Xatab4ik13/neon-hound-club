@@ -74,6 +74,13 @@ function GaragePage() {
 
   const bikes = useMemo(() => (bikesQ.data ?? []).map(toStored), [bikesQ.data]);
 
+  // Префетч списка мото-марок NHTSA, чтобы при открытии модалки
+  // комбобокс уже был тёплый. Внутри есть localStorage-кеш на 30 дней.
+  useEffect(() => {
+    void getMotorcycleMakes();
+  }, []);
+
+
   if (hydrated && !isAuthed) {
     return (
       <main className="mx-auto w-full max-w-2xl px-4 py-16 text-center">
