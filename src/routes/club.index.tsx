@@ -650,26 +650,49 @@ function CommentsSheet({
 
   const stripReplyPrefix = (text: string) => text.replace(/^@\S+\s+/, "");
 
-  const renderItem = (c: Comment, isReply = false) => (
-    <CommentItem
-      key={c.id}
-      comment={isReply ? { ...c, text: stripReplyPrefix(c.text) } : c}
-      large
-      onReply={() =>
-        setReplyTo({
-          nick: PUBLIC_USERS[c.authorSlug]?.nick ?? c.authorSlug,
-          commentId: c.id,
-        })
-      }
-      onDelete={
-        moderate
-          ? () => {
-              if (confirm("Удалить комментарий?")) feedStore.removeComment(post.id, c.id);
-            }
-          : undefined
-      }
-    />
-  );
+  const renderItem = (c: Comment, isReply = false) => {
+    const isMine = c.authorSlug === ME_SLUG;
+    const canDelete = isMine || moderate;
+    const onDelete = canDelete
+      ? () => {
+          if (confirm("Удалить комментарий?")) feedStore.removeComment(post.id, c.id);
+        }
+      : undefined;
+
+    const item = (
+      <CommentItem
+        key={c.id}
+        comment={isReply ? { ...c, text: stripReplyPrefix(c.text) } : c}
+        large
+        onReply={() =>
+          setReplyTo({
+            nick: PUBLIC_USERS[c.authorSlug]?.nick ?? c.authorSlug,
+            commentId: c.id,
+          })
+        }
+        onDelete={moderate ? onDelete : undefined}
+      />
+    );
+
+    if (!canDelete) return item;
+
+    return (
+      <Swipeable
+        key={c.id}
+        radius={12}
+        left={{
+          icon: <Trash2 className="h-4 w-4" />,
+          label: "Удалить",
+          bg: "linear-gradient(90deg, oklch(0.4 0.18 27) 0%, oklch(0.5 0.22 27) 100%)",
+          onAction: () => {
+            if (confirm("Удалить комментарий?")) feedStore.removeComment(post.id, c.id);
+          },
+        }}
+      >
+        {item}
+      </Swipeable>
+    );
+  };
 
   return (
     <IOSSheet
