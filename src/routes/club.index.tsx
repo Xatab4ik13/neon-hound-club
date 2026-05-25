@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useRef, useState, useCallback } from "react";
-import { Smile, Paperclip, Send, Search as SearchIcon, Clock, Sticker, X, Pin, PinOff, Trash2, BarChart3, Share2, MessageCircle, Heart } from "lucide-react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { Smile, Send, Search as SearchIcon, Clock, Sticker, X, Pin, PinOff, Trash2, BarChart3, Share2, MessageCircle, Heart } from "lucide-react";
 import { RANKS, type RankId } from "@/data/ranks";
 import { ME_SLUG, PUBLIC_USERS } from "@/data/users";
 import { useFeedPosts, feedStore, type FeedComment, type FeedPost, type FeedPoll } from "@/data/feed-store";
@@ -459,6 +459,7 @@ function CommentsSheet({
   moderate?: boolean;
 }) {
   const [replyTo, setReplyTo] = useState<{ nick: string; commentId: string } | null>(null);
+  const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set());
   const listRef = useRef<HTMLDivElement>(null);
 
   // сбросить reply при закрытии
@@ -474,6 +475,62 @@ function CommentsSheet({
     }
     lastCount.current = post.comments.length;
   }, [post.comments.length]);
+
+  // Группировка ответов: ответ = коммент, начинающийся с "@<nick> "
+  const { topLevel, childrenByParentId } = useMemo<{
+    topLevel: Comment[];
+    childrenByParentId: Map<string, Comment[]>;
+  }>(() => {
+    const childrenByParentId = new Map<string, Comment[]>();
+    const topLevel: Comment[] = [];
+    const nickToLatest = new Map<string, string>(); // nick(lower) -> commentId
+    for (const c of post.comments) {
+      const m = c.text.match(/^@(\S+)\s/);
+      const parentId = m ? nickToLatest.get(m[1].toLowerCase()) : undefined;
+      if (parentId) {
+        const arr = childrenByParentId.get(parentId) ?? [];
+        arr.push(c);
+        childrenByParentId.set(parentId, arr);
+      } else {
+        topLevel.push(c);
+      }
+      const nick = PUBLIC_USERS[c.authorSlug]?.nick;
+      if (nick) nickToLatest.set(nick.toLowerCase(), c.id);
+    }
+    return { topLevel, childrenByParentId };
+  }, [post.comments]);
+
+  const toggleCollapse = (id: string) => {
+    setCollapsed((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const stripReplyPrefix = (text: string) => text.replace(/^@\S+\s+/, "");
+
+  const renderItem = (c: Comment, isReply = false) => (
+    <CommentItem
+      key={c.id}
+      comment={isReply ? { ...c, text: stripReplyPrefix(c.text) } : c}
+      large
+      onReply={() =>
+        setReplyTo({
+          nick: PUBLIC_USERS[c.authorSlug]?.nick ?? c.authorSlug,
+          commentId: c.id,
+        })
+      }
+      onDelete={
+        moderate
+          ? () => {
+              if (confirm("Удалить комментарий?")) feedStore.removeComment(post.id, c.id);
+            }
+          : undefined
+      }
+    />
+  );
 
   return (
     <IOSSheet
@@ -491,26 +548,34 @@ function CommentsSheet({
             </div>
           ) : (
             <ul className="space-y-5">
-              {post.comments.map((c) => (
-                <CommentItem
-                  key={c.id}
-                  comment={c}
-                  large
-                  onReply={() =>
-                    setReplyTo({
-                      nick: PUBLIC_USERS[c.authorSlug]?.nick ?? c.authorSlug,
-                      commentId: c.id,
-                    })
-                  }
-                  onDelete={
-                    moderate
-                      ? () => {
-                          if (confirm("Удалить комментарий?")) feedStore.removeComment(post.id, c.id);
-                        }
-                      : undefined
-                  }
-                />
-              ))}
+              {topLevel.map((c) => {
+                const children = childrenByParentId.get(c.id) ?? [];
+                const isCollapsed = collapsed.has(c.id);
+                return (
+                  <li key={c.id} className="space-y-3">
+                    <ul>{renderItem(c)}</ul>
+                    {children.length > 0 && (
+                      <div className="pl-12">
+                        <button
+                          type="button"
+                          onClick={() => toggleCollapse(c.id)}
+                          className="mb-2 inline-flex items-center gap-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground/70 transition-colors hover:text-foreground"
+                        >
+                          <span className="h-px w-6 bg-white/15" />
+                          {isCollapsed
+                            ? `Показать ответы · ${children.length}`
+                            : `Скрыть ответы · ${children.length}`}
+                        </button>
+                        {!isCollapsed && (
+                          <ul className="space-y-4">
+                            {children.map((child) => renderItem(child, true))}
+                          </ul>
+                        )}
+                      </div>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>
@@ -920,25 +985,19 @@ function CommentComposer({
         }}
         className="flex items-end gap-2 px-3 py-2.5"
       >
-        {meIsBlogger ? (
-          <HellhoundAvatar size={32} initials={meInitials} avatarUrl={meAvatar} />
-        ) : (
-          <RankAvatar initials={meInitials} rankId={meRank} avatarUrl={meAvatar} size={32} />
-        )}
-
         <div className="flex min-w-0 flex-1 items-center gap-1 rounded-3xl border border-white/[0.08] bg-black/60 pl-2 pr-1 py-1 focus-within:border-primary/40">
           <button
             type="button"
             onClick={() => {
-              if (panel === "emoji") {
+              if (panel === "stickers") {
                 setPanel(null);
               } else {
-                setPanel("emoji");
-                setTab("emoji");
+                setPanel("stickers");
+                setTab("stickers");
               }
             }}
             className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-muted-foreground hover:text-foreground"
-            aria-label="Эмодзи и стикеры"
+            aria-label="Стикеры"
           >
             <Smile size={20} strokeWidth={1.6} />
           </button>
@@ -952,14 +1011,6 @@ function CommentComposer({
             placeholder={replyTo ? `Ответить @${replyTo.nick}…` : "Написать комментарий…"}
             className="min-w-0 flex-1 bg-transparent px-1 py-1.5 text-[14px] text-foreground placeholder:text-muted-foreground/60 outline-none"
           />
-
-          <button
-            type="button"
-            className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-muted-foreground hover:text-foreground"
-            aria-label="Прикрепить"
-          >
-            <Paperclip size={18} strokeWidth={1.6} />
-          </button>
         </div>
 
         {disabled ? (
@@ -1025,7 +1076,7 @@ function StickerPanel({
           <SearchIcon size={14} className="text-muted-foreground" />
           <input
             type="text"
-            placeholder={tab === "emoji" ? "Поиск эмодзи" : "Поиск стикеров"}
+            placeholder="Поиск стикеров"
             className="min-w-0 flex-1 bg-transparent text-[13px] text-foreground placeholder:text-muted-foreground/60 outline-none"
           />
         </div>
@@ -1091,22 +1142,9 @@ function StickerPanel({
               )}
             </div>
           </>
-        ) : tab === "emoji" ? (
-          <div className={`grid gap-1 pt-1 ${large ? "grid-cols-6 sm:grid-cols-7" : "grid-cols-7 sm:grid-cols-8"}`}>
-            {"😀 😁 😂 🤣 😊 😍 😎 🤘 🔥 💀 🏁 🏍️ ⚙️ 🛠️ 🏆 ⚡ 💯 👀 👍 🙏 🤝 🫡 😤 🥶 😅 😉 🥰 😘 🤔 🙄 😴 🤯".split(" ").map((e, i) => (
-              <button
-                key={i}
-                type="button"
-                onClick={() => onPickEmoji(e)}
-                className={`grid aspect-square place-items-center rounded-lg transition-transform active:scale-90 hover:bg-white/[0.05] ${large ? "text-4xl" : "text-[26px]"}`}
-              >
-                {e}
-              </button>
-            ))}
-          </div>
         ) : recent.length === 0 ? (
           <div className="grid h-full place-items-center px-6 text-center text-[12px] text-muted-foreground/60">
-            Здесь появятся стикеры и эмодзи, которые ты используешь
+            Здесь появятся стикеры, которые ты используешь
           </div>
         ) : (
           <div className={`grid gap-1 pt-1 ${large ? "grid-cols-4 sm:grid-cols-5" : "grid-cols-5 sm:grid-cols-6"}`}>
@@ -1139,13 +1177,9 @@ function StickerPanel({
           onClick={() => setTab("recent")}
           icon={<Clock size={18} />}
         />
-        <PanelTab
-          active={tab === "emoji"}
-          onClick={() => setTab("emoji")}
-          icon={<Smile size={18} />}
-        />
 
         <div className="mx-1 h-5 w-px bg-white/[0.08]" />
+
 
         <div className="flex flex-1 items-center gap-0.5 overflow-x-auto scrollbar-none">
           {STICKER_PACKS.map((p) => {
