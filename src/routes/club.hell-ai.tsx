@@ -581,82 +581,108 @@ function HellAiMobile() {
       </div>
 
 
-      {/* липкий композер */}
-      <div
-        className="fixed inset-x-0 z-30 border-t border-white/[0.06] bg-background/85 backdrop-blur-xl"
-        style={{ bottom: composerOffset }}
-      >
-        {/* квота */}
-        <div className="flex items-center justify-between px-4 pb-1.5 pt-2">
-          <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-            {tierLabel} ·{" "}
-            <span className="tabular-nums text-foreground/70">
-              {isUnlimited ? "∞" : `${used}/${quota}`}
-            </span>
-          </span>
-          {!canAsk && !isGuest && (
-            <span className="font-mono text-[10px] uppercase tracking-wider text-red-400/80">
-              {!activeBike && !isStaff ? "добавь байк" : "лимит"}
-            </span>
-          )}
+      {/* липкий композер / CTA для гостя */}
+      {isGuest ? (
+        <div
+          className="fixed inset-x-0 z-30 border-t border-white/[0.06] bg-background/90 backdrop-blur-xl"
+          style={{ bottom: composerOffset }}
+        >
+          <div className="px-4 pb-3 pt-3">
+            <Link
+              to="/club/hell-pass"
+              onClick={() => haptic("light")}
+              className="flex h-14 w-full items-center justify-between rounded-2xl bg-primary px-5 text-primary-foreground shadow-[0_8px_24px_-8px_color-mix(in_oklab,var(--primary)_70%,transparent)] active:scale-[0.98] transition-transform"
+            >
+              <span className="flex items-center gap-3">
+                <Sparkles className="h-5 w-5" />
+                <span className="text-[17px] font-semibold">Активировать Hell Pass</span>
+              </span>
+              <ArrowRight className="h-5 w-5" />
+            </Link>
+            <p className="mt-2 px-1 text-center text-[13px] text-muted-foreground">
+              AI-механик по твоему мото · 20/100/∞ вопросов на 30 дней
+            </p>
+          </div>
         </div>
+      ) : (
+        <div
+          className="fixed inset-x-0 z-30 border-t border-white/[0.06] bg-background/85 backdrop-blur-xl"
+          style={{ bottom: composerOffset }}
+        >
+          {/* квота */}
+          <div className="flex items-center justify-between px-4 pb-1.5 pt-2">
+            <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+              {tierLabel} ·{" "}
+              <span className="tabular-nums text-foreground/70">
+                {isUnlimited ? "∞" : `${used}/${quota}`}
+              </span>
+            </span>
+            {!canAsk && (
+              <span className="font-mono text-[10px] uppercase tracking-wider text-red-400/80">
+                {!activeBike && !isStaff ? "добавь байк" : "лимит"}
+              </span>
+            )}
+          </div>
 
-        <div className="flex items-end gap-2 px-3 pb-2">
-          <button
-            type="button"
-            onClick={() => setCmdSheetOpen(true)}
-            className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/[0.08] bg-white/[0.03] text-muted-foreground active:scale-95"
-            aria-label="команды"
-          >
-            <Plus className="h-[18px] w-[18px]" />
-          </button>
-
-          <div className="flex min-w-0 flex-1 items-end rounded-[22px] border border-white/[0.08] bg-white/[0.03]">
-            <textarea
-              ref={taRef}
-              value={value}
-              onChange={(e) => {
-                setValue(e.target.value);
-                adjust();
+          <div className="flex items-end gap-2 px-3 pb-2">
+            <button
+              type="button"
+              onClick={() => {
+                haptic("selection");
+                setCmdSheetOpen(true);
               }}
-              onKeyDown={onKey}
-              disabled={!canAsk}
-              rows={1}
-              placeholder={
-                isGuest
-                  ? "Hell AI доступен с Hell Pass"
-                  : !activeBike && !isStaff
+              className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/[0.08] bg-white/[0.03] text-muted-foreground active:scale-95"
+              aria-label="команды"
+            >
+              <Plus className="h-[20px] w-[20px]" />
+            </button>
+
+            <div className="flex min-w-0 flex-1 items-end rounded-[22px] border border-white/[0.08] bg-white/[0.03]">
+              <textarea
+                ref={taRef}
+                value={value}
+                onChange={(e) => {
+                  setValue(e.target.value);
+                  adjust();
+                }}
+                onKeyDown={onKey}
+                disabled={!canAsk}
+                rows={1}
+                placeholder={
+                  !activeBike && !isStaff
                     ? "добавь байк в гараж"
                     : !canAsk
                       ? "лимит на месяц исчерпан"
                       : `спроси про ${bikeStr}…`
-              }
-              className="min-h-[40px] w-full resize-none border-none bg-transparent px-3.5 py-2.5 text-[15px] leading-snug text-foreground placeholder:text-muted-foreground/45 focus:outline-none disabled:cursor-not-allowed"
-              style={{ overflow: "hidden" }}
-            />
-          </div>
+                }
+                className="min-h-[44px] w-full resize-none border-none bg-transparent px-3.5 py-2.5 text-[17px] leading-snug text-foreground placeholder:text-muted-foreground/45 focus:outline-none disabled:cursor-not-allowed"
+                style={{ overflow: "hidden" }}
+              />
+            </div>
 
-          <motion.button
-            type="button"
-            onClick={send}
-            whileTap={{ scale: 0.92 }}
-            disabled={isThinking || !value.trim() || !canAsk}
-            className={cn(
-              "grid h-9 w-9 shrink-0 place-items-center rounded-full transition-colors",
-              value.trim() && canAsk
-                ? "bg-primary text-primary-foreground shadow-[0_4px_14px_-4px_color-mix(in_oklab,var(--primary)_60%,transparent)]"
-                : "bg-white/[0.06] text-muted-foreground",
-            )}
-            aria-label="Отправить"
-          >
-            {isThinking ? (
-              <LoaderIcon className="h-[18px] w-[18px] animate-spin" />
-            ) : (
-              <SendIcon className="h-[16px] w-[16px]" />
-            )}
-          </motion.button>
+            <motion.button
+              type="button"
+              onClick={send}
+              whileTap={{ scale: 0.9 }}
+              disabled={isThinking || !value.trim() || !canAsk}
+              className={cn(
+                "grid h-10 w-10 shrink-0 place-items-center rounded-full transition-colors",
+                value.trim() && canAsk
+                  ? "bg-primary text-primary-foreground shadow-[0_4px_14px_-4px_color-mix(in_oklab,var(--primary)_60%,transparent)]"
+                  : "bg-white/[0.06] text-muted-foreground",
+              )}
+              aria-label="Отправить"
+            >
+              {isThinking ? (
+                <LoaderIcon className="h-[20px] w-[20px] animate-spin" />
+              ) : (
+                <SendIcon className="h-[18px] w-[18px]" />
+              )}
+            </motion.button>
+          </div>
         </div>
-      </div>
+      )}
+
 
       {/* sheet: выбор байка */}
       <BikeSheet
