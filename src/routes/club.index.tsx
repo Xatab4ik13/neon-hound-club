@@ -920,25 +920,19 @@ function CommentComposer({
         }}
         className="flex items-end gap-2 px-3 py-2.5"
       >
-        {meIsBlogger ? (
-          <HellhoundAvatar size={32} initials={meInitials} avatarUrl={meAvatar} />
-        ) : (
-          <RankAvatar initials={meInitials} rankId={meRank} avatarUrl={meAvatar} size={32} />
-        )}
-
         <div className="flex min-w-0 flex-1 items-center gap-1 rounded-3xl border border-white/[0.08] bg-black/60 pl-2 pr-1 py-1 focus-within:border-primary/40">
           <button
             type="button"
             onClick={() => {
-              if (panel === "emoji") {
+              if (panel === "stickers") {
                 setPanel(null);
               } else {
-                setPanel("emoji");
-                setTab("emoji");
+                setPanel("stickers");
+                setTab("stickers");
               }
             }}
             className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-muted-foreground hover:text-foreground"
-            aria-label="Эмодзи и стикеры"
+            aria-label="Стикеры"
           >
             <Smile size={20} strokeWidth={1.6} />
           </button>
@@ -952,14 +946,6 @@ function CommentComposer({
             placeholder={replyTo ? `Ответить @${replyTo.nick}…` : "Написать комментарий…"}
             className="min-w-0 flex-1 bg-transparent px-1 py-1.5 text-[14px] text-foreground placeholder:text-muted-foreground/60 outline-none"
           />
-
-          <button
-            type="button"
-            className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-muted-foreground hover:text-foreground"
-            aria-label="Прикрепить"
-          >
-            <Paperclip size={18} strokeWidth={1.6} />
-          </button>
         </div>
 
         {disabled ? (
