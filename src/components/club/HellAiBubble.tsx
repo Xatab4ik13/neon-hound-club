@@ -38,7 +38,7 @@ export function HellAiBubble({ role, content, error, onRegenerate, meta }: Props
     clearTimer();
     timerRef.current = window.setTimeout(() => {
       if (!movedRef.current) {
-        haptic("medium");
+        haptic("selection");
         setSheetOpen(true);
       }
     }, 450);
