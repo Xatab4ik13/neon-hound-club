@@ -6,6 +6,7 @@
 import { Link } from "@tanstack/react-router";
 import { Ticket } from "lucide-react";
 
+
 function pluralTickets(n: number): string {
   const mod10 = n % 10;
   const mod100 = n % 100;
