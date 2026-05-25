@@ -482,8 +482,20 @@ function HellAiMobile() {
     setUsedDelta((n) => n + 1);
     const ctrl = new AbortController();
     abortRef.current = ctrl;
-    askHellAi(text, activeBike?.id, chatId, ctrl.signal)
+
+    const onDelta = (chunk: string) => {
+      updateChat(chatId, (c) => ({
+        ...c,
+        messages: c.messages.map((m) =>
+          m.id === msgId ? { ...m, a: (m.a ?? "") + chunk, error: false } : m,
+        ),
+        updatedAt: Date.now(),
+      }));
+    };
+
+    streamHellAi(text, activeBike?.id, chatId, onDelta, ctrl.signal)
       .then((a) => {
+        // на всякий случай синхронизируем итоговый текст
         updateChat(chatId, (c) => ({
           ...c,
           messages: c.messages.map((m) => (m.id === msgId ? { ...m, a, error: false } : m)),
@@ -497,7 +509,6 @@ function HellAiMobile() {
           (err instanceof DOMException && err.name === "AbortError") ||
           (typeof err === "object" && err !== null && (err as { name?: string }).name === "AbortError");
         if (aborted) {
-          // отменили — убираем pending-сообщение из чата целиком
           updateChat(chatId, (c) => ({
             ...c,
             messages: c.messages.filter((m) => m.id !== msgId),
