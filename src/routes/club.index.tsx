@@ -256,15 +256,21 @@ export function PostCard({ post, moderate = false }: { post: Post; moderate?: bo
 
       {post.image && (
         <div className="px-3 pb-3">
-          <div className="overflow-hidden rounded-[16px] border border-white/[0.05] bg-black">
+          <button
+            type="button"
+            onClick={onImageTap}
+            aria-label="Открыть картинку"
+            className="block w-full overflow-hidden rounded-[16px] border border-white/[0.05] bg-black active:opacity-95"
+          >
             <img
               src={post.image}
               alt=""
               loading="lazy"
               decoding="async"
-              className="aspect-[16/9] w-full object-cover"
+              draggable={false}
+              className="aspect-[16/9] w-full select-none object-cover"
             />
-          </div>
+          </button>
         </div>
       )}
 
