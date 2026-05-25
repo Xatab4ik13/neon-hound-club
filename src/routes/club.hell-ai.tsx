@@ -518,7 +518,12 @@ function HellAiMobile() {
   }
 
   // высота композера ≈ 56 + textarea, плюс таб-бар 52 + safe-area
-  const composerOffset = "calc(64px + env(safe-area-inset-bottom))";
+  // на iOS клавиатура поднимает композер над виртуальной клавиатурой (visualViewport),
+  // на десктопе/Android keyboardOffset = 0 и работает обычный bottom-таб-бар.
+  const composerOffset =
+    keyboardOffset > 0
+      ? `${keyboardOffset}px`
+      : "calc(64px + env(safe-area-inset-bottom))";
 
   return (
     <div className="relative flex min-h-[calc(100vh-3.25rem)] flex-col">
