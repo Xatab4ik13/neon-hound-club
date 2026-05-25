@@ -4,7 +4,7 @@
 // Сверху — лёгкая глянцевая засветка и медленный «шиммер» в стиле iOS.
 
 import { Link } from "@tanstack/react-router";
-import { ArrowUpRight, Ticket } from "lucide-react";
+import { Ticket } from "lucide-react";
 
 function pluralTickets(n: number): string {
   const mod10 = n % 10;
