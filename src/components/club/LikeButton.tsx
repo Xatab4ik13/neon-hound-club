@@ -73,7 +73,7 @@ export function LikeButton({ liked, count, onToggle, onReact }: Props) {
     clearLong();
     longPressTimer.current = setTimeout(() => {
       longPressed.current = true;
-      haptic("medium");
+      haptic("success");
       setBarOpen(true);
     }, 380);
   }, []);
