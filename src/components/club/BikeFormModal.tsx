@@ -301,14 +301,14 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
                   addMod();
                 }
               }}
-              placeholder="Akrapovič, Pazzo levers... (Enter)"
-              className="border-white/[0.08] bg-black/30"
+              placeholder="Akrapovič, Pazzo levers..."
+              className="h-11 border-white/[0.08] bg-black/30 text-base"
             />
             <button
               type="button"
               onClick={addMod}
               disabled={!modInput.trim()}
-              className="border border-white/[0.08] bg-black/30 px-3 font-mono text-[11px] uppercase tracking-wider text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary disabled:opacity-40"
+              className="h-11 shrink-0 border border-white/[0.08] bg-black/30 px-4 font-mono text-[11px] uppercase tracking-wider text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary disabled:opacity-40"
             >
               + Добавить
             </button>
@@ -318,16 +318,16 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
               {mods.map((m) => (
                 <span
                   key={m}
-                  className="inline-flex items-center gap-1 border border-primary/30 bg-primary/[0.06] px-2 py-1 font-mono text-[10px] uppercase tracking-wider text-primary"
+                  className="inline-flex items-center gap-0.5 border border-primary/30 bg-primary/[0.06] py-1 pl-2.5 pr-1 font-mono text-[11px] uppercase tracking-wider text-primary"
                 >
                   {m}
                   <button
                     type="button"
                     onClick={() => removeMod(m)}
                     aria-label={`Удалить ${m}`}
-                    className="opacity-60 hover:opacity-100"
+                    className="flex h-7 w-7 items-center justify-center opacity-60 active:opacity-100"
                   >
-                    <X className="h-3 w-3" />
+                    <X className="h-3.5 w-3.5" />
                   </button>
                 </span>
               ))}
