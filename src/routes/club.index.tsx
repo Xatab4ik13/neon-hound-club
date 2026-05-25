@@ -39,12 +39,14 @@ function ClubFeedPage() {
   return (
     <main className="mx-auto w-full max-w-[640px] px-3 py-5 md:px-4 md:py-10">
       <div className="mb-4 flex items-center justify-between px-2">
-        <h1 className="font-display text-lg font-black uppercase italic tracking-tight text-foreground">
+        <h1 className="font-display text-[34px] font-black uppercase italic leading-none tracking-tight text-foreground md:text-3xl">
           Лента
         </h1>
       </div>
 
-      <FeedHeroCarousel />
+      <div className="md:hidden">
+        <FeedHeroCarousel />
+      </div>
 
       <div className="space-y-5">
         {posts.map((post) => (
