@@ -1,5 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { getMotorcycleMakes } from "@/lib/nhtsa";
+
 import { BikeFormModal } from "@/components/club/BikeFormModal";
 import { MobileGarage } from "@/components/club/MobileGarage";
 import { type StoredBike } from "@/data/bike-storage";
