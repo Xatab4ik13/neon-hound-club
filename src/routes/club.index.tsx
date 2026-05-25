@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { Smile, Send, Search as SearchIcon, Clock, Sticker, X, Pin, PinOff, Trash2, BarChart3, Share2, MessageCircle, Heart } from "lucide-react";
 import { RANKS, type RankId } from "@/data/ranks";
 import { ME_SLUG, PUBLIC_USERS } from "@/data/users";
-import { useFeedPosts, feedStore, type FeedComment, type FeedPost, type FeedPoll } from "@/data/feed-store";
+import { useFeedPosts, useFeedLoaded, feedStore, type FeedComment, type FeedPost, type FeedPoll } from "@/data/feed-store";
 import { HellhoundAvatar, HellhoundChip } from "@/components/club/HellhoundPlaque";
 import { IOSSheet } from "@/components/ios/IOSSheet";
 import { useMyProfile } from "@/lib/garage-api";
