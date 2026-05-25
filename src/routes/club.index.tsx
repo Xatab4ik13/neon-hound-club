@@ -292,7 +292,9 @@ export function PostCard({ post, moderate = false }: { post: Post; moderate?: bo
           liked={liked}
           count={likeCount}
           onToggle={(next: boolean) => feedStore.toggleLike(post.id, next)}
+          onReact={(r) => reactionsStore.set(post.id, r)}
         />
+
 
 
         <button
