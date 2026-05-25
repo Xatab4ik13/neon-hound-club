@@ -6,7 +6,7 @@ import { useCurrentRank } from "@/data/rank-state";
 import { useCart } from "@/hooks/use-cart";
 import { haptic } from "@/hooks/use-haptic";
 import { useScrollCollapse } from "@/hooks/use-scroll-collapse";
-import { ProfilePlaque } from "@/routes/club";
+
 import { NotificationsSheet } from "./NotificationsSheet";
 
 
