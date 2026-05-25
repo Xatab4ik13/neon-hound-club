@@ -204,6 +204,85 @@ async function askHellAi(
   return res.answer;
 }
 
+// Стриминговый вариант: вызывает onDelta на каждую токен-порцию.
+// Возвращает полный ответ. Бросает ApiError при HTTP-ошибке, AbortError при отмене.
+async function streamHellAi(
+  question: string,
+  bikeId: string | undefined,
+  chatId: string | undefined,
+  onDelta: (chunk: string) => void,
+  signal?: AbortSignal,
+): Promise<string> {
+  const { BACKEND_URL } = await import("@/lib/api");
+  const res = await fetch(`${BACKEND_URL}/api/v1/hell-ai/ask-stream`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json", Accept: "text/event-stream" },
+    body: JSON.stringify({ question, bikeId, chatId }),
+    signal,
+  });
+  if (!res.ok || !res.body) {
+    const text = await res.text().catch(() => "");
+    let code = "request_failed";
+    let message = res.statusText;
+    try {
+      const j = JSON.parse(text);
+      code = j?.error ?? code;
+      message = j?.message ?? message;
+    } catch { /* noop */ }
+    throw new ApiError(res.status, code, message);
+  }
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buf = "";
+  let answer = "";
+  let errorMessage: string | null = null;
+  let aborted = false;
+
+  try {
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+      let sep: number;
+      while ((sep = buf.indexOf("\n\n")) !== -1) {
+        const raw = buf.slice(0, sep);
+        buf = buf.slice(sep + 2);
+        let event = "message";
+        let dataStr = "";
+        for (const ln of raw.split("\n")) {
+          if (ln.startsWith("event:")) event = ln.slice(6).trim();
+          else if (ln.startsWith("data:")) dataStr += (dataStr ? "\n" : "") + ln.slice(5).trim();
+        }
+        if (!dataStr) continue;
+        let data: { t?: string; message?: string; aborted?: boolean } = {};
+        try { data = JSON.parse(dataStr); } catch { continue; }
+        if (event === "delta" && typeof data.t === "string") {
+          answer += data.t;
+          onDelta(data.t);
+        } else if (event === "error") {
+          errorMessage = data.message ?? "AI временно недоступен";
+          aborted = !!data.aborted;
+        } else if (event === "done") {
+          // финал
+        }
+      }
+    }
+  } finally {
+    try { reader.releaseLock(); } catch { /* noop */ }
+  }
+
+  if (errorMessage) {
+    if (aborted) {
+      const e = new DOMException(errorMessage, "AbortError");
+      throw e;
+    }
+    throw new ApiError(502, "ai_failed", errorMessage);
+  }
+  return answer;
+}
+
 function errorToMessage(err: unknown): string {
   if (err instanceof ApiError) {
     if (err.status === 401) return "Войди в аккаунт, чтобы пользоваться Hell AI.";
