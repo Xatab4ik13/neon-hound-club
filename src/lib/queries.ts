@@ -386,6 +386,34 @@ export async function createOrder(input: CreateOrderInput) {
   });
 }
 
+// ---------- PAYMENTS (T-Bank) ----------
+
+export type PaymentStatus = "new" | "pending" | "authorized" | "confirmed" | "rejected" | "refunded";
+
+export async function initOrderPayment(orderId: string) {
+  return apiFetch<{ paymentId: string; paymentUrl: string }>(
+    `/api/v1/payments/order/${orderId}/init`,
+    { method: "POST" },
+  );
+}
+
+export async function initPassPayment(purchaseId: string) {
+  return apiFetch<{ paymentId: string; paymentUrl: string }>(
+    `/api/v1/payments/pass/${purchaseId}/init`,
+    { method: "POST" },
+  );
+}
+
+export async function fetchPaymentStatus(paymentId: string) {
+  return apiFetch<{
+    id: string;
+    status: PaymentStatus;
+    refType: "pass" | "order";
+    refId: string;
+    amountRub: number;
+  }>(`/api/v1/payments/${paymentId}/status`);
+}
+
 // ============================================================================
 // NEWS (public)
 // ============================================================================

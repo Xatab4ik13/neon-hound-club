@@ -150,6 +150,9 @@ export async function buildApp() {
   const { stickersRoutes } = await import("./routes/stickers.js");
   await app.register(stickersRoutes, { prefix: "/api/v1/stickers" });
 
+  const { paymentsRoutes } = await import("./routes/payments.js");
+  await app.register(paymentsRoutes, { prefix: "/api/v1/payments" });
+
   // Создаём S3-бакет, если его ещё нет.
   try {
     const { ensureBucket } = await import("./lib/s3.js");

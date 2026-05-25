@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/club/PageHeader";
 import { useCart } from "@/hooks/use-cart";
 import { useViewer } from "@/hooks/use-viewer";
 import { formatRuPhone } from "@/lib/phone";
-import { createOrder, qk } from "@/lib/queries";
+import { createOrder, initOrderPayment, qk } from "@/lib/queries";
 import { ApiError } from "@/lib/api";
 import { hhToast } from "@/lib/hh-toast";
 
@@ -97,23 +97,27 @@ function ClubCheckoutPage() {
     setForm((f) => ({ ...f, [k]: v }));
 
   const mutation = useMutation({
-    mutationFn: createOrder,
-    onSuccess: (order) => {
+    mutationFn: async (input: Parameters<typeof createOrder>[0]) => {
+      const order = await createOrder(input);
+      // Сразу инициируем оплату через Т-Банк и получаем ссылку на платёжку.
+      const pay = await initOrderPayment(order.id);
+      return { order, pay };
+    },
+    onSuccess: ({ order, pay }) => {
       if (typeof window !== "undefined") {
         window.localStorage.setItem(PROFILE_KEY, JSON.stringify(form));
       }
       clear();
       queryClient.invalidateQueries({ queryKey: qk.shopOrders });
       queryClient.invalidateQueries({ queryKey: qk.ticketsBalance });
-      const shortId = order.id.slice(0, 8).toUpperCase();
-      navigate({
-        to: "/checkout/success",
-        search: { o: shortId, t: ticketsTotal },
-      });
+      // Редирект на платёжную страницу Т-Банка. После оплаты юзер вернётся на /pay/success.
+      window.location.href = pay.paymentUrl;
+      // На случай если редирект завис — fallback на success-страницу заказа.
+      void order;
     },
     onError: (err) => {
       const msg = err instanceof ApiError ? err.message : "Не удалось оформить заказ";
-      hhToast.error("Ошибка оформления", { meta: msg });
+      hhToast.error("Ошибка оплаты", { meta: msg });
     },
   });
 

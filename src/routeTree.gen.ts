@@ -28,6 +28,8 @@ import { Route as CheckoutIndexRouteImport } from './routes/checkout.index'
 import { Route as BloggerIndexRouteImport } from './routes/blogger.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as ShopProductSlugRouteImport } from './routes/shop.$productSlug'
+import { Route as PaySuccessRouteImport } from './routes/pay.success'
+import { Route as PayFailRouteImport } from './routes/pay.fail'
 import { Route as NewsSlugRouteImport } from './routes/news.$slug'
 import { Route as LegalTermsRouteImport } from './routes/legal.terms'
 import { Route as LegalRequisitesRouteImport } from './routes/legal.requisites'
@@ -163,6 +165,16 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
 const ShopProductSlugRoute = ShopProductSlugRouteImport.update({
   id: '/shop/$productSlug',
   path: '/shop/$productSlug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PaySuccessRoute = PaySuccessRouteImport.update({
+  id: '/pay/success',
+  path: '/pay/success',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PayFailRoute = PayFailRouteImport.update({
+  id: '/pay/fail',
+  path: '/pay/fail',
   getParentRoute: () => rootRouteImport,
 } as any)
 const NewsSlugRoute = NewsSlugRouteImport.update({
@@ -415,6 +427,8 @@ export interface FileRoutesByFullPath {
   '/legal/requisites': typeof LegalRequisitesRoute
   '/legal/terms': typeof LegalTermsRoute
   '/news/$slug': typeof NewsSlugRoute
+  '/pay/fail': typeof PayFailRoute
+  '/pay/success': typeof PaySuccessRoute
   '/shop/$productSlug': typeof ShopProductSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/blogger/': typeof BloggerIndexRoute
@@ -474,6 +488,8 @@ export interface FileRoutesByTo {
   '/legal/requisites': typeof LegalRequisitesRoute
   '/legal/terms': typeof LegalTermsRoute
   '/news/$slug': typeof NewsSlugRoute
+  '/pay/fail': typeof PayFailRoute
+  '/pay/success': typeof PaySuccessRoute
   '/shop/$productSlug': typeof ShopProductSlugRoute
   '/admin': typeof AdminIndexRoute
   '/blogger': typeof BloggerIndexRoute
@@ -537,6 +553,8 @@ export interface FileRoutesById {
   '/legal/requisites': typeof LegalRequisitesRoute
   '/legal/terms': typeof LegalTermsRoute
   '/news/$slug': typeof NewsSlugRoute
+  '/pay/fail': typeof PayFailRoute
+  '/pay/success': typeof PaySuccessRoute
   '/shop/$productSlug': typeof ShopProductSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/blogger/': typeof BloggerIndexRoute
@@ -601,6 +619,8 @@ export interface FileRouteTypes {
     | '/legal/requisites'
     | '/legal/terms'
     | '/news/$slug'
+    | '/pay/fail'
+    | '/pay/success'
     | '/shop/$productSlug'
     | '/admin/'
     | '/blogger/'
@@ -660,6 +680,8 @@ export interface FileRouteTypes {
     | '/legal/requisites'
     | '/legal/terms'
     | '/news/$slug'
+    | '/pay/fail'
+    | '/pay/success'
     | '/shop/$productSlug'
     | '/admin'
     | '/blogger'
@@ -722,6 +744,8 @@ export interface FileRouteTypes {
     | '/legal/requisites'
     | '/legal/terms'
     | '/news/$slug'
+    | '/pay/fail'
+    | '/pay/success'
     | '/shop/$productSlug'
     | '/admin/'
     | '/blogger/'
@@ -760,6 +784,8 @@ export interface RootRouteChildren {
   LegalRequisitesRoute: typeof LegalRequisitesRoute
   LegalTermsRoute: typeof LegalTermsRoute
   NewsSlugRoute: typeof NewsSlugRoute
+  PayFailRoute: typeof PayFailRoute
+  PaySuccessRoute: typeof PaySuccessRoute
   ShopProductSlugRoute: typeof ShopProductSlugRoute
   CheckoutIndexRoute: typeof CheckoutIndexRoute
   HellPassIndexRoute: typeof HellPassIndexRoute
@@ -900,6 +926,20 @@ declare module '@tanstack/react-router' {
       path: '/shop/$productSlug'
       fullPath: '/shop/$productSlug'
       preLoaderRoute: typeof ShopProductSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pay/success': {
+      id: '/pay/success'
+      path: '/pay/success'
+      fullPath: '/pay/success'
+      preLoaderRoute: typeof PaySuccessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pay/fail': {
+      id: '/pay/fail'
+      path: '/pay/fail'
+      fullPath: '/pay/fail'
+      preLoaderRoute: typeof PayFailRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/news/$slug': {
@@ -1310,6 +1350,8 @@ const rootRouteChildren: RootRouteChildren = {
   LegalRequisitesRoute: LegalRequisitesRoute,
   LegalTermsRoute: LegalTermsRoute,
   NewsSlugRoute: NewsSlugRoute,
+  PayFailRoute: PayFailRoute,
+  PaySuccessRoute: PaySuccessRoute,
   ShopProductSlugRoute: ShopProductSlugRoute,
   CheckoutIndexRoute: CheckoutIndexRoute,
   HellPassIndexRoute: HellPassIndexRoute,
