@@ -61,26 +61,69 @@ export function MobileTopBar() {
   };
 
 
-  // On primary tabs — show the full branded plaque (avatar + nick + XP bar) like in settings.
-  // Tapping it opens the profile/settings screen.
+  // On primary tabs — компактная плашка как на скрине:
+  // круглая розовая лапка + капсула HELL/XP + колокольчик.
   if (isTab) {
+    const xp = rank.xp;
+    const xpMax = rank.xpMax;
     return (
       <header
         className="sticky top-0 z-30 border-b border-white/[0.06] bg-background/70 backdrop-blur-2xl backdrop-saturate-150 lg:hidden"
         style={{ paddingTop: "env(safe-area-inset-top)" }}
       >
         <div className="flex items-center gap-2 px-3 py-2">
-          <div className="min-w-0 flex-1">
-            <ProfilePlaque compact />
-          </div>
+          {/* Лапка-аватар → профиль */}
+          <Link
+            to="/club/me"
+            aria-label="Профиль"
+            className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary/15 text-primary transition-transform active:scale-90"
+          >
+            <PawPrint className="h-[18px] w-[18px]" strokeWidth={2.4} fill="currentColor" />
+          </Link>
+
+          {/* Капсула HELL · XP → ранг */}
+          <Link
+            to="/club/rank"
+            aria-label={`Ранг: ${xp} из ${xpMax} XP`}
+            className="relative flex h-10 min-w-0 flex-1 items-center justify-between overflow-hidden rounded-full px-4 text-primary-foreground transition-transform active:scale-[0.98]"
+            style={{
+              background:
+                "linear-gradient(135deg, oklch(0.55 0.22 357.3) 0%, oklch(0.72 0.26 357.3) 50%, oklch(0.55 0.22 357.3) 100%)",
+              boxShadow: "0 4px 18px rgba(255,45,149,0.35), inset 0 1px 0 rgba(255,255,255,0.25)",
+            }}
+          >
+            {/* Переливающийся блик */}
+            <span
+              aria-hidden
+              className="pointer-events-none absolute inset-y-0 -left-1/4 w-1/3"
+              style={{
+                background:
+                  "linear-gradient(110deg, transparent 20%, rgba(255,255,255,0.55) 50%, transparent 80%)",
+                animation: "plaque-sweep 3.5s ease-in-out infinite",
+                mixBlendMode: "screen",
+              }}
+            />
+            <span className="relative font-display text-[15px] font-black italic tracking-tight">
+              HELL
+            </span>
+            <span className="relative whitespace-nowrap font-mono text-[12px] font-bold tabular-nums">
+              <span className="text-white">{xp.toLocaleString("ru-RU")}</span>
+              <span className="ml-1 text-white/60">/ {xpMax.toLocaleString("ru-RU")} XP</span>
+            </span>
+          </Link>
+
+          {/* Колокольчик */}
           <button
             type="button"
             onClick={openNotif}
             aria-label="Уведомления"
-            className="relative flex h-10 w-10 shrink-0 items-center justify-center text-foreground transition-transform active:scale-[0.9] active:opacity-60"
+            className="relative grid h-10 w-10 shrink-0 place-items-center text-foreground transition-transform active:scale-90 active:opacity-60"
           >
-            <Bell className="h-[20px] w-[20px]" strokeWidth={1.9} />
-            <span aria-hidden className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-primary" />
+            <Bell className="h-[22px] w-[22px]" strokeWidth={1.9} />
+            <span
+              aria-hidden
+              className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-primary ring-2 ring-background"
+            />
           </button>
         </div>
         <NotificationsSheet open={notifOpen} onOpenChange={setNotifOpen} />
