@@ -418,9 +418,9 @@ function CommentsPreview({
       <button
         type="button"
         onClick={onOpen}
-        className="flex w-full items-center gap-2 border-t border-white/[0.05] bg-[oklch(0.10_0_0)]/60 px-4 py-3 text-left font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground transition-colors hover:text-primary md:px-5"
+        className="flex w-full items-center gap-2 px-4 pb-4 pt-1 text-left font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground transition-colors hover:text-primary md:px-5"
       >
-        Написать комментарий
+        Написать комментарий →
       </button>
     );
   }
@@ -430,19 +430,21 @@ function CommentsPreview({
     <button
       type="button"
       onClick={onOpen}
-      className="flex w-full flex-col gap-2 border-t border-white/[0.05] bg-[oklch(0.10_0_0)]/60 px-4 py-3 text-left transition-colors active:bg-white/[0.02] md:px-5"
+      className="flex w-full flex-col gap-2 px-4 pb-4 pt-1 text-left transition-opacity active:opacity-70 md:px-5"
     >
-      <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.18em] text-primary">
-        Все комментарии · {comments.length}
-        <span className="text-muted-foreground">→</span>
+      <div className="flex gap-2.5 border-l-2 border-primary pl-2.5">
+        <div className="min-w-0 flex-1">
+          <div className="truncate font-mono text-[10px] font-black uppercase tracking-[0.18em] text-primary">
+            {user?.nick ?? last.authorSlug}
+          </div>
+          <div className="mt-0.5 line-clamp-2 text-[13px] leading-snug text-foreground/85">
+            {last.text.startsWith("::sticker::") ? "🖼 Стикер" : last.text}
+          </div>
+        </div>
       </div>
-      <div className="flex items-start gap-2">
-        <span className="truncate font-display text-[12px] font-bold uppercase italic tracking-tight text-foreground/80">
-          {user?.nick ?? last.authorSlug}
-        </span>
-        <span className="line-clamp-1 flex-1 text-[13px] text-foreground/70">
-          {last.text.startsWith("::sticker::") ? "🖼 Стикер" : last.text}
-        </span>
+      <div className="inline-flex items-center gap-1 font-mono text-[10px] font-black uppercase tracking-[0.18em] text-primary">
+        Все комментарии · {comments.length}
+        <span>→</span>
       </div>
     </button>
   );
