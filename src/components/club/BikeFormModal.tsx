@@ -259,8 +259,13 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
         photo={photo}
         error={photoError}
         onPick={handlePhoto}
-        onClear={() => { setPhoto(undefined); setPhotoFile(null); }}
+        onClear={() => {
+          if (photo && photo.startsWith("blob:")) URL.revokeObjectURL(photo);
+          setPhoto(undefined);
+          setPhotoFile(null);
+        }}
       />
+
 
       <div className="grid gap-3 sm:grid-cols-2">
         <Field label="Цвет">
