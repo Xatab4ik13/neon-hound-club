@@ -4,9 +4,10 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { haptic } from "@/hooks/use-haptic";
+import { feedStore } from "@/data/feed-store";
 
 type Props = {
-  onRefresh: () => Promise<void> | void;
+  onRefresh?: () => Promise<void> | void;
   children: ReactNode;
   /** Порог срабатывания в px. По умолчанию 70. */
   threshold?: number;
