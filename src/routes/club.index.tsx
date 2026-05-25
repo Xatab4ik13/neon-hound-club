@@ -14,6 +14,8 @@ import { LikeButton } from "@/components/club/LikeButton";
 import { ImageViewer } from "@/components/club/ImageViewer";
 import { PostSkeleton } from "@/components/club/PostSkeleton";
 import { ReactionsBar } from "@/components/club/ReactionsBar";
+import { FeedSentinel } from "@/components/club/FeedSentinel";
+import { Swipeable } from "@/components/club/Swipeable";
 import { reactionsStore } from "@/data/reactions-store";
 import { hhToast } from "@/lib/hh-toast";
 import { haptic } from "@/hooks/use-haptic";
@@ -66,7 +68,23 @@ function ClubFeedPage() {
             <PostSkeleton withImage />
           </>
         ) : (
-          posts.map((post) => <PostCard key={post.id} post={post} />)
+          <>
+            {posts.map((post) => (
+              <Swipeable
+                key={post.id}
+                radius={24}
+                right={{
+                  icon: <Heart className="h-4 w-4" fill="currentColor" />,
+                  label: post.liked ? "Лайк убран" : "Лайк",
+                  bg: "linear-gradient(90deg, oklch(0.55 0.22 357.3) 0%, oklch(0.6 0.24 357.3) 100%)",
+                  onAction: () => feedStore.toggleLike(post.id, !post.liked),
+                }}
+              >
+                <PostCard post={post} />
+              </Swipeable>
+            ))}
+            {posts.length > 0 && <FeedSentinel />}
+          </>
         )}
       </div>
     </main>
@@ -632,26 +650,49 @@ function CommentsSheet({
 
   const stripReplyPrefix = (text: string) => text.replace(/^@\S+\s+/, "");
 
-  const renderItem = (c: Comment, isReply = false) => (
-    <CommentItem
-      key={c.id}
-      comment={isReply ? { ...c, text: stripReplyPrefix(c.text) } : c}
-      large
-      onReply={() =>
-        setReplyTo({
-          nick: PUBLIC_USERS[c.authorSlug]?.nick ?? c.authorSlug,
-          commentId: c.id,
-        })
-      }
-      onDelete={
-        moderate
-          ? () => {
-              if (confirm("Удалить комментарий?")) feedStore.removeComment(post.id, c.id);
-            }
-          : undefined
-      }
-    />
-  );
+  const renderItem = (c: Comment, isReply = false) => {
+    const isMine = c.authorSlug === ME_SLUG;
+    const canDelete = isMine || moderate;
+    const onDelete = canDelete
+      ? () => {
+          if (confirm("Удалить комментарий?")) feedStore.removeComment(post.id, c.id);
+        }
+      : undefined;
+
+    const item = (
+      <CommentItem
+        key={c.id}
+        comment={isReply ? { ...c, text: stripReplyPrefix(c.text) } : c}
+        large
+        onReply={() =>
+          setReplyTo({
+            nick: PUBLIC_USERS[c.authorSlug]?.nick ?? c.authorSlug,
+            commentId: c.id,
+          })
+        }
+        onDelete={moderate ? onDelete : undefined}
+      />
+    );
+
+    if (!canDelete) return item;
+
+    return (
+      <Swipeable
+        key={c.id}
+        radius={12}
+        left={{
+          icon: <Trash2 className="h-4 w-4" />,
+          label: "Удалить",
+          bg: "linear-gradient(90deg, oklch(0.4 0.18 27) 0%, oklch(0.5 0.22 27) 100%)",
+          onAction: () => {
+            if (confirm("Удалить комментарий?")) feedStore.removeComment(post.id, c.id);
+          },
+        }}
+      >
+        {item}
+      </Swipeable>
+    );
+  };
 
   return (
     <IOSSheet
