@@ -1,150 +1,103 @@
 
-# Hell AI — полный план запуска
+# План: подключение Т-Банк Интернет-эквайринг
 
-## 1. Регистрация и оплата (гайд для чайников)
+Подключаем **Tinkoff Acquiring API** (Init → платёжная страница → Notification webhook) к существующему бэку `server/` на VPS. Сначала DEMO-терминал, потом одной переменной переключим на боевой. Чек по 54-ФЗ пока не формируем — добавим, когда подключишь онлайн-кассу Атол (заложу место в коде, чтобы потом дописать в одну функцию).
 
-### Шаг 1. OpenRouter аккаунт
-1. Открой **https://openrouter.ai** → Sign up через Google (1 минута).
-2. Зайди в **Settings → Privacy** → выключи галку «Enable input/output logging» (чтобы провайдеры не использовали наши данные для тренировки).
-3. **Settings → Keys** → Create Key → имя `hellhound-prod` → скопируй ключ `sk-or-v1-...`. **Это единственный ключ, который мне нужен.**
+## Что уже готово в коде (не трогаем)
 
-### Шаг 2. Пополнение баланса (без РФ-карты)
-OpenRouter РФ-карты не принимает. Три рабочих варианта:
-- **Крипта (USDT, рекомендую)**: Settings → Credits → Add Credits → Crypto → выбери USDT (TRC-20 дешевле). Пополнить можно через любую крипто-биржу или обменник типа bestchange.ru.
-- **Зарубежная карта** (если есть карта Казахстана/Грузии/UAE/Турции) — просто Stripe Checkout.
-- **Виртуальная карта** через сервисы вроде Pyypl / Wise / Payeer.
+- `POST /api/v1/pass/purchase` → создаёт `passPurchases` со статусом `pending_payment`, сейчас возвращает `paymentUrl: null`
+- `POST /api/v1/orders` → создаёт `orders` со статусом `pending_payment`, резервирует остатки
+- `activatePassPurchase(purchaseId)` и `markOrderPaid(orderId)` — идемпотентные функции активации. Их и будем дёргать из вебхука.
 
-Стартовый депозит — **$20**. Этого хватит на ~2-3 месяца теста при 50-100 юзерах. Дальше топим по факту.
+## Что добавляем
 
-### Шаг 3. Сколько будет стоить (реальные цифры на сегодня)
-| Модель | Input / 1M ток | Output / 1M ток | Цена 1 ответа* |
-|---|---|---|---|
-| **GPT-5** | $1.25 | $10 | ~$0.012 |
-| **Claude Sonnet 4.5** | $3 | $15 | ~$0.020 |
+### 1. Конфиг и секреты (на VPS)
 
-\* при ~3к токенов контекста (промпт + история + гараж) и ~500 токенов ответа.
+Новые переменные в `server/.env` (и `.env.example`):
+```
+TBANK_TERMINAL_KEY=...           # DEMO-терминал
+TBANK_PASSWORD=...               # пароль терминала
+TBANK_API_URL=https://securepay.tinkoff.ru/v2   # одинаков для demo и prod
+TBANK_SUCCESS_URL=https://hhr.pro/pay/success
+TBANK_FAIL_URL=https://hhr.pro/pay/fail
+TBANK_NOTIFICATION_URL=https://api.hhr.pro/api/v1/payments/tbank/webhook
+```
+Боевой переезд = просто меняешь `TBANK_TERMINAL_KEY` + `TBANK_PASSWORD` и `docker compose up -d --build api`. Кода не трогаем.
 
-**Маржа по тирам Pass на 30 дней:**
-- Silver 490₽ / 20 вопросов → себестоимость ~$0.24 = ~22₽ → маржа **96%**.
-- Gold 1290₽ / 100 вопросов → ~$1.2 = ~110₽ → маржа **91%**.
-- Platinum 2990₽ / ∞ (реалистично 200-400 в месяц) → ~$2.4-4.8 = 220-440₽ → маржа **85-93%**.
+### 2. Клиент Т-Банка `server/src/lib/tbank.ts`
 
-Экономика здоровая даже на топовой модели. **Рекомендую дефолт = GPT-5** (немного дешевле и лучше следует инструкциям). Claude Sonnet 4.5 оставим как опцию в админке — переключается одним селектом, без передеплоя.
+- `initPayment({ orderId, amountRub, description, customerEmail })` — POST `/Init`, считает Token (SHA-256 от отсортированных пар + Password), возвращает `PaymentURL` и `PaymentId`.
+- `getState(paymentId)` — POST `/GetState` для сверки на сервере (защита от подделки вебхука).
+- `verifyNotification(body)` — пересчитывает Token из тела вебхука, сравнивает с присланным; возвращает true/false. Это и есть подпись Т-Банка.
 
-### Шаг 4. Что ты делаешь, когда я готов кодить
-1. Даёшь мне ключ `sk-or-v1-...` через секреты Lovable (я подскажу как).
-2. Я добавлю его в `.env` бекенда на VPS.
-3. Дальше всё работает автоматически.
+### 3. Таблица платежей (миграция `0027_payments.sql`)
 
----
+```
+payments (
+  id uuid pk,
+  provider varchar(16),         -- 'tbank'
+  provider_payment_id varchar,  -- PaymentId из Т-Банка, unique
+  ref_type varchar(16),         -- 'pass' | 'order'
+  ref_id uuid,                  -- passPurchase.id / order.id
+  user_id uuid,
+  amount_rub integer,
+  status varchar(24),           -- 'new' | 'authorized' | 'confirmed' | 'rejected' | 'refunded'
+  raw_init jsonb, raw_last_notification jsonb,
+  created_at, updated_at
+)
++ unique(ref_type, ref_id) WHERE status NOT IN ('rejected')
+```
+Зачем: дедуп вебхуков, история, ручная сверка через админку.
 
-## 2. Архитектура
+### 4. Роуты `server/src/routes/payments.ts`
 
-### Бекенд (server/) — новые файлы
-- `server/src/db/schema/hell-ai.ts` — таблицы:
-  - `ai_threads` (id, user_id, title, last_message_at, created_at)
-  - `ai_messages` (id, thread_id, role: 'user'|'assistant'|'system', content, tokens_in, tokens_out, model, created_at)
-  - `ai_usage` (id, user_id, pass_id, period_start, period_end, used_count) — счётчик вопросов в текущем 30-дневном окне Pass
-- `server/src/lib/openrouter.ts` — клиент OpenRouter (fetch + SSE стриминг, OpenAI-совместимый формат).
-- `server/src/lib/hell-ai-prompt.ts` — сборка system prompt из:
-  - базового промпта (правила из `mem://hell-ai-rules.md` + редактируется в админке),
-  - гаража юзера (модель/год/пробег всех мото),
-  - подписи «Псы» и фишек тона.
-- `server/src/routes/hell-ai.ts` — API:
-  - `GET /api/v1/ai/threads` — список тредов юзера.
-  - `POST /api/v1/ai/threads` — создать новый.
-  - `PATCH /api/v1/ai/threads/:id` — переименовать.
-  - `DELETE /api/v1/ai/threads/:id`.
-  - `GET /api/v1/ai/threads/:id/messages` — история.
-  - `POST /api/v1/ai/threads/:id/messages` — отправить вопрос, **отвечает SSE-стримом**. Внутри:
-    1. Проверка активного Pass + лимита (из `ai_usage` + лимиты из system_settings).
-    2. Сборка контекста: system prompt + последние N сообщений (окно ~20, далее обрезка).
-    3. Стрим из OpenRouter → проксируем клиенту.
-    4. По окончании: insert message в БД, инкремент `ai_usage.used_count`.
-  - `GET /api/v1/ai/status` — текущий тир, лимит, остаток вопросов, модель.
+- `POST /api/v1/payments/pass/:purchaseId/init` (auth) — проверяет, что purchase принадлежит юзеру и `pending_payment`, дёргает `initPayment`, сохраняет `payments` row, возвращает `{ paymentUrl }`.
+- `POST /api/v1/payments/order/:orderId/init` (auth) — то же для заказа мерча.
+- `POST /api/v1/payments/tbank/webhook` (public, без auth) — принимает Notification от Т-Банка:
+  1. `verifyNotification` → если false: 403.
+  2. Находит `payments` row по `provider_payment_id`.
+  3. Для подстраховки дёргает `getState` и сверяет статус (защита от спуфинга подписи при утечке пароля).
+  4. Если `Status=CONFIRMED` → `activatePassPurchase` или `markOrderPaid`. Эти функции уже идемпотентны.
+  5. Отвечает `OK` (Т-Банк требует именно тело `OK`).
+- `GET /api/v1/payments/:id/status` (auth) — для фронта, чтобы поллить статус после редиректа на success-страницу.
 
-### База — миграция `0022_hell_ai.sql`
-3 таблицы выше + индексы по `user_id`/`thread_id`. Окно лимита привязано к `pass_purchases` (period_start = дата активации Pass, period_end = +30 дней).
+И обновляем уже существующие `pass/purchase`, чтобы они сразу возвращали `paymentUrl` (вызывают init внутри, как в TODO).
 
-### Фронт (src/) — новые/изменённые файлы
-- `src/routes/club.ai.tsx` — главная страница Hell AI (мобайл-first, layout в стиле текущего клуба):
-  - Слева (или выдвижной sheet на мобиле): список тредов, кнопка «Новый чат».
-  - Справа: сам чат — пузырьки сообщений, рендер markdown, стрим токенов в real-time, индикатор «печатает», скролл-в-низ, плашка «осталось N вопросов».
-  - Если Pass нет / закончились вопросы — заглушка с кнопкой «Купить Pass» / «Продлить».
-- `src/components/club/ai/ChatMessage.tsx` — пузырёк с markdown (react-markdown уже стоит).
-- `src/components/club/ai/ChatInput.tsx` — поле ввода + кнопка отправки, отключается при стриминге.
-- `src/components/club/ai/ThreadsList.tsx` — сайдбар с тредами, переименование, удаление.
-- `src/lib/queries.ts` — хуки `useAiThreads`, `useAiMessages`, `useAiStatus`.
-- `src/lib/ai-stream.ts` — fetch + SSE-парсер (depth-tracking, как в knowledge о gateway), пушит токены в стейт.
-- Точка входа в навигации клуба: иконка/пункт «Hell AI».
+### 5. Фронт (минимум)
 
-### Админка — `src/routes/admin.hell-ai.tsx` + бек
-- Редактирование `base_system_prompt` (textarea, сохраняется в `system_settings`).
-- Выбор модели: `openai/gpt-5` / `anthropic/claude-sonnet-4.5` / `openai/gpt-5-mini` (на случай экономии).
-- Лимиты по тирам (Silver/Gold/Platinum) — уже есть в settings, просто подключим.
-- Список заблокированных тем (banned_topics, массив строк) — добавляются в system prompt.
-- Аналитика: total questions / total cost (по `tokens_in/out` × цене) / топ-юзеров за последние 30 дней.
+- В `club.hell-pass.$tier.tsx` и `club.checkout.tsx`: при успешном создании purchase/order — `window.location.href = paymentUrl`.
+- Новые роуты:
+  - `pay.success.tsx` — поллит `GET /payments/:id/status` секунд 15, показывает «оплачено» или «ждём подтверждения банка» и ссылку в личный кабинет.
+  - `pay.fail.tsx` — простой экран «не получилось, попробовать снова».
 
----
+### 6. Тесты на DEMO
 
-## 3. System prompt — тон HELLHOUND
+После деплоя `docker compose up -d --build api` пройдём вручную:
+1. Купить Silver на тестовой карте `4300 0000 0000 0777` (3-DS код `12345678`) → редирект → success → Pass активен.
+2. Тест отказа (`4000 0000 0000 0002`) → fail → пасс остаётся `pending_payment`.
+3. Тест заказа мерча → статус `paid`, билеты начислены, остатки списаны.
+4. Дубликат вебхука Т-Банка → данные не двоятся (idempotent).
 
-Базовый промпт, который сохраним в `system_settings.hell_ai_prompt` (редактируется из админки):
+## Технические детали
 
-> Ты — AI-механик клуба HELLHOUND Racing. Помогаешь Псам с их мото: диагностика, ТО, тюнинг, моменты затяжки, масла, прошивки.
->
-> Тон:
-> — На «ты», коротко, без воды и эмодзи.
-> — Без морализаторства и фраз про «обратитесь к специалисту». Если что-то реально опасно (тормоза, рама, топливная) — скажи это одной фразой и переходи к делу.
-> — Технические единицы СИ: Н·м, мл, °C, км/ч.
-> — Раз в 3-4 ответа можно сказать «по-нашему» или «по-хелхаундовски», но не имитируй личность Hell.
-> — Обращение «Псы» — ок.
->
-> Что можно:
-> — Тюнинг без ограничений: де-кат, прямоток, прошивка без ограничителя, удаление DRL, чип — обсуждаем как нормальную тему.
-> — Конкретные запчасти, бренды масел, артикулы — называй, если уверен.
->
-> Что нельзя:
-> — Не помогать с темами вне мото (код, домашка, юр/мед, общие чаты) — короткий отказ: «Это не моя тема. Я по мото».
-> — Не имитировать личность Hell, не говорить от его имени.
->
-> Контекст юзера (подставляется автоматически):
-> [GARAGE]
-> — Мото 1: Yamaha MT-09 2021, пробег 18 000 км
-> — Мото 2: ...
-> [/GARAGE]
->
-> Если у юзера нет мото в гараже — попроси добавить.
+- Подпись Token: конкатенируем все top-level пары `{...body, Password}` (без вложенных Receipt/DATA), сортируем по ключу, склеиваем только **значения**, SHA-256, hex. Это формат Т-Банка.
+- Сумма передаётся в копейках (`amountRub * 100`).
+- В `Init` обязательно: `TerminalKey`, `Amount`, `OrderId` (наш `payments.id`), `Description`, `NotificationURL`, `SuccessURL`, `FailURL`, `DATA: { userId }`. `Receipt` пока **не передаём** — оставим закомментированный билдер для будущей кассы Атол.
+- Webhook должен отвечать строго `OK` текстом, иначе Т-Банк ретраит.
+- На фронте `pay.success` поллим именно наш `/payments/:id/status` (источник правды — наш `markOrderPaid`/`activatePassPurchase`), а не доверяем query-параметрам из редиректа.
 
-Этот текст ты сможешь править из админки в любой момент — без передеплоя.
+## Что НЕ делаем сейчас (по твоему ответу)
 
----
+- 54-ФЗ чек (Атол) — закладываем место в `initPayment`, реальный билдер чека добавим, когда дашь доступ к Атолу.
+- Возвраты через API Т-Банка — пока ручные через ЛК Т-Банка; в БД `payments` поле под это уже будет.
+- СБП/Т-Касса — не подключаем, договорились на интернет-эквайринг.
 
-## 4. Что НЕ делаем в MVP (по твоему выбору)
+## Деплой
 
-- Картинки на вход (vision) — оставляем на v2.
-- Загрузка PDF-мануалов / RAG — на v2.
-- Голосовой ввод — на v3.
-- Имитация Hell — не делаем никогда (правило бренда).
+Один коммит, затем твоей рукой:
+```
+cd /opt/hhr/server && git pull && docker compose up -d --build api
+```
+Перед этим добавишь `TBANK_TERMINAL_KEY` и `TBANK_PASSWORD` (DEMO) в `.env` на VPS.
 
----
-
-## 5. Порядок реализации (когда переключим на build)
-
-1. Миграция `0022_hell_ai.sql` (3 таблицы).
-2. `openrouter.ts` + `hell-ai-prompt.ts` + роуты `/api/v1/ai/*` со стримингом.
-3. Подключение лимитов к существующим тирам Pass.
-4. Фронт: страница `club.ai`, ThreadsList, ChatMessage, ChatInput, стрим-парсер.
-5. Админ-страница `admin.hell-ai` (prompt + модель + аналитика).
-6. Точка входа в навигации клуба + плашка остатка вопросов.
-7. Деплой: `cd /opt/hhr/server && git pull && docker compose up -d --build api` + добавить `OPENROUTER_API_KEY` в `.env`.
-
----
-
-## 6. Что мне нужно от тебя перед стартом кода
-
-1. **Ключ OpenRouter** `sk-or-v1-...` — после регистрации.
-2. Подтверждение дефолтной модели: **GPT-5** (моя рекомендация) или Claude Sonnet 4.5.
-3. Финальный текст system prompt — можешь утвердить мой выше или прислать свой / правки. Это потом всё равно правится в админке, так что стартуем с моего и доводим в проде.
-
-Жду ключ и «ок по модели» — дальше иду кодить.
+Скажи «ок» — переключаемся в build и я делаю.
