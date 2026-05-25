@@ -317,6 +317,10 @@ export function PostCard({ post, moderate = false }: { post: Post; moderate?: bo
         </button>
       </div>
 
+      <ReactionsBar postId={post.id} />
+
+
+
       <CommentsPreview
         comments={post.comments}
         onOpen={() => setCommentsOpen(true)}
