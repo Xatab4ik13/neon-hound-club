@@ -1,5 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { getMotorcycleMakes } from "@/lib/nhtsa";
+
 import { BikeFormModal } from "@/components/club/BikeFormModal";
 import { MobileGarage } from "@/components/club/MobileGarage";
 import { type StoredBike } from "@/data/bike-storage";
@@ -71,6 +73,13 @@ function GaragePage() {
   const [editing, setEditing] = useState<StoredBike | null>(null);
 
   const bikes = useMemo(() => (bikesQ.data ?? []).map(toStored), [bikesQ.data]);
+
+  // Префетч списка мото-марок NHTSA, чтобы при открытии модалки
+  // комбобокс уже был тёплый. Внутри есть localStorage-кеш на 30 дней.
+  useEffect(() => {
+    void getMotorcycleMakes();
+  }, []);
+
 
   if (hydrated && !isAuthed) {
     return (

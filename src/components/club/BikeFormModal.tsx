@@ -93,6 +93,14 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
     setSubmitting(false);
   }, [open, bike]);
 
+  // Освобождаем blob-URL при размонтировании — иначе утечёт.
+  useEffect(() => {
+    return () => {
+      if (photo && photo.startsWith("blob:")) URL.revokeObjectURL(photo);
+    };
+  }, [photo]);
+
+
 
   // Загрузка списка марок
   useEffect(() => {
@@ -153,12 +161,12 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
       setPhotoError("Файл больше 15 МБ");
       return;
     }
+    // Если до этого было локальное превью — освобождаем blob, чтобы не текло.
+    if (photo && photo.startsWith("blob:")) URL.revokeObjectURL(photo);
     setPhotoFile(file);
-    const reader = new FileReader();
-    reader.onload = () => setPhoto(String(reader.result));
-    reader.onerror = () => setPhotoError("Не удалось прочитать файл");
-    reader.readAsDataURL(file);
+    setPhoto(URL.createObjectURL(file));
   }
+
 
   async function handleSubmit(e?: React.FormEvent) {
     e?.preventDefault();
@@ -259,8 +267,13 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
         photo={photo}
         error={photoError}
         onPick={handlePhoto}
-        onClear={() => { setPhoto(undefined); setPhotoFile(null); }}
+        onClear={() => {
+          if (photo && photo.startsWith("blob:")) URL.revokeObjectURL(photo);
+          setPhoto(undefined);
+          setPhotoFile(null);
+        }}
       />
+
 
       <div className="grid gap-3 sm:grid-cols-2">
         <Field label="Цвет">
