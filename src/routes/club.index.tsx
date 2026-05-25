@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { Smile, Send, Search as SearchIcon, Clock, Sticker, X, Pin, PinOff, Trash2, BarChart3, Share2, MessageCircle, Heart } from "lucide-react";
 import { RANKS, type RankId } from "@/data/ranks";
@@ -11,6 +11,9 @@ import { useMyStickerPacks, STICKER_PACK_PRODUCT_SLUGS } from "@/lib/stickers-ap
 import { SPECIAL_PACK_STICKERS, SPECIAL_PACK_COVER } from "@/assets/stickers/special";
 import { FeedHeroCarousel } from "@/components/club/FeedHeroCarousel";
 import { LikeButton } from "@/components/club/LikeButton";
+import { ImageViewer } from "@/components/club/ImageViewer";
+import { hhToast } from "@/lib/hh-toast";
+import { haptic } from "@/hooks/use-haptic";
 
 
 
