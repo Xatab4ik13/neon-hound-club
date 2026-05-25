@@ -625,20 +625,22 @@ function HellAiMobile() {
     });
   }
 
-  // высота композера ≈ 56 + textarea, плюс таб-бар 52 + safe-area
-  // на iOS клавиатура поднимает композер над виртуальной клавиатурой (visualViewport),
-  // на десктопе/Android keyboardOffset = 0 и работает обычный bottom-таб-бар.
-  const composerOffset =
+  // Высота страницы = видимая область между топ-баром (52px) и таб-баром (64px+safe+8px gap из <main>).
+  // При открытой клавиатуре (iOS visualViewport) сжимаем до 100dvh - topbar - keyboardOffset.
+  // Композер и тулбар сверху — в обычном потоке, без position:fixed, потому что
+  // <MobileTransition> оборачивает страницу в motion.div с transform → fixed ломается.
+  const pageHeight =
     keyboardOffset > 0
-      ? `${keyboardOffset}px`
-      : "calc(64px + env(safe-area-inset-bottom))";
+      ? `calc(100dvh - 3.25rem - ${keyboardOffset}px)`
+      : "calc(100dvh - 3.25rem - 64px - 8px - env(safe-area-inset-bottom))";
 
   return (
-    <div className="relative flex min-h-[calc(100vh-3.25rem)] flex-col">
-      {/* без фоновых glow — чистый iOS */}
-
+    <div
+      className="relative flex w-full flex-col overflow-hidden"
+      style={{ height: pageHeight }}
+    >
       {/* верхняя панель: история + контекст + новый чат */}
-      <div className="sticky top-14 z-20 -mt-px border-b border-white/[0.05] bg-background/80 px-3 py-2 backdrop-blur-xl">
+      <div className="shrink-0 border-b border-white/[0.05] bg-background/80 px-3 py-2 backdrop-blur-xl">
         <div className="flex items-center gap-2">
           <button
             type="button"
@@ -678,8 +680,7 @@ function HellAiMobile() {
       <div
         ref={scrollRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto px-4 pb-4 pt-4"
-        style={{ paddingBottom: `calc(${composerOffset} + 110px)` }}
+        className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-3 pt-4"
       >
         {messages.length === 0 ? (
           <EmptyChat
@@ -692,7 +693,6 @@ function HellAiMobile() {
           <ul className="space-y-3">
             <AnimatePresence initial={false}>
               {messages.map((m) => {
-                // bike-чип показываем только если для чата выбран байк
                 const chatBike = bikes.find((b) => b.id === activeChat?.bikeId);
                 const bikeMeta = chatBike ? bikeLabel(chatBike) : null;
                 return (
@@ -732,13 +732,9 @@ function HellAiMobile() {
         )}
       </div>
 
-
-      {/* липкий композер / CTA для гостя */}
+      {/* композер / CTA для гостя — в обычном потоке, прижат к низу flex-колонки */}
       {isGuest ? (
-        <div
-          className="fixed inset-x-0 z-30 border-t border-white/[0.06] bg-background/90 backdrop-blur-xl"
-          style={{ bottom: composerOffset }}
-        >
+        <div className="shrink-0 border-t border-white/[0.06] bg-background/90 backdrop-blur-xl">
           <div className="px-4 pb-3 pt-3">
             <Link
               to="/club/hell-pass"
@@ -757,10 +753,7 @@ function HellAiMobile() {
           </div>
         </div>
       ) : (
-        <div
-          className="fixed inset-x-0 z-30 border-t border-white/[0.06] bg-background/85 backdrop-blur-xl"
-          style={{ bottom: composerOffset }}
-        >
+        <div className="shrink-0 border-t border-white/[0.06] bg-background/85 backdrop-blur-xl">
           {/* квота */}
           <div className="flex items-center justify-between px-4 pb-1.5 pt-2">
             <span className="text-[12px] text-muted-foreground">
@@ -845,6 +838,8 @@ function HellAiMobile() {
           </div>
         </div>
       )}
+
+
 
 
       {/* sheet: выбор байка */}
