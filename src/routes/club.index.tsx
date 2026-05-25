@@ -477,7 +477,10 @@ function CommentsSheet({
   }, [post.comments.length]);
 
   // Группировка ответов: ответ = коммент, начинающийся с "@<nick> "
-  const { topLevel, childrenByParentId } = useMemo(() => {
+  const { topLevel, childrenByParentId } = useMemo<{
+    topLevel: Comment[];
+    childrenByParentId: Map<string, Comment[]>;
+  }>(() => {
     const childrenByParentId = new Map<string, Comment[]>();
     const topLevel: Comment[] = [];
     const nickToLatest = new Map<string, string>(); // nick(lower) -> commentId
