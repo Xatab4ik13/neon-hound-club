@@ -30,11 +30,11 @@ export function HellhoundAvatar({
     <div className="relative shrink-0" style={style}>
       <span
         aria-hidden
-        className="absolute -inset-[2px] animate-hell-pulse rounded-[2px] opacity-80 blur-[6px]"
+        className="absolute -inset-[2px] animate-hell-pulse rounded-full opacity-80 blur-[6px]"
         style={{ background: HELL_GRADIENT }}
       />
       <div
-        className={`relative flex h-full w-full items-center justify-center ${avatarUrl ? "overflow-hidden" : ""}`}
+        className={`relative flex h-full w-full items-center justify-center overflow-hidden rounded-full`}
         style={{
           background: "#0a0a0a",
           boxShadow: "inset 0 0 0 1.5px #ff2d4a, 0 0 12px -2px rgba(255,45,74,0.6)",
