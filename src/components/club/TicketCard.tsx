@@ -1,9 +1,10 @@
 // Карточка баланса в форме отрывного билета.
-// Слева — основная часть с числом и CTA, справа — узкий «корешок» с серийником.
+// Слева — основная часть с числом и CTA, справа — узкий «корешок».
 // Полукруглые вырезы по бокам пунктирной линии отрыва имитируют перфорацию.
+// Сверху — лёгкая глянцевая засветка и медленный «шиммер» в стиле iOS.
 
 import { Link } from "@tanstack/react-router";
-import { Ticket } from "lucide-react";
+import { ArrowUpRight, Ticket } from "lucide-react";
 
 function pluralTickets(n: number): string {
   const mod10 = n % 10;
@@ -13,12 +14,6 @@ function pluralTickets(n: number): string {
   return "билетов";
 }
 
-function serial(balance: number): string {
-  // Стабильный «серийный» для красоты — не уникальный, просто декор.
-  const n = (balance * 7 + 1024) % 1000000;
-  return `№ ${String(n).padStart(6, "0")}`;
-}
-
 export function TicketCard({
   balance,
   isLoading,
@@ -26,13 +21,17 @@ export function TicketCard({
   balance: number;
   isLoading?: boolean;
 }) {
-  const STUB_W = 56; // ширина «корешка» в px — совпадает с w-14
+  const STUB_W = 44; // ширина «корешка» в px
+
+  // Размер числа подстраиваем под длину — чтобы 1 000 000 не вылетал за край.
+  const formatted = isLoading ? "—" : balance.toLocaleString("ru-RU");
+  const len = formatted.length;
+  const numberSize =
+    len <= 4 ? "text-[76px]" : len <= 6 ? "text-[60px]" : len <= 8 ? "text-[48px]" : "text-[38px]";
 
   return (
     <section aria-label="Баланс билетов" className="relative mb-6">
-      <div
-        className="relative flex h-[220px] overflow-hidden rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/15 via-card/70 to-black shadow-[0_8px_28px_-12px_color-mix(in_oklab,var(--primary)_45%,transparent)]"
-      >
+      <div className="relative flex h-[220px] overflow-hidden rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/15 via-card/70 to-black shadow-[0_8px_28px_-12px_color-mix(in_oklab,var(--primary)_45%,transparent)]">
         {/* мягкое свечение */}
         <div
           aria-hidden
@@ -47,6 +46,23 @@ export function TicketCard({
               "repeating-linear-gradient(45deg, #fff 0 1px, transparent 1px 8px)",
           }}
         />
+        {/* верхний глянец — узкая полоса света сверху, как на iOS-карточках */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/[0.09] to-transparent"
+        />
+        {/* медленный шиммер по диагонали — «холо»-эффект */}
+        <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+          <div
+            className="absolute inset-y-0 w-1/3"
+            style={{
+              background:
+                "linear-gradient(110deg, transparent 0%, color-mix(in oklab, white 14%, transparent) 50%, transparent 100%)",
+              animation: "badge-shine 4.5s ease-in-out infinite",
+              animationDelay: "1.5s",
+            }}
+          />
+        </div>
 
         {/* основная часть */}
         <div className="relative z-10 flex min-w-0 flex-1 flex-col justify-between p-5">
@@ -59,32 +75,31 @@ export function TicketCard({
             </span>
           </div>
 
-          <div className="flex items-end justify-between gap-3">
-            <div className="flex items-baseline gap-2">
-              <span className="text-[80px] font-semibold leading-none tabular-nums text-foreground">
-                {isLoading ? "—" : balance.toLocaleString("ru-RU")}
+          <div className="flex items-end justify-between gap-4">
+            <div className="flex min-w-0 items-baseline gap-2">
+              <span
+                className={`${numberSize} font-semibold leading-none tabular-nums text-foreground`}
+              >
+                {formatted}
               </span>
-              <span className="pb-2 text-[15px] text-muted-foreground">
+              <span className="pb-1.5 text-[14px] text-muted-foreground">
                 {pluralTickets(balance)}
               </span>
             </div>
 
             <Link
               to="/club/raffles"
-              className="flex shrink-0 items-center gap-1.5 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-[0_6px_16px_-6px_color-mix(in_oklab,var(--primary)_70%,transparent)] transition-all active:scale-95"
+              aria-label="Поставить билеты"
+              className="group flex h-9 shrink-0 items-center gap-1 rounded-full border border-primary/40 bg-primary/15 pl-3 pr-2.5 text-[13px] font-medium text-foreground backdrop-blur-sm transition-all active:scale-95 hover:bg-primary/25"
             >
-              <Ticket className="h-4 w-4" />
               Поставить
+              <ArrowUpRight className="h-3.5 w-3.5 text-primary transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
             </Link>
           </div>
         </div>
 
         {/* линия отрыва */}
-        <div
-          aria-hidden
-          className="relative shrink-0"
-          style={{ width: 0 }}
-        >
+        <div aria-hidden className="relative shrink-0" style={{ width: 0 }}>
           <div
             className="absolute inset-y-3"
             style={{
@@ -94,21 +109,20 @@ export function TicketCard({
           />
         </div>
 
-        {/* «корешок» */}
+        {/* «корешок» — только иконка и декоративные точки */}
         <div
-          className="relative z-10 flex shrink-0 flex-col items-center justify-between py-5"
+          className="relative z-10 flex shrink-0 flex-col items-center justify-center gap-3 py-5"
           style={{ width: STUB_W }}
         >
           <Ticket className="h-4 w-4 text-primary/80" strokeWidth={1.8} />
-          <span
-            className="text-[10px] font-medium uppercase tracking-[0.32em] text-muted-foreground"
-            style={{ writingMode: "vertical-rl", transform: "rotate(180deg)" }}
-          >
-            HHR · Ticket
-          </span>
-          <span className="text-[9px] tabular-nums text-muted-foreground/70">
-            {serial(balance)}
-          </span>
+          <div className="flex flex-col gap-1.5">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <span
+                key={i}
+                className="h-1 w-1 rounded-full bg-muted-foreground/40"
+              />
+            ))}
+          </div>
         </div>
 
         {/* перфорация — полукруглые вырезы в цвет фона страницы */}
