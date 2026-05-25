@@ -1,13 +1,14 @@
 import { Link, useRouter, useRouterState } from "@tanstack/react-router";
 import { Bell, ChevronLeft, ShoppingBag } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { ME } from "@/data/profile";
-import { useCurrentRank } from "@/data/rank-state";
+import { RANKS, useCurrentRank } from "@/data/rank-state";
 import { useCart } from "@/hooks/use-cart";
 import { haptic } from "@/hooks/use-haptic";
 import { useScrollCollapse } from "@/hooks/use-scroll-collapse";
 import { useViewer } from "@/hooks/use-viewer";
 import { useMyProfile } from "@/lib/garage-api";
+import type { RankMeta } from "@/data/ranks";
 import { NotificationsSheet } from "./NotificationsSheet";
 
 
