@@ -36,20 +36,35 @@ export function IOSSheet({
   const close = () => onOpenChange(false);
   useThemeColor(open ? "#0d0d0d" : null);
   return (
-    <Drawer.Root open={open} onOpenChange={onOpenChange}>
+    <Drawer.Root
+      open={open}
+      onOpenChange={onOpenChange}
+      // Не масштабируем фон — это и есть причина «прыжков» при открытии
+      // вложенных пикеров и при анимации появления.
+      shouldScaleBackground={false}
+      setBackgroundColorOnScale={false}
+      // Свайп-вниз только за ручку наверху, чтобы случайный жест в форме
+      // не закрывал модалку с несохранёнными данными.
+      handleOnly
+      // Vaul сам поднимает контент при появлении iOS-клавиатуры.
+      repositionInputs
+    >
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 z-[80] bg-black/80" />
         <Drawer.Content
           className={cn(
             "fixed inset-x-0 bottom-0 z-[81] flex flex-col rounded-t-[20px] border-t border-white/[0.08] bg-[#0d0d0d] outline-none",
-            fullHeight ? "h-[92dvh]" : "max-h-[78dvh]",
+            fullHeight
+              ? "h-[calc(100dvh-env(safe-area-inset-top)-8px)]"
+              : "max-h-[78dvh]",
           )}
           style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
         >
           <Drawer.Title className="sr-only">{title}</Drawer.Title>
 
-          {/* ручка */}
-          <div className="mx-auto mt-2.5 h-1 w-10 shrink-0 rounded-full bg-white/15" />
+          {/* ручка — она же зона свайпа благодаря handleOnly */}
+          <Drawer.Handle className="mx-auto mt-2.5 h-1 w-10 shrink-0 rounded-full !bg-white/15" />
+
 
           {/* шапка — sticky */}
           <div className="flex shrink-0 items-center justify-between gap-3 border-b border-white/[0.05] px-5 pb-3 pt-3">
