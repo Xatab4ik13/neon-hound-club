@@ -62,7 +62,7 @@ export function PullToRefresh({ onRefresh, children, threshold = 70 }: Props) {
         setPull(48);
         haptic("success");
         try {
-          await onRefresh();
+          await (onRefresh ? onRefresh() : feedStore.refresh());
         } finally {
           setBusy(false);
           setPull(0);
