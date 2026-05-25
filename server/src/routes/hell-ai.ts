@@ -10,6 +10,7 @@ import { passPurchases } from "../db/schema/pass.js";
 import { systemSettings } from "../db/schema/economy.js";
 import { loadAiSettings, loadUserGarage, buildSystemPrompt, AI_LIMITS_DEFAULT, TIER_PRIMARY_MODEL, PLATINUM_FALLBACK_MODEL, type AiLimits } from "../lib/hell-ai.js";
 import { chatCompletion, streamChatCompletion, OpenRouterError, type ChatMessage } from "../lib/openrouter.js";
+import { acquireGlobalSlot, releaseGlobalSlot, acquireUserLock, releaseUserLock, AiBusyError, AiUserBusyError, aiThrottleStats } from "../lib/ai-throttle.js";
 
 const askSchema = z.object({
   question: z.string().trim().min(2).max(2000),
