@@ -583,19 +583,28 @@ function HellAiMobile() {
         ) : (
           <ul className="space-y-3">
             <AnimatePresence initial={false}>
-              {messages.map((m) => (
-                <li key={m.id} className="space-y-2">
-                  <HellAiBubble role="user" content={m.q} />
-                  {m.a !== undefined && (
+              {messages.map((m) => {
+                // bike-чип показываем только если для чата выбран байк
+                const chatBike = bikes.find((b) => b.id === activeChat?.bikeId);
+                const bikeMeta = chatBike ? bikeLabel(chatBike) : null;
+                return (
+                  <li key={m.id} className="space-y-2">
                     <HellAiBubble
-                      role="assistant"
-                      content={m.a}
-                      error={m.error}
-                      onRegenerate={() => regenerate(m.id)}
+                      role="user"
+                      content={m.q}
+                      meta={bikeMeta ? <span>· {bikeMeta}</span> : undefined}
                     />
-                  )}
-                </li>
-              ))}
+                    {m.a !== undefined && (
+                      <HellAiBubble
+                        role="assistant"
+                        content={m.a}
+                        error={m.error}
+                        onRegenerate={() => regenerate(m.id)}
+                      />
+                    )}
+                  </li>
+                );
+              })}
             </AnimatePresence>
 
             {isThinking && (
