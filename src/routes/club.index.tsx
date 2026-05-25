@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Smile, Paperclip, Send, Search as SearchIcon, Clock, Sticker, X, Pin, PinOff, Trash2 } from "lucide-react";
+import { Smile, Paperclip, Send, Search as SearchIcon, Clock, Sticker, X, Pin, PinOff, Trash2, BarChart3, Share2, MessageCircle, Heart } from "lucide-react";
 import { RANKS, type RankId } from "@/data/ranks";
 import { ME_SLUG, PUBLIC_USERS } from "@/data/users";
 import { useFeedPosts, feedStore, type FeedComment, type FeedPost, type FeedPoll } from "@/data/feed-store";
@@ -68,14 +68,26 @@ export function PostCard({ post, moderate = false }: { post: Post; moderate?: bo
 
   return (
     <article className="relative overflow-visible rounded-[24px] border border-white/[0.06] bg-card/60 shadow-[0_8px_40px_rgba(0,0,0,0.4)] transition-colors hover:border-white/[0.10]">
-      {post.pinned && (
-        <div className="pointer-events-none absolute -top-2 right-4 z-10 inline-flex items-center gap-1 rounded-md bg-primary px-2 py-1 font-mono text-[9px] font-black uppercase tracking-[0.18em] text-primary-foreground shadow-[0_4px_12px_rgba(0,0,0,0.45)]">
-          <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M16 4l4 4-6 2 2 6-4 4-2-6-6 2 4-4-2-6 6 2 4-4z" />
-          </svg>
-          Закреп
-        </div>
-      )}
+      {(() => {
+        // Priority: ОПРОС > ЗАКРЕП (один чип)
+        if (post.poll) {
+          return (
+            <div className="pointer-events-none absolute -top-2.5 left-4 z-10 inline-flex items-center gap-1 rounded-md border border-primary/50 bg-[oklch(0.18_0.08_357.3)] px-2 py-1 font-mono text-[9px] font-black uppercase tracking-[0.18em] text-primary shadow-[0_4px_12px_rgba(0,0,0,0.45)]">
+              <BarChart3 className="h-2.5 w-2.5" strokeWidth={2.8} />
+              Опрос
+            </div>
+          );
+        }
+        if (post.pinned) {
+          return (
+            <div className="pointer-events-none absolute -top-2.5 left-4 z-10 inline-flex items-center gap-1 rounded-md border border-primary/50 bg-[oklch(0.18_0.08_357.3)] px-2 py-1 font-mono text-[9px] font-black uppercase tracking-[0.18em] text-primary shadow-[0_4px_12px_rgba(0,0,0,0.45)]">
+              <Pin className="h-2.5 w-2.5" strokeWidth={2.8} />
+              Закреп
+            </div>
+          );
+        }
+        return null;
+      })()}
 
       <div className="overflow-hidden rounded-[24px]">
 
@@ -171,26 +183,40 @@ export function PostCard({ post, moderate = false }: { post: Post; moderate?: bo
         </div>
       )}
 
-      <div className="flex items-center gap-1 border-t border-white/[0.05] bg-black/30 px-3 py-2 md:px-4">
-        <PostAction
-          icon={<HeartIcon filled={liked} size={18} />}
-          count={likeCount}
-          label="Лайк"
-          active={liked}
-          onClick={() => {
-            feedStore.toggleLike(post.id, !liked);
-          }}
-        />
 
-        <PostAction
-          icon={<CommentIcon />}
-          count={post.comments.length}
-          label="Комментарий"
+      <div className="flex items-center gap-2 px-4 py-3 md:px-5">
+        <button
+          type="button"
+          onClick={() => feedStore.toggleLike(post.id, !liked)}
+          aria-label="Лайк"
+          aria-pressed={liked}
+          className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 font-mono text-[12px] font-bold tabular-nums transition-all active:scale-95 ${
+            liked
+              ? "bg-primary text-primary-foreground shadow-[0_4px_14px_rgba(255,45,149,0.35)]"
+              : "border border-white/[0.08] bg-white/[0.04] text-foreground hover:border-primary/40 hover:text-primary"
+          }`}
+        >
+          <Heart className="h-4 w-4" fill={liked ? "currentColor" : "none"} strokeWidth={2} />
+          <span>{formatCount(likeCount)}</span>
+        </button>
+
+        <button
+          type="button"
           onClick={() => setCommentsOpen(true)}
-        />
-        <div className="ml-auto">
-          <PostAction icon={<ShareIcon />} label="Поделиться" compact />
-        </div>
+          aria-label="Комментарий"
+          className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 font-mono text-[12px] font-bold tabular-nums text-foreground transition-all hover:border-primary/40 hover:text-primary active:scale-95"
+        >
+          <MessageCircle className="h-4 w-4" strokeWidth={2} />
+          <span>{formatCount(post.comments.length)}</span>
+        </button>
+
+        <button
+          type="button"
+          aria-label="Поделиться"
+          className="ml-auto grid h-9 w-9 place-items-center rounded-full border border-white/[0.08] bg-white/[0.04] text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary active:scale-95"
+        >
+          <Share2 className="h-4 w-4" strokeWidth={2} />
+        </button>
       </div>
 
       <CommentsPreview
@@ -392,9 +418,9 @@ function CommentsPreview({
       <button
         type="button"
         onClick={onOpen}
-        className="flex w-full items-center gap-2 border-t border-white/[0.05] bg-[oklch(0.10_0_0)]/60 px-4 py-3 text-left font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground transition-colors hover:text-primary md:px-5"
+        className="flex w-full items-center gap-2 px-4 pb-4 pt-1 text-left font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground transition-colors hover:text-primary md:px-5"
       >
-        Написать комментарий
+        Написать комментарий →
       </button>
     );
   }
@@ -404,19 +430,21 @@ function CommentsPreview({
     <button
       type="button"
       onClick={onOpen}
-      className="flex w-full flex-col gap-2 border-t border-white/[0.05] bg-[oklch(0.10_0_0)]/60 px-4 py-3 text-left transition-colors active:bg-white/[0.02] md:px-5"
+      className="flex w-full flex-col gap-2 px-4 pb-4 pt-1 text-left transition-opacity active:opacity-70 md:px-5"
     >
-      <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.18em] text-primary">
-        Все комментарии · {comments.length}
-        <span className="text-muted-foreground">→</span>
+      <div className="flex gap-2.5 border-l-2 border-primary pl-2.5">
+        <div className="min-w-0 flex-1">
+          <div className="truncate font-mono text-[10px] font-black uppercase tracking-[0.18em] text-primary">
+            {user?.nick ?? last.authorSlug}
+          </div>
+          <div className="mt-0.5 line-clamp-2 text-[13px] leading-snug text-foreground/85">
+            {last.text.startsWith("::sticker::") ? "🖼 Стикер" : last.text}
+          </div>
+        </div>
       </div>
-      <div className="flex items-start gap-2">
-        <span className="truncate font-display text-[12px] font-bold uppercase italic tracking-tight text-foreground/80">
-          {user?.nick ?? last.authorSlug}
-        </span>
-        <span className="line-clamp-1 flex-1 text-[13px] text-foreground/70">
-          {last.text.startsWith("::sticker::") ? "🖼 Стикер" : last.text}
-        </span>
+      <div className="inline-flex items-center gap-1 font-mono text-[10px] font-black uppercase tracking-[0.18em] text-primary">
+        Все комментарии · {comments.length}
+        <span>→</span>
       </div>
     </button>
   );
