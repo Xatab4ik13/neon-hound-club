@@ -607,14 +607,14 @@ function HellAiMobile() {
         >
           {/* квота */}
           <div className="flex items-center justify-between px-4 pb-1.5 pt-2">
-            <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+            <span className="text-[12px] text-muted-foreground">
               {tierLabel} ·{" "}
-              <span className="tabular-nums text-foreground/70">
-                {isUnlimited ? "∞" : `${used}/${quota}`}
+              <span className="tabular-nums text-foreground/80">
+                {isUnlimited ? "∞" : `${used} / ${quota}`}
               </span>
             </span>
             {!canAsk && (
-              <span className="font-mono text-[10px] uppercase tracking-wider text-red-400/80">
+              <span className="text-[12px] text-red-400/80">
                 {!activeBike && !isStaff ? "добавь байк" : "лимит"}
               </span>
             )}
