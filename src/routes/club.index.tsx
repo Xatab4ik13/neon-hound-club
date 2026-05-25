@@ -183,16 +183,6 @@ export function PostCard({ post, moderate = false }: { post: Post; moderate?: bo
         </div>
       )}
 
-      <div className="flex items-center gap-1 border-t border-white/[0.05] bg-black/30 px-3 py-2 md:px-4">
-        <PostAction
-          icon={<HeartIcon filled={liked} size={18} />}
-          count={likeCount}
-          label="Лайк"
-          active={liked}
-          onClick={() => {
-            feedStore.toggleLike(post.id, !liked);
-          }}
-        />
 
       <div className="flex items-center gap-2 px-4 py-3 md:px-5">
         <button
