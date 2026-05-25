@@ -52,6 +52,10 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
   const [photoError, setPhotoError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
+  // Снимок исходного состояния — для определения «грязной» формы.
+  const initialSnapshotRef = useRef<string>("");
+
+
 
   // Источники данных
   const [makes, setMakes] = useState<string[]>([]);
@@ -91,7 +95,47 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
     setModInput("");
     setPhotoError(null);
     setSubmitting(false);
+    initialSnapshotRef.current = JSON.stringify({
+      brand: bike?.brand ?? "",
+      model: bike?.model ?? "",
+      year: bike?.year ?? new Date().getFullYear(),
+      color: bike?.color ?? "",
+      nickname: bike?.nickname ?? "",
+      mileage: bike?.mileage ?? "",
+      purchaseDate: bike?.purchaseDate ?? "",
+      mods: bike?.mods ?? [],
+      photo: bike?.photo ?? "",
+    });
   }, [open, bike]);
+
+  function isDirty() {
+    const current = JSON.stringify({
+      brand,
+      model,
+      year,
+      color,
+      nickname,
+      mileage,
+      purchaseDate,
+      mods,
+      photo: photo ?? "",
+    });
+    return current !== initialSnapshotRef.current || !!photoFile;
+  }
+
+  function requestClose(next: boolean) {
+    if (next) {
+      onOpenChange(true);
+      return;
+    }
+    if (submitting) return;
+    if (isDirty()) {
+      const ok = window.confirm("Закрыть без сохранения? Изменения будут потеряны.");
+      if (!ok) return;
+    }
+    onOpenChange(false);
+  }
+
 
   // Освобождаем blob-URL при размонтировании — иначе утечёт.
   useEffect(() => {
@@ -341,11 +385,12 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
         <div className="flex items-center justify-end gap-2 border-t border-white/[0.06] pt-4">
           <button
             type="button"
-            onClick={() => onOpenChange(false)}
+            onClick={() => requestClose(false)}
             className="border border-white/[0.08] bg-transparent px-4 py-2 font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground transition-colors hover:border-white/30 hover:text-foreground"
           >
             Отмена
           </button>
+
           <button
             type="button"
             onClick={() => handleSubmit()}
@@ -363,7 +408,8 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
     return (
       <IOSSheet
         open={open}
-        onOpenChange={onOpenChange}
+        onOpenChange={requestClose}
+
         title={bike ? "Редактировать байк" : "Добавить байк"}
         fullHeight
         doneLabel={submitting ? "..." : bike ? "Сохранить" : "Добавить"}
@@ -379,7 +425,7 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
 
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={requestClose}>
       <DialogContent className="max-h-[92vh] overflow-y-auto border-white/[0.08] bg-[#0b0b0b] sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle className="font-display text-xl font-black uppercase italic tracking-tight">
