@@ -187,10 +187,16 @@ function bikeLabel(b: StoredBike) {
   return `${b.brand} ${b.model}${b.year ? ` ${b.year}` : ""}`;
 }
 
-async function askHellAi(question: string, bikeId?: string, chatId?: string): Promise<string> {
+async function askHellAi(
+  question: string,
+  bikeId?: string,
+  chatId?: string,
+  signal?: AbortSignal,
+): Promise<string> {
   const res = await apiFetch<{ answer: string }>("/api/v1/hell-ai/ask", {
     method: "POST",
     body: JSON.stringify({ question, bikeId, chatId }),
+    signal,
   });
   return res.answer;
 }
