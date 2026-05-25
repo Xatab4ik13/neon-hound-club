@@ -488,11 +488,7 @@ function HellAiMobile() {
 
   return (
     <div className="relative flex min-h-[calc(100vh-3.25rem)] flex-col">
-      {/* фоновое свечение */}
-      <div aria-hidden className="pointer-events-none fixed inset-x-0 top-14 -z-10 h-72 overflow-hidden">
-        <div className="absolute left-1/4 top-0 h-72 w-72 animate-pulse rounded-full bg-primary/[0.08] blur-[110px]" />
-        <div className="absolute right-1/4 top-10 h-56 w-56 animate-pulse rounded-full bg-primary/[0.06] blur-[90px] [animation-delay:700ms]" />
-      </div>
+      {/* без фоновых glow — чистый iOS */}
 
       {/* верхняя панель: история + контекст + новый чат */}
       <div className="sticky top-14 z-20 -mt-px border-b border-white/[0.05] bg-background/80 px-3 py-2 backdrop-blur-xl">
