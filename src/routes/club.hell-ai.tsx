@@ -3,7 +3,7 @@
 // Мобайл (iOS-стиль): экран-чат — история сообщений + липкий композер над таб-баром,
 // переключатель байка и команды открываются bottom-sheet'ом (vaul).
 
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   useCallback,
   useEffect,
@@ -31,6 +31,7 @@ import {
   History as HistoryIcon,
   MessageSquarePlus,
   Trash2,
+  ArrowRight,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -39,6 +40,9 @@ import { type StoredBike } from "@/data/bike-storage";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useViewer } from "@/hooks/use-viewer";
 import { useBikes, type ServerBike } from "@/lib/garage-api";
+import { haptic } from "@/hooks/use-haptic";
+import { Swipeable } from "@/components/club/Swipeable";
+import { HellAiBubble } from "@/components/club/HellAiBubble";
 
 export const Route = createFileRoute("/club/hell-ai")({
   head: () => ({
@@ -340,10 +344,17 @@ function HellAiMobile() {
     setUsedDelta(0);
   }, [serverUsed]);
 
-  // авто-скролл вниз при новых сообщениях / typing
-  useEffect(() => {
+  // умный авто-скролл вниз: только если юзер уже у низа (в пределах 140px)
+  const stickToBottomRef = useRef(true);
+  function handleScroll() {
     const el = scrollRef.current;
     if (!el) return;
+    const distance = el.scrollHeight - el.scrollTop - el.clientHeight;
+    stickToBottomRef.current = distance < 140;
+  }
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el || !stickToBottomRef.current) return;
     requestAnimationFrame(() => {
       el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
     });
@@ -353,11 +364,48 @@ function HellAiMobile() {
     setChats((prev) => prev.map((c) => (c.id === id ? updater(c) : c)));
   }
 
+  function makeId() {
+    if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+      return crypto.randomUUID();
+    }
+    return `m_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+  }
+
+  function performAsk(text: string, msgId: string, chatId: string) {
+    setIsThinking(true);
+    setUsedDelta((n) => n + 1);
+    askHellAi(text, activeBike?.id, chatId)
+      .then((a) => {
+        updateChat(chatId, (c) => ({
+          ...c,
+          messages: c.messages.map((m) => (m.id === msgId ? { ...m, a, error: false } : m)),
+          updatedAt: Date.now(),
+        }));
+        refreshStatus();
+        haptic("selection");
+      })
+      .catch((err: unknown) => {
+        updateChat(chatId, (c) => ({
+          ...c,
+          messages: c.messages.map((m) =>
+            m.id === msgId ? { ...m, a: errorToMessage(err), error: true } : m,
+          ),
+          updatedAt: Date.now(),
+        }));
+        setUsedDelta((n) => Math.max(0, n - 1));
+        refreshStatus();
+        haptic("warning");
+      })
+      .finally(() => setIsThinking(false));
+  }
+
   function send() {
     const text = value.trim();
     if (!text || !canAsk || isThinking || !activeChatId) return;
-    const id = String(Date.now());
+    const id = makeId();
     const chatId = activeChatId;
+    haptic("light");
+    stickToBottomRef.current = true;
     updateChat(chatId, (c) => ({
       ...c,
       messages: [...c.messages, { id, q: text }],
@@ -367,29 +415,20 @@ function HellAiMobile() {
     }));
     setValue("");
     adjust(true);
-    setIsThinking(true);
-    setUsedDelta((n) => n + 1);
-    askHellAi(text, activeBike?.id, chatId)
-      .then((a) => {
-        updateChat(chatId, (c) => ({
-          ...c,
-          messages: c.messages.map((m) => (m.id === id ? { ...m, a } : m)),
-          updatedAt: Date.now(),
-        }));
-        refreshStatus();
-      })
-      .catch((err: unknown) => {
-        updateChat(chatId, (c) => ({
-          ...c,
-          messages: c.messages.map((m) =>
-            m.id === id ? { ...m, a: errorToMessage(err), error: true } : m,
-          ),
-          updatedAt: Date.now(),
-        }));
-        setUsedDelta((n) => Math.max(0, n - 1));
-        refreshStatus();
-      })
-      .finally(() => setIsThinking(false));
+    performAsk(text, id, chatId);
+  }
+
+  function regenerate(msgId: string) {
+    if (!activeChatId || isThinking) return;
+    const chat = chats.find((c) => c.id === activeChatId);
+    const msg = chat?.messages.find((m) => m.id === msgId);
+    if (!msg) return;
+    haptic("light");
+    updateChat(activeChatId, (c) => ({
+      ...c,
+      messages: c.messages.map((m) => (m.id === msgId ? { ...m, a: undefined, error: false } : m)),
+    }));
+    performAsk(msg.q, msgId, activeChatId);
   }
 
   function onKey(e: ReactKeyboardEvent<HTMLTextAreaElement>) {
@@ -495,47 +534,30 @@ function HellAiMobile() {
       {/* лента сообщений */}
       <div
         ref={scrollRef}
+        onScroll={handleScroll}
         className="flex-1 overflow-y-auto px-4 pb-4 pt-4"
         style={{ paddingBottom: `calc(${composerOffset} + 110px)` }}
       >
         {messages.length === 0 ? (
-          <EmptyChat bikeStr={bikeStr} onPick={pickCommand} disabled={!canAsk} />
+          <EmptyChat
+            bikeStr={bikeStr}
+            onPick={pickCommand}
+            disabled={!canAsk}
+            isGuest={isGuest}
+          />
         ) : (
           <ul className="space-y-3">
             <AnimatePresence initial={false}>
               {messages.map((m) => (
                 <li key={m.id} className="space-y-2">
-                  {/* вопрос — пузырь справа */}
-                  <motion.div
-                    initial={{ opacity: 0, y: 8, scale: 0.96 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    transition={{ type: "spring", stiffness: 520, damping: 32 }}
-                    className="flex justify-end"
-                  >
-                    <div className="max-w-[82%] rounded-[20px] rounded-br-md bg-primary px-3.5 py-2 text-[15px] leading-snug text-primary-foreground shadow-sm">
-                      {m.q}
-                    </div>
-                  </motion.div>
-
-                  {/* ответ — пузырь слева */}
+                  <HellAiBubble role="user" content={m.q} />
                   {m.a !== undefined && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 8, scale: 0.96 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      transition={{ type: "spring", stiffness: 520, damping: 32, delay: 0.04 }}
-                      className="flex justify-start"
-                    >
-                      <div
-                        className={cn(
-                          "max-w-[86%] rounded-[20px] rounded-bl-md px-3.5 py-2.5 text-[15px] leading-relaxed shadow-sm",
-                          m.error
-                            ? "border border-red-500/25 bg-red-500/[0.06] text-red-200"
-                            : "border border-white/[0.06] bg-white/[0.04] text-foreground",
-                        )}
-                      >
-                        {m.a}
-                      </div>
-                    </motion.div>
+                    <HellAiBubble
+                      role="assistant"
+                      content={m.a}
+                      error={m.error}
+                      onRegenerate={() => regenerate(m.id)}
+                    />
                   )}
                 </li>
               ))}
@@ -548,7 +570,7 @@ function HellAiMobile() {
                   animate={{ opacity: 1, y: 0 }}
                   className="flex justify-start"
                 >
-                  <div className="rounded-[20px] rounded-bl-md border border-white/[0.06] bg-white/[0.04] px-4 py-3 shadow-sm">
+                  <div className="rounded-[22px] rounded-bl-[6px] border border-white/[0.06] bg-white/[0.05] px-4 py-3 shadow-sm">
                     <TypingDots />
                   </div>
                 </motion.div>
@@ -558,82 +580,109 @@ function HellAiMobile() {
         )}
       </div>
 
-      {/* липкий композер */}
-      <div
-        className="fixed inset-x-0 z-30 border-t border-white/[0.06] bg-background/85 backdrop-blur-xl"
-        style={{ bottom: composerOffset }}
-      >
-        {/* квота */}
-        <div className="flex items-center justify-between px-4 pb-1.5 pt-2">
-          <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-            {tierLabel} ·{" "}
-            <span className="tabular-nums text-foreground/70">
-              {isUnlimited ? "∞" : `${used}/${quota}`}
-            </span>
-          </span>
-          {!canAsk && !isGuest && (
-            <span className="font-mono text-[10px] uppercase tracking-wider text-red-400/80">
-              {!activeBike && !isStaff ? "добавь байк" : "лимит"}
-            </span>
-          )}
+
+      {/* липкий композер / CTA для гостя */}
+      {isGuest ? (
+        <div
+          className="fixed inset-x-0 z-30 border-t border-white/[0.06] bg-background/90 backdrop-blur-xl"
+          style={{ bottom: composerOffset }}
+        >
+          <div className="px-4 pb-3 pt-3">
+            <Link
+              to="/club/hell-pass"
+              onClick={() => haptic("light")}
+              className="flex h-14 w-full items-center justify-between rounded-2xl bg-primary px-5 text-primary-foreground shadow-[0_8px_24px_-8px_color-mix(in_oklab,var(--primary)_70%,transparent)] active:scale-[0.98] transition-transform"
+            >
+              <span className="flex items-center gap-3">
+                <Sparkles className="h-5 w-5" />
+                <span className="text-[17px] font-semibold">Активировать Hell Pass</span>
+              </span>
+              <ArrowRight className="h-5 w-5" />
+            </Link>
+            <p className="mt-2 px-1 text-center text-[13px] text-muted-foreground">
+              AI-механик по твоему мото · 20/100/∞ вопросов на 30 дней
+            </p>
+          </div>
         </div>
+      ) : (
+        <div
+          className="fixed inset-x-0 z-30 border-t border-white/[0.06] bg-background/85 backdrop-blur-xl"
+          style={{ bottom: composerOffset }}
+        >
+          {/* квота */}
+          <div className="flex items-center justify-between px-4 pb-1.5 pt-2">
+            <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+              {tierLabel} ·{" "}
+              <span className="tabular-nums text-foreground/70">
+                {isUnlimited ? "∞" : `${used}/${quota}`}
+              </span>
+            </span>
+            {!canAsk && (
+              <span className="font-mono text-[10px] uppercase tracking-wider text-red-400/80">
+                {!activeBike && !isStaff ? "добавь байк" : "лимит"}
+              </span>
+            )}
+          </div>
 
-        <div className="flex items-end gap-2 px-3 pb-2">
-          <button
-            type="button"
-            onClick={() => setCmdSheetOpen(true)}
-            className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/[0.08] bg-white/[0.03] text-muted-foreground active:scale-95"
-            aria-label="команды"
-          >
-            <Plus className="h-[18px] w-[18px]" />
-          </button>
-
-          <div className="flex min-w-0 flex-1 items-end rounded-[22px] border border-white/[0.08] bg-white/[0.03]">
-            <textarea
-              ref={taRef}
-              value={value}
-              onChange={(e) => {
-                setValue(e.target.value);
-                adjust();
+          <div className="flex items-end gap-2 px-3 pb-2">
+            <button
+              type="button"
+              onClick={() => {
+                haptic("selection");
+                setCmdSheetOpen(true);
               }}
-              onKeyDown={onKey}
-              disabled={!canAsk}
-              rows={1}
-              placeholder={
-                isGuest
-                  ? "Hell AI доступен с Hell Pass"
-                  : !activeBike && !isStaff
+              className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/[0.08] bg-white/[0.03] text-muted-foreground active:scale-95"
+              aria-label="команды"
+            >
+              <Plus className="h-[20px] w-[20px]" />
+            </button>
+
+            <div className="flex min-w-0 flex-1 items-end rounded-[22px] border border-white/[0.08] bg-white/[0.03]">
+              <textarea
+                ref={taRef}
+                value={value}
+                onChange={(e) => {
+                  setValue(e.target.value);
+                  adjust();
+                }}
+                onKeyDown={onKey}
+                disabled={!canAsk}
+                rows={1}
+                placeholder={
+                  !activeBike && !isStaff
                     ? "добавь байк в гараж"
                     : !canAsk
                       ? "лимит на месяц исчерпан"
                       : `спроси про ${bikeStr}…`
-              }
-              className="min-h-[40px] w-full resize-none border-none bg-transparent px-3.5 py-2.5 text-[15px] leading-snug text-foreground placeholder:text-muted-foreground/45 focus:outline-none disabled:cursor-not-allowed"
-              style={{ overflow: "hidden" }}
-            />
-          </div>
+                }
+                className="min-h-[44px] w-full resize-none border-none bg-transparent px-3.5 py-2.5 text-[17px] leading-snug text-foreground placeholder:text-muted-foreground/45 focus:outline-none disabled:cursor-not-allowed"
+                style={{ overflow: "hidden" }}
+              />
+            </div>
 
-          <motion.button
-            type="button"
-            onClick={send}
-            whileTap={{ scale: 0.92 }}
-            disabled={isThinking || !value.trim() || !canAsk}
-            className={cn(
-              "grid h-9 w-9 shrink-0 place-items-center rounded-full transition-colors",
-              value.trim() && canAsk
-                ? "bg-primary text-primary-foreground shadow-[0_4px_14px_-4px_color-mix(in_oklab,var(--primary)_60%,transparent)]"
-                : "bg-white/[0.06] text-muted-foreground",
-            )}
-            aria-label="Отправить"
-          >
-            {isThinking ? (
-              <LoaderIcon className="h-[18px] w-[18px] animate-spin" />
-            ) : (
-              <SendIcon className="h-[16px] w-[16px]" />
-            )}
-          </motion.button>
+            <motion.button
+              type="button"
+              onClick={send}
+              whileTap={{ scale: 0.9 }}
+              disabled={isThinking || !value.trim() || !canAsk}
+              className={cn(
+                "grid h-10 w-10 shrink-0 place-items-center rounded-full transition-colors",
+                value.trim() && canAsk
+                  ? "bg-primary text-primary-foreground shadow-[0_4px_14px_-4px_color-mix(in_oklab,var(--primary)_60%,transparent)]"
+                  : "bg-white/[0.06] text-muted-foreground",
+              )}
+              aria-label="Отправить"
+            >
+              {isThinking ? (
+                <LoaderIcon className="h-[20px] w-[20px] animate-spin" />
+              ) : (
+                <SendIcon className="h-[18px] w-[18px]" />
+              )}
+            </motion.button>
+          </div>
         </div>
-      </div>
+      )}
+
 
       {/* sheet: выбор байка */}
       <BikeSheet
@@ -734,7 +783,7 @@ function HistorySheet({
                 <div className="mb-2 px-1 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
                   обращения · {sorted.length}
                 </div>
-                <ul className="overflow-hidden rounded-2xl border border-white/[0.06] bg-card/40 divide-y divide-white/[0.05]">
+                <ul className="space-y-2">
                   {sorted.map((c) => {
                     const active = c.id === activeId;
                     const count = c.messages.length;
@@ -743,57 +792,63 @@ function HistorySheet({
                         ? "Пустой чат"
                         : c.title;
                     return (
-                      <li key={c.id} className="relative">
-                        <button
-                          type="button"
-                          onClick={() => onPick(c.id)}
-                          className="flex w-full items-start gap-3 px-4 py-3 pr-12 text-left active:bg-white/[0.04]"
+                      <li key={c.id}>
+                        <Swipeable
+                          radius={16}
+                          left={{
+                            icon: <Trash2 className="h-5 w-5" />,
+                            label: "Удалить",
+                            bg: "linear-gradient(90deg, rgba(239,68,68,0.18), rgba(239,68,68,0.32))",
+                            fg: "rgb(252,165,165)",
+                            onAction: () => onDelete(c.id),
+                          }}
                         >
-                          <span
+                          <button
+                            type="button"
+                            onClick={() => onPick(c.id)}
                             className={cn(
-                              "mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-lg",
+                              "flex w-full items-start gap-3 rounded-2xl border px-4 py-3 text-left active:scale-[0.99] active:bg-white/[0.05]",
                               active
-                                ? "bg-primary/15 text-primary"
-                                : "bg-white/[0.05] text-muted-foreground",
+                                ? "border-primary/30 bg-primary/[0.06]"
+                                : "border-white/[0.06] bg-card/40",
                             )}
                           >
-                            <Sparkles className="h-[18px] w-[18px]" />
-                          </span>
-                          <span className="min-w-0 flex-1">
-                            <span className="flex items-center gap-2">
-                              <span className="min-w-0 flex-1 truncate text-[15px] font-semibold text-foreground">
-                                {preview}
-                              </span>
-                              {active && (
-                                <span className="font-mono text-[9px] uppercase tracking-wider text-primary">
-                                  активный
-                                </span>
+                            <span
+                              className={cn(
+                                "mt-0.5 grid h-10 w-10 shrink-0 place-items-center rounded-xl",
+                                active
+                                  ? "bg-primary/15 text-primary"
+                                  : "bg-white/[0.05] text-muted-foreground",
                               )}
+                            >
+                              <Sparkles className="h-[20px] w-[20px]" />
                             </span>
-                            <span className="mt-0.5 flex items-center gap-2 font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-                              <span>{formatRelative(c.updatedAt)}</span>
-                              <span className="opacity-50">·</span>
-                              <span className="tabular-nums">
-                                {count} {count === 1 ? "сообщ." : "сообщ."}
+                            <span className="min-w-0 flex-1">
+                              <span className="flex items-center gap-2">
+                                <span className="min-w-0 flex-1 truncate text-[17px] font-semibold text-foreground">
+                                  {preview}
+                                </span>
+                                {active && (
+                                  <span className="font-mono text-[9px] uppercase tracking-wider text-primary">
+                                    активный
+                                  </span>
+                                )}
+                              </span>
+                              <span className="mt-1 flex items-center gap-2 font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
+                                <span>{formatRelative(c.updatedAt)}</span>
+                                <span className="opacity-50">·</span>
+                                <span className="tabular-nums">
+                                  {count} {count === 1 ? "сообщ." : "сообщ."}
+                                </span>
                               </span>
                             </span>
-                          </span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onDelete(c.id);
-                          }}
-                          className="absolute right-2 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full text-red-400/80 active:scale-90 active:bg-red-500/10"
-                          aria-label="Удалить"
-                        >
-                          <Trash2 className="h-[16px] w-[16px]" />
-                        </button>
+                          </button>
+                        </Swipeable>
                       </li>
                     );
                   })}
                 </ul>
+
               </>
             )}
           </div>
@@ -808,62 +863,72 @@ function EmptyChat({
   bikeStr,
   onPick,
   disabled,
+  isGuest,
 }: {
   bikeStr: string;
   onPick: (c: Cmd) => void;
   disabled: boolean;
+  isGuest: boolean;
 }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: "easeOut" }}
-      className="flex flex-col items-center px-2 pt-8 text-center"
+      className="flex flex-col items-center px-2 pt-6 text-center"
     >
-      <div className="mb-3 inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
+      <div className="mb-4 inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
         <span className="relative flex h-1.5 w-1.5">
           <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-60" />
           <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary" />
         </span>
         hell ai · online
       </div>
-      <h1 className="bg-gradient-to-r from-foreground to-foreground/40 bg-clip-text font-display text-[26px] font-medium leading-tight tracking-tight text-transparent">
-        Чем помочь по&nbsp;твоему мото?
+      <h1 className="bg-gradient-to-r from-foreground to-foreground/40 bg-clip-text font-display text-[34px] font-black italic uppercase leading-[0.95] tracking-tight text-transparent">
+        Чем помочь<br />по&nbsp;твоему мото?
       </h1>
-      <p className="mt-2 max-w-[280px] text-[13px] text-muted-foreground">
-        Спрашивай про {bikeStr}: затяжка, давление, масло, болячки.
+      <p className="mt-3 max-w-[300px] text-[15px] leading-snug text-muted-foreground">
+        {isGuest
+          ? "AI-механик по твоему байку: моменты затяжки, давление, масла, типичные болячки модели."
+          : <>Спрашивай про {bikeStr}: затяжка, давление, масло, болячки.</>}
       </p>
 
-      <div className="mt-6 w-full">
-        <div className="mb-2 px-1 text-left font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-          быстрый старт
-        </div>
-        <ul className="grid grid-cols-2 gap-2">
-          {COMMANDS.slice(0, 4).map((c) => (
-            <li key={c.prefix}>
-              <button
-                type="button"
-                onClick={() => onPick(c)}
-                disabled={disabled}
-                className="flex w-full items-center gap-2 rounded-2xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5 text-left text-[13px] text-foreground/85 active:scale-[0.97] active:bg-white/[0.06] disabled:opacity-50"
-              >
-                <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-primary/12 text-primary">
-                  {c.icon}
-                </span>
-                <span className="min-w-0">
-                  <span className="block truncate font-medium">{c.label}</span>
-                  <span className="block truncate text-[11px] text-muted-foreground">
-                    {c.description}
+      {!isGuest && (
+        <div className="mt-7 w-full">
+          <div className="mb-2 px-1 text-left font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+            быстрый старт
+          </div>
+          <ul className="space-y-2">
+            {COMMANDS.slice(0, 4).map((c) => (
+              <li key={c.prefix}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    haptic("selection");
+                    onPick(c);
+                  }}
+                  disabled={disabled}
+                  className="flex w-full items-center gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.03] px-3.5 py-3 text-left active:scale-[0.98] active:bg-white/[0.06] disabled:opacity-50"
+                >
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/12 text-primary">
+                    {c.icon}
                   </span>
-                </span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      </div>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-[16px] font-semibold text-foreground">{c.label}</span>
+                    <span className="block text-[13px] text-muted-foreground">
+                      {c.description}
+                    </span>
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </motion.div>
   );
 }
+
 
 function BikeSheet({
   open,
