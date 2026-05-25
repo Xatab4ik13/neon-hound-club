@@ -90,7 +90,7 @@ export function MobileTopBar() {
             to="/club/me"
             aria-label="Профиль"
             className="relative grid h-10 w-10 shrink-0 overflow-hidden rounded-full bg-primary/15 text-primary transition-transform active:scale-90"
-            style={{ boxShadow: `0 0 0 2px ${rank.accentSoft}` }}
+            style={{ boxShadow: `0 0 0 2px ${effectiveRank.accentSoft}` }}
           >
             {avatarUrl ? (
               <img
@@ -108,23 +108,31 @@ export function MobileTopBar() {
           </Link>
 
           {/* Капсула HELL · XP → ранг.
-              Прогресс-фон: тёмная подложка + розовый филл шириной xpPct%.
+              Прогресс-фон: тёмная подложка + филл цвета ранга шириной xpPct%.
               Текст лежит поверх. */}
           <Link
             to="/club/rank"
             aria-label={`Ранг: ${xp} из ${xpMax} XP`}
             className="relative flex h-10 min-w-0 flex-1 items-center justify-between overflow-hidden rounded-full border border-white/[0.08] bg-[oklch(0.18_0.02_357.3)] px-4 text-foreground transition-transform active:scale-[0.98]"
           >
-            {/* Розовый прогресс-филл */}
+            {/* Прогресс-филл цвета ранга */}
             <span
               aria-hidden
               className="pointer-events-none absolute inset-y-0 left-0 rounded-full transition-[width] duration-500 ease-out"
-              style={{
-                width: `${xpPct}%`,
-                background:
-                  "linear-gradient(90deg, oklch(0.55 0.22 357.3) 0%, oklch(0.72 0.26 357.3) 100%)",
-                boxShadow: "0 0 18px rgba(255,45,149,0.45)",
-              }}
+              style={(() => {
+                const a = effectiveRank.accent;
+                const from = a.startsWith('var(')
+                  ? 'oklch(0.55 0.22 357.3)'
+                  : `color-mix(in oklab, ${a}, #000 25%)`;
+                const to = a.startsWith('var(')
+                  ? 'oklch(0.72 0.26 357.3)'
+                  : a;
+                return {
+                  width: `${xpPct}%`,
+                  background: `linear-gradient(90deg, ${from} 0%, ${to} 100%)`,
+                  boxShadow: `0 0 18px ${effectiveRank.accentSoft}`,
+                };
+              })()}
             >
               {/* Переливающийся блик по филлу */}
               <span
