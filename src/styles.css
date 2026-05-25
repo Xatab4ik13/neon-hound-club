@@ -109,6 +109,12 @@
   --ring: oklch(0.62 0.22 5);
 }
 
+/* Feed perf: skip render for off-viewport post cards. */
+.post-card {
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 520px;
+}
+
 @layer base {
   * {
     border-color: var(--color-border);

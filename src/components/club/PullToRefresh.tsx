@@ -1,58 +1,70 @@
-import { useEffect, useRef, useState } from "react";
-import { useRouter } from "@tanstack/react-router";
-import { Loader2 } from "lucide-react";
+// SwiftUI-подобный pull-to-refresh: тянем сверху, резина, релиз → refresh.
+// Только touch (мобайл). На десктопе ничего не делает.
+// Перформанс: transform на одном внутреннем контейнере, без re-layout.
+
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { haptic } from "@/hooks/use-haptic";
+import { feedStore } from "@/data/feed-store";
 
-// iOS-style pull-to-refresh. Срабатывает только когда скролл уже наверху.
-// При достижении трешхолда — invalidate() роутера (перетягивает loader-данные
-// и инвалидирует react-query кеш) + haptic. Без external libs.
+type Props = {
+  onRefresh?: () => Promise<void> | void;
+  children: ReactNode;
+  /** Порог срабатывания в px. По умолчанию 70. */
+  threshold?: number;
+};
 
-const THRESHOLD = 72; // px — порог срабатывания
-const MAX_PULL = 120; // px — визуальный максимум
-
-export function PullToRefresh({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
-  const [pull, setPull] = useState(0);
-  const [refreshing, setRefreshing] = useState(false);
-  const startY = useRef<number | null>(null);
+export function PullToRefresh({ onRefresh, children, threshold = 70 }: Props) {
+  const wrapRef = useRef<HTMLDivElement | null>(null);
+  const startY = useRef(0);
+  const pulling = useRef(false);
   const armed = useRef(false);
+  const [pull, setPull] = useState(0);
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+    if (typeof window === "undefined") return;
+    if (!("ontouchstart" in window)) return;
+
     const onTouchStart = (e: TouchEvent) => {
-      if (refreshing) return;
-      // Только если страница реально наверху.
-      if (window.scrollY > 0) {
-        startY.current = null;
-        armed.current = false;
-        return;
-      }
+      if (busy) return;
+      // Тянем только если страница скроллена в самый верх.
+      if ((window.scrollY || document.documentElement.scrollTop) > 0) return;
       startY.current = e.touches[0].clientY;
-      armed.current = true;
+      pulling.current = true;
+      armed.current = false;
     };
 
     const onTouchMove = (e: TouchEvent) => {
-      if (!armed.current || startY.current === null || refreshing) return;
+      if (!pulling.current || busy) return;
       const dy = e.touches[0].clientY - startY.current;
       if (dy <= 0) {
-        setPull(0);
+        if (pull !== 0) setPull(0);
         return;
       }
-      // Резиновое сопротивление — чем дальше, тем медленнее.
-      const eased = Math.min(MAX_PULL, dy * 0.5);
+      // Резина: чем дальше — тем тяжелее.
+      const eased = Math.min(140, Math.pow(dy, 0.82));
       setPull(eased);
+      if (!armed.current && eased >= threshold) {
+        armed.current = true;
+        haptic("light");
+      } else if (armed.current && eased < threshold) {
+        armed.current = false;
+      }
     };
 
     const onTouchEnd = async () => {
-      if (!armed.current) return;
-      armed.current = false;
-      startY.current = null;
-      if (pull >= THRESHOLD && !refreshing) {
-        setRefreshing(true);
+      if (!pulling.current) return;
+      pulling.current = false;
+      if (armed.current && !busy) {
+        setBusy(true);
+        setPull(48);
         haptic("success");
         try {
-          await router.invalidate();
+          await (onRefresh ? onRefresh() : feedStore.refresh());
         } finally {
-          setRefreshing(false);
+          setBusy(false);
           setPull(0);
         }
       } else {
@@ -60,54 +72,73 @@ export function PullToRefresh({ children }: { children: React.ReactNode }) {
       }
     };
 
-    window.addEventListener("touchstart", onTouchStart, { passive: true });
-    window.addEventListener("touchmove", onTouchMove, { passive: true });
-    window.addEventListener("touchend", onTouchEnd, { passive: true });
-    window.addEventListener("touchcancel", onTouchEnd, { passive: true });
+    el.addEventListener("touchstart", onTouchStart, { passive: true });
+    el.addEventListener("touchmove", onTouchMove, { passive: true });
+    el.addEventListener("touchend", onTouchEnd, { passive: true });
+    el.addEventListener("touchcancel", onTouchEnd, { passive: true });
     return () => {
-      window.removeEventListener("touchstart", onTouchStart);
-      window.removeEventListener("touchmove", onTouchMove);
-      window.removeEventListener("touchend", onTouchEnd);
-      window.removeEventListener("touchcancel", onTouchEnd);
+      el.removeEventListener("touchstart", onTouchStart);
+      el.removeEventListener("touchmove", onTouchMove);
+      el.removeEventListener("touchend", onTouchEnd);
+      el.removeEventListener("touchcancel", onTouchEnd);
     };
-  }, [pull, refreshing, router]);
+  }, [busy, onRefresh, pull, threshold]);
 
-  const visible = pull > 0 || refreshing;
-  const progress = Math.min(1, pull / THRESHOLD);
+  const progress = Math.min(1, pull / threshold);
 
   return (
-    <>
+    <div ref={wrapRef} className="relative">
+      {/* Индикатор */}
       <div
-        aria-hidden={!visible}
-        className="pointer-events-none fixed inset-x-0 z-40 flex justify-center"
+        aria-hidden
+        className="pointer-events-none absolute left-1/2 z-20 -translate-x-1/2"
         style={{
-          top: "calc(env(safe-area-inset-top) + 4px)",
-          transform: `translateY(${visible ? Math.min(pull, MAX_PULL) * 0.5 : -40}px)`,
-          opacity: visible ? 1 : 0,
-          transition: refreshing || pull === 0 ? "transform 220ms cubic-bezier(0.32,0.72,0,1), opacity 220ms" : "none",
+          top: 8,
+          opacity: pull > 4 ? 1 : 0,
+          transform: `translate(-50%, ${Math.max(0, pull - 24)}px)`,
+          transition: pulling.current ? "none" : "transform 280ms cubic-bezier(0.22,1,0.36,1), opacity 200ms ease",
         }}
       >
         <div
-          className="grid h-9 w-9 place-items-center rounded-full border border-white/10 bg-black/70 backdrop-blur-xl"
+          className="grid h-9 w-9 place-items-center rounded-full border border-white/10 bg-black/60 backdrop-blur"
           style={{
-            transform: refreshing ? "none" : `rotate(${progress * 360}deg)`,
+            boxShadow: busy || armed.current ? "0 0 14px rgba(255,45,149,0.45)" : undefined,
+            transition: "box-shadow 180ms ease",
           }}
         >
-          <Loader2
-            className={`h-4 w-4 text-primary ${refreshing ? "animate-spin" : ""}`}
-            strokeWidth={2.4}
-            style={{ opacity: refreshing ? 1 : 0.4 + progress * 0.6 }}
-          />
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            className={busy ? "animate-spin text-primary" : "text-foreground/80"}
+            style={{
+              transform: busy ? undefined : `rotate(${progress * 270}deg)`,
+              transition: busy ? undefined : "transform 60ms linear",
+            }}
+          >
+            <path
+              d="M12 4v4M12 4l-3 3M12 4l3 3"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+            />
+            {busy && (
+              <circle cx="12" cy="12" r="7" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="20 60" />
+            )}
+          </svg>
         </div>
       </div>
+
       <div
         style={{
-          transform: pull > 0 && !refreshing ? `translateY(${pull * 0.4}px)` : "translateY(0)",
-          transition: pull === 0 || refreshing ? "transform 240ms cubic-bezier(0.32,0.72,0,1)" : "none",
+          transform: `translate3d(0, ${pull}px, 0)`,
+          transition: pulling.current ? "none" : "transform 320ms cubic-bezier(0.22,1,0.36,1)",
+          willChange: "transform",
         }}
       >
         {children}
       </div>
-    </>
+    </div>
   );
 }
