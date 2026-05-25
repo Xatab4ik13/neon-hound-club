@@ -172,7 +172,7 @@ function mapComment(c: FeedCommentHydrated): FeedComment {
   };
 }
 
-type FeedPostWithComments = FeedPostHydrated & { comments?: FeedCommentHydrated[] };
+export type FeedPostWithComments = FeedPostHydrated & { comments?: FeedCommentHydrated[] };
 
 function mapPost(p: FeedPostWithComments): FeedPost {
   const slug = ensurePublicUser({
