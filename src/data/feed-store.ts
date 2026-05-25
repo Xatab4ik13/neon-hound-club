@@ -436,6 +436,12 @@ function scheduleRefetch(delay = 120) {
   }, delay);
 }
 
+export function useFeedLoaded(): boolean {
+  // подписываемся на тот же стор — после первой загрузки emit() триггерит ре-рендер
+  useSyncExternalStore(feedStore.subscribe, feedStore.getSnapshot, feedStore.getSnapshot);
+  return loaded;
+}
+
 export function useFeedPosts(): FeedPost[] {
   const snap = useSyncExternalStore(feedStore.subscribe, feedStore.getSnapshot, feedStore.getSnapshot);
   useEffect(() => {

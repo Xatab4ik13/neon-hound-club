@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { Smile, Send, Search as SearchIcon, Clock, Sticker, X, Pin, PinOff, Trash2, BarChart3, Share2, MessageCircle, Heart } from "lucide-react";
 import { RANKS, type RankId } from "@/data/ranks";
 import { ME_SLUG, PUBLIC_USERS } from "@/data/users";
-import { useFeedPosts, feedStore, type FeedComment, type FeedPost, type FeedPoll } from "@/data/feed-store";
+import { useFeedPosts, useFeedLoaded, feedStore, type FeedComment, type FeedPost, type FeedPoll } from "@/data/feed-store";
 import { HellhoundAvatar, HellhoundChip } from "@/components/club/HellhoundPlaque";
 import { IOSSheet } from "@/components/ios/IOSSheet";
 import { useMyProfile } from "@/lib/garage-api";
@@ -12,6 +12,7 @@ import { SPECIAL_PACK_STICKERS, SPECIAL_PACK_COVER } from "@/assets/stickers/spe
 import { FeedHeroCarousel } from "@/components/club/FeedHeroCarousel";
 import { LikeButton } from "@/components/club/LikeButton";
 import { ImageViewer } from "@/components/club/ImageViewer";
+import { PostSkeleton } from "@/components/club/PostSkeleton";
 import { hhToast } from "@/lib/hh-toast";
 import { haptic } from "@/hooks/use-haptic";
 
@@ -40,6 +41,9 @@ const RANK_BY_ID = Object.fromEntries(RANKS.map((r) => [r.id, r])) as Record<
 
 function ClubFeedPage() {
   const posts = useFeedPosts();
+  const loaded = useFeedLoaded();
+  const showSkeleton = !loaded && posts.length === 0;
+
   return (
     <main className="mx-auto w-full max-w-[640px] px-3 py-5 md:px-4 md:py-10">
       <div className="mb-4 flex items-center justify-between px-2">
@@ -53,9 +57,15 @@ function ClubFeedPage() {
       </div>
 
       <div className="space-y-5">
-        {posts.map((post) => (
-          <PostCard key={post.id} post={post} />
-        ))}
+        {showSkeleton ? (
+          <>
+            <PostSkeleton withImage />
+            <PostSkeleton />
+            <PostSkeleton withImage />
+          </>
+        ) : (
+          posts.map((post) => <PostCard key={post.id} post={post} />)
+        )}
       </div>
     </main>
   );
