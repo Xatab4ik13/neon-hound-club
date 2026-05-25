@@ -52,6 +52,10 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
   const [photoError, setPhotoError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
+  // Снимок исходного состояния — для определения «грязной» формы.
+  const initialSnapshotRef = useRef<string>("");
+
+
 
   // Источники данных
   const [makes, setMakes] = useState<string[]>([]);
