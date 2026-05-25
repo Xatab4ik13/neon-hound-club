@@ -32,6 +32,8 @@ import {
   MessageSquarePlus,
   Trash2,
   ArrowRight,
+  Square,
+  Search as SearchIcon,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -43,6 +45,7 @@ import { useBikes, type ServerBike } from "@/lib/garage-api";
 import { haptic } from "@/hooks/use-haptic";
 import { Swipeable } from "@/components/club/Swipeable";
 import { HellAiBubble } from "@/components/club/HellAiBubble";
+import { useKeyboardOffset } from "@/hooks/use-keyboard-offset";
 
 export const Route = createFileRoute("/club/hell-ai")({
   head: () => ({
@@ -187,10 +190,16 @@ function bikeLabel(b: StoredBike) {
   return `${b.brand} ${b.model}${b.year ? ` ${b.year}` : ""}`;
 }
 
-async function askHellAi(question: string, bikeId?: string, chatId?: string): Promise<string> {
+async function askHellAi(
+  question: string,
+  bikeId?: string,
+  chatId?: string,
+  signal?: AbortSignal,
+): Promise<string> {
   const res = await apiFetch<{ answer: string }>("/api/v1/hell-ai/ask", {
     method: "POST",
     body: JSON.stringify({ question, bikeId, chatId }),
+    signal,
   });
   return res.answer;
 }
@@ -280,6 +289,22 @@ function formatRelative(ts: number): string {
   return new Date(ts).toLocaleDateString("ru-RU", { day: "2-digit", month: "short" });
 }
 
+function formatDayGroup(ts: number): string {
+  const d = new Date(ts);
+  const today = new Date();
+  const yest = new Date();
+  yest.setDate(today.getDate() - 1);
+  const same = (a: Date, b: Date) =>
+    a.getDate() === b.getDate() &&
+    a.getMonth() === b.getMonth() &&
+    a.getFullYear() === b.getFullYear();
+  if (same(d, today)) return "Сегодня";
+  if (same(d, yest)) return "Вчера";
+  const diffDays = Math.floor((today.getTime() - d.getTime()) / 86400000);
+  if (diffDays < 7) return d.toLocaleDateString("ru-RU", { weekday: "long" });
+  return d.toLocaleDateString("ru-RU", { day: "2-digit", month: "long" });
+}
+
 function HellAiMobile() {
   const {
     bikes,
@@ -335,6 +360,8 @@ function HellAiMobile() {
 
   const { ref: taRef, adjust } = useAutoResize(40, 140);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
+  const keyboardOffset = useKeyboardOffset();
 
   const used = serverUsed + usedDelta;
   const left = isUnlimited ? Infinity : Math.max(0, (quota as number) - used);
@@ -374,7 +401,9 @@ function HellAiMobile() {
   function performAsk(text: string, msgId: string, chatId: string) {
     setIsThinking(true);
     setUsedDelta((n) => n + 1);
-    askHellAi(text, activeBike?.id, chatId)
+    const ctrl = new AbortController();
+    abortRef.current = ctrl;
+    askHellAi(text, activeBike?.id, chatId, ctrl.signal)
       .then((a) => {
         updateChat(chatId, (c) => ({
           ...c,
@@ -385,6 +414,20 @@ function HellAiMobile() {
         haptic("selection");
       })
       .catch((err: unknown) => {
+        const aborted =
+          (err instanceof DOMException && err.name === "AbortError") ||
+          (typeof err === "object" && err !== null && (err as { name?: string }).name === "AbortError");
+        if (aborted) {
+          // отменили — убираем pending-сообщение из чата целиком
+          updateChat(chatId, (c) => ({
+            ...c,
+            messages: c.messages.filter((m) => m.id !== msgId),
+            updatedAt: Date.now(),
+          }));
+          setUsedDelta((n) => Math.max(0, n - 1));
+          haptic("light");
+          return;
+        }
         updateChat(chatId, (c) => ({
           ...c,
           messages: c.messages.map((m) =>
@@ -396,7 +439,14 @@ function HellAiMobile() {
         refreshStatus();
         haptic("warning");
       })
-      .finally(() => setIsThinking(false));
+      .finally(() => {
+        if (abortRef.current === ctrl) abortRef.current = null;
+        setIsThinking(false);
+      });
+  }
+
+  function stopGeneration() {
+    abortRef.current?.abort();
   }
 
   function send() {
@@ -484,7 +534,12 @@ function HellAiMobile() {
   }
 
   // высота композера ≈ 56 + textarea, плюс таб-бар 52 + safe-area
-  const composerOffset = "calc(64px + env(safe-area-inset-bottom))";
+  // на iOS клавиатура поднимает композер над виртуальной клавиатурой (visualViewport),
+  // на десктопе/Android keyboardOffset = 0 и работает обычный bottom-таб-бар.
+  const composerOffset =
+    keyboardOffset > 0
+      ? `${keyboardOffset}px`
+      : "calc(64px + env(safe-area-inset-bottom))";
 
   return (
     <div className="relative flex min-h-[calc(100vh-3.25rem)] flex-col">
@@ -544,19 +599,28 @@ function HellAiMobile() {
         ) : (
           <ul className="space-y-3">
             <AnimatePresence initial={false}>
-              {messages.map((m) => (
-                <li key={m.id} className="space-y-2">
-                  <HellAiBubble role="user" content={m.q} />
-                  {m.a !== undefined && (
+              {messages.map((m) => {
+                // bike-чип показываем только если для чата выбран байк
+                const chatBike = bikes.find((b) => b.id === activeChat?.bikeId);
+                const bikeMeta = chatBike ? bikeLabel(chatBike) : null;
+                return (
+                  <li key={m.id} className="space-y-2">
                     <HellAiBubble
-                      role="assistant"
-                      content={m.a}
-                      error={m.error}
-                      onRegenerate={() => regenerate(m.id)}
+                      role="user"
+                      content={m.q}
+                      meta={bikeMeta ? <span>· {bikeMeta}</span> : undefined}
                     />
-                  )}
-                </li>
-              ))}
+                    {m.a !== undefined && (
+                      <HellAiBubble
+                        role="assistant"
+                        content={m.a}
+                        error={m.error}
+                        onRegenerate={() => regenerate(m.id)}
+                      />
+                    )}
+                  </li>
+                );
+              })}
             </AnimatePresence>
 
             {isThinking && (
@@ -656,25 +720,36 @@ function HellAiMobile() {
               />
             </div>
 
-            <motion.button
-              type="button"
-              onClick={send}
-              whileTap={{ scale: 0.9 }}
-              disabled={isThinking || !value.trim() || !canAsk}
-              className={cn(
-                "grid h-10 w-10 shrink-0 place-items-center rounded-full transition-colors",
-                value.trim() && canAsk
-                  ? "bg-primary text-primary-foreground shadow-[0_4px_14px_-4px_color-mix(in_oklab,var(--primary)_60%,transparent)]"
-                  : "bg-white/[0.06] text-muted-foreground",
-              )}
-              aria-label="Отправить"
-            >
-              {isThinking ? (
-                <LoaderIcon className="h-[20px] w-[20px] animate-spin" />
-              ) : (
+            {isThinking ? (
+              <motion.button
+                type="button"
+                onClick={() => {
+                  haptic("light");
+                  stopGeneration();
+                }}
+                whileTap={{ scale: 0.9 }}
+                className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-foreground text-background shadow-[0_4px_14px_-4px_rgba(255,255,255,0.3)]"
+                aria-label="Остановить"
+              >
+                <Square className="h-[14px] w-[14px] fill-current" />
+              </motion.button>
+            ) : (
+              <motion.button
+                type="button"
+                onClick={send}
+                whileTap={{ scale: 0.9 }}
+                disabled={!value.trim() || !canAsk}
+                className={cn(
+                  "grid h-10 w-10 shrink-0 place-items-center rounded-full transition-colors",
+                  value.trim() && canAsk
+                    ? "bg-primary text-primary-foreground shadow-[0_4px_14px_-4px_color-mix(in_oklab,var(--primary)_60%,transparent)]"
+                    : "bg-white/[0.06] text-muted-foreground",
+                )}
+                aria-label="Отправить"
+              >
                 <SendIcon className="h-[18px] w-[18px]" />
-              )}
-            </motion.button>
+              </motion.button>
+            )}
           </div>
         </div>
       )}
@@ -731,7 +806,32 @@ function HistorySheet({
   onDelete: (id: string) => void;
   onNew: () => void;
 }) {
+  const [query, setQuery] = useState("");
   const sorted = [...chats].sort((a, b) => b.updatedAt - a.updatedAt);
+  const q = query.trim().toLowerCase();
+  const filtered = q
+    ? sorted.filter((c) => {
+        if (c.title.toLowerCase().includes(q)) return true;
+        return c.messages.some(
+          (m) =>
+            m.q.toLowerCase().includes(q) || (m.a ?? "").toLowerCase().includes(q),
+        );
+      })
+    : sorted;
+  // группировка по дню
+  const groups = filtered.reduce<{ key: string; label: string; items: Chat[] }[]>(
+    (acc, c) => {
+      const label = formatDayGroup(c.updatedAt);
+      const last = acc[acc.length - 1];
+      if (last && last.label === label) {
+        last.items.push(c);
+      } else {
+        acc.push({ key: `${label}-${c.id}`, label, items: [c] });
+      }
+      return acc;
+    },
+    [],
+  );
   return (
     <Drawer.Root open={open} onOpenChange={onOpenChange}>
       <Drawer.Portal>
@@ -756,7 +856,7 @@ function HistorySheet({
             </button>
           </div>
 
-          <div className="px-4 pb-3">
+          <div className="px-4 pb-3 space-y-2">
             <button
               type="button"
               onClick={onNew}
@@ -767,6 +867,19 @@ function HistorySheet({
               </span>
               <span className="text-[15px] font-semibold">Новый чат</span>
             </button>
+
+            {sorted.length > 0 && (
+              <div className="flex items-center gap-2 rounded-2xl border border-white/[0.06] bg-white/[0.03] px-3.5 py-2.5">
+                <SearchIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                <input
+                  type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Поиск по чатам"
+                  className="w-full bg-transparent text-[15px] text-foreground placeholder:text-muted-foreground/60 focus:outline-none"
+                />
+              </div>
+            )}
           </div>
 
           <div className="flex-1 overflow-y-auto overscroll-contain px-4 pb-4">
@@ -774,78 +887,83 @@ function HistorySheet({
               <div className="rounded-2xl border border-white/[0.06] bg-card/40 px-4 py-6 text-center text-[13px] text-muted-foreground">
                 Истории пока нет.
               </div>
+            ) : filtered.length === 0 ? (
+              <div className="rounded-2xl border border-white/[0.06] bg-card/40 px-4 py-6 text-center text-[13px] text-muted-foreground">
+                Ничего не найдено.
+              </div>
             ) : (
-              <>
-                <div className="mb-2 px-1 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                  обращения · {sorted.length}
-                </div>
-                <ul className="space-y-2">
-                  {sorted.map((c) => {
-                    const active = c.id === activeId;
-                    const count = c.messages.length;
-                    const preview =
-                      c.messages.length === 0
-                        ? "Пустой чат"
-                        : c.title;
-                    return (
-                      <li key={c.id}>
-                        <Swipeable
-                          radius={16}
-                          left={{
-                            icon: <Trash2 className="h-5 w-5" />,
-                            label: "Удалить",
-                            bg: "linear-gradient(90deg, rgba(239,68,68,0.18), rgba(239,68,68,0.32))",
-                            fg: "rgb(252,165,165)",
-                            onAction: () => onDelete(c.id),
-                          }}
-                        >
-                          <button
-                            type="button"
-                            onClick={() => onPick(c.id)}
-                            className={cn(
-                              "flex w-full items-start gap-3 rounded-2xl border px-4 py-3 text-left active:scale-[0.99] active:bg-white/[0.05]",
-                              active
-                                ? "border-primary/30 bg-primary/[0.06]"
-                                : "border-white/[0.06] bg-card/40",
-                            )}
-                          >
-                            <span
-                              className={cn(
-                                "mt-0.5 grid h-10 w-10 shrink-0 place-items-center rounded-xl",
-                                active
-                                  ? "bg-primary/15 text-primary"
-                                  : "bg-white/[0.05] text-muted-foreground",
-                              )}
+              <div className="space-y-5">
+                {groups.map((g) => (
+                  <div key={g.key}>
+                    <div className="mb-2 px-1 text-[12px] font-medium uppercase tracking-wider text-muted-foreground/70">
+                      {g.label}
+                    </div>
+                    <ul className="space-y-2">
+                      {g.items.map((c) => {
+                        const active = c.id === activeId;
+                        const count = c.messages.length;
+                        const preview =
+                          c.messages.length === 0 ? "Пустой чат" : c.title;
+                        return (
+                          <li key={c.id}>
+                            <Swipeable
+                              radius={16}
+                              left={{
+                                icon: <Trash2 className="h-5 w-5" />,
+                                label: "Удалить",
+                                bg: "linear-gradient(90deg, rgba(239,68,68,0.18), rgba(239,68,68,0.32))",
+                                fg: "rgb(252,165,165)",
+                                onAction: () => onDelete(c.id),
+                              }}
                             >
-                              <Sparkles className="h-[20px] w-[20px]" />
-                            </span>
-                            <span className="min-w-0 flex-1">
-                              <span className="flex items-center gap-2">
-                                <span className="min-w-0 flex-1 truncate text-[17px] font-semibold text-foreground">
-                                  {preview}
-                                </span>
-                                {active && (
-                                  <span className="font-mono text-[9px] uppercase tracking-wider text-primary">
-                                    активный
-                                  </span>
+                              <button
+                                type="button"
+                                onClick={() => onPick(c.id)}
+                                className={cn(
+                                  "flex w-full items-start gap-3 rounded-2xl border px-4 py-3 text-left active:scale-[0.99] active:bg-white/[0.05]",
+                                  active
+                                    ? "border-primary/30 bg-primary/[0.06]"
+                                    : "border-white/[0.06] bg-card/40",
                                 )}
-                              </span>
-                              <span className="mt-1 flex items-center gap-2 font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-                                <span>{formatRelative(c.updatedAt)}</span>
-                                <span className="opacity-50">·</span>
-                                <span className="tabular-nums">
-                                  {count} {count === 1 ? "сообщ." : "сообщ."}
+                              >
+                                <span
+                                  className={cn(
+                                    "mt-0.5 grid h-10 w-10 shrink-0 place-items-center rounded-xl",
+                                    active
+                                      ? "bg-primary/15 text-primary"
+                                      : "bg-white/[0.05] text-muted-foreground",
+                                  )}
+                                >
+                                  <Sparkles className="h-[20px] w-[20px]" />
                                 </span>
-                              </span>
-                            </span>
-                          </button>
-                        </Swipeable>
-                      </li>
-                    );
-                  })}
-                </ul>
-
-              </>
+                                <span className="min-w-0 flex-1">
+                                  <span className="flex items-center gap-2">
+                                    <span className="min-w-0 flex-1 truncate text-[17px] font-semibold text-foreground">
+                                      {preview}
+                                    </span>
+                                    {active && (
+                                      <span className="text-[11px] font-medium text-primary">
+                                        активный
+                                      </span>
+                                    )}
+                                  </span>
+                                  <span className="mt-1 flex items-center gap-2 text-[12px] text-muted-foreground">
+                                    <span>{formatRelative(c.updatedAt)}</span>
+                                    <span className="opacity-50">·</span>
+                                    <span className="tabular-nums">
+                                      {count} сообщ.
+                                    </span>
+                                  </span>
+                                </span>
+                              </button>
+                            </Swipeable>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
         </Drawer.Content>
