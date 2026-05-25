@@ -928,6 +928,18 @@ export function ProfilePlaque({
         }}
       >
         {variant.decor?.()}
+        {/* Переливание: диагональный световой блик идёт слева направо ~каждые 3.5с.
+            Только transform/opacity — GPU, без re-layout. */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-y-0 -left-1/4 w-1/3"
+          style={{
+            background:
+              "linear-gradient(110deg, transparent 20%, rgba(255,255,255,0.55) 50%, transparent 80%)",
+            animation: "plaque-sweep 3.5s ease-in-out infinite",
+            mixBlendMode: "screen",
+          }}
+        />
         <div
           aria-hidden
           className="absolute inset-0 opacity-0 transition-opacity group-hover:opacity-100"
@@ -935,6 +947,7 @@ export function ProfilePlaque({
             background: `linear-gradient(to right, transparent, ${rank.accentSoft})`,
           }}
         />
+
 
         <div className="relative flex items-center gap-2">
           <span
