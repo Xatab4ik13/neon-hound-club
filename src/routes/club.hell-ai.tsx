@@ -45,6 +45,7 @@ import { useBikes, type ServerBike } from "@/lib/garage-api";
 import { haptic } from "@/hooks/use-haptic";
 import { Swipeable } from "@/components/club/Swipeable";
 import { HellAiBubble } from "@/components/club/HellAiBubble";
+import { useKeyboardOffset } from "@/hooks/use-keyboard-offset";
 
 export const Route = createFileRoute("/club/hell-ai")({
   head: () => ({
