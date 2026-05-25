@@ -214,6 +214,9 @@ export function mapPost(p: FeedPostWithComments): FeedPost {
 let POSTS: FeedPost[] = [];
 let loaded = false;
 let pending: Promise<void> | null = null;
+let nextCursor: string | null = null;
+let loadingMore = false;
+const PAGE_SIZE = 30;
 
 const listeners = new Set<() => void>();
 const emit = () => listeners.forEach((l) => l());
@@ -227,8 +230,9 @@ async function refetch(): Promise<void> {
   if (pending) return pending;
   pending = (async () => {
     try {
-      const r = await fetchFeed({ limit: 50 });
+      const r = await fetchFeed({ limit: PAGE_SIZE });
       POSTS = r.items.map(mapPost);
+      nextCursor = r.nextCursor;
       loaded = true;
       emit();
     } catch {
@@ -238,6 +242,25 @@ async function refetch(): Promise<void> {
     }
   })();
   return pending;
+}
+
+async function loadMore(): Promise<void> {
+  if (loadingMore || !nextCursor) return;
+  loadingMore = true;
+  emit();
+  try {
+    const r = await fetchFeed({ limit: PAGE_SIZE, cursor: nextCursor });
+    // дедуп по id (на случай гонок со SSE-рефетчем)
+    const existing = new Set(POSTS.map((p) => p.id));
+    const fresh = r.items.map(mapPost).filter((p) => !existing.has(p.id));
+    POSTS = [...POSTS, ...fresh];
+    nextCursor = r.nextCursor;
+  } catch {
+    /* молча — кнопка/триггер останется активным, юзер скроллит ещё раз */
+  } finally {
+    loadingMore = false;
+    emit();
+  }
 }
 
 export const feedStore = {
