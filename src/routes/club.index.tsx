@@ -12,6 +12,7 @@ import { SPECIAL_PACK_STICKERS, SPECIAL_PACK_COVER } from "@/assets/stickers/spe
 import { FeedHeroCarousel } from "@/components/club/FeedHeroCarousel";
 import { LikeButton } from "@/components/club/LikeButton";
 import { ImageViewer } from "@/components/club/ImageViewer";
+import { PostSkeleton } from "@/components/club/PostSkeleton";
 import { hhToast } from "@/lib/hh-toast";
 import { haptic } from "@/hooks/use-haptic";
 
