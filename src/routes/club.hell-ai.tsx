@@ -783,7 +783,7 @@ function HistorySheet({
                 <div className="mb-2 px-1 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
                   обращения · {sorted.length}
                 </div>
-                <ul className="overflow-hidden rounded-2xl border border-white/[0.06] bg-card/40 divide-y divide-white/[0.05]">
+                <ul className="space-y-2">
                   {sorted.map((c) => {
                     const active = c.id === activeId;
                     const count = c.messages.length;
@@ -792,57 +792,63 @@ function HistorySheet({
                         ? "Пустой чат"
                         : c.title;
                     return (
-                      <li key={c.id} className="relative">
-                        <button
-                          type="button"
-                          onClick={() => onPick(c.id)}
-                          className="flex w-full items-start gap-3 px-4 py-3 pr-12 text-left active:bg-white/[0.04]"
+                      <li key={c.id}>
+                        <Swipeable
+                          radius={16}
+                          left={{
+                            icon: <Trash2 className="h-5 w-5" />,
+                            label: "Удалить",
+                            bg: "linear-gradient(90deg, rgba(239,68,68,0.18), rgba(239,68,68,0.32))",
+                            fg: "rgb(252,165,165)",
+                            onAction: () => onDelete(c.id),
+                          }}
                         >
-                          <span
+                          <button
+                            type="button"
+                            onClick={() => onPick(c.id)}
                             className={cn(
-                              "mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-lg",
+                              "flex w-full items-start gap-3 rounded-2xl border px-4 py-3 text-left active:scale-[0.99] active:bg-white/[0.05]",
                               active
-                                ? "bg-primary/15 text-primary"
-                                : "bg-white/[0.05] text-muted-foreground",
+                                ? "border-primary/30 bg-primary/[0.06]"
+                                : "border-white/[0.06] bg-card/40",
                             )}
                           >
-                            <Sparkles className="h-[18px] w-[18px]" />
-                          </span>
-                          <span className="min-w-0 flex-1">
-                            <span className="flex items-center gap-2">
-                              <span className="min-w-0 flex-1 truncate text-[15px] font-semibold text-foreground">
-                                {preview}
-                              </span>
-                              {active && (
-                                <span className="font-mono text-[9px] uppercase tracking-wider text-primary">
-                                  активный
-                                </span>
+                            <span
+                              className={cn(
+                                "mt-0.5 grid h-10 w-10 shrink-0 place-items-center rounded-xl",
+                                active
+                                  ? "bg-primary/15 text-primary"
+                                  : "bg-white/[0.05] text-muted-foreground",
                               )}
+                            >
+                              <Sparkles className="h-[20px] w-[20px]" />
                             </span>
-                            <span className="mt-0.5 flex items-center gap-2 font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-                              <span>{formatRelative(c.updatedAt)}</span>
-                              <span className="opacity-50">·</span>
-                              <span className="tabular-nums">
-                                {count} {count === 1 ? "сообщ." : "сообщ."}
+                            <span className="min-w-0 flex-1">
+                              <span className="flex items-center gap-2">
+                                <span className="min-w-0 flex-1 truncate text-[17px] font-semibold text-foreground">
+                                  {preview}
+                                </span>
+                                {active && (
+                                  <span className="font-mono text-[9px] uppercase tracking-wider text-primary">
+                                    активный
+                                  </span>
+                                )}
+                              </span>
+                              <span className="mt-1 flex items-center gap-2 font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
+                                <span>{formatRelative(c.updatedAt)}</span>
+                                <span className="opacity-50">·</span>
+                                <span className="tabular-nums">
+                                  {count} {count === 1 ? "сообщ." : "сообщ."}
+                                </span>
                               </span>
                             </span>
-                          </span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onDelete(c.id);
-                          }}
-                          className="absolute right-2 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full text-red-400/80 active:scale-90 active:bg-red-500/10"
-                          aria-label="Удалить"
-                        >
-                          <Trash2 className="h-[16px] w-[16px]" />
-                        </button>
+                          </button>
+                        </Swipeable>
                       </li>
                     );
                   })}
                 </ul>
+
               </>
             )}
           </div>
