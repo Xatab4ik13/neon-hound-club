@@ -695,25 +695,36 @@ function HellAiMobile() {
               />
             </div>
 
-            <motion.button
-              type="button"
-              onClick={send}
-              whileTap={{ scale: 0.9 }}
-              disabled={isThinking || !value.trim() || !canAsk}
-              className={cn(
-                "grid h-10 w-10 shrink-0 place-items-center rounded-full transition-colors",
-                value.trim() && canAsk
-                  ? "bg-primary text-primary-foreground shadow-[0_4px_14px_-4px_color-mix(in_oklab,var(--primary)_60%,transparent)]"
-                  : "bg-white/[0.06] text-muted-foreground",
-              )}
-              aria-label="Отправить"
-            >
-              {isThinking ? (
-                <LoaderIcon className="h-[20px] w-[20px] animate-spin" />
-              ) : (
+            {isThinking ? (
+              <motion.button
+                type="button"
+                onClick={() => {
+                  haptic("light");
+                  stopGeneration();
+                }}
+                whileTap={{ scale: 0.9 }}
+                className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-foreground text-background shadow-[0_4px_14px_-4px_rgba(255,255,255,0.3)]"
+                aria-label="Остановить"
+              >
+                <Square className="h-[14px] w-[14px] fill-current" />
+              </motion.button>
+            ) : (
+              <motion.button
+                type="button"
+                onClick={send}
+                whileTap={{ scale: 0.9 }}
+                disabled={!value.trim() || !canAsk}
+                className={cn(
+                  "grid h-10 w-10 shrink-0 place-items-center rounded-full transition-colors",
+                  value.trim() && canAsk
+                    ? "bg-primary text-primary-foreground shadow-[0_4px_14px_-4px_color-mix(in_oklab,var(--primary)_60%,transparent)]"
+                    : "bg-white/[0.06] text-muted-foreground",
+                )}
+                aria-label="Отправить"
+              >
                 <SendIcon className="h-[18px] w-[18px]" />
-              )}
-            </motion.button>
+              </motion.button>
+            )}
           </div>
         </div>
       )}
