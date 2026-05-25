@@ -432,6 +432,8 @@ function HellAiMobile() {
   function stopGeneration() {
     abortRef.current?.abort();
   }
+
+  function send() {
     const text = value.trim();
     if (!text || !canAsk || isThinking || !activeChatId) return;
     const id = makeId();
