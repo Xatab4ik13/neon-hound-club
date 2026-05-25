@@ -223,7 +223,7 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
           <select
             value={year}
             onChange={(e) => setYear(Number(e.target.value))}
-            className="w-full border border-white/[0.08] bg-black/30 px-3 py-2 text-sm text-foreground transition-colors hover:border-white/20 focus:border-primary/60 focus:outline-none"
+            className="h-11 w-full border border-white/[0.08] bg-black/30 px-3 text-base text-foreground transition-colors hover:border-white/20 focus:border-primary/60 focus:outline-none"
           >
             {YEARS.map((y) => (
               <option key={y} value={y} className="bg-[#0b0b0b]">
