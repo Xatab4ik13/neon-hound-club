@@ -9,7 +9,7 @@ import { aiMessages } from "../db/schema/hell-ai.js";
 import { passPurchases } from "../db/schema/pass.js";
 import { systemSettings } from "../db/schema/economy.js";
 import { loadAiSettings, loadUserGarage, buildSystemPrompt, AI_LIMITS_DEFAULT, TIER_PRIMARY_MODEL, PLATINUM_FALLBACK_MODEL, type AiLimits } from "../lib/hell-ai.js";
-import { chatCompletion, OpenRouterError, type ChatMessage } from "../lib/openrouter.js";
+import { chatCompletion, streamChatCompletion, OpenRouterError, type ChatMessage } from "../lib/openrouter.js";
 
 const askSchema = z.object({
   question: z.string().trim().min(2).max(2000),
