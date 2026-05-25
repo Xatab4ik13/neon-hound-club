@@ -68,14 +68,26 @@ export function PostCard({ post, moderate = false }: { post: Post; moderate?: bo
 
   return (
     <article className="relative overflow-visible rounded-[24px] border border-white/[0.06] bg-card/60 shadow-[0_8px_40px_rgba(0,0,0,0.4)] transition-colors hover:border-white/[0.10]">
-      {post.pinned && (
-        <div className="pointer-events-none absolute -top-2 right-4 z-10 inline-flex items-center gap-1 rounded-md bg-primary px-2 py-1 font-mono text-[9px] font-black uppercase tracking-[0.18em] text-primary-foreground shadow-[0_4px_12px_rgba(0,0,0,0.45)]">
-          <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M16 4l4 4-6 2 2 6-4 4-2-6-6 2 4-4-2-6 6 2 4-4z" />
-          </svg>
-          Закреп
-        </div>
-      )}
+      {(() => {
+        // Priority: ОПРОС > ЗАКРЕП (один чип)
+        if (post.poll) {
+          return (
+            <div className="pointer-events-none absolute -top-2.5 left-4 z-10 inline-flex items-center gap-1 rounded-md border border-primary/50 bg-[oklch(0.18_0.08_357.3)] px-2 py-1 font-mono text-[9px] font-black uppercase tracking-[0.18em] text-primary shadow-[0_4px_12px_rgba(0,0,0,0.45)]">
+              <BarChart3 className="h-2.5 w-2.5" strokeWidth={2.8} />
+              Опрос
+            </div>
+          );
+        }
+        if (post.pinned) {
+          return (
+            <div className="pointer-events-none absolute -top-2.5 left-4 z-10 inline-flex items-center gap-1 rounded-md border border-primary/50 bg-[oklch(0.18_0.08_357.3)] px-2 py-1 font-mono text-[9px] font-black uppercase tracking-[0.18em] text-primary shadow-[0_4px_12px_rgba(0,0,0,0.45)]">
+              <Pin className="h-2.5 w-2.5" strokeWidth={2.8} />
+              Закреп
+            </div>
+          );
+        }
+        return null;
+      })()}
 
       <div className="overflow-hidden rounded-[24px]">
 
