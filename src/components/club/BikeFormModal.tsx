@@ -153,12 +153,12 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
       setPhotoError("Файл больше 15 МБ");
       return;
     }
+    // Если до этого было локальное превью — освобождаем blob, чтобы не текло.
+    if (photo && photo.startsWith("blob:")) URL.revokeObjectURL(photo);
     setPhotoFile(file);
-    const reader = new FileReader();
-    reader.onload = () => setPhoto(String(reader.result));
-    reader.onerror = () => setPhotoError("Не удалось прочитать файл");
-    reader.readAsDataURL(file);
+    setPhoto(URL.createObjectURL(file));
   }
+
 
   async function handleSubmit(e?: React.FormEvent) {
     e?.preventDefault();
