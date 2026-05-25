@@ -125,9 +125,8 @@ function UserView({ user }: { user: ProfileView }) {
   const xp = Math.round((user.xpPct / 100) * xpMax);
   const next = RANKS[rankIdx + 1] ?? null;
 
-  const badges = user.badgeIds
-    .map((id) => BADGES.find((b) => b.id === id))
-    .filter((b): b is (typeof BADGES)[number] => !!b);
+
+
 
   return (
     <main className="mx-auto w-full max-w-3xl px-4 py-6 md:px-8 md:py-10">
