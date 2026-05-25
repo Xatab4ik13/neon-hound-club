@@ -309,6 +309,24 @@ export async function hellAiRoutes(app: FastifyInstance) {
       { role: "user", content: question },
     ];
 
+    // Throttle: per-user lock + глобальный семафор. До открытия SSE,
+    // чтобы клиент получил нормальный JSON 409/503.
+    try {
+      acquireUserLock(session.sub);
+    } catch (e) {
+      const err = e as AiUserBusyError;
+      return reply.code(409).send({ error: "user_busy", message: err.message });
+    }
+    let gotSlot = false;
+    try {
+      await acquireGlobalSlot();
+      gotSlot = true;
+    } catch (e) {
+      releaseUserLock(session.sub);
+      const err = e as AiBusyError;
+      return reply.code(503).send({ error: "ai_busy", message: err.message });
+    }
+
     // Логируем вопрос (учитывается в лимите).
     await db.insert(aiMessages).values({
       userId: session.sub,
