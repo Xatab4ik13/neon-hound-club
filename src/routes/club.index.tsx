@@ -315,6 +315,20 @@ export function PostCard({ post, moderate = false }: { post: Post; moderate?: bo
         post={post}
         moderate={moderate}
       />
+
+      {post.image && (
+        <ImageViewer
+          src={post.image}
+          open={viewerOpen}
+          onClose={() => setViewerOpen(false)}
+          onDoubleTap={() => {
+            if (!liked) {
+              haptic("success");
+              feedStore.toggleLike(post.id, true);
+            }
+          }}
+        />
+      )}
     </article>
   );
 }
