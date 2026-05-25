@@ -295,41 +295,8 @@ function UserView({ user }: { user: ProfileView }) {
         </section>
       )}
 
-      {/* Значки */}
-      <section className="mb-8">
-        <SectionTitle title="Значки" right={`${badges.length}`} />
-        {badges.length === 0 ? (
-          <EmptyHint>Пока без значков.</EmptyHint>
-        ) : (
-          <ul className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6">
-            {badges.map((b) => {
-              const r = RARITY[b.rarity];
-              return (
-                <li
-                  key={b.id}
-                  className="group flex flex-col items-center gap-2 border border-white/[0.06] bg-card/40 p-3 transition-colors hover:border-white/[0.12]"
-                  title={`${b.name} — ${b.description}`}
-                >
-                  <BadgeIcon
-                    id={b.id}
-                    color={r.color}
-                    soft={r.soft}
-                    size={56}
-                    animated
-                    premium={b.rarity === "legendary" || b.rarity === "mythic"}
-                  />
-                  <span
-                    className="truncate text-center font-mono text-[10px] font-bold uppercase tracking-wider"
-                    style={{ color: r.color }}
-                  >
-                    {b.name}
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </section>
+
+
 
       {/* Победы */}
       <section className="mb-8">
