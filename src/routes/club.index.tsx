@@ -938,24 +938,6 @@ const STICKER_PACKS: StickerPack[] = [
     productSlug: STICKER_PACK_PRODUCT_SLUGS.special,
     priceRub: 300,
   },
-  {
-    id: "hellhound-og",
-    title: "HELLHOUND OG",
-    cover: "🔥",
-    stickers: ["🔥", "💀", "🤘", "🏁", "🏍️", "⚡", "💯", "👀", "😤", "🥶", "🛠️", "⚙️", "🏆", "🤝", "🫡", "😎"],
-  },
-  {
-    id: "race-pass-s1",
-    title: "Race Pass · S1",
-    cover: "🏁",
-    stickers: ["🏁", "🏍️", "🏆", "⚡", "🔥", "💨", "🛞", "🧰", "📈", "🥇", "🥈", "🥉"],
-  },
-  {
-    id: "moto-mood",
-    title: "Moto Mood",
-    cover: "🤘",
-    stickers: ["😀", "😁", "😂", "🤣", "😊", "😍", "😎", "🤘", "🙏", "👍", "👌", "🤙"],
-  },
 ];
 
 const RECENT_STICKERS_KEY = "club:recent-stickers";
