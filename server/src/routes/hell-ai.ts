@@ -168,9 +168,11 @@ export async function hellAiRoutes(app: FastifyInstance) {
       const err = e as AiUserBusyError;
       return reply.code(409).send({ error: "user_busy", message: err.message });
     }
+    let gotSlot = false;
     try {
       try {
         await acquireGlobalSlot();
+        gotSlot = true;
       } catch (e) {
         const err = e as AiBusyError;
         return reply.code(503).send({ error: "ai_busy", message: err.message });
