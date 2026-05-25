@@ -67,15 +67,17 @@ export function PostCard({ post, moderate = false }: { post: Post; moderate?: bo
 
 
   return (
-    <article className="overflow-hidden rounded-[24px] border border-white/[0.06] bg-card/60 shadow-[0_8px_40px_rgba(0,0,0,0.4)] transition-colors hover:border-white/[0.10]">
+    <article className="relative overflow-visible rounded-[24px] border border-white/[0.06] bg-card/60 shadow-[0_8px_40px_rgba(0,0,0,0.4)] transition-colors hover:border-white/[0.10]">
       {post.pinned && (
-        <div className="flex items-center gap-2 border-b border-white/[0.06] bg-primary/[0.04] px-5 py-2 font-mono text-[10px] uppercase tracking-[0.2em] text-primary">
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
+        <div className="pointer-events-none absolute -top-2 right-4 z-10 inline-flex items-center gap-1 rounded-md bg-primary px-2 py-1 font-mono text-[9px] font-black uppercase tracking-[0.18em] text-primary-foreground shadow-[0_4px_12px_rgba(0,0,0,0.45)]">
+          <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor">
             <path d="M16 4l4 4-6 2 2 6-4 4-2-6-6 2 4-4-2-6 6 2 4-4z" />
           </svg>
-          Закреплено
+          Закреп
         </div>
       )}
+
+      <div className="overflow-hidden rounded-[24px]">
 
       <header className="flex items-center gap-3 px-4 pt-4 md:px-5 md:pt-5">
         <UserLink slug={post.authorSlug} disabled={authorIsBlogger}>
