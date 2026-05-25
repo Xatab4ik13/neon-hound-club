@@ -3,7 +3,7 @@
 // Мобайл (iOS-стиль): экран-чат — история сообщений + липкий композер над таб-баром,
 // переключатель байка и команды открываются bottom-sheet'ом (vaul).
 
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   useCallback,
   useEffect,
@@ -31,6 +31,7 @@ import {
   History as HistoryIcon,
   MessageSquarePlus,
   Trash2,
+  ArrowRight,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -39,6 +40,9 @@ import { type StoredBike } from "@/data/bike-storage";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useViewer } from "@/hooks/use-viewer";
 import { useBikes, type ServerBike } from "@/lib/garage-api";
+import { haptic } from "@/hooks/use-haptic";
+import { Swipeable } from "@/components/club/Swipeable";
+import { HellAiBubble } from "@/components/club/HellAiBubble";
 
 export const Route = createFileRoute("/club/hell-ai")({
   head: () => ({
