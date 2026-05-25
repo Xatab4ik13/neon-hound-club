@@ -53,7 +53,7 @@ export function TicketLedger({
     () => (filter === "all" ? entries : entries.filter((e) => e.source === filter)),
     [entries, filter],
   );
-  const COLLAPSED = 6;
+  const COLLAPSED = 2;
   const visible = expanded ? filtered : filtered.slice(0, COLLAPSED);
   const hiddenCount = Math.max(0, filtered.length - visible.length);
 
