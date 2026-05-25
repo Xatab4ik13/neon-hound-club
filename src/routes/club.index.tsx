@@ -131,7 +131,8 @@ export function PostCard({ post, moderate = false }: { post: Post; moderate?: bo
 
   return (
     <article
-      className={`relative overflow-visible rounded-[24px] border shadow-[0_8px_40px_rgba(0,0,0,0.4)] transition-colors ${
+      onClick={onCardClick}
+      className={`relative cursor-pointer overflow-visible rounded-[24px] border shadow-[0_8px_40px_rgba(0,0,0,0.4)] transition-colors ${
         post.pinned
           ? "border-primary/30 hover:border-primary/50"
           : "border-white/[0.06] hover:border-white/[0.10]"
