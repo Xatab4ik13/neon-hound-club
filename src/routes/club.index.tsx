@@ -197,6 +197,7 @@ export function PostCard({ post, moderate = false }: { post: Post; moderate?: bo
         comments={post.comments}
         onOpen={() => setCommentsOpen(true)}
       />
+      </div>
 
       <CommentsSheet
         open={commentsOpen}
