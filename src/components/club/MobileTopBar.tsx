@@ -43,6 +43,14 @@ export function MobileTopBar() {
   const { rank, xp, xpMax, xpPct } = useCurrentRank();
   const viewer = useViewer();
   const myProfile = useMyProfile(viewer.isAuthed);
+  const effectiveRank: RankMeta = useMemo(() => {
+    const rid = myProfile.data?.rank?.rankId;
+    if (rid) {
+      const found = RANKS.find((r) => r.id === rid);
+      if (found) return found;
+    }
+    return rank;
+  }, [myProfile.data?.rank?.rankId, rank]);
   const avatarUrl = myProfile.data?.avatarUrl ?? null;
   const nick = viewer.nick ?? ME.nick;
   const { count: cartCount } = useCart();
