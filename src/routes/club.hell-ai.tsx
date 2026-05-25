@@ -32,6 +32,8 @@ import {
   MessageSquarePlus,
   Trash2,
   ArrowRight,
+  Square,
+  Search as SearchIcon,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
