@@ -68,7 +68,12 @@ function ClubFeedPage() {
             <PostSkeleton withImage />
           </>
         ) : (
-          posts.map((post) => <PostCard key={post.id} post={post} />)
+          <>
+            {posts.map((post) => (
+              <PostCard key={post.id} post={post} />
+            ))}
+            {posts.length > 0 && <FeedSentinel />}
+          </>
         )}
       </div>
     </main>
