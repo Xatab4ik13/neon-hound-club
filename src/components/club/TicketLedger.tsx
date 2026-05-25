@@ -1,23 +1,23 @@
 import { useMemo, useState } from "react";
-import { ArrowDown, ArrowUp, Ticket } from "lucide-react";
+import { ArrowDown, ArrowUp } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { LedgerEntry, BackendTicketSource } from "@/lib/queries";
 
 /**
- * Журнал билетов. Получает реальные записи с бэка через проп `entries`.
- * Источники соответствуют server/src/db/schema/tickets.ts → TICKET_SOURCES.
+ * Журнал билетов в iOS-стиле: скруглённые контейнеры, сегментный фильтр,
+ * строка = цветная точка источника + название + дата + сумма.
  */
 
 const SOURCE_META: Record<
   BackendTicketSource,
-  { label: string; tone: "green" | "pink" | "amber" | "violet" | "neutral" | "red" }
+  { label: string; dot: string }
 > = {
-  pass_monthly:  { label: "Hell Pass",      tone: "violet"  },
-  quest:         { label: "Квест",          tone: "green"   },
-  product_bonus: { label: "Бонус за товар", tone: "pink"    },
-  raffle_entry:  { label: "Розыгрыш",       tone: "amber"   },
-  admin:         { label: "Админ",          tone: "neutral" },
-  refund:        { label: "Возврат",        tone: "neutral" },
+  pass_monthly:  { label: "Hell Pass",      dot: "bg-violet-400" },
+  quest:         { label: "Квест",          dot: "bg-emerald-400" },
+  product_bonus: { label: "Бонус за товар", dot: "bg-primary" },
+  raffle_entry:  { label: "Розыгрыш",       dot: "bg-amber-400" },
+  admin:         { label: "Админ",          dot: "bg-white/40" },
+  refund:        { label: "Возврат",        dot: "bg-white/40" },
 };
 
 const ALL_SOURCES: BackendTicketSource[] = [
@@ -36,7 +36,7 @@ function summarize(entries: LedgerEntry[]) {
     if (e.amount > 0) income += e.amount;
     else outcome += -e.amount;
   }
-  return { balance: income - outcome, income, outcome };
+  return { income, outcome };
 }
 
 export function TicketLedger({
@@ -60,31 +60,19 @@ export function TicketLedger({
   const totals = useMemo(() => summarize(entries), [entries]);
   const visibleTotals = useMemo(() => summarize(filtered), [filtered]);
 
-  // Показываем фильтр только по тем источникам, что фактически встречаются в журнале + "all".
   const presentSources = useMemo(() => {
     const set = new Set(entries.map((e) => e.source));
     return ["all", ...ALL_SOURCES.filter((s) => set.has(s))] as Array<BackendTicketSource | "all">;
   }, [entries]);
 
   return (
-    <section aria-label="Журнал билетов" className="mb-10">
-      <div className="mb-3 flex items-baseline justify-between border-b border-white/[0.06] pb-2">
-        <h2 className="font-display text-sm font-black uppercase italic tracking-widest text-foreground">
-          Журнал билетов
-        </h2>
-        <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-          всего операций: {entries.length}
-        </span>
-      </div>
+    <section aria-label="История билетов" className="mb-8">
+      <h2 className="mb-3 px-1 text-[17px] font-semibold text-foreground">
+        История
+      </h2>
 
-      {/* Сводка */}
-      <div className="mb-3 grid grid-cols-3 gap-2 sm:gap-3">
-        <SummaryCard
-          label="Баланс"
-          value={totals.balance}
-          accent="text-foreground"
-          icon={<Ticket className="h-4 w-4 text-primary" strokeWidth={1.8} />}
-        />
+      {/* Сводка — только Получено / Потрачено (баланс уже сверху) */}
+      <div className="mb-3 grid grid-cols-2 gap-2">
         <SummaryCard
           label="Получено"
           value={totals.income}
@@ -96,11 +84,12 @@ export function TicketLedger({
           label="Потрачено"
           value={totals.outcome}
           prefix="−"
-          accent="text-muted-foreground"
+          accent="text-foreground"
           icon={<ArrowUp className="h-4 w-4 text-muted-foreground" strokeWidth={2} />}
         />
       </div>
 
+      {/* iOS-сегментный фильтр */}
       {presentSources.length > 1 && (
         <div
           className="-mx-4 mb-3 flex gap-1.5 overflow-x-auto px-4 [scrollbar-width:none] md:mx-0 md:flex-wrap md:px-0 [&::-webkit-scrollbar]:hidden"
@@ -118,10 +107,10 @@ export function TicketLedger({
                 aria-selected={isActive}
                 onClick={() => setFilter(s)}
                 className={
-                  "shrink-0 border px-2.5 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.2em] transition-colors " +
+                  "shrink-0 rounded-full px-3.5 py-1.5 text-[13px] font-medium transition-colors " +
                   (isActive
-                    ? "border-primary/60 bg-primary/15 text-primary"
-                    : "border-white/[0.08] bg-card/40 text-muted-foreground hover:border-white/30 hover:text-foreground")
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-white/[0.06] text-muted-foreground active:bg-white/[0.1]")
                 }
               >
                 {label}
@@ -131,26 +120,26 @@ export function TicketLedger({
         </div>
       )}
 
-      <div className="overflow-hidden border border-white/[0.06] bg-card/40">
+      <div className="overflow-hidden rounded-2xl border border-white/[0.06] bg-card/40">
         {isLoading && entries.length === 0 ? (
-          <div className="space-y-0">
+          <div>
             {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="flex items-center gap-3 border-b border-white/[0.04] px-4 py-3">
-                <Skeleton className="h-5 w-5 rounded-full" />
+              <div key={i} className="flex items-center gap-3 border-b border-white/[0.04] px-4 py-3 last:border-b-0">
+                <Skeleton className="h-2 w-2 rounded-full" />
                 <div className="flex-1 space-y-1.5">
                   <Skeleton className="h-3.5 w-1/3" />
                   <Skeleton className="h-3 w-1/2" />
                 </div>
-                <Skeleton className="h-5 w-14 rounded-md" />
+                <Skeleton className="h-4 w-12 rounded-md" />
               </div>
             ))}
           </div>
         ) : filtered.length === 0 ? (
-          <div className="px-4 py-10 text-center font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
-            {entries.length === 0 ? "пока пусто" : "нет операций по фильтру"}
+          <div className="px-4 py-10 text-center text-[13px] text-muted-foreground">
+            {entries.length === 0 ? "Пока пусто" : "Нет операций по фильтру"}
           </div>
         ) : (
-          <ul className="divide-y divide-white/[0.04]">
+          <ul className="divide-y divide-white/[0.05]">
             {visible.map((e) => (
               <LedgerRow key={e.id} entry={e} />
             ))}
@@ -161,50 +150,40 @@ export function TicketLedger({
           <button
             type="button"
             onClick={() => setExpanded(true)}
-            className="block w-full border-t border-white/[0.06] bg-black/20 px-4 py-2.5 text-center font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground transition-colors hover:bg-black/40 hover:text-foreground"
+            className="block w-full border-t border-white/[0.06] px-4 py-3 text-center text-[13px] font-medium text-primary transition-colors active:bg-white/[0.04]"
           >
-            Показать ещё {hiddenCount} {pluralOps(hiddenCount)}
+            Показать ещё {hiddenCount}
           </button>
         )}
         {expanded && filtered.length > COLLAPSED && (
           <button
             type="button"
             onClick={() => setExpanded(false)}
-            className="block w-full border-t border-white/[0.06] bg-black/20 px-4 py-2.5 text-center font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground transition-colors hover:bg-black/40 hover:text-foreground"
+            className="block w-full border-t border-white/[0.06] px-4 py-3 text-center text-[13px] font-medium text-muted-foreground transition-colors active:bg-white/[0.04]"
           >
             Свернуть
           </button>
         )}
 
         {filter !== "all" && filtered.length > 0 && (
-          <div className="flex items-baseline justify-between border-t border-white/[0.06] bg-black/30 px-4 py-2.5 font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+          <div className="flex items-center justify-between border-t border-white/[0.06] bg-black/20 px-4 py-2.5 text-[12px] text-muted-foreground">
             <span>Итог по фильтру</span>
             <span className="tabular-nums">
               {visibleTotals.income > 0 && (
                 <span className="text-emerald-400">+{visibleTotals.income}</span>
               )}
               {visibleTotals.income > 0 && visibleTotals.outcome > 0 && (
-                <span className="mx-1 opacity-40">/</span>
+                <span className="mx-1 opacity-40">·</span>
               )}
               {visibleTotals.outcome > 0 && (
                 <span className="text-foreground">−{visibleTotals.outcome}</span>
               )}
-              {" "}
-              <span className="opacity-60">билетов</span>
             </span>
           </div>
         )}
       </div>
     </section>
   );
-}
-
-function pluralOps(n: number): string {
-  const mod10 = n % 10;
-  const mod100 = n % 100;
-  if (mod10 === 1 && mod100 !== 11) return "операцию";
-  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return "операции";
-  return "операций";
 }
 
 function SummaryCard({
@@ -221,21 +200,16 @@ function SummaryCard({
   icon: React.ReactNode;
 }) {
   return (
-    <div className="flex items-center gap-2 border border-white/[0.06] bg-card/40 px-3 py-2.5 sm:gap-3 sm:px-4">
-      <div className="hidden sm:block">{icon}</div>
+    <div className="flex items-center gap-3 rounded-2xl border border-white/[0.06] bg-card/40 px-4 py-3">
+      <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/[0.04]">
+        {icon}
+      </div>
       <div className="flex min-w-0 flex-col">
-        <span
-          className={
-            "font-display text-xl font-black italic leading-none tabular-nums sm:text-2xl " +
-            accent
-          }
-        >
+        <span className={"text-[22px] font-semibold leading-none tabular-nums " + accent}>
           {prefix}
           {value.toLocaleString("ru-RU")}
         </span>
-        <span className="mt-0.5 font-mono text-[9px] uppercase tracking-[0.2em] text-muted-foreground sm:text-[10px]">
-          {label}
-        </span>
+        <span className="mt-1 text-[12px] text-muted-foreground">{label}</span>
       </div>
     </div>
   );
@@ -246,70 +220,42 @@ function LedgerRow({ entry }: { entry: LedgerEntry }) {
   const meta = SOURCE_META[entry.source] ?? SOURCE_META.admin;
 
   return (
-    <li className="grid grid-cols-[1fr_auto] items-center gap-3 px-3 py-2.5 transition-colors hover:bg-white/[0.02] sm:grid-cols-[auto_1fr_auto] sm:gap-4 sm:px-4 sm:py-3">
-      <div className="col-span-2 -mb-0.5 flex items-center gap-2 sm:col-span-1 sm:mb-0">
-        <SourceTag tone={meta.tone}>{meta.label}</SourceTag>
-        <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-muted-foreground/80 sm:hidden">
-          {formatDate(entry.createdAt)}
-        </span>
-      </div>
-
-      <div className="min-w-0">
-        <div className="truncate text-sm text-foreground">{entry.reason}</div>
-        <div className="hidden font-mono text-[10px] uppercase tracking-wider text-muted-foreground sm:block">
-          {formatDate(entry.createdAt)}
+    <li className="flex items-center gap-3 px-4 py-3 transition-colors active:bg-white/[0.03]">
+      <span className={"h-2 w-2 shrink-0 rounded-full " + meta.dot} aria-hidden />
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <span className="truncate text-[15px] text-foreground">{entry.reason}</span>
+        </div>
+        <div className="mt-0.5 flex items-center gap-1.5 text-[12px] text-muted-foreground">
+          <span>{meta.label}</span>
+          <span className="opacity-40">·</span>
+          <span>{formatDate(entry.createdAt)}</span>
         </div>
       </div>
-
       <div
         className={
-          "whitespace-nowrap text-right font-mono text-sm font-bold tabular-nums " +
+          "shrink-0 whitespace-nowrap text-right text-[15px] font-semibold tabular-nums " +
           (isPositive ? "text-emerald-400" : "text-foreground")
         }
       >
         {isPositive ? "+" : "−"}
         {Math.abs(entry.amount)}
-        <span className="ml-1 font-normal text-muted-foreground/70 text-[10px] uppercase tracking-wider">
-          бил.
-        </span>
       </div>
     </li>
   );
 }
 
-function SourceTag({
-  tone,
-  children,
-}: {
-  tone: "green" | "pink" | "amber" | "violet" | "neutral" | "red";
-  children: React.ReactNode;
-}) {
-  const toneMap: Record<typeof tone, string> = {
-    green:   "border-emerald-500/40 bg-emerald-500/10 text-emerald-300",
-    pink:    "border-primary/40 bg-primary/10 text-primary",
-    amber:   "border-amber-500/40 bg-amber-500/10 text-amber-300",
-    violet:  "border-violet-400/40 bg-violet-400/10 text-violet-300",
-    neutral: "border-white/[0.1] bg-white/[0.03] text-muted-foreground",
-    red:     "border-red-500/40 bg-red-500/10 text-red-300",
-  };
-  return (
-    <span
-      className={
-        "whitespace-nowrap border px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-[0.2em] " +
-        toneMap[tone]
-      }
-    >
-      {children}
-    </span>
-  );
-}
-
 function formatDate(iso: string): string {
   const d = new Date(iso);
-  const dd = String(d.getDate()).padStart(2, "0");
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const yy = String(d.getFullYear()).slice(-2);
+  const now = new Date();
+  const sameDay =
+    d.getDate() === now.getDate() &&
+    d.getMonth() === now.getMonth() &&
+    d.getFullYear() === now.getFullYear();
   const hh = String(d.getHours()).padStart(2, "0");
   const mi = String(d.getMinutes()).padStart(2, "0");
-  return `${dd}.${mm}.${yy} · ${hh}:${mi}`;
+  if (sameDay) return `сегодня · ${hh}:${mi}`;
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  return `${dd}.${mm} · ${hh}:${mi}`;
 }
