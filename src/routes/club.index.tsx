@@ -175,7 +175,11 @@ export function PostCard({ post, moderate = false }: { post: Post; moderate?: bo
       <div className="overflow-hidden rounded-[24px]">
 
       <header className="flex items-center gap-3 px-4 pt-4 md:px-5 md:pt-5">
-        <UserLink slug={post.authorSlug} disabled={authorIsBlogger}>
+        <UserLink
+          slug={post.authorSlug}
+          disabled={authorIsBlogger}
+          className="flex min-w-0 flex-1 items-center gap-3"
+        >
           {authorIsBlogger ? (
             <HellhoundAvatar size={44} initials={author?.initials ?? "H"} avatarUrl={author?.avatarUrl} />
           ) : (
@@ -186,20 +190,18 @@ export function PostCard({ post, moderate = false }: { post: Post; moderate?: bo
               size={44}
             />
           )}
-        </UserLink>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <UserLink slug={post.authorSlug} disabled={authorIsBlogger} className="truncate">
-              <span className="truncate font-display text-[15px] font-black uppercase italic tracking-tight text-foreground transition-colors hover:text-primary">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <span className="truncate font-display text-[15px] font-black uppercase italic tracking-tight text-foreground">
                 {author?.nick ?? post.authorSlug}
               </span>
-            </UserLink>
-            {authorIsBlogger && <HellhoundChip size="sm" />}
+              {authorIsBlogger && <HellhoundChip size="sm" />}
+            </div>
+            <span className="mt-0.5 block font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+              {post.time}
+            </span>
           </div>
-          <span className="mt-0.5 block font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-            {post.time}
-          </span>
-        </div>
+        </UserLink>
         {moderate && (
           <div className="flex shrink-0 items-center gap-1.5">
             <button
