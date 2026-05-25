@@ -10,6 +10,7 @@ import { passPurchases } from "../db/schema/pass.js";
 import { systemSettings } from "../db/schema/economy.js";
 import { loadAiSettings, loadUserGarage, buildSystemPrompt, AI_LIMITS_DEFAULT, TIER_PRIMARY_MODEL, PLATINUM_FALLBACK_MODEL, type AiLimits } from "../lib/hell-ai.js";
 import { chatCompletion, streamChatCompletion, OpenRouterError, type ChatMessage } from "../lib/openrouter.js";
+import { acquireGlobalSlot, releaseGlobalSlot, acquireUserLock, releaseUserLock, AiBusyError, AiUserBusyError } from "../lib/ai-throttle.js";
 
 const askSchema = z.object({
   question: z.string().trim().min(2).max(2000),
@@ -160,66 +161,87 @@ export async function hellAiRoutes(app: FastifyInstance) {
       { role: "user", content: question },
     ];
 
-    // 5. Логируем вопрос (учитывается в лимите). model для аналитики, наружу не отдаём.
-    await db.insert(aiMessages).values({
-      userId: session.sub,
-      chatId: chatId ?? null,
-      role: "user",
-      content: question,
-      bikeId: bikeId ?? null,
-      model: modelForRequest,
-    });
-
-    // 6. Вызов модели. Клиенту НЕ возвращаем имя модели — для него это «Hell AI».
+    // 5. Throttle: per-user lock (защита от F5-спама) + глобальный семафор
+    // на одновременные вызовы OpenRouter (защита от 429 при пиках).
     try {
-      const result = await chatCompletion({
-        model: modelForRequest,
-        messages,
-        temperature: 0.6,
-        maxTokens: 900,
-      });
-
-      await db.insert(aiMessages).values({
-        userId: session.sub,
-        chatId: chatId ?? null,
-        role: "assistant",
-        content: result.answer,
-        bikeId: bikeId ?? null,
-        model: result.model,
-        tokensIn: result.tokensIn,
-        tokensOut: result.tokensOut,
-      });
-
-      return { answer: result.answer };
+      acquireUserLock(session.sub);
     } catch (e) {
-      const err = e as OpenRouterError;
-      const status = err.status ?? 502;
-      const message = err.message || "AI временно недоступен";
-      // Логируем неудачу для аналитики, но не учитываем как «использованный вопрос».
+      const err = e as AiUserBusyError;
+      return reply.code(409).send({ error: "user_busy", message: err.message });
+    }
+    let gotSlot = false;
+    try {
+      try {
+        await acquireGlobalSlot();
+        gotSlot = true;
+      } catch (e) {
+        const err = e as AiBusyError;
+        return reply.code(503).send({ error: "ai_busy", message: err.message });
+      }
+
+      // 6. Логируем вопрос (учитывается в лимите). model для аналитики, наружу не отдаём.
       await db.insert(aiMessages).values({
         userId: session.sub,
         chatId: chatId ?? null,
-        role: "assistant",
-        content: `[ERROR] ${message}`,
+        role: "user",
+        content: question,
         bikeId: bikeId ?? null,
         model: modelForRequest,
-        error: true,
       });
-      // Откатываем счётчик: удаляем последний user-вопрос за последние 10 сек.
-      await db
-        .delete(aiMessages)
-        .where(
-          and(
-            eq(aiMessages.userId, session.sub),
-            eq(aiMessages.role, "user"),
-            eq(aiMessages.content, question),
-            gte(aiMessages.createdAt, new Date(Date.now() - 10_000)),
-          ),
-        );
-      return reply.code(status >= 400 && status < 600 ? 502 : 502).send({
-        error: "ai_failed",
-        message,
-      });
+
+      // 7. Вызов модели. Клиенту НЕ возвращаем имя модели — для него это «Hell AI».
+      try {
+        const result = await chatCompletion({
+          model: modelForRequest,
+          messages,
+          temperature: 0.6,
+          maxTokens: 900,
+        });
+
+        await db.insert(aiMessages).values({
+          userId: session.sub,
+          chatId: chatId ?? null,
+          role: "assistant",
+          content: result.answer,
+          bikeId: bikeId ?? null,
+          model: result.model,
+          tokensIn: result.tokensIn,
+          tokensOut: result.tokensOut,
+        });
+
+        return { answer: result.answer };
+      } catch (e) {
+        const err = e as OpenRouterError;
+        const status = err.status ?? 502;
+        const message = err.message || "AI временно недоступен";
+        await db.insert(aiMessages).values({
+          userId: session.sub,
+          chatId: chatId ?? null,
+          role: "assistant",
+          content: `[ERROR] ${message}`,
+          bikeId: bikeId ?? null,
+          model: modelForRequest,
+          error: true,
+        });
+        // Откатываем счётчик: удаляем последний user-вопрос за последние 10 сек.
+        await db
+          .delete(aiMessages)
+          .where(
+            and(
+              eq(aiMessages.userId, session.sub),
+              eq(aiMessages.role, "user"),
+              eq(aiMessages.content, question),
+              gte(aiMessages.createdAt, new Date(Date.now() - 10_000)),
+            ),
+          );
+        return reply.code(status >= 400 && status < 600 ? 502 : 502).send({
+          error: "ai_failed",
+          message,
+        });
+      }
+    } finally {
+      if (gotSlot) releaseGlobalSlot();
+      releaseUserLock(session.sub);
     }
   });
 
@@ -286,6 +308,24 @@ export async function hellAiRoutes(app: FastifyInstance) {
       ...history,
       { role: "user", content: question },
     ];
+
+    // Throttle: per-user lock + глобальный семафор. До открытия SSE,
+    // чтобы клиент получил нормальный JSON 409/503.
+    try {
+      acquireUserLock(session.sub);
+    } catch (e) {
+      const err = e as AiUserBusyError;
+      return reply.code(409).send({ error: "user_busy", message: err.message });
+    }
+    let gotSlot = false;
+    try {
+      await acquireGlobalSlot();
+      gotSlot = true;
+    } catch (e) {
+      releaseUserLock(session.sub);
+      const err = e as AiBusyError;
+      return reply.code(503).send({ error: "ai_busy", message: err.message });
+    }
 
     // Логируем вопрос (учитывается в лимите).
     await db.insert(aiMessages).values({
@@ -408,6 +448,8 @@ export async function hellAiRoutes(app: FastifyInstance) {
     } finally {
       clearInterval(ka);
       try { reply.raw.end(); } catch { /* noop */ }
+      if (gotSlot) releaseGlobalSlot();
+      releaseUserLock(session.sub);
     }
   });
 }

@@ -15,6 +15,9 @@ if (!url) throw new Error("DATABASE_URL is required");
 
 const schema = { ...users, ...emailVerification, ...news, ...referrals, ...xp, ...badges, ...posts, ...economy, ...hellAi };
 
-export const sql = postgres(url, { max: 10 });
+// Пул увеличен с 10 до 40: при пике 200 одновременных Hell AI запросов каждый
+// делает ~4-6 коротких SELECT/INSERT, дефолтных 10 не хватает.
+const poolMax = Number(process.env.PG_POOL_MAX ?? 40);
+export const sql = postgres(url, { max: poolMax });
 export const db = drizzle(sql, { schema });
 export type DB = typeof db;

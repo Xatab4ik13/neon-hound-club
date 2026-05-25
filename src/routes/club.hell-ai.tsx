@@ -287,7 +287,9 @@ function errorToMessage(err: unknown): string {
   if (err instanceof ApiError) {
     if (err.status === 401) return "Войди в аккаунт, чтобы пользоваться Hell AI.";
     if (err.status === 403) return "Hell AI доступен с Hell Pass. Активируй любой тир.";
+    if (err.status === 409) return err.message || "Подожди, предыдущий ответ ещё идёт.";
     if (err.status === 429) return err.message || "Лимит вопросов на этот месяц исчерпан.";
+    if (err.status === 503) return err.message || "Hell AI перегружен, попробуй ещё раз через минуту.";
     return err.message || "Hell AI временно недоступен.";
   }
   return "Не удалось связаться с Hell AI. Попробуй ещё раз.";
