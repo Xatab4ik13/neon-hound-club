@@ -222,4 +222,192 @@ export async function hellAiRoutes(app: FastifyInstance) {
       });
     }
   });
+
+  // Стрим ответа через SSE. Тот же контракт что /ask, но toкены текут по `event: delta`.
+  // Завершается `event: done` или `event: error`. Откат счётчика — как в /ask.
+  app.post("/ask-stream", { preHandler: requireAuth }, async (req, reply) => {
+    const session = req.user as SessionPayload;
+    const parsed = askSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return reply.code(400).send({ error: "invalid", message: parsed.error.issues[0]?.message ?? "bad input" });
+    }
+    const { question, bikeId, chatId } = parsed.data;
+    const isStaff = session.role === "admin" || session.role === "blogger";
+
+    let modelForRequest: string = TIER_PRIMARY_MODEL.silver;
+    if (!isStaff) {
+      const pass = await getActivePass(session.sub);
+      if (!pass) {
+        return reply.code(403).send({ error: "no_pass", message: "Hell AI доступен с активным Hell Pass. Активируй любой тир." });
+      }
+      const limits = await loadLimits();
+      const tier = pass.tier as TierKey;
+      const limit = limits[tier];
+      const since = pass.paidAt ?? pass.createdAt;
+      const used = await countUsed(session.sub, since);
+      if (tier === "platinum") {
+        modelForRequest = used >= limit ? PLATINUM_FALLBACK_MODEL : TIER_PRIMARY_MODEL.platinum;
+      } else {
+        modelForRequest = TIER_PRIMARY_MODEL[tier];
+        if (used >= limit) {
+          return reply.code(429).send({ error: "limit_reached", message: `Лимит ${limit} вопросов на этот период исчерпан. Обновится при покупке следующего Pass.` });
+        }
+      }
+    } else {
+      modelForRequest = TIER_PRIMARY_MODEL.platinum;
+    }
+
+    const settings = await loadAiSettings();
+    const garage = await loadUserGarage(session.sub);
+    const systemPrompt = buildSystemPrompt({
+      basePrompt: settings.systemPrompt || "",
+      signature: settings.signature,
+      bannedTopics: settings.bannedTopics,
+      garage,
+      activeBikeId: bikeId ?? null,
+      isStaff,
+    });
+
+    let history: ChatMessage[] = [];
+    if (chatId) {
+      const rows = await db
+        .select({ role: aiMessages.role, content: aiMessages.content })
+        .from(aiMessages)
+        .where(and(eq(aiMessages.userId, session.sub), eq(aiMessages.chatId, chatId)))
+        .orderBy(desc(aiMessages.createdAt))
+        .limit(20);
+      history = rows
+        .reverse()
+        .map((r) => ({ role: r.role as "user" | "assistant", content: r.content }));
+    }
+
+    const messages: ChatMessage[] = [
+      { role: "system", content: systemPrompt },
+      ...history,
+      { role: "user", content: question },
+    ];
+
+    // Логируем вопрос (учитывается в лимите).
+    await db.insert(aiMessages).values({
+      userId: session.sub,
+      chatId: chatId ?? null,
+      role: "user",
+      content: question,
+      bikeId: bikeId ?? null,
+      model: modelForRequest,
+    });
+
+    // Открываем SSE.
+    reply.raw.writeHead(200, {
+      "Content-Type": "text/event-stream; charset=utf-8",
+      "Cache-Control": "no-cache, no-transform",
+      Connection: "keep-alive",
+      "X-Accel-Buffering": "no",
+    });
+
+    const send = (event: string, data: unknown) => {
+      reply.raw.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+    };
+
+    // Отмена клиентом.
+    const ac = new AbortController();
+    req.raw.on("close", () => {
+      if (!reply.raw.writableEnded) ac.abort();
+    });
+
+    // keep-alive каждые 15 сек, чтобы прокси не закрывали соединение.
+    const ka = setInterval(() => {
+      try { reply.raw.write(`: ka\n\n`); } catch { /* noop */ }
+    }, 15_000);
+
+    let finalAnswer = "";
+    let finalModel = modelForRequest;
+    let tokensIn: number | null = null;
+    let tokensOut: number | null = null;
+
+    try {
+      const gen = streamChatCompletion({
+        model: modelForRequest,
+        messages,
+        temperature: 0.6,
+        maxTokens: 900,
+        signal: ac.signal,
+      });
+      while (true) {
+        const { value, done } = await gen.next();
+        if (done) {
+          if (value) {
+            finalAnswer = value.answer;
+            finalModel = value.model;
+            tokensIn = value.tokensIn;
+            tokensOut = value.tokensOut;
+          }
+          break;
+        }
+        finalAnswer += value;
+        send("delta", { t: value });
+      }
+
+      // Сохраняем итоговый ответ (если что-то получили).
+      if (finalAnswer.trim()) {
+        await db.insert(aiMessages).values({
+          userId: session.sub,
+          chatId: chatId ?? null,
+          role: "assistant",
+          content: finalAnswer,
+          bikeId: bikeId ?? null,
+          model: finalModel,
+          tokensIn,
+          tokensOut,
+        });
+        send("done", { ok: true });
+      } else {
+        // ничего не пришло — считаем ошибкой и откатываем счётчик
+        await db
+          .delete(aiMessages)
+          .where(
+            and(
+              eq(aiMessages.userId, session.sub),
+              eq(aiMessages.role, "user"),
+              eq(aiMessages.content, question),
+              gte(aiMessages.createdAt, new Date(Date.now() - 10_000)),
+            ),
+          );
+        send("error", { message: "Пустой ответ от модели" });
+      }
+    } catch (e) {
+      const aborted = (e as { name?: string })?.name === "AbortError";
+      const err = e as OpenRouterError;
+      const message = aborted
+        ? "Отменено"
+        : (err?.message || "AI временно недоступен");
+
+      if (!aborted) {
+        await db.insert(aiMessages).values({
+          userId: session.sub,
+          chatId: chatId ?? null,
+          role: "assistant",
+          content: `[ERROR] ${message}`,
+          bikeId: bikeId ?? null,
+          model: modelForRequest,
+          error: true,
+        });
+      }
+      // Откатываем счётчик и при отмене, и при ошибке.
+      await db
+        .delete(aiMessages)
+        .where(
+          and(
+            eq(aiMessages.userId, session.sub),
+            eq(aiMessages.role, "user"),
+            eq(aiMessages.content, question),
+            gte(aiMessages.createdAt, new Date(Date.now() - 10_000)),
+          ),
+        );
+      try { send("error", { message, aborted }); } catch { /* noop */ }
+    } finally {
+      clearInterval(ka);
+      try { reply.raw.end(); } catch { /* noop */ }
+    }
+  });
 }
