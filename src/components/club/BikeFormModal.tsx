@@ -408,7 +408,8 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
     return (
       <IOSSheet
         open={open}
-        onOpenChange={onOpenChange}
+        onOpenChange={requestClose}
+
         title={bike ? "Редактировать байк" : "Добавить байк"}
         fullHeight
         doneLabel={submitting ? "..." : bike ? "Сохранить" : "Добавить"}
