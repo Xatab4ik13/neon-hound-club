@@ -870,61 +870,58 @@ function EmptyChat({
   disabled: boolean;
   isGuest: boolean;
 }) {
+  const items = COMMANDS.slice(0, 4);
   return (
     <motion.div
-      initial={{ opacity: 0, y: 12 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, ease: "easeOut" }}
-      className="flex flex-col items-center px-2 pt-6 text-center"
+      transition={{ duration: 0.35, ease: "easeOut" }}
+      className="px-1 pt-4"
     >
-      <div className="mb-4 inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
-        <span className="relative flex h-1.5 w-1.5">
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-60" />
-          <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary" />
-        </span>
-        hell ai · online
-      </div>
-      <h1 className="bg-gradient-to-r from-foreground to-foreground/40 bg-clip-text font-display text-[34px] font-black italic uppercase leading-[0.95] tracking-tight text-transparent">
-        Чем помочь<br />по&nbsp;твоему мото?
-      </h1>
-      <p className="mt-3 max-w-[300px] text-[15px] leading-snug text-muted-foreground">
-        {isGuest
-          ? "AI-механик по твоему байку: моменты затяжки, давление, масла, типичные болячки модели."
-          : <>Спрашивай про {bikeStr}: затяжка, давление, масло, болячки.</>}
-      </p>
+      {/* Large iOS title */}
+      <header className="px-2 pb-7">
+        <h1 className="text-[34px] font-bold leading-[1.05] tracking-tight text-foreground">
+          Hell AI
+        </h1>
+        <p className="mt-1.5 text-[15px] leading-snug text-muted-foreground">
+          {isGuest
+            ? "AI-механик по твоему мото — моменты затяжки, давление, масла, болячки."
+            : <>Спрашивай про {bikeStr}: затяжка, давление, масло, болячки.</>}
+        </p>
+      </header>
 
-      {!isGuest && (
-        <div className="mt-7 w-full">
-          <div className="mb-2 px-1 text-left font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-            быстрый старт
-          </div>
-          <ul className="space-y-2">
-            {COMMANDS.slice(0, 4).map((c) => (
-              <li key={c.prefix}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    haptic("selection");
-                    onPick(c);
-                  }}
-                  disabled={disabled}
-                  className="flex w-full items-center gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.03] px-3.5 py-3 text-left active:scale-[0.98] active:bg-white/[0.06] disabled:opacity-50"
-                >
-                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/12 text-primary">
-                    {c.icon}
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-[16px] font-semibold text-foreground">{c.label}</span>
-                    <span className="block text-[13px] text-muted-foreground">
-                      {c.description}
-                    </span>
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+      {/* iOS-style grouped suggestions list */}
+      <section>
+        <h2 className="mb-2 px-3 text-[12px] font-medium uppercase tracking-wider text-muted-foreground/70">
+          Примеры
+        </h2>
+        <ul className="overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.02]">
+          {items.map((c, i) => (
+            <li key={c.prefix}>
+              <button
+                type="button"
+                onClick={() => {
+                  haptic("selection");
+                  onPick(c);
+                }}
+                disabled={disabled}
+                className={cn(
+                  "flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors active:bg-white/[0.05] disabled:opacity-50",
+                  i < items.length - 1 && "border-b border-white/[0.05]",
+                )}
+              >
+                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-white/[0.06] text-foreground/70">
+                  {c.icon}
+                </span>
+                <span className="min-w-0 flex-1 truncate text-[16px] font-medium text-foreground">
+                  {c.label}
+                </span>
+                <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground/50" />
+              </button>
+            </li>
+          ))}
+        </ul>
+      </section>
     </motion.div>
   );
 }
