@@ -93,6 +93,14 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
     setSubmitting(false);
   }, [open, bike]);
 
+  // Освобождаем blob-URL при размонтировании — иначе утечёт.
+  useEffect(() => {
+    return () => {
+      if (photo && photo.startsWith("blob:")) URL.revokeObjectURL(photo);
+    };
+  }, [photo]);
+
+
 
   // Загрузка списка марок
   useEffect(() => {
