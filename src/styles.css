@@ -497,3 +497,35 @@ body[data-modal-open="1"] [class*="plaque-"] {
   from { transform: scaleX(1); }
   to   { transform: scaleX(0); }
 }
+
+/* Hell AI — markdown в пузыре ответа */
+.markdown-body p { margin: 0; }
+.markdown-body p + p { margin-top: 0.5em; }
+.markdown-body ul, .markdown-body ol { margin: 0.4em 0; padding-left: 1.2em; }
+.markdown-body li { margin: 0.15em 0; }
+.markdown-body strong { font-weight: 600; }
+.markdown-body code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.92em;
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+  background: color-mix(in oklab, currentColor 10%, transparent);
+}
+.markdown-body pre {
+  margin: 0.5em 0;
+  padding: 0.7em 0.85em;
+  border-radius: 10px;
+  background: color-mix(in oklab, currentColor 8%, transparent);
+  overflow-x: auto;
+}
+.markdown-body pre code { padding: 0; background: transparent; }
+.markdown-body h1, .markdown-body h2, .markdown-body h3 {
+  font-weight: 700;
+  margin: 0.6em 0 0.2em;
+  line-height: 1.25;
+}
+.markdown-body h1 { font-size: 1.15em; }
+.markdown-body h2 { font-size: 1.08em; }
+.markdown-body h3 { font-size: 1em; }
+.markdown-body a { color: var(--primary); text-decoration: underline; text-underline-offset: 2px; }
+.markdown-body hr { border: 0; border-top: 1px solid color-mix(in oklab, currentColor 18%, transparent); margin: 0.7em 0; }
