@@ -344,10 +344,17 @@ function HellAiMobile() {
     setUsedDelta(0);
   }, [serverUsed]);
 
-  // авто-скролл вниз при новых сообщениях / typing
-  useEffect(() => {
+  // умный авто-скролл вниз: только если юзер уже у низа (в пределах 140px)
+  const stickToBottomRef = useRef(true);
+  function handleScroll() {
     const el = scrollRef.current;
     if (!el) return;
+    const distance = el.scrollHeight - el.scrollTop - el.clientHeight;
+    stickToBottomRef.current = distance < 140;
+  }
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el || !stickToBottomRef.current) return;
     requestAnimationFrame(() => {
       el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
     });
@@ -357,11 +364,48 @@ function HellAiMobile() {
     setChats((prev) => prev.map((c) => (c.id === id ? updater(c) : c)));
   }
 
+  function makeId() {
+    if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+      return crypto.randomUUID();
+    }
+    return `m_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+  }
+
+  function performAsk(text: string, msgId: string, chatId: string) {
+    setIsThinking(true);
+    setUsedDelta((n) => n + 1);
+    askHellAi(text, activeBike?.id, chatId)
+      .then((a) => {
+        updateChat(chatId, (c) => ({
+          ...c,
+          messages: c.messages.map((m) => (m.id === msgId ? { ...m, a, error: false } : m)),
+          updatedAt: Date.now(),
+        }));
+        refreshStatus();
+        haptic("selection");
+      })
+      .catch((err: unknown) => {
+        updateChat(chatId, (c) => ({
+          ...c,
+          messages: c.messages.map((m) =>
+            m.id === msgId ? { ...m, a: errorToMessage(err), error: true } : m,
+          ),
+          updatedAt: Date.now(),
+        }));
+        setUsedDelta((n) => Math.max(0, n - 1));
+        refreshStatus();
+        haptic("warning");
+      })
+      .finally(() => setIsThinking(false));
+  }
+
   function send() {
     const text = value.trim();
     if (!text || !canAsk || isThinking || !activeChatId) return;
-    const id = String(Date.now());
+    const id = makeId();
     const chatId = activeChatId;
+    haptic("light");
+    stickToBottomRef.current = true;
     updateChat(chatId, (c) => ({
       ...c,
       messages: [...c.messages, { id, q: text }],
@@ -371,29 +415,20 @@ function HellAiMobile() {
     }));
     setValue("");
     adjust(true);
-    setIsThinking(true);
-    setUsedDelta((n) => n + 1);
-    askHellAi(text, activeBike?.id, chatId)
-      .then((a) => {
-        updateChat(chatId, (c) => ({
-          ...c,
-          messages: c.messages.map((m) => (m.id === id ? { ...m, a } : m)),
-          updatedAt: Date.now(),
-        }));
-        refreshStatus();
-      })
-      .catch((err: unknown) => {
-        updateChat(chatId, (c) => ({
-          ...c,
-          messages: c.messages.map((m) =>
-            m.id === id ? { ...m, a: errorToMessage(err), error: true } : m,
-          ),
-          updatedAt: Date.now(),
-        }));
-        setUsedDelta((n) => Math.max(0, n - 1));
-        refreshStatus();
-      })
-      .finally(() => setIsThinking(false));
+    performAsk(text, id, chatId);
+  }
+
+  function regenerate(msgId: string) {
+    if (!activeChatId || isThinking) return;
+    const chat = chats.find((c) => c.id === activeChatId);
+    const msg = chat?.messages.find((m) => m.id === msgId);
+    if (!msg) return;
+    haptic("light");
+    updateChat(activeChatId, (c) => ({
+      ...c,
+      messages: c.messages.map((m) => (m.id === msgId ? { ...m, a: undefined, error: false } : m)),
+    }));
+    performAsk(msg.q, msgId, activeChatId);
   }
 
   function onKey(e: ReactKeyboardEvent<HTMLTextAreaElement>) {
