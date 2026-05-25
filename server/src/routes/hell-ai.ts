@@ -239,7 +239,7 @@ export async function hellAiRoutes(app: FastifyInstance) {
         });
       }
     } finally {
-      releaseGlobalSlot();
+      if (gotSlot) releaseGlobalSlot();
       releaseUserLock(session.sub);
     }
   });
