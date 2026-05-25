@@ -448,6 +448,8 @@ export async function hellAiRoutes(app: FastifyInstance) {
     } finally {
       clearInterval(ka);
       try { reply.raw.end(); } catch { /* noop */ }
+      if (gotSlot) releaseGlobalSlot();
+      releaseUserLock(session.sub);
     }
   });
 }
