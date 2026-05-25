@@ -61,7 +61,7 @@ function Trigger({
       onClick={onClick}
       aria-expanded={open}
       className={cn(
-        "flex w-full items-center justify-between border border-white/[0.08] bg-black/30 px-3 py-2 text-left text-sm text-foreground transition-colors hover:border-white/20 focus:border-primary/60 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50",
+        "flex h-11 w-full items-center justify-between border border-white/[0.08] bg-black/30 px-3 text-left text-base text-foreground transition-colors hover:border-white/20 focus:border-primary/60 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50",
         !value && "text-muted-foreground",
       )}
     >
