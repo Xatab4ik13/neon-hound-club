@@ -469,6 +469,11 @@ export function useFeedLoaded(): boolean {
   return loaded;
 }
 
+export function useFeedPagination(): { hasMore: boolean; loadingMore: boolean } {
+  useSyncExternalStore(feedStore.subscribe, feedStore.getSnapshot, feedStore.getSnapshot);
+  return { hasMore: nextCursor !== null, loadingMore };
+}
+
 export function useFeedPosts(): FeedPost[] {
   const snap = useSyncExternalStore(feedStore.subscribe, feedStore.getSnapshot, feedStore.getSnapshot);
   useEffect(() => {
