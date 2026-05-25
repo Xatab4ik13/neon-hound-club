@@ -187,20 +187,12 @@ export function PostCard({ post, moderate = false }: { post: Post; moderate?: bo
 
 
       <div className="flex items-center gap-2 px-4 py-3 md:px-5">
-        <button
-          type="button"
-          onClick={() => feedStore.toggleLike(post.id, !liked)}
-          aria-label="Лайк"
-          aria-pressed={liked}
-          className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 font-mono text-[12px] font-bold tabular-nums transition-all active:scale-95 ${
-            liked
-              ? "bg-primary text-primary-foreground shadow-[0_4px_14px_rgba(255,45,149,0.35)]"
-              : "border border-white/[0.08] bg-white/[0.04] text-foreground hover:border-primary/40 hover:text-primary"
-          }`}
-        >
-          <Heart className="h-4 w-4" fill={liked ? "currentColor" : "none"} strokeWidth={2} />
-          <span>{formatCount(likeCount)}</span>
-        </button>
+        <LikeButton
+          liked={liked}
+          count={likeCount}
+          onToggle={(next) => feedStore.toggleLike(post.id, next)}
+        />
+
 
         <button
           type="button"
