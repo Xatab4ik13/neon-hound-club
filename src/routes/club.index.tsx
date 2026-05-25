@@ -13,6 +13,8 @@ import { FeedHeroCarousel } from "@/components/club/FeedHeroCarousel";
 import { LikeButton } from "@/components/club/LikeButton";
 import { ImageViewer } from "@/components/club/ImageViewer";
 import { PostSkeleton } from "@/components/club/PostSkeleton";
+import { ReactionsBar } from "@/components/club/ReactionsBar";
+import { reactionsStore } from "@/data/reactions-store";
 import { hhToast } from "@/lib/hh-toast";
 import { haptic } from "@/hooks/use-haptic";
 
