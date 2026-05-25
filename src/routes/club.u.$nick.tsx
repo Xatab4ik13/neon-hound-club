@@ -1,11 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, Bike, Calendar, MapPin, Trophy } from "lucide-react";
-import { BadgeIcon } from "@/components/club/BadgeIcon";
-import { BADGES, RARITY } from "@/data/badges";
 import { RANKS, getRankSpan, type RankId } from "@/data/ranks";
 import { getUser, type PublicUser } from "@/data/users";
 import { PlaqueBackground } from "./club";
 import { usePublicProfile, type PublicProfile } from "@/lib/garage-api";
+
 
 type ProfileView = PublicUser & {
   bikeYear?: number | null;
