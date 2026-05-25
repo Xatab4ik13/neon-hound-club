@@ -6,7 +6,11 @@
 import { Heart } from "lucide-react";
 import { useRef, useState } from "react";
 import { haptic } from "@/hooks/use-haptic";
-import { formatCount } from "@/lib/utils";
+function formatCount(n: number): string {
+  if (n < 1000) return String(n);
+  if (n < 10000) return (n / 1000).toFixed(1).replace(".0", "") + "k";
+  return Math.round(n / 1000) + "k";
+}
 
 type Props = {
   liked: boolean;
