@@ -385,11 +385,12 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
         <div className="flex items-center justify-end gap-2 border-t border-white/[0.06] pt-4">
           <button
             type="button"
-            onClick={() => onOpenChange(false)}
+            onClick={() => requestClose(false)}
             className="border border-white/[0.08] bg-transparent px-4 py-2 font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground transition-colors hover:border-white/30 hover:text-foreground"
           >
             Отмена
           </button>
+
           <button
             type="button"
             onClick={() => handleSubmit()}
