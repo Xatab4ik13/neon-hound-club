@@ -12,6 +12,8 @@ import {
   getPassHistory,
   PassPurchaseError,
 } from "../lib/pass.js";
+import { createPaymentForPass, PaymentInitError } from "../lib/payments.js";
+import { isTbankConfigured } from "../lib/tbank.js";
 
 // ---------- USER ----------
 
@@ -46,8 +48,8 @@ export async function passRoutes(app: FastifyInstance) {
     return { active, history, daysLeft, durationDays: PASS_DURATION_DAYS };
   });
 
-  // POST /api/v1/pass/purchase — создать запись pending_payment
-  // Реальная оплата через платёжку придёт позже и дёрнет activatePassPurchase из вебхука.
+  // POST /api/v1/pass/purchase — создать запись pending_payment и сразу инициировать
+  // платёж в Т-Банке (если терминал сконфигурирован). Возвращает paymentUrl для редиректа.
   app.post("/purchase", { preHandler: requireAuth }, async (req, reply) => {
     const parsed = purchaseSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -56,11 +58,24 @@ export async function passRoutes(app: FastifyInstance) {
     const session = req.user as SessionPayload;
     try {
       const purchase = await createPassPurchase(session.sub, parsed.data.tier);
-      return reply.code(201).send({
-        purchase,
-        // TODO: тут вернём ссылку на оплату, когда подключим ЮKassa / CloudPayments
-        paymentUrl: null,
-      });
+      let paymentUrl: string | null = null;
+      if (isTbankConfigured()) {
+        try {
+          const p = await createPaymentForPass(purchase.id, session.sub);
+          paymentUrl = p.paymentUrl;
+        } catch (e) {
+          // Платёжка отвалилась — purchase остаётся pending_payment, юзер увидит ошибку.
+          if (e instanceof PaymentInitError) {
+            return reply.code(502).send({
+              error: e.code,
+              message: e.message,
+              purchase,
+            });
+          }
+          throw e;
+        }
+      }
+      return reply.code(201).send({ purchase, paymentUrl });
     } catch (e) {
       if (e instanceof PassPurchaseError) {
         return reply.code(409).send({ error: e.code, message: e.message });
