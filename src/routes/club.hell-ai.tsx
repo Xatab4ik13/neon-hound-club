@@ -385,7 +385,9 @@ function HellAiMobile() {
   function performAsk(text: string, msgId: string, chatId: string) {
     setIsThinking(true);
     setUsedDelta((n) => n + 1);
-    askHellAi(text, activeBike?.id, chatId)
+    const ctrl = new AbortController();
+    abortRef.current = ctrl;
+    askHellAi(text, activeBike?.id, chatId, ctrl.signal)
       .then((a) => {
         updateChat(chatId, (c) => ({
           ...c,
@@ -396,6 +398,20 @@ function HellAiMobile() {
         haptic("selection");
       })
       .catch((err: unknown) => {
+        const aborted =
+          (err instanceof DOMException && err.name === "AbortError") ||
+          (typeof err === "object" && err !== null && (err as { name?: string }).name === "AbortError");
+        if (aborted) {
+          // отменили — убираем pending-сообщение из чата целиком
+          updateChat(chatId, (c) => ({
+            ...c,
+            messages: c.messages.filter((m) => m.id !== msgId),
+            updatedAt: Date.now(),
+          }));
+          setUsedDelta((n) => Math.max(0, n - 1));
+          haptic("light");
+          return;
+        }
         updateChat(chatId, (c) => ({
           ...c,
           messages: c.messages.map((m) =>
@@ -407,10 +423,15 @@ function HellAiMobile() {
         refreshStatus();
         haptic("warning");
       })
-      .finally(() => setIsThinking(false));
+      .finally(() => {
+        if (abortRef.current === ctrl) abortRef.current = null;
+        setIsThinking(false);
+      });
   }
 
-  function send() {
+  function stopGeneration() {
+    abortRef.current?.abort();
+  }
     const text = value.trim();
     if (!text || !canAsk || isThinking || !activeChatId) return;
     const id = makeId();
