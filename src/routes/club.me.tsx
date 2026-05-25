@@ -143,12 +143,8 @@ function MePage() {
         )}
       </section>
 
-      <section aria-label="Значки" className="mt-8 md:mt-12">
-        <h2 className="mb-4 font-display text-2xl font-black italic uppercase tracking-tight text-foreground md:text-3xl">
-          Значки
-        </h2>
-        <BadgeCase />
-      </section>
+
+
 
       <section aria-label="Настройки" className="mt-8 md:mt-12">
         {isMobile ? (
