@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { Smile, Send, Search as SearchIcon, Clock, Sticker, X, Pin, PinOff, Trash2, BarChart3, Share2, MessageCircle, Heart } from "lucide-react";
 import { RANKS, type RankId } from "@/data/ranks";
@@ -11,6 +11,9 @@ import { useMyStickerPacks, STICKER_PACK_PRODUCT_SLUGS } from "@/lib/stickers-ap
 import { SPECIAL_PACK_STICKERS, SPECIAL_PACK_COVER } from "@/assets/stickers/special";
 import { FeedHeroCarousel } from "@/components/club/FeedHeroCarousel";
 import { LikeButton } from "@/components/club/LikeButton";
+import { ImageViewer } from "@/components/club/ImageViewer";
+import { hhToast } from "@/lib/hh-toast";
+import { haptic } from "@/hooks/use-haptic";
 
 
 
@@ -63,15 +66,73 @@ function ClubFeedPage() {
 export function PostCard({ post, moderate = false }: { post: Post; moderate?: boolean }) {
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const navigate = useNavigate();
   const liked = post.liked;
   const likeCount = post.likes;
   const author = PUBLIC_USERS[post.authorSlug];
   const authorIsBlogger = post.isBlogger;
 
+  const postUrl = typeof window !== "undefined" ? `${window.location.origin}/club/p/${post.id}` : `/club/p/${post.id}`;
+
+  const handleShare = useCallback(async () => {
+    haptic("light");
+    const text = author?.nick ? `${author.nick} — HELLHOUND` : "HELLHOUND";
+    const nav = typeof navigator !== "undefined" ? navigator : null;
+    if (nav && typeof nav.share === "function") {
+      try {
+        await nav.share({ title: text, url: postUrl });
+        return;
+      } catch (e) {
+        // пользователь отменил — молча
+        if ((e as Error)?.name === "AbortError") return;
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(postUrl);
+      hhToast.success("Ссылка скопирована");
+    } catch {
+      hhToast.error("Не удалось скопировать");
+    }
+  }, [postUrl, author?.nick]);
+
+  const openPost = useCallback(() => {
+    navigate({ to: "/club/p/$postId", params: { postId: post.id } });
+  }, [navigate, post.id]);
+
+  // Тап по «свободному» месту карточки → открыть пост.
+  // Игнорируем клики по интерактивным детям (кнопки, ссылки, инпуты, формы).
+  const onCardClick = useCallback((e: React.MouseEvent<HTMLElement>) => {
+    const target = e.target as HTMLElement;
+    if (target.closest("button,a,input,form,textarea,select,[role='button']")) return;
+    openPost();
+  }, [openPost]);
+
+  // Дабл-тап по картинке = лайк (если ещё не лайкнут).
+  const lastImgTap = useRef(0);
+  const onImageTap = useCallback(() => {
+    const now = Date.now();
+    if (now - lastImgTap.current < 280) {
+      if (!liked) {
+        haptic("success");
+        feedStore.toggleLike(post.id, true);
+      }
+      lastImgTap.current = 0;
+    } else {
+      lastImgTap.current = now;
+      // Одиночный тап с задержкой — откроем вьюер, если за это время не пришёл второй.
+      setTimeout(() => {
+        if (lastImgTap.current === now) setViewerOpen(true);
+      }, 290);
+    }
+  }, [liked, post.id]);
+
+
 
   return (
     <article
-      className={`relative overflow-visible rounded-[24px] border shadow-[0_8px_40px_rgba(0,0,0,0.4)] transition-colors ${
+      onClick={onCardClick}
+      className={`relative cursor-pointer overflow-visible rounded-[24px] border shadow-[0_8px_40px_rgba(0,0,0,0.4)] transition-colors ${
         post.pinned
           ? "border-primary/30 hover:border-primary/50"
           : "border-white/[0.06] hover:border-white/[0.10]"
@@ -114,7 +175,11 @@ export function PostCard({ post, moderate = false }: { post: Post; moderate?: bo
       <div className="overflow-hidden rounded-[24px]">
 
       <header className="flex items-center gap-3 px-4 pt-4 md:px-5 md:pt-5">
-        <UserLink slug={post.authorSlug} disabled={authorIsBlogger}>
+        <UserLink
+          slug={post.authorSlug}
+          disabled={authorIsBlogger}
+          className="flex min-w-0 flex-1 items-center gap-3"
+        >
           {authorIsBlogger ? (
             <HellhoundAvatar size={44} initials={author?.initials ?? "H"} avatarUrl={author?.avatarUrl} />
           ) : (
@@ -125,20 +190,18 @@ export function PostCard({ post, moderate = false }: { post: Post; moderate?: bo
               size={44}
             />
           )}
-        </UserLink>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <UserLink slug={post.authorSlug} disabled={authorIsBlogger} className="truncate">
-              <span className="truncate font-display text-[15px] font-black uppercase italic tracking-tight text-foreground transition-colors hover:text-primary">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <span className="truncate font-display text-[15px] font-black uppercase italic tracking-tight text-foreground">
                 {author?.nick ?? post.authorSlug}
               </span>
-            </UserLink>
-            {authorIsBlogger && <HellhoundChip size="sm" />}
+              {authorIsBlogger && <HellhoundChip size="sm" />}
+            </div>
+            <span className="mt-0.5 block font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+              {post.time}
+            </span>
           </div>
-          <span className="mt-0.5 block font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-            {post.time}
-          </span>
-        </div>
+        </UserLink>
         {moderate && (
           <div className="flex shrink-0 items-center gap-1.5">
             <button
@@ -193,15 +256,21 @@ export function PostCard({ post, moderate = false }: { post: Post; moderate?: bo
 
       {post.image && (
         <div className="px-3 pb-3">
-          <div className="overflow-hidden rounded-[16px] border border-white/[0.05] bg-black">
+          <button
+            type="button"
+            onClick={onImageTap}
+            aria-label="Открыть картинку"
+            className="block w-full overflow-hidden rounded-[16px] border border-white/[0.05] bg-black active:opacity-95"
+          >
             <img
               src={post.image}
               alt=""
               loading="lazy"
               decoding="async"
-              className="aspect-[16/9] w-full object-cover"
+              draggable={false}
+              className="aspect-[16/9] w-full select-none object-cover"
             />
-          </div>
+          </button>
         </div>
       )}
 
@@ -226,6 +295,7 @@ export function PostCard({ post, moderate = false }: { post: Post; moderate?: bo
 
         <button
           type="button"
+          onClick={handleShare}
           aria-label="Поделиться"
           className="ml-auto grid h-9 w-9 place-items-center rounded-full border border-white/[0.08] bg-white/[0.04] text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary active:scale-95"
         >
@@ -245,6 +315,20 @@ export function PostCard({ post, moderate = false }: { post: Post; moderate?: bo
         post={post}
         moderate={moderate}
       />
+
+      {post.image && (
+        <ImageViewer
+          src={post.image}
+          open={viewerOpen}
+          onClose={() => setViewerOpen(false)}
+          onDoubleTap={() => {
+            if (!liked) {
+              haptic("success");
+              feedStore.toggleLike(post.id, true);
+            }
+          }}
+        />
+      )}
     </article>
   );
 }
