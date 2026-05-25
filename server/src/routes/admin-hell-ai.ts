@@ -119,4 +119,54 @@ export async function adminHellAiRoutes(app: FastifyInstance) {
       })),
     };
   });
+
+  // GET /usage/top?hours=24&limit=20 — топ юзеров по токенам за период.
+  // Помогает ловить злоупотребления / ботов / понимать кто реально жжёт деньги.
+  app.get("/usage/top", async (req) => {
+    const q = z
+      .object({
+        hours: z.coerce.number().int().min(1).max(720).default(24),
+        limit: z.coerce.number().int().min(1).max(100).default(20),
+      })
+      .parse((req.query as object) ?? {});
+    const since = new Date(Date.now() - q.hours * 60 * 60 * 1000);
+    const rows = await db
+      .select({
+        userId: aiMessages.userId,
+        email: users.email,
+        nick: users.nick,
+        questions: sql<number>`count(*) filter (where ${aiMessages.role} = 'user')::int`,
+        tokensIn: sql<number>`coalesce(sum(${aiMessages.tokensIn}), 0)::int`,
+        tokensOut: sql<number>`coalesce(sum(${aiMessages.tokensOut}), 0)::int`,
+        errors: sql<number>`count(*) filter (where ${aiMessages.error} is true)::int`,
+        lastAt: sql<Date>`max(${aiMessages.createdAt})`,
+      })
+      .from(aiMessages)
+      .leftJoin(users, eq(users.id, aiMessages.userId))
+      .where(gte(aiMessages.createdAt, since))
+      .groupBy(aiMessages.userId, users.email, users.nick)
+      .orderBy(desc(sql`coalesce(sum(${aiMessages.tokensOut}), 0)`))
+      .limit(q.limit);
+
+    return {
+      since: since.toISOString(),
+      hours: q.hours,
+      users: rows.map((r) => ({
+        userId: r.userId,
+        email: r.email,
+        nick: r.nick,
+        questions: r.questions,
+        tokensIn: r.tokensIn,
+        tokensOut: r.tokensOut,
+        tokensTotal: r.tokensIn + r.tokensOut,
+        errors: r.errors,
+        lastAt: r.lastAt ? new Date(r.lastAt).toISOString() : null,
+      })),
+    };
+  });
+
+  // GET /throttle — текущее состояние очереди OpenRouter (для health-чека админки).
+  app.get("/throttle", async () => {
+    return aiThrottleStats();
+  });
 }
