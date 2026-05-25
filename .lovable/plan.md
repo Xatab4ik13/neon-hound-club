@@ -1,103 +1,117 @@
 
-# План: подключение Т-Банк Интернет-эквайринг
+## Что делаем
 
-Подключаем **Tinkoff Acquiring API** (Init → платёжная страница → Notification webhook) к существующему бэку `server/` на VPS. Сначала DEMO-терминал, потом одной переменной переключим на боевой. Чек по 54-ФЗ пока не формируем — добавим, когда подключишь онлайн-кассу Атол (заложу место в коде, чтобы потом дописать в одну функцию).
+1. **Убираем «Значки» из UI везде.** Код компонентов оставляем в репо (для будущего), просто перестаём рендерить.
+2. **Сливаем `/club/rank` и `/club/orders` в `/club/me`.** Профиль становится единственным «личным» экраном — как Settings в iOS, со всеми разделами в виде iOS-списка. Старые роуты → редиректят на `/club/me` (чтобы не сломать ссылки и навигацию из других мест).
+3. **Чистим навигацию.** Из «Ещё» убираем «Ранг и XP» и «Заказы». Из подсветки активного «Ещё» — тоже.
 
-## Что уже готово в коде (не трогаем)
+Единый стиль = тот же `IOSListSection` / `IOSListRow`, который уже используется на `/club/me`. Никаких новых паттернов.
 
-- `POST /api/v1/pass/purchase` → создаёт `passPurchases` со статусом `pending_payment`, сейчас возвращает `paymentUrl: null`
-- `POST /api/v1/orders` → создаёт `orders` со статусом `pending_payment`, резервирует остатки
-- `activatePassPurchase(purchaseId)` и `markOrderPaid(orderId)` — идемпотентные функции активации. Их и будем дёргать из вебхука.
+---
 
-## Что добавляем
+## Новый /club/me — структура (сверху вниз)
 
-### 1. Конфиг и секреты (на VPS)
+```text
+┌─────────────────────────────────┐
+│   ProfileHero                   │  ← без изменений (аватар, ник, ранг, XP-бар)
+│   (плашка с фоном ранга)        │
+└─────────────────────────────────┘
 
-Новые переменные в `server/.env` (и `.env.example`):
+СТАТИСТИКА              ← 2×2 сетка (билеты, выигрыши, заказы, байки)
+[🎟 12]    [🏆 2]
+[📦 5]     [🏍 1]
+
+ПОДПИСКА                ← как сейчас
+• Hell Pass · Gold · осталось 18 дней   ›
+• Фон профиля                            ›
+
+ПРОГРЕСС                ← раскрытый список рангов inline (Rider → Pit → ...)
+                          + текущий с акцентом, пройденные тусклые, будущие серые
+                          (берём RankLadderVertical, ужимаем под IOSListSection)
+
+ЗАКАЗЫ                  ← последние 3 заказа inline + ссылка «Все заказы»
+• Заказ #A1B2C3D4
+  12 мая · Оплачен · +5 🎟    1 290 ₽   ›
+• ...
+• Все заказы (12)                        ›  ← открывает сабэкран-шторку с полным списком и фильтрами
+
+АККАУНТ
+• Профиль и аккаунт                      ›
+• Выйти из клуба                         ›  (danger)
 ```
-TBANK_TERMINAL_KEY=...           # DEMO-терминал
-TBANK_PASSWORD=...               # пароль терминала
-TBANK_API_URL=https://securepay.tinkoff.ru/v2   # одинаков для demo и prod
-TBANK_SUCCESS_URL=https://hhr.pro/pay/success
-TBANK_FAIL_URL=https://hhr.pro/pay/fail
-TBANK_NOTIFICATION_URL=https://api.hhr.pro/api/v1/payments/tbank/webhook
-```
-Боевой переезд = просто меняешь `TBANK_TERMINAL_KEY` + `TBANK_PASSWORD` и `docker compose up -d --build api`. Кода не трогаем.
 
-### 2. Клиент Т-Банка `server/src/lib/tbank.ts`
+Внутри полного списка заказов — текущая логика OrdersPage (фильтры Все/Активные/Доставлены, карточки), вынесенная в `OrdersList`-компонент и переиспользуемая и в `IOSSheet` (мобайл), и в десктоп-варианте.
 
-- `initPayment({ orderId, amountRub, description, customerEmail })` — POST `/Init`, считает Token (SHA-256 от отсортированных пар + Password), возвращает `PaymentURL` и `PaymentId`.
-- `getState(paymentId)` — POST `/GetState` для сверки на сервере (защита от подделки вебхука).
-- `verifyNotification(body)` — пересчитывает Token из тела вебхука, сравнивает с присланным; возвращает true/false. Это и есть подпись Т-Банка.
+---
 
-### 3. Таблица платежей (миграция `0027_payments.sql`)
+## Файлы
 
-```
-payments (
-  id uuid pk,
-  provider varchar(16),         -- 'tbank'
-  provider_payment_id varchar,  -- PaymentId из Т-Банка, unique
-  ref_type varchar(16),         -- 'pass' | 'order'
-  ref_id uuid,                  -- passPurchase.id / order.id
-  user_id uuid,
-  amount_rub integer,
-  status varchar(24),           -- 'new' | 'authorized' | 'confirmed' | 'rejected' | 'refunded'
-  raw_init jsonb, raw_last_notification jsonb,
-  created_at, updated_at
-)
-+ unique(ref_type, ref_id) WHERE status NOT IN ('rejected')
-```
-Зачем: дедуп вебхуков, история, ручная сверка через админку.
+**Меняем:**
+- `src/routes/club.me.tsx` — добавить секции «Статистика», «Прогресс», «Заказы»; убрать секцию «Значки».
+- `src/components/club/MobileMoreSheet.tsx` — убрать пункты «Ранг и XP», «Заказы».
+- `src/components/club/MobileTabBar.tsx` — выкинуть `/club/orders` и `/club/rank` из `MORE_PATHS`.
+- `src/components/brand/Header.tsx` — убрать ссылку «Значки», если есть.
+- `src/routes/club.u.$nick.tsx` — убрать секцию значков на чужом профиле (логика остаётся, просто не показываем).
 
-### 4. Роуты `server/src/routes/payments.ts`
+**Делаем новый шаренный компонент:**
+- `src/components/club/OrdersList.tsx` — выносим текущий `OrdersPage` рендер (фильтры + карточки + empty) в чистый компонент, чтобы переиспользовать.
 
-- `POST /api/v1/payments/pass/:purchaseId/init` (auth) — проверяет, что purchase принадлежит юзеру и `pending_payment`, дёргает `initPayment`, сохраняет `payments` row, возвращает `{ paymentUrl }`.
-- `POST /api/v1/payments/order/:orderId/init` (auth) — то же для заказа мерча.
-- `POST /api/v1/payments/tbank/webhook` (public, без auth) — принимает Notification от Т-Банка:
-  1. `verifyNotification` → если false: 403.
-  2. Находит `payments` row по `provider_payment_id`.
-  3. Для подстраховки дёргает `getState` и сверяет статус (защита от спуфинга подписи при утечке пароля).
-  4. Если `Status=CONFIRMED` → `activatePassPurchase` или `markOrderPaid`. Эти функции уже идемпотентны.
-  5. Отвечает `OK` (Т-Банк требует именно тело `OK`).
-- `GET /api/v1/payments/:id/status` (auth) — для фронта, чтобы поллить статус после редиректа на success-страницу.
+**Удаляем (после редиректов):**
+- `src/routes/club.rank.tsx` → редирект-роут на `/club/me`
+- `src/routes/club.orders.tsx` → редирект-роут на `/club/me` (или оставляем как «полный список», без хедера-дубля — обсудим во 2-м подходе)
 
-И обновляем уже существующие `pass/purchase`, чтобы они сразу возвращали `paymentUrl` (вызывают init внутри, как в TODO).
+> На первом подходе НЕ удаляем сами файлы — превращаем в редиректы через `beforeLoad → throw redirect({ to: "/club/me" })`. Если позже видим, что полный список заказов нужен как отдельная страница — оставим `/club/orders` живой и сошлёмся туда из секции «Все заказы».
 
-### 5. Фронт (минимум)
+**НЕ трогаем:**
+- `src/components/club/BadgeCase.tsx`, `BadgeIcon.tsx`, `src/data/badges.ts` — лежат в репо, не рендерим.
+- Всё, что про Hell Pass / гараж / билеты — без изменений.
 
-- В `club.hell-pass.$tier.tsx` и `club.checkout.tsx`: при успешном создании purchase/order — `window.location.href = paymentUrl`.
-- Новые роуты:
-  - `pay.success.tsx` — поллит `GET /payments/:id/status` секунд 15, показывает «оплачено» или «ждём подтверждения банка» и ссылку в личный кабинет.
-  - `pay.fail.tsx` — простой экран «не получилось, попробовать снова».
+---
 
-### 6. Тесты на DEMO
+## Этапы (так, как пойдём)
 
-После деплоя `docker compose up -d --build api` пройдём вручную:
-1. Купить Silver на тестовой карте `4300 0000 0000 0777` (3-DS код `12345678`) → редирект → success → Pass активен.
-2. Тест отказа (`4000 0000 0000 0002`) → fail → пасс остаётся `pending_payment`.
-3. Тест заказа мерча → статус `paid`, билеты начислены, остатки списаны.
-4. Дубликат вебхука Т-Банка → данные не двоятся (idempotent).
+**Этап 1. Убрать значки из UI.**
+- Удалить секцию «Значки» из `club.me.tsx` и `club.u.$nick.tsx`.
+- Убрать ссылку «Значки» из Header (если есть).
+- Проверить, что в `InviteBlock`, `checkout.success`, `pay.success` не торчит баджей в UI (если торчит — убрать).
+
+**Этап 2. Перенести «Ранг и XP» внутрь /club/me.**
+- Добавить секцию «Статистика» (2×2 квадраты из текущего `StatsRow`).
+- Добавить секцию «Прогресс» с инлайн-лестницей рангов (компактный вариант `RankLadderVertical`).
+- Превратить `/club/rank` в редирект на `/club/me`.
+- Убрать пункт «Ранг и XP» из `MobileMoreSheet`.
+
+**Этап 3. Перенести «Заказы» внутрь /club/me.**
+- Вынести рендер заказов в `OrdersList`.
+- Добавить в `/club/me` секцию «Заказы»: 3 последних + кнопка «Все заказы (N)».
+- «Все заказы» открывает `IOSSheet` со списком + фильтрами (на мобайле). На десктопе — раскрываем секцию или ведём на `/club/orders` (оставим живым с заголовком «Заказы» и `<OrdersList />`).
+- Убрать пункт «Заказы» из `MobileMoreSheet`.
+
+**Этап 4. Полировка.**
+- Прогон по `MORE_PATHS` — убрать `/club/orders`, `/club/rank`.
+- Проверить ссылки на `/club/rank` в коде (например, в `ProfileHero` есть `to="/club/rank"` на рендере ранга) — заменить на якорь внутри `/club/me` или убрать ссылку.
+- Тон и стиль секций — единый: `IOSListSection` с заголовком, `IOSListRow` или плитки 2×2 (для статистики).
+
+---
 
 ## Технические детали
 
-- Подпись Token: конкатенируем все top-level пары `{...body, Password}` (без вложенных Receipt/DATA), сортируем по ключу, склеиваем только **значения**, SHA-256, hex. Это формат Т-Банка.
-- Сумма передаётся в копейках (`amountRub * 100`).
-- В `Init` обязательно: `TerminalKey`, `Amount`, `OrderId` (наш `payments.id`), `Description`, `NotificationURL`, `SuccessURL`, `FailURL`, `DATA: { userId }`. `Receipt` пока **не передаём** — оставим закомментированный билдер для будущей кассы Атол.
-- Webhook должен отвечать строго `OK` текстом, иначе Т-Банк ретраит.
-- На фронте `pay.success` поллим именно наш `/payments/:id/status` (источник правды — наш `markOrderPaid`/`activatePassPurchase`), а не доверяем query-параметрам из редиректа.
+- Стиль секций единый: `IOSListSection title="..."` + `IOSListRow ... chevron`. Для квадратиков статистики делаем подкомпонент `StatGrid` (2 кол. на мобайле, 4 — на md+).
+- Лестница рангов внутри `IOSListSection` — оставляем `RankLadderVertical`, но без рамок (фон от секции), чтобы вписалось в iOS-look.
+- Редирект-роут шаблон:
+  ```tsx
+  export const Route = createFileRoute("/club/rank")({
+    beforeLoad: () => { throw redirect({ to: "/club/me" }); },
+  });
+  ```
+- `BadgeCase` и `BadgeIcon` не импортируются — TypeScript строгий, поэтому удаляем только импорты, файлы оставляем.
+- Заказы и ранг подгружаются через те же `useQuery` (`fetchMyOrders`, `useMyProfile`) — данные уже есть, просто в одном экране.
 
-## Что НЕ делаем сейчас (по твоему ответу)
+---
 
-- 54-ФЗ чек (Атол) — закладываем место в `initPayment`, реальный билдер чека добавим, когда дашь доступ к Атолу.
-- Возвраты через API Т-Банка — пока ручные через ЛК Т-Банка; в БД `payments` поле под это уже будет.
-- СБП/Т-Касса — не подключаем, договорились на интернет-эквайринг.
+## Что НЕ делаем (явно)
 
-## Деплой
-
-Один коммит, затем твоей рукой:
-```
-cd /opt/hhr/server && git pull && docker compose up -d --build api
-```
-Перед этим добавишь `TBANK_TERMINAL_KEY` и `TBANK_PASSWORD` (DEMO) в `.env` на VPS.
-
-Скажи «ок» — переключаемся в build и я делаю.
+- Не трогаем дизайн-токены, шрифты, цвета.
+- Не редизайним Hell Pass / гараж / билеты / Hell AI.
+- Не удаляем код значков (на будущее).
+- Не меняем backend / API — все ручки те же.
