@@ -790,7 +790,32 @@ function HistorySheet({
   onDelete: (id: string) => void;
   onNew: () => void;
 }) {
+  const [query, setQuery] = useState("");
   const sorted = [...chats].sort((a, b) => b.updatedAt - a.updatedAt);
+  const q = query.trim().toLowerCase();
+  const filtered = q
+    ? sorted.filter((c) => {
+        if (c.title.toLowerCase().includes(q)) return true;
+        return c.messages.some(
+          (m) =>
+            m.q.toLowerCase().includes(q) || (m.a ?? "").toLowerCase().includes(q),
+        );
+      })
+    : sorted;
+  // группировка по дню
+  const groups = filtered.reduce<{ key: string; label: string; items: Chat[] }[]>(
+    (acc, c) => {
+      const label = formatDayGroup(c.updatedAt);
+      const last = acc[acc.length - 1];
+      if (last && last.label === label) {
+        last.items.push(c);
+      } else {
+        acc.push({ key: `${label}-${c.id}`, label, items: [c] });
+      }
+      return acc;
+    },
+    [],
+  );
   return (
     <Drawer.Root open={open} onOpenChange={onOpenChange}>
       <Drawer.Portal>
