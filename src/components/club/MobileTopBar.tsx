@@ -37,7 +37,7 @@ function titleFor(pathname: string): string {
 export function MobileTopBar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const router = useRouter();
-  const { rank } = useCurrentRank();
+  const { rank, xp, xpMax } = useCurrentRank();
   const { count: cartCount } = useCart();
   const isTab = TAB_PATHS.includes(pathname);
   const isShop = pathname.startsWith("/club/shop");
