@@ -95,7 +95,47 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
     setModInput("");
     setPhotoError(null);
     setSubmitting(false);
+    initialSnapshotRef.current = JSON.stringify({
+      brand: bike?.brand ?? "",
+      model: bike?.model ?? "",
+      year: bike?.year ?? new Date().getFullYear(),
+      color: bike?.color ?? "",
+      nickname: bike?.nickname ?? "",
+      mileage: bike?.mileage ?? "",
+      purchaseDate: bike?.purchaseDate ?? "",
+      mods: bike?.mods ?? [],
+      photo: bike?.photo ?? "",
+    });
   }, [open, bike]);
+
+  function isDirty() {
+    const current = JSON.stringify({
+      brand,
+      model,
+      year,
+      color,
+      nickname,
+      mileage,
+      purchaseDate,
+      mods,
+      photo: photo ?? "",
+    });
+    return current !== initialSnapshotRef.current || !!photoFile;
+  }
+
+  function requestClose(next: boolean) {
+    if (next) {
+      onOpenChange(true);
+      return;
+    }
+    if (submitting) return;
+    if (isDirty()) {
+      const ok = window.confirm("Закрыть без сохранения? Изменения будут потеряны.");
+      if (!ok) return;
+    }
+    onOpenChange(false);
+  }
+
 
   // Освобождаем blob-URL при размонтировании — иначе утечёт.
   useEffect(() => {
