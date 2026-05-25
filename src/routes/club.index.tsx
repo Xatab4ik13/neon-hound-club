@@ -41,6 +41,9 @@ const RANK_BY_ID = Object.fromEntries(RANKS.map((r) => [r.id, r])) as Record<
 
 function ClubFeedPage() {
   const posts = useFeedPosts();
+  const loaded = useFeedLoaded();
+  const showSkeleton = !loaded && posts.length === 0;
+
   return (
     <main className="mx-auto w-full max-w-[640px] px-3 py-5 md:px-4 md:py-10">
       <div className="mb-4 flex items-center justify-between px-2">
@@ -54,9 +57,15 @@ function ClubFeedPage() {
       </div>
 
       <div className="space-y-5">
-        {posts.map((post) => (
-          <PostCard key={post.id} post={post} />
-        ))}
+        {showSkeleton ? (
+          <>
+            <PostSkeleton withImage />
+            <PostSkeleton />
+            <PostSkeleton withImage />
+          </>
+        ) : (
+          posts.map((post) => <PostCard key={post.id} post={post} />)
+        )}
       </div>
     </main>
   );
