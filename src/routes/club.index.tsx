@@ -1077,22 +1077,9 @@ function StickerPanel({
               )}
             </div>
           </>
-        ) : tab === "emoji" ? (
-          <div className={`grid gap-1 pt-1 ${large ? "grid-cols-6 sm:grid-cols-7" : "grid-cols-7 sm:grid-cols-8"}`}>
-            {"😀 😁 😂 🤣 😊 😍 😎 🤘 🔥 💀 🏁 🏍️ ⚙️ 🛠️ 🏆 ⚡ 💯 👀 👍 🙏 🤝 🫡 😤 🥶 😅 😉 🥰 😘 🤔 🙄 😴 🤯".split(" ").map((e, i) => (
-              <button
-                key={i}
-                type="button"
-                onClick={() => onPickEmoji(e)}
-                className={`grid aspect-square place-items-center rounded-lg transition-transform active:scale-90 hover:bg-white/[0.05] ${large ? "text-4xl" : "text-[26px]"}`}
-              >
-                {e}
-              </button>
-            ))}
-          </div>
         ) : recent.length === 0 ? (
           <div className="grid h-full place-items-center px-6 text-center text-[12px] text-muted-foreground/60">
-            Здесь появятся стикеры и эмодзи, которые ты используешь
+            Здесь появятся стикеры, которые ты используешь
           </div>
         ) : (
           <div className={`grid gap-1 pt-1 ${large ? "grid-cols-4 sm:grid-cols-5" : "grid-cols-5 sm:grid-cols-6"}`}>
@@ -1125,13 +1112,9 @@ function StickerPanel({
           onClick={() => setTab("recent")}
           icon={<Clock size={18} />}
         />
-        <PanelTab
-          active={tab === "emoji"}
-          onClick={() => setTab("emoji")}
-          icon={<Smile size={18} />}
-        />
 
         <div className="mx-1 h-5 w-px bg-white/[0.08]" />
+
 
         <div className="flex flex-1 items-center gap-0.5 overflow-x-auto scrollbar-none">
           {STICKER_PACKS.map((p) => {
