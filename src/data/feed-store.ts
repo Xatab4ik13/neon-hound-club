@@ -20,6 +20,7 @@ import {
   type FeedCommentHydrated,
 } from "@/lib/queries";
 import { PUBLIC_USERS, type PublicUser } from "./users";
+import { hhToast } from "@/lib/hh-toast";
 
 // ───────── Внешние типы (контракт UI) ─────────
 
@@ -354,6 +355,7 @@ export const feedStore = {
       else await unlikePost(postId);
     } catch {
       patchPostLocal(postId, () => prev);
+      hhToast.error(liked ? "Не удалось поставить лайк" : "Не удалось снять лайк");
     }
   },
 

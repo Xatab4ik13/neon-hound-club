@@ -13,6 +13,8 @@ import { FeedHeroCarousel } from "@/components/club/FeedHeroCarousel";
 import { LikeButton } from "@/components/club/LikeButton";
 import { ImageViewer } from "@/components/club/ImageViewer";
 import { PostSkeleton } from "@/components/club/PostSkeleton";
+import { ReactionsBar } from "@/components/club/ReactionsBar";
+import { reactionsStore } from "@/data/reactions-store";
 import { hhToast } from "@/lib/hh-toast";
 import { haptic } from "@/hooks/use-haptic";
 
@@ -290,7 +292,9 @@ export function PostCard({ post, moderate = false }: { post: Post; moderate?: bo
           liked={liked}
           count={likeCount}
           onToggle={(next: boolean) => feedStore.toggleLike(post.id, next)}
+          onReact={(r) => reactionsStore.set(post.id, r)}
         />
+
 
 
         <button
@@ -312,6 +316,10 @@ export function PostCard({ post, moderate = false }: { post: Post; moderate?: bo
           <Share2 className="h-4 w-4" strokeWidth={2} />
         </button>
       </div>
+
+      <ReactionsBar postId={post.id} />
+
+
 
       <CommentsPreview
         comments={post.comments}
