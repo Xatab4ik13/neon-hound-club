@@ -459,6 +459,7 @@ function CommentsSheet({
   moderate?: boolean;
 }) {
   const [replyTo, setReplyTo] = useState<{ nick: string; commentId: string } | null>(null);
+  const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set());
   const listRef = useRef<HTMLDivElement>(null);
 
   // сбросить reply при закрытии
@@ -474,6 +475,59 @@ function CommentsSheet({
     }
     lastCount.current = post.comments.length;
   }, [post.comments.length]);
+
+  // Группировка ответов: ответ = коммент, начинающийся с "@<nick> "
+  const { topLevel, childrenByParentId } = useMemo(() => {
+    const childrenByParentId = new Map<string, Comment[]>();
+    const topLevel: Comment[] = [];
+    const nickToLatest = new Map<string, string>(); // nick(lower) -> commentId
+    for (const c of post.comments) {
+      const m = c.text.match(/^@(\S+)\s/);
+      const parentId = m ? nickToLatest.get(m[1].toLowerCase()) : undefined;
+      if (parentId) {
+        const arr = childrenByParentId.get(parentId) ?? [];
+        arr.push(c);
+        childrenByParentId.set(parentId, arr);
+      } else {
+        topLevel.push(c);
+      }
+      const nick = PUBLIC_USERS[c.authorSlug]?.nick;
+      if (nick) nickToLatest.set(nick.toLowerCase(), c.id);
+    }
+    return { topLevel, childrenByParentId };
+  }, [post.comments]);
+
+  const toggleCollapse = (id: string) => {
+    setCollapsed((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const stripReplyPrefix = (text: string) => text.replace(/^@\S+\s+/, "");
+
+  const renderItem = (c: Comment, isReply = false) => (
+    <CommentItem
+      key={c.id}
+      comment={isReply ? { ...c, text: stripReplyPrefix(c.text) } : c}
+      large
+      onReply={() =>
+        setReplyTo({
+          nick: PUBLIC_USERS[c.authorSlug]?.nick ?? c.authorSlug,
+          commentId: c.id,
+        })
+      }
+      onDelete={
+        moderate
+          ? () => {
+              if (confirm("Удалить комментарий?")) feedStore.removeComment(post.id, c.id);
+            }
+          : undefined
+      }
+    />
+  );
 
   return (
     <IOSSheet
@@ -491,26 +545,34 @@ function CommentsSheet({
             </div>
           ) : (
             <ul className="space-y-5">
-              {post.comments.map((c) => (
-                <CommentItem
-                  key={c.id}
-                  comment={c}
-                  large
-                  onReply={() =>
-                    setReplyTo({
-                      nick: PUBLIC_USERS[c.authorSlug]?.nick ?? c.authorSlug,
-                      commentId: c.id,
-                    })
-                  }
-                  onDelete={
-                    moderate
-                      ? () => {
-                          if (confirm("Удалить комментарий?")) feedStore.removeComment(post.id, c.id);
-                        }
-                      : undefined
-                  }
-                />
-              ))}
+              {topLevel.map((c) => {
+                const children = childrenByParentId.get(c.id) ?? [];
+                const isCollapsed = collapsed.has(c.id);
+                return (
+                  <li key={c.id} className="space-y-3">
+                    <ul>{renderItem(c)}</ul>
+                    {children.length > 0 && (
+                      <div className="pl-12">
+                        <button
+                          type="button"
+                          onClick={() => toggleCollapse(c.id)}
+                          className="mb-2 inline-flex items-center gap-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground/70 transition-colors hover:text-foreground"
+                        >
+                          <span className="h-px w-6 bg-white/15" />
+                          {isCollapsed
+                            ? `Показать ответы · ${children.length}`
+                            : `Скрыть ответы · ${children.length}`}
+                        </button>
+                        {!isCollapsed && (
+                          <ul className="space-y-4">
+                            {children.map((child) => renderItem(child, true))}
+                          </ul>
+                        )}
+                      </div>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>
