@@ -366,17 +366,17 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
         onOpenChange={onOpenChange}
         title={bike ? "Редактировать байк" : "Добавить байк"}
         fullHeight
-        doneLabel={bike ? "Сохранить" : "Добавить"}
+        doneLabel={submitting ? "..." : bike ? "Сохранить" : "Добавить"}
         onDone={() => {
           if (!canSubmit) return;
-          const form = document.getElementById("bike-form") as HTMLFormElement | null;
-          form?.requestSubmit();
+          void handleSubmit();
         }}
       >
         {formBody}
       </IOSSheet>
     );
   }
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
