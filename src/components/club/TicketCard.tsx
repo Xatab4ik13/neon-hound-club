@@ -4,7 +4,7 @@
 // Сверху — лёгкая глянцевая засветка и медленный «шиммер» в стиле iOS.
 
 import { Link } from "@tanstack/react-router";
-import { ArrowUpRight, Ticket } from "lucide-react";
+import { Ticket } from "lucide-react";
 
 function pluralTickets(n: number): string {
   const mod10 = n % 10;
@@ -51,18 +51,6 @@ export function TicketCard({
           aria-hidden
           className="pointer-events-none absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/[0.09] to-transparent"
         />
-        {/* медленный шиммер по диагонали — «холо»-эффект */}
-        <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-          <div
-            className="absolute inset-y-0 w-1/3"
-            style={{
-              background:
-                "linear-gradient(110deg, transparent 0%, color-mix(in oklab, white 14%, transparent) 50%, transparent 100%)",
-              animation: "badge-shine 4.5s ease-in-out infinite",
-              animationDelay: "1.5s",
-            }}
-          />
-        </div>
 
         {/* основная часть */}
         <div className="relative z-10 flex min-w-0 flex-1 flex-col justify-between p-5">
@@ -90,10 +78,10 @@ export function TicketCard({
             <Link
               to="/club/raffles"
               aria-label="Поставить билеты"
-              className="group flex h-9 shrink-0 items-center gap-1 rounded-full border border-primary/40 bg-primary/15 pl-3 pr-2.5 text-[13px] font-medium text-foreground backdrop-blur-sm transition-all active:scale-95 hover:bg-primary/25"
+              className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-primary px-4 text-[13px] font-semibold text-primary-foreground shadow-[0_4px_14px_-4px_color-mix(in_oklab,var(--primary)_70%,transparent)] transition-all active:scale-[0.97] hover:brightness-110"
             >
+              <Ticket className="h-3.5 w-3.5" strokeWidth={2.2} />
               Поставить
-              <ArrowUpRight className="h-3.5 w-3.5 text-primary transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
             </Link>
           </div>
         </div>
