@@ -856,7 +856,7 @@ function HistorySheet({
             </button>
           </div>
 
-          <div className="px-4 pb-3">
+          <div className="px-4 pb-3 space-y-2">
             <button
               type="button"
               onClick={onNew}
@@ -867,6 +867,19 @@ function HistorySheet({
               </span>
               <span className="text-[15px] font-semibold">Новый чат</span>
             </button>
+
+            {sorted.length > 0 && (
+              <div className="flex items-center gap-2 rounded-2xl border border-white/[0.06] bg-white/[0.03] px-3.5 py-2.5">
+                <SearchIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                <input
+                  type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Поиск по чатам"
+                  className="w-full bg-transparent text-[15px] text-foreground placeholder:text-muted-foreground/60 focus:outline-none"
+                />
+              </div>
+            )}
           </div>
 
           <div className="flex-1 overflow-y-auto overscroll-contain px-4 pb-4">
@@ -874,78 +887,83 @@ function HistorySheet({
               <div className="rounded-2xl border border-white/[0.06] bg-card/40 px-4 py-6 text-center text-[13px] text-muted-foreground">
                 Истории пока нет.
               </div>
+            ) : filtered.length === 0 ? (
+              <div className="rounded-2xl border border-white/[0.06] bg-card/40 px-4 py-6 text-center text-[13px] text-muted-foreground">
+                Ничего не найдено.
+              </div>
             ) : (
-              <>
-                <div className="mb-2 px-1 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                  обращения · {sorted.length}
-                </div>
-                <ul className="space-y-2">
-                  {sorted.map((c) => {
-                    const active = c.id === activeId;
-                    const count = c.messages.length;
-                    const preview =
-                      c.messages.length === 0
-                        ? "Пустой чат"
-                        : c.title;
-                    return (
-                      <li key={c.id}>
-                        <Swipeable
-                          radius={16}
-                          left={{
-                            icon: <Trash2 className="h-5 w-5" />,
-                            label: "Удалить",
-                            bg: "linear-gradient(90deg, rgba(239,68,68,0.18), rgba(239,68,68,0.32))",
-                            fg: "rgb(252,165,165)",
-                            onAction: () => onDelete(c.id),
-                          }}
-                        >
-                          <button
-                            type="button"
-                            onClick={() => onPick(c.id)}
-                            className={cn(
-                              "flex w-full items-start gap-3 rounded-2xl border px-4 py-3 text-left active:scale-[0.99] active:bg-white/[0.05]",
-                              active
-                                ? "border-primary/30 bg-primary/[0.06]"
-                                : "border-white/[0.06] bg-card/40",
-                            )}
-                          >
-                            <span
-                              className={cn(
-                                "mt-0.5 grid h-10 w-10 shrink-0 place-items-center rounded-xl",
-                                active
-                                  ? "bg-primary/15 text-primary"
-                                  : "bg-white/[0.05] text-muted-foreground",
-                              )}
+              <div className="space-y-5">
+                {groups.map((g) => (
+                  <div key={g.key}>
+                    <div className="mb-2 px-1 text-[12px] font-medium uppercase tracking-wider text-muted-foreground/70">
+                      {g.label}
+                    </div>
+                    <ul className="space-y-2">
+                      {g.items.map((c) => {
+                        const active = c.id === activeId;
+                        const count = c.messages.length;
+                        const preview =
+                          c.messages.length === 0 ? "Пустой чат" : c.title;
+                        return (
+                          <li key={c.id}>
+                            <Swipeable
+                              radius={16}
+                              left={{
+                                icon: <Trash2 className="h-5 w-5" />,
+                                label: "Удалить",
+                                bg: "linear-gradient(90deg, rgba(239,68,68,0.18), rgba(239,68,68,0.32))",
+                                fg: "rgb(252,165,165)",
+                                onAction: () => onDelete(c.id),
+                              }}
                             >
-                              <Sparkles className="h-[20px] w-[20px]" />
-                            </span>
-                            <span className="min-w-0 flex-1">
-                              <span className="flex items-center gap-2">
-                                <span className="min-w-0 flex-1 truncate text-[17px] font-semibold text-foreground">
-                                  {preview}
-                                </span>
-                                {active && (
-                                  <span className="font-mono text-[9px] uppercase tracking-wider text-primary">
-                                    активный
-                                  </span>
+                              <button
+                                type="button"
+                                onClick={() => onPick(c.id)}
+                                className={cn(
+                                  "flex w-full items-start gap-3 rounded-2xl border px-4 py-3 text-left active:scale-[0.99] active:bg-white/[0.05]",
+                                  active
+                                    ? "border-primary/30 bg-primary/[0.06]"
+                                    : "border-white/[0.06] bg-card/40",
                                 )}
-                              </span>
-                              <span className="mt-1 flex items-center gap-2 font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-                                <span>{formatRelative(c.updatedAt)}</span>
-                                <span className="opacity-50">·</span>
-                                <span className="tabular-nums">
-                                  {count} {count === 1 ? "сообщ." : "сообщ."}
+                              >
+                                <span
+                                  className={cn(
+                                    "mt-0.5 grid h-10 w-10 shrink-0 place-items-center rounded-xl",
+                                    active
+                                      ? "bg-primary/15 text-primary"
+                                      : "bg-white/[0.05] text-muted-foreground",
+                                  )}
+                                >
+                                  <Sparkles className="h-[20px] w-[20px]" />
                                 </span>
-                              </span>
-                            </span>
-                          </button>
-                        </Swipeable>
-                      </li>
-                    );
-                  })}
-                </ul>
-
-              </>
+                                <span className="min-w-0 flex-1">
+                                  <span className="flex items-center gap-2">
+                                    <span className="min-w-0 flex-1 truncate text-[17px] font-semibold text-foreground">
+                                      {preview}
+                                    </span>
+                                    {active && (
+                                      <span className="text-[11px] font-medium text-primary">
+                                        активный
+                                      </span>
+                                    )}
+                                  </span>
+                                  <span className="mt-1 flex items-center gap-2 text-[12px] text-muted-foreground">
+                                    <span>{formatRelative(c.updatedAt)}</span>
+                                    <span className="opacity-50">·</span>
+                                    <span className="tabular-nums">
+                                      {count} сообщ.
+                                    </span>
+                                  </span>
+                                </span>
+                              </button>
+                            </Swipeable>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
         </Drawer.Content>
