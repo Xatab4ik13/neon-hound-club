@@ -20,6 +20,7 @@ import {
   type FeedCommentHydrated,
 } from "@/lib/queries";
 import { PUBLIC_USERS, type PublicUser } from "./users";
+import { hhToast } from "@/lib/hh-toast";
 
 // ───────── Внешние типы (контракт UI) ─────────
 
