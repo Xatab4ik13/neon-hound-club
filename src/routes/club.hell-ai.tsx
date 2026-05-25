@@ -534,47 +534,30 @@ function HellAiMobile() {
       {/* лента сообщений */}
       <div
         ref={scrollRef}
+        onScroll={handleScroll}
         className="flex-1 overflow-y-auto px-4 pb-4 pt-4"
         style={{ paddingBottom: `calc(${composerOffset} + 110px)` }}
       >
         {messages.length === 0 ? (
-          <EmptyChat bikeStr={bikeStr} onPick={pickCommand} disabled={!canAsk} />
+          <EmptyChat
+            bikeStr={bikeStr}
+            onPick={pickCommand}
+            disabled={!canAsk}
+            isGuest={isGuest}
+          />
         ) : (
           <ul className="space-y-3">
             <AnimatePresence initial={false}>
               {messages.map((m) => (
                 <li key={m.id} className="space-y-2">
-                  {/* вопрос — пузырь справа */}
-                  <motion.div
-                    initial={{ opacity: 0, y: 8, scale: 0.96 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    transition={{ type: "spring", stiffness: 520, damping: 32 }}
-                    className="flex justify-end"
-                  >
-                    <div className="max-w-[82%] rounded-[20px] rounded-br-md bg-primary px-3.5 py-2 text-[15px] leading-snug text-primary-foreground shadow-sm">
-                      {m.q}
-                    </div>
-                  </motion.div>
-
-                  {/* ответ — пузырь слева */}
+                  <HellAiBubble role="user" content={m.q} />
                   {m.a !== undefined && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 8, scale: 0.96 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      transition={{ type: "spring", stiffness: 520, damping: 32, delay: 0.04 }}
-                      className="flex justify-start"
-                    >
-                      <div
-                        className={cn(
-                          "max-w-[86%] rounded-[20px] rounded-bl-md px-3.5 py-2.5 text-[15px] leading-relaxed shadow-sm",
-                          m.error
-                            ? "border border-red-500/25 bg-red-500/[0.06] text-red-200"
-                            : "border border-white/[0.06] bg-white/[0.04] text-foreground",
-                        )}
-                      >
-                        {m.a}
-                      </div>
-                    </motion.div>
+                    <HellAiBubble
+                      role="assistant"
+                      content={m.a}
+                      error={m.error}
+                      onRegenerate={() => regenerate(m.id)}
+                    />
                   )}
                 </li>
               ))}
@@ -587,7 +570,7 @@ function HellAiMobile() {
                   animate={{ opacity: 1, y: 0 }}
                   className="flex justify-start"
                 >
-                  <div className="rounded-[20px] rounded-bl-md border border-white/[0.06] bg-white/[0.04] px-4 py-3 shadow-sm">
+                  <div className="rounded-[22px] rounded-bl-[6px] border border-white/[0.06] bg-white/[0.05] px-4 py-3 shadow-sm">
                     <TypingDots />
                   </div>
                 </motion.div>
@@ -596,6 +579,7 @@ function HellAiMobile() {
           </ul>
         )}
       </div>
+
 
       {/* липкий композер */}
       <div
