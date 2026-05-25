@@ -713,7 +713,7 @@ function HellAiMobile() {
               })}
             </AnimatePresence>
 
-            {isThinking && (
+            {isThinking && !(messages[messages.length - 1]?.a ?? "").length && (
               <li>
                 <motion.div
                   initial={{ opacity: 0, y: 6 }}
