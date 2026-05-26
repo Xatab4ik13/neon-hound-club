@@ -1,4 +1,4 @@
-import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useLocation, useNavigate, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
   Newspaper,
@@ -65,7 +65,9 @@ function ClubLayout() {
   const isMobile = useIsMobile();
   const viewer = useViewer();
   const navigate = useNavigate();
-  useEdgeSwipeBack(true);
+  // На корне /club свайп-назад уводит из приложения — это раздражает.
+  // Включаем edge-swipe только на под-страницах.
+  useEdgeSwipeBack(pathname !== "/club");
 
   // Блогер живёт в своём кабинете — внутрь клуба не пускаем.
   useEffect(() => {
@@ -73,6 +75,18 @@ function ClubLayout() {
       navigate({ to: "/blogger", replace: true });
     }
   }, [viewer.hydrated, viewer.user?.role, navigate]);
+
+  // Per-page refresh: на ленте — feed, иначе — invalidate текущего роута.
+  // (PullToRefresh без onRefresh всегда дёргал feedStore.refresh — это был баг.)
+  const router = useRouter();
+  const onPullRefresh = async () => {
+    if (pathname === "/club") {
+      const { feedStore } = await import("@/data/feed-store");
+      await feedStore.refresh();
+    } else {
+      await router.invalidate();
+    }
+  };
 
   // Mobile shell — iOS-app feel: top bar + push/pop transition + bottom tab bar.
   if (isMobile) {
@@ -84,7 +98,7 @@ function ClubLayout() {
           className="relative"
           style={{ paddingBottom: "calc(64px + env(safe-area-inset-bottom) + 8px)" }}
         >
-          <PullToRefresh>
+          <PullToRefresh onRefresh={onPullRefresh}>
             <MobileTransition>
               <Outlet />
             </MobileTransition>
@@ -852,8 +866,9 @@ export function ProfilePlaque({
   const myProfile = useMyProfile(viewer.isAuthed);
   const mockRank = useCurrentRank();
 
-  // Реальный ник/ранг/xp с бэка, если есть. Иначе fallback на мок.
-  const nick = viewer.nick ?? ME.nick;
+  // Пока viewer не гидрирован — НЕ показываем мок-ник ASPHALT_DOG.
+  // Иначе на 1–2 сек мелькает чужой ник, потом подменяется реальным.
+  const nick = viewer.hydrated ? (viewer.nick ?? ME.nick) : "";
   const realRankId = myProfile.data?.rank.rankId as RankId | undefined;
   const realRankIdx = realRankId ? RANKS.findIndex((r) => r.id === realRankId) : -1;
   const rank = realRankIdx >= 0 ? RANKS[realRankIdx] : mockRank.rank;
