@@ -917,7 +917,7 @@ function RankAvatar({
   const rank = RANK_BY_ID[rankId];
   return (
     <div
-      className="relative flex shrink-0 items-center justify-center overflow-hidden"
+      className="relative flex shrink-0 items-center justify-center overflow-hidden rounded-full"
       style={{
         height: size,
         width: size,
@@ -926,16 +926,17 @@ function RankAvatar({
     >
       <div
         aria-hidden
-        className="absolute inset-0"
+        className="absolute inset-0 rounded-full"
         style={{ border: `1px solid ${rank.accent}`, opacity: 0.85 }}
       />
       <div
         aria-hidden
-        className="absolute inset-0 opacity-20"
+        className="absolute inset-0 rounded-full opacity-20"
         style={{
           background: `linear-gradient(135deg, ${rank.accent} 0%, transparent 70%)`,
         }}
       />
+
       {avatarUrl ? (
         <img
           src={avatarUrl}
