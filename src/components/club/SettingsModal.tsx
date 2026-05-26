@@ -7,7 +7,6 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import {
   Bike,
-  MapPin,
   Bell,
   ShieldAlert,
   LogOut,
@@ -16,7 +15,6 @@ import {
   X,
   Loader2,
   Camera,
-  Plus,
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useViewer } from "@/hooks/use-viewer";
@@ -27,8 +25,6 @@ import {
   useMyProfile,
   useUpdateMyProfile,
   useBikes,
-  useMyAddress,
-  useSaveMyAddress,
   useMyNotifications,
   useSaveMyNotifications,
   useChangePassword,
@@ -41,11 +37,10 @@ import { Link } from "@tanstack/react-router";
 
 type Props = { open: boolean; onOpenChange: (v: boolean) => void };
 
-type TabId = "profile" | "address" | "notify" | "account";
+type TabId = "profile" | "notify" | "account";
 
 const TABS: { id: TabId; label: string; short: string; icon: React.ReactNode }[] = [
   { id: "profile", label: "Профиль и байк", short: "Профиль", icon: <User className="h-3.5 w-3.5" /> },
-  { id: "address", label: "Доставка",       short: "Доставка", icon: <MapPin className="h-3.5 w-3.5" /> },
   { id: "notify",  label: "Уведомления",    short: "Уведом.",  icon: <Bell className="h-3.5 w-3.5" /> },
   { id: "account", label: "Аккаунт",        short: "Аккаунт",  icon: <ShieldAlert className="h-3.5 w-3.5" /> },
 ];
