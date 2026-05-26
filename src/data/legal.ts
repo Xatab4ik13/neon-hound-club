@@ -15,6 +15,8 @@ export const LEGAL = {
   region: "г. Москва, Россия",
   /** Канал связи для обращений по сервису и ПДн. */
   contactTelegram: "https://t.me/hell666hound",
+  /** Email для официальных обращений (требование банка-эквайера). */
+  contactEmail: "no-reply@hhr.pro",
   /** Бренд / коммерческое обозначение сервиса. */
   brand: "HELLHOUND Racing Club",
   /** Сайт сервиса (для оферты и политики). */

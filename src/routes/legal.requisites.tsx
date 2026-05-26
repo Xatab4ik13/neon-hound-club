@@ -32,9 +32,13 @@ function RequisitesPage() {
 
       <h2>Контакты</h2>
       <p>
-        Все обращения по работе сервиса, заказам, возвратам и обработке
-        персональных данных принимаются через Telegram:
-        {" "}<a href={LEGAL.contactTelegram} target="_blank" rel="noreferrer">@hell666hound</a>.
+        Email для официальных обращений:{" "}
+        <a href={`mailto:${LEGAL.contactEmail}`}>{LEGAL.contactEmail}</a>.
+      </p>
+      <p>
+        Оперативная поддержка по заказам, возвратам и обработке персональных
+        данных — Telegram:{" "}
+        <a href={LEGAL.contactTelegram} target="_blank" rel="noreferrer">@hell666hound</a>.
       </p>
     </LegalShell>
   );
