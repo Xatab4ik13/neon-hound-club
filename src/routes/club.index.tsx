@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback, memo } from "react";
+import { useKeyboardOffset } from "@/hooks/use-keyboard-offset";
 import { Smile, Send, Search as SearchIcon, Clock, Sticker, X, Pin, PinOff, Trash2, BarChart3, Share2, MessageCircle, Heart } from "lucide-react";
 import { RANKS, type RankId } from "@/data/ranks";
 import { ME_SLUG, PUBLIC_USERS } from "@/data/users";
@@ -602,17 +603,26 @@ function CommentsSheet({
   const [replyTo, setReplyTo] = useState<{ nick: string; commentId: string } | null>(null);
   const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set());
   const listRef = useRef<HTMLDivElement>(null);
+  const kbOffset = useKeyboardOffset();
 
   // сбросить reply при закрытии
   useEffect(() => {
     if (!open) setReplyTo(null);
   }, [open]);
 
-  // автоскролл вниз при добавлении
+  // автоскролл вниз только если юзер уже у низа (порог 120px) — иначе не дёргаем
   const lastCount = useRef(post.comments.length);
   useEffect(() => {
-    if (post.comments.length > lastCount.current && listRef.current) {
-      listRef.current.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
+    const el = listRef.current;
+    if (!el) {
+      lastCount.current = post.comments.length;
+      return;
+    }
+    if (post.comments.length > lastCount.current) {
+      const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 120;
+      if (nearBottom) {
+        el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+      }
     }
     lastCount.current = post.comments.length;
   }, [post.comments.length]);
@@ -702,10 +712,14 @@ function CommentsSheet({
       onOpenChange={onOpenChange}
       title={`Комментарии · ${post.comments.length}`}
       fullHeight
-      contentClassName="!p-0"
+      contentClassName="!p-0 !overflow-hidden flex flex-col min-h-0"
     >
-      <div className="flex h-full flex-col">
-        <div ref={listRef} className="flex-1 overflow-y-auto overscroll-contain px-4 py-4 md:px-5">
+      <div className="flex h-full min-h-0 flex-1 flex-col">
+        <div
+          ref={listRef}
+          className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 md:px-5"
+          style={{ WebkitOverflowScrolling: "touch" } as React.CSSProperties}
+        >
           {post.comments.length === 0 ? (
             <div className="grid h-full place-items-center text-[13px] text-muted-foreground">
               Будь первым — оставь комментарий
@@ -743,7 +757,10 @@ function CommentsSheet({
             </ul>
           )}
         </div>
-        <div className="shrink-0 border-t border-white/[0.06] bg-[#0d0d0d]">
+        <div
+          className="shrink-0 border-t border-white/[0.06] bg-[#0d0d0d]"
+          style={{ paddingBottom: kbOffset > 0 ? kbOffset : undefined }}
+        >
           <CommentComposer
             postId={post.id}
             large
@@ -758,7 +775,7 @@ function CommentsSheet({
 
 // ───────── Comment item ─────────
 
-function CommentItem({
+const CommentItem = memo(function CommentItem({
   comment,
   large = false,
   onReply,
@@ -774,6 +791,7 @@ function CommentItem({
   const rank = RANK_BY_ID[user?.rank ?? "rookie"];
   const count = comment.likes;
   const authorIsBlogger = comment.isBlogger;
+  const stickerUrl = parseSticker(comment.text);
 
   return (
     <li className="flex gap-3">
@@ -813,30 +831,24 @@ function CommentItem({
             {comment.time}
           </span>
         </div>
-        {(() => {
-          const stickerUrl = parseSticker(comment.text);
-          if (stickerUrl) {
-            return (
-              <div className="mt-1">
-                <img
-                  src={stickerUrl}
-                  alt="стикер"
-                  loading="lazy"
-                  decoding="async"
-                  draggable={false}
-                  className="h-48 w-48 select-none object-contain md:h-52 md:w-52"
-                />
-              </div>
-            );
-          }
-          return (
-            <div className="mt-1 inline-block max-w-full rounded-2xl rounded-tl-sm border border-white/[0.05] bg-white/[0.03] px-3 py-2">
-              <p className={`break-words leading-relaxed text-foreground/90 ${large ? "text-[14.5px]" : "text-[13.5px]"}`}>
-                {comment.text}
-              </p>
-            </div>
-          );
-        })()}
+        {stickerUrl ? (
+          <div className="mt-1">
+            <img
+              src={stickerUrl}
+              alt="стикер"
+              loading="lazy"
+              decoding="async"
+              draggable={false}
+              className="h-48 w-48 select-none object-contain md:h-52 md:w-52"
+            />
+          </div>
+        ) : (
+          <div className="mt-1 inline-block max-w-full rounded-2xl rounded-tl-sm border border-white/[0.05] bg-white/[0.03] px-3 py-2">
+            <p className={`break-words leading-relaxed text-foreground/90 ${large ? "text-[14.5px]" : "text-[13.5px]"}`}>
+              {comment.text}
+            </p>
+          </div>
+        )}
         <div className="mt-1.5 flex items-center gap-4 pl-1">
           <button
             type="button"
@@ -874,7 +886,7 @@ function CommentItem({
       </div>
     </li>
   );
-}
+});
 
 
 
