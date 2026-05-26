@@ -642,3 +642,24 @@ export function patchPost(id: string, input: Partial<CreatePostInput>) {
 export function deletePost(id: string) {
   return apiFetch<{ ok: true }>(`/api/v1/posts/${id}`, { method: "DELETE" });
 }
+
+// ============================================================================
+// HOME BANNERS — карусель на /club. Публичный read-only список.
+// ============================================================================
+
+export type HomeBanner = {
+  id: string;
+  title: string;
+  eyebrow: string;
+  ctaLabel: string;
+  ctaHref: string;
+  imageUrl: string;
+  sort: number;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export function fetchHomeBanners() {
+  return apiFetch<{ banners: HomeBanner[] }>(`/api/v1/home/banners/`);
+}
