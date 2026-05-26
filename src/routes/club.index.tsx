@@ -110,8 +110,8 @@ export const PostCard = memo(function PostCard({ post, moderate = false }: { pos
   const navigate = useNavigate();
   const liked = post.liked;
   const likeCount = post.likes;
-  const author = PUBLIC_USERS[post.authorSlug];
-  const authorIsBlogger = post.isBlogger;
+  const author = post.author;
+  const authorIsBlogger = author.isBlogger;
 
   const postUrl = typeof window !== "undefined" ? `${window.location.origin}/club/p/${post.id}` : `/club/p/${post.id}`;
 
