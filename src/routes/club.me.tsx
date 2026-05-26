@@ -100,12 +100,36 @@ function deriveRankView(rank: RankInfo | null | undefined, customBg: PlaqueBg | 
 function MePage() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [bgSheetOpen, setBgSheetOpen] = useState(false);
+  const [ordersSheetOpen, setOrdersSheetOpen] = useState(false);
   const isMobile = useIsMobile();
+  const { isAuthed, signOut } = useViewer();
+  const profileQ = useMyProfile(isAuthed);
   const passQ = useQuery({ queryKey: ["pass", "me"], queryFn: fetchPassMe, staleTime: 30_000, retry: false });
   const activeTierSlug = passQ.data?.active?.status === "active" ? passQ.data.active.tier : null;
   const tierInfo: Tier | null = activeTierSlug ? TIERS.find((t) => t.slug === activeTierSlug) ?? null : null;
   const passDaysLeft = passQ.data?.daysLeft ?? null;
-  const { signOut } = useViewer();
+
+  // Статистика
+  const balanceQ = useQuery({
+    queryKey: qk.ticketsBalance,
+    queryFn: fetchTicketsBalance,
+    enabled: isAuthed,
+    staleTime: 30_000,
+  });
+  const rafflesQ = useQuery({
+    queryKey: qk.myRaffles,
+    queryFn: fetchMyRaffles,
+    enabled: isAuthed,
+    staleTime: 30_000,
+  });
+  const ordersQ = useQuery({
+    queryKey: qk.shopOrders,
+    queryFn: fetchMyOrders,
+    enabled: isAuthed,
+    staleTime: 30_000,
+  });
+  const bikesQ = useBikes(isAuthed);
+  const totalOrders = ordersQ.data?.items.length ?? 0;
 
   const [confirmLogout, setConfirmLogout] = useState(false);
   const doLogout = async () => {
@@ -117,11 +141,25 @@ function MePage() {
   };
   const handleLogout = () => setConfirmLogout(true);
 
-
-
   return (
     <main className="mx-auto w-full max-w-3xl px-4 py-6 md:px-8 md:py-10">
       <ProfileHero onSettings={() => setSettingsOpen(true)} />
+
+      {/* Статистика — 2×2 / 4×1 */}
+      <section aria-label="Статистика" className="mt-6 md:mt-10">
+        <StatGrid
+          items={[
+            { label: "Билеты", value: balanceQ.data?.balance ?? 0, icon: TicketIcon },
+            {
+              label: "Выигрыши",
+              value: rafflesQ.data?.items.filter((r) => r.won).length ?? 0,
+              icon: Trophy,
+            },
+            { label: "Заказы", value: totalOrders, icon: Package },
+            { label: "Байки", value: bikesQ.data?.length ?? 0, icon: Bike },
+          ]}
+        />
+      </section>
 
       {/* Hell Pass */}
       <section aria-label="Hell Pass" className="mt-6 md:mt-10">
@@ -154,8 +192,53 @@ function MePage() {
         )}
       </section>
 
+      {/* Прогресс — компактная лестница рангов */}
+      <section aria-label="Прогресс" className="mt-6 md:mt-10">
+        {isMobile ? (
+          <>
+            <h3 className="mb-1.5 px-3 font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+              Прогресс
+            </h3>
+            <RankLadderCompact rankIndex={profileQ.data?.rank?.rankIndex ?? 0} />
+          </>
+        ) : (
+          <>
+            <h2 className="mb-4 font-display text-2xl font-black italic uppercase tracking-tight text-foreground md:text-3xl">
+              Прогресс
+            </h2>
+            <RankLadderCompact rankIndex={profileQ.data?.rank?.rankIndex ?? 0} />
+          </>
+        )}
+      </section>
 
-
+      {/* Заказы — последние 3 */}
+      <section aria-label="Заказы" className="mt-6 md:mt-10">
+        {isMobile ? (
+          <h3 className="mb-1.5 px-3 font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+            Заказы
+          </h3>
+        ) : (
+          <h2 className="mb-4 font-display text-2xl font-black italic uppercase tracking-tight text-foreground md:text-3xl">
+            Заказы
+          </h2>
+        )}
+        <OrdersList showFilters={false} limit={3} />
+        {totalOrders > 3 && (
+          <button
+            type="button"
+            onClick={() => setOrdersSheetOpen(true)}
+            className="mt-3 flex w-full items-center justify-between rounded-2xl border border-white/[0.06] bg-card/40 px-4 py-3.5 text-left transition-colors active:bg-white/[0.05]"
+          >
+            <span className="text-[15px] font-semibold text-foreground">
+              Все заказы
+            </span>
+            <span className="flex items-center gap-2 font-mono text-[12px] uppercase tracking-wider text-muted-foreground">
+              {totalOrders}
+              <ChevronRight className="h-4 w-4" />
+            </span>
+          </button>
+        )}
+      </section>
 
       <section aria-label="Настройки" className="mt-8 md:mt-12">
         {isMobile ? (
@@ -203,6 +286,14 @@ function MePage() {
 
       <SettingsModal open={settingsOpen} onOpenChange={setSettingsOpen} />
       <BackgroundPickerSheet open={bgSheetOpen} onOpenChange={setBgSheetOpen} />
+      <IOSSheet
+        open={ordersSheetOpen}
+        onOpenChange={setOrdersSheetOpen}
+        title="Все заказы"
+        fullHeight
+      >
+        <OrdersList />
+      </IOSSheet>
       <IOSConfirm
         open={confirmLogout}
         onOpenChange={setConfirmLogout}
@@ -215,6 +306,83 @@ function MePage() {
     </main>
   );
 }
+
+function StatGrid({
+  items,
+}: {
+  items: { label: string; value: number; icon: React.ComponentType<{ className?: string; strokeWidth?: number }> }[];
+}) {
+  return (
+    <ul className="grid grid-cols-2 gap-2.5 md:grid-cols-4 md:gap-3">
+      {items.map(({ label, value, icon: Icon }) => (
+        <li
+          key={label}
+          className="flex items-center gap-3 rounded-2xl border border-white/[0.06] bg-card/40 px-4 py-3.5"
+        >
+          <Icon className="h-5 w-5 shrink-0 text-primary" strokeWidth={1.8} />
+          <div className="flex min-w-0 flex-col">
+            <span className="font-display text-2xl font-black italic leading-none text-foreground tabular-nums md:text-3xl">
+              {value}
+            </span>
+            <span className="mt-1 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+              {label}
+            </span>
+          </div>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function RankLadderCompact({ rankIndex }: { rankIndex: number }) {
+  return (
+    <ul className="overflow-hidden rounded-2xl border border-white/[0.06] bg-card/40 divide-y divide-white/[0.05]">
+      {RANKS.map((r, i) => {
+        const isPast = i < rankIndex;
+        const isActive = i === rankIndex;
+        const isFuture = i > rankIndex;
+        return (
+          <li
+            key={r.id}
+            className="flex items-center gap-3 px-4 py-3"
+            style={
+              isActive
+                ? { boxShadow: `inset 3px 0 0 0 ${r.accent}` }
+                : undefined
+            }
+          >
+            <div
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-lg font-display text-xs font-black italic uppercase"
+              style={{
+                backgroundColor: isActive || isPast ? r.accent : "rgba(255,255,255,0.04)",
+                color: isActive || isPast ? r.onAccent : "rgba(167,167,167,0.6)",
+              }}
+            >
+              {r.short}
+            </div>
+            <div
+              className="min-w-0 flex-1 font-display text-base font-black italic uppercase tracking-tight"
+              style={{ color: isFuture ? "rgba(167,167,167,0.7)" : r.accent }}
+            >
+              {r.label}
+            </div>
+            {isActive && (
+              <span className="shrink-0 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-primary">
+                Сейчас
+              </span>
+            )}
+            {isPast && (
+              <span className="shrink-0 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/70">
+                Пройдено
+              </span>
+            )}
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
 
 function pluralDays(n: number) {
   const m10 = n % 10;
