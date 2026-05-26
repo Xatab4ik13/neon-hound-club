@@ -122,7 +122,6 @@ function RaffleDetailContent({
   const navigate = useNavigate();
   const [stake, setStake] = useState(0);
   const [flash, setFlash] = useState<string | null>(null);
-  const isMobile = useIsMobile();
   const finished = raffle.status === "finished";
 
   const enterMut = useMutation({
