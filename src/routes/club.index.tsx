@@ -107,8 +107,6 @@ export const PostCard = memo(function PostCard({ post, moderate = false }: { pos
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [viewerOpen, setViewerOpen] = useState(false);
   const [viewerEverOpened, setViewerEverOpened] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(false);
-  const [viewerOpen, setViewerOpen] = useState(false);
   const navigate = useNavigate();
   const liked = post.liked;
   const likeCount = post.likes;
