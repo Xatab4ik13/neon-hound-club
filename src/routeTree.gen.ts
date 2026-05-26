@@ -32,6 +32,7 @@ import { Route as PaySuccessRouteImport } from './routes/pay.success'
 import { Route as PayFailRouteImport } from './routes/pay.fail'
 import { Route as NewsSlugRouteImport } from './routes/news.$slug'
 import { Route as LegalTermsRouteImport } from './routes/legal.terms'
+import { Route as LegalShippingRouteImport } from './routes/legal.shipping'
 import { Route as LegalRequisitesRouteImport } from './routes/legal.requisites'
 import { Route as LegalPrivacyRouteImport } from './routes/legal.privacy'
 import { Route as LegalOfferRouteImport } from './routes/legal.offer'
@@ -186,6 +187,11 @@ const NewsSlugRoute = NewsSlugRouteImport.update({
 const LegalTermsRoute = LegalTermsRouteImport.update({
   id: '/legal/terms',
   path: '/legal/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LegalShippingRoute = LegalShippingRouteImport.update({
+  id: '/legal/shipping',
+  path: '/legal/shipping',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LegalRequisitesRoute = LegalRequisitesRouteImport.update({
@@ -431,6 +437,7 @@ export interface FileRoutesByFullPath {
   '/legal/offer': typeof LegalOfferRoute
   '/legal/privacy': typeof LegalPrivacyRoute
   '/legal/requisites': typeof LegalRequisitesRoute
+  '/legal/shipping': typeof LegalShippingRoute
   '/legal/terms': typeof LegalTermsRoute
   '/news/$slug': typeof NewsSlugRoute
   '/pay/fail': typeof PayFailRoute
@@ -493,6 +500,7 @@ export interface FileRoutesByTo {
   '/legal/offer': typeof LegalOfferRoute
   '/legal/privacy': typeof LegalPrivacyRoute
   '/legal/requisites': typeof LegalRequisitesRoute
+  '/legal/shipping': typeof LegalShippingRoute
   '/legal/terms': typeof LegalTermsRoute
   '/news/$slug': typeof NewsSlugRoute
   '/pay/fail': typeof PayFailRoute
@@ -559,6 +567,7 @@ export interface FileRoutesById {
   '/legal/offer': typeof LegalOfferRoute
   '/legal/privacy': typeof LegalPrivacyRoute
   '/legal/requisites': typeof LegalRequisitesRoute
+  '/legal/shipping': typeof LegalShippingRoute
   '/legal/terms': typeof LegalTermsRoute
   '/news/$slug': typeof NewsSlugRoute
   '/pay/fail': typeof PayFailRoute
@@ -626,6 +635,7 @@ export interface FileRouteTypes {
     | '/legal/offer'
     | '/legal/privacy'
     | '/legal/requisites'
+    | '/legal/shipping'
     | '/legal/terms'
     | '/news/$slug'
     | '/pay/fail'
@@ -688,6 +698,7 @@ export interface FileRouteTypes {
     | '/legal/offer'
     | '/legal/privacy'
     | '/legal/requisites'
+    | '/legal/shipping'
     | '/legal/terms'
     | '/news/$slug'
     | '/pay/fail'
@@ -753,6 +764,7 @@ export interface FileRouteTypes {
     | '/legal/offer'
     | '/legal/privacy'
     | '/legal/requisites'
+    | '/legal/shipping'
     | '/legal/terms'
     | '/news/$slug'
     | '/pay/fail'
@@ -794,6 +806,7 @@ export interface RootRouteChildren {
   LegalOfferRoute: typeof LegalOfferRoute
   LegalPrivacyRoute: typeof LegalPrivacyRoute
   LegalRequisitesRoute: typeof LegalRequisitesRoute
+  LegalShippingRoute: typeof LegalShippingRoute
   LegalTermsRoute: typeof LegalTermsRoute
   NewsSlugRoute: typeof NewsSlugRoute
   PayFailRoute: typeof PayFailRoute
@@ -966,6 +979,13 @@ declare module '@tanstack/react-router' {
       path: '/legal/terms'
       fullPath: '/legal/terms'
       preLoaderRoute: typeof LegalTermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/legal/shipping': {
+      id: '/legal/shipping'
+      path: '/legal/shipping'
+      fullPath: '/legal/shipping'
+      preLoaderRoute: typeof LegalShippingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/legal/requisites': {
@@ -1369,6 +1389,7 @@ const rootRouteChildren: RootRouteChildren = {
   LegalOfferRoute: LegalOfferRoute,
   LegalPrivacyRoute: LegalPrivacyRoute,
   LegalRequisitesRoute: LegalRequisitesRoute,
+  LegalShippingRoute: LegalShippingRoute,
   LegalTermsRoute: LegalTermsRoute,
   NewsSlugRoute: NewsSlugRoute,
   PayFailRoute: PayFailRoute,
