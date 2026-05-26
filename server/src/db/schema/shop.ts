@@ -84,7 +84,7 @@ export const products = pgTable(
     preorderExpectedAt: timestamp("preorder_expected_at", { withTimezone: true }),
     shippingInfo: text("shipping_info").notNull().default(""),
     returnPolicy: text("return_policy").notNull().default(""),
-    sizes: jsonb("sizes").$type<string[]>().notNull().default([]),
+    sizes: jsonb("sizes").$type<Array<{ label: string; stock: number | null }>>().notNull().default([]),
     stickerPackSlug: varchar("sticker_pack_slug", { length: 64 }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
