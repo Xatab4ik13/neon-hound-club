@@ -121,7 +121,6 @@ function Composer() {
       await feedStore.addPost({
         text: text.trim(),
         image: imageUrl,
-        authorSlug: "", // игнорируется бэкендом — автор берётся из сессии
         poll: pollPayload,
       });
       setText("");

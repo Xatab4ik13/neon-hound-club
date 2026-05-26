@@ -3,10 +3,10 @@ import { useEffect, useMemo, useRef, useState, useCallback, memo } from "react";
 import { useKeyboardOffset } from "@/hooks/use-keyboard-offset";
 import { Smile, Send, Search as SearchIcon, Clock, Sticker, X, Pin, PinOff, Trash2, BarChart3, Share2, MessageCircle, Heart } from "lucide-react";
 import { RANKS, type RankId } from "@/data/ranks";
-import { ME_SLUG, PUBLIC_USERS } from "@/data/users";
-import { useFeedPosts, useFeedLoaded, feedStore, type FeedComment, type FeedPost, type FeedPoll } from "@/data/feed-store";
+import { useFeedPosts, useFeedLoaded, feedStore, initialsOf, makeSlug, type FeedAuthor, type FeedComment, type FeedPost, type FeedPoll } from "@/data/feed-store";
 import { HellhoundAvatar, HellhoundChip } from "@/components/club/HellhoundPlaque";
 import { IOSSheet } from "@/components/ios/IOSSheet";
+import { useViewer } from "@/hooks/use-viewer";
 import { useMyProfile } from "@/lib/garage-api";
 import { useMyStickerPacks, STICKER_PACK_PRODUCT_SLUGS } from "@/lib/stickers-api";
 import { SPECIAL_PACK_STICKERS, SPECIAL_PACK_COVER } from "@/assets/stickers/special";
@@ -110,8 +110,8 @@ export const PostCard = memo(function PostCard({ post, moderate = false }: { pos
   const navigate = useNavigate();
   const liked = post.liked;
   const likeCount = post.likes;
-  const author = PUBLIC_USERS[post.authorSlug];
-  const authorIsBlogger = post.isBlogger;
+  const author = post.author;
+  const authorIsBlogger = author.isBlogger;
 
   const postUrl = typeof window !== "undefined" ? `${window.location.origin}/club/p/${post.id}` : `/club/p/${post.id}`;
 
@@ -221,24 +221,24 @@ export const PostCard = memo(function PostCard({ post, moderate = false }: { pos
 
       <header className="flex items-center gap-3 px-4 pt-4 md:px-5 md:pt-5">
         <UserLink
-          slug={post.authorSlug}
+          slug={author.slug}
           disabled={authorIsBlogger}
           className="flex min-w-0 flex-1 items-center gap-3"
         >
           {authorIsBlogger ? (
-            <HellhoundAvatar size={44} initials={author?.initials ?? "H"} avatarUrl={author?.avatarUrl} />
+            <HellhoundAvatar size={44} initials={author.initials} avatarUrl={author.avatarUrl} />
           ) : (
             <RankAvatar
-              initials={author?.initials ?? "?"}
-              rankId={author?.rank ?? "rookie"}
-              avatarUrl={author?.avatarUrl}
+              initials={author.initials}
+              rankId={(author.rankId as RankId) ?? "rookie"}
+              avatarUrl={author.avatarUrl}
               size={44}
             />
           )}
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
               <span className="truncate font-display text-[15px] font-black uppercase italic tracking-tight text-foreground">
-                {author?.nick ?? post.authorSlug}
+                {author.nick}
               </span>
               {authorIsBlogger && <HellhoundChip size="sm" />}
             </div>
@@ -576,7 +576,6 @@ const CommentsPreview = memo(function CommentsPreview({
     );
   }
   const last = comments[comments.length - 1];
-  const user = PUBLIC_USERS[last.authorSlug];
   return (
     <button
       type="button"
@@ -586,7 +585,7 @@ const CommentsPreview = memo(function CommentsPreview({
       <div className="flex gap-2.5 border-l-2 border-primary pl-2.5">
         <div className="min-w-0 flex-1">
           <div className="truncate font-mono text-[10px] font-black uppercase tracking-[0.18em] text-primary">
-            {user?.nick ?? last.authorSlug}
+            {last.author.nick}
           </div>
           <div className="mt-0.5 line-clamp-2 text-[13px] leading-snug text-foreground/85">
             {last.text.startsWith("::sticker::") ? "🖼 Стикер" : last.text}
@@ -618,6 +617,8 @@ function CommentsSheet({
   const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set());
   const listRef = useRef<HTMLDivElement>(null);
   const kbOffset = useKeyboardOffset();
+  const viewer = useViewer();
+  const myId = viewer.user?.id ?? null;
 
   // сбросить reply при закрытии
   useEffect(() => {
@@ -659,8 +660,7 @@ function CommentsSheet({
       } else {
         topLevel.push(c);
       }
-      const nick = PUBLIC_USERS[c.authorSlug]?.nick;
-      if (nick) nickToLatest.set(nick.toLowerCase(), c.id);
+      nickToLatest.set(c.author.nick.toLowerCase(), c.id);
     }
     return { topLevel, childrenByParentId };
   }, [post.comments]);
@@ -677,7 +677,7 @@ function CommentsSheet({
   const stripReplyPrefix = (text: string) => text.replace(/^@\S+\s+/, "");
 
   const renderItem = (c: Comment, isReply = false) => {
-    const isMine = c.authorSlug === ME_SLUG;
+    const isMine = myId != null && c.author.id === myId;
     const canDelete = isMine || moderate;
     const onDelete = canDelete
       ? () => {
@@ -692,7 +692,7 @@ function CommentsSheet({
         large
         onReply={() =>
           setReplyTo({
-            nick: PUBLIC_USERS[c.authorSlug]?.nick ?? c.authorSlug,
+            nick: c.author.nick,
             commentId: c.id,
           })
         }
@@ -801,34 +801,34 @@ const CommentItem = memo(function CommentItem({
   onDelete?: () => void;
 }) {
   const liked = comment.liked;
-  const user = PUBLIC_USERS[comment.authorSlug];
-  const rank = RANK_BY_ID[user?.rank ?? "rookie"];
+  const author = comment.author;
+  const rank = RANK_BY_ID[(author.rankId as RankId) ?? "rookie"] ?? RANK_BY_ID["rookie"];
   const count = comment.likes;
-  const authorIsBlogger = comment.isBlogger;
+  const authorIsBlogger = author.isBlogger;
   const stickerUrl = parseSticker(comment.text);
 
   return (
     <li className="flex gap-3">
-      <UserLink slug={comment.authorSlug} disabled={authorIsBlogger}>
+      <UserLink slug={author.slug} disabled={authorIsBlogger}>
         {authorIsBlogger ? (
-          <HellhoundAvatar size={large ? 40 : 36} initials={user?.initials ?? "H"} avatarUrl={user?.avatarUrl} />
+          <HellhoundAvatar size={large ? 40 : 36} initials={author.initials} avatarUrl={author.avatarUrl} />
         ) : (
           <RankAvatar
-            initials={user?.initials ?? "?"}
-            rankId={user?.rank ?? "rookie"}
-            avatarUrl={user?.avatarUrl}
+            initials={author.initials}
+            rankId={(author.rankId as RankId) ?? "rookie"}
+            avatarUrl={author.avatarUrl}
             size={large ? 40 : 36}
           />
         )}
       </UserLink>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <UserLink slug={comment.authorSlug} disabled={authorIsBlogger} className="min-w-0 truncate">
+          <UserLink slug={author.slug} disabled={authorIsBlogger} className="min-w-0 truncate">
             <span
               className={`truncate font-display font-bold uppercase italic tracking-tight transition-opacity hover:opacity-80 ${large ? "text-[14px]" : "text-[13px]"}`}
               style={{ color: authorIsBlogger ? undefined : rank.accent }}
             >
-              {user?.nick ?? comment.authorSlug}
+              {author.nick}
             </span>
           </UserLink>
           {authorIsBlogger ? (
@@ -1055,24 +1055,34 @@ function CommentComposer({
   const [tab, setTab] = useState<"recent" | "emoji" | "stickers">("stickers");
   const [activePack, setActivePack] = useState<string>(STICKER_PACKS[0].id);
   const [recent, setRecent] = useState<string[]>(() => loadRecent());
+  const viewer = useViewer();
   const myProfileQ = useMyProfile();
   const myProfile = myProfileQ.data;
   const ownedPacksQ = useMyStickerPacks(!!myProfile);
   const ownedPacks = ownedPacksQ.data ?? [];
-  const meNick = myProfile?.nick ?? PUBLIC_USERS[ME_SLUG]?.nick ?? "";
-  const meInitials = (() => {
-    const t = meNick.trim();
-    if (!t) return "?";
-    const parts = t.split(/\s+/);
-    if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
-    return t.slice(0, 2).toUpperCase();
-  })();
-  const meRank = (myProfile?.rank?.rankId as RankId | undefined) ?? PUBLIC_USERS[ME_SLUG]?.rank ?? "rookie";
-  const meAvatar = myProfile?.avatarUrl ?? PUBLIC_USERS[ME_SLUG]?.avatarUrl;
+  const meNick = myProfile?.nick ?? viewer.nick ?? "";
+  const meInitials = initialsOf(meNick);
+  const meRank = (myProfile?.rank?.rankId as RankId | undefined) ?? "rookie";
+  const meAvatar = myProfile?.avatarUrl ?? undefined;
   const meIsBlogger = myProfile?.role === "blogger";
+  const meId = viewer.user?.id ?? "";
   const disabled = value.trim().length === 0;
   const wrapRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const meAuthor = useMemo<FeedAuthor>(
+    () => ({
+      id: meId,
+      slug: makeSlug(meNick) || meId,
+      nick: meNick,
+      initials: meInitials,
+      avatarUrl: meAvatar,
+      rankId: meRank,
+      role: meIsBlogger ? "blogger" : "user",
+      isBlogger: meIsBlogger,
+    }),
+    [meId, meNick, meInitials, meAvatar, meRank, meIsBlogger],
+  );
 
   // Когда тыкнули «Ответить» — фокус на ввод
   useEffect(() => {
@@ -1092,12 +1102,12 @@ function CommentComposer({
       const clean = text.trim();
       if (!clean) return;
       const prefix = replyTo ? `@${replyTo.nick} ` : "";
-      feedStore.addComment(postId, { authorSlug: ME_SLUG, text: `${prefix}${clean}` });
+      feedStore.addComment(postId, { author: meAuthor, text: `${prefix}${clean}` });
       setValue("");
       setPanel(null);
       onClearReply?.();
     },
-    [postId, replyTo, onClearReply],
+    [postId, replyTo, onClearReply, meAuthor],
   );
 
   const insertEmoji = useCallback((e: string) => {
@@ -1109,11 +1119,11 @@ function CommentComposer({
     (s: string) => {
       pushRecent(s);
       const prefix = replyTo ? `@${replyTo.nick} ` : "";
-      feedStore.addComment(postId, { authorSlug: ME_SLUG, text: `${prefix}${s}` });
+      feedStore.addComment(postId, { author: meAuthor, text: `${prefix}${s}` });
       setPanel(null);
       onClearReply?.();
     },
-    [postId, replyTo, onClearReply, pushRecent],
+    [postId, replyTo, onClearReply, pushRecent, meAuthor],
   );
 
   return (
