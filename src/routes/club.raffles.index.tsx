@@ -161,7 +161,7 @@ function LegalNotice() {
           <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
           <div className="min-w-0 flex-1">
             <h2 className="font-display text-[13px] font-black uppercase italic tracking-wider text-foreground">
-              Стимулирующее мероприятие, не лотерея
+              Стимулирующее мероприятие
             </h2>
             <p className="mt-1.5 text-[12px] leading-relaxed text-muted-foreground">
               Розыгрыши проводятся в порядке ст. 9 ФЗ-38 «О рекламе». Билеты
