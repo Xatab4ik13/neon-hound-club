@@ -366,36 +366,63 @@ function BannerEditor({
 
         {/* Картинка */}
         <Field
-          label="Картинка-фон"
-          hint="JPG/WebP 1600×1000 (16:10), до 800 КБ. Текст НЕ рисуй на картинке — он накладывается сверху."
+          label="Фон баннера"
+          hint="Выбери один из 4 готовых градиентов или загрузи свою картинку (JPG/WebP 1600×1000, до 800 КБ)."
         >
-          <div className="flex items-center gap-3">
-            <label className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm hover:border-primary hover:text-primary dark:border-zinc-700 dark:bg-zinc-900">
-              {uploading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Plus className="h-4 w-4" />
+          <div className="space-y-3">
+            <div className="grid grid-cols-4 gap-2">
+              {BANNER_PRESETS.map((p) => {
+                const value = `preset:${p.id}`;
+                const active = form.imageUrl === value;
+                return (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => setF("imageUrl", value)}
+                    className={`group relative aspect-[16/10] overflow-hidden rounded-md border-2 transition-all ${
+                      active
+                        ? "border-primary ring-2 ring-primary/30"
+                        : "border-transparent hover:border-zinc-400"
+                    }`}
+                    style={{ backgroundImage: p.swatch }}
+                    title={p.label}
+                  >
+                    <span className="absolute bottom-1 left-1.5 text-[10px] font-bold uppercase tracking-wider text-white drop-shadow">
+                      {p.label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+            <div className="flex items-center gap-3">
+              <label className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm hover:border-primary hover:text-primary dark:border-zinc-700 dark:bg-zinc-900">
+                {uploading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Plus className="h-4 w-4" />
+                )}
+                {form.imageUrl && !isBannerPreset(form.imageUrl) ? "Заменить картинку" : "Загрузить свою картинку"}
+                <input
+                  type="file"
+                  accept="image/jpeg,image/webp,image/png"
+                  className="hidden"
+                  onChange={onPickFile}
+                  disabled={uploading}
+                />
+              </label>
+              {form.imageUrl && (
+                <button
+                  type="button"
+                  onClick={() => setF("imageUrl", "")}
+                  className="text-xs text-zinc-500 hover:text-rose-500"
+                >
+                  Убрать
+                </button>
               )}
-              {form.imageUrl ? "Заменить" : "Загрузить картинку"}
-              <input
-                type="file"
-                accept="image/jpeg,image/webp,image/png"
-                className="hidden"
-                onChange={onPickFile}
-                disabled={uploading}
-              />
-            </label>
-            {form.imageUrl && (
-              <button
-                type="button"
-                onClick={() => setF("imageUrl", "")}
-                className="text-xs text-zinc-500 hover:text-rose-500"
-              >
-                Убрать
-              </button>
-            )}
+            </div>
           </div>
         </Field>
+
 
         <Field
           label="Заголовок"
