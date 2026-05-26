@@ -603,17 +603,26 @@ function CommentsSheet({
   const [replyTo, setReplyTo] = useState<{ nick: string; commentId: string } | null>(null);
   const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set());
   const listRef = useRef<HTMLDivElement>(null);
+  const kbOffset = useKeyboardOffset();
 
   // сбросить reply при закрытии
   useEffect(() => {
     if (!open) setReplyTo(null);
   }, [open]);
 
-  // автоскролл вниз при добавлении
+  // автоскролл вниз только если юзер уже у низа (порог 120px) — иначе не дёргаем
   const lastCount = useRef(post.comments.length);
   useEffect(() => {
-    if (post.comments.length > lastCount.current && listRef.current) {
-      listRef.current.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
+    const el = listRef.current;
+    if (!el) {
+      lastCount.current = post.comments.length;
+      return;
+    }
+    if (post.comments.length > lastCount.current) {
+      const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 120;
+      if (nearBottom) {
+        el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+      }
     }
     lastCount.current = post.comments.length;
   }, [post.comments.length]);
