@@ -49,8 +49,11 @@ function ClubCheckoutPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const [agree, setAgree] = useState(false);
+  // Профиль и сохранённый адрес доставки из аккаунта
+  const profileQ = useMyProfile();
+  const addressQ = useMyAddress();
 
+  const [agree, setAgree] = useState(false);
   const [form, setForm] = useState<CheckoutProfile>({
     name: user?.nick ?? "",
     phone: "",
@@ -59,7 +62,10 @@ function ClubCheckoutPage() {
     address: "",
   });
 
-  // Гидрация из прошлого заказа
+  // Поля, которые юзер вручную правил — их не перетираем при гидрации
+  const touchedRef = useRef<Set<keyof CheckoutProfile>>(new Set());
+
+  // Гидрация из прошлого заказа (localStorage) — сразу при маунте
   useEffect(() => {
     const saved = readProfile();
     setForm((f) => ({
@@ -71,15 +77,36 @@ function ClubCheckoutPage() {
     }));
   }, []);
 
-  // Подхватываем актуальный профиль, когда он подгрузится
+  // Автозаполнение из аккаунта: профиль (email, nick, phone, city)
   useEffect(() => {
-    if (!user) return;
-    setForm((f) => ({
-      ...f,
-      name: f.name || user.nick || "",
-      email: f.email || user.email || "",
-    }));
-  }, [user]);
+    const p = profileQ.data;
+    if (!p) return;
+    setForm((f) => {
+      const next = { ...f };
+      const t = touchedRef.current;
+      if (!t.has("name") && !next.name && p.nick) next.name = p.nick;
+      if (!t.has("email") && !next.email && p.email) next.email = p.email;
+      if (!t.has("phone") && !next.phone && p.phone) next.phone = formatRuPhone(p.phone);
+      if (!t.has("city") && !next.city && p.city) next.city = p.city;
+      return next;
+    });
+  }, [profileQ.data]);
+
+  // Автозаполнение из сохранённого адреса доставки (приоритет выше профиля)
+  useEffect(() => {
+    const a = addressQ.data;
+    if (!a) return;
+    const composed = [a.postalCode, a.pickupPoint].filter(Boolean).join(", ");
+    setForm((f) => {
+      const next = { ...f };
+      const t = touchedRef.current;
+      if (!t.has("name") && a.fullName) next.name = a.fullName;
+      if (!t.has("phone") && a.phone) next.phone = formatRuPhone(a.phone);
+      if (!t.has("city") && a.city) next.city = a.city;
+      if (!t.has("address") && composed) next.address = composed;
+      return next;
+    });
+  }, [addressQ.data]);
 
   // Гард
   useEffect(() => {
@@ -96,10 +123,11 @@ function ClubCheckoutPage() {
     () => items.filter((i) => Boolean(i.productId)),
     [items],
   );
-  
 
-  const set = <K extends keyof CheckoutProfile>(k: K, v: string) =>
+  const set = <K extends keyof CheckoutProfile>(k: K, v: string) => {
+    touchedRef.current.add(k);
     setForm((f) => ({ ...f, [k]: v }));
+  };
 
   const mutation = useMutation({
     mutationFn: async (input: Parameters<typeof createOrder>[0]) => {
