@@ -307,26 +307,35 @@ function RaffleDetailContent({
 
       {!finished && <div aria-hidden className="h-56" />}
 
-      {!finished && (
-        <div
-          className="fixed inset-x-0 z-30 border-t border-white/[0.08] bg-[#0d0d0d]/95 px-4 py-3 backdrop-blur"
-          style={{ bottom: "calc(64px + env(safe-area-inset-bottom))" }}
-        >
-          <div className="mx-auto w-full max-w-3xl">
-            <StakeControls
-              ticketCost={raffle.ticketCost}
-              balance={balance}
-              stake={stake}
-              maxStake={maxStake}
-              isAuthed={isAuthed}
-              isPending={enterMut.isPending}
-              onStakeChange={(v) => setStake(Math.max(0, Math.min(maxStake, v)))}
-              onStake={handleStake}
-              compact
-            />
-          </div>
-        </div>
-      )}
+      {!finished && typeof document !== "undefined" &&
+        createPortal(
+          <div
+            className="fixed inset-x-0 z-[60] border-t border-white/[0.08] bg-[#0d0d0d]/95 backdrop-blur-xl"
+            style={{
+              bottom: "calc(64px + env(safe-area-inset-bottom))",
+              paddingLeft: "max(16px, env(safe-area-inset-left))",
+              paddingRight: "max(16px, env(safe-area-inset-right))",
+              paddingTop: 12,
+              paddingBottom: 12,
+              boxShadow: "0 -8px 24px -12px rgba(0,0,0,0.6)",
+            }}
+          >
+            <div className="mx-auto w-full max-w-3xl">
+              <StakeControls
+                ticketCost={raffle.ticketCost}
+                balance={balance}
+                stake={stake}
+                maxStake={maxStake}
+                isAuthed={isAuthed}
+                isPending={enterMut.isPending}
+                onStakeChange={(v) => setStake(Math.max(0, Math.min(maxStake, v)))}
+                onStake={handleStake}
+                compact
+              />
+            </div>
+          </div>,
+          document.body,
+        )}
     </main>
   );
 }
