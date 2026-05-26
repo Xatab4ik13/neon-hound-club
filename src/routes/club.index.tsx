@@ -1055,24 +1055,34 @@ function CommentComposer({
   const [tab, setTab] = useState<"recent" | "emoji" | "stickers">("stickers");
   const [activePack, setActivePack] = useState<string>(STICKER_PACKS[0].id);
   const [recent, setRecent] = useState<string[]>(() => loadRecent());
+  const viewer = useViewer();
   const myProfileQ = useMyProfile();
   const myProfile = myProfileQ.data;
   const ownedPacksQ = useMyStickerPacks(!!myProfile);
   const ownedPacks = ownedPacksQ.data ?? [];
-  const meNick = myProfile?.nick ?? PUBLIC_USERS[ME_SLUG]?.nick ?? "";
-  const meInitials = (() => {
-    const t = meNick.trim();
-    if (!t) return "?";
-    const parts = t.split(/\s+/);
-    if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
-    return t.slice(0, 2).toUpperCase();
-  })();
-  const meRank = (myProfile?.rank?.rankId as RankId | undefined) ?? PUBLIC_USERS[ME_SLUG]?.rank ?? "rookie";
-  const meAvatar = myProfile?.avatarUrl ?? PUBLIC_USERS[ME_SLUG]?.avatarUrl;
+  const meNick = myProfile?.nick ?? viewer.nick ?? "";
+  const meInitials = initialsOf(meNick);
+  const meRank = (myProfile?.rank?.rankId as RankId | undefined) ?? "rookie";
+  const meAvatar = myProfile?.avatarUrl ?? undefined;
   const meIsBlogger = myProfile?.role === "blogger";
+  const meId = viewer.user?.id ?? "";
   const disabled = value.trim().length === 0;
   const wrapRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const meAuthor = useMemo<FeedAuthor>(
+    () => ({
+      id: meId,
+      slug: makeSlug(meNick) || meId,
+      nick: meNick,
+      initials: meInitials,
+      avatarUrl: meAvatar,
+      rankId: meRank,
+      role: meIsBlogger ? "blogger" : "user",
+      isBlogger: meIsBlogger,
+    }),
+    [meId, meNick, meInitials, meAvatar, meRank, meIsBlogger],
+  );
 
   // Когда тыкнули «Ответить» — фокус на ввод
   useEffect(() => {
@@ -1092,12 +1102,12 @@ function CommentComposer({
       const clean = text.trim();
       if (!clean) return;
       const prefix = replyTo ? `@${replyTo.nick} ` : "";
-      feedStore.addComment(postId, { authorSlug: ME_SLUG, text: `${prefix}${clean}` });
+      feedStore.addComment(postId, { author: meAuthor, text: `${prefix}${clean}` });
       setValue("");
       setPanel(null);
       onClearReply?.();
     },
-    [postId, replyTo, onClearReply],
+    [postId, replyTo, onClearReply, meAuthor],
   );
 
   const insertEmoji = useCallback((e: string) => {
@@ -1109,11 +1119,11 @@ function CommentComposer({
     (s: string) => {
       pushRecent(s);
       const prefix = replyTo ? `@${replyTo.nick} ` : "";
-      feedStore.addComment(postId, { authorSlug: ME_SLUG, text: `${prefix}${s}` });
+      feedStore.addComment(postId, { author: meAuthor, text: `${prefix}${s}` });
       setPanel(null);
       onClearReply?.();
     },
-    [postId, replyTo, onClearReply, pushRecent],
+    [postId, replyTo, onClearReply, pushRecent, meAuthor],
   );
 
   return (
