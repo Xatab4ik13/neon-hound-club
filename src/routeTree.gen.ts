@@ -61,6 +61,7 @@ import { Route as AdminQuestsRouteImport } from './routes/admin.quests'
 import { Route as AdminHellAiRouteImport } from './routes/admin.hell-ai'
 import { Route as AdminEconomyRouteImport } from './routes/admin.economy'
 import { Route as AdminCdekRouteImport } from './routes/admin.cdek'
+import { Route as AdminBannersRouteImport } from './routes/admin.banners'
 import { Route as ClubShopIndexRouteImport } from './routes/club.shop.index'
 import { Route as ClubRafflesIndexRouteImport } from './routes/club.raffles.index'
 import { Route as ClubHellPassIndexRouteImport } from './routes/club.hell-pass.index'
@@ -335,6 +336,11 @@ const AdminCdekRoute = AdminCdekRouteImport.update({
   path: '/cdek',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminBannersRoute = AdminBannersRouteImport.update({
+  id: '/banners',
+  path: '/banners',
+  getParentRoute: () => AdminRoute,
+} as any)
 const ClubShopIndexRoute = ClubShopIndexRouteImport.update({
   id: '/shop/',
   path: '/shop/',
@@ -414,6 +420,7 @@ export interface FileRoutesByFullPath {
   '/school': typeof SchoolRoute
   '/shop-info': typeof ShopInfoRoute
   '/verify-email': typeof VerifyEmailRoute
+  '/admin/banners': typeof AdminBannersRoute
   '/admin/cdek': typeof AdminCdekRoute
   '/admin/economy': typeof AdminEconomyRoute
   '/admin/hell-ai': typeof AdminHellAiRoute
@@ -478,6 +485,7 @@ export interface FileRoutesByTo {
   '/school': typeof SchoolRoute
   '/shop-info': typeof ShopInfoRoute
   '/verify-email': typeof VerifyEmailRoute
+  '/admin/banners': typeof AdminBannersRoute
   '/admin/cdek': typeof AdminCdekRoute
   '/admin/economy': typeof AdminEconomyRoute
   '/admin/hell-ai': typeof AdminHellAiRoute
@@ -546,6 +554,7 @@ export interface FileRoutesById {
   '/school': typeof SchoolRoute
   '/shop-info': typeof ShopInfoRoute
   '/verify-email': typeof VerifyEmailRoute
+  '/admin/banners': typeof AdminBannersRoute
   '/admin/cdek': typeof AdminCdekRoute
   '/admin/economy': typeof AdminEconomyRoute
   '/admin/hell-ai': typeof AdminHellAiRoute
@@ -615,6 +624,7 @@ export interface FileRouteTypes {
     | '/school'
     | '/shop-info'
     | '/verify-email'
+    | '/admin/banners'
     | '/admin/cdek'
     | '/admin/economy'
     | '/admin/hell-ai'
@@ -679,6 +689,7 @@ export interface FileRouteTypes {
     | '/school'
     | '/shop-info'
     | '/verify-email'
+    | '/admin/banners'
     | '/admin/cdek'
     | '/admin/economy'
     | '/admin/hell-ai'
@@ -746,6 +757,7 @@ export interface FileRouteTypes {
     | '/school'
     | '/shop-info'
     | '/verify-email'
+    | '/admin/banners'
     | '/admin/cdek'
     | '/admin/economy'
     | '/admin/hell-ai'
@@ -1195,6 +1207,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCdekRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/banners': {
+      id: '/admin/banners'
+      path: '/banners'
+      fullPath: '/admin/banners'
+      preLoaderRoute: typeof AdminBannersRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/club/shop/': {
       id: '/club/shop/'
       path: '/shop'
@@ -1290,6 +1309,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AdminRouteChildren {
+  AdminBannersRoute: typeof AdminBannersRoute
   AdminCdekRoute: typeof AdminCdekRoute
   AdminEconomyRoute: typeof AdminEconomyRoute
   AdminHellAiRoute: typeof AdminHellAiRoute
@@ -1304,6 +1324,7 @@ interface AdminRouteChildren {
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminBannersRoute: AdminBannersRoute,
   AdminCdekRoute: AdminCdekRoute,
   AdminEconomyRoute: AdminEconomyRoute,
   AdminHellAiRoute: AdminHellAiRoute,
