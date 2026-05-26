@@ -52,7 +52,7 @@ function TicketsPage() {
           <EarnRow
             title="Покупки в магазине"
             hint="К каждому товару — свой бонус билетов"
-            to="/shop"
+            to="/club/shop"
             icon={<ShoppingBag className="h-4 w-4" />}
           />
           <EarnRow
@@ -82,7 +82,7 @@ function EarnRow({
   title: string;
   hint: string;
   icon: React.ReactNode;
-  to: "/shop" | "/club/hell-pass" | "/club/quests";
+  to: "/club/shop" | "/club/hell-pass" | "/club/quests";
 }) {
   return (
     <li className="border-b border-white/[0.05] last:border-b-0">
