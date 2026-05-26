@@ -712,10 +712,14 @@ function CommentsSheet({
       onOpenChange={onOpenChange}
       title={`Комментарии · ${post.comments.length}`}
       fullHeight
-      contentClassName="!p-0"
+      contentClassName="!p-0 !overflow-hidden flex flex-col min-h-0"
     >
-      <div className="flex h-full flex-col">
-        <div ref={listRef} className="flex-1 overflow-y-auto overscroll-contain px-4 py-4 md:px-5">
+      <div className="flex h-full min-h-0 flex-1 flex-col">
+        <div
+          ref={listRef}
+          className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 md:px-5"
+          style={{ WebkitOverflowScrolling: "touch" } as React.CSSProperties}
+        >
           {post.comments.length === 0 ? (
             <div className="grid h-full place-items-center text-[13px] text-muted-foreground">
               Будь первым — оставь комментарий
@@ -753,7 +757,10 @@ function CommentsSheet({
             </ul>
           )}
         </div>
-        <div className="shrink-0 border-t border-white/[0.06] bg-[#0d0d0d]">
+        <div
+          className="shrink-0 border-t border-white/[0.06] bg-[#0d0d0d]"
+          style={{ paddingBottom: kbOffset > 0 ? kbOffset : undefined }}
+        >
           <CommentComposer
             postId={post.id}
             large
