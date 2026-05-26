@@ -33,12 +33,29 @@ createRoot(rootEl).render(
   </StrictMode>,
 );
 
-// Снимаем boot-сплеш (из index.html) после первого кадра React
+// Снимаем boot-сплеш (из index.html) только когда роутер ДЕЙСТВИТЕЛЬНО
+// смонтировал первый match. Без этого получаем кадр пустого фона между
+// удалением splash и первым React-рендером — особенно заметно в iOS PWA,
+// где нативный launch image гасится сразу.
 if (typeof window !== "undefined") {
-  requestAnimationFrame(() => {
+  const hideBoot = () => {
     const boot = document.getElementById("hh-boot");
-    if (!boot) return;
-    boot.setAttribute("data-hide", "1");
-    setTimeout(() => boot.remove(), 350);
+    if (!boot || boot.getAttribute("data-hide") === "1") return;
+    // двойной rAF гарантирует, что React уже закоммитил DOM и браузер
+    // получил кадр с реальным интерфейсом ПОД сплешом — fade выглядит плавно
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        boot.setAttribute("data-hide", "1");
+        setTimeout(() => boot.remove(), 400);
+      });
+    });
+  };
+
+  const unsub = router.subscribe("onResolved", () => {
+    hideBoot();
+    unsub();
   });
+  // подстраховка на случай мгновенного матча (subscribe мог опоздать)
+  setTimeout(hideBoot, 1500);
 }
+
