@@ -760,6 +760,14 @@ function ProductModal({
   );
 }
 
+const SIZE_PRESETS: { label: string; values: string[] }[] = [
+  { label: "Одежда", values: ["XS", "S", "M", "L", "XL", "XXL"] },
+  { label: "Обувь RU", values: ["40", "41", "42", "43", "44", "45", "46"] },
+  { label: "Обувь EU", values: ["39", "40", "41", "42", "43", "44", "45", "46"] },
+  { label: "Носки", values: ["35-38", "39-41", "42-44", "45-47"] },
+  { label: "Детская", values: ["86", "92", "98", "104", "110", "116", "122", "128"] },
+];
+
 function SizesInput({
   value,
   onChange,
@@ -782,38 +790,64 @@ function SizesInput({
     setDraft("");
   };
   return (
-    <div className="flex flex-wrap items-center gap-2 rounded-md border border-zinc-200 bg-white p-2 dark:border-zinc-800 dark:bg-zinc-900">
-      {value.map((s, i) => (
-        <span
-          key={`${s}-${i}`}
-          className="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-medium dark:bg-zinc-800"
-        >
-          {s}
+    <div className="space-y-2">
+      <div className="flex flex-wrap items-center gap-1.5">
+        <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+          Пресеты:
+        </span>
+        {SIZE_PRESETS.map((preset) => (
+          <button
+            key={preset.label}
+            type="button"
+            onClick={() => onChange(preset.values)}
+            className="rounded-full border border-zinc-300 bg-white px-2.5 py-1 text-xs font-medium text-zinc-700 transition-colors hover:border-primary hover:text-primary dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300"
+          >
+            {preset.label}
+          </button>
+        ))}
+        {value.length > 0 && (
           <button
             type="button"
-            onClick={() => onChange(value.filter((_, j) => j !== i))}
-            className="text-zinc-500 hover:text-rose-500"
-            aria-label="Удалить"
+            onClick={() => onChange([])}
+            className="rounded-full border border-transparent px-2.5 py-1 text-xs font-medium text-zinc-500 hover:text-rose-500"
           >
-            ×
+            Очистить
           </button>
-        </span>
-      ))}
-      <input
-        value={draft}
-        onChange={(e) => setDraft(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === ",") {
-            e.preventDefault();
-            commit(draft);
-          } else if (e.key === "Backspace" && draft === "" && value.length > 0) {
-            onChange(value.slice(0, -1));
-          }
-        }}
-        onBlur={() => draft && commit(draft)}
-        placeholder={value.length === 0 ? "S, M, L, XL" : ""}
-        className="min-w-[80px] flex-1 bg-transparent text-sm outline-none"
-      />
+        )}
+      </div>
+      <div className="flex flex-wrap items-center gap-2 rounded-md border border-zinc-200 bg-white p-2 dark:border-zinc-800 dark:bg-zinc-900">
+        {value.map((s, i) => (
+          <span
+            key={`${s}-${i}`}
+            className="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-medium dark:bg-zinc-800"
+          >
+            {s}
+            <button
+              type="button"
+              onClick={() => onChange(value.filter((_, j) => j !== i))}
+              className="text-zinc-500 hover:text-rose-500"
+              aria-label="Удалить"
+            >
+              ×
+            </button>
+          </span>
+        ))}
+        <input
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === ",") {
+              e.preventDefault();
+              commit(draft);
+            } else if (e.key === "Backspace" && draft === "" && value.length > 0) {
+              onChange(value.slice(0, -1));
+            }
+          }}
+          onBlur={() => draft && commit(draft)}
+          placeholder={value.length === 0 ? "впиши свой размер, например 43-46" : ""}
+          className="min-w-[140px] flex-1 bg-transparent text-sm outline-none"
+        />
+      </div>
     </div>
   );
 }
