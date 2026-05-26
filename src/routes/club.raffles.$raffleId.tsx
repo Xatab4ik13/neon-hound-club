@@ -361,12 +361,13 @@ function StakeControls({
   const presets = [1, 5, maxStake].filter((v, i, arr) => v > 0 && arr.indexOf(v) === i);
   const noBalance = isAuthed && maxStake <= 0;
   const totalCost = stake * ticketCost;
+  const ticketWord = pluralRu(ticketCost, ["билет", "билета", "билетов"]);
 
   return (
     <div>
       <div className="flex items-center justify-between">
         <div className="font-mono text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-          Поставить заявок · {ticketCost} билет(а)/шт
+          1 заявка — {ticketCost} {ticketWord}
         </div>
         <div className="flex items-center gap-1 font-mono text-[11px] uppercase tracking-wider text-foreground">
           <Ticket className="h-3.5 w-3.5 text-primary" />
