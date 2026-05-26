@@ -21,14 +21,13 @@ const TABS: Tab[] = [
 
 // Pathnames that should keep "More" highlighted as the active tab.
 const MORE_PATHS = [
-  "/club/orders",
-  "/club/rank",
   "/club/quests",
   "/club/raffles",
   "/club/invite",
   "/club/hell-pass",
   "/club/school",
 ];
+
 
 export function MobileTabBar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });

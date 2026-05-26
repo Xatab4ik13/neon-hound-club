@@ -1,10 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import {
   Gem,
-  Ticket,
   Target,
-  Package,
-  TrendingUp,
   UserPlus,
   GraduationCap,
   Settings,
@@ -12,6 +9,7 @@ import {
   ChevronRight,
   ShoppingBag,
   ShoppingCart,
+  Ticket,
   type LucideIcon,
 } from "lucide-react";
 import { Drawer } from "vaul";
@@ -42,8 +40,6 @@ function buildGroups(cartCount: number): { title: string; items: Item[] }[] {
   {
     title: "Активность",
     items: [
-      { label: "Заказы", href: "/club/orders", icon: Package },
-      { label: "Ранг и XP", href: "/club/rank", icon: TrendingUp },
       { label: "Пригласить друга", href: "/club/invite", icon: UserPlus },
       { label: "Магазин клуба", href: "/club/shop", icon: ShoppingBag },
       {
@@ -56,6 +52,7 @@ function buildGroups(cartCount: number): { title: string; items: Item[] }[] {
   },
   ];
 }
+
 
 export function MobileMoreSheet({
   open,

@@ -9,12 +9,11 @@ import {
   Gem,
   User,
   Bike,
-  Package,
   Target,
-  TrendingUp,
   UserPlus,
   type LucideIcon,
 } from "lucide-react";
+
 import { ME } from "@/data/profile";
 import { RANKS, getRankSpan, type PlaqueBg, type RankId } from "@/data/ranks";
 import { useCurrentRank } from "@/data/rank-state";
@@ -47,8 +46,6 @@ const NAV: { label: string; href: string; icon: LucideIcon; final?: boolean }[] 
   { label: "Профиль", href: "/club/me", icon: User },
   { label: "Гараж", href: "/club/garage", icon: Bike },
   { label: "Билеты", href: "/club/tickets", icon: Ticket },
-  { label: "Заказы", href: "/club/orders", icon: Package },
-  { label: "Ранг и XP", href: "/club/rank", icon: TrendingUp },
   { label: "Квесты", href: "/club/quests", icon: Target },
   { label: "Розыгрыши", href: "/club/raffles", icon: Ticket },
   { label: "Hell AI", href: "/club/hell-ai", icon: Bot },
@@ -57,6 +54,7 @@ const NAV: { label: string; href: string; icon: LucideIcon; final?: boolean }[] 
   { label: "Школа", href: "/club/school", icon: GraduationCap },
   { label: "Hell Pass", href: "/club/hell-pass", icon: Gem, final: true },
 ];
+
 
 
 // ---------- Layout ----------
