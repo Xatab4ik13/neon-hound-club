@@ -1,7 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { Bell, ShoppingBag } from "lucide-react";
 import { useMemo, useState } from "react";
-import { ME } from "@/data/profile";
 import { RANKS } from "@/data/ranks";
 import type { RankMeta } from "@/data/ranks";
 import { useCurrentRank } from "@/data/rank-state";
@@ -28,7 +27,7 @@ export function MobileTopBar() {
     return rank;
   }, [myProfile.data?.rank?.rankId, rank]);
   const avatarUrl = myProfile.data?.avatarUrl ?? null;
-  const nick = viewer.nick ?? ME.nick;
+  const nick = myProfile.data?.nick ?? viewer.nick ?? "";
   const { count: cartCount } = useCart();
   const isShop = pathname.startsWith("/club/shop") || pathname.startsWith("/club/cart");
   const [notifOpen, setNotifOpen] = useState(false);
@@ -59,11 +58,11 @@ export function MobileTopBar() {
               decoding="async"
               className="absolute inset-0 h-full w-full object-cover"
             />
-          ) : (
+          ) : nick ? (
             <span className="grid h-full w-full place-items-center font-display text-[13px] font-black italic uppercase text-primary">
               {nick.slice(0, 2)}
             </span>
-          )}
+          ) : null}
         </Link>
 
         {/* Капсула HELL · XP → ранг */}
@@ -101,8 +100,8 @@ export function MobileTopBar() {
               }}
             />
           </span>
-          <span className="relative font-display text-[15px] font-black italic tracking-tight text-white">
-            HELL
+          <span className="relative truncate font-display text-[15px] font-black italic tracking-tight text-white">
+            {nick || "—"}
           </span>
           <span className="relative whitespace-nowrap font-mono text-[12px] font-bold tabular-nums">
             <span className="text-white">{xp.toLocaleString("ru-RU")}</span>

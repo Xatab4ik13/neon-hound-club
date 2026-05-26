@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ArrowRight } from "lucide-react";
 import { fetchHomeBanners, type HomeBanner } from "@/lib/queries";
 
-// Унифицированная модель слайда: либо картинка-фон (с бека), либо градиент-fallback (мок).
+// Унифицированная модель слайда: картинка-фон с бека.
 type Slide = {
   id: string;
   eyebrow?: string;
@@ -13,41 +13,7 @@ type Slide = {
   to: string;
   isExternal: boolean;
   imageUrl?: string;
-  gradient?: string;
 };
-
-const FALLBACK_SLIDES: Slide[] = [
-  {
-    id: "merch-black-hound",
-    eyebrow: "Лимит 50 шт. · −15% по Gold Pass",
-    title: "BLACK HOUND\nJACKET",
-    cta: "К товару",
-    to: "/club/shop",
-    isExternal: false,
-    gradient:
-      "radial-gradient(120% 90% at 85% 40%, oklch(0.55 0.22 357.3) 0%, oklch(0.32 0.18 357.3) 45%, oklch(0.18 0.10 357.3) 100%)",
-  },
-  {
-    id: "hell-pass-gold",
-    eyebrow: "30 дней доступа · +билеты сразу",
-    title: "HELL PASS\nGOLD",
-    cta: "Открыть",
-    to: "/club/hell-pass",
-    isExternal: false,
-    gradient:
-      "radial-gradient(120% 90% at 15% 30%, oklch(0.50 0.18 60) 0%, oklch(0.28 0.12 50) 50%, oklch(0.16 0.06 40) 100%)",
-  },
-  {
-    id: "quest-week",
-    eyebrow: "Дедлайн через 3 дня · +500 билетов",
-    title: "КВЕСТ\nНЕДЕЛИ",
-    cta: "Участвовать",
-    to: "/club/quests",
-    isExternal: false,
-    gradient:
-      "radial-gradient(120% 90% at 80% 70%, oklch(0.48 0.18 240) 0%, oklch(0.26 0.12 240) 50%, oklch(0.14 0.06 240) 100%)",
-  },
-];
 
 function toSlide(b: HomeBanner): Slide {
   return {
@@ -64,16 +30,13 @@ function toSlide(b: HomeBanner): Slide {
 const AUTO_MS = 5000;
 
 export function FeedHeroCarousel() {
-  const { data } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ["home-banners"],
     queryFn: fetchHomeBanners,
     staleTime: 60_000,
   });
 
-  const slides: Slide[] =
-    data?.banners && data.banners.length > 0
-      ? data.banners.map(toSlide)
-      : FALLBACK_SLIDES;
+  const slides: Slide[] = data?.banners ? data.banners.map(toSlide) : [];
 
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
@@ -106,6 +69,18 @@ export function FeedHeroCarousel() {
     }
     window.setTimeout(() => setPaused(false), 1500);
   };
+
+  // Пока баннеров нет — секция не рендерится (никаких моков).
+  if (total === 0) {
+    if (isLoading) {
+      return (
+        <section className="mb-5" aria-label="Промо">
+          <div className="aspect-[16/10] w-full animate-pulse rounded-[24px] bg-white/[0.04]" />
+        </section>
+      );
+    }
+    return null;
+  }
 
   return (
     <section className="mb-5" aria-label="Промо">
@@ -155,7 +130,7 @@ function HeroSlideCard({ slide }: { slide: Slide }) {
         backgroundSize: "cover",
         backgroundPosition: "center",
       }
-    : { background: slide.gradient };
+    : {};
 
   const Cta = slide.isExternal ? (
     <a
@@ -179,22 +154,12 @@ function HeroSlideCard({ slide }: { slide: Slide }) {
 
   return (
     <div className="relative aspect-[16/10] w-full shrink-0 bg-zinc-900" style={bgStyle}>
-      {/* Узор поверх (только для fallback-градиентов, на фото мешает) */}
-      {!slide.imageUrl && (
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 opacity-[0.18] mix-blend-overlay"
-          style={{
-            backgroundImage:
-              "radial-gradient(circle at 80% 60%, rgba(255,255,255,0.9) 0, transparent 40%), repeating-radial-gradient(circle at 80% 60%, rgba(255,255,255,0.5) 0, rgba(255,255,255,0.5) 1px, transparent 1px, transparent 18px)",
-          }}
-        />
-      )}
       {/* Затемнение снизу для читабельности текста */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/65 via-black/30 to-transparent"
       />
+
 
       <div className="relative flex h-full flex-col justify-between p-5">
         <div className="pt-2">
