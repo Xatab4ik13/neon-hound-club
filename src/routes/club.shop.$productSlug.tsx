@@ -282,19 +282,23 @@ function ProductView({ product }: { product: ShopProduct }) {
             </div>
             <div className="flex flex-wrap gap-2">
               {sizes.map((s) => {
-                const isActive = s === size;
+                const isActive = s.label === size;
+                const isOut = s.stock !== null && s.stock <= 0;
                 return (
                   <button
-                    key={s}
+                    key={s.label}
                     type="button"
-                    onClick={() => setSize(s)}
+                    disabled={isOut}
+                    onClick={() => setSize(s.label)}
                     className={`min-w-[48px] rounded-xl border px-4 py-2.5 text-[15px] font-semibold transition-colors active:scale-95 ${
-                      isActive
-                        ? "border-primary bg-primary text-primary-foreground"
-                        : "border-white/[0.08] bg-white/[0.03] text-foreground"
+                      isOut
+                        ? "border-white/[0.04] bg-white/[0.02] text-muted-foreground/40 line-through"
+                        : isActive
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-white/[0.08] bg-white/[0.03] text-foreground"
                     }`}
                   >
-                    {s}
+                    {s.label}
                   </button>
                 );
               })}
