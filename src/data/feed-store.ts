@@ -455,7 +455,7 @@ export const feedStore = {
 
 // Дебаунс-рефетча, чтобы пачку событий от бэка склеивать в один запрос.
 let refetchTimer: ReturnType<typeof setTimeout> | null = null;
-function scheduleRefetch(delay = 120) {
+function scheduleRefetch(delay = 500) {
   if (refetchTimer != null) clearTimeout(refetchTimer);
   refetchTimer = setTimeout(() => {
     refetchTimer = null;
