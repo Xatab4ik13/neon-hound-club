@@ -677,7 +677,7 @@ function CommentsSheet({
   const stripReplyPrefix = (text: string) => text.replace(/^@\S+\s+/, "");
 
   const renderItem = (c: Comment, isReply = false) => {
-    const isMine = c.authorSlug === ME_SLUG;
+    const isMine = myId != null && c.author.id === myId;
     const canDelete = isMine || moderate;
     const onDelete = canDelete
       ? () => {
