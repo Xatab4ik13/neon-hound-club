@@ -256,21 +256,6 @@ function RaffleDetailContent({
         </section>
       )}
 
-      {!finished && !isMobile && (
-        <section className="mt-5 rounded-2xl border border-primary/30 bg-card/40 p-4">
-          <StakeControls
-            ticketCost={raffle.ticketCost}
-            balance={balance}
-            stake={stake}
-            maxStake={maxStake}
-            isAuthed={isAuthed}
-            isPending={enterMut.isPending}
-            onStakeChange={(v) => setStake(Math.max(0, Math.min(maxStake, v)))}
-            onStake={handleStake}
-          />
-        </section>
-      )}
-
       {raffle.description && (
         <section className="mt-6 space-y-3.5 text-[15px] leading-relaxed">
           {raffle.description.split(/\n\n+/).map((p, i) => (
@@ -313,25 +298,26 @@ function RaffleDetailContent({
         </div>
       </section>
 
+      {!finished && <div aria-hidden className="h-56" />}
 
-      {!finished && isMobile && <div aria-hidden className="h-44" />}
-
-      {!finished && isMobile && (
+      {!finished && (
         <div
           className="fixed inset-x-0 z-30 border-t border-white/[0.08] bg-[#0d0d0d]/95 px-4 py-3 backdrop-blur"
           style={{ bottom: "calc(64px + env(safe-area-inset-bottom))" }}
         >
-          <StakeControls
-            ticketCost={raffle.ticketCost}
-            balance={balance}
-            stake={stake}
-            maxStake={maxStake}
-            isAuthed={isAuthed}
-            isPending={enterMut.isPending}
-            onStakeChange={(v) => setStake(Math.max(0, Math.min(maxStake, v)))}
-            onStake={handleStake}
-            compact
-          />
+          <div className="mx-auto w-full max-w-3xl">
+            <StakeControls
+              ticketCost={raffle.ticketCost}
+              balance={balance}
+              stake={stake}
+              maxStake={maxStake}
+              isAuthed={isAuthed}
+              isPending={enterMut.isPending}
+              onStakeChange={(v) => setStake(Math.max(0, Math.min(maxStake, v)))}
+              onStake={handleStake}
+              compact
+            />
+          </div>
         </div>
       )}
     </main>
