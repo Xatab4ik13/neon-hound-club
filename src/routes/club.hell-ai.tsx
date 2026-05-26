@@ -967,7 +967,7 @@ function HistorySheet({
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Поиск по чатам"
-                  className="w-full bg-transparent text-[15px] text-foreground placeholder:text-muted-foreground/60 focus:outline-none"
+                  className="w-full bg-transparent text-[16px] text-foreground placeholder:text-muted-foreground/60 focus:outline-none"
                 />
               </div>
             )}
