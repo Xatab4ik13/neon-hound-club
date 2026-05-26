@@ -357,14 +357,16 @@ export const PostCard = memo(function PostCard({ post, moderate = false }: { pos
       />
       </div>
 
-      <CommentsSheet
-        open={commentsOpen}
-        onOpenChange={setCommentsOpen}
-        post={post}
-        moderate={moderate}
-      />
+      {commentsEverOpened && (
+        <CommentsSheet
+          open={commentsOpen}
+          onOpenChange={setCommentsOpen}
+          post={post}
+          moderate={moderate}
+        />
+      )}
 
-      {post.image && (
+      {post.image && viewerEverOpened && (
         <ImageViewer
           src={post.image}
           open={viewerOpen}
@@ -379,7 +381,7 @@ export const PostCard = memo(function PostCard({ post, moderate = false }: { pos
       )}
     </article>
   );
-}
+});
 
 // ───────── Poll ─────────
 
