@@ -69,6 +69,9 @@ import { Route as ClubUNickRouteImport } from './routes/club.u.$nick'
 import { Route as ClubShopProductSlugRouteImport } from './routes/club.shop.$productSlug'
 import { Route as ClubRafflesRaffleIdRouteImport } from './routes/club.raffles.$raffleId'
 import { Route as ClubPPostIdRouteImport } from './routes/club.p.$postId'
+import { Route as ClubLegalRequisitesRouteImport } from './routes/club.legal.requisites'
+import { Route as ClubLegalPromoRulesRouteImport } from './routes/club.legal.promo-rules'
+import { Route as ClubLegalPrivacyRouteImport } from './routes/club.legal.privacy'
 import { Route as ClubHellPassTierRouteImport } from './routes/club.hell-pass.$tier'
 import { Route as BloggerRafflesRaffleIdRouteImport } from './routes/blogger.raffles.$raffleId'
 
@@ -372,6 +375,21 @@ const ClubPPostIdRoute = ClubPPostIdRouteImport.update({
   path: '/p/$postId',
   getParentRoute: () => ClubRoute,
 } as any)
+const ClubLegalRequisitesRoute = ClubLegalRequisitesRouteImport.update({
+  id: '/legal/requisites',
+  path: '/legal/requisites',
+  getParentRoute: () => ClubRoute,
+} as any)
+const ClubLegalPromoRulesRoute = ClubLegalPromoRulesRouteImport.update({
+  id: '/legal/promo-rules',
+  path: '/legal/promo-rules',
+  getParentRoute: () => ClubRoute,
+} as any)
+const ClubLegalPrivacyRoute = ClubLegalPrivacyRouteImport.update({
+  id: '/legal/privacy',
+  path: '/legal/privacy',
+  getParentRoute: () => ClubRoute,
+} as any)
 const ClubHellPassTierRoute = ClubHellPassTierRouteImport.update({
   id: '/hell-pass/$tier',
   path: '/hell-pass/$tier',
@@ -438,6 +456,9 @@ export interface FileRoutesByFullPath {
   '/shop/': typeof ShopIndexRoute
   '/blogger/raffles/$raffleId': typeof BloggerRafflesRaffleIdRoute
   '/club/hell-pass/$tier': typeof ClubHellPassTierRoute
+  '/club/legal/privacy': typeof ClubLegalPrivacyRoute
+  '/club/legal/promo-rules': typeof ClubLegalPromoRulesRoute
+  '/club/legal/requisites': typeof ClubLegalRequisitesRoute
   '/club/p/$postId': typeof ClubPPostIdRoute
   '/club/raffles/$raffleId': typeof ClubRafflesRaffleIdRoute
   '/club/shop/$productSlug': typeof ClubShopProductSlugRoute
@@ -499,6 +520,9 @@ export interface FileRoutesByTo {
   '/shop': typeof ShopIndexRoute
   '/blogger/raffles/$raffleId': typeof BloggerRafflesRaffleIdRoute
   '/club/hell-pass/$tier': typeof ClubHellPassTierRoute
+  '/club/legal/privacy': typeof ClubLegalPrivacyRoute
+  '/club/legal/promo-rules': typeof ClubLegalPromoRulesRoute
+  '/club/legal/requisites': typeof ClubLegalRequisitesRoute
   '/club/p/$postId': typeof ClubPPostIdRoute
   '/club/raffles/$raffleId': typeof ClubRafflesRaffleIdRoute
   '/club/shop/$productSlug': typeof ClubShopProductSlugRoute
@@ -564,6 +588,9 @@ export interface FileRoutesById {
   '/shop/': typeof ShopIndexRoute
   '/blogger/raffles/$raffleId': typeof BloggerRafflesRaffleIdRoute
   '/club/hell-pass/$tier': typeof ClubHellPassTierRoute
+  '/club/legal/privacy': typeof ClubLegalPrivacyRoute
+  '/club/legal/promo-rules': typeof ClubLegalPromoRulesRoute
+  '/club/legal/requisites': typeof ClubLegalRequisitesRoute
   '/club/p/$postId': typeof ClubPPostIdRoute
   '/club/raffles/$raffleId': typeof ClubRafflesRaffleIdRoute
   '/club/shop/$productSlug': typeof ClubShopProductSlugRoute
@@ -630,6 +657,9 @@ export interface FileRouteTypes {
     | '/shop/'
     | '/blogger/raffles/$raffleId'
     | '/club/hell-pass/$tier'
+    | '/club/legal/privacy'
+    | '/club/legal/promo-rules'
+    | '/club/legal/requisites'
     | '/club/p/$postId'
     | '/club/raffles/$raffleId'
     | '/club/shop/$productSlug'
@@ -691,6 +721,9 @@ export interface FileRouteTypes {
     | '/shop'
     | '/blogger/raffles/$raffleId'
     | '/club/hell-pass/$tier'
+    | '/club/legal/privacy'
+    | '/club/legal/promo-rules'
+    | '/club/legal/requisites'
     | '/club/p/$postId'
     | '/club/raffles/$raffleId'
     | '/club/shop/$productSlug'
@@ -755,6 +788,9 @@ export interface FileRouteTypes {
     | '/shop/'
     | '/blogger/raffles/$raffleId'
     | '/club/hell-pass/$tier'
+    | '/club/legal/privacy'
+    | '/club/legal/promo-rules'
+    | '/club/legal/requisites'
     | '/club/p/$postId'
     | '/club/raffles/$raffleId'
     | '/club/shop/$productSlug'
@@ -1215,6 +1251,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ClubPPostIdRouteImport
       parentRoute: typeof ClubRoute
     }
+    '/club/legal/requisites': {
+      id: '/club/legal/requisites'
+      path: '/legal/requisites'
+      fullPath: '/club/legal/requisites'
+      preLoaderRoute: typeof ClubLegalRequisitesRouteImport
+      parentRoute: typeof ClubRoute
+    }
+    '/club/legal/promo-rules': {
+      id: '/club/legal/promo-rules'
+      path: '/legal/promo-rules'
+      fullPath: '/club/legal/promo-rules'
+      preLoaderRoute: typeof ClubLegalPromoRulesRouteImport
+      parentRoute: typeof ClubRoute
+    }
+    '/club/legal/privacy': {
+      id: '/club/legal/privacy'
+      path: '/legal/privacy'
+      fullPath: '/club/legal/privacy'
+      preLoaderRoute: typeof ClubLegalPrivacyRouteImport
+      parentRoute: typeof ClubRoute
+    }
     '/club/hell-pass/$tier': {
       id: '/club/hell-pass/$tier'
       path: '/hell-pass/$tier'
@@ -1296,6 +1353,9 @@ interface ClubRouteChildren {
   ClubTicketsRoute: typeof ClubTicketsRoute
   ClubIndexRoute: typeof ClubIndexRoute
   ClubHellPassTierRoute: typeof ClubHellPassTierRoute
+  ClubLegalPrivacyRoute: typeof ClubLegalPrivacyRoute
+  ClubLegalPromoRulesRoute: typeof ClubLegalPromoRulesRoute
+  ClubLegalRequisitesRoute: typeof ClubLegalRequisitesRoute
   ClubPPostIdRoute: typeof ClubPPostIdRoute
   ClubRafflesRaffleIdRoute: typeof ClubRafflesRaffleIdRoute
   ClubShopProductSlugRoute: typeof ClubShopProductSlugRoute
@@ -1320,6 +1380,9 @@ const ClubRouteChildren: ClubRouteChildren = {
   ClubTicketsRoute: ClubTicketsRoute,
   ClubIndexRoute: ClubIndexRoute,
   ClubHellPassTierRoute: ClubHellPassTierRoute,
+  ClubLegalPrivacyRoute: ClubLegalPrivacyRoute,
+  ClubLegalPromoRulesRoute: ClubLegalPromoRulesRoute,
+  ClubLegalRequisitesRoute: ClubLegalRequisitesRoute,
   ClubPPostIdRoute: ClubPPostIdRoute,
   ClubRafflesRaffleIdRoute: ClubRafflesRaffleIdRoute,
   ClubShopProductSlugRoute: ClubShopProductSlugRoute,
