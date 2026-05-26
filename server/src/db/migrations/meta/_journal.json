@@ -29,6 +29,7 @@
     { "idx": 24, "version": "7", "when": 1779710000000, "tag": "0024_pass_perks", "breakpoints": true },
     { "idx": 25, "version": "7", "when": 1779720000000, "tag": "0025_sticker_packs", "breakpoints": true },
     { "idx": 26, "version": "7", "when": 1779730000000, "tag": "0026_phone_unique", "breakpoints": true },
-    { "idx": 27, "version": "7", "when": 1779740000000, "tag": "0027_payments", "breakpoints": true }
+    { "idx": 27, "version": "7", "when": 1779740000000, "tag": "0027_payments", "breakpoints": true },
+    { "idx": 28, "version": "7", "when": 1779750000000, "tag": "0028_drop_news", "breakpoints": true }
   ]
 }

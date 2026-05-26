@@ -17,7 +17,6 @@ const NAV = [
   { label: "Hell Pass", href: "/hell-pass" },
   { label: "Школа", href: "/school" },
   { label: "О клубе", href: "/about" },
-  { label: "Новости", href: "/news" },
 ];
 
 export function Header() {

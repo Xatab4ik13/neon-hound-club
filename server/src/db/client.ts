@@ -2,7 +2,6 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import * as users from "./schema/users.js";
 import * as emailVerification from "./schema/email-verification.js";
-import * as news from "./schema/news.js";
 import * as referrals from "./schema/referrals.js";
 import * as xp from "./schema/xp.js";
 import * as badges from "./schema/badges.js";
@@ -13,7 +12,7 @@ import * as hellAi from "./schema/hell-ai.js";
 const url = process.env.DATABASE_URL;
 if (!url) throw new Error("DATABASE_URL is required");
 
-const schema = { ...users, ...emailVerification, ...news, ...referrals, ...xp, ...badges, ...posts, ...economy, ...hellAi };
+const schema = { ...users, ...emailVerification, ...referrals, ...xp, ...badges, ...posts, ...economy, ...hellAi };
 
 // Пул увеличен с 10 до 40: при пике 200 одновременных Hell AI запросов каждый
 // делает ~4-6 коротких SELECT/INSERT, дефолтных 10 не хватает.

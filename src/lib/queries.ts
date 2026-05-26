@@ -414,35 +414,6 @@ export async function fetchPaymentStatus(paymentId: string) {
   }>(`/api/v1/payments/${paymentId}/status`);
 }
 
-// ============================================================================
-// NEWS (public)
-// ============================================================================
-
-export type NewsListItem = {
-  slug: string;
-  title: string;
-  excerpt: string;
-  tag: string;
-  coverUrl: string | null;
-  publishedAt: string | null;
-};
-
-export type NewsArticle = NewsListItem & {
-  id: string;
-  body: string;
-  metaTitle: string;
-  metaDescription: string;
-  ogImage: string | null;
-  status: "draft" | "published";
-};
-
-export function fetchNewsList(limit = 20) {
-  return apiFetch<{ items: NewsListItem[] }>(`/api/v1/news?limit=${limit}`);
-}
-
-export function fetchNewsArticle(slug: string) {
-  return apiFetch<NewsArticle>(`/api/v1/news/${slug}`);
-}
 
 // ============================================================================
 // INVITES

@@ -108,9 +108,6 @@ export async function buildApp() {
   const { adminStaffRoutes } = await import("./routes/admin-staff.js");
   await app.register(adminStaffRoutes, { prefix: "/api/v1/admin/staff" });
 
-  const { newsRoutes, adminNewsRoutes } = await import("./routes/news.js");
-  await app.register(newsRoutes, { prefix: "/api/v1/news" });
-  await app.register(adminNewsRoutes, { prefix: "/api/v1/admin/news" });
 
   const { invitesRoutes } = await import("./routes/invites.js");
   await app.register(invitesRoutes, { prefix: "/api/v1/invites" });

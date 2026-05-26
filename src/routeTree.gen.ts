@@ -21,7 +21,6 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ShopIndexRouteImport } from './routes/shop.index'
-import { Route as NewsIndexRouteImport } from './routes/news.index'
 import { Route as HellPassIndexRouteImport } from './routes/hell-pass.index'
 import { Route as ClubIndexRouteImport } from './routes/club.index'
 import { Route as CheckoutIndexRouteImport } from './routes/checkout.index'
@@ -30,7 +29,6 @@ import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as ShopProductSlugRouteImport } from './routes/shop.$productSlug'
 import { Route as PaySuccessRouteImport } from './routes/pay.success'
 import { Route as PayFailRouteImport } from './routes/pay.fail'
-import { Route as NewsSlugRouteImport } from './routes/news.$slug'
 import { Route as LegalTermsRouteImport } from './routes/legal.terms'
 import { Route as LegalShippingRouteImport } from './routes/legal.shipping'
 import { Route as LegalRequisitesRouteImport } from './routes/legal.requisites'
@@ -60,7 +58,6 @@ import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as AdminSchoolRouteImport } from './routes/admin.school'
 import { Route as AdminRafflesRouteImport } from './routes/admin.raffles'
 import { Route as AdminQuestsRouteImport } from './routes/admin.quests'
-import { Route as AdminNewsRouteImport } from './routes/admin.news'
 import { Route as AdminHellAiRouteImport } from './routes/admin.hell-ai'
 import { Route as AdminEconomyRouteImport } from './routes/admin.economy'
 import { Route as AdminCdekRouteImport } from './routes/admin.cdek'
@@ -135,11 +132,6 @@ const ShopIndexRoute = ShopIndexRouteImport.update({
   path: '/shop/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const NewsIndexRoute = NewsIndexRouteImport.update({
-  id: '/news/',
-  path: '/news/',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const HellPassIndexRoute = HellPassIndexRouteImport.update({
   id: '/hell-pass/',
   path: '/hell-pass/',
@@ -178,11 +170,6 @@ const PaySuccessRoute = PaySuccessRouteImport.update({
 const PayFailRoute = PayFailRouteImport.update({
   id: '/pay/fail',
   path: '/pay/fail',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const NewsSlugRoute = NewsSlugRouteImport.update({
-  id: '/news/$slug',
-  path: '/news/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LegalTermsRoute = LegalTermsRouteImport.update({
@@ -330,11 +317,6 @@ const AdminQuestsRoute = AdminQuestsRouteImport.update({
   path: '/quests',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminNewsRoute = AdminNewsRouteImport.update({
-  id: '/news',
-  path: '/news',
-  getParentRoute: () => AdminRoute,
-} as any)
 const AdminHellAiRoute = AdminHellAiRouteImport.update({
   id: '/hell-ai',
   path: '/hell-ai',
@@ -416,7 +398,6 @@ export interface FileRoutesByFullPath {
   '/admin/cdek': typeof AdminCdekRoute
   '/admin/economy': typeof AdminEconomyRoute
   '/admin/hell-ai': typeof AdminHellAiRoute
-  '/admin/news': typeof AdminNewsRoute
   '/admin/quests': typeof AdminQuestsRoute
   '/admin/raffles': typeof AdminRafflesRoute
   '/admin/school': typeof AdminSchoolRoute
@@ -446,7 +427,6 @@ export interface FileRoutesByFullPath {
   '/legal/requisites': typeof LegalRequisitesRoute
   '/legal/shipping': typeof LegalShippingRoute
   '/legal/terms': typeof LegalTermsRoute
-  '/news/$slug': typeof NewsSlugRoute
   '/pay/fail': typeof PayFailRoute
   '/pay/success': typeof PaySuccessRoute
   '/shop/$productSlug': typeof ShopProductSlugRoute
@@ -455,7 +435,6 @@ export interface FileRoutesByFullPath {
   '/checkout/': typeof CheckoutIndexRoute
   '/club/': typeof ClubIndexRoute
   '/hell-pass/': typeof HellPassIndexRoute
-  '/news/': typeof NewsIndexRoute
   '/shop/': typeof ShopIndexRoute
   '/blogger/raffles/$raffleId': typeof BloggerRafflesRaffleIdRoute
   '/club/hell-pass/$tier': typeof ClubHellPassTierRoute
@@ -480,7 +459,6 @@ export interface FileRoutesByTo {
   '/admin/cdek': typeof AdminCdekRoute
   '/admin/economy': typeof AdminEconomyRoute
   '/admin/hell-ai': typeof AdminHellAiRoute
-  '/admin/news': typeof AdminNewsRoute
   '/admin/quests': typeof AdminQuestsRoute
   '/admin/raffles': typeof AdminRafflesRoute
   '/admin/school': typeof AdminSchoolRoute
@@ -510,7 +488,6 @@ export interface FileRoutesByTo {
   '/legal/requisites': typeof LegalRequisitesRoute
   '/legal/shipping': typeof LegalShippingRoute
   '/legal/terms': typeof LegalTermsRoute
-  '/news/$slug': typeof NewsSlugRoute
   '/pay/fail': typeof PayFailRoute
   '/pay/success': typeof PaySuccessRoute
   '/shop/$productSlug': typeof ShopProductSlugRoute
@@ -519,7 +496,6 @@ export interface FileRoutesByTo {
   '/checkout': typeof CheckoutIndexRoute
   '/club': typeof ClubIndexRoute
   '/hell-pass': typeof HellPassIndexRoute
-  '/news': typeof NewsIndexRoute
   '/shop': typeof ShopIndexRoute
   '/blogger/raffles/$raffleId': typeof BloggerRafflesRaffleIdRoute
   '/club/hell-pass/$tier': typeof ClubHellPassTierRoute
@@ -548,7 +524,6 @@ export interface FileRoutesById {
   '/admin/cdek': typeof AdminCdekRoute
   '/admin/economy': typeof AdminEconomyRoute
   '/admin/hell-ai': typeof AdminHellAiRoute
-  '/admin/news': typeof AdminNewsRoute
   '/admin/quests': typeof AdminQuestsRoute
   '/admin/raffles': typeof AdminRafflesRoute
   '/admin/school': typeof AdminSchoolRoute
@@ -578,7 +553,6 @@ export interface FileRoutesById {
   '/legal/requisites': typeof LegalRequisitesRoute
   '/legal/shipping': typeof LegalShippingRoute
   '/legal/terms': typeof LegalTermsRoute
-  '/news/$slug': typeof NewsSlugRoute
   '/pay/fail': typeof PayFailRoute
   '/pay/success': typeof PaySuccessRoute
   '/shop/$productSlug': typeof ShopProductSlugRoute
@@ -587,7 +561,6 @@ export interface FileRoutesById {
   '/checkout/': typeof CheckoutIndexRoute
   '/club/': typeof ClubIndexRoute
   '/hell-pass/': typeof HellPassIndexRoute
-  '/news/': typeof NewsIndexRoute
   '/shop/': typeof ShopIndexRoute
   '/blogger/raffles/$raffleId': typeof BloggerRafflesRaffleIdRoute
   '/club/hell-pass/$tier': typeof ClubHellPassTierRoute
@@ -617,7 +590,6 @@ export interface FileRouteTypes {
     | '/admin/cdek'
     | '/admin/economy'
     | '/admin/hell-ai'
-    | '/admin/news'
     | '/admin/quests'
     | '/admin/raffles'
     | '/admin/school'
@@ -647,7 +619,6 @@ export interface FileRouteTypes {
     | '/legal/requisites'
     | '/legal/shipping'
     | '/legal/terms'
-    | '/news/$slug'
     | '/pay/fail'
     | '/pay/success'
     | '/shop/$productSlug'
@@ -656,7 +627,6 @@ export interface FileRouteTypes {
     | '/checkout/'
     | '/club/'
     | '/hell-pass/'
-    | '/news/'
     | '/shop/'
     | '/blogger/raffles/$raffleId'
     | '/club/hell-pass/$tier'
@@ -681,7 +651,6 @@ export interface FileRouteTypes {
     | '/admin/cdek'
     | '/admin/economy'
     | '/admin/hell-ai'
-    | '/admin/news'
     | '/admin/quests'
     | '/admin/raffles'
     | '/admin/school'
@@ -711,7 +680,6 @@ export interface FileRouteTypes {
     | '/legal/requisites'
     | '/legal/shipping'
     | '/legal/terms'
-    | '/news/$slug'
     | '/pay/fail'
     | '/pay/success'
     | '/shop/$productSlug'
@@ -720,7 +688,6 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/club'
     | '/hell-pass'
-    | '/news'
     | '/shop'
     | '/blogger/raffles/$raffleId'
     | '/club/hell-pass/$tier'
@@ -748,7 +715,6 @@ export interface FileRouteTypes {
     | '/admin/cdek'
     | '/admin/economy'
     | '/admin/hell-ai'
-    | '/admin/news'
     | '/admin/quests'
     | '/admin/raffles'
     | '/admin/school'
@@ -778,7 +744,6 @@ export interface FileRouteTypes {
     | '/legal/requisites'
     | '/legal/shipping'
     | '/legal/terms'
-    | '/news/$slug'
     | '/pay/fail'
     | '/pay/success'
     | '/shop/$productSlug'
@@ -787,7 +752,6 @@ export interface FileRouteTypes {
     | '/checkout/'
     | '/club/'
     | '/hell-pass/'
-    | '/news/'
     | '/shop/'
     | '/blogger/raffles/$raffleId'
     | '/club/hell-pass/$tier'
@@ -821,13 +785,11 @@ export interface RootRouteChildren {
   LegalRequisitesRoute: typeof LegalRequisitesRoute
   LegalShippingRoute: typeof LegalShippingRoute
   LegalTermsRoute: typeof LegalTermsRoute
-  NewsSlugRoute: typeof NewsSlugRoute
   PayFailRoute: typeof PayFailRoute
   PaySuccessRoute: typeof PaySuccessRoute
   ShopProductSlugRoute: typeof ShopProductSlugRoute
   CheckoutIndexRoute: typeof CheckoutIndexRoute
   HellPassIndexRoute: typeof HellPassIndexRoute
-  NewsIndexRoute: typeof NewsIndexRoute
   ShopIndexRoute: typeof ShopIndexRoute
 }
 
@@ -917,13 +879,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShopIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/news/': {
-      id: '/news/'
-      path: '/news'
-      fullPath: '/news/'
-      preLoaderRoute: typeof NewsIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/hell-pass/': {
       id: '/hell-pass/'
       path: '/hell-pass'
@@ -978,13 +933,6 @@ declare module '@tanstack/react-router' {
       path: '/pay/fail'
       fullPath: '/pay/fail'
       preLoaderRoute: typeof PayFailRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/news/$slug': {
-      id: '/news/$slug'
-      path: '/news/$slug'
-      fullPath: '/news/$slug'
-      preLoaderRoute: typeof NewsSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/legal/terms': {
@@ -1190,13 +1138,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminQuestsRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/admin/news': {
-      id: '/admin/news'
-      path: '/news'
-      fullPath: '/admin/news'
-      preLoaderRoute: typeof AdminNewsRouteImport
-      parentRoute: typeof AdminRoute
-    }
     '/admin/hell-ai': {
       id: '/admin/hell-ai'
       path: '/hell-ai'
@@ -1295,7 +1236,6 @@ interface AdminRouteChildren {
   AdminCdekRoute: typeof AdminCdekRoute
   AdminEconomyRoute: typeof AdminEconomyRoute
   AdminHellAiRoute: typeof AdminHellAiRoute
-  AdminNewsRoute: typeof AdminNewsRoute
   AdminQuestsRoute: typeof AdminQuestsRoute
   AdminRafflesRoute: typeof AdminRafflesRoute
   AdminSchoolRoute: typeof AdminSchoolRoute
@@ -1310,7 +1250,6 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminCdekRoute: AdminCdekRoute,
   AdminEconomyRoute: AdminEconomyRoute,
   AdminHellAiRoute: AdminHellAiRoute,
-  AdminNewsRoute: AdminNewsRoute,
   AdminQuestsRoute: AdminQuestsRoute,
   AdminRafflesRoute: AdminRafflesRoute,
   AdminSchoolRoute: AdminSchoolRoute,
@@ -1412,13 +1351,11 @@ const rootRouteChildren: RootRouteChildren = {
   LegalRequisitesRoute: LegalRequisitesRoute,
   LegalShippingRoute: LegalShippingRoute,
   LegalTermsRoute: LegalTermsRoute,
-  NewsSlugRoute: NewsSlugRoute,
   PayFailRoute: PayFailRoute,
   PaySuccessRoute: PaySuccessRoute,
   ShopProductSlugRoute: ShopProductSlugRoute,
   CheckoutIndexRoute: CheckoutIndexRoute,
   HellPassIndexRoute: HellPassIndexRoute,
-  NewsIndexRoute: NewsIndexRoute,
   ShopIndexRoute: ShopIndexRoute,
 }
 export const routeTree = rootRouteImport
