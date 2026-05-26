@@ -5,6 +5,7 @@ import { useSyncExternalStore, useEffect } from "react";
 import { BACKEND_URL } from "@/lib/api";
 import {
   fetchFeed,
+  fetchPost,
   createPost,
   patchPost,
   deletePost,
@@ -21,6 +22,7 @@ import {
 } from "@/lib/queries";
 import { PUBLIC_USERS, type PublicUser } from "./users";
 import { hhToast } from "@/lib/hh-toast";
+
 
 // ───────── Внешние типы (контракт UI) ─────────
 
