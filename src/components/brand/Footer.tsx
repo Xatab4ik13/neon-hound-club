@@ -125,7 +125,7 @@ export function Footer() {
         <div className="mt-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div className="font-mono text-[11px] leading-relaxed text-muted-foreground">
             {LEGAL.shortName} · ОГРНИП {LEGAL.ogrnip} · ИНН {LEGAL.inn}
-            <span className="hidden md:inline"> · {LEGAL.region}</span>
+            <span className="hidden md:inline"> · {LEGAL.addressShort}</span>
           </div>
           <div className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
             © {year} {LEGAL.brand}
