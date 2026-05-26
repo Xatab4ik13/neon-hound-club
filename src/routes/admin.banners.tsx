@@ -79,13 +79,14 @@ function BannersPage() {
     <div className="space-y-6">
       <PageHeader
         title="Баннеры на главной"
-        subtitle="Карусель на /club — то, что видит пользователь сразу при входе."
-        action={
-          <Btn icon={Plus} onClick={() => setEditing("new")}>
-            Добавить
+        description="Карусель на /club — то, что видит пользователь сразу при входе."
+        actions={
+          <Btn onClick={() => setEditing("new")}>
+            <Plus className="mr-1 h-4 w-4" /> Добавить
           </Btn>
         }
       />
+
 
       <Panel>
         <div className="p-4">
