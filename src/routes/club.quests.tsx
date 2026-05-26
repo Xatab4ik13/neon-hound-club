@@ -1,17 +1,28 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Check, Download, Loader2, Smartphone, Sparkles, Ticket } from "lucide-react";
+import {
+  Check,
+  ChevronRight,
+  Download,
+  Loader2,
+  Smartphone,
+  Sparkles,
+  Ticket,
+  Calendar,
+  TrendingUp,
+  ClipboardCheck,
+  CircleDashed,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { hhToast as toast } from "@/lib/hh-toast";
-import { checkQuest, confirmPwaInstall, fetchQuests, qk, type QuestItem } from "@/lib/queries";
+import { checkQuest, fetchQuests, qk, type QuestItem } from "@/lib/queries";
 import { useViewer } from "@/hooks/use-viewer";
 import { ApiError } from "@/lib/api";
-
 
 export const Route = createFileRoute("/club/quests")({
   head: () => ({
     meta: [
-      { title: "Задания — клуб HELLHOUND" },
+      { title: "Квесты — клуб HELLHOUND" },
       {
         name: "description",
         content: "Задания клуба. Выполняй — получай билеты.",
@@ -40,51 +51,38 @@ function QuestsPage() {
     .reduce((sum, i) => sum + i.ticketsReward, 0);
 
   return (
-    <main className="mx-auto w-full max-w-5xl px-4 py-6 md:px-8 md:py-10">
-      <Link
-        to="/club/me"
-        className="mb-6 inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground transition-colors hover:text-foreground"
-      >
-        <ArrowLeft className="h-3 w-3" />
-        В профиль
-      </Link>
-
-      <header className="mb-8 border border-white/[0.06] bg-card/40 p-6 md:p-8">
-        <div className="font-mono text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
-          Задания клуба
-        </div>
-        <h1 className="mt-2 font-display text-3xl font-black uppercase italic tracking-tight text-foreground md:text-4xl">
-          Прокачка
+    <main className="mx-auto w-full max-w-2xl px-4 pt-4 pb-[calc(env(safe-area-inset-bottom)+96px)] md:max-w-3xl md:px-8 md:py-10">
+      {/* iOS large title */}
+      <header className="mb-5 pt-2">
+        <h1 className="text-[34px] font-bold leading-tight tracking-tight text-foreground">
+          Квесты
         </h1>
-        <p className="mt-2 max-w-xl text-sm text-muted-foreground">
-          Выполняй задания клуба — получай билеты. Часть заданий зачитывается
-          автоматически, часть проверяется по кнопке.
+        <p className="mt-1 text-[15px] leading-snug text-muted-foreground">
+          Выполняй задания — получай билеты и XP.
         </p>
-
-        <div className="mt-5 grid gap-4 sm:grid-cols-3">
-          <Stat label="Выполнено" value={`${doneCount}/${items.length}`} />
-          <Stat label="Билетов получено" value={`${ticketsEarned}`} />
-          <Stat label="Можно получить" value={`${ticketsAvailable}`} />
-        </div>
       </header>
+
+      {/* Stats row, iOS-style soft tiles */}
+      <section className="mb-5 grid grid-cols-3 gap-2">
+        <Stat label="Выполнено" value={`${doneCount}/${items.length || 0}`} />
+        <Stat label="Получено" value={`${ticketsEarned}`} accent />
+        <Stat label="Доступно" value={`${ticketsAvailable}`} />
+      </section>
 
       <InstallAppQuest />
 
       {q.isLoading ? (
-        <div className="grid gap-3 md:grid-cols-2">
+        <div className="grid gap-2">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div
-              key={i}
-              className="skeleton-shimmer h-[88px] rounded-2xl"
-            />
+            <div key={i} className="skeleton-shimmer h-[84px] rounded-2xl" />
           ))}
         </div>
       ) : items.length === 0 ? (
-        <div className="border border-white/[0.06] bg-card/40 py-16 text-center font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
-          пока нет заданий
+        <div className="rounded-2xl bg-white/[0.04] py-14 text-center text-[14px] text-muted-foreground">
+          Пока нет заданий
         </div>
       ) : (
-        <div className="grid gap-3 md:grid-cols-2">
+        <div className="grid gap-2">
           {items.map((q) => (
             <QuestCard key={q.id} q={q} />
           ))}
@@ -102,7 +100,8 @@ function InstallAppQuest() {
     const check = () => {
       const standalone =
         window.matchMedia?.("(display-mode: standalone)").matches ||
-        (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
+        (window.navigator as Navigator & { standalone?: boolean }).standalone ===
+          true;
       setInstalled(!!standalone);
     };
     check();
@@ -114,45 +113,39 @@ function InstallAppQuest() {
   return (
     <Link
       to="/club/install"
-      className="mb-3 block overflow-hidden rounded-2xl border border-primary/25 bg-gradient-to-br from-primary/15 via-card/60 to-black p-4 transition-transform active:scale-[0.99] md:p-5"
+      className="mb-4 block rounded-2xl bg-gradient-to-br from-primary/20 via-primary/10 to-white/[0.04] p-4 transition-transform active:scale-[0.99]"
     >
-      <div className="flex items-start gap-4">
+      <div className="flex items-center gap-3.5">
         <span
-          className={`grid h-12 w-12 shrink-0 place-items-center rounded-xl ${
+          className={`grid h-11 w-11 shrink-0 place-items-center rounded-2xl ${
             installed
-              ? "bg-emerald-500/15 text-emerald-300"
-              : "bg-primary/15 text-primary"
+              ? "bg-emerald-500/20 text-emerald-300"
+              : "bg-primary/20 text-primary"
           }`}
         >
           {installed ? (
-            <Check className="h-5 w-5" />
+            <Check className="h-5 w-5" strokeWidth={2.5} />
           ) : (
-            <Smartphone className="h-5 w-5" strokeWidth={1.8} />
+            <Smartphone className="h-5 w-5" strokeWidth={2} />
           )}
         </span>
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-primary">
+          <div className="flex items-center gap-1.5 text-[12px] font-medium text-primary">
             <Download className="h-3 w-3" />
-            Квест · клуб в кармане
-          </div>
-          <div className="mt-1 font-display text-[18px] font-black italic uppercase leading-tight tracking-tight text-foreground md:text-[20px]">
             Установи приложение
           </div>
-          <p className="mt-1 text-[13px] leading-snug text-muted-foreground">
+          <p className="mt-0.5 text-[13.5px] leading-snug text-muted-foreground">
             {installed
-              ? "Готово — клуб открыт из приложения. Награда зачислится автоматически."
-              : "Поставь клуб на главный экран. Получай пуши о новых розыгрышах, постах и поступлениях."}
+              ? "Готово — клуб открыт из приложения."
+              : "Поставь клуб на главный экран — получай пуши."}
           </p>
         </div>
-        <div className="hidden shrink-0 items-center gap-1 self-center rounded-full border border-white/[0.08] bg-black/30 px-2.5 py-1 font-mono text-[11px] font-bold uppercase tracking-wider text-foreground sm:inline-flex">
-          <Ticket className="h-3 w-3 text-primary" />
-          +1
-        </div>
+        <RewardPill tickets={1} />
+        <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/60" />
       </div>
     </Link>
   );
 }
-
 
 function QuestCard({ q }: { q: QuestItem }) {
   const qc = useQueryClient();
@@ -184,100 +177,101 @@ function QuestCard({ q }: { q: QuestItem }) {
 
   const done = q.completed;
   const pct =
-    q.kind === "ladder"
+    q.kind === "ladder" || q.kind === "monthly"
       ? Math.min(100, Math.round((q.progress / q.goal) * 100))
-      : q.kind === "monthly"
-        ? Math.min(100, Math.round((q.progress / q.goal) * 100))
-        : done
-          ? 100
-          : 0;
+      : done
+        ? 100
+        : 0;
   const earnedLadderXp = q.ladder
-    ? q.ladder
-        .slice(0, q.lastLadderStep)
-        .reduce((s, step) => s + step.xp, 0)
+    ? q.ladder.slice(0, q.lastLadderStep).reduce((s, step) => s + step.xp, 0)
     : 0;
 
-  const kindBadge =
+  const Icon =
     q.kind === "monthly"
-      ? "за месяц"
+      ? Calendar
       : q.kind === "ladder"
-        ? "ступени"
+        ? TrendingUp
         : q.kind === "manual"
-          ? "ручное"
-          : null;
+          ? ClipboardCheck
+          : CircleDashed;
 
   return (
     <article
-      className={`relative flex flex-col gap-3 border bg-card/40 p-4 transition-colors ${
-        done
-          ? "border-green-500/40 opacity-80"
-          : "border-white/[0.06] hover:border-white/[0.12]"
+      className={`relative flex flex-col gap-3 rounded-2xl p-4 transition-colors ${
+        done ? "bg-white/[0.025]" : "bg-white/[0.04]"
       }`}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <h3 className="font-display text-base font-black uppercase italic tracking-tight text-foreground">
-              {q.title}
-            </h3>
-            {kindBadge && (
-              <span className="border border-white/[0.08] px-1.5 py-px font-mono text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
-                {kindBadge}
-              </span>
-            )}
-            {q.bloggerOnly && (
-              <span className="border border-primary/40 px-1.5 py-px font-mono text-[9px] font-bold uppercase tracking-wider text-primary">
-                blogger
-              </span>
-            )}
-          </div>
-          <p className="mt-1 text-xs text-muted-foreground">{q.description}</p>
-        </div>
-        <div className="flex shrink-0 flex-col items-end gap-1">
-          {q.xpReward > 0 && (
-            <div className="flex items-center gap-1 font-mono text-xs font-bold text-foreground">
-              <Sparkles className="h-3 w-3 text-primary" />
-              +{q.ladder ? `${earnedLadderXp}/${q.xpReward}` : q.xpReward} XP
-            </div>
+      <div className="flex items-start gap-3">
+        <span
+          className={`grid h-10 w-10 shrink-0 place-items-center rounded-2xl ${
+            done
+              ? "bg-emerald-500/20 text-emerald-300"
+              : "bg-white/[0.06] text-foreground"
+          }`}
+        >
+          {done ? (
+            <Check className="h-5 w-5" strokeWidth={2.5} />
+          ) : (
+            <Icon className="h-[18px] w-[18px]" strokeWidth={2} />
           )}
-          {q.ticketsReward > 0 && (
-            <div className="flex items-center gap-1 border border-yellow-500/30 bg-yellow-500/10 px-2 py-0.5 font-mono text-[10px] font-bold text-yellow-400">
-              <Ticket className="h-3 w-3" />+{q.ticketsReward}
+        </span>
+
+        <div className="min-w-0 flex-1">
+          <h3
+            className={`text-[15px] font-semibold leading-snug ${
+              done ? "text-muted-foreground line-through" : "text-foreground"
+            }`}
+          >
+            {q.title}
+          </h3>
+          <p className="mt-0.5 text-[13px] leading-snug text-muted-foreground">
+            {q.description}
+          </p>
+        </div>
+
+        <div className="flex shrink-0 flex-col items-end gap-1">
+          {q.ticketsReward > 0 && <RewardPill tickets={q.ticketsReward} />}
+          {q.xpReward > 0 && (
+            <div className="flex items-center gap-1 text-[11px] font-medium tabular-nums text-muted-foreground">
+              <Sparkles className="h-3 w-3 text-primary" />
+              {q.ladder ? `${earnedLadderXp}/${q.xpReward}` : `+${q.xpReward}`} XP
             </div>
           )}
         </div>
       </div>
 
       {(q.kind === "monthly" || q.kind === "ladder") && (
-        <div className="flex items-center gap-3">
-          <div className="relative h-1.5 flex-1 overflow-hidden rounded-sm bg-black/55 ring-1 ring-inset ring-white/10">
+        <div className="flex items-center gap-3 pl-[52px]">
+          <div className="relative h-1 flex-1 overflow-hidden rounded-full bg-white/[0.06]">
             <div
-              className="absolute inset-y-0 left-0 rounded-sm transition-all"
+              className="absolute inset-y-0 left-0 rounded-full transition-all"
               style={{
                 width: `${pct}%`,
-                backgroundColor: done ? "rgb(74, 222, 128)" : "var(--primary)",
+                backgroundColor: done ? "rgb(52, 199, 89)" : "var(--primary)",
               }}
             />
           </div>
-          <span className="shrink-0 font-mono text-[10px] tabular-nums text-muted-foreground">
-            {q.progress}/{q.goal} {q.unit}
+          <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">
+            {q.progress}/{q.goal}
           </span>
         </div>
       )}
 
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex items-center justify-between gap-3 pl-[52px]">
         {q.actionTo ? (
           <Link
             to={q.actionTo}
-            className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground transition-colors hover:text-primary"
+            className="inline-flex items-center gap-0.5 text-[13px] font-medium text-primary active:opacity-60"
           >
-            {q.actionLabel ?? "Открыть"} →
+            {q.actionLabel ?? "Открыть"}
+            <ChevronRight className="h-3.5 w-3.5" />
           </Link>
-        ) : <span />}
+        ) : (
+          <span />
+        )}
 
         {done ? (
-          <span className="inline-flex items-center gap-1 font-mono text-[10px] font-bold uppercase tracking-wider text-green-400">
-            <Check className="h-3 w-3" />
+          <span className="text-[12px] font-medium text-emerald-400">
             Выполнено
           </span>
         ) : q.kind === "one_time" ? (
@@ -285,22 +279,30 @@ function QuestCard({ q }: { q: QuestItem }) {
             type="button"
             disabled={check.isPending}
             onClick={() => check.mutate()}
-            className="inline-flex items-center gap-1 border border-primary/60 bg-primary/10 px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-wider text-primary transition-colors hover:bg-primary/20 disabled:opacity-60"
+            className="inline-flex items-center gap-1.5 rounded-full bg-foreground px-3.5 py-1.5 text-[13px] font-semibold text-background transition-opacity active:opacity-70 disabled:opacity-60"
           >
-            {check.isPending && <Loader2 className="h-3 w-3 animate-spin" />}
+            {check.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
             Проверить
           </button>
         ) : q.kind === "manual" ? (
-          <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+          <span className="text-[12px] text-muted-foreground">
             Засчитывает админ
           </span>
         ) : (
-          <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-            {q.kind === "monthly" ? "автозачёт за месяц" : "автозачёт по ступеням"}
+          <span className="text-[12px] text-muted-foreground">
+            {q.kind === "monthly" ? "Автозачёт за месяц" : "Автозачёт по ступеням"}
           </span>
         )}
       </div>
     </article>
+  );
+}
+
+function RewardPill({ tickets }: { tickets: number }) {
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-yellow-500/15 px-2 py-0.5 text-[12px] font-semibold tabular-nums text-yellow-300">
+      <Ticket className="h-3 w-3" />+{tickets}
+    </span>
   );
 }
 
@@ -317,13 +319,27 @@ function reasonLabel(reason: string): string {
   }
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+function Stat({
+  label,
+  value,
+  accent,
+}: {
+  label: string;
+  value: string;
+  accent?: boolean;
+}) {
   return (
-    <div className="border border-white/[0.06] bg-black/30 p-3">
-      <div className="font-mono text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
-        {label}
-      </div>
-      <div className="mt-2 font-display text-2xl font-black italic leading-none text-foreground tabular-nums">
+    <div
+      className={`rounded-2xl px-3 py-2.5 ${
+        accent ? "bg-primary/15" : "bg-white/[0.04]"
+      }`}
+    >
+      <div className="text-[11px] font-medium text-muted-foreground">{label}</div>
+      <div
+        className={`mt-1 text-[20px] font-bold leading-none tabular-nums ${
+          accent ? "text-primary" : "text-foreground"
+        }`}
+      >
         {value}
       </div>
     </div>
