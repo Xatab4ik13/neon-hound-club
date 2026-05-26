@@ -36,6 +36,8 @@ import type { HomeBanner } from "@/lib/queries";
 import { uploadFileToS3 } from "@/lib/garage-api";
 import { ApiError } from "@/lib/api";
 import { hhToast as toast } from "@/lib/hh-toast";
+import { BANNER_PRESETS, bannerBackgroundStyle, isBannerPreset } from "@/lib/banner-presets";
+
 
 export const Route = createFileRoute("/admin/banners")({
   component: BannersPage,
@@ -171,21 +173,14 @@ function BannerCard({
     <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
       <div
         className="relative aspect-[16/10] bg-zinc-100 dark:bg-zinc-800"
-        style={
-          banner.imageUrl
-            ? {
-                backgroundImage: `url(${JSON.stringify(banner.imageUrl)})`,
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-              }
-            : undefined
-        }
+        style={bannerBackgroundStyle(banner.imageUrl)}
       >
         {!banner.imageUrl && (
           <div className="flex h-full items-center justify-center text-zinc-400">
             <ImageIcon className="h-8 w-8" />
           </div>
         )}
+
         <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/65 via-black/30 to-transparent" />
         <div className="relative flex h-full flex-col justify-between p-3 text-white">
           <div className="pt-1">
@@ -340,15 +335,7 @@ function BannerEditor({
         <Field label="Превью" hint="Так баннер увидит пользователь в карусели на /club.">
           <div
             className="relative aspect-[16/10] w-full overflow-hidden rounded-lg border border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900"
-            style={
-              form.imageUrl
-                ? {
-                    backgroundImage: `url(${JSON.stringify(form.imageUrl)})`,
-                    backgroundSize: "cover",
-                    backgroundPosition: "center",
-                  }
-                : undefined
-            }
+            style={bannerBackgroundStyle(form.imageUrl)}
           >
             {!form.imageUrl && (
               <div className="flex h-full items-center justify-center text-zinc-400">
@@ -356,6 +343,7 @@ function BannerEditor({
               </div>
             )}
              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/65 via-black/30 to-transparent" />
+
              <div className="relative flex h-full flex-col justify-between p-4 text-white">
                <div className="pt-1">
                  <h3 className="whitespace-pre-line font-display text-xl font-black uppercase italic leading-[0.95] drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]">
@@ -378,36 +366,63 @@ function BannerEditor({
 
         {/* Картинка */}
         <Field
-          label="Картинка-фон"
-          hint="JPG/WebP 1600×1000 (16:10), до 800 КБ. Текст НЕ рисуй на картинке — он накладывается сверху."
+          label="Фон баннера"
+          hint="Выбери один из 4 готовых градиентов или загрузи свою картинку (JPG/WebP 1600×1000, до 800 КБ)."
         >
-          <div className="flex items-center gap-3">
-            <label className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm hover:border-primary hover:text-primary dark:border-zinc-700 dark:bg-zinc-900">
-              {uploading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Plus className="h-4 w-4" />
+          <div className="space-y-3">
+            <div className="grid grid-cols-4 gap-2">
+              {BANNER_PRESETS.map((p) => {
+                const value = `preset:${p.id}`;
+                const active = form.imageUrl === value;
+                return (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => setF("imageUrl", value)}
+                    className={`group relative aspect-[16/10] overflow-hidden rounded-md border-2 transition-all ${
+                      active
+                        ? "border-primary ring-2 ring-primary/30"
+                        : "border-transparent hover:border-zinc-400"
+                    }`}
+                    style={{ backgroundImage: p.swatch }}
+                    title={p.label}
+                  >
+                    <span className="absolute bottom-1 left-1.5 text-[10px] font-bold uppercase tracking-wider text-white drop-shadow">
+                      {p.label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+            <div className="flex items-center gap-3">
+              <label className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm hover:border-primary hover:text-primary dark:border-zinc-700 dark:bg-zinc-900">
+                {uploading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Plus className="h-4 w-4" />
+                )}
+                {form.imageUrl && !isBannerPreset(form.imageUrl) ? "Заменить картинку" : "Загрузить свою картинку"}
+                <input
+                  type="file"
+                  accept="image/jpeg,image/webp,image/png"
+                  className="hidden"
+                  onChange={onPickFile}
+                  disabled={uploading}
+                />
+              </label>
+              {form.imageUrl && (
+                <button
+                  type="button"
+                  onClick={() => setF("imageUrl", "")}
+                  className="text-xs text-zinc-500 hover:text-rose-500"
+                >
+                  Убрать
+                </button>
               )}
-              {form.imageUrl ? "Заменить" : "Загрузить картинку"}
-              <input
-                type="file"
-                accept="image/jpeg,image/webp,image/png"
-                className="hidden"
-                onChange={onPickFile}
-                disabled={uploading}
-              />
-            </label>
-            {form.imageUrl && (
-              <button
-                type="button"
-                onClick={() => setF("imageUrl", "")}
-                className="text-xs text-zinc-500 hover:text-rose-500"
-              >
-                Убрать
-              </button>
-            )}
+            </div>
           </div>
         </Field>
+
 
         <Field
           label="Заголовок"

@@ -64,8 +64,13 @@ export async function adminEconomyRoutes(app: FastifyInstance) {
     const fromDate = q.from ? new Date(q.from) : null;
     const toDate = q.to ? new Date(q.to) : null;
 
-    // ---- Авто-доходы: paid orders ----
-    const orderConds = [eq(orders.status, "paid")] as any[];
+    // ---- Авто-доходы: реально оплаченные заказы (paid/shipped/delivered).
+    // Считаем по paid_at, а не по статусу — статус потом меняется на shipped/delivered,
+    // но заказ всё равно оплачен и должен быть в доходе.
+    const orderConds = [
+      sql`${orders.paidAt} IS NOT NULL`,
+      sql`${orders.status} IN ('paid','shipped','delivered')`,
+    ] as any[];
     if (fromDate) orderConds.push(gte(orders.paidAt, fromDate));
     if (toDate) orderConds.push(lte(orders.paidAt, toDate));
     const [ordersIncome] = await db
@@ -73,14 +78,18 @@ export async function adminEconomyRoutes(app: FastifyInstance) {
       .from(orders)
       .where(and(...orderConds));
 
-    // ---- Авто-доходы: Hell Pass ----
-    const passConds = [sql`${passPurchases.paidAt} IS NOT NULL`] as any[];
+    // ---- Авто-доходы: оплаченный Hell Pass (active/expired — оба оплачены).
+    const passConds = [
+      sql`${passPurchases.paidAt} IS NOT NULL`,
+      sql`${passPurchases.status} IN ('active','expired')`,
+    ] as any[];
     if (fromDate) passConds.push(gte(passPurchases.paidAt, fromDate));
     if (toDate) passConds.push(lte(passPurchases.paidAt, toDate));
     const [passIncome] = await db
       .select({ total: sql<number>`COALESCE(SUM(${passPurchases.priceRub}), 0)::int` })
       .from(passPurchases)
       .where(and(...passConds));
+
 
     // ---- Ручные операции ----
     const manualConds = [] as any[];
@@ -115,16 +124,21 @@ export async function adminEconomyRoutes(app: FastifyInstance) {
         SELECT to_char(date_trunc('month', paid_at), 'YYYY-MM') AS month,
                SUM(total_rub)::int AS amount
         FROM orders
-        WHERE status='paid' AND paid_at >= date_trunc('month', now()) - interval '5 months'
+        WHERE paid_at IS NOT NULL
+          AND status IN ('paid','shipped','delivered')
+          AND paid_at >= date_trunc('month', now()) - interval '5 months'
         GROUP BY 1
       ),
       pass_m AS (
         SELECT to_char(date_trunc('month', paid_at), 'YYYY-MM') AS month,
                SUM(price_rub)::int AS amount
         FROM pass_purchases
-        WHERE paid_at IS NOT NULL AND paid_at >= date_trunc('month', now()) - interval '5 months'
+        WHERE paid_at IS NOT NULL
+          AND status IN ('active','expired')
+          AND paid_at >= date_trunc('month', now()) - interval '5 months'
         GROUP BY 1
       ),
+
       manual_m AS (
         SELECT to_char(date_trunc('month', occurred_at), 'YYYY-MM') AS month,
                COALESCE(SUM(amount_rub) FILTER (WHERE type='income'), 0)::int AS income,
@@ -189,9 +203,13 @@ export async function adminEconomyRoutes(app: FastifyInstance) {
           paidAt: orders.paidAt,
         })
         .from(orders)
-        .where(eq(orders.status, "paid"))
+        .where(and(
+          sql`${orders.paidAt} IS NOT NULL`,
+          sql`${orders.status} IN ('paid','shipped','delivered')`,
+        ))
         .orderBy(desc(orders.paidAt))
         .limit(q.limit);
+
       for (const r of rows) {
         if (!r.paidAt) continue;
         items.push({
@@ -220,9 +238,13 @@ export async function adminEconomyRoutes(app: FastifyInstance) {
           tier: passPurchases.tier,
         })
         .from(passPurchases)
-        .where(sql`${passPurchases.paidAt} IS NOT NULL`)
+        .where(and(
+          sql`${passPurchases.paidAt} IS NOT NULL`,
+          sql`${passPurchases.status} IN ('active','expired')`,
+        ))
         .orderBy(desc(passPurchases.paidAt))
         .limit(q.limit);
+
       for (const r of rows) {
         if (!r.paidAt) continue;
         items.push({

@@ -23,7 +23,16 @@ const bannerInputSchema = z.object({
   eyebrow: z.string().trim().max(120).default(""),
   ctaLabel: z.string().trim().min(1).max(40).default("Открыть"),
   ctaHref: hrefSchema,
-  imageUrl: z.string().trim().url().max(1000),
+  imageUrl: z
+    .string()
+    .trim()
+    .min(1)
+    .max(1000)
+    .refine(
+      (s) => s.startsWith("preset:") || /^https?:\/\//i.test(s),
+      { message: "Картинка: URL https:// или пресет фона" },
+    ),
+
   sort: z.number().int().min(0).max(9999).default(0),
   active: z.boolean().default(true),
 });
