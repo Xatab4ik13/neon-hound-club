@@ -464,52 +464,6 @@ export function activatePass(purchaseId: string) {
 
 export type { PassTier };
 
-// ============================================================================
-// NEWS (ADMIN)
-// ============================================================================
-
-export type AdminNewsItem = {
-  id: string;
-  slug: string;
-  title: string;
-  excerpt: string;
-  body: string;
-  tag: string;
-  coverUrl: string | null;
-  metaTitle: string;
-  metaDescription: string;
-  ogImage: string | null;
-  status: "draft" | "published";
-  publishedAt: string | null;
-  createdAt: string;
-  updatedAt: string;
-};
-
-export function fetchAdminNews(params?: { search?: string; status?: "draft" | "published" | "all" }) {
-  const qs = new URLSearchParams();
-  if (params?.search) qs.set("search", params.search);
-  if (params?.status) qs.set("status", params.status);
-  const s = qs.toString();
-  return apiFetch<{ items: AdminNewsItem[] }>(`/api/v1/admin/news${s ? `?${s}` : ""}`);
-}
-
-export function createAdminNews(data: Partial<AdminNewsItem>) {
-  return apiFetch<AdminNewsItem>(`/api/v1/admin/news`, {
-    method: "POST",
-    body: JSON.stringify(data),
-  });
-}
-
-export function updateAdminNews(id: string, data: Partial<AdminNewsItem>) {
-  return apiFetch<AdminNewsItem>(`/api/v1/admin/news/${id}`, {
-    method: "PATCH",
-    body: JSON.stringify(data),
-  });
-}
-
-export function deleteAdminNews(id: string) {
-  return apiFetch<{ ok: true }>(`/api/v1/admin/news/${id}`, { method: "DELETE" });
-}
 
 // ============================================================================
 // XP / BADGES (ADMIN)

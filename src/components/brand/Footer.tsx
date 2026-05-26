@@ -41,7 +41,7 @@ export function Footer() {
               <li><Link to="/shop" className="transition-colors hover:text-primary">Магазин</Link></li>
               <li><Link to="/hell-pass" className="transition-colors hover:text-primary">Hell Pass</Link></li>
               <li><Link to="/school" className="transition-colors hover:text-primary">Школа</Link></li>
-              <li><Link to="/news" className="transition-colors hover:text-primary">Новости</Link></li>
+              
               <li><Link to="/about" className="transition-colors hover:text-primary">О клубе</Link></li>
             </ul>
           </div>

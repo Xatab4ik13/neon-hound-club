@@ -10,7 +10,7 @@ import {
   Users,
   ShoppingBag,
   Ticket,
-  Newspaper,
+  
   Wallet,
   Bot,
   GraduationCap,
@@ -148,7 +148,7 @@ const NAV: NavItem[] = [
   { to: "/admin/users", label: "Пользователи", icon: Users },
   { to: "/admin/shop", label: "Магазин", icon: ShoppingBag },
   { to: "/admin/tickets", label: "Билеты", icon: Ticket },
-  { to: "/admin/news", label: "Новости", icon: Newspaper },
+  
   { to: "/admin/economy", label: "Экономика", icon: Wallet },
   { to: "/admin/hell-ai", label: "Hell AI", icon: Bot },
   { to: "/admin/school", label: "Школа", icon: GraduationCap },

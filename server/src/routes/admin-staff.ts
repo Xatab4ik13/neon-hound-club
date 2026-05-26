@@ -121,7 +121,7 @@ export async function adminStaffRoutes(app: FastifyInstance) {
             await tx.execute(sql`DELETE FROM post_likes WHERE user_id = ${id}`);
             await tx.execute(sql`DELETE FROM post_comments WHERE user_id = ${id}`);
             await tx.execute(sql`DELETE FROM posts WHERE author_id = ${id}`);
-            await tx.execute(sql`UPDATE news SET created_by = NULL WHERE created_by = ${id}`);
+            
             await tx.execute(sql`DELETE FROM profiles WHERE user_id = ${id}`);
             await tx.execute(sql`DELETE FROM users WHERE id = ${id}`);
           });
