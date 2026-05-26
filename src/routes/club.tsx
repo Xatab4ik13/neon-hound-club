@@ -46,11 +46,11 @@ const NAV: { label: string; href: string; icon: LucideIcon; final?: boolean }[] 
   { label: "Профиль", href: "/club/me", icon: User },
   { label: "Гараж", href: "/club/garage", icon: Bike },
   { label: "Билеты", href: "/club/tickets", icon: Ticket },
+  { label: "Магазин", href: "/club/shop", icon: ShoppingBag },
   { label: "Квесты", href: "/club/quests", icon: Target },
   { label: "Розыгрыши", href: "/club/raffles", icon: Ticket },
   { label: "Hell AI", href: "/club/hell-ai", icon: Bot },
   { label: "Пригласить", href: "/club/invite", icon: UserPlus },
-  { label: "Магазин", href: "/club/shop", icon: ShoppingBag },
   { label: "Школа", href: "/club/school", icon: GraduationCap },
   { label: "Hell Pass", href: "/club/hell-pass", icon: Gem, final: true },
 ];
