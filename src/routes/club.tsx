@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import type { QueryClient } from "@tanstack/react-query";
 
-import { ME } from "@/data/profile";
+
 import { RANKS, getRankSpan, type PlaqueBg, type RankId } from "@/data/ranks";
 import { useCurrentRank } from "@/data/rank-state";
 import { useViewer } from "@/hooks/use-viewer";
@@ -901,7 +901,7 @@ export function ProfilePlaque({
 
   // Пока viewer не гидрирован — НЕ показываем мок-ник ASPHALT_DOG.
   // Иначе на 1–2 сек мелькает чужой ник, потом подменяется реальным.
-  const nick = viewer.hydrated ? (viewer.nick ?? ME.nick) : "";
+  const nick = viewer.hydrated ? (viewer.nick ?? "") : "";
   const realRankId = myProfile.data?.rank.rankId as RankId | undefined;
   const realRankIdx = realRankId ? RANKS.findIndex((r) => r.id === realRankId) : -1;
   const rank = realRankIdx >= 0 ? RANKS[realRankIdx] : mockRank.rank;

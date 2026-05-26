@@ -1,12 +1,5 @@
 // Профиль райдера. Ранги и XP вынесены в src/data/ranks.ts + rank-state.ts.
-
-export const ME = {
-  nick: "ASPHALT_DOG",
-  city: "Москва",
-  bike: "Yamaha MT-09",
-  joined: "март 2024",
-  totals: { tickets: 7, wins: 1, orders: 4, bikes: 1 },
-};
+// Реальные данные пользователя теперь приходят с бэкенда через useViewer() и useMyProfile().
 
 export type RafflePrize = {
   /** Место в розыгрыше: 1 — главный приз, 2/3 и т.д. — доп. призы. */

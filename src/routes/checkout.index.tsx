@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useCart } from "@/hooks/use-cart";
 import { useViewer } from "@/hooks/use-viewer";
-import { ME } from "@/data/profile";
+
 import { formatRuPhone } from "@/lib/phone";
 
 export const Route = createFileRoute("/checkout/")({
@@ -24,10 +24,11 @@ export const Route = createFileRoute("/checkout/")({
 
 function CheckoutPage() {
   const { items, total, clear } = useCart();
-  const { isAuthed } = useViewer();
+  const viewer = useViewer();
+  const { isAuthed } = viewer;
   const navigate = useNavigate();
 
-  const [name, setName] = useState(ME.nick ?? "");
+  const [name, setName] = useState(viewer.nick ?? "");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [address, setAddress] = useState("");
