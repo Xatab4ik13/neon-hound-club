@@ -49,7 +49,10 @@ export const Route = createFileRoute("/blogger")({
     if (!user) {
       throw redirect({ to: "/login", search: { redirect: location.href } as never });
     }
-    if (user.role !== "blogger" && user.role !== "admin") {
+    if (user.role === "admin") {
+      throw redirect({ to: "/admin" });
+    }
+    if (user.role !== "blogger") {
       throw redirect({ to: "/club" });
     }
   },
