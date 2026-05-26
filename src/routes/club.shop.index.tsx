@@ -1,10 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Search, X, ShoppingBag, Ticket } from "lucide-react";
-import { PageHeader } from "@/components/club/PageHeader";
+import { Search, X, ShoppingBag, Ticket, SlidersHorizontal } from "lucide-react";
 import { LazyImage } from "@/components/ui/lazy-image";
-import { useIsMobile } from "@/hooks/use-mobile";
 import {
   fetchShopCategories,
   fetchShopProducts,
@@ -26,17 +24,24 @@ export const Route = createFileRoute("/club/shop/")({
 
 type Sort = "new" | "price-asc" | "price-desc";
 const SORTS: { id: Sort; label: string }[] = [
-  { id: "new", label: "Новые" },
-  { id: "price-asc", label: "Дешевле" },
-  { id: "price-desc", label: "Дороже" },
+  { id: "new", label: "Сначала новые" },
+  { id: "price-asc", label: "Сначала дешёвые" },
+  { id: "price-desc", label: "Сначала дорогие" },
 ];
 
 function ClubShopPage() {
-  const isMobile = useIsMobile();
   const [q, setQ] = useState("");
+  const [debouncedQ, setDebouncedQ] = useState("");
   const [sort, setSort] = useState<Sort>("new");
-  const [activeCat, setActiveCat] = useState<string>("all"); // "all" | categoryId
+  const [sortOpen, setSortOpen] = useState(false);
+  const [activeCat, setActiveCat] = useState<string>("all");
   const [activeSub, setActiveSub] = useState<string | null>(null);
+
+  // debounce поиска
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQ(q.trim().toLowerCase()), 180);
+    return () => clearTimeout(t);
+  }, [q]);
 
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: qk.shopProducts,
@@ -49,7 +54,6 @@ function ClubShopPage() {
 
   const products = data?.items ?? [];
   const categories = catsData?.items ?? [];
-
   const activeCatObj = categories.find((c) => c.id === activeCat);
   const subs = activeCatObj?.subs ?? [];
 
@@ -61,160 +65,38 @@ function ClubShopPage() {
         return p.categoryId === activeCat;
       });
     }
-    const needle = q.trim().toLowerCase();
-    if (needle) list = list.filter((p) => p.title.toLowerCase().includes(needle));
+    if (debouncedQ) list = list.filter((p) => p.title.toLowerCase().includes(debouncedQ));
     if (sort === "price-asc") list.sort((a, b) => a.priceRub - b.priceRub);
     if (sort === "price-desc") list.sort((a, b) => b.priceRub - a.priceRub);
     return list;
-  }, [products, q, sort, activeCat, activeSub]);
+  }, [products, debouncedQ, sort, activeCat, activeSub]);
 
   const selectCat = (id: string) => {
     setActiveCat(id);
     setActiveSub(null);
   };
 
-  // ---------- DESKTOP ----------
-  if (!isMobile) {
-    return (
-      <main className="mx-auto w-full max-w-6xl px-6 py-8 md:px-8 md:py-10">
-        <PageHeader title="Магазин клуба" subtitle="Мерч, экипировка, цифровые товары" />
+  // авто-скролл активного чипса в видимую область
+  const catScrollRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const el = catScrollRef.current?.querySelector<HTMLElement>("[data-active='true']");
+    el?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+  }, [activeCat]);
 
-        {/* Поиск + сортировка */}
-        <div className="mb-6 flex flex-wrap items-center gap-3">
-          <div className="relative min-w-[260px] flex-1">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <input
-              type="search"
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Поиск по магазину"
-              className="h-11 w-full rounded-xl border border-white/[0.06] bg-white/[0.04] pl-9 pr-9 text-[14px] text-foreground placeholder:text-muted-foreground focus:border-primary/40 focus:outline-none"
-            />
-            {q && (
-              <button
-                type="button"
-                onClick={() => setQ("")}
-                className="absolute right-2 top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-full bg-white/[0.08] text-muted-foreground hover:text-foreground"
-                aria-label="Очистить"
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
-            )}
-          </div>
-          <div className="flex items-center gap-1 rounded-full border border-white/[0.08] bg-white/[0.03] p-1">
-            {SORTS.map((s) => {
-              const active = s.id === sort;
-              return (
-                <button
-                  key={s.id}
-                  type="button"
-                  onClick={() => setSort(s.id)}
-                  className={`rounded-full px-3.5 py-1.5 font-mono text-[11px] font-bold uppercase tracking-wider transition-colors ${
-                    active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {s.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="grid gap-8 lg:grid-cols-[240px_1fr]">
-          {/* Sidebar категорий */}
-          <aside className="h-fit lg:sticky lg:top-24">
-            <div className="mb-3 font-mono text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
-              Категории
-            </div>
-            <ul className="flex flex-col gap-1">
-              <li>
-                <CatBtn active={activeCat === "all"} onClick={() => selectCat("all")}>
-                  Все
-                </CatBtn>
-              </li>
-              {categories.map((c) => {
-                const isActive = activeCat === c.id;
-                return (
-                  <li key={c.id} className="flex flex-col">
-                    <CatBtn active={isActive && !activeSub} onClick={() => selectCat(c.id)}>
-                      {c.name}
-                    </CatBtn>
-                    {isActive && c.subs.length > 0 && (
-                      <ul className="ml-3 mt-1 flex flex-col gap-0.5 border-l border-white/[0.06] pl-3">
-                        {c.subs.map((s) => {
-                          const subActive = activeSub === s.id;
-                          return (
-                            <li key={s.id}>
-                              <button
-                                type="button"
-                                onClick={() => setActiveSub(s.id)}
-                                className={`block w-full rounded-md px-2 py-1.5 text-left text-[13px] transition-colors ${
-                                  subActive
-                                    ? "bg-primary/10 text-primary"
-                                    : "text-muted-foreground hover:bg-white/[0.04] hover:text-foreground"
-                                }`}
-                              >
-                                {s.name}
-                              </button>
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
-          </aside>
-
-          {/* Grid */}
-          <section>
-            <div className="mb-4 flex items-baseline gap-3 border-b border-white/[0.06] pb-3">
-              <span className="font-display text-xl uppercase tracking-tight">
-                {activeSub
-                  ? activeCatObj?.subs.find((s) => s.id === activeSub)?.name
-                  : activeCatObj?.name ?? "Все товары"}
-              </span>
-              <span className="font-mono text-xs text-muted-foreground">
-                {filtered.length} {filtered.length === 1 ? "товар" : "товаров"}
-              </span>
-            </div>
-
-            {isLoading ? (
-              <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="skeleton-shimmer aspect-square rounded-2xl"
-                  />
-                ))}
-              </div>
-            ) : isError ? (
-              <ErrorState
-                message={(error as Error)?.message ?? "Не получилось загрузить"}
-                onRetry={() => refetch()}
-              />
-            ) : filtered.length === 0 ? (
-              <EmptyState hasQuery={Boolean(q)} />
-            ) : (
-              <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
-                {filtered.map((p) => (
-                  <ProductCard key={p.id} product={p} />
-                ))}
-              </div>
-            )}
-          </section>
-        </div>
-      </main>
-    );
-  }
-
-  // ---------- MOBILE (iOS chips, как было) ----------
   return (
-    <main className="mx-auto w-full max-w-5xl px-4 py-5">
-      <PageHeader title="Магазин клуба" subtitle="Мерч, экипировка, цифровые товары" />
+    <main className="mx-auto w-full max-w-6xl px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+96px)] md:max-w-6xl md:px-8 md:py-10">
+      {/* iOS large title */}
+      <header className="mb-4 md:mb-8">
+        <h1 className="text-[34px] font-bold leading-tight tracking-[-0.02em] text-foreground md:text-4xl">
+          Магазин
+        </h1>
+        <p className="mt-1 text-[15px] text-muted-foreground md:text-sm">
+          Мерч, экипировка, цифровые товары
+        </p>
+      </header>
 
-      <div className="mb-4 flex items-center gap-2">
+      {/* Поиск + иконка сортировки */}
+      <div className="mb-3 flex items-center gap-2">
         <div className="relative flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
@@ -222,7 +104,7 @@ function ClubShopPage() {
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Поиск"
-            className="h-11 w-full rounded-xl border border-white/[0.06] bg-white/[0.04] pl-9 pr-9 text-[15px] text-foreground placeholder:text-muted-foreground focus:border-primary/40 focus:outline-none"
+            className="h-11 w-full rounded-xl border border-white/[0.06] bg-white/[0.04] pl-9 pr-9 text-[16px] text-foreground placeholder:text-muted-foreground focus:border-primary/40 focus:outline-none"
           />
           {q && (
             <button
@@ -235,23 +117,41 @@ function ClubShopPage() {
             </button>
           )}
         </div>
+        <button
+          type="button"
+          onClick={() => setSortOpen(true)}
+          aria-label="Сортировка"
+          className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-white/[0.06] bg-white/[0.04] text-foreground active:scale-95"
+        >
+          <SlidersHorizontal className="h-4 w-4" />
+        </button>
       </div>
 
-      <div className="-mx-4 mb-3 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        <CatChip active={activeCat === "all"} onClick={() => selectCat("all")}>
+      {/* Чипсы категорий */}
+      <div
+        ref={catScrollRef}
+        className="-mx-4 mb-3 flex gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
+        <Chip data-active={activeCat === "all"} active={activeCat === "all"} onClick={() => selectCat("all")}>
           Все
-        </CatChip>
+        </Chip>
         {categories.map((c) => (
-          <CatChip key={c.id} active={activeCat === c.id} onClick={() => selectCat(c.id)}>
+          <Chip
+            key={c.id}
+            data-active={activeCat === c.id}
+            active={activeCat === c.id}
+            onClick={() => selectCat(c.id)}
+          >
             {c.name}
-          </CatChip>
+          </Chip>
         ))}
       </div>
 
+      {/* Подкатегории */}
       {subs.length > 0 && (
-        <div className="-mx-4 mb-4 flex gap-1.5 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="-mx-4 mb-4 flex gap-1.5 overflow-x-auto px-4 pb-1 md:mx-0 md:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <SubChip active={activeSub === null} onClick={() => setActiveSub(null)}>
-            Всё в «{activeCatObj?.name}»
+            Всё
           </SubChip>
           {subs.map((s) => (
             <SubChip key={s.id} active={activeSub === s.id} onClick={() => setActiveSub(s.id)}>
@@ -261,33 +161,10 @@ function ClubShopPage() {
         </div>
       )}
 
-      <div className="-mx-4 mb-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {SORTS.map((s) => {
-          const active = s.id === sort;
-          return (
-            <button
-              key={s.id}
-              type="button"
-              onClick={() => setSort(s.id)}
-              className={`shrink-0 rounded-full px-4 py-2 font-mono text-[12px] font-bold uppercase tracking-wider transition-all active:scale-95 ${
-                active
-                  ? "bg-primary text-primary-foreground"
-                  : "border border-white/[0.08] bg-white/[0.03] text-muted-foreground"
-              }`}
-            >
-              {s.label}
-            </button>
-          );
-        })}
-      </div>
-
       {isLoading ? (
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div
-              key={i}
-              className="skeleton-shimmer aspect-square rounded-2xl"
-            />
+            <CardSkeleton key={i} />
           ))}
         </div>
       ) : isError ? (
@@ -296,60 +173,81 @@ function ClubShopPage() {
           onRetry={() => refetch()}
         />
       ) : filtered.length === 0 ? (
-        <EmptyState hasQuery={Boolean(q)} />
+        <EmptyState hasQuery={Boolean(debouncedQ)} />
       ) : (
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4">
           {filtered.map((p) => (
             <ProductCard key={p.id} product={p} />
           ))}
+        </div>
+      )}
+
+      {/* iOS action sheet — сортировка */}
+      {sortOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm md:items-center"
+          onClick={() => setSortOpen(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-t-2xl bg-card pb-[calc(env(safe-area-inset-bottom)+12px)] md:rounded-2xl md:pb-3"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mx-auto mt-2 mb-3 h-1 w-9 rounded-full bg-white/15 md:hidden" />
+            <div className="px-2 pb-2 pt-1">
+              {SORTS.map((s) => {
+                const active = s.id === sort;
+                return (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => {
+                      setSort(s.id);
+                      setSortOpen(false);
+                    }}
+                    className={`flex w-full items-center justify-between rounded-xl px-4 py-3.5 text-left text-[16px] transition-colors active:bg-white/[0.06] ${
+                      active ? "text-primary" : "text-foreground"
+                    }`}
+                  >
+                    <span>{s.label}</span>
+                    {active && <span aria-hidden>✓</span>}
+                  </button>
+                );
+              })}
+            </div>
+            <button
+              type="button"
+              onClick={() => setSortOpen(false)}
+              className="mx-2 mt-1 block w-[calc(100%-1rem)] rounded-xl bg-white/[0.06] py-3 text-[16px] font-semibold text-foreground active:scale-[0.99]"
+            >
+              Готово
+            </button>
+          </div>
         </div>
       )}
     </main>
   );
 }
 
-function CatBtn({
+function Chip({
   active,
   onClick,
   children,
+  ...rest
 }: {
   active: boolean;
   onClick: () => void;
   children: React.ReactNode;
-}) {
+} & React.HTMLAttributes<HTMLButtonElement>) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`block w-full rounded-lg px-3 py-2 text-left text-[14px] font-medium transition-colors ${
-        active
-          ? "bg-primary text-primary-foreground"
-          : "text-muted-foreground hover:bg-white/[0.04] hover:text-foreground"
-      }`}
-    >
-      {children}
-    </button>
-  );
-}
-
-function CatChip({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`shrink-0 rounded-full px-4 py-2 font-mono text-[12px] font-bold uppercase tracking-wider transition-all active:scale-95 ${
+      className={`shrink-0 rounded-full px-4 py-2 text-[14px] font-medium transition-all active:scale-95 ${
         active
           ? "bg-primary text-primary-foreground"
           : "border border-white/[0.08] bg-white/[0.03] text-muted-foreground"
       }`}
+      {...rest}
     >
       {children}
     </button>
@@ -369,10 +267,10 @@ function SubChip({
     <button
       type="button"
       onClick={onClick}
-      className={`shrink-0 rounded-full px-3 py-1.5 text-[11px] font-medium transition-all active:scale-95 ${
+      className={`shrink-0 rounded-full px-3 py-1.5 text-[13px] font-medium transition-all active:scale-95 ${
         active
           ? "bg-primary/15 text-primary"
-          : "bg-white/[0.03] text-muted-foreground/80 hover:text-foreground"
+          : "bg-white/[0.03] text-muted-foreground/80"
       }`}
     >
       {children}
@@ -382,19 +280,20 @@ function SubChip({
 
 function ProductCard({ product }: { product: ShopProductListItem }) {
   const sold = product.stock !== null && product.stock <= 0;
-  const cover = product.images[0] ?? (product.slug === "stickerpack-special" ? SPECIAL_PACK_COVER : undefined);
+  const cover =
+    product.images[0] ?? (product.slug === "stickerpack-special" ? SPECIAL_PACK_COVER : undefined);
   return (
     <Link
       to="/club/shop/$productSlug"
       params={{ productSlug: product.slug }}
-      className="group block overflow-hidden rounded-2xl border border-white/[0.06] bg-card/40 transition-all hover:border-primary/30 active:scale-[0.98]"
+      className="group block overflow-hidden rounded-2xl border border-white/[0.06] bg-card/40 transition-all active:scale-[0.98] md:hover:border-primary/30"
     >
       <div className="relative aspect-square overflow-hidden bg-surface">
         {cover ? (
           <LazyImage
             src={cover}
             alt={product.title}
-            className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+            className="absolute inset-0 h-full w-full object-cover md:transition-transform md:duration-500 md:group-hover:scale-[1.03]"
           />
         ) : (
           <div className="grid h-full w-full place-items-center text-muted-foreground/60">
@@ -402,25 +301,37 @@ function ProductCard({ product }: { product: ShopProductListItem }) {
           </div>
         )}
         {sold && (
-          <span className="absolute left-2 top-2 rounded-full bg-black/70 px-2 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wider text-foreground backdrop-blur">
+          <span className="absolute left-2 top-2 rounded-full bg-black/70 px-2.5 py-0.5 text-[11px] font-medium text-foreground backdrop-blur">
             Распродано
           </span>
         )}
         {product.bonusTickets > 0 && (
-          <span className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full bg-black/70 px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wider text-primary backdrop-blur">
+          <span className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full bg-black/70 px-2 py-0.5 text-[11px] font-semibold text-primary backdrop-blur">
             <Ticket className="h-3 w-3" />+{product.bonusTickets}
           </span>
         )}
       </div>
       <div className="px-3 py-2.5">
-        <div className="line-clamp-2 text-[13px] font-semibold leading-tight text-foreground">
+        <div className="line-clamp-2 text-[14px] font-medium leading-snug text-foreground">
           {product.title}
         </div>
-        <div className="mt-1.5 font-mono text-[13px] font-bold tabular-nums text-primary">
+        <div className="mt-1.5 text-[15px] font-semibold tabular-nums text-foreground">
           {product.priceRub.toLocaleString("ru-RU")} ₽
         </div>
       </div>
     </Link>
+  );
+}
+
+function CardSkeleton() {
+  return (
+    <div className="overflow-hidden rounded-2xl border border-white/[0.06] bg-card/40">
+      <div className="skeleton-shimmer aspect-square w-full" />
+      <div className="space-y-2 p-3">
+        <div className="skeleton-shimmer h-3.5 w-3/4 rounded" />
+        <div className="skeleton-shimmer h-4 w-1/3 rounded" />
+      </div>
+    </div>
   );
 }
 
@@ -430,13 +341,11 @@ function EmptyState({ hasQuery }: { hasQuery: boolean }) {
       <div className="grid h-12 w-12 place-items-center rounded-full bg-primary/10 text-primary">
         <ShoppingBag className="h-5 w-5" />
       </div>
-      <div className="mt-4 font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
-        {hasQuery ? "Ничего не нашли" : "Пусто"}
+      <div className="mt-4 text-[15px] font-semibold text-foreground">
+        {hasQuery ? "Ничего не нашли" : "Здесь пока пусто"}
       </div>
-      <p className="mt-2 max-w-[34ch] text-sm text-muted-foreground/80">
-        {hasQuery
-          ? "Попробуй другой запрос."
-          : "В этой категории пока ничего нет. Загляни позже."}
+      <p className="mt-1.5 max-w-[34ch] text-[14px] text-muted-foreground">
+        {hasQuery ? "Попробуй другой запрос." : "В этой категории пока ничего нет. Загляни позже."}
       </p>
     </div>
   );
@@ -445,14 +354,12 @@ function EmptyState({ hasQuery }: { hasQuery: boolean }) {
 function ErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
     <div className="grid place-items-center rounded-2xl border border-dashed border-red-500/30 bg-red-500/[0.04] px-6 py-12 text-center">
-      <div className="font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-red-300">
-        Ошибка
-      </div>
-      <p className="mt-2 max-w-[34ch] text-sm text-muted-foreground/80">{message}</p>
+      <div className="text-[15px] font-semibold text-red-300">Ошибка</div>
+      <p className="mt-1.5 max-w-[34ch] text-[14px] text-muted-foreground/80">{message}</p>
       <button
         type="button"
         onClick={onRetry}
-        className="mt-4 rounded-xl border border-white/[0.1] px-5 py-2.5 font-mono text-[11px] font-bold uppercase tracking-wider active:scale-95"
+        className="mt-4 rounded-xl border border-white/[0.1] px-5 py-2.5 text-[14px] font-semibold active:scale-95"
       >
         Повторить
       </button>
