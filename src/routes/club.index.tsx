@@ -162,7 +162,10 @@ export const PostCard = memo(function PostCard({ post, moderate = false }: { pos
       lastImgTap.current = now;
       // Одиночный тап с задержкой — откроем вьюер, если за это время не пришёл второй.
       setTimeout(() => {
-        if (lastImgTap.current === now) setViewerOpen(true);
+        if (lastImgTap.current === now) {
+          setViewerEverOpened(true);
+          setViewerOpen(true);
+        }
       }, 290);
     }
   }, [liked, post.id]);
