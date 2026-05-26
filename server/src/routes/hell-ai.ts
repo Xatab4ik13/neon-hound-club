@@ -452,4 +452,80 @@ export async function hellAiRoutes(app: FastifyInstance) {
       releaseUserLock(session.sub);
     }
   });
+
+  // Список чатов юзера (последние 100). Title = первое user-сообщение.
+  app.get("/chats", { preHandler: requireAuth }, async (req) => {
+    const session = req.user as SessionPayload;
+    const rows = await db.execute(sql`
+      SELECT
+        m.chat_id AS "chatId",
+        MAX(m.created_at) AS "updatedAt",
+        MIN(m.created_at) AS "createdAt",
+        (SELECT content FROM ai_messages
+          WHERE user_id = ${session.sub} AND chat_id = m.chat_id AND role = 'user'
+          ORDER BY created_at ASC LIMIT 1) AS "title",
+        (SELECT bike_id FROM ai_messages
+          WHERE user_id = ${session.sub} AND chat_id = m.chat_id AND bike_id IS NOT NULL
+          ORDER BY created_at DESC LIMIT 1) AS "bikeId",
+        COUNT(*)::int AS "messageCount"
+      FROM ai_messages m
+      WHERE m.user_id = ${session.sub} AND m.chat_id IS NOT NULL
+      GROUP BY m.chat_id
+      ORDER BY MAX(m.created_at) DESC
+      LIMIT 100
+    `);
+    const items = (rows as unknown as { rows: Array<Record<string, unknown>> }).rows ?? (rows as unknown as Array<Record<string, unknown>>);
+    return {
+      chats: (items as Array<Record<string, unknown>>).map((r) => ({
+        id: String(r.chatId),
+        title: r.title ? String(r.title).slice(0, 80) : "Новый чат",
+        bikeId: r.bikeId ? String(r.bikeId) : null,
+        messageCount: Number(r.messageCount ?? 0),
+        createdAt: r.createdAt ? new Date(r.createdAt as string).toISOString() : null,
+        updatedAt: r.updatedAt ? new Date(r.updatedAt as string).toISOString() : null,
+      })),
+    };
+  });
+
+  // Сообщения одного чата в порядке возрастания.
+  app.get("/chats/:id", { preHandler: requireAuth }, async (req, reply) => {
+    const session = req.user as SessionPayload;
+    const { id } = req.params as { id: string };
+    if (!id || id.length > 64) return reply.code(400).send({ error: "invalid_id" });
+    const rows = await db
+      .select({
+        id: aiMessages.id,
+        role: aiMessages.role,
+        content: aiMessages.content,
+        bikeId: aiMessages.bikeId,
+        error: aiMessages.error,
+        createdAt: aiMessages.createdAt,
+      })
+      .from(aiMessages)
+      .where(and(eq(aiMessages.userId, session.sub), eq(aiMessages.chatId, id)))
+      .orderBy(aiMessages.createdAt);
+    return {
+      chatId: id,
+      messages: rows.map((r) => ({
+        id: r.id,
+        role: r.role,
+        content: r.content,
+        bikeId: r.bikeId,
+        error: r.error,
+        createdAt: r.createdAt.toISOString(),
+      })),
+    };
+  });
+
+  // Удалить чат целиком.
+  app.delete("/chats/:id", { preHandler: requireAuth }, async (req, reply) => {
+    const session = req.user as SessionPayload;
+    const { id } = req.params as { id: string };
+    if (!id || id.length > 64) return reply.code(400).send({ error: "invalid_id" });
+    await db
+      .delete(aiMessages)
+      .where(and(eq(aiMessages.userId, session.sub), eq(aiMessages.chatId, id)));
+    return { ok: true };
+  });
 }
+
