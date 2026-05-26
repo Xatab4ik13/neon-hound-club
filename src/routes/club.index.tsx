@@ -576,7 +576,6 @@ const CommentsPreview = memo(function CommentsPreview({
     );
   }
   const last = comments[comments.length - 1];
-  const user = PUBLIC_USERS[last.authorSlug];
   return (
     <button
       type="button"
@@ -586,7 +585,7 @@ const CommentsPreview = memo(function CommentsPreview({
       <div className="flex gap-2.5 border-l-2 border-primary pl-2.5">
         <div className="min-w-0 flex-1">
           <div className="truncate font-mono text-[10px] font-black uppercase tracking-[0.18em] text-primary">
-            {user?.nick ?? last.authorSlug}
+            {last.author.nick}
           </div>
           <div className="mt-0.5 line-clamp-2 text-[13px] leading-snug text-foreground/85">
             {last.text.startsWith("::sticker::") ? "🖼 Стикер" : last.text}
