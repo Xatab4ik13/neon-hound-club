@@ -74,9 +74,11 @@ export function Footer() {
               Документы
             </div>
             <ul className="grid grid-cols-1 gap-2.5 text-sm sm:grid-cols-2">
+              <li><Link to="/legal/payment" className="transition-colors hover:text-primary">Оплата</Link></li>
+              <li><Link to="/legal/shipping" className="transition-colors hover:text-primary">Доставка</Link></li>
+              <li><Link to="/legal/offer" className="transition-colors hover:text-primary">Публичная оферта</Link></li>
               <li><Link to="/legal/terms" className="transition-colors hover:text-primary">Пользовательское соглашение</Link></li>
               <li><Link to="/legal/privacy" className="transition-colors hover:text-primary">Политика ПДн</Link></li>
-              <li><Link to="/legal/offer" className="transition-colors hover:text-primary">Публичная оферта</Link></li>
               <li><Link to="/legal/requisites" className="transition-colors hover:text-primary">Реквизиты</Link></li>
             </ul>
 
