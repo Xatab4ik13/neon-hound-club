@@ -10,7 +10,7 @@ import {
   Users,
   ShoppingBag,
   Ticket,
-  
+  Image as ImageIcon,
   Wallet,
   Bot,
   GraduationCap,
