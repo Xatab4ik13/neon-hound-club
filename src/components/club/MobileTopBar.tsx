@@ -58,11 +58,11 @@ export function MobileTopBar() {
               decoding="async"
               className="absolute inset-0 h-full w-full object-cover"
             />
-          ) : (
+          ) : nick ? (
             <span className="grid h-full w-full place-items-center font-display text-[13px] font-black italic uppercase text-primary">
               {nick.slice(0, 2)}
             </span>
-          )}
+          ) : null}
         </Link>
 
         {/* Капсула HELL · XP → ранг */}
