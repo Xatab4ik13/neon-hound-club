@@ -164,3 +164,34 @@ export async function decrementStockIfTracked(productId: string, qty: number): P
   if (productRow.stock === null) return true; // без учёта
   return res.length > 0;
 }
+
+/**
+ * Атомарно списывает остаток у выбранного размера в jsonb-массиве sizes.
+ * Если у размера stock=null — считается безлимитным (UPDATE проходит без изменений).
+ */
+export async function decrementSizeStockIfTracked(
+  productId: string,
+  sizeLabel: string,
+  qty: number,
+): Promise<boolean> {
+  const res = await db.execute(sql`
+    UPDATE products
+    SET sizes = (
+      SELECT jsonb_agg(
+        CASE WHEN (s->>'label') = ${sizeLabel} AND (s->'stock') IS NOT NULL AND (s->>'stock') <> 'null'
+             THEN jsonb_set(s, '{stock}', to_jsonb(((s->>'stock')::int) - ${qty}))
+             ELSE s END
+      )
+      FROM jsonb_array_elements(sizes) s
+    ),
+    updated_at = now()
+    WHERE id = ${productId}
+      AND EXISTS (
+        SELECT 1 FROM jsonb_array_elements(sizes) s
+        WHERE (s->>'label') = ${sizeLabel}
+          AND ((s->'stock') IS NULL OR (s->>'stock') = 'null' OR ((s->>'stock')::int) >= ${qty})
+      )
+    RETURNING id
+  `);
+  return (res.length ?? (res as any).rowCount ?? 0) > 0;
+}

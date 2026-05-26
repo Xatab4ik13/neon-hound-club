@@ -15,6 +15,7 @@ import {
 import { requireAuth, requireAdmin, type SessionPayload } from "../lib/auth.js";
 import {
   decrementStockIfTracked,
+  decrementSizeStockIfTracked,
   getOrderWithItems,
   markOrderPaid,
   refundOrder,
@@ -37,6 +38,7 @@ const createOrderSchema = z.object({
       z.object({
         productId: z.string().uuid(),
         qty: z.number().int().min(1).max(50),
+        size: z.string().trim().min(1).max(24).optional(),
       }),
     )
     .min(1)
@@ -129,6 +131,7 @@ export async function shopRoutes(app: FastifyInstance) {
     if (!parsed.success) {
       return reply.code(400).send({ error: "invalid_input", message: parsed.error.issues[0]?.message });
     }
+    try {
     const session = req.user as SessionPayload;
     const { items, shipping, comment } = parsed.data;
 
@@ -151,12 +154,20 @@ export async function shopRoutes(app: FastifyInstance) {
       const p = productMap.get(i.productId)!;
       subtotalRub += p.priceRub * i.qty;
       bonusTotal += p.bonusTickets * i.qty;
+      const hasSizes = Array.isArray(p.sizes) && p.sizes.length > 0;
+      if (hasSizes && !i.size) {
+        throw Object.assign(new Error("size_required"), { _http: { code: 400, productId: p.id, title: p.title } });
+      }
+      if (hasSizes && i.size && !p.sizes.some((s: any) => s.label === i.size)) {
+        throw Object.assign(new Error("size_invalid"), { _http: { code: 400, productId: p.id, title: p.title } });
+      }
       return {
         productId: p.id,
         titleSnapshot: p.title,
         priceRubSnapshot: p.priceRub,
         bonusTicketsSnapshot: p.bonusTickets,
         qty: i.qty,
+        sizeSnapshot: hasSizes ? i.size ?? null : null,
       };
     });
 
@@ -166,21 +177,29 @@ export async function shopRoutes(app: FastifyInstance) {
     const discountRub = Math.floor((subtotalRub * discountPct) / 100);
     const totalRub = Math.max(0, subtotalRub - discountRub);
 
-    // резерв остатков (для товаров с stock != null)
+    // резерв остатков: для товаров с sizes — по выбранному размеру; иначе — по общему stock
     for (const i of items) {
       const p = productMap.get(i.productId)!;
-      if (p.stock !== null && p.stock < i.qty) {
-        return reply
-          .code(409)
-          .send({ error: "out_of_stock", message: `«${p.title}» закончился`, productId: p.id });
-      }
-    }
-    for (const i of items) {
-      const ok = await decrementStockIfTracked(i.productId, i.qty);
-      if (!ok) {
-        return reply
-          .code(409)
-          .send({ error: "out_of_stock", message: "Кто-то успел раньше, попробуй ещё раз" });
+      const hasSizes = Array.isArray(p.sizes) && p.sizes.length > 0;
+      if (hasSizes && i.size) {
+        const ok = await decrementSizeStockIfTracked(i.productId, i.size, i.qty);
+        if (!ok) {
+          return reply
+            .code(409)
+            .send({ error: "out_of_stock", message: `«${p.title}» (${i.size}) закончился`, productId: p.id });
+        }
+      } else {
+        if (p.stock !== null && p.stock < i.qty) {
+          return reply
+            .code(409)
+            .send({ error: "out_of_stock", message: `«${p.title}» закончился`, productId: p.id });
+        }
+        const ok = await decrementStockIfTracked(i.productId, i.qty);
+        if (!ok) {
+          return reply
+            .code(409)
+            .send({ error: "out_of_stock", message: "Кто-то успел раньше, попробуй ещё раз" });
+        }
       }
     }
 
@@ -204,6 +223,15 @@ export async function shopRoutes(app: FastifyInstance) {
 
     const full = await getOrderWithItems(order!.id);
     return reply.code(201).send(full);
+    } catch (e: any) {
+      if (e?._http?.code === 400) {
+        const msg = e.message === "size_required"
+          ? `Выбери размер для «${e._http.title}»`
+          : `Неверный размер для «${e._http.title}»`;
+        return reply.code(400).send({ error: e.message, message: msg, productId: e._http.productId });
+      }
+      throw e;
+    }
   });
 
   // GET /api/v1/shop/orders — мои заказы
@@ -252,7 +280,18 @@ const createProductSchema = z
     preorderExpectedAt: z.string().datetime().nullable().optional(),
     shippingInfo: z.string().max(4000).default(""),
     returnPolicy: z.string().max(4000).default(""),
-    sizes: z.array(z.string().trim().min(1).max(24)).max(40).default([]),
+    sizes: z
+      .array(
+        z.union([
+          z.string().trim().min(1).max(24).transform((label) => ({ label, stock: null as number | null })),
+          z.object({
+            label: z.string().trim().min(1).max(24),
+            stock: z.number().int().min(0).max(1_000_000).nullable(),
+          }),
+        ]),
+      )
+      .max(40)
+      .default([]),
   })
   .superRefine((v, ctx) => {
     if (v.kind === "digital" && !v.digitalFileUrl) {
@@ -281,7 +320,17 @@ const patchProductSchema = z
     preorderExpectedAt: z.string().datetime().nullable(),
     shippingInfo: z.string().max(4000),
     returnPolicy: z.string().max(4000),
-    sizes: z.array(z.string().trim().min(1).max(24)).max(40),
+    sizes: z
+      .array(
+        z.union([
+          z.string().trim().min(1).max(24).transform((label) => ({ label, stock: null as number | null })),
+          z.object({
+            label: z.string().trim().min(1).max(24),
+            stock: z.number().int().min(0).max(1_000_000).nullable(),
+          }),
+        ]),
+      )
+      .max(40),
   })
   .partial();
 

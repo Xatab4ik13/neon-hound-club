@@ -11,78 +11,12 @@ import { orders } from "../db/schema/shop.js";
 import { passPurchases } from "../db/schema/pass.js";
 import { requireAdmin, type SessionPayload } from "../lib/auth.js";
 
-// ---------- helpers: sync auto-income from paid orders / pass ----------
+// Экономика работает в реальном времени:
+//   income  = paid orders + paid Hell Pass + ручные income-операции
+//   expense = ручные expense-операции
+// Таблица economy_operations используется ТОЛЬКО для ручных операций.
+// Авто-доходы выводятся виртуально из orders/passPurchases — без дублей и без sync.
 
-/**
- * Идемпотентно заводит операции-доходы по всем paid-заказам и активным Pass,
- * для которых ещё нет операции с тем же ref_type/ref_id.
- * Дорого не делает: insert ... on conflict (через unique index eo_ref_uniq).
- */
-export async function syncEconomyAutoIncome(): Promise<{ orders: number; pass: number }> {
-  // orders: status='paid', paid_at not null
-  const orderRows = await db
-    .select({
-      id: orders.id,
-      total: orders.totalRub,
-      paidAt: orders.paidAt,
-    })
-    .from(orders)
-    .where(eq(orders.status, "paid"))
-    .limit(1000);
-
-  let createdOrders = 0;
-  for (const o of orderRows) {
-    if (!o.paidAt) continue;
-    const r = await db
-      .insert(economyOperations)
-      .values({
-        occurredAt: o.paidAt,
-        type: "income",
-        category: "Магазин",
-        amountRub: o.total,
-        note: `Заказ #${o.id.slice(0, 8)}`,
-        source: "auto",
-        refType: "order",
-        refId: o.id,
-      })
-      .onConflictDoNothing({ target: [economyOperations.refType, economyOperations.refId] })
-      .returning({ id: economyOperations.id });
-    if (r.length) createdOrders += 1;
-  }
-
-  // pass: status='active' or any paid_at not null
-  const passRows = await db
-    .select({
-      id: passPurchases.id,
-      price: passPurchases.priceRub,
-      paidAt: passPurchases.paidAt,
-      tier: passPurchases.tier,
-    })
-    .from(passPurchases)
-    .limit(1000);
-
-  let createdPass = 0;
-  for (const p of passRows) {
-    if (!p.paidAt) continue;
-    const r = await db
-      .insert(economyOperations)
-      .values({
-        occurredAt: p.paidAt,
-        type: "income",
-        category: "Hell Pass",
-        amountRub: p.price,
-        note: `Hell Pass ${p.tier}`,
-        source: "auto",
-        refType: "pass_purchase",
-        refId: p.id,
-      })
-      .onConflictDoNothing({ target: [economyOperations.refType, economyOperations.refId] })
-      .returning({ id: economyOperations.id });
-    if (r.length) createdPass += 1;
-  }
-
-  return { orders: createdOrders, pass: createdPass };
-}
 
 // ---------- schemas ----------
 
@@ -118,7 +52,7 @@ const partnerPatchSchema = partnerCreateSchema.partial();
 export async function adminEconomyRoutes(app: FastifyInstance) {
   app.addHook("preHandler", requireAdmin);
 
-  /** Сводный обзор + последние операции. */
+  /** Сводный обзор. Income считается реал-тайм из orders + pass + manual income. */
   app.get("/overview", async (req) => {
     const q = z
       .object({
@@ -127,44 +61,93 @@ export async function adminEconomyRoutes(app: FastifyInstance) {
       })
       .parse((req.query as object) ?? {});
 
-    // Дотягиваем авто-операции на лету (дёшево при наличии unique index).
-    await syncEconomyAutoIncome();
+    const fromDate = q.from ? new Date(q.from) : null;
+    const toDate = q.to ? new Date(q.to) : null;
 
-    const conds = [] as any[];
-    if (q.from) conds.push(gte(economyOperations.occurredAt, new Date(q.from)));
-    if (q.to) conds.push(lte(economyOperations.occurredAt, new Date(q.to)));
-    const where = conds.length ? and(...conds) : undefined;
+    // ---- Авто-доходы: paid orders ----
+    const orderConds = [eq(orders.status, "paid")] as any[];
+    if (fromDate) orderConds.push(gte(orders.paidAt, fromDate));
+    if (toDate) orderConds.push(lte(orders.paidAt, toDate));
+    const [ordersIncome] = await db
+      .select({ total: sql<number>`COALESCE(SUM(${orders.totalRub}), 0)::int` })
+      .from(orders)
+      .where(and(...orderConds));
 
-    const [incomeRow] = await db
+    // ---- Авто-доходы: Hell Pass ----
+    const passConds = [sql`${passPurchases.paidAt} IS NOT NULL`] as any[];
+    if (fromDate) passConds.push(gte(passPurchases.paidAt, fromDate));
+    if (toDate) passConds.push(lte(passPurchases.paidAt, toDate));
+    const [passIncome] = await db
+      .select({ total: sql<number>`COALESCE(SUM(${passPurchases.priceRub}), 0)::int` })
+      .from(passPurchases)
+      .where(and(...passConds));
+
+    // ---- Ручные операции ----
+    const manualConds = [] as any[];
+    if (fromDate) manualConds.push(gte(economyOperations.occurredAt, fromDate));
+    if (toDate) manualConds.push(lte(economyOperations.occurredAt, toDate));
+    const manualWhere = manualConds.length ? and(...manualConds) : undefined;
+
+    const [manualIncome] = await db
       .select({ total: sql<number>`COALESCE(SUM(${economyOperations.amountRub}), 0)::int` })
       .from(economyOperations)
-      .where(where ? and(where, eq(economyOperations.type, "income")) : eq(economyOperations.type, "income"));
+      .where(manualWhere ? and(manualWhere, eq(economyOperations.type, "income")) : eq(economyOperations.type, "income"));
 
-    const [expenseRow] = await db
+    const [manualExpense] = await db
       .select({ total: sql<number>`COALESCE(SUM(${economyOperations.amountRub}), 0)::int` })
       .from(economyOperations)
-      .where(where ? and(where, eq(economyOperations.type, "expense")) : eq(economyOperations.type, "expense"));
+      .where(manualWhere ? and(manualWhere, eq(economyOperations.type, "expense")) : eq(economyOperations.type, "expense"));
 
-    // P&L по месяцам (последние 6).
+    const income = (ordersIncome?.total ?? 0) + (passIncome?.total ?? 0) + (manualIncome?.total ?? 0);
+    const expense = manualExpense?.total ?? 0;
+
+    // ---- P&L по месяцам (последние 6) ----
     const monthly = await db.execute<{
       month: string;
       income: number;
       expense: number;
     }>(sql`
+      WITH months AS (
+        SELECT to_char(date_trunc('month', m), 'YYYY-MM') AS month
+        FROM generate_series(date_trunc('month', now()) - interval '5 months', date_trunc('month', now()), interval '1 month') AS m
+      ),
+      orders_m AS (
+        SELECT to_char(date_trunc('month', paid_at), 'YYYY-MM') AS month,
+               SUM(total_rub)::int AS amount
+        FROM orders
+        WHERE status='paid' AND paid_at >= date_trunc('month', now()) - interval '5 months'
+        GROUP BY 1
+      ),
+      pass_m AS (
+        SELECT to_char(date_trunc('month', paid_at), 'YYYY-MM') AS month,
+               SUM(price_rub)::int AS amount
+        FROM pass_purchases
+        WHERE paid_at IS NOT NULL AND paid_at >= date_trunc('month', now()) - interval '5 months'
+        GROUP BY 1
+      ),
+      manual_m AS (
+        SELECT to_char(date_trunc('month', occurred_at), 'YYYY-MM') AS month,
+               COALESCE(SUM(amount_rub) FILTER (WHERE type='income'), 0)::int AS income,
+               COALESCE(SUM(amount_rub) FILTER (WHERE type='expense'), 0)::int AS expense
+        FROM economy_operations
+        WHERE occurred_at >= date_trunc('month', now()) - interval '5 months'
+        GROUP BY 1
+      )
       SELECT
-        to_char(date_trunc('month', occurred_at), 'YYYY-MM') AS month,
-        COALESCE(SUM(amount_rub) FILTER (WHERE type='income'), 0)::int AS income,
-        COALESCE(SUM(amount_rub) FILTER (WHERE type='expense'), 0)::int AS expense
-      FROM economy_operations
-      WHERE occurred_at >= now() - interval '6 months'
-      GROUP BY 1
-      ORDER BY 1
+        months.month,
+        (COALESCE(orders_m.amount, 0) + COALESCE(pass_m.amount, 0) + COALESCE(manual_m.income, 0))::int AS income,
+        COALESCE(manual_m.expense, 0)::int AS expense
+      FROM months
+      LEFT JOIN orders_m USING (month)
+      LEFT JOIN pass_m USING (month)
+      LEFT JOIN manual_m USING (month)
+      ORDER BY months.month
     `);
 
     return {
-      income: incomeRow?.total ?? 0,
-      expense: expenseRow?.total ?? 0,
-      profit: (incomeRow?.total ?? 0) - (expenseRow?.total ?? 0),
+      income,
+      expense,
+      profit: income - expense,
       monthly: monthly.map((m: any) => ({
         month: m.month,
         income: Number(m.income) || 0,
@@ -173,7 +156,7 @@ export async function adminEconomyRoutes(app: FastifyInstance) {
     };
   });
 
-  /** Операции — список. */
+  /** Операции — список (виртуальные авто + ручные). */
   app.get("/operations", async (req) => {
     const q = z
       .object({
@@ -183,22 +166,112 @@ export async function adminEconomyRoutes(app: FastifyInstance) {
       })
       .parse((req.query as object) ?? {});
 
-    await syncEconomyAutoIncome();
+    const items: Array<{
+      id: string;
+      occurredAt: Date;
+      type: "income" | "expense";
+      category: string;
+      amountRub: number;
+      note: string;
+      source: "auto" | "manual";
+      refType: string | null;
+      refId: string | null;
+      createdBy: string | null;
+      createdAt: Date;
+    }> = [];
 
-    const conds = [] as any[];
+    // Авто: paid orders
+    if (q.type !== "expense" && (!q.category || q.category === "Магазин")) {
+      const rows = await db
+        .select({
+          id: orders.id,
+          totalRub: orders.totalRub,
+          paidAt: orders.paidAt,
+        })
+        .from(orders)
+        .where(eq(orders.status, "paid"))
+        .orderBy(desc(orders.paidAt))
+        .limit(q.limit);
+      for (const r of rows) {
+        if (!r.paidAt) continue;
+        items.push({
+          id: `order:${r.id}`,
+          occurredAt: r.paidAt,
+          type: "income",
+          category: "Магазин",
+          amountRub: r.totalRub,
+          note: `Заказ #${r.id.slice(0, 8)}`,
+          source: "auto",
+          refType: "order",
+          refId: r.id,
+          createdBy: null,
+          createdAt: r.paidAt,
+        });
+      }
+    }
+
+    // Авто: Hell Pass
+    if (q.type !== "expense" && (!q.category || q.category === "Hell Pass")) {
+      const rows = await db
+        .select({
+          id: passPurchases.id,
+          priceRub: passPurchases.priceRub,
+          paidAt: passPurchases.paidAt,
+          tier: passPurchases.tier,
+        })
+        .from(passPurchases)
+        .where(sql`${passPurchases.paidAt} IS NOT NULL`)
+        .orderBy(desc(passPurchases.paidAt))
+        .limit(q.limit);
+      for (const r of rows) {
+        if (!r.paidAt) continue;
+        items.push({
+          id: `pass:${r.id}`,
+          occurredAt: r.paidAt,
+          type: "income",
+          category: "Hell Pass",
+          amountRub: r.priceRub,
+          note: `Hell Pass ${r.tier}`,
+          source: "auto",
+          refType: "pass_purchase",
+          refId: r.id,
+          createdBy: null,
+          createdAt: r.paidAt,
+        });
+      }
+    }
+
+    // Ручные операции
+    const conds = [eq(economyOperations.source, "manual")] as any[];
     if (q.type !== "all") conds.push(eq(economyOperations.type, q.type));
     if (q.category) conds.push(eq(economyOperations.category, q.category));
-    const where = conds.length ? and(...conds) : undefined;
-
-    const items = await db
+    const manualRows = await db
       .select()
       .from(economyOperations)
-      .where(where)
+      .where(and(...conds))
       .orderBy(desc(economyOperations.occurredAt))
       .limit(q.limit);
+    for (const r of manualRows) {
+      items.push({
+        id: r.id,
+        occurredAt: r.occurredAt,
+        type: r.type as "income" | "expense",
+        category: r.category,
+        amountRub: r.amountRub,
+        note: r.note ?? "",
+        source: "manual",
+        refType: r.refType,
+        refId: r.refId,
+        createdBy: r.createdBy,
+        createdAt: r.createdAt,
+      });
+    }
 
-    return { items };
+    items.sort((a, b) => b.occurredAt.getTime() - a.occurredAt.getTime());
+    return { items: items.slice(0, q.limit) };
   });
+
+
 
   app.post("/operations", async (req, reply) => {
     const session = req.user as SessionPayload;
