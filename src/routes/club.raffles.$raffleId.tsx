@@ -146,7 +146,7 @@ function RaffleDetailContent({
       if (e instanceof ApiError) {
         toast.error(ENTER_ERRORS[e.code] ?? "Не удалось участвовать");
         if (e.code === "phone_required") {
-          navigate({ to: "/profile" });
+          navigate({ to: "/club/me" });
         }
       } else {
         toast.error("Не удалось участвовать");
