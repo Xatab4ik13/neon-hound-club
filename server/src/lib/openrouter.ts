@@ -42,6 +42,14 @@ export async function chatCompletion(opts: {
     max_tokens: opts.maxTokens ?? (isReasoning ? 2000 : 800),
     stream: false,
   };
+  if (opts.model === "openrouter/auto") {
+    body.models = [
+      "google/gemini-2.5-flash",
+      "openai/gpt-5-mini",
+      "anthropic/claude-sonnet-4.5",
+      "google/gemini-2.5-pro",
+    ];
+  }
   if (!isReasoning) {
     body.temperature = opts.temperature ?? 0.6;
   } else {
@@ -116,6 +124,14 @@ export async function* streamChatCompletion(opts: {
     max_tokens: opts.maxTokens ?? (isReasoning ? 2000 : 800),
     stream: true,
   };
+  if (opts.model === "openrouter/auto") {
+    body.models = [
+      "google/gemini-2.5-flash",
+      "openai/gpt-5-mini",
+      "anthropic/claude-sonnet-4.5",
+      "google/gemini-2.5-pro",
+    ];
+  }
   if (!isReasoning) {
     body.temperature = opts.temperature ?? 0.6;
   } else {
