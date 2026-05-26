@@ -705,6 +705,12 @@ function HellAiMobile() {
   }
 
   function deleteChat(id: string) {
+    // Серверный чат удаляем на бэке (локальный c_* — не трогаем).
+    if (!id.startsWith("c_")) {
+      apiFetch(`/api/v1/hell-ai/chats/${encodeURIComponent(id)}`, { method: "DELETE" }).catch(
+        () => { /* игнор: всё равно убрали локально */ },
+      );
+    }
     setChats((prev) => {
       const next = prev.filter((c) => c.id !== id);
       if (id === activeChatId) {
@@ -718,6 +724,7 @@ function HellAiMobile() {
       return next;
     });
   }
+
 
   // Высота страницы = видимая область между топ-баром (52px + safe-area-inset-top в PWA)
   // и таб-баром (64px+safe+8px gap из <main>).
