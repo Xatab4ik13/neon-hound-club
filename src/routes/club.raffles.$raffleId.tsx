@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Calendar, Check, Minus, Plus, Ticket, Trophy, Zap } from "lucide-react";
 import { Countdown } from "@/components/club/Countdown";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { useViewer } from "@/hooks/use-viewer";
 import {
   enterRaffle,
@@ -120,6 +121,7 @@ function RaffleDetailContent({
 }) {
   const qc = useQueryClient();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [stake, setStake] = useState(0);
   const [flash, setFlash] = useState<string | null>(null);
   const finished = raffle.status === "finished";
@@ -308,9 +310,26 @@ function RaffleDetailContent({
         </div>
       </section>
 
-      {!finished && <div aria-hidden className="h-56" />}
+      {!finished && isMobile && <div aria-hidden className="h-56" />}
 
-      {!finished && typeof document !== "undefined" &&
+      {!finished && !isMobile && (
+        <section className="mt-8 pb-8">
+          <div className="rounded-2xl border border-white/[0.08] bg-card/60 p-4 shadow-[0_16px_40px_-24px_rgba(0,0,0,0.7)] backdrop-blur-md">
+            <StakeControls
+              ticketCost={raffle.ticketCost}
+              balance={balance}
+              stake={stake}
+              maxStake={maxStake}
+              isAuthed={isAuthed}
+              isPending={enterMut.isPending}
+              onStakeChange={(v) => setStake(Math.max(0, Math.min(maxStake, v)))}
+              onStake={handleStake}
+            />
+          </div>
+        </section>
+      )}
+
+      {!finished && isMobile && typeof document !== "undefined" &&
         createPortal(
           <div
             className="fixed inset-x-0 z-[60] border-t border-white/[0.08] bg-[#0d0d0d]/95 backdrop-blur-xl"
