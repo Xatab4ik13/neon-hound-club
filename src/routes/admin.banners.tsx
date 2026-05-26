@@ -299,6 +299,8 @@ function BannerEditor({
 
   return (
     <Modal
+      open
+      size="lg"
       title={isNew ? "Новый баннер" : "Баннер"}
       onClose={onClose}
       footer={
