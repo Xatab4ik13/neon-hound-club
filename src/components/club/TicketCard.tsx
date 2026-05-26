@@ -75,15 +75,6 @@ export function TicketCard({
                 {pluralTickets(balance)}
               </span>
             </div>
-
-            <Link
-              to="/club/raffles"
-              aria-label="Поставить билеты"
-              className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-primary px-4 text-[13px] font-semibold text-primary-foreground shadow-[0_4px_14px_-4px_color-mix(in_oklab,var(--primary)_70%,transparent)] transition-all active:scale-[0.97] hover:brightness-110"
-            >
-              <Ticket className="h-3.5 w-3.5" strokeWidth={2.2} />
-              Поставить
-            </Link>
           </div>
         </div>
 
