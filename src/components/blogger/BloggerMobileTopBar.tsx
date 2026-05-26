@@ -1,8 +1,9 @@
-// iOS-style top bar для /blogger. На «вкладках» — Hell-плашка слева + колокольчик.
+// iOS-style top bar для /blogger. На «вкладках» — Hell-плашка во всю ширину.
 // На вложенных страницах — chevron «Назад» + центрированный заголовок.
+// Стилистика подтянута к клубному MobileTopBar (стеклянный фон, без колокольчика).
 
 import { useRouter, useRouterState } from "@tanstack/react-router";
-import { Bell, ChevronLeft } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import { HellhoundPlaqueLarge } from "@/components/club/HellhoundPlaque";
 import { useBloggerProfile } from "@/data/blogger-profile";
 
@@ -34,8 +35,11 @@ export function BloggerMobileTopBar({ onPlaqueClick }: { onPlaqueClick: () => vo
   if (isTab) {
     return (
       <header
-        className="sticky top-0 z-30 border-b border-white/[0.06] bg-background/85 backdrop-blur-xl lg:hidden"
-        style={{ paddingTop: "env(safe-area-inset-top)" }}
+        className="sticky top-0 z-30 border-b border-white/[0.06] bg-background/70 backdrop-blur-2xl backdrop-saturate-150 lg:hidden"
+        style={{
+          paddingTop: "env(safe-area-inset-top)",
+          WebkitBackdropFilter: "saturate(180%) blur(24px)",
+        }}
       >
         <div className="flex items-center gap-2 px-3 py-2">
           <div className="min-w-0 flex-1">
@@ -46,14 +50,6 @@ export function BloggerMobileTopBar({ onPlaqueClick }: { onPlaqueClick: () => vo
               onClick={onPlaqueClick}
             />
           </div>
-          <button
-            type="button"
-            aria-label="Уведомления"
-            className="relative flex h-10 w-10 shrink-0 items-center justify-center text-foreground active:opacity-60"
-          >
-            <Bell className="h-[20px] w-[20px]" strokeWidth={1.9} />
-            <span aria-hidden className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-primary" />
-          </button>
         </div>
       </header>
     );
@@ -61,8 +57,11 @@ export function BloggerMobileTopBar({ onPlaqueClick }: { onPlaqueClick: () => vo
 
   return (
     <header
-      className="sticky top-0 z-30 border-b border-white/[0.06] bg-background/85 backdrop-blur-xl lg:hidden"
-      style={{ paddingTop: "env(safe-area-inset-top)" }}
+      className="sticky top-0 z-30 border-b border-white/[0.06] bg-background/70 backdrop-blur-2xl backdrop-saturate-150 lg:hidden"
+      style={{
+        paddingTop: "env(safe-area-inset-top)",
+        WebkitBackdropFilter: "saturate(180%) blur(24px)",
+      }}
     >
       <div className="relative flex h-11 items-center px-3">
         <div className="flex w-20 items-center">
@@ -81,16 +80,7 @@ export function BloggerMobileTopBar({ onPlaqueClick }: { onPlaqueClick: () => vo
           {title}
         </h1>
 
-        <div className="ml-auto flex w-20 items-center justify-end">
-          <button
-            type="button"
-            aria-label="Уведомления"
-            className="relative flex h-8 w-8 items-center justify-center text-foreground active:opacity-60"
-          >
-            <Bell className="h-[20px] w-[20px]" strokeWidth={1.9} />
-            <span aria-hidden className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-primary" />
-          </button>
-        </div>
+        <div className="ml-auto flex w-20 items-center justify-end" />
       </div>
     </header>
   );
