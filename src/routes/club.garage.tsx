@@ -74,11 +74,15 @@ function GaragePage() {
 
   const bikes = useMemo(() => (bikesQ.data ?? []).map(toStored), [bikesQ.data]);
 
-  // Префетч списка мото-марок NHTSA, чтобы при открытии модалки
-  // комбобокс уже был тёплый. Внутри есть localStorage-кеш на 30 дней.
+  // Префетч NHTSA — только при первом открытии модалки, не на загрузке страницы.
+  // Внутри есть localStorage-кеш на 30 дней, дальнейшие открытия мгновенные.
+  const nhtsaPrefetched = useRef(false);
   useEffect(() => {
-    void getMotorcycleMakes();
-  }, []);
+    if (modalOpen && !nhtsaPrefetched.current) {
+      nhtsaPrefetched.current = true;
+      void getMotorcycleMakes();
+    }
+  }, [modalOpen]);
 
 
   if (hydrated && !isAuthed) {
