@@ -12,8 +12,10 @@ export const getRouter = () => {
     scrollRestoration: true,
     defaultPreload: "intent",
     defaultPreloadStaleTime: 0,
-    defaultPendingMs: 400,
-    defaultPendingMinMs: 500,
+    // Бывший 400/500 ловил splash на каждом переходе между вкладками клуба.
+    // Поднимаем порог: splash показываем только на «холодных» долгих загрузках.
+    defaultPendingMs: 1200,
+    defaultPendingMinMs: 400,
     defaultPendingComponent: SplashScreen,
   });
 
