@@ -1,6 +1,7 @@
-import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, redirect, useLocation, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Newspaper, Ticket, Bot, Settings, type LucideIcon } from "lucide-react";
+import type { QueryClient } from "@tanstack/react-query";
 import { HellhoundPlaqueLarge } from "@/components/club/HellhoundPlaque";
 import { BloggerMobileTopBar } from "@/components/blogger/BloggerMobileTopBar";
 import { BloggerMobileTabBar } from "@/components/blogger/BloggerMobileTabBar";
@@ -11,6 +12,19 @@ import { useEdgeSwipeBack } from "@/hooks/use-edge-swipe-back";
 import { useBloggerProfile } from "@/data/blogger-profile";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useViewer } from "@/hooks/use-viewer";
+import { apiFetch, ApiError } from "@/lib/api";
+
+type MeUser = { id: string; email: string; nick: string; role: "user" | "admin" | "blogger" };
+
+async function fetchMeSafe(): Promise<MeUser | null> {
+  try {
+    const res = await apiFetch<{ user: MeUser }>("/api/v1/auth/me");
+    return res.user;
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 401) return null;
+    return null;
+  }
+}
 
 export const Route = createFileRoute("/blogger")({
   head: () => ({
@@ -20,6 +34,25 @@ export const Route = createFileRoute("/blogger")({
       { name: "robots", content: "noindex" },
     ],
   }),
+  // Жёстко проверяем роль до рендера. useEffect-редирект давал вспышку
+  // блогерского UI у обычного юзера, открывшего /blogger вручную.
+  beforeLoad: async ({ context, location }) => {
+    if (typeof window === "undefined") return; // SSR: cookie нет, доверяем клиенту
+    const queryClient = (context as { queryClient?: QueryClient }).queryClient;
+    const user = queryClient
+      ? await queryClient.ensureQueryData({
+          queryKey: ["auth", "me"],
+          queryFn: fetchMeSafe,
+          staleTime: 60_000,
+        })
+      : await fetchMeSafe();
+    if (!user) {
+      throw redirect({ to: "/login", search: { redirect: location.href } as never });
+    }
+    if (user.role !== "blogger" && user.role !== "admin") {
+      throw redirect({ to: "/club" });
+    }
+  },
   component: BloggerLayout,
 });
 
@@ -40,7 +73,7 @@ function BloggerLayout() {
 
   const goToSettings = () => navigate({ to: "/blogger/settings" });
 
-  // В кабинет блогера пускаем только blogger/admin. Остальных — в /club или /login.
+  // Страховка на случай разлогина уже внутри кабинета.
   useEffect(() => {
     if (!viewer.hydrated) return;
     if (!viewer.user) {
