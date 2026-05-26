@@ -44,6 +44,7 @@ export type NewAiMessage = typeof aiMessages.$inferInsert;
 
 /** Список моделей, которые админ может выбрать в селекте. */
 export const ALLOWED_AI_MODELS = [
+  "openrouter/auto",
   "openai/gpt-5",
   "openai/gpt-5-mini",
   "anthropic/claude-sonnet-4.5",
