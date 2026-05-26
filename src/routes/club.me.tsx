@@ -192,24 +192,34 @@ function MePage() {
         )}
       </section>
 
-      {/* Прогресс — компактная лестница рангов */}
+      {/* Прогресс рангов — одна строка-ссылка, без длинной лестницы.
+          Текущий ранг и XP уже показаны в шапке профиля. */}
       <section aria-label="Прогресс" className="mt-6 md:mt-10">
         {isMobile ? (
-          <>
-            <h3 className="mb-1.5 px-3 font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
-              Прогресс
-            </h3>
-            <RankLadderCompact rankIndex={profileQ.data?.rank?.rankIndex ?? 0} />
-          </>
+          <IOSListSection title="Прогресс">
+            <IOSListRow
+              icon={<Trophy className="h-5 w-5" />}
+              label="Ранги и XP"
+              description="Все уровни и привилегии"
+              chevron
+              to="/club/rank"
+            />
+          </IOSListSection>
         ) : (
           <>
             <h2 className="mb-4 font-display text-2xl font-black italic uppercase tracking-tight text-foreground md:text-3xl">
               Прогресс
             </h2>
-            <RankLadderCompact rankIndex={profileQ.data?.rank?.rankIndex ?? 0} />
+            <ActionRow
+              icon={<Trophy className="h-5 w-5" />}
+              label="Ранги и XP"
+              description="Все уровни и привилегии"
+              to="/club/rank"
+            />
           </>
         )}
       </section>
+
 
       {/* Заказы — последние 3 */}
       <section aria-label="Заказы" className="mt-6 md:mt-10">
@@ -246,8 +256,8 @@ function MePage() {
             <IOSListSection title="Аккаунт">
               <IOSListRow
                 icon={<Settings className="h-5 w-5" />}
-                label="Профиль и аккаунт"
-                description="Ник, фото, контакты, привязки"
+                label="Настройки профиля"
+                description="Ник, фото, адрес, уведомления"
                 chevron
                 onClick={() => setSettingsOpen(true)}
               />
@@ -269,10 +279,11 @@ function MePage() {
             <div className="space-y-2">
               <ActionRow
                 icon={<Settings className="h-5 w-5" />}
-                label="Профиль и аккаунт"
-                description="Ник, фото, контакты, привязки"
+                label="Настройки профиля"
+                description="Ник, фото, адрес, уведомления"
                 onClick={() => setSettingsOpen(true)}
               />
+
               <ActionRow
                 icon={<LogOut className="h-5 w-5" />}
                 label="Выйти из клуба"
@@ -716,11 +727,12 @@ function ProfileHero({ onSettings }: { onSettings: () => void }) {
           <button
             type="button"
             onClick={onSettings}
-            className="mt-5 inline-flex items-center gap-2 border border-white/[0.12] bg-black/40 px-4 py-2 font-mono text-xs font-bold uppercase tracking-[0.2em] text-foreground transition-colors hover:border-primary/60 hover:text-primary"
+            aria-label="Редактировать профиль"
+            className="absolute right-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.12] bg-black/45 text-foreground transition-colors hover:border-primary/60 hover:text-primary md:right-4 md:top-4"
           >
             <Pencil className="h-4 w-4" />
-            Редактировать профиль
           </button>
+
         </div>
       </div>
     </section>
