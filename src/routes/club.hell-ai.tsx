@@ -240,6 +240,7 @@ async function streamHellAi(
     let answer = "";
     let errorMessage: string | null = null;
     let aborted = false;
+    let currentEvent = "message";
 
     try {
       while (true) {
@@ -252,24 +253,21 @@ async function streamHellAi(
           let line = buf.slice(0, newlineIndex);
           buf = buf.slice(newlineIndex + 1);
           if (line.endsWith("\r")) line = line.slice(0, -1);
-          if (!line || line.startsWith(":")) continue;
+          if (!line) {
+            currentEvent = "message";
+            continue;
+          }
+          if (line.startsWith(":")) continue;
 
           if (line.startsWith("event:")) {
-            const nextEvent = line.slice(6).trim();
-            if (nextEvent) {
-              buf = `__EVENT__${nextEvent}\n${buf}`;
-            }
+            currentEvent = line.slice(6).trim() || "message";
             continue;
           }
 
-          if (line.startsWith("__EVENT__")) continue;
           if (!line.startsWith("data:")) continue;
 
           const dataStr = line.slice(5).trim();
           if (!dataStr) continue;
-
-          const eventMarkerMatch = buf.match(/^__EVENT__(.+)$/m);
-          const event = eventMarkerMatch?.[1]?.trim() || "message";
 
           let data: { t?: string; message?: string; aborted?: boolean } = {};
           try {
@@ -278,10 +276,10 @@ async function streamHellAi(
             continue;
           }
 
-          if (event === "delta" && typeof data.t === "string") {
+          if (currentEvent === "delta" && typeof data.t === "string") {
             answer += data.t;
             onDelta(data.t);
-          } else if (event === "error") {
+          } else if (currentEvent === "error") {
             errorMessage = data.message ?? "AI временно недоступен";
             aborted = !!data.aborted;
           }
