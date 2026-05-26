@@ -1,330 +1,70 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Check, Download, Loader2, Smartphone, Sparkles, Ticket } from "lucide-react";
-import { useEffect, useState } from "react";
-import { hhToast as toast } from "@/lib/hh-toast";
-import { checkQuest, confirmPwaInstall, fetchQuests, qk, type QuestItem } from "@/lib/queries";
-import { useViewer } from "@/hooks/use-viewer";
-import { ApiError } from "@/lib/api";
-
+import { createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { getQuests } from "@/api/quests";
+import { motion } from "framer-motion";
+import { CheckCircle2, Trophy, Zap, Calendar, ChevronRight } from "lucide-react";
 
 export const Route = createFileRoute("/club/quests")({
-  head: () => ({
-    meta: [
-      { title: "Задания — клуб HELLHOUND" },
-      {
-        name: "description",
-        content: "Задания клуба. Выполняй — получай билеты.",
-      },
-      { name: "robots", content: "noindex" },
-    ],
-  }),
   component: QuestsPage,
 });
 
 function QuestsPage() {
-  const { isAuthed } = useViewer();
-  const q = useQuery({
-    queryKey: qk.quests,
-    queryFn: fetchQuests,
-    enabled: isAuthed,
+  const { data: quests, isLoading } = useQuery({
+    queryKey: ["quests"],
+    queryFn: getQuests,
   });
 
-  const items = q.data?.items ?? [];
-  const doneCount = items.filter((i) => i.completed).length;
-  const ticketsEarned = items
-    .filter((i) => i.completed)
-    .reduce((sum, i) => sum + i.ticketsReward, 0);
-  const ticketsAvailable = items
-    .filter((i) => !i.completed)
-    .reduce((sum, i) => sum + i.ticketsReward, 0);
-
   return (
-    <main className="mx-auto w-full max-w-5xl px-4 py-6 md:px-8 md:py-10">
-      <Link
-        to="/club/me"
-        className="mb-6 inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground transition-colors hover:text-foreground"
-      >
-        <ArrowLeft className="h-3 w-3" />
-        В профиль
-      </Link>
+    <div className="min-h-screen bg-[#F2F2F7] pb-[calc(env(safe-area-inset-bottom)+96px)] pt-safe">
+      <div className="px-4 pt-8 pb-6">
+        <h1 className="text-[34px] font-bold tracking-tight text-black">Квесты</h1>
+      </div>
 
-      <header className="mb-8 border border-white/[0.06] bg-card/40 p-6 md:p-8">
-        <div className="font-mono text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
-          Задания клуба
-        </div>
-        <h1 className="mt-2 font-display text-3xl font-black uppercase italic tracking-tight text-foreground md:text-4xl">
-          Прокачка
-        </h1>
-        <p className="mt-2 max-w-xl text-sm text-muted-foreground">
-          Выполняй задания клуба — получай билеты. Часть заданий зачитывается
-          автоматически, часть проверяется по кнопке.
-        </p>
-
-        <div className="mt-5 grid gap-4 sm:grid-cols-3">
-          <Stat label="Выполнено" value={`${doneCount}/${items.length}`} />
-          <Stat label="Билетов получено" value={`${ticketsEarned}`} />
-          <Stat label="Можно получить" value={`${ticketsAvailable}`} />
-        </div>
-      </header>
-
-      <InstallAppQuest />
-
-      {q.isLoading ? (
-        <div className="grid gap-3 md:grid-cols-2">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div
-              key={i}
-              className="skeleton-shimmer h-[88px] rounded-2xl"
-            />
+      <div className="px-4 space-y-6">
+        {/* Stats Section */}
+        <div className="grid grid-cols-3 gap-3">
+          {[
+            { label: "Выполнено", value: "12", icon: CheckCircle2 },
+            { label: "Очки", value: "1,240", icon: Trophy },
+            { label: "Серия", value: "5 дн", icon: Zap },
+          ].map((stat, i) => (
+            <div key={i} className="bg-white p-4 rounded-2xl shadow-sm flex flex-col items-center justify-center gap-1">
+              <stat.icon className="w-5 h-5 text-blue-500" />
+              <span className="text-lg font-semibold text-black">{stat.value}</span>
+              <span className="text-[10px] font-medium text-gray-400 uppercase tracking-wider">{stat.label}</span>
+            </div>
           ))}
         </div>
-      ) : items.length === 0 ? (
-        <div className="border border-white/[0.06] bg-card/40 py-16 text-center font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
-          пока нет заданий
-        </div>
-      ) : (
-        <div className="grid gap-3 md:grid-cols-2">
-          {items.map((q) => (
-            <QuestCard key={q.id} q={q} />
-          ))}
-        </div>
-      )}
-    </main>
-  );
-}
 
-function InstallAppQuest() {
-  const [installed, setInstalled] = useState(false);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const check = () => {
-      const standalone =
-        window.matchMedia?.("(display-mode: standalone)").matches ||
-        (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
-      setInstalled(!!standalone);
-    };
-    check();
-    const mq = window.matchMedia?.("(display-mode: standalone)");
-    mq?.addEventListener?.("change", check);
-    return () => mq?.removeEventListener?.("change", check);
-  }, []);
-
-  return (
-    <Link
-      to="/club/install"
-      className="mb-3 block overflow-hidden rounded-2xl border border-primary/25 bg-gradient-to-br from-primary/15 via-card/60 to-black p-4 transition-transform active:scale-[0.99] md:p-5"
-    >
-      <div className="flex items-start gap-4">
-        <span
-          className={`grid h-12 w-12 shrink-0 place-items-center rounded-xl ${
-            installed
-              ? "bg-emerald-500/15 text-emerald-300"
-              : "bg-primary/15 text-primary"
-          }`}
-        >
-          {installed ? (
-            <Check className="h-5 w-5" />
+        {/* Quests List */}
+        <div className="space-y-3">
+          <h2 className="text-lg font-semibold text-gray-900 px-1">Активные</h2>
+          {isLoading ? (
+            <div className="h-24 bg-white rounded-2xl animate-pulse" />
           ) : (
-            <Smartphone className="h-5 w-5" strokeWidth={1.8} />
-          )}
-        </span>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-primary">
-            <Download className="h-3 w-3" />
-            Квест · клуб в кармане
-          </div>
-          <div className="mt-1 font-display text-[18px] font-black italic uppercase leading-tight tracking-tight text-foreground md:text-[20px]">
-            Установи приложение
-          </div>
-          <p className="mt-1 text-[13px] leading-snug text-muted-foreground">
-            {installed
-              ? "Готово — клуб открыт из приложения. Награда зачислится автоматически."
-              : "Поставь клуб на главный экран. Получай пуши о новых розыгрышах, постах и поступлениях."}
-          </p>
-        </div>
-        <div className="hidden shrink-0 items-center gap-1 self-center rounded-full border border-white/[0.08] bg-black/30 px-2.5 py-1 font-mono text-[11px] font-bold uppercase tracking-wider text-foreground sm:inline-flex">
-          <Ticket className="h-3 w-3 text-primary" />
-          +1
-        </div>
-      </div>
-    </Link>
-  );
-}
-
-
-function QuestCard({ q }: { q: QuestItem }) {
-  const qc = useQueryClient();
-  const invalidateAll = () => {
-    qc.invalidateQueries({ queryKey: qk.quests });
-    qc.invalidateQueries({ queryKey: qk.ticketsBalance });
-    qc.invalidateQueries({ queryKey: ["tickets", "history"] });
-  };
-  const check = useMutation({
-    mutationFn: () => checkQuest(q.code),
-    onSuccess: (res) => {
-      if ("credited" in res && res.credited) {
-        toast.success(
-          res.tickets > 0
-            ? `+${res.tickets} билетов · ${q.title}`
-            : `+${res.xp} XP · ${q.title}`,
-        );
-        invalidateAll();
-      } else {
-        const reason = (res as { reason?: string }).reason ?? "condition_not_met";
-        toast.info(reasonLabel(reason));
-      }
-    },
-    onError: (e) => {
-      const msg = e instanceof ApiError ? e.message : "Не удалось проверить квест";
-      toast.error(msg);
-    },
-  });
-
-  const done = q.completed;
-  const pct =
-    q.kind === "ladder"
-      ? Math.min(100, Math.round((q.progress / q.goal) * 100))
-      : q.kind === "monthly"
-        ? Math.min(100, Math.round((q.progress / q.goal) * 100))
-        : done
-          ? 100
-          : 0;
-  const earnedLadderXp = q.ladder
-    ? q.ladder
-        .slice(0, q.lastLadderStep)
-        .reduce((s, step) => s + step.xp, 0)
-    : 0;
-
-  const kindBadge =
-    q.kind === "monthly"
-      ? "за месяц"
-      : q.kind === "ladder"
-        ? "ступени"
-        : q.kind === "manual"
-          ? "ручное"
-          : null;
-
-  return (
-    <article
-      className={`relative flex flex-col gap-3 border bg-card/40 p-4 transition-colors ${
-        done
-          ? "border-green-500/40 opacity-80"
-          : "border-white/[0.06] hover:border-white/[0.12]"
-      }`}
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <h3 className="font-display text-base font-black uppercase italic tracking-tight text-foreground">
-              {q.title}
-            </h3>
-            {kindBadge && (
-              <span className="border border-white/[0.08] px-1.5 py-px font-mono text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
-                {kindBadge}
-              </span>
-            )}
-            {q.bloggerOnly && (
-              <span className="border border-primary/40 px-1.5 py-px font-mono text-[9px] font-bold uppercase tracking-wider text-primary">
-                blogger
-              </span>
-            )}
-          </div>
-          <p className="mt-1 text-xs text-muted-foreground">{q.description}</p>
-        </div>
-        <div className="flex shrink-0 flex-col items-end gap-1">
-          {q.xpReward > 0 && (
-            <div className="flex items-center gap-1 font-mono text-xs font-bold text-foreground">
-              <Sparkles className="h-3 w-3 text-primary" />
-              +{q.ladder ? `${earnedLadderXp}/${q.xpReward}` : q.xpReward} XP
-            </div>
-          )}
-          {q.ticketsReward > 0 && (
-            <div className="flex items-center gap-1 border border-yellow-500/30 bg-yellow-500/10 px-2 py-0.5 font-mono text-[10px] font-bold text-yellow-400">
-              <Ticket className="h-3 w-3" />+{q.ticketsReward}
-            </div>
+            quests?.map((quest: any) => (
+              <motion.div
+                key={quest.id}
+                whileTap={{ scale: 0.98 }}
+                className="bg-white p-4 rounded-2xl shadow-sm flex items-center gap-4 active:bg-gray-50 transition-colors"
+              >
+                <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
+                  <Calendar className="w-6 h-6 text-blue-500" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-gray-900 truncate">{quest.title}</h3>
+                  <p className="text-sm text-gray-500 truncate">{quest.description}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full">
+                    +{quest.reward} XP
+                  </span>
+                  <ChevronRight className="w-5 h-5 text-gray-300" />
+                </div>
+              </motion.div>
+            ))
           )}
         </div>
-      </div>
-
-      {(q.kind === "monthly" || q.kind === "ladder") && (
-        <div className="flex items-center gap-3">
-          <div className="relative h-1.5 flex-1 overflow-hidden rounded-sm bg-black/55 ring-1 ring-inset ring-white/10">
-            <div
-              className="absolute inset-y-0 left-0 rounded-sm transition-all"
-              style={{
-                width: `${pct}%`,
-                backgroundColor: done ? "rgb(74, 222, 128)" : "var(--primary)",
-              }}
-            />
-          </div>
-          <span className="shrink-0 font-mono text-[10px] tabular-nums text-muted-foreground">
-            {q.progress}/{q.goal} {q.unit}
-          </span>
-        </div>
-      )}
-
-      <div className="flex items-center justify-between gap-3">
-        {q.actionTo ? (
-          <Link
-            to={q.actionTo}
-            className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground transition-colors hover:text-primary"
-          >
-            {q.actionLabel ?? "Открыть"} →
-          </Link>
-        ) : <span />}
-
-        {done ? (
-          <span className="inline-flex items-center gap-1 font-mono text-[10px] font-bold uppercase tracking-wider text-green-400">
-            <Check className="h-3 w-3" />
-            Выполнено
-          </span>
-        ) : q.kind === "one_time" ? (
-          <button
-            type="button"
-            disabled={check.isPending}
-            onClick={() => check.mutate()}
-            className="inline-flex items-center gap-1 border border-primary/60 bg-primary/10 px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-wider text-primary transition-colors hover:bg-primary/20 disabled:opacity-60"
-          >
-            {check.isPending && <Loader2 className="h-3 w-3 animate-spin" />}
-            Проверить
-          </button>
-        ) : q.kind === "manual" ? (
-          <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-            Засчитывает админ
-          </span>
-        ) : (
-          <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-            {q.kind === "monthly" ? "автозачёт за месяц" : "автозачёт по ступеням"}
-          </span>
-        )}
-      </div>
-    </article>
-  );
-}
-
-function reasonLabel(reason: string): string {
-  switch (reason) {
-    case "condition_not_met":
-      return "Условие пока не выполнено";
-    case "already_completed":
-      return "Квест уже засчитан";
-    case "quest_inactive":
-      return "Квест неактивен";
-    default:
-      return "Не удалось засчитать";
-  }
-}
-
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="border border-white/[0.06] bg-black/30 p-3">
-      <div className="font-mono text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
-        {label}
-      </div>
-      <div className="mt-2 font-display text-2xl font-black italic leading-none text-foreground tabular-nums">
-        {value}
       </div>
     </div>
   );
