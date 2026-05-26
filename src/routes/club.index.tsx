@@ -356,7 +356,7 @@ export const PostCard = memo(function PostCard({ post, moderate = false }: { pos
 
       <CommentsPreview
         comments={post.comments}
-        onOpen={() => setCommentsOpen(true)}
+        onOpen={() => { setCommentsEverOpened(true); setCommentsOpen(true); }}
       />
       </div>
 
