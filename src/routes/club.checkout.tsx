@@ -259,10 +259,12 @@ function ClubCheckoutPage() {
                 const d = s.data as DadataAddressData;
                 if (!touchedRef.current.has("city")) {
                   const city = d.city_with_type || d.settlement_with_type || "";
-                  if (city) set("city", city);
-                  touchedRef.current.delete("city");
+                  if (city) {
+                    set("city", city);
+                    touchedRef.current.delete("city");
+                  }
                 }
-                onAddressSelectedSetAddress(set, s);
+                set("address", s.value);
               }}
               params={{ from_bound: { value: "street" }, to_bound: { value: "flat" } }}
               placeholder="Улица, дом, кв."
