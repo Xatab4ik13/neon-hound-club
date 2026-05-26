@@ -89,6 +89,14 @@ function formatDeadline(iso: string) {
   }
 }
 
+function pluralRu(n: number, forms: [string, string, string]) {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return forms[0];
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return forms[1];
+  return forms[2];
+}
+
 const ENTER_ERRORS: Record<string, string> = {
   insufficient_tickets: "Не хватает билетов",
   limit_reached: "Достигнут лимит заявок",
@@ -256,21 +264,6 @@ function RaffleDetailContent({
         </section>
       )}
 
-      {!finished && !isMobile && (
-        <section className="mt-5 rounded-2xl border border-primary/30 bg-card/40 p-4">
-          <StakeControls
-            ticketCost={raffle.ticketCost}
-            balance={balance}
-            stake={stake}
-            maxStake={maxStake}
-            isAuthed={isAuthed}
-            isPending={enterMut.isPending}
-            onStakeChange={(v) => setStake(Math.max(0, Math.min(maxStake, v)))}
-            onStake={handleStake}
-          />
-        </section>
-      )}
-
       {raffle.description && (
         <section className="mt-6 space-y-3.5 text-[15px] leading-relaxed">
           {raffle.description.split(/\n\n+/).map((p, i) => (
@@ -313,25 +306,26 @@ function RaffleDetailContent({
         </div>
       </section>
 
+      {!finished && <div aria-hidden className="h-56" />}
 
-      {!finished && isMobile && <div aria-hidden className="h-44" />}
-
-      {!finished && isMobile && (
+      {!finished && (
         <div
           className="fixed inset-x-0 z-30 border-t border-white/[0.08] bg-[#0d0d0d]/95 px-4 py-3 backdrop-blur"
           style={{ bottom: "calc(64px + env(safe-area-inset-bottom))" }}
         >
-          <StakeControls
-            ticketCost={raffle.ticketCost}
-            balance={balance}
-            stake={stake}
-            maxStake={maxStake}
-            isAuthed={isAuthed}
-            isPending={enterMut.isPending}
-            onStakeChange={(v) => setStake(Math.max(0, Math.min(maxStake, v)))}
-            onStake={handleStake}
-            compact
-          />
+          <div className="mx-auto w-full max-w-3xl">
+            <StakeControls
+              ticketCost={raffle.ticketCost}
+              balance={balance}
+              stake={stake}
+              maxStake={maxStake}
+              isAuthed={isAuthed}
+              isPending={enterMut.isPending}
+              onStakeChange={(v) => setStake(Math.max(0, Math.min(maxStake, v)))}
+              onStake={handleStake}
+              compact
+            />
+          </div>
         </div>
       )}
     </main>
@@ -375,12 +369,13 @@ function StakeControls({
   const presets = [1, 5, maxStake].filter((v, i, arr) => v > 0 && arr.indexOf(v) === i);
   const noBalance = isAuthed && maxStake <= 0;
   const totalCost = stake * ticketCost;
+  const ticketWord = pluralRu(ticketCost, ["билет", "билета", "билетов"]);
 
   return (
     <div>
       <div className="flex items-center justify-between">
         <div className="font-mono text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-          Поставить заявок · {ticketCost} билет(а)/шт
+          1 заявка — {ticketCost} {ticketWord}
         </div>
         <div className="flex items-center gap-1 font-mono text-[11px] uppercase tracking-wider text-foreground">
           <Ticket className="h-3.5 w-3.5 text-primary" />
