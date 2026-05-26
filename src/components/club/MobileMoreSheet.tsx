@@ -33,7 +33,7 @@ function buildGroups(cartCount: number): { title: string; items: Item[] }[] {
     items: [
       { label: "Hell Pass", href: "/club/hell-pass", icon: Gem, subtitle: "Подписка клуба" },
       { label: "Розыгрыши", href: "/club/raffles", icon: Ticket },
-      { label: "Квесты", href: "/club/quests", icon: Target },
+      { label: "Магазин клуба", href: "/club/shop", icon: ShoppingBag },
       { label: "Школа", href: "/club/school", icon: GraduationCap },
     ],
   },
@@ -41,7 +41,7 @@ function buildGroups(cartCount: number): { title: string; items: Item[] }[] {
     title: "Активность",
     items: [
       { label: "Пригласить друга", href: "/club/invite", icon: UserPlus },
-      { label: "Магазин клуба", href: "/club/shop", icon: ShoppingBag },
+      { label: "Квесты", href: "/club/quests", icon: Target },
       {
         label: "Корзина",
         href: "/club/cart",
