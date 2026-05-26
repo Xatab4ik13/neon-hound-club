@@ -261,12 +261,14 @@ function BannerEditor({
     active: initial?.active ?? true,
   });
   const [uploading, setUploading] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const setF = <K extends keyof HomeBannerInput>(k: K, v: HomeBannerInput[K]) =>
     setForm((p) => ({ ...p, [k]: v }));
 
   const saveMut = useMutation({
     mutationFn: async () => {
+      setSaveError(null);
       if (isNew) {
         return createAdminHomeBanner(form);
       }
@@ -276,7 +278,11 @@ function BannerEditor({
       toast.success(isNew ? "Баннер создан" : "Сохранено");
       onSaved();
     },
-    onError: (e) => toast.error(apiErr(e, "Не получилось сохранить баннер")),
+    onError: (e) => {
+      const message = apiErr(e, "Не получилось сохранить баннер");
+      setSaveError(message);
+      toast.error(message);
+    },
   });
 
   async function onPickFile(e: ChangeEvent<HTMLInputElement>) {
@@ -324,6 +330,12 @@ function BannerEditor({
       }
     >
       <div className="space-y-4">
+        {saveError && (
+          <div className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-950 dark:bg-rose-950/40 dark:text-rose-300">
+            {saveError}
+          </div>
+        )}
+
         {/* Превью */}
         <Field label="Превью" hint="Так баннер увидит пользователь в карусели на /club.">
           <div

@@ -40,7 +40,10 @@ function cookieOptions() {
   return {
     httpOnly: true,
     secure: isProd,
-    sameSite: "lax" as const,
+    // Для Lovable preview фронт и API находятся на разных доменах,
+    // поэтому браузер не отправит cookie в XHR/fetch при SameSite=Lax.
+    // В проде включаем None+Secure, чтобы админка и превью могли ходить к API.
+    sameSite: (isProd ? "none" : "lax") as const,
     path: "/",
     // В проде .hhr.pro — куку видят и hhr.pro, и api.hhr.pro.
     // В dev оставляем undefined (текущий хост).
