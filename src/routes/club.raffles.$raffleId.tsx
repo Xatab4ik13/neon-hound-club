@@ -293,19 +293,19 @@ function RaffleDetailContent({
         </p>
         <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5 text-[12px]">
           <Link
-            to="/legal/promo-rules"
+            to="/club/legal/promo-rules"
             className="font-mono text-[11px] font-bold uppercase tracking-wider text-primary hover:underline"
           >
             Полные правила →
           </Link>
           <Link
-            to="/legal/requisites"
+            to="/club/legal/requisites"
             className="text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
           >
             Организатор
           </Link>
           <Link
-            to="/legal/privacy"
+            to="/club/legal/privacy"
             className="text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
           >
             Персональные данные
