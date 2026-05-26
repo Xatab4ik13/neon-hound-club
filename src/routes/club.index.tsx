@@ -619,11 +619,35 @@ function CommentsSheet({
   const kbOffset = useKeyboardOffset();
   const viewer = useViewer();
   const myId = viewer.user?.id ?? null;
+  // Запоминаем, был ли юзер у низа списка ПЕРЕД появлением клавиатуры.
+  // Это позволяет при появлении клавиатуры подтянуть скролл обратно к низу
+  // (вместо того чтобы показать старые сообщения сверху из-за уменьшения высоты).
+  const wasNearBottomRef = useRef(true);
+  const onListScroll = () => {
+    const el = listRef.current;
+    if (!el) return;
+    wasNearBottomRef.current =
+      el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+  };
 
   // сбросить reply при закрытии
   useEffect(() => {
     if (!open) setReplyTo(null);
   }, [open]);
+
+  // Когда клавиатура появилась/исчезла — если были внизу, остаёмся внизу.
+  useEffect(() => {
+    const el = listRef.current;
+    if (!el) return;
+    if (wasNearBottomRef.current) {
+      // двойной rAF чтобы дождаться reflow после изменения высоты
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          el.scrollTop = el.scrollHeight;
+        });
+      });
+    }
+  }, [kbOffset]);
 
   // автоскролл вниз только если юзер уже у низа (порог 120px) — иначе не дёргаем
   const lastCount = useRef(post.comments.length);
@@ -641,6 +665,7 @@ function CommentsSheet({
     }
     lastCount.current = post.comments.length;
   }, [post.comments.length]);
+
 
   // Группировка ответов: ответ = коммент, начинающийся с "@<nick> "
   const { topLevel, childrenByParentId } = useMemo<{
