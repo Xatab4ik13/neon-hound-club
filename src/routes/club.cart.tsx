@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { Minus, Plus, ShoppingBag, Ticket, Trash2, ChevronLeft } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { toast } from "sonner";
@@ -232,66 +233,73 @@ function ClubCartPage() {
               transition={{ duration: 0.22, ease: [0.32, 0.72, 0, 1] }}
               className="overflow-hidden"
             >
-              <SwipeRow onDelete={() => handleRemove(i)}>
-                <div className="flex gap-3 bg-card/40 px-3 py-3">
+              <div className="relative flex gap-3 bg-card/40 px-3 py-3 pr-12">
+                <Link
+                  to="/club/shop/$productSlug"
+                  params={{ productSlug: i.slug }}
+                  className="block h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-surface active:opacity-80"
+                >
+                  <CartImage src={i.image} alt={i.name} className="h-full w-full" />
+                </Link>
+
+                <div className="min-w-0 flex-1">
                   <Link
                     to="/club/shop/$productSlug"
                     params={{ productSlug: i.slug }}
-                    className="block h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-surface active:opacity-80"
+                    className="block pr-2 text-[15px] font-semibold leading-tight text-foreground"
                   >
-                    <CartImage src={i.image} alt={i.name} className="h-full w-full" />
+                    {i.name}
                   </Link>
+                  <div className="mt-1 text-[13px] text-muted-foreground">
+                    {i.size ? `Размер ${i.size}` : "Без размера"}
+                  </div>
 
-                  <div className="min-w-0 flex-1">
-                    <Link
-                      to="/club/shop/$productSlug"
-                      params={{ productSlug: i.slug }}
-                      className="block text-[15px] font-semibold leading-tight text-foreground"
-                    >
-                      {i.name}
-                    </Link>
-                    <div className="mt-1 text-[13px] text-muted-foreground">
-                      {i.size ? `Размер ${i.size}` : "Без размера"}
-                    </div>
-
-                    {i.ticketsBonus && i.ticketsBonus > 0 ? (
-                      <div className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5">
-                        <Ticket className="h-3 w-3 text-primary" />
-                        <span className="text-[12px] font-semibold text-primary">
-                          +{i.ticketsBonus * i.qty} {ticketsWord(i.ticketsBonus * i.qty)}
-                        </span>
-                      </div>
-                    ) : null}
-
-                    <div className="mt-2.5 flex items-center justify-between gap-3">
-                      <div className="flex items-center overflow-hidden rounded-xl border border-white/[0.08] bg-white/[0.03]">
-                        <button
-                          type="button"
-                          onClick={() => handleQty(i.id, Math.max(1, i.qty - 1))}
-                          className="grid h-11 w-11 place-items-center text-foreground active:bg-white/[0.08]"
-                          aria-label="Уменьшить"
-                        >
-                          <Minus className="h-4 w-4" />
-                        </button>
-                        <span className="w-9 text-center text-[15px] font-semibold tabular-nums">
-                          {i.qty}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => handleQty(i.id, i.qty + 1)}
-                          className="grid h-11 w-11 place-items-center text-foreground active:bg-white/[0.08]"
-                          aria-label="Увеличить"
-                        >
-                          <Plus className="h-4 w-4" />
-                        </button>
-                      </div>
-                      <span className="text-[16px] font-bold tabular-nums text-foreground">
-                        {(i.price * i.qty).toLocaleString("ru-RU")} ₽
+                  {i.ticketsBonus && i.ticketsBonus > 0 ? (
+                    <div className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5">
+                      <Ticket className="h-3 w-3 text-primary" />
+                      <span className="text-[12px] font-semibold text-primary">
+                        +{i.ticketsBonus * i.qty} {ticketsWord(i.ticketsBonus * i.qty)}
                       </span>
                     </div>
+                  ) : null}
+
+                  <div className="mt-2.5 flex items-center justify-between gap-3">
+                    <div className="flex items-center overflow-hidden rounded-xl border border-white/[0.08] bg-white/[0.03]">
+                      <button
+                        type="button"
+                        onClick={() => handleQty(i.id, Math.max(1, i.qty - 1))}
+                        className="grid h-11 w-11 place-items-center text-foreground active:bg-white/[0.08]"
+                        aria-label="Уменьшить"
+                      >
+                        <Minus className="h-4 w-4" />
+                      </button>
+                      <span className="w-9 text-center text-[15px] font-semibold tabular-nums">
+                        {i.qty}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleQty(i.id, i.qty + 1)}
+                        className="grid h-11 w-11 place-items-center text-foreground active:bg-white/[0.08]"
+                        aria-label="Увеличить"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </button>
+                    </div>
+                    <span className="text-[16px] font-bold tabular-nums text-foreground">
+                      {(i.price * i.qty).toLocaleString("ru-RU")} ₽
+                    </span>
                   </div>
                 </div>
-              </SwipeRow>
+
+                <button
+                  type="button"
+                  onClick={() => handleRemove(i)}
+                  aria-label="Удалить"
+                  className="absolute right-2 top-2 grid h-9 w-9 place-items-center rounded-full border border-red-500/30 bg-red-500/15 text-red-400 transition-colors active:bg-red-500 active:text-white"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
             </motion.li>
           ))}
         </AnimatePresence>
@@ -335,31 +343,38 @@ function ClubCartPage() {
         </div>
       )}
 
-      <p className="mt-3 px-1 text-center text-[12px] text-muted-foreground/80">
-        Свайпни строку влево, чтобы удалить
-      </p>
-
-      {/* Sticky CTA */}
-      <div
-        className="fixed inset-x-0 z-30 border-t border-border/40 bg-background/85 px-4 py-3 backdrop-blur-xl"
-        style={{ bottom: "calc(64px + env(safe-area-inset-bottom))" }}
-      >
-        <div className="mx-auto flex max-w-3xl items-center gap-3">
-          <div className="flex flex-col">
-            <span className="text-[12px] text-muted-foreground">К оплате</span>
-            <span className="text-[18px] font-bold tabular-nums text-foreground">
-              {total.toLocaleString("ru-RU")} ₽
-            </span>
-          </div>
-          <button
-            type="button"
-            onClick={handleCheckout}
-            className="ml-auto flex flex-1 items-center justify-center rounded-xl bg-primary px-5 py-3.5 text-[16px] font-semibold text-primary-foreground active:scale-[0.98]"
+      {/* Sticky CTA — портал в body, иначе transform-обёртки клуба ломают fixed */}
+      {typeof document !== "undefined" &&
+        createPortal(
+          <div
+            className="fixed inset-x-0 z-[60] border-t border-white/[0.08] bg-[#0d0d0d]/95 backdrop-blur-xl md:hidden"
+            style={{
+              bottom: "calc(64px + env(safe-area-inset-bottom))",
+              paddingLeft: "max(16px, env(safe-area-inset-left))",
+              paddingRight: "max(16px, env(safe-area-inset-right))",
+              paddingTop: 12,
+              paddingBottom: 12,
+              boxShadow: "0 -8px 24px -12px rgba(0,0,0,0.6)",
+            }}
           >
-            {isAuthed ? "Оформить" : "Войти и оформить"}
-          </button>
-        </div>
-      </div>
+            <div className="mx-auto flex max-w-3xl items-center gap-3">
+              <div className="flex flex-col">
+                <span className="text-[12px] text-muted-foreground">К оплате</span>
+                <span className="text-[18px] font-bold tabular-nums text-foreground">
+                  {total.toLocaleString("ru-RU")} ₽
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={handleCheckout}
+                className="ml-auto flex flex-1 items-center justify-center rounded-xl bg-primary px-5 py-3.5 text-[16px] font-semibold text-primary-foreground active:scale-[0.98]"
+              >
+                {isAuthed ? "Оформить" : "Войти и оформить"}
+              </button>
+            </div>
+          </div>,
+          document.body,
+        )}
     </main>
   );
 
@@ -428,66 +443,6 @@ function EmptyBlock() {
   );
 }
 
-/** Свайп-влево по строке открывает кнопку удаления (как iOS Mail). */
-function SwipeRow({
-  children,
-  onDelete,
-}: {
-  children: React.ReactNode;
-  onDelete: () => void;
-}) {
-  const [offset, setOffset] = useState(0);
-  const startX = useRef(0);
-  const startOffset = useRef(0);
-  const dragging = useRef(false);
-  const ACTION_W = 88;
-
-  return (
-    <div className="relative overflow-hidden">
-      {/* Backdrop action */}
-      <button
-        type="button"
-        onClick={onDelete}
-        aria-label="Удалить"
-        className="absolute inset-y-0 right-0 flex w-[88px] items-center justify-center bg-red-500 text-white"
-      >
-        <Trash2 className="h-5 w-5" />
-      </button>
-
-      <div
-        className="relative will-change-transform"
-        style={{
-          transform: `translateX(${offset}px)`,
-          transition: dragging.current ? "none" : "transform 0.25s cubic-bezier(0.32, 0.72, 0, 1)",
-        }}
-        onTouchStart={(e) => {
-          startX.current = e.touches[0].clientX;
-          startOffset.current = offset;
-          dragging.current = true;
-        }}
-        onTouchMove={(e) => {
-          if (!dragging.current) return;
-          const dx = e.touches[0].clientX - startX.current;
-          let next = startOffset.current + dx;
-          if (next > 0) next = 0;
-          if (next < -160) next = -160 + (next + 160) * 0.3; // rubber band
-          setOffset(next);
-        }}
-        onTouchEnd={() => {
-          dragging.current = false;
-          if (offset < -ACTION_W * 0.6) {
-            setOffset(-ACTION_W);
-            haptic("light");
-          } else {
-            setOffset(0);
-          }
-        }}
-      >
-        {children}
-      </div>
-    </div>
-  );
-}
 
 function DesktopRow({
   item,
