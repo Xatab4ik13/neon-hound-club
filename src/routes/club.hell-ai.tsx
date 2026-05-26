@@ -213,74 +213,103 @@ async function streamHellAi(
   onDelta: (chunk: string) => void,
   signal?: AbortSignal,
 ): Promise<string> {
-  const { BACKEND_URL } = await import("@/lib/api");
-  const res = await fetch(`${BACKEND_URL}/api/v1/hell-ai/ask-stream`, {
-    method: "POST",
-    credentials: "include",
-    headers: { "Content-Type": "application/json", Accept: "text/event-stream" },
-    body: JSON.stringify({ question, bikeId, chatId }),
-    signal,
-  });
-  if (!res.ok || !res.body) {
-    const text = await res.text().catch(() => "");
-    let code = "request_failed";
-    let message = res.statusText;
-    try {
-      const j = JSON.parse(text);
-      code = j?.error ?? code;
-      message = j?.message ?? message;
-    } catch { /* noop */ }
-    throw new ApiError(res.status, code, message);
-  }
-
-  const reader = res.body.getReader();
-  const decoder = new TextDecoder();
-  let buf = "";
-  let answer = "";
-  let errorMessage: string | null = null;
-  let aborted = false;
-
   try {
-    while (true) {
-      const { value, done } = await reader.read();
-      if (done) break;
-      buf += decoder.decode(value, { stream: true });
-      let sep: number;
-      while ((sep = buf.indexOf("\n\n")) !== -1) {
-        const raw = buf.slice(0, sep);
-        buf = buf.slice(sep + 2);
-        let event = "message";
-        let dataStr = "";
-        for (const ln of raw.split("\n")) {
-          if (ln.startsWith("event:")) event = ln.slice(6).trim();
-          else if (ln.startsWith("data:")) dataStr += (dataStr ? "\n" : "") + ln.slice(5).trim();
-        }
-        if (!dataStr) continue;
-        let data: { t?: string; message?: string; aborted?: boolean } = {};
-        try { data = JSON.parse(dataStr); } catch { continue; }
-        if (event === "delta" && typeof data.t === "string") {
-          answer += data.t;
-          onDelta(data.t);
-        } else if (event === "error") {
-          errorMessage = data.message ?? "AI временно недоступен";
-          aborted = !!data.aborted;
-        } else if (event === "done") {
-          // финал
+    const { BACKEND_URL } = await import("@/lib/api");
+    const res = await fetch(`${BACKEND_URL}/api/v1/hell-ai/ask-stream`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json", Accept: "text/event-stream" },
+      body: JSON.stringify({ question, bikeId, chatId }),
+      signal,
+    });
+    if (!res.ok || !res.body) {
+      const text = await res.text().catch(() => "");
+      let code = "request_failed";
+      let message = res.statusText;
+      try {
+        const j = JSON.parse(text);
+        code = j?.error ?? code;
+        message = j?.message ?? message;
+      } catch { /* noop */ }
+      throw new ApiError(res.status, code, message);
+    }
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = "";
+    let answer = "";
+    let errorMessage: string | null = null;
+    let aborted = false;
+
+    try {
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+
+        let newlineIndex: number;
+        while ((newlineIndex = buf.indexOf("\n")) !== -1) {
+          let line = buf.slice(0, newlineIndex);
+          buf = buf.slice(newlineIndex + 1);
+          if (line.endsWith("\r")) line = line.slice(0, -1);
+          if (!line || line.startsWith(":")) continue;
+
+          if (line.startsWith("event:")) {
+            const nextEvent = line.slice(6).trim();
+            if (nextEvent) {
+              buf = `__EVENT__${nextEvent}\n${buf}`;
+            }
+            continue;
+          }
+
+          if (line.startsWith("__EVENT__")) continue;
+          if (!line.startsWith("data:")) continue;
+
+          const dataStr = line.slice(5).trim();
+          if (!dataStr) continue;
+
+          const eventMarkerMatch = buf.match(/^__EVENT__(.+)$/m);
+          const event = eventMarkerMatch?.[1]?.trim() || "message";
+
+          let data: { t?: string; message?: string; aborted?: boolean } = {};
+          try {
+            data = JSON.parse(dataStr);
+          } catch {
+            continue;
+          }
+
+          if (event === "delta" && typeof data.t === "string") {
+            answer += data.t;
+            onDelta(data.t);
+          } else if (event === "error") {
+            errorMessage = data.message ?? "AI временно недоступен";
+            aborted = !!data.aborted;
+          }
         }
       }
+    } finally {
+      try { reader.releaseLock(); } catch { /* noop */ }
     }
-  } finally {
-    try { reader.releaseLock(); } catch { /* noop */ }
-  }
 
-  if (errorMessage) {
-    if (aborted) {
-      const e = new DOMException(errorMessage, "AbortError");
-      throw e;
+    if (errorMessage) {
+      if (aborted) {
+        throw new DOMException(errorMessage, "AbortError");
+      }
+      throw new ApiError(502, "ai_failed", errorMessage);
     }
-    throw new ApiError(502, "ai_failed", errorMessage);
+
+    if (!answer.trim()) {
+      throw new Error("empty_stream_answer");
+    }
+
+    return answer;
+  } catch (err) {
+    const aborted =
+      (err instanceof DOMException && err.name === "AbortError") ||
+      (typeof err === "object" && err !== null && (err as { name?: string }).name === "AbortError");
+    if (aborted || err instanceof ApiError) throw err;
+    return askHellAi(question, bikeId, chatId, signal);
   }
-  return answer;
 }
 
 function errorToMessage(err: unknown): string {
