@@ -332,7 +332,7 @@ export const PostCard = memo(function PostCard({ post, moderate = false }: { pos
 
         <button
           type="button"
-          onClick={() => setCommentsOpen(true)}
+          onClick={() => { setCommentsEverOpened(true); setCommentsOpen(true); }}
           aria-label="Комментарий"
           className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 font-mono text-[12px] font-bold tabular-nums text-foreground transition-all hover:border-primary/40 hover:text-primary active:scale-95"
         >
