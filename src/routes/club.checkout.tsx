@@ -195,40 +195,83 @@ function ClubCheckoutPage() {
       <form onSubmit={submit} className="space-y-5">
         {/* Контакты */}
         <Section icon={<User className="h-3.5 w-3.5" />} title="Получатель">
-          <Field label="Имя" value={form.name} onChange={(v) => set("name", v)} required />
-          <Field
-            label="Телефон"
-            value={form.phone}
-            onChange={(v) => set("phone", formatRuPhone(v))}
-            type="tel"
-            inputMode="tel"
-            placeholder="+7 (___) ___-__-__"
-            required
-          />
-          <Field
-            label="Email"
-            value={form.email}
-            onChange={(v) => set("email", v)}
-            type="email"
-            inputMode="email"
-            placeholder="rider@example.com"
-            required
-            last
-          />
+          <FieldRow label="Имя">
+            <DadataInput
+              type="fio"
+              value={form.name}
+              onChange={(v) => set("name", v)}
+              params={{ parts: ["SURNAME", "NAME", "PATRONYMIC"] }}
+              placeholder="Иван Иванов"
+              autoComplete="name"
+              required
+            />
+          </FieldRow>
+          <FieldRow label="Телефон">
+            <input
+              value={form.phone}
+              onChange={(e) => set("phone", formatRuPhone(e.target.value))}
+              type="tel"
+              inputMode="tel"
+              placeholder="+7 (___) ___-__-__"
+              autoComplete="tel"
+              required
+              className="min-w-0 flex-1 bg-transparent py-1.5 text-right text-[15px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none"
+            />
+          </FieldRow>
+          <FieldRow label="Email" last>
+            <DadataInput
+              type="email"
+              value={form.email}
+              onChange={(v) => set("email", v)}
+              inputType="email"
+              inputMode="email"
+              placeholder="rider@example.com"
+              autoComplete="email"
+              required
+            />
+          </FieldRow>
         </Section>
 
         {/* Доставка */}
         <Section icon={<MapPin className="h-3.5 w-3.5" />} title="Доставка">
-          <Field label="Город" value={form.city} onChange={(v) => set("city", v)} required />
-          <Field
-            label="Адрес"
-            value={form.address}
-            onChange={(v) => set("address", v)}
-            placeholder="Улица, дом, кв."
-            required
-            last
-          />
+          <FieldRow label="Город">
+            <DadataInput
+              type="address"
+              value={form.city}
+              onChange={(v) => set("city", v)}
+              onSelect={(s) => {
+                const d = s.data as DadataAddressData;
+                const city = d.city_with_type || d.settlement_with_type || s.value;
+                set("city", city);
+              }}
+              params={{ from_bound: { value: "city" }, to_bound: { value: "settlement" } }}
+              placeholder="Москва"
+              autoComplete="address-level2"
+              required
+            />
+          </FieldRow>
+          <FieldRow label="Адрес" last>
+            <DadataInput
+              type="address"
+              value={form.address}
+              onChange={(v) => set("address", v)}
+              onSelect={(s) => {
+                const d = s.data as DadataAddressData;
+                if (!touchedRef.current.has("city")) {
+                  const city = d.city_with_type || d.settlement_with_type || "";
+                  if (city) set("city", city);
+                  touchedRef.current.delete("city");
+                }
+                onAddressSelectedSetAddress(set, s);
+              }}
+              params={{ from_bound: { value: "street" }, to_bound: { value: "flat" } }}
+              placeholder="Улица, дом, кв."
+              autoComplete="street-address"
+              required
+            />
+          </FieldRow>
         </Section>
+
 
         <div className="flex items-center gap-3 rounded-2xl border border-white/[0.06] bg-card/40 px-4 py-3">
           <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
