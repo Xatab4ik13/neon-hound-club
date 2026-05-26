@@ -5,6 +5,7 @@ import { useSyncExternalStore, useEffect } from "react";
 import { BACKEND_URL } from "@/lib/api";
 import {
   fetchFeed,
+  fetchPost,
   createPost,
   patchPost,
   deletePost,
@@ -21,6 +22,7 @@ import {
 } from "@/lib/queries";
 import { PUBLIC_USERS, type PublicUser } from "./users";
 import { hhToast } from "@/lib/hh-toast";
+
 
 // ───────── Внешние типы (контракт UI) ─────────
 
@@ -453,7 +455,7 @@ export const feedStore = {
   },
 };
 
-// Дебаунс-рефетча, чтобы пачку событий от бэка склеивать в один запрос.
+// Дебаунс полного рефетча — только для событий, меняющих состав ленты.
 let refetchTimer: ReturnType<typeof setTimeout> | null = null;
 function scheduleRefetch(delay = 500) {
   if (refetchTimer != null) clearTimeout(refetchTimer);
@@ -462,6 +464,53 @@ function scheduleRefetch(delay = 500) {
     if (document.visibilityState !== "hidden") refetch();
   }, delay);
 }
+
+// Гранулярный рефетч одного поста: один HTTP-запрос вместо всей ленты.
+const postTimers = new Map<string, ReturnType<typeof setTimeout>>();
+async function refetchPostNow(postId: string) {
+  // Не лезем в сеть, если поста нет в текущем снапшоте (он не показан юзеру).
+  if (!POSTS.some((p) => p.id === postId)) return;
+  if (document.visibilityState === "hidden") return;
+  try {
+    const detail = await fetchPost(postId);
+    const next = mapPost({ ...detail, comments: detail.comments });
+    // Сохраняем порядок и не дёргаем другие посты.
+    POSTS = POSTS.map((p) => (p.id === postId ? next : p));
+    emit();
+  } catch {
+    /* молча */
+  }
+}
+function schedulePostRefetch(postId: string, delay = 350) {
+  const prev = postTimers.get(postId);
+  if (prev) clearTimeout(prev);
+  postTimers.set(
+    postId,
+    setTimeout(() => {
+      postTimers.delete(postId);
+      void refetchPostNow(postId);
+    }, delay),
+  );
+}
+
+// Найти postId по commentId среди уже загруженных постов (для событий, где есть только commentId).
+function findPostIdByCommentId(commentId: string): string | null {
+  for (const p of POSTS) {
+    if (p.comments.some((c) => c.id === commentId)) return p.id;
+  }
+  return null;
+}
+
+// Локальное удаление коммента без сетевого запроса (для SSE comment.deleted).
+function removeCommentLocal(commentId: string) {
+  const postId = findPostIdByCommentId(commentId);
+  if (!postId) return;
+  patchPostLocal(postId, (p) => ({
+    ...p,
+    comments: p.comments.filter((c) => c.id !== commentId),
+  }));
+}
+
 
 export function useFeedLoaded(): boolean {
   // подписываемся на тот же стор — после первой загрузки emit() триггерит ре-рендер
@@ -509,15 +558,46 @@ export function useFeedPosts(): FeedPost[] {
         startPolling();
         return;
       }
-      const onAny = () => scheduleRefetch();
-      es.addEventListener("post.created", onAny);
-      es.addEventListener("post.updated", onAny);
-      es.addEventListener("post.deleted", onAny);
-      es.addEventListener("comment.created", onAny);
-      es.addEventListener("comment.deleted", onAny);
-      es.addEventListener("post.liked", onAny);
-      es.addEventListener("comment.liked", onAny);
-      es.addEventListener("poll.voted", onAny);
+      const parsePayload = (e: MessageEvent): { postId?: string; commentId?: string } => {
+        try {
+          return typeof e.data === "string" && e.data ? JSON.parse(e.data) : {};
+        } catch {
+          return {};
+        }
+      };
+      // Состав ленты меняется → полный рефетч (редкие события).
+      es.addEventListener("post.created", () => scheduleRefetch());
+      es.addEventListener("post.deleted", () => scheduleRefetch());
+      // Изменение одного поста → точечный рефетч только этого поста.
+      es.addEventListener("post.updated", (e) => {
+        const { postId } = parsePayload(e as MessageEvent);
+        if (postId) schedulePostRefetch(postId);
+      });
+      es.addEventListener("post.liked", (e) => {
+        const { postId } = parsePayload(e as MessageEvent);
+        if (postId) schedulePostRefetch(postId);
+      });
+      es.addEventListener("poll.voted", (e) => {
+        const { postId } = parsePayload(e as MessageEvent);
+        if (postId) schedulePostRefetch(postId);
+      });
+      es.addEventListener("comment.created", (e) => {
+        const { postId } = parsePayload(e as MessageEvent);
+        if (postId) schedulePostRefetch(postId);
+      });
+      // Удаление коммента → локально, без сети.
+      es.addEventListener("comment.deleted", (e) => {
+        const { commentId } = parsePayload(e as MessageEvent);
+        if (commentId) removeCommentLocal(commentId);
+      });
+      // Лайк коммента → точечный рефетч поста, в котором он лежит.
+      es.addEventListener("comment.liked", (e) => {
+        const { commentId } = parsePayload(e as MessageEvent);
+        if (!commentId) return;
+        const postId = findPostIdByCommentId(commentId);
+        if (postId) schedulePostRefetch(postId);
+      });
+
       es.onopen = () => stopPolling();
       es.onerror = () => {
         // EventSource сам переподключится; на всякий случай подстрахуемся polling-ом.
