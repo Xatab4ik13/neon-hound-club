@@ -20,20 +20,36 @@ import {
   type FeedPostHydrated,
   type FeedCommentHydrated,
 } from "@/lib/queries";
-import { PUBLIC_USERS, type PublicUser } from "./users";
 import { hhToast } from "@/lib/hh-toast";
-
 
 // ───────── Внешние типы (контракт UI) ─────────
 
+/**
+ * Самодостаточный автор поста/коммента. Всё, что UI должен знать о юзере,
+ * приходит прямо в payload бэка. Никаких внешних словарей.
+ */
+export type FeedAuthor = {
+  id: string;
+  /** URL-slug для /club/u/$nick. Для обычных юзеров — производный от ника. */
+  slug: string;
+  nick: string;
+  initials: string;
+  avatarUrl?: string;
+  rankId: string;
+  role: "user" | "admin" | "blogger";
+  isBlogger: boolean;
+};
+
 export type FeedComment = {
   id: string;
-  authorId: string;
-  authorSlug: string;
+  author: FeedAuthor;
   time: string;
   text: string;
   likes: number;
   liked: boolean;
+  // ↓ shim для старых мест UI; всегда == author.slug / author.isBlogger
+  authorId: string;
+  authorSlug: string;
   isBlogger: boolean;
 };
 
@@ -50,8 +66,7 @@ export type FeedPoll = {
 
 export type FeedPost = {
   id: string;
-  authorId: string;
-  authorSlug: string;
+  author: FeedAuthor;
   time: string;
   text: string;
   image?: string;
@@ -59,20 +74,23 @@ export type FeedPost = {
   likes: number;
   liked: boolean;
   pinned?: boolean;
+  // shim
+  authorId: string;
+  authorSlug: string;
   isBlogger: boolean;
   comments: FeedComment[];
 };
 
-// ───────── Маппинг автор → PUBLIC_USERS (runtime) ─────────
+// ───────── Утилиты ─────────
 
-function makeSlug(nick: string): string {
+export function makeSlug(nick: string): string {
   return nick
     .toLowerCase()
     .replace(/\s+/g, "_")
     .replace(/[^a-z0-9_-]/g, "");
 }
 
-function initialsOf(nick: string): string {
+export function initialsOf(nick: string): string {
   const t = nick.trim();
   if (!t) return "?";
   const parts = t.split(/\s+/);
@@ -80,63 +98,27 @@ function initialsOf(nick: string): string {
   return t.slice(0, 2).toUpperCase();
 }
 
-function ensurePublicUser(input: {
+function buildAuthor(input: {
   id: string;
   nick: string;
-  role: string | null;
+  role: "user" | "admin" | "blogger" | string | null;
   avatarUrl: string | null;
-  city: string | null;
-  rankId?: string | null;
-}): string {
-  const slug = makeSlug(input.nick);
-  const isBlogger = input.role === "blogger";
-  const role: PublicUser["role"] =
-    input.role === "admin" ? "owner" : input.role === "blogger" ? "team" : "rider";
-  const nextAvatar = input.avatarUrl ?? undefined;
-  const nextCity = input.city ?? undefined;
-  const nextInitials = initialsOf(input.nick);
-  const nextRank = (input.rankId ?? null) as PublicUser["rank"] | null;
-  if (PUBLIC_USERS[slug]) {
-    const cur = PUBLIC_USERS[slug];
-    const nextBlogger = input.role == null ? cur.isBlogger === true : isBlogger;
-    const resolvedRank = nextRank ?? cur.rank;
-    if (
-      cur.nick !== input.nick ||
-      cur.initials !== nextInitials ||
-      cur.role !== role ||
-      cur.city !== nextCity ||
-      cur.avatarUrl !== nextAvatar ||
-      cur.isBlogger !== nextBlogger ||
-      cur.rank !== resolvedRank
-    ) {
-      PUBLIC_USERS[slug] = {
-        ...cur,
-        nick: input.nick,
-        initials: nextInitials,
-        role,
-        city: nextCity,
-        avatarUrl: nextAvatar,
-        isBlogger: nextBlogger,
-        rank: resolvedRank,
-      };
-    }
-    return slug;
-  }
-  PUBLIC_USERS[slug] = {
-    slug,
+  rankId: string | null;
+}): FeedAuthor {
+  const role = (input.role === "admin" || input.role === "blogger" ? input.role : "user") as
+    | "user"
+    | "admin"
+    | "blogger";
+  return {
+    id: input.id,
+    slug: makeSlug(input.nick) || input.id,
     nick: input.nick,
-    initials: nextInitials,
-    rank: nextRank ?? "rookie",
-    xpPct: 0,
+    initials: initialsOf(input.nick),
+    avatarUrl: input.avatarUrl ?? undefined,
+    rankId: input.rankId ?? "rookie",
     role,
-    isBlogger,
-    city: nextCity,
-    joined: "",
-    badgeIds: [],
-    wins: [],
-    avatarUrl: nextAvatar,
+    isBlogger: role === "blogger",
   };
-  return slug;
 }
 
 // ───────── Относительное время ─────────
@@ -155,41 +137,42 @@ function formatRelative(iso: string): string {
 // ───────── Маппинг API → FeedPost ─────────
 
 function mapComment(c: FeedCommentHydrated): FeedComment {
-  const slug = ensurePublicUser({
+  const author = buildAuthor({
     id: c.authorId,
     nick: c.nick,
     role: c.role,
     avatarUrl: c.avatarUrl,
-    city: null,
     rankId: c.rankId,
   });
   return {
     id: c.id,
-    authorId: c.authorId,
-    authorSlug: slug,
+    author,
+    authorId: author.id,
+    authorSlug: author.slug,
+    isBlogger: author.isBlogger,
     time: formatRelative(c.createdAt),
     text: c.text,
     likes: c.likes,
     liked: c.liked,
-    isBlogger: c.role === "blogger",
   };
 }
 
 export type FeedPostWithComments = FeedPostHydrated & { comments?: FeedCommentHydrated[] };
 
 export function mapPost(p: FeedPostWithComments): FeedPost {
-  const slug = ensurePublicUser({
+  const author = buildAuthor({
     id: p.author.id,
     nick: p.author.nick,
     role: p.author.role,
     avatarUrl: p.author.avatarUrl,
-    city: p.author.city,
     rankId: p.author.rankId,
   });
   return {
     id: p.id,
-    authorId: p.author.id,
-    authorSlug: slug,
+    author,
+    authorId: author.id,
+    authorSlug: author.slug,
+    isBlogger: author.isBlogger,
     time: formatRelative(p.createdAt),
     text: p.text,
     image: p.imageUrl ?? undefined,
@@ -206,7 +189,6 @@ export function mapPost(p: FeedPostWithComments): FeedPost {
       : undefined,
     likes: p.likes,
     liked: p.liked,
-    isBlogger: p.author.role === "blogger",
     comments: (p.comments ?? []).map(mapComment),
   };
 }
@@ -252,7 +234,6 @@ async function loadMore(): Promise<void> {
   emit();
   try {
     const r = await fetchFeed({ limit: PAGE_SIZE, cursor: nextCursor });
-    // дедуп по id (на случай гонок со SSE-рефетчем)
     const existing = new Set(POSTS.map((p) => p.id));
     const fresh = r.items.map(mapPost).filter((p) => !existing.has(p.id));
     POSTS = [...POSTS, ...fresh];
@@ -276,12 +257,10 @@ export const feedStore = {
   getSnapshot() {
     return POSTS;
   },
-  /** Принудительно перечитать ленту с бэка. */
   refresh: refetch,
-  /** Подгрузить следующую страницу (для infinite scroll). */
   loadMore,
 
-  async addPost(input: { text: string; image?: string; authorSlug: string; poll?: FeedPoll }) {
+  async addPost(input: { text: string; image?: string; poll?: FeedPoll }) {
     await createPost({
       text: input.text,
       imageUrl: input.image ?? null,
@@ -331,17 +310,18 @@ export const feedStore = {
     }
   },
 
-  async addComment(postId: string, input: { authorSlug: string; text: string }) {
+  async addComment(postId: string, input: { author: FeedAuthor; text: string }) {
     const tempId = `tmp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     const optimistic: FeedComment = {
       id: tempId,
-      authorId: "me",
-      authorSlug: input.authorSlug,
+      author: input.author,
+      authorId: input.author.id,
+      authorSlug: input.author.slug,
+      isBlogger: input.author.isBlogger,
       time: "только что",
       text: input.text,
       likes: 0,
       liked: false,
-      isBlogger: false,
     };
     patchPostLocal(postId, (p) => ({ ...p, comments: [...p.comments, optimistic] }));
     try {
@@ -468,13 +448,11 @@ function scheduleRefetch(delay = 500) {
 // Гранулярный рефетч одного поста: один HTTP-запрос вместо всей ленты.
 const postTimers = new Map<string, ReturnType<typeof setTimeout>>();
 async function refetchPostNow(postId: string) {
-  // Не лезем в сеть, если поста нет в текущем снапшоте (он не показан юзеру).
   if (!POSTS.some((p) => p.id === postId)) return;
   if (document.visibilityState === "hidden") return;
   try {
     const detail = await fetchPost(postId);
     const next = mapPost({ ...detail, comments: detail.comments });
-    // Сохраняем порядок и не дёргаем другие посты.
     POSTS = POSTS.map((p) => (p.id === postId ? next : p));
     emit();
   } catch {
@@ -493,7 +471,6 @@ function schedulePostRefetch(postId: string, delay = 350) {
   );
 }
 
-// Найти postId по commentId среди уже загруженных постов (для событий, где есть только commentId).
 function findPostIdByCommentId(commentId: string): string | null {
   for (const p of POSTS) {
     if (p.comments.some((c) => c.id === commentId)) return p.id;
@@ -501,7 +478,6 @@ function findPostIdByCommentId(commentId: string): string | null {
   return null;
 }
 
-// Локальное удаление коммента без сетевого запроса (для SSE comment.deleted).
 function removeCommentLocal(commentId: string) {
   const postId = findPostIdByCommentId(commentId);
   if (!postId) return;
@@ -511,9 +487,7 @@ function removeCommentLocal(commentId: string) {
   }));
 }
 
-
 export function useFeedLoaded(): boolean {
-  // подписываемся на тот же стор — после первой загрузки emit() триггерит ре-рендер
   useSyncExternalStore(feedStore.subscribe, feedStore.getSnapshot, feedStore.getSnapshot);
   return loaded;
 }
@@ -528,9 +502,6 @@ export function useFeedPosts(): FeedPost[] {
   useEffect(() => {
     if (!loaded && !pending) refetch();
 
-    // ─── Live: SSE-подписка на /api/v1/feed/stream ───
-    // На любое событие (post/comment/like/poll) делаем дебаунс-рефетч.
-    // Если SSE недоступен — fallback на редкий polling (раз в 20с).
     let es: EventSource | null = null;
     let pollTimer: ReturnType<typeof setInterval> | null = null;
     let stopped = false;
@@ -550,7 +521,7 @@ export function useFeedPosts(): FeedPost[] {
 
     const connect = () => {
       if (stopped) return;
-      if (document.visibilityState === "hidden") return; // не открываем сокет в фоне
+      if (document.visibilityState === "hidden") return;
       if (es) return;
       try {
         es = new EventSource(`${BACKEND_URL}/api/v1/feed/stream`, { withCredentials: true });
@@ -565,10 +536,8 @@ export function useFeedPosts(): FeedPost[] {
           return {};
         }
       };
-      // Состав ленты меняется → полный рефетч (редкие события).
       es.addEventListener("post.created", () => scheduleRefetch());
       es.addEventListener("post.deleted", () => scheduleRefetch());
-      // Изменение одного поста → точечный рефетч только этого поста.
       es.addEventListener("post.updated", (e) => {
         const { postId } = parsePayload(e as MessageEvent);
         if (postId) schedulePostRefetch(postId);
@@ -585,12 +554,10 @@ export function useFeedPosts(): FeedPost[] {
         const { postId } = parsePayload(e as MessageEvent);
         if (postId) schedulePostRefetch(postId);
       });
-      // Удаление коммента → локально, без сети.
       es.addEventListener("comment.deleted", (e) => {
         const { commentId } = parsePayload(e as MessageEvent);
         if (commentId) removeCommentLocal(commentId);
       });
-      // Лайк коммента → точечный рефетч поста, в котором он лежит.
       es.addEventListener("comment.liked", (e) => {
         const { commentId } = parsePayload(e as MessageEvent);
         if (!commentId) return;
@@ -600,7 +567,6 @@ export function useFeedPosts(): FeedPost[] {
 
       es.onopen = () => stopPolling();
       es.onerror = () => {
-        // EventSource сам переподключится; на всякий случай подстрахуемся polling-ом.
         startPolling();
       };
     };
@@ -618,7 +584,6 @@ export function useFeedPosts(): FeedPost[] {
         refetch();
         connect();
       } else {
-        // В фоне SSE и polling не нужны — экономим батарею и трафик.
         disconnect();
       }
     };
