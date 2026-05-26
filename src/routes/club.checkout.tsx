@@ -441,23 +441,13 @@ function Section({
   );
 }
 
-function Field({
+function FieldRow({
   label,
-  value,
-  onChange,
-  type = "text",
-  inputMode,
-  placeholder,
-  required,
+  children,
   last,
 }: {
   label: string;
-  value: string;
-  onChange: (v: string) => void;
-  type?: string;
-  inputMode?: "tel" | "email" | "text" | "numeric";
-  placeholder?: string;
-  required?: boolean;
+  children: React.ReactNode;
   last?: boolean;
 }) {
   return (
@@ -467,15 +457,8 @@ function Field({
       <span className="w-[88px] shrink-0 text-[13px] text-muted-foreground">
         {label}
       </span>
-      <input
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        type={type}
-        inputMode={inputMode}
-        placeholder={placeholder}
-        required={required}
-        className="min-w-0 flex-1 bg-transparent py-1.5 text-right text-[15px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none"
-      />
+      {children}
     </label>
   );
 }
+
