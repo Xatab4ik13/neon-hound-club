@@ -71,18 +71,7 @@ function ClubFeedPage() {
         ) : (
           <>
             {posts.map((post) => (
-              <Swipeable
-                key={post.id}
-                radius={24}
-                right={{
-                  icon: <Heart className="h-4 w-4" fill="currentColor" />,
-                  label: post.liked ? "Лайк убран" : "Лайк",
-                  bg: "linear-gradient(90deg, oklch(0.55 0.22 357.3) 0%, oklch(0.6 0.24 357.3) 100%)",
-                  onAction: () => feedStore.toggleLike(post.id, !post.liked),
-                }}
-              >
-                <PostCard post={post} />
-              </Swipeable>
+              <FeedRow key={post.id} post={post} />
             ))}
             {posts.length > 0 && <FeedSentinel />}
           </>
@@ -92,12 +81,32 @@ function ClubFeedPage() {
   );
 }
 
+// Отдельный мемо-компонент — стабильный prop для Swipeable
+const FeedRow = memo(function FeedRow({ post }: { post: Post }) {
+  const right = useMemo(
+    () => ({
+      icon: <Heart className="h-4 w-4" fill="currentColor" />,
+      label: post.liked ? "Лайк убран" : "Лайк",
+      bg: "linear-gradient(90deg, oklch(0.55 0.22 357.3) 0%, oklch(0.6 0.24 357.3) 100%)",
+      onAction: () => feedStore.toggleLike(post.id, !post.liked),
+    }),
+    [post.id, post.liked],
+  );
+  return (
+    <Swipeable radius={24} right={right}>
+      <PostCard post={post} />
+    </Swipeable>
+  );
+});
+
 // ───────── Post ─────────
 
-export function PostCard({ post, moderate = false }: { post: Post; moderate?: boolean }) {
+export const PostCard = memo(function PostCard({ post, moderate = false }: { post: Post; moderate?: boolean }) {
   const [commentsOpen, setCommentsOpen] = useState(false);
+  const [commentsEverOpened, setCommentsEverOpened] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [viewerOpen, setViewerOpen] = useState(false);
+  const [viewerEverOpened, setViewerEverOpened] = useState(false);
   const navigate = useNavigate();
   const liked = post.liked;
   const likeCount = post.likes;
@@ -153,7 +162,10 @@ export function PostCard({ post, moderate = false }: { post: Post; moderate?: bo
       lastImgTap.current = now;
       // Одиночный тап с задержкой — откроем вьюер, если за это время не пришёл второй.
       setTimeout(() => {
-        if (lastImgTap.current === now) setViewerOpen(true);
+        if (lastImgTap.current === now) {
+          setViewerEverOpened(true);
+          setViewerOpen(true);
+        }
       }, 290);
     }
   }, [liked, post.id]);
@@ -320,7 +332,7 @@ export function PostCard({ post, moderate = false }: { post: Post; moderate?: bo
 
         <button
           type="button"
-          onClick={() => setCommentsOpen(true)}
+          onClick={() => { setCommentsEverOpened(true); setCommentsOpen(true); }}
           aria-label="Комментарий"
           className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 font-mono text-[12px] font-bold tabular-nums text-foreground transition-all hover:border-primary/40 hover:text-primary active:scale-95"
         >
@@ -344,18 +356,20 @@ export function PostCard({ post, moderate = false }: { post: Post; moderate?: bo
 
       <CommentsPreview
         comments={post.comments}
-        onOpen={() => setCommentsOpen(true)}
+        onOpen={() => { setCommentsEverOpened(true); setCommentsOpen(true); }}
       />
       </div>
 
-      <CommentsSheet
-        open={commentsOpen}
-        onOpenChange={setCommentsOpen}
-        post={post}
-        moderate={moderate}
-      />
+      {commentsEverOpened && (
+        <CommentsSheet
+          open={commentsOpen}
+          onOpenChange={setCommentsOpen}
+          post={post}
+          moderate={moderate}
+        />
+      )}
 
-      {post.image && (
+      {post.image && viewerEverOpened && (
         <ImageViewer
           src={post.image}
           open={viewerOpen}
@@ -370,7 +384,7 @@ export function PostCard({ post, moderate = false }: { post: Post; moderate?: bo
       )}
     </article>
   );
-}
+});
 
 // ───────── Poll ─────────
 
@@ -543,7 +557,7 @@ function PostAction({
 
 // ───────── Comments preview (под постом) ─────────
 
-function CommentsPreview({
+const CommentsPreview = memo(function CommentsPreview({
   comments,
   onOpen,
 }: {
@@ -585,7 +599,7 @@ function CommentsPreview({
       </div>
     </button>
   );
-}
+});
 
 // ───────── Comments sheet (Telegram-style full-screen) ─────────
 
