@@ -47,7 +47,6 @@ export async function chatCompletion(opts: {
       "google/gemini-2.5-flash",
       "openai/gpt-5-mini",
       "anthropic/claude-sonnet-4.5",
-      "google/gemini-2.5-pro",
     ];
   }
   if (!isReasoning) {
