@@ -81,14 +81,22 @@ export function Footer() {
               <li><Link to="/legal/requisites" className="transition-colors hover:text-primary">Реквизиты</Link></li>
             </ul>
 
-            <a
-              href={LEGAL.contactTelegram}
-              target="_blank"
-              rel="noreferrer"
-              className="mt-6 inline-flex items-center gap-2 rounded-md border border-border bg-surface px-4 py-2 font-mono text-[11px] font-bold uppercase tracking-widest transition-colors hover:border-primary/60 hover:text-primary"
-            >
-              Поддержка · Telegram →
-            </a>
+            <div className="mt-6 flex flex-col gap-2">
+              <a
+                href={LEGAL.contactTelegram}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex w-fit items-center gap-2 rounded-md border border-border bg-surface px-4 py-2 font-mono text-[11px] font-bold uppercase tracking-widest transition-colors hover:border-primary/60 hover:text-primary"
+              >
+                Поддержка · Telegram →
+              </a>
+              <a
+                href={`mailto:${LEGAL.contactEmail}`}
+                className="inline-flex w-fit items-center gap-2 font-mono text-[11px] uppercase tracking-widest text-muted-foreground transition-colors hover:text-primary"
+              >
+                {LEGAL.contactEmail}
+              </a>
+            </div>
           </div>
         </div>
 
