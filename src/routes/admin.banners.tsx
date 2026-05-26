@@ -42,7 +42,11 @@ export const Route = createFileRoute("/admin/banners")({
 });
 
 function apiErr(e: unknown, fallback = "Ошибка") {
-  return e instanceof ApiError ? e.message : fallback;
+  if (e instanceof ApiError) {
+    const message = (e.message || "").trim();
+    return message && message !== "Bad Request" ? message : fallback;
+  }
+  return fallback;
 }
 
 function BannersPage() {
@@ -62,7 +66,7 @@ function BannersPage() {
     mutationFn: ({ id, active }: { id: string; active: boolean }) =>
       patchAdminHomeBanner(id, { active }),
     onSuccess: () => refetch(),
-    onError: (e) => toast.error(apiErr(e)),
+      onError: (e) => toast.error(apiErr(e, "Не получилось изменить баннер")),
   });
 
   const deleteMut = useMutation({
@@ -72,7 +76,7 @@ function BannersPage() {
       toast.success("Баннер удалён");
       setToDelete(null);
     },
-    onError: (e) => toast.error(apiErr(e)),
+    onError: (e) => toast.error(apiErr(e, "Не получилось удалить баннер")),
   });
 
   return (
@@ -182,16 +186,18 @@ function BannerCard({
             <ImageIcon className="h-8 w-8" />
           </div>
         )}
-        <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
-        <div className="absolute inset-x-0 bottom-0 p-3">
-          {banner.eyebrow && (
-            <p className="mb-1 truncate text-[10px] uppercase tracking-wider text-white/80">
-              {banner.eyebrow}
-            </p>
-          )}
-          <h3 className="line-clamp-2 whitespace-pre-line text-sm font-bold uppercase italic leading-tight text-white">
-            {banner.title}
-          </h3>
+        <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/65 via-black/30 to-transparent" />
+        <div className="relative flex h-full flex-col justify-between p-3 text-white">
+          <div className="pt-1">
+            <h3 className="line-clamp-2 whitespace-pre-line font-display text-sm font-black uppercase italic leading-[0.95] text-white">
+              {banner.title}
+            </h3>
+            {banner.eyebrow && (
+              <p className="mt-1.5 line-clamp-2 text-[10px] leading-snug text-white/90">
+                {banner.eyebrow}
+              </p>
+            )}
+          </div>
         </div>
         {!banner.active && (
           <div className="absolute right-2 top-2 rounded-full bg-zinc-900/80 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-zinc-300">
@@ -270,7 +276,7 @@ function BannerEditor({
       toast.success(isNew ? "Баннер создан" : "Сохранено");
       onSaved();
     },
-    onError: (e) => toast.error(apiErr(e)),
+    onError: (e) => toast.error(apiErr(e, "Не получилось сохранить баннер")),
   });
 
   async function onPickFile(e: ChangeEvent<HTMLInputElement>) {
@@ -337,19 +343,23 @@ function BannerEditor({
                 <ImageIcon className="h-10 w-10" />
               </div>
             )}
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
-            <div className="absolute inset-x-0 bottom-0 p-4 text-white">
-              {form.eyebrow && (
-                <p className="mb-1 text-[11px] uppercase tracking-wider text-white/85">
-                  {form.eyebrow}
-                </p>
-              )}
-              <h3 className="whitespace-pre-line text-xl font-black uppercase italic leading-tight drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]">
-                {form.title || "Заголовок баннера"}
-              </h3>
-              <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-primary-foreground">
-                {form.ctaLabel || "Открыть"}
-              </div>
+             <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/65 via-black/30 to-transparent" />
+             <div className="relative flex h-full flex-col justify-between p-4 text-white">
+               <div className="pt-1">
+                 <h3 className="whitespace-pre-line font-display text-xl font-black uppercase italic leading-[0.95] drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]">
+                   {form.title || "Заголовок баннера"}
+                 </h3>
+                 {form.eyebrow && (
+                   <p className="mt-2 text-[11px] leading-snug text-white/90 drop-shadow-[0_1px_4px_rgba(0,0,0,0.5)]">
+                     {form.eyebrow}
+                   </p>
+                 )}
+               </div>
+               <div>
+                 <div className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-primary-foreground">
+                   {form.ctaLabel || "Открыть"}
+                 </div>
+               </div>
             </div>
           </div>
         </Field>
