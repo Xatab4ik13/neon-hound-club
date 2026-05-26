@@ -343,31 +343,38 @@ function ClubCartPage() {
         </div>
       )}
 
-      <p className="mt-3 px-1 text-center text-[12px] text-muted-foreground/80">
-        Свайпни строку влево, чтобы удалить
-      </p>
-
-      {/* Sticky CTA */}
-      <div
-        className="fixed inset-x-0 z-30 border-t border-border/40 bg-background/85 px-4 py-3 backdrop-blur-xl"
-        style={{ bottom: "calc(64px + env(safe-area-inset-bottom))" }}
-      >
-        <div className="mx-auto flex max-w-3xl items-center gap-3">
-          <div className="flex flex-col">
-            <span className="text-[12px] text-muted-foreground">К оплате</span>
-            <span className="text-[18px] font-bold tabular-nums text-foreground">
-              {total.toLocaleString("ru-RU")} ₽
-            </span>
-          </div>
-          <button
-            type="button"
-            onClick={handleCheckout}
-            className="ml-auto flex flex-1 items-center justify-center rounded-xl bg-primary px-5 py-3.5 text-[16px] font-semibold text-primary-foreground active:scale-[0.98]"
+      {/* Sticky CTA — портал в body, иначе transform-обёртки клуба ломают fixed */}
+      {typeof document !== "undefined" &&
+        createPortal(
+          <div
+            className="fixed inset-x-0 z-[60] border-t border-white/[0.08] bg-[#0d0d0d]/95 backdrop-blur-xl md:hidden"
+            style={{
+              bottom: "calc(64px + env(safe-area-inset-bottom))",
+              paddingLeft: "max(16px, env(safe-area-inset-left))",
+              paddingRight: "max(16px, env(safe-area-inset-right))",
+              paddingTop: 12,
+              paddingBottom: 12,
+              boxShadow: "0 -8px 24px -12px rgba(0,0,0,0.6)",
+            }}
           >
-            {isAuthed ? "Оформить" : "Войти и оформить"}
-          </button>
-        </div>
-      </div>
+            <div className="mx-auto flex max-w-3xl items-center gap-3">
+              <div className="flex flex-col">
+                <span className="text-[12px] text-muted-foreground">К оплате</span>
+                <span className="text-[18px] font-bold tabular-nums text-foreground">
+                  {total.toLocaleString("ru-RU")} ₽
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={handleCheckout}
+                className="ml-auto flex flex-1 items-center justify-center rounded-xl bg-primary px-5 py-3.5 text-[16px] font-semibold text-primary-foreground active:scale-[0.98]"
+              >
+                {isAuthed ? "Оформить" : "Войти и оформить"}
+              </button>
+            </div>
+          </div>,
+          document.body,
+        )}
     </main>
   );
 
