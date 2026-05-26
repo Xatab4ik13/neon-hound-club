@@ -222,6 +222,15 @@ export async function shopRoutes(app: FastifyInstance) {
 
     const full = await getOrderWithItems(order!.id);
     return reply.code(201).send(full);
+    } catch (e: any) {
+      if (e?._http?.code === 400) {
+        const msg = e.message === "size_required"
+          ? `Выбери размер для «${e._http.title}»`
+          : `Неверный размер для «${e._http.title}»`;
+        return reply.code(400).send({ error: e.message, message: msg, productId: e._http.productId });
+      }
+      throw e;
+    }
   });
 
   // GET /api/v1/shop/orders — мои заказы
