@@ -1,4 +1,4 @@
-import { createFileRoute, Link, Outlet, useLocation, useNavigate, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, redirect, useLocation, useNavigate, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
   Newspaper,
@@ -13,6 +13,7 @@ import {
   UserPlus,
   type LucideIcon,
 } from "lucide-react";
+import type { QueryClient } from "@tanstack/react-query";
 
 import { ME } from "@/data/profile";
 import { RANKS, getRankSpan, type PlaqueBg, type RankId } from "@/data/ranks";
@@ -27,6 +28,19 @@ import { MobileTransition } from "@/components/club/MobileTransition";
 import { PullToRefresh } from "@/components/club/PullToRefresh";
 import { OfflineBanner } from "@/components/club/OfflineBanner";
 import { useEdgeSwipeBack } from "@/hooks/use-edge-swipe-back";
+import { apiFetch, ApiError } from "@/lib/api";
+
+type MeUser = { id: string; email: string; nick: string; role: "user" | "admin" | "blogger" };
+
+async function fetchMeSafe(): Promise<MeUser | null> {
+  try {
+    const res = await apiFetch<{ user: MeUser }>("/api/v1/auth/me");
+    return res.user;
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 401) return null;
+    return null;
+  }
+}
 
 export const Route = createFileRoute("/club")({
   head: () => ({
@@ -36,6 +50,21 @@ export const Route = createFileRoute("/club")({
       { name: "robots", content: "noindex" },
     ],
   }),
+  // Блогер живёт в /blogger — выкидываем до рендера, без вспышки клубного UI.
+  beforeLoad: async ({ context }) => {
+    if (typeof window === "undefined") return;
+    const queryClient = (context as { queryClient?: QueryClient }).queryClient;
+    const user = queryClient
+      ? await queryClient.ensureQueryData({
+          queryKey: ["auth", "me"],
+          queryFn: fetchMeSafe,
+          staleTime: 60_000,
+        })
+      : await fetchMeSafe();
+    if (user?.role === "blogger") {
+      throw redirect({ to: "/blogger" });
+    }
+  },
   component: ClubLayout,
 });
 
