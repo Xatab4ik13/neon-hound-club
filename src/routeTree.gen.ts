@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VerifyEmailRouteImport } from './routes/verify-email'
+import { Route as ShopInfoRouteImport } from './routes/shop-info'
 import { Route as SchoolRouteImport } from './routes/school'
 import { Route as LogosRouteImport } from './routes/logos'
 import { Route as LoginRouteImport } from './routes/login'
@@ -73,6 +74,11 @@ import { Route as BloggerRafflesRaffleIdRouteImport } from './routes/blogger.raf
 const VerifyEmailRoute = VerifyEmailRouteImport.update({
   id: '/verify-email',
   path: '/verify-email',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ShopInfoRoute = ShopInfoRouteImport.update({
+  id: '/shop-info',
+  path: '/shop-info',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SchoolRoute = SchoolRouteImport.update({
@@ -382,6 +388,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/logos': typeof LogosRoute
   '/school': typeof SchoolRoute
+  '/shop-info': typeof ShopInfoRoute
   '/verify-email': typeof VerifyEmailRoute
   '/admin/cdek': typeof AdminCdekRoute
   '/admin/economy': typeof AdminEconomyRoute
@@ -441,6 +448,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/logos': typeof LogosRoute
   '/school': typeof SchoolRoute
+  '/shop-info': typeof ShopInfoRoute
   '/verify-email': typeof VerifyEmailRoute
   '/admin/cdek': typeof AdminCdekRoute
   '/admin/economy': typeof AdminEconomyRoute
@@ -504,6 +512,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/logos': typeof LogosRoute
   '/school': typeof SchoolRoute
+  '/shop-info': typeof ShopInfoRoute
   '/verify-email': typeof VerifyEmailRoute
   '/admin/cdek': typeof AdminCdekRoute
   '/admin/economy': typeof AdminEconomyRoute
@@ -568,6 +577,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/logos'
     | '/school'
+    | '/shop-info'
     | '/verify-email'
     | '/admin/cdek'
     | '/admin/economy'
@@ -627,6 +637,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/logos'
     | '/school'
+    | '/shop-info'
     | '/verify-email'
     | '/admin/cdek'
     | '/admin/economy'
@@ -689,6 +700,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/logos'
     | '/school'
+    | '/shop-info'
     | '/verify-email'
     | '/admin/cdek'
     | '/admin/economy'
@@ -752,6 +764,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   LogosRoute: typeof LogosRoute
   SchoolRoute: typeof SchoolRoute
+  ShopInfoRoute: typeof ShopInfoRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
   CheckoutSuccessRoute: typeof CheckoutSuccessRoute
   HellPassTierRoute: typeof HellPassTierRoute
@@ -774,6 +787,13 @@ declare module '@tanstack/react-router' {
       path: '/verify-email'
       fullPath: '/verify-email'
       preLoaderRoute: typeof VerifyEmailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/shop-info': {
+      id: '/shop-info'
+      path: '/shop-info'
+      fullPath: '/shop-info'
+      preLoaderRoute: typeof ShopInfoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/school': {
@@ -1302,6 +1322,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   LogosRoute: LogosRoute,
   SchoolRoute: SchoolRoute,
+  ShopInfoRoute: ShopInfoRoute,
   VerifyEmailRoute: VerifyEmailRoute,
   CheckoutSuccessRoute: CheckoutSuccessRoute,
   HellPassTierRoute: HellPassTierRoute,
