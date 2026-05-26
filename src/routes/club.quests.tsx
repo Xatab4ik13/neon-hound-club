@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { hhToast as toast } from "@/lib/hh-toast";
-import { checkQuest, fetchQuests, qk, type QuestItem } from "@/lib/queries";
+import { checkQuest, confirmPwaInstall, fetchQuests, qk, type QuestItem } from "@/lib/queries";
 import { useViewer } from "@/hooks/use-viewer";
 import { ApiError } from "@/lib/api";
 
@@ -154,8 +154,30 @@ function QuestCard({ q }: { q: QuestItem }) {
     qc.invalidateQueries({ queryKey: qk.ticketsBalance });
     qc.invalidateQueries({ queryKey: ["tickets", "history"] });
   };
+  const isPwaInstallQuest = q.code === "pwa_install";
+
   const check = useMutation({
-    mutationFn: () => checkQuest(q.code),
+    mutationFn: async () => {
+      // Для квеста "Установи приложение" фронт сам проверяет режим запуска
+      // и дёргает отдельный endpoint /confirm — обычный /check на бэке
+      // для этого кода всегда возвращает condition_not_met.
+      if (isPwaInstallQuest) {
+        const standalone =
+          typeof window !== "undefined" &&
+          (window.matchMedia?.("(display-mode: standalone)").matches ||
+            (window.navigator as Navigator & { standalone?: boolean })
+              .standalone === true);
+        if (!standalone) {
+          throw new ApiError(
+            400,
+            "not_standalone",
+            "Открой клуб из установленного приложения, чтобы засчитать квест.",
+          );
+        }
+        return confirmPwaInstall();
+      }
+      return checkQuest(q.code);
+    },
     onSuccess: (res) => {
       if ("credited" in res && res.credited) {
         toast.success(
