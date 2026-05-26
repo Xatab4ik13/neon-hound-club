@@ -599,7 +599,7 @@ const CommentsPreview = memo(function CommentsPreview({
       </div>
     </button>
   );
-}
+});
 
 // ───────── Comments sheet (Telegram-style full-screen) ─────────
 
