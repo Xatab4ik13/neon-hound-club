@@ -1,9 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Calendar, Check, Minus, Plus, Ticket, Trophy, Zap } from "lucide-react";
 import { Countdown } from "@/components/club/Countdown";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { useViewer } from "@/hooks/use-viewer";
 import {
   enterRaffle,
