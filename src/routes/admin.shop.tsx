@@ -440,7 +440,9 @@ function ProductModal({
         preorderExpectedAt: p.kind === "preorder" ? p.preorderExpectedAt || null : null,
         shippingInfo: (p.shippingInfo ?? "").trim(),
         returnPolicy: (p.returnPolicy ?? "").trim(),
-        sizes: (p.sizes ?? []).map((s) => s.trim()).filter(Boolean),
+        sizes: (p.sizes ?? [])
+          .map((s) => ({ label: s.label.trim(), stock: s.stock }))
+          .filter((s) => s.label),
       };
       return mode === "create"
         ? createAdminProduct(payload)
@@ -768,12 +770,14 @@ const SIZE_PRESETS: { label: string; values: string[] }[] = [
   { label: "Детская", values: ["86", "92", "98", "104", "110", "116", "122", "128"] },
 ];
 
+type SizeRow = { label: string; stock: number | null };
+
 function SizesInput({
   value,
   onChange,
 }: {
-  value: string[];
-  onChange: (next: string[]) => void;
+  value: SizeRow[];
+  onChange: (next: SizeRow[]) => void;
 }) {
   const [draft, setDraft] = useState("");
   const commit = (raw: string) => {
@@ -784,10 +788,24 @@ function SizesInput({
     if (parts.length === 0) return;
     const next = [...value];
     for (const part of parts) {
-      if (!next.includes(part) && next.length < 40) next.push(part);
+      if (!next.some((s) => s.label === part) && next.length < 40) {
+        next.push({ label: part, stock: null });
+      }
     }
     onChange(next);
     setDraft("");
+  };
+  const applyPreset = (labels: string[]) => {
+    onChange(labels.map((label) => ({ label, stock: null })));
+  };
+  const updateStock = (i: number, raw: string) => {
+    const next = [...value];
+    if (raw.trim() === "") next[i] = { ...next[i], stock: null };
+    else {
+      const n = Math.max(0, Math.floor(Number(raw)));
+      next[i] = { ...next[i], stock: Number.isFinite(n) ? n : null };
+    }
+    onChange(next);
   };
   return (
     <div className="space-y-2">
@@ -799,7 +817,7 @@ function SizesInput({
           <button
             key={preset.label}
             type="button"
-            onClick={() => onChange(preset.values)}
+            onClick={() => applyPreset(preset.values)}
             className="rounded-full border border-zinc-300 bg-white px-2.5 py-1 text-xs font-medium text-zinc-700 transition-colors hover:border-primary hover:text-primary dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300"
           >
             {preset.label}
@@ -815,23 +833,45 @@ function SizesInput({
           </button>
         )}
       </div>
-      <div className="flex flex-wrap items-center gap-2 rounded-md border border-zinc-200 bg-white p-2 dark:border-zinc-800 dark:bg-zinc-900">
-        {value.map((s, i) => (
-          <span
-            key={`${s}-${i}`}
-            className="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-medium dark:bg-zinc-800"
-          >
-            {s}
-            <button
-              type="button"
-              onClick={() => onChange(value.filter((_, j) => j !== i))}
-              className="text-zinc-500 hover:text-rose-500"
-              aria-label="Удалить"
-            >
-              ×
-            </button>
-          </span>
-        ))}
+
+      {value.length > 0 && (
+        <div className="overflow-hidden rounded-md border border-zinc-200 dark:border-zinc-800">
+          <div className="grid grid-cols-[1fr_140px_40px] gap-2 bg-zinc-50 px-3 py-1.5 text-[10px] font-medium uppercase tracking-wider text-zinc-500 dark:bg-zinc-900/60">
+            <span>Размер</span>
+            <span>Остаток</span>
+            <span></span>
+          </div>
+          <div className="divide-y divide-zinc-200 dark:divide-zinc-800">
+            {value.map((s, i) => (
+              <div
+                key={`${s.label}-${i}`}
+                className="grid grid-cols-[1fr_140px_40px] items-center gap-2 px-3 py-1.5"
+              >
+                <span className="text-sm font-medium">{s.label}</span>
+                <input
+                  type="number"
+                  min={0}
+                  inputMode="numeric"
+                  value={s.stock ?? ""}
+                  onChange={(e) => updateStock(i, e.target.value)}
+                  placeholder="∞"
+                  className="w-full rounded-md border border-zinc-200 bg-white px-2 py-1 text-sm tabular-nums outline-none focus:border-primary dark:border-zinc-700 dark:bg-zinc-900"
+                />
+                <button
+                  type="button"
+                  onClick={() => onChange(value.filter((_, j) => j !== i))}
+                  className="grid h-7 w-7 place-items-center rounded-md text-zinc-500 hover:bg-rose-500/10 hover:text-rose-500"
+                  aria-label="Удалить"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="flex items-center gap-2 rounded-md border border-zinc-200 bg-white p-2 dark:border-zinc-800 dark:bg-zinc-900">
         <input
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
@@ -839,12 +879,10 @@ function SizesInput({
             if (e.key === "Enter" || e.key === ",") {
               e.preventDefault();
               commit(draft);
-            } else if (e.key === "Backspace" && draft === "" && value.length > 0) {
-              onChange(value.slice(0, -1));
             }
           }}
           onBlur={() => draft && commit(draft)}
-          placeholder={value.length === 0 ? "впиши свой размер, например 43-46" : ""}
+          placeholder="Добавить размер (Enter / запятая). Остаток пусто = ∞"
           className="min-w-[140px] flex-1 bg-transparent text-sm outline-none"
         />
       </div>

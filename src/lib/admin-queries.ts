@@ -181,7 +181,7 @@ export type CreateProductInput = {
   preorderExpectedAt?: string | null;
   shippingInfo?: string;
   returnPolicy?: string;
-  sizes?: string[];
+  sizes?: Array<{ label: string; stock: number | null }>;
 };
 
 export function fetchAdminShopProducts() {

@@ -95,7 +95,7 @@ export type ShopProductListItem = {
   categoryId: string | null;
   subcategoryId: string | null;
   preorderExpectedAt: string | null;
-  sizes: string[];
+  sizes: Array<{ label: string; stock: number | null }>;
 };
 
 export type ShopProduct = ShopProductListItem & {
