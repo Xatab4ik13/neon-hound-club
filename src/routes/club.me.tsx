@@ -9,14 +9,17 @@ import {
   Image as ImageIcon,
   LogOut,
   MapPin,
+  Package,
   Pencil,
   Settings,
+  Ticket as TicketIcon,
+  Trophy,
   Check,
   Lock,
 } from "lucide-react";
 import { SettingsModal } from "@/components/club/SettingsModal";
-import { BadgeCase } from "@/components/club/BadgeCase";
-import { useMyProfile } from "@/lib/garage-api";
+import { OrdersList } from "@/components/club/OrdersList";
+import { useMyProfile, useBikes } from "@/lib/garage-api";
 import { useViewer } from "@/hooks/use-viewer";
 import {
   useRankState,
@@ -24,7 +27,14 @@ import {
   getAvailablePlaqueBgs,
   getPlaqueBgRankIndex,
 } from "@/data/rank-state";
-import { fetchPassMe, type RankInfo } from "@/lib/queries";
+import {
+  fetchPassMe,
+  fetchTicketsBalance,
+  fetchMyRaffles,
+  fetchMyOrders,
+  qk,
+  type RankInfo,
+} from "@/lib/queries";
 import { TIERS, type Tier } from "@/data/hell-pass";
 import { RANKS, type PlaqueBg, type RankMeta } from "@/data/ranks";
 import { PlaqueBackground } from "./club";
@@ -32,6 +42,7 @@ import { IOSListSection, IOSListRow } from "@/components/ios/IOSList";
 import { IOSSheet } from "@/components/ios/IOSSheet";
 import { IOSConfirm } from "@/components/ios/IOSConfirm";
 import { useIsMobile } from "@/hooks/use-mobile";
+
 
 export const Route = createFileRoute("/club/me")({
   head: () => ({
