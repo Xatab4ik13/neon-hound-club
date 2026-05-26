@@ -145,7 +145,7 @@ export const AI_LIMITS_DEFAULT: AiLimits = {
 export const TIER_PRIMARY_MODEL: Record<"silver" | "gold" | "platinum", string> = {
   silver: "google/gemini-2.5-flash",
   gold: "google/gemini-2.5-flash",
-  platinum: "openai/gpt-5",
+  platinum: "openai/gpt-5-mini",
 };
 
 /** Модель для platinum после превышения лимита умной модели. */
