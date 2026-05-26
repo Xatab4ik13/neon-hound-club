@@ -398,7 +398,7 @@ function ProfileTab({ mobile }: { mobile?: boolean }) {
           />
         </IOSListSection>
 
-        <IOSListSection title="Профиль" footer="Ник менять нельзя. Остальное — в любой момент.">
+        <IOSListSection title="Профиль" footer="Ник менять нельзя. Город и телефон — в любой момент.">
           <IOSField label="Ник">
             <Input value={me.nick} readOnly disabled />
           </IOSField>
@@ -408,66 +408,14 @@ function ProfileTab({ mobile }: { mobile?: boolean }) {
           <IOSField label="Телефон">
             <PhoneInput value={phone} onChange={(v) => setPhone(v ?? "")} />
           </IOSField>
-          <IOSField label="О себе" hint={`${bio.length}/300`}>
-            <Input value={bio} onChange={(e) => setBio(e.target.value)} maxLength={300} placeholder="Райдер. Москва. R6." />
-          </IOSField>
         </IOSListSection>
 
-        <IOSListSection title="Соцсети" footer="Только логины, без https://.">
-          <IOSField label="Telegram">
-            <Input value={telegram} onChange={(e) => setTelegram(e.target.value)} maxLength={80} placeholder="username" />
-          </IOSField>
-          <IOSField label="Instagram">
-            <Input value={instagram} onChange={(e) => setInstagram(e.target.value)} maxLength={80} placeholder="username" />
-          </IOSField>
-          <IOSField label="YouTube">
-            <Input value={youtube} onChange={(e) => setYoutube(e.target.value)} maxLength={120} placeholder="@channel" />
-          </IOSField>
-        </IOSListSection>
-
-        <IOSListSection
-          title="Мои байки"
-          footer="Тап по байку — открывается «Гараж» для редактирования."
-        >
-          {bikes.length === 0 ? (
-            <IOSListRow
-              icon={<Plus className="h-[18px] w-[18px]" />}
-              label="Добавить байк"
-              description="В гараже пока пусто"
-              to="/club/garage"
-              chevron
-            />
-          ) : (
-            <>
-              {bikes.map((b: ServerBike) => (
-                <IOSListRow
-                  key={b.id}
-                  icon={<Bike className="h-[18px] w-[18px]" />}
-                  label={`${b.brand} ${b.model}`}
-                  description={
-                    [b.isPrimary ? "Основной" : null, b.year ? String(b.year) : null]
-                      .filter(Boolean)
-                      .join(" · ") || undefined
-                  }
-                  to="/club/garage"
-                  chevron
-                />
-              ))}
-              <IOSListRow
-                icon={<Plus className="h-[18px] w-[18px]" />}
-                label="Добавить байк"
-                to="/club/garage"
-                chevron
-              />
-            </>
-          )}
-        </IOSListSection>
-
-        <div className="px-1 pt-1">
+        <div className="px-4 pt-1">
           <PrimaryButton full onClick={onSave} loading={updateMut.isPending}>
-            Сохранить
+            Сохранить профиль
           </PrimaryButton>
         </div>
+
       </>
     );
   }
