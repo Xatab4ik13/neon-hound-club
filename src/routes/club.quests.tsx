@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { hhToast as toast } from "@/lib/hh-toast";
-import { checkQuest, fetchQuests, qk, type QuestItem } from "@/lib/queries";
+import { checkQuest, confirmPwaInstall, fetchQuests, qk, type QuestItem } from "@/lib/queries";
 import { useViewer } from "@/hooks/use-viewer";
 import { ApiError } from "@/lib/api";
 
