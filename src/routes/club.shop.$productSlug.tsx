@@ -363,8 +363,10 @@ function ProductView({ product }: { product: ShopProduct }) {
             onToggle={() => setOpen(open === "returns" ? null : "returns")}
           >
             <p className="whitespace-pre-line text-[15px] leading-relaxed text-muted-foreground">
-              {product.returnPolicy?.trim() ||
-                "Возврат 14 дней, если вещь не носилась и сохранены ярлыки."}
+              Возврат в течение 14 дней с момента получения, если товар не был в употреблении,
+              сохранены товарный вид, потребительские свойства, ярлыки и упаковка. Деньги
+              возвращаются на ту же карту, которой была произведена оплата. Подробнее —
+              на странице <a href="/shop-info" className="text-primary underline-offset-2 hover:underline">«Оплата и доставка»</a> и в публичной оферте.
             </p>
           </Accordion>
         </div>

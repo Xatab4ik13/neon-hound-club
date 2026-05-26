@@ -747,24 +747,14 @@ function ProductModal({
           </Field>
         )}
 
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-          <Field label="Доставка" hint="Текст для аккордеона «Доставка» на карточке товара.">
-            <TextArea
-              rows={4}
-              value={p.shippingInfo ?? ""}
-              onChange={(e) => setP({ ...p, shippingInfo: e.target.value })}
-              placeholder="· СДЭК и Boxberry по РФ — 2–7 дней.&#10;· Самовывоз из гаража HELLHOUND в Москве."
-            />
-          </Field>
-          <Field label="Возврат" hint="Текст для аккордеона «Возврат» на карточке товара.">
-            <TextArea
-              rows={4}
-              value={p.returnPolicy ?? ""}
-              onChange={(e) => setP({ ...p, returnPolicy: e.target.value })}
-              placeholder="Возврат 14 дней, если вещь не носилась и сохранены ярлыки."
-            />
-          </Field>
-        </div>
+        <Field label="Доставка" hint="Текст для аккордеона «Доставка» на карточке товара.">
+          <TextArea
+            rows={4}
+            value={p.shippingInfo ?? ""}
+            onChange={(e) => setP({ ...p, shippingInfo: e.target.value })}
+            placeholder="· СДЭК и Boxberry по РФ — 2–7 дней.&#10;· Самовывоз из гаража HELLHOUND в Москве."
+          />
+        </Field>
       </div>
     </Modal>
   );
