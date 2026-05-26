@@ -186,16 +186,18 @@ function BannerCard({
             <ImageIcon className="h-8 w-8" />
           </div>
         )}
-        <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
-        <div className="absolute inset-x-0 bottom-0 p-3">
-          {banner.eyebrow && (
-            <p className="mb-1 truncate text-[10px] uppercase tracking-wider text-white/80">
-              {banner.eyebrow}
-            </p>
-          )}
-          <h3 className="line-clamp-2 whitespace-pre-line text-sm font-bold uppercase italic leading-tight text-white">
-            {banner.title}
-          </h3>
+        <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/65 via-black/30 to-transparent" />
+        <div className="relative flex h-full flex-col justify-between p-3 text-white">
+          <div className="pt-1">
+            <h3 className="line-clamp-2 whitespace-pre-line font-display text-sm font-black uppercase italic leading-[0.95] text-white">
+              {banner.title}
+            </h3>
+            {banner.eyebrow && (
+              <p className="mt-1.5 line-clamp-2 text-[10px] leading-snug text-white/90">
+                {banner.eyebrow}
+              </p>
+            )}
+          </div>
         </div>
         {!banner.active && (
           <div className="absolute right-2 top-2 rounded-full bg-zinc-900/80 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-zinc-300">
