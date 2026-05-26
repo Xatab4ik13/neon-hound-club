@@ -78,7 +78,7 @@ function ClubCartPage() {
   // Undo-удаление через sonner-toast.
   const handleRemove = useCallback(
     (item: CartItem) => {
-      haptic("medium");
+      haptic("selection");
       remove(item.id);
       toast("Удалено из корзины", {
         description: item.name,
@@ -100,7 +100,7 @@ function ClubCartPage() {
   );
 
   const handleCheckout = useCallback(() => {
-    haptic("medium");
+    haptic("selection");
     if (isAuthed) navigate({ to: "/club/checkout" });
     else navigate({ to: "/login" });
   }, [isAuthed, navigate]);
