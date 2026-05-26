@@ -32,6 +32,7 @@ import { Route as PaySuccessRouteImport } from './routes/pay.success'
 import { Route as PayFailRouteImport } from './routes/pay.fail'
 import { Route as LegalTermsRouteImport } from './routes/legal.terms'
 import { Route as LegalRequisitesRouteImport } from './routes/legal.requisites'
+import { Route as LegalPromoRulesRouteImport } from './routes/legal.promo-rules'
 import { Route as LegalPrivacyRouteImport } from './routes/legal.privacy'
 import { Route as LegalOfferRouteImport } from './routes/legal.offer'
 import { Route as HellPassTierRouteImport } from './routes/hell-pass.$tier'
@@ -184,6 +185,11 @@ const LegalTermsRoute = LegalTermsRouteImport.update({
 const LegalRequisitesRoute = LegalRequisitesRouteImport.update({
   id: '/legal/requisites',
   path: '/legal/requisites',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LegalPromoRulesRoute = LegalPromoRulesRouteImport.update({
+  id: '/legal/promo-rules',
+  path: '/legal/promo-rules',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LegalPrivacyRoute = LegalPrivacyRouteImport.update({
@@ -418,6 +424,7 @@ export interface FileRoutesByFullPath {
   '/hell-pass/$tier': typeof HellPassTierRoute
   '/legal/offer': typeof LegalOfferRoute
   '/legal/privacy': typeof LegalPrivacyRoute
+  '/legal/promo-rules': typeof LegalPromoRulesRoute
   '/legal/requisites': typeof LegalRequisitesRoute
   '/legal/terms': typeof LegalTermsRoute
   '/pay/fail': typeof PayFailRoute
@@ -478,6 +485,7 @@ export interface FileRoutesByTo {
   '/hell-pass/$tier': typeof HellPassTierRoute
   '/legal/offer': typeof LegalOfferRoute
   '/legal/privacy': typeof LegalPrivacyRoute
+  '/legal/promo-rules': typeof LegalPromoRulesRoute
   '/legal/requisites': typeof LegalRequisitesRoute
   '/legal/terms': typeof LegalTermsRoute
   '/pay/fail': typeof PayFailRoute
@@ -542,6 +550,7 @@ export interface FileRoutesById {
   '/hell-pass/$tier': typeof HellPassTierRoute
   '/legal/offer': typeof LegalOfferRoute
   '/legal/privacy': typeof LegalPrivacyRoute
+  '/legal/promo-rules': typeof LegalPromoRulesRoute
   '/legal/requisites': typeof LegalRequisitesRoute
   '/legal/terms': typeof LegalTermsRoute
   '/pay/fail': typeof PayFailRoute
@@ -607,6 +616,7 @@ export interface FileRouteTypes {
     | '/hell-pass/$tier'
     | '/legal/offer'
     | '/legal/privacy'
+    | '/legal/promo-rules'
     | '/legal/requisites'
     | '/legal/terms'
     | '/pay/fail'
@@ -667,6 +677,7 @@ export interface FileRouteTypes {
     | '/hell-pass/$tier'
     | '/legal/offer'
     | '/legal/privacy'
+    | '/legal/promo-rules'
     | '/legal/requisites'
     | '/legal/terms'
     | '/pay/fail'
@@ -730,6 +741,7 @@ export interface FileRouteTypes {
     | '/hell-pass/$tier'
     | '/legal/offer'
     | '/legal/privacy'
+    | '/legal/promo-rules'
     | '/legal/requisites'
     | '/legal/terms'
     | '/pay/fail'
@@ -770,6 +782,7 @@ export interface RootRouteChildren {
   HellPassTierRoute: typeof HellPassTierRoute
   LegalOfferRoute: typeof LegalOfferRoute
   LegalPrivacyRoute: typeof LegalPrivacyRoute
+  LegalPromoRulesRoute: typeof LegalPromoRulesRoute
   LegalRequisitesRoute: typeof LegalRequisitesRoute
   LegalTermsRoute: typeof LegalTermsRoute
   PayFailRoute: typeof PayFailRoute
@@ -941,6 +954,13 @@ declare module '@tanstack/react-router' {
       path: '/legal/requisites'
       fullPath: '/legal/requisites'
       preLoaderRoute: typeof LegalRequisitesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/legal/promo-rules': {
+      id: '/legal/promo-rules'
+      path: '/legal/promo-rules'
+      fullPath: '/legal/promo-rules'
+      preLoaderRoute: typeof LegalPromoRulesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/legal/privacy': {
@@ -1328,6 +1348,7 @@ const rootRouteChildren: RootRouteChildren = {
   HellPassTierRoute: HellPassTierRoute,
   LegalOfferRoute: LegalOfferRoute,
   LegalPrivacyRoute: LegalPrivacyRoute,
+  LegalPromoRulesRoute: LegalPromoRulesRoute,
   LegalRequisitesRoute: LegalRequisitesRoute,
   LegalTermsRoute: LegalTermsRoute,
   PayFailRoute: PayFailRoute,
