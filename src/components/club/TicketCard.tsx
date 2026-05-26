@@ -54,7 +54,7 @@ export function TicketCard({
         />
 
         {/* основная часть */}
-        <div className="relative z-10 flex min-w-0 flex-1 flex-col justify-between p-5">
+        <div className="relative z-10 flex min-w-0 flex-1 flex-col justify-between py-5 pl-5 pr-2">
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
               Мой баланс

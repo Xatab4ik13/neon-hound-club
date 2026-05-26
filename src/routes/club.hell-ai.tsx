@@ -625,14 +625,18 @@ function HellAiMobile() {
     });
   }
 
-  // Высота страницы = видимая область между топ-баром (52px) и таб-баром (64px+safe+8px gap из <main>).
+  // Высота страницы = видимая область между топ-баром (52px + safe-area-inset-top в PWA)
+  // и таб-баром (64px+safe+8px gap из <main>).
+  // ВАЖНО: в iOS PWA standalone MobileTopBar добавляет paddingTop: env(safe-area-inset-top),
+  // поэтому его высота = 3.25rem + safe-area-inset-top. Без учёта этого композер
+  // уезжает за нижний край и приходится скроллить.
   // При открытой клавиатуре (iOS visualViewport) сжимаем до 100dvh - topbar - keyboardOffset.
   // Композер и тулбар сверху — в обычном потоке, без position:fixed, потому что
   // <MobileTransition> оборачивает страницу в motion.div с transform → fixed ломается.
   const pageHeight =
     keyboardOffset > 0
-      ? `calc(100dvh - 3.25rem - ${keyboardOffset}px)`
-      : "calc(100dvh - 3.25rem - 64px - 8px - env(safe-area-inset-bottom))";
+      ? `calc(100dvh - 3.25rem - env(safe-area-inset-top) - ${keyboardOffset}px)`
+      : "calc(100dvh - 3.25rem - env(safe-area-inset-top) - 64px - 8px - env(safe-area-inset-bottom))";
 
   return (
     <div
