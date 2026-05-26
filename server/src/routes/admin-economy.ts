@@ -11,78 +11,12 @@ import { orders } from "../db/schema/shop.js";
 import { passPurchases } from "../db/schema/pass.js";
 import { requireAdmin, type SessionPayload } from "../lib/auth.js";
 
-// ---------- helpers: sync auto-income from paid orders / pass ----------
+// Экономика работает в реальном времени:
+//   income  = paid orders + paid Hell Pass + ручные income-операции
+//   expense = ручные expense-операции
+// Таблица economy_operations используется ТОЛЬКО для ручных операций.
+// Авто-доходы выводятся виртуально из orders/passPurchases — без дублей и без sync.
 
-/**
- * Идемпотентно заводит операции-доходы по всем paid-заказам и активным Pass,
- * для которых ещё нет операции с тем же ref_type/ref_id.
- * Дорого не делает: insert ... on conflict (через unique index eo_ref_uniq).
- */
-export async function syncEconomyAutoIncome(): Promise<{ orders: number; pass: number }> {
-  // orders: status='paid', paid_at not null
-  const orderRows = await db
-    .select({
-      id: orders.id,
-      total: orders.totalRub,
-      paidAt: orders.paidAt,
-    })
-    .from(orders)
-    .where(eq(orders.status, "paid"))
-    .limit(1000);
-
-  let createdOrders = 0;
-  for (const o of orderRows) {
-    if (!o.paidAt) continue;
-    const r = await db
-      .insert(economyOperations)
-      .values({
-        occurredAt: o.paidAt,
-        type: "income",
-        category: "Магазин",
-        amountRub: o.total,
-        note: `Заказ #${o.id.slice(0, 8)}`,
-        source: "auto",
-        refType: "order",
-        refId: o.id,
-      })
-      .onConflictDoNothing({ target: [economyOperations.refType, economyOperations.refId] })
-      .returning({ id: economyOperations.id });
-    if (r.length) createdOrders += 1;
-  }
-
-  // pass: status='active' or any paid_at not null
-  const passRows = await db
-    .select({
-      id: passPurchases.id,
-      price: passPurchases.priceRub,
-      paidAt: passPurchases.paidAt,
-      tier: passPurchases.tier,
-    })
-    .from(passPurchases)
-    .limit(1000);
-
-  let createdPass = 0;
-  for (const p of passRows) {
-    if (!p.paidAt) continue;
-    const r = await db
-      .insert(economyOperations)
-      .values({
-        occurredAt: p.paidAt,
-        type: "income",
-        category: "Hell Pass",
-        amountRub: p.price,
-        note: `Hell Pass ${p.tier}`,
-        source: "auto",
-        refType: "pass_purchase",
-        refId: p.id,
-      })
-      .onConflictDoNothing({ target: [economyOperations.refType, economyOperations.refId] })
-      .returning({ id: economyOperations.id });
-    if (r.length) createdPass += 1;
-  }
-
-  return { orders: createdOrders, pass: createdPass };
-}
 
 // ---------- schemas ----------
 
