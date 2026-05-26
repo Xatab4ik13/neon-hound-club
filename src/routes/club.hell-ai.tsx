@@ -475,25 +475,53 @@ function HellAiMobile() {
   const hydrated = useRef(false);
 
   useEffect(() => {
-    const list = loadChats();
+    let cancelled = false;
     const aid = loadActiveId();
-    if (list.length === 0) {
-      const c = newChat();
-      setChats([c]);
-      setActiveChatId(c.id);
-    } else {
-      setChats(list);
-      setActiveChatId(list.find((c) => c.id === aid)?.id ?? list[0].id);
-    }
+    // Сразу показываем пустой "Новый чат", чтобы UI не моргал.
+    const fresh = newChat();
+    setChats([fresh]);
+    setActiveChatId(fresh.id);
     hydrated.current = true;
+    // Подгружаем серверную историю и аккуратно мёрджим.
+    fetchChats()
+      .then((server) => {
+        if (cancelled) return;
+        setChats((prev) => {
+          const localEmpty = prev.find((c) => c.messages.length === 0);
+          const head = localEmpty ? [localEmpty] : [];
+          return [...head, ...server.filter((s) => !head.some((h) => h.id === s.id))];
+        });
+        const target = server.find((c) => c.id === aid);
+        if (target) setActiveChatId(target.id);
+      })
+      .catch(() => { /* офлайн / 401 — оставляем локальный пустой чат */ });
+    return () => { cancelled = true; };
   }, []);
 
   useEffect(() => {
-    if (hydrated.current) saveChats(chats);
-  }, [chats]);
-  useEffect(() => {
     if (hydrated.current && activeChatId) saveActiveId(activeChatId);
   }, [activeChatId]);
+
+  // Догружаем сообщения активного чата с бэка при первом открытии.
+  useEffect(() => {
+    if (!activeChatId) return;
+    const chat = chats.find((c) => c.id === activeChatId);
+    if (!chat || chat.loaded) return;
+    let cancelled = false;
+    fetchChatMessages(activeChatId)
+      .then((msgs) => {
+        if (cancelled) return;
+        setChats((prev) =>
+          prev.map((c) => (c.id === activeChatId ? { ...c, messages: msgs, loaded: true } : c)),
+        );
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setChats((prev) => prev.map((c) => (c.id === activeChatId ? { ...c, loaded: true } : c)));
+      });
+    return () => { cancelled = true; };
+  }, [activeChatId, chats]);
+
 
   const activeChat = chats.find((c) => c.id === activeChatId);
   const messages = activeChat?.messages ?? [];
