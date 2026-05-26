@@ -30,6 +30,10 @@ const bannerInputSchema = z.object({
 
 const bannerPatchSchema = bannerInputSchema.partial();
 
+function zodMessage(error: z.ZodError) {
+  return error.issues[0]?.message ?? "Проверь поля баннера";
+}
+
 export async function homeBannersRoutes(app: FastifyInstance) {
   // Публично: только активные, отсортированные.
   app.get("/", async () => {
@@ -57,7 +61,11 @@ export async function adminHomeBannersRoutes(app: FastifyInstance) {
   app.post("/", async (req, reply) => {
     const parsed = bannerInputSchema.safeParse(req.body);
     if (!parsed.success) {
-      return reply.code(400).send({ error: "invalid_input", details: parsed.error.flatten() });
+      return reply.code(400).send({
+        error: "invalid_input",
+        message: zodMessage(parsed.error),
+        details: parsed.error.flatten(),
+      });
     }
     const [created] = await db.insert(homeBanners).values(parsed.data).returning();
     return reply.code(201).send({ banner: created });
@@ -67,7 +75,11 @@ export async function adminHomeBannersRoutes(app: FastifyInstance) {
     const { id } = z.object({ id: z.string().uuid() }).parse(req.params);
     const parsed = bannerPatchSchema.safeParse(req.body);
     if (!parsed.success) {
-      return reply.code(400).send({ error: "invalid_input", details: parsed.error.flatten() });
+      return reply.code(400).send({
+        error: "invalid_input",
+        message: zodMessage(parsed.error),
+        details: parsed.error.flatten(),
+      });
     }
     const [updated] = await db
       .update(homeBanners)
