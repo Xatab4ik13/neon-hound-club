@@ -73,8 +73,8 @@ export function Hero() {
           </h1>
 
           <p className="mt-8 max-w-[36ch] text-pretty text-lg text-muted-foreground md:text-xl">
-            Мерч, конкурсы, школа, гараж, трек и закрытая движуха для тех, кто
-            живёт мото-комьюнити.
+            Магазин. Школа. Гараж. Призы. Для тех, кто живёт
+            мото-комьюнити.
           </p>
 
           <div className="mt-10 flex flex-wrap items-center gap-6">
