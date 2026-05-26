@@ -198,6 +198,7 @@ export const orderItems = pgTable(
     priceRubSnapshot: integer("price_rub_snapshot").notNull(),
     bonusTicketsSnapshot: integer("bonus_tickets_snapshot").notNull().default(0),
     qty: integer("qty").notNull(),
+    sizeSnapshot: varchar("size_snapshot", { length: 24 }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => ({
