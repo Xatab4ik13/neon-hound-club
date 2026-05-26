@@ -320,7 +320,17 @@ const patchProductSchema = z
     preorderExpectedAt: z.string().datetime().nullable(),
     shippingInfo: z.string().max(4000),
     returnPolicy: z.string().max(4000),
-    sizes: z.array(z.string().trim().min(1).max(24)).max(40),
+    sizes: z
+      .array(
+        z.union([
+          z.string().trim().min(1).max(24).transform((label) => ({ label, stock: null as number | null })),
+          z.object({
+            label: z.string().trim().min(1).max(24),
+            stock: z.number().int().min(0).max(1_000_000).nullable(),
+          }),
+        ]),
+      )
+      .max(40),
   })
   .partial();
 
