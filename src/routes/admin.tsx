@@ -148,6 +148,8 @@ const NAV: NavItem[] = [
   { to: "/admin/users", label: "Пользователи", icon: Users },
   { to: "/admin/shop", label: "Магазин", icon: ShoppingBag },
   { to: "/admin/tickets", label: "Билеты", icon: Ticket },
+  { to: "/admin/banners", label: "Баннеры", icon: ImageIcon },
+
   
   { to: "/admin/economy", label: "Экономика", icon: Wallet },
   { to: "/admin/hell-ai", label: "Hell AI", icon: Bot },
