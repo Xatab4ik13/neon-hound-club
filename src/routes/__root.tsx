@@ -107,17 +107,6 @@ function RootComponent() {
       <ViewerProvider>
         <CartProvider>
           <Outlet />
-          <Toaster
-            position="top-center"
-            theme="dark"
-            offset="calc(env(safe-area-inset-top) + 12px)"
-            toastOptions={{
-              classNames: {
-                toast:
-                  "rounded-2xl border border-white/[0.08] bg-[#1c1c1e]/95 backdrop-blur-xl shadow-[0_12px_40px_-8px_rgba(0,0,0,0.6)]",
-              },
-            }}
-          />
         </CartProvider>
       </ViewerProvider>
     </QueryClientProvider>
