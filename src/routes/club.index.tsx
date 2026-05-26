@@ -221,24 +221,24 @@ export const PostCard = memo(function PostCard({ post, moderate = false }: { pos
 
       <header className="flex items-center gap-3 px-4 pt-4 md:px-5 md:pt-5">
         <UserLink
-          slug={post.authorSlug}
+          slug={author.slug}
           disabled={authorIsBlogger}
           className="flex min-w-0 flex-1 items-center gap-3"
         >
           {authorIsBlogger ? (
-            <HellhoundAvatar size={44} initials={author?.initials ?? "H"} avatarUrl={author?.avatarUrl} />
+            <HellhoundAvatar size={44} initials={author.initials} avatarUrl={author.avatarUrl} />
           ) : (
             <RankAvatar
-              initials={author?.initials ?? "?"}
-              rankId={author?.rank ?? "rookie"}
-              avatarUrl={author?.avatarUrl}
+              initials={author.initials}
+              rankId={(author.rankId as RankId) ?? "rookie"}
+              avatarUrl={author.avatarUrl}
               size={44}
             />
           )}
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
               <span className="truncate font-display text-[15px] font-black uppercase italic tracking-tight text-foreground">
-                {author?.nick ?? post.authorSlug}
+                {author.nick}
               </span>
               {authorIsBlogger && <HellhoundChip size="sm" />}
             </div>
