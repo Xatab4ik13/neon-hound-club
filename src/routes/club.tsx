@@ -9,12 +9,11 @@ import {
   Gem,
   User,
   Bike,
-  Package,
   Target,
-  TrendingUp,
   UserPlus,
   type LucideIcon,
 } from "lucide-react";
+
 import { ME } from "@/data/profile";
 import { RANKS, getRankSpan, type PlaqueBg, type RankId } from "@/data/ranks";
 import { useCurrentRank } from "@/data/rank-state";
