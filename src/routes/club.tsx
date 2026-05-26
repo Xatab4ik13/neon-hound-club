@@ -866,8 +866,9 @@ export function ProfilePlaque({
   const myProfile = useMyProfile(viewer.isAuthed);
   const mockRank = useCurrentRank();
 
-  // Реальный ник/ранг/xp с бэка, если есть. Иначе fallback на мок.
-  const nick = viewer.nick ?? ME.nick;
+  // Пока viewer не гидрирован — НЕ показываем мок-ник ASPHALT_DOG.
+  // Иначе на 1–2 сек мелькает чужой ник, потом подменяется реальным.
+  const nick = viewer.hydrated ? (viewer.nick ?? ME.nick) : "";
   const realRankId = myProfile.data?.rank.rankId as RankId | undefined;
   const realRankIdx = realRankId ? RANKS.findIndex((r) => r.id === realRankId) : -1;
   const rank = realRankIdx >= 0 ? RANKS[realRankIdx] : mockRank.rank;
