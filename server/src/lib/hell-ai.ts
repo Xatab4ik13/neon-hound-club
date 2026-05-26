@@ -143,10 +143,10 @@ export const AI_LIMITS_DEFAULT: AiLimits = {
  * Имя модели НЕ возвращается клиенту — клиент видит только "Hell AI".
  */
 export const TIER_PRIMARY_MODEL: Record<"silver" | "gold" | "platinum", string> = {
-  silver: "google/gemini-2.5-flash",
-  gold: "google/gemini-2.5-flash",
-  platinum: "openai/gpt-5-mini",
+  silver: "openrouter/auto",
+  gold: "openrouter/auto",
+  platinum: "openrouter/auto",
 };
 
 /** Модель для platinum после превышения лимита умной модели. */
-export const PLATINUM_FALLBACK_MODEL = "openai/gpt-5-mini";
+export const PLATINUM_FALLBACK_MODEL = "openrouter/auto";
