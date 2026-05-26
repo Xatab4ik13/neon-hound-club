@@ -101,8 +101,12 @@ const FeedRow = memo(function FeedRow({ post }: { post: Post }) {
 
 // ───────── Post ─────────
 
-export function PostCard({ post, moderate = false }: { post: Post; moderate?: boolean }) {
+export const PostCard = memo(function PostCard({ post, moderate = false }: { post: Post; moderate?: boolean }) {
   const [commentsOpen, setCommentsOpen] = useState(false);
+  const [commentsEverOpened, setCommentsEverOpened] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [viewerEverOpened, setViewerEverOpened] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [viewerOpen, setViewerOpen] = useState(false);
   const navigate = useNavigate();
