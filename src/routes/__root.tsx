@@ -38,6 +38,21 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
 
+  const handleRetry = async () => {
+    try {
+      // Сбрасываем кэш запросов, чтобы повторно дёрнуть данные
+      const { queryClient } = router.options.context as { queryClient?: QueryClient };
+      if (queryClient) {
+        await queryClient.invalidateQueries();
+      }
+      await router.invalidate();
+      reset();
+    } catch {
+      // Если что-то пошло не так — жёстко перезагружаем текущий URL
+      if (typeof window !== "undefined") window.location.reload();
+    }
+  };
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
@@ -49,10 +64,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
-            onClick={() => {
-              router.invalidate();
-              reset();
-            }}
+            onClick={handleRetry}
             className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
             Повторить
