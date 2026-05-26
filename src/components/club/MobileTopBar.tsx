@@ -100,8 +100,8 @@ export function MobileTopBar() {
               }}
             />
           </span>
-          <span className="relative font-display text-[15px] font-black italic tracking-tight text-white">
-            HELL
+          <span className="relative truncate font-display text-[15px] font-black italic tracking-tight text-white">
+            {nick || "—"}
           </span>
           <span className="relative whitespace-nowrap font-mono text-[12px] font-bold tabular-nums">
             <span className="text-white">{xp.toLocaleString("ru-RU")}</span>
