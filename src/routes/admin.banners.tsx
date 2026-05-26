@@ -36,6 +36,8 @@ import type { HomeBanner } from "@/lib/queries";
 import { uploadFileToS3 } from "@/lib/garage-api";
 import { ApiError } from "@/lib/api";
 import { hhToast as toast } from "@/lib/hh-toast";
+import { BANNER_PRESETS, bannerBackgroundStyle, isBannerPreset } from "@/lib/banner-presets";
+
 
 export const Route = createFileRoute("/admin/banners")({
   component: BannersPage,
@@ -171,21 +173,14 @@ function BannerCard({
     <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
       <div
         className="relative aspect-[16/10] bg-zinc-100 dark:bg-zinc-800"
-        style={
-          banner.imageUrl
-            ? {
-                backgroundImage: `url(${JSON.stringify(banner.imageUrl)})`,
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-              }
-            : undefined
-        }
+        style={bannerBackgroundStyle(banner.imageUrl)}
       >
         {!banner.imageUrl && (
           <div className="flex h-full items-center justify-center text-zinc-400">
             <ImageIcon className="h-8 w-8" />
           </div>
         )}
+
         <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/65 via-black/30 to-transparent" />
         <div className="relative flex h-full flex-col justify-between p-3 text-white">
           <div className="pt-1">
@@ -340,15 +335,7 @@ function BannerEditor({
         <Field label="Превью" hint="Так баннер увидит пользователь в карусели на /club.">
           <div
             className="relative aspect-[16/10] w-full overflow-hidden rounded-lg border border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900"
-            style={
-              form.imageUrl
-                ? {
-                    backgroundImage: `url(${JSON.stringify(form.imageUrl)})`,
-                    backgroundSize: "cover",
-                    backgroundPosition: "center",
-                  }
-                : undefined
-            }
+            style={bannerBackgroundStyle(form.imageUrl)}
           >
             {!form.imageUrl && (
               <div className="flex h-full items-center justify-center text-zinc-400">
@@ -356,6 +343,7 @@ function BannerEditor({
               </div>
             )}
              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/65 via-black/30 to-transparent" />
+
              <div className="relative flex h-full flex-col justify-between p-4 text-white">
                <div className="pt-1">
                  <h3 className="whitespace-pre-line font-display text-xl font-black uppercase italic leading-[0.95] drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]">
