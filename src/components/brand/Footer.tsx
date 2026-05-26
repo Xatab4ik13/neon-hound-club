@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { Logo } from "./Logo";
+import { PaymentBadges } from "./PaymentBadges";
 import { LEGAL } from "@/data/legal";
 
 const SOCIALS = [
@@ -102,6 +103,22 @@ export function Footer() {
 
         {/* разделитель */}
         <div className="mt-12 border-t border-border/60" />
+
+        {/* платёжные системы */}
+        <div className="mt-6 flex flex-col items-start gap-3 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-center gap-3">
+            <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+              Принимаем
+            </span>
+            <PaymentBadges size="sm" />
+          </div>
+          <Link
+            to="/shop-info"
+            className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground transition-colors hover:text-primary"
+          >
+            Оплата и доставка →
+          </Link>
+        </div>
 
         {/* нижняя строка: реквизиты ИП по 152-ФЗ */}
         <div className="mt-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">

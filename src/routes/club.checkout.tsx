@@ -3,6 +3,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, MapPin, Ticket, Truck, User } from "lucide-react";
 import { PageHeader } from "@/components/club/PageHeader";
+import { PaymentBadges } from "@/components/brand/PaymentBadges";
+import { LEGAL } from "@/data/legal";
 import { useCart } from "@/hooks/use-cart";
 import { useViewer } from "@/hooks/use-viewer";
 import { formatRuPhone } from "@/lib/phone";
@@ -45,6 +47,8 @@ function ClubCheckoutPage() {
   const { isAuthed, user } = useViewer();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+
+  const [agree, setAgree] = useState(false);
 
   const [form, setForm] = useState<CheckoutProfile>({
     name: user?.nick ?? "",
@@ -127,6 +131,7 @@ function ClubCheckoutPage() {
     form.city.trim().length >= 1 &&
     form.address.trim().length >= 3 &&
     orderableItems.length > 0 &&
+    agree &&
     !mutation.isPending;
 
   const submit = (e: React.FormEvent) => {
@@ -263,13 +268,48 @@ function ClubCheckoutPage() {
           </div>
         )}
 
-        <p className="px-1 text-center text-[11px] text-muted-foreground/80">
-          Нажимая «Оплатить», вы соглашаетесь с{" "}
-          <Link to="/about" className="text-primary">
-            условиями клуба
-          </Link>
-          .
-        </p>
+        {/* Платёжные системы */}
+        <div className="flex items-center justify-between gap-3 rounded-2xl border border-white/[0.06] bg-card/40 px-4 py-3">
+          <div className="font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+            Принимаем
+          </div>
+          <PaymentBadges size="sm" />
+        </div>
+
+        {/* Продавец (для банка-эквайера) */}
+        <div className="rounded-2xl border border-white/[0.06] bg-card/40 px-4 py-3">
+          <div className="mb-1 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+            Продавец
+          </div>
+          <div className="text-[12px] leading-relaxed text-muted-foreground">
+            {LEGAL.shortName} · ОГРНИП {LEGAL.ogrnip} · ИНН {LEGAL.inn} · {LEGAL.region}
+          </div>
+        </div>
+
+        {/* Согласие на оферту */}
+        <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-white/[0.06] bg-card/40 px-4 py-3">
+          <input
+            type="checkbox"
+            checked={agree}
+            onChange={(e) => setAgree(e.target.checked)}
+            className="mt-0.5 h-4 w-4 shrink-0 accent-primary"
+          />
+          <span className="text-[12px] leading-relaxed text-muted-foreground">
+            Я согласен с{" "}
+            <Link to="/legal/offer" className="text-primary underline-offset-2 hover:underline">
+              публичной офертой
+            </Link>
+            ,{" "}
+            <Link to="/legal/privacy" className="text-primary underline-offset-2 hover:underline">
+              обработкой персональных данных
+            </Link>{" "}
+            и условиями{" "}
+            <Link to="/shop-info" className="text-primary underline-offset-2 hover:underline">
+              оплаты и доставки
+            </Link>
+            .
+          </span>
+        </label>
 
         {/* Sticky CTA */}
         <div
