@@ -16,6 +16,7 @@ const NAV = [
   { label: "Магазин", href: "/shop" },
   { label: "Hell Pass", href: "/hell-pass" },
   { label: "Школа", href: "/school" },
+  { label: "Доставка и оплата", href: "/shop-info" },
   { label: "О клубе", href: "/about" },
 ];
 

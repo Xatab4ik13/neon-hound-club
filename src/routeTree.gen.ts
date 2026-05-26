@@ -30,10 +30,8 @@ import { Route as ShopProductSlugRouteImport } from './routes/shop.$productSlug'
 import { Route as PaySuccessRouteImport } from './routes/pay.success'
 import { Route as PayFailRouteImport } from './routes/pay.fail'
 import { Route as LegalTermsRouteImport } from './routes/legal.terms'
-import { Route as LegalShippingRouteImport } from './routes/legal.shipping'
 import { Route as LegalRequisitesRouteImport } from './routes/legal.requisites'
 import { Route as LegalPrivacyRouteImport } from './routes/legal.privacy'
-import { Route as LegalPaymentRouteImport } from './routes/legal.payment'
 import { Route as LegalOfferRouteImport } from './routes/legal.offer'
 import { Route as HellPassTierRouteImport } from './routes/hell-pass.$tier'
 import { Route as ClubTicketsRouteImport } from './routes/club.tickets'
@@ -177,11 +175,6 @@ const LegalTermsRoute = LegalTermsRouteImport.update({
   path: '/legal/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
-const LegalShippingRoute = LegalShippingRouteImport.update({
-  id: '/legal/shipping',
-  path: '/legal/shipping',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const LegalRequisitesRoute = LegalRequisitesRouteImport.update({
   id: '/legal/requisites',
   path: '/legal/requisites',
@@ -190,11 +183,6 @@ const LegalRequisitesRoute = LegalRequisitesRouteImport.update({
 const LegalPrivacyRoute = LegalPrivacyRouteImport.update({
   id: '/legal/privacy',
   path: '/legal/privacy',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LegalPaymentRoute = LegalPaymentRouteImport.update({
-  id: '/legal/payment',
-  path: '/legal/payment',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LegalOfferRoute = LegalOfferRouteImport.update({
@@ -422,10 +410,8 @@ export interface FileRoutesByFullPath {
   '/club/tickets': typeof ClubTicketsRoute
   '/hell-pass/$tier': typeof HellPassTierRoute
   '/legal/offer': typeof LegalOfferRoute
-  '/legal/payment': typeof LegalPaymentRoute
   '/legal/privacy': typeof LegalPrivacyRoute
   '/legal/requisites': typeof LegalRequisitesRoute
-  '/legal/shipping': typeof LegalShippingRoute
   '/legal/terms': typeof LegalTermsRoute
   '/pay/fail': typeof PayFailRoute
   '/pay/success': typeof PaySuccessRoute
@@ -483,10 +469,8 @@ export interface FileRoutesByTo {
   '/club/tickets': typeof ClubTicketsRoute
   '/hell-pass/$tier': typeof HellPassTierRoute
   '/legal/offer': typeof LegalOfferRoute
-  '/legal/payment': typeof LegalPaymentRoute
   '/legal/privacy': typeof LegalPrivacyRoute
   '/legal/requisites': typeof LegalRequisitesRoute
-  '/legal/shipping': typeof LegalShippingRoute
   '/legal/terms': typeof LegalTermsRoute
   '/pay/fail': typeof PayFailRoute
   '/pay/success': typeof PaySuccessRoute
@@ -548,10 +532,8 @@ export interface FileRoutesById {
   '/club/tickets': typeof ClubTicketsRoute
   '/hell-pass/$tier': typeof HellPassTierRoute
   '/legal/offer': typeof LegalOfferRoute
-  '/legal/payment': typeof LegalPaymentRoute
   '/legal/privacy': typeof LegalPrivacyRoute
   '/legal/requisites': typeof LegalRequisitesRoute
-  '/legal/shipping': typeof LegalShippingRoute
   '/legal/terms': typeof LegalTermsRoute
   '/pay/fail': typeof PayFailRoute
   '/pay/success': typeof PaySuccessRoute
@@ -614,10 +596,8 @@ export interface FileRouteTypes {
     | '/club/tickets'
     | '/hell-pass/$tier'
     | '/legal/offer'
-    | '/legal/payment'
     | '/legal/privacy'
     | '/legal/requisites'
-    | '/legal/shipping'
     | '/legal/terms'
     | '/pay/fail'
     | '/pay/success'
@@ -675,10 +655,8 @@ export interface FileRouteTypes {
     | '/club/tickets'
     | '/hell-pass/$tier'
     | '/legal/offer'
-    | '/legal/payment'
     | '/legal/privacy'
     | '/legal/requisites'
-    | '/legal/shipping'
     | '/legal/terms'
     | '/pay/fail'
     | '/pay/success'
@@ -739,10 +717,8 @@ export interface FileRouteTypes {
     | '/club/tickets'
     | '/hell-pass/$tier'
     | '/legal/offer'
-    | '/legal/payment'
     | '/legal/privacy'
     | '/legal/requisites'
-    | '/legal/shipping'
     | '/legal/terms'
     | '/pay/fail'
     | '/pay/success'
@@ -780,10 +756,8 @@ export interface RootRouteChildren {
   CheckoutSuccessRoute: typeof CheckoutSuccessRoute
   HellPassTierRoute: typeof HellPassTierRoute
   LegalOfferRoute: typeof LegalOfferRoute
-  LegalPaymentRoute: typeof LegalPaymentRoute
   LegalPrivacyRoute: typeof LegalPrivacyRoute
   LegalRequisitesRoute: typeof LegalRequisitesRoute
-  LegalShippingRoute: typeof LegalShippingRoute
   LegalTermsRoute: typeof LegalTermsRoute
   PayFailRoute: typeof PayFailRoute
   PaySuccessRoute: typeof PaySuccessRoute
@@ -942,13 +916,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LegalTermsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/legal/shipping': {
-      id: '/legal/shipping'
-      path: '/legal/shipping'
-      fullPath: '/legal/shipping'
-      preLoaderRoute: typeof LegalShippingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/legal/requisites': {
       id: '/legal/requisites'
       path: '/legal/requisites'
@@ -961,13 +928,6 @@ declare module '@tanstack/react-router' {
       path: '/legal/privacy'
       fullPath: '/legal/privacy'
       preLoaderRoute: typeof LegalPrivacyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/legal/payment': {
-      id: '/legal/payment'
-      path: '/legal/payment'
-      fullPath: '/legal/payment'
-      preLoaderRoute: typeof LegalPaymentRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/legal/offer': {
@@ -1346,10 +1306,8 @@ const rootRouteChildren: RootRouteChildren = {
   CheckoutSuccessRoute: CheckoutSuccessRoute,
   HellPassTierRoute: HellPassTierRoute,
   LegalOfferRoute: LegalOfferRoute,
-  LegalPaymentRoute: LegalPaymentRoute,
   LegalPrivacyRoute: LegalPrivacyRoute,
   LegalRequisitesRoute: LegalRequisitesRoute,
-  LegalShippingRoute: LegalShippingRoute,
   LegalTermsRoute: LegalTermsRoute,
   PayFailRoute: PayFailRoute,
   PaySuccessRoute: PaySuccessRoute,
