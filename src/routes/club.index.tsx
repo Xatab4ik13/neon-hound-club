@@ -692,7 +692,7 @@ function CommentsSheet({
         large
         onReply={() =>
           setReplyTo({
-            nick: PUBLIC_USERS[c.authorSlug]?.nick ?? c.authorSlug,
+            nick: c.author.nick,
             commentId: c.id,
           })
         }
