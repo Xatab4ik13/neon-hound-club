@@ -558,15 +558,46 @@ export function useFeedPosts(): FeedPost[] {
         startPolling();
         return;
       }
-      const onAny = () => scheduleRefetch();
-      es.addEventListener("post.created", onAny);
-      es.addEventListener("post.updated", onAny);
-      es.addEventListener("post.deleted", onAny);
-      es.addEventListener("comment.created", onAny);
-      es.addEventListener("comment.deleted", onAny);
-      es.addEventListener("post.liked", onAny);
-      es.addEventListener("comment.liked", onAny);
-      es.addEventListener("poll.voted", onAny);
+      const parsePayload = (e: MessageEvent): { postId?: string; commentId?: string } => {
+        try {
+          return typeof e.data === "string" && e.data ? JSON.parse(e.data) : {};
+        } catch {
+          return {};
+        }
+      };
+      // Состав ленты меняется → полный рефетч (редкие события).
+      es.addEventListener("post.created", () => scheduleRefetch());
+      es.addEventListener("post.deleted", () => scheduleRefetch());
+      // Изменение одного поста → точечный рефетч только этого поста.
+      es.addEventListener("post.updated", (e) => {
+        const { postId } = parsePayload(e as MessageEvent);
+        if (postId) schedulePostRefetch(postId);
+      });
+      es.addEventListener("post.liked", (e) => {
+        const { postId } = parsePayload(e as MessageEvent);
+        if (postId) schedulePostRefetch(postId);
+      });
+      es.addEventListener("poll.voted", (e) => {
+        const { postId } = parsePayload(e as MessageEvent);
+        if (postId) schedulePostRefetch(postId);
+      });
+      es.addEventListener("comment.created", (e) => {
+        const { postId } = parsePayload(e as MessageEvent);
+        if (postId) schedulePostRefetch(postId);
+      });
+      // Удаление коммента → локально, без сети.
+      es.addEventListener("comment.deleted", (e) => {
+        const { commentId } = parsePayload(e as MessageEvent);
+        if (commentId) removeCommentLocal(commentId);
+      });
+      // Лайк коммента → точечный рефетч поста, в котором он лежит.
+      es.addEventListener("comment.liked", (e) => {
+        const { commentId } = parsePayload(e as MessageEvent);
+        if (!commentId) return;
+        const postId = findPostIdByCommentId(commentId);
+        if (postId) schedulePostRefetch(postId);
+      });
+
       es.onopen = () => stopPolling();
       es.onerror = () => {
         // EventSource сам переподключится; на всякий случай подстрахуемся polling-ом.
