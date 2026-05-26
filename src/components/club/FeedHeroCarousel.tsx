@@ -70,6 +70,18 @@ export function FeedHeroCarousel() {
     window.setTimeout(() => setPaused(false), 1500);
   };
 
+  // Пока баннеров нет — секция не рендерится (никаких моков).
+  if (total === 0) {
+    if (isLoading) {
+      return (
+        <section className="mb-5" aria-label="Промо">
+          <div className="aspect-[16/10] w-full animate-pulse rounded-[24px] bg-white/[0.04]" />
+        </section>
+      );
+    }
+    return null;
+  }
+
   return (
     <section className="mb-5" aria-label="Промо">
       <div
