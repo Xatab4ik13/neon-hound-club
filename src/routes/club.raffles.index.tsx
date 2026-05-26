@@ -53,7 +53,7 @@ function RafflesPage() {
 
   return (
     <main className="mx-auto w-full max-w-3xl px-4 py-5 md:py-8">
-      <PageHeader title="Розыгрыши" subtitle="Лоты клуба и архив" />
+      <PageHeader title="Розыгрыши" />
 
       {isAuthed && (
         <section
