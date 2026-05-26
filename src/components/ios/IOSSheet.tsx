@@ -6,6 +6,7 @@ import { Drawer } from "vaul";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { useThemeColor } from "@/hooks/use-theme-color";
+import { useKeyboardOffset } from "@/hooks/use-keyboard-offset";
 
 type Props = {
   open: boolean;
@@ -35,6 +36,13 @@ export function IOSSheet({
 }: Props) {
   const close = () => onOpenChange(false);
   useThemeColor(open ? "#0d0d0d" : null);
+  // На iOS PWA visualViewport уменьшается, когда появляется клавиатура.
+  // Используем kbOffset чтобы СЖАТЬ sheet снизу (padding-bottom),
+  // вместо vaul.repositionInputs, который физически поднимает Drawer и
+  // утаскивает шапку с «Готово» за пределы экрана.
+  const kbOffset = useKeyboardOffset();
+  const isKbOpen = kbOffset > 0;
+
   return (
     <Drawer.Root
       open={open}
@@ -46,8 +54,9 @@ export function IOSSheet({
       // Свайп-вниз только за ручку наверху, чтобы случайный жест в форме
       // не закрывал модалку с несохранёнными данными.
       handleOnly
-      // Vaul сам поднимает контент при появлении iOS-клавиатуры.
-      repositionInputs
+      // ВАЖНО: отключаем встроенный лифт. Мы сами компенсируем клавиатуру
+      // через padding-bottom = высота клавиатуры (см. style ниже).
+      repositionInputs={false}
     >
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 z-[80] bg-black/80" />
@@ -59,11 +68,19 @@ export function IOSSheet({
               : "max-h-[78dvh]",
           )}
           style={{
-            paddingBottom: "env(safe-area-inset-bottom)",
+            // Когда клавиатура открыта — её высота вытесняет нижний инсет.
+            // Это сжимает внутренний flex-1 список и поднимает композер ровно
+            // над клавиатурой, не двигая шапку.
+            paddingBottom: isKbOpen
+              ? kbOffset
+              : "env(safe-area-inset-bottom)",
             // Запрещаем браузеру обрабатывать горизонтальный пан — иначе в iOS PWA
             // модалку можно «таскать» вправо-влево пальцем по форме.
             touchAction: "pan-y",
             overscrollBehavior: "contain",
+            // Плавно подстраиваемся под появление/скрытие клавиатуры,
+            // чтобы композер не «дёргался».
+            transition: "padding-bottom 180ms ease-out",
           }}
         >
           <Drawer.Title className="sr-only">{title}</Drawer.Title>
