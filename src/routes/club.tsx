@@ -50,7 +50,8 @@ export const Route = createFileRoute("/club")({
       { name: "robots", content: "noindex" },
     ],
   }),
-  // Блогер живёт в /blogger — выкидываем до рендера, без вспышки клубного UI.
+  // В клуб пускаем только role === "user". Блогер уходит в /blogger,
+  // админ — в /admin. Без вспышки клубного UI.
   beforeLoad: async ({ context }) => {
     if (typeof window === "undefined") return;
     const queryClient = (context as { queryClient?: QueryClient }).queryClient;
@@ -63,6 +64,9 @@ export const Route = createFileRoute("/club")({
       : await fetchMeSafe();
     if (user?.role === "blogger") {
       throw redirect({ to: "/blogger" });
+    }
+    if (user?.role === "admin") {
+      throw redirect({ to: "/admin" });
     }
   },
   component: ClubLayout,
