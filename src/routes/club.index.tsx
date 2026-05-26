@@ -756,6 +756,7 @@ function CommentsSheet({
       <div className="flex h-full min-h-0 flex-1 flex-col">
         <div
           ref={listRef}
+          onScroll={onListScroll}
           className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 md:px-5"
           style={{ WebkitOverflowScrolling: "touch" } as React.CSSProperties}
         >
@@ -796,10 +797,7 @@ function CommentsSheet({
             </ul>
           )}
         </div>
-        <div
-          className="shrink-0 border-t border-white/[0.06] bg-[#0d0d0d]"
-          style={{ paddingBottom: kbOffset > 0 ? kbOffset : undefined }}
-        >
+        <div className="shrink-0 border-t border-white/[0.06] bg-[#0d0d0d]">
           <CommentComposer
             postId={post.id}
             large
@@ -808,6 +806,7 @@ function CommentsSheet({
           />
         </div>
       </div>
+
     </IOSSheet>
   );
 }
