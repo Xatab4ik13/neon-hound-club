@@ -443,66 +443,6 @@ function EmptyBlock() {
   );
 }
 
-/** Свайп-влево по строке открывает кнопку удаления (как iOS Mail). */
-function SwipeRow({
-  children,
-  onDelete,
-}: {
-  children: React.ReactNode;
-  onDelete: () => void;
-}) {
-  const [offset, setOffset] = useState(0);
-  const startX = useRef(0);
-  const startOffset = useRef(0);
-  const dragging = useRef(false);
-  const ACTION_W = 88;
-
-  return (
-    <div className="relative overflow-hidden">
-      {/* Backdrop action */}
-      <button
-        type="button"
-        onClick={onDelete}
-        aria-label="Удалить"
-        className="absolute inset-y-0 right-0 flex w-[88px] items-center justify-center bg-red-500 text-white"
-      >
-        <Trash2 className="h-5 w-5" />
-      </button>
-
-      <div
-        className="relative will-change-transform"
-        style={{
-          transform: `translateX(${offset}px)`,
-          transition: dragging.current ? "none" : "transform 0.25s cubic-bezier(0.32, 0.72, 0, 1)",
-        }}
-        onTouchStart={(e) => {
-          startX.current = e.touches[0].clientX;
-          startOffset.current = offset;
-          dragging.current = true;
-        }}
-        onTouchMove={(e) => {
-          if (!dragging.current) return;
-          const dx = e.touches[0].clientX - startX.current;
-          let next = startOffset.current + dx;
-          if (next > 0) next = 0;
-          if (next < -160) next = -160 + (next + 160) * 0.3; // rubber band
-          setOffset(next);
-        }}
-        onTouchEnd={() => {
-          dragging.current = false;
-          if (offset < -ACTION_W * 0.6) {
-            setOffset(-ACTION_W);
-            haptic("light");
-          } else {
-            setOffset(0);
-          }
-        }}
-      >
-        {children}
-      </div>
-    </div>
-  );
-}
 
 function DesktopRow({
   item,
