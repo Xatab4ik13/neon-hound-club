@@ -1,9 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronRight, Ticket, Trophy, ShieldCheck, Info } from "lucide-react";
+import { ChevronRight, Ticket, Trophy, ShieldCheck } from "lucide-react";
 import { Countdown } from "@/components/club/Countdown";
 import { PageHeader } from "@/components/club/PageHeader";
-import { LEGAL } from "@/data/legal";
 import {
   fetchMyRaffles,
   fetchRaffles,
