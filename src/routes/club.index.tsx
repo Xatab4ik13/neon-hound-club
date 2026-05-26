@@ -557,10 +557,13 @@ function PostAction({
 
 // ───────── Comments preview (под постом) ─────────
 
-function CommentsPreview({
+const CommentsPreview = memo(function CommentsPreview({
   comments,
   onOpen,
 }: {
+  comments: Comment[];
+  onOpen: () => void;
+}) {
   comments: Comment[];
   onOpen: () => void;
 }) {
