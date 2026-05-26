@@ -281,6 +281,39 @@ function RaffleDetailContent({
         </section>
       )}
 
+      <section className="mt-6 rounded-2xl border border-white/[0.06] bg-card/40 p-4">
+        <h2 className="font-display text-[13px] font-black uppercase italic tracking-wider text-foreground">
+          Условия участия
+        </h2>
+        <p className="mt-1.5 text-[12px] leading-relaxed text-muted-foreground">
+          Это стимулирующее мероприятие в порядке ст. 9 ФЗ-38, не лотерея.
+          Участие возможно без покупок — билеты выдаются за активность в клубе.
+          НДФЛ с призов платит организатор. К участию допускаются лица 18+ из
+          РФ и стран СНГ.
+        </p>
+        <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5 text-[12px]">
+          <Link
+            to="/legal/promo-rules"
+            className="font-mono text-[11px] font-bold uppercase tracking-wider text-primary hover:underline"
+          >
+            Полные правила →
+          </Link>
+          <Link
+            to="/legal/requisites"
+            className="text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+          >
+            Организатор
+          </Link>
+          <Link
+            to="/legal/privacy"
+            className="text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+          >
+            Персональные данные
+          </Link>
+        </div>
+      </section>
+
+
       {!finished && isMobile && <div aria-hidden className="h-44" />}
 
       {!finished && isMobile && (
