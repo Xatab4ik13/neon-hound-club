@@ -5,12 +5,14 @@ import { cn } from "@/lib/utils";
 import { X, AlertTriangle, Image as ImageIcon } from "lucide-react";
 import {
   useEffect,
+  useState,
   type ButtonHTMLAttributes,
   type InputHTMLAttributes,
   type TextareaHTMLAttributes,
   type SelectHTMLAttributes,
   type ReactNode,
 } from "react";
+import { createPortal } from "react-dom";
 
 export function PageHeader({
   title,
