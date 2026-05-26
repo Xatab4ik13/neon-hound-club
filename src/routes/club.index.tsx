@@ -617,6 +617,8 @@ function CommentsSheet({
   const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set());
   const listRef = useRef<HTMLDivElement>(null);
   const kbOffset = useKeyboardOffset();
+  const viewer = useViewer();
+  const myId = viewer.user?.id ?? null;
 
   // сбросить reply при закрытии
   useEffect(() => {
