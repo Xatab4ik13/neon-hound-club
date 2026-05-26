@@ -1,25 +1,29 @@
 import { Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { ArrowRight } from "lucide-react";
+import { fetchHomeBanners, type HomeBanner } from "@/lib/queries";
 
-export type HeroSlide = {
+// Унифицированная модель слайда: либо картинка-фон (с бека), либо градиент-fallback (мок).
+type Slide = {
   id: string;
-  eyebrow?: string; // small label e.g. "ЛИМИТ 50 ШТ. · −15% ПО GOLD PASS"
+  eyebrow?: string;
   title: string;
   cta: string;
-  to: string; // internal route
-  // visual
-  gradient: string; // CSS background gradient
+  to: string;
+  isExternal: boolean;
+  imageUrl?: string;
+  gradient?: string;
 };
 
-// Хардкод-моки (потом — через админку)
-const SLIDES: HeroSlide[] = [
+const FALLBACK_SLIDES: Slide[] = [
   {
     id: "merch-black-hound",
     eyebrow: "Лимит 50 шт. · −15% по Gold Pass",
     title: "BLACK HOUND\nJACKET",
     cta: "К товару",
     to: "/club/shop",
+    isExternal: false,
     gradient:
       "radial-gradient(120% 90% at 85% 40%, oklch(0.55 0.22 357.3) 0%, oklch(0.32 0.18 357.3) 45%, oklch(0.18 0.10 357.3) 100%)",
   },
@@ -29,6 +33,7 @@ const SLIDES: HeroSlide[] = [
     title: "HELL PASS\nGOLD",
     cta: "Открыть",
     to: "/club/hell-pass",
+    isExternal: false,
     gradient:
       "radial-gradient(120% 90% at 15% 30%, oklch(0.50 0.18 60) 0%, oklch(0.28 0.12 50) 50%, oklch(0.16 0.06 40) 100%)",
   },
@@ -38,31 +43,50 @@ const SLIDES: HeroSlide[] = [
     title: "КВЕСТ\nНЕДЕЛИ",
     cta: "Участвовать",
     to: "/club/quests",
+    isExternal: false,
     gradient:
       "radial-gradient(120% 90% at 80% 70%, oklch(0.48 0.18 240) 0%, oklch(0.26 0.12 240) 50%, oklch(0.14 0.06 240) 100%)",
   },
-  {
-    id: "new-video",
-    eyebrow: "Новое видео на канале",
-    title: "GTR vs M5\nНОЧНОЙ ЗАМЕС",
-    cta: "Смотреть",
-    to: "/club",
-    gradient:
-      "radial-gradient(120% 90% at 50% 50%, oklch(0.45 0.20 150) 0%, oklch(0.24 0.12 150) 50%, oklch(0.12 0.05 150) 100%)",
-  },
 ];
+
+function toSlide(b: HomeBanner): Slide {
+  return {
+    id: b.id,
+    eyebrow: b.eyebrow || undefined,
+    title: b.title,
+    cta: b.ctaLabel,
+    to: b.ctaHref,
+    isExternal: /^https?:\/\//i.test(b.ctaHref),
+    imageUrl: b.imageUrl || undefined,
+  };
+}
 
 const AUTO_MS = 5000;
 
 export function FeedHeroCarousel() {
+  const { data } = useQuery({
+    queryKey: ["home-banners"],
+    queryFn: fetchHomeBanners,
+    staleTime: 60_000,
+  });
+
+  const slides: Slide[] =
+    data?.banners && data.banners.length > 0
+      ? data.banners.map(toSlide)
+      : FALLBACK_SLIDES;
+
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const startX = useRef<number | null>(null);
-  const total = SLIDES.length;
+  const total = slides.length;
 
-  // Auto-rotate
+  // Если слайдов стало меньше после рефетча — не выйти за пределы.
   useEffect(() => {
-    if (paused) return;
+    if (index >= total) setIndex(0);
+  }, [index, total]);
+
+  useEffect(() => {
+    if (paused || total <= 1) return;
     const t = window.setTimeout(() => {
       setIndex((i) => (i + 1) % total);
     }, AUTO_MS);
@@ -80,7 +104,6 @@ export function FeedHeroCarousel() {
     if (Math.abs(dx) > 40) {
       setIndex((i) => (dx < 0 ? (i + 1) % total : (i - 1 + total) % total));
     }
-    // resume after a moment
     window.setTimeout(() => setPaused(false), 1500);
   };
 
@@ -93,80 +116,99 @@ export function FeedHeroCarousel() {
         onMouseEnter={() => setPaused(true)}
         onMouseLeave={() => setPaused(false)}
       >
-        {/* Track */}
         <div
           className="flex transition-transform duration-500 ease-out"
           style={{ transform: `translateX(-${index * 100}%)` }}
         >
-          {SLIDES.map((s) => (
+          {slides.map((s) => (
             <HeroSlideCard key={s.id} slide={s} />
           ))}
         </div>
       </div>
 
-      {/* Dots */}
-      <div className="mt-3 flex items-center justify-center gap-1.5">
-        {SLIDES.map((s, i) => {
-          const active = i === index;
-          return (
-            <button
-              key={s.id}
-              type="button"
-              aria-label={`Слайд ${i + 1}`}
-              onClick={() => setIndex(i)}
-              className={`h-1.5 rounded-full transition-all duration-300 ${
-                active ? "w-6 bg-primary" : "w-1.5 bg-white/20 hover:bg-white/40"
-              }`}
-            />
-          );
-        })}
-      </div>
+      {total > 1 && (
+        <div className="mt-3 flex items-center justify-center gap-1.5">
+          {slides.map((s, i) => {
+            const active = i === index;
+            return (
+              <button
+                key={s.id}
+                type="button"
+                aria-label={`Слайд ${i + 1}`}
+                onClick={() => setIndex(i)}
+                className={`h-1.5 rounded-full transition-all duration-300 ${
+                  active ? "w-6 bg-primary" : "w-1.5 bg-white/20 hover:bg-white/40"
+                }`}
+              />
+            );
+          })}
+        </div>
+      )}
     </section>
   );
 }
 
-function HeroSlideCard({ slide }: { slide: HeroSlide }) {
-  return (
-    <div
-      className="relative aspect-[16/10] w-full shrink-0"
-      style={{ background: slide.gradient }}
+function HeroSlideCard({ slide }: { slide: Slide }) {
+  const bgStyle: React.CSSProperties = slide.imageUrl
+    ? {
+        backgroundImage: `url(${JSON.stringify(slide.imageUrl)})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }
+    : { background: slide.gradient };
+
+  const Cta = slide.isExternal ? (
+    <a
+      href={slide.to}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3.5 py-2 font-mono text-[11px] font-bold uppercase tracking-[0.18em] text-primary-foreground shadow-[0_4px_16px_rgba(0,0,0,0.35)] transition-transform active:scale-95"
     >
-      {/* Abstract circle pattern overlay */}
+      {slide.cta}
+      <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.5} />
+    </a>
+  ) : (
+    <Link
+      to={slide.to}
+      className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3.5 py-2 font-mono text-[11px] font-bold uppercase tracking-[0.18em] text-primary-foreground shadow-[0_4px_16px_rgba(0,0,0,0.35)] transition-transform active:scale-95"
+    >
+      {slide.cta}
+      <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.5} />
+    </Link>
+  );
+
+  return (
+    <div className="relative aspect-[16/10] w-full shrink-0 bg-zinc-900" style={bgStyle}>
+      {/* Узор поверх (только для fallback-градиентов, на фото мешает) */}
+      {!slide.imageUrl && (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 opacity-[0.18] mix-blend-overlay"
+          style={{
+            backgroundImage:
+              "radial-gradient(circle at 80% 60%, rgba(255,255,255,0.9) 0, transparent 40%), repeating-radial-gradient(circle at 80% 60%, rgba(255,255,255,0.5) 0, rgba(255,255,255,0.5) 1px, transparent 1px, transparent 18px)",
+          }}
+        />
+      )}
+      {/* Затемнение снизу для читабельности текста */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-[0.18] mix-blend-overlay"
-        style={{
-          backgroundImage:
-            "radial-gradient(circle at 80% 60%, rgba(255,255,255,0.9) 0, transparent 40%), repeating-radial-gradient(circle at 80% 60%, rgba(255,255,255,0.5) 0, rgba(255,255,255,0.5) 1px, transparent 1px, transparent 18px)",
-        }}
-      />
-      {/* Dark bottom fade for legibility */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/40 to-transparent"
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/65 via-black/30 to-transparent"
       />
 
       <div className="relative flex h-full flex-col justify-between p-5">
         <div className="pt-2">
-          <h2 className="whitespace-pre-line font-display text-[28px] font-black uppercase italic leading-[0.95] tracking-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.4)]">
+          <h2 className="whitespace-pre-line font-display text-[28px] font-black uppercase italic leading-[0.95] tracking-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]">
             {slide.title}
           </h2>
           {slide.eyebrow && (
-            <p className="mt-2 text-[13px] leading-snug text-white/85">
+            <p className="mt-2 text-[13px] leading-snug text-white/90 drop-shadow-[0_1px_4px_rgba(0,0,0,0.5)]">
               {slide.eyebrow}
             </p>
           )}
         </div>
 
-        <div>
-          <Link
-            to={slide.to}
-            className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3.5 py-2 font-mono text-[11px] font-bold uppercase tracking-[0.18em] text-primary-foreground shadow-[0_4px_16px_rgba(0,0,0,0.35)] transition-transform active:scale-95"
-          >
-            {slide.cta}
-            <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.5} />
-          </Link>
-        </div>
+        <div>{Cta}</div>
       </div>
     </div>
   );

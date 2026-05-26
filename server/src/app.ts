@@ -153,6 +153,10 @@ export async function buildApp() {
   const { dadataRoutes } = await import("./routes/dadata.js");
   await app.register(dadataRoutes, { prefix: "/api/v1/dadata" });
 
+  const { homeBannersRoutes, adminHomeBannersRoutes } = await import("./routes/home-banners.js");
+  await app.register(homeBannersRoutes, { prefix: "/api/v1/home/banners" });
+  await app.register(adminHomeBannersRoutes, { prefix: "/api/v1/admin/home/banners" });
+
   // Создаём S3-бакет, если его ещё нет.
   try {
     const { ensureBucket } = await import("./lib/s3.js");

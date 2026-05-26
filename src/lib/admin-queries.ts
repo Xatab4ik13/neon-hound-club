@@ -673,3 +673,43 @@ export function putAdminSetting<K extends keyof SystemSettings>(
     body: JSON.stringify(value),
   });
 }
+
+// ============================================================================
+// HOME BANNERS (admin)
+// ============================================================================
+
+import type { HomeBanner } from "@/lib/queries";
+
+export const adminHomeBannersQk = ["admin", "home-banners"] as const;
+
+export type HomeBannerInput = {
+  title: string;
+  eyebrow?: string;
+  ctaLabel?: string;
+  ctaHref: string;
+  imageUrl: string;
+  sort?: number;
+  active?: boolean;
+};
+
+export function fetchAdminHomeBanners() {
+  return apiFetch<{ banners: HomeBanner[] }>(`/api/v1/admin/home/banners/`);
+}
+
+export function createAdminHomeBanner(input: HomeBannerInput) {
+  return apiFetch<{ banner: HomeBanner }>(`/api/v1/admin/home/banners/`, {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export function patchAdminHomeBanner(id: string, patch: Partial<HomeBannerInput>) {
+  return apiFetch<{ banner: HomeBanner }>(`/api/v1/admin/home/banners/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(patch),
+  });
+}
+
+export function deleteAdminHomeBanner(id: string) {
+  return apiFetch<{ ok: true }>(`/api/v1/admin/home/banners/${id}`, { method: "DELETE" });
+}
