@@ -130,6 +130,7 @@ export async function shopRoutes(app: FastifyInstance) {
     if (!parsed.success) {
       return reply.code(400).send({ error: "invalid_input", message: parsed.error.issues[0]?.message });
     }
+    try {
     const session = req.user as SessionPayload;
     const { items, shipping, comment } = parsed.data;
 
