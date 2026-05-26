@@ -10,7 +10,7 @@ import {
   Users,
   ShoppingBag,
   Ticket,
-  Newspaper,
+  
   Wallet,
   Bot,
   GraduationCap,
