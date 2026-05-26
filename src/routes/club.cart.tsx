@@ -233,66 +233,73 @@ function ClubCartPage() {
               transition={{ duration: 0.22, ease: [0.32, 0.72, 0, 1] }}
               className="overflow-hidden"
             >
-              <SwipeRow onDelete={() => handleRemove(i)}>
-                <div className="flex gap-3 bg-card/40 px-3 py-3">
+              <div className="relative flex gap-3 bg-card/40 px-3 py-3 pr-12">
+                <Link
+                  to="/club/shop/$productSlug"
+                  params={{ productSlug: i.slug }}
+                  className="block h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-surface active:opacity-80"
+                >
+                  <CartImage src={i.image} alt={i.name} className="h-full w-full" />
+                </Link>
+
+                <div className="min-w-0 flex-1">
                   <Link
                     to="/club/shop/$productSlug"
                     params={{ productSlug: i.slug }}
-                    className="block h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-surface active:opacity-80"
+                    className="block pr-2 text-[15px] font-semibold leading-tight text-foreground"
                   >
-                    <CartImage src={i.image} alt={i.name} className="h-full w-full" />
+                    {i.name}
                   </Link>
+                  <div className="mt-1 text-[13px] text-muted-foreground">
+                    {i.size ? `Размер ${i.size}` : "Без размера"}
+                  </div>
 
-                  <div className="min-w-0 flex-1">
-                    <Link
-                      to="/club/shop/$productSlug"
-                      params={{ productSlug: i.slug }}
-                      className="block text-[15px] font-semibold leading-tight text-foreground"
-                    >
-                      {i.name}
-                    </Link>
-                    <div className="mt-1 text-[13px] text-muted-foreground">
-                      {i.size ? `Размер ${i.size}` : "Без размера"}
-                    </div>
-
-                    {i.ticketsBonus && i.ticketsBonus > 0 ? (
-                      <div className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5">
-                        <Ticket className="h-3 w-3 text-primary" />
-                        <span className="text-[12px] font-semibold text-primary">
-                          +{i.ticketsBonus * i.qty} {ticketsWord(i.ticketsBonus * i.qty)}
-                        </span>
-                      </div>
-                    ) : null}
-
-                    <div className="mt-2.5 flex items-center justify-between gap-3">
-                      <div className="flex items-center overflow-hidden rounded-xl border border-white/[0.08] bg-white/[0.03]">
-                        <button
-                          type="button"
-                          onClick={() => handleQty(i.id, Math.max(1, i.qty - 1))}
-                          className="grid h-11 w-11 place-items-center text-foreground active:bg-white/[0.08]"
-                          aria-label="Уменьшить"
-                        >
-                          <Minus className="h-4 w-4" />
-                        </button>
-                        <span className="w-9 text-center text-[15px] font-semibold tabular-nums">
-                          {i.qty}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => handleQty(i.id, i.qty + 1)}
-                          className="grid h-11 w-11 place-items-center text-foreground active:bg-white/[0.08]"
-                          aria-label="Увеличить"
-                        >
-                          <Plus className="h-4 w-4" />
-                        </button>
-                      </div>
-                      <span className="text-[16px] font-bold tabular-nums text-foreground">
-                        {(i.price * i.qty).toLocaleString("ru-RU")} ₽
+                  {i.ticketsBonus && i.ticketsBonus > 0 ? (
+                    <div className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5">
+                      <Ticket className="h-3 w-3 text-primary" />
+                      <span className="text-[12px] font-semibold text-primary">
+                        +{i.ticketsBonus * i.qty} {ticketsWord(i.ticketsBonus * i.qty)}
                       </span>
                     </div>
+                  ) : null}
+
+                  <div className="mt-2.5 flex items-center justify-between gap-3">
+                    <div className="flex items-center overflow-hidden rounded-xl border border-white/[0.08] bg-white/[0.03]">
+                      <button
+                        type="button"
+                        onClick={() => handleQty(i.id, Math.max(1, i.qty - 1))}
+                        className="grid h-11 w-11 place-items-center text-foreground active:bg-white/[0.08]"
+                        aria-label="Уменьшить"
+                      >
+                        <Minus className="h-4 w-4" />
+                      </button>
+                      <span className="w-9 text-center text-[15px] font-semibold tabular-nums">
+                        {i.qty}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleQty(i.id, i.qty + 1)}
+                        className="grid h-11 w-11 place-items-center text-foreground active:bg-white/[0.08]"
+                        aria-label="Увеличить"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </button>
+                    </div>
+                    <span className="text-[16px] font-bold tabular-nums text-foreground">
+                      {(i.price * i.qty).toLocaleString("ru-RU")} ₽
+                    </span>
                   </div>
                 </div>
-              </SwipeRow>
+
+                <button
+                  type="button"
+                  onClick={() => handleRemove(i)}
+                  aria-label="Удалить"
+                  className="absolute right-2 top-2 grid h-9 w-9 place-items-center rounded-full border border-red-500/30 bg-red-500/15 text-red-400 transition-colors active:bg-red-500 active:text-white"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
             </motion.li>
           ))}
         </AnimatePresence>
