@@ -54,25 +54,31 @@
       href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap"
     />
     <style>
-      /* Boot splash — рисуется ещё до загрузки React-бандла */
+      /* Boot splash — рисуется ещё до загрузки React-бандла.
+         Всё на transform/opacity → GPU-композитинг, без layout/paint jank.
+         Никаких filter:drop-shadow и mask-image на анимированных слоях. */
       #hh-boot {
         position: fixed; inset: 0; z-index: 2147483647;
-        background: #050505; color: #EDEDED;
+        background-color: #050505; color: #EDEDED;
         display: flex; align-items: center; justify-content: center;
         font-family: ui-sans-serif, system-ui, sans-serif;
         overflow: hidden;
+        opacity: 1;
+        transition: opacity .35s ease;
+        /* статичная сетка фоном — рендерится один раз, не перерисовывается */
         background-image:
+          radial-gradient(circle at 50% 50%, rgba(255,45,149,0.07), transparent 60%),
           linear-gradient(rgba(255,45,149,0.05) 1px, transparent 1px),
           linear-gradient(90deg, rgba(255,45,149,0.05) 1px, transparent 1px);
-        background-size: 30px 30px;
-        -webkit-mask-image: radial-gradient(circle at 50% 50%, #000 30%, transparent 70%);
-        mask-image: radial-gradient(circle at 50% 50%, #000 30%, transparent 70%);
-        transition: opacity .25s ease;
+        background-size: 100% 100%, 30px 30px, 30px 30px;
+        background-position: center, 0 0, 0 0;
       }
       #hh-boot[data-hide="1"] { opacity: 0; pointer-events: none; }
       #hh-boot .tach {
         position: relative; width: 55vw; max-width: 220px; aspect-ratio: 1/1;
         border-radius: 50%; border: 1px solid #1a1a1a;
+        /* статичное свечение НА РОДИТЕЛЕ, не на анимированном слое */
+        box-shadow: 0 0 60px rgba(255,45,149,0.25), inset 0 0 30px rgba(255,45,149,0.08);
       }
       #hh-boot .tach::before {
         content: ""; position: absolute; inset: 8px;
@@ -82,18 +88,22 @@
         position: absolute; inset: 0; border-radius: 50%;
         border: 2px solid transparent;
         border-top-color: #FF2D95; border-right-color: #FF2D95;
-        filter: drop-shadow(0 0 8px #FF2D95);
-        animation: hh-spin 1s linear infinite;
+        /* НЕТ filter:drop-shadow — он бы пересчитывал тень каждый кадр. */
+        animation: hh-spin 1.1s linear infinite;
+        will-change: transform;
+        transform: translateZ(0);
       }
       #hh-boot .h {
         position: absolute; inset: 0;
         display: flex; align-items: center; justify-content: center;
         color: #FF2D95; font-weight: 700; font-size: 56px; line-height: 1;
         letter-spacing: -1px;
+        text-shadow: 0 0 12px rgba(255,45,149,0.45);
       }
       #hh-boot .lbl {
         position: absolute; bottom: 22%; left: 0; right: 0; text-align: center;
         font-size: 10px; letter-spacing: .5em; text-transform: uppercase; color: #777;
+        animation: hh-pulse 1.6s ease-in-out infinite;
       }
       #hh-boot .rpm {
         position: absolute; bottom: 16%; left: 0; right: 0; text-align: center;
@@ -106,6 +116,11 @@
         font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
       }
       @keyframes hh-spin { to { transform: rotate(360deg); } }
+      @keyframes hh-pulse { 0%,100% { opacity: .55; } 50% { opacity: 1; } }
+      @media (prefers-reduced-motion: reduce) {
+        #hh-boot .ring { animation-duration: 3s; }
+        #hh-boot .lbl { animation: none; opacity: .8; }
+      }
     </style>
   </head>
   <body>
