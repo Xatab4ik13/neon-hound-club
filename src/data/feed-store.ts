@@ -501,6 +501,8 @@ export function useFeedPosts(): FeedPost[] {
 
     const connect = () => {
       if (stopped) return;
+      if (document.visibilityState === "hidden") return; // не открываем сокет в фоне
+      if (es) return;
       try {
         es = new EventSource(`${BACKEND_URL}/api/v1/feed/stream`, { withCredentials: true });
       } catch {
@@ -523,8 +525,22 @@ export function useFeedPosts(): FeedPost[] {
       };
     };
 
+    const disconnect = () => {
+      if (es) {
+        es.close();
+        es = null;
+      }
+      stopPolling();
+    };
+
     const onVisibility = () => {
-      if (document.visibilityState === "visible") refetch();
+      if (document.visibilityState === "visible") {
+        refetch();
+        connect();
+      } else {
+        // В фоне SSE и polling не нужны — экономим батарею и трафик.
+        disconnect();
+      }
     };
     const onFocus = () => refetch();
 
@@ -534,11 +550,7 @@ export function useFeedPosts(): FeedPost[] {
 
     return () => {
       stopped = true;
-      if (es) {
-        es.close();
-        es = null;
-      }
-      stopPolling();
+      disconnect();
       document.removeEventListener("visibilitychange", onVisibility);
       window.removeEventListener("focus", onFocus);
     };
