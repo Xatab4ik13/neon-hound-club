@@ -15,6 +15,7 @@ import {
 import { requireAuth, requireAdmin, type SessionPayload } from "../lib/auth.js";
 import {
   decrementStockIfTracked,
+  decrementSizeStockIfTracked,
   getOrderWithItems,
   markOrderPaid,
   refundOrder,
