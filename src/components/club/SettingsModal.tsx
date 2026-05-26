@@ -68,7 +68,6 @@ function SettingsMobile({ open, onOpenChange }: Props) {
     >
       <div className="space-y-6 pb-4">
         <ProfileTab mobile />
-        <AddressTab mobile />
         <NotifyTab mobile />
         <AccountTab mobile onClose={() => onOpenChange(false)} />
       </div>
@@ -154,7 +153,6 @@ function SettingsDesktop({ open, onOpenChange }: Props) {
 
           <div className="min-h-0 flex-1 overflow-y-auto px-5 py-6 sm:px-7 sm:py-7">
             {tab === "profile" && <ProfileTab />}
-            {tab === "address" && <AddressTab />}
             {tab === "notify" && <NotifyTab />}
             {tab === "account" && <AccountTab onClose={() => onOpenChange(false)} />}
           </div>
@@ -507,98 +505,6 @@ function ProfileTab({ mobile }: { mobile?: boolean }) {
 
       <div className="flex justify-end border-t border-white/[0.06] pt-5">
         <PrimaryButton onClick={onSave} loading={updateMut.isPending}>Сохранить</PrimaryButton>
-      </div>
-    </div>
-  );
-}
-
-// ════════════════════════════════════════════════════════════════════
-// ADDRESS TAB
-// ════════════════════════════════════════════════════════════════════
-
-function AddressTab({ mobile }: { mobile?: boolean }) {
-  const q = useMyAddress();
-  const saveMut = useSaveMyAddress();
-
-  const [fullName, setFullName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [city, setCity] = useState("");
-  const [postalCode, setPostalCode] = useState("");
-  const [pickupPoint, setPickupPoint] = useState("");
-  const [comment, setComment] = useState("");
-
-  const hydrated = useRef(false);
-  useEffect(() => {
-    if (!q.data || hydrated.current) return;
-    setFullName(q.data.fullName);
-    setPhone(q.data.phone);
-    setCity(q.data.city);
-    setPostalCode(q.data.postalCode);
-    setPickupPoint(q.data.pickupPoint);
-    setComment(q.data.comment);
-    hydrated.current = true;
-  }, [q.data]);
-
-  const onSave = async () => {
-    try {
-      await saveMut.mutateAsync({ fullName, phone, city, postalCode, pickupPoint, comment });
-      toast.success("Адрес сохранён");
-    } catch (e) {
-      toast.error((e as Error).message || "Не удалось сохранить");
-    }
-  };
-
-  if (q.isLoading) return <LoadingBlock />;
-  if (q.isError) return <ErrorBlock error={q.error} onRetry={() => q.refetch()} />;
-
-  if (mobile) {
-    return (
-      <>
-        <IOSListSection title="Получатель">
-          <IOSField label="ФИО"><Input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Иванов Иван Иванович" /></IOSField>
-          <IOSField label="Телефон"><PhoneInput value={phone} onChange={(v) => setPhone(v ?? "")} /></IOSField>
-        </IOSListSection>
-
-        <IOSListSection title="Адрес СДЭК" footer="Доставка только СДЭК. Используется для мерча и призов.">
-          <IOSField label="Город"><Input value={city} onChange={(e) => setCity(e.target.value)} placeholder="Москва" /></IOSField>
-          <IOSField label="Индекс"><Input value={postalCode} onChange={(e) => setPostalCode(e.target.value)} placeholder="101000" inputMode="numeric" /></IOSField>
-          <IOSField label="Пункт выдачи или адрес"><Input value={pickupPoint} onChange={(e) => setPickupPoint(e.target.value)} placeholder="ПВЗ MSK123, ул. Тверская 1" /></IOSField>
-          <IOSField label="Комментарий"><Input value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Код домофона, этаж…" /></IOSField>
-        </IOSListSection>
-
-        <div className="px-1 pt-1">
-          <PrimaryButton full onClick={onSave} loading={saveMut.isPending}>Сохранить адрес</PrimaryButton>
-        </div>
-      </>
-    );
-  }
-  return (
-    <div className="space-y-8">
-      <div>
-        <SectionTitle>Адрес доставки</SectionTitle>
-        <p className="mb-4 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-          Доставка только СДЭК. Используется для мерча и призов.
-        </p>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="ФИО получателя"><Input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Иванов Иван Иванович" /></Field>
-          <Field label="Телефон"><PhoneInput value={phone} onChange={(v) => setPhone(v ?? "")} /></Field>
-          <Field label="Город"><Input value={city} onChange={(e) => setCity(e.target.value)} placeholder="Москва" /></Field>
-          <Field label="Индекс"><Input value={postalCode} onChange={(e) => setPostalCode(e.target.value)} placeholder="101000" inputMode="numeric" /></Field>
-        </div>
-        <div className="mt-4">
-          <Field label="Пункт выдачи СДЭК или адрес курьера">
-            <Input value={pickupPoint} onChange={(e) => setPickupPoint(e.target.value)} placeholder="ПВЗ MSK123, ул. Тверская 1" />
-          </Field>
-        </div>
-        <div className="mt-4">
-          <Field label="Комментарий">
-            <Input value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Код домофона, этаж…" />
-          </Field>
-        </div>
-      </div>
-
-      <div className="flex justify-end border-t border-white/[0.06] pt-5">
-        <PrimaryButton onClick={onSave} loading={saveMut.isPending}>Сохранить адрес</PrimaryButton>
       </div>
     </div>
   );
