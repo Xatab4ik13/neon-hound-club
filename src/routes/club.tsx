@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import type { QueryClient } from "@tanstack/react-query";
 
-import { ME } from "@/data/profile";
+
 import { RANKS, getRankSpan, type PlaqueBg, type RankId } from "@/data/ranks";
 import { useCurrentRank } from "@/data/rank-state";
 import { useViewer } from "@/hooks/use-viewer";
