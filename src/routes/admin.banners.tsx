@@ -138,6 +138,7 @@ function BannersPage() {
 
       {toDelete && (
         <ConfirmModal
+          open
           title="Удалить баннер?"
           message={`«${toDelete.title}» исчезнет из карусели сразу.`}
           confirmLabel="Удалить"
@@ -146,6 +147,7 @@ function BannersPage() {
           onClose={() => setToDelete(null)}
         />
       )}
+
     </div>
   );
 }
