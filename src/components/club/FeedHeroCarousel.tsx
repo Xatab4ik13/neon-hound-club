@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ArrowRight } from "lucide-react";
 import { fetchHomeBanners, type HomeBanner } from "@/lib/queries";
 
-// Унифицированная модель слайда: либо картинка-фон (с бека), либо градиент-fallback (мок).
+// Унифицированная модель слайда: картинка-фон с бека.
 type Slide = {
   id: string;
   eyebrow?: string;
@@ -13,7 +13,6 @@ type Slide = {
   to: string;
   isExternal: boolean;
   imageUrl?: string;
-  gradient?: string;
 };
 
 const FALLBACK_SLIDES: Slide[] = [
