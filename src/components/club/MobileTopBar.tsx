@@ -68,7 +68,7 @@ export function MobileTopBar() {
 
         {/* Капсула HELL · XP → ранг */}
         <Link
-          to="/club/rank"
+          to="/club/me"
           aria-label={`Ранг: ${xp} из ${xpMax} XP`}
           className="relative flex h-10 min-w-0 flex-1 items-center justify-between overflow-hidden rounded-full border border-white/[0.08] bg-[oklch(0.18_0.02_357.3)] px-4 text-foreground transition-transform active:scale-[0.98]"
         >
