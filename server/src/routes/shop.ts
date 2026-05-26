@@ -152,12 +152,20 @@ export async function shopRoutes(app: FastifyInstance) {
       const p = productMap.get(i.productId)!;
       subtotalRub += p.priceRub * i.qty;
       bonusTotal += p.bonusTickets * i.qty;
+      const hasSizes = Array.isArray(p.sizes) && p.sizes.length > 0;
+      if (hasSizes && !i.size) {
+        throw Object.assign(new Error("size_required"), { _http: { code: 400, productId: p.id, title: p.title } });
+      }
+      if (hasSizes && i.size && !p.sizes.some((s: any) => s.label === i.size)) {
+        throw Object.assign(new Error("size_invalid"), { _http: { code: 400, productId: p.id, title: p.title } });
+      }
       return {
         productId: p.id,
         titleSnapshot: p.title,
         priceRubSnapshot: p.priceRub,
         bonusTicketsSnapshot: p.bonusTickets,
         qty: i.qty,
+        sizeSnapshot: hasSizes ? i.size ?? null : null,
       };
     });
 
@@ -167,21 +175,29 @@ export async function shopRoutes(app: FastifyInstance) {
     const discountRub = Math.floor((subtotalRub * discountPct) / 100);
     const totalRub = Math.max(0, subtotalRub - discountRub);
 
-    // резерв остатков (для товаров с stock != null)
+    // резерв остатков: для товаров с sizes — по выбранному размеру; иначе — по общему stock
     for (const i of items) {
       const p = productMap.get(i.productId)!;
-      if (p.stock !== null && p.stock < i.qty) {
-        return reply
-          .code(409)
-          .send({ error: "out_of_stock", message: `«${p.title}» закончился`, productId: p.id });
-      }
-    }
-    for (const i of items) {
-      const ok = await decrementStockIfTracked(i.productId, i.qty);
-      if (!ok) {
-        return reply
-          .code(409)
-          .send({ error: "out_of_stock", message: "Кто-то успел раньше, попробуй ещё раз" });
+      const hasSizes = Array.isArray(p.sizes) && p.sizes.length > 0;
+      if (hasSizes && i.size) {
+        const ok = await decrementSizeStockIfTracked(i.productId, i.size, i.qty);
+        if (!ok) {
+          return reply
+            .code(409)
+            .send({ error: "out_of_stock", message: `«${p.title}» (${i.size}) закончился`, productId: p.id });
+        }
+      } else {
+        if (p.stock !== null && p.stock < i.qty) {
+          return reply
+            .code(409)
+            .send({ error: "out_of_stock", message: `«${p.title}» закончился`, productId: p.id });
+        }
+        const ok = await decrementStockIfTracked(i.productId, i.qty);
+        if (!ok) {
+          return reply
+            .code(409)
+            .send({ error: "out_of_stock", message: "Кто-то успел раньше, попробуй ещё раз" });
+        }
       }
     }
 
