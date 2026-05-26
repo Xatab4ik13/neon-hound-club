@@ -238,9 +238,13 @@ export async function adminEconomyRoutes(app: FastifyInstance) {
           tier: passPurchases.tier,
         })
         .from(passPurchases)
-        .where(sql`${passPurchases.paidAt} IS NOT NULL`)
+        .where(and(
+          sql`${passPurchases.paidAt} IS NOT NULL`,
+          sql`${passPurchases.status} IN ('active','expired')`,
+        ))
         .orderBy(desc(passPurchases.paidAt))
         .limit(q.limit);
+
       for (const r of rows) {
         if (!r.paidAt) continue;
         items.push({
