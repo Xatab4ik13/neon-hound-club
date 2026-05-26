@@ -64,64 +64,23 @@ export function SettingsModal({ open, onOpenChange }: Props) {
 // ════════════════════════════════════════════════════════════════════
 
 function SettingsMobile({ open, onOpenChange }: Props) {
-  const [tab, setTab] = useState<TabId | null>(null);
-
-  useEffect(() => {
-    if (open) setTab(null);
-  }, [open]);
-
-  const currentTab = TABS.find((t) => t.id === tab) ?? null;
-
   return (
     <IOSSheet
       open={open}
       onOpenChange={onOpenChange}
       fullHeight
-      title={currentTab ? currentTab.label : "Настройки"}
-      headerLeft={
-        currentTab ? (
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              onClick={() => setTab(null)}
-              className="-ml-2 flex items-center gap-0.5 font-mono text-[13px] font-semibold text-primary active:opacity-60"
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-                <path d="M15 18l-6-6 6-6" />
-              </svg>
-              Назад
-            </button>
-            <h2 className="ml-2 truncate font-display text-lg font-black italic uppercase tracking-tight">
-              {currentTab.label}
-            </h2>
-          </div>
-        ) : undefined
-      }
+      title="Профиль"
     >
-      {currentTab === null ? (
-        <IOSListSection>
-          {TABS.map((t) => (
-            <IOSListRow
-              key={t.id}
-              icon={<span className="grid h-5 w-5 place-items-center">{t.icon}</span>}
-              label={t.label}
-              chevron
-              onClick={() => setTab(t.id)}
-            />
-          ))}
-        </IOSListSection>
-      ) : tab === "profile" ? (
+      <div className="space-y-6 pb-4">
         <ProfileTab mobile />
-      ) : tab === "address" ? (
         <AddressTab mobile />
-      ) : tab === "notify" ? (
         <NotifyTab mobile />
-      ) : (
         <AccountTab mobile onClose={() => onOpenChange(false)} />
-      )}
+      </div>
     </IOSSheet>
   );
 }
+
 
 // ════════════════════════════════════════════════════════════════════
 // DESKTOP
@@ -439,7 +398,7 @@ function ProfileTab({ mobile }: { mobile?: boolean }) {
           />
         </IOSListSection>
 
-        <IOSListSection title="Профиль" footer="Ник менять нельзя. Остальное — в любой момент.">
+        <IOSListSection title="Профиль" footer="Ник менять нельзя. Город и телефон — в любой момент.">
           <IOSField label="Ник">
             <Input value={me.nick} readOnly disabled />
           </IOSField>
@@ -449,66 +408,14 @@ function ProfileTab({ mobile }: { mobile?: boolean }) {
           <IOSField label="Телефон">
             <PhoneInput value={phone} onChange={(v) => setPhone(v ?? "")} />
           </IOSField>
-          <IOSField label="О себе" hint={`${bio.length}/300`}>
-            <Input value={bio} onChange={(e) => setBio(e.target.value)} maxLength={300} placeholder="Райдер. Москва. R6." />
-          </IOSField>
         </IOSListSection>
 
-        <IOSListSection title="Соцсети" footer="Только логины, без https://.">
-          <IOSField label="Telegram">
-            <Input value={telegram} onChange={(e) => setTelegram(e.target.value)} maxLength={80} placeholder="username" />
-          </IOSField>
-          <IOSField label="Instagram">
-            <Input value={instagram} onChange={(e) => setInstagram(e.target.value)} maxLength={80} placeholder="username" />
-          </IOSField>
-          <IOSField label="YouTube">
-            <Input value={youtube} onChange={(e) => setYoutube(e.target.value)} maxLength={120} placeholder="@channel" />
-          </IOSField>
-        </IOSListSection>
-
-        <IOSListSection
-          title="Мои байки"
-          footer="Тап по байку — открывается «Гараж» для редактирования."
-        >
-          {bikes.length === 0 ? (
-            <IOSListRow
-              icon={<Plus className="h-[18px] w-[18px]" />}
-              label="Добавить байк"
-              description="В гараже пока пусто"
-              to="/club/garage"
-              chevron
-            />
-          ) : (
-            <>
-              {bikes.map((b: ServerBike) => (
-                <IOSListRow
-                  key={b.id}
-                  icon={<Bike className="h-[18px] w-[18px]" />}
-                  label={`${b.brand} ${b.model}`}
-                  description={
-                    [b.isPrimary ? "Основной" : null, b.year ? String(b.year) : null]
-                      .filter(Boolean)
-                      .join(" · ") || undefined
-                  }
-                  to="/club/garage"
-                  chevron
-                />
-              ))}
-              <IOSListRow
-                icon={<Plus className="h-[18px] w-[18px]" />}
-                label="Добавить байк"
-                to="/club/garage"
-                chevron
-              />
-            </>
-          )}
-        </IOSListSection>
-
-        <div className="px-1 pt-1">
+        <div className="px-4 pt-1">
           <PrimaryButton full onClick={onSave} loading={updateMut.isPending}>
-            Сохранить
+            Сохранить профиль
           </PrimaryButton>
         </div>
+
       </>
     );
   }
