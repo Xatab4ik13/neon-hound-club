@@ -52,7 +52,7 @@ function TicketsPage() {
           <EarnRow
             title="Покупки в магазине"
             hint="К каждому товару — свой бонус билетов"
-            to="/shop"
+            to="/club/shop"
             icon={<ShoppingBag className="h-4 w-4" />}
           />
           <EarnRow
