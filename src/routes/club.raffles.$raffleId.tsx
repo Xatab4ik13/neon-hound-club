@@ -273,8 +273,8 @@ function RaffleDetailContent({
 
       {raffle.description && (
         <section className="mt-6 space-y-3.5 text-[15px] leading-relaxed">
-          {raffle.description.split("\n\n").map((p, i) => (
-            <p key={i} className="text-foreground/85">
+          {raffle.description.split(/\n\n+/).map((p, i) => (
+            <p key={i} className="whitespace-pre-line text-foreground/85">
               {p}
             </p>
           ))}
