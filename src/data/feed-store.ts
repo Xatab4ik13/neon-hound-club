@@ -455,7 +455,7 @@ export const feedStore = {
   },
 };
 
-// Дебаунс-рефетча, чтобы пачку событий от бэка склеивать в один запрос.
+// Дебаунс полного рефетча — только для событий, меняющих состав ленты.
 let refetchTimer: ReturnType<typeof setTimeout> | null = null;
 function scheduleRefetch(delay = 500) {
   if (refetchTimer != null) clearTimeout(refetchTimer);
@@ -464,6 +464,53 @@ function scheduleRefetch(delay = 500) {
     if (document.visibilityState !== "hidden") refetch();
   }, delay);
 }
+
+// Гранулярный рефетч одного поста: один HTTP-запрос вместо всей ленты.
+const postTimers = new Map<string, ReturnType<typeof setTimeout>>();
+async function refetchPostNow(postId: string) {
+  // Не лезем в сеть, если поста нет в текущем снапшоте (он не показан юзеру).
+  if (!POSTS.some((p) => p.id === postId)) return;
+  if (document.visibilityState === "hidden") return;
+  try {
+    const detail = await fetchPost(postId);
+    const next = mapPost({ ...detail, comments: detail.comments });
+    // Сохраняем порядок и не дёргаем другие посты.
+    POSTS = POSTS.map((p) => (p.id === postId ? next : p));
+    emit();
+  } catch {
+    /* молча */
+  }
+}
+function schedulePostRefetch(postId: string, delay = 350) {
+  const prev = postTimers.get(postId);
+  if (prev) clearTimeout(prev);
+  postTimers.set(
+    postId,
+    setTimeout(() => {
+      postTimers.delete(postId);
+      void refetchPostNow(postId);
+    }, delay),
+  );
+}
+
+// Найти postId по commentId среди уже загруженных постов (для событий, где есть только commentId).
+function findPostIdByCommentId(commentId: string): string | null {
+  for (const p of POSTS) {
+    if (p.comments.some((c) => c.id === commentId)) return p.id;
+  }
+  return null;
+}
+
+// Локальное удаление коммента без сетевого запроса (для SSE comment.deleted).
+function removeCommentLocal(commentId: string) {
+  const postId = findPostIdByCommentId(commentId);
+  if (!postId) return;
+  patchPostLocal(postId, (p) => ({
+    ...p,
+    comments: p.comments.filter((c) => c.id !== commentId),
+  }));
+}
+
 
 export function useFeedLoaded(): boolean {
   // подписываемся на тот же стор — после первой загрузки emit() триггерит ре-рендер
