@@ -801,34 +801,34 @@ const CommentItem = memo(function CommentItem({
   onDelete?: () => void;
 }) {
   const liked = comment.liked;
-  const user = PUBLIC_USERS[comment.authorSlug];
-  const rank = RANK_BY_ID[user?.rank ?? "rookie"];
+  const author = comment.author;
+  const rank = RANK_BY_ID[(author.rankId as RankId) ?? "rookie"] ?? RANK_BY_ID["rookie"];
   const count = comment.likes;
-  const authorIsBlogger = comment.isBlogger;
+  const authorIsBlogger = author.isBlogger;
   const stickerUrl = parseSticker(comment.text);
 
   return (
     <li className="flex gap-3">
-      <UserLink slug={comment.authorSlug} disabled={authorIsBlogger}>
+      <UserLink slug={author.slug} disabled={authorIsBlogger}>
         {authorIsBlogger ? (
-          <HellhoundAvatar size={large ? 40 : 36} initials={user?.initials ?? "H"} avatarUrl={user?.avatarUrl} />
+          <HellhoundAvatar size={large ? 40 : 36} initials={author.initials} avatarUrl={author.avatarUrl} />
         ) : (
           <RankAvatar
-            initials={user?.initials ?? "?"}
-            rankId={user?.rank ?? "rookie"}
-            avatarUrl={user?.avatarUrl}
+            initials={author.initials}
+            rankId={(author.rankId as RankId) ?? "rookie"}
+            avatarUrl={author.avatarUrl}
             size={large ? 40 : 36}
           />
         )}
       </UserLink>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <UserLink slug={comment.authorSlug} disabled={authorIsBlogger} className="min-w-0 truncate">
+          <UserLink slug={author.slug} disabled={authorIsBlogger} className="min-w-0 truncate">
             <span
               className={`truncate font-display font-bold uppercase italic tracking-tight transition-opacity hover:opacity-80 ${large ? "text-[14px]" : "text-[13px]"}`}
               style={{ color: authorIsBlogger ? undefined : rank.accent }}
             >
-              {user?.nick ?? comment.authorSlug}
+              {author.nick}
             </span>
           </UserLink>
           {authorIsBlogger ? (
