@@ -775,7 +775,7 @@ function CommentsSheet({
 
 // ───────── Comment item ─────────
 
-function CommentItem({
+const CommentItem = memo(function CommentItem({
   comment,
   large = false,
   onReply,
@@ -791,6 +791,7 @@ function CommentItem({
   const rank = RANK_BY_ID[user?.rank ?? "rookie"];
   const count = comment.likes;
   const authorIsBlogger = comment.isBlogger;
+  const stickerUrl = parseSticker(comment.text);
 
   return (
     <li className="flex gap-3">
@@ -830,30 +831,24 @@ function CommentItem({
             {comment.time}
           </span>
         </div>
-        {(() => {
-          const stickerUrl = parseSticker(comment.text);
-          if (stickerUrl) {
-            return (
-              <div className="mt-1">
-                <img
-                  src={stickerUrl}
-                  alt="стикер"
-                  loading="lazy"
-                  decoding="async"
-                  draggable={false}
-                  className="h-48 w-48 select-none object-contain md:h-52 md:w-52"
-                />
-              </div>
-            );
-          }
-          return (
-            <div className="mt-1 inline-block max-w-full rounded-2xl rounded-tl-sm border border-white/[0.05] bg-white/[0.03] px-3 py-2">
-              <p className={`break-words leading-relaxed text-foreground/90 ${large ? "text-[14.5px]" : "text-[13.5px]"}`}>
-                {comment.text}
-              </p>
-            </div>
-          );
-        })()}
+        {stickerUrl ? (
+          <div className="mt-1">
+            <img
+              src={stickerUrl}
+              alt="стикер"
+              loading="lazy"
+              decoding="async"
+              draggable={false}
+              className="h-48 w-48 select-none object-contain md:h-52 md:w-52"
+            />
+          </div>
+        ) : (
+          <div className="mt-1 inline-block max-w-full rounded-2xl rounded-tl-sm border border-white/[0.05] bg-white/[0.03] px-3 py-2">
+            <p className={`break-words leading-relaxed text-foreground/90 ${large ? "text-[14.5px]" : "text-[13.5px]"}`}>
+              {comment.text}
+            </p>
+          </div>
+        )}
         <div className="mt-1.5 flex items-center gap-4 pl-1">
           <button
             type="button"
@@ -891,7 +886,7 @@ function CommentItem({
       </div>
     </li>
   );
-}
+});
 
 
 
