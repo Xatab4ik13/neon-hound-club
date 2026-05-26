@@ -27,7 +27,7 @@ function RequisitesPage() {
         <li><strong>ОГРНИП:</strong> {LEGAL.ogrnip}</li>
         <li><strong>ИНН:</strong> {LEGAL.inn}</li>
         <li><strong>Дата регистрации:</strong> {LEGAL.registeredAt}</li>
-        <li><strong>Регион регистрации:</strong> {LEGAL.region}</li>
+        <li><strong>Юридический адрес:</strong> {LEGAL.address}</li>
       </ul>
 
       <h2>Контакты</h2>

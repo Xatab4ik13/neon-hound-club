@@ -333,7 +333,7 @@ export default function ShopInfoPage() {
           </div>
 
           <p className="mt-12 font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
-            Продавец: {LEGAL.shortName} · ОГРНИП {LEGAL.ogrnip} · ИНН {LEGAL.inn} · {LEGAL.region}
+            Продавец: {LEGAL.shortName} · ОГРНИП {LEGAL.ogrnip} · ИНН {LEGAL.inn} · {LEGAL.address}
           </p>
         </div>
       </section>

@@ -282,7 +282,7 @@ function ClubCheckoutPage() {
             Продавец
           </div>
           <div className="text-[12px] leading-relaxed text-muted-foreground">
-            {LEGAL.shortName} · ОГРНИП {LEGAL.ogrnip} · ИНН {LEGAL.inn} · {LEGAL.region}
+            {LEGAL.shortName} · ОГРНИП {LEGAL.ogrnip} · ИНН {LEGAL.inn} · {LEGAL.address}
           </div>
         </div>
 

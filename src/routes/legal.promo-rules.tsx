@@ -48,7 +48,7 @@ function PromoRulesPage() {
       <ul>
         <li>
           <strong>Организатор</strong> — {LEGAL.fullName}, ОГРНИП{" "}
-          {LEGAL.ogrnip}, ИНН {LEGAL.inn}, регион регистрации: {LEGAL.region}.
+          {LEGAL.ogrnip}, ИНН {LEGAL.inn}, юридический адрес: {LEGAL.address}.
         </li>
         <li>
           <strong>Участник</strong> — зарегистрированный пользователь Сервиса,
