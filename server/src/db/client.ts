@@ -8,11 +8,12 @@ import * as badges from "./schema/badges.js";
 import * as posts from "./schema/posts.js";
 import * as economy from "./schema/economy.js";
 import * as hellAi from "./schema/hell-ai.js";
+import * as homeBanners from "./schema/home-banners.js";
 
 const url = process.env.DATABASE_URL;
 if (!url) throw new Error("DATABASE_URL is required");
 
-const schema = { ...users, ...emailVerification, ...referrals, ...xp, ...badges, ...posts, ...economy, ...hellAi };
+const schema = { ...users, ...emailVerification, ...referrals, ...xp, ...badges, ...posts, ...economy, ...hellAi, ...homeBanners };
 
 // Пул увеличен с 10 до 40: при пике 200 одновременных Hell AI запросов каждый
 // делает ~4-6 коротких SELECT/INSERT, дефолтных 10 не хватает.
