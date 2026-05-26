@@ -660,8 +660,7 @@ function CommentsSheet({
       } else {
         topLevel.push(c);
       }
-      const nick = PUBLIC_USERS[c.authorSlug]?.nick;
-      if (nick) nickToLatest.set(nick.toLowerCase(), c.id);
+      nickToLatest.set(c.author.nick.toLowerCase(), c.id);
     }
     return { topLevel, childrenByParentId };
   }, [post.comments]);
