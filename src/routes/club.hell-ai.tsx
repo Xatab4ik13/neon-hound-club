@@ -340,30 +340,12 @@ type Chat = {
   messages: Msg[];
   createdAt: number;
   updatedAt: number;
+  /** true = сообщения подгружены с бэка (или это новый локальный чат) */
+  loaded?: boolean;
 };
 
-const CHATS_KEY = "hh:hellai:chats:v1";
 const ACTIVE_KEY = "hh:hellai:active:v1";
 
-function loadChats(): Chat[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = localStorage.getItem(CHATS_KEY);
-    if (!raw) return [];
-    const data = JSON.parse(raw);
-    return Array.isArray(data) ? data : [];
-  } catch {
-    return [];
-  }
-}
-function saveChats(chats: Chat[]) {
-  if (typeof window === "undefined") return;
-  try {
-    localStorage.setItem(CHATS_KEY, JSON.stringify(chats));
-  } catch {
-    /* ignore */
-  }
-}
 function loadActiveId(): string {
   if (typeof window === "undefined") return "";
   return localStorage.getItem(ACTIVE_KEY) ?? "";
@@ -382,8 +364,65 @@ function newChat(bikeId?: string): Chat {
     messages: [],
     createdAt: now,
     updatedAt: now,
+    loaded: true,
   };
 }
+
+type ServerChatMeta = {
+  id: string;
+  title: string;
+  bikeId: string | null;
+  messageCount: number;
+  createdAt: string | null;
+  updatedAt: string | null;
+};
+type ServerChatMsg = {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  bikeId: string | null;
+  error: boolean;
+  createdAt: string;
+};
+
+async function fetchChats(): Promise<Chat[]> {
+  const res = await apiFetch<{ chats: ServerChatMeta[] }>("/api/v1/hell-ai/chats");
+  return res.chats.map((c) => ({
+    id: c.id,
+    title: c.title,
+    bikeId: c.bikeId ?? undefined,
+    messages: [],
+    createdAt: c.createdAt ? new Date(c.createdAt).getTime() : Date.now(),
+    updatedAt: c.updatedAt ? new Date(c.updatedAt).getTime() : Date.now(),
+    loaded: false,
+  }));
+}
+
+async function fetchChatMessages(id: string): Promise<Msg[]> {
+  const res = await apiFetch<{ messages: ServerChatMsg[] }>(
+    `/api/v1/hell-ai/chats/${encodeURIComponent(id)}`,
+  );
+  // Сворачиваем последовательность user→assistant в пары Msg.
+  const out: Msg[] = [];
+  let pending: { id: string; q: string } | null = null;
+  for (const m of res.messages) {
+    if (m.role === "user") {
+      if (pending) out.push({ id: pending.id, q: pending.q });
+      pending = { id: m.id, q: m.content };
+    } else if (m.role === "assistant") {
+      if (pending) {
+        out.push({ id: pending.id, q: pending.q, a: m.content, error: m.error });
+        pending = null;
+      } else {
+        // ассистент без user — кладём как stand-alone
+        out.push({ id: m.id, q: "", a: m.content, error: m.error });
+      }
+    }
+  }
+  if (pending) out.push({ id: pending.id, q: pending.q });
+  return out;
+}
+
 
 function formatRelative(ts: number): string {
   const diff = Date.now() - ts;
