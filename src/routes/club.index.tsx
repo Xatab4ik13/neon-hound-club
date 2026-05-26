@@ -71,18 +71,7 @@ function ClubFeedPage() {
         ) : (
           <>
             {posts.map((post) => (
-              <Swipeable
-                key={post.id}
-                radius={24}
-                right={{
-                  icon: <Heart className="h-4 w-4" fill="currentColor" />,
-                  label: post.liked ? "Лайк убран" : "Лайк",
-                  bg: "linear-gradient(90deg, oklch(0.55 0.22 357.3) 0%, oklch(0.6 0.24 357.3) 100%)",
-                  onAction: () => feedStore.toggleLike(post.id, !post.liked),
-                }}
-              >
-                <PostCard post={post} />
-              </Swipeable>
+              <FeedRow key={post.id} post={post} />
             ))}
             {posts.length > 0 && <FeedSentinel />}
           </>
@@ -91,6 +80,24 @@ function ClubFeedPage() {
     </main>
   );
 }
+
+// Отдельный мемо-компонент — стабильный prop для Swipeable
+const FeedRow = memo(function FeedRow({ post }: { post: Post }) {
+  const right = useMemo(
+    () => ({
+      icon: <Heart className="h-4 w-4" fill="currentColor" />,
+      label: post.liked ? "Лайк убран" : "Лайк",
+      bg: "linear-gradient(90deg, oklch(0.55 0.22 357.3) 0%, oklch(0.6 0.24 357.3) 100%)",
+      onAction: () => feedStore.toggleLike(post.id, !post.liked),
+    }),
+    [post.id, post.liked],
+  );
+  return (
+    <Swipeable radius={24} right={right}>
+      <PostCard post={post} />
+    </Swipeable>
+  );
+});
 
 // ───────── Post ─────────
 
