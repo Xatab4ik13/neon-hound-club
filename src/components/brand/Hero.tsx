@@ -73,7 +73,7 @@ export function Hero() {
           </h1>
 
           <p className="mt-8 max-w-[36ch] text-pretty text-lg text-muted-foreground md:text-xl">
-            Магазин. Школа. Гараж. Призы. Для тех, кто живёт
+            Магазин. Школа. Гараж. Призы. AI-механик. Для тех, кто живёт
             мото-комьюнити.
           </p>
 
