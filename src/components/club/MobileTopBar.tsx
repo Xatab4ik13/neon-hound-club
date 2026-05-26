@@ -27,7 +27,7 @@ export function MobileTopBar() {
     return rank;
   }, [myProfile.data?.rank?.rankId, rank]);
   const avatarUrl = myProfile.data?.avatarUrl ?? null;
-  const nick = viewer.nick ?? ME.nick;
+  const nick = myProfile.data?.nick ?? viewer.nick ?? "";
   const { count: cartCount } = useCart();
   const isShop = pathname.startsWith("/club/shop") || pathname.startsWith("/club/cart");
   const [notifOpen, setNotifOpen] = useState(false);
