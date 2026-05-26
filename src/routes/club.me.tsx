@@ -666,13 +666,13 @@ function ProfileHero({ onSettings }: { onSettings: () => void }) {
           {/* Rank badge + XP bar */}
           <div className="mt-5">
             <div className="mb-2 flex items-baseline justify-between gap-3">
-              <Link
-                to="/club/rank"
-                className="font-display text-lg font-black italic uppercase tracking-tight transition-opacity hover:opacity-80 md:text-xl"
+              <span
+                className="font-display text-lg font-black italic uppercase tracking-tight md:text-xl"
                 style={{ color: rank.accent }}
               >
                 {rank.label}
-              </Link>
+              </span>
+
               {isMax ? (
 
                 <span
