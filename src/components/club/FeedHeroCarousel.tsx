@@ -3,6 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowRight } from "lucide-react";
 import { fetchHomeBanners, type HomeBanner } from "@/lib/queries";
+import { bannerBackgroundStyle } from "@/lib/banner-presets";
+
 
 // Унифицированная модель слайда: картинка-фон с бека.
 type Slide = {
@@ -124,13 +126,8 @@ export function FeedHeroCarousel() {
 }
 
 function HeroSlideCard({ slide }: { slide: Slide }) {
-  const bgStyle: React.CSSProperties = slide.imageUrl
-    ? {
-        backgroundImage: `url(${JSON.stringify(slide.imageUrl)})`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-      }
-    : {};
+  const bgStyle: React.CSSProperties = bannerBackgroundStyle(slide.imageUrl);
+
 
   const Cta = slide.isExternal ? (
     <a
