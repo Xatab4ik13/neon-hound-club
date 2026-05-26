@@ -148,7 +148,89 @@ function RafflesPage() {
           </ul>
         </section>
       )}
+
+      <LegalNotice />
     </main>
+  );
+}
+
+function LegalNotice() {
+  return (
+    <section
+      aria-label="Юридическая информация"
+      className="mt-10 space-y-3"
+    >
+      <div className="flex items-center gap-2 px-1">
+        <ShieldCheck className="h-3.5 w-3.5 text-muted-foreground" />
+        <h2 className="font-display text-sm font-black uppercase italic tracking-widest text-muted-foreground">
+          Как это работает по закону
+        </h2>
+      </div>
+
+      <div className="rounded-2xl border border-white/[0.06] bg-card/40 p-4 text-[12px] leading-relaxed text-muted-foreground">
+        <p>
+          Розыгрыши на платформе {LEGAL.brand} — это{" "}
+          <span className="font-semibold text-foreground">
+            стимулирующее мероприятие
+          </span>{" "}
+          в значении ст. 9 Федерального закона № 38-ФЗ «О рекламе».
+          Это{" "}
+          <span className="font-semibold text-foreground">не лотерея</span>{" "}
+          и не азартная игра: участие не требует денежной ставки, исход
+          не определяется случайным выбором среди платных билетов в смысле
+          ФЗ № 138-ФЗ «О лотереях» и ФЗ № 244-ФЗ.
+        </p>
+      </div>
+
+      <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        <LegalCard
+          title="Организатор"
+          body={`${LEGAL.fullName}. ОГРНИП ${LEGAL.ogrnip}, ИНН ${LEGAL.inn}. Регион: ${LEGAL.region}.`}
+        />
+        <LegalCard
+          title="Билеты"
+          body="Внутренняя бонусная единица сервиса. Начисляются за активность в клубе и бонусом к покупкам мерча. Не подлежат обмену на деньги и не возвращаются."
+        />
+        <LegalCard
+          title="Участие"
+          body="Бесплатное для всех зарегистрированных участников клуба. Покупка товаров и доступ Hell Pass не являются обязательным условием участия."
+        />
+        <LegalCard
+          title="Призы и выдача"
+          body="Победитель определяется на прямом эфире у блогера HELLHOUND и публикуется в карточке розыгрыша. С победителем связывается организатор для согласования доставки. Денежный эквивалент не выплачивается."
+        />
+      </ul>
+
+      <div className="flex items-start gap-2 rounded-2xl border border-white/[0.06] bg-black/40 px-4 py-3 text-[11px] leading-relaxed text-muted-foreground">
+        <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+        <p>
+          Полные правила каждого розыгрыша — сроки, призовой фонд, порядок
+          определения победителя — публикуются в его карточке до старта.
+          Принимая участие, вы соглашаетесь с{" "}
+          <Link to="/legal/offer" className="text-foreground underline-offset-2 hover:underline">
+            публичной офертой
+          </Link>{" "}
+          и{" "}
+          <Link to="/legal/privacy" className="text-foreground underline-offset-2 hover:underline">
+            политикой обработки персональных данных
+          </Link>
+          . Вопросы: {LEGAL.contactEmail}.
+        </p>
+      </div>
+    </section>
+  );
+}
+
+function LegalCard({ title, body }: { title: string; body: string }) {
+  return (
+    <li className="rounded-2xl border border-white/[0.06] bg-card/40 px-4 py-3">
+      <div className="font-mono text-[10px] font-bold uppercase tracking-wider text-primary">
+        {title}
+      </div>
+      <p className="mt-1.5 text-[12px] leading-relaxed text-muted-foreground">
+        {body}
+      </p>
+    </li>
   );
 }
 
