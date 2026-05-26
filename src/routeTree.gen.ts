@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VerifyEmailRouteImport } from './routes/verify-email'
+import { Route as ShopInfoRouteImport } from './routes/shop-info'
 import { Route as SchoolRouteImport } from './routes/school'
 import { Route as LogosRouteImport } from './routes/logos'
 import { Route as LoginRouteImport } from './routes/login'
@@ -30,10 +31,8 @@ import { Route as ShopProductSlugRouteImport } from './routes/shop.$productSlug'
 import { Route as PaySuccessRouteImport } from './routes/pay.success'
 import { Route as PayFailRouteImport } from './routes/pay.fail'
 import { Route as LegalTermsRouteImport } from './routes/legal.terms'
-import { Route as LegalShippingRouteImport } from './routes/legal.shipping'
 import { Route as LegalRequisitesRouteImport } from './routes/legal.requisites'
 import { Route as LegalPrivacyRouteImport } from './routes/legal.privacy'
-import { Route as LegalPaymentRouteImport } from './routes/legal.payment'
 import { Route as LegalOfferRouteImport } from './routes/legal.offer'
 import { Route as HellPassTierRouteImport } from './routes/hell-pass.$tier'
 import { Route as ClubTicketsRouteImport } from './routes/club.tickets'
@@ -75,6 +74,11 @@ import { Route as BloggerRafflesRaffleIdRouteImport } from './routes/blogger.raf
 const VerifyEmailRoute = VerifyEmailRouteImport.update({
   id: '/verify-email',
   path: '/verify-email',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ShopInfoRoute = ShopInfoRouteImport.update({
+  id: '/shop-info',
+  path: '/shop-info',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SchoolRoute = SchoolRouteImport.update({
@@ -177,11 +181,6 @@ const LegalTermsRoute = LegalTermsRouteImport.update({
   path: '/legal/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
-const LegalShippingRoute = LegalShippingRouteImport.update({
-  id: '/legal/shipping',
-  path: '/legal/shipping',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const LegalRequisitesRoute = LegalRequisitesRouteImport.update({
   id: '/legal/requisites',
   path: '/legal/requisites',
@@ -190,11 +189,6 @@ const LegalRequisitesRoute = LegalRequisitesRouteImport.update({
 const LegalPrivacyRoute = LegalPrivacyRouteImport.update({
   id: '/legal/privacy',
   path: '/legal/privacy',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LegalPaymentRoute = LegalPaymentRouteImport.update({
-  id: '/legal/payment',
-  path: '/legal/payment',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LegalOfferRoute = LegalOfferRouteImport.update({
@@ -394,6 +388,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/logos': typeof LogosRoute
   '/school': typeof SchoolRoute
+  '/shop-info': typeof ShopInfoRoute
   '/verify-email': typeof VerifyEmailRoute
   '/admin/cdek': typeof AdminCdekRoute
   '/admin/economy': typeof AdminEconomyRoute
@@ -422,10 +417,8 @@ export interface FileRoutesByFullPath {
   '/club/tickets': typeof ClubTicketsRoute
   '/hell-pass/$tier': typeof HellPassTierRoute
   '/legal/offer': typeof LegalOfferRoute
-  '/legal/payment': typeof LegalPaymentRoute
   '/legal/privacy': typeof LegalPrivacyRoute
   '/legal/requisites': typeof LegalRequisitesRoute
-  '/legal/shipping': typeof LegalShippingRoute
   '/legal/terms': typeof LegalTermsRoute
   '/pay/fail': typeof PayFailRoute
   '/pay/success': typeof PaySuccessRoute
@@ -455,6 +448,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/logos': typeof LogosRoute
   '/school': typeof SchoolRoute
+  '/shop-info': typeof ShopInfoRoute
   '/verify-email': typeof VerifyEmailRoute
   '/admin/cdek': typeof AdminCdekRoute
   '/admin/economy': typeof AdminEconomyRoute
@@ -483,10 +477,8 @@ export interface FileRoutesByTo {
   '/club/tickets': typeof ClubTicketsRoute
   '/hell-pass/$tier': typeof HellPassTierRoute
   '/legal/offer': typeof LegalOfferRoute
-  '/legal/payment': typeof LegalPaymentRoute
   '/legal/privacy': typeof LegalPrivacyRoute
   '/legal/requisites': typeof LegalRequisitesRoute
-  '/legal/shipping': typeof LegalShippingRoute
   '/legal/terms': typeof LegalTermsRoute
   '/pay/fail': typeof PayFailRoute
   '/pay/success': typeof PaySuccessRoute
@@ -520,6 +512,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/logos': typeof LogosRoute
   '/school': typeof SchoolRoute
+  '/shop-info': typeof ShopInfoRoute
   '/verify-email': typeof VerifyEmailRoute
   '/admin/cdek': typeof AdminCdekRoute
   '/admin/economy': typeof AdminEconomyRoute
@@ -548,10 +541,8 @@ export interface FileRoutesById {
   '/club/tickets': typeof ClubTicketsRoute
   '/hell-pass/$tier': typeof HellPassTierRoute
   '/legal/offer': typeof LegalOfferRoute
-  '/legal/payment': typeof LegalPaymentRoute
   '/legal/privacy': typeof LegalPrivacyRoute
   '/legal/requisites': typeof LegalRequisitesRoute
-  '/legal/shipping': typeof LegalShippingRoute
   '/legal/terms': typeof LegalTermsRoute
   '/pay/fail': typeof PayFailRoute
   '/pay/success': typeof PaySuccessRoute
@@ -586,6 +577,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/logos'
     | '/school'
+    | '/shop-info'
     | '/verify-email'
     | '/admin/cdek'
     | '/admin/economy'
@@ -614,10 +606,8 @@ export interface FileRouteTypes {
     | '/club/tickets'
     | '/hell-pass/$tier'
     | '/legal/offer'
-    | '/legal/payment'
     | '/legal/privacy'
     | '/legal/requisites'
-    | '/legal/shipping'
     | '/legal/terms'
     | '/pay/fail'
     | '/pay/success'
@@ -647,6 +637,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/logos'
     | '/school'
+    | '/shop-info'
     | '/verify-email'
     | '/admin/cdek'
     | '/admin/economy'
@@ -675,10 +666,8 @@ export interface FileRouteTypes {
     | '/club/tickets'
     | '/hell-pass/$tier'
     | '/legal/offer'
-    | '/legal/payment'
     | '/legal/privacy'
     | '/legal/requisites'
-    | '/legal/shipping'
     | '/legal/terms'
     | '/pay/fail'
     | '/pay/success'
@@ -711,6 +700,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/logos'
     | '/school'
+    | '/shop-info'
     | '/verify-email'
     | '/admin/cdek'
     | '/admin/economy'
@@ -739,10 +729,8 @@ export interface FileRouteTypes {
     | '/club/tickets'
     | '/hell-pass/$tier'
     | '/legal/offer'
-    | '/legal/payment'
     | '/legal/privacy'
     | '/legal/requisites'
-    | '/legal/shipping'
     | '/legal/terms'
     | '/pay/fail'
     | '/pay/success'
@@ -776,14 +764,13 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   LogosRoute: typeof LogosRoute
   SchoolRoute: typeof SchoolRoute
+  ShopInfoRoute: typeof ShopInfoRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
   CheckoutSuccessRoute: typeof CheckoutSuccessRoute
   HellPassTierRoute: typeof HellPassTierRoute
   LegalOfferRoute: typeof LegalOfferRoute
-  LegalPaymentRoute: typeof LegalPaymentRoute
   LegalPrivacyRoute: typeof LegalPrivacyRoute
   LegalRequisitesRoute: typeof LegalRequisitesRoute
-  LegalShippingRoute: typeof LegalShippingRoute
   LegalTermsRoute: typeof LegalTermsRoute
   PayFailRoute: typeof PayFailRoute
   PaySuccessRoute: typeof PaySuccessRoute
@@ -800,6 +787,13 @@ declare module '@tanstack/react-router' {
       path: '/verify-email'
       fullPath: '/verify-email'
       preLoaderRoute: typeof VerifyEmailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/shop-info': {
+      id: '/shop-info'
+      path: '/shop-info'
+      fullPath: '/shop-info'
+      preLoaderRoute: typeof ShopInfoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/school': {
@@ -942,13 +936,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LegalTermsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/legal/shipping': {
-      id: '/legal/shipping'
-      path: '/legal/shipping'
-      fullPath: '/legal/shipping'
-      preLoaderRoute: typeof LegalShippingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/legal/requisites': {
       id: '/legal/requisites'
       path: '/legal/requisites'
@@ -961,13 +948,6 @@ declare module '@tanstack/react-router' {
       path: '/legal/privacy'
       fullPath: '/legal/privacy'
       preLoaderRoute: typeof LegalPrivacyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/legal/payment': {
-      id: '/legal/payment'
-      path: '/legal/payment'
-      fullPath: '/legal/payment'
-      preLoaderRoute: typeof LegalPaymentRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/legal/offer': {
@@ -1342,14 +1322,13 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   LogosRoute: LogosRoute,
   SchoolRoute: SchoolRoute,
+  ShopInfoRoute: ShopInfoRoute,
   VerifyEmailRoute: VerifyEmailRoute,
   CheckoutSuccessRoute: CheckoutSuccessRoute,
   HellPassTierRoute: HellPassTierRoute,
   LegalOfferRoute: LegalOfferRoute,
-  LegalPaymentRoute: LegalPaymentRoute,
   LegalPrivacyRoute: LegalPrivacyRoute,
   LegalRequisitesRoute: LegalRequisitesRoute,
-  LegalShippingRoute: LegalShippingRoute,
   LegalTermsRoute: LegalTermsRoute,
   PayFailRoute: PayFailRoute,
   PaySuccessRoute: PaySuccessRoute,
