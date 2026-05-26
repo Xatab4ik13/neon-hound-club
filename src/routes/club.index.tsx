@@ -564,9 +564,6 @@ const CommentsPreview = memo(function CommentsPreview({
   comments: Comment[];
   onOpen: () => void;
 }) {
-  comments: Comment[];
-  onOpen: () => void;
-}) {
   if (comments.length === 0) {
     return (
       <button
