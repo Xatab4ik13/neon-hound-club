@@ -58,7 +58,13 @@ export function IOSSheet({
               ? "h-[calc(100dvh-env(safe-area-inset-top)-8px)]"
               : "max-h-[78dvh]",
           )}
-          style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+          style={{
+            paddingBottom: "env(safe-area-inset-bottom)",
+            // Запрещаем браузеру обрабатывать горизонтальный пан — иначе в iOS PWA
+            // модалку можно «таскать» вправо-влево пальцем по форме.
+            touchAction: "pan-y",
+            overscrollBehavior: "contain",
+          }}
         >
           <Drawer.Title className="sr-only">{title}</Drawer.Title>
 
