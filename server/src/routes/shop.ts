@@ -280,7 +280,18 @@ const createProductSchema = z
     preorderExpectedAt: z.string().datetime().nullable().optional(),
     shippingInfo: z.string().max(4000).default(""),
     returnPolicy: z.string().max(4000).default(""),
-    sizes: z.array(z.string().trim().min(1).max(24)).max(40).default([]),
+    sizes: z
+      .array(
+        z.union([
+          z.string().trim().min(1).max(24).transform((label) => ({ label, stock: null as number | null })),
+          z.object({
+            label: z.string().trim().min(1).max(24),
+            stock: z.number().int().min(0).max(1_000_000).nullable(),
+          }),
+        ]),
+      )
+      .max(40)
+      .default([]),
   })
   .superRefine((v, ctx) => {
     if (v.kind === "digital" && !v.digitalFileUrl) {
