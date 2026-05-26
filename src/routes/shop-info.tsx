@@ -146,7 +146,7 @@ export default function ShopInfoPage() {
       {/* PAYMENT METHODS */}
       <section className="border-b border-border">
         <div className="mx-auto max-w-7xl px-6 py-20">
-          <SectionHead eyebrow="01 — Оплата" title="Принимаем к оплате" />
+          <SectionHead eyebrow="Оплата" title="Принимаем к оплате" />
 
           <div className="mt-10 grid gap-4 sm:grid-cols-3">
             <PaymentCard name="VISA" sub="International">
@@ -187,7 +187,7 @@ export default function ShopInfoPage() {
       {/* SECURITY */}
       <section className="border-b border-border bg-surface/40">
         <div className="mx-auto max-w-7xl px-6 py-20">
-          <SectionHead eyebrow="02 — Безопасность" title="Карта остаётся у банка" />
+          <SectionHead eyebrow="Безопасность" title="Карта остаётся у банка" />
           <div className="mt-10 grid gap-4 md:grid-cols-3">
             <FeatureCard icon={<LockIcon />} title="TLS-шифрование">
               Данные карты передаются на сервер банка по защищённому каналу
@@ -215,7 +215,7 @@ export default function ShopInfoPage() {
       {/* DELIVERY */}
       <section className="border-b border-border">
         <div className="mx-auto max-w-7xl px-6 py-20">
-          <SectionHead eyebrow="03 — Доставка" title="Везём по всей России" />
+          <SectionHead eyebrow="Доставка" title="Везём по всей России" />
 
           <div className="mt-10 grid gap-4 md:grid-cols-2">
             <CarrierCard
@@ -263,7 +263,7 @@ export default function ShopInfoPage() {
       {/* RETURN */}
       <section className="border-b border-border bg-surface/40">
         <div className="mx-auto max-w-7xl px-6 py-20">
-          <SectionHead eyebrow="04 — Возврат" title="Деньги — на ту же карту" />
+          <SectionHead eyebrow="Возврат" title="Деньги — на ту же карту" />
           <p className="mt-6 max-w-3xl text-base leading-relaxed text-muted-foreground">
             Возврат денежных средств производится на ту же банковскую карту,
             с которой была произведена оплата. Срок зачисления — от 1 до 30
@@ -296,7 +296,7 @@ export default function ShopInfoPage() {
       {/* SUPPORT */}
       <section className="border-b border-border">
         <div className="mx-auto max-w-7xl px-6 py-20">
-          <SectionHead eyebrow="05 — Связь" title="Если что-то пошло не так" />
+          <SectionHead eyebrow="Связь" title="Если что-то пошло не так" />
           <div className="mt-10 grid gap-4 md:grid-cols-2">
             <a
               href={LEGAL.contactTelegram}
