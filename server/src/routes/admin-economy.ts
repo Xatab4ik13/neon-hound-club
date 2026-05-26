@@ -203,9 +203,13 @@ export async function adminEconomyRoutes(app: FastifyInstance) {
           paidAt: orders.paidAt,
         })
         .from(orders)
-        .where(eq(orders.status, "paid"))
+        .where(and(
+          sql`${orders.paidAt} IS NOT NULL`,
+          sql`${orders.status} IN ('paid','shipped','delivered')`,
+        ))
         .orderBy(desc(orders.paidAt))
         .limit(q.limit);
+
       for (const r of rows) {
         if (!r.paidAt) continue;
         items.push({
