@@ -1,10 +1,11 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useMemo } from "react";
-import { Minus, Plus, ShoppingBag, Ticket, Trash2 } from "lucide-react";
-import { PageHeader } from "@/components/club/PageHeader";
+import { useCallback, useMemo, useRef, useState } from "react";
+import { Minus, Plus, ShoppingBag, Ticket, Trash2, ChevronLeft } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { toast } from "sonner";
 import { useCart, type CartItem } from "@/hooks/use-cart";
 import { useViewer } from "@/hooks/use-viewer";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { haptic } from "@/hooks/use-haptic";
 
 export const Route = createFileRoute("/club/cart")({
   head: () => ({
@@ -25,7 +26,15 @@ function ticketsWord(n: number) {
   return "билетов";
 }
 
-/** Картинка товара в корзине с фолбэком на иконку, если ссылки нет. */
+function positionsWord(n: number) {
+  const m10 = n % 10;
+  const m100 = n % 100;
+  if (m10 === 1 && m100 !== 11) return "позиция";
+  if (m10 >= 2 && m10 <= 4 && (m100 < 10 || m100 >= 20)) return "позиции";
+  return "позиций";
+}
+
+/** Картинка товара с фолбэком на иконку через React-стейт. */
 function CartImage({
   src,
   alt,
@@ -37,7 +46,8 @@ function CartImage({
   className: string;
   iconSize?: string;
 }) {
-  if (!src) {
+  const [failed, setFailed] = useState(false);
+  if (!src || failed) {
     return (
       <div className={`${className} grid place-items-center text-muted-foreground/60`}>
         <ShoppingBag className={iconSize} />
@@ -48,27 +58,14 @@ function CartImage({
     <img
       src={src}
       alt={alt}
+      loading="lazy"
       className={`${className} object-cover`}
-      onError={(e) => {
-        // Если ссылка битая — показываем плейсхолдер
-        const img = e.currentTarget;
-        img.style.display = "none";
-        const parent = img.parentElement;
-        if (parent && !parent.querySelector(".cart-img-fallback")) {
-          const ph = document.createElement("div");
-          ph.className =
-            "cart-img-fallback grid h-full w-full place-items-center text-muted-foreground/60";
-          ph.innerHTML =
-            '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>';
-          parent.appendChild(ph);
-        }
-      }}
+      onError={() => setFailed(true)}
     />
   );
 }
 
 function ClubCartPage() {
-  const isMobile = useIsMobile();
   const { items, total, setQty, remove } = useCart();
   const { isAuthed } = useViewer();
   const navigate = useNavigate();
@@ -78,227 +75,243 @@ function ClubCartPage() {
     [items],
   );
 
+  // Undo-удаление через sonner-toast.
+  const handleRemove = useCallback(
+    (item: CartItem) => {
+      haptic("selection");
+      remove(item.id);
+      toast("Удалено из корзины", {
+        description: item.name,
+        action: {
+          label: "Отмена",
+          onClick: () => setQty(item.id, item.qty),
+        },
+      });
+    },
+    [remove, setQty],
+  );
+
+  const handleQty = useCallback(
+    (id: string, qty: number) => {
+      haptic("light");
+      setQty(id, qty);
+    },
+    [setQty],
+  );
+
+  const handleCheckout = useCallback(() => {
+    haptic("selection");
+    if (isAuthed) navigate({ to: "/club/checkout" });
+    else navigate({ to: "/login" });
+  }, [isAuthed, navigate]);
+
+  // ---------- ПУСТАЯ КОРЗИНА ----------
   if (items.length === 0) {
     return (
-      <main
-        className={
-          isMobile
-            ? "mx-auto w-full max-w-3xl px-4 py-5"
-            : "mx-auto w-full max-w-5xl px-6 py-8 md:px-8 md:py-10"
-        }
-        style={
-          isMobile
-            ? { paddingBottom: "calc(108px + env(safe-area-inset-bottom))" }
-            : undefined
-        }
-      >
-        <PageHeader title="Корзина" subtitle="Пока пусто" />
-        <div className="grid place-items-center rounded-2xl border border-dashed border-white/[0.08] bg-card/40 px-6 py-16 text-center">
-          <div className="grid h-14 w-14 place-items-center rounded-full bg-primary/10 text-primary">
-            <ShoppingBag className="h-6 w-6" />
-          </div>
-          <div className="mt-4 font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
-            Корзина пуста
-          </div>
-          <p className="mt-2 max-w-[32ch] text-sm text-muted-foreground/80">
-            Загляни в магазин клуба — мерч, экипировка, открытки с бонусом билетов.
-          </p>
-          <Link
-            to="/club/shop"
-            className="mt-5 inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 font-mono text-[12px] font-bold uppercase tracking-wider text-primary-foreground transition-transform active:scale-95 hover:scale-[1.02]"
-          >
-            В магазин
-          </Link>
-        </div>
-      </main>
+      <>
+        {/* MOBILE empty */}
+        <main
+          className="mx-auto w-full max-w-3xl px-4 py-5 md:hidden"
+          style={{ paddingBottom: "calc(108px + env(safe-area-inset-bottom))" }}
+        >
+          <MobileTitle title="Корзина" subtitle="Пока пусто" />
+          <EmptyBlock />
+        </main>
+
+        {/* DESKTOP empty */}
+        <main className="mx-auto hidden w-full max-w-5xl px-6 py-8 md:block md:px-8 md:py-10">
+          <DesktopHeader title="Корзина" subtitle="Пока пусто" />
+          <EmptyBlock />
+        </main>
+      </>
     );
   }
 
-  // ---------- DESKTOP ----------
-  if (!isMobile) {
-    return (
-      <main className="mx-auto w-full max-w-5xl px-6 py-8 md:px-8 md:py-10">
-        <PageHeader
-          title="Корзина"
-          subtitle={`${items.length} ${items.length === 1 ? "позиция" : "позиций"}`}
-        />
-
-        <div className="grid gap-8 lg:grid-cols-[1fr_360px]">
-          {/* Список товаров */}
-          <ul className="space-y-3">
-            {items.map((i) => (
-              <DesktopRow
-                key={i.id}
-                item={i}
-                onQty={(qty) => setQty(i.id, qty)}
-                onRemove={() => remove(i.id)}
-              />
-            ))}
-          </ul>
-
-          {/* Сводка */}
-          <aside className="h-fit space-y-4 rounded-2xl border border-white/[0.06] bg-card/40 p-6">
-            <div className="space-y-3 border-b border-white/[0.06] pb-4">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Товары</span>
-                <span className="font-mono tabular-nums">
-                  {total.toLocaleString("ru-RU")} ₽
-                </span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Доставка</span>
-                <span className="font-mono text-[12px] uppercase tracking-wider text-muted-foreground">
-                  на оформлении
-                </span>
-              </div>
-            </div>
-
-            <div className="flex items-baseline justify-between">
-              <span className="text-xs uppercase tracking-widest text-muted-foreground">
-                Итого
-              </span>
-              <span className="font-display text-3xl font-black tabular-nums text-foreground">
-                {total.toLocaleString("ru-RU")} ₽
-              </span>
-            </div>
-
-            {ticketsTotal > 0 && (
-              <div className="flex items-center gap-3 rounded-xl border border-primary/25 bg-primary/[0.08] px-3 py-2.5">
-                <Ticket className="h-4 w-4 shrink-0 text-primary" />
-                <div className="min-w-0 flex-1">
-                  <div className="font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-primary">
-                    Бонус билетов
-                  </div>
-                  <div className="text-[11px] text-muted-foreground">
-                    Начислится после оплаты
-                  </div>
-                </div>
-                <span className="font-display text-xl font-black italic tabular-nums text-primary">
-                  +{ticketsTotal}
-                </span>
-              </div>
-            )}
-
-            <button
-              type="button"
-              onClick={() =>
-                isAuthed ? navigate({ to: "/club/checkout" }) : navigate({ to: "/login" })
-              }
-              className="w-full rounded-xl bg-primary px-5 py-3 font-display text-sm font-black uppercase tracking-wider text-primary-foreground transition-transform active:scale-[0.98] hover:scale-[1.01]"
-            >
-              {isAuthed ? "Оформить заказ" : "Войти и оформить"}
-            </button>
-            <p className="text-[11px] text-muted-foreground">
-              Оплата и адрес доставки — на следующем шаге.
-            </p>
-          </aside>
-        </div>
-      </main>
-    );
-  }
-
-  // ---------- MOBILE ----------
-  return (
-    <main
-      className="mx-auto w-full max-w-3xl px-4 py-5"
-      style={{ paddingBottom: "calc(124px + env(safe-area-inset-bottom))" }}
-    >
-      <PageHeader
+  // ---------- ДЕСКТОП ----------
+  const Desktop = (
+    <main className="mx-auto hidden w-full max-w-5xl px-6 py-8 md:block md:px-8 md:py-10">
+      <DesktopHeader
         title="Корзина"
-        subtitle={`${items.length} ${items.length === 1 ? "позиция" : "позиций"}`}
+        subtitle={`${items.length} ${positionsWord(items.length)}`}
+      />
+
+      <div className="grid gap-8 lg:grid-cols-[1fr_360px]">
+        <ul className="space-y-3">
+          <AnimatePresence initial={false}>
+            {items.map((i) => (
+              <motion.div
+                key={i.id}
+                layout
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.2 }}
+              >
+                <DesktopRow
+                  item={i}
+                  onQty={(qty) => handleQty(i.id, qty)}
+                  onRemove={() => handleRemove(i)}
+                />
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </ul>
+
+        <aside className="h-fit space-y-4 rounded-2xl border border-white/[0.06] bg-card/40 p-6">
+          <div className="space-y-3 border-b border-white/[0.06] pb-4">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Товары</span>
+              <span className="tabular-nums">{total.toLocaleString("ru-RU")} ₽</span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Доставка</span>
+              <span className="text-muted-foreground">на оформлении</span>
+            </div>
+          </div>
+
+          <div className="flex items-baseline justify-between">
+            <span className="text-sm text-muted-foreground">Итого</span>
+            <span className="text-3xl font-bold tabular-nums text-foreground">
+              {total.toLocaleString("ru-RU")} ₽
+            </span>
+          </div>
+
+          {ticketsTotal > 0 && (
+            <div className="flex items-center gap-3 rounded-xl border border-primary/25 bg-primary/[0.08] px-3 py-2.5">
+              <Ticket className="h-4 w-4 shrink-0 text-primary" />
+              <div className="min-w-0 flex-1">
+                <div className="text-[13px] font-semibold text-primary">Бонус билетов</div>
+                <div className="text-[12px] text-muted-foreground">
+                  Начислится после оплаты
+                </div>
+              </div>
+              <span className="text-xl font-bold tabular-nums text-primary">
+                +{ticketsTotal}
+              </span>
+            </div>
+          )}
+
+          <button
+            type="button"
+            onClick={handleCheckout}
+            className="w-full rounded-xl bg-primary px-5 py-3 text-[15px] font-semibold text-primary-foreground transition-transform active:scale-[0.98] hover:scale-[1.01]"
+          >
+            {isAuthed ? "Оформить заказ" : "Войти и оформить"}
+          </button>
+          <p className="text-[12px] text-muted-foreground">
+            Оплата и адрес доставки — на следующем шаге.
+          </p>
+        </aside>
+      </div>
+    </main>
+  );
+
+  // ---------- МОБИЛКА ----------
+  const Mobile = (
+    <main
+      className="mx-auto w-full max-w-3xl px-4 py-5 md:hidden"
+      style={{
+        paddingBottom: "calc(132px + env(safe-area-inset-bottom))",
+        overscrollBehaviorY: "contain",
+      }}
+    >
+      <MobileTitle
+        title="Корзина"
+        subtitle={`${items.length} ${positionsWord(items.length)}`}
       />
 
       <ul className="mb-5 overflow-hidden rounded-2xl border border-white/[0.06] bg-card/40 divide-y divide-white/[0.05]">
-        {items.map((i) => (
-          <li key={i.id} className="px-3 py-3">
-            <div className="flex gap-3">
-              <Link
-                to="/club/shop/$productSlug"
-                params={{ productSlug: i.slug }}
-                className="block h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-surface active:opacity-80"
-              >
-                <CartImage src={i.image} alt={i.name} className="h-full w-full" />
-              </Link>
+        <AnimatePresence initial={false}>
+          {items.map((i) => (
+            <motion.li
+              key={i.id}
+              layout
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.22, ease: [0.32, 0.72, 0, 1] }}
+              className="overflow-hidden"
+            >
+              <SwipeRow onDelete={() => handleRemove(i)}>
+                <div className="flex gap-3 bg-card/40 px-3 py-3">
+                  <Link
+                    to="/club/shop/$productSlug"
+                    params={{ productSlug: i.slug }}
+                    className="block h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-surface active:opacity-80"
+                  >
+                    <CartImage src={i.image} alt={i.name} className="h-full w-full" />
+                  </Link>
 
-              <div className="min-w-0 flex-1">
-                <Link
-                  to="/club/shop/$productSlug"
-                  params={{ productSlug: i.slug }}
-                  className="block text-[14px] font-semibold leading-tight text-foreground"
-                >
-                  {i.name}
-                </Link>
-                <div className="mt-1 font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-                  {i.size ? `Размер ${i.size}` : "—"}
-                </div>
-
-                {i.ticketsBonus && i.ticketsBonus > 0 ? (
-                  <div className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5">
-                    <Ticket className="h-3 w-3 text-primary" />
-                    <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-primary">
-                      +{i.ticketsBonus * i.qty} {ticketsWord(i.ticketsBonus * i.qty)}
-                    </span>
-                  </div>
-                ) : null}
-
-                <div className="mt-2 flex items-center justify-between gap-3">
-                  <div className="flex items-center overflow-hidden rounded-lg border border-white/[0.08] bg-white/[0.03]">
-                    <button
-                      type="button"
-                      onClick={() => setQty(i.id, Math.max(1, i.qty - 1))}
-                      className="grid h-8 w-8 place-items-center text-foreground active:bg-white/[0.06]"
-                      aria-label="Уменьшить"
+                  <div className="min-w-0 flex-1">
+                    <Link
+                      to="/club/shop/$productSlug"
+                      params={{ productSlug: i.slug }}
+                      className="block text-[15px] font-semibold leading-tight text-foreground"
                     >
-                      <Minus className="h-3.5 w-3.5" />
-                    </button>
-                    <span className="w-8 text-center font-mono text-[13px] font-bold tabular-nums">
-                      {i.qty}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setQty(i.id, i.qty + 1)}
-                      className="grid h-8 w-8 place-items-center text-foreground active:bg-white/[0.06]"
-                      aria-label="Увеличить"
-                    >
-                      <Plus className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                  <span className="font-mono text-[14px] font-bold tabular-nums text-foreground">
-                    {(i.price * i.qty).toLocaleString("ru-RU")} ₽
-                  </span>
-                </div>
-              </div>
+                      {i.name}
+                    </Link>
+                    <div className="mt-1 text-[13px] text-muted-foreground">
+                      {i.size ? `Размер ${i.size}` : "Без размера"}
+                    </div>
 
-              <button
-                type="button"
-                onClick={() => remove(i.id)}
-                aria-label="Удалить"
-                className="grid h-8 w-8 shrink-0 place-items-center self-start rounded-lg text-muted-foreground active:bg-white/[0.06] active:text-red-400"
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
-            </div>
-          </li>
-        ))}
+                    {i.ticketsBonus && i.ticketsBonus > 0 ? (
+                      <div className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5">
+                        <Ticket className="h-3 w-3 text-primary" />
+                        <span className="text-[12px] font-semibold text-primary">
+                          +{i.ticketsBonus * i.qty} {ticketsWord(i.ticketsBonus * i.qty)}
+                        </span>
+                      </div>
+                    ) : null}
+
+                    <div className="mt-2.5 flex items-center justify-between gap-3">
+                      <div className="flex items-center overflow-hidden rounded-xl border border-white/[0.08] bg-white/[0.03]">
+                        <button
+                          type="button"
+                          onClick={() => handleQty(i.id, Math.max(1, i.qty - 1))}
+                          className="grid h-11 w-11 place-items-center text-foreground active:bg-white/[0.08]"
+                          aria-label="Уменьшить"
+                        >
+                          <Minus className="h-4 w-4" />
+                        </button>
+                        <span className="w-9 text-center text-[15px] font-semibold tabular-nums">
+                          {i.qty}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleQty(i.id, i.qty + 1)}
+                          className="grid h-11 w-11 place-items-center text-foreground active:bg-white/[0.08]"
+                          aria-label="Увеличить"
+                        >
+                          <Plus className="h-4 w-4" />
+                        </button>
+                      </div>
+                      <span className="text-[16px] font-bold tabular-nums text-foreground">
+                        {(i.price * i.qty).toLocaleString("ru-RU")} ₽
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </SwipeRow>
+            </motion.li>
+          ))}
+        </AnimatePresence>
       </ul>
 
       <section className="overflow-hidden rounded-2xl border border-white/[0.06] bg-card/40">
         <div className="divide-y divide-white/[0.05]">
           <div className="flex items-center justify-between px-4 py-3">
-            <span className="text-[14px] text-muted-foreground">Товары</span>
-            <span className="font-mono text-[14px] tabular-nums text-foreground">
+            <span className="text-[15px] text-muted-foreground">Товары</span>
+            <span className="text-[15px] tabular-nums text-foreground">
               {total.toLocaleString("ru-RU")} ₽
             </span>
           </div>
           <div className="flex items-center justify-between px-4 py-3">
-            <span className="text-[14px] text-muted-foreground">Доставка</span>
-            <span className="font-mono text-[13px] uppercase tracking-wider text-muted-foreground">
-              на оформлении
-            </span>
+            <span className="text-[15px] text-muted-foreground">Доставка</span>
+            <span className="text-[14px] text-muted-foreground">на оформлении</span>
           </div>
           <div className="flex items-center justify-between px-4 py-3.5">
-            <span className="text-[15px] font-semibold text-foreground">Итого</span>
-            <span className="font-display text-2xl font-black tabular-nums text-foreground">
+            <span className="text-[16px] font-semibold text-foreground">Итого</span>
+            <span className="text-2xl font-bold tabular-nums text-foreground">
               {total.toLocaleString("ru-RU")} ₽
             </span>
           </div>
@@ -311,44 +324,168 @@ function ClubCartPage() {
             <Ticket className="h-4 w-4" />
           </span>
           <div className="min-w-0 flex-1">
-            <div className="font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-primary">
-              Бонус билетов
-            </div>
+            <div className="text-[14px] font-semibold text-primary">Бонус билетов</div>
             <div className="text-[12px] text-muted-foreground">
               Начислится после оплаты — для розыгрышей клуба.
             </div>
           </div>
-          <span className="font-display text-xl font-black italic tabular-nums text-primary">
+          <span className="text-xl font-bold tabular-nums text-primary">
             +{ticketsTotal}
           </span>
         </div>
       )}
 
+      <p className="mt-3 px-1 text-center text-[12px] text-muted-foreground/80">
+        Свайпни строку влево, чтобы удалить
+      </p>
+
+      {/* Sticky CTA */}
       <div
-        className="fixed inset-x-0 z-30 border-t border-white/[0.06] bg-black/85 px-4 py-3 backdrop-blur-xl"
+        className="fixed inset-x-0 z-30 border-t border-border/40 bg-background/85 px-4 py-3 backdrop-blur-xl"
         style={{ bottom: "calc(64px + env(safe-area-inset-bottom))" }}
       >
         <div className="mx-auto flex max-w-3xl items-center gap-3">
           <div className="flex flex-col">
-            <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-              К оплате
-            </span>
-            <span className="font-display text-lg font-black tabular-nums text-primary">
+            <span className="text-[12px] text-muted-foreground">К оплате</span>
+            <span className="text-[18px] font-bold tabular-nums text-foreground">
               {total.toLocaleString("ru-RU")} ₽
             </span>
           </div>
           <button
             type="button"
-            onClick={() =>
-              isAuthed ? navigate({ to: "/club/checkout" }) : navigate({ to: "/login" })
-            }
-            className="ml-auto flex flex-1 items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 font-display text-sm font-black uppercase tracking-wider text-primary-foreground active:scale-[0.98]"
+            onClick={handleCheckout}
+            className="ml-auto flex flex-1 items-center justify-center rounded-xl bg-primary px-5 py-3.5 text-[16px] font-semibold text-primary-foreground active:scale-[0.98]"
           >
             {isAuthed ? "Оформить" : "Войти и оформить"}
           </button>
         </div>
       </div>
     </main>
+  );
+
+  return (
+    <>
+      {Mobile}
+      {Desktop}
+    </>
+  );
+}
+
+// ============ Subcomponents ============
+
+function MobileTitle({ title, subtitle }: { title: string; subtitle?: string }) {
+  return (
+    <header className="mb-4">
+      <h1 className="text-[34px] font-bold leading-[1.1] tracking-tight text-foreground">
+        {title}
+      </h1>
+      {subtitle ? (
+        <p className="mt-1 text-[15px] text-muted-foreground">{subtitle}</p>
+      ) : null}
+    </header>
+  );
+}
+
+function DesktopHeader({ title, subtitle }: { title: string; subtitle?: string }) {
+  return (
+    <header className="mb-8 flex items-center justify-between">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight text-foreground md:text-4xl">
+          {title}
+        </h1>
+        {subtitle ? (
+          <p className="mt-1.5 text-sm text-muted-foreground">{subtitle}</p>
+        ) : null}
+      </div>
+      <Link
+        to="/club/shop"
+        className="hidden items-center gap-1 text-[14px] text-primary hover:underline md:inline-flex"
+      >
+        <ChevronLeft className="h-4 w-4" />
+        В магазин
+      </Link>
+    </header>
+  );
+}
+
+function EmptyBlock() {
+  return (
+    <div className="grid place-items-center rounded-2xl border border-dashed border-white/[0.08] bg-card/40 px-6 py-16 text-center">
+      <div className="grid h-14 w-14 place-items-center rounded-full bg-primary/10 text-primary">
+        <ShoppingBag className="h-6 w-6" />
+      </div>
+      <div className="mt-4 text-[15px] font-semibold text-foreground">Корзина пуста</div>
+      <p className="mt-1.5 max-w-[32ch] text-[14px] text-muted-foreground/80">
+        Загляни в магазин клуба — мерч, экипировка, открытки с бонусом билетов.
+      </p>
+      <Link
+        to="/club/shop"
+        className="mt-5 inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-3 text-[15px] font-semibold text-primary-foreground transition-transform active:scale-[0.97] md:hover:scale-[1.02]"
+      >
+        В магазин
+      </Link>
+    </div>
+  );
+}
+
+/** Свайп-влево по строке открывает кнопку удаления (как iOS Mail). */
+function SwipeRow({
+  children,
+  onDelete,
+}: {
+  children: React.ReactNode;
+  onDelete: () => void;
+}) {
+  const [offset, setOffset] = useState(0);
+  const startX = useRef(0);
+  const startOffset = useRef(0);
+  const dragging = useRef(false);
+  const ACTION_W = 88;
+
+  return (
+    <div className="relative overflow-hidden">
+      {/* Backdrop action */}
+      <button
+        type="button"
+        onClick={onDelete}
+        aria-label="Удалить"
+        className="absolute inset-y-0 right-0 flex w-[88px] items-center justify-center bg-red-500 text-white"
+      >
+        <Trash2 className="h-5 w-5" />
+      </button>
+
+      <div
+        className="relative will-change-transform"
+        style={{
+          transform: `translateX(${offset}px)`,
+          transition: dragging.current ? "none" : "transform 0.25s cubic-bezier(0.32, 0.72, 0, 1)",
+        }}
+        onTouchStart={(e) => {
+          startX.current = e.touches[0].clientX;
+          startOffset.current = offset;
+          dragging.current = true;
+        }}
+        onTouchMove={(e) => {
+          if (!dragging.current) return;
+          const dx = e.touches[0].clientX - startX.current;
+          let next = startOffset.current + dx;
+          if (next > 0) next = 0;
+          if (next < -160) next = -160 + (next + 160) * 0.3; // rubber band
+          setOffset(next);
+        }}
+        onTouchEnd={() => {
+          dragging.current = false;
+          if (offset < -ACTION_W * 0.6) {
+            setOffset(-ACTION_W);
+            haptic("light");
+          } else {
+            setOffset(0);
+          }
+        }}
+      >
+        {children}
+      </div>
+    </div>
   );
 }
 
@@ -381,19 +518,19 @@ function DesktopRow({
             >
               {item.name}
             </Link>
-            <div className="mt-1 font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
+            <div className="mt-1 text-[13px] text-muted-foreground">
               {item.size ? `Размер ${item.size}` : "Без размера"} · {item.price.toLocaleString("ru-RU")} ₽
             </div>
             {item.ticketsBonus && item.ticketsBonus > 0 ? (
               <div className="mt-2 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5">
                 <Ticket className="h-3 w-3 text-primary" />
-                <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-primary">
+                <span className="text-[12px] font-semibold text-primary">
                   +{item.ticketsBonus * item.qty} {ticketsWord(item.ticketsBonus * item.qty)}
                 </span>
               </div>
             ) : null}
           </div>
-          <div className="shrink-0 text-right font-mono text-lg font-bold tabular-nums text-foreground">
+          <div className="shrink-0 text-right text-lg font-bold tabular-nums text-foreground">
             {(item.price * item.qty).toLocaleString("ru-RU")} ₽
           </div>
         </div>
@@ -408,7 +545,7 @@ function DesktopRow({
             >
               <Minus className="h-3.5 w-3.5" />
             </button>
-            <span className="w-9 text-center font-mono text-sm font-bold tabular-nums">
+            <span className="w-9 text-center text-sm font-semibold tabular-nums">
               {item.qty}
             </span>
             <button
@@ -423,7 +560,7 @@ function DesktopRow({
           <button
             type="button"
             onClick={onRemove}
-            className="inline-flex items-center gap-1.5 text-xs uppercase tracking-widest text-muted-foreground hover:text-red-400"
+            className="inline-flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-red-400"
           >
             <Trash2 className="h-3.5 w-3.5" />
             Удалить
