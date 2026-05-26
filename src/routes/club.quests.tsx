@@ -169,9 +169,9 @@ function QuestCard({ q }: { q: QuestItem }) {
               .standalone === true);
         if (!standalone) {
           throw new ApiError(
-            "Открой клуб из установленного приложения, чтобы засчитать квест.",
             400,
             "not_standalone",
+            "Открой клуб из установленного приложения, чтобы засчитать квест.",
           );
         }
         return confirmPwaInstall();
