@@ -22,7 +22,7 @@ export function TicketCard({
   balance: number;
   isLoading?: boolean;
 }) {
-  const STUB_W = 76; // ширина «корешка» в px
+  const STUB_W = 104; // ширина «корешка» в px
 
   // Размер числа подстраиваем под длину — чтобы 1 000 000 не вылетал за край.
   const formatted = isLoading ? "—" : balance.toLocaleString("ru-RU");
@@ -89,23 +89,18 @@ export function TicketCard({
           />
         </div>
 
-        {/* «корешок» — кнопка "Поставить" вплотную к правому краю */}
+        {/* «корешок» — горизонтальная кнопка "Поставить" у правого края */}
         <div
-          className="relative z-10 flex shrink-0 flex-col items-center justify-center py-5"
+          className="relative z-10 flex shrink-0 items-center justify-end pr-3"
           style={{ width: STUB_W }}
         >
           <Link
             to="/club/raffles"
             aria-label="Поставить билеты"
-            className="flex flex-col items-center gap-2 rounded-2xl bg-primary/90 px-2 py-3 text-[11px] font-semibold text-primary-foreground shadow-[0_4px_14px_-4px_color-mix(in_oklab,var(--primary)_70%,transparent)] transition-all active:scale-[0.97] hover:brightness-110"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-primary/90 px-3 py-2 text-[12px] font-semibold text-primary-foreground shadow-[0_4px_14px_-4px_color-mix(in_oklab,var(--primary)_70%,transparent)] transition-all active:scale-[0.97] hover:brightness-110"
           >
-            <Ticket className="h-4 w-4" strokeWidth={2.2} />
-            <span
-              className="leading-none"
-              style={{ writingMode: "vertical-rl", textOrientation: "mixed" }}
-            >
-              Поставить
-            </span>
+            <Ticket className="h-3.5 w-3.5" strokeWidth={2.2} />
+            <span className="leading-none">Поставить</span>
           </Link>
         </div>
 
