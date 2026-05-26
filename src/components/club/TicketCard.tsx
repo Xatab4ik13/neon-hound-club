@@ -22,7 +22,7 @@ export function TicketCard({
   balance: number;
   isLoading?: boolean;
 }) {
-  const STUB_W = 44; // ширина «корешка» в px
+  const STUB_W = 76; // ширина «корешка» в px
 
   // Размер числа подстраиваем под длину — чтобы 1 000 000 не вылетал за край.
   const formatted = isLoading ? "—" : balance.toLocaleString("ru-RU");
@@ -54,7 +54,7 @@ export function TicketCard({
         />
 
         {/* основная часть */}
-        <div className="relative z-10 flex min-w-0 flex-1 flex-col justify-between py-5 pl-5 pr-2">
+        <div className="relative z-10 flex min-w-0 flex-1 flex-col justify-between py-5 pl-5 pr-4">
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
               Мой баланс
@@ -89,17 +89,24 @@ export function TicketCard({
           />
         </div>
 
-        {/* «корешок» — только декоративные точки */}
+        {/* «корешок» — кнопка "Поставить" вплотную к правому краю */}
         <div
-          className="relative z-10 flex shrink-0 flex-col items-center justify-center gap-1.5 py-5"
+          className="relative z-10 flex shrink-0 flex-col items-center justify-center py-5"
           style={{ width: STUB_W }}
         >
-          {Array.from({ length: 4 }).map((_, i) => (
+          <Link
+            to="/club/raffles"
+            aria-label="Поставить билеты"
+            className="flex flex-col items-center gap-2 rounded-2xl bg-primary/90 px-2 py-3 text-[11px] font-semibold text-primary-foreground shadow-[0_4px_14px_-4px_color-mix(in_oklab,var(--primary)_70%,transparent)] transition-all active:scale-[0.97] hover:brightness-110"
+          >
+            <Ticket className="h-4 w-4" strokeWidth={2.2} />
             <span
-              key={i}
-              className="h-1 w-1 rounded-full bg-muted-foreground/40"
-            />
-          ))}
+              className="leading-none"
+              style={{ writingMode: "vertical-rl", textOrientation: "mixed" }}
+            >
+              Поставить
+            </span>
+          </Link>
         </div>
 
         {/* перфорация — полукруглые вырезы в цвет фона страницы */}
