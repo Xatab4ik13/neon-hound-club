@@ -83,10 +83,14 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
 
   const signIn = useCallback(
     async (email: string, password: string) => {
-      const { user } = await apiFetch<{ user: SessionUser }>("/api/v1/auth/login", {
+      await apiFetch<{ user: SessionUser }>("/api/v1/auth/login", {
         method: "POST",
         body: JSON.stringify({ email, password }),
       });
+      const user = await fetchMe();
+      if (!user) {
+        throw new ApiError(401, "session_not_persisted", "Сессия не сохранилась. Обнови страницу и войди ещё раз");
+      }
       qc.setQueryData(ME_KEY, user);
       // После логина — освежить зависящие данные.
       qc.invalidateQueries({ queryKey: qk.passMe });
