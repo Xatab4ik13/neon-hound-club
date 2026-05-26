@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { getMotorcycleMakes } from "@/lib/nhtsa";
 
 import { BikeFormModal } from "@/components/club/BikeFormModal";
