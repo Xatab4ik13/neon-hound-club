@@ -273,29 +273,37 @@ export function Modal({
   footer?: ReactNode;
   size?: "sm" | "md" | "lg" | "xl";
 }) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   useEffect(() => {
     if (!open) return;
     const handler = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     document.addEventListener("keydown", handler);
+    const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
       document.removeEventListener("keydown", handler);
-      document.body.style.overflow = "";
+      document.body.style.overflow = prevOverflow;
     };
   }, [open, onClose]);
 
-  if (!open) return null;
+  if (!open || !mounted) return null;
   const widths = { sm: "max-w-sm", md: "max-w-lg", lg: "max-w-2xl", xl: "max-w-4xl" }[size];
 
-  return (
-    <div className="fixed inset-0 z-[60] flex items-end justify-center sm:items-center">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+  const node = (
+    <div
+      className="fixed inset-0 z-[60] flex items-end justify-center sm:items-center"
+      style={{ contain: "layout paint", willChange: "opacity" }}
+    >
+      <div className="absolute inset-0 bg-black/70" onClick={onClose} />
       <div
         className={cn(
           "relative w-full overflow-hidden rounded-t-lg bg-white shadow-xl dark:bg-zinc-900 sm:rounded-lg",
           widths,
           "max-h-[90vh] flex flex-col",
         )}
+        style={{ transform: "translateZ(0)" }}
       >
         <div className="flex items-start justify-between border-b border-zinc-200 px-5 py-4 dark:border-zinc-800">
           <div>
@@ -311,7 +319,7 @@ export function Modal({
             <X className="h-4 w-4" />
           </button>
         </div>
-        <div className="overflow-y-auto px-5 py-4">{children}</div>
+        <div className="overflow-y-auto overscroll-contain px-5 py-4">{children}</div>
         {footer && (
           <div className="flex justify-end gap-2 border-t border-zinc-200 px-5 py-3 dark:border-zinc-800">
             {footer}
@@ -320,6 +328,8 @@ export function Modal({
       </div>
     </div>
   );
+
+  return createPortal(node, document.body);
 }
 
 // ============= Drawer (для деталей пользователя и т.п.) =============
@@ -336,22 +346,32 @@ export function Drawer({
   children: ReactNode;
   footer?: ReactNode;
 }) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   useEffect(() => {
     if (!open) return;
     const handler = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     document.addEventListener("keydown", handler);
+    const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
       document.removeEventListener("keydown", handler);
-      document.body.style.overflow = "";
+      document.body.style.overflow = prevOverflow;
     };
   }, [open, onClose]);
 
-  if (!open) return null;
-  return (
-    <div className="fixed inset-0 z-[60]">
-      <div className="absolute inset-0 bg-black/60" onClick={onClose} />
-      <aside className="absolute right-0 top-0 flex h-full w-full max-w-md flex-col bg-white shadow-xl dark:bg-zinc-900">
+  if (!open || !mounted) return null;
+  const node = (
+    <div
+      className="fixed inset-0 z-[60]"
+      style={{ contain: "layout paint", willChange: "opacity" }}
+    >
+      <div className="absolute inset-0 bg-black/70" onClick={onClose} />
+      <aside
+        className="absolute right-0 top-0 flex h-full w-full max-w-md flex-col bg-white shadow-xl dark:bg-zinc-900"
+        style={{ transform: "translateZ(0)" }}
+      >
         <div className="flex items-center justify-between border-b border-zinc-200 px-5 py-4 dark:border-zinc-800">
           <h2 className="text-base font-semibold">{title}</h2>
           <button
@@ -361,7 +381,7 @@ export function Drawer({
             <X className="h-4 w-4" />
           </button>
         </div>
-        <div className="flex-1 overflow-y-auto px-5 py-4">{children}</div>
+        <div className="flex-1 overflow-y-auto overscroll-contain px-5 py-4">{children}</div>
         {footer && (
           <div className="flex justify-end gap-2 border-t border-zinc-200 px-5 py-3 dark:border-zinc-800">
             {footer}
@@ -370,6 +390,8 @@ export function Drawer({
       </aside>
     </div>
   );
+
+  return createPortal(node, document.body);
 }
 
 // ============= Confirm =============
