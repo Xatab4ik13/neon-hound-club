@@ -182,10 +182,10 @@ export function PostCard({ post, moderate = false }: { post: Post; moderate?: bo
       }
     >
       {(() => {
-        // Priority: ОПРОС > ЗАКРЕП (один чип). Чип внутри карточки, чтобы родители не клиппали.
+        // Priority: ОПРОС > ЗАКРЕП (один чип). В правом верхнем углу — не клиппается и не перекрывает аватар.
         if (post.poll) {
           return (
-            <div className="pointer-events-none absolute top-3 left-3 z-10 inline-flex items-center gap-1 rounded-md border border-primary/50 bg-[oklch(0.18_0.08_357.3)] px-2 py-1 font-mono text-[9px] font-black uppercase leading-none tracking-[0.18em] text-primary shadow-[0_4px_12px_rgba(0,0,0,0.45)]">
+            <div className="pointer-events-none absolute top-3 right-3 z-10 inline-flex items-center gap-1 rounded-md border border-primary/50 bg-[oklch(0.18_0.08_357.3)] px-2 py-1 font-mono text-[9px] font-black uppercase leading-none tracking-[0.18em] text-primary shadow-[0_4px_12px_rgba(0,0,0,0.45)]">
               <BarChart3 className="h-2.5 w-2.5" strokeWidth={2.8} />
               Опрос
             </div>
@@ -193,7 +193,7 @@ export function PostCard({ post, moderate = false }: { post: Post; moderate?: bo
         }
         if (post.pinned) {
           return (
-            <div className="pointer-events-none absolute top-3 left-3 z-10 inline-flex items-center gap-1 rounded-md border border-primary/50 bg-[oklch(0.18_0.08_357.3)] px-2 py-1 font-mono text-[9px] font-black uppercase leading-none tracking-[0.18em] text-primary shadow-[0_4px_12px_rgba(0,0,0,0.45)]">
+            <div className="pointer-events-none absolute top-3 right-3 z-10 inline-flex items-center gap-1 rounded-md border border-primary/50 bg-[oklch(0.18_0.08_357.3)] px-2 py-1 font-mono text-[9px] font-black uppercase leading-none tracking-[0.18em] text-primary shadow-[0_4px_12px_rgba(0,0,0,0.45)]">
               <Pin className="h-2.5 w-2.5" strokeWidth={2.8} />
               Закреп
             </div>
@@ -201,6 +201,7 @@ export function PostCard({ post, moderate = false }: { post: Post; moderate?: bo
         }
         return null;
       })()}
+
 
 
       <div className="overflow-hidden rounded-[24px]">
