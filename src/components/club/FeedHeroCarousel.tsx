@@ -118,7 +118,7 @@ function HeroSlideCard({ slide }: { slide: Slide }) {
         backgroundSize: "cover",
         backgroundPosition: "center",
       }
-    : { background: slide.gradient };
+    : {};
 
   const Cta = slide.isExternal ? (
     <a
@@ -142,22 +142,12 @@ function HeroSlideCard({ slide }: { slide: Slide }) {
 
   return (
     <div className="relative aspect-[16/10] w-full shrink-0 bg-zinc-900" style={bgStyle}>
-      {/* Узор поверх (только для fallback-градиентов, на фото мешает) */}
-      {!slide.imageUrl && (
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 opacity-[0.18] mix-blend-overlay"
-          style={{
-            backgroundImage:
-              "radial-gradient(circle at 80% 60%, rgba(255,255,255,0.9) 0, transparent 40%), repeating-radial-gradient(circle at 80% 60%, rgba(255,255,255,0.5) 0, rgba(255,255,255,0.5) 1px, transparent 1px, transparent 18px)",
-          }}
-        />
-      )}
       {/* Затемнение снизу для читабельности текста */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/65 via-black/30 to-transparent"
       />
+
 
       <div className="relative flex h-full flex-col justify-between p-5">
         <div className="pt-2">
