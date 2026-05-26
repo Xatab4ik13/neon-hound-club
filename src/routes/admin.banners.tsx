@@ -444,7 +444,7 @@ function BannerEditor({
           <Field label="Показывать">
             <Switch
               checked={form.active ?? true}
-              onCheckedChange={(v) => setF("active", v)}
+              onChange={(v: boolean) => setF("active", v)}
               label={form.active ? "Включён" : "Выключен"}
             />
           </Field>
