@@ -6,13 +6,14 @@ import { useRouterState } from "@tanstack/react-router";
  * iOS-style push/pop transition between routes.
  *
  * Forward (deeper path): incoming slides in from the right (x:100% → 0),
- * outgoing slides left to -30%.
+ * outgoing slides to -30%.
  * Back (shallower path): inverse.
  * Same-depth: subtle cross-fade.
  *
- * Both layers are absolutely positioned inside an overflow-hidden track
- * so they don't stack visually and don't push the layout. Opacity stays
- * at 1 during slides — translucency on motion looks broken on real iOS.
+ * Uses framer-motion mode="popLayout": the exiting element is taken out
+ * of normal flow automatically, so both layers can slide without pushing
+ * the document height. Opacity stays at 1 during slides — translucency
+ * on motion looks broken vs real iOS.
  */
 
 function depth(path: string) {
@@ -38,27 +39,25 @@ export function MobileTransition({ children }: { children: React.ReactNode }) {
   const isSlide = direction !== 0;
 
   return (
-    <div className="relative isolate min-h-full overflow-hidden">
-      <AnimatePresence mode="sync" initial={false}>
-        <motion.div
-          key={pathname}
-          initial={
-            isSlide
-              ? { x: direction === 1 ? "100%" : "-30%", opacity: 1 }
-              : { opacity: 0 }
-          }
-          animate={{ x: 0, opacity: 1 }}
-          exit={
-            isSlide
-              ? { x: direction === 1 ? "-30%" : "100%", opacity: 1 }
-              : { opacity: 0 }
-          }
-          transition={isSlide ? SPRING : FADE}
-          className="absolute inset-0 min-h-full will-change-transform"
-        >
-          {children}
-        </motion.div>
-      </AnimatePresence>
-    </div>
+    <AnimatePresence mode="popLayout" initial={false}>
+      <motion.div
+        key={pathname}
+        initial={
+          isSlide
+            ? { x: direction === 1 ? "100%" : "-30%", opacity: 1 }
+            : { opacity: 0 }
+        }
+        animate={{ x: 0, opacity: 1 }}
+        exit={
+          isSlide
+            ? { x: direction === 1 ? "-30%" : "100%", opacity: 1 }
+            : { opacity: 0 }
+        }
+        transition={isSlide ? SPRING : FADE}
+        className="min-h-full will-change-transform"
+      >
+        {children}
+      </motion.div>
+    </AnimatePresence>
   );
 }
