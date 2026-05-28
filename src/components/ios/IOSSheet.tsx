@@ -131,13 +131,19 @@ export function IOSSheet({
 
 
           <div
+            data-vaul-no-drag
             className={cn(
-              "flex-1 overflow-y-auto overscroll-contain px-4 pb-6 pt-4",
+              "flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 pb-6 pt-4",
               contentClassName,
             )}
+            style={{
+              WebkitOverflowScrolling: "touch",
+              touchAction: "pan-y",
+            }}
           >
             {children}
           </div>
+
         </Drawer.Content>
       </Drawer.Portal>
     </Drawer.Root>
