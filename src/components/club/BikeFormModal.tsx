@@ -167,7 +167,7 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
 
   // загрузка моделей при смене марки/года
   useEffect(() => {
-    if (!open || !brand || brandCustom) {
+    if (!open || !brand) {
       setModels([]);
       return;
     }
@@ -183,7 +183,8 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [open, brand, brandCustom, year]);
+  }, [open, brand, year]);
+
 
   function addMod(v: string) {
     const t = v.trim();

@@ -33,13 +33,25 @@ function writeCache<T>(key: string, data: T) {
   }
 }
 
+const FETCH_TIMEOUT_MS = 6000;
+
+async function fetchWithTimeout(url: string): Promise<Response> {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
+  try {
+    return await fetch(url, { signal: ctrl.signal });
+  } finally {
+    clearTimeout(t);
+  }
+}
+
 /** Список всех мото-марок. */
 export async function getMotorcycleMakes(): Promise<string[]> {
   const cached = readCache<string[]>("makes");
-  if (cached) return cached;
+  if (cached && cached.length > 0) return cached;
 
   try {
-    const res = await fetch(
+    const res = await fetchWithTimeout(
       `${BASE}/vehicles/GetMakesForVehicleType/motorcycle?format=json`,
     );
     if (!res.ok) throw new Error(`NHTSA ${res.status}`);
@@ -61,30 +73,46 @@ export async function getMotorcycleMakes(): Promise<string[]> {
   }
 }
 
-/** Модели для конкретной марки и года. */
+async function fetchModelsRaw(url: string): Promise<string[]> {
+  const res = await fetchWithTimeout(url);
+  if (!res.ok) throw new Error(`NHTSA ${res.status}`);
+  const json = (await res.json()) as { Results: { Model_Name: string }[] };
+  return Array.from(
+    new Set(
+      json.Results.map((r) => r.Model_Name.trim()).filter(
+        (n): n is string => !!n,
+      ),
+    ),
+  ).sort((a, b) => a.localeCompare(b));
+}
+
+/** Модели для конкретной марки и года. Если по году пусто — пробуем без года. */
 export async function getModelsForMakeYear(
   make: string,
   year: number,
 ): Promise<string[]> {
   const key = `models:${make.toLowerCase()}:${year}`;
   const cached = readCache<string[]>(key);
-  if (cached) return cached;
+  if (cached && cached.length > 0) return cached;
 
+  const safeMake = encodeURIComponent(make);
   try {
-    const res = await fetch(
-      `${BASE}/vehicles/GetModelsForMakeYear/make/${encodeURIComponent(make)}/modelYear/${year}?format=json`,
+    let models = await fetchModelsRaw(
+      `${BASE}/vehicles/GetModelsForMakeYear/make/${safeMake}/modelYear/${year}?format=json`,
     );
-    if (!res.ok) throw new Error(`NHTSA ${res.status}`);
-    const json = (await res.json()) as {
-      Results: { Model_Name: string }[];
-    };
-    const models = Array.from(
-      new Set(
-        json.Results.map((r) => r.Model_Name.trim()).filter(
-          (n): n is string => !!n,
-        ),
-      ),
-    ).sort((a, b) => a.localeCompare(b));
+    // NHTSA часто не знает свежие/старые годы — фолбэк: все модели марки.
+    if (models.length === 0) {
+      const allKey = `models:${make.toLowerCase()}:all`;
+      const cachedAll = readCache<string[]>(allKey);
+      if (cachedAll && cachedAll.length > 0) {
+        models = cachedAll;
+      } else {
+        models = await fetchModelsRaw(
+          `${BASE}/vehicles/GetModelsForMake/${safeMake}?format=json`,
+        );
+        if (models.length > 0) writeCache(allKey, models);
+      }
+    }
     writeCache(key, models);
     return models;
   } catch (err) {
@@ -92,6 +120,7 @@ export async function getModelsForMakeYear(
     return [];
   }
 }
+
 
 /** Список годов от текущего до 1980. */
 export function getYears(): number[] {
