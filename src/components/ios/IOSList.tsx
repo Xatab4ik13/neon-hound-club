@@ -3,6 +3,7 @@
 
 import type { ReactNode } from "react";
 import { ChevronRight } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
 
 export function IOSListSection({
@@ -33,81 +34,88 @@ export function IOSListSection({
   );
 }
 
-/**
- * Строка списка: ярлык слева, контент справа. Контент может быть текстом
- * (readonly-row, который открывает picker по тапу) или интерактивным элементом
- * (inline-input). minH 44px — Apple HIG.
- */
-export function IOSListRow({
-  label,
-  value,
-  hint,
-  trailing,
-  chevron = false,
-  onClick,
-  destructive = false,
-  className,
-  children,
-  disabled = false,
-}: {
+type Tone = "default" | "danger" | "warning";
+
+type IOSListRowProps = {
   label?: ReactNode;
   /** Готовое значение справа (для readonly-row). */
   value?: ReactNode;
+  /** Иконка слева. */
+  icon?: ReactNode;
   /** Подсказка под label-ом. */
+  description?: ReactNode;
+  /** Альяс для description (используется в форме байка). */
   hint?: ReactNode;
   /** Кастомный элемент в правой части (приоритет над value/chevron). */
   trailing?: ReactNode;
   chevron?: boolean;
   onClick?: () => void;
-  destructive?: boolean;
+  /** Если задан — строка ведёт по ссылке (TanStack Link). */
+  to?: string;
+  tone?: Tone;
   className?: string;
-  /** Если children — рендерим вместо двухколоночной разметки. */
+  /** Если children — кастомный контент строки целиком. */
   children?: ReactNode;
   disabled?: boolean;
-}) {
-  const interactive = !!onClick && !disabled;
-  const Comp: "button" | "div" = interactive ? "button" : "div";
+};
 
-  if (children) {
-    return (
-      <div
-        className={cn(
-          "min-h-[44px] px-4 py-2.5",
-          "border-b border-white/[0.05] last:border-b-0",
-          className,
-        )}
-      >
-        {children}
-      </div>
-    );
-  }
+/**
+ * Строка списка: иконка + лейбл слева, значение/контент справа.
+ * minH 44px (Apple HIG).
+ */
+export function IOSListRow({
+  label,
+  value,
+  icon,
+  description,
+  hint,
+  trailing,
+  chevron = false,
+  onClick,
+  to,
+  tone = "default",
+  className,
+  children,
+  disabled = false,
+}: IOSListRowProps) {
+  const sub = description ?? hint;
+  const interactive = (!!onClick || !!to) && !disabled;
 
-  return (
-    <Comp
-      type={interactive ? "button" : undefined}
-      onClick={interactive ? onClick : undefined}
-      disabled={disabled}
-      className={cn(
-        "flex w-full items-center gap-3 px-4 py-2.5 text-left",
-        "min-h-[44px] border-b border-white/[0.05] last:border-b-0",
-        interactive && "transition-colors active:bg-white/[0.04]",
-        disabled && "opacity-50",
-        className,
+  const rowBody = children ? (
+    children
+  ) : (
+    <>
+      {icon && (
+        <span
+          className={cn(
+            "flex h-7 w-7 shrink-0 items-center justify-center rounded-md",
+            tone === "danger"
+              ? "text-[#ff453a]"
+              : tone === "warning"
+                ? "text-[#ff9f0a]"
+                : "text-muted-foreground",
+          )}
+        >
+          {icon}
+        </span>
       )}
-    >
       {label !== undefined && (
         <div className="min-w-0 flex-1">
           <div
             className={cn(
               "text-[15px] leading-snug",
-              destructive ? "text-[#ff453a]" : "text-foreground",
+              tone === "danger"
+                ? "text-[#ff453a]"
+                : tone === "warning"
+                  ? "text-[#ff9f0a]"
+                  : "text-foreground",
             )}
           >
             {label}
           </div>
-          {hint && (
+          {sub !== undefined && sub !== null && sub !== "" && (
             <div className="mt-0.5 text-[12px] leading-snug text-muted-foreground/80">
-              {hint}
+              {sub}
             </div>
           )}
         </div>
@@ -115,6 +123,7 @@ export function IOSListRow({
       {trailing !== undefined ? (
         <div className="flex shrink-0 items-center gap-1.5 text-[15px] text-muted-foreground">
           {trailing}
+          {chevron && <ChevronRight className="h-4 w-4 shrink-0 opacity-60" />}
         </div>
       ) : value !== undefined ? (
         <div className="flex min-w-0 shrink items-center gap-1.5 truncate text-right text-[15px] text-muted-foreground">
@@ -124,6 +133,32 @@ export function IOSListRow({
       ) : chevron ? (
         <ChevronRight className="h-4 w-4 shrink-0 opacity-60 text-muted-foreground" />
       ) : null}
-    </Comp>
+    </>
   );
+
+  const baseCls = cn(
+    "flex w-full items-center gap-3 px-4 py-2.5 text-left",
+    "min-h-[44px] border-b border-white/[0.05] last:border-b-0",
+    interactive && "transition-colors active:bg-white/[0.04]",
+    disabled && "opacity-50",
+    className,
+  );
+
+  if (to && !disabled) {
+    return (
+      <Link to={to} className={baseCls}>
+        {rowBody}
+      </Link>
+    );
+  }
+
+  if (interactive) {
+    return (
+      <button type="button" onClick={onClick} disabled={disabled} className={baseCls}>
+        {rowBody}
+      </button>
+    );
+  }
+
+  return <div className={baseCls}>{rowBody}</div>;
 }
