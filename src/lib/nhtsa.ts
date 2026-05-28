@@ -130,21 +130,16 @@ export function getYears(): number[] {
   return years;
 }
 
-// Фолбэк если API недоступен — самые популярные мото-марки.
+// Фолбэк если API недоступен — расширенный список самых популярных мото-марок
+// (мировые + те, что NHTSA не знает: советские/российские/китайские).
 const FALLBACK_MAKES = [
-  "Aprilia",
-  "BMW",
-  "Ducati",
-  "Harley-Davidson",
-  "Honda",
-  "Husqvarna",
-  "Indian",
-  "Kawasaki",
-  "KTM",
-  "Moto Guzzi",
-  "MV Agusta",
-  "Royal Enfield",
-  "Suzuki",
-  "Triumph",
-  "Yamaha",
-];
+  "Aprilia", "Bajaj", "Benelli", "Beta", "Bimota", "BMW",
+  "Buell", "Can-Am", "CFMoto", "Ducati", "Energica", "Fantic",
+  "GasGas", "Harley-Davidson", "Hero", "Honda", "Husaberg", "Husqvarna",
+  "Hyosung", "Indian", "Jawa", "Kawasaki", "Keeway", "KTM",
+  "Kymco", "Lifan", "Loncin", "Mash", "Moto Guzzi", "Moto Morini",
+  "MV Agusta", "Norton", "Peugeot Motocycles", "Piaggio", "Polaris", "Qianjiang",
+  "Regal Raptor", "Royal Enfield", "Sherco", "SWM", "Sym", "Suzuki",
+  "Triumph", "TVS", "Ural", "Vespa", "Victory", "Voge",
+  "Yamaha", "Zero Motorcycles", "ИЖ", "Минск", "Восход",
+].sort((a, b) => a.localeCompare(b));
