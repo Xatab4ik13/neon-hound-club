@@ -17,6 +17,9 @@ type Props = {
   onDone?: () => void;
   /** Заблокировать CTA (например, форма ещё не валидна). */
   doneDisabled?: boolean;
+  /** Кнопка слева в шапке (iOS-стиль). Если не задана — слева пусто. */
+  cancelLabel?: string;
+  onCancel?: () => void;
   /** Полноэкранный режим — высокая модалка (формы), иначе ~70vh (списки). */
   fullHeight?: boolean;
   children: ReactNode;
@@ -25,6 +28,7 @@ type Props = {
   contentClassName?: string;
 };
 
+
 export function IOSSheet({
   open,
   onOpenChange,
@@ -32,6 +36,8 @@ export function IOSSheet({
   doneLabel = "Готово",
   onDone,
   doneDisabled = false,
+  cancelLabel = "Отмена",
+  onCancel,
   fullHeight = false,
   children,
   headerLeft,
@@ -39,6 +45,7 @@ export function IOSSheet({
 }: Props) {
   const close = () => onOpenChange(false);
   useThemeColor(open ? "#0d0d0d" : null);
+
   // На iOS PWA visualViewport уменьшается, когда появляется клавиатура.
   // Используем kbOffset чтобы СЖАТЬ sheet снизу (padding-bottom),
   // вместо vaul.repositionInputs, который физически поднимает Drawer и
