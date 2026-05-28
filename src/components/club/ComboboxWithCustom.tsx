@@ -237,10 +237,12 @@ function MobilePicker({
             }}
             role="dialog"
             aria-modal="true"
-            // Не даём событиям утечь к vaul Drawer, в котором сидит хост-модалка.
-            onPointerDownCapture={(e) => e.stopPropagation()}
-            onTouchStartCapture={(e) => e.stopPropagation()}
-            onTouchMoveCapture={(e) => e.stopPropagation()}
+            // Гасим события в bubble-фазе — таргет (input/кнопки) уже получил их,
+            // а до vaul Drawer выше они не дойдут. Capture-фаза здесь ломала
+            // фокус инпута (stopPropagation не давал событию долететь до таргета).
+            onPointerDown={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
+            onTouchMove={(e) => e.stopPropagation()}
           >
             {/* Шапка */}
             <div className="flex shrink-0 items-center justify-between gap-3 border-b border-white/[0.05] px-4 py-3">
