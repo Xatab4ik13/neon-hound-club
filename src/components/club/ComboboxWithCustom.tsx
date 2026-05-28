@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Check, ChevronDown, Plus, Search, X } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
@@ -232,114 +233,121 @@ function MobilePicker({
         onClick={() => !disabled && setOpen(true)}
         open={open}
       />
-      {open && (
-        <div
-          className="fixed inset-0 z-[90] flex animate-fade-in flex-col bg-[#0d0d0d]"
-          style={{
-            paddingTop: "env(safe-area-inset-top)",
-            paddingBottom: "env(safe-area-inset-bottom)",
-          }}
-          role="dialog"
-          aria-modal="true"
-        >
-          {/* Шапка */}
-          <div className="flex shrink-0 items-center justify-between gap-3 border-b border-white/[0.05] px-4 py-3">
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              className="-ml-2 flex h-11 items-center px-2 font-mono text-[12px] uppercase tracking-wider text-muted-foreground active:opacity-60"
-            >
-              Назад
-            </button>
-            <h2 className="min-w-0 flex-1 truncate text-center font-display text-base font-black italic uppercase tracking-tight">
-              {placeholder}
-            </h2>
-            <span className="w-[60px]" aria-hidden />
-          </div>
-
-          {/* Поиск */}
-          <div className="shrink-0 border-b border-white/[0.06] bg-[#0d0d0d] px-4 py-3">
-            <div className="flex h-11 items-center gap-2 border border-white/[0.08] bg-black/30 px-3">
-              <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
-              <input
-                ref={inputRef}
-                type="text"
-                inputMode="search"
-                autoComplete="off"
-                autoCorrect="off"
-                spellCheck={false}
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder={loading ? "Загрузка..." : "Поиск или ввести своё..."}
-                className="flex-1 bg-transparent text-[16px] text-foreground placeholder:text-muted-foreground focus:outline-none"
-              />
-              {query && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setQuery("");
-                    inputRef.current?.focus();
-                  }}
-                  className="shrink-0 text-muted-foreground active:opacity-60"
-                  aria-label="Очистить"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Список */}
-          <div className="flex-1 overflow-y-auto overscroll-contain px-2 py-2">
-            {showCustomOption && (
+      {open && typeof document !== "undefined" &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[200] flex animate-fade-in flex-col bg-[#0d0d0d]"
+            style={{
+              paddingTop: "env(safe-area-inset-top)",
+              paddingBottom: "env(safe-area-inset-bottom)",
+              touchAction: "manipulation",
+            }}
+            role="dialog"
+            aria-modal="true"
+            // Не даём событиям утечь к vaul Drawer, в котором сидит хост-модалка.
+            onPointerDownCapture={(e) => e.stopPropagation()}
+            onTouchStartCapture={(e) => e.stopPropagation()}
+            onTouchMoveCapture={(e) => e.stopPropagation()}
+          >
+            {/* Шапка */}
+            <div className="flex shrink-0 items-center justify-between gap-3 border-b border-white/[0.05] px-4 py-3">
               <button
                 type="button"
-                onClick={() => {
-                  onChange(normalizedQuery, true);
-                  setOpen(false);
-                }}
-                className="flex w-full items-center gap-3 border-b border-white/[0.04] px-3 py-3.5 text-left text-primary active:bg-primary/[0.06]"
+                onClick={() => setOpen(false)}
+                className="-ml-2 flex h-11 items-center px-2 font-mono text-[12px] uppercase tracking-wider text-muted-foreground active:opacity-60"
               >
-                <Plus className="h-4 w-4 shrink-0" />
-                <span className="flex-1 truncate text-[15px]">
-                  Добавить: «{normalizedQuery}»
-                </span>
+                Назад
               </button>
-            )}
+              <h2 className="min-w-0 flex-1 truncate text-center font-display text-base font-black italic uppercase tracking-tight">
+                {placeholder}
+              </h2>
+              <span className="w-[60px]" aria-hidden />
+            </div>
 
-            {filtered.length === 0 && !showCustomOption && (
-              <p className="px-4 py-8 text-center font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-                {loading ? "Загрузка..." : emptyHint}
-              </p>
-            )}
+            {/* Поиск */}
+            <div className="shrink-0 border-b border-white/[0.06] bg-[#0d0d0d] px-4 py-3">
+              <div className="flex h-11 items-center gap-2 border border-white/[0.08] bg-black/30 px-3">
+                <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
+                <input
+                  ref={inputRef}
+                  type="text"
+                  inputMode="search"
+                  autoComplete="off"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder={loading ? "Загрузка..." : "Поиск или ввести своё..."}
+                  className="flex-1 bg-transparent text-[16px] text-foreground placeholder:text-muted-foreground focus:outline-none"
+                />
+                {query && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setQuery("");
+                      inputRef.current?.focus();
+                    }}
+                    className="shrink-0 text-muted-foreground active:opacity-60"
+                    aria-label="Очистить"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+            </div>
 
-            {filtered.map((opt) => {
-              const active = value.toLowerCase() === opt.toLowerCase();
-              return (
+            {/* Список */}
+            <div className="flex-1 overflow-y-auto overscroll-contain px-2 py-2">
+              {showCustomOption && (
                 <button
-                  key={opt}
                   type="button"
                   onClick={() => {
-                    onChange(opt, false);
+                    onChange(normalizedQuery, true);
                     setOpen(false);
                   }}
-                  className="flex min-h-[44px] w-full items-center gap-3 border-b border-white/[0.04] px-3 py-3 text-left active:bg-white/[0.04]"
+                  className="flex w-full items-center gap-3 border-b border-white/[0.04] px-3 py-3.5 text-left text-primary active:bg-primary/[0.06]"
                 >
-                  <Check
-                    className={cn(
-                      "h-4 w-4 shrink-0",
-                      active ? "text-primary opacity-100" : "opacity-0",
-                    )}
-                  />
-                  <span className="flex-1 truncate text-[15px] text-foreground">
-                    {opt}
+                  <Plus className="h-4 w-4 shrink-0" />
+                  <span className="flex-1 truncate text-[15px]">
+                    Добавить: «{normalizedQuery}»
                   </span>
                 </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
+              )}
+
+              {filtered.length === 0 && !showCustomOption && (
+                <p className="px-4 py-8 text-center font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
+                  {loading ? "Загрузка..." : emptyHint}
+                </p>
+              )}
+
+              {filtered.map((opt) => {
+                const active = value.toLowerCase() === opt.toLowerCase();
+                return (
+                  <button
+                    key={opt}
+                    type="button"
+                    onClick={() => {
+                      onChange(opt, false);
+                      setOpen(false);
+                    }}
+                    className="flex min-h-[44px] w-full items-center gap-3 border-b border-white/[0.04] px-3 py-3 text-left active:bg-white/[0.04]"
+                  >
+                    <Check
+                      className={cn(
+                        "h-4 w-4 shrink-0",
+                        active ? "text-primary opacity-100" : "opacity-0",
+                      )}
+                    />
+                    <span className="flex-1 truncate text-[15px] text-foreground">
+                      {opt}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>,
+          document.body,
+        )}
     </>
   );
 }
