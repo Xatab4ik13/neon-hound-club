@@ -13,7 +13,7 @@ import {
   PassPurchaseError,
 } from "../lib/pass.js";
 import { createPaymentForPass, PaymentInitError } from "../lib/payments.js";
-import { isTbankConfigured } from "../lib/tbank.js";
+import { isRaifConfigured } from "../lib/raif.js";
 
 // ---------- USER ----------
 
