@@ -35,6 +35,7 @@ export function IOSSearchPicker({
 }: Props) {
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
 
   useThemeColor(open ? "#0d0d0d" : null);
 
@@ -50,6 +51,11 @@ export function IOSSearchPicker({
 
     return () => window.cancelAnimationFrame(frame);
   }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    listRef.current?.scrollTo({ top: 0, behavior: "auto" });
+  }, [open, normalizedQuery]);
 
   const normalizedQuery = normalize(query);
   const filtered = useMemo(() => {
@@ -144,6 +150,7 @@ export function IOSSearchPicker({
       </div>
 
       <div
+        ref={listRef}
         data-vaul-no-drag
         className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-2 py-2"
         style={{
