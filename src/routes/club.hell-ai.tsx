@@ -206,6 +206,39 @@ async function askHellAi(
 
 // Стриминговый вариант: вызывает onDelta на каждую токен-порцию.
 // Возвращает полный ответ. Бросает ApiError при HTTP-ошибке, AbortError при отмене.
+//
+// Авто-fallback на нестриминговый /ask, если SSE режется провайдером
+// (актуально для юзеров без VPN в РФ — TSPU часто рвёт длинные
+// text/event-stream через CF):
+//   1) если за 6 сек не пришёл первый delta — отменяем стрим, идём в /ask;
+//   2) если стрим оборвался без единого токена — тоже идём в /ask;
+//   3) запоминаем «стрим не работает» в sessionStorage, чтобы следующие
+//      вопросы в этой же вкладке сразу шли через /ask без 6-сек паузы.
+const STREAM_BROKEN_KEY = "hh:hellai:stream_broken";
+
+function isStreamMarkedBroken(): boolean {
+  try {
+    return typeof sessionStorage !== "undefined" && sessionStorage.getItem(STREAM_BROKEN_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+function markStreamBroken() {
+  try { sessionStorage.setItem(STREAM_BROKEN_KEY, "1"); } catch { /* noop */ }
+}
+
+async function fallbackToPlainAsk(
+  question: string,
+  bikeId: string | undefined,
+  chatId: string | undefined,
+  onDelta: (chunk: string) => void,
+  signal?: AbortSignal,
+): Promise<string> {
+  const full = await askHellAi(question, bikeId, chatId, signal);
+  if (full) onDelta(full);
+  return full;
+}
+
 async function streamHellAi(
   question: string,
   bikeId: string | undefined,
@@ -213,101 +246,148 @@ async function streamHellAi(
   onDelta: (chunk: string) => void,
   signal?: AbortSignal,
 ): Promise<string> {
+  // Уже знаем, что стрим у этого юзера не пролезает — не тратим 6 сек на ожидание.
+  if (isStreamMarkedBroken()) {
+    return fallbackToPlainAsk(question, bikeId, chatId, onDelta, signal);
+  }
+
+  const { BACKEND_URL } = await import("@/lib/api");
+
+  // Объединяем внешний signal с нашим таймаут-контроллером "первого байта".
+  const firstByteCtrl = new AbortController();
+  const onExternalAbort = () => firstByteCtrl.abort();
+  if (signal) {
+    if (signal.aborted) firstByteCtrl.abort();
+    else signal.addEventListener("abort", onExternalAbort);
+  }
+  let firstDeltaReceived = false;
+  const firstByteTimer = setTimeout(() => {
+    if (!firstDeltaReceived) firstByteCtrl.abort();
+  }, 6000);
+
+  let res: Response;
   try {
-    const { BACKEND_URL } = await import("@/lib/api");
-    const res = await fetch(`${BACKEND_URL}/api/v1/hell-ai/ask-stream`, {
+    res = await fetch(`${BACKEND_URL}/api/v1/hell-ai/ask-stream`, {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json", Accept: "text/event-stream" },
       body: JSON.stringify({ question, bikeId, chatId }),
-      signal,
+      signal: firstByteCtrl.signal,
     });
-    if (!res.ok || !res.body) {
-      const text = await res.text().catch(() => "");
-      let code = "request_failed";
-      let message = res.statusText;
-      try {
-        const j = JSON.parse(text);
-        code = j?.error ?? code;
-        message = j?.message ?? message;
-      } catch { /* noop */ }
-      throw new ApiError(res.status, code, message);
-    }
+  } catch (err) {
+    clearTimeout(firstByteTimer);
+    if (signal) signal.removeEventListener("abort", onExternalAbort);
+    // Юзер отменил руками — пробрасываем.
+    if (signal?.aborted) throw err;
+    // Иначе провайдер не пустил даже коннект — fallback.
+    markStreamBroken();
+    return fallbackToPlainAsk(question, bikeId, chatId, onDelta, signal);
+  }
 
-    const reader = res.body.getReader();
-    const decoder = new TextDecoder();
-    let buf = "";
-    let answer = "";
-    let errorMessage: string | null = null;
-    let aborted = false;
-    let currentEvent = "message";
-
+  if (!res.ok || !res.body) {
+    clearTimeout(firstByteTimer);
+    if (signal) signal.removeEventListener("abort", onExternalAbort);
+    const text = await res.text().catch(() => "");
+    let code = "request_failed";
+    let message = res.statusText;
     try {
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
-        buf += decoder.decode(value, { stream: true });
+      const j = JSON.parse(text);
+      code = j?.error ?? code;
+      message = j?.message ?? message;
+    } catch { /* noop */ }
+    throw new ApiError(res.status, code, message);
+  }
 
-        let newlineIndex: number;
-        while ((newlineIndex = buf.indexOf("\n")) !== -1) {
-          let line = buf.slice(0, newlineIndex);
-          buf = buf.slice(newlineIndex + 1);
-          if (line.endsWith("\r")) line = line.slice(0, -1);
-          if (!line) {
-            currentEvent = "message";
-            continue;
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buf = "";
+  let answer = "";
+  let errorMessage: string | null = null;
+  let aborted = false;
+  let currentEvent = "message";
+
+  try {
+    while (true) {
+      let chunk: ReadableStreamReadResult<Uint8Array>;
+      try {
+        chunk = await reader.read();
+      } catch (err) {
+        // Стрим лопнул посреди ответа.
+        if (signal?.aborted) throw err;
+        // Если успели прокачать хоть что-то — отдаём как есть (частичный ответ
+        // лучше нового длинного запроса). Если совсем ничего — fallback.
+        if (answer) break;
+        markStreamBroken();
+        return fallbackToPlainAsk(question, bikeId, chatId, onDelta, signal);
+      }
+      const { value, done } = chunk;
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+
+      let newlineIndex: number;
+      while ((newlineIndex = buf.indexOf("\n")) !== -1) {
+        let line = buf.slice(0, newlineIndex);
+        buf = buf.slice(newlineIndex + 1);
+        if (line.endsWith("\r")) line = line.slice(0, -1);
+        if (!line) {
+          currentEvent = "message";
+          continue;
+        }
+        if (line.startsWith(":")) continue;
+
+        if (line.startsWith("event:")) {
+          currentEvent = line.slice(6).trim() || "message";
+          continue;
+        }
+
+        if (!line.startsWith("data:")) continue;
+
+        const dataStr = line.slice(5).trim();
+        if (!dataStr) continue;
+
+        let data: { t?: string; message?: string; aborted?: boolean } = {};
+        try {
+          data = JSON.parse(dataStr);
+        } catch {
+          continue;
+        }
+
+        if (currentEvent === "delta" && typeof data.t === "string") {
+          if (!firstDeltaReceived) {
+            firstDeltaReceived = true;
+            clearTimeout(firstByteTimer);
           }
-          if (line.startsWith(":")) continue;
-
-          if (line.startsWith("event:")) {
-            currentEvent = line.slice(6).trim() || "message";
-            continue;
-          }
-
-          if (!line.startsWith("data:")) continue;
-
-          const dataStr = line.slice(5).trim();
-          if (!dataStr) continue;
-
-          let data: { t?: string; message?: string; aborted?: boolean } = {};
-          try {
-            data = JSON.parse(dataStr);
-          } catch {
-            continue;
-          }
-
-          if (currentEvent === "delta" && typeof data.t === "string") {
-            answer += data.t;
-            onDelta(data.t);
-          } else if (currentEvent === "error") {
-            errorMessage = data.message ?? "AI временно недоступен";
-            aborted = !!data.aborted;
-          }
+          answer += data.t;
+          onDelta(data.t);
+        } else if (currentEvent === "error") {
+          errorMessage = data.message ?? "AI временно недоступен";
+          aborted = !!data.aborted;
         }
       }
-    } finally {
-      try { reader.releaseLock(); } catch { /* noop */ }
     }
-
-    if (errorMessage) {
-      if (aborted) {
-        throw new DOMException(errorMessage, "AbortError");
-      }
-      throw new ApiError(502, "ai_failed", errorMessage);
-    }
-
-    if (!answer.trim()) {
-      throw new Error("empty_stream_answer");
-    }
-
-    return answer;
-  } catch (err) {
-    const aborted =
-      (err instanceof DOMException && err.name === "AbortError") ||
-      (typeof err === "object" && err !== null && (err as { name?: string }).name === "AbortError");
-    if (aborted || err instanceof ApiError) throw err;
-    return askHellAi(question, bikeId, chatId, signal);
+  } finally {
+    clearTimeout(firstByteTimer);
+    if (signal) signal.removeEventListener("abort", onExternalAbort);
+    try { reader.releaseLock(); } catch { /* noop */ }
   }
+
+  if (errorMessage) {
+    if (aborted) {
+      throw new DOMException(errorMessage, "AbortError");
+    }
+    throw new ApiError(502, "ai_failed", errorMessage);
+  }
+
+  if (!answer.trim()) {
+    // Стрим закрылся без токенов и без явной ошибки — провайдер.
+    if (signal?.aborted) {
+      throw new DOMException("aborted", "AbortError");
+    }
+    markStreamBroken();
+    return fallbackToPlainAsk(question, bikeId, chatId, onDelta, signal);
+  }
+
+  return answer;
 }
 
 function errorToMessage(err: unknown): string {
