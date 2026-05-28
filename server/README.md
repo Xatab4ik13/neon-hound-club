@@ -14,8 +14,9 @@ git clone <repo> hellhound && cd hellhound/server
 test -f .env || cp .env.example .env
 nano .env                  # если .env уже есть — НЕ перетирать, только править точечно
 docker compose up -d --build
-docker compose exec api npm run db:migrate
 ```
+
+Миграции применяются автоматически при старте `api`, отдельно запускать `db:migrate` не нужно.
 
 Nginx наружу:
 
@@ -38,7 +39,6 @@ server {
 ```bash
 cd ~/hellhound && git pull
 cd server && docker compose up -d --build
-docker compose exec api npm run db:migrate   # если есть новые миграции
 ```
 
 ## Проверка
