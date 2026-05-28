@@ -209,6 +209,25 @@ function ClubCheckoutPage() {
     >
       <PageHeader title="Оформление" subtitle="Доставка и оплата" />
 
+      {payUrl && (
+        <div className="mb-4 rounded-2xl border border-primary/30 bg-primary/[0.08] px-4 py-3">
+          <div className="font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-primary">
+            Платёж создан
+          </div>
+          <div className="mt-1 text-[13px] text-foreground">
+            Если страница банка не открылась — нажми кнопку ниже.
+          </div>
+          <a
+            href={payUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-3 inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 font-display text-xs font-black uppercase tracking-wider text-primary-foreground"
+          >
+            Открыть оплату
+          </a>
+        </div>
+      )}
+
       <form onSubmit={submit} className="space-y-5">
         {/* Контакты */}
         <Section icon={<User className="h-3.5 w-3.5" />} title="Получатель">
