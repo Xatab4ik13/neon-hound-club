@@ -462,7 +462,7 @@ function ClubCheckoutPage() {
   );
 }
 
-}
+
 
 function Section({
   icon,
