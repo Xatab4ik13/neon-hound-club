@@ -19,6 +19,14 @@ const unsubscribeSchema = z.object({
 });
 
 export async function pushRoutes(app: FastifyInstance) {
+  app.get("/config", async () => {
+    const publicKey = (process.env.VAPID_PUBLIC_KEY ?? "").trim();
+    return {
+      enabled: Boolean(publicKey),
+      publicKey: publicKey || null,
+    };
+  });
+
   // Подписаться (можно и без логина — анонимный девайс).
   app.post("/subscribe", { preHandler: loadSession }, async (req, reply) => {
     const parsed = subscribeSchema.safeParse(req.body);
