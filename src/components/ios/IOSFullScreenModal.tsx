@@ -72,9 +72,6 @@ export function IOSFullScreenModal({
         height: "100dvh",
         paddingTop: "env(safe-area-inset-top)",
       }}
-      style={{
-        paddingTop: "env(safe-area-inset-top)",
-      }}
       role="dialog"
       aria-modal="true"
       aria-label={title}
