@@ -547,7 +547,7 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
             {bike ? "Редактировать байк" : "Добавить байк"}
           </DialogTitle>
           <DialogDescription className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-            База NHTSA · если нет в списке — введи вручную
+              Локальный каталог · если нет в списке — введи вручную
           </DialogDescription>
         </DialogHeader>
         <form id="bike-form" onSubmit={handleSubmit} className="space-y-5 pt-2">
