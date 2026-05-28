@@ -145,9 +145,23 @@ function ClubCheckoutPage() {
       clear();
       queryClient.invalidateQueries({ queryKey: qk.shopOrders });
       queryClient.invalidateQueries({ queryKey: qk.ticketsBalance });
-      // Редирект на платёжную страницу Т-Банка. После оплаты юзер вернётся на /pay/success.
-      window.location.href = pay.paymentUrl;
-      // На случай если редирект завис — fallback на success-страницу заказа.
+      setPayUrl(pay.paymentUrl);
+      // В PWA (standalone) браузер часто блокирует location.href на внешний домен —
+      // юзер «застревает». Открываем в системном браузере новой вкладкой.
+      const isStandalone =
+        typeof window !== "undefined" &&
+        (window.matchMedia?.("(display-mode: standalone)").matches ||
+          // iOS
+          (window.navigator as unknown as { standalone?: boolean }).standalone === true);
+      if (isStandalone) {
+        const w = window.open(pay.paymentUrl, "_blank", "noopener,noreferrer");
+        if (!w) {
+          // popup заблокирован — попробуем top-level редирект
+          window.location.href = pay.paymentUrl;
+        }
+      } else {
+        window.location.href = pay.paymentUrl;
+      }
       void order;
     },
     onError: (err) => {
@@ -155,6 +169,9 @@ function ClubCheckoutPage() {
       hhToast.error("Ошибка оплаты", { meta: msg });
     },
   });
+
+  // Если редирект не сработал — показываем кнопку «Открыть оплату»
+  const [payUrl, setPayUrl] = useState<string | null>(null);
 
   const canSubmit =
     form.name.trim().length >= 2 &&
@@ -191,6 +208,25 @@ function ClubCheckoutPage() {
       style={{ paddingBottom: "calc(124px + env(safe-area-inset-bottom))" }}
     >
       <PageHeader title="Оформление" subtitle="Доставка и оплата" />
+
+      {payUrl && (
+        <div className="mb-4 rounded-2xl border border-primary/30 bg-primary/[0.08] px-4 py-3">
+          <div className="font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-primary">
+            Платёж создан
+          </div>
+          <div className="mt-1 text-[13px] text-foreground">
+            Если страница банка не открылась — нажми кнопку ниже.
+          </div>
+          <a
+            href={payUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-3 inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 font-display text-xs font-black uppercase tracking-wider text-primary-foreground"
+          >
+            Открыть оплату
+          </a>
+        </div>
+      )}
 
       <form onSubmit={submit} className="space-y-5">
         {/* Контакты */}
