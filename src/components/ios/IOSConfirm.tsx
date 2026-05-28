@@ -33,10 +33,10 @@ export function IOSConfirm({
   return (
     <AlertDialog.Root open={open} onOpenChange={onOpenChange}>
       <AlertDialog.Portal>
-        <AlertDialog.Overlay className="fixed inset-0 z-[90] bg-black/70 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0" />
+        <AlertDialog.Overlay className="fixed inset-0 z-[340] bg-black/70 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0" />
         <AlertDialog.Content
           className={cn(
-            "fixed left-1/2 top-1/2 z-[91] w-[270px] -translate-x-1/2 -translate-y-1/2",
+            "fixed left-1/2 top-1/2 z-[341] w-[270px] -translate-x-1/2 -translate-y-1/2",
             "overflow-hidden rounded-2xl border border-white/[0.08] bg-[#1c1c1e]/95 backdrop-blur-2xl",
             "shadow-[0_24px_60px_-20px_rgba(0,0,0,0.7)] outline-none",
             "data-[state=open]:animate-in data-[state=closed]:animate-out",
