@@ -47,9 +47,11 @@ cd hellhound/server
 ## Шаг 4. Создать `.env` с секретами
 
 ```bash
-cp .env.example .env
+test -f .env || cp .env.example .env
 nano .env
 ```
+
+Если `.env` уже существует и сервис раньше работал — **не пересоздавай его и не копируй `.env.example` поверх**. Только правь нужные строки.
 
 Заполни эти поля (остальное оставь по умолчанию):
 
@@ -68,15 +70,28 @@ JWT_SECRET=<СЮДА_СЕКРЕТ_64+_СИМВОЛА>
 COOKIE_DOMAIN=.hhr.pro
 
 # CORS — фронт
-FRONTEND_URL=https://hhr.pro
+FRONTEND_ORIGIN=https://hhr.pro
 
 # MinIO (S3-совместимое хранилище медиа)
 S3_ENDPOINT=http://minio:9000
 S3_REGION=us-east-1
-S3_BUCKET=hellhound
+S3_BUCKET=hellhound-media
 S3_ACCESS_KEY=hellhound
 S3_SECRET_KEY=<ПРИДУМАЙ_ДЛИННЫЙ_ПАРОЛЬ>
-S3_PUBLIC_URL=https://media.hhr.pro
+S3_PUBLIC_URL=https://api.hhr.pro/media
+
+# Опциональные интеграции — оставь пустыми, если ещё не подключал
+DADATA_API_KEY=
+OPENROUTER_API_KEY=
+OPENROUTER_REFERER=https://hhr.pro
+VAPID_PUBLIC_KEY=
+VAPID_PRIVATE_KEY=
+VAPID_SUBJECT=mailto:owner@hhr.pro
+RAIF_PUBLIC_ID=
+RAIF_SECRET_KEY=
+RAIF_API_URL=https://pay.raif.ru
+RAIF_SUCCESS_URL=https://hhr.pro/pay/success
+RAIF_FAIL_URL=https://hhr.pro/pay/fail
 ```
 
 Сгенерировать JWT_SECRET (выполни и скопируй вывод в `.env`):
@@ -105,6 +120,8 @@ curl http://127.0.0.1:3000/healthz
 ```
 
 Ожидаемый ответ: `{"ok":true}`.
+
+Если нужен внешний мониторинг, `curl http://127.0.0.1:3000/health` тоже должен вернуть тот же JSON.
 
 Если что-то упало — смотри логи:
 
@@ -166,6 +183,8 @@ cd server
 docker compose up -d --build
 docker compose logs -f api   # Ctrl+C чтобы выйти
 ```
+
+`git pull` **не должен** перетирать локальный `server/.env`, потому что `.env` не хранится в репо. Если значения пропали — значит файл уже был изменён вручную на VPS.
 
 Всё. Фронт обновляется сам на Timeweb, бекенд — этими 4 командами.
 

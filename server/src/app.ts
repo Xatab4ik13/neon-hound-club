@@ -4,6 +4,7 @@ import cookie from "@fastify/cookie";
 import jwt from "@fastify/jwt";
 import rateLimit from "@fastify/rate-limit";
 import multipart from "@fastify/multipart";
+import { logRuntimeConfig } from "./lib/runtime-config.js";
 
 export async function buildApp() {
   const app = Fastify({
@@ -15,6 +16,8 @@ export async function buildApp() {
     },
     trustProxy: true,
   });
+
+  logRuntimeConfig(app.log);
 
   // Разрешённые источники:
   // - прод (hhr.pro и поддомены)
@@ -62,7 +65,9 @@ export async function buildApp() {
 
   await app.register(multipart, { limits: { fileSize: 10 * 1024 * 1024 } });
 
-  app.get("/healthz", async () => ({ ok: true, ts: Date.now() }));
+  const healthPayload = () => ({ ok: true, ts: Date.now() });
+  app.get("/healthz", async () => healthPayload());
+  app.get("/health", async () => healthPayload());
 
   const { authRoutes } = await import("./routes/auth.js");
   await app.register(authRoutes, { prefix: "/api/v1/auth" });
