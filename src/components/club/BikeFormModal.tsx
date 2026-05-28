@@ -102,7 +102,7 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
     setPhotoFile(null);
     setModInput("");
     setPhotoError(null);
-    setSubmitting(false);
+      setSubmitting(false);
       setBrandSheet(false);
       setModelSheet(false);
       setYearSheet(false);
