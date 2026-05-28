@@ -9,11 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { ComboboxWithCustom } from "./ComboboxWithCustom";
-import {
-  getMotorcycleMakes,
-  getModelsForMakeYear,
-  getYears,
-} from "@/lib/nhtsa";
+import { getMotorcycleMakes, getModelsForMakeYear, getYears } from "@/lib/nhtsa";
 import { newBikeId, type StoredBike } from "@/data/bike-storage";
 import { IOSSheet } from "@/components/ios/IOSSheet";
 import { IOSListSection, IOSListRow } from "@/components/ios/IOSList";
@@ -103,14 +99,14 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
     setPhotoFile(null);
     setModInput("");
     setPhotoError(null);
-      setSubmitting(false);
-      setBrandSheet(false);
-      setModelSheet(false);
-      setYearSheet(false);
-      setDateSheet(false);
-      setModSheet(false);
-      setPhotoActions(false);
-      setConfirmDiscard(false);
+    setSubmitting(false);
+    setBrandSheet(false);
+    setModelSheet(false);
+    setYearSheet(false);
+    setDateSheet(false);
+    setModSheet(false);
+    setPhotoActions(false);
+    setConfirmDiscard(false);
     initialSnapshotRef.current = JSON.stringify({
       brand: bike?.brand ?? "",
       model: bike?.model ?? "",
@@ -195,7 +191,6 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
       cancelled = true;
     };
   }, [open, brand, year]);
-
 
   function addMod(v: string) {
     const t = v.trim();
@@ -308,7 +303,9 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
                 label="Модель"
                 value={
                   <span className="inline-flex max-w-full items-center gap-2 truncate">
-                    <span className="truncate">{model || (brand ? "Выбрать" : "Сначала марка")}</span>
+                    <span className="truncate">
+                      {model || (brand ? "Выбрать" : "Сначала марка")}
+                    </span>
                     {modelCustom && model && (
                       <span className="shrink-0 rounded border border-primary/30 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.18em] text-primary">
                         custom
@@ -321,12 +318,7 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
                 disabled={!brand}
               />
 
-              <IOSListRow
-                label="Год"
-                value={year}
-                chevron
-                onClick={() => setYearSheet(true)}
-              />
+              <IOSListRow label="Год" value={year} chevron onClick={() => setYearSheet(true)} />
             </IOSListSection>
 
             {/* Детали */}
@@ -430,7 +422,11 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
             setModel(v);
             setModelCustom(custom);
           }}
-          emptyHint={brandCustom ? "Для своей марки введи модель вручную" : "Модель не найдена — можно ввести свою"}
+          emptyHint={
+            brandCustom
+              ? "Для своей марки введи модель вручную"
+              : "Модель не найдена — можно ввести свою"
+          }
         />
 
         <IOSWheelPicker
@@ -619,7 +615,11 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
               <TextInput value={color} onChange={setColor} placeholder="Чёрный мат, розовый..." />
             </Field>
             <Field label="Прозвище">
-              <TextInput value={nickname} onChange={setNickname} placeholder="Гончая, Чёрная вдова..." />
+              <TextInput
+                value={nickname}
+                onChange={setNickname}
+                placeholder="Гончая, Чёрная вдова..."
+              />
             </Field>
           </div>
 
@@ -808,9 +808,7 @@ function PhotoCard({
           className="hidden"
         />
       </div>
-      {error && (
-        <p className="mt-2 text-center text-[12px] text-destructive">{error}</p>
-      )}
+      {error && <p className="mt-2 text-center text-[12px] text-destructive">{error}</p>}
     </div>
   );
 }

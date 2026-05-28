@@ -65,7 +65,8 @@ export function IOSSearchPicker({
   }, [normalizedQuery, options]);
 
   const hasExactMatch = useMemo(
-    () => normalizedQuery.length > 0 && options.some((option) => normalize(option) === normalizedQuery),
+    () =>
+      normalizedQuery.length > 0 && options.some((option) => normalize(option) === normalizedQuery),
     [normalizedQuery, options],
   );
 
