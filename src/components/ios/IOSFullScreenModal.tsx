@@ -65,7 +65,7 @@ export function IOSFullScreenModal({
   return createPortal(
     <div
       className={cn(
-        "fixed inset-0 flex flex-col bg-[#0d0d0d]",
+        "fixed inset-0 flex flex-col bg-[#0d0d0d] relative",
         zIndexClassName ?? "z-[260]",
       )}
       style={{
