@@ -4,10 +4,12 @@
 
 import { apiFetch } from "@/lib/api";
 
-// Публичный VAPID-кей. Не секрет — генерируется в паре с приватным на бэке.
-// При смене ключа надо обновить и здесь, и в env бэка (VAPID_PUBLIC_KEY).
-export const VAPID_PUBLIC_KEY =
-  "BD8l8vZ77J9_OF1QOEaJcnxNPVcZeMJLZ35DeBcIt182HLEp6eas2geTodtysDCLU4g6PT3HfQ128lLMyscvGkQ";
+type PushConfigResponse = {
+  enabled: boolean;
+  publicKey: string | null;
+};
+
+let vapidPublicKeyPromise: Promise<string | null> | null = null;
 
 export function isPushSupported(): boolean {
   if (typeof window === "undefined") return false;
@@ -39,6 +41,19 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
   return out;
 }
 
+async function getVapidPublicKey(): Promise<string | null> {
+  if (!vapidPublicKeyPromise) {
+    vapidPublicKeyPromise = apiFetch<PushConfigResponse>("/api/v1/push/config")
+      .then((config) => (config.enabled ? config.publicKey : null))
+      .catch((error) => {
+        console.warn("[push] config load failed", error);
+        return null;
+      });
+  }
+
+  return vapidPublicKeyPromise;
+}
+
 export async function registerPushSW(): Promise<ServiceWorkerRegistration | null> {
   if (!isPushSupported() || isLovablePreview()) return null;
   try {
@@ -67,7 +82,10 @@ export async function subscribeToPush(): Promise<{ ok: boolean; reason?: string 
 
   let sub = await reg.pushManager.getSubscription();
   if (!sub) {
-    const key = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
+    const publicKey = await getVapidPublicKey();
+    if (!publicKey) return { ok: false, reason: "Пуши ещё не настроены на сервере." };
+
+    const key = urlBase64ToUint8Array(publicKey);
     sub = await reg.pushManager.subscribe({
       userVisibleOnly: true,
       applicationServerKey: key.buffer.slice(key.byteOffset, key.byteOffset + key.byteLength) as ArrayBuffer,
