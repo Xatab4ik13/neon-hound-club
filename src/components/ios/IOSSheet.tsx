@@ -15,6 +15,8 @@ type Props = {
   /** Кнопка-CTA справа в шапке. По умолчанию «Готово», закрывающее sheet. */
   doneLabel?: string;
   onDone?: () => void;
+  /** Заблокировать CTA (например, форма ещё не валидна). */
+  doneDisabled?: boolean;
   /** Полноэкранный режим — высокая модалка (формы), иначе ~70vh (списки). */
   fullHeight?: boolean;
   children: ReactNode;
@@ -29,6 +31,7 @@ export function IOSSheet({
   title,
   doneLabel = "Готово",
   onDone,
+  doneDisabled = false,
   fullHeight = false,
   children,
   headerLeft,
@@ -101,7 +104,8 @@ export function IOSSheet({
             <button
               type="button"
               onClick={onDone ?? close}
-              className="shrink-0 font-mono text-[12px] font-bold uppercase tracking-wider text-primary active:opacity-60"
+              disabled={doneDisabled}
+              className="shrink-0 font-mono text-[12px] font-bold uppercase tracking-wider text-primary active:opacity-60 disabled:cursor-not-allowed disabled:text-muted-foreground/40 disabled:active:opacity-100"
             >
               {doneLabel}
             </button>
