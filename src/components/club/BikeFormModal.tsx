@@ -413,6 +413,7 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
         title={bike ? "Редактировать байк" : "Добавить байк"}
         fullHeight
         doneLabel={submitting ? "..." : bike ? "Сохранить" : "Добавить"}
+        doneDisabled={!canSubmit}
         onDone={() => {
           if (!canSubmit) return;
           void handleSubmit();

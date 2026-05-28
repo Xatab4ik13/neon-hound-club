@@ -117,14 +117,47 @@ function ClubShopPage() {
             </button>
           )}
         </div>
-        <button
-          type="button"
-          onClick={() => setSortOpen(true)}
-          aria-label="Сортировка"
-          className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-white/[0.06] bg-white/[0.04] text-foreground active:scale-95"
-        >
-          <SlidersHorizontal className="h-4 w-4" />
-        </button>
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setSortOpen((v) => !v)}
+            aria-label="Сортировка"
+            aria-expanded={sortOpen}
+            className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-white/[0.06] bg-white/[0.04] text-foreground active:scale-95"
+          >
+            <SlidersHorizontal className="h-4 w-4" />
+          </button>
+          {sortOpen && (
+            <>
+              <div
+                className="fixed inset-0 z-40"
+                onClick={() => setSortOpen(false)}
+                aria-hidden
+              />
+              <div className="absolute right-0 top-full z-50 mt-2 w-60 overflow-hidden rounded-xl border border-white/[0.08] bg-[#111]/98 p-1 shadow-2xl backdrop-blur-xl">
+                {SORTS.map((s) => {
+                  const active = s.id === sort;
+                  return (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => {
+                        setSort(s.id);
+                        setSortOpen(false);
+                      }}
+                      className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-[14px] transition-colors active:bg-white/[0.06] ${
+                        active ? "text-primary" : "text-foreground"
+                      }`}
+                    >
+                      <span>{s.label}</span>
+                      {active && <span aria-hidden>✓</span>}
+                    </button>
+                  );
+                })}
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Чипсы категорий */}
@@ -182,48 +215,6 @@ function ClubShopPage() {
         </div>
       )}
 
-      {/* iOS action sheet — сортировка */}
-      {sortOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm md:items-center"
-          onClick={() => setSortOpen(false)}
-        >
-          <div
-            className="w-full max-w-md rounded-t-2xl bg-card pb-[calc(env(safe-area-inset-bottom)+12px)] md:rounded-2xl md:pb-3"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="mx-auto mt-2 mb-3 h-1 w-9 rounded-full bg-white/15 md:hidden" />
-            <div className="px-2 pb-2 pt-1">
-              {SORTS.map((s) => {
-                const active = s.id === sort;
-                return (
-                  <button
-                    key={s.id}
-                    type="button"
-                    onClick={() => {
-                      setSort(s.id);
-                      setSortOpen(false);
-                    }}
-                    className={`flex w-full items-center justify-between rounded-xl px-4 py-3.5 text-left text-[16px] transition-colors active:bg-white/[0.06] ${
-                      active ? "text-primary" : "text-foreground"
-                    }`}
-                  >
-                    <span>{s.label}</span>
-                    {active && <span aria-hidden>✓</span>}
-                  </button>
-                );
-              })}
-            </div>
-            <button
-              type="button"
-              onClick={() => setSortOpen(false)}
-              className="mx-2 mt-1 block w-[calc(100%-1rem)] rounded-xl bg-white/[0.06] py-3 text-[16px] font-semibold text-foreground active:scale-[0.99]"
-            >
-              Готово
-            </button>
-          </div>
-        </div>
-      )}
     </main>
   );
 }
