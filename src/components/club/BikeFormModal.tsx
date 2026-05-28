@@ -20,6 +20,7 @@ import { IOSListSection, IOSListRow } from "@/components/ios/IOSList";
 import { IOSConfirm } from "@/components/ios/IOSConfirm";
 import { IOSWheelPicker } from "@/components/ios/IOSWheelPicker";
 import { IOSDateSheet } from "@/components/ios/IOSDateSheet";
+import { IOSSearchPicker } from "@/components/ios/IOSSearchPicker";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 
@@ -56,6 +57,8 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
   const [yearSheet, setYearSheet] = useState(false);
   const [dateSheet, setDateSheet] = useState(false);
   const [modSheet, setModSheet] = useState(false);
+  const [brandSheet, setBrandSheet] = useState(false);
+  const [modelSheet, setModelSheet] = useState(false);
   const [modInput, setModInput] = useState("");
   const [photoActions, setPhotoActions] = useState(false);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
@@ -99,7 +102,14 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
     setPhotoFile(null);
     setModInput("");
     setPhotoError(null);
-    setSubmitting(false);
+      setSubmitting(false);
+      setBrandSheet(false);
+      setModelSheet(false);
+      setYearSheet(false);
+      setDateSheet(false);
+      setModSheet(false);
+      setPhotoActions(false);
+      setConfirmDiscard(false);
     initialSnapshotRef.current = JSON.stringify({
       brand: bike?.brand ?? "",
       model: bike?.model ?? "",
@@ -280,52 +290,36 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
             <IOSListSection title="Мотоцикл">
               <IOSListRow
                 label="Марка"
-                onClick={undefined}
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <span className="shrink-0 text-[15px] text-foreground">Марка</span>
-                  <div className="min-w-0 flex-1">
-                    <ComboboxWithCustom
-                      value={brand}
-                      onChange={(v, custom) => {
-                        setBrand(v);
-                        setBrandCustom(custom);
-                        setModel("");
-                        setModelCustom(false);
-                      }}
-                      options={makes}
-                      loading={makesLoading}
-                      placeholder="Выбрать марку"
-                      isCustom={brandCustom}
-                    />
-                  </div>
-                </div>
-              </IOSListRow>
+                value={
+                  <span className="inline-flex max-w-full items-center gap-2 truncate">
+                    <span className="truncate">{brand || "Выбрать"}</span>
+                    {brandCustom && brand && (
+                      <span className="shrink-0 rounded border border-primary/30 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.18em] text-primary">
+                        custom
+                      </span>
+                    )}
+                  </span>
+                }
+                chevron
+                onClick={() => setBrandSheet(true)}
+              />
 
-              <IOSListRow>
-                <div className="flex items-center justify-between gap-3">
-                  <span className="shrink-0 text-[15px] text-foreground">Модель</span>
-                  <div className="min-w-0 flex-1">
-                    <ComboboxWithCustom
-                      value={model}
-                      onChange={(v, custom) => {
-                        setModel(v);
-                        setModelCustom(custom);
-                      }}
-                      options={models}
-                      loading={modelsLoading}
-                      placeholder={brand ? "Выбрать модель" : "Сначала марка"}
-                      disabled={!brand}
-                      isCustom={modelCustom}
-                      emptyHint={
-                        brandCustom
-                          ? "Кастомная марка — введи модель"
-                          : "Не найдено — введи вручную"
-                      }
-                    />
-                  </div>
-                </div>
-              </IOSListRow>
+              <IOSListRow
+                label="Модель"
+                value={
+                  <span className="inline-flex max-w-full items-center gap-2 truncate">
+                    <span className="truncate">{model || (brand ? "Выбрать" : "Сначала марка")}</span>
+                    {modelCustom && model && (
+                      <span className="shrink-0 rounded border border-primary/30 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.18em] text-primary">
+                        custom
+                      </span>
+                    )}
+                  </span>
+                }
+                onClick={() => brand && setModelSheet(true)}
+                chevron
+                disabled={!brand}
+              />
 
               <IOSListRow
                 label="Год"
@@ -407,6 +401,38 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
         </IOSSheet>
 
         {/* Год */}
+        <IOSSearchPicker
+          open={brandSheet}
+          onOpenChange={setBrandSheet}
+          title="Марка"
+          value={brand}
+          options={makes}
+          loading={makesLoading}
+          placeholder="Поиск марки или ввести свою..."
+          onSelect={(v, custom) => {
+            setBrand(v);
+            setBrandCustom(custom);
+            setModel("");
+            setModelCustom(false);
+          }}
+          emptyHint="Марка не найдена — можно ввести свою"
+        />
+
+        <IOSSearchPicker
+          open={modelSheet}
+          onOpenChange={setModelSheet}
+          title="Модель"
+          value={model}
+          options={models}
+          loading={modelsLoading}
+          placeholder={brand ? "Поиск модели или ввести свою..." : "Сначала выбери марку"}
+          onSelect={(v, custom) => {
+            setModel(v);
+            setModelCustom(custom);
+          }}
+          emptyHint={brandCustom ? "Для своей марки введи модель вручную" : "Модель не найдена — можно ввести свою"}
+        />
+
         <IOSWheelPicker
           open={yearSheet}
           onOpenChange={setYearSheet}
