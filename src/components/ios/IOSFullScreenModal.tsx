@@ -65,10 +65,11 @@ export function IOSFullScreenModal({
   return createPortal(
     <div
       className={cn(
-        "fixed inset-0 flex flex-col bg-[#0d0d0d] relative",
+        "fixed inset-0 flex flex-col bg-[#0d0d0d]",
         zIndexClassName ?? "z-[260]",
       )}
       style={{
+        height: "100dvh",
         paddingTop: "env(safe-area-inset-top)",
       }}
       role="dialog"
