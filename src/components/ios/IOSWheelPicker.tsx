@@ -33,6 +33,9 @@ export function IOSWheelPicker({
   doneLabel = "Готово",
 }: Props) {
   useThemeColor(open ? "#1c1c1e" : null);
+
+  if (!open || typeof document === "undefined") return null;
+
   return createPortal(
     <div
       className="fixed inset-0 z-[300] flex flex-col justify-end bg-black/60 animate-in fade-in-0"
@@ -40,13 +43,10 @@ export function IOSWheelPicker({
     >
       <div
         className="rounded-t-[20px] border-t border-white/[0.08] bg-[#1c1c1e] pb-[env(safe-area-inset-bottom)] animate-in slide-in-from-bottom"
-
-    >
-      <div
-        className="rounded-t-[20px] border-t border-white/[0.08] bg-[#1c1c1e] pb-[env(safe-area-inset-bottom)] animate-slide-in-bottom"
         onClick={(e) => e.stopPropagation()}
         style={{ touchAction: "pan-y" }}
       >
+
         {/* шапка */}
         <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-3">
           <button
