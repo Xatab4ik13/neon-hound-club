@@ -59,7 +59,7 @@ export async function passRoutes(app: FastifyInstance) {
     try {
       const purchase = await createPassPurchase(session.sub, parsed.data.tier);
       let paymentUrl: string | null = null;
-      if (isTbankConfigured()) {
+      if (isRaifConfigured()) {
         try {
           const p = await createPaymentForPass(purchase.id, session.sub);
           paymentUrl = p.paymentUrl;
