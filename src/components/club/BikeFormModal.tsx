@@ -20,6 +20,7 @@ import { IOSListSection, IOSListRow } from "@/components/ios/IOSList";
 import { IOSConfirm } from "@/components/ios/IOSConfirm";
 import { IOSWheelPicker } from "@/components/ios/IOSWheelPicker";
 import { IOSDateSheet } from "@/components/ios/IOSDateSheet";
+import { IOSSearchPicker } from "@/components/ios/IOSSearchPicker";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 
@@ -56,6 +57,8 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
   const [yearSheet, setYearSheet] = useState(false);
   const [dateSheet, setDateSheet] = useState(false);
   const [modSheet, setModSheet] = useState(false);
+  const [brandSheet, setBrandSheet] = useState(false);
+  const [modelSheet, setModelSheet] = useState(false);
   const [modInput, setModInput] = useState("");
   const [photoActions, setPhotoActions] = useState(false);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
@@ -100,6 +103,13 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
     setModInput("");
     setPhotoError(null);
     setSubmitting(false);
+      setBrandSheet(false);
+      setModelSheet(false);
+      setYearSheet(false);
+      setDateSheet(false);
+      setModSheet(false);
+      setPhotoActions(false);
+      setConfirmDiscard(false);
     initialSnapshotRef.current = JSON.stringify({
       brand: bike?.brand ?? "",
       model: bike?.model ?? "",
