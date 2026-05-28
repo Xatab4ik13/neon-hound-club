@@ -55,9 +55,7 @@ export function IOSConfirm({
             )}
           </div>
           <div className="grid grid-cols-2 border-t border-white/[0.08]">
-            <AlertDialog.Cancel
-              className="border-r border-white/[0.08] px-3 py-3 text-[17px] font-normal text-primary transition-colors active:bg-white/[0.04]"
-            >
+            <AlertDialog.Cancel className="border-r border-white/[0.08] px-3 py-3 text-[17px] font-normal text-primary transition-colors active:bg-white/[0.04]">
               {cancelLabel}
             </AlertDialog.Cancel>
             <AlertDialog.Action

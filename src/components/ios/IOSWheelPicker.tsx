@@ -42,11 +42,10 @@ export function IOSWheelPicker({
       onClick={() => onOpenChange(false)}
     >
       <div
-          className="rounded-t-[20px] border-t border-white/[0.08] bg-[#1c1c1e] pb-[env(safe-area-inset-bottom)] animate-in slide-in-from-bottom"
+        className="rounded-t-[20px] border-t border-white/[0.08] bg-[#1c1c1e] pb-[env(safe-area-inset-bottom)] animate-in slide-in-from-bottom"
         onClick={(e) => e.stopPropagation()}
         style={{ touchAction: "pan-y" }}
       >
-
         {/* шапка */}
         <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-3">
           <button
@@ -56,9 +55,7 @@ export function IOSWheelPicker({
           >
             Отмена
           </button>
-          <h2 className="truncate text-center text-[15px] font-semibold text-white">
-            {title}
-          </h2>
+          <h2 className="truncate text-center text-[15px] font-semibold text-white">{title}</h2>
           <button
             type="button"
             onClick={() => onOpenChange(false)}
@@ -122,10 +119,7 @@ function WheelColumn({ options, value, onChange, width = "w-24" }: Column) {
     <div
       ref={ref}
       onScroll={handleScroll}
-      className={cn(
-        "relative overflow-y-scroll no-scrollbar",
-        width,
-      )}
+      className={cn("relative overflow-y-scroll no-scrollbar", width)}
       style={{
         height: VISIBLE * ITEM_H,
         scrollSnapType: "y mandatory",
