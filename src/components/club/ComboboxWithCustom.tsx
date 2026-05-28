@@ -263,19 +263,7 @@ function MobilePicker({
               </button>
             </div>
 
-            <div className="flex shrink-0 items-center justify-between gap-3 border-b border-white/[0.05] px-4 py-3">
-              <button
-                type="button"
-                onClick={() => setOpen(false)}
-                className="-ml-2 flex h-11 items-center px-2 font-mono text-[12px] uppercase tracking-wider text-muted-foreground active:opacity-60"
-              >
-                Назад
-              </button>
-              <h2 className="min-w-0 flex-1 truncate text-center font-display text-base font-black italic uppercase tracking-tight">
-                {placeholder}
-              </h2>
-              <span className="w-[60px]" aria-hidden />
-            </div>
+
 
             {/* Поиск */}
             <div className="shrink-0 border-b border-white/[0.06] bg-[#0d0d0d] px-4 py-3">
