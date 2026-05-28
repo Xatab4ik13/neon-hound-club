@@ -21,6 +21,7 @@ import { IOSConfirm } from "@/components/ios/IOSConfirm";
 import { IOSWheelPicker } from "@/components/ios/IOSWheelPicker";
 import { IOSDateSheet } from "@/components/ios/IOSDateSheet";
 import { IOSSearchPicker } from "@/components/ios/IOSSearchPicker";
+import { IOSFullScreenModal } from "@/components/ios/IOSFullScreenModal";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 
@@ -260,11 +261,10 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
   if (isMobile) {
     return (
       <>
-        <IOSSheet
+        <IOSFullScreenModal
           open={open}
           onOpenChange={(v) => requestClose(v)}
           title={bike ? "Редактировать байк" : "Добавить байк"}
-          fullHeight
           onCancel={() => requestClose(false)}
           cancelLabel="Отмена"
           doneLabel={submitting ? "..." : bike ? "Сохранить" : "Добавить"}
@@ -398,7 +398,7 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
               <Loader2 className="h-7 w-7 animate-spin text-primary" />
             </div>
           )}
-        </IOSSheet>
+        </IOSFullScreenModal>
 
         {/* Год */}
         <IOSSearchPicker
@@ -457,7 +457,7 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
         />
 
         {/* Новая модификация */}
-        <IOSSheet
+        <IOSFullScreenModal
           open={modSheet}
           onOpenChange={setModSheet}
           title="Тюнинг"
@@ -487,14 +487,15 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
               className="h-12 border-white/[0.08] bg-black/30 text-[16px]"
             />
           </div>
-        </IOSSheet>
+        </IOSFullScreenModal>
 
         {/* Действия с фото */}
-        <IOSSheet
+        <IOSFullScreenModal
           open={photoActions}
           onOpenChange={setPhotoActions}
           title="Фото"
           doneLabel="Закрыть"
+          zIndexClassName="z-[290]"
         >
           <IOSListSection>
             <IOSListRow
@@ -522,7 +523,7 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
               }}
             />
           </IOSListSection>
-        </IOSSheet>
+        </IOSFullScreenModal>
 
         {/* Подтверждение отмены */}
         <IOSConfirm
