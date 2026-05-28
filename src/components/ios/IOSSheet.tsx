@@ -101,9 +101,20 @@ export function IOSSheet({
 
           {/* шапка — sticky */}
           <div className="flex shrink-0 items-center justify-between gap-3 border-b border-white/[0.05] px-5 pb-3 pt-3">
-            <div className="min-w-0 flex-1">
+            {onCancel ? (
+              <button
+                type="button"
+                onClick={onCancel}
+                className="shrink-0 font-mono text-[12px] uppercase tracking-wider text-muted-foreground active:opacity-60"
+              >
+                {cancelLabel}
+              </button>
+            ) : (
+              <div className="w-[60px] shrink-0" aria-hidden />
+            )}
+            <div className="min-w-0 flex-1 text-center">
               {headerLeft ?? (
-                <h2 className="truncate font-display text-xl font-black italic uppercase tracking-tight">
+                <h2 className="truncate text-[15px] font-semibold text-white">
                   {title}
                 </h2>
               )}
@@ -117,6 +128,7 @@ export function IOSSheet({
               {doneLabel}
             </button>
           </div>
+
 
           <div
             className={cn(
