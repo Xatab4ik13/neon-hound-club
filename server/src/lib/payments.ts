@@ -1,11 +1,11 @@
 /**
- * Высокоуровневая обвязка над Т-Банком:
- *   - создать платёж для pass/order (createPaymentFor*)
- *   - обработать Notification (handleTbankNotification)
+ * Высокоуровневая обвязка над платёжкой (Raiffeisenbank e-commerce):
+ *   - createPaymentFor{Pass,Order} — создать платёж и получить ссылку на форму
+ *   - handleRaifNotification — обработать вебхук
  *
  * Идемпотентность: на каждый ref (pass/order) живёт один активный платёж
  * (status в new/pending/authorized). Если он уже есть — переиспользуем.
- * Повторный CONFIRMED-вебхук не двоит активацию (это уже гарантируют
+ * Повторный CONFIRMED-вебхук не двоит активацию (это гарантируют
  * activatePassPurchase и markOrderPaid).
  */
 import { and, eq, inArray } from "drizzle-orm";
@@ -16,20 +16,16 @@ import { orders } from "../db/schema/shop.js";
 import { activatePassPurchase } from "./pass.js";
 import { markOrderPaid } from "./shop.js";
 import {
-  initPayment,
-  getPaymentState,
-  verifyNotification,
-  mapTbankStatus,
-  isTbankConfigured,
-} from "./tbank.js";
+  createOrder,
+  verifyPaymentCallback,
+  mapRaifStatus,
+  isRaifConfigured,
+  RaifApiError,
+} from "./raif.js";
 
-const SUCCESS_URL =
-  process.env.TBANK_SUCCESS_URL || `${process.env.FRONTEND_ORIGIN || "https://hhr.pro"}/pay/success`;
-const FAIL_URL =
-  process.env.TBANK_FAIL_URL || `${process.env.FRONTEND_ORIGIN || "https://hhr.pro"}/pay/fail`;
-const NOTIFICATION_URL =
-  process.env.TBANK_NOTIFICATION_URL ||
-  `${(process.env.BACKEND_PUBLIC_URL || "https://api.hhr.pro").replace(/\/$/, "")}/api/v1/payments/tbank/webhook`;
+const FRONTEND = (process.env.FRONTEND_ORIGIN || "https://hhr.pro").replace(/\/$/, "");
+const SUCCESS_URL = process.env.RAIF_SUCCESS_URL || `${FRONTEND}/pay/success`;
+const FAIL_URL = process.env.RAIF_FAIL_URL || `${FRONTEND}/pay/fail`;
 
 export class PaymentInitError extends Error {
   code: string;
@@ -64,13 +60,13 @@ function withPaymentId(url: string, paymentId: string): string {
 
 /**
  * Создать (или вернуть существующий) платёж для покупки Hell Pass.
- * Возвращает { payment, paymentUrl } для редиректа на платёжную страницу.
+ * Возвращает { payment, paymentUrl } для редиректа на платёжную форму Райффайзена.
  */
 export async function createPaymentForPass(
   purchaseId: string,
   userId: string,
 ): Promise<{ payment: Payment; paymentUrl: string }> {
-  if (!isTbankConfigured()) {
+  if (!isRaifConfigured()) {
     throw new PaymentInitError("payments_not_configured", "Оплата сейчас недоступна");
   }
   const [purchase] = await db
@@ -87,11 +83,11 @@ export async function createPaymentForPass(
   const existing = await findActivePayment("pass", purchase.id);
   if (existing && existing.paymentUrl) return { payment: existing, paymentUrl: existing.paymentUrl };
 
-  // Создаём нашу запись заранее — её id и пойдёт как OrderId в Т-Банк.
+  // Создаём нашу запись заранее — её id и пойдёт как orderId в Райф.
   const [created] = await db
     .insert(payments)
     .values({
-      provider: "tbank",
+      provider: "raif",
       refType: "pass",
       refId: purchase.id,
       userId,
@@ -100,44 +96,44 @@ export async function createPaymentForPass(
     })
     .returning();
 
-  const init = await initPayment({
-    orderId: created!.id,
-    amountRub: purchase.priceRub,
-    description: `Hell Pass ${purchase.tier.toUpperCase()} — 30 дней`,
-    successUrl: withPaymentId(SUCCESS_URL, created!.id),
-    failUrl: withPaymentId(FAIL_URL, created!.id),
-    notificationUrl: NOTIFICATION_URL,
-    data: { userId, refType: "pass", refId: purchase.id },
-  });
-
-  if (!init.Success || !init.PaymentURL || !init.PaymentId) {
+  try {
+    const order = await createOrder({
+      orderId: created!.id,
+      amountRub: purchase.priceRub,
+      comment: `Hell Pass ${purchase.tier.toUpperCase()} — 30 дней`,
+      successUrl: withPaymentId(SUCCESS_URL, created!.id),
+      failUrl: withPaymentId(FAIL_URL, created!.id),
+      extra: { userId, refType: "pass", refId: purchase.id },
+    });
+    if (!order.payformUrl) {
+      throw new RaifApiError(502, "no_payform_url", "Райффайзен не вернул payformUrl", order);
+    }
+    const [updated] = await db
+      .update(payments)
+      .set({
+        providerPaymentId: order.id,
+        paymentUrl: order.payformUrl,
+        status: "pending",
+        rawInit: order as unknown as Record<string, unknown>,
+        updatedAt: new Date(),
+      })
+      .where(eq(payments.id, created!.id))
+      .returning();
+    return { payment: updated!, paymentUrl: order.payformUrl };
+  } catch (e) {
     await db
       .update(payments)
       .set({
         status: "rejected",
-        rawInit: init as unknown as Record<string, unknown>,
+        rawInit: { error: String(e) } as Record<string, unknown>,
         updatedAt: new Date(),
       })
       .where(eq(payments.id, created!.id));
-    throw new PaymentInitError(
-      init.ErrorCode || "init_failed",
-      init.Message || init.Details || "Не удалось создать платёж",
-    );
+    if (e instanceof RaifApiError) {
+      throw new PaymentInitError(e.code, e.message);
+    }
+    throw new PaymentInitError("init_failed", "Не удалось создать платёж");
   }
-
-  const [updated] = await db
-    .update(payments)
-    .set({
-      providerPaymentId: init.PaymentId,
-      paymentUrl: init.PaymentURL,
-      status: "pending",
-      rawInit: init as unknown as Record<string, unknown>,
-      updatedAt: new Date(),
-    })
-    .where(eq(payments.id, created!.id))
-    .returning();
-
-  return { payment: updated!, paymentUrl: init.PaymentURL };
 }
 
 /** То же самое для заказа мерча. */
@@ -145,7 +141,7 @@ export async function createPaymentForOrder(
   orderId: string,
   userId: string,
 ): Promise<{ payment: Payment; paymentUrl: string }> {
-  if (!isTbankConfigured()) {
+  if (!isRaifConfigured()) {
     throw new PaymentInitError("payments_not_configured", "Оплата сейчас недоступна");
   }
   const [order] = await db.select().from(orders).where(eq(orders.id, orderId)).limit(1);
@@ -161,7 +157,7 @@ export async function createPaymentForOrder(
   const [created] = await db
     .insert(payments)
     .values({
-      provider: "tbank",
+      provider: "raif",
       refType: "order",
       refId: order.id,
       userId,
@@ -170,64 +166,74 @@ export async function createPaymentForOrder(
     })
     .returning();
 
-  const init = await initPayment({
-    orderId: created!.id,
-    amountRub: order.totalRub,
-    description: `Заказ #${order.id.slice(0, 8).toUpperCase()} в магазине HELLHOUND`,
-    successUrl: withPaymentId(SUCCESS_URL, created!.id),
-    failUrl: withPaymentId(FAIL_URL, created!.id),
-    notificationUrl: NOTIFICATION_URL,
-    customerEmail: undefined,
-    customerPhone: order.shipping?.phone,
-    data: { userId, refType: "order", refId: order.id },
-  });
-
-  if (!init.Success || !init.PaymentURL || !init.PaymentId) {
+  try {
+    const raifOrder = await createOrder({
+      orderId: created!.id,
+      amountRub: order.totalRub,
+      comment: `Заказ #${order.id.slice(0, 8).toUpperCase()} в магазине HELLHOUND`,
+      successUrl: withPaymentId(SUCCESS_URL, created!.id),
+      failUrl: withPaymentId(FAIL_URL, created!.id),
+      extra: { userId, refType: "order", refId: order.id },
+    });
+    if (!raifOrder.payformUrl) {
+      throw new RaifApiError(502, "no_payform_url", "Райффайзен не вернул payformUrl", raifOrder);
+    }
+    const [updated] = await db
+      .update(payments)
+      .set({
+        providerPaymentId: raifOrder.id,
+        paymentUrl: raifOrder.payformUrl,
+        status: "pending",
+        rawInit: raifOrder as unknown as Record<string, unknown>,
+        updatedAt: new Date(),
+      })
+      .where(eq(payments.id, created!.id))
+      .returning();
+    return { payment: updated!, paymentUrl: raifOrder.payformUrl };
+  } catch (e) {
     await db
       .update(payments)
       .set({
         status: "rejected",
-        rawInit: init as unknown as Record<string, unknown>,
+        rawInit: { error: String(e) } as Record<string, unknown>,
         updatedAt: new Date(),
       })
       .where(eq(payments.id, created!.id));
-    throw new PaymentInitError(
-      init.ErrorCode || "init_failed",
-      init.Message || init.Details || "Не удалось создать платёж",
-    );
+    if (e instanceof RaifApiError) {
+      throw new PaymentInitError(e.code, e.message);
+    }
+    throw new PaymentInitError("init_failed", "Не удалось создать платёж");
   }
-
-  const [updated] = await db
-    .update(payments)
-    .set({
-      providerPaymentId: init.PaymentId,
-      paymentUrl: init.PaymentURL,
-      status: "pending",
-      rawInit: init as unknown as Record<string, unknown>,
-      updatedAt: new Date(),
-    })
-    .where(eq(payments.id, created!.id))
-    .returning();
-
-  return { payment: updated!, paymentUrl: init.PaymentURL };
 }
 
 /**
- * Обработать Notification от Т-Банка.
- *   1. Подпись (Token).
- *   2. Найти наш payments row по providerPaymentId.
- *   3. Сверить со /GetState (защита на случай утечки пароля).
- *   4. Если статус CONFIRMED — активировать pass или заказ (idempotent).
+ * Обработать Notification от Райффайзена (Уведомление об оплате v3).
+ *   1. Проверка HMAC-SHA-256 подписи (X-Api-Signature-SHA256).
+ *   2. Найти наш payments row по providerPaymentId (= data.order.id).
+ *   3. Сверить сумму (защита от подмены).
+ *   4. Если статус SUCCESS — активировать pass или заказ (idempotent).
  *   5. Обновить наш статус + raw_last_notification.
  *
- * Возвращает true, если можно отвечать клиенту "OK" (т.е. вебхук принят).
- * false — подпись не сошлась или произошла фатальная ошибка (тогда Т-Банк ретраит).
+ * Возвращает true, если можно отвечать 200 OK (вебхук принят).
+ * false — подпись/данные не сошлись (банк не будет ретраить при 400).
  */
-export async function handleTbankNotification(body: Record<string, unknown>): Promise<boolean> {
-  if (!isTbankConfigured()) return false;
-  if (!verifyNotification(body)) return false;
+export async function handleRaifNotification(
+  body: Record<string, unknown>,
+  signature: string | undefined,
+): Promise<boolean> {
+  if (!isRaifConfigured()) return false;
+  if (!verifyPaymentCallback(body, signature)) return false;
 
-  const providerPaymentId = String(body.PaymentId ?? "");
+  const event = body.event as string | undefined;
+  if (event !== "PAYMENT") {
+    // Не платёж (например, REFUND/SUBSCRIPTION) — игнорируем, но считаем принятым.
+    return true;
+  }
+
+  const data = (body.data ?? {}) as Record<string, unknown>;
+  const order = (data.order ?? {}) as Record<string, unknown>;
+  const status = (data.status ?? {}) as Record<string, unknown>;
+  const providerPaymentId = String(order.id ?? "");
   if (!providerPaymentId) return false;
 
   const [payment] = await db
@@ -237,11 +243,21 @@ export async function handleTbankNotification(body: Record<string, unknown>): Pr
     .limit(1);
   if (!payment) return false;
 
-  // Сверка с банком (на случай поддельной подписи).
-  const state = await getPaymentState(providerPaymentId);
-  const trustedStatus = state.Success ? state.Status : (body.Status as string | undefined);
-  const mapped = mapTbankStatus(trustedStatus);
+  // Сверка суммы — клиент мог изменить сумму на форме.
+  const incomingAmount = Number(data.amount);
+  if (!Number.isFinite(incomingAmount) || Math.round(incomingAmount) !== payment.amountRub) {
+    await db
+      .update(payments)
+      .set({
+        status: "rejected",
+        rawLastNotification: body as Record<string, unknown>,
+        updatedAt: new Date(),
+      })
+      .where(eq(payments.id, payment.id));
+    return true; // подпись валидная, но сумма не та — отвечаем 200, чтобы банк не ретраил
+  }
 
+  const mapped = mapRaifStatus(status.value as string | undefined);
   await db
     .update(payments)
     .set({

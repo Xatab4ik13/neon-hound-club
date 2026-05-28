@@ -13,7 +13,7 @@ import {
   PassPurchaseError,
 } from "../lib/pass.js";
 import { createPaymentForPass, PaymentInitError } from "../lib/payments.js";
-import { isTbankConfigured } from "../lib/tbank.js";
+import { isRaifConfigured } from "../lib/raif.js";
 
 // ---------- USER ----------
 
@@ -59,7 +59,7 @@ export async function passRoutes(app: FastifyInstance) {
     try {
       const purchase = await createPassPurchase(session.sub, parsed.data.tier);
       let paymentUrl: string | null = null;
-      if (isTbankConfigured()) {
+      if (isRaifConfigured()) {
         try {
           const p = await createPaymentForPass(purchase.id, session.sub);
           paymentUrl = p.paymentUrl;
