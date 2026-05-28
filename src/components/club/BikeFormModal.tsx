@@ -11,7 +11,6 @@ import { Input } from "@/components/ui/input";
 import { ComboboxWithCustom } from "./ComboboxWithCustom";
 import { getMotorcycleMakes, getModelsForMakeYear, getYears } from "@/lib/nhtsa";
 import { newBikeId, type StoredBike } from "@/data/bike-storage";
-import { IOSSheet } from "@/components/ios/IOSSheet";
 import { IOSListSection, IOSListRow } from "@/components/ios/IOSList";
 import { IOSConfirm } from "@/components/ios/IOSConfirm";
 import { IOSWheelPicker } from "@/components/ios/IOSWheelPicker";
