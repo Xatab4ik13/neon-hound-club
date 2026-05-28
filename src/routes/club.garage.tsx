@@ -74,8 +74,8 @@ function GaragePage() {
 
   const bikes = useMemo(() => (bikesQ.data ?? []).map(toStored), [bikesQ.data]);
 
-  // Префетч NHTSA — только при первом открытии модалки, не на загрузке страницы.
-  // Внутри есть localStorage-кеш на 30 дней, дальнейшие открытия мгновенные.
+  // Прогреваем локальный каталог при первом открытии модалки.
+  // Сейчас источник статический и локальный, поэтому открытие мгновенное.
   const nhtsaPrefetched = useRef(false);
   useEffect(() => {
     if (modalOpen && !nhtsaPrefetched.current) {

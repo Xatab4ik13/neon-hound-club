@@ -9,18 +9,14 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { ComboboxWithCustom } from "./ComboboxWithCustom";
-import {
-  getMotorcycleMakes,
-  getModelsForMakeYear,
-  getYears,
-} from "@/lib/nhtsa";
+import { getMotorcycleMakes, getModelsForMakeYear, getYears } from "@/lib/nhtsa";
 import { newBikeId, type StoredBike } from "@/data/bike-storage";
-import { IOSSheet } from "@/components/ios/IOSSheet";
 import { IOSListSection, IOSListRow } from "@/components/ios/IOSList";
 import { IOSConfirm } from "@/components/ios/IOSConfirm";
 import { IOSWheelPicker } from "@/components/ios/IOSWheelPicker";
 import { IOSDateSheet } from "@/components/ios/IOSDateSheet";
 import { IOSSearchPicker } from "@/components/ios/IOSSearchPicker";
+import { IOSFullScreenModal } from "@/components/ios/IOSFullScreenModal";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 
@@ -102,14 +98,14 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
     setPhotoFile(null);
     setModInput("");
     setPhotoError(null);
-      setSubmitting(false);
-      setBrandSheet(false);
-      setModelSheet(false);
-      setYearSheet(false);
-      setDateSheet(false);
-      setModSheet(false);
-      setPhotoActions(false);
-      setConfirmDiscard(false);
+    setSubmitting(false);
+    setBrandSheet(false);
+    setModelSheet(false);
+    setYearSheet(false);
+    setDateSheet(false);
+    setModSheet(false);
+    setPhotoActions(false);
+    setConfirmDiscard(false);
     initialSnapshotRef.current = JSON.stringify({
       brand: bike?.brand ?? "",
       model: bike?.model ?? "",
@@ -195,7 +191,6 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
     };
   }, [open, brand, year]);
 
-
   function addMod(v: string) {
     const t = v.trim();
     if (!t || mods.includes(t)) return;
@@ -260,11 +255,10 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
   if (isMobile) {
     return (
       <>
-        <IOSSheet
+        <IOSFullScreenModal
           open={open}
           onOpenChange={(v) => requestClose(v)}
           title={bike ? "Редактировать байк" : "Добавить байк"}
-          fullHeight
           onCancel={() => requestClose(false)}
           cancelLabel="Отмена"
           doneLabel={submitting ? "..." : bike ? "Сохранить" : "Добавить"}
@@ -308,7 +302,9 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
                 label="Модель"
                 value={
                   <span className="inline-flex max-w-full items-center gap-2 truncate">
-                    <span className="truncate">{model || (brand ? "Выбрать" : "Сначала марка")}</span>
+                    <span className="truncate">
+                      {model || (brand ? "Выбрать" : "Сначала марка")}
+                    </span>
                     {modelCustom && model && (
                       <span className="shrink-0 rounded border border-primary/30 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.18em] text-primary">
                         custom
@@ -321,12 +317,7 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
                 disabled={!brand}
               />
 
-              <IOSListRow
-                label="Год"
-                value={year}
-                chevron
-                onClick={() => setYearSheet(true)}
-              />
+              <IOSListRow label="Год" value={year} chevron onClick={() => setYearSheet(true)} />
             </IOSListSection>
 
             {/* Детали */}
@@ -398,7 +389,7 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
               <Loader2 className="h-7 w-7 animate-spin text-primary" />
             </div>
           )}
-        </IOSSheet>
+        </IOSFullScreenModal>
 
         {/* Год */}
         <IOSSearchPicker
@@ -430,7 +421,11 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
             setModel(v);
             setModelCustom(custom);
           }}
-          emptyHint={brandCustom ? "Для своей марки введи модель вручную" : "Модель не найдена — можно ввести свою"}
+          emptyHint={
+            brandCustom
+              ? "Для своей марки введи модель вручную"
+              : "Модель не найдена — можно ввести свою"
+          }
         />
 
         <IOSWheelPicker
@@ -457,7 +452,7 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
         />
 
         {/* Новая модификация */}
-        <IOSSheet
+        <IOSFullScreenModal
           open={modSheet}
           onOpenChange={setModSheet}
           title="Тюнинг"
@@ -487,14 +482,15 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
               className="h-12 border-white/[0.08] bg-black/30 text-[16px]"
             />
           </div>
-        </IOSSheet>
+        </IOSFullScreenModal>
 
         {/* Действия с фото */}
-        <IOSSheet
+        <IOSFullScreenModal
           open={photoActions}
           onOpenChange={setPhotoActions}
           title="Фото"
           doneLabel="Закрыть"
+          zIndexClassName="z-[290]"
         >
           <IOSListSection>
             <IOSListRow
@@ -522,7 +518,7 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
               }}
             />
           </IOSListSection>
-        </IOSSheet>
+        </IOSFullScreenModal>
 
         {/* Подтверждение отмены */}
         <IOSConfirm
@@ -551,7 +547,7 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
             {bike ? "Редактировать байк" : "Добавить байк"}
           </DialogTitle>
           <DialogDescription className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-            База NHTSA · если нет в списке — введи вручную
+              Локальный каталог · если нет в списке — введи вручную
           </DialogDescription>
         </DialogHeader>
         <form id="bike-form" onSubmit={handleSubmit} className="space-y-5 pt-2">
@@ -618,7 +614,11 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
               <TextInput value={color} onChange={setColor} placeholder="Чёрный мат, розовый..." />
             </Field>
             <Field label="Прозвище">
-              <TextInput value={nickname} onChange={setNickname} placeholder="Гончая, Чёрная вдова..." />
+              <TextInput
+                value={nickname}
+                onChange={setNickname}
+                placeholder="Гончая, Чёрная вдова..."
+              />
             </Field>
           </div>
 
@@ -807,9 +807,7 @@ function PhotoCard({
           className="hidden"
         />
       </div>
-      {error && (
-        <p className="mt-2 text-center text-[12px] text-destructive">{error}</p>
-      )}
+      {error && <p className="mt-2 text-center text-[12px] text-destructive">{error}</p>}
     </div>
   );
 }
