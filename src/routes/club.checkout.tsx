@@ -146,20 +146,16 @@ function ClubCheckoutPage() {
       queryClient.invalidateQueries({ queryKey: qk.shopOrders });
       queryClient.invalidateQueries({ queryKey: qk.ticketsBalance });
       setPayUrl(pay.paymentUrl);
-      // В PWA (standalone) браузер часто блокирует location.href на внешний домен —
-      // юзер «застревает». Открываем в системном браузере новой вкладкой.
-      const isStandalone =
-        typeof window !== "undefined" &&
-        (window.matchMedia?.("(display-mode: standalone)").matches ||
-          // iOS
-          (window.navigator as unknown as { standalone?: boolean }).standalone === true);
-      if (isStandalone) {
-        const w = window.open(pay.paymentUrl, "_blank", "noopener,noreferrer");
-        if (!w) {
-          // popup заблокирован — попробуем top-level редирект
-          window.location.href = pay.paymentUrl;
-        }
-      } else {
+      // Единый путь: top-level редирект на платёжный шлюз.
+      // - На iOS PWA (standalone) переход на внешний https открывает Safari автоматически.
+      // - На Android Chrome PWA — то же, открывается в Chrome Custom Tab / браузере.
+      // - В обычном браузере — просто навигация.
+      // window.open(_blank) из async-колбэка блокируется как popup, поэтому НЕ используем.
+      // Если по какой-то причине редирект не произошёл (extension/блокировщик) —
+      // ниже отрисован fallback-блок с кнопкой «Открыть оплату» (использует payUrl).
+      try {
+        window.location.assign(pay.paymentUrl);
+      } catch {
         window.location.href = pay.paymentUrl;
       }
       void order;
