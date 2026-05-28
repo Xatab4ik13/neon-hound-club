@@ -161,7 +161,7 @@ function CartPage() {
                 className="mt-4 w-full"
                 onClick={() =>
                   isAuthed
-                    ? navigate({ to: "/checkout" })
+                    ? navigate({ to: "/club/checkout" })
                     : navigate({ to: "/login" })
                 }
               >
