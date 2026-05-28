@@ -145,9 +145,23 @@ function ClubCheckoutPage() {
       clear();
       queryClient.invalidateQueries({ queryKey: qk.shopOrders });
       queryClient.invalidateQueries({ queryKey: qk.ticketsBalance });
-      // Редирект на платёжную страницу Т-Банка. После оплаты юзер вернётся на /pay/success.
-      window.location.href = pay.paymentUrl;
-      // На случай если редирект завис — fallback на success-страницу заказа.
+      setPayUrl(pay.paymentUrl);
+      // В PWA (standalone) браузер часто блокирует location.href на внешний домен —
+      // юзер «застревает». Открываем в системном браузере новой вкладкой.
+      const isStandalone =
+        typeof window !== "undefined" &&
+        (window.matchMedia?.("(display-mode: standalone)").matches ||
+          // iOS
+          (window.navigator as unknown as { standalone?: boolean }).standalone === true);
+      if (isStandalone) {
+        const w = window.open(pay.paymentUrl, "_blank", "noopener,noreferrer");
+        if (!w) {
+          // popup заблокирован — попробуем top-level редирект
+          window.location.href = pay.paymentUrl;
+        }
+      } else {
+        window.location.href = pay.paymentUrl;
+      }
       void order;
     },
     onError: (err) => {
@@ -155,6 +169,9 @@ function ClubCheckoutPage() {
       hhToast.error("Ошибка оплаты", { meta: msg });
     },
   });
+
+  // Если редирект не сработал — показываем кнопку «Открыть оплату»
+  const [payUrl, setPayUrl] = useState<string | null>(null);
 
   const canSubmit =
     form.name.trim().length >= 2 &&
