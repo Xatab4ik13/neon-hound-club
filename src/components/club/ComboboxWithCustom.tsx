@@ -213,15 +213,8 @@ function MobilePicker({
     options.some((o) => o.toLowerCase() === lowerQuery);
   const showCustomOption = normalizedQuery.length > 0 && !queryMatchesOption;
 
-  // Блокируем скролл родительского sheet, пока пикер открыт.
-  useEffect(() => {
-    if (!open) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prev;
-    };
-  }, [open]);
+  // Не блокируем body — vaul уже держит свой scroll-lock,
+  // двойная блокировка приводит к фризу скролла после закрытия пикера.
 
   return (
     <>
@@ -236,7 +229,7 @@ function MobilePicker({
       {open && typeof document !== "undefined" &&
         createPortal(
           <div
-            className="fixed inset-0 z-[200] flex animate-fade-in flex-col bg-[#0d0d0d]"
+            className="fixed inset-0 z-[300] flex animate-fade-in flex-col bg-[#0d0d0d]"
             style={{
               paddingTop: "env(safe-area-inset-top)",
               paddingBottom: "env(safe-area-inset-bottom)",
@@ -256,13 +249,21 @@ function MobilePicker({
                 onClick={() => setOpen(false)}
                 className="-ml-2 flex h-11 items-center px-2 font-mono text-[12px] uppercase tracking-wider text-muted-foreground active:opacity-60"
               >
-                Назад
+                Отмена
               </button>
-              <h2 className="min-w-0 flex-1 truncate text-center font-display text-base font-black italic uppercase tracking-tight">
+              <h2 className="min-w-0 flex-1 truncate text-center text-[15px] font-semibold text-white">
                 {placeholder}
               </h2>
-              <span className="w-[60px]" aria-hidden />
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="-mr-2 flex h-11 items-center px-2 font-mono text-[12px] font-bold uppercase tracking-wider text-primary active:opacity-60"
+              >
+                Готово
+              </button>
             </div>
+
+
 
             {/* Поиск */}
             <div className="shrink-0 border-b border-white/[0.06] bg-[#0d0d0d] px-4 py-3">

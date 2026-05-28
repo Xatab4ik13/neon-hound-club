@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Upload, X } from "lucide-react";
+import { Upload, X, Plus, Loader2, Pencil, Trash2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -16,26 +16,27 @@ import {
 } from "@/lib/nhtsa";
 import { newBikeId, type StoredBike } from "@/data/bike-storage";
 import { IOSSheet } from "@/components/ios/IOSSheet";
+import { IOSListSection, IOSListRow } from "@/components/ios/IOSList";
+import { IOSConfirm } from "@/components/ios/IOSConfirm";
+import { IOSWheelPicker } from "@/components/ios/IOSWheelPicker";
+import { IOSDateSheet } from "@/components/ios/IOSDateSheet";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
 
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  bike: StoredBike | null; // null = create
-  /**
-   * Сохранение байка.
-   * - bike: текущая форма (photo — либо http(s) URL уже на S3, либо dataURL-превью)
-   * - photoFile: если юзер выбрал новый файл — передаём File для загрузки в S3.
-   * Возвращает Promise: на время аплоада форма блокируется.
-   */
+  bike: StoredBike | null;
   onSave: (bike: StoredBike, photoFile?: File | null) => void | Promise<void>;
 };
 
-const MAX_PHOTO_BYTES = 15 * 1024 * 1024; // 15 МБ — большие фото для кропа
+const MAX_PHOTO_BYTES = 15 * 1024 * 1024;
 const YEARS = getYears();
 
-
 export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
+  const isMobile = useIsMobile();
+
+  // ─── state ─────────────────────────────────────────────
   const [brand, setBrand] = useState("");
   const [brandCustom, setBrandCustom] = useState(false);
   const [model, setModel] = useState("");
@@ -46,24 +47,28 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
   const [mileage, setMileage] = useState("");
   const [purchaseDate, setPurchaseDate] = useState("");
   const [mods, setMods] = useState<string[]>([]);
-  const [modInput, setModInput] = useState("");
   const [photo, setPhoto] = useState<string | undefined>(undefined);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoError, setPhotoError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  // Снимок исходного состояния — для определения «грязной» формы.
+  // mobile-only sub-sheets
+  const [yearSheet, setYearSheet] = useState(false);
+  const [dateSheet, setDateSheet] = useState(false);
+  const [modSheet, setModSheet] = useState(false);
+  const [modInput, setModInput] = useState("");
+  const [photoActions, setPhotoActions] = useState(false);
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
+
+  // снимок для определения «грязной» формы
   const initialSnapshotRef = useRef<string>("");
 
-
-
-  // Источники данных
   const [makes, setMakes] = useState<string[]>([]);
   const [makesLoading, setMakesLoading] = useState(false);
   const [models, setModels] = useState<string[]>([]);
   const [modelsLoading, setModelsLoading] = useState(false);
 
-  // Сброс/инициализация при открытии
+  // ─── reset on open ─────────────────────────────────────
   useEffect(() => {
     if (!open) return;
     if (bike) {
@@ -130,23 +135,20 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
     }
     if (submitting) return;
     if (isDirty()) {
-      const ok = window.confirm("Закрыть без сохранения? Изменения будут потеряны.");
-      if (!ok) return;
+      setConfirmDiscard(true);
+      return;
     }
     onOpenChange(false);
   }
 
-
-  // Освобождаем blob-URL при размонтировании — иначе утечёт.
+  // освобождаем blob-URL
   useEffect(() => {
     return () => {
       if (photo && photo.startsWith("blob:")) URL.revokeObjectURL(photo);
     };
   }, [photo]);
 
-
-
-  // Загрузка списка марок
+  // загрузка марок
   useEffect(() => {
     if (!open) return;
     let cancelled = false;
@@ -163,7 +165,7 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
     };
   }, [open]);
 
-  // Загрузка моделей при смене марки/года (только если марка не кастомная)
+  // загрузка моделей при смене марки/года
   useEffect(() => {
     if (!open || !brand || brandCustom) {
       setModels([]);
@@ -183,13 +185,11 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
     };
   }, [open, brand, brandCustom, year]);
 
-  function addMod() {
-    const v = modInput.trim();
-    if (!v || mods.includes(v)) return;
-    setMods([...mods, v]);
-    setModInput("");
+  function addMod(v: string) {
+    const t = v.trim();
+    if (!t || mods.includes(t)) return;
+    setMods([...mods, t]);
   }
-
   function removeMod(m: string) {
     setMods(mods.filter((x) => x !== m));
   }
@@ -205,12 +205,16 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
       setPhotoError("Файл больше 15 МБ");
       return;
     }
-    // Если до этого было локальное превью — освобождаем blob, чтобы не текло.
     if (photo && photo.startsWith("blob:")) URL.revokeObjectURL(photo);
     setPhotoFile(file);
     setPhoto(URL.createObjectURL(file));
   }
 
+  function clearPhoto() {
+    if (photo && photo.startsWith("blob:")) URL.revokeObjectURL(photo);
+    setPhoto(undefined);
+    setPhotoFile(null);
+  }
 
   async function handleSubmit(e?: React.FormEvent) {
     e?.preventDefault();
@@ -239,192 +243,279 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
     }
   }
 
-
-
-  const isMobile = useIsMobile();
   const canSubmit = !!brand.trim() && !!model.trim() && !submitting;
 
-  const formBody = (
-    <form id="bike-form" onSubmit={handleSubmit} className="space-y-5 pt-2">
-      {/* Марка / Год / Модель */}
-      <div className="grid gap-3 sm:grid-cols-[1fr_120px]">
-        <Field label="Марка">
-          <ComboboxWithCustom
-            value={brand}
-            onChange={(v, custom) => {
-              setBrand(v);
-              setBrandCustom(custom);
-              setModel("");
-              setModelCustom(false);
-            }}
-            options={makes}
-            loading={makesLoading}
-            placeholder="Yamaha, Honda..."
-            isCustom={brandCustom}
-          />
-        </Field>
-        <Field label="Год">
-          <select
-            value={year}
-            onChange={(e) => setYear(Number(e.target.value))}
-            className="h-11 w-full border border-white/[0.08] bg-black/30 px-3 text-base text-foreground transition-colors hover:border-white/20 focus:border-primary/60 focus:outline-none"
-          >
-            {YEARS.map((y) => (
-              <option key={y} value={y} className="bg-[#0b0b0b]">
-                {y}
-              </option>
-            ))}
-          </select>
-        </Field>
-      </div>
-
-      <Field label="Модель">
-        <ComboboxWithCustom
-          value={model}
-          onChange={(v, custom) => {
-            setModel(v);
-            setModelCustom(custom);
+  // ─── мобильный iOS-форм-фактор ─────────────────────────
+  if (isMobile) {
+    return (
+      <>
+        <IOSSheet
+          open={open}
+          onOpenChange={(v) => requestClose(v)}
+          title={bike ? "Редактировать байк" : "Добавить байк"}
+          fullHeight
+          onCancel={() => requestClose(false)}
+          cancelLabel="Отмена"
+          doneLabel={submitting ? "..." : bike ? "Сохранить" : "Добавить"}
+          doneDisabled={!canSubmit}
+          onDone={() => {
+            if (!canSubmit) return;
+            void handleSubmit();
           }}
-          options={models}
-          loading={modelsLoading}
-          placeholder={brand ? "Выбрать модель..." : "Сначала выбери марку"}
-          disabled={!brand}
-          isCustom={modelCustom}
-          emptyHint={
-            brandCustom
-              ? "Кастомная марка — введи модель вручную"
-              : "Моделей не найдено — введи вручную"
-          }
+          contentClassName="px-0 pt-3"
+        >
+          <div className={cn("space-y-5 pb-6", submitting && "pointer-events-none opacity-60")}>
+            {/* Фото */}
+            <div className="px-4">
+              <PhotoCard
+                photo={photo}
+                error={photoError}
+                onPick={handlePhoto}
+                onTapWhenFilled={() => setPhotoActions(true)}
+              />
+            </div>
+
+            {/* Основное */}
+            <IOSListSection title="Мотоцикл">
+              <IOSListRow
+                label="Марка"
+                onClick={undefined}
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <span className="shrink-0 text-[15px] text-foreground">Марка</span>
+                  <div className="min-w-0 flex-1">
+                    <ComboboxWithCustom
+                      value={brand}
+                      onChange={(v, custom) => {
+                        setBrand(v);
+                        setBrandCustom(custom);
+                        setModel("");
+                        setModelCustom(false);
+                      }}
+                      options={makes}
+                      loading={makesLoading}
+                      placeholder="Выбрать марку"
+                      isCustom={brandCustom}
+                    />
+                  </div>
+                </div>
+              </IOSListRow>
+
+              <IOSListRow>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="shrink-0 text-[15px] text-foreground">Модель</span>
+                  <div className="min-w-0 flex-1">
+                    <ComboboxWithCustom
+                      value={model}
+                      onChange={(v, custom) => {
+                        setModel(v);
+                        setModelCustom(custom);
+                      }}
+                      options={models}
+                      loading={modelsLoading}
+                      placeholder={brand ? "Выбрать модель" : "Сначала марка"}
+                      disabled={!brand}
+                      isCustom={modelCustom}
+                      emptyHint={
+                        brandCustom
+                          ? "Кастомная марка — введи модель"
+                          : "Не найдено — введи вручную"
+                      }
+                    />
+                  </div>
+                </div>
+              </IOSListRow>
+
+              <IOSListRow
+                label="Год"
+                value={year}
+                chevron
+                onClick={() => setYearSheet(true)}
+              />
+            </IOSListSection>
+
+            {/* Детали */}
+            <IOSListSection title="Детали">
+              <IOSListRow>
+                <InlineTextRow
+                  label="Цвет"
+                  value={color}
+                  onChange={setColor}
+                  placeholder="Чёрный мат"
+                />
+              </IOSListRow>
+              <IOSListRow>
+                <InlineTextRow
+                  label="Прозвище"
+                  value={nickname}
+                  onChange={setNickname}
+                  placeholder="Гончая"
+                />
+              </IOSListRow>
+              <IOSListRow>
+                <InlineTextRow
+                  label="Пробег"
+                  value={mileage}
+                  onChange={setMileage}
+                  placeholder="18 400 км"
+                  inputMode="numeric"
+                />
+              </IOSListRow>
+              <IOSListRow
+                label="Куплен"
+                value={purchaseDate ? formatDate(purchaseDate) : "—"}
+                chevron
+                onClick={() => setDateSheet(true)}
+              />
+            </IOSListSection>
+
+            {/* Тюнинг */}
+            <IOSListSection title="Тюнинг и модификации">
+              <IOSListRow
+                label="Добавить"
+                icon={<Plus className="h-5 w-5 text-primary" />}
+                onClick={() => {
+                  setModInput("");
+                  setModSheet(true);
+                }}
+              />
+              {mods.map((m) => (
+                <IOSListRow
+                  key={m}
+                  label={m}
+                  trailing={
+                    <button
+                      type="button"
+                      onClick={() => removeMod(m)}
+                      aria-label={`Удалить ${m}`}
+                      className="flex h-9 w-9 items-center justify-center -mr-2 text-muted-foreground active:opacity-60"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  }
+                />
+              ))}
+            </IOSListSection>
+          </div>
+
+          {submitting && (
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/40">
+              <Loader2 className="h-7 w-7 animate-spin text-primary" />
+            </div>
+          )}
+        </IOSSheet>
+
+        {/* Год */}
+        <IOSWheelPicker
+          open={yearSheet}
+          onOpenChange={setYearSheet}
+          title="Год выпуска"
+          columns={[
+            {
+              options: YEARS.map(String),
+              value: String(year),
+              onChange: (v) => setYear(Number(v)),
+              width: "w-24",
+            },
+          ]}
         />
-      </Field>
 
-      <PhotoField
-        photo={photo}
-        error={photoError}
-        onPick={handlePhoto}
-        onClear={() => {
-          if (photo && photo.startsWith("blob:")) URL.revokeObjectURL(photo);
-          setPhoto(undefined);
-          setPhotoFile(null);
-        }}
-      />
+        {/* Дата */}
+        <IOSDateSheet
+          open={dateSheet}
+          onOpenChange={setDateSheet}
+          value={purchaseDate}
+          onChange={setPurchaseDate}
+          title="Дата покупки"
+        />
 
-
-      <div className="grid gap-3 sm:grid-cols-2">
-        <Field label="Цвет">
-          <TextInput value={color} onChange={setColor} placeholder="Чёрный мат, розовый..." />
-        </Field>
-        <Field label="Прозвище">
-          <TextInput value={nickname} onChange={setNickname} placeholder="Гончая, Чёрная вдова..." />
-        </Field>
-      </div>
-
-      <div className="grid gap-3 sm:grid-cols-2">
-        <Field label="Пробег">
-          <TextInput value={mileage} onChange={setMileage} placeholder="18 400 км" />
-        </Field>
-        <Field label="Дата покупки">
-          <input
-            type="date"
-            value={purchaseDate}
-            onChange={(e) => setPurchaseDate(e.target.value)}
-            className="h-11 w-full border border-white/[0.08] bg-black/30 px-3 text-base text-foreground transition-colors hover:border-white/20 focus:border-primary/60 focus:outline-none"
-          />
-        </Field>
-      </div>
-
-      <Field label="Тюнинг / модификации">
-        <div className="space-y-2">
-          <div className="flex gap-2">
+        {/* Новая модификация */}
+        <IOSSheet
+          open={modSheet}
+          onOpenChange={setModSheet}
+          title="Тюнинг"
+          onCancel={() => setModSheet(false)}
+          doneLabel="Добавить"
+          doneDisabled={!modInput.trim()}
+          onDone={() => {
+            addMod(modInput);
+            setModSheet(false);
+          }}
+        >
+          <div className="pt-2">
             <Input
+              autoFocus
               value={modInput}
               onChange={(e) => setModInput(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   e.preventDefault();
-                  addMod();
+                  if (modInput.trim()) {
+                    addMod(modInput);
+                    setModSheet(false);
+                  }
                 }
               }}
               placeholder="Akrapovič, Pazzo levers..."
-              className="h-11 border-white/[0.08] bg-black/30 text-base"
+              className="h-12 border-white/[0.08] bg-black/30 text-[16px]"
             />
-            <button
-              type="button"
-              onClick={addMod}
-              disabled={!modInput.trim()}
-              className="h-11 shrink-0 border border-white/[0.08] bg-black/30 px-4 font-mono text-[11px] uppercase tracking-wider text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary disabled:opacity-40"
-            >
-              + Добавить
-            </button>
           </div>
-          {mods.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
-              {mods.map((m) => (
-                <span
-                  key={m}
-                  className="inline-flex items-center gap-0.5 border border-primary/30 bg-primary/[0.06] py-1 pl-2.5 pr-1 font-mono text-[11px] uppercase tracking-wider text-primary"
-                >
-                  {m}
-                  <button
-                    type="button"
-                    onClick={() => removeMod(m)}
-                    aria-label={`Удалить ${m}`}
-                    className="flex h-7 w-7 items-center justify-center opacity-60 active:opacity-100"
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </button>
-                </span>
-              ))}
-            </div>
-          )}
-        </div>
-      </Field>
+        </IOSSheet>
 
-      {/* Десктоп: footer actions. Мобайл: Сохранить — в шапке IOSSheet. */}
-      {!isMobile && (
-        <div className="flex items-center justify-end gap-2 border-t border-white/[0.06] pt-4">
-          <button
-            type="button"
-            onClick={() => requestClose(false)}
-            className="border border-white/[0.08] bg-transparent px-4 py-2 font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground transition-colors hover:border-white/30 hover:text-foreground"
-          >
-            Отмена
-          </button>
+        {/* Действия с фото */}
+        <IOSSheet
+          open={photoActions}
+          onOpenChange={setPhotoActions}
+          title="Фото"
+          doneLabel="Закрыть"
+        >
+          <IOSListSection>
+            <IOSListRow
+              icon={<Pencil className="h-5 w-5" />}
+              label="Заменить"
+              onClick={() => {
+                setPhotoActions(false);
+                // даём sheet закрыться и потом открываем file picker
+                setTimeout(() => {
+                  const inp = document.createElement("input");
+                  inp.type = "file";
+                  inp.accept = "image/png,image/jpeg,image/webp";
+                  inp.onchange = () => handlePhoto(inp.files?.[0] ?? undefined);
+                  inp.click();
+                }, 200);
+              }}
+            />
+            <IOSListRow
+              icon={<Trash2 className="h-5 w-5" />}
+              label="Удалить фото"
+              tone="danger"
+              onClick={() => {
+                clearPhoto();
+                setPhotoActions(false);
+              }}
+            />
+          </IOSListSection>
+        </IOSSheet>
 
-          <button
-            type="button"
-            onClick={() => handleSubmit()}
-            disabled={!canSubmit}
-            className="border border-primary bg-primary px-4 py-2 font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            {submitting ? "Сохраняем…" : bike ? "Сохранить" : "Добавить"}
-          </button>
-        </div>
-      )}
-    </form>
-  );
-
-  if (isMobile) {
-    return (
-      <IOSSheet
-        open={open}
-        onOpenChange={requestClose}
-
-        title={bike ? "Редактировать байк" : "Добавить байк"}
-        fullHeight
-        doneLabel={submitting ? "..." : bike ? "Сохранить" : "Добавить"}
-        doneDisabled={!canSubmit}
-        onDone={() => {
-          if (!canSubmit) return;
-          void handleSubmit();
-        }}
-      >
-        {formBody}
-      </IOSSheet>
+        {/* Подтверждение отмены */}
+        <IOSConfirm
+          open={confirmDiscard}
+          onOpenChange={setConfirmDiscard}
+          title="Закрыть без сохранения?"
+          description="Все изменения будут потеряны."
+          confirmLabel="Закрыть"
+          cancelLabel="Остаться"
+          destructive
+          onConfirm={() => {
+            setConfirmDiscard(false);
+            onOpenChange(false);
+          }}
+        />
+      </>
     );
   }
 
-
+  // ─── десктоп ───────────────────────────────────────────
   return (
     <Dialog open={open} onOpenChange={requestClose}>
       <DialogContent className="max-h-[92vh] overflow-y-auto border-white/[0.08] bg-[#0b0b0b] sm:max-w-2xl">
@@ -436,9 +527,263 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
             База NHTSA · если нет в списке — введи вручную
           </DialogDescription>
         </DialogHeader>
-        {formBody}
+        <form id="bike-form" onSubmit={handleSubmit} className="space-y-5 pt-2">
+          <div className="grid gap-3 sm:grid-cols-[1fr_120px]">
+            <Field label="Марка">
+              <ComboboxWithCustom
+                value={brand}
+                onChange={(v, custom) => {
+                  setBrand(v);
+                  setBrandCustom(custom);
+                  setModel("");
+                  setModelCustom(false);
+                }}
+                options={makes}
+                loading={makesLoading}
+                placeholder="Yamaha, Honda..."
+                isCustom={brandCustom}
+              />
+            </Field>
+            <Field label="Год">
+              <select
+                value={year}
+                onChange={(e) => setYear(Number(e.target.value))}
+                className="h-11 w-full border border-white/[0.08] bg-black/30 px-3 text-base text-foreground transition-colors hover:border-white/20 focus:border-primary/60 focus:outline-none"
+              >
+                {YEARS.map((y) => (
+                  <option key={y} value={y} className="bg-[#0b0b0b]">
+                    {y}
+                  </option>
+                ))}
+              </select>
+            </Field>
+          </div>
+
+          <Field label="Модель">
+            <ComboboxWithCustom
+              value={model}
+              onChange={(v, custom) => {
+                setModel(v);
+                setModelCustom(custom);
+              }}
+              options={models}
+              loading={modelsLoading}
+              placeholder={brand ? "Выбрать модель..." : "Сначала выбери марку"}
+              disabled={!brand}
+              isCustom={modelCustom}
+              emptyHint={
+                brandCustom
+                  ? "Кастомная марка — введи модель вручную"
+                  : "Моделей не найдено — введи вручную"
+              }
+            />
+          </Field>
+
+          <DesktopPhotoField
+            photo={photo}
+            error={photoError}
+            onPick={handlePhoto}
+            onClear={clearPhoto}
+          />
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label="Цвет">
+              <TextInput value={color} onChange={setColor} placeholder="Чёрный мат, розовый..." />
+            </Field>
+            <Field label="Прозвище">
+              <TextInput value={nickname} onChange={setNickname} placeholder="Гончая, Чёрная вдова..." />
+            </Field>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label="Пробег">
+              <TextInput value={mileage} onChange={setMileage} placeholder="18 400 км" />
+            </Field>
+            <Field label="Дата покупки">
+              <input
+                type="date"
+                value={purchaseDate}
+                onChange={(e) => setPurchaseDate(e.target.value)}
+                className="h-11 w-full border border-white/[0.08] bg-black/30 px-3 text-base text-foreground transition-colors hover:border-white/20 focus:border-primary/60 focus:outline-none"
+              />
+            </Field>
+          </div>
+
+          <Field label="Тюнинг / модификации">
+            <div className="space-y-2">
+              <div className="flex gap-2">
+                <Input
+                  value={modInput}
+                  onChange={(e) => setModInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      if (modInput.trim()) {
+                        addMod(modInput);
+                        setModInput("");
+                      }
+                    }
+                  }}
+                  placeholder="Akrapovič, Pazzo levers..."
+                  className="h-11 border-white/[0.08] bg-black/30 text-base"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (modInput.trim()) {
+                      addMod(modInput);
+                      setModInput("");
+                    }
+                  }}
+                  disabled={!modInput.trim()}
+                  className="h-11 shrink-0 border border-white/[0.08] bg-black/30 px-4 font-mono text-[11px] uppercase tracking-wider text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary disabled:opacity-40"
+                >
+                  + Добавить
+                </button>
+              </div>
+              {mods.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {mods.map((m) => (
+                    <span
+                      key={m}
+                      className="inline-flex items-center gap-0.5 border border-primary/30 bg-primary/[0.06] py-1 pl-2.5 pr-1 font-mono text-[11px] uppercase tracking-wider text-primary"
+                    >
+                      {m}
+                      <button
+                        type="button"
+                        onClick={() => removeMod(m)}
+                        aria-label={`Удалить ${m}`}
+                        className="flex h-7 w-7 items-center justify-center opacity-60 active:opacity-100"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          </Field>
+
+          <div className="flex items-center justify-end gap-2 border-t border-white/[0.06] pt-4">
+            <button
+              type="button"
+              onClick={() => requestClose(false)}
+              className="border border-white/[0.08] bg-transparent px-4 py-2 font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground transition-colors hover:border-white/30 hover:text-foreground"
+            >
+              Отмена
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSubmit()}
+              disabled={!canSubmit}
+              className="border border-primary bg-primary px-4 py-2 font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              {submitting ? "Сохраняем…" : bike ? "Сохранить" : "Добавить"}
+            </button>
+          </div>
+        </form>
       </DialogContent>
     </Dialog>
+  );
+}
+
+// ───────── helpers ─────────
+
+function formatDate(iso: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return iso;
+  const [y, m, d] = iso.split("-");
+  return `${d}.${m}.${y}`;
+}
+
+function InlineTextRow({
+  label,
+  value,
+  onChange,
+  placeholder,
+  inputMode,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  inputMode?: "text" | "numeric" | "decimal" | "search";
+}) {
+  return (
+    <div className="flex items-center gap-3">
+      <span className="shrink-0 text-[15px] text-foreground w-[100px]">{label}</span>
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        inputMode={inputMode}
+        autoCapitalize="off"
+        autoCorrect="off"
+        spellCheck={false}
+        className="flex-1 bg-transparent text-right text-[15px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none"
+      />
+    </div>
+  );
+}
+
+function PhotoCard({
+  photo,
+  error,
+  onPick,
+  onTapWhenFilled,
+}: {
+  photo: string | undefined;
+  error: string | null;
+  onPick: (f: File | undefined) => void;
+  onTapWhenFilled: () => void;
+}) {
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  return (
+    <div>
+      <div
+        onClick={() => (photo ? onTapWhenFilled() : fileRef.current?.click())}
+        className={cn(
+          "relative flex aspect-[16/10] w-full items-center justify-center overflow-hidden rounded-2xl border border-white/[0.06]",
+          photo ? "bg-black/40" : "bg-white/[0.03] active:bg-white/[0.05]",
+        )}
+      >
+        {photo ? (
+          <>
+            <img
+              src={photo}
+              alt="Превью байка"
+              className="max-h-full max-w-full object-contain"
+              style={{
+                filter:
+                  "drop-shadow(0 0 1px color-mix(in oklab, var(--primary) 80%, transparent)) drop-shadow(0 0 8px color-mix(in oklab, var(--primary) 30%, transparent))",
+              }}
+            />
+            <div className="absolute bottom-2 right-2 rounded-full bg-black/60 px-3 py-1.5 text-[11px] font-medium text-white backdrop-blur">
+              Изменить
+            </div>
+          </>
+        ) : (
+          <div className="flex flex-col items-center gap-2 text-muted-foreground">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full border border-white/15 bg-white/[0.04]">
+              <Upload className="h-5 w-5" />
+            </div>
+            <span className="text-[13px]">Добавить фото</span>
+            <span className="text-[11px] opacity-60">PNG, JPG, WEBP · до 15 МБ</span>
+          </div>
+        )}
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/png,image/jpeg,image/webp"
+          onChange={(e) => onPick(e.target.files?.[0] ?? undefined)}
+          className="hidden"
+        />
+      </div>
+      {error && (
+        <p className="mt-2 text-center text-[12px] text-destructive">{error}</p>
+      )}
+    </div>
   );
 }
 
@@ -472,7 +817,7 @@ function TextInput({
   );
 }
 
-function PhotoField({
+function DesktopPhotoField({
   photo,
   error,
   onPick,
@@ -544,7 +889,7 @@ function PhotoField({
               Перетащи или выбери файл
             </span>
             <span className="font-mono text-[10px] uppercase tracking-wider opacity-60">
-              PNG, JPG, WEBP · до 5 МБ
+              PNG, JPG, WEBP · до 15 МБ
             </span>
           </button>
         )}
@@ -561,9 +906,6 @@ function PhotoField({
           {error}
         </p>
       )}
-      <p className="mt-1.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground opacity-60">
-        Совет: PNG с прозрачным фоном смотрится лучше всего
-      </p>
     </div>
   );
 }
