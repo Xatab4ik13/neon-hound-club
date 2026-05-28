@@ -5,7 +5,7 @@ import {
   createPaymentForOrder,
   createPaymentForPass,
   getPaymentStatusForUser,
-  handleTbankNotification,
+  handleRaifNotification,
   PaymentInitError,
 } from "../lib/payments.js";
 
@@ -68,21 +68,24 @@ export async function paymentsRoutes(app: FastifyInstance) {
     },
   );
 
-  // POST /api/v1/payments/tbank/webhook — Notification от Т-Банка.
-  // Без auth. Ответ строго текстом "OK" — иначе банк ретраит.
-  app.post("/tbank/webhook", async (req, reply) => {
+  // POST /api/v1/payments/raif/webhook — Notification от Райффайзена.
+  // Подпись в заголовке X-Api-Signature-SHA256 (HMAC-SHA-256 от контрольной строки).
+  // Уведомления приходят с IP 193.28.44.23.
+  app.post("/raif/webhook", async (req, reply) => {
     const body = (req.body ?? {}) as Record<string, unknown>;
+    const signature =
+      (req.headers["x-api-signature-sha256"] as string | undefined) ??
+      (req.headers["X-Api-Signature-SHA256"] as string | undefined);
     try {
-      const ok = await handleTbankNotification(body);
+      const ok = await handleRaifNotification(body, signature);
       if (!ok) {
-        req.log.warn({ body }, "tbank webhook rejected");
-        return reply.code(400).type("text/plain").send("ERR");
+        req.log.warn({ body }, "raif webhook rejected (bad signature or unknown payment)");
+        return reply.code(400).send({ error: "invalid_signature" });
       }
-      return reply.code(200).type("text/plain").send("OK");
+      return reply.code(200).send({ ok: true });
     } catch (e) {
-      req.log.error({ err: e, body }, "tbank webhook crashed");
-      // 500 → банк ретраит, что нам и нужно при временной ошибке БД.
-      return reply.code(500).type("text/plain").send("ERR");
+      req.log.error({ err: e, body }, "raif webhook crashed");
+      return reply.code(500).send({ error: "internal" });
     }
   });
 }
