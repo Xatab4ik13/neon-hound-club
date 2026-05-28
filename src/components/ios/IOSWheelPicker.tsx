@@ -38,11 +38,11 @@ export function IOSWheelPicker({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[300] flex flex-col justify-end bg-black/60 animate-in fade-in-0"
+      className="fixed inset-0 z-[320] flex flex-col justify-end bg-black/60 animate-in fade-in-0"
       onClick={() => onOpenChange(false)}
     >
       <div
-        className="rounded-t-[20px] border-t border-white/[0.08] bg-[#1c1c1e] pb-[env(safe-area-inset-bottom)] animate-in slide-in-from-bottom"
+          className="rounded-t-[20px] border-t border-white/[0.08] bg-[#1c1c1e] pb-[env(safe-area-inset-bottom)] animate-in slide-in-from-bottom"
         onClick={(e) => e.stopPropagation()}
         style={{ touchAction: "pan-y" }}
       >
