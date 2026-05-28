@@ -290,40 +290,36 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
             <IOSListSection title="Мотоцикл">
               <IOSListRow
                 label="Марка"
-                value={brand || "Выбрать"}
+                value={
+                  <span className="inline-flex max-w-full items-center gap-2 truncate">
+                    <span className="truncate">{brand || "Выбрать"}</span>
+                    {brandCustom && brand && (
+                      <span className="shrink-0 rounded border border-primary/30 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.18em] text-primary">
+                        custom
+                      </span>
+                    )}
+                  </span>
+                }
                 chevron
                 onClick={() => setBrandSheet(true)}
-              >
-                <div className="flex items-center gap-3">
-                  <span className="shrink-0 text-[15px] text-foreground">Марка</span>
-                  <div className="min-w-0 flex-1 text-right text-[15px] text-muted-foreground">
-                    <span className="inline-flex max-w-full items-center gap-2 truncate">
-                      <span className="truncate">{brand || "Выбрать"}</span>
-                      {brandCustom && brand && (
-                        <span className="shrink-0 rounded border border-primary/30 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.18em] text-primary">
-                          custom
-                        </span>
-                      )}
-                    </span>
-                  </div>
-                </div>
-              </IOSListRow>
+              />
 
-              <IOSListRow onClick={() => brand && setModelSheet(true)} chevron disabled={!brand}>
-                <div className="flex items-center gap-3">
-                  <span className="shrink-0 text-[15px] text-foreground">Модель</span>
-                  <div className="min-w-0 flex-1 text-right text-[15px] text-muted-foreground">
-                    <span className="inline-flex max-w-full items-center gap-2 truncate">
-                      <span className="truncate">{model || (brand ? "Выбрать" : "Сначала марка")}</span>
-                      {modelCustom && model && (
-                        <span className="shrink-0 rounded border border-primary/30 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.18em] text-primary">
-                          custom
-                        </span>
-                      )}
-                    </span>
-                  </div>
-                </div>
-              </IOSListRow>
+              <IOSListRow
+                label="Модель"
+                value={
+                  <span className="inline-flex max-w-full items-center gap-2 truncate">
+                    <span className="truncate">{model || (brand ? "Выбрать" : "Сначала марка")}</span>
+                    {modelCustom && model && (
+                      <span className="shrink-0 rounded border border-primary/30 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.18em] text-primary">
+                        custom
+                      </span>
+                    )}
+                  </span>
+                }
+                onClick={() => brand && setModelSheet(true)}
+                chevron
+                disabled={!brand}
+              />
 
               <IOSListRow
                 label="Год"
