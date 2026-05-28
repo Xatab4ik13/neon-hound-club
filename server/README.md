@@ -11,8 +11,8 @@ Fastify 5 + Drizzle + Postgres 16 + Redis + MinIO. Auth — свой JWT в http
 ```bash
 # на VPS
 git clone <repo> hellhound && cd hellhound/server
-cp .env.example .env
-nano .env                  # выставить пароли, JWT_SECRET, домены
+test -f .env || cp .env.example .env
+nano .env                  # если .env уже есть — НЕ перетирать, только править точечно
 docker compose up -d --build
 docker compose exec api npm run db:migrate
 ```
@@ -46,6 +46,8 @@ docker compose exec api npm run db:migrate   # если есть новые ми
 ```bash
 curl https://api.hhr.pro/healthz
 # {"ok":true,"ts":...}
+
+`/health` тоже отвечает тем же payload для внешних health-check систем.
 ```
 
 ## Структура
