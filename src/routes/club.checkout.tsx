@@ -203,10 +203,7 @@ function ClubCheckoutPage() {
   // Если в корзине только старые позиции без productId — оформить нельзя
 
   return (
-    <main
-      className="mx-auto w-full max-w-3xl px-4 py-5 md:py-8"
-      style={{ paddingBottom: "calc(124px + env(safe-area-inset-bottom))" }}
-    >
+    <main className="mx-auto w-full max-w-3xl px-4 py-5 pb-[calc(124px+env(safe-area-inset-bottom))] md:max-w-6xl md:px-8 md:py-10 md:pb-16">
       <PageHeader title="Оформление" subtitle="Доставка и оплата" />
 
       {payUrl && (
@@ -228,204 +225,218 @@ function ClubCheckoutPage() {
         </div>
       )}
 
-      <form onSubmit={submit} className="space-y-5">
-        {/* Контакты */}
-        <Section icon={<User className="h-3.5 w-3.5" />} title="Получатель">
-          <FieldRow label="Имя">
-            <DadataInput
-              type="fio"
-              value={form.name}
-              onChange={(v) => set("name", v)}
-              params={{ parts: ["SURNAME", "NAME", "PATRONYMIC"] }}
-              placeholder="Иван Иванов"
-              autoComplete="name"
-              required
-            />
-          </FieldRow>
-          <FieldRow label="Телефон">
-            <input
-              value={form.phone}
-              onChange={(e) => set("phone", formatRuPhone(e.target.value))}
-              type="tel"
-              inputMode="tel"
-              placeholder="+7 (___) ___-__-__"
-              autoComplete="tel"
-              required
-              className="min-w-0 flex-1 bg-transparent py-1.5 text-right text-[15px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none"
-            />
-          </FieldRow>
-          <FieldRow label="Email" last>
-            <DadataInput
-              type="email"
-              value={form.email}
-              onChange={(v) => set("email", v)}
-              inputType="email"
-              inputMode="email"
-              placeholder="rider@example.com"
-              autoComplete="email"
-              required
-            />
-          </FieldRow>
-        </Section>
+      <form onSubmit={submit} className="md:grid md:grid-cols-[1fr_380px] md:items-start md:gap-8">
+        {/* ЛЕВАЯ КОЛОНКА: данные получателя/доставки */}
+        <div className="space-y-5">
+          {/* Контакты */}
+          <Section icon={<User className="h-3.5 w-3.5" />} title="Получатель">
+            <FieldRow label="Имя">
+              <DadataInput
+                type="fio"
+                value={form.name}
+                onChange={(v) => set("name", v)}
+                params={{ parts: ["SURNAME", "NAME", "PATRONYMIC"] }}
+                placeholder="Иван Иванов"
+                autoComplete="name"
+                required
+              />
+            </FieldRow>
+            <FieldRow label="Телефон">
+              <input
+                value={form.phone}
+                onChange={(e) => set("phone", formatRuPhone(e.target.value))}
+                type="tel"
+                inputMode="tel"
+                placeholder="+7 (___) ___-__-__"
+                autoComplete="tel"
+                required
+                className="min-w-0 flex-1 bg-transparent py-1.5 text-right text-[15px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none"
+              />
+            </FieldRow>
+            <FieldRow label="Email" last>
+              <DadataInput
+                type="email"
+                value={form.email}
+                onChange={(v) => set("email", v)}
+                inputType="email"
+                inputMode="email"
+                placeholder="rider@example.com"
+                autoComplete="email"
+                required
+              />
+            </FieldRow>
+          </Section>
 
-        {/* Доставка */}
-        <Section icon={<MapPin className="h-3.5 w-3.5" />} title="Доставка">
-          <FieldRow label="Город">
-            <DadataInput
-              type="address"
-              value={form.city}
-              onChange={(v) => set("city", v)}
-              onSelect={(s) => {
-                const d = s.data as DadataAddressData;
-                const city = d.city_with_type || d.settlement_with_type || s.value;
-                set("city", city);
-              }}
-              params={{ from_bound: { value: "city" }, to_bound: { value: "settlement" } }}
-              placeholder="Москва"
-              autoComplete="address-level2"
-              required
-            />
-          </FieldRow>
-          <FieldRow label="Адрес" last>
-            <DadataInput
-              type="address"
-              value={form.address}
-              onChange={(v) => set("address", v)}
-              onSelect={(s) => {
-                const d = s.data as DadataAddressData;
-                if (!touchedRef.current.has("city")) {
-                  const city = d.city_with_type || d.settlement_with_type || "";
-                  if (city) {
-                    set("city", city);
-                    touchedRef.current.delete("city");
+          {/* Доставка */}
+          <Section icon={<MapPin className="h-3.5 w-3.5" />} title="Доставка">
+            <FieldRow label="Город">
+              <DadataInput
+                type="address"
+                value={form.city}
+                onChange={(v) => set("city", v)}
+                onSelect={(s) => {
+                  const d = s.data as DadataAddressData;
+                  const city = d.city_with_type || d.settlement_with_type || s.value;
+                  set("city", city);
+                }}
+                params={{ from_bound: { value: "city" }, to_bound: { value: "settlement" } }}
+                placeholder="Москва"
+                autoComplete="address-level2"
+                required
+              />
+            </FieldRow>
+            <FieldRow label="Адрес" last>
+              <DadataInput
+                type="address"
+                value={form.address}
+                onChange={(v) => set("address", v)}
+                onSelect={(s) => {
+                  const d = s.data as DadataAddressData;
+                  if (!touchedRef.current.has("city")) {
+                    const city = d.city_with_type || d.settlement_with_type || "";
+                    if (city) {
+                      set("city", city);
+                      touchedRef.current.delete("city");
+                    }
                   }
-                }
-                set("address", s.value);
-              }}
-              params={{ from_bound: { value: "street" }, to_bound: { value: "flat" } }}
-              placeholder="Улица, дом, кв."
-              autoComplete="street-address"
-              required
-            />
-          </FieldRow>
-        </Section>
+                  set("address", s.value);
+                }}
+                params={{ from_bound: { value: "street" }, to_bound: { value: "flat" } }}
+                placeholder="Улица, дом, кв."
+                autoComplete="street-address"
+                required
+              />
+            </FieldRow>
+          </Section>
 
-
-        <div className="flex items-center gap-3 rounded-2xl border border-white/[0.06] bg-card/40 px-4 py-3">
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
-            <Truck className="h-4 w-4" />
-          </span>
-          <div className="min-w-0 flex-1">
-            <div className="text-[14px] font-semibold text-foreground">СДЭК</div>
-            <div className="text-[12px] text-muted-foreground">
-              По всей России, 2–5 дней. Расчёт курьером.
-            </div>
-          </div>
-          <CheckCircle2 className="h-5 w-5 shrink-0 text-primary" />
-        </div>
-
-        {/* Состав заказа */}
-        <section className="overflow-hidden rounded-2xl border border-white/[0.06] bg-card/40">
-          <div className="border-b border-white/[0.05] px-4 py-3">
-            <span className="font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
-              Заказ · {items.length}
-            </span>
-          </div>
-          <ul className="divide-y divide-white/[0.05]">
-            {items.map((i) => (
-              <li key={i.id} className="flex items-center gap-3 px-3 py-2.5">
-                <img
-                  src={i.image}
-                  alt={i.name}
-                  className="h-12 w-12 shrink-0 rounded-lg object-cover"
-                />
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-[13px] font-semibold text-foreground">
-                    {i.name}
-                  </div>
-                  <div className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-                    {i.size ? `${i.size} · ` : ""}× {i.qty}
-                  </div>
-                </div>
-                <span className="font-mono text-[13px] tabular-nums text-foreground">
-                  {(i.price * i.qty).toLocaleString("ru-RU")} ₽
-                </span>
-              </li>
-            ))}
-          </ul>
-          <div className="flex items-center justify-between border-t border-white/[0.05] px-4 py-3.5">
-            <span className="text-[15px] font-semibold">Итого</span>
-            <span className="font-display text-2xl font-black tabular-nums">
-              {total.toLocaleString("ru-RU")} ₽
-            </span>
-          </div>
-        </section>
-
-        {ticketsTotal > 0 && (
-          <div className="flex items-center gap-3 rounded-2xl border border-primary/25 bg-primary/[0.08] px-4 py-3">
-            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/20 text-primary">
-              <Ticket className="h-4 w-4" />
+          <div className="flex items-center gap-3 rounded-2xl border border-white/[0.06] bg-card/40 px-4 py-3">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
+              <Truck className="h-4 w-4" />
             </span>
             <div className="min-w-0 flex-1">
-              <div className="font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-primary">
-                Бонус билетов
-              </div>
+              <div className="text-[14px] font-semibold text-foreground">СДЭК</div>
               <div className="text-[12px] text-muted-foreground">
-                Начислим после оплаты — для розыгрышей клуба.
+                По всей России, 2–5 дней. Расчёт курьером.
               </div>
             </div>
-            <span className="font-display text-xl font-black italic tabular-nums text-primary">
-              +{ticketsTotal}
+            <CheckCircle2 className="h-5 w-5 shrink-0 text-primary" />
+          </div>
+
+          {/* Продавец (для банка-эквайера) */}
+          <div className="rounded-2xl border border-white/[0.06] bg-card/40 px-4 py-3">
+            <div className="mb-1 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+              Продавец
+            </div>
+            <div className="text-[12px] leading-relaxed text-muted-foreground">
+              {LEGAL.shortName} · ОГРНИП {LEGAL.ogrnip} · ИНН {LEGAL.inn} · {LEGAL.address}
+            </div>
+          </div>
+
+          {/* Согласие на оферту */}
+          <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-white/[0.06] bg-card/40 px-4 py-3">
+            <input
+              type="checkbox"
+              checked={agree}
+              onChange={(e) => setAgree(e.target.checked)}
+              className="mt-0.5 h-4 w-4 shrink-0 accent-primary"
+            />
+            <span className="text-[12px] leading-relaxed text-muted-foreground">
+              Я согласен с{" "}
+              <Link to="/legal/offer" className="text-primary underline-offset-2 hover:underline">
+                публичной офертой
+              </Link>
+              ,{" "}
+              <Link to="/legal/privacy" className="text-primary underline-offset-2 hover:underline">
+                обработкой персональных данных
+              </Link>{" "}
+              и условиями{" "}
+              <Link to="/shop-info" className="text-primary underline-offset-2 hover:underline">
+                оплаты и доставки
+              </Link>
+              .
             </span>
-          </div>
-        )}
-
-        {/* Платёжные системы */}
-        <div className="flex items-center justify-between gap-3 rounded-2xl border border-white/[0.06] bg-card/40 px-4 py-3">
-          <div className="font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
-            Принимаем
-          </div>
-          <PaymentBadges size="sm" />
+          </label>
         </div>
 
-        {/* Продавец (для банка-эквайера) */}
-        <div className="rounded-2xl border border-white/[0.06] bg-card/40 px-4 py-3">
-          <div className="mb-1 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
-            Продавец
-          </div>
-          <div className="text-[12px] leading-relaxed text-muted-foreground">
-            {LEGAL.shortName} · ОГРНИП {LEGAL.ogrnip} · ИНН {LEGAL.inn} · {LEGAL.address}
-          </div>
-        </div>
+        {/* ПРАВАЯ КОЛОНКА (md+): состав + итого + кнопка. На мобиле — просто стек ниже формы. */}
+        <aside className="mt-5 space-y-4 md:sticky md:top-24 md:mt-0">
+          {/* Состав заказа */}
+          <section className="overflow-hidden rounded-2xl border border-white/[0.06] bg-card/40">
+            <div className="border-b border-white/[0.05] px-4 py-3">
+              <span className="font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                Заказ · {items.length}
+              </span>
+            </div>
+            <ul className="divide-y divide-white/[0.05]">
+              {items.map((i) => (
+                <li key={i.id} className="flex items-center gap-3 px-3 py-2.5">
+                  <img
+                    src={i.image}
+                    alt={i.name}
+                    className="h-12 w-12 shrink-0 rounded-lg object-cover"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-[13px] font-semibold text-foreground">
+                      {i.name}
+                    </div>
+                    <div className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                      {i.size ? `${i.size} · ` : ""}× {i.qty}
+                    </div>
+                  </div>
+                  <span className="font-mono text-[13px] tabular-nums text-foreground">
+                    {(i.price * i.qty).toLocaleString("ru-RU")} ₽
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <div className="flex items-center justify-between border-t border-white/[0.05] px-4 py-3.5">
+              <span className="text-[15px] font-semibold">Итого</span>
+              <span className="font-display text-2xl font-black tabular-nums">
+                {total.toLocaleString("ru-RU")} ₽
+              </span>
+            </div>
+          </section>
 
-        {/* Согласие на оферту */}
-        <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-white/[0.06] bg-card/40 px-4 py-3">
-          <input
-            type="checkbox"
-            checked={agree}
-            onChange={(e) => setAgree(e.target.checked)}
-            className="mt-0.5 h-4 w-4 shrink-0 accent-primary"
-          />
-          <span className="text-[12px] leading-relaxed text-muted-foreground">
-            Я согласен с{" "}
-            <Link to="/legal/offer" className="text-primary underline-offset-2 hover:underline">
-              публичной офертой
-            </Link>
-            ,{" "}
-            <Link to="/legal/privacy" className="text-primary underline-offset-2 hover:underline">
-              обработкой персональных данных
-            </Link>{" "}
-            и условиями{" "}
-            <Link to="/shop-info" className="text-primary underline-offset-2 hover:underline">
-              оплаты и доставки
-            </Link>
-            .
-          </span>
-        </label>
+          {ticketsTotal > 0 && (
+            <div className="flex items-center gap-3 rounded-2xl border border-primary/25 bg-primary/[0.08] px-4 py-3">
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/20 text-primary">
+                <Ticket className="h-4 w-4" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <div className="font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-primary">
+                  Бонус билетов
+                </div>
+                <div className="text-[12px] text-muted-foreground">
+                  Начислим после оплаты — для розыгрышей клуба.
+                </div>
+              </div>
+              <span className="font-display text-xl font-black italic tabular-nums text-primary">
+                +{ticketsTotal}
+              </span>
+            </div>
+          )}
 
-        {/* Sticky CTA */}
+          {/* Платёжные системы */}
+          <div className="flex items-center justify-between gap-3 rounded-2xl border border-white/[0.06] bg-card/40 px-4 py-3">
+            <div className="font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+              Принимаем
+            </div>
+            <PaymentBadges size="sm" />
+          </div>
+
+          {/* Desktop CTA — встроена в aside, всегда видна */}
+          <button
+            type="submit"
+            disabled={!canSubmit || submitting}
+            className="hidden w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3.5 font-display text-sm font-black uppercase tracking-wider text-primary-foreground transition-opacity disabled:opacity-40 md:flex"
+          >
+            {submitting ? "Оформляем…" : `Оплатить ${total.toLocaleString("ru-RU")} ₽`}
+          </button>
+        </aside>
+
+        {/* Mobile sticky CTA — только < md */}
         <div
-          className="fixed inset-x-0 z-30 border-t border-white/[0.06] bg-black/85 px-4 py-3 backdrop-blur-xl"
+          className="fixed inset-x-0 z-30 border-t border-white/[0.06] bg-black/85 px-4 py-3 backdrop-blur-xl md:hidden"
           style={{ bottom: "calc(64px + env(safe-area-inset-bottom))" }}
         >
           <div className="mx-auto flex max-w-3xl items-center gap-3">
@@ -449,6 +460,8 @@ function ClubCheckoutPage() {
       </form>
     </main>
   );
+}
+
 }
 
 function Section({
