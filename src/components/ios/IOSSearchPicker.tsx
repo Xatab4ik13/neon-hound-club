@@ -52,12 +52,13 @@ export function IOSSearchPicker({
     return () => window.cancelAnimationFrame(frame);
   }, [open]);
 
+  const normalizedQuery = normalize(query);
+
   useEffect(() => {
     if (!open) return;
     listRef.current?.scrollTo({ top: 0, behavior: "auto" });
   }, [open, normalizedQuery]);
 
-  const normalizedQuery = normalize(query);
   const filtered = useMemo(() => {
     if (!normalizedQuery) return options;
     return options.filter((option) => normalize(option).includes(normalizedQuery));
