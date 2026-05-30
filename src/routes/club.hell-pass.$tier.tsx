@@ -7,8 +7,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Check, Loader2 } from "lucide-react";
 import { hhToast as toast } from "@/lib/hh-toast";
 import { getTier, type Perk, type Tier } from "@/data/hell-pass";
-import { fetchPassMe, purchasePass, qk, type PassTier } from "@/lib/queries";
+import { fetchPassMe, purchasePass, qk, type PassTier, type PaymentMethod } from "@/lib/queries";
 import { useViewer } from "@/hooks/use-viewer";
+import { usePaymentMethods } from "@/hooks/use-payment-methods";
 import { ApiError } from "@/lib/api";
 
 const TIER_RANK: Record<PassTier, number> = { silver: 1, gold: 2, platinum: 3 };
@@ -67,6 +68,8 @@ function TierDetailPage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [purchaseId, setPurchaseId] = useState<string | null>(null);
+  const [pendingMethod, setPendingMethod] = useState<PaymentMethod | null>(null);
+  const { sbp: sbpEnabled } = usePaymentMethods();
 
   const passQ = useQuery({
     queryKey: qk.passMe,
@@ -82,7 +85,7 @@ function TierDetailPage() {
   const isDowngrade = active && targetRank < activeRank;
 
   const purchaseM = useMutation({
-    mutationFn: () => purchasePass(tier.slug as PassTier),
+    mutationFn: (method: PaymentMethod) => purchasePass(tier.slug as PassTier, method),
     onSuccess: (res) => {
       setPurchaseId(res.purchase.id);
       qc.invalidateQueries({ queryKey: qk.passMe });
@@ -103,18 +106,27 @@ function TierDetailPage() {
   const isGold = tier.recommended;
   const isPlatinum = tier.ultimate;
 
-  const ctaLabel = !isAuthed
-    ? "Войти и купить"
+  const buy = (method: PaymentMethod) => {
+    if (!isAuthed) {
+      navigate({ to: "/login", search: { redirect: `/club/hell-pass/${tier.slug}` } });
+      return;
+    }
+    setPendingMethod(method);
+    purchaseM.mutate(method);
+  };
+
+  const ctaDisabled = !isAuthed || purchaseM.isPending || Boolean(isDowngrade);
+  const baseLabel = !isAuthed
+    ? "Войти"
     : purchaseId
       ? "Заявка создана"
       : isDowngrade
-        ? `У тебя уже выше — ${active!.tier.toUpperCase()}`
+        ? `Уже выше — ${active!.tier.toUpperCase()}`
         : isSameTier
-          ? "Продлить на 30 дней"
+          ? "Продлить"
           : isUpgrade
-            ? `Апгрейд до ${tier.name}`
-            : `Купить ${tier.name}`;
-  const ctaDisabled = !isAuthed || purchaseM.isPending || Boolean(isDowngrade);
+            ? `Апгрейд`
+            : `Купить`;
 
 
   return (
