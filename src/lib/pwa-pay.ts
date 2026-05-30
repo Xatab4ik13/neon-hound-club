@@ -28,7 +28,6 @@ export function payInPwa(fields: Record<string, string>): void {
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
       Accept: "application/json",
-      "X-PWA": "1",
     },
     body: body.toString(),
   })
