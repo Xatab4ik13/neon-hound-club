@@ -15,6 +15,7 @@ import { formatRuPhone } from "@/lib/phone";
 import { hhToast } from "@/lib/hh-toast";
 import { BACKEND_URL } from "@/lib/api";
 import { isStandalonePWA } from "@/lib/is-pwa";
+import { payInPwa } from "@/lib/pwa-pay";
 
 const PAY_ACTION = `${BACKEND_URL}/api/v1/payments/redirect`;
 
