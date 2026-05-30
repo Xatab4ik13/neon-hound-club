@@ -236,7 +236,7 @@ function TierDetailPage() {
 
               <div className="mt-4 flex flex-col gap-2">
                 {/* Карта */}
-                <form method="POST" action={PAY_ACTION} onSubmit={guard} target={isStandalonePWA() ? "_blank" : undefined}>
+                <form method="POST" action={PAY_ACTION} onSubmit={guard}>
                   <input type="hidden" name="target" value="pass" />
                   <input type="hidden" name="tier" value={tier.slug} />
                   <input type="hidden" name="method" value="card" />
@@ -249,7 +249,7 @@ function TierDetailPage() {
                 </form>
                 {/* СБП */}
                 {sbpEnabled && !isDowngrade && (
-                  <form method="POST" action={PAY_ACTION} onSubmit={guard} target={isStandalonePWA() ? "_blank" : undefined}>
+                  <form method="POST" action={PAY_ACTION} onSubmit={guard}>
                     <input type="hidden" name="target" value="pass" />
                     <input type="hidden" name="tier" value={tier.slug} />
                     <input type="hidden" name="method" value="sbp" />
