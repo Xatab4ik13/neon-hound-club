@@ -6,6 +6,7 @@
  *
  * Используется на /club/checkout и /club/hell-pass/$tier.
  */
+import { useRef } from "react";
 import { Loader2 } from "lucide-react";
 import sbpLogo from "@/assets/sbp-logo.png";
 
@@ -33,12 +34,26 @@ function Base({
   className?: string;
   size?: Size;
 }) {
+  const lastTapRef = useRef(0);
+
+  const trigger = () => {
+    if (disabled || loading) return;
+    const now = Date.now();
+    if (now - lastTapRef.current < 500) return;
+    lastTapRef.current = now;
+    onClick();
+  };
+
   return (
     <button
       type="button"
-      onClick={onClick}
+      onClick={trigger}
+      onTouchEnd={(event) => {
+        event.preventDefault();
+        trigger();
+      }}
       disabled={disabled}
-      className={`group relative flex w-full items-center justify-between gap-3 rounded-xl bg-white text-neutral-900 shadow-[0_1px_0_0_rgba(255,255,255,0.06)_inset,0_8px_24px_-12px_rgba(0,0,0,0.6)] transition-[transform,opacity] active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-50 ${SIZE[size]} ${className}`}
+      className={`group relative flex w-full touch-manipulation items-center justify-between gap-3 rounded-xl bg-white text-neutral-900 shadow-[0_1px_0_0_rgba(255,255,255,0.06)_inset,0_8px_24px_-12px_rgba(0,0,0,0.6)] transition-[transform,opacity] active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-50 ${SIZE[size]} ${className}`}
     >
       <span className="flex min-w-0 items-center gap-2 font-display font-bold uppercase tracking-wider">
         {loading ? <Loader2 className="h-4 w-4 animate-spin text-neutral-700" /> : null}
