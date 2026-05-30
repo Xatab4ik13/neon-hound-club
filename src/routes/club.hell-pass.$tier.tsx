@@ -93,14 +93,12 @@ function TierDetailPage() {
       //    Любые setState/invalidate ниже не должны опережать редирект,
       //    иначе на мобиле/PWA SPA-навигация перехватит управление.
       if (res.paymentUrl) {
-        setPurchaseId(res.purchase.id);
         setPayUrl(res.paymentUrl);
         commitPaymentRedirect(res.paymentUrl);
         qc.invalidateQueries({ queryKey: qk.passMe });
         return;
       }
       // 2) Если paymentUrl нет — оплата не сконфигурирована, оставляем pending.
-      setPurchaseId(res.purchase.id);
       qc.invalidateQueries({ queryKey: qk.passMe });
       toast.success(
         `Заявка №${res.purchase.id.slice(0, 8)} создана. Ожидает оплаты — пока активирует админ.`,
