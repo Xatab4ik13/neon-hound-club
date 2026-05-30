@@ -11,6 +11,7 @@ import { ChevronLeft, ChevronRight, Minus, Plus, ShoppingBag, Ticket } from "luc
 import { hhToast } from "@/lib/hh-toast";
 import { useCart } from "@/hooks/use-cart";
 import { haptic } from "@/hooks/use-haptic";
+import { flyToCart } from "@/lib/fly-to-cart";
 import { ApiError } from "@/lib/api";
 import { LazyImage } from "@/components/ui/lazy-image";
 import { fetchShopProduct, qk, type ShopProduct } from "@/lib/queries";
@@ -113,7 +114,7 @@ function ProductView({ product }: { product: ShopProduct }) {
   const cover = gallery[slide] ?? gallery[0];
   const maxQty = product.stock && product.stock > 0 ? product.stock : 99;
 
-  const handleAdd = (goToCart = false) => {
+  const handleAdd = (goToCart = false, originEl?: HTMLElement | null) => {
     if (sold) return;
     if (sizeMissing) {
       haptic("warning");
@@ -121,6 +122,10 @@ function ProductView({ product }: { product: ShopProduct }) {
       return;
     }
     haptic("success");
+    // Fly-to-cart запускаем СРАЗУ — до setState, чтобы fromRect был «честный».
+    if (!goToCart && originEl && cover) {
+      flyToCart({ fromRect: originEl.getBoundingClientRect(), imageUrl: cover });
+    }
     add(
       {
         productId: product.id,
@@ -133,10 +138,14 @@ function ProductView({ product }: { product: ShopProduct }) {
       },
       qty,
     );
-    hhToast.success("Добавлено в корзину", {
-      meta: `${product.title}${size ? ` · ${size}` : ""} × ${qty}`,
-    });
-    if (goToCart) navigate({ to: "/club/cart" });
+    if (goToCart) {
+      navigate({ to: "/club/cart" });
+    } else {
+      // Toast как лёгкое подтверждение (анимация уже сама показала «куда»).
+      hhToast.success("Добавлено в корзину", {
+        meta: `${product.title}${size ? ` · ${size}` : ""} × ${qty}`,
+      });
+    }
   };
 
   const total = Math.max(1, gallery.length);
@@ -386,7 +395,7 @@ function ProductView({ product }: { product: ShopProduct }) {
           <button
             type="button"
             disabled={sold}
-            onClick={() => handleAdd(false)}
+            onClick={(e) => handleAdd(false, e.currentTarget)}
             className="ml-auto inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-8 py-3.5 text-[15px] font-semibold text-primary-foreground transition-all active:scale-[0.98] disabled:bg-muted disabled:text-muted-foreground"
           >
             {sold ? "Распродано" : sizeMissing ? "Выбери размер" : "В корзину"}
@@ -415,7 +424,7 @@ function ProductView({ product }: { product: ShopProduct }) {
           <button
             type="button"
             disabled={sold}
-            onClick={() => handleAdd(false)}
+            onClick={(e) => handleAdd(false, e.currentTarget)}
             className="ml-auto flex flex-1 items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3.5 text-[15px] font-semibold text-primary-foreground transition-all active:scale-[0.98] disabled:bg-muted disabled:text-muted-foreground"
           >
             {sold ? "Распродано" : sizeMissing ? "Выбери размер" : "В корзину"}

@@ -1,6 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { Bell, ShoppingBag } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { RANKS } from "@/data/ranks";
 import type { RankMeta } from "@/data/ranks";
 import { useCurrentRank } from "@/data/rank-state";
@@ -31,6 +31,22 @@ export function MobileTopBar() {
   const { count: cartCount } = useCart();
   const isShop = pathname.startsWith("/club/shop") || pathname.startsWith("/club/cart");
   const [notifOpen, setNotifOpen] = useState(false);
+
+  // Bump бейджа при изменении count и glow при «приземлении» анимации.
+  const prevCount = useRef(cartCount);
+  const [bump, setBump] = useState(0);
+  const [glow, setGlow] = useState(0);
+  useEffect(() => {
+    if (cartCount !== prevCount.current) {
+      prevCount.current = cartCount;
+      setBump((n) => n + 1);
+    }
+  }, [cartCount]);
+  useEffect(() => {
+    const onLanded = () => setGlow((n) => n + 1);
+    window.addEventListener("hh:cart:landed", onLanded);
+    return () => window.removeEventListener("hh:cart:landed", onLanded);
+  }, []);
 
   const openNotif = () => {
     haptic("light");
@@ -113,12 +129,17 @@ export function MobileTopBar() {
         {isShop && (
           <Link
             to="/club/cart"
+            data-cart-anchor
             aria-label="Корзина"
             className="relative grid h-10 w-10 shrink-0 place-items-center text-foreground transition-transform active:scale-90 active:opacity-60"
           >
+            <span key={`glow-${glow}`} className="absolute inset-0 hh-cart-glow" aria-hidden />
             <ShoppingBag className="h-[22px] w-[22px]" strokeWidth={1.9} />
             {cartCount > 0 && (
-              <span className="absolute right-0.5 top-0.5 grid h-[16px] min-w-[16px] place-items-center rounded-full bg-primary px-1 font-mono text-[9px] font-bold leading-none text-primary-foreground ring-2 ring-background">
+              <span
+                key={`badge-${bump}`}
+                className="hh-cart-bump absolute right-0.5 top-0.5 grid h-[16px] min-w-[16px] place-items-center rounded-full bg-primary px-1 font-mono text-[9px] font-bold leading-none text-primary-foreground ring-2 ring-background"
+              >
                 {cartCount > 99 ? "99+" : cartCount}
               </span>
             )}
