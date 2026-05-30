@@ -16,7 +16,7 @@ import { formatRuPhone } from "@/lib/phone";
 import { createOrder, initOrderPayment, qk, type PaymentMethod } from "@/lib/queries";
 import { ApiError } from "@/lib/api";
 import { hhToast } from "@/lib/hh-toast";
-import { beginPaymentRedirect, type PaymentRedirectHandle } from "@/lib/payment-redirect";
+
 
 export const Route = createFileRoute("/club/checkout")({
   head: () => ({
@@ -136,7 +136,10 @@ function ClubCheckoutPage() {
 
   const { sbp: sbpEnabled } = usePaymentMethods();
 
-  const redirectHandleRef = useRef<PaymentRedirectHandle | null>(null);
+  // Если редирект не сработал — показываем кнопку «Перейти к оплате»
+  const [payUrl, setPayUrl] = useState<string | null>(null);
+  const [pendingMethod, setPendingMethod] = useState<PaymentMethod | null>(null);
+  const payCtaRef = useRef<HTMLAnchorElement | null>(null);
 
   const mutation = useMutation({
     mutationFn: async (
@@ -156,28 +159,28 @@ function ClubCheckoutPage() {
         }
       }
       setPayUrl(pay.paymentUrl);
-      // Подставляем URL в окно, открытое синхронно в момент тапа.
-      redirectHandleRef.current?.commit(pay.paymentUrl);
-      redirectHandleRef.current = null;
       queryClient.invalidateQueries({ queryKey: qk.shopOrders });
       queryClient.invalidateQueries({ queryKey: qk.ticketsBalance });
       void order;
     },
     onError: (err) => {
-      redirectHandleRef.current?.cancel();
-      redirectHandleRef.current = null;
       const msg = err instanceof ApiError ? err.message : "Не удалось оформить заказ";
       hhToast.error("Ошибка оплаты", { meta: msg });
     },
   });
 
-  // Если редирект не сработал — показываем кнопку «Открыть оплату»
-  const [payUrl, setPayUrl] = useState<string | null>(null);
+  // Когда платёж создан — скроллим к большой кнопке «Перейти к оплате».
+  useEffect(() => {
+    if (!payUrl) return;
+    const el = payCtaRef.current;
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [payUrl]);
 
-  const [pendingMethod, setPendingMethod] = useState<PaymentMethod | null>(null);
+
 
   const pay = (method: PaymentMethod) => {
-    if (mutation.isPending) return;
+    if (mutation.isPending || payUrl) return;
     if (orderableItems.length === 0) {
       hhToast.error("Корзина пустая или товары устарели — обнови корзину.");
       return;
@@ -205,8 +208,6 @@ function ClubCheckoutPage() {
     }
     // Если юзер не выбрал подсказку — city может быть пуст. Берём первую часть адреса.
     const cityFallback = form.city.trim() || form.address.split(",")[0]?.trim() || "—";
-    // СИНХРОННО открываем окно в момент тапа — до createOrder/initOrderPayment.
-    redirectHandleRef.current = beginPaymentRedirect();
     setPendingMethod(method);
     mutation.mutate({
       method,
@@ -219,6 +220,7 @@ function ClubCheckoutPage() {
       },
     });
   };
+
 
   // Submit формы (Enter в поле / нативный submit) — дефолтно платим картой.
   const submit = (e: React.FormEvent) => {
