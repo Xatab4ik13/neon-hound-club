@@ -197,7 +197,22 @@ function ClubCheckoutPage() {
         /* ignore */
       }
     }
-    // Дальше — нативный POST на BACKEND_URL/api/v1/payments/redirect
+    // Дальше — если PWA: перехватываем и идём через payInPwa (window.open + fetch).
+    // Если обычный браузер: нативный POST на BACKEND_URL/api/v1/payments/redirect.
+    if (isStandalonePWA()) {
+      e.preventDefault();
+      const submitter = (e.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null;
+      const method = submitter?.value === "sbp" ? "sbp" : "card";
+      payInPwa({
+        target: "order",
+        method,
+        items: itemsJson,
+        shipping_fio: form.name,
+        shipping_phone: form.phone,
+        shipping_city: cityFallback,
+        shipping_address: form.address,
+      });
+    }
   };
 
   if (!isAuthed || items.length === 0) return null;
