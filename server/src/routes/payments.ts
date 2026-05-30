@@ -125,6 +125,19 @@ export async function paymentsRoutes(app: FastifyInstance) {
     const body = (req.body ?? {}) as Record<string, unknown>;
     const target = String(body.target ?? "");
 
+    // PWA-friendly режим: фронт просит JSON и сам делает window.open(paymentUrl).
+    // Триггерится либо Accept: application/json, либо явным X-PWA: 1.
+    const wantsJson =
+      (req.headers["x-pwa"] as string | undefined) === "1" ||
+      String(req.headers["accept"] ?? "").includes("application/json");
+
+    const replyOk = (url: string) =>
+      wantsJson ? reply.code(200).send({ paymentUrl: url }) : reply.redirect(url, 303);
+    const replyErr = (path: string, message: string) =>
+      wantsJson
+        ? reply.code(400).send({ error: "payment_init_failed", message })
+        : reply.redirect(errorRedirect(path, message), 303);
+
     if (!session) {
       // На login с возвратом — куда вернуть, зависит от target.
       const back =
