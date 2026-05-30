@@ -255,18 +255,26 @@ function TierDetailPage() {
                 </div>
               )}
 
+              {payUrl && (
+                <a
+                  href={payUrl}
+                  className="mt-4 block w-full rounded-xl bg-primary px-5 py-3 text-center font-display text-xs font-black uppercase tracking-wider text-primary-foreground"
+                >
+                  Открыть оплату
+                </a>
+              )}
+
               <div className="mt-4 flex flex-col gap-2">
                 <PayCardButton
                   onClick={() => buy("card")}
                   loading={purchaseM.isPending && pendingMethod === "card"}
+                  disabled={!!isDowngrade}
                   label={
-                    !purchaseId && !isDowngrade
-                      ? `${baseLabel} картой`
-                      : baseLabel
+                    !isDowngrade ? `${baseLabel} картой` : baseLabel
                   }
                   size="lg"
                 />
-                {sbpEnabled && !purchaseId && !isDowngrade && (
+                {sbpEnabled && !isDowngrade && (
                   <PaySbpButton
                     onClick={() => buy("sbp")}
                     loading={purchaseM.isPending && pendingMethod === "sbp"}
