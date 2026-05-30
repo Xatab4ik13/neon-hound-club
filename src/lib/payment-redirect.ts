@@ -1,17 +1,10 @@
 /**
- * Редирект на платёжную форму.
+ * Навигация в платёжный flow.
  *
- * История вопроса: пробовали через `window.open("about:blank")` синхронно
- * в onClick, чтобы потом подставить URL — на мобильных браузерах это
- * приводит к зависанию вкладки на about:blank (ссылка на popup теряется
- * при переключении табов, либо запись в popup.location блокируется).
- *
- * Правильное решение: `window.location.href = url` в текущем окне.
- * В отличие от `window.open`, это НЕ требует user gesture и работает
- * даже после await — на всех платформах (mobile browser, PWA, desktop).
- *
- * API сохранён (beginPaymentRedirect + handle.commit), чтобы не трогать
- * вызывающие компоненты.
+ * Для mobile/PWA самый надёжный вариант — синхронный submit обычной HTML-формы
+ * в backend endpoint, который уже сам делает 303 redirect на страницу банка.
+ * Тогда браузер видит это как настоящий top-level navigation, а не JS-редирект
+ * после await, который мобильные движки часто душат.
  */
 
 export type PaymentRedirectHandle = {
@@ -19,17 +12,46 @@ export type PaymentRedirectHandle = {
   cancel: () => void;
 };
 
+function navigateViaForm(url: string) {
+  if (typeof document === "undefined") return;
+
+  const form = document.createElement("form");
+  form.method = "GET";
+  form.action = url;
+  form.style.display = "none";
+  document.body.appendChild(form);
+  form.submit();
+}
+
 export function beginPaymentRedirect(): PaymentRedirectHandle {
   return {
     commit: (url: string) => {
-      if (typeof window === "undefined") return;
-      window.location.href = url;
+      navigateViaForm(url);
     },
     cancel: () => {},
   };
 }
 
 export function commitPaymentRedirect(paymentUrl: string) {
-  if (typeof window === "undefined") return;
-  window.location.href = paymentUrl;
+  navigateViaForm(paymentUrl);
+}
+
+export function submitPaymentRedirectForm(action: string, fields: Record<string, string>) {
+  if (typeof document === "undefined") return;
+
+  const form = document.createElement("form");
+  form.method = "POST";
+  form.action = action;
+  form.style.display = "none";
+
+  for (const [name, value] of Object.entries(fields)) {
+    const input = document.createElement("input");
+    input.type = "hidden";
+    input.name = name;
+    input.value = value;
+    form.appendChild(input);
+  }
+
+  document.body.appendChild(form);
+  form.submit();
 }

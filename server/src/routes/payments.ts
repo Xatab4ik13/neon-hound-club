@@ -15,6 +15,11 @@ const idSchema = z.object({ id: z.string().uuid() });
 const initBodySchema = z
   .object({ method: z.enum(PAYMENT_METHODS).optional() })
   .optional();
+const redirectBodySchema = z.object({
+  target: z.enum(["pass", "order"]),
+  refId: z.string().uuid(),
+  method: z.enum(PAYMENT_METHODS).optional(),
+});
 
 export async function paymentsRoutes(app: FastifyInstance) {
   // GET /api/v1/payments/methods — какие способы оплаты сконфигурированы на бэке.
@@ -70,6 +75,43 @@ export async function paymentsRoutes(app: FastifyInstance) {
         }
         req.log.error({ err: e }, "createPaymentForOrder failed");
         return reply.code(500).send({ error: "payment_init_failed", message: "Не удалось создать платёж" });
+      }
+    },
+  );
+
+  app.post<{ Body: { target: "pass" | "order"; refId: string; method?: "card" | "sbp" } }>(
+    "/redirect",
+    { preHandler: requireAuth },
+    async (req, reply) => {
+      const parsed = redirectBodySchema.safeParse(req.body ?? {});
+      if (!parsed.success) return reply.code(400).send({ error: "invalid_input" });
+
+      const session = req.user as SessionPayload;
+      const method = parsed.data.method ?? "card";
+
+      try {
+        const result =
+          parsed.data.target === "pass"
+            ? await createPaymentForPass(parsed.data.refId, session.sub, method)
+            : await createPaymentForOrder(parsed.data.refId, session.sub, method);
+
+        return reply.redirect(result.paymentUrl, 303);
+      } catch (e) {
+        if (e instanceof PaymentInitError) {
+          const targetPath =
+            parsed.data.target === "pass" ? "/club/hell-pass" : "/club/checkout";
+          const url = new URL(targetPath, process.env.FRONTEND_ORIGIN || "https://hhr.pro");
+          url.searchParams.set("payment_error", e.message);
+          return reply.redirect(url.toString(), 303);
+        }
+
+        req.log.error({ err: e }, "payment redirect failed");
+        const url = new URL(
+          parsed.data.target === "pass" ? "/club/hell-pass" : "/club/checkout",
+          process.env.FRONTEND_ORIGIN || "https://hhr.pro",
+        );
+        url.searchParams.set("payment_error", "Не удалось открыть оплату");
+        return reply.redirect(url.toString(), 303);
       }
     },
   );
