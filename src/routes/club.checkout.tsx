@@ -453,7 +453,6 @@ function ClubCheckoutPage() {
           <div className="hidden flex-col gap-2 md:flex">
             <PayCardButton
               onClick={() => pay("card")}
-              disabled={!canSubmit || submitting}
               loading={submitting && pendingMethod === "card"}
               label={submitting && pendingMethod === "card" ? "Открываем…" : "Оплатить картой"}
               size="lg"
@@ -461,7 +460,6 @@ function ClubCheckoutPage() {
             {sbpEnabled && (
               <PaySbpButton
                 onClick={() => pay("sbp")}
-                disabled={!canSubmit || submitting}
                 loading={submitting && pendingMethod === "sbp"}
                 label={submitting && pendingMethod === "sbp" ? "Открываем…" : "Оплатить через"}
                 size="lg"
@@ -487,14 +485,12 @@ function ClubCheckoutPage() {
             <div className="ml-auto flex flex-1 flex-col gap-2">
               <PayCardButton
                 onClick={() => pay("card")}
-                disabled={!canSubmit || submitting}
                 loading={submitting && pendingMethod === "card"}
                 label={submitting && pendingMethod === "card" ? "Открываем…" : "Картой"}
               />
               {sbpEnabled && (
                 <PaySbpButton
                   onClick={() => pay("sbp")}
-                  disabled={!canSubmit || submitting}
                   loading={submitting && pendingMethod === "sbp"}
                   label={submitting && pendingMethod === "sbp" ? "Открываем…" : "Через"}
                 />
