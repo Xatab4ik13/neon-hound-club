@@ -251,7 +251,6 @@ function TierDetailPage() {
               <div className="mt-4 flex flex-col gap-2">
                 <PayCardButton
                   onClick={() => buy("card")}
-                  disabled={ctaDisabled}
                   loading={purchaseM.isPending && pendingMethod === "card"}
                   label={
                     !purchaseId && !isDowngrade
@@ -263,7 +262,6 @@ function TierDetailPage() {
                 {sbpEnabled && !purchaseId && !isDowngrade && (
                   <PaySbpButton
                     onClick={() => buy("sbp")}
-                    disabled={ctaDisabled}
                     loading={purchaseM.isPending && pendingMethod === "sbp"}
                     label={`${baseLabel} через`}
                     size="lg"
