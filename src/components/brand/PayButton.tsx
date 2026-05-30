@@ -48,10 +48,6 @@ function Base({
     <button
       type="button"
       onClick={trigger}
-      onTouchEnd={(event) => {
-        event.preventDefault();
-        trigger();
-      }}
       disabled={disabled}
       className={`group relative flex w-full touch-manipulation items-center justify-between gap-3 rounded-xl bg-white text-neutral-900 shadow-[0_1px_0_0_rgba(255,255,255,0.06)_inset,0_8px_24px_-12px_rgba(0,0,0,0.6)] transition-[transform,opacity] active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-50 ${SIZE[size]} ${className}`}
     >
