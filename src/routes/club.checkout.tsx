@@ -16,6 +16,7 @@ import { formatRuPhone } from "@/lib/phone";
 import { createOrder, initOrderPayment, qk, type PaymentMethod } from "@/lib/queries";
 import { ApiError } from "@/lib/api";
 import { hhToast } from "@/lib/hh-toast";
+import { cancelPaymentRedirect, commitPaymentRedirect, preparePaymentRedirect } from "@/lib/payment-redirect";
 
 export const Route = createFileRoute("/club/checkout")({
   head: () => ({
@@ -154,14 +155,12 @@ function ClubCheckoutPage() {
       setPayUrl(pay.paymentUrl);
       const popup = paymentWindowRef.current;
       paymentWindowRef.current = null;
-      if (popup && !popup.closed) {
-        popup.location.href = pay.paymentUrl;
-      } else {
-        window.location.href = pay.paymentUrl;
-      }
+      commitPaymentRedirect(popup, pay.paymentUrl);
       void order;
     },
     onError: (err) => {
+      cancelPaymentRedirect(paymentWindowRef.current);
+      paymentWindowRef.current = null;
       const msg = err instanceof ApiError ? err.message : "Не удалось оформить заказ";
       hhToast.error("Ошибка оплаты", { meta: msg });
     },
@@ -204,9 +203,7 @@ function ClubCheckoutPage() {
       }
       return;
     }
-    if (typeof window !== "undefined") {
-      paymentWindowRef.current = window.open("about:blank", "_blank");
-    }
+    paymentWindowRef.current = preparePaymentRedirect();
     setPendingMethod(method);
     mutation.mutate({
       method,
@@ -452,6 +449,23 @@ function ClubCheckoutPage() {
               Принимаем
             </div>
             <PaymentBadges size="sm" />
+          </div>
+
+          <div className="flex flex-col gap-2 md:hidden">
+            <PayCardButton
+              onClick={() => pay("card")}
+              loading={submitting && pendingMethod === "card"}
+              label={submitting && pendingMethod === "card" ? "Открываем…" : "Оплатить картой"}
+              size="lg"
+            />
+            {sbpEnabled && (
+              <PaySbpButton
+                onClick={() => pay("sbp")}
+                loading={submitting && pendingMethod === "sbp"}
+                label={submitting && pendingMethod === "sbp" ? "Открываем…" : "Оплатить через"}
+                size="lg"
+              />
+            )}
           </div>
 
           {/* Desktop CTA — встроена в aside, всегда видна */}

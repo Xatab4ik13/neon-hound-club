@@ -12,6 +12,7 @@ import { fetchPassMe, purchasePass, qk, type PassTier, type PaymentMethod } from
 import { useViewer } from "@/hooks/use-viewer";
 import { usePaymentMethods } from "@/hooks/use-payment-methods";
 import { ApiError } from "@/lib/api";
+import { cancelPaymentRedirect, commitPaymentRedirect, preparePaymentRedirect } from "@/lib/payment-redirect";
 
 const TIER_RANK: Record<PassTier, number> = { silver: 1, gold: 2, platinum: 3 };
 
@@ -94,11 +95,7 @@ function TierDetailPage() {
       if (res.paymentUrl) {
         const popup = paymentWindowRef.current;
         paymentWindowRef.current = null;
-        if (popup && !popup.closed) {
-          popup.location.href = res.paymentUrl;
-        } else {
-          window.location.href = res.paymentUrl;
-        }
+        commitPaymentRedirect(popup, res.paymentUrl);
       } else {
         toast.success(
           `Заявка №${res.purchase.id.slice(0, 8)} создана. Ожидает оплаты — пока активирует админ.`,
@@ -106,6 +103,8 @@ function TierDetailPage() {
       }
     },
     onError: (e) => {
+      cancelPaymentRedirect(paymentWindowRef.current);
+      paymentWindowRef.current = null;
       const msg = e instanceof ApiError ? e.message : "Не удалось создать заявку";
       toast.error(msg);
     },
@@ -123,9 +122,7 @@ function TierDetailPage() {
       toast.error(`У тебя активен ${active!.tier.toUpperCase()} — тир ниже купить нельзя.`);
       return;
     }
-    if (typeof window !== "undefined") {
-      paymentWindowRef.current = window.open("about:blank", "_blank");
-    }
+    paymentWindowRef.current = preparePaymentRedirect();
     setPendingMethod(method);
     purchaseM.mutate(method);
   };
