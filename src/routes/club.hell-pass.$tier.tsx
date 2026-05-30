@@ -13,6 +13,7 @@ import { fetchPassMe, qk, type PassTier } from "@/lib/queries";
 import { useViewer } from "@/hooks/use-viewer";
 import { usePaymentMethods } from "@/hooks/use-payment-methods";
 import { BACKEND_URL } from "@/lib/api";
+import { isStandalonePWA } from "@/lib/is-pwa";
 
 const TIER_RANK: Record<PassTier, number> = { silver: 1, gold: 2, platinum: 3 };
 const PAY_ACTION = `${BACKEND_URL}/api/v1/payments/redirect`;
@@ -223,7 +224,7 @@ function TierDetailPage() {
 
               <div className="mt-4 flex flex-col gap-2">
                 {/* Карта */}
-                <form method="POST" action={PAY_ACTION} onSubmit={guard}>
+                <form method="POST" action={PAY_ACTION} onSubmit={guard} target={isStandalonePWA() ? "_blank" : undefined}>
                   <input type="hidden" name="target" value="pass" />
                   <input type="hidden" name="tier" value={tier.slug} />
                   <input type="hidden" name="method" value="card" />
@@ -236,7 +237,7 @@ function TierDetailPage() {
                 </form>
                 {/* СБП */}
                 {sbpEnabled && !isDowngrade && (
-                  <form method="POST" action={PAY_ACTION} onSubmit={guard}>
+                  <form method="POST" action={PAY_ACTION} onSubmit={guard} target={isStandalonePWA() ? "_blank" : undefined}>
                     <input type="hidden" name="target" value="pass" />
                     <input type="hidden" name="tier" value={tier.slug} />
                     <input type="hidden" name="method" value="sbp" />
