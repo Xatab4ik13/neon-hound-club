@@ -429,24 +429,22 @@ function ClubCheckoutPage() {
           </div>
 
           {/* Desktop CTA — встроена в aside, всегда видна */}
-          <div className="hidden md:flex md:gap-2">
-            <button
-              type="button"
+          <div className="hidden flex-col gap-2 md:flex">
+            <PayCardButton
               onClick={() => pay("card")}
               disabled={!canSubmit || submitting}
-              className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3.5 font-display text-sm font-black uppercase tracking-wider text-primary-foreground transition-opacity disabled:opacity-40"
-            >
-              {submitting && pendingMethod === "card" ? "Открываем…" : "Картой"}
-            </button>
+              loading={submitting && pendingMethod === "card"}
+              label={submitting && pendingMethod === "card" ? "Открываем…" : "Оплатить картой"}
+              size="lg"
+            />
             {sbpEnabled && (
-              <button
-                type="button"
+              <PaySbpButton
                 onClick={() => pay("sbp")}
                 disabled={!canSubmit || submitting}
-                className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-primary/60 bg-transparent px-4 py-3.5 font-display text-sm font-black uppercase tracking-wider text-primary transition-colors hover:bg-primary/10 disabled:opacity-40"
-              >
-                {submitting && pendingMethod === "sbp" ? "Открываем…" : "СБП"}
-              </button>
+                loading={submitting && pendingMethod === "sbp"}
+                label={submitting && pendingMethod === "sbp" ? "Открываем…" : "Оплатить через"}
+                size="lg"
+              />
             )}
           </div>
         </aside>
