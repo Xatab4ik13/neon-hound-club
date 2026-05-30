@@ -169,19 +169,39 @@ function ClubCheckoutPage() {
   // Если редирект не сработал — показываем кнопку «Открыть оплату»
   const [payUrl, setPayUrl] = useState<string | null>(null);
 
-  const canSubmit =
-    form.name.trim().length >= 2 &&
-    form.phone.trim().length >= 5 &&
-    form.city.trim().length >= 1 &&
-    form.address.trim().length >= 3 &&
-    orderableItems.length > 0 &&
-    agree &&
-    !mutation.isPending;
-
   const [pendingMethod, setPendingMethod] = useState<PaymentMethod | null>(null);
 
   const pay = (method: PaymentMethod) => {
-    if (!canSubmit) return;
+    if (mutation.isPending) return;
+    if (orderableItems.length === 0) {
+      hhToast.error("Корзина пустая или товары устарели — обнови корзину.");
+      return;
+    }
+    if (form.name.trim().length < 2) {
+      hhToast.error("Укажи имя получателя.");
+      return;
+    }
+    if (form.phone.trim().length < 5) {
+      hhToast.error("Укажи телефон.");
+      return;
+    }
+    if (form.city.trim().length < 1) {
+      hhToast.error("Укажи город доставки.");
+      return;
+    }
+    if (form.address.trim().length < 3) {
+      hhToast.error("Укажи адрес доставки.");
+      return;
+    }
+    if (!agree) {
+      hhToast.error("Поставь галочку согласия с офертой внизу формы.");
+      if (typeof document !== "undefined") {
+        document
+          .querySelector<HTMLInputElement>('input[type="checkbox"]')
+          ?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+      return;
+    }
     setPendingMethod(method);
     mutation.mutate({
       method,
@@ -433,7 +453,6 @@ function ClubCheckoutPage() {
           <div className="hidden flex-col gap-2 md:flex">
             <PayCardButton
               onClick={() => pay("card")}
-              disabled={!canSubmit || submitting}
               loading={submitting && pendingMethod === "card"}
               label={submitting && pendingMethod === "card" ? "Открываем…" : "Оплатить картой"}
               size="lg"
@@ -441,7 +460,6 @@ function ClubCheckoutPage() {
             {sbpEnabled && (
               <PaySbpButton
                 onClick={() => pay("sbp")}
-                disabled={!canSubmit || submitting}
                 loading={submitting && pendingMethod === "sbp"}
                 label={submitting && pendingMethod === "sbp" ? "Открываем…" : "Оплатить через"}
                 size="lg"
@@ -467,14 +485,12 @@ function ClubCheckoutPage() {
             <div className="ml-auto flex flex-1 flex-col gap-2">
               <PayCardButton
                 onClick={() => pay("card")}
-                disabled={!canSubmit || submitting}
                 loading={submitting && pendingMethod === "card"}
                 label={submitting && pendingMethod === "card" ? "Открываем…" : "Картой"}
               />
               {sbpEnabled && (
                 <PaySbpButton
                   onClick={() => pay("sbp")}
-                  disabled={!canSubmit || submitting}
                   loading={submitting && pendingMethod === "sbp"}
                   label={submitting && pendingMethod === "sbp" ? "Открываем…" : "Через"}
                 />

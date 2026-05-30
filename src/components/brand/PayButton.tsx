@@ -100,18 +100,23 @@ function MirLogo() {
 }
 
 function SbpLogo() {
-  // Стилизованный знак СБП — квадрат с цветными «лучами» и буквами.
+  // Официальный знак СБП: квадратный значок с цветными полосами + надпись «СБП».
+  // Цвета и пропорции приближены к brand book НСПК.
   return (
-    <svg viewBox="0 0 64 22" className="h-5 w-auto" aria-label="СБП">
-      <g transform="translate(0,1)">
-        <path d="M2 10 L10 2 L10 18 Z" fill="#1F8FFF" />
-        <path d="M10 2 L18 10 L10 18 Z" fill="#5BCBA0" />
-        <path d="M10 2 L18 10 L10 10 Z" fill="#FFD23F" />
-        <path d="M10 10 L18 10 L10 18 Z" fill="#EF4444" />
+    <svg viewBox="0 0 76 24" className="h-5 w-auto" aria-label="СБП">
+      {/* значок — наклонённые полосы в квадрате */}
+      <g>
+        <rect x="0" y="2" width="20" height="20" rx="2" fill="#1D1D1B" />
+        <g transform="translate(2,4)">
+          <path d="M0 4 L6 0 L9 0 L3 4 Z" fill="#5BCBA0" />
+          <path d="M0 8 L12 0 L15 0 L3 8 Z" fill="#1F8FFF" />
+          <path d="M0 12 L16 1.5 L16 4.5 L4.5 12 Z" fill="#FFB400" />
+          <path d="M6 12 L16 5 L16 8 L10 12 Z" fill="#EF4444" />
+        </g>
       </g>
       <text
-        x="24"
-        y="16"
+        x="26"
+        y="17"
         fontFamily="Arial Black, Arial, sans-serif"
         fontSize="13"
         fontWeight="900"

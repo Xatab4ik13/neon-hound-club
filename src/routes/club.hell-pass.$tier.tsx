@@ -111,11 +111,15 @@ function TierDetailPage() {
       navigate({ to: "/login", search: { redirect: `/club/hell-pass/${tier.slug}` } });
       return;
     }
+    if (purchaseM.isPending) return;
+    if (isDowngrade) {
+      toast.error(`У тебя активен ${active!.tier.toUpperCase()} — тир ниже купить нельзя.`);
+      return;
+    }
     setPendingMethod(method);
     purchaseM.mutate(method);
   };
 
-  const ctaDisabled = !isAuthed || purchaseM.isPending || Boolean(isDowngrade);
   const baseLabel = !isAuthed
     ? "Войти"
     : purchaseId
@@ -247,7 +251,6 @@ function TierDetailPage() {
               <div className="mt-4 flex flex-col gap-2">
                 <PayCardButton
                   onClick={() => buy("card")}
-                  disabled={ctaDisabled}
                   loading={purchaseM.isPending && pendingMethod === "card"}
                   label={
                     !purchaseId && !isDowngrade
@@ -259,7 +262,6 @@ function TierDetailPage() {
                 {sbpEnabled && !purchaseId && !isDowngrade && (
                   <PaySbpButton
                     onClick={() => buy("sbp")}
-                    disabled={ctaDisabled}
                     loading={purchaseM.isPending && pendingMethod === "sbp"}
                     label={`${baseLabel} через`}
                     size="lg"
