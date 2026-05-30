@@ -133,14 +133,19 @@ function SbpLogo() {
 
 /* ───── Публичные компоненты ───── */
 
-export function PayCardButton(props: {
-  onClick: () => void;
+type PublicProps = {
+  onClick?: () => void;
   disabled?: boolean;
   loading?: boolean;
   label?: string;
   size?: Size;
   className?: string;
-}) {
+  type?: "button" | "submit";
+  name?: string;
+  value?: string;
+};
+
+export function PayCardButton(props: PublicProps) {
   return (
     <Base
       {...props}
@@ -156,13 +161,7 @@ export function PayCardButton(props: {
   );
 }
 
-export function PaySbpButton(props: {
-  onClick: () => void;
-  disabled?: boolean;
-  loading?: boolean;
-  label?: string;
-  size?: Size;
-  className?: string;
-}) {
+export function PaySbpButton(props: PublicProps) {
   return <Base {...props} label={props.label ?? "Оплатить через"} logos={<SbpLogo />} />;
 }
+
