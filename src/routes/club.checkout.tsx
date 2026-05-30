@@ -18,9 +18,10 @@ import { BACKEND_URL } from "@/lib/api";
 const PAY_ACTION = `${BACKEND_URL}/api/v1/payments/redirect`;
 
 export const Route = createFileRoute("/club/checkout")({
-  validateSearch: (s: Record<string, unknown>) => ({
-    payment_error: typeof s.payment_error === "string" ? s.payment_error : undefined,
-  }),
+  validateSearch: (s: Record<string, unknown>): { payment_error?: string } => {
+    const v = typeof s.payment_error === "string" ? s.payment_error : undefined;
+    return v ? { payment_error: v } : {};
+  },
   head: () => ({
     meta: [
       { title: "Оформление — клуб HELLHOUND" },
@@ -119,7 +120,7 @@ function ClubCheckoutPage() {
   useEffect(() => {
     if (search.payment_error) {
       hhToast.error("Ошибка оплаты", { meta: search.payment_error });
-      navigate({ to: "/club/checkout", search: {}, replace: true });
+      navigate({ to: "/club/checkout", search: () => ({}), replace: true });
     }
   }, [search.payment_error, navigate]);
 
@@ -197,44 +198,24 @@ function ClubCheckoutPage() {
 
   if (!isAuthed || items.length === 0) return null;
 
-
-  // Если в корзине только старые позиции без productId — оформить нельзя
-
   return (
     <main className="mx-auto w-full max-w-3xl px-4 py-5 pb-[calc(32px+env(safe-area-inset-bottom))] md:max-w-6xl md:px-8 md:py-10 md:pb-16">
       <PageHeader title="Оформление" subtitle="Доставка и оплата" />
 
-      {payUrl && (
-        <div className="mb-5 rounded-2xl border border-primary/40 bg-primary/[0.08] p-4">
-          <div className="font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-primary">
-            Заказ создан · ждём оплату
-          </div>
-          <div className="mt-1 text-[13px] text-foreground/80">
-            Нажми, чтобы открыть страницу банка.
-          </div>
-          <a
-            ref={payCtaRef}
-            href={payUrl}
-            rel="noopener"
-            className="mt-3 block w-full rounded-xl bg-primary px-5 py-4 text-center font-display text-base font-black uppercase tracking-wider text-primary-foreground shadow-[0_8px_24px_-8px_rgba(255,45,149,0.6)] active:scale-[0.99]"
-          >
-            Перейти к оплате →
-          </a>
-          <button
-            type="button"
-            onClick={() => {
-              setPayUrl(null);
-              setPendingMethod(null);
-            }}
-            className="mt-2 block w-full text-center font-mono text-[10px] uppercase tracking-widest text-white/40 underline-offset-2 hover:text-white/70 hover:underline"
-          >
-            Отменить
-          </button>
-        </div>
-      )}
+      <form
+        method="POST"
+        action={PAY_ACTION}
+        onSubmit={guard}
+        className="md:grid md:grid-cols-[1fr_380px] md:items-start md:gap-8"
+      >
+        {/* Скрытые поля для бекенда — он сам создаст заказ и редиректнёт на банк */}
+        <input type="hidden" name="target" value="order" />
+        <input type="hidden" name="items" value={itemsJson} />
+        <input type="hidden" name="shipping_fio" value={form.name} />
+        <input type="hidden" name="shipping_phone" value={form.phone} />
+        <input type="hidden" name="shipping_city" value={cityFallback} />
+        <input type="hidden" name="shipping_address" value={form.address} />
 
-
-      <form onSubmit={submit} className="md:grid md:grid-cols-[1fr_380px] md:items-start md:gap-8">
         {/* ЛЕВАЯ КОЛОНКА: данные получателя/доставки */}
         <div className="space-y-5">
           {/* Контакты */}
@@ -276,7 +257,7 @@ function ClubCheckoutPage() {
             </FieldRow>
           </Section>
 
-          {/* Доставка — единое поле с подсказками DaData */}
+          {/* Доставка */}
           <Section icon={<MapPin className="h-3.5 w-3.5" />} title="Доставка">
             <FieldRow label="Адрес" last>
               <DadataInput
@@ -310,7 +291,6 @@ function ClubCheckoutPage() {
             <CheckCircle2 className="h-5 w-5 shrink-0 text-primary" />
           </div>
 
-          {/* Продавец (для банка-эквайера) */}
           <div className="rounded-2xl border border-white/[0.06] bg-card/40 px-4 py-3">
             <div className="mb-1 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
               Продавец
@@ -320,7 +300,6 @@ function ClubCheckoutPage() {
             </div>
           </div>
 
-          {/* Согласие на оферту */}
           <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-white/[0.06] bg-card/40 px-4 py-3">
             <input
               type="checkbox"
@@ -346,9 +325,8 @@ function ClubCheckoutPage() {
           </label>
         </div>
 
-        {/* ПРАВАЯ КОЛОНКА (md+): состав + итого + кнопка. На мобиле — просто стек ниже формы. */}
+        {/* ПРАВАЯ КОЛОНКА */}
         <aside className="mt-5 space-y-4 md:sticky md:top-24 md:mt-0">
-          {/* Состав заказа */}
           <section className="overflow-hidden rounded-2xl border border-white/[0.06] bg-card/40">
             <div className="border-b border-white/[0.05] px-4 py-3">
               <span className="font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
@@ -404,7 +382,6 @@ function ClubCheckoutPage() {
             </div>
           )}
 
-          {/* Платёжные системы */}
           <div className="flex items-center justify-between gap-3 rounded-2xl border border-white/[0.06] bg-card/40 px-4 py-3">
             <div className="font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
               Принимаем
@@ -412,42 +389,22 @@ function ClubCheckoutPage() {
             <PaymentBadges size="sm" />
           </div>
 
+          {/* Мобильные кнопки оплаты */}
           <div className="flex flex-col gap-2 md:hidden">
-            <PayCardButton
-              onClick={() => pay("card")}
-              loading={submitting && pendingMethod === "card"}
-              label={submitting && pendingMethod === "card" ? "Открываем…" : "Оплатить картой"}
-              size="lg"
-            />
+            <PayCardButton type="submit" name="method" value="card" size="lg" />
             {sbpEnabled && (
-              <PaySbpButton
-                onClick={() => pay("sbp")}
-                loading={submitting && pendingMethod === "sbp"}
-                label={submitting && pendingMethod === "sbp" ? "Открываем…" : "Оплатить через"}
-                size="lg"
-              />
+              <PaySbpButton type="submit" name="method" value="sbp" size="lg" />
             )}
           </div>
 
-          {/* Desktop CTA — встроена в aside, всегда видна */}
+          {/* Desktop кнопки оплаты */}
           <div className="hidden flex-col gap-2 md:flex">
-            <PayCardButton
-              onClick={() => pay("card")}
-              loading={submitting && pendingMethod === "card"}
-              label={submitting && pendingMethod === "card" ? "Открываем…" : "Оплатить картой"}
-              size="lg"
-            />
+            <PayCardButton type="submit" name="method" value="card" size="lg" />
             {sbpEnabled && (
-              <PaySbpButton
-                onClick={() => pay("sbp")}
-                loading={submitting && pendingMethod === "sbp"}
-                label={submitting && pendingMethod === "sbp" ? "Открываем…" : "Оплатить через"}
-                size="lg"
-              />
+              <PaySbpButton type="submit" name="method" value="sbp" size="lg" />
             )}
           </div>
         </aside>
-
       </form>
     </main>
   );
