@@ -32,6 +32,58 @@ function errorRedirect(path: string, message: string): string {
   }
 }
 
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function paymentRedirectDocument(url: string): string {
+  const safeUrl = escapeHtml(url);
+  const jsUrl = JSON.stringify(url);
+
+  return `<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="refresh" content="0;url=${safeUrl}" />
+    <title>Переход к оплате</title>
+    <style>
+      :root { color-scheme: light dark; }
+      body {
+        margin: 0;
+        min-height: 100dvh;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        font: 16px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: #0f0f10;
+        color: #f5f5f5;
+      }
+      main { max-width: 420px; text-align: center; }
+      a { color: #f5f5f5; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p>Переходим к оплате…</p>
+      <p><a href="${safeUrl}" rel="noopener noreferrer">Если не открылось — нажми сюда</a></p>
+    </main>
+    <script>
+      const url = ${jsUrl};
+      try { window.location.replace(url); } catch {}
+      setTimeout(() => {
+        try { window.location.href = url; } catch {}
+      }, 60);
+    </script>
+  </body>
+</html>`;
+}
+
 // /redirect — единая точка входа для всех платежей.
 // Принимает application/x-www-form-urlencoded ИЛИ application/json.
 // Делает всё за один HTTP-цикл и отвечает 303 на платёжную форму банка.
@@ -132,7 +184,13 @@ export async function paymentsRoutes(app: FastifyInstance) {
       String(req.headers["accept"] ?? "").includes("application/json");
 
     const replyOk = (url: string) =>
-      wantsJson ? reply.code(200).send({ paymentUrl: url }) : reply.redirect(url, 303);
+      wantsJson
+        ? reply.code(200).send({ paymentUrl: url })
+        : reply
+            .code(200)
+            .header("content-type", "text/html; charset=utf-8")
+            .header("cache-control", "no-store, max-age=0")
+            .send(paymentRedirectDocument(url));
     const replyErr = (path: string, message: string) =>
       wantsJson
         ? reply.code(400).send({ error: "payment_init_failed", message })
