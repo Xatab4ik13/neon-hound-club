@@ -14,6 +14,7 @@ import { useViewer } from "@/hooks/use-viewer";
 import { usePaymentMethods } from "@/hooks/use-payment-methods";
 import { BACKEND_URL } from "@/lib/api";
 import { isStandalonePWA } from "@/lib/is-pwa";
+import { payInPwa } from "@/lib/pwa-pay";
 
 const TIER_RANK: Record<PassTier, number> = { silver: 1, gold: 2, platinum: 3 };
 const PAY_ACTION = `${BACKEND_URL}/api/v1/payments/redirect`;
