@@ -196,6 +196,11 @@ function ClubCheckoutPage() {
         /* ignore */
       }
     }
+    // В standalone PWA (iOS) cross-origin 303 в том же окне блокируется системой.
+    // target="_blank" форсит открытие в Safari поверх PWA.
+    if (isStandalonePWA()) {
+      e.currentTarget.target = "_blank";
+    }
   };
 
   if (!isAuthed || items.length === 0) return null;
