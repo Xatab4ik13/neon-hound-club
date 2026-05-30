@@ -152,10 +152,11 @@ function ClubCheckoutPage() {
       queryClient.invalidateQueries({ queryKey: qk.shopOrders });
       queryClient.invalidateQueries({ queryKey: qk.ticketsBalance });
       setPayUrl(pay.paymentUrl);
-      // Top-level редирект на платёжный шлюз (см. комментарий ниже).
-      try {
-        window.location.assign(pay.paymentUrl);
-      } catch {
+      const popup = paymentWindowRef.current;
+      paymentWindowRef.current = null;
+      if (popup && !popup.closed) {
+        popup.location.href = pay.paymentUrl;
+      } else {
         window.location.href = pay.paymentUrl;
       }
       void order;
@@ -170,6 +171,7 @@ function ClubCheckoutPage() {
   const [payUrl, setPayUrl] = useState<string | null>(null);
 
   const [pendingMethod, setPendingMethod] = useState<PaymentMethod | null>(null);
+  const paymentWindowRef = useRef<Window | null>(null);
 
   const pay = (method: PaymentMethod) => {
     if (mutation.isPending) return;
@@ -202,6 +204,9 @@ function ClubCheckoutPage() {
       }
       return;
     }
+    if (typeof window !== "undefined") {
+      paymentWindowRef.current = window.open("about:blank", "_blank");
+    }
     setPendingMethod(method);
     mutation.mutate({
       method,
@@ -228,7 +233,7 @@ function ClubCheckoutPage() {
   // Если в корзине только старые позиции без productId — оформить нельзя
 
   return (
-    <main className="mx-auto w-full max-w-3xl px-4 py-5 pb-[calc(124px+env(safe-area-inset-bottom))] md:max-w-6xl md:px-8 md:py-10 md:pb-16">
+    <main className="mx-auto w-full max-w-3xl px-4 py-5 pb-[calc(32px+env(safe-area-inset-bottom))] md:max-w-6xl md:px-8 md:py-10 md:pb-16">
       <PageHeader title="Оформление" subtitle="Доставка и оплата" />
 
       {payUrl && (
@@ -468,36 +473,6 @@ function ClubCheckoutPage() {
           </div>
         </aside>
 
-        {/* Mobile sticky CTA — только < md */}
-        <div
-          className="fixed inset-x-0 z-30 border-t border-white/[0.06] bg-black/85 px-4 py-3 backdrop-blur-xl md:hidden"
-          style={{ bottom: "calc(64px + env(safe-area-inset-bottom))" }}
-        >
-          <div className="mx-auto flex max-w-3xl items-center gap-3">
-            <div className="flex flex-col">
-              <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                К оплате
-              </span>
-              <span className="font-display text-lg font-black tabular-nums text-primary">
-                {total.toLocaleString("ru-RU")} ₽
-              </span>
-            </div>
-            <div className="ml-auto flex flex-1 flex-col gap-2">
-              <PayCardButton
-                onClick={() => pay("card")}
-                loading={submitting && pendingMethod === "card"}
-                label={submitting && pendingMethod === "card" ? "Открываем…" : "Картой"}
-              />
-              {sbpEnabled && (
-                <PaySbpButton
-                  onClick={() => pay("sbp")}
-                  loading={submitting && pendingMethod === "sbp"}
-                  label={submitting && pendingMethod === "sbp" ? "Открываем…" : "Через"}
-                />
-              )}
-            </div>
-          </div>
-        </div>
       </form>
     </main>
   );

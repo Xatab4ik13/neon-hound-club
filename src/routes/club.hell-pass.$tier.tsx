@@ -1,7 +1,7 @@
 // Детальная страница одного тира Hell Pass.
 // Полное описание каждого преимущества + кнопка «Купить».
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Check } from "lucide-react";
@@ -70,6 +70,7 @@ function TierDetailPage() {
   const qc = useQueryClient();
   const [purchaseId, setPurchaseId] = useState<string | null>(null);
   const [pendingMethod, setPendingMethod] = useState<PaymentMethod | null>(null);
+  const paymentWindowRef = useRef<Window | null>(null);
   const { sbp: sbpEnabled } = usePaymentMethods();
 
   const passQ = useQuery({
@@ -91,7 +92,13 @@ function TierDetailPage() {
       setPurchaseId(res.purchase.id);
       qc.invalidateQueries({ queryKey: qk.passMe });
       if (res.paymentUrl) {
-        window.location.href = res.paymentUrl;
+        const popup = paymentWindowRef.current;
+        paymentWindowRef.current = null;
+        if (popup && !popup.closed) {
+          popup.location.href = res.paymentUrl;
+        } else {
+          window.location.href = res.paymentUrl;
+        }
       } else {
         toast.success(
           `Заявка №${res.purchase.id.slice(0, 8)} создана. Ожидает оплаты — пока активирует админ.`,
@@ -115,6 +122,9 @@ function TierDetailPage() {
     if (isDowngrade) {
       toast.error(`У тебя активен ${active!.tier.toUpperCase()} — тир ниже купить нельзя.`);
       return;
+    }
+    if (typeof window !== "undefined") {
+      paymentWindowRef.current = window.open("about:blank", "_blank");
     }
     setPendingMethod(method);
     purchaseM.mutate(method);
