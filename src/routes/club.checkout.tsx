@@ -14,6 +14,7 @@ import { useMyProfile, useMyAddress } from "@/lib/garage-api";
 import { formatRuPhone } from "@/lib/phone";
 import { hhToast } from "@/lib/hh-toast";
 import { BACKEND_URL } from "@/lib/api";
+import { isStandalonePWA } from "@/lib/is-pwa";
 
 const PAY_ACTION = `${BACKEND_URL}/api/v1/payments/redirect`;
 
@@ -194,6 +195,11 @@ function ClubCheckoutPage() {
       } catch {
         /* ignore */
       }
+    }
+    // В standalone PWA (iOS) cross-origin 303 в том же окне блокируется системой.
+    // target="_blank" форсит открытие в Safari поверх PWA.
+    if (isStandalonePWA()) {
+      e.currentTarget.target = "_blank";
     }
   };
 
