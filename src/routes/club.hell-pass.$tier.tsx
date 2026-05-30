@@ -1,7 +1,7 @@
 // Детальная страница одного тира Hell Pass.
 // Полное описание каждого преимущества + кнопка «Купить».
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Check } from "lucide-react";
@@ -12,7 +12,7 @@ import { fetchPassMe, purchasePass, qk, type PassTier, type PaymentMethod } from
 import { useViewer } from "@/hooks/use-viewer";
 import { usePaymentMethods } from "@/hooks/use-payment-methods";
 import { ApiError } from "@/lib/api";
-import { commitPaymentRedirect } from "@/lib/payment-redirect";
+import { beginPaymentRedirect, type PaymentRedirectHandle } from "@/lib/payment-redirect";
 
 const TIER_RANK: Record<PassTier, number> = { silver: 1, gold: 2, platinum: 3 };
 
