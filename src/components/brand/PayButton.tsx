@@ -7,6 +7,7 @@
  * Используется на /club/checkout и /club/hell-pass/$tier.
  */
 import { Loader2 } from "lucide-react";
+import sbpLogo from "@/assets/sbp-logo.png";
 
 type Size = "md" | "lg";
 
@@ -100,32 +101,8 @@ function MirLogo() {
 }
 
 function SbpLogo() {
-  // Официальный знак СБП: квадратный значок с цветными полосами + надпись «СБП».
-  // Цвета и пропорции приближены к brand book НСПК.
   return (
-    <svg viewBox="0 0 76 24" className="h-5 w-auto" aria-label="СБП">
-      {/* значок — наклонённые полосы в квадрате */}
-      <g>
-        <rect x="0" y="2" width="20" height="20" rx="2" fill="#1D1D1B" />
-        <g transform="translate(2,4)">
-          <path d="M0 4 L6 0 L9 0 L3 4 Z" fill="#5BCBA0" />
-          <path d="M0 8 L12 0 L15 0 L3 8 Z" fill="#1F8FFF" />
-          <path d="M0 12 L16 1.5 L16 4.5 L4.5 12 Z" fill="#FFB400" />
-          <path d="M6 12 L16 5 L16 8 L10 12 Z" fill="#EF4444" />
-        </g>
-      </g>
-      <text
-        x="26"
-        y="17"
-        fontFamily="Arial Black, Arial, sans-serif"
-        fontSize="13"
-        fontWeight="900"
-        fill="#0B1B3A"
-        letterSpacing="0.5"
-      >
-        СБП
-      </text>
-    </svg>
+    <img src={sbpLogo} alt="СБП" className="h-5 w-auto object-contain" loading="lazy" />
   );
 }
 
