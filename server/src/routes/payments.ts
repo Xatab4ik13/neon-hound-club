@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { requireAuth, type SessionPayload } from "../lib/auth.js";
+import { loadSession, requireAuth, type SessionPayload } from "../lib/auth.js";
 import {
   createPaymentForOrder,
   createPaymentForPass,
