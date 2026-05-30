@@ -57,7 +57,7 @@ async function getVapidPublicKey(): Promise<string | null> {
 export async function registerPushSW(): Promise<ServiceWorkerRegistration | null> {
   if (!isPushSupported() || isLovablePreview()) return null;
   try {
-    return await navigator.serviceWorker.register("/sw.js");
+    return await navigator.serviceWorker.register("/sw.js", { updateViaCache: "none" });
   } catch (e) {
     console.warn("[push] sw register failed", e);
     return null;
