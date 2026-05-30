@@ -19,6 +19,7 @@ import { isRaifConfigured } from "../lib/raif.js";
 
 const purchaseSchema = z.object({
   tier: z.enum(PASS_TIERS),
+  method: z.enum(["card", "sbp"]).optional(),
 });
 
 export async function passRoutes(app: FastifyInstance) {
@@ -58,10 +59,11 @@ export async function passRoutes(app: FastifyInstance) {
     const session = req.user as SessionPayload;
     try {
       const purchase = await createPassPurchase(session.sub, parsed.data.tier);
+      const method = parsed.data.method ?? "card";
       let paymentUrl: string | null = null;
-      if (isRaifConfigured()) {
+      if (isRaifConfigured(method)) {
         try {
-          const p = await createPaymentForPass(purchase.id, session.sub);
+          const p = await createPaymentForPass(purchase.id, session.sub, method);
           paymentUrl = p.paymentUrl;
         } catch (e) {
           // Платёжка отвалилась — purchase остаётся pending_payment, юзер увидит ошибку.

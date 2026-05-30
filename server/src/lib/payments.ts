@@ -3,14 +3,16 @@
  *   - createPaymentFor{Pass,Order} — создать платёж и получить ссылку на форму
  *   - handleRaifNotification — обработать вебхук
  *
- * Идемпотентность: на каждый ref (pass/order) живёт один активный платёж
- * (status в new/pending/authorized). Если он уже есть — переиспользуем.
- * Повторный CONFIRMED-вебхук не двоит активацию (это гарантируют
- * activatePassPurchase и markOrderPaid).
+ * У нас две торговые точки (card / sbp) — фронт выбирает кнопкой,
+ * метод сохраняется в payments.method и используется при проверке вебхука.
+ *
+ * Идемпотентность: на каждый ref (pass/order) + method живёт один активный
+ * платёж (status в new/pending/authorized). Карточный и СБП-платёжи на тот же
+ * заказ — это разные мерчанты, поэтому хранятся параллельно.
  */
 import { and, eq, inArray } from "drizzle-orm";
 import { db } from "../db/client.js";
-import { payments, type Payment } from "../db/schema/payments.js";
+import { payments, type Payment, type PaymentMethod } from "../db/schema/payments.js";
 import { passPurchases } from "../db/schema/pass.js";
 import { orders } from "../db/schema/shop.js";
 import { activatePassPurchase } from "./pass.js";
@@ -20,6 +22,7 @@ import {
   verifyPaymentCallback,
   mapRaifStatus,
   isRaifConfigured,
+  getAccount,
   RaifApiError,
 } from "./raif.js";
 
@@ -37,7 +40,11 @@ export class PaymentInitError extends Error {
 
 const ACTIVE_STATUSES = ["new", "pending", "authorized"] as const;
 
-async function findActivePayment(refType: "pass" | "order", refId: string): Promise<Payment | null> {
+async function findActivePayment(
+  refType: "pass" | "order",
+  refId: string,
+  method: PaymentMethod,
+): Promise<Payment | null> {
   const [row] = await db
     .select()
     .from(payments)
@@ -45,6 +52,7 @@ async function findActivePayment(refType: "pass" | "order", refId: string): Prom
       and(
         eq(payments.refType, refType),
         eq(payments.refId, refId),
+        eq(payments.method, method),
         inArray(payments.status, ACTIVE_STATUSES as unknown as string[]),
       ),
     )
@@ -60,14 +68,17 @@ function withPaymentId(url: string, paymentId: string): string {
 
 /**
  * Создать (или вернуть существующий) платёж для покупки Hell Pass.
- * Возвращает { payment, paymentUrl } для редиректа на платёжную форму Райффайзена.
  */
 export async function createPaymentForPass(
   purchaseId: string,
   userId: string,
+  method: PaymentMethod = "card",
 ): Promise<{ payment: Payment; paymentUrl: string }> {
-  if (!isRaifConfigured()) {
-    throw new PaymentInitError("payments_not_configured", "Оплата сейчас недоступна");
+  if (!isRaifConfigured(method)) {
+    throw new PaymentInitError(
+      "payments_not_configured",
+      method === "sbp" ? "Оплата через СБП сейчас недоступна" : "Оплата сейчас недоступна",
+    );
   }
   const [purchase] = await db
     .select()
@@ -80,10 +91,9 @@ export async function createPaymentForPass(
     throw new PaymentInitError("purchase_not_payable", `Заявка уже ${purchase.status}`);
   }
 
-  const existing = await findActivePayment("pass", purchase.id);
+  const existing = await findActivePayment("pass", purchase.id, method);
   if (existing && existing.paymentUrl) return { payment: existing, paymentUrl: existing.paymentUrl };
 
-  // Создаём нашу запись заранее — её id и пойдёт как orderId в Райф.
   const [created] = await db
     .insert(payments)
     .values({
@@ -92,12 +102,14 @@ export async function createPaymentForPass(
       refId: purchase.id,
       userId,
       amountRub: purchase.priceRub,
+      method,
       status: "new",
     })
     .returning();
 
   try {
     const order = await createOrder({
+      method,
       orderId: created!.id,
       amountRub: purchase.priceRub,
       comment: `Hell Pass ${purchase.tier.toUpperCase()} — 30 дней`,
@@ -140,9 +152,13 @@ export async function createPaymentForPass(
 export async function createPaymentForOrder(
   orderId: string,
   userId: string,
+  method: PaymentMethod = "card",
 ): Promise<{ payment: Payment; paymentUrl: string }> {
-  if (!isRaifConfigured()) {
-    throw new PaymentInitError("payments_not_configured", "Оплата сейчас недоступна");
+  if (!isRaifConfigured(method)) {
+    throw new PaymentInitError(
+      "payments_not_configured",
+      method === "sbp" ? "Оплата через СБП сейчас недоступна" : "Оплата сейчас недоступна",
+    );
   }
   const [order] = await db.select().from(orders).where(eq(orders.id, orderId)).limit(1);
   if (!order) throw new PaymentInitError("order_not_found", "Заказ не найден");
@@ -151,7 +167,7 @@ export async function createPaymentForOrder(
     throw new PaymentInitError("order_not_payable", `Заказ уже ${order.status}`);
   }
 
-  const existing = await findActivePayment("order", order.id);
+  const existing = await findActivePayment("order", order.id, method);
   if (existing && existing.paymentUrl) return { payment: existing, paymentUrl: existing.paymentUrl };
 
   const [created] = await db
@@ -162,12 +178,14 @@ export async function createPaymentForOrder(
       refId: order.id,
       userId,
       amountRub: order.totalRub,
+      method,
       status: "new",
     })
     .returning();
 
   try {
     const raifOrder = await createOrder({
+      method,
       orderId: created!.id,
       amountRub: order.totalRub,
       comment: `Заказ #${order.id.slice(0, 8).toUpperCase()} в магазине HELLHOUND`,
@@ -208,27 +226,16 @@ export async function createPaymentForOrder(
 
 /**
  * Обработать Notification от Райффайзена (Уведомление об оплате v3).
- *   1. Проверка HMAC-SHA-256 подписи (X-Api-Signature-SHA256).
- *   2. Найти наш payments row по providerPaymentId (= data.order.id).
- *   3. Сверить сумму (защита от подмены).
- *   4. Если статус SUCCESS — активировать pass или заказ (idempotent).
- *   5. Обновить наш статус + raw_last_notification.
- *
- * Возвращает true, если можно отвечать 200 OK (вебхук принят).
- * false — подпись/данные не сошлись (банк не будет ретраить при 400).
+ *   1. Найти наш payments row по providerPaymentId (= data.order.id).
+ *   2. По payment.method взять секрет нужной торговой точки.
+ *   3. Проверить HMAC-SHA-256 подпись этим секретом.
+ *   4. Сверить сумму, обновить статус, активировать pass/order при SUCCESS.
  */
 export async function handleRaifNotification(
   body: Record<string, unknown>,
   signature: string | undefined,
 ): Promise<boolean> {
-  if (!isRaifConfigured()) return false;
-  if (!verifyPaymentCallback(body, signature)) return false;
-
   const event = body.event as string | undefined;
-  if (event !== "PAYMENT") {
-    // Не платёж (например, REFUND/SUBSCRIPTION) — игнорируем, но считаем принятым.
-    return true;
-  }
 
   const data = (body.data ?? {}) as Record<string, unknown>;
   const order = (data.order ?? {}) as Record<string, unknown>;
@@ -243,6 +250,15 @@ export async function handleRaifNotification(
     .limit(1);
   if (!payment) return false;
 
+  const method = (payment.method as PaymentMethod) || "card";
+  const acc = getAccount(method);
+  if (!acc) return false;
+
+  if (!verifyPaymentCallback(body, signature, acc.secretKey)) return false;
+
+  // Если это не событие платежа — подпись валидна, отвечаем 200, ничего не делаем.
+  if (event && event !== "PAYMENT") return true;
+
   // Сверка суммы — клиент мог изменить сумму на форме.
   const incomingAmount = Number(data.amount);
   if (!Number.isFinite(incomingAmount) || Math.round(incomingAmount) !== payment.amountRub) {
@@ -254,7 +270,7 @@ export async function handleRaifNotification(
         updatedAt: new Date(),
       })
       .where(eq(payments.id, payment.id));
-    return true; // подпись валидная, но сумма не та — отвечаем 200, чтобы банк не ретраил
+    return true;
   }
 
   const mapped = mapRaifStatus(status.value as string | undefined);
@@ -288,5 +304,6 @@ export async function getPaymentStatusForUser(paymentId: string, userId: string)
     refType: row.refType,
     refId: row.refId,
     amountRub: row.amountRub,
+    method: row.method,
   };
 }

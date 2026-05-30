@@ -1,79 +1,131 @@
-# Fly-to-cart анимация (iOS-style, без лагов)
+## Что делаем
 
-## Цель
-При тапе «В корзину» юзер видит, как мини-копия товара по дуге улетает к иконке корзины в правом верхнем углу. Корзина в этот момент пульсирует, badge делает bump. Никаких лагов даже на слабом телефоне в PWA.
+На чекауте магазина и на покупке Hell Pass — две кнопки оплаты: **«Картой»** и **«СБП»**. Каждая создаёт платёж в Райфе через свою торговую точку (свой `publicId` + свой `secretKey`). Внешне для клиента — выбор способа прямо у нас, потом сразу на форму банка.
 
-## Как это будет выглядеть
-1. Тап по кнопке → лёгкий haptic, кнопка делает iOS-press (scale 0.96).
-2. От центра кнопки отрывается круглая превью (40×40, картинка товара, скруглённая, с тенью).
-3. Летит по дуге к иконке корзины 550 мс, по пути уменьшается до 12px и затухает.
-4. В момент «прилёта» — badge корзины делает bump (scale 1 → 1.25 → 1, 250 мс), иконка коротко подсвечивается primary-glow.
-5. `cart.add()` вызывается сразу при тапе (не ждём анимацию) — данные не блокируются визуалом.
+Если СБП-точка в `.env` не настроена — кнопка СБП просто скрывается, всё продолжает работать как раньше.
 
-## Что делаем (минимум файлов)
+---
 
-### 1. `src/components/club/FlyToCart.tsx` (новый)
-Императивный API через React-портал в `<body>`:
-- `flyToCart({ fromRect, imageUrl })` — функция, которую можно дёрнуть откуда угодно.
-- Находит target по `document.querySelector('[data-cart-anchor]')`, берёт его `getBoundingClientRect()`.
-- Если target не найден → no-op (fallback на существующий toast).
-- Создаёт абсолютно позиционированный `<div>` с `position: fixed`, размер 40×40, `background-image: url(...)`, `border-radius: 50%`, `box-shadow`.
-- Анимирует через **Web Animations API** (`element.animate([...], { duration: 550, easing: 'cubic-bezier(.5,-0.3,.7,.3)' })`) — это GPU, не дёргает React, не вызывает re-renders. По завершении удаляет элемент.
-- Дуга: keyframes на `transform: translate(x,y) scale(s)` + `opacity`. Промежуточный кадр на 40% времени смещён вверх на `-80px` от прямой линии → даёт «горку».
-- `will-change: transform, opacity` ставится на старте, снимается на финише.
+## Что нужно от тебя в `.env` на VPS (после деплоя)
 
-**Почему не лагает:**
-- Только `transform` + `opacity` (composited слои, без layout/paint).
-- Web Animations API работает в браузерном compositor thread.
-- Никаких `setState` во время полёта.
-- Элемент один, удаляется после.
-
-### 2. `src/hooks/use-haptic.ts` — уже есть, переиспользуем.
-
-### 3. `src/components/club/MobileTopBar.tsx` (edit)
-- На иконке корзины добавить `data-cart-anchor` (атрибут на ссылку `<Link to="/club/cart">`).
-- Badge получает `key={cartCount}` + класс с keyframe `animate-cart-bump` (новый, в `styles.css`) — bump срабатывает на каждое изменение count.
-- Glow-пульс иконки: слушаем кастомное событие `hh:cart:landed` (диспатчим из `FlyToCart` в момент финиша) → добавляем класс на 400 мс через `useState`/таймер.
-
-### 4. `src/styles.css`
-Добавить два keyframe:
-```css
-@keyframes cart-bump { 0%{transform:scale(1)} 40%{transform:scale(1.25)} 100%{transform:scale(1)} }
-@keyframes cart-glow { 0%,100%{box-shadow:none} 50%{box-shadow:0 0 16px var(--primary)} }
+```
+RAIF_PUBLIC_ID_SBP=MB0002844756
+RAIF_SECRET_KEY_SBP=<секретный ключ СБП-точки из ЛК Райфа>
 ```
 
-### 5. Интеграция в кнопках «В корзину»
-Два места:
-- `src/routes/club.shop.$productSlug.tsx` — кнопка покупки на странице товара.
-- `src/routes/club.shop.index.tsx` — кнопка «+» на карточке в листинге (если есть; иначе тап по карточке не меняем).
+Где взять ключ: ЛК Райфа → «Настройки» → выбрать точку `MB0002844756` → «Секретные ключи для интеграции» → «Добавить». Скопировать и вставить в `.env`. Webhook URL у СБП-точки указать тот же, что у карточной: `https://api.hhr.pro/api/v1/payments/raif/webhook`.
 
-Обёртка одинаковая:
-```tsx
-const btnRef = useRef<HTMLButtonElement>(null);
-const onAdd = () => {
-  haptic('light');
-  flyToCart({ fromRect: btnRef.current!.getBoundingClientRect(), imageUrl: product.image });
-  cart.add({...});
-};
+Имеющиеся `RAIF_PUBLIC_ID` / `RAIF_SECRET_KEY` (карточная точка) остаются как есть.
+
+---
+
+## UI
+
+### Чекаут магазина (`/club/checkout`)
+
+- **Desktop (aside справа):** две одинаковые по ширине кнопки в одну строку под итогом — «Оплатить картой» / «Оплатить через СБП».
+- **Mobile sticky bar:** слева цена «К оплате», справа две кнопки рядом, равной ширины. Высота бара та же.
+- Кнопка «Картой» — primary fill. Кнопка «СБП» — outline (border + текст в primary). Обе уважают `prefers-reduced-motion`.
+- Disabled, пока форма не валидна / нет согласия / нет товаров с `productId`.
+- Если СБП не сконфигурирован на бэке — рендерим только кнопку «Картой» (на всю ширину, как сейчас).
+
+### Hell Pass (`/club/hell-pass/$tier`)
+
+- В правом sticky-блоке вместо одной CTA — две кнопки оплаты в одну строку («Картой» / «СБП»), сохраняя текущий стиль карточки тира (gold-градиент для Gold, primary-glow для Platinum применяется к основной кнопке; СБП — outline-вариант).
+- Логика выбора способа передаётся в `purchasePass`.
+
+---
+
+## Бэкенд
+
+### Миграция `server/src/db/migrations/0032_payments_method.sql`
+```sql
+ALTER TABLE "payments"
+  ADD COLUMN IF NOT EXISTS "method" varchar(8) NOT NULL DEFAULT 'card';
 ```
+Существующие платежи остаются валидными (`method='card'`).
 
-### 6. Fallback и edge cases
-- **Корзина не на экране** (десктоп, переход между роутами): `flyToCart` возвращает `false` → показываем существующий toast «Добавлено · Открыть корзину».
-- **`prefers-reduced-motion: reduce`**: пропускаем полёт, только badge bump + toast.
-- **Быстрые повторные тапы**: каждый полёт — отдельный DOM-элемент, не мешают друг другу, badge `key={count}` рестартит анимацию.
-- **PWA standalone**: всё работает идентично, никаких popup'ов и navigations.
+### `server/src/db/schema/payments.ts`
+Добавить `method: varchar("method", { length: 8 }).notNull().default("card")` + тип `PaymentMethod = "card" | "sbp"`.
+
+### `server/src/lib/raif.ts` (переписать конфигурацию)
+- Завести внутреннюю мапу аккаунтов:
+  ```ts
+  type Account = { publicId: string; secretKey: string };
+  const ACCOUNTS: Partial<Record<"card" | "sbp", Account>> = { … };
+  ```
+  Заполняется из env при загрузке модуля:
+  - `card` ← `RAIF_PUBLIC_ID` + `RAIF_SECRET_KEY`
+  - `sbp` ← `RAIF_PUBLIC_ID_SBP` + `RAIF_SECRET_KEY_SBP`
+- `isRaifConfigured(method)` — есть ли аккаунт под этот метод.
+- `getConfiguredMethods(): ("card"|"sbp")[]` — для публичного эндпоинта.
+- `createOrder({ method, … })` — берёт нужный аккаунт, шлёт `paymentMethods: [method === "sbp" ? "SBP" : "ACQUIRING"]`, авторизуется секретом этого аккаунта.
+- `verifyPaymentCallback(body, signature, secretKey)` — теперь принимает секрет параметром, а не читает глобальный.
+
+### `server/src/lib/payments.ts`
+- `createPaymentForPass(purchaseId, userId, method)` и `createPaymentForOrder(orderId, userId, method)`:
+  - проверяют `isRaifConfigured(method)`;
+  - `findActivePayment` фильтрует ещё и по `method` (карточный и СБП-платёж на тот же заказ не конфликтуют — это два разных мерчанта);
+  - сохраняют `method` в строке `payments`;
+  - вызывают `raif.createOrder({ method, … })`.
+- `handleRaifNotification(body, signature)`:
+  1. Парсим `data.order.id` → находим `payment` по `providerPaymentId`.
+  2. По `payment.method` берём секрет соответствующего аккаунта.
+  3. Этим секретом проверяем подпись. Если не сошлась — 400.
+  4. Дальше — как было: сверка суммы → активация pass/order.
+
+### `server/src/routes/payments.ts`
+- В body `/pass/:id/init` и `/order/:id/init` принимаем `{ method?: "card" | "sbp" }` (Zod, default `"card"`).
+- Возвращаем 400, если метод не сконфигурирован.
+- Новый `GET /api/v1/payments/methods` (без auth, дешёвый): `{ card: bool, sbp: bool }` — фронт по нему решает, показывать ли кнопку СБП.
+
+### `server/src/routes/pass.ts`
+- `POST /pass/purchase` принимает `{ tier, method? }`, передаёт `method` в `createPaymentForPass`.
+
+### `server/src/app.ts` / `server/src/index.ts`
+Если требуется регистрация нового публичного `/methods` — проверим, что paymentsRoutes уже без auth для GET (внутри обработчика без `requireAuth`). Никаких новых пакетов.
+
+---
+
+## Фронт
+
+### `src/lib/queries.ts`
+- `initOrderPayment(orderId, method: "card" | "sbp" = "card")` — теперь шлёт body `{ method }`.
+- `initPassPayment(purchaseId, method = "card")` — то же.
+- `purchasePass(tier, method = "card")` — добавляет `method` в body.
+- Новый `fetchPaymentMethods(): Promise<{ card: boolean; sbp: boolean }>` → `/api/v1/payments/methods`.
+- React Query key: `qk.paymentMethods`.
+
+### `src/hooks/use-payment-methods.ts` (новый, маленький)
+Хук `usePaymentMethods()` оборачивает `useQuery(qk.paymentMethods, …, { staleTime: 5 * 60_000 })`. Возвращает `{ card, sbp, isLoading }`, дефолт `{ card: true, sbp: false }`.
+
+### `src/routes/club.checkout.tsx`
+- Mutation принимает `method` параметром.
+- Заменяем единственный `<button type="submit">` на компонент `PayButtons` — две кнопки (или одна, если sbp недоступен). Раскладка:
+  - **Desktop aside**: `flex gap-2` с `flex-1` на каждой кнопке.
+  - **Mobile sticky bar**: цена слева (как сейчас), справа `flex-1 flex gap-2` — две кнопки делят пространство поровну.
+- Каждая кнопка вызывает `submit(method)` — общий обработчик, который дергает `mutate({ …, method })`.
+
+### `src/routes/club.hell-pass.$tier.tsx`
+- Mutation: `purchasePass(tier.slug, method)`. Внутри кнопок — два варианта вызова.
+- В sticky-карточке тира: основная кнопка «Картой» сохраняет существующий стиль (gold-градиент / primary-glow). Под ней — кнопка «СБП» в стиле `border border-white/15 bg-transparent` с тем же `tier.color` для акцента. Если sbp недоступен — рендерим только верхнюю кнопку (без изменений к существующему виду).
+
+---
 
 ## Что НЕ трогаем
-- Логику `useCart`, бэкенд, любые роуты, layout.
-- Условие `isShop` в `MobileTopBar` — оставляем как есть (юзер уже на shop-странице в момент добавления, корзина видна; глобальную видимость не вводим в этой итерации).
-- Не добавляем зависимости (`framer-motion`, `gsap` и т.п.) — Web Animations API нативный.
+- `/pay/success`, поллинг статуса, webhook-URL, схему `orders`/`pass_purchases`.
+- Старые платежи (`method` дефолтится в `'card'`).
+- Никаких новых сервисов, пакетов, миграций кроме одной выше.
 
-## Файлы
-- ✏️ `src/components/ios/` — не трогаем
-- 🆕 `src/components/club/FlyToCart.tsx` (~80 строк)
-- ✏️ `src/components/club/MobileTopBar.tsx` (data-атрибут + bump key + glow листенер, ~10 строк)
-- ✏️ `src/styles.css` (2 keyframe, +1 утилита `.cart-icon-glow`)
-- ✏️ `src/routes/club.shop.$productSlug.tsx` (ref + вызов flyToCart перед `cart.add`)
-- ✏️ `src/routes/club.shop.index.tsx` (то же на карточке, если есть кнопка «+»)
+---
 
-Готов перейти в build и сделать всё одним проходом.
+## После мержа (твои шаги)
+1. В ЛК Райфа создать секретный ключ для точки `MB0002844756`.
+2. На VPS добавить в `.env`:
+   ```
+   RAIF_PUBLIC_ID_SBP=MB0002844756
+   RAIF_SECRET_KEY_SBP=…
+   ```
+3. У СБП-точки в ЛК Райфа указать webhook URL `https://api.hhr.pro/api/v1/payments/raif/webhook`.
+4. `git pull && docker compose up -d --build`.
+5. Тестовая покупка → проверить, что «Картой» уходит на форму карточной точки, «СБП» — на форму со сканированием QR.

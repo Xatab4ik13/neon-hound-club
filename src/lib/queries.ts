@@ -203,6 +203,7 @@ export const qk = {
   raffle: (id: string) => ["raffles", "item", id] as const,
   myRaffles: ["raffles", "my"] as const,
   invitesMe: ["invites", "me"] as const,
+  paymentMethods: ["payments", "methods"] as const,
 };
 
 // ---------- INVITES / REFERRALS ----------
@@ -319,10 +320,10 @@ export async function fetchPassMe() {
   return apiFetch<{ active: PassRecord | null; history: PassRecord[]; daysLeft: number | null; durationDays: number }>("/api/v1/pass/me");
 }
 
-export async function purchasePass(tier: PassTier) {
+export async function purchasePass(tier: PassTier, method: "card" | "sbp" = "card") {
   return apiFetch<{ purchase: PassRecord; paymentUrl: string | null }>(
     "/api/v1/pass/purchase",
-    { method: "POST", body: JSON.stringify({ tier }) },
+    { method: "POST", body: JSON.stringify({ tier, method }) },
   );
 }
 
@@ -386,21 +387,26 @@ export async function createOrder(input: CreateOrderInput) {
   });
 }
 
-// ---------- PAYMENTS (T-Bank) ----------
+// ---------- PAYMENTS (Raiffeisen) ----------
 
 export type PaymentStatus = "new" | "pending" | "authorized" | "confirmed" | "rejected" | "refunded";
+export type PaymentMethod = "card" | "sbp";
 
-export async function initOrderPayment(orderId: string) {
+export async function fetchPaymentMethods() {
+  return apiFetch<{ card: boolean; sbp: boolean }>("/api/v1/payments/methods");
+}
+
+export async function initOrderPayment(orderId: string, method: PaymentMethod = "card") {
   return apiFetch<{ paymentId: string; paymentUrl: string }>(
     `/api/v1/payments/order/${orderId}/init`,
-    { method: "POST" },
+    { method: "POST", body: JSON.stringify({ method }) },
   );
 }
 
-export async function initPassPayment(purchaseId: string) {
+export async function initPassPayment(purchaseId: string, method: PaymentMethod = "card") {
   return apiFetch<{ paymentId: string; paymentUrl: string }>(
     `/api/v1/payments/pass/${purchaseId}/init`,
-    { method: "POST" },
+    { method: "POST", body: JSON.stringify({ method }) },
   );
 }
 
@@ -411,6 +417,7 @@ export async function fetchPaymentStatus(paymentId: string) {
     refType: "pass" | "order";
     refId: string;
     amountRub: number;
+    method: PaymentMethod;
   }>(`/api/v1/payments/${paymentId}/status`);
 }
 

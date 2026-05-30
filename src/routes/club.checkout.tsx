@@ -9,9 +9,10 @@ import type { DadataAddressData, DadataSuggestion } from "@/lib/dadata";
 import { LEGAL } from "@/data/legal";
 import { useCart } from "@/hooks/use-cart";
 import { useViewer } from "@/hooks/use-viewer";
+import { usePaymentMethods } from "@/hooks/use-payment-methods";
 import { useMyProfile, useMyAddress } from "@/lib/garage-api";
 import { formatRuPhone } from "@/lib/phone";
-import { createOrder, initOrderPayment, qk } from "@/lib/queries";
+import { createOrder, initOrderPayment, qk, type PaymentMethod } from "@/lib/queries";
 import { ApiError } from "@/lib/api";
 import { hhToast } from "@/lib/hh-toast";
 
@@ -131,11 +132,15 @@ function ClubCheckoutPage() {
     setForm((f) => ({ ...f, [k]: v }));
   };
 
+  const { sbp: sbpEnabled } = usePaymentMethods();
+
   const mutation = useMutation({
-    mutationFn: async (input: Parameters<typeof createOrder>[0]) => {
-      const order = await createOrder(input);
-      // Сразу инициируем оплату через Т-Банк и получаем ссылку на платёжку.
-      const pay = await initOrderPayment(order.id);
+    mutationFn: async (
+      input: Parameters<typeof createOrder>[0] & { method: PaymentMethod },
+    ) => {
+      const { method, ...orderInput } = input;
+      const order = await createOrder(orderInput);
+      const pay = await initOrderPayment(order.id, method);
       return { order, pay };
     },
     onSuccess: ({ order, pay }) => {
@@ -146,13 +151,7 @@ function ClubCheckoutPage() {
       queryClient.invalidateQueries({ queryKey: qk.shopOrders });
       queryClient.invalidateQueries({ queryKey: qk.ticketsBalance });
       setPayUrl(pay.paymentUrl);
-      // Единый путь: top-level редирект на платёжный шлюз.
-      // - На iOS PWA (standalone) переход на внешний https открывает Safari автоматически.
-      // - На Android Chrome PWA — то же, открывается в Chrome Custom Tab / браузере.
-      // - В обычном браузере — просто навигация.
-      // window.open(_blank) из async-колбэка блокируется как popup, поэтому НЕ используем.
-      // Если по какой-то причине редирект не произошёл (extension/блокировщик) —
-      // ниже отрисован fallback-блок с кнопкой «Открыть оплату» (использует payUrl).
+      // Top-level редирект на платёжный шлюз (см. комментарий ниже).
       try {
         window.location.assign(pay.paymentUrl);
       } catch {
@@ -178,10 +177,13 @@ function ClubCheckoutPage() {
     agree &&
     !mutation.isPending;
 
-  const submit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const [pendingMethod, setPendingMethod] = useState<PaymentMethod | null>(null);
+
+  const pay = (method: PaymentMethod) => {
     if (!canSubmit) return;
+    setPendingMethod(method);
     mutation.mutate({
+      method,
       items: orderableItems.map((i) => ({ productId: i.productId!, qty: i.qty })),
       shipping: {
         fio: form.name.trim(),
@@ -190,6 +192,12 @@ function ClubCheckoutPage() {
         address: form.address.trim(),
       },
     });
+  };
+
+  // Submit формы (Enter в поле / нативный submit) — дефолтно платим картой.
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    pay("card");
   };
 
   const submitting = mutation.isPending;
@@ -421,13 +429,26 @@ function ClubCheckoutPage() {
           </div>
 
           {/* Desktop CTA — встроена в aside, всегда видна */}
-          <button
-            type="submit"
-            disabled={!canSubmit || submitting}
-            className="hidden w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3.5 font-display text-sm font-black uppercase tracking-wider text-primary-foreground transition-opacity disabled:opacity-40 md:flex"
-          >
-            {submitting ? "Оформляем…" : `Оплатить ${total.toLocaleString("ru-RU")} ₽`}
-          </button>
+          <div className="hidden md:flex md:gap-2">
+            <button
+              type="button"
+              onClick={() => pay("card")}
+              disabled={!canSubmit || submitting}
+              className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3.5 font-display text-sm font-black uppercase tracking-wider text-primary-foreground transition-opacity disabled:opacity-40"
+            >
+              {submitting && pendingMethod === "card" ? "Открываем…" : "Картой"}
+            </button>
+            {sbpEnabled && (
+              <button
+                type="button"
+                onClick={() => pay("sbp")}
+                disabled={!canSubmit || submitting}
+                className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-primary/60 bg-transparent px-4 py-3.5 font-display text-sm font-black uppercase tracking-wider text-primary transition-colors hover:bg-primary/10 disabled:opacity-40"
+              >
+                {submitting && pendingMethod === "sbp" ? "Открываем…" : "СБП"}
+              </button>
+            )}
+          </div>
         </aside>
 
         {/* Mobile sticky CTA — только < md */}
@@ -444,13 +465,26 @@ function ClubCheckoutPage() {
                 {total.toLocaleString("ru-RU")} ₽
               </span>
             </div>
-            <button
-              type="submit"
-              disabled={!canSubmit || submitting}
-              className="ml-auto flex flex-1 items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 font-display text-sm font-black uppercase tracking-wider text-primary-foreground transition-opacity active:scale-[0.98] disabled:opacity-40"
-            >
-              {submitting ? "Оформляем…" : "Оплатить"}
-            </button>
+            <div className="ml-auto flex flex-1 gap-2">
+              <button
+                type="button"
+                onClick={() => pay("card")}
+                disabled={!canSubmit || submitting}
+                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-primary px-3 py-3 font-display text-[13px] font-black uppercase tracking-wider text-primary-foreground transition-opacity active:scale-[0.98] disabled:opacity-40"
+              >
+                {submitting && pendingMethod === "card" ? "…" : "Картой"}
+              </button>
+              {sbpEnabled && (
+                <button
+                  type="button"
+                  onClick={() => pay("sbp")}
+                  disabled={!canSubmit || submitting}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-primary/60 bg-transparent px-3 py-3 font-display text-[13px] font-black uppercase tracking-wider text-primary transition-colors active:scale-[0.98] disabled:opacity-40"
+                >
+                  {submitting && pendingMethod === "sbp" ? "…" : "СБП"}
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </form>

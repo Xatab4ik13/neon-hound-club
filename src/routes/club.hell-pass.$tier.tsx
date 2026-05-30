@@ -7,8 +7,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Check, Loader2 } from "lucide-react";
 import { hhToast as toast } from "@/lib/hh-toast";
 import { getTier, type Perk, type Tier } from "@/data/hell-pass";
-import { fetchPassMe, purchasePass, qk, type PassTier } from "@/lib/queries";
+import { fetchPassMe, purchasePass, qk, type PassTier, type PaymentMethod } from "@/lib/queries";
 import { useViewer } from "@/hooks/use-viewer";
+import { usePaymentMethods } from "@/hooks/use-payment-methods";
 import { ApiError } from "@/lib/api";
 
 const TIER_RANK: Record<PassTier, number> = { silver: 1, gold: 2, platinum: 3 };
@@ -67,6 +68,8 @@ function TierDetailPage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [purchaseId, setPurchaseId] = useState<string | null>(null);
+  const [pendingMethod, setPendingMethod] = useState<PaymentMethod | null>(null);
+  const { sbp: sbpEnabled } = usePaymentMethods();
 
   const passQ = useQuery({
     queryKey: qk.passMe,
@@ -82,7 +85,7 @@ function TierDetailPage() {
   const isDowngrade = active && targetRank < activeRank;
 
   const purchaseM = useMutation({
-    mutationFn: () => purchasePass(tier.slug as PassTier),
+    mutationFn: (method: PaymentMethod) => purchasePass(tier.slug as PassTier, method),
     onSuccess: (res) => {
       setPurchaseId(res.purchase.id);
       qc.invalidateQueries({ queryKey: qk.passMe });
@@ -103,18 +106,27 @@ function TierDetailPage() {
   const isGold = tier.recommended;
   const isPlatinum = tier.ultimate;
 
-  const ctaLabel = !isAuthed
-    ? "Войти и купить"
+  const buy = (method: PaymentMethod) => {
+    if (!isAuthed) {
+      navigate({ to: "/login", search: { redirect: `/club/hell-pass/${tier.slug}` } });
+      return;
+    }
+    setPendingMethod(method);
+    purchaseM.mutate(method);
+  };
+
+  const ctaDisabled = !isAuthed || purchaseM.isPending || Boolean(isDowngrade);
+  const baseLabel = !isAuthed
+    ? "Войти"
     : purchaseId
       ? "Заявка создана"
       : isDowngrade
-        ? `У тебя уже выше — ${active!.tier.toUpperCase()}`
+        ? `Уже выше — ${active!.tier.toUpperCase()}`
         : isSameTier
-          ? "Продлить на 30 дней"
+          ? "Продлить"
           : isUpgrade
-            ? `Апгрейд до ${tier.name}`
-            : `Купить ${tier.name}`;
-  const ctaDisabled = !isAuthed || purchaseM.isPending || Boolean(isDowngrade);
+            ? `Апгрейд`
+            : `Купить`;
 
 
   return (
@@ -235,13 +247,7 @@ function TierDetailPage() {
               <button
                 type="button"
                 disabled={ctaDisabled}
-                onClick={() => {
-                  if (!isAuthed) {
-                    navigate({ to: "/login", search: { redirect: `/club/hell-pass/${tier.slug}` } });
-                    return;
-                  }
-                  purchaseM.mutate();
-                }}
+                onClick={() => buy("card")}
                 className="mt-4 flex w-full items-center justify-center gap-2 px-6 py-3.5 text-center font-display text-sm font-bold uppercase tracking-widest transition-all hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100"
                 style={{
                   background: isGold
@@ -256,9 +262,26 @@ function TierDetailPage() {
                     : undefined,
                 }}
               >
-                {purchaseM.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-                {ctaLabel}
+                {purchaseM.isPending && pendingMethod === "card" && (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                )}
+                {baseLabel} {!purchaseId && !isDowngrade && "картой"}
               </button>
+
+              {sbpEnabled && !purchaseId && !isDowngrade && (
+                <button
+                  type="button"
+                  disabled={ctaDisabled}
+                  onClick={() => buy("sbp")}
+                  className="mt-2 flex w-full items-center justify-center gap-2 border border-white/15 bg-transparent px-6 py-3.5 text-center font-display text-sm font-bold uppercase tracking-widest transition-colors hover:bg-white/[0.04] disabled:cursor-not-allowed disabled:opacity-60"
+                  style={{ color: tier.color, borderColor: `${tier.color}55` }}
+                >
+                  {purchaseM.isPending && pendingMethod === "sbp" && (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  )}
+                  {baseLabel} через СБП
+                </button>
+              )}
 
               <div className="mt-4 font-mono text-[10px] uppercase tracking-widest text-white/40">
                 {isDowngrade
