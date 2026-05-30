@@ -15,6 +15,7 @@ import { formatRuPhone } from "@/lib/phone";
 import { hhToast } from "@/lib/hh-toast";
 import { BACKEND_URL } from "@/lib/api";
 import { isStandalonePWA } from "@/lib/is-pwa";
+import { payInPwa } from "@/lib/pwa-pay";
 
 const PAY_ACTION = `${BACKEND_URL}/api/v1/payments/redirect`;
 
@@ -196,7 +197,22 @@ function ClubCheckoutPage() {
         /* ignore */
       }
     }
-    // Дальше — нативный POST на BACKEND_URL/api/v1/payments/redirect
+    // Дальше — если PWA: перехватываем и идём через payInPwa (window.open + fetch).
+    // Если обычный браузер: нативный POST на BACKEND_URL/api/v1/payments/redirect.
+    if (isStandalonePWA()) {
+      e.preventDefault();
+      const submitter = (e.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null;
+      const method = submitter?.value === "sbp" ? "sbp" : "card";
+      payInPwa({
+        target: "order",
+        method,
+        items: itemsJson,
+        shipping_fio: form.name,
+        shipping_phone: form.phone,
+        shipping_city: cityFallback,
+        shipping_address: form.address,
+      });
+    }
   };
 
   if (!isAuthed || items.length === 0) return null;
@@ -209,7 +225,6 @@ function ClubCheckoutPage() {
         method="POST"
         action={PAY_ACTION}
         onSubmit={guard}
-        target={isStandalonePWA() ? "_blank" : undefined}
         className="md:grid md:grid-cols-[1fr_380px] md:items-start md:gap-8"
       >
         {/* Скрытые поля для бекенда — он сам создаст заказ и редиректнёт на банк */}

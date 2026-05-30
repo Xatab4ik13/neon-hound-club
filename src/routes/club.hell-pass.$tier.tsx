@@ -14,6 +14,7 @@ import { useViewer } from "@/hooks/use-viewer";
 import { usePaymentMethods } from "@/hooks/use-payment-methods";
 import { BACKEND_URL } from "@/lib/api";
 import { isStandalonePWA } from "@/lib/is-pwa";
+import { payInPwa } from "@/lib/pwa-pay";
 
 const TIER_RANK: Record<PassTier, number> = { silver: 1, gold: 2, platinum: 3 };
 const PAY_ACTION = `${BACKEND_URL}/api/v1/payments/redirect`;
@@ -86,7 +87,7 @@ function TierDetailPage() {
   const isDowngrade = active && targetRank < activeRank;
 
   // Перехват submit: если не залогинен — на /login; если даунгрейд — блок.
-  // Если всё ок, форма отправляется нативно (никакого fetch, никакого await).
+  // Если PWA — идём через payInPwa (window.open + fetch). Иначе нативный submit.
   const guard = (e: React.FormEvent<HTMLFormElement>) => {
     if (!isAuthed) {
       e.preventDefault();
@@ -95,8 +96,19 @@ function TierDetailPage() {
     }
     if (isDowngrade) {
       e.preventDefault();
+      return;
+    }
+    if (isStandalonePWA()) {
+      e.preventDefault();
+      const fd = new FormData(e.currentTarget);
+      payInPwa({
+        target: "pass",
+        tier: tier.slug,
+        method: String(fd.get("method") ?? "card"),
+      });
     }
   };
+
 
   const isPlatinum = tier.ultimate;
   const baseLabel = !isAuthed
@@ -224,7 +236,7 @@ function TierDetailPage() {
 
               <div className="mt-4 flex flex-col gap-2">
                 {/* Карта */}
-                <form method="POST" action={PAY_ACTION} onSubmit={guard} target={isStandalonePWA() ? "_blank" : undefined}>
+                <form method="POST" action={PAY_ACTION} onSubmit={guard}>
                   <input type="hidden" name="target" value="pass" />
                   <input type="hidden" name="tier" value={tier.slug} />
                   <input type="hidden" name="method" value="card" />
@@ -237,7 +249,7 @@ function TierDetailPage() {
                 </form>
                 {/* СБП */}
                 {sbpEnabled && !isDowngrade && (
-                  <form method="POST" action={PAY_ACTION} onSubmit={guard} target={isStandalonePWA() ? "_blank" : undefined}>
+                  <form method="POST" action={PAY_ACTION} onSubmit={guard}>
                     <input type="hidden" name="target" value="pass" />
                     <input type="hidden" name="tier" value={tier.slug} />
                     <input type="hidden" name="method" value="sbp" />
