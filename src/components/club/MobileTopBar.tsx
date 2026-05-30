@@ -1,6 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { Bell, ShoppingBag } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { RANKS } from "@/data/ranks";
 import type { RankMeta } from "@/data/ranks";
 import { useCurrentRank } from "@/data/rank-state";
