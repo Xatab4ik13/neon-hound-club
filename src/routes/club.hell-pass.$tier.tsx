@@ -1,7 +1,7 @@
 // Детальная страница одного тира Hell Pass.
 // Полное описание каждого преимущества + кнопка «Купить».
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Check } from "lucide-react";
@@ -12,7 +12,7 @@ import { fetchPassMe, purchasePass, qk, type PassTier, type PaymentMethod } from
 import { useViewer } from "@/hooks/use-viewer";
 import { usePaymentMethods } from "@/hooks/use-payment-methods";
 import { ApiError } from "@/lib/api";
-import { commitPaymentRedirect } from "@/lib/payment-redirect";
+import { beginPaymentRedirect, type PaymentRedirectHandle } from "@/lib/payment-redirect";
 
 const TIER_RANK: Record<PassTier, number> = { silver: 1, gold: 2, platinum: 3 };
 
@@ -71,6 +71,7 @@ function TierDetailPage() {
   const qc = useQueryClient();
   const [payUrl, setPayUrl] = useState<string | null>(null);
   const [pendingMethod, setPendingMethod] = useState<PaymentMethod | null>(null);
+  const redirectHandleRef = useRef<PaymentRedirectHandle | null>(null);
   const { sbp: sbpEnabled } = usePaymentMethods();
 
   const passQ = useQuery({
@@ -89,22 +90,25 @@ function TierDetailPage() {
   const purchaseM = useMutation({
     mutationFn: (method: PaymentMethod) => purchasePass(tier.slug as PassTier, method),
     onSuccess: (res) => {
-      // 1) Если бэк отдал paymentUrl — СНАЧАЛА уводим браузер, синхронно.
-      //    Любые setState/invalidate ниже не должны опережать редирект,
-      //    иначе на мобиле/PWA SPA-навигация перехватит управление.
       if (res.paymentUrl) {
         setPayUrl(res.paymentUrl);
-        commitPaymentRedirect(res.paymentUrl);
+        // Подставляем URL в уже открытое (синхронно при тапе) окно.
+        redirectHandleRef.current?.commit(res.paymentUrl);
+        redirectHandleRef.current = null;
         qc.invalidateQueries({ queryKey: qk.passMe });
         return;
       }
-      // 2) Если paymentUrl нет — оплата не сконфигурирована, оставляем pending.
+      // paymentUrl нет — закрываем пустое окно, оставляем pending.
+      redirectHandleRef.current?.cancel();
+      redirectHandleRef.current = null;
       qc.invalidateQueries({ queryKey: qk.passMe });
       toast.success(
         `Заявка №${res.purchase.id.slice(0, 8)} создана. Ожидает оплаты — пока активирует админ.`,
       );
     },
     onError: (e) => {
+      redirectHandleRef.current?.cancel();
+      redirectHandleRef.current = null;
       const msg = e instanceof ApiError ? e.message : "Не удалось создать заявку";
       toast.error(msg);
     },
@@ -122,6 +126,8 @@ function TierDetailPage() {
       toast.error(`У тебя активен ${active!.tier.toUpperCase()} — тир ниже купить нельзя.`);
       return;
     }
+    // СИНХРОННО открываем окно в момент тапа — до await/мутации.
+    redirectHandleRef.current = beginPaymentRedirect();
     setPendingMethod(method);
     purchaseM.mutate(method);
   };
