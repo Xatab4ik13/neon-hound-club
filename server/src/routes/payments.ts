@@ -8,20 +8,37 @@ import {
   handleRaifNotification,
   PaymentInitError,
 } from "../lib/payments.js";
+import { isRaifConfigured } from "../lib/raif.js";
+import { PAYMENT_METHODS } from "../db/schema/payments.js";
 
 const idSchema = z.object({ id: z.string().uuid() });
+const initBodySchema = z
+  .object({ method: z.enum(PAYMENT_METHODS).optional() })
+  .optional();
 
 export async function paymentsRoutes(app: FastifyInstance) {
+  // GET /api/v1/payments/methods — какие способы оплаты сконфигурированы на бэке.
+  // Используется фронтом, чтобы решить, показывать ли кнопку СБП.
+  app.get("/methods", async () => {
+    return {
+      card: isRaifConfigured("card"),
+      sbp: isRaifConfigured("sbp"),
+    };
+  });
+
   // POST /api/v1/payments/pass/:id/init — создать платёж для покупки Pass.
-  app.post<{ Params: { id: string } }>(
+  app.post<{ Params: { id: string }; Body: { method?: "card" | "sbp" } }>(
     "/pass/:id/init",
     { preHandler: requireAuth },
     async (req, reply) => {
       const parsed = idSchema.safeParse(req.params);
       if (!parsed.success) return reply.code(400).send({ error: "invalid_id" });
+      const bodyParsed = initBodySchema.safeParse(req.body ?? {});
+      if (!bodyParsed.success) return reply.code(400).send({ error: "invalid_method" });
+      const method = bodyParsed.data?.method ?? "card";
       const session = req.user as SessionPayload;
       try {
-        const r = await createPaymentForPass(parsed.data.id, session.sub);
+        const r = await createPaymentForPass(parsed.data.id, session.sub, method);
         return reply.code(201).send({ paymentId: r.payment.id, paymentUrl: r.paymentUrl });
       } catch (e) {
         if (e instanceof PaymentInitError) {
@@ -34,15 +51,18 @@ export async function paymentsRoutes(app: FastifyInstance) {
   );
 
   // POST /api/v1/payments/order/:id/init — создать платёж для заказа мерча.
-  app.post<{ Params: { id: string } }>(
+  app.post<{ Params: { id: string }; Body: { method?: "card" | "sbp" } }>(
     "/order/:id/init",
     { preHandler: requireAuth },
     async (req, reply) => {
       const parsed = idSchema.safeParse(req.params);
       if (!parsed.success) return reply.code(400).send({ error: "invalid_id" });
+      const bodyParsed = initBodySchema.safeParse(req.body ?? {});
+      if (!bodyParsed.success) return reply.code(400).send({ error: "invalid_method" });
+      const method = bodyParsed.data?.method ?? "card";
       const session = req.user as SessionPayload;
       try {
-        const r = await createPaymentForOrder(parsed.data.id, session.sub);
+        const r = await createPaymentForOrder(parsed.data.id, session.sub, method);
         return reply.code(201).send({ paymentId: r.payment.id, paymentUrl: r.paymentUrl });
       } catch (e) {
         if (e instanceof PaymentInitError) {
@@ -69,8 +89,8 @@ export async function paymentsRoutes(app: FastifyInstance) {
   );
 
   // POST /api/v1/payments/raif/webhook — Notification от Райффайзена.
-  // Подпись в заголовке X-Api-Signature-SHA256 (HMAC-SHA-256 от контрольной строки).
-  // Уведомления приходят с IP 193.28.44.23.
+  // Подпись в заголовке X-Api-Signature-SHA256. IP 193.28.44.23.
+  // Webhook URL у ОБЕИХ торговых точек (card и sbp) в ЛК Райфа — этот один.
   app.post("/raif/webhook", async (req, reply) => {
     const body = (req.body ?? {}) as Record<string, unknown>;
     const signature =
