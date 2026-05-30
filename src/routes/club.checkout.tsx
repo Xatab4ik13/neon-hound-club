@@ -152,8 +152,11 @@ function ClubCheckoutPage() {
       queryClient.invalidateQueries({ queryKey: qk.shopOrders });
       queryClient.invalidateQueries({ queryKey: qk.ticketsBalance });
       setPayUrl(pay.paymentUrl);
-      const popup = window.open(pay.paymentUrl, "_blank", "noopener,noreferrer");
-      if (!popup) {
+      const popup = paymentWindowRef.current;
+      paymentWindowRef.current = null;
+      if (popup && !popup.closed) {
+        popup.location.href = pay.paymentUrl;
+      } else {
         window.location.href = pay.paymentUrl;
       }
       void order;
@@ -168,6 +171,7 @@ function ClubCheckoutPage() {
   const [payUrl, setPayUrl] = useState<string | null>(null);
 
   const [pendingMethod, setPendingMethod] = useState<PaymentMethod | null>(null);
+  const paymentWindowRef = useRef<Window | null>(null);
 
   const pay = (method: PaymentMethod) => {
     if (mutation.isPending) return;
@@ -199,6 +203,9 @@ function ClubCheckoutPage() {
           ?.scrollIntoView({ behavior: "smooth", block: "center" });
       }
       return;
+    }
+    if (typeof window !== "undefined") {
+      paymentWindowRef.current = window.open("about:blank", "_blank");
     }
     setPendingMethod(method);
     mutation.mutate({
