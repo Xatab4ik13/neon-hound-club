@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, MapPin, Ticket, Truck, User } from "lucide-react";
 import { PageHeader } from "@/components/club/PageHeader";
 import { PaymentBadges } from "@/components/brand/PaymentBadges";
+import { PayCardButton, PaySbpButton } from "@/components/brand/PayButton";
 import { DadataInput } from "@/components/ui/DadataInput";
 import type { DadataAddressData, DadataSuggestion } from "@/lib/dadata";
 import { LEGAL } from "@/data/legal";
@@ -429,24 +430,22 @@ function ClubCheckoutPage() {
           </div>
 
           {/* Desktop CTA — встроена в aside, всегда видна */}
-          <div className="hidden md:flex md:gap-2">
-            <button
-              type="button"
+          <div className="hidden flex-col gap-2 md:flex">
+            <PayCardButton
               onClick={() => pay("card")}
               disabled={!canSubmit || submitting}
-              className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3.5 font-display text-sm font-black uppercase tracking-wider text-primary-foreground transition-opacity disabled:opacity-40"
-            >
-              {submitting && pendingMethod === "card" ? "Открываем…" : "Картой"}
-            </button>
+              loading={submitting && pendingMethod === "card"}
+              label={submitting && pendingMethod === "card" ? "Открываем…" : "Оплатить картой"}
+              size="lg"
+            />
             {sbpEnabled && (
-              <button
-                type="button"
+              <PaySbpButton
                 onClick={() => pay("sbp")}
                 disabled={!canSubmit || submitting}
-                className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-primary/60 bg-transparent px-4 py-3.5 font-display text-sm font-black uppercase tracking-wider text-primary transition-colors hover:bg-primary/10 disabled:opacity-40"
-              >
-                {submitting && pendingMethod === "sbp" ? "Открываем…" : "СБП"}
-              </button>
+                loading={submitting && pendingMethod === "sbp"}
+                label={submitting && pendingMethod === "sbp" ? "Открываем…" : "Оплатить через"}
+                size="lg"
+              />
             )}
           </div>
         </aside>
@@ -465,24 +464,20 @@ function ClubCheckoutPage() {
                 {total.toLocaleString("ru-RU")} ₽
               </span>
             </div>
-            <div className="ml-auto flex flex-1 gap-2">
-              <button
-                type="button"
+            <div className="ml-auto flex flex-1 flex-col gap-2">
+              <PayCardButton
                 onClick={() => pay("card")}
                 disabled={!canSubmit || submitting}
-                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-primary px-3 py-3 font-display text-[13px] font-black uppercase tracking-wider text-primary-foreground transition-opacity active:scale-[0.98] disabled:opacity-40"
-              >
-                {submitting && pendingMethod === "card" ? "…" : "Картой"}
-              </button>
+                loading={submitting && pendingMethod === "card"}
+                label={submitting && pendingMethod === "card" ? "Открываем…" : "Картой"}
+              />
               {sbpEnabled && (
-                <button
-                  type="button"
+                <PaySbpButton
                   onClick={() => pay("sbp")}
                   disabled={!canSubmit || submitting}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-primary/60 bg-transparent px-3 py-3 font-display text-[13px] font-black uppercase tracking-wider text-primary transition-colors active:scale-[0.98] disabled:opacity-40"
-                >
-                  {submitting && pendingMethod === "sbp" ? "…" : "СБП"}
-                </button>
+                  loading={submitting && pendingMethod === "sbp"}
+                  label={submitting && pendingMethod === "sbp" ? "Открываем…" : "Через"}
+                />
               )}
             </div>
           </div>
