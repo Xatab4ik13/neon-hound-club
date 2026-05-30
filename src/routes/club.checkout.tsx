@@ -101,7 +101,7 @@ function ClubCheckoutPage() {
   useEffect(() => {
     const a = addressQ.data;
     if (!a) return;
-    const composed = [a.postalCode, a.pickupPoint].filter(Boolean).join(", ");
+    const composed = [a.city, a.postalCode, a.pickupPoint].filter(Boolean).join(", ");
     setForm((f) => {
       const next = { ...f };
       const t = touchedRef.current;
