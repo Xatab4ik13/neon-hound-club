@@ -91,7 +91,10 @@ function TierDetailPage() {
       setPurchaseId(res.purchase.id);
       qc.invalidateQueries({ queryKey: qk.passMe });
       if (res.paymentUrl) {
-        window.location.href = res.paymentUrl;
+        const popup = window.open(res.paymentUrl, "_blank", "noopener,noreferrer");
+        if (!popup) {
+          window.location.href = res.paymentUrl;
+        }
       } else {
         toast.success(
           `Заявка №${res.purchase.id.slice(0, 8)} создана. Ожидает оплаты — пока активирует админ.`,
