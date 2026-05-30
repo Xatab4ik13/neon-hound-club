@@ -36,12 +36,17 @@ export function commitPaymentRedirect(paymentUrl: string) {
   navigateViaForm(paymentUrl);
 }
 
-export function submitPaymentRedirectForm(action: string, fields: Record<string, string>) {
+export function submitPaymentRedirectForm(
+  action: string,
+  fields: Record<string, string>,
+  options?: { target?: string },
+) {
   if (typeof document === "undefined") return;
 
   const form = document.createElement("form");
   form.method = "POST";
   form.action = action;
+  if (options?.target) form.target = options.target;
   form.style.display = "none";
 
   for (const [name, value] of Object.entries(fields)) {
