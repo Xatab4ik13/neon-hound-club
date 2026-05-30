@@ -111,11 +111,15 @@ function TierDetailPage() {
       navigate({ to: "/login", search: { redirect: `/club/hell-pass/${tier.slug}` } });
       return;
     }
+    if (purchaseM.isPending) return;
+    if (isDowngrade) {
+      toast.error(`У тебя активен ${active!.tier.toUpperCase()} — тир ниже купить нельзя.`);
+      return;
+    }
     setPendingMethod(method);
     purchaseM.mutate(method);
   };
 
-  const ctaDisabled = !isAuthed || purchaseM.isPending || Boolean(isDowngrade);
   const baseLabel = !isAuthed
     ? "Войти"
     : purchaseId
