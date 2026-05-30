@@ -120,10 +120,22 @@ export async function paymentsRoutes(app: FastifyInstance) {
     },
   );
 
-  app.post("/redirect", { preHandler: requireAuth }, async (req, reply) => {
-    const session = req.user as SessionPayload;
+  app.post("/redirect", { preHandler: loadSession }, async (req, reply) => {
+    const session = req.user as SessionPayload | undefined;
     const body = (req.body ?? {}) as Record<string, unknown>;
     const target = String(body.target ?? "");
+
+    if (!session) {
+      // На login с возвратом — куда вернуть, зависит от target.
+      const back =
+        target === "pass"
+          ? `/club/hell-pass${typeof body.tier === "string" ? "/" + body.tier : ""}`
+          : "/club/checkout";
+      const url = new URL("/login", FRONTEND);
+      url.searchParams.set("redirect", back);
+      return reply.redirect(url.toString(), 303);
+    }
+
 
     if (target === "pass") {
       const parsed = passRedirectSchema.safeParse(body);
