@@ -101,7 +101,7 @@ function ClubCheckoutPage() {
   useEffect(() => {
     const a = addressQ.data;
     if (!a) return;
-    const composed = [a.postalCode, a.pickupPoint].filter(Boolean).join(", ");
+    const composed = [a.city, a.postalCode, a.pickupPoint].filter(Boolean).join(", ");
     setForm((f) => {
       const next = { ...f };
       const t = touchedRef.current;
@@ -190,11 +190,7 @@ function ClubCheckoutPage() {
       hhToast.error("Укажи телефон.");
       return;
     }
-    if (form.city.trim().length < 1) {
-      hhToast.error("Укажи город доставки.");
-      return;
-    }
-    if (form.address.trim().length < 3) {
+    if (form.address.trim().length < 5) {
       hhToast.error("Укажи адрес доставки.");
       return;
     }
@@ -207,6 +203,8 @@ function ClubCheckoutPage() {
       }
       return;
     }
+    // Если юзер не выбрал подсказку — city может быть пуст. Берём первую часть адреса.
+    const cityFallback = form.city.trim() || form.address.split(",")[0]?.trim() || "—";
     // СИНХРОННО открываем окно в момент тапа — до createOrder/initOrderPayment.
     redirectHandleRef.current = beginPaymentRedirect();
     setPendingMethod(method);
@@ -216,7 +214,7 @@ function ClubCheckoutPage() {
       shipping: {
         fio: form.name.trim(),
         phone: form.phone.trim(),
-        city: form.city.trim(),
+        city: cityFallback,
         address: form.address.trim(),
       },
     });
@@ -297,24 +295,8 @@ function ClubCheckoutPage() {
             </FieldRow>
           </Section>
 
-          {/* Доставка */}
+          {/* Доставка — единое поле с подсказками DaData */}
           <Section icon={<MapPin className="h-3.5 w-3.5" />} title="Доставка">
-            <FieldRow label="Город">
-              <DadataInput
-                type="address"
-                value={form.city}
-                onChange={(v) => set("city", v)}
-                onSelect={(s) => {
-                  const d = s.data as DadataAddressData;
-                  const city = d.city_with_type || d.settlement_with_type || s.value;
-                  set("city", city);
-                }}
-                params={{ from_bound: { value: "city" }, to_bound: { value: "settlement" } }}
-                placeholder="Москва"
-                autoComplete="address-level2"
-                required
-              />
-            </FieldRow>
             <FieldRow label="Адрес" last>
               <DadataInput
                 type="address"
@@ -322,17 +304,12 @@ function ClubCheckoutPage() {
                 onChange={(v) => set("address", v)}
                 onSelect={(s) => {
                   const d = s.data as DadataAddressData;
-                  if (!touchedRef.current.has("city")) {
-                    const city = d.city_with_type || d.settlement_with_type || "";
-                    if (city) {
-                      set("city", city);
-                      touchedRef.current.delete("city");
-                    }
-                  }
-                  set("address", s.value);
+                  const city = d.city_with_type || d.settlement_with_type || "";
+                  setForm((f) => ({ ...f, address: s.value, city: city || f.city }));
+                  touchedRef.current.add("address");
+                  if (city) touchedRef.current.add("city");
                 }}
-                params={{ from_bound: { value: "street" }, to_bound: { value: "flat" } }}
-                placeholder="Улица, дом, кв."
+                placeholder="Город, улица, дом, кв."
                 autoComplete="street-address"
                 required
               />
