@@ -129,12 +129,17 @@ export function MobileTopBar() {
         {isShop && (
           <Link
             to="/club/cart"
+            data-cart-anchor
             aria-label="Корзина"
             className="relative grid h-10 w-10 shrink-0 place-items-center text-foreground transition-transform active:scale-90 active:opacity-60"
           >
+            <span key={`glow-${glow}`} className="absolute inset-0 hh-cart-glow" aria-hidden />
             <ShoppingBag className="h-[22px] w-[22px]" strokeWidth={1.9} />
             {cartCount > 0 && (
-              <span className="absolute right-0.5 top-0.5 grid h-[16px] min-w-[16px] place-items-center rounded-full bg-primary px-1 font-mono text-[9px] font-bold leading-none text-primary-foreground ring-2 ring-background">
+              <span
+                key={`badge-${bump}`}
+                className="hh-cart-bump absolute right-0.5 top-0.5 grid h-[16px] min-w-[16px] place-items-center rounded-full bg-primary px-1 font-mono text-[9px] font-bold leading-none text-primary-foreground ring-2 ring-background"
+              >
                 {cartCount > 99 ? "99+" : cartCount}
               </span>
             )}
