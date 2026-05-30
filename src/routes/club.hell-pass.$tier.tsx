@@ -1,7 +1,7 @@
 // Детальная страница одного тира Hell Pass.
 // Полное описание каждого преимущества + кнопка «Купить».
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Check } from "lucide-react";
@@ -12,7 +12,7 @@ import { fetchPassMe, purchasePass, qk, type PassTier, type PaymentMethod } from
 import { useViewer } from "@/hooks/use-viewer";
 import { usePaymentMethods } from "@/hooks/use-payment-methods";
 import { ApiError } from "@/lib/api";
-import { beginPaymentRedirect, type PaymentRedirectHandle } from "@/lib/payment-redirect";
+
 
 const TIER_RANK: Record<PassTier, number> = { silver: 1, gold: 2, platinum: 3 };
 
@@ -71,8 +71,9 @@ function TierDetailPage() {
   const qc = useQueryClient();
   const [payUrl, setPayUrl] = useState<string | null>(null);
   const [pendingMethod, setPendingMethod] = useState<PaymentMethod | null>(null);
-  const redirectHandleRef = useRef<PaymentRedirectHandle | null>(null);
+  const payCtaRef = useRef<HTMLAnchorElement | null>(null);
   const { sbp: sbpEnabled } = usePaymentMethods();
+
 
   const passQ = useQuery({
     queryKey: qk.passMe,
@@ -90,29 +91,28 @@ function TierDetailPage() {
   const purchaseM = useMutation({
     mutationFn: (method: PaymentMethod) => purchasePass(tier.slug as PassTier, method),
     onSuccess: (res) => {
+      qc.invalidateQueries({ queryKey: qk.passMe });
       if (res.paymentUrl) {
         setPayUrl(res.paymentUrl);
-        // Подставляем URL в уже открытое (синхронно при тапе) окно.
-        redirectHandleRef.current?.commit(res.paymentUrl);
-        redirectHandleRef.current = null;
-        qc.invalidateQueries({ queryKey: qk.passMe });
         return;
       }
-      // paymentUrl нет — закрываем пустое окно, оставляем pending.
-      redirectHandleRef.current?.cancel();
-      redirectHandleRef.current = null;
-      qc.invalidateQueries({ queryKey: qk.passMe });
       toast.success(
         `Заявка №${res.purchase.id.slice(0, 8)} создана. Ожидает оплаты — пока активирует админ.`,
       );
     },
     onError: (e) => {
-      redirectHandleRef.current?.cancel();
-      redirectHandleRef.current = null;
       const msg = e instanceof ApiError ? e.message : "Не удалось создать заявку";
       toast.error(msg);
     },
   });
+
+  // Когда платёж создан — скроллим к большой кнопке «Перейти к оплате».
+  useEffect(() => {
+    if (!payUrl) return;
+    const el = payCtaRef.current;
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [payUrl]);
 
   const isPlatinum = tier.ultimate;
 
@@ -121,16 +121,15 @@ function TierDetailPage() {
       navigate({ to: "/login", search: { redirect: `/club/hell-pass/${tier.slug}` } });
       return;
     }
-    if (purchaseM.isPending) return;
+    if (purchaseM.isPending || payUrl) return;
     if (isDowngrade) {
       toast.error(`У тебя активен ${active!.tier.toUpperCase()} — тир ниже купить нельзя.`);
       return;
     }
-    // СИНХРОННО открываем окно в момент тапа — до await/мутации.
-    redirectHandleRef.current = beginPaymentRedirect();
     setPendingMethod(method);
     purchaseM.mutate(method);
   };
+
 
   const baseLabel = !isAuthed
     ? "Войти"
@@ -258,34 +257,49 @@ function TierDetailPage() {
                 </div>
               )}
 
-              {payUrl && (
-                <a
-                  href={payUrl}
-                  className="mt-4 block w-full rounded-xl bg-primary px-5 py-3 text-center font-display text-xs font-black uppercase tracking-wider text-primary-foreground"
-                >
-                  Открыть оплату
-                </a>
-              )}
-
-              <div className="mt-4 flex flex-col gap-2">
-                <PayCardButton
-                  onClick={() => buy("card")}
-                  loading={purchaseM.isPending && pendingMethod === "card"}
-                  disabled={!!isDowngrade}
-                  label={
-                    !isDowngrade ? `${baseLabel} картой` : baseLabel
-                  }
-                  size="lg"
-                />
-                {sbpEnabled && !isDowngrade && (
-                  <PaySbpButton
-                    onClick={() => buy("sbp")}
-                    loading={purchaseM.isPending && pendingMethod === "sbp"}
-                    label={`${baseLabel} через`}
+              {payUrl ? (
+                <>
+                  <a
+                    ref={payCtaRef}
+                    href={payUrl}
+                    rel="noopener"
+                    className="mt-4 block w-full rounded-xl bg-primary px-5 py-4 text-center font-display text-base font-black uppercase tracking-wider text-primary-foreground shadow-[0_8px_24px_-8px_rgba(255,45,149,0.6)] active:scale-[0.99]"
+                  >
+                    Перейти к оплате →
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPayUrl(null);
+                      setPendingMethod(null);
+                    }}
+                    className="mt-2 block w-full text-center font-mono text-[10px] uppercase tracking-widest text-white/40 underline-offset-2 hover:text-white/70 hover:underline"
+                  >
+                    Отменить
+                  </button>
+                </>
+              ) : (
+                <div className="mt-4 flex flex-col gap-2">
+                  <PayCardButton
+                    onClick={() => buy("card")}
+                    loading={purchaseM.isPending && pendingMethod === "card"}
+                    disabled={!!isDowngrade}
+                    label={
+                      !isDowngrade ? `${baseLabel} картой` : baseLabel
+                    }
                     size="lg"
                   />
-                )}
-              </div>
+                  {sbpEnabled && !isDowngrade && (
+                    <PaySbpButton
+                      onClick={() => buy("sbp")}
+                      loading={purchaseM.isPending && pendingMethod === "sbp"}
+                      label={`${baseLabel} через`}
+                      size="lg"
+                    />
+                  )}
+                </div>
+              )}
+
 
               <div className="mt-4 font-mono text-[10px] uppercase tracking-widest text-white/40">
                 {isDowngrade
