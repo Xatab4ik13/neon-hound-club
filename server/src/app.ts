@@ -4,6 +4,7 @@ import cookie from "@fastify/cookie";
 import jwt from "@fastify/jwt";
 import rateLimit from "@fastify/rate-limit";
 import multipart from "@fastify/multipart";
+import formbody from "@fastify/formbody";
 import { logRuntimeConfig } from "./lib/runtime-config.js";
 
 export async function buildApp() {
@@ -64,6 +65,7 @@ export async function buildApp() {
   });
 
   await app.register(multipart, { limits: { fileSize: 10 * 1024 * 1024 } });
+  await app.register(formbody);
 
   const healthPayload = () => ({ ok: true, ts: Date.now() });
   app.get("/healthz", async () => healthPayload());
