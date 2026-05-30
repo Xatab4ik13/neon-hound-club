@@ -225,7 +225,6 @@ function ClubCheckoutPage() {
         method="POST"
         action={PAY_ACTION}
         onSubmit={guard}
-        target={isStandalonePWA() ? "_blank" : undefined}
         className="md:grid md:grid-cols-[1fr_380px] md:items-start md:gap-8"
       >
         {/* Скрытые поля для бекенда — он сам создаст заказ и редиректнёт на банк */}
