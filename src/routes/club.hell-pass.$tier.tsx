@@ -104,7 +104,6 @@ function TierDetailPage() {
     },
   });
 
-  const isGold = tier.recommended;
   const isPlatinum = tier.ultimate;
 
   const buy = (method: PaymentMethod) => {
