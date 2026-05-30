@@ -70,6 +70,7 @@ function TierDetailPage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [purchaseId, setPurchaseId] = useState<string | null>(null);
+  const [payUrl, setPayUrl] = useState<string | null>(null);
   const [pendingMethod, setPendingMethod] = useState<PaymentMethod | null>(null);
   const { sbp: sbpEnabled } = usePaymentMethods();
 
@@ -89,15 +90,22 @@ function TierDetailPage() {
   const purchaseM = useMutation({
     mutationFn: (method: PaymentMethod) => purchasePass(tier.slug as PassTier, method),
     onSuccess: (res) => {
+      // 1) Если бэк отдал paymentUrl — СНАЧАЛА уводим браузер, синхронно.
+      //    Любые setState/invalidate ниже не должны опережать редирект,
+      //    иначе на мобиле/PWA SPA-навигация перехватит управление.
+      if (res.paymentUrl) {
+        setPurchaseId(res.purchase.id);
+        setPayUrl(res.paymentUrl);
+        commitPaymentRedirect(res.paymentUrl);
+        qc.invalidateQueries({ queryKey: qk.passMe });
+        return;
+      }
+      // 2) Если paymentUrl нет — оплата не сконфигурирована, оставляем pending.
       setPurchaseId(res.purchase.id);
       qc.invalidateQueries({ queryKey: qk.passMe });
-      if (res.paymentUrl) {
-        commitPaymentRedirect(res.paymentUrl);
-      } else {
-        toast.success(
-          `Заявка №${res.purchase.id.slice(0, 8)} создана. Ожидает оплаты — пока активирует админ.`,
-        );
-      }
+      toast.success(
+        `Заявка №${res.purchase.id.slice(0, 8)} создана. Ожидает оплаты — пока активирует админ.`,
+      );
     },
     onError: (e) => {
       const msg = e instanceof ApiError ? e.message : "Не удалось создать заявку";
