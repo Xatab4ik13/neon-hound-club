@@ -190,11 +190,7 @@ function ClubCheckoutPage() {
       hhToast.error("Укажи телефон.");
       return;
     }
-    if (form.city.trim().length < 1) {
-      hhToast.error("Укажи город доставки.");
-      return;
-    }
-    if (form.address.trim().length < 3) {
+    if (form.address.trim().length < 5) {
       hhToast.error("Укажи адрес доставки.");
       return;
     }
@@ -207,6 +203,8 @@ function ClubCheckoutPage() {
       }
       return;
     }
+    // Если юзер не выбрал подсказку — city может быть пуст. Берём первую часть адреса.
+    const cityFallback = form.city.trim() || form.address.split(",")[0]?.trim() || "—";
     // СИНХРОННО открываем окно в момент тапа — до createOrder/initOrderPayment.
     redirectHandleRef.current = beginPaymentRedirect();
     setPendingMethod(method);
@@ -216,7 +214,7 @@ function ClubCheckoutPage() {
       shipping: {
         fio: form.name.trim(),
         phone: form.phone.trim(),
-        city: form.city.trim(),
+        city: cityFallback,
         address: form.address.trim(),
       },
     });
