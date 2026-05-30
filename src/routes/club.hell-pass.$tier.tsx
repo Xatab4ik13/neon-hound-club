@@ -100,13 +100,24 @@ function TierDetailPage() {
     }
     if (isStandalonePWA()) {
       e.preventDefault();
-      const fd = new FormData(e.currentTarget);
-      payInPwa({
-        target: "pass",
-        tier: tier.slug,
-        method: String(fd.get("method") ?? "card"),
-      });
     }
+  };
+
+  const handlePwaPay = (method: "card" | "sbp") => (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (!isStandalonePWA()) return;
+    e.preventDefault();
+
+    if (!isAuthed) {
+      navigate({ to: "/login", search: { redirect: `/club/hell-pass/${tier.slug}` } });
+      return;
+    }
+    if (isDowngrade) return;
+
+    payInPwa({
+      target: "pass",
+      tier: tier.slug,
+      method,
+    });
   };
 
 
@@ -245,6 +256,7 @@ function TierDetailPage() {
                     disabled={!!isDowngrade}
                     label={!isDowngrade ? `${baseLabel} картой` : baseLabel}
                     size="lg"
+                    onClick={handlePwaPay("card")}
                   />
                 </form>
                 {/* СБП */}
@@ -253,7 +265,12 @@ function TierDetailPage() {
                     <input type="hidden" name="target" value="pass" />
                     <input type="hidden" name="tier" value={tier.slug} />
                     <input type="hidden" name="method" value="sbp" />
-                    <PaySbpButton type="submit" label={`${baseLabel} через`} size="lg" />
+                    <PaySbpButton
+                      type="submit"
+                      label={`${baseLabel} через`}
+                      size="lg"
+                      onClick={handlePwaPay("sbp")}
+                    />
                   </form>
                 )}
               </div>
