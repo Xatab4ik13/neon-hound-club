@@ -1,7 +1,7 @@
 export type PaymentRedirectHandle = Window | null;
 
 export function preparePaymentRedirect(): PaymentRedirectHandle {
-  return window.open("about:blank", "_blank");
+  return null;
 }
 
 export function commitPaymentRedirect(handle: PaymentRedirectHandle, paymentUrl: string) {
