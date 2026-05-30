@@ -12,19 +12,28 @@ export type PaymentRedirectHandle = {
   cancel: () => void;
 };
 
+function navigateViaForm(url: string) {
+  if (typeof document === "undefined") return;
+
+  const form = document.createElement("form");
+  form.method = "GET";
+  form.action = url;
+  form.style.display = "none";
+  document.body.appendChild(form);
+  form.submit();
+}
+
 export function beginPaymentRedirect(): PaymentRedirectHandle {
   return {
     commit: (url: string) => {
-      if (typeof window === "undefined") return;
-      window.location.href = url;
+      navigateViaForm(url);
     },
     cancel: () => {},
   };
 }
 
 export function commitPaymentRedirect(paymentUrl: string) {
-  if (typeof window === "undefined") return;
-  window.location.href = paymentUrl;
+  navigateViaForm(paymentUrl);
 }
 
 export function submitPaymentRedirectForm(action: string, fields: Record<string, string>) {
