@@ -69,7 +69,6 @@ function TierDetailPage() {
   const { isAuthed } = useViewer();
   const navigate = useNavigate();
   const qc = useQueryClient();
-  const [purchaseId, setPurchaseId] = useState<string | null>(null);
   const [payUrl, setPayUrl] = useState<string | null>(null);
   const [pendingMethod, setPendingMethod] = useState<PaymentMethod | null>(null);
   const { sbp: sbpEnabled } = usePaymentMethods();
