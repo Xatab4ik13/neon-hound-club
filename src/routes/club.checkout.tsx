@@ -1,6 +1,5 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, MapPin, Ticket, Truck, User } from "lucide-react";
 import { PageHeader } from "@/components/club/PageHeader";
 import { PaymentBadges } from "@/components/brand/PaymentBadges";
@@ -13,12 +12,15 @@ import { useViewer } from "@/hooks/use-viewer";
 import { usePaymentMethods } from "@/hooks/use-payment-methods";
 import { useMyProfile, useMyAddress } from "@/lib/garage-api";
 import { formatRuPhone } from "@/lib/phone";
-import { createOrder, initOrderPayment, qk, type PaymentMethod } from "@/lib/queries";
-import { ApiError } from "@/lib/api";
 import { hhToast } from "@/lib/hh-toast";
+import { BACKEND_URL } from "@/lib/api";
 
+const PAY_ACTION = `${BACKEND_URL}/api/v1/payments/redirect`;
 
 export const Route = createFileRoute("/club/checkout")({
+  validateSearch: (s: Record<string, unknown>) => ({
+    payment_error: typeof s.payment_error === "string" ? s.payment_error : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Оформление — клуб HELLHOUND" },
@@ -52,9 +54,8 @@ function ClubCheckoutPage() {
   const { items, total } = useCart();
   const { isAuthed, user } = useViewer();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
+  const search = useSearch({ from: "/club/checkout" }) as { payment_error?: string };
 
-  // Профиль и сохранённый адрес доставки из аккаунта
   const profileQ = useMyProfile();
   const addressQ = useMyAddress();
 
@@ -67,10 +68,8 @@ function ClubCheckoutPage() {
     address: "",
   });
 
-  // Поля, которые юзер вручную правил — их не перетираем при гидрации
   const touchedRef = useRef<Set<keyof CheckoutProfile>>(new Set());
 
-  // Гидрация из прошлого заказа (localStorage) — сразу при маунте
   useEffect(() => {
     const saved = readProfile();
     setForm((f) => ({
@@ -82,7 +81,6 @@ function ClubCheckoutPage() {
     }));
   }, []);
 
-  // Автозаполнение из аккаунта: профиль (email, nick, phone, city)
   useEffect(() => {
     const p = profileQ.data;
     if (!p) return;
@@ -97,7 +95,6 @@ function ClubCheckoutPage() {
     });
   }, [profileQ.data]);
 
-  // Автозаполнение из сохранённого адреса доставки (приоритет выше профиля)
   useEffect(() => {
     const a = addressQ.data;
     if (!a) return;
@@ -113,11 +110,18 @@ function ClubCheckoutPage() {
     });
   }, [addressQ.data]);
 
-  // Гард
   useEffect(() => {
     if (!isAuthed) navigate({ to: "/login" });
     else if (items.length === 0) navigate({ to: "/club/cart" });
   }, [isAuthed, items.length, navigate]);
+
+  // Если бекенд редиректнул сюда с ошибкой — показываем тост один раз.
+  useEffect(() => {
+    if (search.payment_error) {
+      hhToast.error("Ошибка оплаты", { meta: search.payment_error });
+      navigate({ to: "/club/checkout", search: {}, replace: true });
+    }
+  }, [search.payment_error, navigate]);
 
   const ticketsTotal = useMemo(
     () => items.reduce((s, i) => s + (i.ticketsBonus ?? 0) * i.qty, 0),
@@ -129,6 +133,17 @@ function ClubCheckoutPage() {
     [items],
   );
 
+  // JSON, который кладём в hidden input — бекенд распарсит.
+  const itemsJson = useMemo(
+    () =>
+      JSON.stringify(
+        orderableItems.map((i) => ({ productId: i.productId!, qty: i.qty, size: i.size })),
+      ),
+    [orderableItems],
+  );
+
+  const cityFallback = form.city.trim() || form.address.split(",")[0]?.trim() || "—";
+
   const set = <K extends keyof CheckoutProfile>(k: K, v: string) => {
     touchedRef.current.add(k);
     setForm((f) => ({ ...f, [k]: v }));
@@ -136,68 +151,31 @@ function ClubCheckoutPage() {
 
   const { sbp: sbpEnabled } = usePaymentMethods();
 
-  // Если редирект не сработал — показываем кнопку «Перейти к оплате»
-  const [payUrl, setPayUrl] = useState<string | null>(null);
-  const [pendingMethod, setPendingMethod] = useState<PaymentMethod | null>(null);
-  const payCtaRef = useRef<HTMLAnchorElement | null>(null);
-
-  const mutation = useMutation({
-    mutationFn: async (
-      input: Parameters<typeof createOrder>[0] & { method: PaymentMethod },
-    ) => {
-      const { method, ...orderInput } = input;
-      const order = await createOrder(orderInput);
-      const pay = await initOrderPayment(order.id, method);
-      return { order, pay };
-    },
-    onSuccess: ({ order, pay }) => {
-      if (typeof window !== "undefined") {
-        try {
-          window.localStorage.setItem(PROFILE_KEY, JSON.stringify(form));
-        } catch {
-          /* ignore */
-        }
-      }
-      setPayUrl(pay.paymentUrl);
-      queryClient.invalidateQueries({ queryKey: qk.shopOrders });
-      queryClient.invalidateQueries({ queryKey: qk.ticketsBalance });
-      void order;
-    },
-    onError: (err) => {
-      const msg = err instanceof ApiError ? err.message : "Не удалось оформить заказ";
-      hhToast.error("Ошибка оплаты", { meta: msg });
-    },
-  });
-
-  // Когда платёж создан — скроллим к большой кнопке «Перейти к оплате».
-  useEffect(() => {
-    if (!payUrl) return;
-    const el = payCtaRef.current;
-    if (!el) return;
-    el.scrollIntoView({ behavior: "smooth", block: "center" });
-  }, [payUrl]);
-
-
-
-  const pay = (method: PaymentMethod) => {
-    if (mutation.isPending || payUrl) return;
+  // Клиентская валидация. Бросаем preventDefault если данные не годятся —
+  // иначе пускаем нативный submit формы прямо на бекенд (он 303→на банк).
+  const guard = (e: React.FormEvent<HTMLFormElement>) => {
     if (orderableItems.length === 0) {
+      e.preventDefault();
       hhToast.error("Корзина пустая или товары устарели — обнови корзину.");
       return;
     }
     if (form.name.trim().length < 2) {
+      e.preventDefault();
       hhToast.error("Укажи имя получателя.");
       return;
     }
     if (form.phone.trim().length < 5) {
+      e.preventDefault();
       hhToast.error("Укажи телефон.");
       return;
     }
     if (form.address.trim().length < 5) {
+      e.preventDefault();
       hhToast.error("Укажи адрес доставки.");
       return;
     }
     if (!agree) {
+      e.preventDefault();
       hhToast.error("Поставь галочку согласия с офертой внизу формы.");
       if (typeof document !== "undefined") {
         document
@@ -206,31 +184,19 @@ function ClubCheckoutPage() {
       }
       return;
     }
-    // Если юзер не выбрал подсказку — city может быть пуст. Берём первую часть адреса.
-    const cityFallback = form.city.trim() || form.address.split(",")[0]?.trim() || "—";
-    setPendingMethod(method);
-    mutation.mutate({
-      method,
-      items: orderableItems.map((i) => ({ productId: i.productId!, qty: i.qty })),
-      shipping: {
-        fio: form.name.trim(),
-        phone: form.phone.trim(),
-        city: cityFallback,
-        address: form.address.trim(),
-      },
-    });
+    // Сохраняем профиль для следующего заказа.
+    if (typeof window !== "undefined") {
+      try {
+        window.localStorage.setItem(PROFILE_KEY, JSON.stringify(form));
+      } catch {
+        /* ignore */
+      }
+    }
+    // Дальше — нативный POST на BACKEND_URL/api/v1/payments/redirect
   };
-
-
-  // Submit формы (Enter в поле / нативный submit) — дефолтно платим картой.
-  const submit = (e: React.FormEvent) => {
-    e.preventDefault();
-    pay("card");
-  };
-
-  const submitting = mutation.isPending;
 
   if (!isAuthed || items.length === 0) return null;
+
 
   // Если в корзине только старые позиции без productId — оформить нельзя
 

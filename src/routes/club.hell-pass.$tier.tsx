@@ -1,20 +1,21 @@
 // Детальная страница одного тира Hell Pass.
-// Полное описание каждого преимущества + кнопка «Купить».
+// Кнопки оплаты — submit-формы прямо на бекенд `/redirect`, который сам
+// создаёт purchase, открывает платёж в Райфе и отвечает 303 на форму банка.
+// Это единственный способ, который стабильно работает на iOS/Android PWA
+// и в обычных мобильных браузерах: нативный top-level navigation по клику.
 
-import { useEffect, useRef, useState } from "react";
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Check } from "lucide-react";
 import { PayCardButton, PaySbpButton } from "@/components/brand/PayButton";
-import { hhToast as toast } from "@/lib/hh-toast";
 import { getTier, type Perk, type Tier } from "@/data/hell-pass";
-import { fetchPassMe, purchasePass, qk, type PassTier, type PaymentMethod } from "@/lib/queries";
+import { fetchPassMe, qk, type PassTier } from "@/lib/queries";
 import { useViewer } from "@/hooks/use-viewer";
 import { usePaymentMethods } from "@/hooks/use-payment-methods";
-import { ApiError } from "@/lib/api";
-
+import { BACKEND_URL } from "@/lib/api";
 
 const TIER_RANK: Record<PassTier, number> = { silver: 1, gold: 2, platinum: 3 };
+const PAY_ACTION = `${BACKEND_URL}/api/v1/payments/redirect`;
 
 export const Route = createFileRoute("/club/hell-pass/$tier")({
   loader: ({ params }) => {
@@ -68,12 +69,7 @@ function TierDetailPage() {
   const { tier } = Route.useLoaderData() as { tier: Tier };
   const { isAuthed } = useViewer();
   const navigate = useNavigate();
-  const qc = useQueryClient();
-  const [payUrl, setPayUrl] = useState<string | null>(null);
-  const [pendingMethod, setPendingMethod] = useState<PaymentMethod | null>(null);
-  const payCtaRef = useRef<HTMLAnchorElement | null>(null);
   const { sbp: sbpEnabled } = usePaymentMethods();
-
 
   const passQ = useQuery({
     queryKey: qk.passMe,
@@ -88,49 +84,20 @@ function TierDetailPage() {
   const isUpgrade = active && targetRank > activeRank;
   const isDowngrade = active && targetRank < activeRank;
 
-  const purchaseM = useMutation({
-    mutationFn: (method: PaymentMethod) => purchasePass(tier.slug as PassTier, method),
-    onSuccess: (res) => {
-      qc.invalidateQueries({ queryKey: qk.passMe });
-      if (res.paymentUrl) {
-        setPayUrl(res.paymentUrl);
-        return;
-      }
-      toast.success(
-        `Заявка №${res.purchase.id.slice(0, 8)} создана. Ожидает оплаты — пока активирует админ.`,
-      );
-    },
-    onError: (e) => {
-      const msg = e instanceof ApiError ? e.message : "Не удалось создать заявку";
-      toast.error(msg);
-    },
-  });
-
-  // Когда платёж создан — скроллим к большой кнопке «Перейти к оплате».
-  useEffect(() => {
-    if (!payUrl) return;
-    const el = payCtaRef.current;
-    if (!el) return;
-    el.scrollIntoView({ behavior: "smooth", block: "center" });
-  }, [payUrl]);
-
-  const isPlatinum = tier.ultimate;
-
-  const buy = (method: PaymentMethod) => {
+  // Перехват submit: если не залогинен — на /login; если даунгрейд — блок.
+  // Если всё ок, форма отправляется нативно (никакого fetch, никакого await).
+  const guard = (e: React.FormEvent<HTMLFormElement>) => {
     if (!isAuthed) {
+      e.preventDefault();
       navigate({ to: "/login", search: { redirect: `/club/hell-pass/${tier.slug}` } });
       return;
     }
-    if (purchaseM.isPending || payUrl) return;
     if (isDowngrade) {
-      toast.error(`У тебя активен ${active!.tier.toUpperCase()} — тир ниже купить нельзя.`);
-      return;
+      e.preventDefault();
     }
-    setPendingMethod(method);
-    purchaseM.mutate(method);
   };
 
-
+  const isPlatinum = tier.ultimate;
   const baseLabel = !isAuthed
     ? "Войти"
     : isDowngrade
@@ -138,9 +105,8 @@ function TierDetailPage() {
       : isSameTier
         ? "Продлить"
         : isUpgrade
-          ? `Апгрейд`
-          : `Купить`;
-
+          ? "Апгрейд"
+          : "Купить";
 
   return (
     <main className="mx-auto w-full max-w-5xl px-4 py-8 md:px-8 md:py-12">
@@ -153,7 +119,6 @@ function TierDetailPage() {
       </Link>
 
       <div className="mt-6 grid grid-cols-1 gap-8 lg:grid-cols-[1fr_320px]">
-        {/* LEFT: контент */}
         <div>
           <div className="flex items-baseline gap-4">
             <h1
@@ -218,7 +183,6 @@ function TierDetailPage() {
           </section>
         </div>
 
-        {/* RIGHT: sticky CTA */}
         <aside className="lg:sticky lg:top-24 lg:self-start">
           <div
             className="relative overflow-hidden border bg-[#0f0f0f] p-6"
@@ -257,49 +221,29 @@ function TierDetailPage() {
                 </div>
               )}
 
-              {payUrl ? (
-                <>
-                  <a
-                    ref={payCtaRef}
-                    href={payUrl}
-                    rel="noopener"
-                    className="mt-4 block w-full rounded-xl bg-primary px-5 py-4 text-center font-display text-base font-black uppercase tracking-wider text-primary-foreground shadow-[0_8px_24px_-8px_rgba(255,45,149,0.6)] active:scale-[0.99]"
-                  >
-                    Перейти к оплате →
-                  </a>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setPayUrl(null);
-                      setPendingMethod(null);
-                    }}
-                    className="mt-2 block w-full text-center font-mono text-[10px] uppercase tracking-widest text-white/40 underline-offset-2 hover:text-white/70 hover:underline"
-                  >
-                    Отменить
-                  </button>
-                </>
-              ) : (
-                <div className="mt-4 flex flex-col gap-2">
+              <div className="mt-4 flex flex-col gap-2">
+                {/* Карта */}
+                <form method="POST" action={PAY_ACTION} onSubmit={guard}>
+                  <input type="hidden" name="target" value="pass" />
+                  <input type="hidden" name="tier" value={tier.slug} />
+                  <input type="hidden" name="method" value="card" />
                   <PayCardButton
-                    onClick={() => buy("card")}
-                    loading={purchaseM.isPending && pendingMethod === "card"}
+                    type="submit"
                     disabled={!!isDowngrade}
-                    label={
-                      !isDowngrade ? `${baseLabel} картой` : baseLabel
-                    }
+                    label={!isDowngrade ? `${baseLabel} картой` : baseLabel}
                     size="lg"
                   />
-                  {sbpEnabled && !isDowngrade && (
-                    <PaySbpButton
-                      onClick={() => buy("sbp")}
-                      loading={purchaseM.isPending && pendingMethod === "sbp"}
-                      label={`${baseLabel} через`}
-                      size="lg"
-                    />
-                  )}
-                </div>
-              )}
-
+                </form>
+                {/* СБП */}
+                {sbpEnabled && !isDowngrade && (
+                  <form method="POST" action={PAY_ACTION} onSubmit={guard}>
+                    <input type="hidden" name="target" value="pass" />
+                    <input type="hidden" name="tier" value={tier.slug} />
+                    <input type="hidden" name="method" value="sbp" />
+                    <PaySbpButton type="submit" label={`${baseLabel} через`} size="lg" />
+                  </form>
+                )}
+              </div>
 
               <div className="mt-4 font-mono text-[10px] uppercase tracking-widest text-white/40">
                 {isDowngrade

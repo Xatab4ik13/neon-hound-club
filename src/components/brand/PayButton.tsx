@@ -25,29 +25,43 @@ function Base({
   logos,
   className = "",
   size = "md",
+  type = "button",
+  name,
+  value,
 }: {
-  onClick: () => void;
+  onClick?: () => void;
   disabled?: boolean;
   loading?: boolean;
   label: string;
   logos: React.ReactNode;
   className?: string;
   size?: Size;
+  type?: "button" | "submit";
+  name?: string;
+  value?: string;
 }) {
   const lastTapRef = useRef(0);
 
-  const trigger = () => {
-    if (disabled || loading) return;
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (disabled || loading) {
+      e.preventDefault();
+      return;
+    }
     const now = Date.now();
-    if (now - lastTapRef.current < 500) return;
+    if (now - lastTapRef.current < 500) {
+      e.preventDefault();
+      return;
+    }
     lastTapRef.current = now;
-    onClick();
+    onClick?.();
   };
 
   return (
     <button
-      type="button"
-      onClick={trigger}
+      type={type}
+      name={name}
+      value={value}
+      onClick={handleClick}
       disabled={disabled}
       className={`group relative flex w-full touch-manipulation items-center justify-between gap-3 rounded-xl bg-white text-neutral-900 shadow-[0_1px_0_0_rgba(255,255,255,0.06)_inset,0_8px_24px_-12px_rgba(0,0,0,0.6)] transition-[transform,opacity] active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-50 ${SIZE[size]} ${className}`}
     >
@@ -119,14 +133,19 @@ function SbpLogo() {
 
 /* ───── Публичные компоненты ───── */
 
-export function PayCardButton(props: {
-  onClick: () => void;
+type PublicProps = {
+  onClick?: () => void;
   disabled?: boolean;
   loading?: boolean;
   label?: string;
   size?: Size;
   className?: string;
-}) {
+  type?: "button" | "submit";
+  name?: string;
+  value?: string;
+};
+
+export function PayCardButton(props: PublicProps) {
   return (
     <Base
       {...props}
@@ -142,13 +161,7 @@ export function PayCardButton(props: {
   );
 }
 
-export function PaySbpButton(props: {
-  onClick: () => void;
-  disabled?: boolean;
-  loading?: boolean;
-  label?: string;
-  size?: Size;
-  className?: string;
-}) {
+export function PaySbpButton(props: PublicProps) {
   return <Base {...props} label={props.label ?? "Оплатить через"} logos={<SbpLogo />} />;
 }
+
