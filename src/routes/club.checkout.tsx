@@ -146,14 +146,24 @@ function ClubCheckoutPage() {
       return { order, pay };
     },
     onSuccess: ({ order, pay }) => {
+      // 1) СНАЧАЛА уводим браузер на платёжную форму — синхронно.
+      //    Любые setState/clear()/invalidate ниже могут вызвать SPA-навигацию
+      //    и на мобиле/PWA перехватить редирект.
       if (typeof window !== "undefined") {
-        window.localStorage.setItem(PROFILE_KEY, JSON.stringify(form));
+        try {
+          window.localStorage.setItem(PROFILE_KEY, JSON.stringify(form));
+        } catch {
+          /* ignore */
+        }
       }
-      clear();
-      queryClient.invalidateQueries({ queryKey: qk.shopOrders });
-      queryClient.invalidateQueries({ queryKey: qk.ticketsBalance });
       setPayUrl(pay.paymentUrl);
       commitPaymentRedirect(pay.paymentUrl);
+      // 2) Пост-эффекты. Корзину НЕ очищаем здесь — иначе useEffect ниже
+      //    видит пустую корзину и делает navigate('/club/cart'), что на мобиле
+      //    может перехватить редирект. Чистка случится по факту оплаты на
+      //    /pay/success (или юзер вручную может вернуться и допокупить).
+      queryClient.invalidateQueries({ queryKey: qk.shopOrders });
+      queryClient.invalidateQueries({ queryKey: qk.ticketsBalance });
       void order;
     },
     onError: (err) => {
