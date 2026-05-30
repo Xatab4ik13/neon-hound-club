@@ -239,21 +239,34 @@ function ClubCheckoutPage() {
       <PageHeader title="Оформление" subtitle="Доставка и оплата" />
 
       {payUrl && (
-        <div className="mb-4 rounded-2xl border border-primary/30 bg-primary/[0.08] px-4 py-3">
+        <div className="mb-5 rounded-2xl border border-primary/40 bg-primary/[0.08] p-4">
           <div className="font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-primary">
-            Платёж создан
+            Заказ создан · ждём оплату
           </div>
-          <div className="mt-1 text-[13px] text-foreground">
-            Если страница банка не открылась — нажми кнопку ниже.
+          <div className="mt-1 text-[13px] text-foreground/80">
+            Нажми, чтобы открыть страницу банка.
           </div>
           <a
+            ref={payCtaRef}
             href={payUrl}
-            className="mt-3 inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 font-display text-xs font-black uppercase tracking-wider text-primary-foreground"
+            rel="noopener"
+            className="mt-3 block w-full rounded-xl bg-primary px-5 py-4 text-center font-display text-base font-black uppercase tracking-wider text-primary-foreground shadow-[0_8px_24px_-8px_rgba(255,45,149,0.6)] active:scale-[0.99]"
           >
-            Открыть оплату
+            Перейти к оплате →
           </a>
+          <button
+            type="button"
+            onClick={() => {
+              setPayUrl(null);
+              setPendingMethod(null);
+            }}
+            className="mt-2 block w-full text-center font-mono text-[10px] uppercase tracking-widest text-white/40 underline-offset-2 hover:text-white/70 hover:underline"
+          >
+            Отменить
+          </button>
         </div>
       )}
+
 
       <form onSubmit={submit} className="md:grid md:grid-cols-[1fr_380px] md:items-start md:gap-8">
         {/* ЛЕВАЯ КОЛОНКА: данные получателя/доставки */}
