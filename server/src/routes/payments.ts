@@ -144,6 +144,9 @@ export async function paymentsRoutes(app: FastifyInstance) {
         target === "pass"
           ? `/club/hell-pass${typeof body.tier === "string" ? "/" + body.tier : ""}`
           : "/club/checkout";
+      if (wantsJson) {
+        return reply.code(401).send({ error: "unauthorized", message: "Войди заново" });
+      }
       const url = new URL("/login", FRONTEND);
       url.searchParams.set("redirect", back);
       return reply.redirect(url.toString(), 303);
@@ -153,14 +156,14 @@ export async function paymentsRoutes(app: FastifyInstance) {
     if (target === "pass") {
       const parsed = passRedirectSchema.safeParse(body);
       if (!parsed.success) {
-        return reply.redirect(errorRedirect("/club/hell-pass", "Неверные данные"), 303);
+        return replyErr("/club/hell-pass", "Неверные данные");
       }
       const { tier } = parsed.data;
       const method = parsed.data.method ?? "card";
       try {
         const purchase = await createPassPurchase(session.sub, tier);
         const r = await createPaymentForPass(purchase.id, session.sub, method);
-        return reply.redirect(r.paymentUrl, 303);
+        return replyOk(r.paymentUrl);
       } catch (e) {
         const msg =
           e instanceof PassPurchaseError || e instanceof PaymentInitError
@@ -169,17 +172,14 @@ export async function paymentsRoutes(app: FastifyInstance) {
         if (!(e instanceof PassPurchaseError || e instanceof PaymentInitError)) {
           req.log.error({ err: e }, "pass redirect failed");
         }
-        return reply.redirect(errorRedirect(`/club/hell-pass/${tier}`, msg), 303);
+        return replyErr(`/club/hell-pass/${tier}`, msg);
       }
     }
 
     if (target === "order") {
       const parsed = orderRedirectSchema.safeParse(body);
       if (!parsed.success) {
-        return reply.redirect(
-          errorRedirect("/club/checkout", parsed.error.issues[0]?.message ?? "Неверные данные"),
-          303,
-        );
+        return replyErr("/club/checkout", parsed.error.issues[0]?.message ?? "Неверные данные");
       }
       const method = parsed.data.method ?? "card";
       let items: Array<{ productId: string; qty: number; size?: string }>;
@@ -190,7 +190,7 @@ export async function paymentsRoutes(app: FastifyInstance) {
             : parsed.data.items;
         items = z.array(orderItemSchema).min(1).max(20).parse(raw);
       } catch {
-        return reply.redirect(errorRedirect("/club/checkout", "Корзина пустая"), 303);
+        return replyErr("/club/checkout", "Корзина пустая");
       }
 
       try {
@@ -206,7 +206,7 @@ export async function paymentsRoutes(app: FastifyInstance) {
           comment: parsed.data.comment,
         });
         const r = await createPaymentForOrder(orderId, session.sub, method);
-        return reply.redirect(r.paymentUrl, 303);
+        return replyOk(r.paymentUrl);
       } catch (e) {
         const msg =
           e instanceof OrderCreateError || e instanceof PaymentInitError
@@ -215,11 +215,11 @@ export async function paymentsRoutes(app: FastifyInstance) {
         if (!(e instanceof OrderCreateError || e instanceof PaymentInitError)) {
           req.log.error({ err: e }, "order redirect failed");
         }
-        return reply.redirect(errorRedirect("/club/checkout", msg), 303);
+        return replyErr("/club/checkout", msg);
       }
     }
 
-    return reply.redirect(errorRedirect("/club", "Неизвестный тип платежа"), 303);
+    return replyErr("/club", "Неизвестный тип платежа");
   });
 
   app.get<{ Params: { id: string } }>(
