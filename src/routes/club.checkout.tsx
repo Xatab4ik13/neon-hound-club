@@ -117,12 +117,14 @@ function ClubCheckoutPage() {
   }, [isAuthed, items.length, navigate]);
 
   // Если бекенд редиректнул сюда с ошибкой — показываем тост один раз.
+  // НЕ чистим search моментально, чтобы юзер успел увидеть причину.
   useEffect(() => {
     if (search.payment_error) {
-      hhToast.error("Ошибка оплаты", { meta: search.payment_error });
-      navigate({ to: "/club/checkout", search: () => ({}), replace: true });
+      // eslint-disable-next-line no-console
+      console.error("[payment_error]", search.payment_error);
+      hhToast.error("Ошибка оплаты", { meta: search.payment_error, duration: 15000 });
     }
-  }, [search.payment_error, navigate]);
+  }, [search.payment_error]);
 
   const ticketsTotal = useMemo(
     () => items.reduce((s, i) => s + (i.ticketsBonus ?? 0) * i.qty, 0),
