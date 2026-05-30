@@ -96,6 +96,11 @@ function TierDetailPage() {
       e.preventDefault();
       return;
     }
+    // В standalone PWA (iOS) cross-origin 303 в том же окне блокируется системой.
+    // target="_blank" форсит открытие в Safari поверх PWA.
+    if (isStandalonePWA()) {
+      e.currentTarget.target = "_blank";
+    }
   };
 
 
