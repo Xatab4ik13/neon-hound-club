@@ -1,5 +1,18 @@
 import "./styles.css";
 
+// framer-motion внутри делает `try { require("@emotion/is-prop-valid") } catch {}`.
+// В браузерном ESM `require` не существует → бросается ReferenceError. Он
+// безопасно ловится try/catch, но если в DevTools включён «Pause on caught
+// exceptions», страница встаёт колом на сплэше. Подкладываем шим, чтобы
+// исключение вообще не возникало.
+import isPropValid from "@emotion/is-prop-valid";
+(globalThis as unknown as { require?: (name: string) => unknown }).require = (
+  name: string,
+) => {
+  if (name === "@emotion/is-prop-valid") return { default: isPropValid };
+  throw new Error(`require() not supported in browser: ${name}`);
+};
+
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { RouterProvider } from "@tanstack/react-router";
