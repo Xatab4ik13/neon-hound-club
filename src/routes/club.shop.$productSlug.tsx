@@ -114,7 +114,7 @@ function ProductView({ product }: { product: ShopProduct }) {
   const cover = gallery[slide] ?? gallery[0];
   const maxQty = product.stock && product.stock > 0 ? product.stock : 99;
 
-  const handleAdd = (goToCart = false) => {
+  const handleAdd = (goToCart = false, originEl?: HTMLElement | null) => {
     if (sold) return;
     if (sizeMissing) {
       haptic("warning");
@@ -122,6 +122,10 @@ function ProductView({ product }: { product: ShopProduct }) {
       return;
     }
     haptic("success");
+    // Fly-to-cart запускаем СРАЗУ — до setState, чтобы fromRect был «честный».
+    if (!goToCart && originEl && cover) {
+      flyToCart({ fromRect: originEl.getBoundingClientRect(), imageUrl: cover });
+    }
     add(
       {
         productId: product.id,
@@ -134,10 +138,14 @@ function ProductView({ product }: { product: ShopProduct }) {
       },
       qty,
     );
-    hhToast.success("Добавлено в корзину", {
-      meta: `${product.title}${size ? ` · ${size}` : ""} × ${qty}`,
-    });
-    if (goToCart) navigate({ to: "/club/cart" });
+    if (goToCart) {
+      navigate({ to: "/club/cart" });
+    } else {
+      // Toast как лёгкое подтверждение (анимация уже сама показала «куда»).
+      hhToast.success("Добавлено в корзину", {
+        meta: `${product.title}${size ? ` · ${size}` : ""} × ${qty}`,
+      });
+    }
   };
 
   const total = Math.max(1, gallery.length);
