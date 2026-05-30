@@ -16,7 +16,7 @@ import { formatRuPhone } from "@/lib/phone";
 import { createOrder, initOrderPayment, qk, type PaymentMethod } from "@/lib/queries";
 import { ApiError } from "@/lib/api";
 import { hhToast } from "@/lib/hh-toast";
-import { commitPaymentRedirect } from "@/lib/payment-redirect";
+import { beginPaymentRedirect, type PaymentRedirectHandle } from "@/lib/payment-redirect";
 
 export const Route = createFileRoute("/club/checkout")({
   head: () => ({
@@ -136,6 +136,8 @@ function ClubCheckoutPage() {
 
   const { sbp: sbpEnabled } = usePaymentMethods();
 
+  const redirectHandleRef = useRef<PaymentRedirectHandle | null>(null);
+
   const mutation = useMutation({
     mutationFn: async (
       input: Parameters<typeof createOrder>[0] & { method: PaymentMethod },
@@ -146,9 +148,6 @@ function ClubCheckoutPage() {
       return { order, pay };
     },
     onSuccess: ({ order, pay }) => {
-      // 1) СНАЧАЛА уводим браузер на платёжную форму — синхронно.
-      //    Любые setState/clear()/invalidate ниже могут вызвать SPA-навигацию
-      //    и на мобиле/PWA перехватить редирект.
       if (typeof window !== "undefined") {
         try {
           window.localStorage.setItem(PROFILE_KEY, JSON.stringify(form));
@@ -157,16 +156,16 @@ function ClubCheckoutPage() {
         }
       }
       setPayUrl(pay.paymentUrl);
-      commitPaymentRedirect(pay.paymentUrl);
-      // 2) Пост-эффекты. Корзину НЕ очищаем здесь — иначе useEffect ниже
-      //    видит пустую корзину и делает navigate('/club/cart'), что на мобиле
-      //    может перехватить редирект. Чистка случится по факту оплаты на
-      //    /pay/success (или юзер вручную может вернуться и допокупить).
+      // Подставляем URL в окно, открытое синхронно в момент тапа.
+      redirectHandleRef.current?.commit(pay.paymentUrl);
+      redirectHandleRef.current = null;
       queryClient.invalidateQueries({ queryKey: qk.shopOrders });
       queryClient.invalidateQueries({ queryKey: qk.ticketsBalance });
       void order;
     },
     onError: (err) => {
+      redirectHandleRef.current?.cancel();
+      redirectHandleRef.current = null;
       const msg = err instanceof ApiError ? err.message : "Не удалось оформить заказ";
       hhToast.error("Ошибка оплаты", { meta: msg });
     },
@@ -208,6 +207,8 @@ function ClubCheckoutPage() {
       }
       return;
     }
+    // СИНХРОННО открываем окно в момент тапа — до createOrder/initOrderPayment.
+    redirectHandleRef.current = beginPaymentRedirect();
     setPendingMethod(method);
     mutation.mutate({
       method,
