@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/club/PageHeader";
 import { PaymentBadges } from "@/components/brand/PaymentBadges";
 import { PayCardButton, PaySbpButton } from "@/components/brand/PayButton";
 import { DadataInput } from "@/components/ui/DadataInput";
-import type { DadataAddressData, DadataSuggestion } from "@/lib/dadata";
+import type { DadataAddressData } from "@/lib/dadata";
 import { LEGAL } from "@/data/legal";
 import { useCart } from "@/hooks/use-cart";
 import { useViewer } from "@/hooks/use-viewer";
@@ -16,7 +16,7 @@ import { formatRuPhone } from "@/lib/phone";
 import { createOrder, initOrderPayment, qk, type PaymentMethod } from "@/lib/queries";
 import { ApiError } from "@/lib/api";
 import { hhToast } from "@/lib/hh-toast";
-import { cancelPaymentRedirect, commitPaymentRedirect, preparePaymentRedirect } from "@/lib/payment-redirect";
+import { commitPaymentRedirect } from "@/lib/payment-redirect";
 
 export const Route = createFileRoute("/club/checkout")({
   head: () => ({
@@ -153,14 +153,10 @@ function ClubCheckoutPage() {
       queryClient.invalidateQueries({ queryKey: qk.shopOrders });
       queryClient.invalidateQueries({ queryKey: qk.ticketsBalance });
       setPayUrl(pay.paymentUrl);
-      const popup = paymentWindowRef.current;
-      paymentWindowRef.current = null;
-      commitPaymentRedirect(popup, pay.paymentUrl);
+      commitPaymentRedirect(pay.paymentUrl);
       void order;
     },
     onError: (err) => {
-      cancelPaymentRedirect(paymentWindowRef.current);
-      paymentWindowRef.current = null;
       const msg = err instanceof ApiError ? err.message : "Не удалось оформить заказ";
       hhToast.error("Ошибка оплаты", { meta: msg });
     },
@@ -170,7 +166,6 @@ function ClubCheckoutPage() {
   const [payUrl, setPayUrl] = useState<string | null>(null);
 
   const [pendingMethod, setPendingMethod] = useState<PaymentMethod | null>(null);
-  const paymentWindowRef = useRef<Window | null>(null);
 
   const pay = (method: PaymentMethod) => {
     if (mutation.isPending) return;
@@ -203,7 +198,6 @@ function ClubCheckoutPage() {
       }
       return;
     }
-    paymentWindowRef.current = preparePaymentRedirect();
     setPendingMethod(method);
     mutation.mutate({
       method,
@@ -243,8 +237,6 @@ function ClubCheckoutPage() {
           </div>
           <a
             href={payUrl}
-            target="_blank"
-            rel="noopener noreferrer"
             className="mt-3 inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 font-display text-xs font-black uppercase tracking-wider text-primary-foreground"
           >
             Открыть оплату

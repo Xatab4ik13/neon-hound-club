@@ -1,7 +1,7 @@
 // Детальная страница одного тира Hell Pass.
 // Полное описание каждого преимущества + кнопка «Купить».
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Check } from "lucide-react";
@@ -12,7 +12,7 @@ import { fetchPassMe, purchasePass, qk, type PassTier, type PaymentMethod } from
 import { useViewer } from "@/hooks/use-viewer";
 import { usePaymentMethods } from "@/hooks/use-payment-methods";
 import { ApiError } from "@/lib/api";
-import { cancelPaymentRedirect, commitPaymentRedirect, preparePaymentRedirect } from "@/lib/payment-redirect";
+import { commitPaymentRedirect } from "@/lib/payment-redirect";
 
 const TIER_RANK: Record<PassTier, number> = { silver: 1, gold: 2, platinum: 3 };
 
@@ -71,7 +71,6 @@ function TierDetailPage() {
   const qc = useQueryClient();
   const [purchaseId, setPurchaseId] = useState<string | null>(null);
   const [pendingMethod, setPendingMethod] = useState<PaymentMethod | null>(null);
-  const paymentWindowRef = useRef<Window | null>(null);
   const { sbp: sbpEnabled } = usePaymentMethods();
 
   const passQ = useQuery({
@@ -93,9 +92,7 @@ function TierDetailPage() {
       setPurchaseId(res.purchase.id);
       qc.invalidateQueries({ queryKey: qk.passMe });
       if (res.paymentUrl) {
-        const popup = paymentWindowRef.current;
-        paymentWindowRef.current = null;
-        commitPaymentRedirect(popup, res.paymentUrl);
+        commitPaymentRedirect(res.paymentUrl);
       } else {
         toast.success(
           `Заявка №${res.purchase.id.slice(0, 8)} создана. Ожидает оплаты — пока активирует админ.`,
@@ -103,8 +100,6 @@ function TierDetailPage() {
       }
     },
     onError: (e) => {
-      cancelPaymentRedirect(paymentWindowRef.current);
-      paymentWindowRef.current = null;
       const msg = e instanceof ApiError ? e.message : "Не удалось создать заявку";
       toast.error(msg);
     },
@@ -122,7 +117,6 @@ function TierDetailPage() {
       toast.error(`У тебя активен ${active!.tier.toUpperCase()} — тир ниже купить нельзя.`);
       return;
     }
-    paymentWindowRef.current = preparePaymentRedirect();
     setPendingMethod(method);
     purchaseM.mutate(method);
   };
