@@ -87,7 +87,7 @@ function TierDetailPage() {
   const isDowngrade = active && targetRank < activeRank;
 
   // Перехват submit: если не залогинен — на /login; если даунгрейд — блок.
-  // Если всё ок, форма отправляется нативно (никакого fetch, никакого await).
+  // Если PWA — идём через payInPwa (window.open + fetch). Иначе нативный submit.
   const guard = (e: React.FormEvent<HTMLFormElement>) => {
     if (!isAuthed) {
       e.preventDefault();
@@ -96,8 +96,19 @@ function TierDetailPage() {
     }
     if (isDowngrade) {
       e.preventDefault();
+      return;
+    }
+    if (isStandalonePWA()) {
+      e.preventDefault();
+      const fd = new FormData(e.currentTarget);
+      payInPwa({
+        target: "pass",
+        tier: tier.slug,
+        method: String(fd.get("method") ?? "card"),
+      });
     }
   };
+
 
   const isPlatinum = tier.ultimate;
   const baseLabel = !isAuthed
