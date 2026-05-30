@@ -13,8 +13,6 @@ import { fetchPassMe, qk, type PassTier } from "@/lib/queries";
 import { useViewer } from "@/hooks/use-viewer";
 import { usePaymentMethods } from "@/hooks/use-payment-methods";
 import { BACKEND_URL } from "@/lib/api";
-import { isStandalonePWA } from "@/lib/is-pwa";
-import { payInPwa } from "@/lib/pwa-pay";
 
 const TIER_RANK: Record<PassTier, number> = { silver: 1, gold: 2, platinum: 3 };
 const PAY_ACTION = `${BACKEND_URL}/api/v1/payments/redirect`;
@@ -87,7 +85,6 @@ function TierDetailPage() {
   const isDowngrade = active && targetRank < activeRank;
 
   // Перехват submit: если не залогинен — на /login; если даунгрейд — блок.
-  // Если PWA — идём через payInPwa (window.open + fetch). Иначе нативный submit.
   const guard = (e: React.FormEvent<HTMLFormElement>) => {
     if (!isAuthed) {
       e.preventDefault();
@@ -98,26 +95,6 @@ function TierDetailPage() {
       e.preventDefault();
       return;
     }
-    if (isStandalonePWA()) {
-      e.preventDefault();
-    }
-  };
-
-  const handlePwaPay = (method: "card" | "sbp") => (e: React.MouseEvent<HTMLButtonElement>) => {
-    if (!isStandalonePWA()) return;
-    e.preventDefault();
-
-    if (!isAuthed) {
-      navigate({ to: "/login", search: { redirect: `/club/hell-pass/${tier.slug}` } });
-      return;
-    }
-    if (isDowngrade) return;
-
-    payInPwa({
-      target: "pass",
-      tier: tier.slug,
-      method,
-    });
   };
 
 
@@ -256,7 +233,6 @@ function TierDetailPage() {
                     disabled={!!isDowngrade}
                     label={!isDowngrade ? `${baseLabel} картой` : baseLabel}
                     size="lg"
-                    onClick={handlePwaPay("card")}
                   />
                 </form>
                 {/* СБП */}
@@ -269,7 +245,6 @@ function TierDetailPage() {
                       type="submit"
                       label={`${baseLabel} через`}
                       size="lg"
-                      onClick={handlePwaPay("sbp")}
                     />
                   </form>
                 )}
