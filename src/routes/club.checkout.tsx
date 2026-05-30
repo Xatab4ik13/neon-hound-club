@@ -120,7 +120,7 @@ function ClubCheckoutPage() {
   useEffect(() => {
     if (search.payment_error) {
       hhToast.error("Ошибка оплаты", { meta: search.payment_error });
-      navigate({ to: "/club/checkout", search: {}, replace: true });
+      navigate({ to: "/club/checkout", search: () => ({}), replace: true });
     }
   }, [search.payment_error, navigate]);
 
