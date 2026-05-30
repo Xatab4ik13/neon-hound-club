@@ -424,7 +424,7 @@ function ProductView({ product }: { product: ShopProduct }) {
           <button
             type="button"
             disabled={sold}
-            onClick={() => handleAdd(false)}
+            onClick={(e) => handleAdd(false, e.currentTarget)}
             className="ml-auto flex flex-1 items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3.5 text-[15px] font-semibold text-primary-foreground transition-all active:scale-[0.98] disabled:bg-muted disabled:text-muted-foreground"
           >
             {sold ? "Распродано" : sizeMissing ? "Выбери размер" : "В корзину"}
