@@ -247,13 +247,7 @@ function TierDetailPage() {
               <button
                 type="button"
                 disabled={ctaDisabled}
-                onClick={() => {
-                  if (!isAuthed) {
-                    navigate({ to: "/login", search: { redirect: `/club/hell-pass/${tier.slug}` } });
-                    return;
-                  }
-                  purchaseM.mutate();
-                }}
+                onClick={() => buy("card")}
                 className="mt-4 flex w-full items-center justify-center gap-2 px-6 py-3.5 text-center font-display text-sm font-bold uppercase tracking-widest transition-all hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100"
                 style={{
                   background: isGold
@@ -268,9 +262,26 @@ function TierDetailPage() {
                     : undefined,
                 }}
               >
-                {purchaseM.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-                {ctaLabel}
+                {purchaseM.isPending && pendingMethod === "card" && (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                )}
+                {baseLabel} {!purchaseId && !isDowngrade && "картой"}
               </button>
+
+              {sbpEnabled && !purchaseId && !isDowngrade && (
+                <button
+                  type="button"
+                  disabled={ctaDisabled}
+                  onClick={() => buy("sbp")}
+                  className="mt-2 flex w-full items-center justify-center gap-2 border border-white/15 bg-transparent px-6 py-3.5 text-center font-display text-sm font-bold uppercase tracking-widest transition-colors hover:bg-white/[0.04] disabled:cursor-not-allowed disabled:opacity-60"
+                  style={{ color: tier.color, borderColor: `${tier.color}55` }}
+                >
+                  {purchaseM.isPending && pendingMethod === "sbp" && (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  )}
+                  {baseLabel} через СБП
+                </button>
+              )}
 
               <div className="mt-4 font-mono text-[10px] uppercase tracking-widest text-white/40">
                 {isDowngrade
