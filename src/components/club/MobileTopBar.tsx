@@ -32,6 +32,22 @@ export function MobileTopBar() {
   const isShop = pathname.startsWith("/club/shop") || pathname.startsWith("/club/cart");
   const [notifOpen, setNotifOpen] = useState(false);
 
+  // Bump бейджа при изменении count и glow при «приземлении» анимации.
+  const prevCount = useRef(cartCount);
+  const [bump, setBump] = useState(0);
+  const [glow, setGlow] = useState(0);
+  useEffect(() => {
+    if (cartCount !== prevCount.current) {
+      prevCount.current = cartCount;
+      setBump((n) => n + 1);
+    }
+  }, [cartCount]);
+  useEffect(() => {
+    const onLanded = () => setGlow((n) => n + 1);
+    window.addEventListener("hh:cart:landed", onLanded);
+    return () => window.removeEventListener("hh:cart:landed", onLanded);
+  }, []);
+
   const openNotif = () => {
     haptic("light");
     setNotifOpen(true);
