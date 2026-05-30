@@ -49,7 +49,7 @@ function readProfile(): Partial<CheckoutProfile> {
 }
 
 function ClubCheckoutPage() {
-  const { items, total, clear } = useCart();
+  const { items, total } = useCart();
   const { isAuthed, user } = useViewer();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
