@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/club/PageHeader";
 import { PaymentBadges } from "@/components/brand/PaymentBadges";
 import { PayCardButton, PaySbpButton } from "@/components/brand/PayButton";
 import { DadataInput } from "@/components/ui/DadataInput";
-import type { DadataAddressData, DadataSuggestion } from "@/lib/dadata";
+import type { DadataAddressData } from "@/lib/dadata";
 import { LEGAL } from "@/data/legal";
 import { useCart } from "@/hooks/use-cart";
 import { useViewer } from "@/hooks/use-viewer";
