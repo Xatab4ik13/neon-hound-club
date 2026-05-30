@@ -1,117 +1,79 @@
-## В чём реальная проблема (одна строчка кода)
+# Fly-to-cart анимация (iOS-style, без лагов)
 
-`src/components/ios/IOSFullScreenModal.tsx`, строка 68:
+## Цель
+При тапе «В корзину» юзер видит, как мини-копия товара по дуге улетает к иконке корзины в правом верхнем углу. Корзина в этот момент пульсирует, badge делает bump. Никаких лагов даже на слабом телефоне в PWA.
 
-```
-"fixed inset-0 flex flex-col bg-[#0d0d0d] relative"
-```
+## Как это будет выглядеть
+1. Тап по кнопке → лёгкий haptic, кнопка делает iOS-press (scale 0.96).
+2. От центра кнопки отрывается круглая превью (40×40, картинка товара, скруглённая, с тенью).
+3. Летит по дуге к иконке корзины 550 мс, по пути уменьшается до 12px и затухает.
+4. В момент «прилёта» — badge корзины делает bump (scale 1 → 1.25 → 1, 250 мс), иконка коротко подсвечивается primary-glow.
+5. `cart.add()` вызывается сразу при тапе (не ждём анимацию) — данные не блокируются визуалом.
 
-Здесь одновременно стоят два класса, задающих `position`: **`fixed`** и **`relative`**. В CSS Tailwind `relative` объявлен позже `fixed`, поэтому **побеждает `relative`**. Итог: модалка перестаёт быть фиксированной поверх экрана и встаёт обычным блоком в потоке документа — внизу страницы.
+## Что делаем (минимум файлов)
 
-Отсюда обе твои жалобы — это **одна и та же ошибка**:
+### 1. `src/components/club/FlyToCart.tsx` (новый)
+Императивный API через React-портал в `<body>`:
+- `flyToCart({ fromRect, imageUrl })` — функция, которую можно дёрнуть откуда угодно.
+- Находит target по `document.querySelector('[data-cart-anchor]')`, берёт его `getBoundingClientRect()`.
+- Если target не найден → no-op (fallback на существующий toast).
+- Создаёт абсолютно позиционированный `<div>` с `position: fixed`, размер 40×40, `background-image: url(...)`, `border-radius: 50%`, `box-shadow`.
+- Анимирует через **Web Animations API** (`element.animate([...], { duration: 550, easing: 'cubic-bezier(.5,-0.3,.7,.3)' })`) — это GPU, не дёргает React, не вызывает re-renders. По завершении удаляет элемент.
+- Дуга: keyframes на `transform: translate(x,y) scale(s)` + `opacity`. Промежуточный кадр на 40% времени смещён вверх на `-80px` от прямой линии → даёт «горку».
+- `will-change: transform, opacity` ставится на старте, снимается на финише.
 
-- **Мобильный Safari**: «снизу открывается кривая страничка» — это и есть модалка, которая ушла в поток страницы вместо того, чтобы покрыть экран.
-- **PWA**: кнопка «как будто не реагирует» — на самом деле модалка открывается, но рендерится вне видимой зоны (где-то ниже скролла), и ты её не видишь. Клик отработал, состояние изменилось, просто визуально ничего не появилось.
+**Почему не лагает:**
+- Только `transform` + `opacity` (composited слои, без layout/paint).
+- Web Animations API работает в браузерном compositor thread.
+- Никаких `setState` во время полёта.
+- Элемент один, удаляется после.
 
-Это объясняет, почему ни один из предыдущих фиксов (vaul → portal, z-index, touch-action, min-h-0) не помог: они все чинили не ту проблему. Корневой баг — CSS-конфликт классов, который оставляет модалку в потоке.
+### 2. `src/hooks/use-haptic.ts` — уже есть, переиспользуем.
 
-## Почему мы крутимся в этом цикле 2 часа
+### 3. `src/components/club/MobileTopBar.tsx` (edit)
+- На иконке корзины добавить `data-cart-anchor` (атрибут на ссылку `<Link to="/club/cart">`).
+- Badge получает `key={cartCount}` + класс с keyframe `animate-cart-bump` (новый, в `styles.css`) — bump срабатывает на каждое изменение count.
+- Glow-пульс иконки: слушаем кастомное событие `hh:cart:landed` (диспатчим из `FlyToCart` в момент финиша) → добавляем класс на 400 мс через `useState`/таймер.
 
-Глубинная причина — **зоопарк перекрывающихся примитивов модалок**, каждый со своей логикой:
-
-```
-IOSSheet            → vaul Drawer + portal + z-[81]
-IOSFullScreenModal  → React portal + fixed + z-[260]   ← сломан
-IOSSearchPicker     → свой portal + fixed + z-[320]
-IOSWheelPicker      → свой
-IOSDateSheet        → свой
-IOSConfirm          → свой
-```
-
-У них **разные** способы блокировать body scroll, обрабатывать клавиатуру, реагировать на safe-area, считать высоту (vh vs dvh vs svh), и **разные z-index лесенки**. Когда что-то ломается, каждый фикс «лечит» одну модалку и ломает другую. Это и есть источник цикла.
-
-Плюс iOS Safari address bar: `100vh` ≠ видимая зона. Если использовать `vh` без `dvh`/`svh`, модалка всегда будет либо обрезана сверху, либо «уходить» под адресную панель.
-
-## Что сделать один раз правильно
-
-### 1. Починить корневой баг (5 минут)
-
-В `IOSFullScreenModal.tsx` убрать лишний `relative` из className. Этого достаточно, чтобы кнопка «Изменить» сразу заработала и в PWA, и в браузере.
-
-### 2. Унифицировать все мобильные оверлеи на одном примитиве
-
-Создать **один** базовый компонент `IOSOverlay` и переписать на нём:
-- `IOSFullScreenModal` (форма байка, тюнинг, фото-действия)
-- `IOSSearchPicker` (марка, модель)
-- `IOSWheelPicker` (год)
-- `IOSDateSheet` (дата покупки)
-- `IOSConfirm` (подтверждение)
-- `IOSSheet` (FAB-меню гаража)
-
-`IOSOverlay` берёт на себя ровно те вещи, на которых ломались предыдущие итерации:
-
-```text
-┌──────────────────────────────────────────┐
-│ Portal в document.body                   │
-│ position: fixed                          │
-│ inset-0 + height: 100dvh (с fallback svh)│
-│ padding-top: env(safe-area-inset-top)    │
-│ padding-bottom: env(safe-area-inset-bot.)│
-│                                          │
-│ Один менеджер z-index (стек):            │
-│   layer 1: sheets/modals (z 200)         │
-│   layer 2: pickers (z 300)               │
-│   layer 3: confirms/toasts (z 400)       │
-│                                          │
-│ Один lock body scroll (счётчик откр.)    │
-│ Один обработчик клавиатуры               │
-│   (visualViewport → padding-bottom)      │
-│ Один Escape handler                      │
-└──────────────────────────────────────────┘
+### 4. `src/styles.css`
+Добавить два keyframe:
+```css
+@keyframes cart-bump { 0%{transform:scale(1)} 40%{transform:scale(1.25)} 100%{transform:scale(1)} }
+@keyframes cart-glow { 0%,100%{box-shadow:none} 50%{box-shadow:0 0 16px var(--primary)} }
 ```
 
-После этого у нас остаются **только 2 публичных компонента**:
+### 5. Интеграция в кнопках «В корзину»
+Два места:
+- `src/routes/club.shop.$productSlug.tsx` — кнопка покупки на странице товара.
+- `src/routes/club.shop.index.tsx` — кнопка «+» на карточке в листинге (если есть; иначе тап по карточке не меняем).
 
-- `IOSFullScreen` — полноэкранная форма с шапкой «Отмена / Заголовок / Готово»
-- `IOSPicker` — список с поиском (или wheel/date — варианты одного компонента)
+Обёртка одинаковая:
+```tsx
+const btnRef = useRef<HTMLButtonElement>(null);
+const onAdd = () => {
+  haptic('light');
+  flyToCart({ fromRect: btnRef.current!.getBoundingClientRect(), imageUrl: product.image });
+  cart.add({...});
+};
+```
 
-Всё остальное (BikeFormModal, ServiceSheet, RideSheet, DocSheet, год, дата, тюнинг, подтверждение) строится из этих двух.
+### 6. Fallback и edge cases
+- **Корзина не на экране** (десктоп, переход между роутами): `flyToCart` возвращает `false` → показываем существующий toast «Добавлено · Открыть корзину».
+- **`prefers-reduced-motion: reduce`**: пропускаем полёт, только badge bump + toast.
+- **Быстрые повторные тапы**: каждый полёт — отдельный DOM-элемент, не мешают друг другу, badge `key={count}` рестартит анимацию.
+- **PWA standalone**: всё работает идентично, никаких popup'ов и navigations.
 
-### 3. Убрать vaul из мобильного флоу
+## Что НЕ трогаем
+- Логику `useCart`, бэкенд, любые роуты, layout.
+- Условие `isShop` в `MobileTopBar` — оставляем как есть (юзер уже на shop-странице в момент добавления, корзина видна; глобальную видимость не вводим в этой итерации).
+- Не добавляем зависимости (`framer-motion`, `gsap` и т.п.) — Web Animations API нативный.
 
-`vaul`-драйвер (`IOSSheet`) был источником большинства багов со скроллом и тач-конфликтами (drag-handle vs scroll, фоновый scale, repositionInputs, и т.д.). Для мобильных форм он не нужен — `fixed` + `100dvh` делает то же самое без жестов, которые мешают вводу.
+## Файлы
+- ✏️ `src/components/ios/` — не трогаем
+- 🆕 `src/components/club/FlyToCart.tsx` (~80 строк)
+- ✏️ `src/components/club/MobileTopBar.tsx` (data-атрибут + bump key + glow листенер, ~10 строк)
+- ✏️ `src/styles.css` (2 keyframe, +1 утилита `.cart-icon-glow`)
+- ✏️ `src/routes/club.shop.$productSlug.tsx` (ref + вызов flyToCart перед `cart.add`)
+- ✏️ `src/routes/club.shop.index.tsx` (то же на карточке, если есть кнопка «+»)
 
-`vaul` можно оставить только для FAB-меню гаража (там drag-down действительно уместен), но даже его проще переписать на `IOSOverlay` с `max-height: 70dvh` снизу.
-
-### 4. Тестовый чек-лист после рефакторинга
-
-Один и тот же сценарий проверяется в трёх средах:
-
-1. Desktop Chrome 1086px (текущий preview).
-2. Мобильный Safari (адресная панель появляется/исчезает).
-3. PWA standalone (без адресной панели, с home indicator).
-
-Сценарий:
-- Открыть «Изменить» → модалка покрывает весь экран, шапка видна, кнопка «Сохранить» видна.
-- Скролл формы работает, не таскает модалку.
-- Тапнуть «Марка» → поверх формы открывается поиск, скролл в нём работает, ввод текста фокусит поле.
-- Закрыть «Отмена» → возврат в форму, без артефактов.
-- Сохранить → модалка закрывается, тост появляется.
-
-## Технические детали (для имплементации, когда переключимся в build)
-
-- Файлы под удаление/переписывание: `IOSSheet.tsx`, `IOSFullScreenModal.tsx`, `IOSSearchPicker.tsx`, `IOSWheelPicker.tsx`, `IOSDateSheet.tsx`, `IOSConfirm.tsx`.
-- Новый файл: `src/components/ios/IOSOverlay.tsx` — базовый примитив (portal + fixed + 100dvh + scroll lock + keyboard offset + z-stack).
-- Новые публичные обёртки: `IOSFullScreen.tsx`, `IOSPicker.tsx` поверх `IOSOverlay`.
-- Места вызова под обновление: `BikeFormModal.tsx`, `MobileGarage.tsx` (FAB-меню, ServiceSheet, RideSheet, DocSheet, DocViewerSheet).
-- `useIsMobile` оставить как есть; решение mobile vs desktop в `BikeFormModal` не меняется.
-- `framer-motion`/анимация открытия — простой fade+translate-y внутри `IOSOverlay`, без vaul.
-
-## Что я предлагаю дальше
-
-Два варианта, выбирай:
-
-- **A. Быстро (5 минут)**: только убрать `relative` из `IOSFullScreenModal`. Кнопка «Изменить» сразу заработает. Архитектура останется хрупкой — следующий баг в модалках вернёт нас в этот цикл.
-- **B. Правильно (1 заход, ~30–40 минут работы)**: фикс + рефакторинг на единый `IOSOverlay`. Закрывает не только текущий баг, но и весь класс багов «модалка ведёт себя по-разному в PWA и Safari».
-
-Я бы делал **B**, потому что ты прямо просишь «один раз правильно». Скажи «делай B» — переключусь в build и выполню за один проход.
+Готов перейти в build и сделать всё одним проходом.
