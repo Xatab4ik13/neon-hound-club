@@ -11,6 +11,7 @@ import { ChevronLeft, ChevronRight, Minus, Plus, ShoppingBag, Ticket } from "luc
 import { hhToast } from "@/lib/hh-toast";
 import { useCart } from "@/hooks/use-cart";
 import { haptic } from "@/hooks/use-haptic";
+import { flyToCart } from "@/lib/fly-to-cart";
 import { ApiError } from "@/lib/api";
 import { LazyImage } from "@/components/ui/lazy-image";
 import { fetchShopProduct, qk, type ShopProduct } from "@/lib/queries";
