@@ -257,34 +257,49 @@ function TierDetailPage() {
                 </div>
               )}
 
-              {payUrl && (
-                <a
-                  href={payUrl}
-                  className="mt-4 block w-full rounded-xl bg-primary px-5 py-3 text-center font-display text-xs font-black uppercase tracking-wider text-primary-foreground"
-                >
-                  Открыть оплату
-                </a>
-              )}
-
-              <div className="mt-4 flex flex-col gap-2">
-                <PayCardButton
-                  onClick={() => buy("card")}
-                  loading={purchaseM.isPending && pendingMethod === "card"}
-                  disabled={!!isDowngrade}
-                  label={
-                    !isDowngrade ? `${baseLabel} картой` : baseLabel
-                  }
-                  size="lg"
-                />
-                {sbpEnabled && !isDowngrade && (
-                  <PaySbpButton
-                    onClick={() => buy("sbp")}
-                    loading={purchaseM.isPending && pendingMethod === "sbp"}
-                    label={`${baseLabel} через`}
+              {payUrl ? (
+                <>
+                  <a
+                    ref={payCtaRef}
+                    href={payUrl}
+                    rel="noopener"
+                    className="mt-4 block w-full rounded-xl bg-primary px-5 py-4 text-center font-display text-base font-black uppercase tracking-wider text-primary-foreground shadow-[0_8px_24px_-8px_rgba(255,45,149,0.6)] active:scale-[0.99]"
+                  >
+                    Перейти к оплате →
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPayUrl(null);
+                      setPendingMethod(null);
+                    }}
+                    className="mt-2 block w-full text-center font-mono text-[10px] uppercase tracking-widest text-white/40 underline-offset-2 hover:text-white/70 hover:underline"
+                  >
+                    Отменить
+                  </button>
+                </>
+              ) : (
+                <div className="mt-4 flex flex-col gap-2">
+                  <PayCardButton
+                    onClick={() => buy("card")}
+                    loading={purchaseM.isPending && pendingMethod === "card"}
+                    disabled={!!isDowngrade}
+                    label={
+                      !isDowngrade ? `${baseLabel} картой` : baseLabel
+                    }
                     size="lg"
                   />
-                )}
-              </div>
+                  {sbpEnabled && !isDowngrade && (
+                    <PaySbpButton
+                      onClick={() => buy("sbp")}
+                      loading={purchaseM.isPending && pendingMethod === "sbp"}
+                      label={`${baseLabel} через`}
+                      size="lg"
+                    />
+                  )}
+                </div>
+              )}
+
 
               <div className="mt-4 font-mono text-[10px] uppercase tracking-widest text-white/40">
                 {isDowngrade
