@@ -57,7 +57,19 @@ async function getVapidPublicKey(): Promise<string | null> {
 export async function registerPushSW(): Promise<ServiceWorkerRegistration | null> {
   if (!isPushSupported() || isLovablePreview()) return null;
   try {
-    return await navigator.serviceWorker.register("/sw.js");
+    const registrations = await navigator.serviceWorker.getRegistrations();
+    await Promise.all(
+      registrations.map(async (registration) => {
+        const scriptUrl = registration.active?.scriptURL || registration.waiting?.scriptURL || registration.installing?.scriptURL;
+        if (!scriptUrl) return;
+        const pathname = new URL(scriptUrl).pathname;
+        if (pathname === "/service-worker.js") {
+          await registration.unregister();
+        }
+      }),
+    );
+
+    return await navigator.serviceWorker.register("/sw.js", { updateViaCache: "none" });
   } catch (e) {
     console.warn("[push] sw register failed", e);
     return null;
