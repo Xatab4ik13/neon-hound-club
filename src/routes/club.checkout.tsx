@@ -18,9 +18,10 @@ import { BACKEND_URL } from "@/lib/api";
 const PAY_ACTION = `${BACKEND_URL}/api/v1/payments/redirect`;
 
 export const Route = createFileRoute("/club/checkout")({
-  validateSearch: (s: Record<string, unknown>) => ({
-    payment_error: typeof s.payment_error === "string" ? s.payment_error : undefined,
-  }),
+  validateSearch: (s: Record<string, unknown>): { payment_error?: string } => {
+    const v = typeof s.payment_error === "string" ? s.payment_error : undefined;
+    return v ? { payment_error: v } : {};
+  },
   head: () => ({
     meta: [
       { title: "Оформление — клуб HELLHOUND" },
