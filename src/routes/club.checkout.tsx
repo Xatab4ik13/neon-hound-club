@@ -429,13 +429,26 @@ function ClubCheckoutPage() {
           </div>
 
           {/* Desktop CTA — встроена в aside, всегда видна */}
-          <button
-            type="submit"
-            disabled={!canSubmit || submitting}
-            className="hidden w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3.5 font-display text-sm font-black uppercase tracking-wider text-primary-foreground transition-opacity disabled:opacity-40 md:flex"
-          >
-            {submitting ? "Оформляем…" : `Оплатить ${total.toLocaleString("ru-RU")} ₽`}
-          </button>
+          <div className="hidden md:flex md:gap-2">
+            <button
+              type="button"
+              onClick={() => pay("card")}
+              disabled={!canSubmit || submitting}
+              className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3.5 font-display text-sm font-black uppercase tracking-wider text-primary-foreground transition-opacity disabled:opacity-40"
+            >
+              {submitting && pendingMethod === "card" ? "Открываем…" : "Картой"}
+            </button>
+            {sbpEnabled && (
+              <button
+                type="button"
+                onClick={() => pay("sbp")}
+                disabled={!canSubmit || submitting}
+                className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-primary/60 bg-transparent px-4 py-3.5 font-display text-sm font-black uppercase tracking-wider text-primary transition-colors hover:bg-primary/10 disabled:opacity-40"
+              >
+                {submitting && pendingMethod === "sbp" ? "Открываем…" : "СБП"}
+              </button>
+            )}
+          </div>
         </aside>
 
         {/* Mobile sticky CTA — только < md */}
@@ -452,13 +465,26 @@ function ClubCheckoutPage() {
                 {total.toLocaleString("ru-RU")} ₽
               </span>
             </div>
-            <button
-              type="submit"
-              disabled={!canSubmit || submitting}
-              className="ml-auto flex flex-1 items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 font-display text-sm font-black uppercase tracking-wider text-primary-foreground transition-opacity active:scale-[0.98] disabled:opacity-40"
-            >
-              {submitting ? "Оформляем…" : "Оплатить"}
-            </button>
+            <div className="ml-auto flex flex-1 gap-2">
+              <button
+                type="button"
+                onClick={() => pay("card")}
+                disabled={!canSubmit || submitting}
+                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-primary px-3 py-3 font-display text-[13px] font-black uppercase tracking-wider text-primary-foreground transition-opacity active:scale-[0.98] disabled:opacity-40"
+              >
+                {submitting && pendingMethod === "card" ? "…" : "Картой"}
+              </button>
+              {sbpEnabled && (
+                <button
+                  type="button"
+                  onClick={() => pay("sbp")}
+                  disabled={!canSubmit || submitting}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-primary/60 bg-transparent px-3 py-3 font-display text-[13px] font-black uppercase tracking-wider text-primary transition-colors active:scale-[0.98] disabled:opacity-40"
+                >
+                  {submitting && pendingMethod === "sbp" ? "…" : "СБП"}
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </form>
