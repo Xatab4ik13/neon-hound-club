@@ -131,15 +131,13 @@ function TierDetailPage() {
 
   const baseLabel = !isAuthed
     ? "Войти"
-    : purchaseId
-      ? "Заявка создана"
-      : isDowngrade
-        ? `Уже выше — ${active!.tier.toUpperCase()}`
-        : isSameTier
-          ? "Продлить"
-          : isUpgrade
-            ? `Апгрейд`
-            : `Купить`;
+    : isDowngrade
+      ? `Уже выше — ${active!.tier.toUpperCase()}`
+      : isSameTier
+        ? "Продлить"
+        : isUpgrade
+          ? `Апгрейд`
+          : `Купить`;
 
 
   return (
