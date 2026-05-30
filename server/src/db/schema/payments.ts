@@ -41,6 +41,8 @@ export const payments = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     amountRub: integer("amount_rub").notNull(),
+    /** 'card' | 'sbp' — какая торговая точка Райфа обрабатывает платёж. */
+    method: varchar("method", { length: 8 }).notNull().default("card"),
     status: varchar("status", { length: 24 }).notNull().default("new"),
     paymentUrl: varchar("payment_url", { length: 500 }),
     rawInit: jsonb("raw_init"),
@@ -71,3 +73,6 @@ export type PaymentStatus = (typeof PAYMENT_STATUSES)[number];
 
 export const PAYMENT_REF_TYPES = ["pass", "order"] as const;
 export type PaymentRefType = (typeof PAYMENT_REF_TYPES)[number];
+
+export const PAYMENT_METHODS = ["card", "sbp"] as const;
+export type PaymentMethod = (typeof PAYMENT_METHODS)[number];

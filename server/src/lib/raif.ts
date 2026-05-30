@@ -1,44 +1,60 @@
 /**
  * Тонкий клиент Raiffeisenbank e-commerce API (https://pay.raif.ru/doc/ecom.html).
  *
- * Поддержка:
- *   - createOrder — POST /api/v1/merchants/{publicId}/orders → возвращает payformUrl
- *   - verifyPaymentCallback — проверка HMAC-SHA-256 подписи входящего webhook
+ * У нас оформлены ДВЕ торговые точки в Райфе:
+ *   - "card" — интернет-эквайринг (карты), env: RAIF_PUBLIC_ID + RAIF_SECRET_KEY
+ *   - "sbp"  — СБП (QR),                 env: RAIF_PUBLIC_ID_SBP + RAIF_SECRET_KEY_SBP
  *
- * Авторизация исходящих запросов: Authorization: Bearer <RAIF_SECRET_KEY>.
- *
- * Подпись webhook (заголовок X-Api-Signature-SHA256) для уведомления об оплате (v3):
- *   контрольная строка: data.amount|data.publicId|data.order.id|data.status.value|data.status.date
- *   HMAC-SHA-256(secretKey, контрольная строка) → hex(lowercase).
+ * Для каждого платежа выбираем соответствующий аккаунт:
+ *   - Authorization: Bearer <secretKey этого аккаунта>
+ *   - paymentMethods: ["ACQUIRING"] для карт, ["SBP"] для СБП
+ *   - подпись вебхука проверяется секретом аккаунта, к которому относится платёж
  *
  * Уведомления приходят с IP 193.28.44.23.
  */
 import { createHmac, timingSafeEqual } from "node:crypto";
 
 const API_URL = (process.env.RAIF_API_URL || "https://pay.raif.ru").replace(/\/$/, "");
-const PUBLIC_ID = process.env.RAIF_PUBLIC_ID ?? "";
-const SECRET_KEY = process.env.RAIF_SECRET_KEY ?? "";
 
-export function isRaifConfigured(): boolean {
-  return Boolean(PUBLIC_ID && SECRET_KEY);
+export type RaifMethod = "card" | "sbp";
+
+type Account = { publicId: string; secretKey: string };
+
+const ACCOUNTS: Partial<Record<RaifMethod, Account>> = {};
+{
+  const cardPub = process.env.RAIF_PUBLIC_ID ?? "";
+  const cardSec = process.env.RAIF_SECRET_KEY ?? "";
+  if (cardPub && cardSec) ACCOUNTS.card = { publicId: cardPub, secretKey: cardSec };
+
+  const sbpPub = process.env.RAIF_PUBLIC_ID_SBP ?? "";
+  const sbpSec = process.env.RAIF_SECRET_KEY_SBP ?? "";
+  if (sbpPub && sbpSec) ACCOUNTS.sbp = { publicId: sbpPub, secretKey: sbpSec };
 }
 
-export function getRaifPublicId(): string {
-  return PUBLIC_ID;
+export function isRaifConfigured(method: RaifMethod = "card"): boolean {
+  return Boolean(ACCOUNTS[method]);
+}
+
+export function getConfiguredMethods(): RaifMethod[] {
+  return (Object.keys(ACCOUNTS) as RaifMethod[]).filter((m) => Boolean(ACCOUNTS[m]));
+}
+
+export function getAccount(method: RaifMethod): Account | null {
+  return ACCOUNTS[method] ?? null;
 }
 
 export type RaifCreateOrderParams = {
+  /** Какой торговой точкой оплачиваем. */
+  method: RaifMethod;
   /** Наш internal id платежа (UUID). Пойдёт как id заказа в Райф. <=40 chars [A-Za-z0-9-_.]. */
   orderId: string;
-  /** Сумма в рублях (целое или с копейками). Райф принимает number. */
+  /** Сумма в рублях. */
   amountRub: number;
   /** Комментарий (<=140 chars). */
   comment: string;
   successUrl: string;
   failUrl: string;
-  /** Платёжные методы. По умолчанию — карты + СБП. */
-  paymentMethods?: Array<"ACQUIRING" | "SBP">;
-  /** Доп. поля key-value (попадают в реестр). */
+  /** Доп. поля (попадают в реестр). */
   extra?: Record<string, string>;
 };
 
@@ -47,7 +63,6 @@ export type RaifOrderResponse = {
   amount: number;
   status?: { value: string; date: string };
   payformUrl?: string;
-  // ... остальные поля игнорируем
 };
 
 export class RaifApiError extends Error {
@@ -58,14 +73,20 @@ export class RaifApiError extends Error {
 
 /** POST /api/v1/merchants/{publicId}/orders — создать заказ и получить ссылку на форму. */
 export async function createOrder(p: RaifCreateOrderParams): Promise<RaifOrderResponse> {
-  if (!isRaifConfigured()) {
-    throw new Error("RAIF_PUBLIC_ID / RAIF_SECRET_KEY не заданы в env");
+  const acc = ACCOUNTS[p.method];
+  if (!acc) {
+    throw new RaifApiError(
+      500,
+      "not_configured",
+      `Райф (${p.method}) не сконфигурирован в env`,
+    );
   }
+
   const body: Record<string, unknown> = {
     id: p.orderId,
     amount: p.amountRub,
     comment: p.comment.slice(0, 140),
-    paymentMethods: p.paymentMethods ?? ["ACQUIRING", "SBP"],
+    paymentMethods: [p.method === "sbp" ? "SBP" : "ACQUIRING"],
     returnUrls: {
       successUrl: p.successUrl,
       failUrl: p.failUrl,
@@ -75,12 +96,12 @@ export async function createOrder(p: RaifCreateOrderParams): Promise<RaifOrderRe
     body.extra = p.extra;
   }
 
-  const url = `${API_URL}/api/v1/merchants/${encodeURIComponent(PUBLIC_ID)}/orders`;
+  const url = `${API_URL}/api/v1/merchants/${encodeURIComponent(acc.publicId)}/orders`;
   const res = await fetch(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${SECRET_KEY}`,
+      Authorization: `Bearer ${acc.secretKey}`,
     },
     body: JSON.stringify(body),
   });
@@ -110,14 +131,15 @@ export async function createOrder(p: RaifCreateOrderParams): Promise<RaifOrderRe
 }
 
 /**
- * Проверка подписи входящего webhook об оплате (v3).
- * body — уже распарсенный JSON, signature — значение заголовка X-Api-Signature-SHA256.
+ * Проверка подписи входящего webhook (X-Api-Signature-SHA256).
+ * Секрет — той точки (card/sbp), к которой относится платёж.
  */
 export function verifyPaymentCallback(
   body: Record<string, unknown>,
   signature: string | undefined,
+  secretKey: string,
 ): boolean {
-  if (!signature || !SECRET_KEY) return false;
+  if (!signature || !secretKey) return false;
   const data = (body.data ?? {}) as Record<string, unknown>;
   const order = (data.order ?? {}) as Record<string, unknown>;
   const status = (data.status ?? {}) as Record<string, unknown>;
@@ -142,7 +164,7 @@ export function verifyPaymentCallback(
     .map((v) => String(v))
     .join("|");
 
-  const expected = createHmac("sha256", SECRET_KEY).update(controlString, "utf8").digest("hex");
+  const expected = createHmac("sha256", secretKey).update(controlString, "utf8").digest("hex");
   const incoming = signature.toLowerCase();
   if (incoming.length !== expected.length) return false;
 
