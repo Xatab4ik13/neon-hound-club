@@ -201,18 +201,55 @@ function ClubCheckoutPage() {
     // Если обычный браузер: нативный POST на BACKEND_URL/api/v1/payments/redirect.
     if (isStandalonePWA()) {
       e.preventDefault();
-      const submitter = (e.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null;
-      const method = submitter?.value === "sbp" ? "sbp" : "card";
-      payInPwa({
-        target: "order",
-        method,
-        items: itemsJson,
-        shipping_fio: form.name,
-        shipping_phone: form.phone,
-        shipping_city: cityFallback,
-        shipping_address: form.address,
-      });
     }
+  };
+
+  const handlePwaPay = (method: "card" | "sbp") => (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (!isStandalonePWA()) return;
+    e.preventDefault();
+
+    if (orderableItems.length === 0) {
+      hhToast.error("Корзина пустая или товары устарели — обнови корзину.");
+      return;
+    }
+    if (form.name.trim().length < 2) {
+      hhToast.error("Укажи имя получателя.");
+      return;
+    }
+    if (form.phone.trim().length < 5) {
+      hhToast.error("Укажи телефон.");
+      return;
+    }
+    if (form.address.trim().length < 5) {
+      hhToast.error("Укажи адрес доставки.");
+      return;
+    }
+    if (!agree) {
+      hhToast.error("Поставь галочку согласия с офертой внизу формы.");
+      if (typeof document !== "undefined") {
+        document
+          .querySelector<HTMLInputElement>('input[type="checkbox"]')
+          ?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+      return;
+    }
+    if (typeof window !== "undefined") {
+      try {
+        window.localStorage.setItem(PROFILE_KEY, JSON.stringify(form));
+      } catch {
+        /* ignore */
+      }
+    }
+
+    payInPwa({
+      target: "order",
+      method,
+      items: itemsJson,
+      shipping_fio: form.name,
+      shipping_phone: form.phone,
+      shipping_city: cityFallback,
+      shipping_address: form.address,
+    });
   };
 
   if (!isAuthed || items.length === 0) return null;
@@ -410,17 +447,41 @@ function ClubCheckoutPage() {
 
           {/* Мобильные кнопки оплаты */}
           <div className="flex flex-col gap-2 md:hidden">
-            <PayCardButton type="submit" name="method" value="card" size="lg" />
+            <PayCardButton
+              type="submit"
+              name="method"
+              value="card"
+              size="lg"
+              onClick={handlePwaPay("card")}
+            />
             {sbpEnabled && (
-              <PaySbpButton type="submit" name="method" value="sbp" size="lg" />
+              <PaySbpButton
+                type="submit"
+                name="method"
+                value="sbp"
+                size="lg"
+                onClick={handlePwaPay("sbp")}
+              />
             )}
           </div>
 
           {/* Desktop кнопки оплаты */}
           <div className="hidden flex-col gap-2 md:flex">
-            <PayCardButton type="submit" name="method" value="card" size="lg" />
+            <PayCardButton
+              type="submit"
+              name="method"
+              value="card"
+              size="lg"
+              onClick={handlePwaPay("card")}
+            />
             {sbpEnabled && (
-              <PaySbpButton type="submit" name="method" value="sbp" size="lg" />
+              <PaySbpButton
+                type="submit"
+                name="method"
+                value="sbp"
+                size="lg"
+                onClick={handlePwaPay("sbp")}
+              />
             )}
           </div>
         </aside>

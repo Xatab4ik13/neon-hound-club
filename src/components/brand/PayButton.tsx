@@ -29,7 +29,7 @@ function Base({
   name,
   value,
 }: {
-  onClick?: () => void;
+  onClick?: (e: React.MouseEvent<HTMLButtonElement>) => void;
   disabled?: boolean;
   loading?: boolean;
   label: string;
@@ -53,7 +53,7 @@ function Base({
       return;
     }
     lastTapRef.current = now;
-    onClick?.();
+    onClick?.(e);
   };
 
   return (
@@ -134,7 +134,7 @@ function SbpLogo() {
 /* ───── Публичные компоненты ───── */
 
 type PublicProps = {
-  onClick?: () => void;
+  onClick?: (e: React.MouseEvent<HTMLButtonElement>) => void;
   disabled?: boolean;
   loading?: boolean;
   label?: string;
