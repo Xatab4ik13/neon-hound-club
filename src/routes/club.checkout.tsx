@@ -154,7 +154,7 @@ function ClubCheckoutPage() {
     setForm((f) => ({ ...f, [k]: v }));
   };
 
-  const { sbp: sbpEnabled } = usePaymentMethods();
+  
 
   // Клиентская валидация. Для браузера — пускаем нативный submit (303→банк).
   // Для PWA — preventDefault и идём через startPayment (JSON + /pay/go).
