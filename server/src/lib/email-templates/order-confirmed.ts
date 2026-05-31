@@ -22,6 +22,12 @@ export type OrderItem = {
   sumRub: number;
 };
 
+export type DigitalItem = {
+  title: string;
+  url: string;
+  fileName?: string | null;
+};
+
 export function orderConfirmedTemplate(opts: {
   nick: string;
   orderNumber: string;
@@ -29,9 +35,13 @@ export function orderConfirmedTemplate(opts: {
   items: OrderItem[];
   totalRub: number;
   ticketsBonus?: number;
+  /** Если передан непустой массив — письмо рендерится в "цифровом" виде:
+   *  убираем фразу про СДЭК/трек, добавляем блок со ссылками на скачивание. */
+  digitalItems?: DigitalItem[];
 }) {
-  const { nick, orderNumber, orderUrl, items, totalRub, ticketsBonus = 0 } = opts;
+  const { nick, orderNumber, orderUrl, items, totalRub, ticketsBonus = 0, digitalItems = [] } = opts;
   const subject = `Заказ ${orderNumber} принят — HELLHOUND Racing`;
+  const isDigital = digitalItems.length > 0;
 
   const text = [
     `Привет, ${nick}.`,
@@ -43,9 +53,13 @@ export function orderConfirmedTemplate(opts: {
     `Итого: ${formatRub(totalRub)}`,
     ticketsBonus > 0 ? `Начислено билетов: +${ticketsBonus}` : ``,
     ``,
-    `Статус и трек-номер появятся здесь:`,
-    orderUrl,
-    ``,
+    ...(isDigital
+      ? [
+          `Скачать:`,
+          ...digitalItems.map((d) => `· ${d.title} — ${d.url}`),
+          ``,
+        ]
+      : [`Статус и трек-номер появятся здесь:`, orderUrl, ``]),
     `HELLHOUND Racing`,
   ]
     .filter(Boolean)
@@ -65,6 +79,32 @@ export function orderConfirmedTemplate(opts: {
         </tr>`,
     )
     .join("");
+
+  const digitalLinksBlock = isDigital
+    ? `
+        <tr><td style="padding:0 32px 24px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#0f1a14;border:1px solid #2dff95;">
+            <tr><td style="padding:14px 18px;">
+              <div style="font-family:'SFMono-Regular',Menlo,Consolas,monospace;font-size:11px;letter-spacing:0.16em;color:#2dff95;text-transform:uppercase;margin-bottom:8px;">
+                Скачать
+              </div>
+              ${digitalItems
+                .map(
+                  (d) => `
+                <div style="margin:0 0 8px;">
+                  <a href="${d.url}" target="_blank" style="color:#fff;font-size:14px;text-decoration:underline;">
+                    ${escapeHtml(d.title)}${d.fileName ? ` <span style="color:#777;font-size:12px;">(${escapeHtml(d.fileName)})</span>` : ""}
+                  </a>
+                </div>`,
+                )
+                .join("")}
+              <div style="font-size:12px;color:#999;margin-top:8px;">
+                Ссылки действуют постоянно. Также доступны в личном кабинете.
+              </div>
+            </td></tr>
+          </table>
+        </td></tr>`
+    : "";
 
   const ticketsBlock =
     ticketsBonus > 0
