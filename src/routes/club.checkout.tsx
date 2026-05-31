@@ -208,7 +208,7 @@ function ClubCheckoutPage() {
         shipping_phone: form.phone,
         shipping_city: cityFallback,
         shipping_address: form.address,
-        method: "card",
+        method: "sbp",
 
       }).then((r) => {
         if (!r.ok) hhToast.error("Ошибка оплаты", { meta: r.message });
