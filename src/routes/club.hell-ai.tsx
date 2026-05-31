@@ -253,17 +253,31 @@ async function streamHellAi(
 
   const { BACKEND_URL } = await import("@/lib/api");
 
-  // Объединяем внешний signal с нашим таймаут-контроллером "первого байта".
-  const firstByteCtrl = new AbortController();
-  const onExternalAbort = () => firstByteCtrl.abort();
+  // Раньше тут был «6 сек до первой дельты» — но reasoning-модели (GPT-5)
+  // часто думают 10-25 сек до первого токена. Сервер шлёт keep-alive
+  // `: ka\n\n` каждые 15 сек, поэтому теперь это inactivity-таймер:
+  // ждём ХОТЬ КАКИЕ-ТО байты от сервера в течение 30 сек, иначе abort.
+  // Таймер сбрасывается в reader-цикле на каждом chunk'е.
+  const INACTIVITY_MS = 30_000;
+  const inactivityCtrl = new AbortController();
+  const onExternalAbort = () => inactivityCtrl.abort();
   if (signal) {
-    if (signal.aborted) firstByteCtrl.abort();
+    if (signal.aborted) inactivityCtrl.abort();
     else signal.addEventListener("abort", onExternalAbort);
   }
   let firstDeltaReceived = false;
-  const firstByteTimer = setTimeout(() => {
-    if (!firstDeltaReceived) firstByteCtrl.abort();
-  }, 6000);
+  let inactivityTimer: ReturnType<typeof setTimeout> | null = null;
+  const resetInactivity = () => {
+    if (inactivityTimer) clearTimeout(inactivityTimer);
+    inactivityTimer = setTimeout(() => inactivityCtrl.abort(), INACTIVITY_MS);
+  };
+  const clearInactivity = () => {
+    if (inactivityTimer) {
+      clearTimeout(inactivityTimer);
+      inactivityTimer = null;
+    }
+  };
+  resetInactivity();
 
   let res: Response;
   try {
@@ -272,20 +286,18 @@ async function streamHellAi(
       credentials: "include",
       headers: { "Content-Type": "application/json", Accept: "text/event-stream" },
       body: JSON.stringify({ question, bikeId, chatId }),
-      signal: firstByteCtrl.signal,
+      signal: inactivityCtrl.signal,
     });
   } catch (err) {
-    clearTimeout(firstByteTimer);
+    clearInactivity();
     if (signal) signal.removeEventListener("abort", onExternalAbort);
-    // Юзер отменил руками — пробрасываем.
     if (signal?.aborted) throw err;
-    // Иначе провайдер не пустил даже коннект — fallback.
     markStreamBroken();
     return fallbackToPlainAsk(question, bikeId, chatId, onDelta, signal);
   }
 
   if (!res.ok || !res.body) {
-    clearTimeout(firstByteTimer);
+    clearInactivity();
     if (signal) signal.removeEventListener("abort", onExternalAbort);
     const text = await res.text().catch(() => "");
     let code = "request_failed";
@@ -322,6 +334,8 @@ async function streamHellAi(
       }
       const { value, done } = chunk;
       if (done) break;
+      // Любой байт от сервера (включая `: ka`) = стрим живой → продлеваем таймер.
+      resetInactivity();
       buf += decoder.decode(value, { stream: true });
 
       let newlineIndex: number;
@@ -355,7 +369,6 @@ async function streamHellAi(
         if (currentEvent === "delta" && typeof data.t === "string") {
           if (!firstDeltaReceived) {
             firstDeltaReceived = true;
-            clearTimeout(firstByteTimer);
           }
           answer += data.t;
           onDelta(data.t);
@@ -366,7 +379,7 @@ async function streamHellAi(
       }
     }
   } finally {
-    clearTimeout(firstByteTimer);
+    clearInactivity();
     if (signal) signal.removeEventListener("abort", onExternalAbort);
     try { reader.releaseLock(); } catch { /* noop */ }
   }
@@ -697,6 +710,34 @@ function HellAiMobile() {
           haptic("light");
           return;
         }
+        // 409 user_busy: предыдущий запрос ещё в работе на бэке. Не показываем
+        // ошибку — поллим чат и подхватываем ответ, как только сервер его
+        // сохранит. Это закрывает баг, когда стрим оборвался на клиенте
+        // (PWA в фоне / сеть моргнула), а ответ всё равно дописался в БД.
+        if (err instanceof ApiError && err.status === 409) {
+          pollForAnswer(chatId, msgId, text, ctrl.signal)
+            .then(() => {
+              refreshStatus();
+              haptic("selection");
+            })
+            .catch((pollErr: unknown) => {
+              const pAborted =
+                pollErr instanceof DOMException && pollErr.name === "AbortError";
+              if (pAborted) return;
+              updateChat(chatId, (c) => ({
+                ...c,
+                messages: c.messages.map((m) =>
+                  m.id === msgId
+                    ? { ...m, a: errorToMessage(pollErr), error: true }
+                    : m,
+                ),
+                updatedAt: Date.now(),
+              }));
+              setUsedDelta((n) => Math.max(0, n - 1));
+              haptic("warning");
+            });
+          return;
+        }
         updateChat(chatId, (c) => ({
           ...c,
           messages: c.messages.map((m) =>
@@ -713,6 +754,45 @@ function HellAiMobile() {
         setIsThinking(false);
       });
   }
+
+  // Поллим серверную историю чата, пока не появится assistant-сообщение для
+  // нашего вопроса. До 90 сек, шаг 2 сек. По мере появления текста — обновляем
+  // бабл в UI, чтобы юзер видел готовый ответ без перезахода.
+  async function pollForAnswer(
+    chatId: string,
+    msgId: string,
+    questionText: string,
+    signal: AbortSignal,
+  ): Promise<void> {
+    const deadline = Date.now() + 90_000;
+    while (Date.now() < deadline) {
+      if (signal.aborted) throw new DOMException("aborted", "AbortError");
+      await new Promise((r) => setTimeout(r, 2000));
+      if (signal.aborted) throw new DOMException("aborted", "AbortError");
+      let msgs: Msg[] = [];
+      try {
+        msgs = await fetchChatMessages(chatId);
+      } catch {
+        continue;
+      }
+      // Берём последний user-message с нашим текстом, у которого уже есть ответ.
+      for (let i = msgs.length - 1; i >= 0; i--) {
+        const m = msgs[i];
+        if (m.q === questionText && m.a) {
+          updateChat(chatId, (c) => ({
+            ...c,
+            messages: c.messages.map((cm) =>
+              cm.id === msgId ? { ...cm, a: m.a, error: !!m.error } : cm,
+            ),
+            updatedAt: Date.now(),
+          }));
+          return;
+        }
+      }
+    }
+    throw new ApiError(504, "timeout", "Ответ долго не приходит. Попробуй открыть чат позже.");
+  }
+
 
   function stopGeneration() {
     abortRef.current?.abort();
