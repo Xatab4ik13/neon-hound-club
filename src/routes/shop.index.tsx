@@ -10,6 +10,8 @@ import {
   type ShopProductListItem,
 } from "@/lib/queries";
 import { SPECIAL_PACK_COVER } from "@/assets/stickers/special";
+import { useCart } from "@/hooks/use-cart";
+import { hhToast } from "@/lib/hh-toast";
 
 export const Route = createFileRoute("/shop/")({
   head: () => ({
