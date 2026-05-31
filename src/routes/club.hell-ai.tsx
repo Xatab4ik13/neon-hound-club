@@ -710,6 +710,34 @@ function HellAiMobile() {
           haptic("light");
           return;
         }
+        // 409 user_busy: предыдущий запрос ещё в работе на бэке. Не показываем
+        // ошибку — поллим чат и подхватываем ответ, как только сервер его
+        // сохранит. Это закрывает баг, когда стрим оборвался на клиенте
+        // (PWA в фоне / сеть моргнула), а ответ всё равно дописался в БД.
+        if (err instanceof ApiError && err.status === 409) {
+          pollForAnswer(chatId, msgId, text, ctrl.signal)
+            .then(() => {
+              refreshStatus();
+              haptic("selection");
+            })
+            .catch((pollErr: unknown) => {
+              const pAborted =
+                pollErr instanceof DOMException && pollErr.name === "AbortError";
+              if (pAborted) return;
+              updateChat(chatId, (c) => ({
+                ...c,
+                messages: c.messages.map((m) =>
+                  m.id === msgId
+                    ? { ...m, a: errorToMessage(pollErr), error: true }
+                    : m,
+                ),
+                updatedAt: Date.now(),
+              }));
+              setUsedDelta((n) => Math.max(0, n - 1));
+              haptic("warning");
+            });
+          return;
+        }
         updateChat(chatId, (c) => ({
           ...c,
           messages: c.messages.map((m) =>
@@ -726,6 +754,45 @@ function HellAiMobile() {
         setIsThinking(false);
       });
   }
+
+  // Поллим серверную историю чата, пока не появится assistant-сообщение для
+  // нашего вопроса. До 90 сек, шаг 2 сек. По мере появления текста — обновляем
+  // бабл в UI, чтобы юзер видел готовый ответ без перезахода.
+  async function pollForAnswer(
+    chatId: string,
+    msgId: string,
+    questionText: string,
+    signal: AbortSignal,
+  ): Promise<void> {
+    const deadline = Date.now() + 90_000;
+    while (Date.now() < deadline) {
+      if (signal.aborted) throw new DOMException("aborted", "AbortError");
+      await new Promise((r) => setTimeout(r, 2000));
+      if (signal.aborted) throw new DOMException("aborted", "AbortError");
+      let msgs: Msg[] = [];
+      try {
+        msgs = await fetchChatMessages(chatId);
+      } catch {
+        continue;
+      }
+      // Берём последний user-message с нашим текстом, у которого уже есть ответ.
+      for (let i = msgs.length - 1; i >= 0; i--) {
+        const m = msgs[i];
+        if (m.q === questionText && m.a) {
+          updateChat(chatId, (c) => ({
+            ...c,
+            messages: c.messages.map((cm) =>
+              cm.id === msgId ? { ...cm, a: m.a, error: !!m.error } : cm,
+            ),
+            updatedAt: Date.now(),
+          }));
+          return;
+        }
+      }
+    }
+    throw new ApiError(504, "timeout", "Ответ долго не приходит. Попробуй открыть чат позже.");
+  }
+
 
   function stopGeneration() {
     abortRef.current?.abort();
