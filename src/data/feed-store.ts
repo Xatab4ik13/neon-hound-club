@@ -44,6 +44,8 @@ export type FeedComment = {
   id: string;
   author: FeedAuthor;
   time: string;
+  /** ISO-строка момента создания — используется для «непрочитанных» (read-marker). */
+  createdAt: string;
   text: string;
   likes: number;
   liked: boolean;
@@ -155,6 +157,7 @@ function mapComment(c: FeedCommentHydrated): FeedComment {
     authorSlug: author.slug,
     isBlogger: author.isBlogger,
     time: formatRelative(c.createdAt),
+    createdAt: c.createdAt,
     text: c.text,
     likes: c.likes,
     liked: c.liked,
@@ -324,6 +327,7 @@ export const feedStore = {
       authorSlug: input.author.slug,
       isBlogger: input.author.isBlogger,
       time: "только что",
+      createdAt: new Date().toISOString(),
       text: input.text,
       likes: 0,
       liked: false,
