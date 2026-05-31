@@ -19,6 +19,7 @@ import {
   getOrderWithItems,
   markOrderPaid,
   refundOrder,
+  restockOrder,
 } from "../lib/shop.js";
 import { getActivePassPerks } from "../lib/pass.js";
 
