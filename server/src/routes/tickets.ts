@@ -6,6 +6,7 @@ import { ticketsLedger, TICKET_SOURCES } from "../db/schema/tickets.js";
 import { users } from "../db/schema/users.js";
 import { requireAuth, requireAdmin, type SessionPayload } from "../lib/auth.js";
 import { getTicketBalance, ticketCredit } from "../lib/tickets.js";
+import { parsePagination } from "../lib/pagination.js";
 
 const historyQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(30),
