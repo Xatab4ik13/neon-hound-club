@@ -412,6 +412,8 @@ export async function patchAdminOrder(
   });
 }
 
+// ---------- PAYMENTS (Raiffeisen) ----------
+
 export type PaymentStatus = "new" | "pending" | "authorized" | "confirmed" | "rejected" | "refunded";
 export type PaymentMethod = "card" | "sbp";
 
