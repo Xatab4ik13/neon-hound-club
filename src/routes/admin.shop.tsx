@@ -846,6 +846,7 @@ function DigitalFileField({
 }
 
 
+type SizeRow = { label: string; stock: number | null };
 
 function SizesInput({
   value,
