@@ -12,7 +12,7 @@ import { isRaifConfigured } from "../lib/raif.js";
 import { PAYMENT_METHODS } from "../db/schema/payments.js";
 import { createPassPurchase, PassPurchaseError } from "../lib/pass.js";
 import { PASS_TIERS } from "../db/schema/pass.js";
-import { createOrderForUser, OrderCreateError } from "../lib/shop.js";
+import { createOrderForUser, createOrderFromCartForUser, OrderCreateError } from "../lib/shop.js";
 
 const idSchema = z.object({ id: z.string().uuid() });
 const initBodySchema = z
@@ -104,11 +104,10 @@ const orderItemSchema = z.object({
 
 const orderRedirectSchema = z.object({
   target: z.literal("order"),
-  // items приходят JSON-строкой в форме; в JSON-режиме — массив.
-  items: z.union([
-    z.string().min(2),
-    z.array(orderItemSchema).min(1).max(20),
-  ]),
+  // items может прийти из старого фронта, но основной источник правды теперь серверная корзина.
+  items: z
+    .union([z.string().min(2), z.array(orderItemSchema).min(1).max(20)])
+    .optional(),
   shipping_fio: z.string().trim().min(2).max(120),
   shipping_phone: z.string().trim().min(5).max(32),
   shipping_city: z.string().trim().min(1).max(80),
@@ -247,29 +246,38 @@ export async function paymentsRoutes(app: FastifyInstance) {
         return replyErr("/club/checkout", parsed.error.issues[0]?.message ?? "Неверные данные");
       }
       const method = parsed.data.method ?? "card";
-      let items: Array<{ productId: string; qty: number; size?: string }>;
-      try {
-        const raw =
-          typeof parsed.data.items === "string"
-            ? JSON.parse(parsed.data.items)
-            : parsed.data.items;
-        items = z.array(orderItemSchema).min(1).max(20).parse(raw);
-      } catch {
-        return replyErr("/club/checkout", "Корзина пустая");
-      }
 
       try {
-        const { orderId } = await createOrderForUser(session.sub, {
-          items,
-          shipping: {
-            fio: parsed.data.shipping_fio,
-            phone: parsed.data.shipping_phone,
-            city: parsed.data.shipping_city,
-            address: parsed.data.shipping_address,
-            postalCode: parsed.data.shipping_postal_code,
-          },
-          comment: parsed.data.comment,
-        });
+        let orderId: string;
+        if (Array.isArray(parsed.data.items) || typeof parsed.data.items === "string") {
+          const raw =
+            typeof parsed.data.items === "string"
+              ? JSON.parse(parsed.data.items)
+              : parsed.data.items;
+          const items = z.array(orderItemSchema).min(1).max(20).parse(raw);
+          ({ orderId } = await createOrderForUser(session.sub, {
+            items,
+            shipping: {
+              fio: parsed.data.shipping_fio,
+              phone: parsed.data.shipping_phone,
+              city: parsed.data.shipping_city,
+              address: parsed.data.shipping_address,
+              postalCode: parsed.data.shipping_postal_code,
+            },
+            comment: parsed.data.comment,
+          }));
+        } else {
+          ({ orderId } = await createOrderFromCartForUser(session.sub, {
+            shipping: {
+              fio: parsed.data.shipping_fio,
+              phone: parsed.data.shipping_phone,
+              city: parsed.data.shipping_city,
+              address: parsed.data.shipping_address,
+              postalCode: parsed.data.shipping_postal_code,
+            },
+            comment: parsed.data.comment,
+          }));
+        }
         const r = await createPaymentForOrder(orderId, session.sub, method);
         return replyOk(r.paymentUrl);
       } catch (e) {
