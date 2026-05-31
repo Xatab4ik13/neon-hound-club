@@ -54,7 +54,7 @@ function readProfile(): Partial<CheckoutProfile> {
 }
 
 function ClubCheckoutPage() {
-  const { items, total } = useCart();
+  const { items, total, loading: cartLoading } = useCart();
   const { isAuthed, user } = useViewer();
   const navigate = useNavigate();
   const search = useSearch({ from: "/club/checkout" }) as { payment_error?: string };
