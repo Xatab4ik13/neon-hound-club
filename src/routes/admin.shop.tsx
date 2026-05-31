@@ -7,7 +7,7 @@
 // Подключено к бэку через src/lib/admin-queries.ts.
 
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Plus,
@@ -598,28 +598,13 @@ function ProductModal({
         )}
 
         {p.kind === "digital" && (
-          <div className="space-y-3 rounded-md border border-emerald-200 bg-emerald-50 p-3 dark:border-emerald-900/40 dark:bg-emerald-950/30">
-            <div className="text-xs font-semibold uppercase text-emerald-700 dark:text-emerald-300">
-              Цифровой товар
-            </div>
-            <Field
-              label="Ссылка на файл (PDF / JPG / ZIP)"
-              hint="После оплаты покупатель увидит её в своём кабинете."
-            >
-              <TextInput
-                value={p.digitalFileUrl ?? ""}
-                onChange={(e) => setP({ ...p, digitalFileUrl: e.target.value })}
-                placeholder="https://cdn.hhr.pro/digital/manual.pdf"
-              />
-            </Field>
-            <Field label="Имя файла (как показывать покупателю)">
-              <TextInput
-                value={p.digitalFileName ?? ""}
-                onChange={(e) => setP({ ...p, digitalFileName: e.target.value })}
-                placeholder="manual.pdf"
-              />
-            </Field>
-          </div>
+          <DigitalFileField
+            url={p.digitalFileUrl ?? null}
+            name={p.digitalFileName ?? null}
+            onChange={(url, name) =>
+              setP({ ...p, digitalFileUrl: url, digitalFileName: name })
+            }
+          />
         )}
 
         {p.kind === "preorder" && (
@@ -769,6 +754,97 @@ const SIZE_PRESETS: { label: string; values: string[] }[] = [
   { label: "Носки", values: ["35-38", "39-41", "42-44", "45-47"] },
   { label: "Детская", values: ["86", "92", "98", "104", "110", "116", "122", "128"] },
 ];
+
+function DigitalFileField({
+  url,
+  name,
+  onChange,
+}: {
+  url: string | null;
+  name: string | null;
+  onChange: (url: string | null, name: string | null) => void;
+}) {
+  const [uploading, setUploading] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleFile = async (file: File) => {
+    if (file.size > 50 * 1024 * 1024) {
+      toast.error("Файл больше 50 МБ");
+      return;
+    }
+    setUploading(true);
+    try {
+      const { uploadFileToS3 } = await import("@/lib/garage-api");
+      const publicUrl = await uploadFileToS3(file, "shop");
+      onChange(publicUrl, name && name.trim() ? name : file.name);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Не загрузилось");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-3 rounded-md border border-emerald-200 bg-emerald-50 p-3 dark:border-emerald-900/40 dark:bg-emerald-950/30">
+      <div className="text-xs font-semibold uppercase text-emerald-700 dark:text-emerald-300">
+        Цифровой товар
+      </div>
+      <Field
+        label="Файл для покупателя (PDF / JPG / PNG / WebP / ZIP)"
+        hint="До 50 МБ. После оплаты ссылка появится у покупателя в кабинете."
+      >
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp,application/pdf,application/zip"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) void handleFile(f);
+            e.target.value = "";
+          }}
+        />
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => inputRef.current?.click()}
+            disabled={uploading}
+            className="rounded-md border border-emerald-300 bg-white px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 disabled:opacity-50 dark:border-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-200"
+          >
+            {uploading ? "Загрузка…" : url ? "Заменить файл" : "Загрузить файл"}
+          </button>
+          {url && (
+            <>
+              <a
+                href={url}
+                target="_blank"
+                rel="noreferrer"
+                className="truncate text-xs text-emerald-700 underline dark:text-emerald-300"
+              >
+                {name || "файл"}
+              </a>
+              <button
+                type="button"
+                onClick={() => onChange(null, null)}
+                className="text-xs text-rose-600 hover:underline"
+              >
+                Удалить
+              </button>
+            </>
+          )}
+        </div>
+      </Field>
+      <Field label="Имя файла (как показывать покупателю)">
+        <TextInput
+          value={name ?? ""}
+          onChange={(e) => onChange(url, e.target.value || null)}
+          placeholder="manual.pdf"
+        />
+      </Field>
+    </div>
+  );
+}
+
 
 type SizeRow = { label: string; stock: number | null };
 
