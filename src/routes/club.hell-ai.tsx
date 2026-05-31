@@ -334,6 +334,8 @@ async function streamHellAi(
       }
       const { value, done } = chunk;
       if (done) break;
+      // Любой байт от сервера (включая `: ka`) = стрим живой → продлеваем таймер.
+      resetInactivity();
       buf += decoder.decode(value, { stream: true });
 
       let newlineIndex: number;
@@ -367,7 +369,6 @@ async function streamHellAi(
         if (currentEvent === "delta" && typeof data.t === "string") {
           if (!firstDeltaReceived) {
             firstDeltaReceived = true;
-            clearTimeout(firstByteTimer);
           }
           answer += data.t;
           onDelta(data.t);
@@ -378,7 +379,7 @@ async function streamHellAi(
       }
     }
   } finally {
-    clearTimeout(firstByteTimer);
+    clearInactivity();
     if (signal) signal.removeEventListener("abort", onExternalAbort);
     try { reader.releaseLock(); } catch { /* noop */ }
   }
