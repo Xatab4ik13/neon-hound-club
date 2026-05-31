@@ -422,6 +422,8 @@ type Chat = {
   updatedAt: number;
   /** true = сообщения подгружены с бэка (или это новый локальный чат) */
   loaded?: boolean;
+  /** Кол-во сообщений по данным сервера (для списка истории, чтобы не ждать загрузку чата). */
+  serverMessageCount?: number;
 };
 
 const ACTIVE_KEY = "hh:hellai:active:v1";
