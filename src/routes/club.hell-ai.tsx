@@ -477,6 +477,7 @@ async function fetchChats(): Promise<Chat[]> {
     createdAt: c.createdAt ? new Date(c.createdAt).getTime() : Date.now(),
     updatedAt: c.updatedAt ? new Date(c.updatedAt).getTime() : Date.now(),
     loaded: false,
+    serverMessageCount: c.messageCount,
   }));
 }
 
