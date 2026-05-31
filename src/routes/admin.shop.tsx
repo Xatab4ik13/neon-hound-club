@@ -598,28 +598,13 @@ function ProductModal({
         )}
 
         {p.kind === "digital" && (
-          <div className="space-y-3 rounded-md border border-emerald-200 bg-emerald-50 p-3 dark:border-emerald-900/40 dark:bg-emerald-950/30">
-            <div className="text-xs font-semibold uppercase text-emerald-700 dark:text-emerald-300">
-              Цифровой товар
-            </div>
-            <Field
-              label="Ссылка на файл (PDF / JPG / ZIP)"
-              hint="После оплаты покупатель увидит её в своём кабинете."
-            >
-              <TextInput
-                value={p.digitalFileUrl ?? ""}
-                onChange={(e) => setP({ ...p, digitalFileUrl: e.target.value })}
-                placeholder="https://cdn.hhr.pro/digital/manual.pdf"
-              />
-            </Field>
-            <Field label="Имя файла (как показывать покупателю)">
-              <TextInput
-                value={p.digitalFileName ?? ""}
-                onChange={(e) => setP({ ...p, digitalFileName: e.target.value })}
-                placeholder="manual.pdf"
-              />
-            </Field>
-          </div>
+          <DigitalFileField
+            url={p.digitalFileUrl ?? null}
+            name={p.digitalFileName ?? null}
+            onChange={(url, name) =>
+              setP({ ...p, digitalFileUrl: url, digitalFileName: name })
+            }
+          />
         )}
 
         {p.kind === "preorder" && (
