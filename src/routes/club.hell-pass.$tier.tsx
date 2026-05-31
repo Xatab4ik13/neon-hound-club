@@ -69,7 +69,7 @@ function TierDetailPage() {
   const { tier } = Route.useLoaderData() as { tier: Tier };
   const { isAuthed } = useViewer();
   const navigate = useNavigate();
-  const { sbp: sbpEnabled } = usePaymentMethods();
+
 
   const passQ = useQuery({
     queryKey: qk.passMe,
