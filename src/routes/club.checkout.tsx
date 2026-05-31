@@ -147,7 +147,16 @@ function ClubCheckoutPage() {
     [items],
   );
 
-  const cityFallback = form.city.trim() || form.address.split(",")[0]?.trim() || "—";
+  // Digital-only: в заказе одни цифровые товары → адрес не нужен.
+  const isDigitalOnly = useMemo(
+    () => orderableItems.length > 0 && orderableItems.every((i) => i.kind === "digital"),
+    [orderableItems],
+  );
+
+  const cityFallback = isDigitalOnly
+    ? "—"
+    : form.city.trim() || form.address.split(",")[0]?.trim() || "—";
+  const addressFallback = isDigitalOnly ? "—" : form.address;
 
   const set = <K extends keyof CheckoutProfile>(k: K, v: string) => {
     touchedRef.current.add(k);
