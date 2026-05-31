@@ -55,7 +55,7 @@ function readProfile(): Partial<CheckoutProfile> {
 
 function ClubCheckoutPage() {
   const { items, total, loading: cartLoading } = useCart();
-  const { isAuthed, user } = useViewer();
+  const { isAuthed, user, hydrated } = useViewer();
   const navigate = useNavigate();
   const search = useSearch({ from: "/club/checkout" }) as { payment_error?: string };
 
@@ -114,6 +114,7 @@ function ClubCheckoutPage() {
   }, [addressQ.data]);
 
   useEffect(() => {
+    if (!hydrated) return;
     if (!isAuthed) {
       navigate({ to: "/login" });
       return;
@@ -125,7 +126,7 @@ function ClubCheckoutPage() {
     // Если бек вернул нас с ошибкой оплаты — даём увидеть тост, не редиректим.
     if (search.payment_error) return;
     if (items.length === 0) navigate({ to: "/club/cart" });
-  }, [isAuthed, items.length, cartLoading, search.payment_error, navigate]);
+  }, [hydrated, isAuthed, items.length, cartLoading, search.payment_error, navigate]);
 
   // Если бекенд редиректнул сюда с ошибкой — показываем тост один раз.
   // НЕ чистим search моментально, чтобы юзер успел увидеть причину.
@@ -225,7 +226,7 @@ function ClubCheckoutPage() {
     }
   };
 
-  if (!isAuthed) return null;
+  if (!hydrated || !isAuthed) return null;
   if (items.length === 0 && !search.payment_error) return null;
 
   return (
@@ -419,25 +420,7 @@ function ClubCheckoutPage() {
             <PaymentBadges size="sm" />
           </div>
 
-          {/* Мобильные кнопки оплаты */}
-          <div className="flex flex-col gap-2 md:hidden">
-            <PayButton
-              type="submit"
-              name="method"
-              value="card"
-              size="lg"
-            />
-          </div>
-
-          {/* Desktop кнопки оплаты */}
-          <div className="hidden flex-col gap-2 md:flex">
-            <PayButton
-              type="submit"
-              name="method"
-              value="card"
-              size="lg"
-            />
-          </div>
+          <PayButton type="submit" name="method" value="card" size="lg" />
 
         </aside>
       </form>
