@@ -194,6 +194,7 @@ export function mapPost(p: FeedPostWithComments): FeedPost {
     likes: p.likes,
     liked: p.liked,
     comments: (p.comments ?? []).map(mapComment),
+    commentsCount: p.commentsCount ?? (p.comments?.length ?? 0),
   };
 }
 
