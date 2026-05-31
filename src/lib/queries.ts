@@ -201,6 +201,8 @@ export const qk = {
   shopShowcase: ["shop", "showcase"] as const,
   shopOrders: ["shop", "orders"] as const,
   shopOrder: (id: string) => ["shop", "order", id] as const,
+  adminOrders: (status?: string) => ["admin", "orders", status ?? "all"] as const,
+  adminOrder: (id: string) => ["admin", "order", id] as const,
   raffles: ["raffles", "list"] as const,
   raffle: (id: string) => ["raffles", "item", id] as const,
   myRaffles: ["raffles", "my"] as const,
