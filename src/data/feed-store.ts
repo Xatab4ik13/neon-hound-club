@@ -328,7 +328,11 @@ export const feedStore = {
       likes: 0,
       liked: false,
     };
-    patchPostLocal(postId, (p) => ({ ...p, comments: [...p.comments, optimistic] }));
+    patchPostLocal(postId, (p) => ({
+      ...p,
+      comments: [...p.comments, optimistic],
+      commentsCount: p.commentsCount + 1,
+    }));
     try {
       const created = await addCommentApi(postId, input.text);
       const real = mapComment(created);
@@ -340,17 +344,42 @@ export const feedStore = {
       patchPostLocal(postId, (p) => ({
         ...p,
         comments: p.comments.filter((c) => c.id !== tempId),
+        commentsCount: Math.max(0, p.commentsCount - 1),
       }));
     }
   },
 
   async removeComment(postId: string, commentId: string) {
-    const prev = POSTS.find((p) => p.id === postId)?.comments ?? [];
-    patchPostLocal(postId, (p) => ({ ...p, comments: p.comments.filter((c) => c.id !== commentId) }));
+    const prev = POSTS.find((p) => p.id === postId);
+    const prevComments = prev?.comments ?? [];
+    const prevCount = prev?.commentsCount ?? prevComments.length;
+    patchPostLocal(postId, (p) => ({
+      ...p,
+      comments: p.comments.filter((c) => c.id !== commentId),
+      commentsCount: Math.max(0, p.commentsCount - 1),
+    }));
     try {
       await deleteCommentApi(commentId);
     } catch {
-      patchPostLocal(postId, (p) => ({ ...p, comments: prev }));
+      patchPostLocal(postId, (p) => ({ ...p, comments: prevComments, commentsCount: prevCount }));
+    }
+  },
+
+  /**
+   * Загружает полный список коментов для поста и кладёт в стор.
+   * Вызывается при открытии шита коментов.
+   */
+  async loadFullComments(postId: string) {
+    try {
+      const detail = await fetchPost(postId);
+      patchPostLocal(postId, (p) => ({
+        ...p,
+        comments: detail.comments.map(mapComment),
+        commentsCount: detail.commentsCount,
+        commentsFull: true,
+      }));
+    } catch {
+      /* молча — UI покажет то что уже есть */
     }
   },
 
