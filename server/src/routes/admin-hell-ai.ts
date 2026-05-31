@@ -95,32 +95,37 @@ export async function adminHellAiRoutes(app: FastifyInstance) {
     };
   });
 
-  // GET /log?limit=40 — последние сообщения для контроля качества.
-  app.get<{ Querystring: { limit?: string } }>("/log", async (req) => {
-    const limit = Math.min(100, Math.max(1, Number(req.query.limit ?? 40) || 40));
-    const rows = await db
-      .select({
-        id: aiMessages.id,
-        userId: aiMessages.userId,
-        userEmail: users.email,
-        role: aiMessages.role,
-        content: aiMessages.content,
-        model: aiMessages.model,
-        tokensIn: aiMessages.tokensIn,
-        tokensOut: aiMessages.tokensOut,
-        createdAt: aiMessages.createdAt,
-      })
-      .from(aiMessages)
-      .leftJoin(users, eq(users.id, aiMessages.userId))
-      .orderBy(desc(aiMessages.createdAt))
-      .limit(limit);
+  // GET /log?page=&pageSize= — постранично последние сообщения для контроля качества.
+  app.get("/log", async (req) => {
+    const { page, pageSize, offset } = parsePagination(req.query);
+    const [rows, totalRows] = await Promise.all([
+      db
+        .select({
+          id: aiMessages.id,
+          userId: aiMessages.userId,
+          userEmail: users.email,
+          role: aiMessages.role,
+          content: aiMessages.content,
+          model: aiMessages.model,
+          tokensIn: aiMessages.tokensIn,
+          tokensOut: aiMessages.tokensOut,
+          createdAt: aiMessages.createdAt,
+        })
+        .from(aiMessages)
+        .leftJoin(users, eq(users.id, aiMessages.userId))
+        .orderBy(desc(aiMessages.createdAt))
+        .limit(pageSize)
+        .offset(offset),
+      db.select({ c: sql<number>`count(*)::int` }).from(aiMessages),
+    ]);
     return {
-      messages: rows.map((r) => ({
-        ...r,
-        createdAt: r.createdAt.toISOString(),
-      })),
+      messages: rows.map((r) => ({ ...r, createdAt: r.createdAt.toISOString() })),
+      total: totalRows[0]?.c ?? 0,
+      page,
+      pageSize,
     };
   });
+
 
   // GET /usage/top?hours=24&limit=20 — топ юзеров по токенам за период.
   // Помогает ловить злоупотребления / ботов / понимать кто реально жжёт деньги.
