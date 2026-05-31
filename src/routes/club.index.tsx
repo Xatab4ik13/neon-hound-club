@@ -560,12 +560,14 @@ function PostAction({
 
 const CommentsPreview = memo(function CommentsPreview({
   comments,
+  totalCount,
   onOpen,
 }: {
   comments: Comment[];
+  totalCount: number;
   onOpen: () => void;
 }) {
-  if (comments.length === 0) {
+  if (totalCount === 0) {
     return (
       <button
         type="button"
@@ -583,18 +585,20 @@ const CommentsPreview = memo(function CommentsPreview({
       onClick={onOpen}
       className="flex w-full flex-col gap-2 px-4 pb-4 pt-1 text-left transition-opacity active:opacity-70 md:px-5"
     >
-      <div className="flex gap-2.5 border-l-2 border-primary pl-2.5">
-        <div className="min-w-0 flex-1">
-          <div className="truncate font-mono text-[10px] font-black uppercase tracking-[0.18em] text-primary">
-            {last.author.nick}
-          </div>
-          <div className="mt-0.5 line-clamp-2 text-[13px] leading-snug text-foreground/85">
-            {last.text.startsWith("::sticker::") ? "🖼 Стикер" : last.text}
+      {last && (
+        <div className="flex gap-2.5 border-l-2 border-primary pl-2.5">
+          <div className="min-w-0 flex-1">
+            <div className="truncate font-mono text-[10px] font-black uppercase tracking-[0.18em] text-primary">
+              {last.author.nick}
+            </div>
+            <div className="mt-0.5 line-clamp-2 text-[13px] leading-snug text-foreground/85">
+              {last.text.startsWith("::sticker::") ? "🖼 Стикер" : last.text}
+            </div>
           </div>
         </div>
-      </div>
+      )}
       <div className="inline-flex items-center gap-1 font-mono text-[10px] font-black uppercase tracking-[0.18em] text-primary">
-        Все комментарии · {comments.length}
+        Все комментарии · {totalCount}
         <span>→</span>
       </div>
     </button>
