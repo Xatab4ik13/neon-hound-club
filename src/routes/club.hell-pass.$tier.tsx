@@ -128,6 +128,13 @@ function TierDetailPage() {
 
   return (
     <main className="mx-auto w-full max-w-5xl px-4 py-8 md:px-8 md:py-12">
+      {search.payment_error ? (
+        <section className="mb-5 rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-foreground">
+          <div className="font-semibold text-destructive">Не удалось открыть оплату</div>
+          <div className="mt-1 text-muted-foreground">{search.payment_error}</div>
+        </section>
+      ) : null}
+
       <Link
         to="/club/hell-pass"
         className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-widest text-muted-foreground transition-colors hover:text-primary"
