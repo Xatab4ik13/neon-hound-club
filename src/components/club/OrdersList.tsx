@@ -3,7 +3,7 @@
 // и в превью-секции /club/me как компактный список последних 3.
 
 import { Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Package, ShoppingBag } from "lucide-react";
 import {
@@ -134,43 +134,70 @@ export function OrdersList({
 function OrderCard({ order }: { order: ShopOrder }) {
   const shortId = order.id.slice(0, 8).toUpperCase();
   return (
-    <li className="overflow-hidden rounded-2xl border border-white/[0.06] bg-card/40">
-      <div className="flex items-start gap-3 px-4 py-3.5">
-        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
-          <Package className="h-4 w-4" />
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="text-[14px] font-semibold leading-tight text-foreground">
-            Заказ #{shortId}
+    <li>
+      <Link
+        to="/club/orders/$orderId"
+        params={{ orderId: order.id }}
+        className="block overflow-hidden rounded-2xl border border-white/[0.06] bg-card/40 transition-colors active:bg-card/60"
+      >
+        <div className="flex items-start gap-3 px-4 py-3.5">
+          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
+            <Package className="h-4 w-4" />
           </div>
-          <div className="mt-1 flex flex-wrap items-center gap-2">
-            <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-              {formatDate(order.createdAt)}
-            </span>
-            <span
-              className={`rounded-full border px-2 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wider ${STATUS_TONE[order.status]}`}
-            >
-              {STATUS_LABEL[order.status]}
-            </span>
-            {order.bonusTicketsTotal > 0 && order.status === "paid" && (
-              <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-primary">
-                +{order.bonusTicketsTotal} 🎟
+          <div className="min-w-0 flex-1">
+            <div className="text-[14px] font-semibold leading-tight text-foreground">
+              Заказ #{shortId}
+            </div>
+            <div className="mt-1 flex flex-wrap items-center gap-2">
+              <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                {formatDate(order.createdAt)}
               </span>
+              <span
+                className={`rounded-full border px-2 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wider ${STATUS_TONE[order.status]}`}
+              >
+                {STATUS_LABEL[order.status]}
+              </span>
+              {order.status === "pending_payment" && order.expiresAt && (
+                <ExpiresChip expiresAt={order.expiresAt} />
+              )}
+              {order.bonusTicketsTotal > 0 && order.status === "paid" && (
+                <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-primary">
+                  +{order.bonusTicketsTotal} 🎟
+                </span>
+              )}
+            </div>
+            {order.cdekTrack && (
+              <div className="mt-1 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                СДЭК: {order.cdekTrack}
+              </div>
             )}
           </div>
-          {order.cdekTrack && (
-            <div className="mt-1 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-              СДЭК: {order.cdekTrack}
+          <div className="shrink-0 text-right">
+            <div className="font-mono text-[14px] font-bold tabular-nums text-foreground">
+              {order.totalRub.toLocaleString("ru-RU")} ₽
             </div>
-          )}
-        </div>
-        <div className="shrink-0 text-right">
-          <div className="font-mono text-[14px] font-bold tabular-nums text-foreground">
-            {order.totalRub.toLocaleString("ru-RU")} ₽
           </div>
         </div>
-      </div>
+      </Link>
     </li>
+  );
+}
+
+function ExpiresChip({ expiresAt }: { expiresAt: string }) {
+  const [now, setNow] = useState(() => Date.now());
+  // тикаем раз в 30с — секундная точность тут не нужна, экономим ререндеры
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 30_000);
+    return () => clearInterval(t);
+  }, []);
+  const ms = new Date(expiresAt).getTime() - now;
+  if (ms <= 0) return null;
+  const mins = Math.floor(ms / 60_000);
+  const label = mins >= 60 ? `${Math.floor(mins / 60)}ч ${mins % 60}м` : `${mins}м`;
+  return (
+    <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-amber-300">
+      ~{label}
+    </span>
   );
 }
 
