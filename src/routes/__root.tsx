@@ -122,6 +122,7 @@ function RootComponent() {
         <CartProvider>
           <PaymentErrorWatcher />
           <Outlet />
+          <Toaster />
         </CartProvider>
       </ViewerProvider>
     </QueryClientProvider>
