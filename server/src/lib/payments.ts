@@ -112,7 +112,7 @@ export async function createPaymentForPass(
       method,
       orderId: created!.id,
       amountRub: purchase.priceRub,
-      comment: `Hell Pass ${purchase.tier.toUpperCase()} — 30 дней`,
+      comment: `Hell Pass ${purchase.tier.toUpperCase()} - 30 dney`,
       successUrl: withPaymentId(SUCCESS_URL, created!.id),
       failUrl: withPaymentId(FAIL_URL, created!.id),
       extra: { userId, refType: "pass", refId: purchase.id },
