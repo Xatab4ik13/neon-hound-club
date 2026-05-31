@@ -81,9 +81,17 @@ export type AdminRaffleWinner = {
   avatarUrl: string | null;
 };
 
-export function fetchAdminUsers(q?: string) {
-  const search = q ? `?q=${encodeURIComponent(q)}` : "";
-  return apiFetch<{ items: AdminUserListItem[] }>(`/api/v1/admin/users/${search}`);
+export type AdminListPage<T> = { items: T[]; total: number; page: number; pageSize: number };
+
+export function fetchAdminUsers(opts?: { q?: string; page?: number; pageSize?: number }) {
+  const sp = new URLSearchParams();
+  if (opts?.q) sp.set("q", opts.q);
+  if (opts?.page) sp.set("page", String(opts.page));
+  if (opts?.pageSize) sp.set("pageSize", String(opts.pageSize));
+  const qs = sp.toString();
+  return apiFetch<AdminListPage<AdminUserListItem>>(
+    `/api/v1/admin/users/${qs ? `?${qs}` : ""}`,
+  );
 }
 
 export function fetchAdminUser(id: string) {
