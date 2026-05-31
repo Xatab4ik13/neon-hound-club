@@ -44,6 +44,8 @@ export type FeedComment = {
   id: string;
   author: FeedAuthor;
   time: string;
+  /** ISO-строка момента создания — используется для «непрочитанных» (read-marker). */
+  createdAt: string;
   text: string;
   likes: number;
   liked: boolean;
