@@ -253,17 +253,31 @@ async function streamHellAi(
 
   const { BACKEND_URL } = await import("@/lib/api");
 
-  // Объединяем внешний signal с нашим таймаут-контроллером "первого байта".
-  const firstByteCtrl = new AbortController();
-  const onExternalAbort = () => firstByteCtrl.abort();
+  // Раньше тут был «6 сек до первой дельты» — но reasoning-модели (GPT-5)
+  // часто думают 10-25 сек до первого токена. Сервер шлёт keep-alive
+  // `: ka\n\n` каждые 15 сек, поэтому теперь это inactivity-таймер:
+  // ждём ХОТЬ КАКИЕ-ТО байты от сервера в течение 30 сек, иначе abort.
+  // Таймер сбрасывается в reader-цикле на каждом chunk'е.
+  const INACTIVITY_MS = 30_000;
+  const inactivityCtrl = new AbortController();
+  const onExternalAbort = () => inactivityCtrl.abort();
   if (signal) {
-    if (signal.aborted) firstByteCtrl.abort();
+    if (signal.aborted) inactivityCtrl.abort();
     else signal.addEventListener("abort", onExternalAbort);
   }
   let firstDeltaReceived = false;
-  const firstByteTimer = setTimeout(() => {
-    if (!firstDeltaReceived) firstByteCtrl.abort();
-  }, 6000);
+  let inactivityTimer: ReturnType<typeof setTimeout> | null = null;
+  const resetInactivity = () => {
+    if (inactivityTimer) clearTimeout(inactivityTimer);
+    inactivityTimer = setTimeout(() => inactivityCtrl.abort(), INACTIVITY_MS);
+  };
+  const clearInactivity = () => {
+    if (inactivityTimer) {
+      clearTimeout(inactivityTimer);
+      inactivityTimer = null;
+    }
+  };
+  resetInactivity();
 
   let res: Response;
   try {
@@ -272,20 +286,18 @@ async function streamHellAi(
       credentials: "include",
       headers: { "Content-Type": "application/json", Accept: "text/event-stream" },
       body: JSON.stringify({ question, bikeId, chatId }),
-      signal: firstByteCtrl.signal,
+      signal: inactivityCtrl.signal,
     });
   } catch (err) {
-    clearTimeout(firstByteTimer);
+    clearInactivity();
     if (signal) signal.removeEventListener("abort", onExternalAbort);
-    // Юзер отменил руками — пробрасываем.
     if (signal?.aborted) throw err;
-    // Иначе провайдер не пустил даже коннект — fallback.
     markStreamBroken();
     return fallbackToPlainAsk(question, bikeId, chatId, onDelta, signal);
   }
 
   if (!res.ok || !res.body) {
-    clearTimeout(firstByteTimer);
+    clearInactivity();
     if (signal) signal.removeEventListener("abort", onExternalAbort);
     const text = await res.text().catch(() => "");
     let code = "request_failed";
