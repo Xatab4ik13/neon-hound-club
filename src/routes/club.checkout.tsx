@@ -354,24 +354,24 @@ function ClubCheckoutPage() {
             </div>
           </div>
 
-          <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-white/[0.06] bg-card/40 px-4 py-3">
+          <label className="flex cursor-pointer items-start gap-3.5 rounded-2xl border-2 border-primary/40 bg-primary/[0.06] px-5 py-4 shadow-[0_0_0_4px_rgba(0,0,0,0)] transition hover:border-primary/60 hover:bg-primary/[0.1]">
             <input
               type="checkbox"
               checked={agree}
               onChange={(e) => setAgree(e.target.checked)}
-              className="mt-0.5 h-4 w-4 shrink-0 accent-primary"
+              className="mt-0.5 h-5 w-5 shrink-0 accent-primary"
             />
-            <span className="text-[12px] leading-relaxed text-muted-foreground">
+            <span className="text-[14px] leading-relaxed text-foreground">
               Я согласен с{" "}
-              <Link to="/legal/offer" className="text-primary underline-offset-2 hover:underline">
+              <Link to="/legal/offer" className="font-semibold text-primary underline underline-offset-2">
                 публичной офертой
               </Link>
               ,{" "}
-              <Link to="/legal/privacy" className="text-primary underline-offset-2 hover:underline">
+              <Link to="/legal/privacy" className="font-semibold text-primary underline underline-offset-2">
                 обработкой персональных данных
               </Link>{" "}
               и условиями{" "}
-              <Link to="/shop-info" className="text-primary underline-offset-2 hover:underline">
+              <Link to="/shop-info" className="font-semibold text-primary underline underline-offset-2">
                 оплаты и доставки
               </Link>
               .
