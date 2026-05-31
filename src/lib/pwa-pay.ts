@@ -12,7 +12,10 @@ import { submitPaymentRedirectForm } from "@/lib/payment-redirect";
 const PAY_URL = `${BACKEND_URL}/api/v1/payments/redirect`;
 
 export function payInPwa(fields: Record<string, string>): void {
-  // target="_blank" в standalone iOS форсит открытие в Safari поверх PWA —
-  // обходит блок iOS на cross-origin переход из app scope.
-  submitPaymentRedirectForm(PAY_URL, fields, { target: "_blank" });
+  // БЕЗ target="_blank": в standalone iOS PWA _blank открывает
+  // SFSafariViewController-шторку, которая закрывается при cross-origin
+  // location.replace на банк — пользователь видит белый экран и возврат
+  // в PWA. Сабмит в текущее окно заставляет iOS открыть банк в обычном
+  // Safari (PWA уходит в фон), а success-URL потом возвращает в PWA.
+  submitPaymentRedirectForm(PAY_URL, fields);
 }
