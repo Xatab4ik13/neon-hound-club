@@ -148,6 +148,60 @@ export function DadataInput({
     ? Math.min(288, dropUp ? rect.top - 16 : window.innerHeight - rect.bottom - 16)
     : 288;
 
+  // ── PWA-режим: рендерим кнопку-поле, открывающую полноэкранный пикер ──
+  if (isPwa) {
+    const pickerTitle =
+      type === "address"
+        ? "Адрес доставки"
+        : type === "fio"
+          ? "ФИО"
+          : type === "email"
+            ? "Email"
+            : "Поиск";
+    return (
+      <>
+        <button
+          type="button"
+          onClick={() => setPickerOpen(true)}
+          className={
+            className ??
+            "min-w-0 flex-1 truncate bg-transparent py-1.5 text-right text-[15px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none"
+          }
+        >
+          {value ? (
+            <span className="truncate">{value}</span>
+          ) : (
+            <span className="text-muted-foreground/50">{placeholder ?? "Указать"}</span>
+          )}
+        </button>
+        {/* Скрытый input — чтобы required и нативная валидация формы работали */}
+        <input
+          type="hidden"
+          value={value}
+          required={required}
+          autoComplete={autoComplete}
+          onChange={() => {}}
+        />
+        <DadataIOSPicker
+          open={pickerOpen}
+          onOpenChange={setPickerOpen}
+          title={pickerTitle}
+          type={type}
+          value={value}
+          params={params}
+          count={count}
+          minChars={minChars}
+          placeholder={placeholder}
+          allowCustom
+          onPick={(v, s) => {
+            onChange(v);
+            if (s) onSelect?.(s);
+          }}
+        />
+      </>
+    );
+  }
+
   return (
     <div className="relative min-w-0 flex-1">
       <input
