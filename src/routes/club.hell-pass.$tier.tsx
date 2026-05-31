@@ -6,11 +6,13 @@
 
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { ArrowLeft, Check } from "lucide-react";
 import { PayButton } from "@/components/brand/PayButton";
 import { getTier, type Perk, type Tier } from "@/data/hell-pass";
 import { fetchPassMe, qk, type PassTier } from "@/lib/queries";
 import { useViewer } from "@/hooks/use-viewer";
+import { hhToast } from "@/lib/hh-toast";
 
 import { BACKEND_URL } from "@/lib/api";
 
