@@ -23,6 +23,7 @@ export function NotificationsSheet({ open, onOpenChange }: Props) {
   const [enabled, setEnabled] = useState(false);
   const [permission, setPermission] = useState<NotificationPermission>("default");
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { canPrompt, installed, isIos, promptInstall } = useInstallPrompt();
   const standalone = installed || isStandalone();
 
@@ -36,6 +37,7 @@ export function NotificationsSheet({ open, onOpenChange }: Props) {
       if (cancelled) return;
       setPermission(perm);
       setEnabled(perm === "granted" && !!sub);
+      setError(null);
     })();
     return () => {
       cancelled = true;
@@ -45,22 +47,27 @@ export function NotificationsSheet({ open, onOpenChange }: Props) {
   const handleToggle = async (next: boolean) => {
     if (busy) return;
     setBusy(true);
+    setError(null);
     haptic("light");
     try {
       if (next) {
-        const res = await subscribeToPush();
+        let res: { ok: boolean; reason?: string };
+        try {
+          res = await subscribeToPush();
+        } catch (e) {
+          res = { ok: false, reason: (e as Error)?.message || "Неизвестная ошибка" };
+        }
         if (res.ok) {
           setEnabled(true);
           setPermission("granted");
           haptic("success");
-          toast.success("Уведомления включены");
         } else {
-          toast.error(res.reason ?? "Не удалось включить");
+          setEnabled(false);
+          setError(res.reason ?? "Не удалось включить уведомления.");
         }
       } else {
         await unsubscribeFromPush();
         setEnabled(false);
-        toast.success("Уведомления выключены");
       }
     } finally {
       setBusy(false);
@@ -69,8 +76,7 @@ export function NotificationsSheet({ open, onOpenChange }: Props) {
 
   const handleInstall = async () => {
     haptic("light");
-    const res = await promptInstall();
-    if (res === "accepted") toast.success("Приложение установлено");
+    await promptInstall();
   };
 
   const pushSupported = isPushSupported();
