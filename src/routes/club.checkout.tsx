@@ -157,8 +157,9 @@ function ClubCheckoutPage() {
 
   
 
-  // Клиентская валидация. Для браузера — пускаем нативный submit (303→банк).
-  // Для PWA — preventDefault и идём через startPayment (JSON + /pay/go).
+  // Клиентская валидация.
+  // Для checkout всегда идём через JSON + /pay/go, чтобы не ломаться в PWA/
+  // встроенных webview и не зависеть от cross-origin form redirect.
   const guard = (e: React.FormEvent<HTMLFormElement>) => {
     if (orderableItems.length === 0) {
       e.preventDefault();
@@ -199,21 +200,20 @@ function ClubCheckoutPage() {
       }
     }
 
-    // PWA-режим — перехватываем сабмит и идём через GO-страницу.
-    if (isStandalonePWA()) {
-      e.preventDefault();
-      void startPayment({
+    e.preventDefault();
+    void startPayment(
+      {
         target: "order",
         shipping_fio: form.name,
         shipping_phone: form.phone,
         shipping_city: cityFallback,
         shipping_address: form.address,
         method: "sbp",
-
-      }).then((r) => {
-        if (!r.ok) hhToast.error("Ошибка оплаты", { meta: r.message });
-      });
-    }
+      },
+      { forceLandingPage: true },
+    ).then((r) => {
+      if (!r.ok) hhToast.error("Ошибка оплаты", { meta: r.message });
+    });
   };
 
   if (!hydrated || !isAuthed) return null;
@@ -417,7 +417,7 @@ function ClubCheckoutPage() {
             <PaymentBadges size="sm" />
           </div>
 
-          <PayButton type="submit" name="method" value="card" size="lg" />
+          <PayButton type="submit" size="lg" />
 
         </aside>
       </form>
