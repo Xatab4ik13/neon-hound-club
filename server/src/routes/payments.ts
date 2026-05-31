@@ -284,6 +284,24 @@ export async function paymentsRoutes(app: FastifyInstance) {
       }
     }
 
+    if (target === "order_existing") {
+      const parsed = orderExistingRedirectSchema.safeParse(body);
+      if (!parsed.success) {
+        return replyErr("/club/orders", "Неверный заказ");
+      }
+      const method = parsed.data.method ?? "card";
+      try {
+        const r = await createPaymentForOrder(parsed.data.order_id, session.sub, method);
+        return replyOk(r.paymentUrl);
+      } catch (e) {
+        const msg = e instanceof PaymentInitError ? e.message : "Не удалось открыть оплату";
+        if (!(e instanceof PaymentInitError)) {
+          req.log.error({ err: e }, "order_existing redirect failed");
+        }
+        return replyErr(`/club/orders/${parsed.data.order_id}`, msg);
+      }
+    }
+
     return replyErr("/club", "Неизвестный тип платежа");
   });
 
