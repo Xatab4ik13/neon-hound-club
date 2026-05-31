@@ -96,23 +96,27 @@ export async function profileRoutes(app: FastifyInstance) {
     const session = req.user as SessionPayload;
     await ensureProfile(session.sub);
 
-    // Если меняется phone — валидируем формат (российский, 11 цифр с 7/8).
+    // Если меняется phone — валидируем как международный E.164 номер.
+    let normalizedPhone: string | null = null;
     if (parsed.data.phone !== undefined && parsed.data.phone !== null) {
-      const digits = parsed.data.phone.replace(/\D/g, "");
-      const normalized =
-        digits.length === 11 && (digits[0] === "7" || digits[0] === "8")
-          ? "7" + digits.slice(1)
-          : null;
-      if (!normalized) {
+      const raw = parsed.data.phone.trim();
+      // libphonenumber-js хочет ведущий "+" для международного парсинга.
+      const withPlus = raw.startsWith("+") ? raw : "+" + raw.replace(/\D/g, "");
+      const parsedPhone = parsePhoneNumberFromString(withPlus);
+      if (!parsedPhone || !parsedPhone.isValid()) {
         return reply
           .code(400)
-          .send({ error: "invalid_input", message: "Укажи корректный номер: +7 (XXX) XXX-XX-XX" });
+          .send({ error: "invalid_input", message: "Укажи корректный номер телефона в международном формате" });
       }
-      // Проверка уникальности (телефон один на аккаунт — защита от мультиаков).
+      // Храним в БД в E.164 (например, "+79991234567"). Триггер нормализует копию в phone_e164.
+      parsed.data.phone = parsedPhone.number;
+      normalizedPhone = parsedPhone.number.replace(/\D/g, "");
+
+      // Проверка уникальности по нормализованной форме.
       const [dup] = await db
         .select({ userId: profiles.userId })
         .from(profiles)
-        .where(and(eq(profiles.phoneE164, normalized), sql`${profiles.userId} <> ${session.sub}`))
+        .where(and(eq(profiles.phoneE164, normalizedPhone), sql`${profiles.userId} <> ${session.sub}`))
         .limit(1);
       if (dup) {
         return reply
