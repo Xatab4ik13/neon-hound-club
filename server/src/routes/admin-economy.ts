@@ -66,31 +66,15 @@ export async function adminEconomyRoutes(app: FastifyInstance) {
     const fromDate = q.from ? new Date(q.from) : null;
     const toDate = q.to ? new Date(q.to) : null;
 
-    // ---- Авто-доходы: реально оплаченные заказы (paid/shipped/delivered).
-    // Считаем по paid_at, а не по статусу — статус потом меняется на shipped/delivered,
-    // но заказ всё равно оплачен и должен быть в доходе.
-    const orderConds = [
-      sql`${orders.paidAt} IS NOT NULL`,
-      sql`${orders.status} IN ('paid','shipped','delivered')`,
-    ] as any[];
-    if (fromDate) orderConds.push(gte(orders.paidAt, fromDate));
-    if (toDate) orderConds.push(lte(orders.paidAt, toDate));
-    const [ordersIncome] = await db
-      .select({ total: sql<number>`COALESCE(SUM(${orders.totalRub}), 0)::int` })
-      .from(orders)
-      .where(and(...orderConds));
-
-    // ---- Авто-доходы: оплаченный Hell Pass (active/expired — оба оплачены).
-    const passConds = [
-      sql`${passPurchases.paidAt} IS NOT NULL`,
-      sql`${passPurchases.status} IN ('active','expired')`,
-    ] as any[];
-    if (fromDate) passConds.push(gte(passPurchases.paidAt, fromDate));
-    if (toDate) passConds.push(lte(passPurchases.paidAt, toDate));
-    const [passIncome] = await db
-      .select({ total: sql<number>`COALESCE(SUM(${passPurchases.priceRub}), 0)::int` })
-      .from(passPurchases)
-      .where(and(...passConds));
+    // ---- Авто-доходы: подтверждённые платежи (реальные деньги от банка).
+    //      Дата платежа = payments.updated_at (момент подтверждения).
+    const payConds = [eq(payments.status, "confirmed")] as any[];
+    if (fromDate) payConds.push(gte(payments.updatedAt, fromDate));
+    if (toDate) payConds.push(lte(payments.updatedAt, toDate));
+    const [paymentsIncome] = await db
+      .select({ total: sql<number>`COALESCE(SUM(${payments.amountRub}), 0)::int` })
+      .from(payments)
+      .where(and(...payConds));
 
 
     // ---- Ручные операции ----
@@ -109,7 +93,7 @@ export async function adminEconomyRoutes(app: FastifyInstance) {
       .from(economyOperations)
       .where(manualWhere ? and(manualWhere, eq(economyOperations.type, "expense")) : eq(economyOperations.type, "expense"));
 
-    const income = (ordersIncome?.total ?? 0) + (passIncome?.total ?? 0) + (manualIncome?.total ?? 0);
+    const income = (paymentsIncome?.total ?? 0) + (manualIncome?.total ?? 0);
     const expense = manualExpense?.total ?? 0;
 
     // ---- P&L по месяцам (последние 6) ----
@@ -122,25 +106,14 @@ export async function adminEconomyRoutes(app: FastifyInstance) {
         SELECT to_char(date_trunc('month', m), 'YYYY-MM') AS month
         FROM generate_series(date_trunc('month', now()) - interval '5 months', date_trunc('month', now()), interval '1 month') AS m
       ),
-      orders_m AS (
-        SELECT to_char(date_trunc('month', paid_at), 'YYYY-MM') AS month,
-               SUM(total_rub)::int AS amount
-        FROM orders
-        WHERE paid_at IS NOT NULL
-          AND status IN ('paid','shipped','delivered')
-          AND paid_at >= date_trunc('month', now()) - interval '5 months'
+      pay_m AS (
+        SELECT to_char(date_trunc('month', updated_at), 'YYYY-MM') AS month,
+               SUM(amount_rub)::int AS amount
+        FROM payments
+        WHERE status = 'confirmed'
+          AND updated_at >= date_trunc('month', now()) - interval '5 months'
         GROUP BY 1
       ),
-      pass_m AS (
-        SELECT to_char(date_trunc('month', paid_at), 'YYYY-MM') AS month,
-               SUM(price_rub)::int AS amount
-        FROM pass_purchases
-        WHERE paid_at IS NOT NULL
-          AND status IN ('active','expired')
-          AND paid_at >= date_trunc('month', now()) - interval '5 months'
-        GROUP BY 1
-      ),
-
       manual_m AS (
         SELECT to_char(date_trunc('month', occurred_at), 'YYYY-MM') AS month,
                COALESCE(SUM(amount_rub) FILTER (WHERE type='income'), 0)::int AS income,
@@ -151,11 +124,10 @@ export async function adminEconomyRoutes(app: FastifyInstance) {
       )
       SELECT
         months.month,
-        (COALESCE(orders_m.amount, 0) + COALESCE(pass_m.amount, 0) + COALESCE(manual_m.income, 0))::int AS income,
+        (COALESCE(pay_m.amount, 0) + COALESCE(manual_m.income, 0))::int AS income,
         COALESCE(manual_m.expense, 0)::int AS expense
       FROM months
-      LEFT JOIN orders_m USING (month)
-      LEFT JOIN pass_m USING (month)
+      LEFT JOIN pay_m USING (month)
       LEFT JOIN manual_m USING (month)
       ORDER BY months.month
     `);
