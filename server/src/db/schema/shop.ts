@@ -210,3 +210,36 @@ export const orderItems = pgTable(
 
 export type OrderItem = typeof orderItems.$inferSelect;
 export type NewOrderItem = typeof orderItems.$inferInsert;
+
+/**
+ * Серверная корзина. Одна запись на (user, product, size).
+ * Хранит только id + qty + размер — цены/название берём всегда из products на чтении,
+ * чтобы пользователь видел актуальную цену.
+ */
+export const cartItems = pgTable(
+  "cart_items",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    productId: uuid("product_id")
+      .notNull()
+      .references(() => products.id, { onDelete: "cascade" }),
+    size: varchar("size", { length: 24 }),
+    qty: integer("qty").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    userIdx: index("cart_items_user_idx").on(t.userId),
+    userProductSizeUniq: uniqueIndex("cart_items_user_product_size_uniq").on(
+      t.userId,
+      t.productId,
+      t.size,
+    ),
+  }),
+);
+
+export type CartItem = typeof cartItems.$inferSelect;
+export type NewCartItem = typeof cartItems.$inferInsert;
