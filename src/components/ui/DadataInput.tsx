@@ -1,10 +1,12 @@
-import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   suggest,
   type DadataSuggestType,
   type DadataSuggestion,
 } from "@/lib/dadata";
+import { isStandalonePWA } from "@/lib/is-pwa";
+import { DadataIOSPicker } from "@/components/ui/DadataIOSPicker";
 
 type Props = {
   type: DadataSuggestType;
@@ -45,6 +47,11 @@ export function DadataInput({
   minChars = 2,
   debounceMs = 180,
 }: Props) {
+  // В PWA inline-dropdown ломается iOS-клавиатурой и overflow контейнеров —
+  // рендерим полноэкранный iOS-пикер вместо него.
+  const isPwa = useMemo(() => isStandalonePWA(), []);
+  const [pickerOpen, setPickerOpen] = useState(false);
+
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<DadataSuggestion[]>([]);
   const [active, setActive] = useState(0);
@@ -56,8 +63,11 @@ export function DadataInput({
   const listRef = useRef<HTMLUListElement>(null);
   const listId = useId();
 
-  // debounce + fetch
+
+
+  // debounce + fetch (только не-PWA — в PWA используется DadataIOSPicker)
   useEffect(() => {
+    if (isPwa) return;
     const q = value.trim();
     if (q.length < minChars) {
       setItems([]);
@@ -138,6 +148,60 @@ export function DadataInput({
   const maxH = rect
     ? Math.min(288, dropUp ? rect.top - 16 : window.innerHeight - rect.bottom - 16)
     : 288;
+
+  // ── PWA-режим: рендерим кнопку-поле, открывающую полноэкранный пикер ──
+  if (isPwa) {
+    const pickerTitle =
+      type === "address"
+        ? "Адрес доставки"
+        : type === "fio"
+          ? "ФИО"
+          : type === "email"
+            ? "Email"
+            : "Поиск";
+    return (
+      <>
+        <button
+          type="button"
+          onClick={() => setPickerOpen(true)}
+          className={
+            className ??
+            "min-w-0 flex-1 truncate bg-transparent py-1.5 text-right text-[15px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none"
+          }
+        >
+          {value ? (
+            <span className="truncate">{value}</span>
+          ) : (
+            <span className="text-muted-foreground/50">{placeholder ?? "Указать"}</span>
+          )}
+        </button>
+        {/* Скрытый input — чтобы required и нативная валидация формы работали */}
+        <input
+          type="hidden"
+          value={value}
+          required={required}
+          autoComplete={autoComplete}
+          onChange={() => {}}
+        />
+        <DadataIOSPicker
+          open={pickerOpen}
+          onOpenChange={setPickerOpen}
+          title={pickerTitle}
+          type={type}
+          value={value}
+          params={params}
+          count={count}
+          minChars={minChars}
+          placeholder={placeholder}
+          allowCustom
+          onPick={(v, s) => {
+            onChange(v);
+            if (s) onSelect?.(s);
+          }}
+        />
+      </>
+    );
+  }
 
   return (
     <div className="relative min-w-0 flex-1">
