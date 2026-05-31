@@ -8,7 +8,6 @@ import {
 
 import { ViewerProvider } from "@/hooks/use-viewer";
 import { CartProvider } from "@/hooks/use-cart";
-import { Toaster } from "@/components/ui/sonner";
 import { PaymentErrorWatcher } from "@/components/brand/PaymentErrorWatcher";
 import { useEffect } from "react";
 import { captureRefFromUrl } from "@/data/referral";
@@ -122,7 +121,6 @@ function RootComponent() {
         <CartProvider>
           <PaymentErrorWatcher />
           <Outlet />
-          <Toaster />
         </CartProvider>
       </ViewerProvider>
     </QueryClientProvider>
