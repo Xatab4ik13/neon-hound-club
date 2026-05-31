@@ -250,7 +250,7 @@ function ClubCheckoutPage() {
         <input type="hidden" name="shipping_fio" value={form.name} />
         <input type="hidden" name="shipping_phone" value={form.phone} />
         <input type="hidden" name="shipping_city" value={cityFallback} />
-        <input type="hidden" name="shipping_address" value={form.address} />
+        <input type="hidden" name="shipping_address" value={addressFallback} />
 
         {/* ЛЕВАЯ КОЛОНКА: данные получателя/доставки */}
         <div className="space-y-5">
