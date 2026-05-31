@@ -160,6 +160,8 @@ export const orders = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
     paidAt: timestamp("paid_at", { withTimezone: true }),
     shippedAt: timestamp("shipped_at", { withTimezone: true }),
+    /** Дедлайн оплаты для status='pending_payment'. После этого воркер сносит заказ и возвращает сток. */
+    expiresAt: timestamp("expires_at", { withTimezone: true }),
   },
   (t) => ({
     userIdx: index("orders_user_idx").on(t.userId),

@@ -1,94 +1,85 @@
-# Полный анализ и решение оплаты
+# План: навести порядок в заказах, корзине, адресе и оплате
 
-## Почему сейчас не работает (корень проблемы)
+Стек напоминание: бек = `server/` (Fastify + Drizzle + Postgres на VPS, **НЕ Supabase**), фронт = TanStack Start. Деплой бека: `cd /opt/hhr && git pull && cd server && docker compose up -d --build`.
 
-Сейчас flow такой: **тап → fetch создаёт заказ/покупку → возвращается `paymentUrl` → рисуется кнопка `<a href={paymentUrl}>` → второй тап → переход на Райф**.
+Делаю **8 маленьких этапов**, каждый отдельным заходом. После каждого — деплой бека (если менялся) и проверка на устройстве. Не еду дальше, пока этап не подтверждён.
 
-Проблемы, которые этот подход НЕ решает:
+---
 
-1. **iOS PWA (standalone)** — тап по `<a href>` на cross-origin URL без `target` ведёт себя непредсказуемо: на iOS 17+ часто открывает в системном Safari, на iOS 16 может молча проигнорировать (особенно если в scope manifest'а только свой домен). Это и есть «нажимаю — ничего не происходит».
-2. **Android Chrome PWA** — `<a href>` на cross-origin открывается в Custom Tab, и форма Райфа внутри CCT часто виснет (cookies, 3DS-редиректы, SameSite=Strict у банка).
-3. **Сам JS-редирект после `await`** — мобильные браузеры считают это «не пользовательским действием» и режут popup/navigation. Поэтому fallback на `window.location.href` тоже не спасал.
+## Этап 1 — Бек: статусы заказа + TTL 2 часа
 
-То, как делают **все нормальные интернет-магазины** (Wildberries, Ozon, Lamoda, любой Тильда-сайт): **submit обычной HTML-формы POST на свой бекенд, который отвечает 303 Redirect на банк**. Браузер воспринимает это как **родную top-level навигацию по пользовательскому клику** — никакие блокировки popup, PWA-scope, cross-origin рестрикции на это не действуют. Работает везде одинаково: Safari, Chrome, любой PWA, десктоп.
+- В `orders` добавить:
+  - `expires_at timestamptz` (created_at + 2h) для статуса `created`
+  - статус `expired` в допустимые значения
+- Воркер прямо внутри Fastify (`setInterval` каждые 60 сек) — без pg_cron, чтобы не плодить инфру:
+  - находит `orders.status='created' AND expires_at < now()`
+  - в транзакции: возвращает сток на варианты, удаляет `order_items`, удаляет `orders`
+- В `GET /orders/me` отдавать `expiresAt`, чтобы фронт показывал таймер.
 
-У нас уже **есть** такой endpoint — `POST /api/v1/payments/redirect`. Но он требует уже созданный `purchase`/`order` (refId), поэтому сейчас не используется — фронт сначала делает fetch, теряет gesture, и весь смысл пропадает.
+## Этап 2 — Фронт: страница заказа `/club/orders/$orderId`
 
-## Решение
+- Реальная страница оформленного заказа (не моки): состав, сумма, адрес, статус, таймер «оплатить в течение HH:MM», кнопка **«Оплатить»** → дергает текущий `payInPwa` с `refType=order, refId=orderId`.
+- Из `/club/orders` каждая карточка ведёт сюда.
+- Кнопка «Отменить заказ» (уже есть API).
 
-Сделать **один синхронный submit формы** с тапа — без `await` перед ним. Бекенд делает всё сам: создаёт purchase/order, создаёт платёж в Райфе, отдаёт 303 на форму банка.
+## Этап 3 — Success-страница в стиле HELLHOUND
 
-### Изменения на бекенде (`server/src/routes/payments.ts`)
+- Переписать `src/routes/pay.success.tsx` в нашей эстетике (display-шрифт, моно-капс, чёрный фон, primary-акцент, как `club.checkout`).
+- Логика:
+  - `pass` → «Hell Pass активирован» + кнопка «В клуб»
+  - `order` → «Заказ оплачен» + сводка по заказу (тянем `/orders/:id`) + кнопка «К заказу»
+- Очистка корзины при успешной оплате заказа.
 
-Расширить `POST /api/v1/payments/redirect`, чтобы он принимал **два режима**:
+## Этап 4 — Бек+фронт: админка заказов (реальная)
 
-**Режим A — Hell Pass** (`target=pass`):
+- Бек: `GET /admin/orders` (фильтр по статусу, пагинация), `GET /admin/orders/:id`, `POST /admin/orders/:id/status` (paid → packed → shipped → delivered/cancelled). Middleware = существующий admin guard.
+- Фронт: новый роут `src/routes/admin.orders.tsx` (список + детали в drawer). Без моков, через `apiFetch`.
+
+## Этап 5 — Бек: корзина на сервере
+
+- Таблица `carts` + `cart_items` (по `userId`, уникальный индекс на `(userId, productId, variantId)`).
+- API: `GET /cart`, `POST /cart/items`, `PATCH /cart/items/:id`, `DELETE /cart/items/:id`, `DELETE /cart`.
+- При оформлении заказа сервер сам читает корзину → создает заказ → чистит корзину.
+
+## Этап 6 — Фронт: гибридная корзина с мержем при логине
+
+- `useCart`: если юзер залогинен → источник правды сервер (react-query), если гость → localStorage (как сейчас).
+- При логине: один раз пушим локальные позиции в `POST /cart/merge` и чистим localStorage.
+- Никаких изменений в UI карточек/счётчиков.
+
+## Этап 7 — iOS-стиль адрес-пикер на checkout
+
+- Новый компонент `AddressPicker` на базе `IOSSearchPicker` (он уже есть в `src/components/ios/`):
+  - Тап по полю «Адрес» → полноэкранная модалка с системным поиском, дебаунс 250мс к DaData.
+  - Выбор подсказки → закрытие модалки, в форме показывается полная нормализованная строка.
+- Заодно поправить выравнивание лейблов/инпутов в `club.checkout.tsx` (пункт 7 — «текст не ровный»).
+
+## Этап 8 — PWA-оплата: финальная схема
+
+С учётом всего выше:
+- `payInPwa` → POST на бек, бек возвращает `{ paymentUrl }`.
+- Фронт навигирует на наш внутренний `/pay/go?orderId=...` (страница «Открыть оплату в Safari» — большая кнопка-ссылка `<a href={paymentUrl}>`). Это единственный способ, который iOS PWA пропускает в нативный Safari на 100%.
+- Возврат на `/pay/success?p=...` — Safari открыт отдельно, PWA получает обновлённый статус через поллинг `paymentId` (как сейчас) + инвалидация `qk.shopOrders`.
+- Между этапами 1–7 пользуемся текущей `submitPaymentRedirectForm` (form POST в текущее окно). На этапе 8 переключаем на схему «GO-страница».
+
+---
+
+## Технические детали (для меня)
+
+**Миграции бека (этап 1 и 5):**
 ```
-tier: "silver" | "gold" | "platinum"
-method: "card" | "sbp"
-```
-Внутри: создать `passPurchase` (через существующий `createPassPurchase`) → `createPaymentForPass(purchase.id, ...)` → `reply.redirect(payformUrl, 303)`.
-
-**Режим B — Корзина** (`target=order`):
-```
-items: JSON-строка [{productId, qty}]
-shipping_fio, shipping_phone, shipping_city, shipping_address
-method: "card" | "sbp"
-```
-Внутри: `createOrder(...)` → `createPaymentForOrder(order.id, ...)` → `reply.redirect(payformUrl, 303)`.
-
-При ошибке — 303-редирект обратно на `/club/hell-pass` или `/club/checkout` с `?payment_error=...` (это уже реализовано).
-
-CORS: для POST с `application/x-www-form-urlencoded` cross-subdomain (`hhr.pro` → `api.hhr.pro`) — простой запрос, preflight не нужен. Cookie `hh_sid` на `.hhr.pro` уйдёт автоматически.
-
-### Изменения на фронте
-
-**`src/routes/club.hell-pass.$tier.tsx`** — кнопки оплаты становятся submit-кнопками маленькой hidden-формы:
-
-```text
-<form method="POST" action="https://api.hhr.pro/api/v1/payments/redirect">
-  <input type="hidden" name="target" value="pass" />
-  <input type="hidden" name="tier" value={tier.slug} />
-  <input type="hidden" name="method" value="card" /> (меняется по кнопке)
-  <button type="submit">Оплатить картой</button>
-</form>
+0033_orders_expires.sql — ALTER TABLE orders ADD COLUMN expires_at, изменить enum статусов
+0034_carts.sql         — CREATE TABLE carts, cart_items + индексы
 ```
 
-Никаких `useMutation`, `await`, `payUrl`, `<a href>` — всё это убираем. Кнопка → submit → 303 → Райф. Один тап, нативный gesture.
+**Воркер TTL** — в `server/src/app.ts` поднимаем `setInterval` после старта Fastify (с guard от двойного запуска через `process.env.RUN_WORKERS=1` — в проде один контейнер).
 
-Перед submit делаем только клиентские проверки (авторизация, downgrade). Если не авторизован — обычная навигация на `/login`.
+**Адрес-пикер** — без изменений в `src/lib/dadata.ts`, только UI поверх.
 
-**`src/routes/club.checkout.tsx`** — то же самое, но форма уже есть на странице. Превращаем существующий `<form onSubmit>` в форму с `method="POST" action="https://api.hhr.pro/api/v1/payments/redirect"`. Кнопки «Картой / СБП» — каждая в своей mini-форме (или одна форма с двумя submit-кнопками, у которых `name="method"` `value="card"`/`value="sbp"` — браузер пошлёт значение нажатой кнопки).
+---
 
-Поля `items`, `shipping_*` — hidden inputs, заполняются из state. Items сериализуем в JSON.
+## Что я предлагаю прямо сейчас
 
-Клиентская валидация (имя/телефон/адрес/чекбокс оферты) — в `onSubmit={e => { if (!valid) e.preventDefault(); }}`. Не блокирует submit, если всё ок.
+Подтверди план — и я начну с **Этапа 1+2 одним заходом** (миграция + TTL-воркер + страница заказа + кнопка «Оплатить»). После деплоя бека проверим, дальше пойдём по списку.
 
-### Что убираем
-
-- `src/lib/payment-redirect.ts` — больше не нужен.
-- `purchasePass()` и `initOrderPayment()` (двухшаговый JSON-flow) — оставляем только если используются где-то ещё; иначе удаляем.
-- Все `payUrl` state, `useEffect` со скроллом, кнопка «Перейти к оплате», «Отменить».
-
-### Edge-cases, которые решаются автоматически
-
-- **Двойной тап** → бекенд видит существующий active payment для (refType, refId, method) и возвращает тот же `paymentUrl` (идемпотентность уже есть в `findActivePayment`). Для нового purchase/order — это новая запись, дубля по сути нет.
-- **«Бесконечно крутит на Райфе»** — это **отдельная проблема банка**, не наша. После фикса редиректа надо открыть DevTools на проблемном телефоне и смотреть Network на стороне Райфа. Скорее всего у их формы свой issue с 3DS/SameSite cookie — это уже не код нашего сайта, и тут вариантов мало: либо переключиться на другой merchant ID у Райфа, либо на ЮKassa/Tinkoff. Но это после фикса основного flow.
-
-## Технические детали
-
-- **CORS на бекенде**: для `/redirect` ничего менять не нужно — это форма-POST, не fetch. Браузер отправит cookies сам, ответ 303 браузер исполнит сам. Никаких `Access-Control-Allow-*` для этого не требуется (response не читается JS-ом).
-- **Cookie `hh_sid`**: должен быть на домене `.hhr.pro` с `SameSite=Lax` (Lax разрешает cookie при top-level POST по нажатию). Если сейчас `SameSite=Strict` — поправить на Lax в `server/src/lib/auth.ts`. Это **критично**, без этого редирект не пройдёт авторизацию.
-- **Endpoint**: `https://api.hhr.pro/api/v1/payments/redirect` — уже существует, расширяем.
-
-## План работ
-
-1. Бекенд `server/src/routes/payments.ts`: расширить `/redirect` для обоих режимов (`pass` без refId / `order` с inline-данными). Подтянуть `createPassPurchase` и `createOrder`.
-2. Бекенд `server/src/lib/auth.ts`: проверить и при необходимости поставить cookie `SameSite=Lax`, `Domain=.hhr.pro`.
-3. Фронт `src/routes/club.hell-pass.$tier.tsx`: убрать useMutation/payUrl, заменить кнопки на submit hidden-форм.
-4. Фронт `src/routes/club.checkout.tsx`: то же — `<form action="https://api.hhr.pro/api/v1/payments/redirect" method="POST">`, hidden inputs, две submit-кнопки.
-5. Удалить `src/lib/payment-redirect.ts` и неиспользуемые JSON-only функции в `src/lib/queries.ts` (если не нужны больше нигде).
-
-После деплоя — проверить руками: Safari iOS, Chrome Android (оба обычные + PWA), десктоп. Везде должен быть один тап → сразу страница Райфа.
-
-Если на Райфе после этого где-то ещё крутится форма — это уже банковская проблема, и нужно отдельно копать в их Network/Console.
+Если по каким-то этапам сразу видишь возражения — напиши, переделаю до старта.

@@ -170,6 +170,8 @@ export type ShopOrder = {
   updatedAt: string;
   paidAt: string | null;
   shippedAt: string | null;
+  /** Дедлайн оплаты для status='pending_payment'. После него заказ сносится воркером. */
+  expiresAt: string | null;
 };
 
 export type ShopOrderItem = {

@@ -253,6 +253,47 @@ export async function shopRoutes(app: FastifyInstance) {
     if (!order || order.userId !== session.sub) return reply.code(404).send({ error: "not_found" });
     return order;
   });
+
+  // POST /api/v1/shop/orders/:id/cancel — отмена своего pending-заказа.
+  // Возвращает остатки на товары/размеры и удаляет заказ (каскадом удалятся order_items).
+  app.post<{ Params: { id: string } }>(
+    "/orders/:id/cancel",
+    { preHandler: requireAuth },
+    async (req, reply) => {
+      const session = req.user as SessionPayload;
+      const [order] = await db
+        .select()
+        .from(orders)
+        .where(eq(orders.id, req.params.id))
+        .limit(1);
+      if (!order || order.userId !== session.sub) return reply.code(404).send({ error: "not_found" });
+      if (order.status !== "pending_payment") {
+        return reply.code(409).send({ error: "cannot_cancel", status: order.status });
+      }
+
+      const items = await db
+        .select({
+          productId: orderItems.productId,
+          qty: orderItems.qty,
+          size: orderItems.sizeSnapshot,
+        })
+        .from(orderItems)
+        .where(eq(orderItems.orderId, order.id));
+
+      const { incrementStockIfTracked, incrementSizeStockIfTracked } = await import("../lib/shop.js");
+      for (const it of items) {
+        if (!it.productId) continue;
+        if (it.size) await incrementSizeStockIfTracked(it.productId, it.size, it.qty);
+        else await incrementStockIfTracked(it.productId, it.qty);
+      }
+
+      await db
+        .delete(orders)
+        .where(and(eq(orders.id, order.id), eq(orders.status, "pending_payment")));
+
+      return { ok: true };
+    },
+  );
 }
 
 // ---------- ADMIN ----------

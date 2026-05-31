@@ -19,3 +19,12 @@ export function payInPwa(fields: Record<string, string>): void {
   // Safari (PWA уходит в фон), а success-URL потом возвращает в PWA.
   submitPaymentRedirectForm(PAY_URL, fields);
 }
+
+/** Оплата уже созданного заказа (со страницы /club/orders/$id). */
+export function payExistingOrderInPwa(orderId: string, method: "card" | "sbp" = "card"): void {
+  submitPaymentRedirectForm(PAY_URL, {
+    target: "order_existing",
+    order_id: orderId,
+    method,
+  });
+}

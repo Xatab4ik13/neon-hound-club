@@ -117,6 +117,8 @@ export async function createOrderForUser(
       bonusTicketsTotal: bonusTotal,
       shipping,
       comment: comment ?? null,
+      // Дедлайн оплаты — 2 часа. Дальше воркер expireUnpaidOrders снесёт.
+      expiresAt: new Date(Date.now() + 2 * 60 * 60 * 1000),
     })
     .returning();
 
@@ -316,4 +318,85 @@ export async function decrementSizeStockIfTracked(
     RETURNING id
   `);
   return (res.length ?? (res as any).rowCount ?? 0) > 0;
+}
+
+/**
+ * Возвращает остаток на товар (если stock не null).
+ * Используется при отмене / экспирации заказа.
+ */
+export async function incrementStockIfTracked(productId: string, qty: number): Promise<void> {
+  await db
+    .update(products)
+    .set({ stock: sql`${products.stock} + ${qty}`, updatedAt: new Date() })
+    .where(and(eq(products.id, productId), sql`${products.stock} IS NOT NULL`));
+}
+
+/**
+ * Возвращает остаток на конкретный размер в jsonb-массиве sizes.
+ * Размеры с stock=null (безлимит) остаются без изменений.
+ */
+export async function incrementSizeStockIfTracked(
+  productId: string,
+  sizeLabel: string,
+  qty: number,
+): Promise<void> {
+  await db.execute(sql`
+    UPDATE products
+    SET sizes = (
+      SELECT jsonb_agg(
+        CASE WHEN (s->>'label') = ${sizeLabel} AND (s->'stock') IS NOT NULL AND (s->>'stock') <> 'null'
+             THEN jsonb_set(s, '{stock}', to_jsonb(((s->>'stock')::int) + ${qty}))
+             ELSE s END
+      )
+      FROM jsonb_array_elements(sizes) s
+    ),
+    updated_at = now()
+    WHERE id = ${productId}
+  `);
+}
+
+/**
+ * Воркер: находит pending_payment-заказы с истёкшим expires_at, возвращает
+ * остатки на товары/размеры и сносит сами заказы (с каскадом на order_items).
+ * Возвращает количество удалённых заказов.
+ */
+export async function expireUnpaidOrders(): Promise<number> {
+  const expired = await db
+    .select({ id: orders.id })
+    .from(orders)
+    .where(
+      and(
+        eq(orders.status, "pending_payment"),
+        sql`${orders.expiresAt} IS NOT NULL AND ${orders.expiresAt} < now()`,
+      ),
+    )
+    .limit(100);
+
+  if (expired.length === 0) return 0;
+
+  let removed = 0;
+  for (const { id } of expired) {
+    const items = await db
+      .select({
+        productId: orderItems.productId,
+        qty: orderItems.qty,
+        size: orderItems.sizeSnapshot,
+      })
+      .from(orderItems)
+      .where(eq(orderItems.orderId, id));
+
+    for (const it of items) {
+      if (!it.productId) continue;
+      if (it.size) await incrementSizeStockIfTracked(it.productId, it.size, it.qty);
+      else await incrementStockIfTracked(it.productId, it.qty);
+    }
+
+    // order_items удалятся каскадно через FK on delete cascade
+    const res = await db
+      .delete(orders)
+      .where(and(eq(orders.id, id), eq(orders.status, "pending_payment")))
+      .returning({ id: orders.id });
+    if (res.length > 0) removed += 1;
+  }
+  return removed;
 }
