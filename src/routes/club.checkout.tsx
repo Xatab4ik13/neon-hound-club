@@ -3,13 +3,13 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { CheckCircle2, MapPin, Ticket, Truck, User } from "lucide-react";
 import { PageHeader } from "@/components/club/PageHeader";
 import { PaymentBadges } from "@/components/brand/PaymentBadges";
-import { PayCardButton, PaySbpButton } from "@/components/brand/PayButton";
+import { PayButton } from "@/components/brand/PayButton";
 import { DadataInput } from "@/components/ui/DadataInput";
 import type { DadataAddressData } from "@/lib/dadata";
 import { LEGAL } from "@/data/legal";
 import { useCart } from "@/hooks/use-cart";
 import { useViewer } from "@/hooks/use-viewer";
-import { usePaymentMethods } from "@/hooks/use-payment-methods";
+
 import { useMyProfile, useMyAddress } from "@/lib/garage-api";
 import { formatRuPhone } from "@/lib/phone";
 import { hhToast } from "@/lib/hh-toast";
