@@ -213,6 +213,8 @@ export async function paymentsRoutes(app: FastifyInstance) {
       }
       const url = new URL("/login", FRONTEND);
       url.searchParams.set("redirect", back);
+      // Чтобы юзер на /login понимал, что его выкинуло из-за оплаты, а не сам пришёл.
+      url.searchParams.set("payment_error", "Сессия истекла — войди заново и попробуй оплатить.");
       return reply.redirect(url.toString(), 303);
     }
 
