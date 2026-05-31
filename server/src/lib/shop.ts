@@ -1,6 +1,6 @@
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
-import { orders, orderItems, products } from "../db/schema/shop.js";
+import { orders, orderItems, products, cartItems } from "../db/schema/shop.js";
 import { userStickerPacks } from "../db/schema/stickers.js";
 import { ticketCredit } from "./tickets.js";
 import { awardXp } from "./xp.js";
@@ -30,6 +30,33 @@ export type CreateOrderInput = {
   };
   comment?: string;
 };
+
+export async function createOrderFromCartForUser(
+  userId: string,
+  input: Omit<CreateOrderInput, "items">,
+): Promise<{ orderId: string }> {
+  const rows = await db
+    .select({
+      productId: cartItems.productId,
+      qty: cartItems.qty,
+      size: cartItems.size,
+    })
+    .from(cartItems)
+    .where(eq(cartItems.userId, userId));
+
+  if (rows.length === 0) {
+    throw new OrderCreateError("cart_empty", "Корзина пустая");
+  }
+
+  return createOrderForUser(userId, {
+    ...input,
+    items: rows.map((row) => ({
+      productId: row.productId,
+      qty: row.qty,
+      size: row.size ?? undefined,
+    })),
+  });
+}
 
 /**
  * Создаёт заказ для юзера: грузит товары, валидирует размеры/остатки, считает скидку
