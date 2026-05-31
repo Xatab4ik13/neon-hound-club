@@ -836,8 +836,18 @@ function CommentsSheet({
               {topLevel.map((c) => {
                 const children = childrenByParentId.get(c.id) ?? [];
                 const isCollapsed = collapsed.has(c.id);
+                const isUnreadAnchor = c.id === firstUnreadId;
                 return (
-                  <li key={c.id} className="space-y-3">
+                  <li key={c.id} data-comment-id={c.id} className="space-y-3">
+                    {isUnreadAnchor && (
+                      <div className="flex items-center gap-3 py-1">
+                        <span className="h-px flex-1 bg-primary/30" />
+                        <span className="font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-primary">
+                          Непрочитанные
+                        </span>
+                        <span className="h-px flex-1 bg-primary/30" />
+                      </div>
+                    )}
                     <ul>{renderItem(c)}</ul>
                     {children.length > 0 && (
                       <div className="pl-12">
