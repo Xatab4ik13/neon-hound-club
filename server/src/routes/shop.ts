@@ -271,21 +271,8 @@ export async function shopRoutes(app: FastifyInstance) {
         return reply.code(409).send({ error: "cannot_cancel", status: order.status });
       }
 
-      const items = await db
-        .select({
-          productId: orderItems.productId,
-          qty: orderItems.qty,
-          size: orderItems.sizeSnapshot,
-        })
-        .from(orderItems)
-        .where(eq(orderItems.orderId, order.id));
-
-      const { incrementStockIfTracked, incrementSizeStockIfTracked } = await import("../lib/shop.js");
-      for (const it of items) {
-        if (!it.productId) continue;
-        if (it.size) await incrementSizeStockIfTracked(it.productId, it.size, it.qty);
-        else await incrementStockIfTracked(it.productId, it.qty);
-      }
+      const { restockOrder } = await import("../lib/shop.js");
+      await restockOrder(order.id);
 
       await db
         .delete(orders)
