@@ -114,7 +114,7 @@ function ProductView({ product }: { product: ShopProduct }) {
   const cover = gallery[slide] ?? gallery[0];
   const maxQty = product.stock && product.stock > 0 ? product.stock : 99;
 
-  const handleAdd = (goToCart = false, originEl?: HTMLElement | null) => {
+  const handleAdd = async (goToCart = false, originEl?: HTMLElement | null) => {
     if (sold) return;
     if (sizeMissing) {
       haptic("warning");
@@ -126,18 +126,26 @@ function ProductView({ product }: { product: ShopProduct }) {
     if (!goToCart && originEl && cover) {
       flyToCart({ fromRect: originEl.getBoundingClientRect(), imageUrl: cover });
     }
-    add(
-      {
-        productId: product.id,
-        slug: product.slug,
-        name: product.title,
-        price: product.priceRub,
-        image: cover ?? "",
-        size,
-        ticketsBonus: product.bonusTickets,
-      },
-      qty,
-    );
+    try {
+      await add(
+        {
+          productId: product.id,
+          slug: product.slug,
+          name: product.title,
+          price: product.priceRub,
+          image: cover ?? "",
+          size,
+          ticketsBonus: product.bonusTickets,
+        },
+        qty,
+      );
+    } catch (e) {
+      haptic("error");
+      hhToast.error("Не удалось добавить", {
+        meta: e instanceof Error ? e.message : "Попробуй ещё раз",
+      });
+      return;
+    }
     if (goToCart) {
       navigate({ to: "/club/cart" });
     } else {
