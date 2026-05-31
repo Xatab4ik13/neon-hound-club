@@ -65,8 +65,9 @@ export function DadataInput({
 
 
 
-  // debounce + fetch
+  // debounce + fetch (только не-PWA — в PWA используется DadataIOSPicker)
   useEffect(() => {
+    if (isPwa) return;
     const q = value.trim();
     if (q.length < minChars) {
       setItems([]);
