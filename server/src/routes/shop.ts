@@ -22,6 +22,7 @@ import {
   restockOrder,
 } from "../lib/shop.js";
 import { getActivePassPerks } from "../lib/pass.js";
+import { parsePagination } from "../lib/pagination.js";
 
 // ---------- PUBLIC / USER ----------
 
