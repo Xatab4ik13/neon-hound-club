@@ -223,32 +223,19 @@ function TierDetailPage() {
               )}
 
               <div className="mt-4 flex flex-col gap-2">
-                {/* Карта */}
                 <form method="POST" action={PAY_ACTION} onSubmit={guard}>
                   <input type="hidden" name="target" value="pass" />
                   <input type="hidden" name="tier" value={tier.slug} />
                   <input type="hidden" name="method" value="card" />
-                  <PayCardButton
+                  <PayButton
                     type="submit"
                     disabled={!!isDowngrade}
-                    label={!isDowngrade ? `${baseLabel} картой` : baseLabel}
+                    label={baseLabel}
                     size="lg"
                   />
                 </form>
-                {/* СБП */}
-                {sbpEnabled && !isDowngrade && (
-                  <form method="POST" action={PAY_ACTION} onSubmit={guard}>
-                    <input type="hidden" name="target" value="pass" />
-                    <input type="hidden" name="tier" value={tier.slug} />
-                    <input type="hidden" name="method" value="sbp" />
-                    <PaySbpButton
-                      type="submit"
-                      label={`${baseLabel} через`}
-                      size="lg"
-                    />
-                  </form>
-                )}
               </div>
+
 
               <div className="mt-4 font-mono text-[10px] uppercase tracking-widest text-white/40">
                 {isDowngrade
