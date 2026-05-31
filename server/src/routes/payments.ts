@@ -118,6 +118,13 @@ const orderRedirectSchema = z.object({
   method: z.enum(PAYMENT_METHODS).optional(),
 });
 
+// Оплата уже существующего заказа (со страницы /club/orders/$id).
+const orderExistingRedirectSchema = z.object({
+  target: z.literal("order_existing"),
+  order_id: z.string().uuid(),
+  method: z.enum(PAYMENT_METHODS).optional(),
+});
+
 export async function paymentsRoutes(app: FastifyInstance) {
   app.get("/methods", async () => {
     return {
