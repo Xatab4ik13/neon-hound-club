@@ -201,9 +201,6 @@ function ClubCheckoutPage() {
     // PWA-режим — перехватываем сабмит и идём через GO-страницу.
     if (isStandalonePWA()) {
       e.preventDefault();
-      const submitter =
-        (e.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null;
-      const method = submitter?.value === "sbp" ? "sbp" : "card";
       void startPayment({
         target: "order",
         items: itemsJson,
@@ -211,7 +208,8 @@ function ClubCheckoutPage() {
         shipping_phone: form.phone,
         shipping_city: cityFallback,
         shipping_address: form.address,
-        method,
+        method: "card",
+
       }).then((r) => {
         if (!r.ok) hhToast.error("Ошибка оплаты", { meta: r.message });
       });
