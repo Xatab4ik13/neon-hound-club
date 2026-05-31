@@ -391,7 +391,26 @@ export async function createOrder(input: CreateOrderInput) {
   });
 }
 
-// ---------- PAYMENTS (Raiffeisen) ----------
+// ---------- ADMIN: ORDERS ----------
+
+export async function fetchAdminOrders(status?: ShopOrderStatus) {
+  const qs = status ? `?status=${encodeURIComponent(status)}&limit=200` : "?limit=200";
+  return apiFetch<{ items: ShopOrder[] }>(`/api/v1/admin/shop/orders${qs}`);
+}
+
+export async function fetchAdminOrder(id: string) {
+  return apiFetch<ShopOrderWithItems>(`/api/v1/admin/shop/orders/${id}`);
+}
+
+export async function patchAdminOrder(
+  id: string,
+  patch: { status?: ShopOrderStatus; cdekTrack?: string | null },
+) {
+  return apiFetch<ShopOrderWithItems>(`/api/v1/admin/shop/orders/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(patch),
+  });
+}
 
 export type PaymentStatus = "new" | "pending" | "authorized" | "confirmed" | "rejected" | "refunded";
 export type PaymentMethod = "card" | "sbp";
