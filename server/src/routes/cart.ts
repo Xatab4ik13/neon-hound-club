@@ -233,7 +233,7 @@ export async function cartRoutes(app: FastifyInstance) {
           size: it.size ?? null,
         })
         .onConflictDoUpdate({
-          target: sql`("user_id", "product_id", COALESCE("size", ''))`,
+          target: sql`("user_id", "product_id", COALESCE("size", ''))` as any,
           set: { qty: sql`${cartItems.qty} + ${it.qty}`, updatedAt: new Date() },
         });
     }
