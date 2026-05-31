@@ -75,6 +75,17 @@ function TierDetailPage() {
   const { tier } = Route.useLoaderData() as { tier: Tier };
   const { isAuthed } = useViewer();
   const navigate = useNavigate();
+  const search = Route.useSearch();
+
+  // Если бек вернул нас сюда с ошибкой инициализации платежа — показываем тост.
+  useEffect(() => {
+    if (search.payment_error) {
+      // eslint-disable-next-line no-console
+      console.error("[payment_error]", search.payment_error);
+      hhToast.error("Ошибка оплаты", { meta: search.payment_error, duration: 15000 });
+    }
+  }, [search.payment_error]);
+
 
 
   const passQ = useQuery({
