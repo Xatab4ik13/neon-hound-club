@@ -70,6 +70,7 @@ import { Route as ClubUNickRouteImport } from './routes/club.u.$nick'
 import { Route as ClubShopProductSlugRouteImport } from './routes/club.shop.$productSlug'
 import { Route as ClubRafflesRaffleIdRouteImport } from './routes/club.raffles.$raffleId'
 import { Route as ClubPPostIdRouteImport } from './routes/club.p.$postId'
+import { Route as ClubOrdersOrderIdRouteImport } from './routes/club.orders.$orderId'
 import { Route as ClubLegalRequisitesRouteImport } from './routes/club.legal.requisites'
 import { Route as ClubLegalPromoRulesRouteImport } from './routes/club.legal.promo-rules'
 import { Route as ClubLegalPrivacyRouteImport } from './routes/club.legal.privacy'
@@ -381,6 +382,11 @@ const ClubPPostIdRoute = ClubPPostIdRouteImport.update({
   path: '/p/$postId',
   getParentRoute: () => ClubRoute,
 } as any)
+const ClubOrdersOrderIdRoute = ClubOrdersOrderIdRouteImport.update({
+  id: '/$orderId',
+  path: '/$orderId',
+  getParentRoute: () => ClubOrdersRoute,
+} as any)
 const ClubLegalRequisitesRoute = ClubLegalRequisitesRouteImport.update({
   id: '/legal/requisites',
   path: '/legal/requisites',
@@ -441,7 +447,7 @@ export interface FileRoutesByFullPath {
   '/club/install': typeof ClubInstallRoute
   '/club/invite': typeof ClubInviteRoute
   '/club/me': typeof ClubMeRoute
-  '/club/orders': typeof ClubOrdersRoute
+  '/club/orders': typeof ClubOrdersRouteWithChildren
   '/club/quests': typeof ClubQuestsRoute
   '/club/rank': typeof ClubRankRoute
   '/club/school': typeof ClubSchoolRoute
@@ -466,6 +472,7 @@ export interface FileRoutesByFullPath {
   '/club/legal/privacy': typeof ClubLegalPrivacyRoute
   '/club/legal/promo-rules': typeof ClubLegalPromoRulesRoute
   '/club/legal/requisites': typeof ClubLegalRequisitesRoute
+  '/club/orders/$orderId': typeof ClubOrdersOrderIdRoute
   '/club/p/$postId': typeof ClubPPostIdRoute
   '/club/raffles/$raffleId': typeof ClubRafflesRaffleIdRoute
   '/club/shop/$productSlug': typeof ClubShopProductSlugRoute
@@ -506,7 +513,7 @@ export interface FileRoutesByTo {
   '/club/install': typeof ClubInstallRoute
   '/club/invite': typeof ClubInviteRoute
   '/club/me': typeof ClubMeRoute
-  '/club/orders': typeof ClubOrdersRoute
+  '/club/orders': typeof ClubOrdersRouteWithChildren
   '/club/quests': typeof ClubQuestsRoute
   '/club/rank': typeof ClubRankRoute
   '/club/school': typeof ClubSchoolRoute
@@ -531,6 +538,7 @@ export interface FileRoutesByTo {
   '/club/legal/privacy': typeof ClubLegalPrivacyRoute
   '/club/legal/promo-rules': typeof ClubLegalPromoRulesRoute
   '/club/legal/requisites': typeof ClubLegalRequisitesRoute
+  '/club/orders/$orderId': typeof ClubOrdersOrderIdRoute
   '/club/p/$postId': typeof ClubPPostIdRoute
   '/club/raffles/$raffleId': typeof ClubRafflesRaffleIdRoute
   '/club/shop/$productSlug': typeof ClubShopProductSlugRoute
@@ -575,7 +583,7 @@ export interface FileRoutesById {
   '/club/install': typeof ClubInstallRoute
   '/club/invite': typeof ClubInviteRoute
   '/club/me': typeof ClubMeRoute
-  '/club/orders': typeof ClubOrdersRoute
+  '/club/orders': typeof ClubOrdersRouteWithChildren
   '/club/quests': typeof ClubQuestsRoute
   '/club/rank': typeof ClubRankRoute
   '/club/school': typeof ClubSchoolRoute
@@ -600,6 +608,7 @@ export interface FileRoutesById {
   '/club/legal/privacy': typeof ClubLegalPrivacyRoute
   '/club/legal/promo-rules': typeof ClubLegalPromoRulesRoute
   '/club/legal/requisites': typeof ClubLegalRequisitesRoute
+  '/club/orders/$orderId': typeof ClubOrdersOrderIdRoute
   '/club/p/$postId': typeof ClubPPostIdRoute
   '/club/raffles/$raffleId': typeof ClubRafflesRaffleIdRoute
   '/club/shop/$productSlug': typeof ClubShopProductSlugRoute
@@ -670,6 +679,7 @@ export interface FileRouteTypes {
     | '/club/legal/privacy'
     | '/club/legal/promo-rules'
     | '/club/legal/requisites'
+    | '/club/orders/$orderId'
     | '/club/p/$postId'
     | '/club/raffles/$raffleId'
     | '/club/shop/$productSlug'
@@ -735,6 +745,7 @@ export interface FileRouteTypes {
     | '/club/legal/privacy'
     | '/club/legal/promo-rules'
     | '/club/legal/requisites'
+    | '/club/orders/$orderId'
     | '/club/p/$postId'
     | '/club/raffles/$raffleId'
     | '/club/shop/$productSlug'
@@ -803,6 +814,7 @@ export interface FileRouteTypes {
     | '/club/legal/privacy'
     | '/club/legal/promo-rules'
     | '/club/legal/requisites'
+    | '/club/orders/$orderId'
     | '/club/p/$postId'
     | '/club/raffles/$raffleId'
     | '/club/shop/$productSlug'
@@ -1270,6 +1282,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ClubPPostIdRouteImport
       parentRoute: typeof ClubRoute
     }
+    '/club/orders/$orderId': {
+      id: '/club/orders/$orderId'
+      path: '/$orderId'
+      fullPath: '/club/orders/$orderId'
+      preLoaderRoute: typeof ClubOrdersOrderIdRouteImport
+      parentRoute: typeof ClubOrdersRoute
+    }
     '/club/legal/requisites': {
       id: '/club/legal/requisites'
       path: '/legal/requisites'
@@ -1359,6 +1378,18 @@ const BloggerRouteChildren: BloggerRouteChildren = {
 const BloggerRouteWithChildren =
   BloggerRoute._addFileChildren(BloggerRouteChildren)
 
+interface ClubOrdersRouteChildren {
+  ClubOrdersOrderIdRoute: typeof ClubOrdersOrderIdRoute
+}
+
+const ClubOrdersRouteChildren: ClubOrdersRouteChildren = {
+  ClubOrdersOrderIdRoute: ClubOrdersOrderIdRoute,
+}
+
+const ClubOrdersRouteWithChildren = ClubOrdersRoute._addFileChildren(
+  ClubOrdersRouteChildren,
+)
+
 interface ClubRouteChildren {
   ClubCartRoute: typeof ClubCartRoute
   ClubCheckoutRoute: typeof ClubCheckoutRoute
@@ -1367,7 +1398,7 @@ interface ClubRouteChildren {
   ClubInstallRoute: typeof ClubInstallRoute
   ClubInviteRoute: typeof ClubInviteRoute
   ClubMeRoute: typeof ClubMeRoute
-  ClubOrdersRoute: typeof ClubOrdersRoute
+  ClubOrdersRoute: typeof ClubOrdersRouteWithChildren
   ClubQuestsRoute: typeof ClubQuestsRoute
   ClubRankRoute: typeof ClubRankRoute
   ClubSchoolRoute: typeof ClubSchoolRoute
@@ -1394,7 +1425,7 @@ const ClubRouteChildren: ClubRouteChildren = {
   ClubInstallRoute: ClubInstallRoute,
   ClubInviteRoute: ClubInviteRoute,
   ClubMeRoute: ClubMeRoute,
-  ClubOrdersRoute: ClubOrdersRoute,
+  ClubOrdersRoute: ClubOrdersRouteWithChildren,
   ClubQuestsRoute: ClubQuestsRoute,
   ClubRankRoute: ClubRankRoute,
   ClubSchoolRoute: ClubSchoolRoute,
