@@ -20,6 +20,10 @@ const TIER_RANK: Record<PassTier, number> = { silver: 1, gold: 2, platinum: 3 };
 const PAY_ACTION = `${BACKEND_URL}/api/v1/payments/redirect`;
 
 export const Route = createFileRoute("/club/hell-pass/$tier")({
+  validateSearch: (s: Record<string, unknown>): { payment_error?: string } => {
+    const v = typeof s.payment_error === "string" ? s.payment_error : undefined;
+    return v ? { payment_error: v } : {};
+  },
   loader: ({ params }) => {
     const tier = getTier(params.tier);
     if (!tier) throw notFound();
