@@ -140,7 +140,7 @@ function ProductView({ product }: { product: ShopProduct }) {
         qty,
       );
     } catch (e) {
-      haptic("error");
+      haptic("warning");
       hhToast.error("Не удалось добавить", {
         meta: e instanceof Error ? e.message : "Попробуй ещё раз",
       });
