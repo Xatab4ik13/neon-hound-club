@@ -250,7 +250,7 @@ function TierDetailPage() {
                 <form method="POST" action={PAY_ACTION} onSubmit={guard}>
                   <input type="hidden" name="target" value="pass" />
                   <input type="hidden" name="tier" value={tier.slug} />
-                  <input type="hidden" name="method" value="card" />
+                  <input type="hidden" name="method" value="sbp" />
                   <PayButton
                     type="submit"
                     disabled={!!isDowngrade}

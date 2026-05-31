@@ -208,7 +208,7 @@ function ClubCheckoutPage() {
         shipping_phone: form.phone,
         shipping_city: cityFallback,
         shipping_address: form.address,
-        method: "card",
+        method: "sbp",
 
       }).then((r) => {
         if (!r.ok) hhToast.error("Ошибка оплаты", { meta: r.message });
@@ -238,6 +238,7 @@ function ClubCheckoutPage() {
       >
         {/* Скрытые поля для бекенда — он сам создаст заказ и редиректнёт на банк */}
         <input type="hidden" name="target" value="order" />
+        <input type="hidden" name="method" value="sbp" />
         <input type="hidden" name="shipping_fio" value={form.name} />
         <input type="hidden" name="shipping_phone" value={form.phone} />
         <input type="hidden" name="shipping_city" value={cityFallback} />
