@@ -11,6 +11,7 @@ import { awardXp, computeRank } from "../lib/xp.js";
 import { xpEvents } from "../db/schema/xp.js";
 import { addClient, removeClient, publish as publishFeedEvent } from "../lib/feed-bus.js";
 import { addQuestProgress } from "../lib/quests.js";
+import { parsePagination } from "../lib/pagination.js";
 
 // Считает rankId батчем для набора пользователей. Возвращает Map<userId, rankId>.
 // Пустой набор → пустая Map. Юзеры без событий получают rookie.
