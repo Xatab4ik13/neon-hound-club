@@ -30,6 +30,7 @@ export type CartItem = {
   size: string | null;
   qty: number;
   ticketsBonus?: number;
+  kind?: "physical" | "digital" | "preorder";
 };
 
 type CartContextValue = {
