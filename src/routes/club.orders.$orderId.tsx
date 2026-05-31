@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { ArrowLeft, Loader2, Package, X } from "lucide-react";
 import { PageHeader } from "@/components/club/PageHeader";
-import { apiFetch, ApiError } from "@/lib/api";
+import { apiFetch } from "@/lib/api";
 import { fetchMyOrder, qk, type ShopOrderWithItems, type ShopOrderStatus } from "@/lib/queries";
 import { payExistingOrderInPwa } from "@/lib/pwa-pay";
 
@@ -52,13 +52,7 @@ function OrderDetailPage() {
 
   const cancelMut = useMutation({
     mutationFn: () =>
-      apiFetch<{ ok: true }>(`/api/v1/shop/orders/${orderId}/cancel`, { method: "POST" }).catch(
-        (e) => {
-          // эндпоинта пока нет — мягко игнорим, появится в админ-этапе.
-          if (e instanceof ApiError && e.status === 404) throw new Error("Скоро добавим");
-          throw e;
-        },
-      ),
+      apiFetch<{ ok: true }>(`/api/v1/shop/orders/${orderId}/cancel`, { method: "POST" }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.shopOrders });
       qc.invalidateQueries({ queryKey: qk.shopOrder(orderId) });
