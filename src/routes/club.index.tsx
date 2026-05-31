@@ -635,10 +635,16 @@ function CommentsSheet({
       el.scrollHeight - el.scrollTop - el.clientHeight < 80;
   };
 
-  // сбросить reply при закрытии
+  // сбросить reply при закрытии; при открытии — подгрузить ПОЛНЫЙ список коментов
   useEffect(() => {
-    if (!open) setReplyTo(null);
-  }, [open]);
+    if (!open) {
+      setReplyTo(null);
+      return;
+    }
+    if (!post.commentsFull) {
+      feedStore.loadFullComments(post.id);
+    }
+  }, [open, post.id, post.commentsFull]);
 
   // Когда клавиатура появилась/исчезла — если были внизу, остаёмся внизу.
   useEffect(() => {
