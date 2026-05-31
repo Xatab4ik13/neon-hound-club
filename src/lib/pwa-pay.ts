@@ -16,6 +16,7 @@ import { isStandalonePWA } from "@/lib/is-pwa";
 const PAY_URL = `${BACKEND_URL}/api/v1/payments/redirect`;
 
 type PayResult = { ok: true } | { ok: false; message: string };
+type StartPaymentOptions = { forceLandingPage?: boolean };
 
 async function payViaPwa(fields: Record<string, string>): Promise<PayResult> {
   let res: Response;
@@ -56,9 +57,12 @@ async function payViaPwa(fields: Record<string, string>): Promise<PayResult> {
   return { ok: true };
 }
 
-/** Универсальный старт оплаты. В PWA → GO-страница; иначе → form-POST. */
-export function startPayment(fields: Record<string, string>): Promise<PayResult> {
-  if (isStandalonePWA()) return payViaPwa(fields);
+/** Универсальный старт оплаты. В PWA или по флагу → GO-страница; иначе → form-POST. */
+export function startPayment(
+  fields: Record<string, string>,
+  options?: StartPaymentOptions,
+): Promise<PayResult> {
+  if (options?.forceLandingPage || isStandalonePWA()) return payViaPwa(fields);
   // Браузер — синхронный сабмит. Возвращаем сразу, юзер уже уехал на банк.
   submitPaymentRedirectForm(PAY_URL, fields);
   return Promise.resolve({ ok: true });
