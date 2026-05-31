@@ -345,6 +345,46 @@ export async function feedRoutes(app: FastifyInstance) {
     return { ...hydrated, comments };
   });
 
+  // ── «как в Telegram»: метка последнего прочитанного коммента ──
+  // GET — узнать, до какого момента юзер уже прочитал коменты поста.
+  app.get<{ Params: { id: string } }>(
+    "/:id/comments-read",
+    { preHandler: requireAuth },
+    async (req) => {
+      const s = req.user as SessionPayload;
+      const [row] = await db
+        .select({ lastReadAt: postReads.lastReadAt })
+        .from(postReads)
+        .where(and(eq(postReads.userId, s.sub), eq(postReads.postId, req.params.id)))
+        .limit(1);
+      return { lastReadAt: row?.lastReadAt?.toISOString() ?? null };
+    },
+  );
+
+  // POST — отметить «прочитано до сейчас» (upsert).
+  app.post<{ Params: { id: string } }>(
+    "/:id/comments-read",
+    { preHandler: requireAuth },
+    async (req, reply) => {
+      const s = req.user as SessionPayload;
+      const [exists] = await db
+        .select({ id: posts.id })
+        .from(posts)
+        .where(and(eq(posts.id, req.params.id), isNull(posts.deletedAt)))
+        .limit(1);
+      if (!exists) return reply.code(404).send({ error: "not_found" });
+      const now = new Date();
+      await db
+        .insert(postReads)
+        .values({ userId: s.sub, postId: req.params.id, lastReadAt: now })
+        .onConflictDoUpdate({
+          target: [postReads.userId, postReads.postId],
+          set: { lastReadAt: now },
+        });
+      return { ok: true, lastReadAt: now.toISOString() };
+    },
+  );
+
   // POST /api/v1/feed/comments/:cid/like  /  DELETE → unlike
   app.post<{ Params: { cid: string } }>("/comments/:cid/like", { preHandler: requireAuth }, async (req, reply) => {
     const s = req.user as SessionPayload;
