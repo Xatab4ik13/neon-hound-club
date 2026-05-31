@@ -144,7 +144,7 @@ export async function adminEconomyRoutes(app: FastifyInstance) {
     };
   });
 
-  /** Операции — список (виртуальные авто + ручные). */
+  /** Операции — список (виртуальные авто из confirmed payments + ручные). */
   app.get("/operations", async (req) => {
     const q = z
       .object({
@@ -168,74 +168,49 @@ export async function adminEconomyRoutes(app: FastifyInstance) {
       createdAt: Date;
     }> = [];
 
-    // Авто: paid orders
-    if (q.type !== "expense" && (!q.category || q.category === "Магазин")) {
+    // Авто: подтверждённые платежи (реальные деньги от банка).
+    if (q.type !== "expense") {
+      const conds = [eq(payments.status, "confirmed")] as any[];
+      if (q.category === "Магазин") conds.push(eq(payments.refType, "order"));
+      else if (q.category === "Hell Pass") conds.push(eq(payments.refType, "pass"));
+      else if (q.category) {
+        // запрошена ручная категория — авто-операции не подходят
+        conds.push(sql`false`);
+      }
+
       const rows = await db
         .select({
-          id: orders.id,
-          totalRub: orders.totalRub,
-          paidAt: orders.paidAt,
+          id: payments.id,
+          amountRub: payments.amountRub,
+          updatedAt: payments.updatedAt,
+          refType: payments.refType,
+          refId: payments.refId,
         })
-        .from(orders)
-        .where(and(
-          sql`${orders.paidAt} IS NOT NULL`,
-          sql`${orders.status} IN ('paid','shipped','delivered')`,
-        ))
-        .orderBy(desc(orders.paidAt))
+        .from(payments)
+        .where(and(...conds))
+        .orderBy(desc(payments.updatedAt))
         .limit(q.limit);
 
       for (const r of rows) {
-        if (!r.paidAt) continue;
+        const isPass = r.refType === "pass";
         items.push({
-          id: `order:${r.id}`,
-          occurredAt: r.paidAt,
+          id: `pay:${r.id}`,
+          occurredAt: r.updatedAt,
           type: "income",
-          category: "Магазин",
-          amountRub: r.totalRub,
-          note: `Заказ #${r.id.slice(0, 8)}`,
+          category: isPass ? "Hell Pass" : "Магазин",
+          amountRub: r.amountRub,
+          note: isPass
+            ? `Hell Pass #${r.refId.slice(0, 8)}`
+            : `Заказ #${r.refId.slice(0, 8)}`,
           source: "auto",
-          refType: "order",
-          refId: r.id,
+          refType: r.refType,
+          refId: r.refId,
           createdBy: null,
-          createdAt: r.paidAt,
+          createdAt: r.updatedAt,
         });
       }
     }
 
-    // Авто: Hell Pass
-    if (q.type !== "expense" && (!q.category || q.category === "Hell Pass")) {
-      const rows = await db
-        .select({
-          id: passPurchases.id,
-          priceRub: passPurchases.priceRub,
-          paidAt: passPurchases.paidAt,
-          tier: passPurchases.tier,
-        })
-        .from(passPurchases)
-        .where(and(
-          sql`${passPurchases.paidAt} IS NOT NULL`,
-          sql`${passPurchases.status} IN ('active','expired')`,
-        ))
-        .orderBy(desc(passPurchases.paidAt))
-        .limit(q.limit);
-
-      for (const r of rows) {
-        if (!r.paidAt) continue;
-        items.push({
-          id: `pass:${r.id}`,
-          occurredAt: r.paidAt,
-          type: "income",
-          category: "Hell Pass",
-          amountRub: r.priceRub,
-          note: `Hell Pass ${r.tier}`,
-          source: "auto",
-          refType: "pass_purchase",
-          refId: r.id,
-          createdBy: null,
-          createdAt: r.paidAt,
-        });
-      }
-    }
 
     // Ручные операции
     const conds = [eq(economyOperations.source, "manual")] as any[];
