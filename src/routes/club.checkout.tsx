@@ -14,6 +14,8 @@ import { useMyProfile, useMyAddress } from "@/lib/garage-api";
 import { formatRuPhone } from "@/lib/phone";
 import { hhToast } from "@/lib/hh-toast";
 import { BACKEND_URL } from "@/lib/api";
+import { startPayment } from "@/lib/pwa-pay";
+import { isStandalonePWA } from "@/lib/is-pwa";
 
 const PAY_ACTION = `${BACKEND_URL}/api/v1/payments/redirect`;
 
@@ -154,8 +156,8 @@ function ClubCheckoutPage() {
 
   const { sbp: sbpEnabled } = usePaymentMethods();
 
-  // Клиентская валидация. Бросаем preventDefault если данные не годятся —
-  // иначе пускаем нативный submit формы прямо на бекенд (он 303→на банк).
+  // Клиентская валидация. Для браузера — пускаем нативный submit (303→банк).
+  // Для PWA — preventDefault и идём через startPayment (JSON + /pay/go).
   const guard = (e: React.FormEvent<HTMLFormElement>) => {
     if (orderableItems.length === 0) {
       e.preventDefault();
@@ -194,6 +196,25 @@ function ClubCheckoutPage() {
       } catch {
         /* ignore */
       }
+    }
+
+    // PWA-режим — перехватываем сабмит и идём через GO-страницу.
+    if (isStandalonePWA()) {
+      e.preventDefault();
+      const submitter =
+        (e.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null;
+      const method = submitter?.value === "sbp" ? "sbp" : "card";
+      void startPayment({
+        target: "order",
+        items: itemsJson,
+        shipping_fio: form.name,
+        shipping_phone: form.phone,
+        shipping_city: cityFallback,
+        shipping_address: form.address,
+        method,
+      }).then((r) => {
+        if (!r.ok) hhToast.error("Ошибка оплаты", { meta: r.message });
+      });
     }
   };
 
