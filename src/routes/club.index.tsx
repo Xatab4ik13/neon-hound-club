@@ -771,7 +771,7 @@ function CommentsSheet({
           className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 md:px-5"
           style={{ WebkitOverflowScrolling: "touch" } as React.CSSProperties}
         >
-          {post.comments.length === 0 ? (
+          {post.commentsCount === 0 ? (
             <div className="grid h-full place-items-center text-[13px] text-muted-foreground">
               Будь первым — оставь комментарий
             </div>
