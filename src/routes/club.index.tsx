@@ -726,6 +726,37 @@ function CommentsSheet({
     return { topLevel, childrenByParentId };
   }, [post.comments]);
 
+  // Первый непрочитанный коммент верхнего уровня (для «Telegram»-разделителя и автоскролла).
+  const firstUnreadId = useMemo(() => {
+    if (!readMarkerLoaded || !lastReadAt) return null;
+    const lr = new Date(lastReadAt).getTime();
+    if (Number.isNaN(lr)) return null;
+    for (const c of topLevel) {
+      if (new Date(c.createdAt).getTime() > lr) return c.id;
+    }
+    return null;
+  }, [readMarkerLoaded, lastReadAt, topLevel]);
+
+  // Скроллим один раз когда всё готово: либо к разделителю, либо в самый низ.
+  useEffect(() => {
+    if (!open || !post.commentsFull || !readMarkerLoaded || didScrollRef.current) return;
+    if (post.comments.length === 0) return;
+    didScrollRef.current = true;
+    requestAnimationFrame(() => {
+      const list = listRef.current;
+      if (!list) return;
+      if (firstUnreadId) {
+        const target = list.querySelector<HTMLElement>(`[data-comment-id="${firstUnreadId}"]`);
+        if (target) {
+          // отступ сверху ~64px чтобы разделитель был виден
+          list.scrollTop = Math.max(0, target.offsetTop - 64);
+          return;
+        }
+      }
+      list.scrollTop = list.scrollHeight;
+    });
+  }, [open, post.commentsFull, readMarkerLoaded, firstUnreadId, post.comments.length]);
+
   const toggleCollapse = (id: string) => {
     setCollapsed((prev) => {
       const next = new Set(prev);
