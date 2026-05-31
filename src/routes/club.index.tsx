@@ -754,7 +754,7 @@ function CommentsSheet({
     <IOSSheet
       open={open}
       onOpenChange={onOpenChange}
-      title={`Комментарии · ${post.comments.length}`}
+      title={`Комментарии · ${post.commentsCount}`}
       fullHeight
       contentClassName="!p-0 !overflow-hidden flex flex-col min-h-0"
     >
