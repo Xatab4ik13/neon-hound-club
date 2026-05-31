@@ -14,6 +14,8 @@ import { useMyProfile, useMyAddress } from "@/lib/garage-api";
 import { formatRuPhone } from "@/lib/phone";
 import { hhToast } from "@/lib/hh-toast";
 import { BACKEND_URL } from "@/lib/api";
+import { startPayment } from "@/lib/pwa-pay";
+import { isStandalonePWA } from "@/lib/is-pwa";
 
 const PAY_ACTION = `${BACKEND_URL}/api/v1/payments/redirect`;
 
