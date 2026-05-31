@@ -224,18 +224,12 @@ export async function cartRoutes(app: FastifyInstance) {
 
     for (const it of items) {
       if (!validIds.has(it.productId)) continue;
-      await db
-        .insert(cartItems)
-        .values({
-          userId: session.sub,
-          productId: it.productId,
-          qty: it.qty,
-          size: it.size ?? null,
-        })
-        .onConflictDoUpdate({
-          target: sql`("user_id", "product_id", COALESCE("size", ''))` as any,
-          set: { qty: sql`${cartItems.qty} + ${it.qty}`, updatedAt: new Date() },
-        });
+      await db.execute(sql`
+        INSERT INTO "cart_items" ("user_id", "product_id", "qty", "size")
+        VALUES (${session.sub}, ${it.productId}, ${it.qty}, ${it.size ?? null})
+        ON CONFLICT ("user_id", "product_id", COALESCE("size", ''))
+        DO UPDATE SET "qty" = "cart_items"."qty" + EXCLUDED."qty", "updated_at" = now()
+      `);
     }
 
     return getCartLines(session.sub);
