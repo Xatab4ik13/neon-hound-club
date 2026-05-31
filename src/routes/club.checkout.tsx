@@ -148,15 +148,6 @@ function ClubCheckoutPage() {
     [items],
   );
 
-  // JSON, который кладём в hidden input — бекенд распарсит.
-  const itemsJson = useMemo(
-    () =>
-      JSON.stringify(
-        orderableItems.map((i) => ({ productId: i.productId!, qty: i.qty, size: i.size })),
-      ),
-    [orderableItems],
-  );
-
   const cityFallback = form.city.trim() || form.address.split(",")[0]?.trim() || "—";
 
   const set = <K extends keyof CheckoutProfile>(k: K, v: string) => {
@@ -213,7 +204,6 @@ function ClubCheckoutPage() {
       e.preventDefault();
       void startPayment({
         target: "order",
-        items: itemsJson,
         shipping_fio: form.name,
         shipping_phone: form.phone,
         shipping_city: cityFallback,
@@ -233,6 +223,13 @@ function ClubCheckoutPage() {
     <main className="mx-auto w-full max-w-3xl px-4 py-5 pb-[calc(32px+env(safe-area-inset-bottom))] md:max-w-6xl md:px-8 md:py-10 md:pb-16">
       <PageHeader title="Оформление" subtitle="Доставка и оплата" />
 
+      {search.payment_error ? (
+        <section className="mb-4 rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-foreground">
+          <div className="font-semibold text-destructive">Не удалось открыть оплату</div>
+          <div className="mt-1 text-muted-foreground">{search.payment_error}</div>
+        </section>
+      ) : null}
+
       <form
         method="POST"
         action={PAY_ACTION}
@@ -241,7 +238,6 @@ function ClubCheckoutPage() {
       >
         {/* Скрытые поля для бекенда — он сам создаст заказ и редиректнёт на банк */}
         <input type="hidden" name="target" value="order" />
-        <input type="hidden" name="items" value={itemsJson} />
         <input type="hidden" name="shipping_fio" value={form.name} />
         <input type="hidden" name="shipping_phone" value={form.phone} />
         <input type="hidden" name="shipping_city" value={cityFallback} />
