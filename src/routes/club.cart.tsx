@@ -3,7 +3,7 @@ import { useCallback, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { Minus, Plus, ShoppingBag, Ticket, Trash2, ChevronLeft } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
-import { toast } from "sonner";
+// toast удалён — больше никаких всплывашек в проекте
 import { useCart, type CartItem } from "@/hooks/use-cart";
 import { useViewer } from "@/hooks/use-viewer";
 import { haptic } from "@/hooks/use-haptic";
@@ -76,20 +76,13 @@ function ClubCartPage() {
     [items],
   );
 
-  // Undo-удаление через sonner-toast.
+  // Удаление без всплывающего уведомления.
   const handleRemove = useCallback(
     (item: CartItem) => {
       haptic("selection");
       remove(item.id);
-      toast("Удалено из корзины", {
-        description: item.name,
-        action: {
-          label: "Отмена",
-          onClick: () => setQty(item.id, item.qty),
-        },
-      });
     },
-    [remove, setQty],
+    [remove],
   );
 
   const handleQty = useCallback(
