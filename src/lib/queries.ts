@@ -207,7 +207,7 @@ export const qk = {
   raffle: (id: string) => ["raffles", "item", id] as const,
   myRaffles: ["raffles", "my"] as const,
   invitesMe: ["invites", "me"] as const,
-  paymentMethods: ["payments", "methods"] as const,
+  
 };
 
 // ---------- INVITES / REFERRALS ----------
@@ -417,9 +417,8 @@ export async function patchAdminOrder(
 export type PaymentStatus = "new" | "pending" | "authorized" | "confirmed" | "rejected" | "refunded";
 export type PaymentMethod = "card" | "sbp";
 
-export async function fetchPaymentMethods() {
-  return apiFetch<{ card: boolean; sbp: boolean }>("/api/v1/payments/methods");
-}
+
+
 
 export async function initOrderPayment(orderId: string, method: PaymentMethod = "card") {
   return apiFetch<{ paymentId: string; paymentUrl: string }>(

@@ -3,13 +3,13 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { CheckCircle2, MapPin, Ticket, Truck, User } from "lucide-react";
 import { PageHeader } from "@/components/club/PageHeader";
 import { PaymentBadges } from "@/components/brand/PaymentBadges";
-import { PayCardButton, PaySbpButton } from "@/components/brand/PayButton";
+import { PayButton } from "@/components/brand/PayButton";
 import { DadataInput } from "@/components/ui/DadataInput";
 import type { DadataAddressData } from "@/lib/dadata";
 import { LEGAL } from "@/data/legal";
 import { useCart } from "@/hooks/use-cart";
 import { useViewer } from "@/hooks/use-viewer";
-import { usePaymentMethods } from "@/hooks/use-payment-methods";
+
 import { useMyProfile, useMyAddress } from "@/lib/garage-api";
 import { formatRuPhone } from "@/lib/phone";
 import { hhToast } from "@/lib/hh-toast";
@@ -154,7 +154,7 @@ function ClubCheckoutPage() {
     setForm((f) => ({ ...f, [k]: v }));
   };
 
-  const { sbp: sbpEnabled } = usePaymentMethods();
+  
 
   // Клиентская валидация. Для браузера — пускаем нативный submit (303→банк).
   // Для PWA — preventDefault и идём через startPayment (JSON + /pay/go).
@@ -201,9 +201,6 @@ function ClubCheckoutPage() {
     // PWA-режим — перехватываем сабмит и идём через GO-страницу.
     if (isStandalonePWA()) {
       e.preventDefault();
-      const submitter =
-        (e.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null;
-      const method = submitter?.value === "sbp" ? "sbp" : "card";
       void startPayment({
         target: "order",
         items: itemsJson,
@@ -211,7 +208,8 @@ function ClubCheckoutPage() {
         shipping_phone: form.phone,
         shipping_city: cityFallback,
         shipping_address: form.address,
-        method,
+        method: "card",
+
       }).then((r) => {
         if (!r.ok) hhToast.error("Ошибка оплаты", { meta: r.message });
       });
@@ -413,39 +411,24 @@ function ClubCheckoutPage() {
 
           {/* Мобильные кнопки оплаты */}
           <div className="flex flex-col gap-2 md:hidden">
-            <PayCardButton
+            <PayButton
               type="submit"
               name="method"
               value="card"
               size="lg"
             />
-            {sbpEnabled && (
-              <PaySbpButton
-                type="submit"
-                name="method"
-                value="sbp"
-                size="lg"
-              />
-            )}
           </div>
 
           {/* Desktop кнопки оплаты */}
           <div className="hidden flex-col gap-2 md:flex">
-            <PayCardButton
+            <PayButton
               type="submit"
               name="method"
               value="card"
               size="lg"
             />
-            {sbpEnabled && (
-              <PaySbpButton
-                type="submit"
-                name="method"
-                value="sbp"
-                size="lg"
-              />
-            )}
           </div>
+
         </aside>
       </form>
     </main>

@@ -145,23 +145,26 @@ type PublicProps = {
   value?: string;
 };
 
-export function PayCardButton(props: PublicProps) {
+export function PayButton(props: PublicProps) {
   return (
     <Base
       {...props}
-      label={props.label ?? "Оплатить картой"}
+      label={props.label ?? "Оплатить"}
       logos={
         <>
           <VisaLogo />
           <MastercardLogo />
           <MirLogo />
+          <SbpLogo />
         </>
       }
     />
   );
 }
 
-export function PaySbpButton(props: PublicProps) {
-  return <Base {...props} label={props.label ?? "Оплатить через"} logos={<SbpLogo />} />;
-}
+// Алиасы для обратной совместимости — после объединения торговых точек
+// в Райфе карта и СБП доступны на одной форме банка, отдельные кнопки не нужны.
+export const PayCardButton = PayButton;
+export const PaySbpButton = PayButton;
+
 

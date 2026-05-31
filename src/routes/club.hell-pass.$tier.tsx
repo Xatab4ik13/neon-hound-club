@@ -7,11 +7,11 @@
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Check } from "lucide-react";
-import { PayCardButton, PaySbpButton } from "@/components/brand/PayButton";
+import { PayButton } from "@/components/brand/PayButton";
 import { getTier, type Perk, type Tier } from "@/data/hell-pass";
 import { fetchPassMe, qk, type PassTier } from "@/lib/queries";
 import { useViewer } from "@/hooks/use-viewer";
-import { usePaymentMethods } from "@/hooks/use-payment-methods";
+
 import { BACKEND_URL } from "@/lib/api";
 
 const TIER_RANK: Record<PassTier, number> = { silver: 1, gold: 2, platinum: 3 };
@@ -69,7 +69,7 @@ function TierDetailPage() {
   const { tier } = Route.useLoaderData() as { tier: Tier };
   const { isAuthed } = useViewer();
   const navigate = useNavigate();
-  const { sbp: sbpEnabled } = usePaymentMethods();
+
 
   const passQ = useQuery({
     queryKey: qk.passMe,
@@ -223,32 +223,19 @@ function TierDetailPage() {
               )}
 
               <div className="mt-4 flex flex-col gap-2">
-                {/* Карта */}
                 <form method="POST" action={PAY_ACTION} onSubmit={guard}>
                   <input type="hidden" name="target" value="pass" />
                   <input type="hidden" name="tier" value={tier.slug} />
                   <input type="hidden" name="method" value="card" />
-                  <PayCardButton
+                  <PayButton
                     type="submit"
                     disabled={!!isDowngrade}
-                    label={!isDowngrade ? `${baseLabel} картой` : baseLabel}
+                    label={baseLabel}
                     size="lg"
                   />
                 </form>
-                {/* СБП */}
-                {sbpEnabled && !isDowngrade && (
-                  <form method="POST" action={PAY_ACTION} onSubmit={guard}>
-                    <input type="hidden" name="target" value="pass" />
-                    <input type="hidden" name="tier" value={tier.slug} />
-                    <input type="hidden" name="method" value="sbp" />
-                    <PaySbpButton
-                      type="submit"
-                      label={`${baseLabel} через`}
-                      size="lg"
-                    />
-                  </form>
-                )}
               </div>
+
 
               <div className="mt-4 font-mono text-[10px] uppercase tracking-widest text-white/40">
                 {isDowngrade
