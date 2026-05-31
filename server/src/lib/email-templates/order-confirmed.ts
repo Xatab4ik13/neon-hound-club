@@ -185,6 +185,8 @@ export function orderConfirmedTemplate(opts: {
           </table>
         </td></tr>
 
+        ${digitalLinksBlock}
+
         ${ticketsBlock}
 
         <tr><td style="padding:20px 32px 28px;border-top:1px solid #1f1f1f;">
@@ -192,8 +194,11 @@ export function orderConfirmedTemplate(opts: {
             Что дальше
           </p>
           <p style="margin:0;font-size:13px;line-height:1.55;color:#999;">
-            Статус, трек-номер СДЭК и история заказов — в личном кабинете на
-            <a href="https://hhr.pro/club/orders" style="color:#ff2d95;text-decoration:none;">hhr.pro/club/orders</a>.
+            ${
+              isDigital
+                ? `Все покупки и ссылки на скачивание — в личном кабинете на <a href="https://hhr.pro/club/orders" style="color:#ff2d95;text-decoration:none;">hhr.pro/club/orders</a>.`
+                : `Статус, трек-номер СДЭК и история заказов — в личном кабинете на <a href="https://hhr.pro/club/orders" style="color:#ff2d95;text-decoration:none;">hhr.pro/club/orders</a>.`
+            }
           </p>
         </td></tr>
       </table>
