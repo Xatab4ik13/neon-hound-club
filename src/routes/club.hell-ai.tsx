@@ -422,6 +422,8 @@ type Chat = {
   updatedAt: number;
   /** true = сообщения подгружены с бэка (или это новый локальный чат) */
   loaded?: boolean;
+  /** Кол-во сообщений по данным сервера (для списка истории, чтобы не ждать загрузку чата). */
+  serverMessageCount?: number;
 };
 
 const ACTIVE_KEY = "hh:hellai:active:v1";
@@ -475,6 +477,7 @@ async function fetchChats(): Promise<Chat[]> {
     createdAt: c.createdAt ? new Date(c.createdAt).getTime() : Date.now(),
     updatedAt: c.updatedAt ? new Date(c.updatedAt).getTime() : Date.now(),
     loaded: false,
+    serverMessageCount: c.messageCount,
   }));
 }
 
@@ -1173,9 +1176,11 @@ function HistorySheet({
                     <ul className="space-y-2">
                       {g.items.map((c) => {
                         const active = c.id === activeId;
-                        const count = c.messages.length;
+                        const count = c.loaded
+                          ? c.messages.length
+                          : Math.ceil((c.serverMessageCount ?? 0) / 2);
                         const preview =
-                          c.messages.length === 0 ? "Пустой чат" : c.title;
+                          count === 0 ? "Пустой чат" : c.title || "Новый чат";
                         return (
                           <li key={c.id}>
                             <Swipeable
