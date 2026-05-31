@@ -7,6 +7,7 @@ import { orders, orderItems, products } from "../db/schema/shop.js";
 import { passPurchases } from "../db/schema/pass.js";
 import { raffles, raffleEntries } from "../db/schema/raffles.js";
 import { ticketsLedger } from "../db/schema/tickets.js";
+import { payments } from "../db/schema/payments.js";
 
 export async function adminDashboardRoutes(app: FastifyInstance) {
   app.addHook("preHandler", requireAdmin);
@@ -20,10 +21,12 @@ export async function adminDashboardRoutes(app: FastifyInstance) {
     const d7next = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 
     // --- KPI ---
+    // Выручка = подтверждённые банком платежи (orders + Hell Pass) за 30 дней.
+    // Единый источник истины с экономикой.
     const [revenueRow] = await db
-      .select({ total: sql<number>`COALESCE(SUM(${orders.totalRub}), 0)::int` })
-      .from(orders)
-      .where(and(gte(orders.paidAt, d30), eq(orders.status, "paid")));
+      .select({ total: sql<number>`COALESCE(SUM(${payments.amountRub}), 0)::int` })
+      .from(payments)
+      .where(and(eq(payments.status, "confirmed"), gte(payments.updatedAt, d30)));
 
     const [passActive] = await db
       .select({ c: sql<number>`COUNT(*)::int` })
