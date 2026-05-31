@@ -157,6 +157,7 @@ function mapComment(c: FeedCommentHydrated): FeedComment {
     authorSlug: author.slug,
     isBlogger: author.isBlogger,
     time: formatRelative(c.createdAt),
+    createdAt: c.createdAt,
     text: c.text,
     likes: c.likes,
     liked: c.liked,
