@@ -1,10 +1,12 @@
-import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   suggest,
   type DadataSuggestType,
   type DadataSuggestion,
 } from "@/lib/dadata";
+import { isStandalonePWA } from "@/lib/is-pwa";
+import { DadataIOSPicker } from "@/components/ui/DadataIOSPicker";
 
 type Props = {
   type: DadataSuggestType;
