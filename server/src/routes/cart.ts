@@ -52,6 +52,8 @@ type CartLine = {
   active: boolean;
   /** Текущий остаток по выбранной строке (учитывает размеры). null = без учёта. */
   stockAvailable: number | null;
+  /** Тип товара: physical | digital | preorder. */
+  kind: "physical" | "digital" | "preorder";
 };
 
 async function getCartLines(userId: string): Promise<{ items: CartLine[]; totalRub: number }> {
@@ -79,6 +81,7 @@ async function getCartLines(userId: string): Promise<{ items: CartLine[]; totalR
       stock: products.stock,
       sizes: products.sizes,
       active: products.active,
+      kind: products.kind,
     })
     .from(products)
     .where(inArray(products.id, ids));
@@ -99,6 +102,7 @@ async function getCartLines(userId: string): Promise<{ items: CartLine[]; totalR
         qty: r.qty,
         active: false,
         stockAvailable: 0,
+        kind: "physical",
       };
     }
     let stockAvailable: number | null = p.stock ?? null;
@@ -118,6 +122,7 @@ async function getCartLines(userId: string): Promise<{ items: CartLine[]; totalR
       qty: r.qty,
       active: p.active,
       stockAvailable,
+      kind: (p.kind ?? "physical") as CartLine["kind"],
     };
   });
 

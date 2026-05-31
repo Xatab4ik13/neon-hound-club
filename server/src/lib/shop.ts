@@ -1,11 +1,16 @@
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { orders, orderItems, products, cartItems } from "../db/schema/shop.js";
+import { users } from "../db/schema/users.js";
 import { userStickerPacks } from "../db/schema/stickers.js";
 import { ticketCredit } from "./tickets.js";
 import { awardXp } from "./xp.js";
 import { tryCompleteQuest } from "./quests.js";
 import { getActivePassPerks } from "./pass.js";
+import { sendMail } from "./mailer.js";
+import { orderConfirmedTemplate, type DigitalItem } from "./email-templates/order-confirmed.js";
+
+const FRONTEND_ORIGIN = (process.env.FRONTEND_ORIGIN || "https://hhr.pro").replace(/\/$/, "");
 
 export class OrderCreateError extends Error {
   code: string;
@@ -251,7 +256,77 @@ export async function markOrderPaid(orderId: string): Promise<{ ok: boolean; rea
   // Выдаём стикер-паки за товары заказа.
   await grantStickerPacksFromOrder(order.id, order.userId);
 
+  // Письмо «заказ принят». Не блокируем оплату на ошибке отправки.
+  try {
+    await sendOrderConfirmedEmail(order.id);
+  } catch (err) {
+    console.error("[order-confirmed mail] send failed", err);
+  }
+
   return { ok: true };
+}
+
+/**
+ * Шлёт письмо «заказ принят» по orderId.
+ * Для digital-товаров добавляет блок со ссылками на скачивание.
+ */
+async function sendOrderConfirmedEmail(orderId: string): Promise<void> {
+  const [order] = await db.select().from(orders).where(eq(orders.id, orderId)).limit(1);
+  if (!order) return;
+  const [user] = await db
+    .select({ email: users.email, nick: users.nick })
+    .from(users)
+    .where(eq(users.id, order.userId))
+    .limit(1);
+  if (!user?.email) return;
+
+  const items = await db
+    .select({
+      productId: orderItems.productId,
+      title: orderItems.titleSnapshot,
+      price: orderItems.priceRubSnapshot,
+      qty: orderItems.qty,
+    })
+    .from(orderItems)
+    .where(eq(orderItems.orderId, orderId));
+
+  // Подтягиваем digital-файлы для позиций.
+  const productIds = items.map((i) => i.productId).filter((x): x is string => !!x);
+  const digitalItems: DigitalItem[] = [];
+  if (productIds.length > 0) {
+    const prods = await db
+      .select({
+        id: products.id,
+        kind: products.kind,
+        digitalFileUrl: products.digitalFileUrl,
+        digitalFileName: products.digitalFileName,
+      })
+      .from(products)
+      .where(inArray(products.id, productIds));
+    const byId = new Map(prods.map((p) => [p.id, p]));
+    for (const it of items) {
+      const p = it.productId ? byId.get(it.productId) : undefined;
+      if (p && p.kind === "digital" && p.digitalFileUrl) {
+        digitalItems.push({
+          title: it.title,
+          url: p.digitalFileUrl,
+          fileName: p.digitalFileName,
+        });
+      }
+    }
+  }
+
+  const { subject, html, text } = orderConfirmedTemplate({
+    nick: user.nick,
+    orderNumber: `HHR-${order.id.slice(0, 8).toUpperCase()}`,
+    orderUrl: `${FRONTEND_ORIGIN}/club/orders/${order.id}`,
+    items: items.map((i) => ({ title: i.title, qty: i.qty, sumRub: i.price * i.qty })),
+    totalRub: order.totalRub,
+    ticketsBonus: order.bonusTicketsTotal,
+    digitalItems,
+  });
+
+  await sendMail({ to: user.email, subject, html, text });
 }
 
 /**

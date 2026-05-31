@@ -147,7 +147,16 @@ function ClubCheckoutPage() {
     [items],
   );
 
-  const cityFallback = form.city.trim() || form.address.split(",")[0]?.trim() || "—";
+  // Digital-only: в заказе одни цифровые товары → адрес не нужен.
+  const isDigitalOnly = useMemo(
+    () => orderableItems.length > 0 && orderableItems.every((i) => i.kind === "digital"),
+    [orderableItems],
+  );
+
+  const cityFallback = isDigitalOnly
+    ? "—"
+    : form.city.trim() || form.address.split(",")[0]?.trim() || "—";
+  const addressFallback = isDigitalOnly ? "—" : form.address;
 
   const set = <K extends keyof CheckoutProfile>(k: K, v: string) => {
     touchedRef.current.add(k);
@@ -175,7 +184,7 @@ function ClubCheckoutPage() {
       hhToast.error("Укажи телефон.");
       return;
     }
-    if (form.address.trim().length < 5) {
+    if (!isDigitalOnly && form.address.trim().length < 5) {
       e.preventDefault();
       hhToast.error("Укажи адрес доставки.");
       return;
@@ -206,7 +215,7 @@ function ClubCheckoutPage() {
         shipping_fio: form.name,
         shipping_phone: form.phone,
         shipping_city: cityFallback,
-        shipping_address: form.address,
+        shipping_address: addressFallback,
         method: "sbp",
       },
       { forceLandingPage: true },
@@ -241,7 +250,7 @@ function ClubCheckoutPage() {
         <input type="hidden" name="shipping_fio" value={form.name} />
         <input type="hidden" name="shipping_phone" value={form.phone} />
         <input type="hidden" name="shipping_city" value={cityFallback} />
-        <input type="hidden" name="shipping_address" value={form.address} />
+        <input type="hidden" name="shipping_address" value={addressFallback} />
 
         {/* ЛЕВАЯ КОЛОНКА: данные получателя/доставки */}
         <div className="space-y-5">
@@ -284,39 +293,57 @@ function ClubCheckoutPage() {
             </FieldRow>
           </Section>
 
-          {/* Доставка */}
-          <Section icon={<MapPin className="h-3.5 w-3.5" />} title="Доставка">
-            <FieldRow label="Адрес" last>
-              <DadataInput
-                type="address"
-                value={form.address}
-                onChange={(v) => set("address", v)}
-                onSelect={(s) => {
-                  const d = s.data as DadataAddressData;
-                  const city = d.city_with_type || d.settlement_with_type || "";
-                  setForm((f) => ({ ...f, address: s.value, city: city || f.city }));
-                  touchedRef.current.add("address");
-                  if (city) touchedRef.current.add("city");
-                }}
-                placeholder="Город, улица, дом, кв."
-                autoComplete="street-address"
-                required
-              />
-            </FieldRow>
-          </Section>
-
-          <div className="flex items-center gap-3 rounded-2xl border border-white/[0.06] bg-card/40 px-4 py-3">
-            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
-              <Truck className="h-4 w-4" />
-            </span>
-            <div className="min-w-0 flex-1">
-              <div className="text-[14px] font-semibold text-foreground">СДЭК</div>
-              <div className="text-[12px] text-muted-foreground">
-                По всей России, 2–5 дней. Расчёт курьером.
+          {/* Доставка / выдача */}
+          {isDigitalOnly ? (
+            <div className="flex items-center gap-3 rounded-2xl border border-primary/25 bg-primary/[0.06] px-4 py-3">
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/15 text-primary">
+                <CheckCircle2 className="h-4 w-4" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <div className="text-[14px] font-semibold text-foreground">
+                  Цифровой товар
+                </div>
+                <div className="text-[12px] text-muted-foreground">
+                  Файл придёт на {form.email || "указанный email"} сразу после оплаты.
+                </div>
               </div>
             </div>
-            <CheckCircle2 className="h-5 w-5 shrink-0 text-primary" />
-          </div>
+          ) : (
+            <>
+              <Section icon={<MapPin className="h-3.5 w-3.5" />} title="Доставка">
+                <FieldRow label="Адрес" last>
+                  <DadataInput
+                    type="address"
+                    value={form.address}
+                    onChange={(v) => set("address", v)}
+                    onSelect={(s) => {
+                      const d = s.data as DadataAddressData;
+                      const city = d.city_with_type || d.settlement_with_type || "";
+                      setForm((f) => ({ ...f, address: s.value, city: city || f.city }));
+                      touchedRef.current.add("address");
+                      if (city) touchedRef.current.add("city");
+                    }}
+                    placeholder="Город, улица, дом, кв."
+                    autoComplete="street-address"
+                    required
+                  />
+                </FieldRow>
+              </Section>
+
+              <div className="flex items-center gap-3 rounded-2xl border border-white/[0.06] bg-card/40 px-4 py-3">
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
+                  <Truck className="h-4 w-4" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="text-[14px] font-semibold text-foreground">СДЭК</div>
+                  <div className="text-[12px] text-muted-foreground">
+                    По всей России, 2–5 дней. Расчёт курьером.
+                  </div>
+                </div>
+                <CheckCircle2 className="h-5 w-5 shrink-0 text-primary" />
+              </div>
+            </>
+          )}
 
           <div className="rounded-2xl border border-white/[0.06] bg-card/40 px-4 py-3">
             <div className="mb-1 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
