@@ -133,16 +133,26 @@ export async function createPaymentForPass(
       .returning();
     return { payment: updated!, paymentUrl: order.payformUrl };
   } catch (e) {
+    const errorDetail =
+      e instanceof RaifApiError
+        ? { code: e.code, status: e.status, message: e.message, raw: e.raw }
+        : { message: String(e) };
+    // eslint-disable-next-line no-console
+    console.error("[raif.createOrder] pass payment init failed", {
+      paymentId: created!.id,
+      method,
+      ...errorDetail,
+    });
     await db
       .update(payments)
       .set({
         status: "rejected",
-        rawInit: { error: String(e) } as Record<string, unknown>,
+        rawInit: { error: errorDetail } as Record<string, unknown>,
         updatedAt: new Date(),
       })
       .where(eq(payments.id, created!.id));
     if (e instanceof RaifApiError) {
-      throw new PaymentInitError(e.code, e.message);
+      throw new PaymentInitError(e.code, `Райф: ${e.message}`);
     }
     throw new PaymentInitError("init_failed", "Не удалось создать платёж");
   }
@@ -209,16 +219,26 @@ export async function createPaymentForOrder(
       .returning();
     return { payment: updated!, paymentUrl: raifOrder.payformUrl };
   } catch (e) {
+    const errorDetail =
+      e instanceof RaifApiError
+        ? { code: e.code, status: e.status, message: e.message, raw: e.raw }
+        : { message: String(e) };
+    // eslint-disable-next-line no-console
+    console.error("[raif.createOrder] order payment init failed", {
+      paymentId: created!.id,
+      method,
+      ...errorDetail,
+    });
     await db
       .update(payments)
       .set({
         status: "rejected",
-        rawInit: { error: String(e) } as Record<string, unknown>,
+        rawInit: { error: errorDetail } as Record<string, unknown>,
         updatedAt: new Date(),
       })
       .where(eq(payments.id, created!.id));
     if (e instanceof RaifApiError) {
-      throw new PaymentInitError(e.code, e.message);
+      throw new PaymentInitError(e.code, `Райф: ${e.message}`);
     }
     throw new PaymentInitError("init_failed", "Не удалось создать платёж");
   }

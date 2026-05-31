@@ -54,7 +54,7 @@ function readProfile(): Partial<CheckoutProfile> {
 }
 
 function ClubCheckoutPage() {
-  const { items, total } = useCart();
+  const { items, total, loading: cartLoading } = useCart();
   const { isAuthed, user } = useViewer();
   const navigate = useNavigate();
   const search = useSearch({ from: "/club/checkout" }) as { payment_error?: string };
@@ -114,9 +114,18 @@ function ClubCheckoutPage() {
   }, [addressQ.data]);
 
   useEffect(() => {
-    if (!isAuthed) navigate({ to: "/login" });
-    else if (items.length === 0) navigate({ to: "/club/cart" });
-  }, [isAuthed, items.length, navigate]);
+    if (!isAuthed) {
+      navigate({ to: "/login" });
+      return;
+    }
+    // НЕ выкидываем юзера, пока корзина с бекенда ещё грузится — иначе
+    // после возврата с /payments/redirect он мигом улетит в /club/cart
+    // и не увидит ни тоста с ошибкой, ни самой страницы оформления.
+    if (cartLoading) return;
+    // Если бек вернул нас с ошибкой оплаты — даём увидеть тост, не редиректим.
+    if (search.payment_error) return;
+    if (items.length === 0) navigate({ to: "/club/cart" });
+  }, [isAuthed, items.length, cartLoading, search.payment_error, navigate]);
 
   // Если бекенд редиректнул сюда с ошибкой — показываем тост один раз.
   // НЕ чистим search моментально, чтобы юзер успел увидеть причину.
@@ -216,7 +225,8 @@ function ClubCheckoutPage() {
     }
   };
 
-  if (!isAuthed || items.length === 0) return null;
+  if (!isAuthed) return null;
+  if (items.length === 0 && !search.payment_error) return null;
 
   return (
     <main className="mx-auto w-full max-w-3xl px-4 py-5 pb-[calc(32px+env(safe-area-inset-bottom))] md:max-w-6xl md:px-8 md:py-10 md:pb-16">

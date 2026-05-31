@@ -6,11 +6,13 @@
 
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { ArrowLeft, Check } from "lucide-react";
 import { PayButton } from "@/components/brand/PayButton";
 import { getTier, type Perk, type Tier } from "@/data/hell-pass";
 import { fetchPassMe, qk, type PassTier } from "@/lib/queries";
 import { useViewer } from "@/hooks/use-viewer";
+import { hhToast } from "@/lib/hh-toast";
 
 import { BACKEND_URL } from "@/lib/api";
 
@@ -18,6 +20,10 @@ const TIER_RANK: Record<PassTier, number> = { silver: 1, gold: 2, platinum: 3 };
 const PAY_ACTION = `${BACKEND_URL}/api/v1/payments/redirect`;
 
 export const Route = createFileRoute("/club/hell-pass/$tier")({
+  validateSearch: (s: Record<string, unknown>): { payment_error?: string } => {
+    const v = typeof s.payment_error === "string" ? s.payment_error : undefined;
+    return v ? { payment_error: v } : {};
+  },
   loader: ({ params }) => {
     const tier = getTier(params.tier);
     if (!tier) throw notFound();
@@ -69,6 +75,17 @@ function TierDetailPage() {
   const { tier } = Route.useLoaderData() as { tier: Tier };
   const { isAuthed } = useViewer();
   const navigate = useNavigate();
+  const search = Route.useSearch();
+
+  // Если бек вернул нас сюда с ошибкой инициализации платежа — показываем тост.
+  useEffect(() => {
+    if (search.payment_error) {
+      // eslint-disable-next-line no-console
+      console.error("[payment_error]", search.payment_error);
+      hhToast.error("Ошибка оплаты", { meta: search.payment_error, duration: 15000 });
+    }
+  }, [search.payment_error]);
+
 
 
   const passQ = useQuery({
