@@ -30,8 +30,16 @@ async function payViaPwa(fields: Record<string, string>): Promise<PayResult> {
       },
       body: JSON.stringify(fields),
     });
-  } catch {
-    return { ok: false, message: "Нет сети. Проверь интернет." };
+  } catch (e) {
+    // fetch выбрасывает TypeError при network error / CORS / TLS / offline.
+    // Это НЕ всегда «нет интернета» — чаще всего CORS-preflight упал.
+    const offline = typeof navigator !== "undefined" && navigator.onLine === false;
+    return {
+      ok: false,
+      message: offline
+        ? "Нет сети. Проверь интернет."
+        : "Не удалось связаться с сервером оплаты. Попробуй ещё раз через минуту.",
+    };
   }
   let data: { paymentUrl?: string; paymentId?: string; message?: string } = {};
   try {
