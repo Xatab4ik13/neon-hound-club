@@ -1,11 +1,12 @@
-import { useState, forwardRef } from "react";
-import { Input } from "@/components/ui/input";
-import { formatRuPhone } from "@/lib/phone";
+import { forwardRef } from "react";
+import PhoneInputBase from "react-phone-number-input";
+import "react-phone-number-input/style.css";
+import { cn } from "@/lib/utils";
 
 type Props = {
   value?: string;
   defaultValue?: string;
-  onChange?: (formatted: string) => void;
+  onChange?: (value: string) => void;
   placeholder?: string;
   className?: string;
   required?: boolean;
@@ -13,32 +14,29 @@ type Props = {
 };
 
 /**
- * Поле телефона с автоформатом «+7 (XXX) XXX-XX-XX».
- * Работает и контролируемо (через value/onChange), и неконтролируемо
- * (через defaultValue) — для форм-заглушек без state.
+ * Международное поле телефона (E.164) с флагами и автоформатом по стране.
+ * Возвращает значение в формате "+<код страны><цифры>" (например "+79123456789").
+ * Дефолтная страна — Россия, но юзер может выбрать любую.
  */
 export const PhoneInput = forwardRef<HTMLInputElement, Props>(function PhoneInput(
-  { value, defaultValue, onChange, placeholder = "+7 (___) ___-__-__", className, required, autoComplete = "tel" },
+  { value, defaultValue, onChange, placeholder = "+7 999 123-45-67", className, required, autoComplete = "tel" },
   ref,
 ) {
-  const isControlled = value !== undefined;
-  const [internal, setInternal] = useState(() => formatRuPhone(defaultValue ?? ""));
-  const shown = isControlled ? (value ?? "") : internal;
-
   return (
-    <Input
-      ref={ref}
-      type="tel"
-      inputMode="tel"
-      autoComplete={autoComplete}
+    <PhoneInputBase
+      ref={ref as never}
+      international
+      defaultCountry="RU"
+      countryCallingCodeEditable={false}
+      value={value ?? defaultValue ?? ""}
+      onChange={(v) => onChange?.(v ?? "")}
       placeholder={placeholder}
-      className={className}
+      autoComplete={autoComplete}
       required={required}
-      value={shown}
-      onChange={(e) => {
-        const next = formatRuPhone(e.target.value);
-        if (!isControlled) setInternal(next);
-        onChange?.(next);
+      className={cn("hh-phone-input", className)}
+      numberInputProps={{
+        className:
+          "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
       }}
     />
   );
