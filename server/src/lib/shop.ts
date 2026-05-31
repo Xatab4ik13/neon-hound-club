@@ -1,11 +1,16 @@
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { orders, orderItems, products, cartItems } from "../db/schema/shop.js";
+import { users } from "../db/schema/users.js";
 import { userStickerPacks } from "../db/schema/stickers.js";
 import { ticketCredit } from "./tickets.js";
 import { awardXp } from "./xp.js";
 import { tryCompleteQuest } from "./quests.js";
 import { getActivePassPerks } from "./pass.js";
+import { sendMail } from "./mailer.js";
+import { orderConfirmedTemplate, type DigitalItem } from "./email-templates/order-confirmed.js";
+
+const FRONTEND_ORIGIN = (process.env.FRONTEND_ORIGIN || "https://hhr.pro").replace(/\/$/, "");
 
 export class OrderCreateError extends Error {
   code: string;
