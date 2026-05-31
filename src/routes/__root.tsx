@@ -120,6 +120,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <ViewerProvider>
         <CartProvider>
+          <PaymentErrorWatcher />
           <Outlet />
         </CartProvider>
       </ViewerProvider>
