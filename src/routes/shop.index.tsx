@@ -405,8 +405,12 @@ function ticketsWord(n: number) {
 
 function ProductCard({ product, index }: { product: ShopProductListItem; index: number }) {
   const [hover, setHover] = useState(false);
+  const cart = useCart();
+  const [adding, setAdding] = useState(false);
 
   const sold = product.stock !== null && product.stock <= 0;
+  const hasSizes = product.sizes.length > 0;
+  const canQuickAdd = !sold && product.kind !== "preorder" && !hasSizes;
   const badgeLabel = sold
     ? "Распродано"
     : product.kind === "preorder"
@@ -421,6 +425,32 @@ function ProductCard({ product, index }: { product: ShopProductListItem; index: 
       : "bg-primary text-primary-foreground";
 
   const cover = product.images[0] ?? (product.slug === "stickerpack-special" ? SPECIAL_PACK_COVER : undefined);
+
+  const handleQuickAdd = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (adding) return;
+    setAdding(true);
+    try {
+      await cart.add({
+        productId: product.id,
+        slug: product.slug,
+        name: product.title,
+        price: product.priceRub,
+        image: cover ?? "",
+        size: null,
+        ticketsBonus: product.bonusTickets,
+        kind: product.kind,
+      });
+      hhToast.success("Добавлено в корзину", { description: product.title });
+    } catch (err) {
+      hhToast.error("Не удалось добавить", {
+        description: err instanceof Error ? err.message : "Попробуй ещё раз",
+      });
+    } finally {
+      setAdding(false);
+    }
+  };
 
   return (
     <Link
@@ -456,23 +486,24 @@ function ProductCard({ product, index }: { product: ShopProductListItem; index: 
         )}
 
         {/* Quick add */}
-        <button
-          type="button"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-          }}
-          aria-label={`Добавить ${product.title} в корзину`}
-          className={`absolute bottom-3 left-3 right-3 flex items-center justify-center gap-2 rounded-full bg-primary py-2.5 text-xs font-semibold uppercase tracking-widest text-primary-foreground transition-all duration-300 ${
-            hover
-              ? "translate-y-0 opacity-100"
-              : "pointer-events-none translate-y-3 opacity-0"
-          }`}
-        >
-          В корзину
-          <span aria-hidden>+</span>
-        </button>
+        {canQuickAdd && (
+          <button
+            type="button"
+            onClick={handleQuickAdd}
+            disabled={adding}
+            aria-label={`Добавить ${product.title} в корзину`}
+            className={`absolute bottom-3 left-3 right-3 flex items-center justify-center gap-2 rounded-full bg-primary py-2.5 text-xs font-semibold uppercase tracking-widest text-primary-foreground transition-all duration-300 disabled:opacity-60 ${
+              hover
+                ? "translate-y-0 opacity-100"
+                : "pointer-events-none translate-y-3 opacity-0"
+            }`}
+          >
+            {adding ? "Добавляю…" : "В корзину"}
+            <span aria-hidden>+</span>
+          </button>
+        )}
       </div>
+
 
       <div className="flex flex-col gap-1 px-4 py-4 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3">
         <h3 className="text-sm font-medium uppercase tracking-wider">
