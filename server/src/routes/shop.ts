@@ -19,6 +19,7 @@ import {
   getOrderWithItems,
   markOrderPaid,
   refundOrder,
+  restockOrder,
 } from "../lib/shop.js";
 import { getActivePassPerks } from "../lib/pass.js";
 
@@ -271,21 +272,8 @@ export async function shopRoutes(app: FastifyInstance) {
         return reply.code(409).send({ error: "cannot_cancel", status: order.status });
       }
 
-      const items = await db
-        .select({
-          productId: orderItems.productId,
-          qty: orderItems.qty,
-          size: orderItems.sizeSnapshot,
-        })
-        .from(orderItems)
-        .where(eq(orderItems.orderId, order.id));
-
-      const { incrementStockIfTracked, incrementSizeStockIfTracked } = await import("../lib/shop.js");
-      for (const it of items) {
-        if (!it.productId) continue;
-        if (it.size) await incrementSizeStockIfTracked(it.productId, it.size, it.qty);
-        else await incrementStockIfTracked(it.productId, it.qty);
-      }
+      const { restockOrder } = await import("../lib/shop.js");
+      await restockOrder(order.id);
 
       await db
         .delete(orders)
@@ -503,10 +491,20 @@ export async function adminShopRoutes(app: FastifyInstance) {
       const r = await refundOrder(req.params.id);
       if (!r.ok) return reply.code(400).send({ error: r.reason });
     } else if (status) {
+      // Загружаем текущий статус, чтобы понять, нужно ли возвращать остатки.
+      const [current] = await db.select({ status: orders.status }).from(orders).where(eq(orders.id, req.params.id)).limit(1);
+      if (!current) return reply.code(404).send({ error: "not_found" });
+
       const patch: Record<string, unknown> = { status, updatedAt: new Date() };
       if (status === "shipped") patch.shippedAt = new Date();
       const [row] = await db.update(orders).set(patch).where(eq(orders.id, req.params.id)).returning();
       if (!row) return reply.code(404).send({ error: "not_found" });
+
+      // При переходе в cancelled из активных статусов — возвращаем остатки.
+      // Из cancelled/refunded — уже не трогаем (идемпотентность).
+      if (status === "cancelled" && current.status !== "cancelled" && current.status !== "refunded") {
+        await restockOrder(req.params.id);
+      }
     }
 
     if (cdekTrack !== undefined) {

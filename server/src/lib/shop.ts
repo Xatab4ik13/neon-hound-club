@@ -383,6 +383,29 @@ export async function incrementSizeStockIfTracked(
 }
 
 /**
+ * Возвращает остатки на товары/размеры по позициям заказа.
+ * Используется при ручной отмене (юзером или админом) и при истечении заказа.
+ * Не трогает сам заказ — только остатки. Вызывающий должен сам гарантировать
+ * однократность (через DELETE заказа или через переход в cancelled один раз).
+ */
+export async function restockOrder(orderId: string): Promise<void> {
+  const items = await db
+    .select({
+      productId: orderItems.productId,
+      qty: orderItems.qty,
+      size: orderItems.sizeSnapshot,
+    })
+    .from(orderItems)
+    .where(eq(orderItems.orderId, orderId));
+
+  for (const it of items) {
+    if (!it.productId) continue;
+    if (it.size) await incrementSizeStockIfTracked(it.productId, it.size, it.qty);
+    else await incrementStockIfTracked(it.productId, it.qty);
+  }
+}
+
+/**
  * Воркер: находит pending_payment-заказы с истёкшим expires_at, возвращает
  * остатки на товары/размеры и сносит сами заказы (с каскадом на order_items).
  * Возвращает количество удалённых заказов.
@@ -403,21 +426,7 @@ export async function expireUnpaidOrders(): Promise<number> {
 
   let removed = 0;
   for (const { id } of expired) {
-    const items = await db
-      .select({
-        productId: orderItems.productId,
-        qty: orderItems.qty,
-        size: orderItems.sizeSnapshot,
-      })
-      .from(orderItems)
-      .where(eq(orderItems.orderId, id));
-
-    for (const it of items) {
-      if (!it.productId) continue;
-      if (it.size) await incrementSizeStockIfTracked(it.productId, it.size, it.qty);
-      else await incrementStockIfTracked(it.productId, it.qty);
-    }
-
+    await restockOrder(id);
     // order_items удалятся каскадно через FK on delete cascade
     const res = await db
       .delete(orders)
