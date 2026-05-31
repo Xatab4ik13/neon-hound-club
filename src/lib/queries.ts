@@ -207,7 +207,7 @@ export const qk = {
   raffle: (id: string) => ["raffles", "item", id] as const,
   myRaffles: ["raffles", "my"] as const,
   invitesMe: ["invites", "me"] as const,
-  paymentMethods: ["payments", "methods"] as const,
+  
 };
 
 // ---------- INVITES / REFERRALS ----------
