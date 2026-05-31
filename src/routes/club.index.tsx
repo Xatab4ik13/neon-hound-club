@@ -337,7 +337,7 @@ export const PostCard = memo(function PostCard({ post, moderate = false }: { pos
           className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 font-mono text-[12px] font-bold tabular-nums text-foreground transition-all hover:border-primary/40 hover:text-primary active:scale-95"
         >
           <MessageCircle className="h-4 w-4" strokeWidth={2} />
-          <span>{formatCount(post.comments.length)}</span>
+          <span>{formatCount(post.commentsCount)}</span>
         </button>
 
         <button
@@ -356,6 +356,7 @@ export const PostCard = memo(function PostCard({ post, moderate = false }: { pos
 
       <CommentsPreview
         comments={post.comments}
+        totalCount={post.commentsCount}
         onOpen={() => { setCommentsEverOpened(true); setCommentsOpen(true); }}
       />
       </div>
@@ -559,12 +560,14 @@ function PostAction({
 
 const CommentsPreview = memo(function CommentsPreview({
   comments,
+  totalCount,
   onOpen,
 }: {
   comments: Comment[];
+  totalCount: number;
   onOpen: () => void;
 }) {
-  if (comments.length === 0) {
+  if (totalCount === 0) {
     return (
       <button
         type="button"
@@ -582,18 +585,20 @@ const CommentsPreview = memo(function CommentsPreview({
       onClick={onOpen}
       className="flex w-full flex-col gap-2 px-4 pb-4 pt-1 text-left transition-opacity active:opacity-70 md:px-5"
     >
-      <div className="flex gap-2.5 border-l-2 border-primary pl-2.5">
-        <div className="min-w-0 flex-1">
-          <div className="truncate font-mono text-[10px] font-black uppercase tracking-[0.18em] text-primary">
-            {last.author.nick}
-          </div>
-          <div className="mt-0.5 line-clamp-2 text-[13px] leading-snug text-foreground/85">
-            {last.text.startsWith("::sticker::") ? "🖼 Стикер" : last.text}
+      {last && (
+        <div className="flex gap-2.5 border-l-2 border-primary pl-2.5">
+          <div className="min-w-0 flex-1">
+            <div className="truncate font-mono text-[10px] font-black uppercase tracking-[0.18em] text-primary">
+              {last.author.nick}
+            </div>
+            <div className="mt-0.5 line-clamp-2 text-[13px] leading-snug text-foreground/85">
+              {last.text.startsWith("::sticker::") ? "🖼 Стикер" : last.text}
+            </div>
           </div>
         </div>
-      </div>
+      )}
       <div className="inline-flex items-center gap-1 font-mono text-[10px] font-black uppercase tracking-[0.18em] text-primary">
-        Все комментарии · {comments.length}
+        Все комментарии · {totalCount}
         <span>→</span>
       </div>
     </button>
@@ -630,10 +635,16 @@ function CommentsSheet({
       el.scrollHeight - el.scrollTop - el.clientHeight < 80;
   };
 
-  // сбросить reply при закрытии
+  // сбросить reply при закрытии; при открытии — подгрузить ПОЛНЫЙ список коментов
   useEffect(() => {
-    if (!open) setReplyTo(null);
-  }, [open]);
+    if (!open) {
+      setReplyTo(null);
+      return;
+    }
+    if (!post.commentsFull) {
+      feedStore.loadFullComments(post.id);
+    }
+  }, [open, post.id, post.commentsFull]);
 
   // Когда клавиатура появилась/исчезла — если были внизу, остаёмся внизу.
   useEffect(() => {
@@ -749,7 +760,7 @@ function CommentsSheet({
     <IOSSheet
       open={open}
       onOpenChange={onOpenChange}
-      title={`Комментарии · ${post.comments.length}`}
+      title={`Комментарии · ${post.commentsCount}`}
       fullHeight
       contentClassName="!p-0 !overflow-hidden flex flex-col min-h-0"
     >
@@ -760,7 +771,7 @@ function CommentsSheet({
           className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 md:px-5"
           style={{ WebkitOverflowScrolling: "touch" } as React.CSSProperties}
         >
-          {post.comments.length === 0 ? (
+          {post.commentsCount === 0 ? (
             <div className="grid h-full place-items-center text-[13px] text-muted-foreground">
               Будь первым — оставь комментарий
             </div>
