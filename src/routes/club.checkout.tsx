@@ -413,39 +413,24 @@ function ClubCheckoutPage() {
 
           {/* Мобильные кнопки оплаты */}
           <div className="flex flex-col gap-2 md:hidden">
-            <PayCardButton
+            <PayButton
               type="submit"
               name="method"
               value="card"
               size="lg"
             />
-            {sbpEnabled && (
-              <PaySbpButton
-                type="submit"
-                name="method"
-                value="sbp"
-                size="lg"
-              />
-            )}
           </div>
 
           {/* Desktop кнопки оплаты */}
           <div className="hidden flex-col gap-2 md:flex">
-            <PayCardButton
+            <PayButton
               type="submit"
               name="method"
               value="card"
               size="lg"
             />
-            {sbpEnabled && (
-              <PaySbpButton
-                type="submit"
-                name="method"
-                value="sbp"
-                size="lg"
-              />
-            )}
           </div>
+
         </aside>
       </form>
     </main>
