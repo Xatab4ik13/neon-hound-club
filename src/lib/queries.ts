@@ -201,6 +201,8 @@ export const qk = {
   shopShowcase: ["shop", "showcase"] as const,
   shopOrders: ["shop", "orders"] as const,
   shopOrder: (id: string) => ["shop", "order", id] as const,
+  adminOrders: (status?: string) => ["admin", "orders", status ?? "all"] as const,
+  adminOrder: (id: string) => ["admin", "order", id] as const,
   raffles: ["raffles", "list"] as const,
   raffle: (id: string) => ["raffles", "item", id] as const,
   myRaffles: ["raffles", "my"] as const,
@@ -386,6 +388,27 @@ export async function createOrder(input: CreateOrderInput) {
   return apiFetch<ShopOrderWithItems>("/api/v1/shop/orders", {
     method: "POST",
     body: JSON.stringify(input),
+  });
+}
+
+// ---------- ADMIN: ORDERS ----------
+
+export async function fetchAdminOrders(status?: ShopOrderStatus) {
+  const qs = status ? `?status=${encodeURIComponent(status)}&limit=200` : "?limit=200";
+  return apiFetch<{ items: ShopOrder[] }>(`/api/v1/admin/shop/orders${qs}`);
+}
+
+export async function fetchAdminOrder(id: string) {
+  return apiFetch<ShopOrderWithItems>(`/api/v1/admin/shop/orders/${id}`);
+}
+
+export async function patchAdminOrder(
+  id: string,
+  patch: { status?: ShopOrderStatus; cdekTrack?: string | null },
+) {
+  return apiFetch<ShopOrderWithItems>(`/api/v1/admin/shop/orders/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(patch),
   });
 }
 

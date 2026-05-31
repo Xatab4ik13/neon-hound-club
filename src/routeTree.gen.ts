@@ -58,6 +58,7 @@ import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as AdminSchoolRouteImport } from './routes/admin.school'
 import { Route as AdminRafflesRouteImport } from './routes/admin.raffles'
 import { Route as AdminQuestsRouteImport } from './routes/admin.quests'
+import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
 import { Route as AdminHellAiRouteImport } from './routes/admin.hell-ai'
 import { Route as AdminEconomyRouteImport } from './routes/admin.economy'
 import { Route as AdminCdekRouteImport } from './routes/admin.cdek'
@@ -322,6 +323,11 @@ const AdminQuestsRoute = AdminQuestsRouteImport.update({
   path: '/quests',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminOrdersRoute = AdminOrdersRouteImport.update({
+  id: '/orders',
+  path: '/orders',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminHellAiRoute = AdminHellAiRouteImport.update({
   id: '/hell-ai',
   path: '/hell-ai',
@@ -430,6 +436,7 @@ export interface FileRoutesByFullPath {
   '/admin/cdek': typeof AdminCdekRoute
   '/admin/economy': typeof AdminEconomyRoute
   '/admin/hell-ai': typeof AdminHellAiRoute
+  '/admin/orders': typeof AdminOrdersRoute
   '/admin/quests': typeof AdminQuestsRoute
   '/admin/raffles': typeof AdminRafflesRoute
   '/admin/school': typeof AdminSchoolRoute
@@ -496,6 +503,7 @@ export interface FileRoutesByTo {
   '/admin/cdek': typeof AdminCdekRoute
   '/admin/economy': typeof AdminEconomyRoute
   '/admin/hell-ai': typeof AdminHellAiRoute
+  '/admin/orders': typeof AdminOrdersRoute
   '/admin/quests': typeof AdminQuestsRoute
   '/admin/raffles': typeof AdminRafflesRoute
   '/admin/school': typeof AdminSchoolRoute
@@ -566,6 +574,7 @@ export interface FileRoutesById {
   '/admin/cdek': typeof AdminCdekRoute
   '/admin/economy': typeof AdminEconomyRoute
   '/admin/hell-ai': typeof AdminHellAiRoute
+  '/admin/orders': typeof AdminOrdersRoute
   '/admin/quests': typeof AdminQuestsRoute
   '/admin/raffles': typeof AdminRafflesRoute
   '/admin/school': typeof AdminSchoolRoute
@@ -637,6 +646,7 @@ export interface FileRouteTypes {
     | '/admin/cdek'
     | '/admin/economy'
     | '/admin/hell-ai'
+    | '/admin/orders'
     | '/admin/quests'
     | '/admin/raffles'
     | '/admin/school'
@@ -703,6 +713,7 @@ export interface FileRouteTypes {
     | '/admin/cdek'
     | '/admin/economy'
     | '/admin/hell-ai'
+    | '/admin/orders'
     | '/admin/quests'
     | '/admin/raffles'
     | '/admin/school'
@@ -772,6 +783,7 @@ export interface FileRouteTypes {
     | '/admin/cdek'
     | '/admin/economy'
     | '/admin/hell-ai'
+    | '/admin/orders'
     | '/admin/quests'
     | '/admin/raffles'
     | '/admin/school'
@@ -1198,6 +1210,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminQuestsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/orders': {
+      id: '/admin/orders'
+      path: '/orders'
+      fullPath: '/admin/orders'
+      preLoaderRoute: typeof AdminOrdersRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/hell-ai': {
       id: '/admin/hell-ai'
       path: '/hell-ai'
@@ -1332,6 +1351,7 @@ interface AdminRouteChildren {
   AdminCdekRoute: typeof AdminCdekRoute
   AdminEconomyRoute: typeof AdminEconomyRoute
   AdminHellAiRoute: typeof AdminHellAiRoute
+  AdminOrdersRoute: typeof AdminOrdersRoute
   AdminQuestsRoute: typeof AdminQuestsRoute
   AdminRafflesRoute: typeof AdminRafflesRoute
   AdminSchoolRoute: typeof AdminSchoolRoute
@@ -1347,6 +1367,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminCdekRoute: AdminCdekRoute,
   AdminEconomyRoute: AdminEconomyRoute,
   AdminHellAiRoute: AdminHellAiRoute,
+  AdminOrdersRoute: AdminOrdersRoute,
   AdminQuestsRoute: AdminQuestsRoute,
   AdminRafflesRoute: AdminRafflesRoute,
   AdminSchoolRoute: AdminSchoolRoute,
