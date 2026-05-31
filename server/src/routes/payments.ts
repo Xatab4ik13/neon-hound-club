@@ -140,7 +140,7 @@ export async function paymentsRoutes(app: FastifyInstance) {
       if (!parsed.success) return reply.code(400).send({ error: "invalid_id" });
       const bodyParsed = initBodySchema.safeParse(req.body ?? {});
       if (!bodyParsed.success) return reply.code(400).send({ error: "invalid_method" });
-      const method = bodyParsed.data?.method ?? "card";
+      const method = bodyParsed.data?.method ?? "sbp";
       const session = req.user as SessionPayload;
       try {
         const r = await createPaymentForPass(parsed.data.id, session.sub, method);
@@ -163,7 +163,7 @@ export async function paymentsRoutes(app: FastifyInstance) {
       if (!parsed.success) return reply.code(400).send({ error: "invalid_id" });
       const bodyParsed = initBodySchema.safeParse(req.body ?? {});
       if (!bodyParsed.success) return reply.code(400).send({ error: "invalid_method" });
-      const method = bodyParsed.data?.method ?? "card";
+      const method = bodyParsed.data?.method ?? "sbp";
       const session = req.user as SessionPayload;
       try {
         const r = await createPaymentForOrder(parsed.data.id, session.sub, method);
@@ -225,7 +225,7 @@ export async function paymentsRoutes(app: FastifyInstance) {
         return replyErr("/club/hell-pass", "Неверные данные");
       }
       const { tier } = parsed.data;
-      const method = parsed.data.method ?? "card";
+      const method = parsed.data.method ?? "sbp";
       try {
         const purchase = await createPassPurchase(session.sub, tier);
         const r = await createPaymentForPass(purchase.id, session.sub, method);
@@ -247,7 +247,7 @@ export async function paymentsRoutes(app: FastifyInstance) {
       if (!parsed.success) {
         return replyErr("/club/checkout", parsed.error.issues[0]?.message ?? "Неверные данные");
       }
-      const method = parsed.data.method ?? "card";
+      const method = parsed.data.method ?? "sbp";
 
       try {
         let orderId: string;
@@ -299,7 +299,7 @@ export async function paymentsRoutes(app: FastifyInstance) {
       if (!parsed.success) {
         return replyErr("/club/orders", "Неверный заказ");
       }
-      const method = parsed.data.method ?? "card";
+      const method = parsed.data.method ?? "sbp";
       try {
         const r = await createPaymentForOrder(parsed.data.order_id, session.sub, method);
         return replyOk(r.paymentUrl);
