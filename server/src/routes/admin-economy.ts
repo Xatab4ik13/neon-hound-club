@@ -7,15 +7,17 @@ import {
   economyOperations,
   economyPartners,
 } from "../db/schema/economy.js";
-import { orders } from "../db/schema/shop.js";
-import { passPurchases } from "../db/schema/pass.js";
+import { payments } from "../db/schema/payments.js";
 import { requireAdmin, type SessionPayload } from "../lib/auth.js";
 
-// Экономика работает в реальном времени:
-//   income  = paid orders + paid Hell Pass + ручные income-операции
+// Экономика — единый источник истины: payments.status='confirmed'.
+// Это реально подтверждённые банком деньги. Заказы/Pass, активированные
+// вручную без оплаты, в выручку НЕ попадают (это и есть смысл «реальных денег»).
+//   income  = confirmed payments + ручные income-операции
+//             ref_type='order' → категория "Магазин"
+//             ref_type='pass'  → категория "Hell Pass"
 //   expense = ручные expense-операции
 // Таблица economy_operations используется ТОЛЬКО для ручных операций.
-// Авто-доходы выводятся виртуально из orders/passPurchases — без дублей и без sync.
 
 
 // ---------- schemas ----------
@@ -64,31 +66,15 @@ export async function adminEconomyRoutes(app: FastifyInstance) {
     const fromDate = q.from ? new Date(q.from) : null;
     const toDate = q.to ? new Date(q.to) : null;
 
-    // ---- Авто-доходы: реально оплаченные заказы (paid/shipped/delivered).
-    // Считаем по paid_at, а не по статусу — статус потом меняется на shipped/delivered,
-    // но заказ всё равно оплачен и должен быть в доходе.
-    const orderConds = [
-      sql`${orders.paidAt} IS NOT NULL`,
-      sql`${orders.status} IN ('paid','shipped','delivered')`,
-    ] as any[];
-    if (fromDate) orderConds.push(gte(orders.paidAt, fromDate));
-    if (toDate) orderConds.push(lte(orders.paidAt, toDate));
-    const [ordersIncome] = await db
-      .select({ total: sql<number>`COALESCE(SUM(${orders.totalRub}), 0)::int` })
-      .from(orders)
-      .where(and(...orderConds));
-
-    // ---- Авто-доходы: оплаченный Hell Pass (active/expired — оба оплачены).
-    const passConds = [
-      sql`${passPurchases.paidAt} IS NOT NULL`,
-      sql`${passPurchases.status} IN ('active','expired')`,
-    ] as any[];
-    if (fromDate) passConds.push(gte(passPurchases.paidAt, fromDate));
-    if (toDate) passConds.push(lte(passPurchases.paidAt, toDate));
-    const [passIncome] = await db
-      .select({ total: sql<number>`COALESCE(SUM(${passPurchases.priceRub}), 0)::int` })
-      .from(passPurchases)
-      .where(and(...passConds));
+    // ---- Авто-доходы: подтверждённые платежи (реальные деньги от банка).
+    //      Дата платежа = payments.updated_at (момент подтверждения).
+    const payConds = [eq(payments.status, "confirmed")] as any[];
+    if (fromDate) payConds.push(gte(payments.updatedAt, fromDate));
+    if (toDate) payConds.push(lte(payments.updatedAt, toDate));
+    const [paymentsIncome] = await db
+      .select({ total: sql<number>`COALESCE(SUM(${payments.amountRub}), 0)::int` })
+      .from(payments)
+      .where(and(...payConds));
 
 
     // ---- Ручные операции ----
@@ -107,7 +93,7 @@ export async function adminEconomyRoutes(app: FastifyInstance) {
       .from(economyOperations)
       .where(manualWhere ? and(manualWhere, eq(economyOperations.type, "expense")) : eq(economyOperations.type, "expense"));
 
-    const income = (ordersIncome?.total ?? 0) + (passIncome?.total ?? 0) + (manualIncome?.total ?? 0);
+    const income = (paymentsIncome?.total ?? 0) + (manualIncome?.total ?? 0);
     const expense = manualExpense?.total ?? 0;
 
     // ---- P&L по месяцам (последние 6) ----
@@ -120,25 +106,14 @@ export async function adminEconomyRoutes(app: FastifyInstance) {
         SELECT to_char(date_trunc('month', m), 'YYYY-MM') AS month
         FROM generate_series(date_trunc('month', now()) - interval '5 months', date_trunc('month', now()), interval '1 month') AS m
       ),
-      orders_m AS (
-        SELECT to_char(date_trunc('month', paid_at), 'YYYY-MM') AS month,
-               SUM(total_rub)::int AS amount
-        FROM orders
-        WHERE paid_at IS NOT NULL
-          AND status IN ('paid','shipped','delivered')
-          AND paid_at >= date_trunc('month', now()) - interval '5 months'
+      pay_m AS (
+        SELECT to_char(date_trunc('month', updated_at), 'YYYY-MM') AS month,
+               SUM(amount_rub)::int AS amount
+        FROM payments
+        WHERE status = 'confirmed'
+          AND updated_at >= date_trunc('month', now()) - interval '5 months'
         GROUP BY 1
       ),
-      pass_m AS (
-        SELECT to_char(date_trunc('month', paid_at), 'YYYY-MM') AS month,
-               SUM(price_rub)::int AS amount
-        FROM pass_purchases
-        WHERE paid_at IS NOT NULL
-          AND status IN ('active','expired')
-          AND paid_at >= date_trunc('month', now()) - interval '5 months'
-        GROUP BY 1
-      ),
-
       manual_m AS (
         SELECT to_char(date_trunc('month', occurred_at), 'YYYY-MM') AS month,
                COALESCE(SUM(amount_rub) FILTER (WHERE type='income'), 0)::int AS income,
@@ -149,11 +124,10 @@ export async function adminEconomyRoutes(app: FastifyInstance) {
       )
       SELECT
         months.month,
-        (COALESCE(orders_m.amount, 0) + COALESCE(pass_m.amount, 0) + COALESCE(manual_m.income, 0))::int AS income,
+        (COALESCE(pay_m.amount, 0) + COALESCE(manual_m.income, 0))::int AS income,
         COALESCE(manual_m.expense, 0)::int AS expense
       FROM months
-      LEFT JOIN orders_m USING (month)
-      LEFT JOIN pass_m USING (month)
+      LEFT JOIN pay_m USING (month)
       LEFT JOIN manual_m USING (month)
       ORDER BY months.month
     `);
@@ -170,7 +144,7 @@ export async function adminEconomyRoutes(app: FastifyInstance) {
     };
   });
 
-  /** Операции — список (виртуальные авто + ручные). */
+  /** Операции — список (виртуальные авто из confirmed payments + ручные). */
   app.get("/operations", async (req) => {
     const q = z
       .object({
@@ -194,74 +168,49 @@ export async function adminEconomyRoutes(app: FastifyInstance) {
       createdAt: Date;
     }> = [];
 
-    // Авто: paid orders
-    if (q.type !== "expense" && (!q.category || q.category === "Магазин")) {
+    // Авто: подтверждённые платежи (реальные деньги от банка).
+    if (q.type !== "expense") {
+      const conds = [eq(payments.status, "confirmed")] as any[];
+      if (q.category === "Магазин") conds.push(eq(payments.refType, "order"));
+      else if (q.category === "Hell Pass") conds.push(eq(payments.refType, "pass"));
+      else if (q.category) {
+        // запрошена ручная категория — авто-операции не подходят
+        conds.push(sql`false`);
+      }
+
       const rows = await db
         .select({
-          id: orders.id,
-          totalRub: orders.totalRub,
-          paidAt: orders.paidAt,
+          id: payments.id,
+          amountRub: payments.amountRub,
+          updatedAt: payments.updatedAt,
+          refType: payments.refType,
+          refId: payments.refId,
         })
-        .from(orders)
-        .where(and(
-          sql`${orders.paidAt} IS NOT NULL`,
-          sql`${orders.status} IN ('paid','shipped','delivered')`,
-        ))
-        .orderBy(desc(orders.paidAt))
+        .from(payments)
+        .where(and(...conds))
+        .orderBy(desc(payments.updatedAt))
         .limit(q.limit);
 
       for (const r of rows) {
-        if (!r.paidAt) continue;
+        const isPass = r.refType === "pass";
         items.push({
-          id: `order:${r.id}`,
-          occurredAt: r.paidAt,
+          id: `pay:${r.id}`,
+          occurredAt: r.updatedAt,
           type: "income",
-          category: "Магазин",
-          amountRub: r.totalRub,
-          note: `Заказ #${r.id.slice(0, 8)}`,
+          category: isPass ? "Hell Pass" : "Магазин",
+          amountRub: r.amountRub,
+          note: isPass
+            ? `Hell Pass #${r.refId.slice(0, 8)}`
+            : `Заказ #${r.refId.slice(0, 8)}`,
           source: "auto",
-          refType: "order",
-          refId: r.id,
+          refType: r.refType,
+          refId: r.refId,
           createdBy: null,
-          createdAt: r.paidAt,
+          createdAt: r.updatedAt,
         });
       }
     }
 
-    // Авто: Hell Pass
-    if (q.type !== "expense" && (!q.category || q.category === "Hell Pass")) {
-      const rows = await db
-        .select({
-          id: passPurchases.id,
-          priceRub: passPurchases.priceRub,
-          paidAt: passPurchases.paidAt,
-          tier: passPurchases.tier,
-        })
-        .from(passPurchases)
-        .where(and(
-          sql`${passPurchases.paidAt} IS NOT NULL`,
-          sql`${passPurchases.status} IN ('active','expired')`,
-        ))
-        .orderBy(desc(passPurchases.paidAt))
-        .limit(q.limit);
-
-      for (const r of rows) {
-        if (!r.paidAt) continue;
-        items.push({
-          id: `pass:${r.id}`,
-          occurredAt: r.paidAt,
-          type: "income",
-          category: "Hell Pass",
-          amountRub: r.priceRub,
-          note: `Hell Pass ${r.tier}`,
-          source: "auto",
-          refType: "pass_purchase",
-          refId: r.id,
-          createdBy: null,
-          createdAt: r.paidAt,
-        });
-      }
-    }
 
     // Ручные операции
     const conds = [eq(economyOperations.source, "manual")] as any[];
