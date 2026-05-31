@@ -311,7 +311,7 @@ function CompleteForUserModal({ quest, onClose }: { quest: AdminQuest; onClose: 
 
   const usersQ = useQuery({
     queryKey: adminQk.users(search),
-    queryFn: () => fetchAdminUsers(search),
+    queryFn: () => fetchAdminUsers({ q: search }),
     enabled: search.length >= 2,
   });
 
