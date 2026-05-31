@@ -12,7 +12,7 @@ import {
 } from "@/lib/push";
 import { useInstallPrompt, isStandalone } from "@/hooks/use-install-prompt";
 import { haptic } from "@/hooks/use-haptic";
-import { hhToast as toast } from "@/lib/hh-toast";
+// тосты убраны из проекта — ошибки показываем прямо в шторке
 
 type Props = {
   open: boolean;
@@ -121,6 +121,12 @@ export function NotificationsSheet({ open, onOpenChange }: Props) {
             <p className="mt-3 flex items-start gap-2 text-[12px] text-muted-foreground">
               <AlertCircle className="mt-[1px] h-3.5 w-3.5 shrink-0" />
               На iOS пуши работают только после установки на экран Домой.
+            </p>
+          )}
+          {error && (
+            <p className="mt-3 flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-[12px] text-destructive">
+              <AlertCircle className="mt-[1px] h-3.5 w-3.5 shrink-0" />
+              {error}
             </p>
           )}
         </div>
