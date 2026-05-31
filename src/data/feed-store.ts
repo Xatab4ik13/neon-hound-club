@@ -79,6 +79,10 @@ export type FeedPost = {
   authorSlug: string;
   isBlogger: boolean;
   comments: FeedComment[];
+  /** Реальное число коментов на бэке (может быть больше, чем length массива preview). */
+  commentsCount: number;
+  /** true когда `comments` содержит ПОЛНЫЙ список (после loadFullComments). */
+  commentsFull?: boolean;
 };
 
 // ───────── Утилиты ─────────
