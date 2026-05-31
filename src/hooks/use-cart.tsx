@@ -88,6 +88,7 @@ type ServerCartLine = {
   qty: number;
   active: boolean;
   stockAvailable: number | null;
+  kind?: "physical" | "digital" | "preorder";
 };
 
 type ServerCartResp = { items: ServerCartLine[]; totalRub: number };
@@ -103,6 +104,7 @@ function lineToItem(l: ServerCartLine): CartItem {
     size: l.size,
     qty: l.qty,
     ticketsBonus: l.bonusTickets,
+    kind: l.kind ?? "physical",
   };
 }
 
