@@ -636,15 +636,39 @@ function CommentsSheet({
       el.scrollHeight - el.scrollTop - el.clientHeight < 80;
   };
 
+  // ── «как в Telegram»: read-marker ──
+  // На открытии модалки тянем lastReadAt; на закрытии — POST'им «прочитано до сейчас».
+  const [lastReadAt, setLastReadAt] = useState<string | null>(null);
+  const [readMarkerLoaded, setReadMarkerLoaded] = useState(false);
+  const didScrollRef = useRef(false);
+
   // сбросить reply при закрытии; при открытии — подгрузить ПОЛНЫЙ список коментов
   useEffect(() => {
     if (!open) {
       setReplyTo(null);
+      setReadMarkerLoaded(false);
+      didScrollRef.current = false;
       return;
     }
     if (!post.commentsFull) {
       feedStore.loadFullComments(post.id);
     }
+    let cancelled = false;
+    apiFetch<{ lastReadAt: string | null }>(`/api/v1/feed/${post.id}/comments-read`)
+      .then((r) => {
+        if (!cancelled) {
+          setLastReadAt(r.lastReadAt);
+          setReadMarkerLoaded(true);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setReadMarkerLoaded(true);
+      });
+    return () => {
+      cancelled = true;
+      // на закрытии — отмечаем как прочитанное (fire-and-forget)
+      apiFetch(`/api/v1/feed/${post.id}/comments-read`, { method: "POST" }).catch(() => {});
+    };
   }, [open, post.id, post.commentsFull]);
 
   // Когда клавиатура появилась/исчезла — если были внизу, остаёмся внизу.
