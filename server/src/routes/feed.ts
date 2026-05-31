@@ -3,6 +3,7 @@ import { z } from "zod";
 import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { posts, postLikes, postComments, postPollVotes, commentLikes, type PollDef } from "../db/schema/posts.js";
+import { postReads } from "../db/schema/post-reads.js";
 import { users } from "../db/schema/users.js";
 import { profiles } from "../db/schema/profile.js";
 import { loadSession, requireAuth, requireAdmin, type SessionPayload } from "../lib/auth.js";
