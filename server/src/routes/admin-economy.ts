@@ -7,15 +7,17 @@ import {
   economyOperations,
   economyPartners,
 } from "../db/schema/economy.js";
-import { orders } from "../db/schema/shop.js";
-import { passPurchases } from "../db/schema/pass.js";
+import { payments } from "../db/schema/payments.js";
 import { requireAdmin, type SessionPayload } from "../lib/auth.js";
 
-// Экономика работает в реальном времени:
-//   income  = paid orders + paid Hell Pass + ручные income-операции
+// Экономика — единый источник истины: payments.status='confirmed'.
+// Это реально подтверждённые банком деньги. Заказы/Pass, активированные
+// вручную без оплаты, в выручку НЕ попадают (это и есть смысл «реальных денег»).
+//   income  = confirmed payments + ручные income-операции
+//             ref_type='order' → категория "Магазин"
+//             ref_type='pass'  → категория "Hell Pass"
 //   expense = ручные expense-операции
 // Таблица economy_operations используется ТОЛЬКО для ручных операций.
-// Авто-доходы выводятся виртуально из orders/passPurchases — без дублей и без sync.
 
 
 // ---------- schemas ----------
