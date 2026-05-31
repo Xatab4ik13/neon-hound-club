@@ -184,7 +184,7 @@ function ClubCheckoutPage() {
       hhToast.error("Укажи телефон.");
       return;
     }
-    if (form.address.trim().length < 5) {
+    if (!isDigitalOnly && form.address.trim().length < 5) {
       e.preventDefault();
       hhToast.error("Укажи адрес доставки.");
       return;
@@ -215,7 +215,7 @@ function ClubCheckoutPage() {
         shipping_fio: form.name,
         shipping_phone: form.phone,
         shipping_city: cityFallback,
-        shipping_address: form.address,
+        shipping_address: addressFallback,
         method: "sbp",
       },
       { forceLandingPage: true },
