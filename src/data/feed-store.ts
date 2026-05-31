@@ -518,6 +518,7 @@ function removeCommentLocal(commentId: string) {
   patchPostLocal(postId, (p) => ({
     ...p,
     comments: p.comments.filter((c) => c.id !== commentId),
+    commentsCount: Math.max(0, p.commentsCount - 1),
   }));
 }
 
