@@ -225,7 +225,8 @@ function ClubCheckoutPage() {
     }
   };
 
-  if (!isAuthed || items.length === 0) return null;
+  if (!isAuthed) return null;
+  if (items.length === 0 && !search.payment_error) return null;
 
   return (
     <main className="mx-auto w-full max-w-3xl px-4 py-5 pb-[calc(32px+env(safe-area-inset-bottom))] md:max-w-6xl md:px-8 md:py-10 md:pb-16">
