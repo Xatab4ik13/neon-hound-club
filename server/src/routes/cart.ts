@@ -102,6 +102,7 @@ async function getCartLines(userId: string): Promise<{ items: CartLine[]; totalR
         qty: r.qty,
         active: false,
         stockAvailable: 0,
+        kind: "physical",
       };
     }
     let stockAvailable: number | null = p.stock ?? null;
@@ -121,6 +122,7 @@ async function getCartLines(userId: string): Promise<{ items: CartLine[]; totalR
       qty: r.qty,
       active: p.active,
       stockAvailable,
+      kind: (p.kind ?? "physical") as CartLine["kind"],
     };
   });
 
