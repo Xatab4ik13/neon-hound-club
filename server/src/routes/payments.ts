@@ -110,8 +110,9 @@ const orderRedirectSchema = z.object({
     .optional(),
   shipping_fio: z.string().trim().min(2).max(120),
   shipping_phone: z.string().trim().min(5).max(32),
-  shipping_city: z.string().trim().min(1).max(80),
-  shipping_address: z.string().trim().min(3).max(300),
+  // Для digital-only заказов адрес/город не нужны. Фронт шлёт "—".
+  shipping_city: z.string().trim().max(80).optional().default("—"),
+  shipping_address: z.string().trim().max(300).optional().default("—"),
   shipping_postal_code: z.string().trim().min(3).max(16).optional(),
   comment: z.string().trim().max(1000).optional(),
   method: z.enum(PAYMENT_METHODS).optional(),
