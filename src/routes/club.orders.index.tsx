@@ -4,7 +4,7 @@ import { PageHeader } from "@/components/club/PageHeader";
 import { OrdersList } from "@/components/club/OrdersList";
 import { fetchMyOrders, qk } from "@/lib/queries";
 
-export const Route = createFileRoute("/club/orders")({
+export const Route = createFileRoute("/club/orders/")({
   head: () => ({
     meta: [
       { title: "Заказы — клуб HELLHOUND" },
