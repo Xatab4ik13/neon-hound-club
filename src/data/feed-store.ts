@@ -327,6 +327,7 @@ export const feedStore = {
       authorSlug: input.author.slug,
       isBlogger: input.author.isBlogger,
       time: "только что",
+      createdAt: new Date().toISOString(),
       text: input.text,
       likes: 0,
       liked: false,
