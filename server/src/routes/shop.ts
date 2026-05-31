@@ -22,6 +22,7 @@ import {
   restockOrder,
 } from "../lib/shop.js";
 import { getActivePassPerks } from "../lib/pass.js";
+import { parsePagination } from "../lib/pagination.js";
 
 // ---------- PUBLIC / USER ----------
 
@@ -459,12 +460,17 @@ export async function adminShopRoutes(app: FastifyInstance) {
   // Orders admin
   app.get("/orders", { preHandler: requireAdmin }, async (req) => {
     const q = z
-      .object({ status: z.enum(ORDER_STATUSES).optional(), limit: z.coerce.number().int().min(1).max(200).default(50) })
+      .object({ status: z.enum(ORDER_STATUSES).optional() })
       .parse(req.query ?? {});
+    const { page, pageSize, offset } = parsePagination(req.query);
     const where = q.status ? eq(orders.status, q.status) : sql`true`;
-    const rows = await db.select().from(orders).where(where).orderBy(desc(orders.createdAt)).limit(q.limit);
-    return { items: rows };
+    const [rows, totalRows] = await Promise.all([
+      db.select().from(orders).where(where).orderBy(desc(orders.createdAt)).limit(pageSize).offset(offset),
+      db.select({ c: sql<number>`count(*)::int` }).from(orders).where(where),
+    ]);
+    return { items: rows, total: totalRows[0]?.c ?? 0, page, pageSize };
   });
+
 
   app.get<{ Params: { id: string } }>("/orders/:id", { preHandler: requireAdmin }, async (req, reply) => {
     const order = await getOrderWithItems(req.params.id);

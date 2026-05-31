@@ -11,6 +11,7 @@ import { awardXp, computeRank } from "../lib/xp.js";
 import { xpEvents } from "../db/schema/xp.js";
 import { addClient, removeClient, publish as publishFeedEvent } from "../lib/feed-bus.js";
 import { addQuestProgress } from "../lib/quests.js";
+import { parsePagination } from "../lib/pagination.js";
 
 // Считает rankId батчем для набора пользователей. Возвращает Map<userId, rankId>.
 // Пустой набор → пустая Map. Юзеры без событий получают rookie.
@@ -603,25 +604,31 @@ export async function postsRoutes(app: FastifyInstance) {
 export async function adminFeedRoutes(app: FastifyInstance) {
   app.addHook("preHandler", requireAdmin);
 
-  // GET /api/v1/admin/feed/posts — все посты включая удалённые
-  app.get("/posts", async () => {
-    const rows = await db
-      .select({
-        id: posts.id,
-        authorId: posts.authorId,
-        nick: users.nick,
-        text: posts.text,
-        imageUrl: posts.imageUrl,
-        pinned: posts.pinned,
-        deletedAt: posts.deletedAt,
-        createdAt: posts.createdAt,
-      })
-      .from(posts)
-      .innerJoin(users, eq(users.id, posts.authorId))
-      .orderBy(desc(posts.createdAt))
-      .limit(200);
-    return { items: rows };
+  // GET /api/v1/admin/feed/posts — все посты включая удалённые (постранично)
+  app.get("/posts", async (req) => {
+    const { page, pageSize, offset } = parsePagination(req.query);
+    const [rows, totalRows] = await Promise.all([
+      db
+        .select({
+          id: posts.id,
+          authorId: posts.authorId,
+          nick: users.nick,
+          text: posts.text,
+          imageUrl: posts.imageUrl,
+          pinned: posts.pinned,
+          deletedAt: posts.deletedAt,
+          createdAt: posts.createdAt,
+        })
+        .from(posts)
+        .innerJoin(users, eq(users.id, posts.authorId))
+        .orderBy(desc(posts.createdAt))
+        .limit(pageSize)
+        .offset(offset),
+      db.select({ c: sql<number>`count(*)::int` }).from(posts),
+    ]);
+    return { items: rows, total: totalRows[0]?.c ?? 0, page, pageSize };
   });
+
 
   // POST /api/v1/admin/feed/posts/:id/restore
   app.post<{ Params: { id: string } }>("/posts/:id/restore", async (req) => {

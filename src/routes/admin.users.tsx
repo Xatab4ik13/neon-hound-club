@@ -49,7 +49,7 @@ function UsersPage() {
 
   const listQ = useQuery({
     queryKey: adminQk.users(debounced),
-    queryFn: () => fetchAdminUsers(debounced || undefined),
+    queryFn: () => fetchAdminUsers({ q: debounced || undefined }),
   });
 
   const items = listQ.data?.items ?? [];

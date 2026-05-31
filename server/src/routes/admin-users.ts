@@ -11,6 +11,7 @@ import { badges, userBadges } from "../db/schema/badges.js";
 import { requireAdmin, hashPassword } from "../lib/auth.js";
 import { getOrCreateReferralCode } from "../lib/referrals.js";
 import { activatePassPurchase } from "../lib/pass.js";
+import { parsePagination } from "../lib/pagination.js";
 
 
 /**
@@ -20,14 +21,12 @@ import { activatePassPurchase } from "../lib/pass.js";
 export async function adminUsersRoutes(app: FastifyInstance) {
   app.addHook("preHandler", requireAdmin);
 
-  // GET /api/v1/admin/users?q=&limit=
+  // GET /api/v1/admin/users?q=&page=&pageSize=
   app.get("/", async (req) => {
     const q = z
-      .object({
-        q: z.string().trim().max(120).optional(),
-        limit: z.coerce.number().int().min(1).max(200).default(50),
-      })
+      .object({ q: z.string().trim().max(120).optional() })
       .parse(req.query ?? {});
+    const { page, pageSize, offset } = parsePagination(req.query);
 
     const search = q.q?.toLowerCase();
     const searchWhere = search
@@ -38,26 +37,33 @@ export async function adminUsersRoutes(app: FastifyInstance) {
       ? and(ne(users.role, "admin"), searchWhere)
       : ne(users.role, "admin");
 
-    const rows = await db
-      .select({
-        id: users.id,
-        email: users.email,
-        nick: users.nick,
-        role: users.role,
-        emailVerified: users.emailVerified,
-        blocked: users.blocked,
-        createdAt: users.createdAt,
-        city: profiles.city,
-        avatarUrl: profiles.avatarUrl,
-        phone: profiles.phone,
-      })
-      .from(users)
-      .leftJoin(profiles, eq(profiles.userId, users.id))
-      .where(where)
-      .orderBy(desc(users.createdAt))
-      .limit(q.limit);
+    const [rows, totalRows] = await Promise.all([
+      db
+        .select({
+          id: users.id,
+          email: users.email,
+          nick: users.nick,
+          role: users.role,
+          emailVerified: users.emailVerified,
+          blocked: users.blocked,
+          createdAt: users.createdAt,
+          city: profiles.city,
+          avatarUrl: profiles.avatarUrl,
+          phone: profiles.phone,
+        })
+        .from(users)
+        .leftJoin(profiles, eq(profiles.userId, users.id))
+        .where(where)
+        .orderBy(desc(users.createdAt))
+        .limit(pageSize)
+        .offset(offset),
+      db
+        .select({ c: sql<number>`count(*)::int` })
+        .from(users)
+        .where(where),
+    ]);
 
-    return { items: rows };
+    return { items: rows, total: totalRows[0]?.c ?? 0, page, pageSize };
   });
 
   // GET /api/v1/admin/users/:id — карточка с агрегатами
