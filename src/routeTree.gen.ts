@@ -29,6 +29,7 @@ import { Route as BloggerIndexRouteImport } from './routes/blogger.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as ShopProductSlugRouteImport } from './routes/shop.$productSlug'
 import { Route as PaySuccessRouteImport } from './routes/pay.success'
+import { Route as PayGoRouteImport } from './routes/pay.go'
 import { Route as PayFailRouteImport } from './routes/pay.fail'
 import { Route as LegalTermsRouteImport } from './routes/legal.terms'
 import { Route as LegalRequisitesRouteImport } from './routes/legal.requisites'
@@ -176,6 +177,11 @@ const ShopProductSlugRoute = ShopProductSlugRouteImport.update({
 const PaySuccessRoute = PaySuccessRouteImport.update({
   id: '/pay/success',
   path: '/pay/success',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PayGoRoute = PayGoRouteImport.update({
+  id: '/pay/go',
+  path: '/pay/go',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PayFailRoute = PayFailRouteImport.update({
@@ -466,6 +472,7 @@ export interface FileRoutesByFullPath {
   '/legal/requisites': typeof LegalRequisitesRoute
   '/legal/terms': typeof LegalTermsRoute
   '/pay/fail': typeof PayFailRoute
+  '/pay/go': typeof PayGoRoute
   '/pay/success': typeof PaySuccessRoute
   '/shop/$productSlug': typeof ShopProductSlugRoute
   '/admin/': typeof AdminIndexRoute
@@ -533,6 +540,7 @@ export interface FileRoutesByTo {
   '/legal/requisites': typeof LegalRequisitesRoute
   '/legal/terms': typeof LegalTermsRoute
   '/pay/fail': typeof PayFailRoute
+  '/pay/go': typeof PayGoRoute
   '/pay/success': typeof PaySuccessRoute
   '/shop/$productSlug': typeof ShopProductSlugRoute
   '/admin': typeof AdminIndexRoute
@@ -604,6 +612,7 @@ export interface FileRoutesById {
   '/legal/requisites': typeof LegalRequisitesRoute
   '/legal/terms': typeof LegalTermsRoute
   '/pay/fail': typeof PayFailRoute
+  '/pay/go': typeof PayGoRoute
   '/pay/success': typeof PaySuccessRoute
   '/shop/$productSlug': typeof ShopProductSlugRoute
   '/admin/': typeof AdminIndexRoute
@@ -676,6 +685,7 @@ export interface FileRouteTypes {
     | '/legal/requisites'
     | '/legal/terms'
     | '/pay/fail'
+    | '/pay/go'
     | '/pay/success'
     | '/shop/$productSlug'
     | '/admin/'
@@ -743,6 +753,7 @@ export interface FileRouteTypes {
     | '/legal/requisites'
     | '/legal/terms'
     | '/pay/fail'
+    | '/pay/go'
     | '/pay/success'
     | '/shop/$productSlug'
     | '/admin'
@@ -813,6 +824,7 @@ export interface FileRouteTypes {
     | '/legal/requisites'
     | '/legal/terms'
     | '/pay/fail'
+    | '/pay/go'
     | '/pay/success'
     | '/shop/$productSlug'
     | '/admin/'
@@ -858,6 +870,7 @@ export interface RootRouteChildren {
   LegalRequisitesRoute: typeof LegalRequisitesRoute
   LegalTermsRoute: typeof LegalTermsRoute
   PayFailRoute: typeof PayFailRoute
+  PayGoRoute: typeof PayGoRoute
   PaySuccessRoute: typeof PaySuccessRoute
   ShopProductSlugRoute: typeof ShopProductSlugRoute
   CheckoutIndexRoute: typeof CheckoutIndexRoute
@@ -1005,6 +1018,13 @@ declare module '@tanstack/react-router' {
       path: '/pay/success'
       fullPath: '/pay/success'
       preLoaderRoute: typeof PaySuccessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pay/go': {
+      id: '/pay/go'
+      path: '/pay/go'
+      fullPath: '/pay/go'
+      preLoaderRoute: typeof PayGoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pay/fail': {
@@ -1488,6 +1508,7 @@ const rootRouteChildren: RootRouteChildren = {
   LegalRequisitesRoute: LegalRequisitesRoute,
   LegalTermsRoute: LegalTermsRoute,
   PayFailRoute: PayFailRoute,
+  PayGoRoute: PayGoRoute,
   PaySuccessRoute: PaySuccessRoute,
   ShopProductSlugRoute: ShopProductSlugRoute,
   CheckoutIndexRoute: CheckoutIndexRoute,
