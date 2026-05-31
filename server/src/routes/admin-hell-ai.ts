@@ -9,6 +9,7 @@ import { aiSettings, aiMessages, ALLOWED_AI_MODELS } from "../db/schema/hell-ai.
 import { users } from "../db/schema/users.js";
 import { loadAiSettings } from "../lib/hell-ai.js";
 import { aiThrottleStats } from "../lib/ai-throttle.js";
+import { parsePagination } from "../lib/pagination.js";
 
 const putSchema = z.object({
   systemPrompt: z.string().min(10).max(20000),
