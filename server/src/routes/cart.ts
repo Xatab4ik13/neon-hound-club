@@ -150,14 +150,14 @@ export async function cartRoutes(app: FastifyInstance) {
     if (!p) return reply.code(404).send({ error: "product_not_found" });
     if (!p.active) return reply.code(409).send({ error: "product_inactive" });
 
-    // Upsert по (user_id, product_id, size). NULL у size учитывается через COALESCE в индексе.
-    await db
-      .insert(cartItems)
-      .values({ userId: session.sub, productId, qty, size: size ?? null })
-      .onConflictDoUpdate({
-        target: sql`("user_id", "product_id", COALESCE("size", ''))` as any,
-        set: { qty: sql`${cartItems.qty} + ${qty}`, updatedAt: new Date() },
-      });
+    // Upsert по (user_id, product_id, COALESCE(size, '')) — индекс по выражению.
+    // Делаем сырым SQL, чтобы Drizzle не путался с ON CONFLICT по выражению.
+    await db.execute(sql`
+      INSERT INTO "cart_items" ("user_id", "product_id", "qty", "size")
+      VALUES (${session.sub}, ${productId}, ${qty}, ${size ?? null})
+      ON CONFLICT ("user_id", "product_id", COALESCE("size", ''))
+      DO UPDATE SET "qty" = "cart_items"."qty" + EXCLUDED."qty", "updated_at" = now()
+    `);
 
     return getCartLines(session.sub);
   });
