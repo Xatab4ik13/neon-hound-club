@@ -7,6 +7,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Package, Phone, MapPin, User as UserIcon, RefreshCw, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ApiError } from "@/lib/api";
+import { AdminPager, type AdminPageSize } from "@/components/admin/AdminPager";
 import {
   fetchAdminOrders,
   fetchAdminOrder,
@@ -68,12 +69,15 @@ function fmtDate(iso: string) {
 function AdminOrdersPage() {
   const [filter, setFilter] = useState<ShopOrderStatus | "all">("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState<AdminPageSize>(50);
 
   const status = filter === "all" ? undefined : filter;
   const list = useQuery({
-    queryKey: qk.adminOrders(status),
-    queryFn: () => fetchAdminOrders(status),
+    queryKey: [...qk.adminOrders(status), page, pageSize],
+    queryFn: () => fetchAdminOrders(status, { page, pageSize }),
     refetchInterval: 30_000,
+    placeholderData: (prev) => prev,
   });
 
   return (
