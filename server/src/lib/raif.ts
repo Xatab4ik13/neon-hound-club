@@ -1,15 +1,15 @@
 /**
  * Тонкий клиент Raiffeisenbank e-commerce API (https://pay.raif.ru/doc/ecom.html).
  *
- * У нас оформлены ДВЕ торговые точки в Райфе:
- *   - "card" — интернет-эквайринг (карты), env: RAIF_PUBLIC_ID + RAIF_SECRET_KEY
- *   - "sbp"  — СБП (QR),                 env: RAIF_PUBLIC_ID_SBP + RAIF_SECRET_KEY_SBP
+ * У нас ОДНА объединённая торговая точка (карты + СБП в одном мерчанте):
+ *   env: RAIF_PUBLIC_ID + RAIF_SECRET_KEY
  *
- * Для каждого платежа выбираем соответствующий аккаунт:
- *   - Authorization: Bearer <secretKey этого аккаунта>
- *   - paymentMethods: ["ACQUIRING"] для карт, ["SBP"] для СБП
- *   - подпись вебхука проверяется секретом аккаунта, к которому относится платёж
+ * Метод оплаты выбирает юзер кнопкой на фронте; на бек это влияет только
+ * на поле `paymentMethods` в запросе createOrder:
+ *   - "card" → ["ACQUIRING"]
+ *   - "sbp"  → ["SBP"]
  *
+ * Подпись вебхука всегда проверяется единственным секретом RAIF_SECRET_KEY.
  * Уведомления приходят с IP 193.28.44.23.
  */
 import { createHmac, timingSafeEqual } from "node:crypto";
@@ -20,31 +20,27 @@ export type RaifMethod = "card" | "sbp";
 
 type Account = { publicId: string; secretKey: string };
 
-const ACCOUNTS: Partial<Record<RaifMethod, Account>> = {};
-{
-  const cardPub = process.env.RAIF_PUBLIC_ID ?? "";
-  const cardSec = process.env.RAIF_SECRET_KEY ?? "";
-  if (cardPub && cardSec) ACCOUNTS.card = { publicId: cardPub, secretKey: cardSec };
-
-  const sbpPub = process.env.RAIF_PUBLIC_ID_SBP ?? "";
-  const sbpSec = process.env.RAIF_SECRET_KEY_SBP ?? "";
-  if (sbpPub && sbpSec) ACCOUNTS.sbp = { publicId: sbpPub, secretKey: sbpSec };
+function getMainAccount(): Account | null {
+  const pub = process.env.RAIF_PUBLIC_ID ?? "";
+  const sec = process.env.RAIF_SECRET_KEY ?? "";
+  if (!pub || !sec) return null;
+  return { publicId: pub, secretKey: sec };
 }
 
-export function isRaifConfigured(method: RaifMethod = "card"): boolean {
-  return Boolean(ACCOUNTS[method]);
+export function isRaifConfigured(_method: RaifMethod = "card"): boolean {
+  return Boolean(getMainAccount());
 }
 
 export function getConfiguredMethods(): RaifMethod[] {
-  return (Object.keys(ACCOUNTS) as RaifMethod[]).filter((m) => Boolean(ACCOUNTS[m]));
+  return getMainAccount() ? ["card", "sbp"] : [];
 }
 
-export function getAccount(method: RaifMethod): Account | null {
-  return ACCOUNTS[method] ?? null;
+export function getAccount(_method: RaifMethod): Account | null {
+  return getMainAccount();
 }
 
 export type RaifCreateOrderParams = {
-  /** Какой торговой точкой оплачиваем. */
+  /** Какой способ оплаты предложить на форме банка. */
   method: RaifMethod;
   /** Наш internal id платежа (UUID). Пойдёт как id заказа в Райф. <=40 chars [A-Za-z0-9-_.]. */
   orderId: string;
@@ -73,13 +69,9 @@ export class RaifApiError extends Error {
 
 /** POST /api/v1/merchants/{publicId}/orders — создать заказ и получить ссылку на форму. */
 export async function createOrder(p: RaifCreateOrderParams): Promise<RaifOrderResponse> {
-  const acc = ACCOUNTS[p.method];
+  const acc = getMainAccount();
   if (!acc) {
-    throw new RaifApiError(
-      500,
-      "not_configured",
-      `Райф (${p.method}) не сконфигурирован в env`,
-    );
+    throw new RaifApiError(500, "not_configured", "Райф не сконфигурирован в env");
   }
 
   const body: Record<string, unknown> = {
@@ -132,7 +124,7 @@ export async function createOrder(p: RaifCreateOrderParams): Promise<RaifOrderRe
 
 /**
  * Проверка подписи входящего webhook (X-Api-Signature-SHA256).
- * Секрет — той точки (card/sbp), к которой относится платёж.
+ * Секрет — единственный RAIF_SECRET_KEY объединённой торговой точки.
  */
 export function verifyPaymentCallback(
   body: Record<string, unknown>,
