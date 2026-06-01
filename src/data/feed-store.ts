@@ -201,6 +201,38 @@ export function mapPost(p: FeedPostWithComments): FeedPost {
   };
 }
 
+function sortCommentsByCreatedAt(comments: FeedComment[]): FeedComment[] {
+  return [...comments].sort(
+    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+  );
+}
+
+function mergeLoadedComments(prev: FeedComment[], next: FeedComment[]): FeedComment[] {
+  const byId = new Map<string, FeedComment>();
+  for (const comment of prev) byId.set(comment.id, comment);
+  for (const comment of next) byId.set(comment.id, comment);
+  return sortCommentsByCreatedAt([...byId.values()]);
+}
+
+function keepLoadedComments(prev: FeedPost | undefined, next: FeedPost): FeedPost {
+  const nextLooksFull = next.commentsCount === next.comments.length;
+  if (nextLooksFull) {
+    return {
+      ...next,
+      comments: sortCommentsByCreatedAt(next.comments),
+      commentsFull: true,
+    };
+  }
+
+  if (!prev?.commentsFull) return next;
+
+  return {
+    ...next,
+    comments: mergeLoadedComments(prev.comments, next.comments),
+    commentsFull: true,
+  };
+}
+
 // ───────── Reactive store ─────────
 
 let POSTS: FeedPost[] = [];
@@ -223,7 +255,8 @@ async function refetch(): Promise<void> {
   pending = (async () => {
     try {
       const r = await fetchFeed({ limit: PAGE_SIZE });
-      POSTS = r.items.map(mapPost);
+      const prevById = new Map(POSTS.map((post) => [post.id, post]));
+      POSTS = r.items.map((item) => keepLoadedComments(prevById.get(item.id), mapPost(item)));
       nextCursor = r.nextCursor;
       loaded = true;
       emit();
@@ -376,12 +409,14 @@ export const feedStore = {
   async loadFullComments(postId: string) {
     try {
       const detail = await fetchPost(postId);
-      patchPostLocal(postId, (p) => ({
-        ...p,
-        comments: detail.comments.map(mapComment),
-        commentsCount: detail.commentsCount,
-        commentsFull: true,
-      }));
+      patchPostLocal(postId, (p) =>
+        keepLoadedComments(p, {
+          ...p,
+          comments: detail.comments.map(mapComment),
+          commentsCount: detail.commentsCount,
+          commentsFull: true,
+        }),
+      );
     } catch {
       /* молча — UI покажет то что уже есть */
     }
@@ -489,8 +524,9 @@ async function refetchPostNow(postId: string) {
   if (!POSTS.some((p) => p.id === postId)) return;
   if (document.visibilityState === "hidden") return;
   try {
+    const prev = POSTS.find((p) => p.id === postId);
     const detail = await fetchPost(postId);
-    const next = mapPost({ ...detail, comments: detail.comments });
+    const next = keepLoadedComments(prev, mapPost({ ...detail, comments: detail.comments }));
     POSTS = POSTS.map((p) => (p.id === postId ? next : p));
     emit();
   } catch {
