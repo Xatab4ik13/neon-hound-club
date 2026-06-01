@@ -10,13 +10,15 @@ import {
   ShoppingBag,
   ShoppingCart,
   Ticket,
+  LifeBuoy,
   type LucideIcon,
 } from "lucide-react";
 import { Drawer } from "vaul";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useCart } from "@/hooks/use-cart";
 import { useViewer } from "@/hooks/use-viewer";
 import { IOSConfirm } from "@/components/ios/IOSConfirm";
+import { isStandalonePWA } from "@/lib/is-pwa";
 
 type Item = {
   label: string;
@@ -26,31 +28,42 @@ type Item = {
   badge?: number;
 };
 
-function buildGroups(cartCount: number): { title: string; items: Item[] }[] {
-  return [
-  {
-    title: "Клуб",
-    items: [
-      { label: "Hell Pass", href: "/club/hell-pass", icon: Gem, subtitle: "Подписка клуба" },
-      { label: "Розыгрыши", href: "/club/raffles", icon: Ticket },
-      { label: "Магазин клуба", href: "/club/shop", icon: ShoppingBag },
-      { label: "Школа", href: "/club/school", icon: GraduationCap },
-    ],
-  },
-  {
-    title: "Активность",
-    items: [
-      { label: "Пригласить друга", href: "/club/invite", icon: UserPlus },
-      { label: "Квесты", href: "/club/quests", icon: Target },
-      {
-        label: "Корзина",
-        href: "/club/cart",
-        icon: ShoppingCart,
-        badge: cartCount > 0 ? cartCount : undefined,
-      },
-    ],
-  },
+function buildGroups(cartCount: number, isPwa: boolean): { title: string; items: Item[] }[] {
+  const groups: { title: string; items: Item[] }[] = [
+    {
+      title: "Клуб",
+      items: [
+        { label: "Hell Pass", href: "/club/hell-pass", icon: Gem, subtitle: "Подписка клуба" },
+        { label: "Розыгрыши", href: "/club/raffles", icon: Ticket },
+        { label: "Магазин клуба", href: "/club/shop", icon: ShoppingBag },
+        { label: "Школа", href: "/club/school", icon: GraduationCap },
+      ],
+    },
+    {
+      title: "Активность",
+      items: [
+        { label: "Пригласить друга", href: "/club/invite", icon: UserPlus },
+        { label: "Квесты", href: "/club/quests", icon: Target },
+        {
+          label: "Корзина",
+          href: "/club/cart",
+          icon: ShoppingCart,
+          badge: cartCount > 0 ? cartCount : undefined,
+        },
+      ],
+    },
   ];
+
+  if (isPwa) {
+    groups.push({
+      title: "Поддержка",
+      items: [
+        { label: "Помощь", href: "/club/help", icon: LifeBuoy, subtitle: "Баги, идеи, вопросы" },
+      ],
+    });
+  }
+
+  return groups;
 }
 
 
