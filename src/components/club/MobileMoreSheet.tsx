@@ -54,14 +54,12 @@ function buildGroups(cartCount: number, isPwa: boolean): { title: string; items:
     },
   ];
 
-  if (isPwa) {
-    groups.push({
-      title: "Поддержка",
-      items: [
-        { label: "Помощь", href: "/club/help", icon: LifeBuoy, subtitle: "Баги, идеи, вопросы" },
-      ],
-    });
-  }
+  groups.push({
+    title: "Поддержка",
+    items: [
+      { label: "Помощь", href: "/club/help", icon: LifeBuoy, subtitle: "Баги, идеи, вопросы" },
+    ],
+  });
 
   return groups;
 }
