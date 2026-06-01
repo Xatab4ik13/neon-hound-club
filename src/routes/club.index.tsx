@@ -622,19 +622,10 @@ function CommentsSheet({
   const [replyTo, setReplyTo] = useState<{ nick: string; commentId: string } | null>(null);
   const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set());
   const listRef = useRef<HTMLDivElement>(null);
-  const kbOffset = useKeyboardOffset();
+  useKeyboardOffset();
   const viewer = useViewer();
   const myId = viewer.user?.id ?? null;
-  // Запоминаем, был ли юзер у низа списка ПЕРЕД появлением клавиатуры.
-  // Это позволяет при появлении клавиатуры подтянуть скролл обратно к низу
-  // (вместо того чтобы показать старые сообщения сверху из-за уменьшения высоты).
-  const wasNearBottomRef = useRef(true);
-  const onListScroll = () => {
-    const el = listRef.current;
-    if (!el) return;
-    wasNearBottomRef.current =
-      el.scrollHeight - el.scrollTop - el.clientHeight < 80;
-  };
+  const onListScroll = () => {};
 
 
   // сбросить reply при закрытии; при открытии — подгрузить ПОЛНЫЙ список коментов
@@ -648,36 +639,6 @@ function CommentsSheet({
     }
   }, [open, post.id, post.commentsFull]);
 
-  // Когда клавиатура появилась/исчезла — если были внизу, остаёмся внизу.
-  useEffect(() => {
-    const el = listRef.current;
-    if (!el) return;
-    if (wasNearBottomRef.current) {
-      // двойной rAF чтобы дождаться reflow после изменения высоты
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          el.scrollTop = el.scrollHeight;
-        });
-      });
-    }
-  }, [kbOffset]);
-
-  // автоскролл вниз только если юзер уже у низа (порог 120px) — иначе не дёргаем
-  const lastCount = useRef(post.comments.length);
-  useEffect(() => {
-    const el = listRef.current;
-    if (!el) {
-      lastCount.current = post.comments.length;
-      return;
-    }
-    if (post.comments.length > lastCount.current) {
-      const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 120;
-      if (nearBottom) {
-        el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
-      }
-    }
-    lastCount.current = post.comments.length;
-  }, [post.comments.length]);
 
 
   // Группировка ответов: ответ = коммент, начинающийся с "@<nick> "
