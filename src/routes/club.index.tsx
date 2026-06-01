@@ -1,6 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState, useCallback, memo } from "react";
-import { useKeyboardOffset } from "@/hooks/use-keyboard-offset";
 import { Smile, Send, Search as SearchIcon, Clock, Sticker, X, Pin, PinOff, Trash2, BarChart3, Share2, MessageCircle, Heart } from "lucide-react";
 import { RANKS, type RankId } from "@/data/ranks";
 import { useFeedPosts, useFeedLoaded, feedStore, initialsOf, makeSlug, type FeedAuthor, type FeedComment, type FeedPost, type FeedPoll } from "@/data/feed-store";
@@ -621,11 +620,8 @@ function CommentsSheet({
 }) {
   const [replyTo, setReplyTo] = useState<{ nick: string; commentId: string } | null>(null);
   const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set());
-  const listRef = useRef<HTMLDivElement>(null);
-  useKeyboardOffset();
   const viewer = useViewer();
   const myId = viewer.user?.id ?? null;
-  const onListScroll = () => {};
 
 
   // сбросить reply при закрытии; при открытии — подгрузить ПОЛНЫЙ список коментов
@@ -731,8 +727,6 @@ function CommentsSheet({
     >
       <div className="flex h-full min-h-0 flex-1 flex-col">
         <div
-          ref={listRef}
-          onScroll={onListScroll}
           className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 md:px-5"
           style={{ WebkitOverflowScrolling: "touch" } as React.CSSProperties}
         >
