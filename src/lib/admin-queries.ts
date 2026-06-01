@@ -452,8 +452,14 @@ export type AdminLedgerRow = {
   createdAt: string;
 };
 
-export function fetchAdminTicketsJournal(limit = 50) {
-  return apiFetch<{ items: AdminLedgerRow[] }>(`/api/v1/admin/tickets/journal?limit=${limit}`);
+export function fetchAdminTicketsJournal(opts?: { page?: number; pageSize?: number }) {
+  const sp = new URLSearchParams();
+  if (opts?.page) sp.set("page", String(opts.page));
+  if (opts?.pageSize) sp.set("pageSize", String(opts.pageSize));
+  const qs = sp.toString();
+  return apiFetch<AdminListPage<AdminLedgerRow>>(
+    `/api/v1/admin/tickets/journal${qs ? `?${qs}` : ""}`,
+  );
 }
 
 // ---------- PASS ADMIN ----------
