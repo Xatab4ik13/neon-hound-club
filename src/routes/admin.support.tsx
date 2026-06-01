@@ -23,7 +23,6 @@ import {
   SUPPORT_CATEGORY_LABEL,
   type SupportCategory,
   type SupportStatus,
-  type AdminSupportTicketListItem,
 } from "@/lib/support-api";
 import { ApiError } from "@/lib/api";
 import { hhToast as toast } from "@/lib/hh-toast";
@@ -278,5 +277,3 @@ function TicketModal({ id, onClose }: { id: string; onClose: () => void }) {
   );
 }
 
-// silence unused
-void AdminSupportTicketListItem;

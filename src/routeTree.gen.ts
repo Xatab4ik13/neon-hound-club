@@ -53,6 +53,7 @@ import { Route as BloggerSettingsRouteImport } from './routes/blogger.settings'
 import { Route as BloggerHellAiRouteImport } from './routes/blogger.hell-ai'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminTicketsRouteImport } from './routes/admin.tickets'
+import { Route as AdminSupportRouteImport } from './routes/admin.support'
 import { Route as AdminShopRouteImport } from './routes/admin.shop'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as AdminSchoolRouteImport } from './routes/admin.school'
@@ -66,6 +67,7 @@ import { Route as AdminBannersRouteImport } from './routes/admin.banners'
 import { Route as ClubShopIndexRouteImport } from './routes/club.shop.index'
 import { Route as ClubRafflesIndexRouteImport } from './routes/club.raffles.index'
 import { Route as ClubOrdersIndexRouteImport } from './routes/club.orders.index'
+import { Route as ClubHelpIndexRouteImport } from './routes/club.help.index'
 import { Route as ClubHellPassIndexRouteImport } from './routes/club.hell-pass.index'
 import { Route as BloggerRafflesIndexRouteImport } from './routes/blogger.raffles.index'
 import { Route as ClubUNickRouteImport } from './routes/club.u.$nick'
@@ -76,6 +78,8 @@ import { Route as ClubOrdersOrderIdRouteImport } from './routes/club.orders.$ord
 import { Route as ClubLegalRequisitesRouteImport } from './routes/club.legal.requisites'
 import { Route as ClubLegalPromoRulesRouteImport } from './routes/club.legal.promo-rules'
 import { Route as ClubLegalPrivacyRouteImport } from './routes/club.legal.privacy'
+import { Route as ClubHelpNewRouteImport } from './routes/club.help.new'
+import { Route as ClubHelpTicketIdRouteImport } from './routes/club.help.$ticketId'
 import { Route as ClubHellPassTierRouteImport } from './routes/club.hell-pass.$tier'
 import { Route as BloggerRafflesRaffleIdRouteImport } from './routes/blogger.raffles.$raffleId'
 
@@ -299,6 +303,11 @@ const AdminTicketsRoute = AdminTicketsRouteImport.update({
   path: '/tickets',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminSupportRoute = AdminSupportRouteImport.update({
+  id: '/support',
+  path: '/support',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminShopRoute = AdminShopRouteImport.update({
   id: '/shop',
   path: '/shop',
@@ -364,6 +373,11 @@ const ClubOrdersIndexRoute = ClubOrdersIndexRouteImport.update({
   path: '/orders/',
   getParentRoute: () => ClubRoute,
 } as any)
+const ClubHelpIndexRoute = ClubHelpIndexRouteImport.update({
+  id: '/help/',
+  path: '/help/',
+  getParentRoute: () => ClubRoute,
+} as any)
 const ClubHellPassIndexRoute = ClubHellPassIndexRouteImport.update({
   id: '/hell-pass/',
   path: '/hell-pass/',
@@ -414,6 +428,16 @@ const ClubLegalPrivacyRoute = ClubLegalPrivacyRouteImport.update({
   path: '/legal/privacy',
   getParentRoute: () => ClubRoute,
 } as any)
+const ClubHelpNewRoute = ClubHelpNewRouteImport.update({
+  id: '/help/new',
+  path: '/help/new',
+  getParentRoute: () => ClubRoute,
+} as any)
+const ClubHelpTicketIdRoute = ClubHelpTicketIdRouteImport.update({
+  id: '/help/$ticketId',
+  path: '/help/$ticketId',
+  getParentRoute: () => ClubRoute,
+} as any)
 const ClubHellPassTierRoute = ClubHellPassTierRouteImport.update({
   id: '/hell-pass/$tier',
   path: '/hell-pass/$tier',
@@ -448,6 +472,7 @@ export interface FileRoutesByFullPath {
   '/admin/school': typeof AdminSchoolRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/shop': typeof AdminShopRoute
+  '/admin/support': typeof AdminSupportRoute
   '/admin/tickets': typeof AdminTicketsRoute
   '/admin/users': typeof AdminUsersRoute
   '/blogger/hell-ai': typeof BloggerHellAiRoute
@@ -482,6 +507,8 @@ export interface FileRoutesByFullPath {
   '/shop/': typeof ShopIndexRoute
   '/blogger/raffles/$raffleId': typeof BloggerRafflesRaffleIdRoute
   '/club/hell-pass/$tier': typeof ClubHellPassTierRoute
+  '/club/help/$ticketId': typeof ClubHelpTicketIdRoute
+  '/club/help/new': typeof ClubHelpNewRoute
   '/club/legal/privacy': typeof ClubLegalPrivacyRoute
   '/club/legal/promo-rules': typeof ClubLegalPromoRulesRoute
   '/club/legal/requisites': typeof ClubLegalRequisitesRoute
@@ -492,6 +519,7 @@ export interface FileRoutesByFullPath {
   '/club/u/$nick': typeof ClubUNickRoute
   '/blogger/raffles/': typeof BloggerRafflesIndexRoute
   '/club/hell-pass/': typeof ClubHellPassIndexRoute
+  '/club/help/': typeof ClubHelpIndexRoute
   '/club/orders/': typeof ClubOrdersIndexRoute
   '/club/raffles/': typeof ClubRafflesIndexRoute
   '/club/shop/': typeof ClubShopIndexRoute
@@ -516,6 +544,7 @@ export interface FileRoutesByTo {
   '/admin/school': typeof AdminSchoolRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/shop': typeof AdminShopRoute
+  '/admin/support': typeof AdminSupportRoute
   '/admin/tickets': typeof AdminTicketsRoute
   '/admin/users': typeof AdminUsersRoute
   '/blogger/hell-ai': typeof BloggerHellAiRoute
@@ -550,6 +579,8 @@ export interface FileRoutesByTo {
   '/shop': typeof ShopIndexRoute
   '/blogger/raffles/$raffleId': typeof BloggerRafflesRaffleIdRoute
   '/club/hell-pass/$tier': typeof ClubHellPassTierRoute
+  '/club/help/$ticketId': typeof ClubHelpTicketIdRoute
+  '/club/help/new': typeof ClubHelpNewRoute
   '/club/legal/privacy': typeof ClubLegalPrivacyRoute
   '/club/legal/promo-rules': typeof ClubLegalPromoRulesRoute
   '/club/legal/requisites': typeof ClubLegalRequisitesRoute
@@ -560,6 +591,7 @@ export interface FileRoutesByTo {
   '/club/u/$nick': typeof ClubUNickRoute
   '/blogger/raffles': typeof BloggerRafflesIndexRoute
   '/club/hell-pass': typeof ClubHellPassIndexRoute
+  '/club/help': typeof ClubHelpIndexRoute
   '/club/orders': typeof ClubOrdersIndexRoute
   '/club/raffles': typeof ClubRafflesIndexRoute
   '/club/shop': typeof ClubShopIndexRoute
@@ -588,6 +620,7 @@ export interface FileRoutesById {
   '/admin/school': typeof AdminSchoolRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/shop': typeof AdminShopRoute
+  '/admin/support': typeof AdminSupportRoute
   '/admin/tickets': typeof AdminTicketsRoute
   '/admin/users': typeof AdminUsersRoute
   '/blogger/hell-ai': typeof BloggerHellAiRoute
@@ -622,6 +655,8 @@ export interface FileRoutesById {
   '/shop/': typeof ShopIndexRoute
   '/blogger/raffles/$raffleId': typeof BloggerRafflesRaffleIdRoute
   '/club/hell-pass/$tier': typeof ClubHellPassTierRoute
+  '/club/help/$ticketId': typeof ClubHelpTicketIdRoute
+  '/club/help/new': typeof ClubHelpNewRoute
   '/club/legal/privacy': typeof ClubLegalPrivacyRoute
   '/club/legal/promo-rules': typeof ClubLegalPromoRulesRoute
   '/club/legal/requisites': typeof ClubLegalRequisitesRoute
@@ -632,6 +667,7 @@ export interface FileRoutesById {
   '/club/u/$nick': typeof ClubUNickRoute
   '/blogger/raffles/': typeof BloggerRafflesIndexRoute
   '/club/hell-pass/': typeof ClubHellPassIndexRoute
+  '/club/help/': typeof ClubHelpIndexRoute
   '/club/orders/': typeof ClubOrdersIndexRoute
   '/club/raffles/': typeof ClubRafflesIndexRoute
   '/club/shop/': typeof ClubShopIndexRoute
@@ -661,6 +697,7 @@ export interface FileRouteTypes {
     | '/admin/school'
     | '/admin/settings'
     | '/admin/shop'
+    | '/admin/support'
     | '/admin/tickets'
     | '/admin/users'
     | '/blogger/hell-ai'
@@ -695,6 +732,8 @@ export interface FileRouteTypes {
     | '/shop/'
     | '/blogger/raffles/$raffleId'
     | '/club/hell-pass/$tier'
+    | '/club/help/$ticketId'
+    | '/club/help/new'
     | '/club/legal/privacy'
     | '/club/legal/promo-rules'
     | '/club/legal/requisites'
@@ -705,6 +744,7 @@ export interface FileRouteTypes {
     | '/club/u/$nick'
     | '/blogger/raffles/'
     | '/club/hell-pass/'
+    | '/club/help/'
     | '/club/orders/'
     | '/club/raffles/'
     | '/club/shop/'
@@ -729,6 +769,7 @@ export interface FileRouteTypes {
     | '/admin/school'
     | '/admin/settings'
     | '/admin/shop'
+    | '/admin/support'
     | '/admin/tickets'
     | '/admin/users'
     | '/blogger/hell-ai'
@@ -763,6 +804,8 @@ export interface FileRouteTypes {
     | '/shop'
     | '/blogger/raffles/$raffleId'
     | '/club/hell-pass/$tier'
+    | '/club/help/$ticketId'
+    | '/club/help/new'
     | '/club/legal/privacy'
     | '/club/legal/promo-rules'
     | '/club/legal/requisites'
@@ -773,6 +816,7 @@ export interface FileRouteTypes {
     | '/club/u/$nick'
     | '/blogger/raffles'
     | '/club/hell-pass'
+    | '/club/help'
     | '/club/orders'
     | '/club/raffles'
     | '/club/shop'
@@ -800,6 +844,7 @@ export interface FileRouteTypes {
     | '/admin/school'
     | '/admin/settings'
     | '/admin/shop'
+    | '/admin/support'
     | '/admin/tickets'
     | '/admin/users'
     | '/blogger/hell-ai'
@@ -834,6 +879,8 @@ export interface FileRouteTypes {
     | '/shop/'
     | '/blogger/raffles/$raffleId'
     | '/club/hell-pass/$tier'
+    | '/club/help/$ticketId'
+    | '/club/help/new'
     | '/club/legal/privacy'
     | '/club/legal/promo-rules'
     | '/club/legal/requisites'
@@ -844,6 +891,7 @@ export interface FileRouteTypes {
     | '/club/u/$nick'
     | '/blogger/raffles/'
     | '/club/hell-pass/'
+    | '/club/help/'
     | '/club/orders/'
     | '/club/raffles/'
     | '/club/shop/'
@@ -1188,6 +1236,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminTicketsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/support': {
+      id: '/admin/support'
+      path: '/support'
+      fullPath: '/admin/support'
+      preLoaderRoute: typeof AdminSupportRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/shop': {
       id: '/admin/shop'
       path: '/shop'
@@ -1279,6 +1334,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ClubOrdersIndexRouteImport
       parentRoute: typeof ClubRoute
     }
+    '/club/help/': {
+      id: '/club/help/'
+      path: '/help'
+      fullPath: '/club/help/'
+      preLoaderRoute: typeof ClubHelpIndexRouteImport
+      parentRoute: typeof ClubRoute
+    }
     '/club/hell-pass/': {
       id: '/club/hell-pass/'
       path: '/hell-pass'
@@ -1349,6 +1411,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ClubLegalPrivacyRouteImport
       parentRoute: typeof ClubRoute
     }
+    '/club/help/new': {
+      id: '/club/help/new'
+      path: '/help/new'
+      fullPath: '/club/help/new'
+      preLoaderRoute: typeof ClubHelpNewRouteImport
+      parentRoute: typeof ClubRoute
+    }
+    '/club/help/$ticketId': {
+      id: '/club/help/$ticketId'
+      path: '/help/$ticketId'
+      fullPath: '/club/help/$ticketId'
+      preLoaderRoute: typeof ClubHelpTicketIdRouteImport
+      parentRoute: typeof ClubRoute
+    }
     '/club/hell-pass/$tier': {
       id: '/club/hell-pass/$tier'
       path: '/hell-pass/$tier'
@@ -1377,6 +1453,7 @@ interface AdminRouteChildren {
   AdminSchoolRoute: typeof AdminSchoolRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
   AdminShopRoute: typeof AdminShopRoute
+  AdminSupportRoute: typeof AdminSupportRoute
   AdminTicketsRoute: typeof AdminTicketsRoute
   AdminUsersRoute: typeof AdminUsersRoute
   AdminIndexRoute: typeof AdminIndexRoute
@@ -1393,6 +1470,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminSchoolRoute: AdminSchoolRoute,
   AdminSettingsRoute: AdminSettingsRoute,
   AdminShopRoute: AdminShopRoute,
+  AdminSupportRoute: AdminSupportRoute,
   AdminTicketsRoute: AdminTicketsRoute,
   AdminUsersRoute: AdminUsersRoute,
   AdminIndexRoute: AdminIndexRoute,
@@ -1433,6 +1511,8 @@ interface ClubRouteChildren {
   ClubTicketsRoute: typeof ClubTicketsRoute
   ClubIndexRoute: typeof ClubIndexRoute
   ClubHellPassTierRoute: typeof ClubHellPassTierRoute
+  ClubHelpTicketIdRoute: typeof ClubHelpTicketIdRoute
+  ClubHelpNewRoute: typeof ClubHelpNewRoute
   ClubLegalPrivacyRoute: typeof ClubLegalPrivacyRoute
   ClubLegalPromoRulesRoute: typeof ClubLegalPromoRulesRoute
   ClubLegalRequisitesRoute: typeof ClubLegalRequisitesRoute
@@ -1442,6 +1522,7 @@ interface ClubRouteChildren {
   ClubShopProductSlugRoute: typeof ClubShopProductSlugRoute
   ClubUNickRoute: typeof ClubUNickRoute
   ClubHellPassIndexRoute: typeof ClubHellPassIndexRoute
+  ClubHelpIndexRoute: typeof ClubHelpIndexRoute
   ClubOrdersIndexRoute: typeof ClubOrdersIndexRoute
   ClubRafflesIndexRoute: typeof ClubRafflesIndexRoute
   ClubShopIndexRoute: typeof ClubShopIndexRoute
@@ -1461,6 +1542,8 @@ const ClubRouteChildren: ClubRouteChildren = {
   ClubTicketsRoute: ClubTicketsRoute,
   ClubIndexRoute: ClubIndexRoute,
   ClubHellPassTierRoute: ClubHellPassTierRoute,
+  ClubHelpTicketIdRoute: ClubHelpTicketIdRoute,
+  ClubHelpNewRoute: ClubHelpNewRoute,
   ClubLegalPrivacyRoute: ClubLegalPrivacyRoute,
   ClubLegalPromoRulesRoute: ClubLegalPromoRulesRoute,
   ClubLegalRequisitesRoute: ClubLegalRequisitesRoute,
@@ -1470,6 +1553,7 @@ const ClubRouteChildren: ClubRouteChildren = {
   ClubShopProductSlugRoute: ClubShopProductSlugRoute,
   ClubUNickRoute: ClubUNickRoute,
   ClubHellPassIndexRoute: ClubHellPassIndexRoute,
+  ClubHelpIndexRoute: ClubHelpIndexRoute,
   ClubOrdersIndexRoute: ClubOrdersIndexRoute,
   ClubRafflesIndexRoute: ClubRafflesIndexRoute,
   ClubShopIndexRoute: ClubShopIndexRoute,
