@@ -622,7 +622,7 @@ function CommentsSheet({
   const [replyTo, setReplyTo] = useState<{ nick: string; commentId: string } | null>(null);
   const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set());
   const listRef = useRef<HTMLDivElement>(null);
-  const kbOffset = useKeyboardOffset();
+  useKeyboardOffset();
   const viewer = useViewer();
   const myId = viewer.user?.id ?? null;
   const onListScroll = () => {};
