@@ -21,6 +21,7 @@ import {
   Moon,
   LogOut,
   Loader2,
+  LifeBuoy,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useViewer } from "@/hooks/use-viewer";
@@ -149,6 +150,7 @@ const NAV: NavItem[] = [
   { to: "/admin/shop", label: "Магазин", icon: ShoppingBag },
   { to: "/admin/orders", label: "Заказы", icon: Package },
   { to: "/admin/tickets", label: "Билеты", icon: Ticket },
+  { to: "/admin/support", label: "Помощь", icon: LifeBuoy },
   { to: "/admin/banners", label: "Баннеры", icon: ImageIcon },
 
   
