@@ -20,7 +20,7 @@ import { Swipeable } from "@/components/club/Swipeable";
 import { reactionsStore } from "@/data/reactions-store";
 import { hhToast } from "@/lib/hh-toast";
 import { haptic } from "@/hooks/use-haptic";
-import { apiFetch } from "@/lib/api";
+
 
 
 
@@ -636,39 +636,16 @@ function CommentsSheet({
       el.scrollHeight - el.scrollTop - el.clientHeight < 80;
   };
 
-  // ── «как в Telegram»: read-marker ──
-  // На открытии модалки тянем lastReadAt; на закрытии — POST'им «прочитано до сейчас».
-  const [lastReadAt, setLastReadAt] = useState<string | null>(null);
-  const [readMarkerLoaded, setReadMarkerLoaded] = useState(false);
-  const didScrollRef = useRef(false);
 
   // сбросить reply при закрытии; при открытии — подгрузить ПОЛНЫЙ список коментов
   useEffect(() => {
     if (!open) {
       setReplyTo(null);
-      setReadMarkerLoaded(false);
-      didScrollRef.current = false;
       return;
     }
     if (!post.commentsFull) {
       feedStore.loadFullComments(post.id);
     }
-    let cancelled = false;
-    apiFetch<{ lastReadAt: string | null }>(`/api/v1/feed/${post.id}/comments-read`)
-      .then((r) => {
-        if (!cancelled) {
-          setLastReadAt(r.lastReadAt);
-          setReadMarkerLoaded(true);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) setReadMarkerLoaded(true);
-      });
-    return () => {
-      cancelled = true;
-      // на закрытии — отмечаем как прочитанное (fire-and-forget)
-      apiFetch(`/api/v1/feed/${post.id}/comments-read`, { method: "POST" }).catch(() => {});
-    };
   }, [open, post.id, post.commentsFull]);
 
   // Когда клавиатура появилась/исчезла — если были внизу, остаёмся внизу.
@@ -726,36 +703,7 @@ function CommentsSheet({
     return { topLevel, childrenByParentId };
   }, [post.comments]);
 
-  // Первый непрочитанный коммент верхнего уровня (для «Telegram»-разделителя и автоскролла).
-  const firstUnreadId = useMemo(() => {
-    if (!readMarkerLoaded || !lastReadAt) return null;
-    const lr = new Date(lastReadAt).getTime();
-    if (Number.isNaN(lr)) return null;
-    for (const c of topLevel) {
-      if (new Date(c.createdAt).getTime() > lr) return c.id;
-    }
-    return null;
-  }, [readMarkerLoaded, lastReadAt, topLevel]);
 
-  // Скроллим один раз когда всё готово: либо к разделителю, либо в самый низ.
-  useEffect(() => {
-    if (!open || !post.commentsFull || !readMarkerLoaded || didScrollRef.current) return;
-    if (post.comments.length === 0) return;
-    didScrollRef.current = true;
-    requestAnimationFrame(() => {
-      const list = listRef.current;
-      if (!list) return;
-      if (firstUnreadId) {
-        const target = list.querySelector<HTMLElement>(`[data-comment-id="${firstUnreadId}"]`);
-        if (target) {
-          // отступ сверху ~64px чтобы разделитель был виден
-          list.scrollTop = Math.max(0, target.offsetTop - 64);
-          return;
-        }
-      }
-      list.scrollTop = list.scrollHeight;
-    });
-  }, [open, post.commentsFull, readMarkerLoaded, firstUnreadId, post.comments.length]);
 
   const toggleCollapse = (id: string) => {
     setCollapsed((prev) => {
@@ -836,18 +784,8 @@ function CommentsSheet({
               {topLevel.map((c) => {
                 const children = childrenByParentId.get(c.id) ?? [];
                 const isCollapsed = collapsed.has(c.id);
-                const isUnreadAnchor = c.id === firstUnreadId;
                 return (
                   <li key={c.id} data-comment-id={c.id} className="space-y-3">
-                    {isUnreadAnchor && (
-                      <div className="flex items-center gap-3 py-1">
-                        <span className="h-px flex-1 bg-primary/30" />
-                        <span className="font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-primary">
-                          Непрочитанные
-                        </span>
-                        <span className="h-px flex-1 bg-primary/30" />
-                      </div>
-                    )}
                     <ul>{renderItem(c)}</ul>
                     {children.length > 0 && (
                       <div className="pl-12">
