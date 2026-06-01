@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { and, desc, eq, gt, inArray, or, sql } from "drizzle-orm";
+import { and, desc, eq, gt, inArray, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import {
   supportTickets,
@@ -272,5 +272,3 @@ export async function adminSupportRoutes(app: FastifyInstance) {
   });
 }
 
-// silence unused import warning if tree-shake misses
-void or;
