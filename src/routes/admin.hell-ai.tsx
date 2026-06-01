@@ -263,6 +263,16 @@ function HellAiAdminPage() {
             </div>
           ))}
         </div>
+        <AdminPager
+          page={logPage}
+          pageSize={logPageSize}
+          total={logTotal}
+          onPageChange={setLogPage}
+          onPageSizeChange={(s) => {
+            setLogPageSize(s);
+            setLogPage(1);
+          }}
+        />
       </Panel>
     </div>
   );
