@@ -14,6 +14,7 @@ import {
   ConfirmModal,
   Modal,
 } from "@/components/admin/ui";
+import { AdminPager, type AdminPageSize } from "@/components/admin/AdminPager";
 import {
   adminQk,
   creditTickets,
@@ -41,22 +42,29 @@ function UsersPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [giftOpen, setGiftOpen] = useState(false);
   const [giftPassOpen, setGiftPassOpen] = useState(false);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState<AdminPageSize>(50);
 
   // дебаунс поиска
   if (query !== debounced) {
-    setTimeout(() => setDebounced(query), 250);
+    setTimeout(() => {
+      setDebounced(query);
+      setPage(1);
+    }, 250);
   }
 
   const listQ = useQuery({
-    queryKey: adminQk.users(debounced),
-    queryFn: () => fetchAdminUsers({ q: debounced || undefined }),
+    queryKey: [...adminQk.users(debounced), page, pageSize],
+    queryFn: () => fetchAdminUsers({ q: debounced || undefined, page, pageSize }),
+    placeholderData: (prev) => prev,
   });
 
   const items = listQ.data?.items ?? [];
+  const total = listQ.data?.total ?? 0;
 
   return (
     <div>
-      <PageHeader title="Пользователи" description={`Найдено: ${items.length}`} />
+      <PageHeader title="Пользователи" description={`Всего: ${total}`} />
 
       <div className="mb-3 flex gap-2">
         <TextInput
@@ -90,6 +98,16 @@ function UsersPage() {
         {!listQ.isLoading && items.length === 0 && (
           <div className="p-6 text-center text-sm text-zinc-500">Никого не найдено</div>
         )}
+        <AdminPager
+          page={page}
+          pageSize={pageSize}
+          total={total}
+          onPageChange={setPage}
+          onPageSizeChange={(s) => {
+            setPageSize(s);
+            setPage(1);
+          }}
+        />
       </Panel>
 
       {selectedId && (

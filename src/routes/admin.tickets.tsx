@@ -12,6 +12,7 @@ import {
   TextInput,
   Modal,
 } from "@/components/admin/ui";
+import { AdminPager, type AdminPageSize } from "@/components/admin/AdminPager";
 import { adminQk, creditTickets, fetchAdminTicketsJournal } from "@/lib/admin-queries";
 import { ApiError } from "@/lib/api";
 import { hhToast as toast } from "@/lib/hh-toast";
@@ -50,17 +51,22 @@ const SOURCE_LABEL: Record<string, string> = {
 };
 
 function JournalPanel() {
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState<AdminPageSize>(50);
+
   const journalQ = useQuery({
-    queryKey: ["admin", "tickets", "journal", 100],
-    queryFn: () => fetchAdminTicketsJournal(100),
+    queryKey: ["admin", "tickets", "journal", page, pageSize],
+    queryFn: () => fetchAdminTicketsJournal({ page, pageSize }),
+    placeholderData: (prev) => prev,
   });
 
   const items = journalQ.data?.items ?? [];
+  const total = journalQ.data?.total ?? 0;
 
   return (
     <Panel>
       <PanelHeader>
-        <div className="text-sm font-medium">Журнал · {items.length}</div>
+        <div className="text-sm font-medium">Журнал · {total}</div>
       </PanelHeader>
       <DataTable
         headers={["Дата", "Юзер", "Δ", "Источник", "Причина"]}
@@ -94,6 +100,16 @@ function JournalPanel() {
       {!journalQ.isLoading && items.length === 0 && (
         <div className="p-6 text-center text-sm text-zinc-500">Журнал пуст</div>
       )}
+      <AdminPager
+        page={page}
+        pageSize={pageSize}
+        total={total}
+        onPageChange={setPage}
+        onPageSizeChange={(s) => {
+          setPageSize(s);
+          setPage(1);
+        }}
+      />
     </Panel>
   );
 }
@@ -114,7 +130,7 @@ function GiveModal({ open, onClose }: { open: boolean; onClose: () => void }) {
       }),
     onSuccess: (res) => {
       toast.success(`@${res.user.nick}: баланс ${res.balance}`);
-      qc.invalidateQueries({ queryKey: ["admin", "tickets", "journal", 100] });
+      qc.invalidateQueries({ queryKey: ["admin", "tickets", "journal"] });
       setNick("");
       setAmount("10");
       setReason("");

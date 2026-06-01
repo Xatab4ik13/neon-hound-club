@@ -393,9 +393,18 @@ export async function createOrder(input: CreateOrderInput) {
 
 // ---------- ADMIN: ORDERS ----------
 
-export async function fetchAdminOrders(status?: ShopOrderStatus) {
-  const qs = status ? `?status=${encodeURIComponent(status)}&limit=200` : "?limit=200";
-  return apiFetch<{ items: ShopOrder[] }>(`/api/v1/admin/shop/orders${qs}`);
+export async function fetchAdminOrders(
+  status?: ShopOrderStatus,
+  opts?: { page?: number; pageSize?: number },
+) {
+  const sp = new URLSearchParams();
+  if (status) sp.set("status", status);
+  if (opts?.page) sp.set("page", String(opts.page));
+  if (opts?.pageSize) sp.set("pageSize", String(opts.pageSize));
+  const qs = sp.toString();
+  return apiFetch<{ items: ShopOrder[]; total: number; page: number; pageSize: number }>(
+    `/api/v1/admin/shop/orders${qs ? `?${qs}` : ""}`,
+  );
 }
 
 export async function fetchAdminOrder(id: string) {

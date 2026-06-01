@@ -7,6 +7,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Package, Phone, MapPin, User as UserIcon, RefreshCw, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ApiError } from "@/lib/api";
+import { AdminPager, type AdminPageSize } from "@/components/admin/AdminPager";
 import {
   fetchAdminOrders,
   fetchAdminOrder,
@@ -68,12 +69,15 @@ function fmtDate(iso: string) {
 function AdminOrdersPage() {
   const [filter, setFilter] = useState<ShopOrderStatus | "all">("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState<AdminPageSize>(50);
 
   const status = filter === "all" ? undefined : filter;
   const list = useQuery({
-    queryKey: qk.adminOrders(status),
-    queryFn: () => fetchAdminOrders(status),
+    queryKey: [...qk.adminOrders(status), page, pageSize],
+    queryFn: () => fetchAdminOrders(status, { page, pageSize }),
     refetchInterval: 30_000,
+    placeholderData: (prev) => prev,
   });
 
   return (
@@ -98,7 +102,10 @@ function AdminOrdersPage() {
           <button
             key={f.key}
             type="button"
-            onClick={() => setFilter(f.key)}
+            onClick={() => {
+              setFilter(f.key);
+              setPage(1);
+            }}
             className={cn(
               "rounded-md px-3 py-1.5 text-xs font-medium transition",
               filter === f.key
@@ -112,24 +119,36 @@ function AdminOrdersPage() {
       </div>
 
       <div className="flex flex-1 overflow-hidden">
-        <div className="flex-1 overflow-y-auto p-4">
-          {list.isLoading ? (
-            <div className="flex items-center justify-center py-20 text-zinc-400">
-              <Loader2 className="h-5 w-5 animate-spin" />
-            </div>
-          ) : list.isError ? (
-            <div className="rounded-md border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950/30 dark:text-rose-300">
-              Не удалось загрузить заказы.
-            </div>
-          ) : !list.data?.items.length ? (
-            <div className="py-20 text-center text-sm text-zinc-500">Заказов нет</div>
-          ) : (
-            <OrdersTable
-              items={list.data.items}
-              selectedId={selectedId}
-              onSelect={setSelectedId}
-            />
-          )}
+        <div className="flex flex-1 flex-col overflow-hidden">
+          <div className="flex-1 overflow-y-auto p-4">
+            {list.isLoading ? (
+              <div className="flex items-center justify-center py-20 text-zinc-400">
+                <Loader2 className="h-5 w-5 animate-spin" />
+              </div>
+            ) : list.isError ? (
+              <div className="rounded-md border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950/30 dark:text-rose-300">
+                Не удалось загрузить заказы.
+              </div>
+            ) : !list.data?.items.length ? (
+              <div className="py-20 text-center text-sm text-zinc-500">Заказов нет</div>
+            ) : (
+              <OrdersTable
+                items={list.data.items}
+                selectedId={selectedId}
+                onSelect={setSelectedId}
+              />
+            )}
+          </div>
+          <AdminPager
+            page={page}
+            pageSize={pageSize}
+            total={list.data?.total ?? 0}
+            onPageChange={setPage}
+            onPageSizeChange={(s) => {
+              setPageSize(s);
+              setPage(1);
+            }}
+          />
         </div>
 
         {selectedId && (
