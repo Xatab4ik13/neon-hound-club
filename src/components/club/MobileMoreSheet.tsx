@@ -77,7 +77,9 @@ export function MobileMoreSheet({
   const close = () => onOpenChange(false);
   const { count: cartCount } = useCart();
   const { signOut } = useViewer();
-  const GROUPS = buildGroups(cartCount);
+  const [isPwa, setIsPwa] = useState(false);
+  useEffect(() => setIsPwa(isStandalonePWA()), []);
+  const GROUPS = buildGroups(cartCount, isPwa);
   const [confirmLogout, setConfirmLogout] = useState(false);
 
   const doLogout = async () => {
