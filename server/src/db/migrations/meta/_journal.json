@@ -36,6 +36,8 @@
     { "idx": 31, "version": "7", "when": 1779780000000, "tag": "0031_payments_default_raif", "breakpoints": true },
     { "idx": 32, "version": "7", "when": 1779790000000, "tag": "0032_payments_method", "breakpoints": true },
     { "idx": 33, "version": "7", "when": 1779800000000, "tag": "0033_orders_expires", "breakpoints": true },
-    { "idx": 34, "version": "7", "when": 1779810000000, "tag": "0034_carts", "breakpoints": true }
+    { "idx": 34, "version": "7", "when": 1779810000000, "tag": "0034_carts", "breakpoints": true },
+    { "idx": 35, "version": "7", "when": 1779820000000, "tag": "0035_phone_international", "breakpoints": true },
+    { "idx": 36, "version": "7", "when": 1779830000000, "tag": "0036_support_tickets", "breakpoints": true }
   ]
 }
