@@ -15,6 +15,7 @@ import {
   Field,
   Badge,
 } from "@/components/admin/ui";
+import { AdminPager, type AdminPageSize } from "@/components/admin/AdminPager";
 import { apiFetch, ApiError } from "@/lib/api";
 
 export const Route = createFileRoute("/admin/hell-ai")({
@@ -55,6 +56,9 @@ function HellAiAdminPage() {
   const [allowedModels, setAllowedModels] = useState<string[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [log, setLog] = useState<LogRow[]>([]);
+  const [logTotal, setLogTotal] = useState(0);
+  const [logPage, setLogPage] = useState(1);
+  const [logPageSize, setLogPageSize] = useState<AdminPageSize>(50);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -67,12 +71,15 @@ function HellAiAdminPage() {
       const [s, st, l] = await Promise.all([
         apiFetch<{ settings: Settings; allowedModels: string[] }>("/api/v1/admin/hell-ai/settings"),
         apiFetch<{ stats: Stats }>("/api/v1/admin/hell-ai/stats"),
-        apiFetch<{ messages: LogRow[] }>("/api/v1/admin/hell-ai/log?limit=40"),
+        apiFetch<{ messages: LogRow[]; total: number; page: number; pageSize: number }>(
+          `/api/v1/admin/hell-ai/log?page=${logPage}&pageSize=${logPageSize}`,
+        ),
       ]);
       setSettings(s.settings);
       setAllowedModels(s.allowedModels);
       setStats(st.stats);
       setLog(l.messages);
+      setLogTotal(l.total ?? l.messages.length);
     } catch (e) {
       const msg =
         e instanceof ApiError
@@ -90,7 +97,8 @@ function HellAiAdminPage() {
 
   useEffect(() => {
     void reload();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [logPage, logPageSize]);
 
   async function save() {
     if (!settings) return;
@@ -220,7 +228,7 @@ function HellAiAdminPage() {
       {/* Журнал */}
       <Panel>
         <PanelHeader>
-          <h2 className="text-sm font-semibold">Последние 40 сообщений</h2>
+          <h2 className="text-sm font-semibold">Сообщения · {logTotal}</h2>
           <span className="text-xs text-zinc-500">контроль качества</span>
         </PanelHeader>
         <div className="divide-y divide-zinc-200 dark:divide-zinc-800">
