@@ -1,126 +1,139 @@
-## Что делаем
+Инструкция: подключение Cloudflare (CDN + защита origin IP) для hhr.pro и api.hhr.pro
 
-Новый раздел **«Помощь»** в клубной части PWA, где юзер может отправить тикет, дождаться ответа админа и посмотреть закрытые в архиве. В админке — отдельная страница со списком и просмотром тикетов.
+Цель
+----
+Скрыть реальный IP сервера (186.246.7.78) за CDN Cloudflare, чтобы ТСПУ и сканеры не видели origin напрямую. Улучшить доступность сайта из разных регионов и операторов РФ.
 
-Логика «один вопрос → один ответ»: после ответа админа юзер может только прочитать. Если нужно ещё — создаёт новый тикет.
-
-## Категории тикетов
-
-- `bug` — Баг
-- `feature` — Предложение
-- `question` — Вопрос
-
-## Статусы тикета
-
-- `open` — отправлен, ждёт ответа
-- `answered` — админ ответил
-- `closed` — админ закрыл (попадает в архив, юзер видит read-only)
-
-## Бэкенд (`server/`)
-
-Всё по существующей архитектуре Fastify + Drizzle + Postgres. Без Supabase.
-
-**Миграция** `0XXX_tickets.sql`:
-```
-tickets
-  id uuid pk
-  user_id uuid fk users
-  category varchar(16) — bug | feature | question
-  subject varchar(120)
-  body text
-  status varchar(16) default 'open'
-  admin_reply text null
-  answered_by uuid null fk users
-  answered_at timestamptz null
-  closed_at timestamptz null
-  created_at timestamptz default now()
-  updated_at timestamptz default now()
-  -- индексы: (user_id, created_at desc), (status, created_at desc)
+Архитектура после настройки
+----------------------------
+```text
+Пользователь → Cloudflare (CDN, SSL, DDoS) → Timeweb Apps (фронт, 46.19.64.95)
+Пользователь → Cloudflare (CDN, SSL, DDoS) → VPS Nginx (API, 186.246.7.78)
 ```
 
-**Схема** `server/src/db/schema/tickets.ts` + регистрация в общем экспорте.
+Шаг 1. Подготовка
+-----------------
+Нужно узнать, где сейчас управляются DNS-записи для домена `hhr.pro`:
+- В панели регистратора домена (timeweb, reg.ru, nic.ru и т.д.)?
+- В панели Timeweb (если домен куплен/делегирован туда)?
 
-**Роуты** `server/src/routes/support-tickets.ts`:
-- `GET /api/v1/support/tickets?status=active|closed` — список тикетов юзера (active = open+answered)
-- `POST /api/v1/support/tickets` — создать (zod: category enum, subject 3–120, body 5–4000)
-- `GET /api/v1/support/tickets/:id` — детали одного тикета (только свой)
+Запиши текущие записи (мы их уже посмотрели):
+- `hhr.pro` A → `46.19.64.95`
+- `www.hhr.pro` A → `46.19.64.95`
+- `api.hhr.pro` A → `186.246.7.78`
+- `hhr.pro` MX → `mx1.timeweb.ru`, `mx2.timeweb.ru`
+- `hhr.pro` TXT → `v=spf1 include:_spf.timeweb.ru ~all`
 
-**Админ-роуты** в том же файле через `requireAdmin`:
-- `GET /api/v1/admin/support/tickets?status=&category=&page=&pageSize=` — постраничный список с ником юзера (через `parsePagination`, аналогично `admin-tickets`)
-- `GET /api/v1/admin/support/tickets/:id`
-- `POST /api/v1/admin/support/tickets/:id/reply` — body: `{ reply: string, close?: boolean }`. Ставит `status='answered'` (или `closed` если `close=true`), сохраняет `answered_by`, `answered_at`, шлёт push юзеру
-- `POST /api/v1/admin/support/tickets/:id/close` — просто закрыть без ответа
+Шаг 2. Регистрация в Cloudflare
+--------------------------------
+1. Открыть https://dash.cloudflare.com/sign-up
+2. Зарегистрироваться (email + пароль)
+3. Нажать "Add a site" / "Добавить сайт"
+4. Ввести: `hhr.pro`
+5. Выбрать тариф: **Free** (достаточно для начала)
 
-**Push-уведомление** при ответе:
-- Используем существующий `server/src/lib/push.ts` (как для других событий)
-- Title: «Ответ на ваш тикет», body: первые 80 символов ответа, deep-link: `/club/help/:id`
+Шаг 3. Перенос DNS-записей в Cloudflare
+----------------------------------------
+Cloudflare просканирует текущие записи. Проверь и добавь недостающие:
 
-**Rate limit**: 1 тикет в минуту на юзера (защита от спама) — простая проверка по `created_at` последнего.
+- **A @** → `46.19.64.95` (оранжевое облачко 🟧 = проксирование ВКЛ)
+- **A www** → `46.19.64.95` (оранжевое облачко 🟧 = проксирование ВКЛ)
+- **A api** → `186.246.7.78` (оранжевое облачко 🟧 = проксирование ВКЛ)
+- **MX** → `mx1.timeweb.ru` (приоритет 10) — серое облачко ☁️ (без прокси)
+- **MX** → `mx2.timeweb.ru` (приоритет 20) — серое облачко ☁️ (без прокси)
+- **TXT** → `v=spf1 include:_spf.timeweb.ru ~all` — серое облачко ☁️
 
-## Фронт (PWA)
+⚠️ **Важно:** записи MX и TXT нельзя проксировать (оранжевое облачко), иначе почта сломается.
 
-### Гейтинг «только PWA»
-В `src/components/club/MobileMoreSheet.tsx` пункт «Помощь» показываем только при `isPwa()` (хелпер `src/lib/is-pwa.ts` уже есть). На вебе пункта в меню нет.
+Шаг 4. Смена NS у регистратора домена
+--------------------------------------
+Cloudflare выдаст 2 именных сервера (NS), например:
+- `bob.ns.cloudflare.com`
+- `lara.ns.cloudflare.com`
 
-### Маршруты
-- `src/routes/club.help.index.tsx` — список своих тикетов (табы «Активные» / «Архив») + кнопка «+ Новый тикет»
-- `src/routes/club.help.new.tsx` — форма создания
-- `src/routes/club.help.$ticketId.tsx` — детальная карточка тикета
+1. Зайди в панель управления доменом (там, где покупал/делегировал `hhr.pro`)
+2. Найди раздел "Управление DNS" или "NS-серверы" / "Name servers"
+3. Замени текущие NS на те, что дал Cloudflare
+4. Сохрани
 
-### Дизайн (iOS-стиль, уже принятый в проекте)
-Используем существующие iOS-компоненты:
-- `IOSList` для списков тикетов (группами по дате)
-- `IOSSheet` для выбора категории (segmented control / wheel picker)
-- `IOSFullScreenModal` или обычная страница для формы
-- `PageHeader` из `club/PageHeader.tsx` с back-кнопкой
-- Цветовые токены из `src/styles.css`, без хардкода
+Обычно обновление занимает от 1 до 24 часов (иногда быстрее).
 
-**Карточка тикета в списке**: иконка категории слева (Bug / Lightbulb / HelpCircle из lucide), сабжект, статус-чип (`open` — серый, `answered` — primary с точкой, `closed` — мьютед), дата справа.
+Шаг 5. Настройка SSL/TLS в Cloudflare
+---------------------------------------
+1. В панели Cloudflare → домен `hhr.pro` → вкладка **SSL/TLS**
+2. Выбрать режим: **Full (strict)**
+   - Почему: шифрование от пользователя до Cloudflare И от Cloudflare до твоего сервера
+   - Твои сертификаты Let's Encrypt на `api.hhr.pro` и `hhr.pro` останутся рабочими
+3. Вкладка **Edge Certificates** — убедись, что SSL для `*.hhr.pro` активен (обычно автоматически)
 
-**Детальная страница**: блок «Ваш вопрос» (категория + сабжект + текст + дата) → если есть ответ, блок «Ответ команды» с ником админа и датой → если статус `answered` и не закрыт, подсказка «Если вопрос исчерпан — создайте новый тикет для нового вопроса». Никаких полей для ответа со стороны юзера.
+Шаг 6. Настройка nginx на VPS (api.hhr.pro)
+---------------------------------------------
+Этот шаг я могу сделать за тебя, если дашь SSH. Или скинь конфиг — я покажу что поменять.
 
-**Форма нового тикета**:
-- Выбор категории (3 опции, segmented)
-- Тема (`Input`, лимит 120)
-- Описание (`Textarea`, лимит 4000, счётчик символов)
-- Кнопка «Отправить» — primary, после успеха toast «Тикет отправлен» и редирект на детальную
+Что нужно:
+1. **Убрать/изменить заголовок Server**
+   ```nginx
+   server_tokens off;
+   ```
+   (в `/etc/nginx/nginx.conf` внутри блока `http {}`)
 
-### API-клиент
-В `src/lib/api.ts` уже есть `apiFetch`. Добавить тонкий слой `src/lib/support-api.ts` с типами и функциями: `listMyTickets`, `getTicket`, `createTicket`. Для админки — в `src/lib/admin-queries.ts` добавить `fetchAdminSupportTickets`, `fetchAdminSupportTicket`, `replyToTicket`, `closeTicket`.
+2. **Добавить доверенные IP Cloudflare** (чтобы nginx видел реальный IP пользователя, а не IP Cloudflare):
+   ```nginx
+   # В http {} блоке
+   set_real_ip_from 173.245.48.0/20;
+   set_real_ip_from 103.21.244.0/22;
+   set_real_ip_from 103.22.200.0/22;
+   set_real_ip_from 103.31.4.0/22;
+   set_real_ip_from 141.101.64.0/18;
+   set_real_ip_from 108.162.192.0/18;
+   set_real_ip_from 190.93.240.0/20;
+   set_real_ip_from 188.114.96.0/20;
+   set_real_ip_from 197.234.240.0/22;
+   set_real_ip_from 198.41.128.0/17;
+   set_real_ip_from 162.158.0.0/15;
+   set_real_ip_from 104.16.0.0/13;
+   set_real_ip_from 104.24.0.0/14;
+   set_real_ip_from 172.64.0.0/13;
+   set_real_ip_from 131.0.72.0/22;
+   set_real_ip_from 2400:cb00::/32;
+   set_real_ip_from 2606:4700::/32;
+   set_real_ip_from 2803:f800::/32;
+   set_real_ip_from 2405:b500::/32;
+   set_real_ip_from 2405:8100::/32;
+   set_real_ip_from 2a06:98c0::/29;
+   set_real_ip_from 2c0f:f248::/32;
+   real_ip_header CF-Connecting-IP;
+   ```
+   Или установи пакет `nginx-module-cloudflare` / `libnginx-mod-http-realip` если есть в репозитории.
 
-### Push deep-link
-Существующий обработчик пушей (в `src/lib/push.ts` или service worker) уже умеет роутить по url из payload. Используем `/club/help/:id`.
+3. **(Опционально, но желательно) Закрыть прямой доступ к origin**
+   После переезда на Cloudflare можно настроить firewall (ufw/iptables) на VPS, чтобы порты 80/443 принимали соединения ТОЛЬКО с IP-диапазонов Cloudflare. Это скроет origin полностью. Но осторожно: если забудешь обновить список IP Cloudflare, сайт упадёт.
 
-## Админка
+Шаг 7. Проверка
+----------------
+После смены NS и включения проксирования:
+1. Открой `https://hhr.pro` — должен работать
+2. Открой `https://api.hhr.pro/healthz` — должен вернуть `{"ok":true}`
+3. Проверь: `nslookup api.hhr.pro` — теперь должен показывать IP Cloudflare (например, `104.21.x.x` или `172.67.x.x`), а не `186.246.7.78`
+4. Проверь авторизацию на сайте (login/logout) — cookie домена `.hhr.pro` должны работать как раньше
+5. Проверь загрузку медиа `/media/*`
 
-### Маршрут
-`src/routes/admin.support.tsx` (по образцу `admin.tickets.tsx`):
-- `PageHeader` «Помощь»
-- Фильтр-чипы по статусу (Все / Открытые / Отвеченные / Закрытые) и категории
-- `DataTable`: Дата · Юзер · Категория · Тема · Статус
-- Клик по строке → `Modal` с полным текстом + textarea для ответа + кнопки «Отправить ответ», «Отправить и закрыть», «Закрыть без ответа»
+Шаг 8. Дополнительно (рекомендую)
+----------------------------------
+- **Always Use HTTPS** в Cloudflare (SSL/TLS → Edge Certificates) — редирект с HTTP на HTTPS
+- **Automatic HTTPS Rewrites** — заменяет http:// на https:// в HTML
+- **Brotli** — вкладка Speed → Optimization → Content optimization → Brotli = ON
+- **Caching** — вкладка Caching → Configuration → Browser cache TTL: 4 часа (для статики)
 
-### Навигация админки
-Добавить пункт «Помощь» в боковое меню админки (там, где сейчас «Билеты», «Заказы» и т.д. — найти и расширить компонент навигации).
+Что может пойти не так
+----------------------
+- **Почта:** если MX проксируются (оранжевое облачко), почта перестанет ходить. Обязательно оставь MX серыми.
+- **SSL:** если выбрать "Flexible", а не "Full (strict)", может сломаться авторизация (cookie не будут передаваться корректно). Выбирай Full (strict).
+- **WebSockets / Realtime:** если используешь WebSockets, нужно включить в Cloudflare: Network → WebSockets = ON (обычно уже ON).
 
-### Бейдж количества открытых
-В пункте меню админки показывать число `open + answered_without_reply` — отдельный запрос `GET /api/v1/admin/support/tickets/unread-count` каждые 30 сек через `useQuery`.
+Кто делает что
+--------------
+- **Ты:** регистрация в Cloudflare, смена NS у регистратора домена, базовые настройки в панели Cloudflare (шаги 1-5)
+- **Я (или ты по моей инструкции):** правка nginx на VPS (шаг 6), проверка (шаг 7)
 
-## Что НЕ делаем (важно)
-
-- Не делаем чат-тред (по выбору юзера: один вопрос → один ответ)
-- Не делаем email-уведомления (только push)
-- Не показываем пункт «Помощь» в вебе и в iOS-сборке Rork (для iOS этот эндпоинт скрывается через `X-Client-Platform: ios` в `/api/v1/config`, как для розыгрышей)
-- Не даём юзеру редактировать или удалять тикет
-- Не даём прикладывать файлы/скриншоты в MVP (можно добавить позже)
-
-## Технические детали
-
-- Все суммы и поля валидируем через zod на бэке (как в существующих роутах)
-- В админ-ответе разрешаем переносы строк, без HTML/markdown (рендерим как `whitespace-pre-wrap`)
-- Регистрация роутов в `server/src/app.ts`: публичные под `/api/v1/support`, админские под `/api/v1/admin/support`
-- Деплой бэка после миграции: `cd /opt/hhr && git pull && cd server && docker compose up -d --build`
-
-## Открытый вопрос
-
-В ответе про уведомления ты выбрал «Push» + «Other», но текст «Other» не пришёл. По умолчанию делаю **только push**. Если хочется ещё бейдж-точку на иконке «Ещё» в табе или email — скажи, добавлю.
+Если готов — скажи, с какого шага начнём. Если хочешь, чтобы я сделал правку nginx — дай вывод `cat /etc/nginx/sites-available/api.hhr.pro` и `cat /etc/nginx/nginx.conf` с VPS.
