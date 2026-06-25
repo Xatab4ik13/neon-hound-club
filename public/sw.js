@@ -1,41 +1,14 @@
 // HELLHOUND service worker — ТОЛЬКО push-уведомления.
-// Никакого кэша, никакого navigateFallback — чтобы не ломать preview и не
-// держать пользователей на устаревшем шеле.
-//
-// События, которые мы хотим показывать: новый розыгрыш, новый пост в ленте,
-// новые поступившие товары. Бэкенд кладёт это в payload.
+// Никакого кэша, никакого navigateFallback, никакого reload окон на activate —
+// иначе boot-splash в PWA показывается дважды на каждое обновление SW.
 
 self.addEventListener("install", (event) => {
   event.waitUntil(self.skipWaiting());
 });
 
 self.addEventListener("activate", (event) => {
-  event.waitUntil(
-    (async () => {
-      await self.clients.claim();
-
-      const cacheNames = await caches.keys();
-      await Promise.all(cacheNames.map((name) => caches.delete(name)));
-
-      const clients = await self.clients.matchAll({
-        type: "window",
-        includeUncontrolled: true,
-      });
-
-      await Promise.all(
-        clients.map(async (client) => {
-          try {
-            const url = new URL(client.url);
-            if (url.origin !== self.location.origin) return;
-            url.searchParams.set("sw-refresh", Date.now().toString());
-            await client.navigate(url.toString());
-          } catch {
-            /* ignore */
-          }
-        }),
-      );
-    })(),
-  );
+  // Берём контроль над уже открытыми вкладками без перезагрузки.
+  event.waitUntil(self.clients.claim());
 });
 
 self.addEventListener("push", (event) => {
