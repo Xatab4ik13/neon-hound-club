@@ -150,6 +150,23 @@ export const PostCard = memo(function PostCard({ post, moderate = false }: { pos
     openPost();
   }, [openPost]);
 
+  // Открытие fullscreen-вьюера — через View Transitions API, если есть.
+  // Браузер snapshot-ит исходную картинку и плавно «летит» в фуллскрин
+  // (shared-element). Где API нет — просто открываем.
+  const openViewer = useCallback(() => {
+    const run = () => flushSync(() => { setViewerEverOpened(true); setViewerOpen(true); });
+    const d = typeof document !== "undefined" ? (document as Document & { startViewTransition?: (cb: () => void) => unknown }) : null;
+    if (d?.startViewTransition) d.startViewTransition(run);
+    else run();
+  }, []);
+
+  const closeViewer = useCallback(() => {
+    const run = () => flushSync(() => setViewerOpen(false));
+    const d = typeof document !== "undefined" ? (document as Document & { startViewTransition?: (cb: () => void) => unknown }) : null;
+    if (d?.startViewTransition) d.startViewTransition(run);
+    else run();
+  }, []);
+
   // Дабл-тап по картинке = лайк (если ещё не лайкнут).
   const lastImgTap = useRef(0);
   const onImageTap = useCallback(() => {
@@ -164,13 +181,10 @@ export const PostCard = memo(function PostCard({ post, moderate = false }: { pos
       lastImgTap.current = now;
       // Одиночный тап с задержкой — откроем вьюер, если за это время не пришёл второй.
       setTimeout(() => {
-        if (lastImgTap.current === now) {
-          setViewerEverOpened(true);
-          setViewerOpen(true);
-        }
+        if (lastImgTap.current === now) openViewer();
       }, 290);
     }
-  }, [liked, post.id]);
+  }, [liked, post.id, openViewer]);
 
 
 
