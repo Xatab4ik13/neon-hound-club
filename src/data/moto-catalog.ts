@@ -163,9 +163,6 @@ export const MOTO_CATALOG: Record<string, string[]> = {
     "Jet 14", "Symphony ST 200", "Fiddle III", "Cruisym 300", "Maxsym TL 500",
     "ADXTG 400", "NH X 125",
   ],
-  Lifan: ["KP 200", "KP 250", "KPR 200", "KPT 200", "X-Pect 200", "KPV 150"],
-  Loncin: ["Voge 300R", "GP 250", "GP 450"],
-  Qianjiang: ["QJ250", "QJ350", "SRK 600", "SRG 600"],
 
   // ── Vintage / Other Europe ─────────────────────────────
   Vespa: [
