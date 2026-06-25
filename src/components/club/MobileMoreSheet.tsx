@@ -7,7 +7,7 @@ import {
   Settings,
   LogOut,
   ChevronRight,
-  ShoppingBag,
+  Bot,
   ShoppingCart,
   Ticket,
   LifeBuoy,
@@ -35,7 +35,7 @@ function buildGroups(cartCount: number, isPwa: boolean): { title: string; items:
       items: [
         { label: "Hell Pass", href: "/club/hell-pass", icon: Gem, subtitle: "Подписка клуба" },
         { label: "Розыгрыши", href: "/club/raffles", icon: Ticket },
-        { label: "Магазин клуба", href: "/club/shop", icon: ShoppingBag },
+        { label: "Hell AI", href: "/club/hell-ai", icon: Bot, subtitle: "AI-механик по твоему мото" },
         { label: "Школа", href: "/club/school", icon: GraduationCap },
       ],
     },

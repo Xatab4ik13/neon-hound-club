@@ -1,19 +1,19 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Newspaper, Bot, Ticket, Bike, MoreHorizontal, type LucideIcon } from "lucide-react";
+import { Newspaper, ShoppingBag, Ticket, Bike, MoreHorizontal, type LucideIcon } from "lucide-react";
 import { useState } from "react";
 import { MobileMoreSheet } from "./MobileMoreSheet";
 import { haptic } from "@/hooks/use-haptic";
 
 type Tab = {
   label: string;
-  href: "/club" | "/club/hell-ai" | "/club/tickets" | "/club/garage";
+  href: "/club" | "/club/shop" | "/club/tickets" | "/club/garage";
   icon: LucideIcon;
   exact?: boolean;
 };
 
 const TABS: Tab[] = [
   { label: "Лента", href: "/club", icon: Newspaper, exact: true },
-  { label: "Hell AI", href: "/club/hell-ai", icon: Bot },
+  { label: "Магазин", href: "/club/shop", icon: ShoppingBag },
   { label: "Билеты", href: "/club/tickets", icon: Ticket },
   { label: "Гараж", href: "/club/garage", icon: Bike },
 ];
@@ -21,6 +21,7 @@ const TABS: Tab[] = [
 
 // Pathnames that should keep "More" highlighted as the active tab.
 const MORE_PATHS = [
+  "/club/hell-ai",
   "/club/quests",
   "/club/raffles",
   "/club/invite",
