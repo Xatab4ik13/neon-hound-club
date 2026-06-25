@@ -395,7 +395,8 @@ export const PostCard = memo(function PostCard({ post, moderate = false }: { pos
         <ImageViewer
           src={post.image}
           open={viewerOpen}
-          onClose={() => setViewerOpen(false)}
+          transitionName={`post-img-${post.id}`}
+          onClose={closeViewer}
           onDoubleTap={() => {
             if (!liked) {
               haptic("success");
