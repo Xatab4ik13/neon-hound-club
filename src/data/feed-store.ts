@@ -21,6 +21,7 @@ import {
   type FeedCommentHydrated,
 } from "@/lib/queries";
 import { hhToast } from "@/lib/hh-toast";
+import { haptic } from "@/hooks/use-haptic";
 
 // ───────── Внешние типы (контракт UI) ─────────
 
