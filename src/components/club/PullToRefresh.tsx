@@ -103,7 +103,7 @@ export function PullToRefresh({ onRefresh, children, threshold = 70 }: Props) {
           className="grid h-9 w-9 place-items-center rounded-full border border-white/10 bg-black/60 backdrop-blur"
           style={{
             boxShadow: busy || armed.current ? "0 0 14px rgba(255,45,149,0.45)" : undefined,
-            transition: "box-shadow 180ms ease",
+            transition: "box-shadow var(--motion-base) var(--ease-in-out)",
           }}
         >
           <svg
