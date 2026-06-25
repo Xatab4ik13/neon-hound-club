@@ -192,33 +192,9 @@ function MePage() {
         )}
       </section>
 
-      {/* Прогресс рангов — одна строка-ссылка, без длинной лестницы.
-          Текущий ранг и XP уже показаны в шапке профиля. */}
-      <section aria-label="Прогресс" className="mt-6 md:mt-10">
-        {isMobile ? (
-          <IOSListSection title="Прогресс">
-            <IOSListRow
-              icon={<Trophy className="h-5 w-5" />}
-              label="Ранги и XP"
-              description="Все уровни и привилегии"
-              chevron
-              to="/club/rank"
-            />
-          </IOSListSection>
-        ) : (
-          <>
-            <h2 className="mb-4 font-display text-2xl font-black italic uppercase tracking-tight text-foreground md:text-3xl">
-              Прогресс
-            </h2>
-            <ActionRow
-              icon={<Trophy className="h-5 w-5" />}
-              label="Ранги и XP"
-              description="Все уровни и привилегии"
-              to="/club/rank"
-            />
-          </>
-        )}
-      </section>
+      {/* «Ранги и XP» убрано: отдельной страницы пока нет, ранг и XP видны в шапке профиля. */}
+
+
 
 
       {/* Заказы — последние 3 */}

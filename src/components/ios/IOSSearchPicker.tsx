@@ -38,14 +38,18 @@ export function IOSSearchPicker({
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Сбрасываем запрос при каждом открытии.
+  // Сбрасываем запрос при каждом открытии и фокусируем поле поиска,
+  // чтобы первая нажатая буква не «съедалась» из-за позднего фокуса
+  // (iOS Safari иногда теряет первый keypress, если фокус приходит после).
   useEffect(() => {
     if (!open) {
       setQuery("");
       return;
     }
-    // Не фокусируем на iOS автоматически — это поднимет клавиатуру и закроет
-    // полоску заголовка. Пусть пользователь сам тапнет в поле, если хочет искать.
+    const t = window.setTimeout(() => {
+      inputRef.current?.focus({ preventScroll: true });
+    }, 220);
+    return () => window.clearTimeout(t);
   }, [open]);
 
   const normalizedQuery = normalize(query);

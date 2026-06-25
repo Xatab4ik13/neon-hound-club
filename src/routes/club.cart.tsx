@@ -340,7 +340,7 @@ function ClubCartPage() {
       {typeof document !== "undefined" &&
         createPortal(
           <div
-            className="fixed inset-x-0 z-[60] border-t border-white/[0.08] bg-[#0d0d0d]/95 backdrop-blur-xl md:hidden"
+            className="fixed inset-x-0 z-30 border-t border-white/[0.08] bg-[#0d0d0d]/95 backdrop-blur-xl md:hidden"
             style={{
               bottom: "calc(64px + env(safe-area-inset-bottom))",
               paddingLeft: "max(16px, env(safe-area-inset-left))",
