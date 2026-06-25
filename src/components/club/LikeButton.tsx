@@ -154,7 +154,7 @@ export function LikeButton({ liked, count, onToggle, onReact }: Props) {
             key={f.id}
             className="absolute left-1/2 top-0 -translate-x-1/2 text-[22px] leading-none"
             style={{
-              animation: "reactions-float 1100ms cubic-bezier(0.22, 1, 0.36, 1) forwards",
+              animation: "reactions-float 1100ms var(--ease-out-soft) forwards",
               filter: "drop-shadow(0 4px 8px rgba(0,0,0,0.5))",
             }}
           >
