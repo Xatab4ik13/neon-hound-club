@@ -237,15 +237,17 @@ export const PostCard = memo(function PostCard({ post, moderate = false }: { pos
             />
           )}
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
+            <div className="flex items-baseline gap-2">
               <span className="truncate font-display text-[15px] font-black uppercase italic tracking-tight text-foreground">
                 {author.nick}
               </span>
               {authorIsBlogger && <HellhoundChip size="sm" />}
             </div>
-            <span className="mt-0.5 block font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-              {post.time}
-            </span>
+            <RelativeTime
+              iso={post.createdAt}
+              fallback={post.time}
+              className="mt-0.5 block font-mono text-[10px] uppercase tracking-[0.18em] tabular-nums text-muted-foreground"
+            />
           </div>
         </UserLink>
         {moderate && (
