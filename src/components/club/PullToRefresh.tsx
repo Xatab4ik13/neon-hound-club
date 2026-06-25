@@ -96,14 +96,14 @@ export function PullToRefresh({ onRefresh, children, threshold = 70 }: Props) {
           top: 8,
           opacity: pull > 4 ? 1 : 0,
           transform: `translate(-50%, ${Math.max(0, pull - 24)}px)`,
-          transition: pulling.current ? "none" : "transform 280ms cubic-bezier(0.22,1,0.36,1), opacity 200ms ease",
+          transition: pulling.current ? "none" : "transform var(--motion-base) var(--ease-out-soft), opacity 200ms var(--ease-in-out)",
         }}
       >
         <div
           className="grid h-9 w-9 place-items-center rounded-full border border-white/10 bg-black/60 backdrop-blur"
           style={{
             boxShadow: busy || armed.current ? "0 0 14px rgba(255,45,149,0.45)" : undefined,
-            transition: "box-shadow 180ms ease",
+            transition: "box-shadow var(--motion-base) var(--ease-in-out)",
           }}
         >
           <svg
@@ -133,7 +133,7 @@ export function PullToRefresh({ onRefresh, children, threshold = 70 }: Props) {
       <div
         style={{
           transform: `translate3d(0, ${pull}px, 0)`,
-          transition: pulling.current ? "none" : "transform 320ms cubic-bezier(0.22,1,0.36,1)",
+          transition: pulling.current ? "none" : "transform var(--motion-slow) var(--ease-out-soft)",
           willChange: "transform",
         }}
       >

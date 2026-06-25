@@ -127,7 +127,7 @@ export function LikeButton({ liked, count, onToggle, onReact }: Props) {
           className="absolute bottom-[calc(100%+10px)] left-0 z-30 flex items-center gap-1 rounded-full border border-white/10 bg-black/85 px-2 py-1.5 shadow-[0_12px_36px_rgba(0,0,0,0.55)] backdrop-blur"
           style={{
             transformOrigin: "left bottom",
-            animation: "reactions-pop 260ms cubic-bezier(0.34, 1.56, 0.64, 1)",
+            animation: "reactions-pop var(--motion-base) var(--ease-spring)",
           }}
         >
           {REACTIONS.map((r, i) => (
@@ -138,7 +138,7 @@ export function LikeButton({ liked, count, onToggle, onReact }: Props) {
               aria-label={`Реакция ${r}`}
               className="grid h-9 w-9 place-items-center rounded-full text-[20px] leading-none transition-transform hover:scale-125 active:scale-110"
               style={{
-                animation: `reactions-stagger 380ms ${i * 35}ms cubic-bezier(0.34, 1.56, 0.64, 1) both`,
+                animation: `reactions-stagger var(--motion-slow) ${i * 35}ms var(--ease-spring) both`,
               }}
             >
               <span style={{ filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.4))" }}>{r}</span>
@@ -154,7 +154,7 @@ export function LikeButton({ liked, count, onToggle, onReact }: Props) {
             key={f.id}
             className="absolute left-1/2 top-0 -translate-x-1/2 text-[22px] leading-none"
             style={{
-              animation: "reactions-float 1100ms cubic-bezier(0.22, 1, 0.36, 1) forwards",
+              animation: "reactions-float 1100ms var(--ease-out-soft) forwards",
               filter: "drop-shadow(0 4px 8px rgba(0,0,0,0.5))",
             }}
           >
@@ -180,7 +180,8 @@ export function LikeButton({ liked, count, onToggle, onReact }: Props) {
             : "border border-white/[0.08] bg-white/[0.04] text-foreground hover:border-primary/40 hover:text-primary"
         }`}
         style={{
-          transition: "background-color 180ms ease, color 180ms ease, transform 120ms ease",
+          transition:
+            "background-color var(--motion-base) var(--ease-in-out), color var(--motion-base) var(--ease-in-out), transform var(--motion-fast) var(--ease-out-soft)",
           touchAction: "manipulation",
           WebkitUserSelect: "none",
         }}
@@ -191,7 +192,7 @@ export function LikeButton({ liked, count, onToggle, onReact }: Props) {
             fill={liked ? "currentColor" : "none"}
             strokeWidth={2}
             style={{
-              animation: burstKey ? "like-pop 360ms cubic-bezier(0.34, 1.56, 0.64, 1)" : undefined,
+              animation: burstKey ? "like-pop var(--motion-slow) var(--ease-spring)" : undefined,
               transformOrigin: "center",
             }}
             key={burstKey}
@@ -210,7 +211,7 @@ export function LikeButton({ liked, count, onToggle, onReact }: Props) {
                     // @ts-expect-error custom CSS vars
                     "--tx": `${p.x}px`,
                     "--ty": `${p.y}px`,
-                    animation: `like-burst 520ms ${p.delay}ms cubic-bezier(0.22, 1, 0.36, 1) forwards`,
+                    animation: `like-burst 520ms ${p.delay}ms var(--ease-out-soft) forwards`,
                     opacity: 0,
                   }}
                 />
