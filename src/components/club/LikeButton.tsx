@@ -138,7 +138,7 @@ export function LikeButton({ liked, count, onToggle, onReact }: Props) {
               aria-label={`Реакция ${r}`}
               className="grid h-9 w-9 place-items-center rounded-full text-[20px] leading-none transition-transform hover:scale-125 active:scale-110"
               style={{
-                animation: `reactions-stagger 380ms ${i * 35}ms cubic-bezier(0.34, 1.56, 0.64, 1) both`,
+                animation: `reactions-stagger var(--motion-slow) ${i * 35}ms var(--ease-spring) both`,
               }}
             >
               <span style={{ filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.4))" }}>{r}</span>
