@@ -439,6 +439,7 @@ export const feedStore = {
       else await unlikePost(postId);
     } catch {
       patchPostLocal(postId, () => prev);
+      haptic("warning");
       hhToast.error(liked ? "Не удалось поставить лайк" : "Не удалось снять лайк");
     }
   },
