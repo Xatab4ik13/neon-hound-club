@@ -183,6 +183,7 @@ export function mapPost(p: FeedPostWithComments): FeedPost {
     authorSlug: author.slug,
     isBlogger: author.isBlogger,
     time: formatRelative(p.createdAt),
+    createdAt: p.createdAt,
     text: p.text,
     image: p.imageUrl ?? undefined,
     pinned: p.pinned,
