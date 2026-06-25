@@ -127,7 +127,7 @@ export function LikeButton({ liked, count, onToggle, onReact }: Props) {
           className="absolute bottom-[calc(100%+10px)] left-0 z-30 flex items-center gap-1 rounded-full border border-white/10 bg-black/85 px-2 py-1.5 shadow-[0_12px_36px_rgba(0,0,0,0.55)] backdrop-blur"
           style={{
             transformOrigin: "left bottom",
-            animation: "reactions-pop 260ms cubic-bezier(0.34, 1.56, 0.64, 1)",
+            animation: "reactions-pop var(--motion-base) var(--ease-spring)",
           }}
         >
           {REACTIONS.map((r, i) => (
