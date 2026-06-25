@@ -133,7 +133,7 @@ export function PullToRefresh({ onRefresh, children, threshold = 70 }: Props) {
       <div
         style={{
           transform: `translate3d(0, ${pull}px, 0)`,
-          transition: pulling.current ? "none" : "transform 320ms cubic-bezier(0.22,1,0.36,1)",
+          transition: pulling.current ? "none" : "transform var(--motion-slow) var(--ease-out-soft)",
           willChange: "transform",
         }}
       >
