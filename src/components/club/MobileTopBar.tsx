@@ -57,7 +57,9 @@ export function MobileTopBar() {
 
   return (
     <header
-      className="sticky top-0 z-30 border-b border-white/[0.06] bg-background/70 backdrop-blur-2xl backdrop-saturate-150 lg:hidden"
+      className={`sticky top-0 z-30 backdrop-blur-2xl backdrop-saturate-150 transition-[background-color,border-color] duration-200 lg:hidden ${
+        scrolled ? "border-b border-white/[0.06] bg-background/72" : "border-b border-transparent bg-background/40"
+      }`}
       style={{ paddingTop: "env(safe-area-inset-top)" }}
     >
       <div className="flex items-center gap-2 px-3 py-2">
