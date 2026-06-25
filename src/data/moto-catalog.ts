@@ -163,9 +163,6 @@ export const MOTO_CATALOG: Record<string, string[]> = {
     "Jet 14", "Symphony ST 200", "Fiddle III", "Cruisym 300", "Maxsym TL 500",
     "ADXTG 400", "NH X 125",
   ],
-  Lifan: ["KP 200", "KP 250", "KPR 200", "KPT 200", "X-Pect 200", "KPV 150"],
-  Loncin: ["Voge 300R", "GP 250", "GP 450"],
-  Qianjiang: ["QJ250", "QJ350", "SRK 600", "SRG 600"],
 
   // ── Vintage / Other Europe ─────────────────────────────
   Vespa: [
@@ -188,13 +185,98 @@ export const MOTO_CATALOG: Record<string, string[]> = {
   "Peugeot Motocycles": ["Django 125", "Tweet 125", "Pulsion 125", "Metropolis 400"],
 
   // ── Russia / Belarus / USSR legacy ─────────────────────
-  Ural: ["Gear Up", "cT", "Sportsman", "M70"],
-  ИЖ: ["Юпитер-5", "Планета-5", "Юпитер-6", "ИЖ-49"],
-  Минск: ["X200", "X250", "C4 250", "D4 125", "TRX 300i"],
+  Ural: ["Gear Up", "cT", "Sportsman", "M70", "Wolf", "Tourist", "Patrol"],
+  ИЖ: ["Юпитер-5", "Планета-5", "Юпитер-6", "ИЖ-49", "Планета Спорт", "Юпитер-3"],
+  Минск: ["X200", "X250", "C4 200", "C4 250", "D4 125", "TRX 300i", "M1NSK 250", "Lider 200", "Goose 250"],
   Восход: ["3М", "3М-01", "Сова"],
   "Урал-Soviet": ["М-72", "М-67", "ИМЗ-8.103"],
-  Днепр: ["МТ-9", "МТ-10", "МТ-11", "МТ-16"],
+  Днепр: ["МТ-9", "МТ-10", "МТ-11", "МТ-16", "К-750"],
   "ЗиД": ["ЗиД-200", "Курьер"],
+
+  // ── РФ / СНГ сборка и дистрибуция (китайские платформы) ─
+  Stels: [
+    "Flex 250", "Flame 200", "Trigger 50", "Trigger 125", "Tactic",
+    "ATV 600 Leopard", "Delta 150", "Validator 300", "Validator 700", "Benelli TNT 125",
+  ],
+  Racer: [
+    "Panther RC250XZR", "Skyway RC250CK", "Storm RC200CK", "Tiger RC250XZR",
+    "Magnum RC250GY-C2", "Nitro RC150-23", "Ranger RC200GY-C2", "Trophy RC150-23X",
+    "Enduro RC250-GY8X", "Flash RC150CF", "Tourer RC250CR", "Hooligan",
+  ],
+  Motoland: [
+    "XR250", "XR250 LITE", "XR300 ENDURO", "WRX250 LITE", "WRX250", "WRX300",
+    "Enduro ST 250", "FX 250", "FX 300", "Bandit 250", "Blackbull 250",
+    "Forester 250", "TT 250", "MX125", "MX140",
+  ],
+  Avantis: [
+    "A2 Lux", "A7 Lux", "Enduro 250", "Enduro 250 21/18", "Enduro 250 21/18 (CB250-F/172FMM-3A)",
+    "Enduro 300 Pro", "Enduro 300 CARB", "Enduro 450 Carb", "FX 250", "FX 7",
+    "Dakar 250", "Dakar 300", "TTR 250", "Vento 250",
+  ],
+  Regulmoto: [
+    "Sport-003", "Sport-003 Pro", "Sport-005", "Sport-009", "Sport-016",
+    "Athlete 250", "Athlete 300", "ZF 250", "ZR 250", "TE-300", "Aqua 200",
+  ],
+  Apollo: [
+    "RXF Freeride 150", "RFZ 150", "RFZ 250", "DB-X18", "AGB-37", "RFZ Open 150",
+    "Orion 250", "Z20 Max", "AGB-X18 250",
+  ],
+  Kayo: [
+    "T2 250", "T4 250", "T6 250", "K1 250", "K6 250", "K6-R 250",
+    "TT140", "TT125", "MR150", "MR250 Enduro", "Basic YX125",
+  ],
+  BSE: [
+    "M2 125", "M2 250", "M5 250", "PH10 Enduro", "RTC-300R", "S2 Enduro",
+    "S6 250", "Z3 200", "Z6 250", "Z7 250", "T7 Enduro",
+  ],
+  Progasi: [
+    "Smart 150", "Race 250", "Race Pro 300", "Palma 250", "Spirit 250",
+    "Super Max 250", "Hardway 250", "Hardway 300",
+  ],
+  Irbis: [
+    "TTR 125", "TTR 250", "TTR 250R", "XR 250R", "XR 300R", "Pitbike TTR 125",
+    "Z50R", "Intruder 200", "Garpia 250", "Virago 250", "GR 250", "VJ 250",
+  ],
+  Lifan: [
+    "KP 150", "KP 200", "KP 250", "KPR 200", "KPR 250", "KPS 200", "KPT 200",
+    "X-Pect 200", "KPV 150", "KPX 250", "LF200-10S", "LF250 V-Twin",
+  ],
+  Patron: [
+    "Sport 250", "Sport 300", "Track 250", "X-Spirit 250", "Vanguard 250",
+  ],
+
+  // ── Китай: бренды, активно продающиеся в РФ ────────────
+  Kove: [
+    "321R", "321RR", "450R", "450 Rally", "450 Rally Pro", "500X", "800X", "800X Pro",
+  ],
+  QJMotor: [
+    "SRK 250", "SRK 350", "SRK 400", "SRK 600", "SRK 700", "SRK 921",
+    "SRT 550", "SRT 750", "SRT 800", "SRG 600", "SRC 500", "SRV 550",
+    "SVT 650", "Chaser 250",
+  ],
+  Zontes: [
+    "ZT125-G1", "ZT125-U", "ZT155-G1", "ZT155-U", "ZT250-S", "ZT250-R",
+    "ZT310-T", "ZT310-X", "ZT310-R", "ZT310-V", "ZT350-T", "ZT350-D",
+    "ZT350-GK", "ZT703F", "ZT703RR",
+  ],
+  Wuyang: ["WY125", "WY150", "WY200"],
+  Geon: [
+    "Pantera 250", "Stinger 250", "Terrax 250", "Nac 250", "Tossa 250",
+    "X-Road 250", "X-Road 700", "X-Pit 150",
+  ],
+  "Senke": ["SK150", "SK200", "SK250", "SK300"],
+  Haojue: ["DR160", "DR300", "TR300", "KA135", "KA150"],
+  Loncin: ["Voge 300R", "GP 250", "GP 450", "LX250-15", "LX300-6F"],
+  Qianjiang: ["QJ250", "QJ350", "SRK 600", "SRG 600", "QJ600GS", "QJ150-19A"],
+
+  // ── Электро / прочее ───────────────────────────────────
+  "Super Soco": ["TC", "TC Max", "TS Street Hunter", "CPx", "Wanderer"],
+  Talaria: ["Sting", "Sting R MX4", "Sting R MX3", "XXX", "Dragon"],
+  Surron: ["Light Bee X", "Light Bee S", "Storm Bee", "Ultra Bee"],
+
+  // ── Япония / Европа: дополнения по популярному в РФ ────
+  PitsterPro: ["LXR 150", "LXR 160", "X4R 125", "X5R 150"],
+  YCF: ["Bigy 150 MX", "Bigy 190 MX", "Pilot F125", "Factory 88", "SM F150"],
 };
 
 /** Отсортированный список всех марок. */
