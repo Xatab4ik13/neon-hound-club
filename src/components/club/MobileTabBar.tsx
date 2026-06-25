@@ -21,6 +21,7 @@ const TABS: Tab[] = [
 
 // Pathnames that should keep "More" highlighted as the active tab.
 const MORE_PATHS = [
+  "/club/hell-ai",
   "/club/quests",
   "/club/raffles",
   "/club/invite",
