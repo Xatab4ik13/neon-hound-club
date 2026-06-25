@@ -264,8 +264,9 @@ export function ImageViewer({ src, open, onClose, onDoubleTap, transitionName }:
           transformOrigin: "center center",
           transition: dragging
             ? undefined
-            : "transform 260ms cubic-bezier(0.22,1,0.36,1)",
+            : "transform var(--motion-base) var(--ease-out-soft)",
           willChange: "transform",
+          viewTransitionName: open ? transitionName : undefined,
         }}
       />
     </div>,
