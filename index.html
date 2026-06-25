@@ -149,16 +149,15 @@
       /* Сама арка свипа. conic-gradient + @property --rev = плавный набор
          оборотов от 0 до redline и небольшой откат на холостые. */
       #hh-boot .arc {
-        position: absolute; inset: 0; border-radius: 50%;
+        position: absolute; inset: -2px; border-radius: 50%;
         --rev: 0deg;
         background: conic-gradient(
           from -135deg,
-          #FF2D95 0deg,
-          #FF6BB4 var(--rev),
+          #FF2D95 0deg var(--rev),
           transparent var(--rev) 360deg
         );
-        -webkit-mask: radial-gradient(circle, transparent 70%, #000 71%, #000 79%, transparent 80%);
-                mask: radial-gradient(circle, transparent 70%, #000 71%, #000 79%, transparent 80%);
+        -webkit-mask: radial-gradient(circle, transparent 62%, #000 64%, #000 84%, transparent 86%);
+                mask: radial-gradient(circle, transparent 62%, #000 64%, #000 84%, transparent 86%);
         animation: hh-rev 1.6s cubic-bezier(.65,0,.35,1) .15s forwards,
                    hh-arc-pulse 2.6s ease-in-out 1.8s infinite;
         will-change: --rev, opacity;
