@@ -32,6 +32,7 @@ export function MobileTopBar() {
   const { count: cartCount } = useCart();
   const isShop = pathname.startsWith("/club/shop") || pathname.startsWith("/club/cart");
   const [notifOpen, setNotifOpen] = useState(false);
+  const scrolled = useScrollCollapse(8);
 
   // Bump бейджа при изменении count и glow при «приземлении» анимации.
   const prevCount = useRef(cartCount);
