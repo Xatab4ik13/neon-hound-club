@@ -509,6 +509,8 @@ export const feedStore = {
         ...p,
         comments: p.comments.map((c) => (c.id === commentId ? prevComment : c)),
       }));
+      haptic("warning");
+      hhToast.error(liked ? "Не удалось поставить лайк" : "Не удалось снять лайк");
     }
   },
 };
