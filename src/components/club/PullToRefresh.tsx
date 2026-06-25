@@ -96,7 +96,7 @@ export function PullToRefresh({ onRefresh, children, threshold = 70 }: Props) {
           top: 8,
           opacity: pull > 4 ? 1 : 0,
           transform: `translate(-50%, ${Math.max(0, pull - 24)}px)`,
-          transition: pulling.current ? "none" : "transform 280ms cubic-bezier(0.22,1,0.36,1), opacity 200ms ease",
+          transition: pulling.current ? "none" : "transform var(--motion-base) var(--ease-out-soft), opacity 200ms var(--ease-in-out)",
         }}
       >
         <div
