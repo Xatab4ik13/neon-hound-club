@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState, useCallback, memo } from "react";
+import { flushSync } from "react-dom";
 import { Smile, Send, Search as SearchIcon, Clock, Sticker, X, Pin, PinOff, Trash2, BarChart3, Share2, MessageCircle, Heart } from "lucide-react";
 import { RANKS, type RankId } from "@/data/ranks";
 import { useFeedPosts, useFeedLoaded, feedStore, initialsOf, makeSlug, type FeedAuthor, type FeedComment, type FeedPost, type FeedPoll } from "@/data/feed-store";
@@ -149,6 +150,23 @@ export const PostCard = memo(function PostCard({ post, moderate = false }: { pos
     openPost();
   }, [openPost]);
 
+  // Открытие fullscreen-вьюера — через View Transitions API, если есть.
+  // Браузер snapshot-ит исходную картинку и плавно «летит» в фуллскрин
+  // (shared-element). Где API нет — просто открываем.
+  const openViewer = useCallback(() => {
+    const run = () => flushSync(() => { setViewerEverOpened(true); setViewerOpen(true); });
+    const d = typeof document !== "undefined" ? (document as Document & { startViewTransition?: (cb: () => void) => unknown }) : null;
+    if (d?.startViewTransition) d.startViewTransition(run);
+    else run();
+  }, []);
+
+  const closeViewer = useCallback(() => {
+    const run = () => flushSync(() => setViewerOpen(false));
+    const d = typeof document !== "undefined" ? (document as Document & { startViewTransition?: (cb: () => void) => unknown }) : null;
+    if (d?.startViewTransition) d.startViewTransition(run);
+    else run();
+  }, []);
+
   // Дабл-тап по картинке = лайк (если ещё не лайкнут).
   const lastImgTap = useRef(0);
   const onImageTap = useCallback(() => {
@@ -163,13 +181,10 @@ export const PostCard = memo(function PostCard({ post, moderate = false }: { pos
       lastImgTap.current = now;
       // Одиночный тап с задержкой — откроем вьюер, если за это время не пришёл второй.
       setTimeout(() => {
-        if (lastImgTap.current === now) {
-          setViewerEverOpened(true);
-          setViewerOpen(true);
-        }
+        if (lastImgTap.current === now) openViewer();
       }, 290);
     }
-  }, [liked, post.id]);
+  }, [liked, post.id, openViewer]);
 
 
 
@@ -315,8 +330,11 @@ export const PostCard = memo(function PostCard({ post, moderate = false }: { pos
               alt=""
               loading="lazy"
               decoding="async"
+              // @ts-expect-error — нестандартный, но поддерживается Chromium/Safari
+              fetchpriority="low"
               draggable={false}
               className="aspect-[16/9] w-full select-none object-cover"
+              style={{ viewTransitionName: viewerOpen ? undefined : `post-img-${post.id}` }}
             />
           </button>
         </div>
@@ -377,7 +395,8 @@ export const PostCard = memo(function PostCard({ post, moderate = false }: { pos
         <ImageViewer
           src={post.image}
           open={viewerOpen}
-          onClose={() => setViewerOpen(false)}
+          transitionName={`post-img-${post.id}`}
+          onClose={closeViewer}
           onDoubleTap={() => {
             if (!liked) {
               haptic("success");

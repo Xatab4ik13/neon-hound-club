@@ -17,6 +17,8 @@ type Props = {
   open: boolean;
   onClose: () => void;
   onDoubleTap?: () => void;
+  /** Имя для View Transitions API — shared-element с источника. */
+  transitionName?: string;
 };
 
 const MIN_SCALE = 1;
@@ -26,7 +28,7 @@ const CLOSE_SWIPE_DY = 120;
 
 type Pt = { x: number; y: number };
 
-export function ImageViewer({ src, open, onClose, onDoubleTap }: Props) {
+export function ImageViewer({ src, open, onClose, onDoubleTap, transitionName }: Props) {
   useThemeColor(open ? "#000000" : null);
 
   const [scale, setScale] = useState(1);
@@ -262,8 +264,9 @@ export function ImageViewer({ src, open, onClose, onDoubleTap }: Props) {
           transformOrigin: "center center",
           transition: dragging
             ? undefined
-            : "transform 260ms cubic-bezier(0.22,1,0.36,1)",
+            : "transform var(--motion-base) var(--ease-out-soft)",
           willChange: "transform",
+          viewTransitionName: open ? transitionName : undefined,
         }}
       />
     </div>,
