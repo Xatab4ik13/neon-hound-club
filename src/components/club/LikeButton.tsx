@@ -211,7 +211,7 @@ export function LikeButton({ liked, count, onToggle, onReact }: Props) {
                     // @ts-expect-error custom CSS vars
                     "--tx": `${p.x}px`,
                     "--ty": `${p.y}px`,
-                    animation: `like-burst 520ms ${p.delay}ms cubic-bezier(0.22, 1, 0.36, 1) forwards`,
+                    animation: `like-burst 520ms ${p.delay}ms var(--ease-out-soft) forwards`,
                     opacity: 0,
                   }}
                 />
