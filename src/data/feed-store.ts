@@ -70,6 +70,8 @@ export type FeedPost = {
   id: string;
   author: FeedAuthor;
   time: string;
+  /** ISO-строка момента создания — для живого относительного времени. */
+  createdAt?: string;
   text: string;
   image?: string;
   poll?: FeedPoll;
