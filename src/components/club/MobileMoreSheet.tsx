@@ -7,7 +7,7 @@ import {
   Settings,
   LogOut,
   ChevronRight,
-  ShoppingBag,
+  Bot,
   ShoppingCart,
   Ticket,
   LifeBuoy,
