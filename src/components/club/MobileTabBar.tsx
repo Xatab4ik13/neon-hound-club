@@ -6,14 +6,14 @@ import { haptic } from "@/hooks/use-haptic";
 
 type Tab = {
   label: string;
-  href: "/club" | "/club/hell-ai" | "/club/tickets" | "/club/garage";
+  href: "/club" | "/club/shop" | "/club/tickets" | "/club/garage";
   icon: LucideIcon;
   exact?: boolean;
 };
 
 const TABS: Tab[] = [
   { label: "Лента", href: "/club", icon: Newspaper, exact: true },
-  { label: "Hell AI", href: "/club/hell-ai", icon: Bot },
+  { label: "Магазин", href: "/club/shop", icon: ShoppingBag },
   { label: "Билеты", href: "/club/tickets", icon: Ticket },
   { label: "Гараж", href: "/club/garage", icon: Bike },
 ];
