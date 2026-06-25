@@ -330,8 +330,11 @@ export const PostCard = memo(function PostCard({ post, moderate = false }: { pos
               alt=""
               loading="lazy"
               decoding="async"
+              // @ts-expect-error — нестандартный, но поддерживается Chromium/Safari
+              fetchpriority="low"
               draggable={false}
               className="aspect-[16/9] w-full select-none object-cover"
+              style={{ viewTransitionName: viewerOpen ? undefined : `post-img-${post.id}` }}
             />
           </button>
         </div>
