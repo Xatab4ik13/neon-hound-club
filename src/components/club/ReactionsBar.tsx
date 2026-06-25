@@ -43,8 +43,9 @@ export function ReactionsBar({ postId }: Props) {
                 : "border-white/[0.08] bg-white/[0.04] text-foreground/85 hover:border-white/15"
             }`}
             style={{
-              animation: "reaction-chip-in 280ms cubic-bezier(0.34, 1.56, 0.64, 1)",
-              transition: "background-color 180ms ease, border-color 180ms ease, color 180ms ease, transform 120ms ease",
+              animation: "reaction-chip-in var(--motion-base) var(--ease-spring)",
+              transition:
+                "background-color var(--motion-base) var(--ease-in-out), border-color var(--motion-base) var(--ease-in-out), color var(--motion-base) var(--ease-in-out), transform var(--motion-fast) var(--ease-out-soft)",
             }}
           >
             <span className="text-[13px] leading-none">{r}</span>
