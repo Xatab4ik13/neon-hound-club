@@ -9,6 +9,7 @@ import { haptic } from "@/hooks/use-haptic";
 import { useViewer } from "@/hooks/use-viewer";
 import { useMyProfile } from "@/lib/garage-api";
 import { NotificationsSheet } from "./NotificationsSheet";
+import { useScrollCollapse } from "@/hooks/use-scroll-collapse";
 
 // Единый iOS-like top-bar для всех мобильных экранов клуба:
 // аватар (→ профиль) · капсула HELL/XP (→ ранг) · корзина (только в магазине) · колокольчик.
@@ -31,6 +32,7 @@ export function MobileTopBar() {
   const { count: cartCount } = useCart();
   const isShop = pathname.startsWith("/club/shop") || pathname.startsWith("/club/cart");
   const [notifOpen, setNotifOpen] = useState(false);
+  const scrolled = useScrollCollapse(8);
 
   // Bump бейджа при изменении count и glow при «приземлении» анимации.
   const prevCount = useRef(cartCount);
@@ -55,7 +57,9 @@ export function MobileTopBar() {
 
   return (
     <header
-      className="sticky top-0 z-30 border-b border-white/[0.06] bg-background/70 backdrop-blur-2xl backdrop-saturate-150 lg:hidden"
+      className={`sticky top-0 z-30 backdrop-blur-2xl backdrop-saturate-150 transition-[background-color,border-color] duration-200 lg:hidden ${
+        scrolled ? "border-b border-white/[0.06] bg-background/72" : "border-b border-transparent bg-background/40"
+      }`}
       style={{ paddingTop: "env(safe-area-inset-top)" }}
     >
       <div className="flex items-center gap-2 px-3 py-2">
