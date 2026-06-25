@@ -82,7 +82,27 @@
   --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Inter", system-ui, "Segoe UI", Roboto, sans-serif;
   --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", SFMono-Regular, Menlo, monospace;
 
+  /* ───────── Motion language (Этап 2) ─────────
+     Один easing-словарь и три длительности на всё приложение.
+     Используем через var() — никогда не пишем magic-числа в компонентах. */
+  --ease-spring:  cubic-bezier(0.34, 1.56, 0.64, 1);  /* поп/реакции/всплытие */
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);    /* основной — pan, fade, slide */
+  --ease-in-out:  cubic-bezier(0.4, 0, 0.2, 1);       /* фон/цвет/blur */
+  --motion-fast:   120ms;  /* hover/press/active */
+  --motion-base:   240ms;  /* появление элементов, переключения */
+  --motion-slow:   400ms;  /* шторки, viewer, большие сцены */
 }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+:root {
 
 /* Site is always dark — keep .dark in sync just in case */
 .dark {
