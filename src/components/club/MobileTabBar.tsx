@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Newspaper, Bot, Ticket, Bike, MoreHorizontal, type LucideIcon } from "lucide-react";
+import { Newspaper, ShoppingBag, Ticket, Bike, MoreHorizontal, type LucideIcon } from "lucide-react";
 import { useState } from "react";
 import { MobileMoreSheet } from "./MobileMoreSheet";
 import { haptic } from "@/hooks/use-haptic";
