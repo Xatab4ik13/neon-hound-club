@@ -9,6 +9,7 @@ import { haptic } from "@/hooks/use-haptic";
 import { useViewer } from "@/hooks/use-viewer";
 import { useMyProfile } from "@/lib/garage-api";
 import { NotificationsSheet } from "./NotificationsSheet";
+import { useScrollCollapse } from "@/hooks/use-scroll-collapse";
 
 // Единый iOS-like top-bar для всех мобильных экранов клуба:
 // аватар (→ профиль) · капсула HELL/XP (→ ранг) · корзина (только в магазине) · колокольчик.
