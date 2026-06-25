@@ -180,7 +180,8 @@ export function LikeButton({ liked, count, onToggle, onReact }: Props) {
             : "border border-white/[0.08] bg-white/[0.04] text-foreground hover:border-primary/40 hover:text-primary"
         }`}
         style={{
-          transition: "background-color 180ms ease, color 180ms ease, transform 120ms ease",
+          transition:
+            "background-color var(--motion-base) var(--ease-in-out), color var(--motion-base) var(--ease-in-out), transform var(--motion-fast) var(--ease-out-soft)",
           touchAction: "manipulation",
           WebkitUserSelect: "none",
         }}
