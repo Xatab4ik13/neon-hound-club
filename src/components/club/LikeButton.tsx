@@ -192,7 +192,7 @@ export function LikeButton({ liked, count, onToggle, onReact }: Props) {
             fill={liked ? "currentColor" : "none"}
             strokeWidth={2}
             style={{
-              animation: burstKey ? "like-pop 360ms cubic-bezier(0.34, 1.56, 0.64, 1)" : undefined,
+              animation: burstKey ? "like-pop var(--motion-slow) var(--ease-spring)" : undefined,
               transformOrigin: "center",
             }}
             key={burstKey}
