@@ -102,8 +102,6 @@
   }
 }
 
-:root {
-
 /* Site is always dark — keep .dark in sync just in case */
 .dark {
   --background: oklch(0.05 0 0);
