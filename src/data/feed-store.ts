@@ -21,6 +21,7 @@ import {
   type FeedCommentHydrated,
 } from "@/lib/queries";
 import { hhToast } from "@/lib/hh-toast";
+import { haptic } from "@/hooks/use-haptic";
 
 // ───────── Внешние типы (контракт UI) ─────────
 
@@ -438,6 +439,7 @@ export const feedStore = {
       else await unlikePost(postId);
     } catch {
       patchPostLocal(postId, () => prev);
+      haptic("warning");
       hhToast.error(liked ? "Не удалось поставить лайк" : "Не удалось снять лайк");
     }
   },
@@ -507,6 +509,8 @@ export const feedStore = {
         ...p,
         comments: p.comments.map((c) => (c.id === commentId ? prevComment : c)),
       }));
+      haptic("warning");
+      hhToast.error(liked ? "Не удалось поставить лайк" : "Не удалось снять лайк");
     }
   },
 };
