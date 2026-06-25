@@ -70,6 +70,8 @@ export type FeedPost = {
   id: string;
   author: FeedAuthor;
   time: string;
+  /** ISO-строка момента создания — для живого относительного времени. */
+  createdAt?: string;
   text: string;
   image?: string;
   poll?: FeedPoll;
@@ -181,6 +183,7 @@ export function mapPost(p: FeedPostWithComments): FeedPost {
     authorSlug: author.slug,
     isBlogger: author.isBlogger,
     time: formatRelative(p.createdAt),
+    createdAt: p.createdAt,
     text: p.text,
     image: p.imageUrl ?? undefined,
     pinned: p.pinned,
