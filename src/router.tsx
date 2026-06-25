@@ -1,7 +1,6 @@
 import { QueryClient } from "@tanstack/react-query";
 import { createRouter } from "@tanstack/react-router";
 import { routeTree } from "./routeTree.gen";
-import { SplashScreen } from "@/components/brand/SplashScreen";
 
 export const getRouter = () => {
   const queryClient = new QueryClient();
@@ -12,11 +11,9 @@ export const getRouter = () => {
     scrollRestoration: true,
     defaultPreload: "intent",
     defaultPreloadStaleTime: 0,
-    // Бывший 400/500 ловил splash на каждом переходе между вкладками клуба.
-    // Поднимаем порог: splash показываем только на «холодных» долгих загрузках.
-    defaultPendingMs: 1200,
-    defaultPendingMinMs: 400,
-    defaultPendingComponent: SplashScreen,
+    // Boot-splash из index.html уже показан до загрузки React-бандла и
+    // снимается в main.tsx после первого resolve. На дальнейших переходах
+    // splash не нужен — это давало двойное мерцание в PWA.
   });
 
   return router;
