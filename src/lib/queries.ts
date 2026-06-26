@@ -646,11 +646,26 @@ export function unlikePost(id: string) {
   return apiFetch<{ ok: true }>(`/api/v1/feed/${id}/like`, { method: "DELETE" });
 }
 
-export function addComment(postId: string, text: string) {
+export type AddCommentInput =
+  | { kind?: "text"; text: string; parentId?: string }
+  | { kind: "sticker"; stickerId: string; parentId?: string };
+
+export function addComment(postId: string, input: string | AddCommentInput) {
+  const body =
+    typeof input === "string"
+      ? { kind: "text" as const, text: input }
+      : input;
   return apiFetch<FeedCommentHydrated>(`/api/v1/feed/${postId}/comments`, {
     method: "POST",
-    body: JSON.stringify({ text }),
+    body: JSON.stringify(body),
   });
+}
+
+export function editComment(commentId: string, text: string) {
+  return apiFetch<{ id: string; text: string; editedAt: string }>(
+    `/api/v1/feed/comments/${commentId}`,
+    { method: "PATCH", body: JSON.stringify({ text }) },
+  );
 }
 
 export function deleteComment(commentId: string) {
