@@ -70,12 +70,19 @@ export function IOSActionSheet({
     };
   }, [open]);
 
-  // Анимация: монтируем компонент когда open=true, размонтируем после fade-out.
-  // Чтобы избежать click-through, оверлей перехватывает И pointerdown, И click,
-  // вызывая preventDefault — браузер не диспатчит «промахнувшийся» click ниже.
-  const mounted = useRef(false);
-  if (open) mounted.current = true;
-  if (!mounted.current) return null;
+  // Монтирование с задержкой размонтажа для анимации fade-out.
+  // mounted-state, не ref, иначе re-render не выкинет узел из DOM (утечка).
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    if (open) {
+      setMounted(true);
+      return;
+    }
+    // Дождёмся завершения transition (200ms) и снимем компонент с дерева.
+    const t = setTimeout(() => setMounted(false), 220);
+    return () => clearTimeout(t);
+  }, [open]);
+  if (!mounted) return null;
 
   const handleSelect = (it: ActionSheetItem) => {
     if (it.disabled) return;
@@ -100,12 +107,21 @@ export function IOSActionSheet({
     <div
       aria-hidden={!open}
       className={cn(
-        "fixed inset-0 z-[330] flex flex-col justify-end",
+        "z-[330] flex flex-col justify-end",
         "transition-opacity duration-200",
         open ? "opacity-100" : "opacity-0 pointer-events-none",
       )}
-      onAnimationEnd={() => {
-        if (!open) mounted.current = false;
+      // Явные top/left/right/bottom + 100vw/100dvh вместо `fixed inset-0`,
+      // чтобы корректно покрывать viewport даже когда мы рендеримся внутри
+      // ancestor'а с `transform` (vaul Drawer.Content). `position: fixed`
+      // внутри transformed-предка позиционируется относительно него, поэтому
+      // полагаемся на абсолютную геометрию.
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        width: "100vw",
+        height: "100dvh",
       }}
     >
       {/* Затемнение + click-shield */}
