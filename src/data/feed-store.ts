@@ -10,6 +10,7 @@ import {
   patchPost,
   deletePost,
   addComment as addCommentApi,
+  editComment as editCommentApi,
   deleteComment as deleteCommentApi,
   likePost,
   unlikePost,
