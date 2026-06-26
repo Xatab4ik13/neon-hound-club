@@ -6,6 +6,7 @@ import { RANKS, type RankId } from "@/data/ranks";
 import { useFeedPosts, useFeedLoaded, feedStore, initialsOf, makeSlug, type FeedAuthor, type FeedComment, type FeedPost, type FeedPoll } from "@/data/feed-store";
 import { HellhoundAvatar, HellhoundChip } from "@/components/club/HellhoundPlaque";
 import { IOSSheet } from "@/components/ios/IOSSheet";
+import { IOSConfirm } from "@/components/ios/IOSConfirm";
 import { useViewer } from "@/hooks/use-viewer";
 import { useMyProfile } from "@/lib/garage-api";
 import { useMyStickerPacks, STICKER_PACK_PRODUCT_SLUGS } from "@/lib/stickers-api";
@@ -642,6 +643,7 @@ function CommentsSheet({
 }) {
   const [replyTo, setReplyTo] = useState<{ nick: string; commentId: string } | null>(null);
   const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set());
+  const [pendingDelete, setPendingDelete] = useState<string | null>(null);
   const viewer = useViewer();
   const myId = viewer.user?.id ?? null;
 
@@ -659,17 +661,29 @@ function CommentsSheet({
 
 
 
-  // Группировка ответов: ответ = коммент, начинающийся с "@<nick> "
-  const { topLevel, childrenByParentId } = useMemo<{
+  // Группировка ответов в треды.
+  // Источник истины — comment.parentId (Этап A). Для legacy-данных без parentId — fallback
+  // на старую эвристику «текст начинается с @nick» относительно последнего такого ника.
+  const { topLevel, childrenByParentId, knownNicks } = useMemo<{
     topLevel: Comment[];
     childrenByParentId: Map<string, Comment[]>;
+    knownNicks: Set<string>;
   }>(() => {
     const childrenByParentId = new Map<string, Comment[]>();
     const topLevel: Comment[] = [];
-    const nickToLatest = new Map<string, string>(); // nick(lower) -> commentId
+    const nickToLatest = new Map<string, string>();
+    const knownNicks = new Set<string>();
+    if (post.author?.nick) knownNicks.add(post.author.nick.toLowerCase());
     for (const c of post.comments) {
-      const m = c.text.match(/^@(\S+)\s/);
-      const parentId = m ? nickToLatest.get(m[1].toLowerCase()) : undefined;
+      let parentId: string | undefined = c.parentId ?? undefined;
+      if (!parentId) {
+        const m = c.text.match(/^@(\S+)\s/);
+        if (m) parentId = nickToLatest.get(m[1].toLowerCase());
+      }
+      if (parentId && childrenByParentId.get(parentId) === undefined && !post.comments.some((x) => x.id === parentId)) {
+        // parentId указывает на удалённого/недоступного — поднимаем коммент в топ
+        parentId = undefined;
+      }
       if (parentId) {
         const arr = childrenByParentId.get(parentId) ?? [];
         arr.push(c);
@@ -678,9 +692,10 @@ function CommentsSheet({
         topLevel.push(c);
       }
       nickToLatest.set(c.author.nick.toLowerCase(), c.id);
+      knownNicks.add(c.author.nick.toLowerCase());
     }
-    return { topLevel, childrenByParentId };
-  }, [post.comments]);
+    return { topLevel, childrenByParentId, knownNicks };
+  }, [post.comments, post.author?.nick]);
 
 
 
@@ -698,16 +713,13 @@ function CommentsSheet({
   const renderItem = (c: Comment, isReply = false) => {
     const isMine = myId != null && c.author.id === myId;
     const canDelete = isMine || moderate;
-    const onDelete = canDelete
-      ? () => {
-          if (confirm("Удалить комментарий?")) feedStore.removeComment(post.id, c.id);
-        }
-      : undefined;
+    const onDelete = canDelete ? () => setPendingDelete(c.id) : undefined;
 
     const item = (
       <CommentItem
         key={c.id}
         comment={isReply ? { ...c, text: stripReplyPrefix(c.text) } : c}
+        knownNicks={knownNicks}
         large
         onReply={() =>
           setReplyTo({
@@ -729,9 +741,7 @@ function CommentsSheet({
           icon: <Trash2 className="h-4 w-4" />,
           label: "Удалить",
           bg: "linear-gradient(90deg, oklch(0.4 0.18 27) 0%, oklch(0.5 0.22 27) 100%)",
-          onAction: () => {
-            if (confirm("Удалить комментарий?")) feedStore.removeComment(post.id, c.id);
-          },
+          onAction: () => setPendingDelete(c.id),
         }}
       >
         {item}
@@ -792,6 +802,7 @@ function CommentsSheet({
         <div className="shrink-0 border-t border-white/[0.06] bg-[#0d0d0d]">
           <CommentComposer
             postId={post.id}
+            knownNicks={knownNicks}
             large
             replyTo={replyTo}
             onClearReply={() => setReplyTo(null)}
@@ -799,6 +810,18 @@ function CommentsSheet({
         </div>
       </div>
 
+      <IOSConfirm
+        open={pendingDelete !== null}
+        onOpenChange={(v) => !v && setPendingDelete(null)}
+        title="Удалить комментарий?"
+        description="Это действие нельзя отменить."
+        confirmLabel="Удалить"
+        destructive
+        onConfirm={() => {
+          if (pendingDelete) feedStore.removeComment(post.id, pendingDelete);
+          setPendingDelete(null);
+        }}
+      />
     </IOSSheet>
   );
 }
@@ -807,11 +830,14 @@ function CommentsSheet({
 
 const CommentItem = memo(function CommentItem({
   comment,
+  knownNicks,
   large = false,
   onReply,
   onDelete,
 }: {
   comment: Comment;
+  /** Если задан — только эти @nick рендерятся как кликабельные ссылки. */
+  knownNicks?: Set<string>;
   large?: boolean;
   onReply?: () => void;
   onDelete?: () => void;
@@ -821,7 +847,7 @@ const CommentItem = memo(function CommentItem({
   const rank = RANK_BY_ID[(author.rankId as RankId) ?? "rookie"] ?? RANK_BY_ID["rookie"];
   const count = comment.likes;
   const authorIsBlogger = author.isBlogger;
-  const stickerUrl = parseSticker(comment.text);
+  const stickerUrl = getCommentStickerUrl(comment);
 
   return (
     <li className="flex gap-3">
@@ -859,6 +885,11 @@ const CommentItem = memo(function CommentItem({
           )}
           <span className="ml-auto shrink-0 font-mono text-[10px] uppercase tracking-wider text-muted-foreground/70">
             {comment.time}
+            {comment.editedAt && (
+              <span className="ml-1 text-muted-foreground/50 normal-case tracking-normal" title="Изменено">
+                · изм.
+              </span>
+            )}
           </span>
         </div>
         {stickerUrl ? (
@@ -869,13 +900,14 @@ const CommentItem = memo(function CommentItem({
               loading="lazy"
               decoding="async"
               draggable={false}
+              referrerPolicy="no-referrer"
               className="h-48 w-48 select-none object-contain md:h-52 md:w-52"
             />
           </div>
         ) : (
           <div className="mt-1 inline-block max-w-full rounded-2xl rounded-tl-sm border border-white/[0.05] bg-white/[0.03] px-3 py-2">
             <p className={`break-words leading-relaxed text-foreground/90 ${large ? "text-[14.5px]" : "text-[13.5px]"}`}>
-              {comment.text}
+              {renderCommentText(comment.text, knownNicks)}
             </p>
           </div>
         )}
@@ -1001,11 +1033,55 @@ function RankAvatar({
 
 // Mock packs — позже заменим на данные из БД
 
-/** Префикс-маркер: текст комментария = стикер-картинка. */
+/** Префикс-маркер: текст комментария = стикер-картинка (legacy-формат до Этапа A). */
 const STICKER_PREFIX = "::sticker::";
 const asStickerText = (url: string) => `${STICKER_PREFIX}${url}`;
 const parseSticker = (text: string): string | null =>
   text.startsWith(STICKER_PREFIX) ? text.slice(STICKER_PREFIX.length) : null;
+
+/** Достаёт url стикера из коммента вне зависимости от формата (новый kind/stickerId или legacy ::sticker::). */
+function getCommentStickerUrl(c: Comment): string | null {
+  if (c.kind === "sticker" && c.stickerId) return c.stickerId;
+  return parseSticker(c.text);
+}
+
+/** Регулярка для меншенов @nick — только латиница/цифры/подчёркивание, 2–32 символа. */
+const MENTION_RE = /@([a-zA-Z0-9_]{2,32})/g;
+
+/**
+ * Рендерит текст коммента, превращая @nick в кликабельные ссылки на /club/u/:nick.
+ * Принимает callback-фильтр: если nick есть в списке известных — ссылка, иначе обычный текст.
+ */
+function renderCommentText(text: string, knownNicks?: Set<string>): React.ReactNode {
+  if (!text) return text;
+  const parts: React.ReactNode[] = [];
+  let last = 0;
+  for (const m of text.matchAll(MENTION_RE)) {
+    const start = m.index ?? 0;
+    if (start > last) parts.push(text.slice(last, start));
+    const nick = m[1];
+    const isKnown = !knownNicks || knownNicks.has(nick.toLowerCase());
+    if (isKnown) {
+      parts.push(
+        <Link
+          key={`m-${start}`}
+          to="/club/u/$nick"
+          params={{ nick: makeSlug(nick) || nick }}
+          className="font-medium text-primary hover:underline"
+          onClick={(e) => e.stopPropagation()}
+        >
+          @{nick}
+        </Link>,
+      );
+    } else {
+      parts.push(m[0]);
+    }
+    last = start + m[0].length;
+  }
+  if (last < text.length) parts.push(text.slice(last));
+  return parts;
+}
+
 
 type StickerPack = {
   id: string;
@@ -1055,13 +1131,22 @@ function saveRecent(list: string[]) {
   }
 }
 
+// Лимит длины коммента (бэк: max 2000). Покажем счётчик начиная с этого порога.
+const COMMENT_MAX = 2000;
+const COMMENT_COUNTER_THRESHOLD = 1800;
+// Анти-флуд: интервал между двумя сабмитами в одном композере.
+const COMMENT_MIN_INTERVAL_MS = 600;
+
 function CommentComposer({
   postId,
+  knownNicks,
   large = false,
   replyTo,
   onClearReply,
 }: {
   postId: string;
+  /** Список ников, которых можно меншенить (для автокомплита) — обычно участники треда. */
+  knownNicks?: Set<string>;
   large?: boolean;
   replyTo?: { nick: string; commentId: string } | null;
   onClearReply?: () => void;
@@ -1071,6 +1156,7 @@ function CommentComposer({
   const [tab, setTab] = useState<"recent" | "emoji" | "stickers">("stickers");
   const [activePack, setActivePack] = useState<string>(STICKER_PACKS[0].id);
   const [recent, setRecent] = useState<string[]>(() => loadRecent());
+  const [submitting, setSubmitting] = useState(false);
   const viewer = useViewer();
   const myProfileQ = useMyProfile();
   const myProfile = myProfileQ.data;
@@ -1082,9 +1168,12 @@ function CommentComposer({
   const meAvatar = myProfile?.avatarUrl ?? undefined;
   const meIsBlogger = myProfile?.role === "blogger";
   const meId = viewer.user?.id ?? "";
-  const disabled = value.trim().length === 0;
+  const trimmed = value.trim();
+  const overLimit = value.length > COMMENT_MAX;
+  const disabled = trimmed.length === 0 || overLimit || submitting;
   const wrapRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const lastSentAt = useRef(0);
 
   const meAuthor = useMemo<FeedAuthor>(
     () => ({
@@ -1105,6 +1194,30 @@ function CommentComposer({
     if (replyTo) inputRef.current?.focus();
   }, [replyTo]);
 
+  // Auto-grow textarea (1 → 5 строк). Считаем по scrollHeight.
+  useEffect(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    const max = 5 * 22; // ~5 строк при line-height 22
+    el.style.height = `${Math.min(el.scrollHeight, max)}px`;
+  }, [value]);
+
+  // Outside-click: закрыть стикер-панель.
+  useEffect(() => {
+    if (!panel) return;
+    const onDoc = (e: MouseEvent | TouchEvent) => {
+      if (!wrapRef.current) return;
+      if (!wrapRef.current.contains(e.target as Node)) setPanel(null);
+    };
+    document.addEventListener("mousedown", onDoc);
+    document.addEventListener("touchstart", onDoc, { passive: true });
+    return () => {
+      document.removeEventListener("mousedown", onDoc);
+      document.removeEventListener("touchstart", onDoc);
+    };
+  }, [panel]);
+
   const pushRecent = useCallback((s: string) => {
     setRecent((prev) => {
       const next = [s, ...prev.filter((x) => x !== s)].slice(0, 24);
@@ -1114,32 +1227,87 @@ function CommentComposer({
   }, []);
 
   const submitText = useCallback(
-    (text: string) => {
+    async (text: string) => {
       const clean = text.trim();
-      if (!clean) return;
-      const prefix = replyTo ? `@${replyTo.nick} ` : "";
-      feedStore.addComment(postId, { author: meAuthor, text: `${prefix}${clean}` });
-      setValue("");
-      setPanel(null);
-      onClearReply?.();
+      if (!clean || clean.length > COMMENT_MAX) return;
+      const now = Date.now();
+      if (now - lastSentAt.current < COMMENT_MIN_INTERVAL_MS) return;
+      lastSentAt.current = now;
+      setSubmitting(true);
+      try {
+        await feedStore.addComment(postId, {
+          author: meAuthor,
+          text: clean,
+          parentId: replyTo?.commentId,
+        });
+        setValue("");
+        setPanel(null);
+        onClearReply?.();
+      } finally {
+        setSubmitting(false);
+      }
     },
     [postId, replyTo, onClearReply, meAuthor],
   );
 
   const insertEmoji = useCallback((e: string) => {
-    setValue((v) => v + e);
+    setValue((v) => (v + e).slice(0, COMMENT_MAX));
     inputRef.current?.focus();
   }, []);
 
   const sendSticker = useCallback(
-    (s: string) => {
+    async (s: string) => {
+      const now = Date.now();
+      if (now - lastSentAt.current < COMMENT_MIN_INTERVAL_MS) return;
+      lastSentAt.current = now;
       pushRecent(s);
-      const prefix = replyTo ? `@${replyTo.nick} ` : "";
-      feedStore.addComment(postId, { author: meAuthor, text: `${prefix}${s}` });
+      // s может быть либо raw URL стикера, либо legacy "::sticker::<url>" — нормализуем.
+      const stickerId = parseSticker(s) ?? s;
       setPanel(null);
       onClearReply?.();
+      await feedStore.addComment(postId, {
+        author: meAuthor,
+        stickerId,
+        parentId: replyTo?.commentId,
+      });
     },
     [postId, replyTo, onClearReply, pushRecent, meAuthor],
+  );
+
+  // ───── Mention-автокомплит ─────
+  // Активен, когда курсор стоит сразу после @<query> и query состоит из [a-zA-Z0-9_].
+  const mention = useMemo(() => {
+    const el = inputRef.current;
+    const caret = el?.selectionStart ?? value.length;
+    const before = value.slice(0, caret);
+    const m = before.match(/(?:^|\s)@([a-zA-Z0-9_]{0,32})$/);
+    if (!m) return null;
+    const query = m[1].toLowerCase();
+    const all = Array.from(knownNicks ?? []);
+    const matches = all
+      .filter((n) => (query ? n.startsWith(query) : true))
+      .filter((n) => n !== meNick.toLowerCase())
+      .slice(0, 6);
+    if (matches.length === 0) return null;
+    return { query, matches, startsAt: caret - m[1].length - 1 };
+    // зависим от value, чтобы пересчитываться при наборе
+  }, [value, knownNicks, meNick]);
+
+  const insertMention = useCallback(
+    (nick: string) => {
+      const el = inputRef.current;
+      const caret = el?.selectionStart ?? value.length;
+      const before = value.slice(0, caret).replace(/@([a-zA-Z0-9_]{0,32})$/, `@${nick} `);
+      const after = value.slice(caret);
+      const next = (before + after).slice(0, COMMENT_MAX);
+      setValue(next);
+      requestAnimationFrame(() => {
+        const newCaret = before.length;
+        el?.focus();
+        el?.setSelectionRange(newCaret, newCaret);
+      });
+    },
+    [value],
   );
 
   return (
@@ -1164,6 +1332,26 @@ function CommentComposer({
         </div>
       )}
 
+      {mention && (
+        <div className="absolute left-3 right-3 bottom-full mb-2 z-10 overflow-hidden rounded-2xl border border-white/[0.08] bg-[#1c1c1e]/95 shadow-[0_12px_40px_-12px_rgba(0,0,0,0.8)] backdrop-blur-xl">
+          {mention.matches.map((nick) => (
+            <button
+              key={nick}
+              type="button"
+              onMouseDown={(e) => {
+                // mousedown (не click) чтобы не потерять фокус textarea
+                e.preventDefault();
+                insertMention(nick);
+              }}
+              className="flex w-full items-center gap-2 px-3 py-2 text-left text-[13px] text-foreground/90 transition-colors hover:bg-white/[0.06] active:bg-white/[0.08]"
+            >
+              <span className="text-muted-foreground/70">@</span>
+              <span className="font-medium">{nick}</span>
+            </button>
+          ))}
+        </div>
+      )}
+
       {panel && (
         <StickerPanel
           tab={tab}
@@ -1180,11 +1368,11 @@ function CommentComposer({
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          submitText(value);
+          void submitText(value);
         }}
         className="flex items-end gap-2 px-3 py-2.5"
       >
-        <div className="flex min-w-0 flex-1 items-center gap-1 rounded-3xl border border-white/[0.08] bg-black/60 pl-2 pr-1 py-1 focus-within:border-primary/40">
+        <div className="flex min-w-0 flex-1 items-end gap-1 rounded-3xl border border-white/[0.08] bg-black/60 pl-2 pr-1 py-1 focus-within:border-primary/40">
           <button
             type="button"
             onClick={() => {
@@ -1201,18 +1389,46 @@ function CommentComposer({
             <Smile size={20} strokeWidth={1.6} />
           </button>
 
-          <input
+          <textarea
             ref={inputRef}
-            type="text"
             value={value}
-            onChange={(e) => setValue(e.target.value)}
+            onChange={(e) => setValue(e.target.value.slice(0, COMMENT_MAX))}
             onFocus={() => setPanel(null)}
+            onKeyDown={(e) => {
+              // Enter = отправить, Shift+Enter = перенос строки.
+              if (e.key === "Enter" && !e.shiftKey && !mention) {
+                e.preventDefault();
+                void submitText(value);
+              }
+              if (e.key === "Escape") {
+                if (mention) {
+                  // курсор сразу за @ → стираем @, чтобы скрыть подсказку
+                  const el = inputRef.current;
+                  const caret = el?.selectionStart ?? value.length;
+                  setValue(value.slice(0, mention.startsAt) + value.slice(caret));
+                } else if (replyTo) {
+                  onClearReply?.();
+                }
+              }
+            }}
+            rows={1}
             placeholder={replyTo ? `Ответить @${replyTo.nick}…` : "Написать комментарий…"}
-            className="min-w-0 flex-1 bg-transparent px-1 py-1.5 text-[14px] text-foreground placeholder:text-muted-foreground/60 outline-none"
+            className="min-w-0 flex-1 resize-none bg-transparent px-1 py-1.5 text-[14px] leading-[22px] text-foreground placeholder:text-muted-foreground/60 outline-none"
+            style={{ maxHeight: 5 * 22 }}
           />
+          {value.length >= COMMENT_COUNTER_THRESHOLD && (
+            <span
+              className={`mb-1.5 shrink-0 self-end font-mono text-[10px] tabular-nums ${
+                overLimit ? "text-destructive" : "text-muted-foreground/60"
+              }`}
+              aria-live="polite"
+            >
+              {COMMENT_MAX - value.length}
+            </span>
+          )}
         </div>
 
-        {disabled ? (
+        {trimmed.length === 0 ? (
           <button
             type="button"
             onClick={() => {
@@ -1231,13 +1447,13 @@ function CommentComposer({
         ) : (
           <button
             type="submit"
-            className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground transition-transform active:scale-95"
+            disabled={disabled}
+            className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground transition-transform active:scale-95 disabled:opacity-40"
             aria-label="Отправить"
           >
             <Send size={18} strokeWidth={2} className="-translate-x-[1px]" />
           </button>
         )}
-
       </form>
     </div>
   );
