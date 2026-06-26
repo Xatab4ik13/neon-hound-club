@@ -713,16 +713,13 @@ function CommentsSheet({
   const renderItem = (c: Comment, isReply = false) => {
     const isMine = myId != null && c.author.id === myId;
     const canDelete = isMine || moderate;
-    const onDelete = canDelete
-      ? () => {
-          if (confirm("Удалить комментарий?")) feedStore.removeComment(post.id, c.id);
-        }
-      : undefined;
+    const onDelete = canDelete ? () => setPendingDelete(c.id) : undefined;
 
     const item = (
       <CommentItem
         key={c.id}
         comment={isReply ? { ...c, text: stripReplyPrefix(c.text) } : c}
+        knownNicks={knownNicks}
         large
         onReply={() =>
           setReplyTo({
@@ -744,9 +741,7 @@ function CommentsSheet({
           icon: <Trash2 className="h-4 w-4" />,
           label: "Удалить",
           bg: "linear-gradient(90deg, oklch(0.4 0.18 27) 0%, oklch(0.5 0.22 27) 100%)",
-          onAction: () => {
-            if (confirm("Удалить комментарий?")) feedStore.removeComment(post.id, c.id);
-          },
+          onAction: () => setPendingDelete(c.id),
         }}
       >
         {item}
