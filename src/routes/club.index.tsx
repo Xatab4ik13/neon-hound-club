@@ -985,8 +985,13 @@ function CommentsSheet({
               0%   { background-color: rgba(255,45,149,0.18); }
               100% { background-color: transparent; }
             }
+            @keyframes comment-flyin {
+              0%   { opacity: 0; transform: translateY(14px) scale(0.985); }
+              60%  { opacity: 1; }
+              100% { opacity: 1; transform: translateY(0) scale(1); }
+            }
             @media (prefers-reduced-motion: reduce) {
-              [style*="comment-highlight"] { animation: none !important; }
+              [style*="comment-highlight"], [style*="comment-flyin"] { animation: none !important; }
             }
           `}</style>
         </div>
