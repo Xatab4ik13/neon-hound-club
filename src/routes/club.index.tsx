@@ -650,8 +650,13 @@ function CommentsSheet({
   const [actionTarget, setActionTarget] = useState<Comment | null>(null);
   const [reactionFor, setReactionFor] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [highlightId, setHighlightId] = useState<string | null>(null);
   const viewer = useViewer();
   const myId = viewer.user?.id ?? null;
+
+  const listRef = useRef<HTMLDivElement | null>(null);
+  const prevCountRef = useRef<number>(post.comments.length);
+  const scrolledToTargetRef = useRef<string | null>(null);
 
 
   // сбросить состояние при закрытии; при открытии — подгрузить полный список
@@ -661,12 +666,57 @@ function CommentsSheet({
       setActionTarget(null);
       setReactionFor(null);
       setEditingId(null);
+      setHighlightId(null);
+      scrolledToTargetRef.current = null;
       return;
     }
     if (!post.commentsFull) {
       feedStore.loadFullComments(post.id);
     }
   }, [open, post.id, post.commentsFull]);
+
+  // Deep-link на коммент: ?c=<commentId>. Скроллим + подсвечиваем пульсом.
+  useEffect(() => {
+    if (!open) return;
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const target = params.get("c");
+    if (!target) return;
+    if (scrolledToTargetRef.current === target) return;
+    const exists = post.comments.some((c) => c.id === target);
+    if (!exists) return; // подождём подгрузки full
+    scrolledToTargetRef.current = target;
+    // Подождём кадр чтобы DOM устоялся
+    requestAnimationFrame(() => {
+      const el = listRef.current?.querySelector<HTMLElement>(`[data-comment-id="${CSS.escape(target)}"]`);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        setHighlightId(target);
+        setTimeout(() => setHighlightId(null), 1800);
+      }
+    });
+  }, [open, post.comments]);
+
+  // Авто-скролл к низу когда юзер отправил свой коммент.
+  useEffect(() => {
+    if (!open) return;
+    const prev = prevCountRef.current;
+    const next = post.comments.length;
+    if (next > prev) {
+      const last = post.comments[post.comments.length - 1];
+      const isMine = myId != null && last && last.author.id === myId;
+      if (isMine && listRef.current) {
+        requestAnimationFrame(() => {
+          if (listRef.current) {
+            listRef.current.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
+          }
+        });
+      }
+    }
+    prevCountRef.current = next;
+  }, [open, post.comments, myId]);
+
+
 
   // Группировка ответов в треды. Источник истины — comment.parentId.
   // Для legacy без parentId — fallback на эвристику «текст начинается с @nick».
@@ -814,6 +864,7 @@ function CommentsSheet({
     >
       <div className="flex h-full min-h-0 flex-1 flex-col">
         <div
+          ref={listRef}
           className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 md:px-5"
           style={{ WebkitOverflowScrolling: "touch" } as React.CSSProperties}
         >
@@ -821,13 +872,21 @@ function CommentsSheet({
             <div className="grid h-full place-items-center text-[13px] text-muted-foreground">
               Будь первым — оставь комментарий
             </div>
+          ) : !post.commentsFull && post.commentsCount > post.comments.length ? (
+            <CommentSkeletonList count={Math.min(5, post.commentsCount)} />
           ) : (
             <ul className="space-y-5">
               {topLevel.map((c) => {
                 const children = childrenByParentId.get(c.id) ?? [];
                 const isCollapsed = collapsed.has(c.id);
+                const isHi = highlightId === c.id;
                 return (
-                  <li key={c.id} data-comment-id={c.id} className="space-y-3">
+                  <li
+                    key={c.id}
+                    data-comment-id={c.id}
+                    className={`space-y-3 rounded-2xl transition-colors ${isHi ? "ring-2 ring-primary/60 bg-primary/[0.04]" : ""}`}
+                    style={isHi ? { animation: "comment-highlight 1.8s ease-out" } : undefined}
+                  >
                     <ul>{renderItem(c)}</ul>
                     {children.length > 0 && (
                       <div className="pl-12">
@@ -843,7 +902,19 @@ function CommentsSheet({
                         </button>
                         {!isCollapsed && (
                           <ul className="space-y-4">
-                            {children.map((child) => renderItem(child, true))}
+                            {children.map((child) => {
+                              const isChildHi = highlightId === child.id;
+                              return (
+                                <div
+                                  key={child.id}
+                                  data-comment-id={child.id}
+                                  className={`rounded-2xl transition-colors ${isChildHi ? "ring-2 ring-primary/60 bg-primary/[0.04]" : ""}`}
+                                  style={isChildHi ? { animation: "comment-highlight 1.8s ease-out" } : undefined}
+                                >
+                                  {renderItem(child, true)}
+                                </div>
+                              );
+                            })}
                           </ul>
                         )}
                       </div>
@@ -853,6 +924,15 @@ function CommentsSheet({
               })}
             </ul>
           )}
+          <style>{`
+            @keyframes comment-highlight {
+              0%   { background-color: rgba(255,45,149,0.18); }
+              100% { background-color: transparent; }
+            }
+            @media (prefers-reduced-motion: reduce) {
+              [style*="comment-highlight"] { animation: none !important; }
+            }
+          `}</style>
         </div>
         <div className="shrink-0 border-t border-white/[0.06] bg-[#0d0d0d]">
           <CommentComposer
@@ -899,6 +979,24 @@ function CommentsSheet({
         }))}
       />
     </IOSSheet>
+  );
+}
+
+// Скелетон списка комментов на момент подгрузки full.
+function CommentSkeletonList({ count }: { count: number }) {
+  return (
+    <ul className="space-y-5">
+      {Array.from({ length: count }).map((_, i) => (
+        <li key={i} className="flex gap-3">
+          <div className="h-10 w-10 shrink-0 animate-pulse rounded-full bg-white/[0.05]" />
+          <div className="min-w-0 flex-1 space-y-2">
+            <div className="h-3 w-24 animate-pulse rounded bg-white/[0.05]" />
+            <div className="h-4 w-[min(70%,260px)] animate-pulse rounded-2xl bg-white/[0.04]" />
+            <div className="h-4 w-[min(50%,200px)] animate-pulse rounded-2xl bg-white/[0.04]" />
+          </div>
+        </li>
+      ))}
+    </ul>
   );
 }
 
