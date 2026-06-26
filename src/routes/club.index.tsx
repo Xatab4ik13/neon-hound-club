@@ -864,6 +864,7 @@ function CommentsSheet({
     >
       <div className="flex h-full min-h-0 flex-1 flex-col">
         <div
+          ref={listRef}
           className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 md:px-5"
           style={{ WebkitOverflowScrolling: "touch" } as React.CSSProperties}
         >
@@ -871,13 +872,21 @@ function CommentsSheet({
             <div className="grid h-full place-items-center text-[13px] text-muted-foreground">
               Будь первым — оставь комментарий
             </div>
+          ) : !post.commentsFull && post.commentsCount > post.comments.length ? (
+            <CommentSkeletonList count={Math.min(5, post.commentsCount)} />
           ) : (
             <ul className="space-y-5">
               {topLevel.map((c) => {
                 const children = childrenByParentId.get(c.id) ?? [];
                 const isCollapsed = collapsed.has(c.id);
+                const isHi = highlightId === c.id;
                 return (
-                  <li key={c.id} data-comment-id={c.id} className="space-y-3">
+                  <li
+                    key={c.id}
+                    data-comment-id={c.id}
+                    className={`space-y-3 rounded-2xl transition-colors ${isHi ? "ring-2 ring-primary/60 bg-primary/[0.04]" : ""}`}
+                    style={isHi ? { animation: "comment-highlight 1.8s ease-out" } : undefined}
+                  >
                     <ul>{renderItem(c)}</ul>
                     {children.length > 0 && (
                       <div className="pl-12">
@@ -893,7 +902,19 @@ function CommentsSheet({
                         </button>
                         {!isCollapsed && (
                           <ul className="space-y-4">
-                            {children.map((child) => renderItem(child, true))}
+                            {children.map((child) => {
+                              const isChildHi = highlightId === child.id;
+                              return (
+                                <div
+                                  key={child.id}
+                                  data-comment-id={child.id}
+                                  className={`rounded-2xl transition-colors ${isChildHi ? "ring-2 ring-primary/60 bg-primary/[0.04]" : ""}`}
+                                  style={isChildHi ? { animation: "comment-highlight 1.8s ease-out" } : undefined}
+                                >
+                                  {renderItem(child, true)}
+                                </div>
+                              );
+                            })}
                           </ul>
                         )}
                       </div>
@@ -903,6 +924,15 @@ function CommentsSheet({
               })}
             </ul>
           )}
+          <style>{`
+            @keyframes comment-highlight {
+              0%   { background-color: rgba(255,45,149,0.18); }
+              100% { background-color: transparent; }
+            }
+            @media (prefers-reduced-motion: reduce) {
+              [style*="comment-highlight"] { animation: none !important; }
+            }
+          `}</style>
         </div>
         <div className="shrink-0 border-t border-white/[0.06] bg-[#0d0d0d]">
           <CommentComposer
