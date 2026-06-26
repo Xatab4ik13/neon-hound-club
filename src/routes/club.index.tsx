@@ -657,6 +657,12 @@ function CommentsSheet({
   const listRef = useRef<HTMLDivElement | null>(null);
   const prevCountRef = useRef<number>(post.comments.length);
   const scrolledToTargetRef = useRef<string | null>(null);
+  // Метка «последнего прочтения» (ms) — фиксируется при открытии шита.
+  // Всё, что новее, рисуем под разделителем «Новые».
+  const [lastReadAt, setLastReadAt] = useState<number>(0);
+  const lastReadStorageKey = `hh:lastRead:${post.id}`;
+  // ID последнего отправленного мной комментария — для fly-in анимации.
+  const [justSentId, setJustSentId] = useState<string | null>(null);
 
 
   // сбросить состояние при закрытии; при открытии — подгрузить полный список
@@ -667,13 +673,20 @@ function CommentsSheet({
       setReactionFor(null);
       setEditingId(null);
       setHighlightId(null);
+      setJustSentId(null);
       scrolledToTargetRef.current = null;
+      // На закрытии запоминаем «прочитано до сейчас».
+      try { localStorage.setItem(lastReadStorageKey, String(Date.now())); } catch {}
       return;
     }
+    try {
+      const raw = localStorage.getItem(lastReadStorageKey);
+      setLastReadAt(raw ? Number(raw) || 0 : 0);
+    } catch { setLastReadAt(0); }
     if (!post.commentsFull) {
       feedStore.loadFullComments(post.id);
     }
-  }, [open, post.id, post.commentsFull]);
+  }, [open, post.id, post.commentsFull, lastReadStorageKey]);
 
   // Deep-link на коммент: ?c=<commentId>. Скроллим + подсвечиваем пульсом.
   useEffect(() => {
