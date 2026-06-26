@@ -169,7 +169,11 @@ function mapComment(c: FeedCommentHydrated): FeedComment {
     isBlogger: author.isBlogger,
     time: formatRelative(c.createdAt),
     createdAt: c.createdAt,
+    editedAt: c.editedAt ?? undefined,
     text: c.text,
+    kind: c.kind ?? "text",
+    stickerId: c.stickerId ?? undefined,
+    parentId: c.parentId ?? undefined,
     likes: c.likes,
     liked: c.liked,
   };
