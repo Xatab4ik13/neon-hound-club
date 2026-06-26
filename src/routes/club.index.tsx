@@ -1273,7 +1273,11 @@ const CommentItem = memo(function CommentItem({
           {onMore && (
             <button
               type="button"
-              onClick={onMore}
+              onClick={(e) => {
+                e.stopPropagation();
+                onMore();
+              }}
+              onPointerDown={(e) => e.stopPropagation()}
               aria-label="Действия"
               title="Действия"
               className="ml-auto inline-flex h-6 items-center justify-center rounded-full px-2 font-mono text-[14px] leading-none text-muted-foreground/60 transition-colors hover:bg-white/[0.05] hover:text-foreground"
