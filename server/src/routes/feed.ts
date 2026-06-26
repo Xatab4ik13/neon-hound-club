@@ -78,7 +78,23 @@ const patchSchema = z.object({
   poll: pollSchema.nullable().optional(),
 });
 
-const commentSchema = z.object({ text: z.string().min(1).max(2000) });
+// Комментарий = текст ИЛИ стикер. Для треда — необязательный parentId.
+// Без discriminatedUnion: фронту удобнее присылать оба поля + kind.
+const commentSchema = z
+  .object({
+    kind: z.enum(["text", "sticker"]).default("text"),
+    text: z.string().max(2000).optional(),
+    stickerId: z.string().min(1).max(500).optional(),
+    parentId: z.string().uuid().optional(),
+  })
+  .refine(
+    (d) =>
+      (d.kind === "text" && !!d.text && d.text.trim().length > 0) ||
+      (d.kind === "sticker" && !!d.stickerId),
+    { message: "Нужен текст или стикер" },
+  );
+
+const commentPatchSchema = z.object({ text: z.string().min(1).max(2000) });
 
 // Собираем агрегаты для списка постов: лайки, комменты, мой лайк, голоса опроса.
 async function hydratePosts(rows: typeof posts.$inferSelect[], viewerId: string | null) {
