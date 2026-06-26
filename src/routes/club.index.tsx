@@ -661,8 +661,15 @@ function CommentsSheet({
   // Всё, что новее, рисуем под разделителем «Новые».
   const [lastReadAt, setLastReadAt] = useState<number>(0);
   const lastReadStorageKey = `hh:lastRead:${post.id}`;
+  // Максимальный createdAt, который юзер РЕАЛЬНО увидел в этой сессии
+  // (через IntersectionObserver на li). При закрытии шита запишем
+  // max(prev, maxSeenAtRef) — так непрочитанные из прошлой сессии,
+  // до которых юзер НЕ доскроллил, останутся непрочитанными.
+  const maxSeenAtRef = useRef<number>(0);
   // ID последнего отправленного мной комментария — для fly-in анимации.
   const [justSentId, setJustSentId] = useState<string | null>(null);
+  // Скелетоны не должны висеть вечно, если bff наврал в commentsCount.
+  const [skeletonExpired, setSkeletonExpired] = useState(false);
 
 
   // сбросить состояние при закрытии; при открытии — подгрузить полный список
@@ -675,20 +682,34 @@ function CommentsSheet({
       setHighlightId(null);
       setJustSentId(null);
       scrolledToTargetRef.current = null;
-      // На закрытии запоминаем «прочитано до сейчас».
-      try { localStorage.setItem(lastReadStorageKey, String(Date.now())); } catch {}
+      // На закрытии запоминаем «прочитано до самого нового РЕАЛЬНО увиденного».
+      // Если юзер ничего не успел увидеть (мгновенно закрыл) — НЕ двигаем метку.
+      try {
+        const prev = Number(localStorage.getItem(lastReadStorageKey) || 0);
+        const next = Math.max(prev, maxSeenAtRef.current);
+        if (next > prev) localStorage.setItem(lastReadStorageKey, String(next));
+      } catch {}
+      maxSeenAtRef.current = 0;
       return;
     }
     try {
       const raw = localStorage.getItem(lastReadStorageKey);
-      setLastReadAt(raw ? Number(raw) || 0 : 0);
+      const parsed = raw ? Number(raw) || 0 : 0;
+      setLastReadAt(parsed);
+      maxSeenAtRef.current = parsed; // стартуем с того, что уже было прочитано
     } catch { setLastReadAt(0); }
+    setSkeletonExpired(false);
     if (!post.commentsFull) {
       feedStore.loadFullComments(post.id);
+      // Защита от вечных скелетонов: через 4с показываем то, что есть.
+      const t = setTimeout(() => setSkeletonExpired(true), 4000);
+      return () => clearTimeout(t);
     }
   }, [open, post.id, post.commentsFull, lastReadStorageKey]);
 
   // Deep-link на коммент: ?c=<commentId>. Скроллим + подсвечиваем пульсом.
+  // После — ВЫЧИЩАЕМ параметр из URL, чтобы при «поделиться» не утаскивать
+  // подсветку чужого комментария.
   useEffect(() => {
     if (!open) return;
     if (typeof window === "undefined") return;
@@ -707,10 +728,19 @@ function CommentsSheet({
         setHighlightId(target);
         setTimeout(() => setHighlightId(null), 1800);
       }
+      // Чистим ?c из URL, сохраняя остальные параметры.
+      try {
+        const url = new URL(window.location.href);
+        url.searchParams.delete("c");
+        window.history.replaceState({}, "", url.toString());
+      } catch {}
     });
   }, [open, post.comments]);
 
-  // Авто-скролл к низу + fly-in анимация, когда юзер отправил свой коммент.
+  // Авто-скролл к низу + fly-in, когда юзер отправил свой коммент.
+  // ВАЖНО: скроллим только если (а) коммент top-level (ответы в треде не двигают
+  // основной список) И (б) юзер уже был близко к низу — иначе уносим его
+  // от того места, что он читает.
   useEffect(() => {
     if (!open) return;
     const prev = prevCountRef.current;
@@ -720,19 +750,48 @@ function CommentsSheet({
       const isMine = myId != null && last && last.author.id === myId;
       if (isMine && last) {
         setJustSentId(last.id);
-        // снимаем подсветку после анимации
         setTimeout(() => setJustSentId((id) => (id === last.id ? null : id)), 600);
-        if (listRef.current) {
+        const isTopLevel = !last.parentId;
+        const el = listRef.current;
+        const nearBottom = el
+          ? el.scrollHeight - el.scrollTop - el.clientHeight < 240
+          : false;
+        if (isTopLevel && el && nearBottom) {
           requestAnimationFrame(() => {
-            if (listRef.current) {
-              listRef.current.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
-            }
+            el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
           });
         }
       }
     }
     prevCountRef.current = next;
   }, [open, post.comments, myId]);
+
+  // IntersectionObserver: трекаем максимальный createdAt РЕАЛЬНО увиденного
+  // комментария. Нужно, чтобы «Новые» не пропадали для непрочитанной части,
+  // до которой юзер не доскроллил.
+  useEffect(() => {
+    if (!open) return;
+    const root = listRef.current;
+    if (!root) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (!e.isIntersecting) continue;
+          const id = (e.target as HTMLElement).dataset.commentId;
+          if (!id) continue;
+          const c = post.comments.find((x) => x.id === id);
+          if (!c?.createdAt) continue;
+          const t = new Date(c.createdAt).getTime();
+          if (t > maxSeenAtRef.current) maxSeenAtRef.current = t;
+        }
+      },
+      { root, threshold: 0.6 },
+    );
+    const nodes = root.querySelectorAll<HTMLElement>("[data-comment-id]");
+    nodes.forEach((n) => io.observe(n));
+    return () => io.disconnect();
+  }, [open, post.comments]);
+
 
   // Группировка ответов в треды. Источник истины — comment.parentId.
   // Для legacy без parentId — fallback на эвристику «текст начинается с @nick».
