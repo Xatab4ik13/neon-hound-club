@@ -367,7 +367,16 @@ export const feedStore = {
     }
   },
 
-  async addComment(postId: string, input: { author: FeedAuthor; text: string }) {
+  async addComment(
+    postId: string,
+    input: {
+      author: FeedAuthor;
+      text?: string;
+      stickerId?: string;
+      parentId?: string;
+    },
+  ) {
+    const isSticker = !!input.stickerId;
     const tempId = `tmp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     const optimistic: FeedComment = {
       id: tempId,
@@ -377,7 +386,10 @@ export const feedStore = {
       isBlogger: input.author.isBlogger,
       time: "только что",
       createdAt: new Date().toISOString(),
-      text: input.text,
+      text: isSticker ? "" : (input.text ?? ""),
+      kind: isSticker ? "sticker" : "text",
+      stickerId: input.stickerId,
+      parentId: input.parentId,
       likes: 0,
       liked: false,
     };
@@ -387,7 +399,10 @@ export const feedStore = {
       commentsCount: p.commentsCount + 1,
     }));
     try {
-      const created = await addCommentApi(postId, input.text);
+      const apiInput = isSticker
+        ? { kind: "sticker" as const, stickerId: input.stickerId!, parentId: input.parentId }
+        : { kind: "text" as const, text: input.text ?? "", parentId: input.parentId };
+      const created = await addCommentApi(postId, apiInput);
       const real = mapComment(created);
       patchPostLocal(postId, (p) => ({
         ...p,
@@ -398,6 +413,33 @@ export const feedStore = {
         ...p,
         comments: p.comments.filter((c) => c.id !== tempId),
         commentsCount: Math.max(0, p.commentsCount - 1),
+      }));
+    }
+  },
+
+  async editComment(postId: string, commentId: string, text: string) {
+    const prev = POSTS.find((p) => p.id === postId);
+    const prevComment = prev?.comments.find((c) => c.id === commentId);
+    if (!prevComment) return;
+    const optimisticEditedAt = new Date().toISOString();
+    patchPostLocal(postId, (p) => ({
+      ...p,
+      comments: p.comments.map((c) =>
+        c.id === commentId ? { ...c, text, editedAt: optimisticEditedAt } : c,
+      ),
+    }));
+    try {
+      const res = await editCommentApi(commentId, text);
+      patchPostLocal(postId, (p) => ({
+        ...p,
+        comments: p.comments.map((c) =>
+          c.id === commentId ? { ...c, text: res.text, editedAt: res.editedAt } : c,
+        ),
+      }));
+    } catch {
+      patchPostLocal(postId, (p) => ({
+        ...p,
+        comments: p.comments.map((c) => (c.id === commentId ? prevComment : c)),
       }));
     }
   },
