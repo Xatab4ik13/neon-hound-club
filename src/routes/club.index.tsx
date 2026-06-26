@@ -910,15 +910,25 @@ const CommentItem = memo(function CommentItem({
   comment,
   knownNicks,
   large = false,
+  editing = false,
   onReply,
-  onDelete,
+  onSaveEdit,
+  onCancelEdit,
+  onLongPress,
+  onMore,
 }: {
   comment: Comment;
   /** Если задан — только эти @nick рендерятся как кликабельные ссылки. */
   knownNicks?: Set<string>;
   large?: boolean;
+  editing?: boolean;
   onReply?: () => void;
-  onDelete?: () => void;
+  onSaveEdit?: (text: string) => void;
+  onCancelEdit?: () => void;
+  /** Долгий тап — открыть action-sheet. */
+  onLongPress?: () => void;
+  /** Клик по «…» — тот же action-sheet. */
+  onMore?: () => void;
 }) {
   const liked = comment.liked;
   const author = comment.author;
@@ -926,6 +936,39 @@ const CommentItem = memo(function CommentItem({
   const count = comment.likes;
   const authorIsBlogger = author.isBlogger;
   const stickerUrl = getCommentStickerUrl(comment);
+
+  // Локальный текст для inline-edit
+  const [draft, setDraft] = useState(comment.text);
+  useEffect(() => {
+    if (editing) setDraft(comment.text);
+  }, [editing, comment.text]);
+
+  // Long-press detection (touch). На десктопе — contextmenu.
+  const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const longPressedRef = useRef(false);
+  const handlePressStart = useCallback(() => {
+    if (!onLongPress) return;
+    longPressedRef.current = false;
+    pressTimer.current = setTimeout(() => {
+      longPressedRef.current = true;
+      haptic("selection");
+      onLongPress();
+    }, 380);
+  }, [onLongPress]);
+  const handlePressEnd = useCallback(() => {
+    if (pressTimer.current) {
+      clearTimeout(pressTimer.current);
+      pressTimer.current = null;
+    }
+  }, []);
+  const handleContextMenu = useCallback(
+    (e: React.MouseEvent) => {
+      if (!onLongPress) return;
+      e.preventDefault();
+      onLongPress();
+    },
+    [onLongPress],
+  );
 
   return (
     <li className="flex gap-3">
@@ -970,8 +1013,54 @@ const CommentItem = memo(function CommentItem({
             )}
           </span>
         </div>
-        {stickerUrl ? (
-          <div className="mt-1">
+
+        {editing && !stickerUrl ? (
+          <div className="mt-1.5">
+            <textarea
+              autoFocus
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Escape") {
+                  e.preventDefault();
+                  onCancelEdit?.();
+                }
+                if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                  e.preventDefault();
+                  onSaveEdit?.(draft);
+                }
+              }}
+              rows={Math.min(5, Math.max(2, draft.split("\n").length))}
+              maxLength={2000}
+              className="w-full resize-none rounded-2xl border border-primary/40 bg-white/[0.04] px-3 py-2 text-[14px] leading-relaxed text-foreground/95 outline-none focus:border-primary/70"
+            />
+            <div className="mt-1.5 flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => onSaveEdit?.(draft)}
+                disabled={!draft.trim() || draft.trim() === comment.text.trim()}
+                className="rounded-full bg-primary px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-wider text-primary-foreground transition-opacity disabled:opacity-40"
+              >
+                Сохранить
+              </button>
+              <button
+                type="button"
+                onClick={onCancelEdit}
+                className="rounded-full border border-white/10 px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80 transition-colors hover:text-foreground"
+              >
+                Отмена
+              </button>
+            </div>
+          </div>
+        ) : stickerUrl ? (
+          <div
+            className="mt-1 select-none"
+            onTouchStart={handlePressStart}
+            onTouchEnd={handlePressEnd}
+            onTouchMove={handlePressEnd}
+            onTouchCancel={handlePressEnd}
+            onContextMenu={handleContextMenu}
+          >
             <img
               src={stickerUrl}
               alt="стикер"
@@ -983,12 +1072,22 @@ const CommentItem = memo(function CommentItem({
             />
           </div>
         ) : (
-          <div className="mt-1 inline-block max-w-full rounded-2xl rounded-tl-sm border border-white/[0.05] bg-white/[0.03] px-3 py-2">
+          <div
+            className="mt-1 inline-block max-w-full select-text rounded-2xl rounded-tl-sm border border-white/[0.05] bg-white/[0.03] px-3 py-2"
+            onTouchStart={handlePressStart}
+            onTouchEnd={handlePressEnd}
+            onTouchMove={handlePressEnd}
+            onTouchCancel={handlePressEnd}
+            onContextMenu={handleContextMenu}
+          >
             <p className={`break-words leading-relaxed text-foreground/90 ${large ? "text-[14.5px]" : "text-[13.5px]"}`}>
               {renderCommentText(comment.text, knownNicks)}
             </p>
           </div>
         )}
+
+        <CommentReactionsBar commentId={comment.id} />
+
         <div className="mt-1.5 flex items-center gap-4 pl-1">
           <button
             type="button"
@@ -1011,15 +1110,15 @@ const CommentItem = memo(function CommentItem({
           >
             Ответить
           </button>
-          {onDelete && (
+          {onMore && (
             <button
               type="button"
-              onClick={onDelete}
-              aria-label="Удалить комментарий"
-              title="Удалить комментарий"
-              className="ml-auto inline-flex items-center gap-1 font-mono text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60 transition-colors hover:text-destructive"
+              onClick={onMore}
+              aria-label="Действия"
+              title="Действия"
+              className="ml-auto inline-flex h-6 items-center justify-center rounded-full px-2 font-mono text-[14px] leading-none text-muted-foreground/60 transition-colors hover:bg-white/[0.05] hover:text-foreground"
             >
-              <Trash2 className="h-3 w-3" /> Удалить
+              ···
             </button>
           )}
         </div>
