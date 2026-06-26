@@ -1266,6 +1266,8 @@ type StickerPack = {
   cover: string; // emoji-cover ИЛИ url картинки
   coverIsImage?: boolean;
   stickers: string[]; // emoji-строка ИЛИ "::sticker::<url>"
+  /** Метаданные стикеров для поиска и a11y (порядок совпадает со `stickers`). */
+  meta?: StickerMeta[];
   /** Если задан — пак закрыт, пока юзер не купит товар с этим slug в магазине. */
   lockSlug?: string;
   /** Slug товара в магазине для покупки (используется в ссылке "Купить"). */
@@ -1281,6 +1283,7 @@ const STICKER_PACKS: StickerPack[] = [
     cover: SPECIAL_PACK_COVER,
     coverIsImage: true,
     stickers: SPECIAL_PACK_STICKERS.map(asStickerText),
+    meta: SPECIAL_PACK,
     lockSlug: "special",
     productSlug: STICKER_PACK_PRODUCT_SLUGS.special,
     priceRub: 300,
