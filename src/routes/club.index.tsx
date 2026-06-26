@@ -661,17 +661,29 @@ function CommentsSheet({
 
 
 
-  // Группировка ответов: ответ = коммент, начинающийся с "@<nick> "
-  const { topLevel, childrenByParentId } = useMemo<{
+  // Группировка ответов в треды.
+  // Источник истины — comment.parentId (Этап A). Для legacy-данных без parentId — fallback
+  // на старую эвристику «текст начинается с @nick» относительно последнего такого ника.
+  const { topLevel, childrenByParentId, knownNicks } = useMemo<{
     topLevel: Comment[];
     childrenByParentId: Map<string, Comment[]>;
+    knownNicks: Set<string>;
   }>(() => {
     const childrenByParentId = new Map<string, Comment[]>();
     const topLevel: Comment[] = [];
-    const nickToLatest = new Map<string, string>(); // nick(lower) -> commentId
+    const nickToLatest = new Map<string, string>();
+    const knownNicks = new Set<string>();
+    if (post.author?.nick) knownNicks.add(post.author.nick.toLowerCase());
     for (const c of post.comments) {
-      const m = c.text.match(/^@(\S+)\s/);
-      const parentId = m ? nickToLatest.get(m[1].toLowerCase()) : undefined;
+      let parentId: string | undefined = c.parentId ?? undefined;
+      if (!parentId) {
+        const m = c.text.match(/^@(\S+)\s/);
+        if (m) parentId = nickToLatest.get(m[1].toLowerCase());
+      }
+      if (parentId && childrenByParentId.get(parentId) === undefined && !post.comments.some((x) => x.id === parentId)) {
+        // parentId указывает на удалённого/недоступного — поднимаем коммент в топ
+        parentId = undefined;
+      }
       if (parentId) {
         const arr = childrenByParentId.get(parentId) ?? [];
         arr.push(c);
@@ -680,9 +692,10 @@ function CommentsSheet({
         topLevel.push(c);
       }
       nickToLatest.set(c.author.nick.toLowerCase(), c.id);
+      knownNicks.add(c.author.nick.toLowerCase());
     }
-    return { topLevel, childrenByParentId };
-  }, [post.comments]);
+    return { topLevel, childrenByParentId, knownNicks };
+  }, [post.comments, post.author?.nick]);
 
 
 
