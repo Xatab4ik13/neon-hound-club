@@ -1647,7 +1647,7 @@ function StickerPanel({
   large = false,
   recent,
   ownedPacks,
-  onPickEmoji,
+  onPickEmoji: _onPickEmoji,
   onPickSticker,
 }: {
   tab: "recent" | "emoji" | "stickers";
@@ -1663,17 +1663,68 @@ function StickerPanel({
   const pack = STICKER_PACKS.find((p) => p.id === activePack) ?? STICKER_PACKS[0];
   const isLocked = !!pack.lockSlug && !ownedPacks.includes(pack.lockSlug);
 
+  const [query, setQuery] = useState("");
+  const [preview, setPreview] = useState<{ url: string; alt: string } | null>(null);
+
+  // Очищать поиск при смене пака — иначе сбивает с толку.
+  useEffect(() => {
+    setQuery("");
+  }, [activePack, tab]);
+
+  // Фильтр по тегам/alt пака. Если пак без `meta` — фильтрация выключена.
+  const filteredIndices = useMemo<number[] | null>(() => {
+    const q = query.trim().toLowerCase();
+    if (!q || !pack.meta) return null;
+    return pack.meta
+      .map((m, i) => ({ i, m }))
+      .filter(({ m }) => m.alt.toLowerCase().includes(q) || m.tags.some((t) => t.includes(q)))
+      .map(({ i }) => i);
+  }, [query, pack.meta]);
+
+  const handlePick = (s: string) => {
+    haptic("selection");
+    onPickSticker(s);
+  };
+
+  // Long-press preview для стикеров (Telegram-style).
+  const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const handlePressStart = (url: string, alt: string) => {
+    if (pressTimer.current) clearTimeout(pressTimer.current);
+    pressTimer.current = setTimeout(() => {
+      haptic("selection");
+      setPreview({ url, alt });
+    }, 380);
+  };
+  const handlePressEnd = () => {
+    if (pressTimer.current) {
+      clearTimeout(pressTimer.current);
+      pressTimer.current = null;
+    }
+  };
+
   return (
-    <div className={`flex flex-col bg-[#0d0d0d] ${large ? "h-[min(70vh,560px)]" : "h-[min(55vh,420px)]"}`}>
+    <div className={`relative flex flex-col bg-[#0d0d0d] ${large ? "h-[min(70vh,560px)]" : "h-[min(55vh,420px)]"}`}>
       {/* Search */}
       <div className="px-3 pt-2.5 pb-2">
         <div className="flex items-center gap-2 rounded-full bg-white/[0.05] px-3 py-1.5">
           <SearchIcon size={14} className="text-muted-foreground" />
           <input
             type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
             placeholder="Поиск стикеров"
             className="min-w-0 flex-1 bg-transparent text-[13px] text-foreground placeholder:text-muted-foreground/60 outline-none"
           />
+          {query && (
+            <button
+              type="button"
+              onClick={() => setQuery("")}
+              aria-label="Очистить поиск"
+              className="text-muted-foreground/70 hover:text-foreground"
+            >
+              <X size={14} />
+            </button>
+          )}
         </div>
       </div>
 
@@ -1683,59 +1734,92 @@ function StickerPanel({
           <>
             <div className="sticky top-0 z-10 -mx-2 mb-1 bg-[#0d0d0d]/95 px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground backdrop-blur">
               {pack.title}
-            </div>
-            <div className="relative">
-              <div
-                className={`grid gap-1 ${large ? "grid-cols-3 sm:grid-cols-4" : "grid-cols-4 sm:grid-cols-5"} ${isLocked ? "pointer-events-none select-none blur-[3px] opacity-60" : ""}`}
-              >
-                {pack.stickers.map((s, i) => {
-                  const url = parseSticker(s);
-                  return (
-                    <button
-                      key={i}
-                      type="button"
-                      disabled={isLocked}
-                      onClick={() => onPickSticker(s)}
-                      className={`grid aspect-square place-items-center rounded-lg transition-transform active:scale-90 hover:bg-white/[0.04] ${url ? "p-1.5" : large ? "text-6xl sm:text-7xl" : "text-4xl sm:text-[40px]"}`}
-                    >
-                      {url ? (
-                        <img
-                          src={url}
-                          alt=""
-                          loading="lazy"
-                          decoding="async"
-                          draggable={false}
-                          className="h-full w-full select-none object-contain"
-                        />
-                      ) : (
-                        <span>{s}</span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-              {isLocked && (
-                <div className="absolute inset-0 z-20 grid place-items-center px-4">
-                  <div className="flex max-w-[280px] flex-col items-center gap-3 rounded-2xl border border-white/[0.08] bg-black/80 px-5 py-4 text-center shadow-xl backdrop-blur">
-                    <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-primary">
-                      Закрытый пак
-                    </div>
-                    <div className="text-[13px] leading-snug text-foreground/90">
-                      {pack.title} открывается после покупки в магазине.
-                    </div>
-                    {pack.productSlug && (
-                      <Link
-                        to="/club/shop/$productSlug"
-                        params={{ productSlug: pack.productSlug }}
-                        className="inline-flex items-center justify-center rounded-full bg-primary px-4 py-1.5 text-[12px] font-semibold text-primary-foreground"
-                      >
-                        Купить{pack.priceRub ? ` · ${pack.priceRub} ₽` : ""}
-                      </Link>
-                    )}
-                  </div>
-                </div>
+              {filteredIndices && (
+                <span className="ml-2 text-muted-foreground/60 normal-case tracking-normal">
+                  · {filteredIndices.length}
+                </span>
               )}
             </div>
+            {filteredIndices && filteredIndices.length === 0 ? (
+              <div className="grid h-32 place-items-center px-6 text-center text-[12px] text-muted-foreground/60">
+                Ничего не нашлось по «{query}»
+              </div>
+            ) : (
+              <div className="relative">
+                <div
+                  className={`grid gap-1 ${large ? "grid-cols-3 sm:grid-cols-4" : "grid-cols-4 sm:grid-cols-5"} ${isLocked ? "pointer-events-none select-none blur-[3px] opacity-60" : ""}`}
+                >
+                  {(filteredIndices ?? pack.stickers.map((_, i) => i)).map((i) => {
+                    const s = pack.stickers[i];
+                    const url = parseSticker(s);
+                    const alt = pack.meta?.[i]?.alt ?? "стикер";
+                    return (
+                      <button
+                        key={i}
+                        type="button"
+                        disabled={isLocked}
+                        onClick={() => handlePick(s)}
+                        onTouchStart={() => url && handlePressStart(url, alt)}
+                        onTouchEnd={handlePressEnd}
+                        onTouchMove={handlePressEnd}
+                        onTouchCancel={handlePressEnd}
+                        onPointerDown={(e) => {
+                          if (e.pointerType === "mouse" || !url) return;
+                          handlePressStart(url, alt);
+                        }}
+                        onPointerUp={handlePressEnd}
+                        onPointerLeave={handlePressEnd}
+                        onContextMenu={(e) => {
+                          if (!url) return;
+                          e.preventDefault();
+                          setPreview({ url, alt });
+                        }}
+                        aria-label={alt}
+                        className={`grid aspect-square place-items-center rounded-lg transition-transform active:scale-90 hover:bg-white/[0.04] ${url ? "p-1.5" : large ? "text-6xl sm:text-7xl" : "text-4xl sm:text-[40px]"}`}
+                      >
+                        {url ? (
+                          <img
+                            src={url}
+                            alt={alt}
+                            width={128}
+                            height={128}
+                            loading="lazy"
+                            decoding="async"
+                            draggable={false}
+                            referrerPolicy="no-referrer"
+                            className="h-full w-full select-none object-contain"
+                          />
+                        ) : (
+                          <span>{s}</span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+                {isLocked && (
+                  <div className="absolute inset-0 z-20 grid place-items-center px-4">
+                    <div className="flex max-w-[280px] flex-col items-center gap-3 rounded-2xl border border-white/[0.08] bg-black/80 px-5 py-4 text-center shadow-xl backdrop-blur">
+                      <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-primary">
+                        Закрытый пак
+                      </div>
+                      <div className="text-[13px] leading-snug text-foreground/90">
+                        {pack.title} открывается после покупки в магазине.
+                      </div>
+                      {pack.productSlug && (
+                        <a
+                          href={`/club/shop/${pack.productSlug}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center justify-center rounded-full bg-primary px-4 py-1.5 text-[12px] font-semibold text-primary-foreground"
+                        >
+                          Купить{pack.priceRub ? ` · ${pack.priceRub} ₽` : ""}
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </>
         ) : recent.length === 0 ? (
           <div className="grid h-full place-items-center px-6 text-center text-[12px] text-muted-foreground/60">
@@ -1749,11 +1833,30 @@ function StickerPanel({
                 <button
                   key={`${s}-${i}`}
                   type="button"
-                  onClick={() => onPickSticker(s)}
+                  onClick={() => handlePick(s)}
+                  onTouchStart={() => url && handlePressStart(url, "стикер")}
+                  onTouchEnd={handlePressEnd}
+                  onTouchMove={handlePressEnd}
+                  onTouchCancel={handlePressEnd}
+                  onContextMenu={(e) => {
+                    if (!url) return;
+                    e.preventDefault();
+                    setPreview({ url, alt: "стикер" });
+                  }}
                   className={`grid aspect-square place-items-center rounded-lg transition-transform active:scale-90 hover:bg-white/[0.04] ${url ? "p-1.5" : large ? "text-5xl sm:text-6xl" : "text-3xl sm:text-4xl"}`}
                 >
                   {url ? (
-                    <img src={url} alt="" loading="lazy" decoding="async" draggable={false} className="h-full w-full select-none object-contain" />
+                    <img
+                      src={url}
+                      alt=""
+                      width={128}
+                      height={128}
+                      loading="lazy"
+                      decoding="async"
+                      draggable={false}
+                      referrerPolicy="no-referrer"
+                      className="h-full w-full select-none object-contain"
+                    />
                   ) : (
                     <span>{s}</span>
                   )}
@@ -1764,7 +1867,6 @@ function StickerPanel({
         )}
       </div>
 
-
       {/* Bottom bar: pack tabs (Telegram-style) */}
       <div className="flex items-center gap-0.5 border-t border-white/[0.06] bg-black/40 px-1.5 py-1.5">
         <PanelTab
@@ -1774,7 +1876,6 @@ function StickerPanel({
         />
 
         <div className="mx-1 h-5 w-px bg-white/[0.08]" />
-
 
         <div className="flex flex-1 items-center gap-0.5 overflow-x-auto scrollbar-none">
           {STICKER_PACKS.map((p) => {
@@ -1793,7 +1894,14 @@ function StickerPanel({
                 }`}
               >
                 {p.coverIsImage ? (
-                  <img src={p.cover} alt="" draggable={false} className="h-7 w-7 select-none object-contain" />
+                  <img
+                    src={p.cover}
+                    alt=""
+                    width={28}
+                    height={28}
+                    draggable={false}
+                    className="h-7 w-7 select-none object-contain"
+                  />
                 ) : (
                   p.cover
                 )}
@@ -1802,6 +1910,31 @@ function StickerPanel({
           })}
         </div>
       </div>
+
+      {/* Long-press preview overlay (Telegram-style) */}
+      {preview && (
+        <div
+          className="pointer-events-none absolute inset-0 z-40 grid place-items-center bg-black/55 backdrop-blur-sm animate-in fade-in-0 duration-150"
+          aria-hidden
+        >
+          <img
+            src={preview.url}
+            alt={preview.alt}
+            width={256}
+            height={256}
+            referrerPolicy="no-referrer"
+            draggable={false}
+            className="h-56 w-56 select-none object-contain drop-shadow-[0_20px_40px_rgba(0,0,0,0.6)]"
+            style={{ animation: "sticker-preview-in 180ms cubic-bezier(.34,1.56,.64,1)" }}
+          />
+          <style>{`
+            @keyframes sticker-preview-in {
+              0%   { transform: scale(0.7); opacity: 0; }
+              100% { transform: scale(1); opacity: 1; }
+            }
+          `}</style>
+        </div>
+      )}
     </div>
   );
 }
