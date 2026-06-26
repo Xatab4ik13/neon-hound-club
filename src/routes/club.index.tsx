@@ -643,6 +643,7 @@ function CommentsSheet({
 }) {
   const [replyTo, setReplyTo] = useState<{ nick: string; commentId: string } | null>(null);
   const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set());
+  const [pendingDelete, setPendingDelete] = useState<string | null>(null);
   const viewer = useViewer();
   const myId = viewer.user?.id ?? null;
 
