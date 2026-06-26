@@ -418,30 +418,55 @@ export async function feedRoutes(app: FastifyInstance) {
     return { ok: true };
   });
 
-  // POST /api/v1/feed/:id/comments
+  // POST /api/v1/feed/:id/comments — текст или стикер, опц. parentId для ответа.
   app.post<{ Params: { id: string } }>("/:id/comments", { preHandler: requireAuth }, async (req, reply) => {
     const s = req.user as SessionPayload;
     const parsed = commentSchema.safeParse(req.body);
-    if (!parsed.success) return reply.code(400).send({ error: "invalid" });
+    if (!parsed.success) return reply.code(400).send({ error: "invalid", details: parsed.error.flatten() });
     const [exists] = await db.select({ id: posts.id }).from(posts).where(and(eq(posts.id, req.params.id), isNull(posts.deletedAt))).limit(1);
     if (!exists) return reply.code(404).send({ error: "not_found" });
+
+    // Если есть parentId — проверим, что родитель из этого же поста и не удалён.
+    let parentId: string | null = null;
+    if (parsed.data.parentId) {
+      const [parent] = await db
+        .select({ id: postComments.id, postId: postComments.postId, deletedAt: postComments.deletedAt })
+        .from(postComments)
+        .where(eq(postComments.id, parsed.data.parentId))
+        .limit(1);
+      if (!parent || parent.postId !== req.params.id || parent.deletedAt) {
+        return reply.code(400).send({ error: "invalid_parent" });
+      }
+      parentId = parent.id;
+    }
+
+    const isSticker = parsed.data.kind === "sticker";
     const [row] = await db
       .insert(postComments)
-      .values({ postId: req.params.id, authorId: s.sub, text: parsed.data.text.trim() })
+      .values({
+        postId: req.params.id,
+        authorId: s.sub,
+        parentId,
+        kind: parsed.data.kind,
+        text: isSticker ? "" : (parsed.data.text ?? "").trim(),
+        stickerId: isSticker ? (parsed.data.stickerId ?? null) : null,
+      })
       .returning();
-    // +XP за активность (минимум, чтобы не фармили)
-    await awardXp({
-      userId: s.sub,
-      amount: 1,
-      source: "admin",
-      reason: "feed_comment",
-      refType: "comment",
-      refId: row.id,
-      idempotent: true,
-    }).catch(() => null);
-    // Квест: 5 комментариев в ленте за месяц.
-    await addQuestProgress(s.sub, "comments_5", 1).catch(() => null);
-    // Возвращаем hydrated-форму (как ждёт фронт: FeedCommentHydrated)
+
+    // +XP за активность (только за текст, чтобы стикерами не фармили).
+    if (!isSticker) {
+      await awardXp({
+        userId: s.sub,
+        amount: 1,
+        source: "admin",
+        reason: "feed_comment",
+        refType: "comment",
+        refId: row.id,
+        idempotent: true,
+      }).catch(() => null);
+      await addQuestProgress(s.sub, "comments_5", 1).catch(() => null);
+    }
+
     const [author] = await db
       .select({ nick: users.nick, role: users.role, avatarUrl: profiles.avatarUrl })
       .from(users)
@@ -458,6 +483,10 @@ export async function feedRoutes(app: FastifyInstance) {
       avatarUrl: author?.avatarUrl ?? null,
       rankId: ranksMap.get(s.sub) ?? "rookie",
       text: row.text,
+      kind: row.kind,
+      stickerId: row.stickerId,
+      parentId: row.parentId,
+      editedAt: row.editedAt,
       createdAt: row.createdAt,
       likes: 0,
       liked: false,
@@ -465,6 +494,29 @@ export async function feedRoutes(app: FastifyInstance) {
     publishFeedEvent("comment.created", { postId: req.params.id, commentId: row.id });
     return result;
   });
+
+  // PATCH /api/v1/feed/comments/:cid — редактирование текста (только автор, только kind=text).
+  app.patch<{ Params: { cid: string } }>("/comments/:cid", { preHandler: requireAuth }, async (req, reply) => {
+    const s = req.user as SessionPayload;
+    const parsed = commentPatchSchema.safeParse(req.body);
+    if (!parsed.success) return reply.code(400).send({ error: "invalid" });
+    const [c] = await db
+      .select({ id: postComments.id, authorId: postComments.authorId, kind: postComments.kind, deletedAt: postComments.deletedAt })
+      .from(postComments)
+      .where(eq(postComments.id, req.params.cid))
+      .limit(1);
+    if (!c || c.deletedAt) return reply.code(404).send({ error: "not_found" });
+    if (c.authorId !== s.sub) return reply.code(403).send({ error: "forbidden" });
+    if (c.kind !== "text") return reply.code(400).send({ error: "not_editable" });
+    const [row] = await db
+      .update(postComments)
+      .set({ text: parsed.data.text.trim(), editedAt: new Date() })
+      .where(eq(postComments.id, req.params.cid))
+      .returning();
+    publishFeedEvent("comment.updated", { commentId: row.id });
+    return { id: row.id, text: row.text, editedAt: row.editedAt };
+  });
+
 
   // DELETE /api/v1/feed/comments/:cid — автор коммента или автор поста или admin/blogger
   app.delete<{ Params: { cid: string } }>("/comments/:cid", { preHandler: requireAuth }, async (req, reply) => {
