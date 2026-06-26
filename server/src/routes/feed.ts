@@ -331,7 +331,11 @@ export async function feedRoutes(app: FastifyInstance) {
       .select({
         id: postComments.id,
         text: postComments.text,
+        kind: postComments.kind,
+        stickerId: postComments.stickerId,
+        parentId: postComments.parentId,
         createdAt: postComments.createdAt,
+        editedAt: postComments.editedAt,
         authorId: postComments.authorId,
         nick: users.nick,
         role: users.role,
