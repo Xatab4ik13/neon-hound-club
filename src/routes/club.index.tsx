@@ -802,6 +802,7 @@ function CommentsSheet({
         <div className="shrink-0 border-t border-white/[0.06] bg-[#0d0d0d]">
           <CommentComposer
             postId={post.id}
+            knownNicks={knownNicks}
             large
             replyTo={replyTo}
             onClearReply={() => setReplyTo(null)}
@@ -809,6 +810,18 @@ function CommentsSheet({
         </div>
       </div>
 
+      <IOSConfirm
+        open={pendingDelete !== null}
+        onOpenChange={(v) => !v && setPendingDelete(null)}
+        title="Удалить комментарий?"
+        description="Это действие нельзя отменить."
+        confirmLabel="Удалить"
+        destructive
+        onConfirm={() => {
+          if (pendingDelete) feedStore.removeComment(post.id, pendingDelete);
+          setPendingDelete(null);
+        }}
+      />
     </IOSSheet>
   );
 }
