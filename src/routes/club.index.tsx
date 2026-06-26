@@ -959,7 +959,7 @@ function CommentsSheet({
             <div className="grid h-full place-items-center text-[13px] text-muted-foreground">
               Будь первым — оставь комментарий
             </div>
-          ) : !post.commentsFull && post.commentsCount > post.comments.length ? (
+          ) : !post.commentsFull && post.commentsCount > post.comments.length && !skeletonExpired ? (
             <CommentSkeletonList count={Math.min(5, post.commentsCount)} />
           ) : (
             <ul className="space-y-5">
