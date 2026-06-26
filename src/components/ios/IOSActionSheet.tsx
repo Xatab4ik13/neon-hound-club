@@ -207,5 +207,11 @@ export function IOSActionSheet({
   );
 
   if (typeof document === "undefined") return null;
-  return createPortal(node, document.body);
+  // Если мы внутри открытого IOSSheet (vaul Drawer) — vaul ставит inert на
+  // siblings body, и наш portal-в-body будет «невидим» для hit-testing,
+  // click пролетит сквозь оверлей в карточку поста. Поэтому, если есть
+  // [data-ios-sheet-portal] (рендерится внутри Drawer.Content), портим туда.
+  const target =
+    document.querySelector<HTMLElement>("[data-ios-sheet-portal]") ?? document.body;
+  return createPortal(node, target);
 }
