@@ -710,7 +710,7 @@ function CommentsSheet({
     });
   }, [open, post.comments]);
 
-  // Авто-скролл к низу когда юзер отправил свой коммент.
+  // Авто-скролл к низу + fly-in анимация, когда юзер отправил свой коммент.
   useEffect(() => {
     if (!open) return;
     const prev = prevCountRef.current;
@@ -718,16 +718,33 @@ function CommentsSheet({
     if (next > prev) {
       const last = post.comments[post.comments.length - 1];
       const isMine = myId != null && last && last.author.id === myId;
-      if (isMine && listRef.current) {
-        requestAnimationFrame(() => {
-          if (listRef.current) {
-            listRef.current.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
-          }
-        });
+      if (isMine && last) {
+        setJustSentId(last.id);
+        // снимаем подсветку после анимации
+        setTimeout(() => setJustSentId((id) => (id === last.id ? null : id)), 600);
+        if (listRef.current) {
+          requestAnimationFrame(() => {
+            if (listRef.current) {
+              listRef.current.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
+            }
+          });
+        }
       }
     }
     prevCountRef.current = next;
   }, [open, post.comments, myId]);
+
+  // Первый «непрочитанный» top-level комментарий (не мой, новее lastReadAt).
+  // Над ним нарисуется разделитель «Новые».
+  const firstUnreadId = useMemo<string | null>(() => {
+    if (!lastReadAt) return null;
+    for (const c of topLevel) {
+      if (myId && c.author.id === myId) continue;
+      const t = c.createdAt ? new Date(c.createdAt).getTime() : 0;
+      if (t > lastReadAt) return c.id;
+    }
+    return null;
+  }, [topLevel, lastReadAt, myId]);
 
 
 
