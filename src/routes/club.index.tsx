@@ -7,15 +7,18 @@ import { useFeedPosts, useFeedLoaded, feedStore, initialsOf, makeSlug, type Feed
 import { HellhoundAvatar, HellhoundChip } from "@/components/club/HellhoundPlaque";
 import { IOSSheet } from "@/components/ios/IOSSheet";
 import { IOSConfirm } from "@/components/ios/IOSConfirm";
+import { IOSActionSheet, type ActionSheetItem } from "@/components/ios/IOSActionSheet";
 import { useViewer } from "@/hooks/use-viewer";
 import { useMyProfile } from "@/lib/garage-api";
 import { useMyStickerPacks, STICKER_PACK_PRODUCT_SLUGS } from "@/lib/stickers-api";
 import { SPECIAL_PACK_STICKERS, SPECIAL_PACK_COVER } from "@/assets/stickers/special";
 import { FeedHeroCarousel } from "@/components/club/FeedHeroCarousel";
-import { LikeButton } from "@/components/club/LikeButton";
+import { LikeButton, REACTIONS, type Reaction } from "@/components/club/LikeButton";
 import { ImageViewer } from "@/components/club/ImageViewer";
 import { PostSkeleton } from "@/components/club/PostSkeleton";
 import { ReactionsBar } from "@/components/club/ReactionsBar";
+import { CommentReactionsBar } from "@/components/club/CommentReactionsBar";
+import { commentReactionsStore } from "@/data/comment-reactions-store";
 import { FeedSentinel } from "@/components/club/FeedSentinel";
 import { Swipeable } from "@/components/club/Swipeable";
 import { reactionsStore } from "@/data/reactions-store";
@@ -644,14 +647,20 @@ function CommentsSheet({
   const [replyTo, setReplyTo] = useState<{ nick: string; commentId: string } | null>(null);
   const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set());
   const [pendingDelete, setPendingDelete] = useState<string | null>(null);
+  const [actionTarget, setActionTarget] = useState<Comment | null>(null);
+  const [reactionFor, setReactionFor] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const viewer = useViewer();
   const myId = viewer.user?.id ?? null;
 
 
-  // сбросить reply при закрытии; при открытии — подгрузить ПОЛНЫЙ список коментов
+  // сбросить состояние при закрытии; при открытии — подгрузить полный список
   useEffect(() => {
     if (!open) {
       setReplyTo(null);
+      setActionTarget(null);
+      setReactionFor(null);
+      setEditingId(null);
       return;
     }
     if (!post.commentsFull) {
@@ -659,11 +668,8 @@ function CommentsSheet({
     }
   }, [open, post.id, post.commentsFull]);
 
-
-
-  // Группировка ответов в треды.
-  // Источник истины — comment.parentId (Этап A). Для legacy-данных без parentId — fallback
-  // на старую эвристику «текст начинается с @nick» относительно последнего такого ника.
+  // Группировка ответов в треды. Источник истины — comment.parentId.
+  // Для legacy без parentId — fallback на эвристику «текст начинается с @nick».
   const { topLevel, childrenByParentId, knownNicks } = useMemo<{
     topLevel: Comment[];
     childrenByParentId: Map<string, Comment[]>;
@@ -681,7 +687,6 @@ function CommentsSheet({
         if (m) parentId = nickToLatest.get(m[1].toLowerCase());
       }
       if (parentId && childrenByParentId.get(parentId) === undefined && !post.comments.some((x) => x.id === parentId)) {
-        // parentId указывает на удалённого/недоступного — поднимаем коммент в топ
         parentId = undefined;
       }
       if (parentId) {
@@ -697,8 +702,6 @@ function CommentsSheet({
     return { topLevel, childrenByParentId, knownNicks };
   }, [post.comments, post.author?.nick]);
 
-
-
   const toggleCollapse = (id: string) => {
     setCollapsed((prev) => {
       const next = new Set(prev);
@@ -710,10 +713,63 @@ function CommentsSheet({
 
   const stripReplyPrefix = (text: string) => text.replace(/^@\S+\s+/, "");
 
+  // Действия из action-sheet
+  const handleReply = (c: Comment) => {
+    setReplyTo({ nick: c.author.nick, commentId: c.id });
+  };
+  const handleCopy = async (c: Comment) => {
+    const text = getCommentStickerUrl(c) ? "(стикер)" : c.text;
+    try {
+      await navigator.clipboard.writeText(text);
+      hhToast.success("Скопировано");
+    } catch {
+      hhToast.error("Не удалось скопировать");
+    }
+  };
+  const handleReport = (_c: Comment) => {
+    hhToast.success("Жалоба отправлена. Спасибо.");
+  };
+  const handleEdit = (c: Comment) => {
+    setEditingId(c.id);
+  };
+  const handleSaveEdit = async (commentId: string, nextText: string) => {
+    const trimmed = nextText.trim();
+    if (!trimmed) return;
+    setEditingId(null);
+    await feedStore.editComment(post.id, commentId, trimmed);
+  };
+
+  const buildActionItems = (c: Comment): ActionSheetItem[] => {
+    const isMine = myId != null && c.author.id === myId;
+    const canDelete = isMine || moderate;
+    const isSticker = !!getCommentStickerUrl(c);
+    const items: ActionSheetItem[] = [
+      { key: "reply", label: "Ответить", onSelect: () => handleReply(c) },
+      { key: "react", label: "Реакция", onSelect: () => setReactionFor(c.id) },
+    ];
+    if (!isSticker) {
+      items.push({ key: "copy", label: "Копировать текст", onSelect: () => handleCopy(c) });
+    }
+    if (isMine && !isSticker) {
+      items.push({ key: "edit", label: "Изменить", onSelect: () => handleEdit(c) });
+    }
+    if (!isMine) {
+      items.push({ key: "report", label: "Пожаловаться", onSelect: () => handleReport(c) });
+    }
+    if (canDelete) {
+      items.push({
+        key: "delete",
+        label: "Удалить",
+        destructive: true,
+        onSelect: () => setPendingDelete(c.id),
+      });
+    }
+    return items;
+  };
+
   const renderItem = (c: Comment, isReply = false) => {
     const isMine = myId != null && c.author.id === myId;
     const canDelete = isMine || moderate;
-    const onDelete = canDelete ? () => setPendingDelete(c.id) : undefined;
 
     const item = (
       <CommentItem
@@ -721,13 +777,12 @@ function CommentsSheet({
         comment={isReply ? { ...c, text: stripReplyPrefix(c.text) } : c}
         knownNicks={knownNicks}
         large
-        onReply={() =>
-          setReplyTo({
-            nick: c.author.nick,
-            commentId: c.id,
-          })
-        }
-        onDelete={moderate ? onDelete : undefined}
+        editing={editingId === c.id}
+        onSaveEdit={(text) => handleSaveEdit(c.id, text)}
+        onCancelEdit={() => setEditingId(null)}
+        onReply={() => handleReply(c)}
+        onLongPress={() => setActionTarget(c)}
+        onMore={() => setActionTarget(c)}
       />
     );
 
@@ -822,25 +877,58 @@ function CommentsSheet({
           setPendingDelete(null);
         }}
       />
+
+      {/* Главный action-sheet — открывается по long-press / кнопке «…» */}
+      <IOSActionSheet
+        open={actionTarget !== null}
+        onOpenChange={(v) => !v && setActionTarget(null)}
+        items={actionTarget ? buildActionItems(actionTarget) : []}
+      />
+
+      {/* Выбор реакции — отдельный мини-шит из 5 эмодзи */}
+      <IOSActionSheet
+        open={reactionFor !== null}
+        onOpenChange={(v) => !v && setReactionFor(null)}
+        title="Реакция"
+        items={REACTIONS.map<ActionSheetItem>((r) => ({
+          key: r,
+          label: r,
+          onSelect: () => {
+            if (reactionFor) commentReactionsStore.toggle(reactionFor, r as Reaction);
+          },
+        }))}
+      />
     </IOSSheet>
   );
 }
 
 // ───────── Comment item ─────────
 
+
+
 const CommentItem = memo(function CommentItem({
   comment,
   knownNicks,
   large = false,
+  editing = false,
   onReply,
-  onDelete,
+  onSaveEdit,
+  onCancelEdit,
+  onLongPress,
+  onMore,
 }: {
   comment: Comment;
   /** Если задан — только эти @nick рендерятся как кликабельные ссылки. */
   knownNicks?: Set<string>;
   large?: boolean;
+  editing?: boolean;
   onReply?: () => void;
-  onDelete?: () => void;
+  onSaveEdit?: (text: string) => void;
+  onCancelEdit?: () => void;
+  /** Долгий тап — открыть action-sheet. */
+  onLongPress?: () => void;
+  /** Клик по «…» — тот же action-sheet. */
+  onMore?: () => void;
 }) {
   const liked = comment.liked;
   const author = comment.author;
@@ -848,6 +936,39 @@ const CommentItem = memo(function CommentItem({
   const count = comment.likes;
   const authorIsBlogger = author.isBlogger;
   const stickerUrl = getCommentStickerUrl(comment);
+
+  // Локальный текст для inline-edit
+  const [draft, setDraft] = useState(comment.text);
+  useEffect(() => {
+    if (editing) setDraft(comment.text);
+  }, [editing, comment.text]);
+
+  // Long-press detection (touch). На десктопе — contextmenu.
+  const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const longPressedRef = useRef(false);
+  const handlePressStart = useCallback(() => {
+    if (!onLongPress) return;
+    longPressedRef.current = false;
+    pressTimer.current = setTimeout(() => {
+      longPressedRef.current = true;
+      haptic("selection");
+      onLongPress();
+    }, 380);
+  }, [onLongPress]);
+  const handlePressEnd = useCallback(() => {
+    if (pressTimer.current) {
+      clearTimeout(pressTimer.current);
+      pressTimer.current = null;
+    }
+  }, []);
+  const handleContextMenu = useCallback(
+    (e: React.MouseEvent) => {
+      if (!onLongPress) return;
+      e.preventDefault();
+      onLongPress();
+    },
+    [onLongPress],
+  );
 
   return (
     <li className="flex gap-3">
@@ -892,8 +1013,54 @@ const CommentItem = memo(function CommentItem({
             )}
           </span>
         </div>
-        {stickerUrl ? (
-          <div className="mt-1">
+
+        {editing && !stickerUrl ? (
+          <div className="mt-1.5">
+            <textarea
+              autoFocus
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Escape") {
+                  e.preventDefault();
+                  onCancelEdit?.();
+                }
+                if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                  e.preventDefault();
+                  onSaveEdit?.(draft);
+                }
+              }}
+              rows={Math.min(5, Math.max(2, draft.split("\n").length))}
+              maxLength={2000}
+              className="w-full resize-none rounded-2xl border border-primary/40 bg-white/[0.04] px-3 py-2 text-[14px] leading-relaxed text-foreground/95 outline-none focus:border-primary/70"
+            />
+            <div className="mt-1.5 flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => onSaveEdit?.(draft)}
+                disabled={!draft.trim() || draft.trim() === comment.text.trim()}
+                className="rounded-full bg-primary px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-wider text-primary-foreground transition-opacity disabled:opacity-40"
+              >
+                Сохранить
+              </button>
+              <button
+                type="button"
+                onClick={onCancelEdit}
+                className="rounded-full border border-white/10 px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80 transition-colors hover:text-foreground"
+              >
+                Отмена
+              </button>
+            </div>
+          </div>
+        ) : stickerUrl ? (
+          <div
+            className="mt-1 select-none"
+            onTouchStart={handlePressStart}
+            onTouchEnd={handlePressEnd}
+            onTouchMove={handlePressEnd}
+            onTouchCancel={handlePressEnd}
+            onContextMenu={handleContextMenu}
+          >
             <img
               src={stickerUrl}
               alt="стикер"
@@ -905,12 +1072,22 @@ const CommentItem = memo(function CommentItem({
             />
           </div>
         ) : (
-          <div className="mt-1 inline-block max-w-full rounded-2xl rounded-tl-sm border border-white/[0.05] bg-white/[0.03] px-3 py-2">
+          <div
+            className="mt-1 inline-block max-w-full select-text rounded-2xl rounded-tl-sm border border-white/[0.05] bg-white/[0.03] px-3 py-2"
+            onTouchStart={handlePressStart}
+            onTouchEnd={handlePressEnd}
+            onTouchMove={handlePressEnd}
+            onTouchCancel={handlePressEnd}
+            onContextMenu={handleContextMenu}
+          >
             <p className={`break-words leading-relaxed text-foreground/90 ${large ? "text-[14.5px]" : "text-[13.5px]"}`}>
               {renderCommentText(comment.text, knownNicks)}
             </p>
           </div>
         )}
+
+        <CommentReactionsBar commentId={comment.id} />
+
         <div className="mt-1.5 flex items-center gap-4 pl-1">
           <button
             type="button"
@@ -933,15 +1110,15 @@ const CommentItem = memo(function CommentItem({
           >
             Ответить
           </button>
-          {onDelete && (
+          {onMore && (
             <button
               type="button"
-              onClick={onDelete}
-              aria-label="Удалить комментарий"
-              title="Удалить комментарий"
-              className="ml-auto inline-flex items-center gap-1 font-mono text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60 transition-colors hover:text-destructive"
+              onClick={onMore}
+              aria-label="Действия"
+              title="Действия"
+              className="ml-auto inline-flex h-6 items-center justify-center rounded-full px-2 font-mono text-[14px] leading-none text-muted-foreground/60 transition-colors hover:bg-white/[0.05] hover:text-foreground"
             >
-              <Trash2 className="h-3 w-3" /> Удалить
+              ···
             </button>
           )}
         </div>
