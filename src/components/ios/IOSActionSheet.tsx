@@ -85,13 +85,15 @@ export function IOSActionSheet({
     setTimeout(() => it.onSelect(), 60);
   };
 
-  // Любой pointerdown/click/touchend по оверлею:
-  //   - preventDefault → НЕ будет click-through к элементу под пальцем
-  //   - stopPropagation → не всплывёт к комменту/PostCard
-  //   - закроем шит
-  const shield = (e: React.SyntheticEvent) => {
+  // Закрытие — ТОЛЬКО по `click` на оверлее (не pointerdown!).
+  // preventDefault на pointerdown НЕ отменяет click — браузер генерирует его
+  // отдельно. Если закрыть шит на pointerdown, оверлей размонтируется, и
+  // синтетический click долетит до элемента под пальцем (PostCard → переход).
+  // На `click` мы гарантированно являемся click-target → ничего не «протекает».
+  const onOverlayClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    close();
   };
 
   const node = (
@@ -109,13 +111,12 @@ export function IOSActionSheet({
       {/* Затемнение + click-shield */}
       <div
         className="absolute inset-0 bg-black/70 backdrop-blur-sm"
-        onPointerDown={(e) => {
-          shield(e);
-          close();
-        }}
-        onClick={shield}
-        onTouchEnd={shield}
-        onContextMenu={shield}
+        onClick={onOverlayClick}
+        // pointerdown НЕ закрывает — но останавливаем всплытие, чтобы PostCard
+        // не успел получить даже pointerdown сквозь портал.
+        onPointerDown={(e) => e.stopPropagation()}
+        onTouchStart={(e) => e.stopPropagation()}
+        onContextMenu={(e) => e.preventDefault()}
         role="presentation"
       />
 
@@ -126,9 +127,9 @@ export function IOSActionSheet({
           "transform transition-transform duration-250 ease-out",
           open ? "translate-y-0" : "translate-y-full",
         )}
-        // блокируем pointerdown/click здесь, чтобы НЕ закрылось при тапе на сам шит
-        onPointerDown={(e) => e.stopPropagation()}
+        // не закрываем при тапе по самому шиту
         onClick={(e) => e.stopPropagation()}
+        onPointerDown={(e) => e.stopPropagation()}
       >
         {/* Группа действий */}
         <div className="overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0d0d0d]/98 backdrop-blur-2xl shadow-[0_24px_60px_-20px_rgba(0,0,0,0.7)]">
