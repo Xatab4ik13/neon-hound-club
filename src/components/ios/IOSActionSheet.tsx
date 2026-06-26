@@ -10,7 +10,7 @@
 // Поддерживается «эмоджи-ряд» (variant="emojiRow") — горизонтальная полоска
 // круглых кнопок 5×, удобно для пикера реакций.
 
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
 import { haptic } from "@/hooks/use-haptic";
