@@ -45,12 +45,22 @@ export const postComments = pgTable(
     id: uuid("id").primaryKey().defaultRandom(),
     postId: uuid("post_id").notNull().references(() => posts.id, { onDelete: "cascade" }),
     authorId: uuid("author_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    // parent_id для тредов: ответ на коммент. Каскад на уровне БД (FK в миграции).
+    parentId: uuid("parent_id"),
+    // 'text' | 'sticker' — на бэке валидируется CHECK-констрейнтом.
+    kind: varchar("kind", { length: 16 }).notNull().default("text"),
+    // id (или url) стикера, когда kind = 'sticker'. null когда kind = 'text'.
+    stickerId: text("sticker_id"),
     text: text("text").notNull(),
     likes: integer("likes").notNull().default(0),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    editedAt: timestamp("edited_at", { withTimezone: true }),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
   },
-  (t) => ({ postIdx: index("post_comments_post_idx").on(t.postId, t.createdAt) }),
+  (t) => ({
+    postIdx: index("post_comments_post_idx").on(t.postId, t.createdAt),
+    parentIdx: index("post_comments_parent_idx").on(t.postId, t.parentId, t.createdAt),
+  }),
 );
 
 export const postPollVotes = pgTable(
