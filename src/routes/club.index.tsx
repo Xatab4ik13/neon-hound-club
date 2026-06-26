@@ -647,14 +647,20 @@ function CommentsSheet({
   const [replyTo, setReplyTo] = useState<{ nick: string; commentId: string } | null>(null);
   const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set());
   const [pendingDelete, setPendingDelete] = useState<string | null>(null);
+  const [actionTarget, setActionTarget] = useState<Comment | null>(null);
+  const [reactionFor, setReactionFor] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const viewer = useViewer();
   const myId = viewer.user?.id ?? null;
 
 
-  // сбросить reply при закрытии; при открытии — подгрузить ПОЛНЫЙ список коментов
+  // сбросить состояние при закрытии; при открытии — подгрузить полный список
   useEffect(() => {
     if (!open) {
       setReplyTo(null);
+      setActionTarget(null);
+      setReactionFor(null);
+      setEditingId(null);
       return;
     }
     if (!post.commentsFull) {
@@ -662,11 +668,8 @@ function CommentsSheet({
     }
   }, [open, post.id, post.commentsFull]);
 
-
-
-  // Группировка ответов в треды.
-  // Источник истины — comment.parentId (Этап A). Для legacy-данных без parentId — fallback
-  // на старую эвристику «текст начинается с @nick» относительно последнего такого ника.
+  // Группировка ответов в треды. Источник истины — comment.parentId.
+  // Для legacy без parentId — fallback на эвристику «текст начинается с @nick».
   const { topLevel, childrenByParentId, knownNicks } = useMemo<{
     topLevel: Comment[];
     childrenByParentId: Map<string, Comment[]>;
@@ -684,7 +687,6 @@ function CommentsSheet({
         if (m) parentId = nickToLatest.get(m[1].toLowerCase());
       }
       if (parentId && childrenByParentId.get(parentId) === undefined && !post.comments.some((x) => x.id === parentId)) {
-        // parentId указывает на удалённого/недоступного — поднимаем коммент в топ
         parentId = undefined;
       }
       if (parentId) {
@@ -700,8 +702,6 @@ function CommentsSheet({
     return { topLevel, childrenByParentId, knownNicks };
   }, [post.comments, post.author?.nick]);
 
-
-
   const toggleCollapse = (id: string) => {
     setCollapsed((prev) => {
       const next = new Set(prev);
@@ -713,10 +713,63 @@ function CommentsSheet({
 
   const stripReplyPrefix = (text: string) => text.replace(/^@\S+\s+/, "");
 
+  // Действия из action-sheet
+  const handleReply = (c: Comment) => {
+    setReplyTo({ nick: c.author.nick, commentId: c.id });
+  };
+  const handleCopy = async (c: Comment) => {
+    const text = getCommentStickerUrl(c) ? "(стикер)" : c.text;
+    try {
+      await navigator.clipboard.writeText(text);
+      hhToast.success("Скопировано");
+    } catch {
+      hhToast.error("Не удалось скопировать");
+    }
+  };
+  const handleReport = (_c: Comment) => {
+    hhToast.success("Жалоба отправлена. Спасибо.");
+  };
+  const handleEdit = (c: Comment) => {
+    setEditingId(c.id);
+  };
+  const handleSaveEdit = async (commentId: string, nextText: string) => {
+    const trimmed = nextText.trim();
+    if (!trimmed) return;
+    setEditingId(null);
+    await feedStore.editComment(post.id, commentId, trimmed);
+  };
+
+  const buildActionItems = (c: Comment): ActionSheetItem[] => {
+    const isMine = myId != null && c.author.id === myId;
+    const canDelete = isMine || moderate;
+    const isSticker = !!getCommentStickerUrl(c);
+    const items: ActionSheetItem[] = [
+      { key: "reply", label: "Ответить", onSelect: () => handleReply(c) },
+      { key: "react", label: "Реакция", onSelect: () => setReactionFor(c.id) },
+    ];
+    if (!isSticker) {
+      items.push({ key: "copy", label: "Копировать текст", onSelect: () => handleCopy(c) });
+    }
+    if (isMine && !isSticker) {
+      items.push({ key: "edit", label: "Изменить", onSelect: () => handleEdit(c) });
+    }
+    if (!isMine) {
+      items.push({ key: "report", label: "Пожаловаться", onSelect: () => handleReport(c) });
+    }
+    if (canDelete) {
+      items.push({
+        key: "delete",
+        label: "Удалить",
+        destructive: true,
+        onSelect: () => setPendingDelete(c.id),
+      });
+    }
+    return items;
+  };
+
   const renderItem = (c: Comment, isReply = false) => {
     const isMine = myId != null && c.author.id === myId;
     const canDelete = isMine || moderate;
-    const onDelete = canDelete ? () => setPendingDelete(c.id) : undefined;
 
     const item = (
       <CommentItem
@@ -724,13 +777,12 @@ function CommentsSheet({
         comment={isReply ? { ...c, text: stripReplyPrefix(c.text) } : c}
         knownNicks={knownNicks}
         large
-        onReply={() =>
-          setReplyTo({
-            nick: c.author.nick,
-            commentId: c.id,
-          })
-        }
-        onDelete={moderate ? onDelete : undefined}
+        editing={editingId === c.id}
+        onSaveEdit={(text) => handleSaveEdit(c.id, text)}
+        onCancelEdit={() => setEditingId(null)}
+        onReply={() => handleReply(c)}
+        onLongPress={() => setActionTarget(c)}
+        onMore={() => setActionTarget(c)}
       />
     );
 
@@ -825,11 +877,34 @@ function CommentsSheet({
           setPendingDelete(null);
         }}
       />
+
+      {/* Главный action-sheet — открывается по long-press / кнопке «…» */}
+      <IOSActionSheet
+        open={actionTarget !== null}
+        onOpenChange={(v) => !v && setActionTarget(null)}
+        items={actionTarget ? buildActionItems(actionTarget) : []}
+      />
+
+      {/* Выбор реакции — отдельный мини-шит из 5 эмодзи */}
+      <IOSActionSheet
+        open={reactionFor !== null}
+        onOpenChange={(v) => !v && setReactionFor(null)}
+        title="Реакция"
+        items={REACTIONS.map<ActionSheetItem>((r) => ({
+          key: r,
+          label: r,
+          onSelect: () => {
+            if (reactionFor) commentReactionsStore.toggle(reactionFor, r as Reaction);
+          },
+        }))}
+      />
     </IOSSheet>
   );
 }
 
 // ───────── Comment item ─────────
+
+
 
 const CommentItem = memo(function CommentItem({
   comment,
