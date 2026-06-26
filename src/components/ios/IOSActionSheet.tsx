@@ -1,9 +1,17 @@
 // iOS-style action sheet снизу. Список действий + отдельная кнопка «Отмена».
-// Используем vaul.Drawer (как IOSSheet), без своего overlay/портала.
-// Деструктивный пункт подсвечен красным (system #ff453a).
+// СОБСТВЕННЫЙ портал (НЕ vaul), чтобы:
+//   1) tap по фону НЕ проваливался кликом в карточку поста под шитом.
+//      vaul закрывал дровер на pointerdown — оверлей размонтировался — синтетический
+//      click долетал до элемента под пальцем (PostCard.onCardClick → переход на пост).
+//      Здесь мы сами рендерим оверлей и гасим pointerdown/click + preventDefault.
+//   2) стиль совпадал с остальным приложением (bg-[#0d0d0d], border-white/[0.08],
+//      радиус 20, primary-CTA). iOS-серый #1c1c1e выглядел чужим.
+//
+// Поддерживается «эмоджи-ряд» (variant="emojiRow") — горизонтальная полоска
+// круглых кнопок 5×, удобно для пикера реакций.
 
-import { Drawer } from "vaul";
-import type { ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
 import { haptic } from "@/hooks/use-haptic";
 
@@ -23,6 +31,8 @@ type Props = {
   description?: string;
   items: ActionSheetItem[];
   cancelLabel?: string;
+  /** "list" (по умолчанию) | "emojiRow" — горизонтальный ряд крупных эмодзи. */
+  variant?: "list" | "emojiRow";
 };
 
 export function IOSActionSheet({
@@ -32,44 +42,130 @@ export function IOSActionSheet({
   description,
   items,
   cancelLabel = "Отмена",
+  variant = "list",
 }: Props) {
+  const close = () => onOpenChange(false);
+
+  // ESC для десктопа.
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        close();
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
+  // Блокируем скролл боди пока шит открыт.
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [open]);
+
+  // Анимация: монтируем компонент когда open=true, размонтируем после fade-out.
+  // Чтобы избежать click-through, оверлей перехватывает И pointerdown, И click,
+  // вызывая preventDefault — браузер не диспатчит «промахнувшийся» click ниже.
+  const mounted = useRef(false);
+  if (open) mounted.current = true;
+  if (!mounted.current) return null;
+
   const handleSelect = (it: ActionSheetItem) => {
     if (it.disabled) return;
     haptic("selection");
     onOpenChange(false);
-    // отложим вызов до закрытия для плавности
+    // отложим до закрытия для плавности
     setTimeout(() => it.onSelect(), 60);
   };
 
-  return (
-    <Drawer.Root open={open} onOpenChange={onOpenChange}>
-      <Drawer.Portal>
-        <Drawer.Overlay className="fixed inset-0 z-[330] bg-black/60 backdrop-blur-sm" />
-        <Drawer.Content
-          className={cn(
-            "fixed inset-x-0 bottom-0 z-[331] outline-none",
-            "px-2 pb-[max(env(safe-area-inset-bottom),8px)]",
-          )}
-        >
-          <Drawer.Title className="sr-only">{title ?? "Действия"}</Drawer.Title>
-          <Drawer.Description className="sr-only">
-            {description ?? "Меню действий"}
-          </Drawer.Description>
+  // Любой pointerdown/click/touchend по оверлею:
+  //   - preventDefault → НЕ будет click-through к элементу под пальцем
+  //   - stopPropagation → не всплывёт к комменту/PostCard
+  //   - закроем шит
+  const shield = (e: React.SyntheticEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
 
-          {/* Группа действий */}
-          <div className="mx-auto max-w-[480px] overflow-hidden rounded-2xl border border-white/[0.06] bg-[#1c1c1e]/95 backdrop-blur-2xl shadow-[0_24px_60px_-20px_rgba(0,0,0,0.7)]">
-            {(title || description) && (
-              <div className="border-b border-white/[0.06] px-4 py-3 text-center">
-                {title && (
-                  <div className="text-[13px] font-medium text-white/55">{title}</div>
-                )}
-                {description && (
-                  <div className="mt-0.5 text-[12px] leading-snug text-white/40">
-                    {description}
-                  </div>
-                )}
-              </div>
-            )}
+  const node = (
+    <div
+      aria-hidden={!open}
+      className={cn(
+        "fixed inset-0 z-[330] flex flex-col justify-end",
+        "transition-opacity duration-200",
+        open ? "opacity-100" : "opacity-0 pointer-events-none",
+      )}
+      onAnimationEnd={() => {
+        if (!open) mounted.current = false;
+      }}
+    >
+      {/* Затемнение + click-shield */}
+      <div
+        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+        onPointerDown={(e) => {
+          shield(e);
+          close();
+        }}
+        onClick={shield}
+        onTouchEnd={shield}
+        onContextMenu={shield}
+        role="presentation"
+      />
+
+      {/* Контент */}
+      <div
+        className={cn(
+          "relative mx-auto w-full max-w-[480px] px-2 pb-[max(env(safe-area-inset-bottom),8px)]",
+          "transform transition-transform duration-250 ease-out",
+          open ? "translate-y-0" : "translate-y-full",
+        )}
+        // блокируем pointerdown/click здесь, чтобы НЕ закрылось при тапе на сам шит
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Группа действий */}
+        <div className="overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0d0d0d]/98 backdrop-blur-2xl shadow-[0_24px_60px_-20px_rgba(0,0,0,0.7)]">
+          {(title || description) && (
+            <div className="border-b border-white/[0.06] px-4 py-3 text-center">
+              {title && (
+                <div className="font-mono text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                  {title}
+                </div>
+              )}
+              {description && (
+                <div className="mt-0.5 text-[12px] leading-snug text-muted-foreground/70">
+                  {description}
+                </div>
+              )}
+            </div>
+          )}
+
+          {variant === "emojiRow" ? (
+            <div className="flex items-center justify-around gap-1 px-3 py-3">
+              {items.map((it) => (
+                <button
+                  key={it.key}
+                  type="button"
+                  disabled={it.disabled}
+                  onClick={() => handleSelect(it)}
+                  aria-label={it.label}
+                  className={cn(
+                    "grid h-12 w-12 place-items-center rounded-full text-[26px] leading-none",
+                    "transition-transform active:scale-90 hover:bg-white/[0.06] disabled:opacity-40",
+                  )}
+                >
+                  {it.label}
+                </button>
+              ))}
+            </div>
+          ) : (
             <ul>
               {items.map((it, i) => (
                 <li key={it.key}>
@@ -78,10 +174,12 @@ export function IOSActionSheet({
                     disabled={it.disabled}
                     onClick={() => handleSelect(it)}
                     className={cn(
-                      "flex w-full items-center justify-between px-4 py-[14px] text-[17px] transition-colors",
+                      "flex w-full items-center justify-between px-4 py-[14px] text-[16px] transition-colors",
                       "active:bg-white/[0.06] disabled:opacity-40",
-                      i > 0 && "border-t border-white/[0.06]",
-                      it.destructive ? "text-[#ff453a] font-medium" : "text-white",
+                      i > 0 && "border-t border-white/[0.05]",
+                      it.destructive
+                        ? "font-medium text-[hsl(var(--destructive,0_84%_60%))]"
+                        : "text-foreground",
                     )}
                   >
                     <span>{it.label}</span>
@@ -90,20 +188,23 @@ export function IOSActionSheet({
                 </li>
               ))}
             </ul>
-          </div>
+          )}
+        </div>
 
-          {/* Отмена */}
-          <div className="mx-auto mt-2 max-w-[480px] overflow-hidden rounded-2xl border border-white/[0.06] bg-[#1c1c1e]/95 backdrop-blur-2xl">
-            <button
-              type="button"
-              onClick={() => onOpenChange(false)}
-              className="w-full px-4 py-[14px] text-[17px] font-semibold text-primary transition-colors active:bg-white/[0.06]"
-            >
-              {cancelLabel}
-            </button>
-          </div>
-        </Drawer.Content>
-      </Drawer.Portal>
-    </Drawer.Root>
+        {/* Отмена */}
+        <div className="mt-2 overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0d0d0d]/98 backdrop-blur-2xl">
+          <button
+            type="button"
+            onClick={close}
+            className="w-full px-4 py-[14px] text-[16px] font-semibold text-primary transition-colors active:bg-white/[0.06]"
+          >
+            {cancelLabel}
+          </button>
+        </div>
+      </div>
+    </div>
   );
+
+  if (typeof document === "undefined") return null;
+  return createPortal(node, document.body);
 }
