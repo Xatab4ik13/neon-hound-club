@@ -12,9 +12,31 @@ import s11 from "./11.webp";
 import s12 from "./12.webp";
 import s13 from "./13.webp";
 
-export const SPECIAL_PACK_STICKERS: string[] = [
-  s01, s02, s03, s04, s05, s07, s09, s11, s12, s13,
+/**
+ * Метаданные стикеров пака — нужны для поиска и для accessibility (alt).
+ * `tags` — нижний регистр, ru/en, разделять не нужно (фильтр идёт по includes).
+ */
+export type StickerMeta = {
+  url: string;
+  alt: string;
+  tags: string[];
+};
+
+export const SPECIAL_PACK: StickerMeta[] = [
+  { url: s01, alt: "Hellhound — пёс с языком",        tags: ["hell", "пёс", "собака", "язык", "dog"] },
+  { url: s02, alt: "Hellhound — злой пёс",              tags: ["hell", "злой", "angry", "rage"] },
+  { url: s03, alt: "Hellhound — лайк",                  tags: ["лайк", "like", "thumbs", "ok", "вверх"] },
+  { url: s04, alt: "Hellhound — череп",                 tags: ["череп", "skull", "death"] },
+  { url: s05, alt: "Hellhound — огонь",                 tags: ["огонь", "fire", "пламя", "hot"] },
+  { url: s07, alt: "Hellhound — поклон",                tags: ["respect", "поклон", "уважение", "bow"] },
+  { url: s09, alt: "Hellhound — крутой",                tags: ["крутой", "cool", "glasses", "swag"] },
+  { url: s11, alt: "Hellhound — мото",                  tags: ["мото", "moto", "bike", "байк", "racing"] },
+  { url: s12, alt: "Hellhound — смех",                  tags: ["смех", "lol", "laugh", "haha"] },
+  { url: s13, alt: "Hellhound — сердце",                tags: ["love", "сердце", "heart", "❤"] },
 ];
+
+/** Только URL-ы — для обратной совместимости с местами, где не нужны метаданные. */
+export const SPECIAL_PACK_STICKERS: string[] = SPECIAL_PACK.map((s) => s.url);
 
 import cover from "./cover.webp";
 
