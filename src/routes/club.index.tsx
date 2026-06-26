@@ -650,8 +650,13 @@ function CommentsSheet({
   const [actionTarget, setActionTarget] = useState<Comment | null>(null);
   const [reactionFor, setReactionFor] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [highlightId, setHighlightId] = useState<string | null>(null);
   const viewer = useViewer();
   const myId = viewer.user?.id ?? null;
+
+  const listRef = useRef<HTMLDivElement | null>(null);
+  const prevCountRef = useRef<number>(post.comments.length);
+  const scrolledToTargetRef = useRef<string | null>(null);
 
 
   // сбросить состояние при закрытии; при открытии — подгрузить полный список
@@ -661,12 +666,57 @@ function CommentsSheet({
       setActionTarget(null);
       setReactionFor(null);
       setEditingId(null);
+      setHighlightId(null);
+      scrolledToTargetRef.current = null;
       return;
     }
     if (!post.commentsFull) {
       feedStore.loadFullComments(post.id);
     }
   }, [open, post.id, post.commentsFull]);
+
+  // Deep-link на коммент: ?c=<commentId>. Скроллим + подсвечиваем пульсом.
+  useEffect(() => {
+    if (!open) return;
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const target = params.get("c");
+    if (!target) return;
+    if (scrolledToTargetRef.current === target) return;
+    const exists = post.comments.some((c) => c.id === target);
+    if (!exists) return; // подождём подгрузки full
+    scrolledToTargetRef.current = target;
+    // Подождём кадр чтобы DOM устоялся
+    requestAnimationFrame(() => {
+      const el = listRef.current?.querySelector<HTMLElement>(`[data-comment-id="${CSS.escape(target)}"]`);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        setHighlightId(target);
+        setTimeout(() => setHighlightId(null), 1800);
+      }
+    });
+  }, [open, post.comments]);
+
+  // Авто-скролл к низу когда юзер отправил свой коммент.
+  useEffect(() => {
+    if (!open) return;
+    const prev = prevCountRef.current;
+    const next = post.comments.length;
+    if (next > prev) {
+      const last = post.comments[post.comments.length - 1];
+      const isMine = myId != null && last && last.author.id === myId;
+      if (isMine && listRef.current) {
+        requestAnimationFrame(() => {
+          if (listRef.current) {
+            listRef.current.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
+          }
+        });
+      }
+    }
+    prevCountRef.current = next;
+  }, [open, post.comments, myId]);
+
+
 
   // Группировка ответов в треды. Источник истины — comment.parentId.
   // Для legacy без parentId — fallback на эвристику «текст начинается с @nick».
