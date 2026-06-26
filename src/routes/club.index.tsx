@@ -1026,11 +1026,12 @@ function CommentsSheet({
         items={actionTarget ? buildActionItems(actionTarget) : []}
       />
 
-      {/* Выбор реакции — отдельный мини-шит из 5 эмодзи */}
+      {/* Выбор реакции — горизонтальный ряд из 5 эмодзи */}
       <IOSActionSheet
         open={reactionFor !== null}
         onOpenChange={(v) => !v && setReactionFor(null)}
         title="Реакция"
+        variant="emojiRow"
         items={REACTIONS.map<ActionSheetItem>((r) => ({
           key: r,
           label: r,
@@ -1272,7 +1273,11 @@ const CommentItem = memo(function CommentItem({
           {onMore && (
             <button
               type="button"
-              onClick={onMore}
+              onClick={(e) => {
+                e.stopPropagation();
+                onMore();
+              }}
+              onPointerDown={(e) => e.stopPropagation()}
               aria-label="Действия"
               title="Действия"
               className="ml-auto inline-flex h-6 items-center justify-center rounded-full px-2 font-mono text-[14px] leading-none text-muted-foreground/60 transition-colors hover:bg-white/[0.05] hover:text-foreground"
