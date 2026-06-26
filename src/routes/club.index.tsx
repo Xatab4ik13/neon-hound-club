@@ -982,6 +982,24 @@ function CommentsSheet({
   );
 }
 
+// Скелетон списка комментов на момент подгрузки full.
+function CommentSkeletonList({ count }: { count: number }) {
+  return (
+    <ul className="space-y-5">
+      {Array.from({ length: count }).map((_, i) => (
+        <li key={i} className="flex gap-3">
+          <div className="h-10 w-10 shrink-0 animate-pulse rounded-full bg-white/[0.05]" />
+          <div className="min-w-0 flex-1 space-y-2">
+            <div className="h-3 w-24 animate-pulse rounded bg-white/[0.05]" />
+            <div className="h-4 w-[min(70%,260px)] animate-pulse rounded-2xl bg-white/[0.04]" />
+            <div className="h-4 w-[min(50%,200px)] animate-pulse rounded-2xl bg-white/[0.04]" />
+          </div>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 // ───────── Comment item ─────────
 
 
