@@ -47,7 +47,15 @@ export type FeedComment = {
   time: string;
   /** ISO-строка момента создания — используется для форматирования времени и сортировки. */
   createdAt: string;
+  /** ISO-метка редактирования, undefined если не редактировался. */
+  editedAt?: string;
   text: string;
+  /** 'text' (по умолчанию) или 'sticker' — для рендеринга через <img>. */
+  kind: "text" | "sticker";
+  /** URL/id стикера когда kind === 'sticker'. */
+  stickerId?: string;
+  /** id родительского коммента (для тредов). */
+  parentId?: string;
   likes: number;
   liked: boolean;
   // ↓ shim для старых мест UI; всегда == author.slug / author.isBlogger
