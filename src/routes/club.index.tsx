@@ -734,20 +734,6 @@ function CommentsSheet({
     prevCountRef.current = next;
   }, [open, post.comments, myId]);
 
-  // Первый «непрочитанный» top-level комментарий (не мой, новее lastReadAt).
-  // Над ним нарисуется разделитель «Новые».
-  const firstUnreadId = useMemo<string | null>(() => {
-    if (!lastReadAt) return null;
-    for (const c of topLevel) {
-      if (myId && c.author.id === myId) continue;
-      const t = c.createdAt ? new Date(c.createdAt).getTime() : 0;
-      if (t > lastReadAt) return c.id;
-    }
-    return null;
-  }, [topLevel, lastReadAt, myId]);
-
-
-
   // Группировка ответов в треды. Источник истины — comment.parentId.
   // Для legacy без parentId — fallback на эвристику «текст начинается с @nick».
   const { topLevel, childrenByParentId, knownNicks } = useMemo<{
@@ -781,6 +767,18 @@ function CommentsSheet({
     }
     return { topLevel, childrenByParentId, knownNicks };
   }, [post.comments, post.author?.nick]);
+
+  // Первый «непрочитанный» top-level комментарий (не мой, новее lastReadAt).
+  // Над ним отрисуется разделитель «Новые».
+  const firstUnreadId = useMemo<string | null>(() => {
+    if (!lastReadAt) return null;
+    for (const c of topLevel) {
+      if (myId && c.author.id === myId) continue;
+      const t = c.createdAt ? new Date(c.createdAt).getTime() : 0;
+      if (t > lastReadAt) return c.id;
+    }
+    return null;
+  }, [topLevel, lastReadAt, myId]);
 
   const toggleCollapse = (id: string) => {
     setCollapsed((prev) => {
