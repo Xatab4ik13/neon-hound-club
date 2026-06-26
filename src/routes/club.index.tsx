@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState, useCallback, memo } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState, useCallback, memo } from "react";
 import { flushSync } from "react-dom";
 import { Smile, Send, Search as SearchIcon, Clock, Sticker, X, Pin, PinOff, Trash2, BarChart3, Share2, MessageCircle, Heart } from "lucide-react";
 import { RANKS, type RankId } from "@/data/ranks";
@@ -657,6 +657,12 @@ function CommentsSheet({
   const listRef = useRef<HTMLDivElement | null>(null);
   const prevCountRef = useRef<number>(post.comments.length);
   const scrolledToTargetRef = useRef<string | null>(null);
+  // Метка «последнего прочтения» (ms) — фиксируется при открытии шита.
+  // Всё, что новее, рисуем под разделителем «Новые».
+  const [lastReadAt, setLastReadAt] = useState<number>(0);
+  const lastReadStorageKey = `hh:lastRead:${post.id}`;
+  // ID последнего отправленного мной комментария — для fly-in анимации.
+  const [justSentId, setJustSentId] = useState<string | null>(null);
 
 
   // сбросить состояние при закрытии; при открытии — подгрузить полный список
@@ -667,13 +673,20 @@ function CommentsSheet({
       setReactionFor(null);
       setEditingId(null);
       setHighlightId(null);
+      setJustSentId(null);
       scrolledToTargetRef.current = null;
+      // На закрытии запоминаем «прочитано до сейчас».
+      try { localStorage.setItem(lastReadStorageKey, String(Date.now())); } catch {}
       return;
     }
+    try {
+      const raw = localStorage.getItem(lastReadStorageKey);
+      setLastReadAt(raw ? Number(raw) || 0 : 0);
+    } catch { setLastReadAt(0); }
     if (!post.commentsFull) {
       feedStore.loadFullComments(post.id);
     }
-  }, [open, post.id, post.commentsFull]);
+  }, [open, post.id, post.commentsFull, lastReadStorageKey]);
 
   // Deep-link на коммент: ?c=<commentId>. Скроллим + подсвечиваем пульсом.
   useEffect(() => {
@@ -697,7 +710,7 @@ function CommentsSheet({
     });
   }, [open, post.comments]);
 
-  // Авто-скролл к низу когда юзер отправил свой коммент.
+  // Авто-скролл к низу + fly-in анимация, когда юзер отправил свой коммент.
   useEffect(() => {
     if (!open) return;
     const prev = prevCountRef.current;
@@ -705,18 +718,21 @@ function CommentsSheet({
     if (next > prev) {
       const last = post.comments[post.comments.length - 1];
       const isMine = myId != null && last && last.author.id === myId;
-      if (isMine && listRef.current) {
-        requestAnimationFrame(() => {
-          if (listRef.current) {
-            listRef.current.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
-          }
-        });
+      if (isMine && last) {
+        setJustSentId(last.id);
+        // снимаем подсветку после анимации
+        setTimeout(() => setJustSentId((id) => (id === last.id ? null : id)), 600);
+        if (listRef.current) {
+          requestAnimationFrame(() => {
+            if (listRef.current) {
+              listRef.current.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
+            }
+          });
+        }
       }
     }
     prevCountRef.current = next;
   }, [open, post.comments, myId]);
-
-
 
   // Группировка ответов в треды. Источник истины — comment.parentId.
   // Для legacy без parentId — fallback на эвристику «текст начинается с @nick».
@@ -751,6 +767,18 @@ function CommentsSheet({
     }
     return { topLevel, childrenByParentId, knownNicks };
   }, [post.comments, post.author?.nick]);
+
+  // Первый «непрочитанный» top-level комментарий (не мой, новее lastReadAt).
+  // Над ним отрисуется разделитель «Новые».
+  const firstUnreadId = useMemo<string | null>(() => {
+    if (!lastReadAt) return null;
+    for (const c of topLevel) {
+      if (myId && c.author.id === myId) continue;
+      const t = c.createdAt ? new Date(c.createdAt).getTime() : 0;
+      if (t > lastReadAt) return c.id;
+    }
+    return null;
+  }, [topLevel, lastReadAt, myId]);
 
   const toggleCollapse = (id: string) => {
     setCollapsed((prev) => {
@@ -880,46 +908,74 @@ function CommentsSheet({
                 const children = childrenByParentId.get(c.id) ?? [];
                 const isCollapsed = collapsed.has(c.id);
                 const isHi = highlightId === c.id;
+                const isJustSent = justSentId === c.id;
+                const isUnreadAnchor = firstUnreadId === c.id;
                 return (
-                  <li
-                    key={c.id}
-                    data-comment-id={c.id}
-                    className={`space-y-3 rounded-2xl transition-colors ${isHi ? "ring-2 ring-primary/60 bg-primary/[0.04]" : ""}`}
-                    style={isHi ? { animation: "comment-highlight 1.8s ease-out" } : undefined}
-                  >
-                    <ul>{renderItem(c)}</ul>
-                    {children.length > 0 && (
-                      <div className="pl-12">
-                        <button
-                          type="button"
-                          onClick={() => toggleCollapse(c.id)}
-                          className="mb-2 inline-flex items-center gap-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground/70 transition-colors hover:text-foreground"
-                        >
-                          <span className="h-px w-6 bg-white/15" />
-                          {isCollapsed
-                            ? `Показать ответы · ${children.length}`
-                            : `Скрыть ответы · ${children.length}`}
-                        </button>
-                        {!isCollapsed && (
-                          <ul className="space-y-4">
-                            {children.map((child) => {
-                              const isChildHi = highlightId === child.id;
-                              return (
-                                <div
-                                  key={child.id}
-                                  data-comment-id={child.id}
-                                  className={`rounded-2xl transition-colors ${isChildHi ? "ring-2 ring-primary/60 bg-primary/[0.04]" : ""}`}
-                                  style={isChildHi ? { animation: "comment-highlight 1.8s ease-out" } : undefined}
-                                >
-                                  {renderItem(child, true)}
-                                </div>
-                              );
-                            })}
-                          </ul>
-                        )}
-                      </div>
+                  <Fragment key={c.id}>
+                    {isUnreadAnchor && (
+                      <li
+                        aria-hidden="true"
+                        className="!my-3 flex items-center gap-2 px-1"
+                      >
+                        <span className="h-px flex-1 bg-gradient-to-r from-transparent to-primary/40" />
+                        <span className="font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-primary">
+                          Новые
+                        </span>
+                        <span className="h-px flex-1 bg-gradient-to-l from-transparent to-primary/40" />
+                      </li>
                     )}
-                  </li>
+                    <li
+                      data-comment-id={c.id}
+                      className={`space-y-3 rounded-2xl transition-colors ${isHi ? "ring-2 ring-primary/60 bg-primary/[0.04]" : ""}`}
+                      style={
+                        isJustSent
+                          ? { animation: "comment-flyin 480ms cubic-bezier(.22,1,.36,1)" }
+                          : isHi
+                            ? { animation: "comment-highlight 1.8s ease-out" }
+                            : undefined
+                      }
+                    >
+                      <ul>{renderItem(c)}</ul>
+                      {children.length > 0 && (
+                        <div className="pl-12">
+                          <button
+                            type="button"
+                            onClick={() => toggleCollapse(c.id)}
+                            className="mb-2 inline-flex items-center gap-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground/70 transition-colors hover:text-foreground"
+                          >
+                            <span className="h-px w-6 bg-white/15" />
+                            {isCollapsed
+                              ? `Показать ответы · ${children.length}`
+                              : `Скрыть ответы · ${children.length}`}
+                          </button>
+                          {!isCollapsed && (
+                            <ul className="space-y-4">
+                              {children.map((child) => {
+                                const isChildHi = highlightId === child.id;
+                                const isChildJustSent = justSentId === child.id;
+                                return (
+                                  <div
+                                    key={child.id}
+                                    data-comment-id={child.id}
+                                    className={`rounded-2xl transition-colors ${isChildHi ? "ring-2 ring-primary/60 bg-primary/[0.04]" : ""}`}
+                                    style={
+                                      isChildJustSent
+                                        ? { animation: "comment-flyin 480ms cubic-bezier(.22,1,.36,1)" }
+                                        : isChildHi
+                                          ? { animation: "comment-highlight 1.8s ease-out" }
+                                          : undefined
+                                    }
+                                  >
+                                    {renderItem(child, true)}
+                                  </div>
+                                );
+                              })}
+                            </ul>
+                          )}
+                        </div>
+                      )}
+                    </li>
+                  </Fragment>
                 );
               })}
             </ul>
@@ -929,8 +985,13 @@ function CommentsSheet({
               0%   { background-color: rgba(255,45,149,0.18); }
               100% { background-color: transparent; }
             }
+            @keyframes comment-flyin {
+              0%   { opacity: 0; transform: translateY(14px) scale(0.985); }
+              60%  { opacity: 1; }
+              100% { opacity: 1; transform: translateY(0) scale(1); }
+            }
             @media (prefers-reduced-motion: reduce) {
-              [style*="comment-highlight"] { animation: none !important; }
+              [style*="comment-highlight"], [style*="comment-flyin"] { animation: none !important; }
             }
           `}</style>
         </div>
