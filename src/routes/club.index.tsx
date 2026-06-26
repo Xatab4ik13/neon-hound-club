@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState, useCallback, memo } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState, useCallback, memo } from "react";
 import { flushSync } from "react-dom";
 import { Smile, Send, Search as SearchIcon, Clock, Sticker, X, Pin, PinOff, Trash2, BarChart3, Share2, MessageCircle, Heart } from "lucide-react";
 import { RANKS, type RankId } from "@/data/ranks";
@@ -911,7 +911,7 @@ function CommentsSheet({
                 const isJustSent = justSentId === c.id;
                 const isUnreadAnchor = firstUnreadId === c.id;
                 return (
-                  <React.Fragment key={c.id}>
+                  <Fragment key={c.id}>
                     {isUnreadAnchor && (
                       <li
                         aria-hidden="true"
@@ -975,7 +975,7 @@ function CommentsSheet({
                         </div>
                       )}
                     </li>
-                  </React.Fragment>
+                  </Fragment>
                 );
               })}
             </ul>
