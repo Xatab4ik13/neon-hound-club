@@ -144,6 +144,11 @@ export function IOSSheet({
             {children}
           </div>
 
+          {/* Portal-target для вложенных overlay (IOSActionSheet и т.п.).
+              Кладём ВНУТРИ Drawer.Content, чтобы vaul не сделал inert
+              (vaul выставляет inert/aria-hidden на siblings body при открытии). */}
+          <div data-ios-sheet-portal="" className="contents" />
+
         </Drawer.Content>
       </Drawer.Portal>
     </Drawer.Root>
