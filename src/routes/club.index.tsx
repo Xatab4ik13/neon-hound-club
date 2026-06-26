@@ -830,11 +830,14 @@ function CommentsSheet({
 
 const CommentItem = memo(function CommentItem({
   comment,
+  knownNicks,
   large = false,
   onReply,
   onDelete,
 }: {
   comment: Comment;
+  /** Если задан — только эти @nick рендерятся как кликабельные ссылки. */
+  knownNicks?: Set<string>;
   large?: boolean;
   onReply?: () => void;
   onDelete?: () => void;
@@ -844,7 +847,7 @@ const CommentItem = memo(function CommentItem({
   const rank = RANK_BY_ID[(author.rankId as RankId) ?? "rookie"] ?? RANK_BY_ID["rookie"];
   const count = comment.likes;
   const authorIsBlogger = author.isBlogger;
-  const stickerUrl = parseSticker(comment.text);
+  const stickerUrl = getCommentStickerUrl(comment);
 
   return (
     <li className="flex gap-3">
@@ -882,6 +885,11 @@ const CommentItem = memo(function CommentItem({
           )}
           <span className="ml-auto shrink-0 font-mono text-[10px] uppercase tracking-wider text-muted-foreground/70">
             {comment.time}
+            {comment.editedAt && (
+              <span className="ml-1 text-muted-foreground/50 normal-case tracking-normal" title="Изменено">
+                · изм.
+              </span>
+            )}
           </span>
         </div>
         {stickerUrl ? (
@@ -892,13 +900,14 @@ const CommentItem = memo(function CommentItem({
               loading="lazy"
               decoding="async"
               draggable={false}
+              referrerPolicy="no-referrer"
               className="h-48 w-48 select-none object-contain md:h-52 md:w-52"
             />
           </div>
         ) : (
           <div className="mt-1 inline-block max-w-full rounded-2xl rounded-tl-sm border border-white/[0.05] bg-white/[0.03] px-3 py-2">
             <p className={`break-words leading-relaxed text-foreground/90 ${large ? "text-[14.5px]" : "text-[13.5px]"}`}>
-              {comment.text}
+              {renderCommentText(comment.text, knownNicks)}
             </p>
           </div>
         )}
