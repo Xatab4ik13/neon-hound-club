@@ -908,46 +908,74 @@ function CommentsSheet({
                 const children = childrenByParentId.get(c.id) ?? [];
                 const isCollapsed = collapsed.has(c.id);
                 const isHi = highlightId === c.id;
+                const isJustSent = justSentId === c.id;
+                const isUnreadAnchor = firstUnreadId === c.id;
                 return (
-                  <li
-                    key={c.id}
-                    data-comment-id={c.id}
-                    className={`space-y-3 rounded-2xl transition-colors ${isHi ? "ring-2 ring-primary/60 bg-primary/[0.04]" : ""}`}
-                    style={isHi ? { animation: "comment-highlight 1.8s ease-out" } : undefined}
-                  >
-                    <ul>{renderItem(c)}</ul>
-                    {children.length > 0 && (
-                      <div className="pl-12">
-                        <button
-                          type="button"
-                          onClick={() => toggleCollapse(c.id)}
-                          className="mb-2 inline-flex items-center gap-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground/70 transition-colors hover:text-foreground"
-                        >
-                          <span className="h-px w-6 bg-white/15" />
-                          {isCollapsed
-                            ? `Показать ответы · ${children.length}`
-                            : `Скрыть ответы · ${children.length}`}
-                        </button>
-                        {!isCollapsed && (
-                          <ul className="space-y-4">
-                            {children.map((child) => {
-                              const isChildHi = highlightId === child.id;
-                              return (
-                                <div
-                                  key={child.id}
-                                  data-comment-id={child.id}
-                                  className={`rounded-2xl transition-colors ${isChildHi ? "ring-2 ring-primary/60 bg-primary/[0.04]" : ""}`}
-                                  style={isChildHi ? { animation: "comment-highlight 1.8s ease-out" } : undefined}
-                                >
-                                  {renderItem(child, true)}
-                                </div>
-                              );
-                            })}
-                          </ul>
-                        )}
-                      </div>
+                  <React.Fragment key={c.id}>
+                    {isUnreadAnchor && (
+                      <li
+                        aria-hidden="true"
+                        className="!my-3 flex items-center gap-2 px-1"
+                      >
+                        <span className="h-px flex-1 bg-gradient-to-r from-transparent to-primary/40" />
+                        <span className="font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-primary">
+                          Новые
+                        </span>
+                        <span className="h-px flex-1 bg-gradient-to-l from-transparent to-primary/40" />
+                      </li>
                     )}
-                  </li>
+                    <li
+                      data-comment-id={c.id}
+                      className={`space-y-3 rounded-2xl transition-colors ${isHi ? "ring-2 ring-primary/60 bg-primary/[0.04]" : ""}`}
+                      style={
+                        isJustSent
+                          ? { animation: "comment-flyin 480ms cubic-bezier(.22,1,.36,1)" }
+                          : isHi
+                            ? { animation: "comment-highlight 1.8s ease-out" }
+                            : undefined
+                      }
+                    >
+                      <ul>{renderItem(c)}</ul>
+                      {children.length > 0 && (
+                        <div className="pl-12">
+                          <button
+                            type="button"
+                            onClick={() => toggleCollapse(c.id)}
+                            className="mb-2 inline-flex items-center gap-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground/70 transition-colors hover:text-foreground"
+                          >
+                            <span className="h-px w-6 bg-white/15" />
+                            {isCollapsed
+                              ? `Показать ответы · ${children.length}`
+                              : `Скрыть ответы · ${children.length}`}
+                          </button>
+                          {!isCollapsed && (
+                            <ul className="space-y-4">
+                              {children.map((child) => {
+                                const isChildHi = highlightId === child.id;
+                                const isChildJustSent = justSentId === child.id;
+                                return (
+                                  <div
+                                    key={child.id}
+                                    data-comment-id={child.id}
+                                    className={`rounded-2xl transition-colors ${isChildHi ? "ring-2 ring-primary/60 bg-primary/[0.04]" : ""}`}
+                                    style={
+                                      isChildJustSent
+                                        ? { animation: "comment-flyin 480ms cubic-bezier(.22,1,.36,1)" }
+                                        : isChildHi
+                                          ? { animation: "comment-highlight 1.8s ease-out" }
+                                          : undefined
+                                    }
+                                  >
+                                    {renderItem(child, true)}
+                                  </div>
+                                );
+                              })}
+                            </ul>
+                          )}
+                        </div>
+                      )}
+                    </li>
+                  </React.Fragment>
                 );
               })}
             </ul>
