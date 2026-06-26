@@ -1026,11 +1026,12 @@ function CommentsSheet({
         items={actionTarget ? buildActionItems(actionTarget) : []}
       />
 
-      {/* Выбор реакции — отдельный мини-шит из 5 эмодзи */}
+      {/* Выбор реакции — горизонтальный ряд из 5 эмодзи */}
       <IOSActionSheet
         open={reactionFor !== null}
         onOpenChange={(v) => !v && setReactionFor(null)}
         title="Реакция"
+        variant="emojiRow"
         items={REACTIONS.map<ActionSheetItem>((r) => ({
           key: r,
           label: r,
