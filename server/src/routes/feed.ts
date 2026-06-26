@@ -253,6 +253,10 @@ async function hydratePosts(rows: typeof posts.$inferSelect[], viewerId: string 
       comments: (commentsByPost.get(r.id) ?? []).map((c) => ({
         id: c.id,
         text: c.text,
+        kind: c.kind,
+        stickerId: c.stickerId,
+        parentId: c.parentId,
+        editedAt: c.editedAt,
         likes: commentLikeMap.get(c.id) ?? 0,
         liked: myCommentLikeSet.has(c.id),
         createdAt: c.createdAt,
