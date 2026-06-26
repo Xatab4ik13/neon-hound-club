@@ -1002,11 +1002,55 @@ function RankAvatar({
 
 // Mock packs — позже заменим на данные из БД
 
-/** Префикс-маркер: текст комментария = стикер-картинка. */
+/** Префикс-маркер: текст комментария = стикер-картинка (legacy-формат до Этапа A). */
 const STICKER_PREFIX = "::sticker::";
 const asStickerText = (url: string) => `${STICKER_PREFIX}${url}`;
 const parseSticker = (text: string): string | null =>
   text.startsWith(STICKER_PREFIX) ? text.slice(STICKER_PREFIX.length) : null;
+
+/** Достаёт url стикера из коммента вне зависимости от формата (новый kind/stickerId или legacy ::sticker::). */
+function getCommentStickerUrl(c: Comment): string | null {
+  if (c.kind === "sticker" && c.stickerId) return c.stickerId;
+  return parseSticker(c.text);
+}
+
+/** Регулярка для меншенов @nick — только латиница/цифры/подчёркивание, 2–32 символа. */
+const MENTION_RE = /@([a-zA-Z0-9_]{2,32})/g;
+
+/**
+ * Рендерит текст коммента, превращая @nick в кликабельные ссылки на /club/u/:nick.
+ * Принимает callback-фильтр: если nick есть в списке известных — ссылка, иначе обычный текст.
+ */
+function renderCommentText(text: string, knownNicks?: Set<string>): React.ReactNode {
+  if (!text) return text;
+  const parts: React.ReactNode[] = [];
+  let last = 0;
+  for (const m of text.matchAll(MENTION_RE)) {
+    const start = m.index ?? 0;
+    if (start > last) parts.push(text.slice(last, start));
+    const nick = m[1];
+    const isKnown = !knownNicks || knownNicks.has(nick.toLowerCase());
+    if (isKnown) {
+      parts.push(
+        <Link
+          key={`m-${start}`}
+          to="/club/u/$nick"
+          params={{ nick: makeSlug(nick) || nick }}
+          className="font-medium text-primary hover:underline"
+          onClick={(e) => e.stopPropagation()}
+        >
+          @{nick}
+        </Link>,
+      );
+    } else {
+      parts.push(m[0]);
+    }
+    last = start + m[0].length;
+  }
+  if (last < text.length) parts.push(text.slice(last));
+  return parts;
+}
+
 
 type StickerPack = {
   id: string;
