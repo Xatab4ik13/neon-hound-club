@@ -3,12 +3,15 @@
 // Иначе — обычный <img> (webp/png/gif/webm-poster и т.п.).
 //
 // Размер задаётся через `size` (px) ИЛИ через className (w-full h-full + квадратный контейнер).
-import { TgSticker } from "./TgSticker";
+import { forwardRef } from "react";
+import { TgSticker, type TgStickerHandle } from "./TgSticker";
 
 function isAnimated(url: string): boolean {
   const u = url.split("?")[0].toLowerCase();
   return u.endsWith(".tgs") || u.endsWith(".json") || u.endsWith(".lottie");
 }
+
+export type StickerViewHandle = TgStickerHandle;
 
 interface Props {
   url: string;
@@ -22,10 +25,14 @@ interface Props {
   preview?: boolean;
 }
 
-export function StickerView({ url, alt = "стикер", size, className, loop = true, autoplay = true, preview = false }: Props) {
+export const StickerView = forwardRef<StickerViewHandle, Props>(function StickerView(
+  { url, alt = "стикер", size, className, loop = true, autoplay = true, preview = false },
+  ref,
+) {
   if (isAnimated(url)) {
     return (
       <TgSticker
+        ref={ref}
         src={url}
         size={size ?? "100%"}
         loop={preview ? false : loop}
@@ -49,6 +56,6 @@ export function StickerView({ url, alt = "стикер", size, className, loop =
       style={size ? { width: size, height: size } : undefined}
     />
   );
-}
+});
 
 export default StickerView;
