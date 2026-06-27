@@ -6,7 +6,7 @@ import { useState } from "react";
 import { IOSActionSheet, type ActionSheetItem } from "@/components/ios/IOSActionSheet";
 import { REACTIONS } from "@/components/club/LikeButton";
 
-export const Route = createFileRoute("/__qa/comment-menu")({
+export const Route = createFileRoute("/qa-comment-menu")({
   component: QAPage,
 });
 
