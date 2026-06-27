@@ -11,6 +11,7 @@ import { systemSettings } from "../db/schema/economy.js";
 import { loadAiSettings, loadUserGarage, buildSystemPrompt, AI_LIMITS_DEFAULT, TIER_PRIMARY_MODEL, PLATINUM_FALLBACK_MODEL, type AiLimits } from "../lib/hell-ai.js";
 import { chatCompletion, streamChatCompletion, OpenRouterError, type ChatMessage } from "../lib/openrouter.js";
 import { acquireGlobalSlot, releaseGlobalSlot, acquireUserLock, releaseUserLock, AiBusyError, AiUserBusyError } from "../lib/ai-throttle.js";
+import { addQuestProgress } from "../lib/quests.js";
 
 const askSchema = z.object({
   question: z.string().trim().min(2).max(2000),
@@ -209,6 +210,9 @@ export async function hellAiRoutes(app: FastifyInstance) {
           tokensOut: result.tokensOut,
         });
 
+        // Лестница Hell AI — +1 вопрос. Не блокируем ответ при ошибке прогресса.
+        addQuestProgress(session.sub, "hell_ai_ladder", 1).catch(() => null);
+
         return { answer: result.answer };
       } catch (e) {
         const err = e as OpenRouterError;
@@ -400,6 +404,7 @@ export async function hellAiRoutes(app: FastifyInstance) {
           tokensIn,
           tokensOut,
         });
+        addQuestProgress(session.sub, "hell_ai_ladder", 1).catch(() => null);
         send("done", { ok: true });
       } else {
         // ничего не пришло — считаем ошибкой и откатываем счётчик
