@@ -27,12 +27,12 @@ type Viewer = {
   hydrated: boolean;
 };
 
-export type SignUpResult = { ok: true; pendingVerification: true; email: string };
+export type SignUpResult = { ok: true; pendingVerification: true; email: string; mailDelivered: boolean };
 
 type ViewerContextValue = Viewer & {
   signIn: (email: string, password: string) => Promise<SessionUser>;
   signUp: (email: string, password: string, nick: string) => Promise<SignUpResult>;
-  resendVerification: (email: string) => Promise<void>;
+  resendVerification: (email: string) => Promise<{ mailDelivered: boolean }>;
   refetchMe: () => Promise<void>;
   signOut: () => Promise<void>;
 };
@@ -104,7 +104,7 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
     async (email: string, password: string, nick: string) => {
       const { getPendingRef, clearPendingRef } = await import("@/data/referral");
       const ref = getPendingRef();
-      const res = await apiFetch<{ ok: true; pendingVerification: true; email: string }>(
+      const res = await apiFetch<{ ok: true; pendingVerification: true; email: string; mailDelivered?: boolean }>(
         "/api/v1/auth/register",
         {
           method: "POST",
@@ -112,16 +112,18 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
         },
       );
       if (ref) clearPendingRef();
-      return res;
+      // mailDelivered может отсутствовать на старом бэке — по умолчанию считаем что ушло.
+      return { ...res, mailDelivered: res.mailDelivered ?? true } as SignUpResult;
     },
     [],
   );
 
   const resendVerification = useCallback(async (email: string) => {
-    await apiFetch<{ ok: true }>("/api/v1/auth/resend-verification", {
+    const res = await apiFetch<{ ok: true; mailDelivered?: boolean }>("/api/v1/auth/resend-verification", {
       method: "POST",
       body: JSON.stringify({ email }),
     });
+    return { mailDelivered: res.mailDelivered ?? true };
   }, []);
 
   const signOutMutation = useMutation({
