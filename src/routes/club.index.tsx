@@ -1632,6 +1632,14 @@ type StickerPack = {
 
 const STICKER_PACKS: StickerPack[] = [
   {
+    id: "hell-minions",
+    title: "Hell Minions",
+    cover: HELL_MINIONS_COVER,
+    coverIsImage: true,
+    stickers: HELL_MINIONS_STICKERS.map(asStickerText),
+    meta: HELL_MINIONS_PACK,
+  },
+  {
     id: "special",
     title: "Special pack",
     cover: SPECIAL_PACK_COVER,
