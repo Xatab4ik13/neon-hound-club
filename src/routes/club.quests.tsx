@@ -241,7 +241,7 @@ function QuestCard({ q }: { q: QuestItem }) {
         <div className="min-w-0 flex-1">
           <h3
             className={`text-[15px] font-semibold leading-snug ${
-              done ? "text-muted-foreground line-through" : "text-foreground"
+              done ? "text-muted-foreground opacity-60" : "text-foreground"
             }`}
           >
             {q.title}
