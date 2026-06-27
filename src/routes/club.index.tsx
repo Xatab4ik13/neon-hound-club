@@ -929,6 +929,7 @@ function CommentsSheet({
         onReply={() => handleReply(c)}
         onLongPress={() => setActionTarget(c)}
         onMore={() => setActionTarget(c)}
+        onDoubleTap={() => commentReactionsStore.toggle(c.id, "🔥")}
       />
     );
 
@@ -1112,6 +1113,27 @@ function CommentsSheet({
   );
 }
 
+// Всплывающее «🔥» по двойному тапу (Telegram-style heart, наш огонь).
+function DoubleTapSplash() {
+  return (
+    <span
+      aria-hidden
+      className="pointer-events-none absolute inset-0 flex items-center justify-center text-[44px] leading-none"
+      style={{ animation: "hh-splash 700ms cubic-bezier(.34,1.56,.64,1) forwards" }}
+    >
+      🔥
+      <style>{`
+        @keyframes hh-splash {
+          0%   { opacity: 0; transform: scale(0.4); }
+          30%  { opacity: 1; transform: scale(1.25); }
+          70%  { opacity: 1; transform: scale(1); }
+          100% { opacity: 0; transform: scale(1.1) translateY(-12px); }
+        }
+      `}</style>
+    </span>
+  );
+}
+
 // Скелетон списка комментов на момент подгрузки full.
 function CommentSkeletonList({ count }: { count: number }) {
   return (
@@ -1144,6 +1166,7 @@ const CommentItem = memo(function CommentItem({
   onCancelEdit,
   onLongPress,
   onMore,
+  onDoubleTap,
 }: {
   comment: Comment;
   /** Если задан — только эти @nick рендерятся как кликабельные ссылки. */
@@ -1157,6 +1180,8 @@ const CommentItem = memo(function CommentItem({
   onLongPress?: () => void;
   /** Клик по «…» — тот же action-sheet. */
   onMore?: () => void;
+  /** Двойной тап по тексту/стикеру — быстрая реакция 🔥. */
+  onDoubleTap?: () => void;
 }) {
   const liked = comment.liked;
   const author = comment.author;
@@ -1171,9 +1196,20 @@ const CommentItem = memo(function CommentItem({
     if (editing) setDraft(comment.text);
   }, [editing, comment.text]);
 
-  // Long-press detection (touch). На десктопе — contextmenu.
+  // 🔥-сплеш по двойному тапу
+  const [splash, setSplash] = useState(false);
+  const splashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const triggerSplash = useCallback(() => {
+    setSplash(true);
+    if (splashTimer.current) clearTimeout(splashTimer.current);
+    splashTimer.current = setTimeout(() => setSplash(false), 700);
+  }, []);
+  useEffect(() => () => { if (splashTimer.current) clearTimeout(splashTimer.current); }, []);
+
+  // Long-press + double-tap detection. Один обработчик для touch и click.
   const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const longPressedRef = useRef(false);
+  const lastTapRef = useRef(0);
   const handlePressStart = useCallback(() => {
     if (!onLongPress) return;
     longPressedRef.current = false;
@@ -1189,6 +1225,19 @@ const CommentItem = memo(function CommentItem({
       pressTimer.current = null;
     }
   }, []);
+  const handleTap = useCallback(() => {
+    if (longPressedRef.current) return;
+    if (!onDoubleTap) return;
+    const now = Date.now();
+    if (now - lastTapRef.current < 300) {
+      lastTapRef.current = 0;
+      haptic("success");
+      triggerSplash();
+      onDoubleTap();
+    } else {
+      lastTapRef.current = now;
+    }
+  }, [onDoubleTap, triggerSplash]);
   const handleContextMenu = useCallback(
     (e: React.MouseEvent) => {
       if (!onLongPress) return;
@@ -1282,11 +1331,12 @@ const CommentItem = memo(function CommentItem({
           </div>
         ) : stickerUrl ? (
           <div
-            className="mt-1 select-none"
+            className="relative mt-1 select-none"
             onTouchStart={handlePressStart}
             onTouchEnd={handlePressEnd}
             onTouchMove={handlePressEnd}
             onTouchCancel={handlePressEnd}
+            onClick={handleTap}
             onContextMenu={handleContextMenu}
           >
             <img
@@ -1298,19 +1348,22 @@ const CommentItem = memo(function CommentItem({
               referrerPolicy="no-referrer"
               className="h-48 w-48 select-none object-contain md:h-52 md:w-52"
             />
+            {splash && <DoubleTapSplash />}
           </div>
         ) : (
           <div
-            className="mt-1 inline-block max-w-full select-text rounded-2xl rounded-tl-sm border border-white/[0.05] bg-white/[0.03] px-3 py-2"
+            className="relative mt-1 inline-block max-w-full select-text rounded-2xl rounded-tl-sm border border-white/[0.05] bg-white/[0.03] px-3 py-2"
             onTouchStart={handlePressStart}
             onTouchEnd={handlePressEnd}
             onTouchMove={handlePressEnd}
             onTouchCancel={handlePressEnd}
+            onClick={handleTap}
             onContextMenu={handleContextMenu}
           >
             <p className={`break-words leading-relaxed text-foreground/90 ${large ? "text-[14.5px]" : "text-[13.5px]"}`}>
               {renderCommentText(comment.text, knownNicks)}
             </p>
+            {splash && <DoubleTapSplash />}
           </div>
         )}
 
