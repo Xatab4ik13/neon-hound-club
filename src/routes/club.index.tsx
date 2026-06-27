@@ -1112,6 +1112,27 @@ function CommentsSheet({
   );
 }
 
+// Всплывающее «🔥» по двойному тапу (Telegram-style heart, наш огонь).
+function DoubleTapSplash() {
+  return (
+    <span
+      aria-hidden
+      className="pointer-events-none absolute inset-0 flex items-center justify-center text-[44px] leading-none"
+      style={{ animation: "hh-splash 700ms cubic-bezier(.34,1.56,.64,1) forwards" }}
+    >
+      🔥
+      <style>{`
+        @keyframes hh-splash {
+          0%   { opacity: 0; transform: scale(0.4); }
+          30%  { opacity: 1; transform: scale(1.25); }
+          70%  { opacity: 1; transform: scale(1); }
+          100% { opacity: 0; transform: scale(1.1) translateY(-12px); }
+        }
+      `}</style>
+    </span>
+  );
+}
+
 // Скелетон списка комментов на момент подгрузки full.
 function CommentSkeletonList({ count }: { count: number }) {
   return (
