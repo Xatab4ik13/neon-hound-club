@@ -1258,6 +1258,7 @@ const CommentItem = memo(function CommentItem({
   const count = comment.likes;
   const authorIsBlogger = author.isBlogger;
   const stickerUrl = getCommentStickerUrl(comment);
+  const stickerRef = useRef<StickerViewHandle | null>(null);
 
   // Локальный текст для inline-edit
   const [draft, setDraft] = useState(comment.text);
