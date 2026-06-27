@@ -388,31 +388,32 @@ export const PostCard = memo(function PostCard({ post, moderate = false }: { pos
         onOpen={() => { setCommentsEverOpened(true); setCommentsOpen(true); }}
       />
       </div>
-
-      {commentsEverOpened && (
-        <CommentsSheet
-          open={commentsOpen}
-          onOpenChange={setCommentsOpen}
-          post={post}
-          moderate={moderate}
-        />
-      )}
-
-      {post.image && viewerEverOpened && (
-        <ImageViewer
-          src={post.image}
-          open={viewerOpen}
-          transitionName={`post-img-${post.id}`}
-          onClose={closeViewer}
-          onDoubleTap={() => {
-            if (!liked) {
-              haptic("success");
-              feedStore.toggleLike(post.id, true);
-            }
-          }}
-        />
-      )}
     </article>
+
+    {commentsEverOpened && (
+      <CommentsSheet
+        open={commentsOpen}
+        onOpenChange={setCommentsOpen}
+        post={post}
+        moderate={moderate}
+      />
+    )}
+
+    {post.image && viewerEverOpened && (
+      <ImageViewer
+        src={post.image}
+        open={viewerOpen}
+        transitionName={`post-img-${post.id}`}
+        onClose={closeViewer}
+        onDoubleTap={() => {
+          if (!liked) {
+            haptic("success");
+            feedStore.toggleLike(post.id, true);
+          }
+        }}
+      />
+    )}
+    </>
   );
 });
 
