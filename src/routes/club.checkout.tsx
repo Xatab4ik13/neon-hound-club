@@ -1,11 +1,11 @@
 import { createFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { CheckCircle2, MapPin, Ticket, Truck, User } from "lucide-react";
+import { CheckCircle2, Loader2, MapPin, Ticket, Truck, User } from "lucide-react";
 import { PageHeader } from "@/components/club/PageHeader";
 import { PaymentBadges } from "@/components/brand/PaymentBadges";
 import { PayButton } from "@/components/brand/PayButton";
 import { DadataInput } from "@/components/ui/DadataInput";
-import type { DadataAddressData } from "@/lib/dadata";
+import { CdekDeliveryPicker, EMPTY_CDEK_STATE, type CdekPickerState } from "@/components/checkout/CdekDeliveryPicker";
 import { LEGAL } from "@/data/legal";
 import { useCart } from "@/hooks/use-cart";
 import { useViewer } from "@/hooks/use-viewer";
@@ -13,7 +13,7 @@ import { useViewer } from "@/hooks/use-viewer";
 import { useMyProfile, useMyAddress } from "@/lib/garage-api";
 import { formatRuPhone } from "@/lib/phone";
 import { hhToast } from "@/lib/hh-toast";
-import { BACKEND_URL } from "@/lib/api";
+import { apiFetch, BACKEND_URL } from "@/lib/api";
 import { startPayment } from "@/lib/pwa-pay";
 
 const PAY_ACTION = `${BACKEND_URL}/api/v1/payments/redirect`;
@@ -97,17 +97,41 @@ function ClubCheckoutPage() {
     });
   }, [profileQ.data]);
 
+  // СДЭК-блок. Состояние держим тут — компонент только редактирует.
+  const [cdek, setCdek] = useState<CdekPickerState>(EMPTY_CDEK_STATE);
+
   useEffect(() => {
     const a = addressQ.data;
     if (!a) return;
-    const composed = [a.city, a.postalCode, a.pickupPoint].filter(Boolean).join(", ");
     setForm((f) => {
       const next = { ...f };
       const t = touchedRef.current;
       if (!t.has("name") && a.fullName) next.name = a.fullName;
       if (!t.has("phone") && a.phone) next.phone = formatRuPhone(a.phone);
       if (!t.has("city") && a.city) next.city = a.city;
-      if (!t.has("address") && composed) next.address = composed;
+      return next;
+    });
+    // Подставляем сохранённый ПВЗ/город из профиля, если юзер ещё ничего не выбрал.
+    setCdek((c) => {
+      if (c.cityCode) return c;
+      const next: CdekPickerState = { ...c };
+      const anyA = a as unknown as {
+        cdekCityCode?: number | null;
+        cdekPvzCode?: string | null;
+        cdekPvzAddress?: string | null;
+        preferredMode?: "pvz" | "courier";
+        streetAddress?: string;
+      };
+      if (anyA.cdekCityCode) {
+        next.cityCode = anyA.cdekCityCode;
+        next.cityName = a.city || "";
+      }
+      if (anyA.preferredMode === "courier") next.mode = "courier";
+      if (anyA.cdekPvzCode) {
+        next.pvzCode = anyA.cdekPvzCode;
+        next.pvzAddress = anyA.cdekPvzAddress ?? null;
+      }
+      if (anyA.streetAddress) next.street = anyA.streetAddress;
       return next;
     });
   }, [addressQ.data]);
@@ -153,21 +177,97 @@ function ClubCheckoutPage() {
     [orderableItems],
   );
 
-  const cityFallback = isDigitalOnly
-    ? "—"
-    : form.city.trim() || form.address.split(",")[0]?.trim() || "—";
-  const addressFallback = isDigitalOnly ? "—" : form.address;
+  // Виртуальные товары (Hell Pass, билеты): доставка не нужна.
+  const needsShipping = useMemo(
+    () => orderableItems.some((i) => i.kind === "physical" || i.kind === "preorder"),
+    [orderableItems],
+  );
+
+  // --- Расчёт стоимости доставки СДЭК (дебаунс, при смене города/режима/ПВЗ) ---
+  const [shipPrice, setShipPrice] = useState<number | null>(null);
+  const [shipDays, setShipDays] = useState<{ min: number; max: number } | null>(null);
+  const [shipCalcLoading, setShipCalcLoading] = useState(false);
+  const [shipCalcError, setShipCalcError] = useState<string | null>(null);
+
+  const canCalculate =
+    needsShipping &&
+    cdek.cityCode != null &&
+    ((cdek.mode === "pvz" && cdek.pvzCode) || (cdek.mode === "courier" && cdek.street.trim().length >= 5));
+
+  useEffect(() => {
+    if (!needsShipping) {
+      setShipPrice(0);
+      setShipDays(null);
+      setShipCalcError(null);
+      return;
+    }
+    if (!canCalculate) {
+      setShipPrice(null);
+      setShipDays(null);
+      setShipCalcError(null);
+      return;
+    }
+    const productPayload = orderableItems
+      .filter((i) => i.kind !== "virtual" && i.kind !== "digital")
+      .map((i) => ({ productId: i.productId!, qty: i.qty }));
+    if (productPayload.length === 0) {
+      setShipPrice(0);
+      setShipDays(null);
+      return;
+    }
+    let cancelled = false;
+    setShipCalcLoading(true);
+    setShipCalcError(null);
+    const t = setTimeout(() => {
+      apiFetch<{ totalSum: number; periodMin: number; periodMax: number }>(
+        "/api/v1/cdek/calculate",
+        {
+          method: "POST",
+          body: JSON.stringify({
+            cityCode: cdek.cityCode,
+            mode: cdek.mode,
+            items: productPayload,
+          }),
+        },
+      )
+        .then((r) => {
+          if (cancelled) return;
+          setShipPrice(r.totalSum);
+          setShipDays({ min: r.periodMin, max: r.periodMax });
+        })
+        .catch((e: { message?: string }) => {
+          if (cancelled) return;
+          setShipPrice(null);
+          setShipDays(null);
+          setShipCalcError(e?.message || "Не удалось рассчитать доставку");
+        })
+        .finally(() => {
+          if (!cancelled) setShipCalcLoading(false);
+        });
+    }, 250);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+    // canCalculate уже включает cdek.cityCode/mode/pvzCode/street — этого достаточно
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canCalculate, cdek.cityCode, cdek.mode, cdek.pvzCode, cdek.street, orderableItems.length, needsShipping]);
+
+  const grandTotal = total + (shipPrice ?? 0);
+
+  const shippingAddressForSubmit = needsShipping
+    ? cdek.mode === "pvz"
+      ? cdek.pvzAddress ?? ""
+      : `${cdek.cityName}, ${cdek.street}`.trim()
+    : "—";
+  const cityForSubmit = needsShipping ? cdek.cityName || "—" : "—";
 
   const set = <K extends keyof CheckoutProfile>(k: K, v: string) => {
     touchedRef.current.add(k);
     setForm((f) => ({ ...f, [k]: v }));
   };
 
-  
-
   // Клиентская валидация.
-  // Для checkout всегда идём через JSON + /pay/go, чтобы не ломаться в PWA/
-  // встроенных webview и не зависеть от cross-origin form redirect.
   const guard = (e: React.FormEvent<HTMLFormElement>) => {
     if (orderableItems.length === 0) {
       e.preventDefault();
@@ -184,10 +284,27 @@ function ClubCheckoutPage() {
       hhToast.error("Укажи телефон.");
       return;
     }
-    if (!isDigitalOnly && form.address.trim().length < 5) {
-      e.preventDefault();
-      hhToast.error("Укажи адрес доставки.");
-      return;
+    if (needsShipping) {
+      if (!cdek.cityCode) {
+        e.preventDefault();
+        hhToast.error("Выбери город доставки.");
+        return;
+      }
+      if (cdek.mode === "pvz" && !cdek.pvzCode) {
+        e.preventDefault();
+        hhToast.error("Выбери пункт выдачи СДЭК.");
+        return;
+      }
+      if (cdek.mode === "courier" && cdek.street.trim().length < 5) {
+        e.preventDefault();
+        hhToast.error("Укажи улицу, дом и квартиру для курьера.");
+        return;
+      }
+      if (shipPrice == null) {
+        e.preventDefault();
+        hhToast.error("Дождись расчёта стоимости доставки.");
+        return;
+      }
     }
     if (!agree) {
       e.preventDefault();
@@ -199,7 +316,6 @@ function ClubCheckoutPage() {
       }
       return;
     }
-    // Сохраняем профиль для следующего заказа.
     if (typeof window !== "undefined") {
       try {
         window.localStorage.setItem(PROFILE_KEY, JSON.stringify(form));
@@ -209,17 +325,23 @@ function ClubCheckoutPage() {
     }
 
     e.preventDefault();
-    void startPayment(
-      {
-        target: "order",
-        shipping_fio: form.name,
-        shipping_phone: form.phone,
-        shipping_city: cityFallback,
-        shipping_address: addressFallback,
-        method: "sbp",
-      },
-      { forceLandingPage: true },
-    ).then((r) => {
+    const payload: Record<string, string> = {
+      target: "order",
+      shipping_fio: form.name,
+      shipping_phone: form.phone,
+      shipping_city: cityForSubmit,
+      shipping_address: shippingAddressForSubmit || "—",
+      shipping_mode: needsShipping ? cdek.mode : "none",
+      method: "sbp",
+    };
+    if (needsShipping && cdek.cityCode) {
+      payload.cdek_city_code = String(cdek.cityCode);
+      if (cdek.mode === "pvz" && cdek.pvzCode) {
+        payload.cdek_pvz_code = cdek.pvzCode;
+        if (cdek.pvzAddress) payload.cdek_pvz_address = cdek.pvzAddress;
+      }
+    }
+    void startPayment(payload, { forceLandingPage: true }).then((r) => {
       if (!r.ok) hhToast.error("Ошибка оплаты", { meta: r.message });
     });
   };
@@ -249,8 +371,20 @@ function ClubCheckoutPage() {
         <input type="hidden" name="method" value="sbp" />
         <input type="hidden" name="shipping_fio" value={form.name} />
         <input type="hidden" name="shipping_phone" value={form.phone} />
-        <input type="hidden" name="shipping_city" value={cityFallback} />
-        <input type="hidden" name="shipping_address" value={addressFallback} />
+        <input type="hidden" name="shipping_city" value={cityForSubmit} />
+        <input type="hidden" name="shipping_address" value={shippingAddressForSubmit || "—"} />
+        <input type="hidden" name="shipping_mode" value={needsShipping ? cdek.mode : "none"} />
+        {needsShipping && cdek.cityCode ? (
+          <input type="hidden" name="cdek_city_code" value={String(cdek.cityCode)} />
+        ) : null}
+        {needsShipping && cdek.mode === "pvz" && cdek.pvzCode ? (
+          <>
+            <input type="hidden" name="cdek_pvz_code" value={cdek.pvzCode} />
+            {cdek.pvzAddress ? (
+              <input type="hidden" name="cdek_pvz_address" value={cdek.pvzAddress} />
+            ) : null}
+          </>
+        ) : null}
 
         {/* ЛЕВАЯ КОЛОНКА: данные получателя/доставки */}
         <div className="space-y-5">
@@ -294,53 +428,65 @@ function ClubCheckoutPage() {
           </Section>
 
           {/* Доставка / выдача */}
-          {isDigitalOnly ? (
+          {isDigitalOnly || !needsShipping ? (
             <div className="flex items-center gap-3 rounded-2xl border border-primary/25 bg-primary/[0.06] px-4 py-3">
               <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/15 text-primary">
                 <CheckCircle2 className="h-4 w-4" />
               </span>
               <div className="min-w-0 flex-1">
                 <div className="text-[14px] font-semibold text-foreground">
-                  Цифровой товар
+                  {isDigitalOnly ? "Цифровой товар" : "Доступ сразу после оплаты"}
                 </div>
                 <div className="text-[12px] text-muted-foreground">
-                  Файл придёт на {form.email || "указанный email"} сразу после оплаты.
+                  {isDigitalOnly
+                    ? `Файл придёт на ${form.email || "указанный email"} сразу после оплаты.`
+                    : "Доставка не требуется — активируем в кабинете."}
                 </div>
               </div>
             </div>
           ) : (
             <>
-              <Section icon={<MapPin className="h-3.5 w-3.5" />} title="Доставка">
-                <FieldRow label="Адрес" last>
-                  <DadataInput
-                    type="address"
-                    value={form.address}
-                    onChange={(v) => set("address", v)}
-                    onSelect={(s) => {
-                      const d = s.data as DadataAddressData;
-                      const city = d.city_with_type || d.settlement_with_type || "";
-                      setForm((f) => ({ ...f, address: s.value, city: city || f.city }));
-                      touchedRef.current.add("address");
-                      if (city) touchedRef.current.add("city");
-                    }}
-                    placeholder="Город, улица, дом, кв."
-                    autoComplete="street-address"
-                    required
-                  />
-                </FieldRow>
+              <Section icon={<MapPin className="h-3.5 w-3.5" />} title="Доставка СДЭК">
+                <div className="p-3">
+                  <CdekDeliveryPicker value={cdek} onChange={setCdek} />
+                </div>
               </Section>
 
-              <div className="flex items-center gap-3 rounded-2xl border border-white/[0.06] bg-card/40 px-4 py-3">
-                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
-                  <Truck className="h-4 w-4" />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <div className="text-[14px] font-semibold text-foreground">СДЭК</div>
-                  <div className="text-[12px] text-muted-foreground">
-                    По всей России, 2–5 дней. Расчёт курьером.
+              <div className="rounded-2xl border border-white/[0.06] bg-card/40 px-4 py-3">
+                <div className="flex items-center gap-3">
+                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
+                    <Truck className="h-4 w-4" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[14px] font-semibold text-foreground">
+                      Стоимость доставки
+                    </div>
+                    <div className="text-[12px] text-muted-foreground">
+                      {!cdek.cityCode
+                        ? "Выбери город — рассчитаем автоматически."
+                        : cdek.mode === "pvz" && !cdek.pvzCode
+                          ? "Выбери пункт выдачи."
+                          : cdek.mode === "courier" && cdek.street.trim().length < 5
+                            ? "Укажи улицу и дом."
+                            : shipCalcLoading
+                              ? "Считаем тариф СДЭК…"
+                              : shipCalcError
+                                ? shipCalcError
+                                : shipDays
+                                  ? `~${shipDays.min}–${shipDays.max} дн., из Краснодара`
+                                  : "—"}
+                    </div>
                   </div>
+                  <span className="font-mono text-[15px] font-bold tabular-nums text-foreground">
+                    {shipCalcLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                    ) : shipPrice != null ? (
+                      `${shipPrice.toLocaleString("ru-RU")} ₽`
+                    ) : (
+                      "—"
+                    )}
+                  </span>
                 </div>
-                <CheckCircle2 className="h-5 w-5 shrink-0 text-primary" />
               </div>
             </>
           )}
@@ -409,13 +555,34 @@ function ClubCheckoutPage() {
                 </li>
               ))}
             </ul>
+            <div className="space-y-1.5 border-t border-white/[0.05] px-4 py-3">
+              <div className="flex items-center justify-between text-[13px]">
+                <span className="text-muted-foreground">Товары</span>
+                <span className="font-mono tabular-nums text-foreground">
+                  {total.toLocaleString("ru-RU")} ₽
+                </span>
+              </div>
+              {needsShipping && (
+                <div className="flex items-center justify-between text-[13px]">
+                  <span className="text-muted-foreground">Доставка СДЭК</span>
+                  <span className="font-mono tabular-nums text-foreground">
+                    {shipCalcLoading
+                      ? "…"
+                      : shipPrice != null
+                        ? `${shipPrice.toLocaleString("ru-RU")} ₽`
+                        : "—"}
+                  </span>
+                </div>
+              )}
+            </div>
             <div className="flex items-center justify-between border-t border-white/[0.05] px-4 py-3.5">
               <span className="text-[15px] font-semibold">Итого</span>
               <span className="font-display text-2xl font-black tabular-nums">
-                {total.toLocaleString("ru-RU")} ₽
+                {grandTotal.toLocaleString("ru-RU")} ₽
               </span>
             </div>
           </section>
+
 
           {ticketsTotal > 0 && (
             <div className="flex items-center gap-3 rounded-2xl border border-primary/25 bg-primary/[0.08] px-4 py-3">

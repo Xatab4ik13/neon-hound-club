@@ -1,6 +1,6 @@
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
-import { orders, orderItems, products, cartItems } from "../db/schema/shop.js";
+import { orders, orderItems, products, cartItems, type ProductKind } from "../db/schema/shop.js";
 import { users } from "../db/schema/users.js";
 import { userStickerPacks } from "../db/schema/stickers.js";
 import { ticketCredit } from "./tickets.js";
@@ -9,6 +9,7 @@ import { tryCompleteQuest } from "./quests.js";
 import { getActivePassPerks } from "./pass.js";
 import { sendMail } from "./mailer.js";
 import { orderConfirmedTemplate, type DigitalItem } from "./email-templates/order-confirmed.js";
+import { cdek, CDEK_TARIFFS, type CdekDeliveryMode } from "./cdek.js";
 
 const FRONTEND_ORIGIN = (process.env.FRONTEND_ORIGIN || "https://hhr.pro").replace(/\/$/, "");
 
@@ -32,6 +33,14 @@ export type CreateOrderInput = {
     city: string;
     address: string;
     postalCode?: string;
+    /** Код города в СДЭК — обязателен для physical/preorder. */
+    cdekCityCode?: number | null;
+    /** Код ПВЗ (если mode='pvz'). */
+    cdekPvzCode?: string | null;
+    /** Человекочитаемый адрес ПВЗ — снапшот. */
+    cdekPvzAddress?: string | null;
+    /** 'pvz' | 'courier' | 'none'. 'none' для virtual/digital. */
+    mode?: "pvz" | "courier" | "none";
   };
   comment?: string;
 };
@@ -66,6 +75,7 @@ export async function createOrderFromCartForUser(
 /**
  * Создаёт заказ для юзера: грузит товары, валидирует размеры/остатки, считает скидку
  * по активному Hell Pass, резервирует остатки и пишет orders+order_items.
+ * Дополнительно: рассчитывает стоимость доставки СДЭК на сервере (фронту не доверяем).
  * Бросает OrderCreateError с понятным сообщением и HTTP-кодом.
  */
 export async function createOrderForUser(
@@ -105,14 +115,80 @@ export async function createOrderForUser(
       bonusTicketsSnapshot: p.bonusTickets,
       qty: i.qty,
       sizeSnapshot: hasSizes ? i.size ?? null : null,
+      kindSnapshot: (p.kind ?? "physical") as ProductKind,
     };
   });
 
+  // ---------- СДЭК: расчёт доставки на сервере ----------
+  // physical/preorder требуют city+(pvz или адрес курьера); virtual/digital — none.
+  const kinds = new Set(itemSnapshots.map((s) => s.kindSnapshot));
+  const needShipping = kinds.has("physical") || kinds.has("preorder");
+  let shippingMode: "pvz" | "courier" | "none" = "none";
+  let shippingPriceRub = 0;
+  let cdekTariffCode: number | null = null;
+
+  if (needShipping) {
+    const mode = shipping.mode ?? "pvz";
+    if (mode === "none") {
+      throw new OrderCreateError("shipping_mode_required", "Выбери способ доставки", 400);
+    }
+    if (!shipping.cdekCityCode || shipping.cdekCityCode <= 0) {
+      throw new OrderCreateError("cdek_city_required", "Выбери город доставки", 400);
+    }
+    if (mode === "pvz" && !shipping.cdekPvzCode) {
+      throw new OrderCreateError("cdek_pvz_required", "Выбери пункт выдачи СДЭК", 400);
+    }
+    if (mode === "courier" && (!shipping.address || shipping.address.trim().length < 5)) {
+      throw new OrderCreateError("shipping_address_required", "Укажи адрес доставки", 400);
+    }
+
+    const packages: Array<{ weightG: number; lengthCm: number; widthCm: number; heightCm: number }> = [];
+    for (const it of items) {
+      const p = productMap.get(it.productId)!;
+      if (p.kind === "virtual" || p.kind === "digital") continue;
+      if (!p.weightG || !p.lengthCm || !p.widthCm || !p.heightCm) {
+        throw new OrderCreateError(
+          "product_missing_dimensions",
+          `У товара «${p.title}» не заданы вес/габариты — напиши в поддержку`,
+          409,
+          p.id,
+        );
+      }
+      for (let k = 0; k < it.qty; k++) {
+        packages.push({
+          weightG: p.weightG,
+          lengthCm: p.lengthCm,
+          widthCm: p.widthCm,
+          heightCm: p.heightCm,
+        });
+      }
+    }
+    try {
+      const calc = await cdek.calculate({
+        toCityCode: shipping.cdekCityCode,
+        mode: mode as CdekDeliveryMode,
+        packages,
+      });
+      shippingPriceRub = calc.totalSum;
+      cdekTariffCode = calc.tariffCode;
+      shippingMode = mode;
+    } catch (e) {
+      throw new OrderCreateError(
+        "cdek_calc_failed",
+        "Не удалось рассчитать доставку СДЭК. Попробуй ещё раз.",
+        502,
+      );
+    }
+  }
+
+  // ---------- Скидка Pass и итог ----------
   const perks = await getActivePassPerks(userId);
   const discountPct = perks.shopDiscountPct;
   const discountRub = Math.floor((subtotalRub * discountPct) / 100);
-  const totalRub = Math.max(0, subtotalRub - discountRub);
+  const goodsAfterDiscount = Math.max(0, subtotalRub - discountRub);
+  const totalRub = goodsAfterDiscount + shippingPriceRub;
 
+  // ---------- Резерв остатков ----------
   for (const i of items) {
     const p = productMap.get(i.productId)!;
     const hasSizes = Array.isArray(p.sizes) && p.sizes.length > 0;
@@ -137,6 +213,24 @@ export async function createOrderForUser(
     }
   }
 
+  // Сводка типов для фильтра в /club/orders.
+  let kindSummary: string = "physical";
+  if (kinds.size === 1) kindSummary = [...kinds][0];
+  else kindSummary = "mixed";
+
+  // Снапшот адреса доставки в jsonb (включая СДЭК-поля).
+  const shippingSnapshot = {
+    fio: shipping.fio,
+    phone: shipping.phone,
+    city: shipping.city,
+    address: shipping.address,
+    postalCode: shipping.postalCode,
+    cdekCityCode: shipping.cdekCityCode ?? null,
+    cdekPvzCode: shipping.cdekPvzCode ?? null,
+    cdekPvzAddress: shipping.cdekPvzAddress ?? null,
+    mode: shippingMode,
+  };
+
   const [order] = await db
     .insert(orders)
     .values({
@@ -147,8 +241,12 @@ export async function createOrderForUser(
       discountRub,
       totalRub,
       bonusTicketsTotal: bonusTotal,
-      shipping,
+      shipping: shippingSnapshot as any,
       comment: comment ?? null,
+      shippingPriceRub,
+      shippingMode,
+      cdekTariffCode: cdekTariffCode ?? undefined,
+      kindSummary,
       // Дедлайн оплаты — 2 часа. Дальше воркер expireUnpaidOrders снесёт.
       expiresAt: new Date(Date.now() + 2 * 60 * 60 * 1000),
     })
