@@ -182,44 +182,31 @@ export async function sendMail(opts: MailOptions): Promise<void> {
   const from = getMailFrom();
   const provider = getMailProvider();
 
-  try {
-    if (provider === "resend") {
-      await sendViaResend(opts, from);
-      return;
-    }
+  // Явно выбранный провайдер — без фолбэков.
+  if (provider === "resend") return sendViaResend(opts, from);
+  if (provider === "unisender") return sendViaUnisender(opts, from);
+  if (provider === "smtp") return sendViaSmtp(opts, from);
 
-    if (provider === "unisender") {
-      await sendViaUnisender(opts, from);
-      return;
-    }
+  // auto: пробуем все настроенные провайдеры по очереди.
+  const attempts: Array<{ name: string; fn: () => Promise<void> }> = [];
+  if (process.env.UNISENDER_API_KEY) attempts.push({ name: "unisender", fn: () => sendViaUnisender(opts, from) });
+  if (process.env.RESEND_API_KEY) attempts.push({ name: "resend", fn: () => sendViaResend(opts, from) });
+  if (getTransport()) attempts.push({ name: "smtp", fn: () => sendViaSmtp(opts, from) });
 
-    if (provider === "smtp") {
-      await sendViaSmtp(opts, from);
-      return;
-    }
-
-    if (process.env.UNISENDER_API_KEY) {
-      await sendViaUnisender(opts, from);
-      return;
-    }
-
-    if (process.env.RESEND_API_KEY) {
-      await sendViaResend(opts, from);
-      return;
-    }
-
-    if (getTransport()) {
-      await sendViaSmtp(opts, from);
-      return;
-    }
-
+  if (attempts.length === 0) {
     console.warn("[mailer] mail provider is not configured, письмо в лог:\n", { from: from.raw, ...opts });
-  } catch (error) {
-    if (provider === "auto" && getTransport()) {
-      console.warn("[mailer] HTTP provider failed, fallback to SMTP", error);
-      await sendViaSmtp(opts, from);
-      return;
-    }
-    throw error;
+    throw new Error("[mailer] no mail provider configured");
   }
+
+  let lastErr: unknown;
+  for (const a of attempts) {
+    try {
+      await a.fn();
+      return;
+    } catch (err) {
+      lastErr = err;
+      console.warn(`[mailer] provider ${a.name} failed, trying next`, err);
+    }
+  }
+  throw lastErr instanceof Error ? lastErr : new Error("[mailer] all providers failed");
 }

@@ -54,7 +54,7 @@ function makeVerificationToken() {
   return { raw, hash };
 }
 
-async function issueAndSendVerification(userId: string, email: string, nick: string) {
+async function issueAndSendVerification(userId: string, email: string, nick: string): Promise<boolean> {
   const { raw, hash } = makeVerificationToken();
   await db.insert(emailVerificationTokens).values({
     userId,
@@ -65,9 +65,11 @@ async function issueAndSendVerification(userId: string, email: string, nick: str
   const { subject, html, text } = verifyEmailTemplate({ nick, verifyUrl });
   try {
     await sendMail({ to: email, subject, html, text });
+    return true;
   } catch (err) {
-    // не валим регистрацию из-за SMTP; юзер сможет нажать "Отправить заново"
-    console.error("[mailer] send failed", err);
+    // не валим регистрацию из-за SMTP; фронт покажет «не доставлено, попробуй позже»
+    console.error("[mailer] send failed for", email, err);
+    return false;
   }
 }
 
@@ -102,13 +104,14 @@ export async function authRoutes(app: FastifyInstance) {
       try { await attachReferral(created.id, ref); } catch (e) { req.log.error({ err: e }, "attachReferral failed"); }
     }
 
-    await issueAndSendVerification(created.id, created.email, created.nick);
+    const mailDelivered = await issueAndSendVerification(created.id, created.email, created.nick);
 
     // Без авто-логина: ждём подтверждения email.
     return reply.code(201).send({
       ok: true,
       pendingVerification: true,
       email: created.email,
+      mailDelivered,
     });
   });
 
@@ -216,12 +219,14 @@ export async function authRoutes(app: FastifyInstance) {
     }
     const { email } = parsed.data;
 
-    // anti-enumeration: всегда ok
+    // anti-enumeration: всегда ok. mailDelivered отдаём чтобы фронт мог
+    // отличить «отправили снова» от «и снова не доставлено».
     const [u] = await db.select().from(users).where(eq(users.email, email)).limit(1);
+    let mailDelivered = true;
     if (u && !u.emailVerified) {
-      await issueAndSendVerification(u.id, u.email, u.nick);
+      mailDelivered = await issueAndSendVerification(u.id, u.email, u.nick);
     }
-    return reply.send({ ok: true });
+    return reply.send({ ok: true, mailDelivered });
   });
 
   app.post("/logout", async (_req, reply) => {
