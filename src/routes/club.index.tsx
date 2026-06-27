@@ -13,7 +13,7 @@ import { useMyProfile } from "@/lib/garage-api";
 import { useMyStickerPacks, STICKER_PACK_PRODUCT_SLUGS } from "@/lib/stickers-api";
 import { SPECIAL_PACK, SPECIAL_PACK_STICKERS, SPECIAL_PACK_COVER, type StickerMeta } from "@/assets/stickers/special";
 import { HELL_MINIONS_PACK, HELL_MINIONS_STICKERS, HELL_MINIONS_COVER } from "@/assets/stickers/hell-minions";
-import { StickerView } from "@/components/club/StickerView";
+import { StickerView, type StickerViewHandle } from "@/components/club/StickerView";
 import { FeedHeroCarousel } from "@/components/club/FeedHeroCarousel";
 import { LikeButton, REACTIONS, type Reaction } from "@/components/club/LikeButton";
 import { ImageViewer } from "@/components/club/ImageViewer";
@@ -1258,6 +1258,7 @@ const CommentItem = memo(function CommentItem({
   const count = comment.likes;
   const authorIsBlogger = author.isBlogger;
   const stickerUrl = getCommentStickerUrl(comment);
+  const stickerRef = useRef<StickerViewHandle | null>(null);
 
   // Локальный текст для inline-edit
   const [draft, setDraft] = useState(comment.text);
@@ -1400,18 +1401,26 @@ const CommentItem = memo(function CommentItem({
           </div>
         ) : stickerUrl ? (
           <div
-            className="relative mt-1 select-none"
+            className="relative mt-1 cursor-pointer select-none"
             onTouchStart={handlePressStart}
             onTouchEnd={handlePressEnd}
             onTouchMove={handlePressEnd}
             onTouchCancel={handlePressEnd}
-            onClick={handleTap}
+            onClick={() => {
+              // Telegram-style: одиночный тап = перезапуск анимации.
+              // Двойной тап продолжает работать через handleTap (реакция-сплеш).
+              stickerRef.current?.replay();
+              haptic("light");
+              handleTap();
+            }}
             onContextMenu={handleContextMenu}
           >
             <StickerView
+              ref={stickerRef}
               url={stickerUrl}
               alt="стикер"
               size={208}
+              loop={false}
               className="h-48 w-48 select-none object-contain md:h-52 md:w-52"
             />
             {splash && <DoubleTapSplash />}

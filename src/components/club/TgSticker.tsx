@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import lottie, { type AnimationItem } from "lottie-web";
 import { ungzip } from "pako";
 
@@ -19,6 +19,11 @@ interface Props {
   autoplay?: boolean;
   className?: string;
   alt?: string;
+}
+
+export interface TgStickerHandle {
+  /** Перезапустить анимацию с нулевого кадра (Telegram-style replay on tap). */
+  replay: () => void;
 }
 
 function detectKind(src: string): StickerKind {
@@ -59,20 +64,37 @@ async function loadLottieJson(src: string, kind: StickerKind): Promise<unknown> 
   return p;
 }
 
-export function TgSticker({
-  src,
-  kind,
-  size = 128,
-  loop = true,
-  autoplay = true,
-  className,
-  alt = "sticker",
-}: Props) {
+export const TgSticker = forwardRef<TgStickerHandle, Props>(function TgSticker(
+  { src, kind, size = 128, loop = true, autoplay = true, className, alt = "sticker" },
+  ref,
+) {
   const k = kind ?? detectKind(src);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
   const animRef = useRef<AnimationItem | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [visible, setVisible] = useState(false);
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      replay: () => {
+        if (animRef.current) {
+          // Lottie: на повторный тап перезапускаем с 0 и играем 1 раз
+          // (если loop=false снаружи) или просто прокручиваем заново.
+          animRef.current.goToAndPlay(0, true);
+        } else if (videoRef.current) {
+          try {
+            videoRef.current.currentTime = 0;
+            void videoRef.current.play();
+          } catch {
+            /* no-op */
+          }
+        }
+      },
+    }),
+    [],
+  );
 
   // Наблюдаем за видимостью: загружаем и анимируем только когда стикер
   // реально попал в зону видимости. Это снимает 90% лага при открытии пикера.
@@ -151,6 +173,7 @@ export function TgSticker({
   if (k === "video") {
     return (
       <video
+        ref={videoRef}
         src={src}
         style={style}
         className={className}
@@ -177,6 +200,6 @@ export function TgSticker({
   }
 
   return <div ref={containerRef} style={style} className={className} aria-label={alt} />;
-}
+});
 
 export default TgSticker;
