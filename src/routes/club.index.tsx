@@ -1259,6 +1259,14 @@ const CommentItem = memo(function CommentItem({
   const authorIsBlogger = author.isBlogger;
   const stickerUrl = getCommentStickerUrl(comment);
   const stickerRef = useRef<StickerViewHandle | null>(null);
+  const navigate = useNavigate();
+  const myPacksQ = useMyStickerPacks();
+  const stickerPack = stickerUrl ? findPackByStickerUrl(stickerUrl) : undefined;
+  const stickerLocked = !!(
+    stickerPack?.lockSlug &&
+    stickerPack?.productSlug &&
+    !(myPacksQ.data ?? []).includes(stickerPack.lockSlug)
+  );
 
   // Локальный текст для inline-edit
   const [draft, setDraft] = useState(comment.text);
