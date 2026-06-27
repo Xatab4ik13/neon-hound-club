@@ -1108,6 +1108,28 @@ function CommentsSheet({
               [style*="comment-highlight"], [style*="comment-flyin"] { animation: none !important; }
             }
           `}</style>
+
+          {/* Floating «↓ N» — внизу скролл-контейнера, sticky.
+              Прячем когда атBottom; счётчик показываем только если что-то прилетело. */}
+          <div className="pointer-events-none sticky bottom-2 z-20 flex justify-end">
+            <button
+              type="button"
+              aria-label={newSinceLeft > 0 ? `${newSinceLeft} новых · вниз` : "Вниз"}
+              onClick={() => { haptic("selection"); scrollToBottom(); }}
+              className={`pointer-events-auto relative grid h-11 w-11 place-items-center rounded-full border border-white/10 bg-[#1a1a1a]/95 text-foreground shadow-[0_8px_24px_-6px_rgba(0,0,0,0.6)] backdrop-blur-md transition-all duration-200 active:scale-90 ${
+                atBottom ? "pointer-events-none translate-y-3 scale-90 opacity-0" : "opacity-100"
+              }`}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M12 5v14M5 12l7 7 7-7" />
+              </svg>
+              {newSinceLeft > 0 && (
+                <span className="absolute -top-1 -right-1 grid min-w-[18px] h-[18px] place-items-center rounded-full bg-primary px-1 font-mono text-[10px] font-bold leading-none text-primary-foreground tabular-nums">
+                  {newSinceLeft > 99 ? "99+" : newSinceLeft}
+                </span>
+              )}
+            </button>
+          </div>
         </div>
         <div className="shrink-0 border-t border-white/[0.06] bg-[#0d0d0d]">
           <CommentComposer
