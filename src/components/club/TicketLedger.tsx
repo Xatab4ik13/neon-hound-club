@@ -129,7 +129,7 @@ export function TicketLedger({
       <div className="overflow-hidden rounded-2xl border border-white/[0.06] bg-card/40">
         {isLoading && entries.length === 0 ? (
           <div>
-            {Array.from({ length: 5 }).map((_, i) => (
+            {Array.from({ length: 2 }).map((_, i) => (
               <div key={i} className="flex items-center gap-3 border-b border-white/[0.04] px-4 py-3 last:border-b-0">
                 <Skeleton className="h-2 w-2 rounded-full" />
                 <div className="flex-1 space-y-1.5">
@@ -140,9 +140,24 @@ export function TicketLedger({
               </div>
             ))}
           </div>
+        ) : isError && entries.length === 0 ? (
+          <div className="flex flex-col items-center gap-2 px-4 py-8 text-center">
+            <span className="text-[13px] text-muted-foreground">Не удалось загрузить историю</span>
+            {onRetry && (
+              <button
+                type="button"
+                onClick={onRetry}
+                className="text-[13px] font-medium text-primary active:opacity-70"
+              >
+                Повторить
+              </button>
+            )}
+          </div>
         ) : filtered.length === 0 ? (
           <div className="px-4 py-10 text-center text-[13px] text-muted-foreground">
-            {entries.length === 0 ? "Пока пусто" : "Нет операций по фильтру"}
+            {entries.length === 0
+              ? "Пока пусто — выполни первый квест, и сюда упадут билеты"
+              : "Нет операций по фильтру"}
           </div>
         ) : (
           <ul className="divide-y divide-white/[0.05]">
