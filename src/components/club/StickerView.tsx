@@ -18,16 +18,18 @@ interface Props {
   className?: string;
   loop?: boolean;
   autoplay?: boolean;
+  /** Превью-режим для сеток: показываем только первый кадр, без RAF/анимации. */
+  preview?: boolean;
 }
 
-export function StickerView({ url, alt = "стикер", size, className, loop = true, autoplay = true }: Props) {
+export function StickerView({ url, alt = "стикер", size, className, loop = true, autoplay = true, preview = false }: Props) {
   if (isAnimated(url)) {
     return (
       <TgSticker
         src={url}
         size={size ?? "100%"}
-        loop={loop}
-        autoplay={autoplay}
+        loop={preview ? false : loop}
+        autoplay={preview ? false : autoplay}
         className={className}
         alt={alt}
       />
