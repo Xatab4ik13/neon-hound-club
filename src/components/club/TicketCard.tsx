@@ -124,6 +124,8 @@ export function TicketCard({
               <span className="leading-none">Поставить</span>
             </Link>
           )}
+        </div>
+
 
         {/* перфорация — полукруглые вырезы в цвет фона страницы */}
         <div
