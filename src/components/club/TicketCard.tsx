@@ -61,12 +61,18 @@ export function TicketCard({
         {/* основная часть */}
         <div className="relative z-10 flex min-w-0 flex-1 flex-col justify-between py-5 pl-5 pr-4">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+            <span className="text-[13px] text-muted-foreground">
               Мой баланс
             </span>
-            <span className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground/70">
-              HHR · Tickets
-            </span>
+            {isError ? (
+              <button
+                type="button"
+                onClick={onRetry}
+                className="text-[12px] font-medium text-primary active:opacity-70"
+              >
+                Повторить
+              </button>
+            ) : null}
           </div>
 
           <div className="flex items-end justify-between gap-4">
