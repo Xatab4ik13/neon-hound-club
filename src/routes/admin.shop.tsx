@@ -97,14 +97,16 @@ const TABS: { key: Tab; label: string; icon: typeof Package }[] = [
 
 const KIND_LABEL: Record<ProductKind, string> = {
   physical: "Физический",
-  digital: "Цифровой",
   preorder: "Предзаказ",
+  virtual: "Виртуальный",
+  digital: "Цифровой",
 };
 
 const KIND_TONE: Record<ProductKind, "zinc" | "emerald" | "amber" | "blue"> = {
   physical: "zinc",
-  digital: "emerald",
   preorder: "amber",
+  virtual: "blue",
+  digital: "emerald",
 };
 
 const STATUS_LABEL: Record<ShopOrderStatus, string> = {
@@ -186,6 +188,11 @@ function emptyProduct(): CreateProductInput {
     shippingInfo: "",
     returnPolicy: "",
     sizes: [],
+    // Дефолты для расчёта СДЭК — типовая футболка в пакете.
+    weightG: 300,
+    lengthCm: 30,
+    widthCm: 25,
+    heightCm: 3,
   };
 }
 
@@ -338,6 +345,10 @@ function ProductsTab() {
             shippingInfo: editing.shippingInfo ?? "",
             returnPolicy: editing.returnPolicy ?? "",
             sizes: editing.sizes ?? [],
+            weightG: editing.weightG ?? 300,
+            lengthCm: editing.lengthCm ?? 30,
+            widthCm: editing.widthCm ?? 25,
+            heightCm: editing.heightCm ?? 3,
           }}
           onClose={() => setEditing(null)}
           onDone={() => {
@@ -429,10 +440,11 @@ function ProductModal({
 
   const save = useMutation({
     mutationFn: () => {
+      const needsShipping = p.kind === "physical" || p.kind === "preorder";
       const payload: CreateProductInput = {
         ...p,
         images: images.filter(Boolean).slice(0, 5),
-        stock: p.kind === "digital" ? null : unlimited ? null : Math.max(0, Number(p.stock) || 0),
+        stock: p.kind === "digital" || p.kind === "virtual" ? null : unlimited ? null : Math.max(0, Number(p.stock) || 0),
         categoryId: p.categoryId || null,
         subcategoryId: p.subcategoryId || null,
         digitalFileUrl: p.kind === "digital" ? p.digitalFileUrl || null : null,
@@ -443,6 +455,10 @@ function ProductModal({
         sizes: (p.sizes ?? [])
           .map((s) => ({ label: s.label.trim(), stock: s.stock }))
           .filter((s) => s.label),
+        weightG: needsShipping ? p.weightG ?? 300 : null,
+        lengthCm: needsShipping ? p.lengthCm ?? 30 : null,
+        widthCm: needsShipping ? p.widthCm ?? 25 : null,
+        heightCm: needsShipping ? p.heightCm ?? 3 : null,
       };
       return mode === "create"
         ? createAdminProduct(payload)
@@ -501,9 +517,10 @@ function ProductModal({
               value={p.kind ?? "physical"}
               onChange={(e) => setP({ ...p, kind: e.target.value as ProductKind })}
             >
-              <option value="physical">Физический</option>
-              <option value="digital">Цифровой (файл)</option>
-              <option value="preorder">Предзаказ</option>
+              <option value="physical">Физический (в наличии)</option>
+              <option value="preorder">Физический предзаказ</option>
+              <option value="virtual">Виртуальный (Hell Pass / билеты / курс)</option>
+              <option value="digital">Цифровой файл (PDF/ZIP)</option>
             </Select>
           </Field>
           <Field label="Категория">
@@ -628,6 +645,55 @@ function ProductModal({
                 }}
               />
             </Field>
+          </div>
+        )}
+
+        {(p.kind === "physical" || p.kind === "preorder") && (
+          <div className="space-y-3 rounded-md border border-border bg-muted/30 p-3">
+            <div className="text-xs font-semibold uppercase text-muted-foreground">
+              Габариты посылки (для расчёта СДЭК)
+            </div>
+            <div className="grid grid-cols-4 gap-3">
+              <Field label="Вес, г">
+                <TextInput
+                  type="number"
+                  min={1}
+                  max={50000}
+                  value={p.weightG ?? 0}
+                  onChange={(e) => setP({ ...p, weightG: Math.max(1, Number(e.target.value) || 0) })}
+                />
+              </Field>
+              <Field label="Длина, см">
+                <TextInput
+                  type="number"
+                  min={1}
+                  max={200}
+                  value={p.lengthCm ?? 0}
+                  onChange={(e) => setP({ ...p, lengthCm: Math.max(1, Number(e.target.value) || 0) })}
+                />
+              </Field>
+              <Field label="Ширина, см">
+                <TextInput
+                  type="number"
+                  min={1}
+                  max={200}
+                  value={p.widthCm ?? 0}
+                  onChange={(e) => setP({ ...p, widthCm: Math.max(1, Number(e.target.value) || 0) })}
+                />
+              </Field>
+              <Field label="Высота, см">
+                <TextInput
+                  type="number"
+                  min={1}
+                  max={200}
+                  value={p.heightCm ?? 0}
+                  onChange={(e) => setP({ ...p, heightCm: Math.max(1, Number(e.target.value) || 0) })}
+                />
+              </Field>
+            </div>
+            <div className="text-xs text-muted-foreground">
+              Дефолт — типовая футболка в пакете (300 г, 30×25×3 см). Поправь, если товар тяжелее/больше.
+            </div>
           </div>
         )}
 

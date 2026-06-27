@@ -362,6 +362,12 @@ const createProductSchema = z
     preorderExpectedAt: z.string().datetime().nullable().optional(),
     shippingInfo: z.string().max(4000).default(""),
     returnPolicy: z.string().max(4000).default(""),
+    // Габариты для расчёта СДЭК. Обязательны для physical/preorder.
+    // Дефолты — типовая футболка в стандартном пакете 30×25×3 см, 300 г.
+    weightG: z.number().int().min(1).max(50_000).nullable().default(300),
+    lengthCm: z.number().int().min(1).max(200).nullable().default(30),
+    widthCm: z.number().int().min(1).max(200).nullable().default(25),
+    heightCm: z.number().int().min(1).max(200).nullable().default(3),
     sizes: z
       .array(
         z.union([
@@ -381,6 +387,14 @@ const createProductSchema = z
     }
     if (v.kind === "preorder" && !v.preorderExpectedAt) {
       ctx.addIssue({ code: "custom", message: "Для предзаказа нужна дата ожидания", path: ["preorderExpectedAt"] });
+    }
+    if ((v.kind === "physical" || v.kind === "preorder") &&
+        (!v.weightG || !v.lengthCm || !v.widthCm || !v.heightCm)) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Для физического товара нужны вес и габариты (для расчёта СДЭК)",
+        path: ["weightG"],
+      });
     }
   });
 
@@ -402,6 +416,10 @@ const patchProductSchema = z
     preorderExpectedAt: z.string().datetime().nullable(),
     shippingInfo: z.string().max(4000),
     returnPolicy: z.string().max(4000),
+    weightG: z.number().int().min(1).max(50_000).nullable(),
+    lengthCm: z.number().int().min(1).max(200).nullable(),
+    widthCm: z.number().int().min(1).max(200).nullable(),
+    heightCm: z.number().int().min(1).max(200).nullable(),
     sizes: z
       .array(
         z.union([
