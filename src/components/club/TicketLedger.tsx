@@ -214,12 +214,14 @@ function SummaryCard({
   prefix = "",
   accent,
   icon,
+  muted = false,
 }: {
   label: string;
   value: number;
   prefix?: string;
   accent: string;
   icon: React.ReactNode;
+  muted?: boolean;
 }) {
   return (
     <div className="flex items-center gap-3 rounded-2xl border border-white/[0.06] bg-card/40 px-4 py-3">
@@ -227,7 +229,13 @@ function SummaryCard({
         {icon}
       </div>
       <div className="flex min-w-0 flex-col">
-        <span className={"text-[22px] font-semibold leading-none tabular-nums " + accent}>
+        <span
+          className={
+            (muted ? "text-[18px] font-medium" : "text-[22px] font-semibold") +
+            " leading-none tabular-nums " +
+            accent
+          }
+        >
           {prefix}
           {value.toLocaleString("ru-RU")}
         </span>
