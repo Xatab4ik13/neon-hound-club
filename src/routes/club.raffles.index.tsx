@@ -154,45 +154,48 @@ function RafflesPage() {
 }
 
 function LegalNotice() {
+  // Юр-блок свёрнут по умолчанию: это требование закона, а не контент.
+  // Юзер раскрывает только если ему правда надо посмотреть условия.
   return (
     <section aria-label="Юридическая информация" className="mt-10">
-      <div className="rounded-2xl border border-white/[0.06] bg-card/40 p-4">
-        <div className="flex items-start gap-3">
-          <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-          <div className="min-w-0 flex-1">
-            <h2 className="font-display text-[13px] font-black uppercase italic tracking-wider text-foreground">
-              Стимулирующее мероприятие
-            </h2>
-            <p className="mt-1.5 text-[12px] leading-relaxed text-muted-foreground">
-              Розыгрыши проводятся в порядке ст. 9 ФЗ-38 «О рекламе». Билеты
-              можно получить <span className="text-foreground">бесплатно</span>{" "}
-              за активность в клубе — покупка не обязательна. НДФЛ с призов
-              платит организатор.
-            </p>
-            <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[12px]">
-              <Link
-                to="/club/legal/promo-rules"
-                className="inline-flex items-center gap-1 font-mono text-[11px] font-bold uppercase tracking-wider text-primary hover:underline"
-              >
-                Полные правила
-                <ChevronRight className="h-3 w-3" />
-              </Link>
-              <Link
-                to="/club/legal/requisites"
-                className="text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
-              >
-                Организатор
-              </Link>
-              <Link
-                to="/club/legal/privacy"
-                className="text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
-              >
-                Персональные данные
-              </Link>
-            </div>
+      <details className="group rounded-2xl border border-white/[0.06] bg-card/40">
+        <summary className="flex cursor-pointer list-none items-center gap-3 px-4 py-3 [&::-webkit-details-marker]:hidden">
+          <ShieldCheck className="h-4 w-4 shrink-0 text-muted-foreground" />
+          <span className="flex-1 font-mono text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+            Юр. информация о розыгрышах
+          </span>
+          <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-90" />
+        </summary>
+        <div className="border-t border-white/[0.06] px-4 py-4">
+          <p className="text-[12px] leading-relaxed text-muted-foreground">
+            Розыгрыши проводятся в порядке ст. 9 ФЗ-38 «О рекламе». Билеты
+            можно получить <span className="text-foreground">бесплатно</span>{" "}
+            за активность в клубе — покупка не обязательна. НДФЛ с призов
+            платит организатор.
+          </p>
+          <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[12px]">
+            <Link
+              to="/club/legal/promo-rules"
+              className="inline-flex items-center gap-1 font-mono text-[11px] font-bold uppercase tracking-wider text-primary hover:underline"
+            >
+              Полные правила
+              <ChevronRight className="h-3 w-3" />
+            </Link>
+            <Link
+              to="/club/legal/requisites"
+              className="text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+            >
+              Организатор
+            </Link>
+            <Link
+              to="/club/legal/privacy"
+              className="text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+            >
+              Персональные данные
+            </Link>
           </div>
         </div>
-      </div>
+      </details>
     </section>
   );
 }
