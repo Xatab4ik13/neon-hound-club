@@ -393,34 +393,38 @@ function ProductView({ product }: { product: ShopProduct }) {
               </p>
             </Accordion>
           )}
-          <Accordion
-            label="Доставка"
-            open={open === "ship"}
-            onToggle={() => setOpen(open === "ship" ? null : "ship")}
-          >
-            {product.shippingInfo?.trim() ? (
+          {!isDigital && (
+            <Accordion
+              label="Доставка"
+              open={open === "ship"}
+              onToggle={() => setOpen(open === "ship" ? null : "ship")}
+            >
+              {product.shippingInfo?.trim() ? (
+                <p className="whitespace-pre-line text-[15px] leading-relaxed text-muted-foreground">
+                  {product.shippingInfo}
+                </p>
+              ) : (
+                <ul className="space-y-2 text-[15px] leading-relaxed text-muted-foreground">
+                  <li>· СДЭК по РФ — 2–7 дней.</li>
+                  <li>· Самовывоз из гаража HELLHOUND в Москве.</li>
+                </ul>
+              )}
+            </Accordion>
+          )}
+          {!isDigital && (
+            <Accordion
+              label="Возврат"
+              open={open === "returns"}
+              onToggle={() => setOpen(open === "returns" ? null : "returns")}
+            >
               <p className="whitespace-pre-line text-[15px] leading-relaxed text-muted-foreground">
-                {product.shippingInfo}
+                Возврат в течение 14 дней с момента получения, если товар не был в употреблении,
+                сохранены товарный вид, потребительские свойства, ярлыки и упаковка. Деньги
+                возвращаются на ту же карту, которой была произведена оплата. Подробнее —
+                на странице <a href="/shop-info" className="text-primary underline-offset-2 hover:underline">«Оплата и доставка»</a> и в публичной оферте.
               </p>
-            ) : (
-              <ul className="space-y-2 text-[15px] leading-relaxed text-muted-foreground">
-                <li>· СДЭК по РФ — 2–7 дней.</li>
-                <li>· Самовывоз из гаража HELLHOUND в Москве.</li>
-              </ul>
-            )}
-          </Accordion>
-          <Accordion
-            label="Возврат"
-            open={open === "returns"}
-            onToggle={() => setOpen(open === "returns" ? null : "returns")}
-          >
-            <p className="whitespace-pre-line text-[15px] leading-relaxed text-muted-foreground">
-              Возврат в течение 14 дней с момента получения, если товар не был в употреблении,
-              сохранены товарный вид, потребительские свойства, ярлыки и упаковка. Деньги
-              возвращаются на ту же карту, которой была произведена оплата. Подробнее —
-              на странице <a href="/shop-info" className="text-primary underline-offset-2 hover:underline">«Оплата и доставка»</a> и в публичной оферте.
-            </p>
-          </Accordion>
+            </Accordion>
+          )}
         </div>
 
         {/* Desktop inline CTA */}
