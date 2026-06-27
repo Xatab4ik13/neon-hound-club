@@ -622,7 +622,11 @@ const CommentsPreview = memo(function CommentsPreview({
               {last.author.nick}
             </div>
             <div className="mt-0.5 line-clamp-2 text-[13px] leading-snug text-foreground/85">
-              {last.text.startsWith("::sticker::") ? "🖼 Стикер" : last.text}
+              {last.kind === "sticker" || last.text.startsWith("::sticker::")
+                ? "🖼 Стикер"
+                : last.kind === "image" || last.imageUrl
+                ? last.text?.trim() ? `📷 ${last.text}` : "📷 Фото"
+                : last.text}
             </div>
           </div>
         </div>
