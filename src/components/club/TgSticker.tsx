@@ -17,7 +17,7 @@ export type StickerKind = "tgs" | "lottie" | "video" | "image";
 interface Props {
   src: string;
   kind?: StickerKind;
-  size?: number;          // px, по умолчанию 128
+  size?: number | string; // px ИЛИ CSS-значение ("100%"). По умолчанию 128.
   loop?: boolean;         // по умолчанию true
   autoplay?: boolean;     // по умолчанию true
   className?: string;
