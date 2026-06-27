@@ -64,6 +64,7 @@ import { Route as AdminHellAiRouteImport } from './routes/admin.hell-ai'
 import { Route as AdminEconomyRouteImport } from './routes/admin.economy'
 import { Route as AdminCdekRouteImport } from './routes/admin.cdek'
 import { Route as AdminBannersRouteImport } from './routes/admin.banners'
+import { Route as _qaCommentMenuRouteImport } from './routes/__qa.comment-menu'
 import { Route as ClubShopIndexRouteImport } from './routes/club.shop.index'
 import { Route as ClubRafflesIndexRouteImport } from './routes/club.raffles.index'
 import { Route as ClubOrdersIndexRouteImport } from './routes/club.orders.index'
@@ -358,6 +359,11 @@ const AdminBannersRoute = AdminBannersRouteImport.update({
   path: '/banners',
   getParentRoute: () => AdminRoute,
 } as any)
+const _qaCommentMenuRoute = _qaCommentMenuRouteImport.update({
+  id: '/__qa/comment-menu',
+  path: '/comment-menu',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ClubShopIndexRoute = ClubShopIndexRouteImport.update({
   id: '/shop/',
   path: '/shop/',
@@ -462,6 +468,7 @@ export interface FileRoutesByFullPath {
   '/school': typeof SchoolRoute
   '/shop-info': typeof ShopInfoRoute
   '/verify-email': typeof VerifyEmailRoute
+  '/comment-menu': typeof _qaCommentMenuRoute
   '/admin/banners': typeof AdminBannersRoute
   '/admin/cdek': typeof AdminCdekRoute
   '/admin/economy': typeof AdminEconomyRoute
@@ -534,6 +541,7 @@ export interface FileRoutesByTo {
   '/school': typeof SchoolRoute
   '/shop-info': typeof ShopInfoRoute
   '/verify-email': typeof VerifyEmailRoute
+  '/comment-menu': typeof _qaCommentMenuRoute
   '/admin/banners': typeof AdminBannersRoute
   '/admin/cdek': typeof AdminCdekRoute
   '/admin/economy': typeof AdminEconomyRoute
@@ -610,6 +618,7 @@ export interface FileRoutesById {
   '/school': typeof SchoolRoute
   '/shop-info': typeof ShopInfoRoute
   '/verify-email': typeof VerifyEmailRoute
+  '/__qa/comment-menu': typeof _qaCommentMenuRoute
   '/admin/banners': typeof AdminBannersRoute
   '/admin/cdek': typeof AdminCdekRoute
   '/admin/economy': typeof AdminEconomyRoute
@@ -687,6 +696,7 @@ export interface FileRouteTypes {
     | '/school'
     | '/shop-info'
     | '/verify-email'
+    | '/comment-menu'
     | '/admin/banners'
     | '/admin/cdek'
     | '/admin/economy'
@@ -759,6 +769,7 @@ export interface FileRouteTypes {
     | '/school'
     | '/shop-info'
     | '/verify-email'
+    | '/comment-menu'
     | '/admin/banners'
     | '/admin/cdek'
     | '/admin/economy'
@@ -834,6 +845,7 @@ export interface FileRouteTypes {
     | '/school'
     | '/shop-info'
     | '/verify-email'
+    | '/__qa/comment-menu'
     | '/admin/banners'
     | '/admin/cdek'
     | '/admin/economy'
@@ -910,6 +922,7 @@ export interface RootRouteChildren {
   SchoolRoute: typeof SchoolRoute
   ShopInfoRoute: typeof ShopInfoRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
+  _qaCommentMenuRoute: typeof _qaCommentMenuRoute
   CheckoutSuccessRoute: typeof CheckoutSuccessRoute
   HellPassTierRoute: typeof HellPassTierRoute
   LegalOfferRoute: typeof LegalOfferRoute
@@ -1313,6 +1326,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminBannersRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/__qa/comment-menu': {
+      id: '/__qa/comment-menu'
+      path: '/comment-menu'
+      fullPath: '/comment-menu'
+      preLoaderRoute: typeof _qaCommentMenuRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/club/shop/': {
       id: '/club/shop/'
       path: '/shop'
@@ -1574,6 +1594,7 @@ const rootRouteChildren: RootRouteChildren = {
   SchoolRoute: SchoolRoute,
   ShopInfoRoute: ShopInfoRoute,
   VerifyEmailRoute: VerifyEmailRoute,
+  _qaCommentMenuRoute: _qaCommentMenuRoute,
   CheckoutSuccessRoute: CheckoutSuccessRoute,
   HellPassTierRoute: HellPassTierRoute,
   LegalOfferRoute: LegalOfferRoute,

@@ -67,10 +67,10 @@ function QAPage() {
         open={openEmoji}
         onOpenChange={setOpenEmoji}
         variant="emojiRow"
-        items={REACTIONS.map((r) => ({
-          key: r.key,
-          label: r.emoji,
-          onSelect: () => setReaction(r.key),
+        items={REACTIONS.map((emoji) => ({
+          key: emoji,
+          label: emoji,
+          onSelect: () => setReaction(emoji),
         }))}
       />
     </div>
