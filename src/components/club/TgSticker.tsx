@@ -4,22 +4,19 @@ import { ungzip } from "pako";
 
 /**
  * Универсальный рендерер стикеров.
- * Поддерживает:
- *  - .tgs  (gzipped Lottie JSON, Telegram animated stickers)
+ *  - .tgs  (gzipped Lottie JSON, Telegram animated)
  *  - .json (Lottie)
- *  - .webm / .mp4 (Telegram video stickers)
+ *  - .webm / .mp4 (video)
  *  - .webp / .png / .gif / .jpg (статика)
- *
- * Тип определяется по расширению в `src` ИЛИ через явный `kind`.
  */
 export type StickerKind = "tgs" | "lottie" | "video" | "image";
 
 interface Props {
   src: string;
   kind?: StickerKind;
-  size?: number | string; // px ИЛИ CSS-значение ("100%"). По умолчанию 128.
-  loop?: boolean;         // по умолчанию true
-  autoplay?: boolean;     // по умолчанию true
+  size?: number | string;
+  loop?: boolean;
+  autoplay?: boolean;
   className?: string;
   alt?: string;
 }
@@ -30,6 +27,36 @@ function detectKind(src: string): StickerKind {
   if (u.endsWith(".json")) return "lottie";
   if (u.endsWith(".webm") || u.endsWith(".mp4")) return "video";
   return "image";
+}
+
+// Глобальный кеш распарсенного Lottie JSON, чтобы повторное открытие пикера
+// и повторный рендер одного и того же стикера были мгновенными.
+const lottieCache = new Map<string, unknown>();
+const inflight = new Map<string, Promise<unknown>>();
+
+async function loadLottieJson(src: string, kind: StickerKind): Promise<unknown> {
+  const cached = lottieCache.get(src);
+  if (cached) return cached;
+  const pending = inflight.get(src);
+  if (pending) return pending;
+
+  const p = (async () => {
+    const res = await fetch(src);
+    if (!res.ok) throw new Error(`fetch ${res.status}`);
+    let json: unknown;
+    if (kind === "tgs") {
+      const buf = new Uint8Array(await res.arrayBuffer());
+      const decoded = ungzip(buf);
+      json = JSON.parse(new TextDecoder("utf-8").decode(decoded));
+    } else {
+      json = await res.json();
+    }
+    lottieCache.set(src, json);
+    inflight.delete(src);
+    return json;
+  })();
+  inflight.set(src, p);
+  return p;
 }
 
 export function TgSticker({
@@ -45,24 +72,43 @@ export function TgSticker({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const animRef = useRef<AnimationItem | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [visible, setVisible] = useState(false);
+
+  // Наблюдаем за видимостью: загружаем и анимируем только когда стикер
+  // реально попал в зону видимости. Это снимает 90% лага при открытии пикера.
+  useEffect(() => {
+    if (k !== "tgs" && k !== "lottie") return;
+    const el = containerRef.current;
+    if (!el) return;
+    // Если IntersectionObserver недоступен — сразу видимый.
+    if (typeof IntersectionObserver === "undefined") {
+      setVisible(true);
+      return;
+    }
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) {
+            setVisible(true);
+            io.disconnect();
+            break;
+          }
+        }
+      },
+      { rootMargin: "150px", threshold: 0.01 },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [k]);
 
   useEffect(() => {
     if (k !== "tgs" && k !== "lottie") return;
+    if (!visible) return;
     let cancelled = false;
 
     (async () => {
       try {
-        const res = await fetch(src);
-        if (!res.ok) throw new Error(`fetch ${res.status}`);
-        let json: unknown;
-        if (k === "tgs") {
-          const buf = new Uint8Array(await res.arrayBuffer());
-          const decoded = ungzip(buf);
-          const txt = new TextDecoder("utf-8").decode(decoded);
-          json = JSON.parse(txt);
-        } else {
-          json = await res.json();
-        }
+        const json = await loadLottieJson(src, k);
         if (cancelled || !containerRef.current) return;
         animRef.current = lottie.loadAnimation({
           container: containerRef.current,
@@ -70,6 +116,10 @@ export function TgSticker({
           loop,
           autoplay,
           animationData: json,
+          rendererSettings: {
+            progressiveLoad: true,
+            hideOnTransparent: true,
+          },
         });
       } catch (e: unknown) {
         const msg = e instanceof Error ? e.message : String(e);
@@ -82,7 +132,7 @@ export function TgSticker({
       animRef.current?.destroy();
       animRef.current = null;
     };
-  }, [src, k, loop, autoplay]);
+  }, [src, k, loop, autoplay, visible]);
 
   const style = { width: size, height: size };
 
@@ -126,7 +176,6 @@ export function TgSticker({
     );
   }
 
-  // tgs / lottie
   return <div ref={containerRef} style={style} className={className} aria-label={alt} />;
 }
 
