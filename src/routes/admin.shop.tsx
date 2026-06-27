@@ -97,14 +97,16 @@ const TABS: { key: Tab; label: string; icon: typeof Package }[] = [
 
 const KIND_LABEL: Record<ProductKind, string> = {
   physical: "Физический",
-  digital: "Цифровой",
   preorder: "Предзаказ",
+  virtual: "Виртуальный",
+  digital: "Цифровой",
 };
 
 const KIND_TONE: Record<ProductKind, "zinc" | "emerald" | "amber" | "blue"> = {
   physical: "zinc",
-  digital: "emerald",
   preorder: "amber",
+  virtual: "blue",
+  digital: "emerald",
 };
 
 const STATUS_LABEL: Record<ShopOrderStatus, string> = {

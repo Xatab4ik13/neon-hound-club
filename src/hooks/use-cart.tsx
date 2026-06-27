@@ -30,7 +30,7 @@ export type CartItem = {
   size: string | null;
   qty: number;
   ticketsBonus?: number;
-  kind?: "physical" | "digital" | "preorder";
+  kind?: "physical" | "preorder" | "virtual" | "digital";
 };
 
 type CartContextValue = {
@@ -88,7 +88,7 @@ type ServerCartLine = {
   qty: number;
   active: boolean;
   stockAvailable: number | null;
-  kind?: "physical" | "digital" | "preorder";
+  kind?: "physical" | "preorder" | "virtual" | "digital";
 };
 
 type ServerCartResp = { items: ServerCartLine[]; totalRub: number };
