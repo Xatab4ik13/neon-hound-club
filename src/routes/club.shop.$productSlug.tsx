@@ -336,11 +336,11 @@ function ProductView({ product }: { product: ShopProduct }) {
                     type="button"
                     disabled={isOut}
                     onClick={() => setSize(s.label)}
-                    className={`min-w-[48px] rounded-xl border px-4 py-2.5 text-[15px] font-semibold transition-colors active:scale-95 ${
+                    className={`min-w-[48px] rounded-xl border px-4 py-2.5 text-[15px] font-semibold transition-all active:scale-95 ${
                       isOut
                         ? "border-white/[0.04] bg-white/[0.02] text-muted-foreground/40 line-through"
                         : isActive
-                          ? "border-primary bg-primary text-primary-foreground"
+                          ? "border-primary bg-primary text-primary-foreground shadow-[0_0_0_3px_hsl(var(--primary)/0.25)]"
                           : "border-white/[0.08] bg-white/[0.03] text-foreground"
                     }`}
                   >
