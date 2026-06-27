@@ -437,11 +437,17 @@ function ProductView({ product }: { product: ShopProduct }) {
           </div>
           <button
             type="button"
-            disabled={sold}
+            disabled={sold || sizeMissing}
             onClick={(e) => handleAdd(false, e.currentTarget)}
-            className="ml-auto inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-8 py-3.5 text-[15px] font-semibold text-primary-foreground transition-all active:scale-[0.98] disabled:bg-muted disabled:text-muted-foreground"
+            className="ml-auto inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-8 py-3.5 text-[15px] font-semibold text-primary-foreground transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-primary/30 disabled:text-primary-foreground/60"
           >
-            {sold ? "Распродано" : sizeMissing ? "Выбери размер" : "В корзину"}
+            {sold
+              ? "Распродано"
+              : sizeMissing
+                ? "Выберите размер"
+                : alreadyInCart
+                  ? "В корзине · перейти"
+                  : "В корзину"}
           </button>
           <Link
             to="/club/cart"
@@ -454,8 +460,11 @@ function ProductView({ product }: { product: ShopProduct }) {
 
       {/* Mobile sticky CTA */}
       <div
-        className="fixed inset-x-0 z-30 border-t border-white/[0.06] bg-background/90 px-4 py-3 backdrop-blur-xl md:hidden"
-        style={{ bottom: "calc(64px + env(safe-area-inset-bottom))" }}
+        className="fixed inset-x-0 z-30 border-t border-white/[0.06] bg-background/95 px-4 py-3 backdrop-blur-xl md:hidden"
+        style={{
+          bottom: "calc(64px + env(safe-area-inset-bottom))",
+          boxShadow: "0 -10px 28px -8px rgba(0,0,0,0.55)",
+        }}
       >
         <div className="mx-auto flex max-w-3xl items-center gap-3">
           <div className="flex flex-col">
@@ -466,11 +475,17 @@ function ProductView({ product }: { product: ShopProduct }) {
           </div>
           <button
             type="button"
-            disabled={sold}
+            disabled={sold || sizeMissing}
             onClick={(e) => handleAdd(false, e.currentTarget)}
-            className="ml-auto flex flex-1 items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3.5 text-[15px] font-semibold text-primary-foreground transition-all active:scale-[0.98] disabled:bg-muted disabled:text-muted-foreground"
+            className="ml-auto flex flex-1 items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3.5 text-[15px] font-semibold text-primary-foreground transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-primary/30 disabled:text-primary-foreground/60"
           >
-            {sold ? "Распродано" : sizeMissing ? "Выбери размер" : "В корзину"}
+            {sold
+              ? "Распродано"
+              : sizeMissing
+                ? "Выберите размер"
+                : alreadyInCart
+                  ? "В корзине · перейти"
+                  : "В корзину"}
           </button>
         </div>
       </div>
