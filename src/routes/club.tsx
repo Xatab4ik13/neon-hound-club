@@ -92,6 +92,28 @@ const NAV: { label: string; href: string; icon: LucideIcon; final?: boolean }[] 
 
 // ---------- Layout ----------
 
+// Маршруты, на которых pull-to-refresh имеет смысл (списки/ленты).
+// На формах (cart, checkout, help/new) и статичных экранах — без него,
+// иначе случайный pull посреди ввода стирает данные.
+const PULL_REFRESH_ROUTES = new Set<string>([
+  "/club",
+  "/club/shop",
+  "/club/tickets",
+  "/club/garage",
+  "/club/quests",
+  "/club/raffles",
+  "/club/orders",
+]);
+
+// Корневые вкладки — префетчим их чанки на idle, чтобы переключение
+// между вкладками было мгновенным.
+const TAB_PRELOAD: ("/club" | "/club/shop" | "/club/tickets" | "/club/garage")[] = [
+  "/club",
+  "/club/shop",
+  "/club/tickets",
+  "/club/garage",
+];
+
 function ClubLayout() {
   const [menuOpen, setMenuOpen] = useState(false);
   const { pathname } = useLocation();
@@ -110,7 +132,6 @@ function ClubLayout() {
   }, [viewer.hydrated, viewer.user?.role, navigate]);
 
   // Per-page refresh: на ленте — feed, иначе — invalidate текущего роута.
-  // (PullToRefresh без onRefresh всегда дёргал feedStore.refresh — это был баг.)
   const router = useRouter();
   const onPullRefresh = async () => {
     if (pathname === "/club") {
@@ -120,6 +141,35 @@ function ClubLayout() {
       await router.invalidate();
     }
   };
+
+  // Idle-префетч соседних вкладок — переключение становится мгновенным.
+  useEffect(() => {
+    if (!isMobile) return;
+    if (typeof window === "undefined") return;
+    const ric =
+      (window as unknown as { requestIdleCallback?: (cb: () => void) => number })
+        .requestIdleCallback ?? ((cb: () => void) => window.setTimeout(cb, 800));
+    const id = ric(() => {
+      for (const href of TAB_PRELOAD) {
+        try {
+          void router.preloadRoute({ to: href });
+        } catch {
+          /* ignore */
+        }
+      }
+    });
+    return () => {
+      try {
+        (
+          window as unknown as { cancelIdleCallback?: (id: number) => void }
+        ).cancelIdleCallback?.(id as number);
+      } catch {
+        /* ignore */
+      }
+    };
+  }, [isMobile, router]);
+
+  const allowPull = PULL_REFRESH_ROUTES.has(pathname);
 
   // Mobile shell — iOS-app feel: top bar + push/pop transition + bottom tab bar.
   if (isMobile) {
@@ -131,16 +181,23 @@ function ClubLayout() {
           className="relative"
           style={{ paddingBottom: "calc(64px + env(safe-area-inset-bottom) + 8px)" }}
         >
-          <PullToRefresh onRefresh={onPullRefresh}>
+          {allowPull ? (
+            <PullToRefresh onRefresh={onPullRefresh}>
+              <MobileTransition>
+                <Outlet />
+              </MobileTransition>
+            </PullToRefresh>
+          ) : (
             <MobileTransition>
               <Outlet />
             </MobileTransition>
-          </PullToRefresh>
+          )}
         </main>
         <MobileTabBar />
       </div>
     );
   }
+
 
   return (
     <div className="min-h-screen bg-background text-foreground">
