@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import lottie, { type AnimationItem } from "lottie-web";
-import { inflate } from "pako";
+import { ungzip } from "pako";
 
 /**
  * Универсальный рендерер стикеров.
@@ -57,7 +57,7 @@ export function TgSticker({
         let json: unknown;
         if (k === "tgs") {
           const buf = new Uint8Array(await res.arrayBuffer());
-          const decoded = inflate(buf);
+          const decoded = ungzip(buf);
           const txt = new TextDecoder("utf-8").decode(decoded);
           json = JSON.parse(txt);
         } else {
