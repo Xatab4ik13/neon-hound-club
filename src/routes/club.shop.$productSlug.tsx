@@ -314,7 +314,7 @@ function ProductView({ product }: { product: ShopProduct }) {
           <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5">
             <Ticket className="h-3.5 w-3.5 text-primary" />
             <span className="text-[13px] font-medium text-primary">
-              +{product.bonusTickets} билетов после оплаты
+              +{product.bonusTickets} {ticketsWord(product.bonusTickets)} после оплаты
             </span>
           </div>
         )}
