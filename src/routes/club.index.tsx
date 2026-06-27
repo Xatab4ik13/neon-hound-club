@@ -2138,7 +2138,7 @@ function CommentComposer({
         </div>
 
         {/* Right: morphs between Sticker (when empty) and Send (when typing) */}
-        {trimmed.length === 0 ? (
+        {trimmed.length === 0 && !hasImage ? (
           <button
             type="button"
             onClick={() => {
