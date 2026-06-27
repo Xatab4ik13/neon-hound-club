@@ -2022,6 +2022,58 @@ function CommentComposer({
           onPickSticker={sendSticker}
         />
       )}
+      {pendingImage && (
+        <div className="flex items-center gap-2 border-b border-white/[0.05] bg-white/[0.02] px-3 py-2">
+          <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border border-white/[0.08] bg-black/40">
+            <img src={pendingImage.preview} alt="" className="h-full w-full object-cover" />
+            {uploading && (
+              <div className="absolute inset-0 grid place-items-center bg-black/50">
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+              </div>
+            )}
+          </div>
+          <div className="min-w-0 flex-1 text-[12px] text-muted-foreground">
+            {uploading ? "Загружаю фото…" : "Фото готово. Добавь подпись (опционально) и отправь."}
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              const img = pendingImage;
+              try { URL.revokeObjectURL(img.preview); } catch { /* noop */ }
+              setPendingImage(null);
+            }}
+            aria-label="Убрать фото"
+            className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-muted-foreground hover:text-foreground"
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) void handleFile(f);
+          e.target.value = "";
+        }}
+      />
+      <input
+        ref={cameraInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) void handleFile(f);
+          e.target.value = "";
+        }}
+      />
+
       <form
         onSubmit={(e) => {
           e.preventDefault();
