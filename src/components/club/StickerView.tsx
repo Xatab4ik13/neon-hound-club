@@ -22,16 +22,16 @@ interface Props {
 
 export function StickerView({ url, alt = "стикер", size, className, loop = true, autoplay = true }: Props) {
   if (isAnimated(url)) {
-    // TgSticker сам считает width/height через `size`. Если size не задан — берём 128 (грид).
+    // Если size не задан — растягиваемся в родителя (для грид-ячейки).
+    if (size == null) {
+      return (
+        <div className={className ?? "h-full w-full"} aria-label={alt}>
+          <TgSticker src={url} size={9999} loop={loop} autoplay={autoplay} alt={alt} className="!h-full !w-full" />
+        </div>
+      );
+    }
     return (
-      <TgSticker
-        src={url}
-        size={size ?? 128}
-        loop={loop}
-        autoplay={autoplay}
-        className={className}
-        alt={alt}
-      />
+      <TgSticker src={url} size={size} loop={loop} autoplay={autoplay} className={className} alt={alt} />
     );
   }
   return (
