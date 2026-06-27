@@ -670,6 +670,11 @@ function CommentsSheet({
   const [justSentId, setJustSentId] = useState<string | null>(null);
   // Скелетоны не должны висеть вечно, если bff наврал в commentsCount.
   const [skeletonExpired, setSkeletonExpired] = useState(false);
+  // Floating «↓ N»: видим ли мы низ списка + сколько новых пришло пока юзер был вверху.
+  const [atBottom, setAtBottom] = useState(true);
+  const [newSinceLeft, setNewSinceLeft] = useState(0);
+  // snapshot length когда юзер ушёл от низа — против него считаем дельту
+  const leftBottomCountRef = useRef<number>(0);
 
 
   // сбросить состояние при закрытии; при открытии — подгрузить полный список
@@ -800,6 +805,46 @@ function CommentsSheet({
     nodes.forEach((n) => io.observe(n));
     return () => io.disconnect();
   }, [open, post.comments]);
+
+  // Scroll-трекинг низа: показываем «↓ N» когда юзер ушёл от низа.
+  useEffect(() => {
+    if (!open) return;
+    const el = listRef.current;
+    if (!el) return;
+    const compute = () => {
+      const near = el.scrollHeight - el.scrollTop - el.clientHeight < 240;
+      setAtBottom((prev) => {
+        if (prev && !near) {
+          // Только что ушли от низа — снапшот текущей длины списка.
+          leftBottomCountRef.current = post.comments.length;
+        }
+        if (!prev && near) {
+          // Вернулись к низу — сбрасываем счётчик.
+          setNewSinceLeft(0);
+        }
+        return near;
+      });
+    };
+    compute();
+    el.addEventListener("scroll", compute, { passive: true });
+    return () => el.removeEventListener("scroll", compute);
+  }, [open, post.comments.length]);
+
+  // Прирост непрочитанных пока юзер вверху.
+  useEffect(() => {
+    if (!open) return;
+    if (atBottom) return;
+    const delta = post.comments.length - leftBottomCountRef.current;
+    if (delta > 0) setNewSinceLeft(delta);
+  }, [open, atBottom, post.comments.length]);
+
+  const scrollToBottom = useCallback(() => {
+    const el = listRef.current;
+    if (!el) return;
+    el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+    setNewSinceLeft(0);
+  }, []);
+
 
 
   // Группировка ответов в треды. Источник истины — comment.parentId.
@@ -1063,6 +1108,28 @@ function CommentsSheet({
               [style*="comment-highlight"], [style*="comment-flyin"] { animation: none !important; }
             }
           `}</style>
+
+          {/* Floating «↓ N» — внизу скролл-контейнера, sticky.
+              Прячем когда атBottom; счётчик показываем только если что-то прилетело. */}
+          <div className="pointer-events-none sticky bottom-2 z-20 flex justify-end">
+            <button
+              type="button"
+              aria-label={newSinceLeft > 0 ? `${newSinceLeft} новых · вниз` : "Вниз"}
+              onClick={() => { haptic("selection"); scrollToBottom(); }}
+              className={`pointer-events-auto relative grid h-11 w-11 place-items-center rounded-full border border-white/10 bg-[#1a1a1a]/95 text-foreground shadow-[0_8px_24px_-6px_rgba(0,0,0,0.6)] backdrop-blur-md transition-all duration-200 active:scale-90 ${
+                atBottom ? "pointer-events-none translate-y-3 scale-90 opacity-0" : "opacity-100"
+              }`}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M12 5v14M5 12l7 7 7-7" />
+              </svg>
+              {newSinceLeft > 0 && (
+                <span className="absolute -top-1 -right-1 grid min-w-[18px] h-[18px] place-items-center rounded-full bg-primary px-1 font-mono text-[10px] font-bold leading-none text-primary-foreground tabular-nums">
+                  {newSinceLeft > 99 ? "99+" : newSinceLeft}
+                </span>
+              )}
+            </button>
+          </div>
         </div>
         <div className="shrink-0 border-t border-white/[0.06] bg-[#0d0d0d]">
           <CommentComposer
