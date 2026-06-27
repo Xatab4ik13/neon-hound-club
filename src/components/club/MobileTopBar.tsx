@@ -217,10 +217,8 @@ export function MobileTopBar() {
           className="relative grid h-10 w-10 shrink-0 place-items-center text-foreground transition-transform active:scale-90 active:opacity-60"
         >
           <Bell className="h-[22px] w-[22px]" strokeWidth={1.9} />
-          <span
-            aria-hidden
-            className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-primary ring-2 ring-background"
-          />
+          {/* Красная точка зарезервирована под реальный счётчик непрочитанных.
+              Пока такого источника нет — точку не показываем, чтобы не врать юзеру. */}
         </button>
       </div>
       <NotificationsSheet open={notifOpen} onOpenChange={setNotifOpen} />
