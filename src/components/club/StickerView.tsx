@@ -22,11 +22,10 @@ interface Props {
 
 export function StickerView({ url, alt = "стикер", size, className, loop = true, autoplay = true }: Props) {
   if (isAnimated(url)) {
-    // TgSticker сам считает width/height через `size`. Если size не задан — берём 128 (грид).
     return (
       <TgSticker
         src={url}
-        size={size ?? 128}
+        size={size ?? "100%"}
         loop={loop}
         autoplay={autoplay}
         className={className}

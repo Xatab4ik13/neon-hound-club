@@ -12,6 +12,8 @@ import { useViewer } from "@/hooks/use-viewer";
 import { useMyProfile } from "@/lib/garage-api";
 import { useMyStickerPacks, STICKER_PACK_PRODUCT_SLUGS } from "@/lib/stickers-api";
 import { SPECIAL_PACK, SPECIAL_PACK_STICKERS, SPECIAL_PACK_COVER, type StickerMeta } from "@/assets/stickers/special";
+import { HELL_MINIONS_PACK, HELL_MINIONS_STICKERS, HELL_MINIONS_COVER } from "@/assets/stickers/hell-minions";
+import { StickerView } from "@/components/club/StickerView";
 import { FeedHeroCarousel } from "@/components/club/FeedHeroCarousel";
 import { LikeButton, REACTIONS, type Reaction } from "@/components/club/LikeButton";
 import { ImageViewer } from "@/components/club/ImageViewer";
@@ -1406,13 +1408,10 @@ const CommentItem = memo(function CommentItem({
             onClick={handleTap}
             onContextMenu={handleContextMenu}
           >
-            <img
-              src={stickerUrl}
+            <StickerView
+              url={stickerUrl}
               alt="стикер"
-              loading="lazy"
-              decoding="async"
-              draggable={false}
-              referrerPolicy="no-referrer"
+              size={208}
               className="h-48 w-48 select-none object-contain md:h-52 md:w-52"
             />
             {splash && <DoubleTapSplash />}
@@ -1629,6 +1628,14 @@ type StickerPack = {
 };
 
 const STICKER_PACKS: StickerPack[] = [
+  {
+    id: "hell-minions",
+    title: "Hell Minions",
+    cover: HELL_MINIONS_COVER,
+    coverIsImage: true,
+    stickers: HELL_MINIONS_STICKERS.map(asStickerText),
+    meta: HELL_MINIONS_PACK,
+  },
   {
     id: "special",
     title: "Special pack",
@@ -2130,17 +2137,7 @@ function StickerPanel({
                         className={`grid aspect-square place-items-center rounded-lg transition-transform active:scale-90 hover:bg-white/[0.04] ${url ? "p-1.5" : large ? "text-6xl sm:text-7xl" : "text-4xl sm:text-[40px]"}`}
                       >
                         {url ? (
-                          <img
-                            src={url}
-                            alt={alt}
-                            width={128}
-                            height={128}
-                            loading="lazy"
-                            decoding="async"
-                            draggable={false}
-                            referrerPolicy="no-referrer"
-                            className="h-full w-full select-none object-contain"
-                          />
+                          <StickerView url={url} alt={alt} className="h-full w-full select-none object-contain" />
                         ) : (
                           <span>{s}</span>
                         )}
@@ -2198,17 +2195,7 @@ function StickerPanel({
                   className={`grid aspect-square place-items-center rounded-lg transition-transform active:scale-90 hover:bg-white/[0.04] ${url ? "p-1.5" : large ? "text-5xl sm:text-6xl" : "text-3xl sm:text-4xl"}`}
                 >
                   {url ? (
-                    <img
-                      src={url}
-                      alt=""
-                      width={128}
-                      height={128}
-                      loading="lazy"
-                      decoding="async"
-                      draggable={false}
-                      referrerPolicy="no-referrer"
-                      className="h-full w-full select-none object-contain"
-                    />
+                    <StickerView url={url} alt="стикер" className="h-full w-full select-none object-contain" />
                   ) : (
                     <span>{s}</span>
                   )}
@@ -2246,12 +2233,10 @@ function StickerPanel({
                 }`}
               >
                 {p.coverIsImage ? (
-                  <img
-                    src={p.cover}
+                  <StickerView
+                    url={p.cover}
                     alt=""
-                    width={28}
-                    height={28}
-                    draggable={false}
+                    size={28}
                     className="h-7 w-7 select-none object-contain"
                   />
                 ) : (
@@ -2269,15 +2254,11 @@ function StickerPanel({
           className="pointer-events-none absolute inset-0 z-40 grid place-items-center bg-black/55 backdrop-blur-sm animate-in fade-in-0 duration-150"
           aria-hidden
         >
-          <img
-            src={preview.url}
+          <StickerView
+            url={preview.url}
             alt={preview.alt}
-            width={256}
-            height={256}
-            referrerPolicy="no-referrer"
-            draggable={false}
+            size={224}
             className="h-56 w-56 select-none object-contain drop-shadow-[0_20px_40px_rgba(0,0,0,0.6)]"
-            style={{ animation: "sticker-preview-in 180ms cubic-bezier(.34,1.56,.64,1)" }}
           />
           <style>{`
             @keyframes sticker-preview-in {
