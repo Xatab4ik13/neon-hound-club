@@ -428,53 +428,65 @@ function ClubCheckoutPage() {
           </Section>
 
           {/* Доставка / выдача */}
-          {isDigitalOnly ? (
+          {isDigitalOnly || !needsShipping ? (
             <div className="flex items-center gap-3 rounded-2xl border border-primary/25 bg-primary/[0.06] px-4 py-3">
               <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/15 text-primary">
                 <CheckCircle2 className="h-4 w-4" />
               </span>
               <div className="min-w-0 flex-1">
                 <div className="text-[14px] font-semibold text-foreground">
-                  Цифровой товар
+                  {isDigitalOnly ? "Цифровой товар" : "Доступ сразу после оплаты"}
                 </div>
                 <div className="text-[12px] text-muted-foreground">
-                  Файл придёт на {form.email || "указанный email"} сразу после оплаты.
+                  {isDigitalOnly
+                    ? `Файл придёт на ${form.email || "указанный email"} сразу после оплаты.`
+                    : "Доставка не требуется — активируем в кабинете."}
                 </div>
               </div>
             </div>
           ) : (
             <>
-              <Section icon={<MapPin className="h-3.5 w-3.5" />} title="Доставка">
-                <FieldRow label="Адрес" last>
-                  <DadataInput
-                    type="address"
-                    value={form.address}
-                    onChange={(v) => set("address", v)}
-                    onSelect={(s) => {
-                      const d = s.data as DadataAddressData;
-                      const city = d.city_with_type || d.settlement_with_type || "";
-                      setForm((f) => ({ ...f, address: s.value, city: city || f.city }));
-                      touchedRef.current.add("address");
-                      if (city) touchedRef.current.add("city");
-                    }}
-                    placeholder="Город, улица, дом, кв."
-                    autoComplete="street-address"
-                    required
-                  />
-                </FieldRow>
+              <Section icon={<MapPin className="h-3.5 w-3.5" />} title="Доставка СДЭК">
+                <div className="p-3">
+                  <CdekDeliveryPicker value={cdek} onChange={setCdek} />
+                </div>
               </Section>
 
-              <div className="flex items-center gap-3 rounded-2xl border border-white/[0.06] bg-card/40 px-4 py-3">
-                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
-                  <Truck className="h-4 w-4" />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <div className="text-[14px] font-semibold text-foreground">СДЭК</div>
-                  <div className="text-[12px] text-muted-foreground">
-                    По всей России, 2–5 дней. Расчёт курьером.
+              <div className="rounded-2xl border border-white/[0.06] bg-card/40 px-4 py-3">
+                <div className="flex items-center gap-3">
+                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
+                    <Truck className="h-4 w-4" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[14px] font-semibold text-foreground">
+                      Стоимость доставки
+                    </div>
+                    <div className="text-[12px] text-muted-foreground">
+                      {!cdek.cityCode
+                        ? "Выбери город — рассчитаем автоматически."
+                        : cdek.mode === "pvz" && !cdek.pvzCode
+                          ? "Выбери пункт выдачи."
+                          : cdek.mode === "courier" && cdek.street.trim().length < 5
+                            ? "Укажи улицу и дом."
+                            : shipCalcLoading
+                              ? "Считаем тариф СДЭК…"
+                              : shipCalcError
+                                ? shipCalcError
+                                : shipDays
+                                  ? `~${shipDays.min}–${shipDays.max} дн., из Краснодара`
+                                  : "—"}
+                    </div>
                   </div>
+                  <span className="font-mono text-[15px] font-bold tabular-nums text-foreground">
+                    {shipCalcLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                    ) : shipPrice != null ? (
+                      `${shipPrice.toLocaleString("ru-RU")} ₽`
+                    ) : (
+                      "—"
+                    )}
+                  </span>
                 </div>
-                <CheckCircle2 className="h-5 w-5 shrink-0 text-primary" />
               </div>
             </>
           )}
