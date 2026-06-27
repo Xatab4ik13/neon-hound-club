@@ -57,7 +57,8 @@ export function TgSticker({
         let json: unknown;
         if (k === "tgs") {
           const buf = new Uint8Array(await res.arrayBuffer());
-          const txt = inflate(buf, { to: "string" });
+          const decoded = inflate(buf);
+          const txt = new TextDecoder("utf-8").decode(decoded);
           json = JSON.parse(txt);
         } else {
           json = await res.json();
