@@ -12,7 +12,6 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as VerifyEmailRouteImport } from './routes/verify-email'
 import { Route as ShopInfoRouteImport } from './routes/shop-info'
 import { Route as SchoolRouteImport } from './routes/school'
-import { Route as QaCommentMenuRouteImport } from './routes/qa-comment-menu'
 import { Route as LogosRouteImport } from './routes/logos'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
@@ -97,11 +96,6 @@ const ShopInfoRoute = ShopInfoRouteImport.update({
 const SchoolRoute = SchoolRouteImport.update({
   id: '/school',
   path: '/school',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const QaCommentMenuRoute = QaCommentMenuRouteImport.update({
-  id: '/qa-comment-menu',
-  path: '/qa-comment-menu',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LogosRoute = LogosRouteImport.update({
@@ -465,7 +459,6 @@ export interface FileRoutesByFullPath {
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/logos': typeof LogosRoute
-  '/qa-comment-menu': typeof QaCommentMenuRoute
   '/school': typeof SchoolRoute
   '/shop-info': typeof ShopInfoRoute
   '/verify-email': typeof VerifyEmailRoute
@@ -538,7 +531,6 @@ export interface FileRoutesByTo {
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/logos': typeof LogosRoute
-  '/qa-comment-menu': typeof QaCommentMenuRoute
   '/school': typeof SchoolRoute
   '/shop-info': typeof ShopInfoRoute
   '/verify-email': typeof VerifyEmailRoute
@@ -615,7 +607,6 @@ export interface FileRoutesById {
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/logos': typeof LogosRoute
-  '/qa-comment-menu': typeof QaCommentMenuRoute
   '/school': typeof SchoolRoute
   '/shop-info': typeof ShopInfoRoute
   '/verify-email': typeof VerifyEmailRoute
@@ -693,7 +684,6 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/login'
     | '/logos'
-    | '/qa-comment-menu'
     | '/school'
     | '/shop-info'
     | '/verify-email'
@@ -766,7 +756,6 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/login'
     | '/logos'
-    | '/qa-comment-menu'
     | '/school'
     | '/shop-info'
     | '/verify-email'
@@ -842,7 +831,6 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/login'
     | '/logos'
-    | '/qa-comment-menu'
     | '/school'
     | '/shop-info'
     | '/verify-email'
@@ -919,7 +907,6 @@ export interface RootRouteChildren {
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
   LogosRoute: typeof LogosRoute
-  QaCommentMenuRoute: typeof QaCommentMenuRoute
   SchoolRoute: typeof SchoolRoute
   ShopInfoRoute: typeof ShopInfoRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
@@ -960,13 +947,6 @@ declare module '@tanstack/react-router' {
       path: '/school'
       fullPath: '/school'
       preLoaderRoute: typeof SchoolRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/qa-comment-menu': {
-      id: '/qa-comment-menu'
-      path: '/qa-comment-menu'
-      fullPath: '/qa-comment-menu'
-      preLoaderRoute: typeof QaCommentMenuRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/logos': {
@@ -1591,7 +1571,6 @@ const rootRouteChildren: RootRouteChildren = {
   ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
   LogosRoute: LogosRoute,
-  QaCommentMenuRoute: QaCommentMenuRoute,
   SchoolRoute: SchoolRoute,
   ShopInfoRoute: ShopInfoRoute,
   VerifyEmailRoute: VerifyEmailRoute,
