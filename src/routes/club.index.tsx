@@ -12,6 +12,8 @@ import { useViewer } from "@/hooks/use-viewer";
 import { useMyProfile } from "@/lib/garage-api";
 import { useMyStickerPacks, STICKER_PACK_PRODUCT_SLUGS } from "@/lib/stickers-api";
 import { SPECIAL_PACK, SPECIAL_PACK_STICKERS, SPECIAL_PACK_COVER, type StickerMeta } from "@/assets/stickers/special";
+import { HELL_MINIONS_PACK, HELL_MINIONS_STICKERS, HELL_MINIONS_COVER } from "@/assets/stickers/hell-minions";
+import { StickerView } from "@/components/club/StickerView";
 import { FeedHeroCarousel } from "@/components/club/FeedHeroCarousel";
 import { LikeButton, REACTIONS, type Reaction } from "@/components/club/LikeButton";
 import { ImageViewer } from "@/components/club/ImageViewer";
