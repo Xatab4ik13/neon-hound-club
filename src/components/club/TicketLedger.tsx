@@ -75,23 +75,25 @@ export function TicketLedger({
         История
       </h2>
 
-      {/* Сводка — только Получено / Потрачено (баланс уже сверху) */}
-      <div className="mb-3 grid grid-cols-2 gap-2">
-        <SummaryCard
-          label="Получено"
-          value={totals.income}
-          prefix="+"
-          accent="text-emerald-400"
-          icon={<ArrowDown className="h-4 w-4 text-emerald-400" strokeWidth={2} />}
-        />
-        <SummaryCard
-          label="Потрачено"
-          value={totals.outcome}
-          prefix="−"
-          accent="text-foreground"
-          icon={<ArrowUp className="h-4 w-4 text-muted-foreground" strokeWidth={2} />}
-        />
-      </div>
+      {/* Сводка — только когда есть операции (баланс уже сверху) */}
+      {entries.length > 0 && (
+        <div className="mb-3 grid grid-cols-2 gap-2">
+          <SummaryCard
+            label="Получено"
+            value={totals.income}
+            prefix="+"
+            accent="text-emerald-400"
+            icon={<ArrowDown className="h-4 w-4 text-emerald-400" strokeWidth={2} />}
+          />
+          <SummaryCard
+            label="Потрачено"
+            value={totals.outcome}
+            prefix="−"
+            accent="text-foreground"
+            icon={<ArrowUp className="h-4 w-4 text-muted-foreground" strokeWidth={2} />}
+          />
+        </div>
+      )}
 
       {/* iOS-сегментный фильтр */}
       {presentSources.length > 1 && (
