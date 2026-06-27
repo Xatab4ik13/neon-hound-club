@@ -643,6 +643,55 @@ function ProductModal({
           </div>
         )}
 
+        {(p.kind === "physical" || p.kind === "preorder") && (
+          <div className="space-y-3 rounded-md border border-border bg-muted/30 p-3">
+            <div className="text-xs font-semibold uppercase text-muted-foreground">
+              Габариты посылки (для расчёта СДЭК)
+            </div>
+            <div className="grid grid-cols-4 gap-3">
+              <Field label="Вес, г">
+                <TextInput
+                  type="number"
+                  min={1}
+                  max={50000}
+                  value={p.weightG ?? 0}
+                  onChange={(e) => setP({ ...p, weightG: Math.max(1, Number(e.target.value) || 0) })}
+                />
+              </Field>
+              <Field label="Длина, см">
+                <TextInput
+                  type="number"
+                  min={1}
+                  max={200}
+                  value={p.lengthCm ?? 0}
+                  onChange={(e) => setP({ ...p, lengthCm: Math.max(1, Number(e.target.value) || 0) })}
+                />
+              </Field>
+              <Field label="Ширина, см">
+                <TextInput
+                  type="number"
+                  min={1}
+                  max={200}
+                  value={p.widthCm ?? 0}
+                  onChange={(e) => setP({ ...p, widthCm: Math.max(1, Number(e.target.value) || 0) })}
+                />
+              </Field>
+              <Field label="Высота, см">
+                <TextInput
+                  type="number"
+                  min={1}
+                  max={200}
+                  value={p.heightCm ?? 0}
+                  onChange={(e) => setP({ ...p, heightCm: Math.max(1, Number(e.target.value) || 0) })}
+                />
+              </Field>
+            </div>
+            <div className="text-xs text-muted-foreground">
+              Дефолт — типовая футболка в пакете (300 г, 30×25×3 см). Поправь, если товар тяжелее/больше.
+            </div>
+          </div>
+        )}
+
         <Field
           label={`Фото товара (до 5, первое — обложка) — ${images.length}/5`}
           hint="JPG/PNG/WebP, до 8 МБ. Можно менять порядок стрелками."
