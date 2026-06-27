@@ -1408,13 +1408,10 @@ const CommentItem = memo(function CommentItem({
             onClick={handleTap}
             onContextMenu={handleContextMenu}
           >
-            <img
-              src={stickerUrl}
+            <StickerView
+              url={stickerUrl}
               alt="стикер"
-              loading="lazy"
-              decoding="async"
-              draggable={false}
-              referrerPolicy="no-referrer"
+              size={208}
               className="h-48 w-48 select-none object-contain md:h-52 md:w-52"
             />
             {splash && <DoubleTapSplash />}
