@@ -133,6 +133,17 @@ export function OrdersList({
 
 function OrderCard({ order }: { order: ShopOrder }) {
   const shortId = order.id.slice(0, 8).toUpperCase();
+  const preview = order.preview;
+  const titles = preview?.titles ?? [];
+  const cover = preview?.coverImage ?? null;
+  // Подпись «причины» для отменённых — пока нет отдельного поля в БД,
+  // выводим по таймауту оплаты, иначе нейтрально.
+  const cancelReason =
+    order.status === "cancelled"
+      ? order.paidAt
+        ? "Возврат / отмена после оплаты"
+        : "Не оплачен в срок"
+      : null;
   return (
     <li>
       <Link
@@ -141,13 +152,31 @@ function OrderCard({ order }: { order: ShopOrder }) {
         className="block overflow-hidden rounded-2xl border border-white/[0.06] bg-card/40 transition-colors active:bg-card/60"
       >
         <div className="flex items-start gap-3 px-4 py-3.5">
-          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
-            <Package className="h-4 w-4" />
+          <div className="grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-xl bg-primary/10 text-primary">
+            {cover ? (
+              <img
+                src={cover}
+                alt=""
+                loading="lazy"
+                decoding="async"
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <Package className="h-5 w-5" />
+            )}
           </div>
           <div className="min-w-0 flex-1">
             <div className="text-[14px] font-semibold leading-tight text-foreground">
-              Заказ #{shortId}
+              {titles.length > 0 ? titles[0] : `Заказ #${shortId}`}
             </div>
+            {titles.length > 1 && (
+              <div className="mt-0.5 truncate text-[12px] text-muted-foreground">
+                {titles.slice(1).join(" · ")}
+                {preview && preview.totalQty > titles.length
+                  ? ` · +${preview.totalQty - titles.length}`
+                  : ""}
+              </div>
+            )}
             <div className="mt-1 flex flex-wrap items-center gap-2">
               <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
                 {formatDate(order.createdAt)}
@@ -166,6 +195,9 @@ function OrderCard({ order }: { order: ShopOrder }) {
                 </span>
               )}
             </div>
+            {cancelReason && (
+              <div className="mt-1 text-[11px] text-muted-foreground/80">{cancelReason}</div>
+            )}
             {order.cdekTrack && (
               <div className="mt-1 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
                 СДЭК: {order.cdekTrack}
@@ -175,6 +207,9 @@ function OrderCard({ order }: { order: ShopOrder }) {
           <div className="shrink-0 text-right">
             <div className="font-mono text-[14px] font-bold tabular-nums text-foreground">
               {order.totalRub.toLocaleString("ru-RU")} ₽
+            </div>
+            <div className="mt-0.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+              #{shortId}
             </div>
           </div>
         </div>
