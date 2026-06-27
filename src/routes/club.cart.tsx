@@ -159,7 +159,7 @@ function ClubCartPage() {
             </div>
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Доставка</span>
-              <span className="text-muted-foreground">на оформлении</span>
+              <span className="text-muted-foreground">рассчитаем при оформлении</span>
             </div>
           </div>
 
@@ -243,9 +243,11 @@ function ClubCartPage() {
                   >
                     {i.name}
                   </Link>
-                  <div className="mt-1 text-[13px] text-muted-foreground">
-                    {i.size ? `Размер ${i.size}` : "Без размера"}
-                  </div>
+                  {i.size && (
+                    <div className="mt-1 text-[13px] text-muted-foreground">
+                      Размер {i.size}
+                    </div>
+                  )}
 
                   {i.ticketsBonus && i.ticketsBonus > 0 ? (
                     <div className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5">
@@ -308,7 +310,7 @@ function ClubCartPage() {
           </div>
           <div className="flex items-center justify-between px-4 py-3">
             <span className="text-[15px] text-muted-foreground">Доставка</span>
-            <span className="text-[14px] text-muted-foreground">на оформлении</span>
+            <span className="text-[14px] text-muted-foreground">рассчитаем при оформлении</span>
           </div>
           <div className="flex items-center justify-between px-4 py-3.5">
             <span className="text-[16px] font-semibold text-foreground">Итого</span>
@@ -467,7 +469,7 @@ function DesktopRow({
               {item.name}
             </Link>
             <div className="mt-1 text-[13px] text-muted-foreground">
-              {item.size ? `Размер ${item.size}` : "Без размера"} · {item.price.toLocaleString("ru-RU")} ₽
+              {item.size ? `Размер ${item.size} · ` : ""}{item.price.toLocaleString("ru-RU")} ₽
             </div>
             {item.ticketsBonus && item.ticketsBonus > 0 ? (
               <div className="mt-2 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5">
