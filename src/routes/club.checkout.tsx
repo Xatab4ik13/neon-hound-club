@@ -97,17 +97,41 @@ function ClubCheckoutPage() {
     });
   }, [profileQ.data]);
 
+  // СДЭК-блок. Состояние держим тут — компонент только редактирует.
+  const [cdek, setCdek] = useState<CdekPickerState>(EMPTY_CDEK_STATE);
+
   useEffect(() => {
     const a = addressQ.data;
     if (!a) return;
-    const composed = [a.city, a.postalCode, a.pickupPoint].filter(Boolean).join(", ");
     setForm((f) => {
       const next = { ...f };
       const t = touchedRef.current;
       if (!t.has("name") && a.fullName) next.name = a.fullName;
       if (!t.has("phone") && a.phone) next.phone = formatRuPhone(a.phone);
       if (!t.has("city") && a.city) next.city = a.city;
-      if (!t.has("address") && composed) next.address = composed;
+      return next;
+    });
+    // Подставляем сохранённый ПВЗ/город из профиля, если юзер ещё ничего не выбрал.
+    setCdek((c) => {
+      if (c.cityCode) return c;
+      const next: CdekPickerState = { ...c };
+      const anyA = a as unknown as {
+        cdekCityCode?: number | null;
+        cdekPvzCode?: string | null;
+        cdekPvzAddress?: string | null;
+        preferredMode?: "pvz" | "courier";
+        streetAddress?: string;
+      };
+      if (anyA.cdekCityCode) {
+        next.cityCode = anyA.cdekCityCode;
+        next.cityName = a.city || "";
+      }
+      if (anyA.preferredMode === "courier") next.mode = "courier";
+      if (anyA.cdekPvzCode) {
+        next.pvzCode = anyA.cdekPvzCode;
+        next.pvzAddress = anyA.cdekPvzAddress ?? null;
+      }
+      if (anyA.streetAddress) next.street = anyA.streetAddress;
       return next;
     });
   }, [addressQ.data]);
