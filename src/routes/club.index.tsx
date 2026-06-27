@@ -2195,17 +2195,7 @@ function StickerPanel({
                   className={`grid aspect-square place-items-center rounded-lg transition-transform active:scale-90 hover:bg-white/[0.04] ${url ? "p-1.5" : large ? "text-5xl sm:text-6xl" : "text-3xl sm:text-4xl"}`}
                 >
                   {url ? (
-                    <img
-                      src={url}
-                      alt=""
-                      width={128}
-                      height={128}
-                      loading="lazy"
-                      decoding="async"
-                      draggable={false}
-                      referrerPolicy="no-referrer"
-                      className="h-full w-full select-none object-contain"
-                    />
+                    <StickerView url={url} alt="стикер" className="h-full w-full select-none object-contain" />
                   ) : (
                     <span>{s}</span>
                   )}
