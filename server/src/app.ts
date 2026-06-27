@@ -163,6 +163,9 @@ export async function buildApp() {
   const { dadataRoutes } = await import("./routes/dadata.js");
   await app.register(dadataRoutes, { prefix: "/api/v1/dadata" });
 
+  const { cdekRoutes } = await import("./routes/cdek.js");
+  await app.register(cdekRoutes, { prefix: "/api/v1/cdek" });
+
   const { homeBannersRoutes, adminHomeBannersRoutes } = await import("./routes/home-banners.js");
   await app.register(homeBannersRoutes, { prefix: "/api/v1/home/banners" });
   await app.register(adminHomeBannersRoutes, { prefix: "/api/v1/admin/home/banners" });
