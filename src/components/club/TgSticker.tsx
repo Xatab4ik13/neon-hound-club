@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import lottie, { type AnimationItem } from "lottie-web";
-// pako types in this version don't expose `{ to: "string" }` overload; cast result.
+import { inflate } from "pako";
 import { inflate } from "pako";
 
 /**
