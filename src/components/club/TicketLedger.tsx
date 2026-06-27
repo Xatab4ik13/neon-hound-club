@@ -89,8 +89,9 @@ export function TicketLedger({
             label="Потрачено"
             value={totals.outcome}
             prefix="−"
-            accent="text-foreground"
+            accent="text-muted-foreground"
             icon={<ArrowUp className="h-4 w-4 text-muted-foreground" strokeWidth={2} />}
+            muted
           />
         </div>
       )}
@@ -171,7 +172,7 @@ export function TicketLedger({
           <button
             type="button"
             onClick={() => setExpanded(true)}
-            className="block w-full border-t border-white/[0.06] px-4 py-3 text-center text-[13px] font-medium text-primary transition-colors active:bg-white/[0.04]"
+            className="block w-full border-t border-white/[0.06] px-4 py-3 text-center text-[13px] font-medium text-muted-foreground transition-colors active:bg-white/[0.04]"
           >
             Показать ещё {hiddenCount}
           </button>
@@ -213,12 +214,14 @@ function SummaryCard({
   prefix = "",
   accent,
   icon,
+  muted = false,
 }: {
   label: string;
   value: number;
   prefix?: string;
   accent: string;
   icon: React.ReactNode;
+  muted?: boolean;
 }) {
   return (
     <div className="flex items-center gap-3 rounded-2xl border border-white/[0.06] bg-card/40 px-4 py-3">
@@ -226,7 +229,13 @@ function SummaryCard({
         {icon}
       </div>
       <div className="flex min-w-0 flex-col">
-        <span className={"text-[22px] font-semibold leading-none tabular-nums " + accent}>
+        <span
+          className={
+            (muted ? "text-[18px] font-medium" : "text-[22px] font-semibold") +
+            " leading-none tabular-nums " +
+            accent
+          }
+        >
           {prefix}
           {value.toLocaleString("ru-RU")}
         </span>
