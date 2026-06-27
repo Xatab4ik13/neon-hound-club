@@ -236,7 +236,7 @@ export async function shopRoutes(app: FastifyInstance) {
     }
   });
 
-  // GET /api/v1/shop/orders — мои заказы
+  // GET /api/v1/shop/orders — мои заказы (+ короткое превью позиций для карточек)
   app.get("/orders", { preHandler: requireAuth }, async (req) => {
     const session = req.user as SessionPayload;
     const rows = await db
@@ -245,8 +245,60 @@ export async function shopRoutes(app: FastifyInstance) {
       .where(eq(orders.userId, session.sub))
       .orderBy(desc(orders.createdAt))
       .limit(100);
-    return { items: rows };
+    if (rows.length === 0) return { items: [] };
+
+    const orderIds = rows.map((o) => o.id);
+    // Все позиции этих заказов одним запросом.
+    const itemsRows = await db
+      .select({
+        orderId: orderItems.orderId,
+        productId: orderItems.productId,
+        title: orderItems.titleSnapshot,
+        qty: orderItems.qty,
+      })
+      .from(orderItems)
+      .where(inArray(orderItems.orderId, orderIds));
+
+    // Картинки берём из текущей карточки товара (snapshot не хранит images).
+    const productIds = Array.from(
+      new Set(itemsRows.map((i) => i.productId).filter((x): x is string => !!x)),
+    );
+    const productImages = new Map<string, string | null>();
+    if (productIds.length > 0) {
+      const imgRows = await db
+        .select({ id: products.id, images: products.images })
+        .from(products)
+        .where(inArray(products.id, productIds));
+      for (const r of imgRows) {
+        productImages.set(r.id, r.images?.[0] ?? null);
+      }
+    }
+
+    const previewByOrder = new Map<
+      string,
+      { titles: string[]; coverImage: string | null; totalQty: number }
+    >();
+    for (const it of itemsRows) {
+      const cur = previewByOrder.get(it.orderId) ?? {
+        titles: [],
+        coverImage: null,
+        totalQty: 0,
+      };
+      if (cur.titles.length < 3) cur.titles.push(it.title);
+      cur.totalQty += it.qty;
+      if (!cur.coverImage && it.productId) {
+        cur.coverImage = productImages.get(it.productId) ?? null;
+      }
+      previewByOrder.set(it.orderId, cur);
+    }
+
+    const items = rows.map((o) => ({
+      ...o,
+      preview: previewByOrder.get(o.id) ?? { titles: [], coverImage: null, totalQty: 0 },
+    }));
+    return { items };
   });
+
 
   // GET /api/v1/shop/orders/:id — мой заказ с позициями
   app.get<{ Params: { id: string } }>("/orders/:id", { preHandler: requireAuth }, async (req, reply) => {
