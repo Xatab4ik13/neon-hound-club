@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import lottie, { type AnimationItem } from "lottie-web";
 import { inflate } from "pako";
-import { inflate } from "pako";
 
 /**
  * Универсальный рендерер стикеров.
