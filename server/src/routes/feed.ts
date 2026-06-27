@@ -446,21 +446,24 @@ export async function feedRoutes(app: FastifyInstance) {
       parentId = parent.id;
     }
 
-    const isSticker = parsed.data.kind === "sticker";
+    const k = parsed.data.kind;
+    const isSticker = k === "sticker";
+    const isImage = k === "image";
     const [row] = await db
       .insert(postComments)
       .values({
         postId: req.params.id,
         authorId: s.sub,
         parentId,
-        kind: parsed.data.kind,
+        kind: k,
         text: isSticker ? "" : (parsed.data.text ?? "").trim(),
         stickerId: isSticker ? (parsed.data.stickerId ?? null) : null,
+        imageUrl: isImage ? (parsed.data.imageUrl ?? null) : null,
       })
       .returning();
 
-    // +XP за активность (только за текст, чтобы стикерами не фармили).
-    if (!isSticker) {
+    // +XP за активность (только за текст, чтобы стикерами/картинками не фармили).
+    if (k === "text") {
       await awardXp({
         userId: s.sub,
         amount: 1,
@@ -491,6 +494,7 @@ export async function feedRoutes(app: FastifyInstance) {
       text: row.text,
       kind: row.kind,
       stickerId: row.stickerId,
+      imageUrl: row.imageUrl,
       parentId: row.parentId,
       editedAt: row.editedAt,
       createdAt: row.createdAt,
