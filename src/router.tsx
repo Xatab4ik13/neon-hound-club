@@ -10,7 +10,9 @@ export const getRouter = () => {
     context: { queryClient },
     scrollRestoration: true,
     defaultPreload: "intent",
-    defaultPreloadStaleTime: 0,
+    // 30s — препятствует двойному fetch при hover→click и при idle-префетче
+    // соседних вкладок (см. ClubLayout). 0 заставлял каждый раз дёргать loader.
+    defaultPreloadStaleTime: 30_000,
     // Boot-splash из index.html уже показан до загрузки React-бандла и
     // снимается в main.tsx после первого resolve. На дальнейших переходах
     // splash не нужен — это давало двойное мерцание в PWA.
