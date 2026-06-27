@@ -1264,6 +1264,7 @@ const CommentItem = memo(function CommentItem({
   const count = comment.likes;
   const authorIsBlogger = author.isBlogger;
   const stickerUrl = getCommentStickerUrl(comment);
+  const imageUrl = comment.imageUrl ?? (comment.kind === "image" ? null : null);
   const stickerRef = useRef<StickerViewHandle | null>(null);
   const navigate = useNavigate();
   const myPacksQ = useMyStickerPacks();
@@ -1273,6 +1274,7 @@ const CommentItem = memo(function CommentItem({
     stickerPack?.productSlug &&
     !(myPacksQ.data ?? []).includes(stickerPack.lockSlug)
   );
+  const [imgViewerOpen, setImgViewerOpen] = useState(false);
 
   // Локальный текст для inline-edit
   const [draft, setDraft] = useState(comment.text);
