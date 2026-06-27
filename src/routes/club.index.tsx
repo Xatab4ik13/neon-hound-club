@@ -2254,15 +2254,11 @@ function StickerPanel({
           className="pointer-events-none absolute inset-0 z-40 grid place-items-center bg-black/55 backdrop-blur-sm animate-in fade-in-0 duration-150"
           aria-hidden
         >
-          <img
-            src={preview.url}
+          <StickerView
+            url={preview.url}
             alt={preview.alt}
-            width={256}
-            height={256}
-            referrerPolicy="no-referrer"
-            draggable={false}
+            size={224}
             className="h-56 w-56 select-none object-contain drop-shadow-[0_20px_40px_rgba(0,0,0,0.6)]"
-            style={{ animation: "sticker-preview-in 180ms cubic-bezier(.34,1.56,.64,1)" }}
           />
           <style>{`
             @keyframes sticker-preview-in {
