@@ -338,6 +338,7 @@ export async function feedRoutes(app: FastifyInstance) {
         text: postComments.text,
         kind: postComments.kind,
         stickerId: postComments.stickerId,
+        imageUrl: postComments.imageUrl,
         parentId: postComments.parentId,
         createdAt: postComments.createdAt,
         editedAt: postComments.editedAt,
