@@ -806,6 +806,46 @@ function CommentsSheet({
     return () => io.disconnect();
   }, [open, post.comments]);
 
+  // Scroll-трекинг низа: показываем «↓ N» когда юзер ушёл от низа.
+  useEffect(() => {
+    if (!open) return;
+    const el = listRef.current;
+    if (!el) return;
+    const compute = () => {
+      const near = el.scrollHeight - el.scrollTop - el.clientHeight < 240;
+      setAtBottom((prev) => {
+        if (prev && !near) {
+          // Только что ушли от низа — снапшот текущей длины списка.
+          leftBottomCountRef.current = post.comments.length;
+        }
+        if (!prev && near) {
+          // Вернулись к низу — сбрасываем счётчик.
+          setNewSinceLeft(0);
+        }
+        return near;
+      });
+    };
+    compute();
+    el.addEventListener("scroll", compute, { passive: true });
+    return () => el.removeEventListener("scroll", compute);
+  }, [open, post.comments.length]);
+
+  // Прирост непрочитанных пока юзер вверху.
+  useEffect(() => {
+    if (!open) return;
+    if (atBottom) return;
+    const delta = post.comments.length - leftBottomCountRef.current;
+    if (delta > 0) setNewSinceLeft(delta);
+  }, [open, atBottom, post.comments.length]);
+
+  const scrollToBottom = useCallback(() => {
+    const el = listRef.current;
+    if (!el) return;
+    el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+    setNewSinceLeft(0);
+  }, []);
+
+
 
   // Группировка ответов в треды. Источник истины — comment.parentId.
   // Для legacy без parentId — fallback на эвристику «текст начинается с @nick».
