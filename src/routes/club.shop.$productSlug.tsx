@@ -213,8 +213,16 @@ function ProductView({ product }: { product: ShopProduct }) {
 
   return (
     <main className="mx-auto w-full max-w-3xl pb-[calc(160px+env(safe-area-inset-bottom))] md:pb-12">
-      {/* iOS back-bar */}
-      <div className="flex items-center justify-between px-4 pt-3">
+      {/* Stock indicator (back-стрелка живёт в MobileTopBar) */}
+      {product.stock !== null && (
+        <div className="flex items-center justify-end px-4 pt-3 md:hidden">
+          <span className="text-[13px] text-muted-foreground">
+            {product.stock > 0 ? `В наличии: ${product.stock}` : "Нет в наличии"}
+          </span>
+        </div>
+      )}
+      {/* Desktop back-link */}
+      <div className="hidden items-center justify-between px-4 pt-3 md:flex">
         <Link
           to="/club/shop"
           className="-ml-1 inline-flex items-center gap-0.5 text-[17px] text-primary active:opacity-60"
@@ -227,6 +235,8 @@ function ProductView({ product }: { product: ShopProduct }) {
           </span>
         )}
       </div>
+
+
 
       {/* Галерея */}
       <section
