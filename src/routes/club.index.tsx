@@ -670,6 +670,11 @@ function CommentsSheet({
   const [justSentId, setJustSentId] = useState<string | null>(null);
   // Скелетоны не должны висеть вечно, если bff наврал в commentsCount.
   const [skeletonExpired, setSkeletonExpired] = useState(false);
+  // Floating «↓ N»: видим ли мы низ списка + сколько новых пришло пока юзер был вверху.
+  const [atBottom, setAtBottom] = useState(true);
+  const [newSinceLeft, setNewSinceLeft] = useState(0);
+  // snapshot length когда юзер ушёл от низа — против него считаем дельту
+  const leftBottomCountRef = useRef<number>(0);
 
 
   // сбросить состояние при закрытии; при открытии — подгрузить полный список
