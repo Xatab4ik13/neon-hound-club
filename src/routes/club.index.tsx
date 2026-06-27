@@ -195,6 +195,7 @@ export const PostCard = memo(function PostCard({ post, moderate = false }: { pos
 
 
   return (
+    <>
     <article
       onClick={onCardClick}
       className={`post-card relative cursor-pointer overflow-visible rounded-[24px] border shadow-[0_8px_40px_rgba(0,0,0,0.4)] transition-colors ${
