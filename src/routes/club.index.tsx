@@ -2098,8 +2098,8 @@ function StickerPanel({
   return (
     <div className={`relative flex flex-col bg-[#0d0d0d] ${large ? "h-[min(70vh,560px)]" : "h-[min(55vh,420px)]"}`}>
       {/* Search */}
-      <div className="px-3 pt-2.5 pb-2">
-        <div className="flex items-center gap-2 rounded-full bg-white/[0.05] px-3 py-1.5">
+      <div className="px-3 pt-3 pb-2">
+        <div className="flex items-center gap-2 rounded-full border border-white/[0.06] bg-white/[0.04] px-3 py-2">
           <SearchIcon size={14} className="text-muted-foreground" />
           <input
             type="text"
@@ -2125,13 +2125,15 @@ function StickerPanel({
       <div className="flex-1 overflow-y-auto overscroll-contain px-2 pb-2">
         {tab === "stickers" ? (
           <>
-            <div className="sticky top-0 z-10 -mx-2 mb-1 bg-[#0d0d0d]/95 px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground backdrop-blur">
-              {pack.title}
-              {filteredIndices && (
-                <span className="ml-2 text-muted-foreground/60 normal-case tracking-normal">
-                  · {filteredIndices.length}
-                </span>
-              )}
+            <div className="sticky top-0 z-10 -mx-2 mb-1 flex items-baseline gap-2 bg-[#0d0d0d]/95 px-3 pt-1 pb-2 backdrop-blur">
+              <h3 className="text-[15px] font-semibold tracking-tight text-foreground">
+                {pack.title}
+              </h3>
+              <span className="text-[11px] text-muted-foreground/70">
+                {filteredIndices
+                  ? `${filteredIndices.length} из ${pack.stickers.length}`
+                  : `${pack.stickers.length} стикеров`}
+              </span>
             </div>
             {filteredIndices && filteredIndices.length === 0 ? (
               <div className="grid h-32 place-items-center px-6 text-center text-[12px] text-muted-foreground/60">
@@ -2140,7 +2142,7 @@ function StickerPanel({
             ) : (
               <div className="relative">
                 <div
-                  className={`grid gap-1 ${large ? "grid-cols-3 sm:grid-cols-4" : "grid-cols-4 sm:grid-cols-5"} ${isLocked ? "pointer-events-none select-none blur-[3px] opacity-60" : ""}`}
+                  className={`grid gap-1 ${large ? "grid-cols-4 sm:grid-cols-5" : "grid-cols-5 sm:grid-cols-6"} ${isLocked ? "pointer-events-none select-none blur-[3px] opacity-60" : ""}`}
                 >
                   {(filteredIndices ?? pack.stickers.map((_, i) => i)).map((i) => {
                     const s = pack.stickers[i];
@@ -2241,7 +2243,7 @@ function StickerPanel({
       </div>
 
       {/* Bottom bar: pack tabs (Telegram-style) */}
-      <div className="flex items-center gap-0.5 border-t border-white/[0.06] bg-black/40 px-1.5 py-1.5">
+      <div className="flex items-center gap-0.5 border-t border-white/[0.06] bg-black/40 px-1.5 py-1.5 pb-[max(0.375rem,env(safe-area-inset-bottom))]">
         <PanelTab
           active={tab === "recent"}
           onClick={() => setTab("recent")}
