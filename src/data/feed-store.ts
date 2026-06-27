@@ -377,10 +377,13 @@ export const feedStore = {
       author: FeedAuthor;
       text?: string;
       stickerId?: string;
+      imageUrl?: string;
       parentId?: string;
     },
   ) {
     const isSticker = !!input.stickerId;
+    const isImage = !isSticker && !!input.imageUrl;
+    const kind: FeedComment["kind"] = isSticker ? "sticker" : isImage ? "image" : "text";
     const tempId = `tmp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     const optimistic: FeedComment = {
       id: tempId,
@@ -391,8 +394,9 @@ export const feedStore = {
       time: "только что",
       createdAt: new Date().toISOString(),
       text: isSticker ? "" : (input.text ?? ""),
-      kind: isSticker ? "sticker" : "text",
+      kind,
       stickerId: input.stickerId,
+      imageUrl: input.imageUrl,
       parentId: input.parentId,
       likes: 0,
       liked: false,
@@ -405,6 +409,8 @@ export const feedStore = {
     try {
       const apiInput = isSticker
         ? { kind: "sticker" as const, stickerId: input.stickerId!, parentId: input.parentId }
+        : isImage
+        ? { kind: "image" as const, imageUrl: input.imageUrl!, text: input.text, parentId: input.parentId }
         : { kind: "text" as const, text: input.text ?? "", parentId: input.parentId };
       const created = await addCommentApi(postId, apiInput);
       const real = mapComment(created);
