@@ -1965,23 +1965,7 @@ function CommentComposer({
               {COMMENT_MAX - value.length}
             </span>
           )}
-          <button
-            type="button"
-            onClick={() => {
-              haptic("light");
-              if (panel === "stickers" && tab === "emoji") {
-                setPanel(null);
-                inputRef.current?.focus();
-              } else {
-                setPanel("stickers");
-                setTab("emoji");
-              }
-            }}
-            className="mb-0.5 grid h-8 w-8 shrink-0 self-end place-items-center rounded-full text-muted-foreground transition-colors hover:text-foreground"
-            aria-label="Эмодзи"
-          >
-            <Smile size={20} strokeWidth={1.6} />
-          </button>
+          {/* Эмодзи-кнопку добавим в Этапе 2 вместе с реальной вкладкой эмодзи в пикере. */}
         </div>
 
         {/* Right: morphs between Sticker (when empty) and Send (when typing) */}
