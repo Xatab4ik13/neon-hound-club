@@ -41,5 +41,4 @@ export const HELL_MINIONS_PACK: StickerMeta[] = ALL.map((a, i) => ({
 export const HELL_MINIONS_STICKERS: string[] = HELL_MINIONS_PACK.map((s) => s.url);
 
 // Cover пака — первый стикер (анимированный .tgs, рендерится через TgSticker).
-export const HELL_MINIONS_COVER: string = ALL[0].url;
 export const HELL_MINIONS_COVER: string = ALL[0];
