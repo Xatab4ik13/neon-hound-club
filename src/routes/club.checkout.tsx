@@ -177,21 +177,97 @@ function ClubCheckoutPage() {
     [orderableItems],
   );
 
-  const cityFallback = isDigitalOnly
-    ? "—"
-    : form.city.trim() || form.address.split(",")[0]?.trim() || "—";
-  const addressFallback = isDigitalOnly ? "—" : form.address;
+  // Виртуальные товары (Hell Pass, билеты): доставка не нужна.
+  const needsShipping = useMemo(
+    () => orderableItems.some((i) => i.kind === "physical" || i.kind === "preorder"),
+    [orderableItems],
+  );
+
+  // --- Расчёт стоимости доставки СДЭК (дебаунс, при смене города/режима/ПВЗ) ---
+  const [shipPrice, setShipPrice] = useState<number | null>(null);
+  const [shipDays, setShipDays] = useState<{ min: number; max: number } | null>(null);
+  const [shipCalcLoading, setShipCalcLoading] = useState(false);
+  const [shipCalcError, setShipCalcError] = useState<string | null>(null);
+
+  const canCalculate =
+    needsShipping &&
+    cdek.cityCode != null &&
+    ((cdek.mode === "pvz" && cdek.pvzCode) || (cdek.mode === "courier" && cdek.street.trim().length >= 5));
+
+  useEffect(() => {
+    if (!needsShipping) {
+      setShipPrice(0);
+      setShipDays(null);
+      setShipCalcError(null);
+      return;
+    }
+    if (!canCalculate) {
+      setShipPrice(null);
+      setShipDays(null);
+      setShipCalcError(null);
+      return;
+    }
+    const productPayload = orderableItems
+      .filter((i) => i.kind !== "virtual" && i.kind !== "digital")
+      .map((i) => ({ productId: i.productId!, qty: i.qty }));
+    if (productPayload.length === 0) {
+      setShipPrice(0);
+      setShipDays(null);
+      return;
+    }
+    let cancelled = false;
+    setShipCalcLoading(true);
+    setShipCalcError(null);
+    const t = setTimeout(() => {
+      apiFetch<{ totalSum: number; periodMin: number; periodMax: number }>(
+        "/api/v1/cdek/calculate",
+        {
+          method: "POST",
+          body: JSON.stringify({
+            cityCode: cdek.cityCode,
+            mode: cdek.mode,
+            items: productPayload,
+          }),
+        },
+      )
+        .then((r) => {
+          if (cancelled) return;
+          setShipPrice(r.totalSum);
+          setShipDays({ min: r.periodMin, max: r.periodMax });
+        })
+        .catch((e: { message?: string }) => {
+          if (cancelled) return;
+          setShipPrice(null);
+          setShipDays(null);
+          setShipCalcError(e?.message || "Не удалось рассчитать доставку");
+        })
+        .finally(() => {
+          if (!cancelled) setShipCalcLoading(false);
+        });
+    }, 250);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+    // canCalculate уже включает cdek.cityCode/mode/pvzCode/street — этого достаточно
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canCalculate, cdek.cityCode, cdek.mode, cdek.pvzCode, cdek.street, orderableItems.length, needsShipping]);
+
+  const grandTotal = total + (shipPrice ?? 0);
+
+  const shippingAddressForSubmit = needsShipping
+    ? cdek.mode === "pvz"
+      ? cdek.pvzAddress ?? ""
+      : `${cdek.cityName}, ${cdek.street}`.trim()
+    : "—";
+  const cityForSubmit = needsShipping ? cdek.cityName || "—" : "—";
 
   const set = <K extends keyof CheckoutProfile>(k: K, v: string) => {
     touchedRef.current.add(k);
     setForm((f) => ({ ...f, [k]: v }));
   };
 
-  
-
   // Клиентская валидация.
-  // Для checkout всегда идём через JSON + /pay/go, чтобы не ломаться в PWA/
-  // встроенных webview и не зависеть от cross-origin form redirect.
   const guard = (e: React.FormEvent<HTMLFormElement>) => {
     if (orderableItems.length === 0) {
       e.preventDefault();
@@ -208,10 +284,27 @@ function ClubCheckoutPage() {
       hhToast.error("Укажи телефон.");
       return;
     }
-    if (!isDigitalOnly && form.address.trim().length < 5) {
-      e.preventDefault();
-      hhToast.error("Укажи адрес доставки.");
-      return;
+    if (needsShipping) {
+      if (!cdek.cityCode) {
+        e.preventDefault();
+        hhToast.error("Выбери город доставки.");
+        return;
+      }
+      if (cdek.mode === "pvz" && !cdek.pvzCode) {
+        e.preventDefault();
+        hhToast.error("Выбери пункт выдачи СДЭК.");
+        return;
+      }
+      if (cdek.mode === "courier" && cdek.street.trim().length < 5) {
+        e.preventDefault();
+        hhToast.error("Укажи улицу, дом и квартиру для курьера.");
+        return;
+      }
+      if (shipPrice == null) {
+        e.preventDefault();
+        hhToast.error("Дождись расчёта стоимости доставки.");
+        return;
+      }
     }
     if (!agree) {
       e.preventDefault();
@@ -223,7 +316,6 @@ function ClubCheckoutPage() {
       }
       return;
     }
-    // Сохраняем профиль для следующего заказа.
     if (typeof window !== "undefined") {
       try {
         window.localStorage.setItem(PROFILE_KEY, JSON.stringify(form));
@@ -233,17 +325,23 @@ function ClubCheckoutPage() {
     }
 
     e.preventDefault();
-    void startPayment(
-      {
-        target: "order",
-        shipping_fio: form.name,
-        shipping_phone: form.phone,
-        shipping_city: cityFallback,
-        shipping_address: addressFallback,
-        method: "sbp",
-      },
-      { forceLandingPage: true },
-    ).then((r) => {
+    const payload: Record<string, string> = {
+      target: "order",
+      shipping_fio: form.name,
+      shipping_phone: form.phone,
+      shipping_city: cityForSubmit,
+      shipping_address: shippingAddressForSubmit || "—",
+      shipping_mode: needsShipping ? cdek.mode : "none",
+      method: "sbp",
+    };
+    if (needsShipping && cdek.cityCode) {
+      payload.cdek_city_code = String(cdek.cityCode);
+      if (cdek.mode === "pvz" && cdek.pvzCode) {
+        payload.cdek_pvz_code = cdek.pvzCode;
+        if (cdek.pvzAddress) payload.cdek_pvz_address = cdek.pvzAddress;
+      }
+    }
+    void startPayment(payload, { forceLandingPage: true }).then((r) => {
       if (!r.ok) hhToast.error("Ошибка оплаты", { meta: r.message });
     });
   };
