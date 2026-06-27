@@ -15,6 +15,14 @@ import { flyToCart } from "@/lib/fly-to-cart";
 import { ApiError } from "@/lib/api";
 import { LazyImage } from "@/components/ui/lazy-image";
 import { fetchShopProduct, qk, type ShopProduct } from "@/lib/queries";
+
+function ticketsWord(n: number) {
+  const m10 = n % 10;
+  const m100 = n % 100;
+  if (m10 === 1 && m100 !== 11) return "билет";
+  if (m10 >= 2 && m10 <= 4 && (m100 < 10 || m100 >= 20)) return "билета";
+  return "билетов";
+}
 import { SPECIAL_PACK_COVER } from "@/assets/stickers/special";
 
 export const Route = createFileRoute("/club/shop/$productSlug")({
