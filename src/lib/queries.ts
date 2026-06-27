@@ -593,10 +593,12 @@ export type FeedPostHydrated = {
 export type FeedCommentHydrated = {
   id: string;
   text: string;
-  /** 'text' — обычный коммент, 'sticker' — стикер (см. stickerId). */
-  kind?: "text" | "sticker";
+  /** 'text' — обычный коммент, 'sticker' — стикер, 'image' — фото-вложение. */
+  kind?: "text" | "sticker" | "image";
   /** URL/id стикера, когда kind === 'sticker'. */
   stickerId?: string | null;
+  /** URL картинки, когда kind === 'image'. */
+  imageUrl?: string | null;
   /** id родительского коммента — для тредов. */
   parentId?: string | null;
   /** ISO-метка последнего редактирования; null если не редактировался. */
