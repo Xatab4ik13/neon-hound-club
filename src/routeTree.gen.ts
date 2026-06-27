@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as VerifyEmailRouteImport } from './routes/verify-email'
 import { Route as ShopInfoRouteImport } from './routes/shop-info'
 import { Route as SchoolRouteImport } from './routes/school'
+import { Route as QaCommentMenuRouteImport } from './routes/qa-comment-menu'
 import { Route as LogosRouteImport } from './routes/logos'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
@@ -64,7 +65,6 @@ import { Route as AdminHellAiRouteImport } from './routes/admin.hell-ai'
 import { Route as AdminEconomyRouteImport } from './routes/admin.economy'
 import { Route as AdminCdekRouteImport } from './routes/admin.cdek'
 import { Route as AdminBannersRouteImport } from './routes/admin.banners'
-import { Route as _qaCommentMenuRouteImport } from './routes/__qa.comment-menu'
 import { Route as ClubShopIndexRouteImport } from './routes/club.shop.index'
 import { Route as ClubRafflesIndexRouteImport } from './routes/club.raffles.index'
 import { Route as ClubOrdersIndexRouteImport } from './routes/club.orders.index'
@@ -97,6 +97,11 @@ const ShopInfoRoute = ShopInfoRouteImport.update({
 const SchoolRoute = SchoolRouteImport.update({
   id: '/school',
   path: '/school',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const QaCommentMenuRoute = QaCommentMenuRouteImport.update({
+  id: '/qa-comment-menu',
+  path: '/qa-comment-menu',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LogosRoute = LogosRouteImport.update({
@@ -359,11 +364,6 @@ const AdminBannersRoute = AdminBannersRouteImport.update({
   path: '/banners',
   getParentRoute: () => AdminRoute,
 } as any)
-const _qaCommentMenuRoute = _qaCommentMenuRouteImport.update({
-  id: '/__qa/comment-menu',
-  path: '/comment-menu',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ClubShopIndexRoute = ClubShopIndexRouteImport.update({
   id: '/shop/',
   path: '/shop/',
@@ -465,10 +465,10 @@ export interface FileRoutesByFullPath {
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/logos': typeof LogosRoute
+  '/qa-comment-menu': typeof QaCommentMenuRoute
   '/school': typeof SchoolRoute
   '/shop-info': typeof ShopInfoRoute
   '/verify-email': typeof VerifyEmailRoute
-  '/comment-menu': typeof _qaCommentMenuRoute
   '/admin/banners': typeof AdminBannersRoute
   '/admin/cdek': typeof AdminCdekRoute
   '/admin/economy': typeof AdminEconomyRoute
@@ -538,10 +538,10 @@ export interface FileRoutesByTo {
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/logos': typeof LogosRoute
+  '/qa-comment-menu': typeof QaCommentMenuRoute
   '/school': typeof SchoolRoute
   '/shop-info': typeof ShopInfoRoute
   '/verify-email': typeof VerifyEmailRoute
-  '/comment-menu': typeof _qaCommentMenuRoute
   '/admin/banners': typeof AdminBannersRoute
   '/admin/cdek': typeof AdminCdekRoute
   '/admin/economy': typeof AdminEconomyRoute
@@ -615,10 +615,10 @@ export interface FileRoutesById {
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/logos': typeof LogosRoute
+  '/qa-comment-menu': typeof QaCommentMenuRoute
   '/school': typeof SchoolRoute
   '/shop-info': typeof ShopInfoRoute
   '/verify-email': typeof VerifyEmailRoute
-  '/__qa/comment-menu': typeof _qaCommentMenuRoute
   '/admin/banners': typeof AdminBannersRoute
   '/admin/cdek': typeof AdminCdekRoute
   '/admin/economy': typeof AdminEconomyRoute
@@ -693,10 +693,10 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/login'
     | '/logos'
+    | '/qa-comment-menu'
     | '/school'
     | '/shop-info'
     | '/verify-email'
-    | '/comment-menu'
     | '/admin/banners'
     | '/admin/cdek'
     | '/admin/economy'
@@ -766,10 +766,10 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/login'
     | '/logos'
+    | '/qa-comment-menu'
     | '/school'
     | '/shop-info'
     | '/verify-email'
-    | '/comment-menu'
     | '/admin/banners'
     | '/admin/cdek'
     | '/admin/economy'
@@ -842,10 +842,10 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/login'
     | '/logos'
+    | '/qa-comment-menu'
     | '/school'
     | '/shop-info'
     | '/verify-email'
-    | '/__qa/comment-menu'
     | '/admin/banners'
     | '/admin/cdek'
     | '/admin/economy'
@@ -919,10 +919,10 @@ export interface RootRouteChildren {
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
   LogosRoute: typeof LogosRoute
+  QaCommentMenuRoute: typeof QaCommentMenuRoute
   SchoolRoute: typeof SchoolRoute
   ShopInfoRoute: typeof ShopInfoRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
-  _qaCommentMenuRoute: typeof _qaCommentMenuRoute
   CheckoutSuccessRoute: typeof CheckoutSuccessRoute
   HellPassTierRoute: typeof HellPassTierRoute
   LegalOfferRoute: typeof LegalOfferRoute
@@ -960,6 +960,13 @@ declare module '@tanstack/react-router' {
       path: '/school'
       fullPath: '/school'
       preLoaderRoute: typeof SchoolRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/qa-comment-menu': {
+      id: '/qa-comment-menu'
+      path: '/qa-comment-menu'
+      fullPath: '/qa-comment-menu'
+      preLoaderRoute: typeof QaCommentMenuRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/logos': {
@@ -1326,13 +1333,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminBannersRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/__qa/comment-menu': {
-      id: '/__qa/comment-menu'
-      path: '/comment-menu'
-      fullPath: '/comment-menu'
-      preLoaderRoute: typeof _qaCommentMenuRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/club/shop/': {
       id: '/club/shop/'
       path: '/shop'
@@ -1591,10 +1591,10 @@ const rootRouteChildren: RootRouteChildren = {
   ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
   LogosRoute: LogosRoute,
+  QaCommentMenuRoute: QaCommentMenuRoute,
   SchoolRoute: SchoolRoute,
   ShopInfoRoute: ShopInfoRoute,
   VerifyEmailRoute: VerifyEmailRoute,
-  _qaCommentMenuRoute: _qaCommentMenuRoute,
   CheckoutSuccessRoute: CheckoutSuccessRoute,
   HellPassTierRoute: HellPassTierRoute,
   LegalOfferRoute: LegalOfferRoute,
