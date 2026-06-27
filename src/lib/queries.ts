@@ -157,6 +157,15 @@ export type ShopOrderShipping = {
   postalCode?: string;
 };
 
+export type ShopOrderPreview = {
+  /** Названия первых позиций (snapshot). Максимум 3. */
+  titles: string[];
+  /** Обложка первого товара заказа. Null, если у товара нет картинок или товар удалён. */
+  coverImage: string | null;
+  /** Сумма qty по всем позициям заказа. */
+  totalQty: number;
+};
+
 export type ShopOrder = {
   id: string;
   userId: string;
@@ -172,6 +181,8 @@ export type ShopOrder = {
   shippedAt: string | null;
   /** Дедлайн оплаты для status='pending_payment'. После него заказ сносится воркером. */
   expiresAt: string | null;
+  /** Превью позиций заказа для карточки в списке. Доступно только в GET /shop/orders. */
+  preview?: ShopOrderPreview;
 };
 
 export type ShopOrderItem = {
