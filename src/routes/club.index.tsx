@@ -1415,6 +1415,39 @@ const CommentItem = memo(function CommentItem({
               </button>
             </div>
           </div>
+        ) : imageUrl ? (
+          <div className="relative mt-1 select-none">
+            <button
+              type="button"
+              onClick={() => {
+                haptic("light");
+                setImgViewerOpen(true);
+              }}
+              onContextMenu={handleContextMenu}
+              className="block max-w-[260px] overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.02] active:opacity-90 md:max-w-[300px]"
+              aria-label="Открыть фото"
+            >
+              <img
+                src={imageUrl}
+                alt={comment.text || "фото"}
+                loading="lazy"
+                decoding="async"
+                className="h-auto max-h-[360px] w-full object-cover"
+              />
+            </button>
+            {comment.text?.trim() && (
+              <p className={`mt-1.5 break-words leading-relaxed text-foreground/90 ${large ? "text-[14.5px]" : "text-[13.5px]"}`}>
+                {renderCommentText(comment.text, knownNicks)}
+              </p>
+            )}
+            {imgViewerOpen && (
+              <ImageViewer
+                src={imageUrl}
+                open={imgViewerOpen}
+                onClose={() => setImgViewerOpen(false)}
+              />
+            )}
+          </div>
         ) : stickerUrl ? (
           <div
             className="relative mt-1 cursor-pointer select-none"
