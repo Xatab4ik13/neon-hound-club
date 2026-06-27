@@ -440,10 +440,11 @@ function ProductModal({
 
   const save = useMutation({
     mutationFn: () => {
+      const needsShipping = p.kind === "physical" || p.kind === "preorder";
       const payload: CreateProductInput = {
         ...p,
         images: images.filter(Boolean).slice(0, 5),
-        stock: p.kind === "digital" ? null : unlimited ? null : Math.max(0, Number(p.stock) || 0),
+        stock: p.kind === "digital" || p.kind === "virtual" ? null : unlimited ? null : Math.max(0, Number(p.stock) || 0),
         categoryId: p.categoryId || null,
         subcategoryId: p.subcategoryId || null,
         digitalFileUrl: p.kind === "digital" ? p.digitalFileUrl || null : null,
@@ -454,6 +455,10 @@ function ProductModal({
         sizes: (p.sizes ?? [])
           .map((s) => ({ label: s.label.trim(), stock: s.stock }))
           .filter((s) => s.label),
+        weightG: needsShipping ? p.weightG ?? 300 : null,
+        lengthCm: needsShipping ? p.lengthCm ?? 30 : null,
+        widthCm: needsShipping ? p.widthCm ?? 25 : null,
+        heightCm: needsShipping ? p.heightCm ?? 3 : null,
       };
       return mode === "create"
         ? createAdminProduct(payload)
