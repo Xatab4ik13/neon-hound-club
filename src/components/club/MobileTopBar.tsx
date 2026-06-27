@@ -176,12 +176,15 @@ export function MobileTopBar() {
               }}
             />
           </span>
-          <span className="relative truncate font-display text-[15px] font-black italic tracking-tight text-white">
+          <span className="relative min-w-0 flex-1 truncate font-display text-[15px] font-black italic tracking-tight text-white">
             {nick || "—"}
           </span>
-          <span className="relative whitespace-nowrap font-mono text-[12px] font-bold tabular-nums">
+          <span className="relative ml-2 whitespace-nowrap font-mono text-[11px] font-bold tabular-nums">
             <span className="text-white">{xp.toLocaleString("ru-RU")}</span>
-            <span className="ml-1 text-white/60">/ {xpMax.toLocaleString("ru-RU")} XP</span>
+            {!isShop && (
+              <span className="ml-1 text-white/60">/ {xpMax.toLocaleString("ru-RU")}</span>
+            )}
+            <span className="ml-1 text-white/60">XP</span>
           </span>
         </Link>
 
