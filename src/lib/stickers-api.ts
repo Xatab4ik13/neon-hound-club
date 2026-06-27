@@ -4,6 +4,7 @@ import { apiFetch } from "@/lib/api";
 
 export const STICKER_PACK_PRODUCT_SLUGS: Record<string, string> = {
   special: "stickerpack-special",
+  "hell-minions": "stickerpack-hell-minions",
 };
 
 export function useMyStickerPacks(enabled = true) {
