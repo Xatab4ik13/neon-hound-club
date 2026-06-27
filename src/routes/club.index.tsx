@@ -1401,18 +1401,26 @@ const CommentItem = memo(function CommentItem({
           </div>
         ) : stickerUrl ? (
           <div
-            className="relative mt-1 select-none"
+            className="relative mt-1 cursor-pointer select-none"
             onTouchStart={handlePressStart}
             onTouchEnd={handlePressEnd}
             onTouchMove={handlePressEnd}
             onTouchCancel={handlePressEnd}
-            onClick={handleTap}
+            onClick={() => {
+              // Telegram-style: одиночный тап = перезапуск анимации.
+              // Двойной тап продолжает работать через handleTap (реакция-сплеш).
+              stickerRef.current?.replay();
+              haptic("light");
+              handleTap();
+            }}
             onContextMenu={handleContextMenu}
           >
             <StickerView
+              ref={stickerRef}
               url={stickerUrl}
               alt="стикер"
               size={208}
+              loop={false}
               className="h-48 w-48 select-none object-contain md:h-52 md:w-52"
             />
             {splash && <DoubleTapSplash />}
