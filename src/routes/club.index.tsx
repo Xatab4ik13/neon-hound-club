@@ -2243,7 +2243,7 @@ function StickerPanel({
       </div>
 
       {/* Bottom bar: pack tabs (Telegram-style) */}
-      <div className="flex items-center gap-0.5 border-t border-white/[0.06] bg-black/40 px-1.5 py-1.5">
+      <div className="flex items-center gap-0.5 border-t border-white/[0.06] bg-black/40 px-1.5 py-1.5 pb-[max(0.375rem,env(safe-area-inset-bottom))]">
         <PanelTab
           active={tab === "recent"}
           onClick={() => setTab("recent")}
