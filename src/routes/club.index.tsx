@@ -723,11 +723,11 @@ function CommentsSheet({
     // Подождём кадр чтобы DOM устоялся
     requestAnimationFrame(() => {
       const el = listRef.current?.querySelector<HTMLElement>(`[data-comment-id="${CSS.escape(target)}"]`);
-      if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "center" });
-        setHighlightId(target);
-        setTimeout(() => setHighlightId(null), 1800);
-      }
+      if (!el) return; // нет в DOM (свёрнутый тред / ещё не прорендерили) — повторим на следующем обновлении
+      scrolledToTargetRef.current = target; // помечаем ТОЛЬКО после реального скролла
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      setHighlightId(target);
+      setTimeout(() => setHighlightId(null), 1800);
       // Чистим ?c из URL, сохраняя остальные параметры.
       try {
         const url = new URL(window.location.href);
