@@ -258,6 +258,17 @@ export async function paymentsRoutes(app: FastifyInstance) {
 
       try {
         let orderId: string;
+        const shippingInput = {
+          fio: parsed.data.shipping_fio,
+          phone: parsed.data.shipping_phone,
+          city: parsed.data.shipping_city,
+          address: parsed.data.shipping_address,
+          postalCode: parsed.data.shipping_postal_code,
+          cdekCityCode: parsed.data.cdek_city_code ?? null,
+          cdekPvzCode: parsed.data.cdek_pvz_code ?? null,
+          cdekPvzAddress: parsed.data.cdek_pvz_address ?? null,
+          mode: parsed.data.shipping_mode ?? "none",
+        };
         if (Array.isArray(parsed.data.items) || typeof parsed.data.items === "string") {
           const raw =
             typeof parsed.data.items === "string"
@@ -266,24 +277,12 @@ export async function paymentsRoutes(app: FastifyInstance) {
           const items = z.array(orderItemSchema).min(1).max(20).parse(raw);
           ({ orderId } = await createOrderForUser(session.sub, {
             items,
-            shipping: {
-              fio: parsed.data.shipping_fio,
-              phone: parsed.data.shipping_phone,
-              city: parsed.data.shipping_city,
-              address: parsed.data.shipping_address,
-              postalCode: parsed.data.shipping_postal_code,
-            },
+            shipping: shippingInput,
             comment: parsed.data.comment,
           }));
         } else {
           ({ orderId } = await createOrderFromCartForUser(session.sub, {
-            shipping: {
-              fio: parsed.data.shipping_fio,
-              phone: parsed.data.shipping_phone,
-              city: parsed.data.shipping_city,
-              address: parsed.data.shipping_address,
-              postalCode: parsed.data.shipping_postal_code,
-            },
+            shipping: shippingInput,
             comment: parsed.data.comment,
           }));
         }
