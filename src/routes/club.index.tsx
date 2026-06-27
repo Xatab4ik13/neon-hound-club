@@ -1912,23 +1912,22 @@ function CommentComposer({
         }}
         className="flex items-end gap-2 px-3 py-2.5"
       >
-        <div className="flex min-w-0 flex-1 items-end gap-1 rounded-3xl border border-white/[0.08] bg-black/60 pl-2 pr-1 py-1 focus-within:border-primary/40">
-          <button
-            type="button"
-            onClick={() => {
-              if (panel === "stickers") {
-                setPanel(null);
-              } else {
-                setPanel("stickers");
-                setTab("stickers");
-              }
-            }}
-            className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-muted-foreground hover:text-foreground"
-            aria-label="Стикеры"
-          >
-            <Smile size={20} strokeWidth={1.6} />
-          </button>
+        {/* Left: attach (paperclip) — заглушка под фото/камеру/файл */}
+        <button
+          type="button"
+          onClick={() => {
+            haptic("light");
+            setPanel(null);
+            setAttachOpen(true);
+          }}
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:text-foreground active:scale-95"
+          aria-label="Прикрепить"
+        >
+          <Paperclip size={20} strokeWidth={1.7} />
+        </button>
 
+        {/* Center: input pill with inline emoji button on the right */}
+        <div className="flex min-w-0 flex-1 items-end gap-1 rounded-3xl border border-white/[0.08] bg-black/60 pl-3 pr-1 py-1 focus-within:border-primary/40">
           <textarea
             ref={inputRef}
             value={value}
@@ -1966,20 +1965,39 @@ function CommentComposer({
               {COMMENT_MAX - value.length}
             </span>
           )}
+          <button
+            type="button"
+            onClick={() => {
+              haptic("light");
+              if (panel === "stickers" && tab === "emoji") {
+                setPanel(null);
+                inputRef.current?.focus();
+              } else {
+                setPanel("stickers");
+                setTab("emoji");
+              }
+            }}
+            className="mb-0.5 grid h-8 w-8 shrink-0 self-end place-items-center rounded-full text-muted-foreground transition-colors hover:text-foreground"
+            aria-label="Эмодзи"
+          >
+            <Smile size={20} strokeWidth={1.6} />
+          </button>
         </div>
 
+        {/* Right: morphs between Sticker (when empty) and Send (when typing) */}
         {trimmed.length === 0 ? (
           <button
             type="button"
             onClick={() => {
-              if (panel === "stickers") {
+              haptic("light");
+              if (panel === "stickers" && tab === "stickers") {
                 setPanel(null);
               } else {
                 setPanel("stickers");
                 setTab("stickers");
               }
             }}
-            className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-muted-foreground hover:text-foreground"
+            className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:text-foreground active:scale-95"
             aria-label="Стикеры"
           >
             <Sticker size={22} strokeWidth={1.6} />
@@ -1995,6 +2013,37 @@ function CommentComposer({
           </button>
         )}
       </form>
+
+      {/* Attach sheet — пока заглушка, под будущую загрузку фото/файлов */}
+      <IOSActionSheet
+        open={attachOpen}
+        onOpenChange={setAttachOpen}
+        title="Прикрепить к комментарию"
+        description="Скоро: фото, камера и файлы"
+        items={[
+          {
+            key: "photo",
+            label: "Фото из галереи",
+            icon: <ImageIcon size={20} strokeWidth={1.7} />,
+            disabled: true,
+            onSelect: () => {},
+          },
+          {
+            key: "camera",
+            label: "Сделать фото",
+            icon: <Camera size={20} strokeWidth={1.7} />,
+            disabled: true,
+            onSelect: () => {},
+          },
+          {
+            key: "file",
+            label: "Файл",
+            icon: <FileText size={20} strokeWidth={1.7} />,
+            disabled: true,
+            onSelect: () => {},
+          },
+        ]}
+      />
     </div>
   );
 }
