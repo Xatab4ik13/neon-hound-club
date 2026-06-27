@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Fragment, useEffect, useMemo, useRef, useState, useCallback, memo } from "react";
 import { flushSync } from "react-dom";
-import { Smile, Send, Search as SearchIcon, Clock, Sticker, X, Pin, PinOff, Trash2, BarChart3, Share2, MessageCircle, Heart } from "lucide-react";
+import { Send, Search as SearchIcon, Clock, Sticker, X, Pin, PinOff, Trash2, BarChart3, Share2, MessageCircle, Heart, Paperclip, Image as ImageIcon, Camera, FileText } from "lucide-react";
 import { RANKS, type RankId } from "@/data/ranks";
 import { useFeedPosts, useFeedLoaded, feedStore, initialsOf, makeSlug, type FeedAuthor, type FeedComment, type FeedPost, type FeedPoll } from "@/data/feed-store";
 import { HellhoundAvatar, HellhoundChip } from "@/components/club/HellhoundPlaque";
@@ -1696,6 +1696,7 @@ function CommentComposer({
   const [activePack, setActivePack] = useState<string>(STICKER_PACKS[0].id);
   const [recent, setRecent] = useState<string[]>(() => loadRecent());
   const [submitting, setSubmitting] = useState(false);
+  const [attachOpen, setAttachOpen] = useState(false);
   const viewer = useViewer();
   const myProfileQ = useMyProfile();
   const myProfile = myProfileQ.data;
@@ -1911,23 +1912,22 @@ function CommentComposer({
         }}
         className="flex items-end gap-2 px-3 py-2.5"
       >
-        <div className="flex min-w-0 flex-1 items-end gap-1 rounded-3xl border border-white/[0.08] bg-black/60 pl-2 pr-1 py-1 focus-within:border-primary/40">
-          <button
-            type="button"
-            onClick={() => {
-              if (panel === "stickers") {
-                setPanel(null);
-              } else {
-                setPanel("stickers");
-                setTab("stickers");
-              }
-            }}
-            className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-muted-foreground hover:text-foreground"
-            aria-label="Стикеры"
-          >
-            <Smile size={20} strokeWidth={1.6} />
-          </button>
+        {/* Left: attach (paperclip) — заглушка под фото/камеру/файл */}
+        <button
+          type="button"
+          onClick={() => {
+            haptic("light");
+            setPanel(null);
+            setAttachOpen(true);
+          }}
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:text-foreground active:scale-95"
+          aria-label="Прикрепить"
+        >
+          <Paperclip size={20} strokeWidth={1.7} />
+        </button>
 
+        {/* Center: input pill with inline emoji button on the right */}
+        <div className="flex min-w-0 flex-1 items-end gap-1 rounded-3xl border border-white/[0.08] bg-black/60 pl-3 pr-1 py-1 focus-within:border-primary/40">
           <textarea
             ref={inputRef}
             value={value}
@@ -1965,20 +1965,23 @@ function CommentComposer({
               {COMMENT_MAX - value.length}
             </span>
           )}
+          {/* Эмодзи-кнопку добавим в Этапе 2 вместе с реальной вкладкой эмодзи в пикере. */}
         </div>
 
+        {/* Right: morphs between Sticker (when empty) and Send (when typing) */}
         {trimmed.length === 0 ? (
           <button
             type="button"
             onClick={() => {
-              if (panel === "stickers") {
+              haptic("light");
+              if (panel === "stickers" && tab === "stickers") {
                 setPanel(null);
               } else {
                 setPanel("stickers");
                 setTab("stickers");
               }
             }}
-            className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-muted-foreground hover:text-foreground"
+            className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:text-foreground active:scale-95"
             aria-label="Стикеры"
           >
             <Sticker size={22} strokeWidth={1.6} />
@@ -1994,6 +1997,37 @@ function CommentComposer({
           </button>
         )}
       </form>
+
+      {/* Attach sheet — пока заглушка, под будущую загрузку фото/файлов */}
+      <IOSActionSheet
+        open={attachOpen}
+        onOpenChange={setAttachOpen}
+        title="Прикрепить к комментарию"
+        description="Скоро: фото, камера и файлы"
+        items={[
+          {
+            key: "photo",
+            label: "Фото из галереи",
+            icon: <ImageIcon size={20} strokeWidth={1.7} />,
+            disabled: true,
+            onSelect: () => {},
+          },
+          {
+            key: "camera",
+            label: "Сделать фото",
+            icon: <Camera size={20} strokeWidth={1.7} />,
+            disabled: true,
+            onSelect: () => {},
+          },
+          {
+            key: "file",
+            label: "Файл",
+            icon: <FileText size={20} strokeWidth={1.7} />,
+            disabled: true,
+            onSelect: () => {},
+          },
+        ]}
+      />
     </div>
   );
 }
