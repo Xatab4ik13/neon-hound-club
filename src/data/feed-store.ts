@@ -51,10 +51,12 @@ export type FeedComment = {
   /** ISO-метка редактирования, undefined если не редактировался. */
   editedAt?: string;
   text: string;
-  /** 'text' (по умолчанию) или 'sticker' — для рендеринга через <img>. */
-  kind: "text" | "sticker";
+  /** 'text' (по умолчанию), 'sticker' или 'image'. */
+  kind: "text" | "sticker" | "image";
   /** URL/id стикера когда kind === 'sticker'. */
   stickerId?: string;
+  /** URL картинки когда kind === 'image'. */
+  imageUrl?: string;
   /** id родительского коммента (для тредов). */
   parentId?: string;
   likes: number;
