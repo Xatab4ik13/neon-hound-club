@@ -1259,6 +1259,14 @@ const CommentItem = memo(function CommentItem({
   const authorIsBlogger = author.isBlogger;
   const stickerUrl = getCommentStickerUrl(comment);
   const stickerRef = useRef<StickerViewHandle | null>(null);
+  const navigate = useNavigate();
+  const myPacksQ = useMyStickerPacks();
+  const stickerPack = stickerUrl ? findPackByStickerUrl(stickerUrl) : undefined;
+  const stickerLocked = !!(
+    stickerPack?.lockSlug &&
+    stickerPack?.productSlug &&
+    !(myPacksQ.data ?? []).includes(stickerPack.lockSlug)
+  );
 
   // Локальный текст для inline-edit
   const [draft, setDraft] = useState(comment.text);
@@ -1407,9 +1415,11 @@ const CommentItem = memo(function CommentItem({
             onTouchMove={handlePressEnd}
             onTouchCancel={handlePressEnd}
             onClick={() => {
-              // Telegram-style: одиночный тап = перезапуск анимации.
-              // Двойной тап продолжает работать через handleTap (реакция-сплеш).
-              stickerRef.current?.replay();
+              if (stickerLocked && stickerPack?.productSlug) {
+                haptic("light");
+                navigate({ to: "/club/shop/$productSlug", params: { productSlug: stickerPack.productSlug } });
+                return;
+              }
               haptic("light");
               handleTap();
             }}
@@ -1420,7 +1430,7 @@ const CommentItem = memo(function CommentItem({
               url={stickerUrl}
               alt="стикер"
               size={208}
-              loop={false}
+              loop
               className="h-48 w-48 select-none object-contain md:h-52 md:w-52"
             />
             {splash && <DoubleTapSplash />}
@@ -1657,6 +1667,21 @@ const STICKER_PACKS: StickerPack[] = [
     priceRub: 300,
   },
 ];
+
+const STICKER_URL_TO_PACK: Map<string, StickerPack> = (() => {
+  const m = new Map<string, StickerPack>();
+  for (const p of STICKER_PACKS) {
+    for (const s of p.stickers) {
+      const u = parseSticker(s) ?? s;
+      if (!m.has(u)) m.set(u, p);
+    }
+  }
+  return m;
+})();
+
+function findPackByStickerUrl(url: string): StickerPack | undefined {
+  return STICKER_URL_TO_PACK.get(url);
+}
 
 const RECENT_STICKERS_KEY = "club:recent-stickers";
 
