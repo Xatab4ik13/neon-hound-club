@@ -259,6 +259,7 @@ async function hydratePosts(rows: typeof posts.$inferSelect[], viewerId: string 
         text: c.text,
         kind: c.kind,
         stickerId: c.stickerId,
+        imageUrl: c.imageUrl,
         parentId: c.parentId,
         editedAt: c.editedAt,
         likes: commentLikeMap.get(c.id) ?? 0,
