@@ -89,8 +89,9 @@ export function TicketLedger({
             label="Потрачено"
             value={totals.outcome}
             prefix="−"
-            accent="text-foreground"
+            accent="text-muted-foreground"
             icon={<ArrowUp className="h-4 w-4 text-muted-foreground" strokeWidth={2} />}
+            muted
           />
         </div>
       )}
