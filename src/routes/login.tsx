@@ -48,6 +48,7 @@ function LoginPage() {
   // экран «проверьте почту» — общий для register-flow и login-of-unverified
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
   const [resendMsg, setResendMsg] = useState("");
+  const [mailFailed, setMailFailed] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,6 +63,7 @@ function LoginPage() {
       if (err instanceof ApiError && err.status === 403) {
         // email_not_verified
         setPendingEmail(loginEmail.trim().toLowerCase());
+        setMailFailed(false);
       } else {
         setError(toMessage(err, "Не удалось войти"));
       }
@@ -82,6 +84,7 @@ function LoginPage() {
     try {
       const res = await signUp(regEmail, regPassword, regNick);
       setPendingEmail(res.email);
+      setMailFailed(!res.mailDelivered);
     } catch (err) {
       setError(toMessage(err, "Не удалось создать аккаунт"));
     } finally {
@@ -94,8 +97,14 @@ function LoginPage() {
     setResendMsg("");
     setBusy(true);
     try {
-      await resendVerification(pendingEmail);
-      setResendMsg("Письмо отправлено — проверь почту");
+      const res = await resendVerification(pendingEmail);
+      if (res.mailDelivered) {
+        setMailFailed(false);
+        setResendMsg("Письмо отправлено — проверь почту");
+      } else {
+        setMailFailed(true);
+        setResendMsg("Письмо не доставлено. Попробуй позже или напиши в поддержку.");
+      }
     } catch (err) {
       setResendMsg(toMessage(err, "Не получилось отправить"));
     } finally {
