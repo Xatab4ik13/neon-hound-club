@@ -159,7 +159,7 @@ function ClubCartPage() {
             </div>
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Доставка</span>
-              <span className="text-muted-foreground">на оформлении</span>
+              <span className="text-muted-foreground">рассчитаем при оформлении</span>
             </div>
           </div>
 
@@ -310,7 +310,7 @@ function ClubCartPage() {
           </div>
           <div className="flex items-center justify-between px-4 py-3">
             <span className="text-[15px] text-muted-foreground">Доставка</span>
-            <span className="text-[14px] text-muted-foreground">на оформлении</span>
+            <span className="text-[14px] text-muted-foreground">рассчитаем при оформлении</span>
           </div>
           <div className="flex items-center justify-between px-4 py-3.5">
             <span className="text-[16px] font-semibold text-foreground">Итого</span>
