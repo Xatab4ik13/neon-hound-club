@@ -1,5 +1,5 @@
-import { Link, useRouterState } from "@tanstack/react-router";
-import { Bell, ShoppingBag } from "lucide-react";
+import { Link, useRouter, useRouterState } from "@tanstack/react-router";
+import { Bell, ChevronLeft, ShoppingBag } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { RANKS } from "@/data/ranks";
 import type { RankMeta } from "@/data/ranks";
@@ -10,6 +10,22 @@ import { useViewer } from "@/hooks/use-viewer";
 import { useMyProfile } from "@/lib/garage-api";
 import { NotificationsSheet } from "./NotificationsSheet";
 import { useScrollCollapse } from "@/hooks/use-scroll-collapse";
+
+// Корни вкладок — на них back-arrow не показываем.
+const TAB_ROOTS = new Set([
+  "/club",
+  "/club/shop",
+  "/club/tickets",
+  "/club/garage",
+]);
+
+function parentPath(pathname: string): string | null {
+  const segs = pathname.split("/").filter(Boolean);
+  if (segs.length <= 1) return null;
+  segs.pop();
+  return "/" + segs.join("/");
+}
+
 
 // Единый iOS-like top-bar для всех мобильных экранов клуба:
 // аватар (→ профиль) · капсула HELL/XP (→ ранг) · корзина (только в магазине) · колокольчик.
