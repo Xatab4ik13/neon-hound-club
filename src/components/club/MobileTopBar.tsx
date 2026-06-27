@@ -28,10 +28,11 @@ function parentPath(pathname: string): string | null {
 
 
 // Единый iOS-like top-bar для всех мобильных экранов клуба:
-// аватар (→ профиль) · капсула HELL/XP (→ ранг) · корзина (только в магазине) · колокольчик.
-// Кнопки «Назад» нет — навигация системным swipe-back + нижним таб-баром.
+// [← back, на подстраницах] · аватар (→ профиль) · капсула HELL/XP (→ ранг) ·
+// корзина (только в магазине) · колокольчик.
 export function MobileTopBar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const router = useRouter();
   const { rank, xp, xpMax, xpPct } = useCurrentRank();
   const viewer = useViewer();
   const myProfile = useMyProfile(viewer.isAuthed);
@@ -49,6 +50,9 @@ export function MobileTopBar() {
   const isShop = pathname.startsWith("/club/shop") || pathname.startsWith("/club/cart");
   const [notifOpen, setNotifOpen] = useState(false);
   const scrolled = useScrollCollapse(8);
+
+  // Back-arrow показываем на всём, что не корень вкладки.
+  const showBack = !TAB_ROOTS.has(pathname) && pathname !== "/club";
 
   // Bump бейджа при изменении count и glow при «приземлении» анимации.
   const prevCount = useRef(cartCount);
@@ -71,14 +75,50 @@ export function MobileTopBar() {
     setNotifOpen(true);
   };
 
+  const onBack = () => {
+    haptic("light");
+    const hasInAppHistory =
+      typeof window !== "undefined" &&
+      typeof window.history.state === "object" &&
+      window.history.state !== null &&
+      typeof (window.history.state as { __TSR_index?: number }).__TSR_index ===
+        "number" &&
+      (window.history.state as { __TSR_index?: number }).__TSR_index! > 0;
+
+    if (hasInAppHistory) {
+      router.history.back();
+      return;
+    }
+    const segs = pathname.split("/").filter(Boolean);
+    if (segs.length <= 1) {
+      router.navigate({ to: "/club", replace: true });
+      return;
+    }
+    segs.pop();
+    router.navigate({ to: "/" + segs.join("/"), replace: true });
+  };
+
   return (
     <header
-      className={`sticky top-0 z-30 backdrop-blur-2xl backdrop-saturate-150 transition-[background-color,border-color] duration-200 lg:hidden ${
-        scrolled ? "border-b border-white/[0.06] bg-background/72" : "border-b border-transparent bg-background/40"
+      className={`sticky top-0 z-30 backdrop-blur-md transition-[background-color,border-color] duration-200 lg:hidden ${
+        scrolled ? "border-b border-white/[0.06] bg-background/85" : "border-b border-transparent bg-background/55"
       }`}
       style={{ paddingTop: "env(safe-area-inset-top)" }}
     >
       <div className="flex items-center gap-2 px-3 py-2">
+        {/* Back ← только на подстраницах */}
+        {showBack && (
+          <button
+            type="button"
+            onClick={onBack}
+            aria-label="Назад"
+            className="grid h-10 w-10 shrink-0 place-items-center text-foreground transition-transform active:scale-90 active:opacity-60"
+          >
+            <ChevronLeft className="h-[26px] w-[26px]" strokeWidth={2.2} />
+          </button>
+        )}
+
+
         {/* Аватар → профиль */}
         <Link
           to="/club/me"
