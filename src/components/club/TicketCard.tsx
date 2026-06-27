@@ -18,10 +18,15 @@ function pluralTickets(n: number): string {
 export function TicketCard({
   balance,
   isLoading,
+  isError,
+  onRetry,
 }: {
   balance: number;
   isLoading?: boolean;
+  isError?: boolean;
+  onRetry?: () => void;
 }) {
+  const empty = !isLoading && !isError && balance === 0;
   const STUB_W = 104; // ширина «корешка» в px
 
   // Размер числа подстраиваем под длину — чтобы 1 000 000 не вылетал за край.
@@ -56,12 +61,18 @@ export function TicketCard({
         {/* основная часть */}
         <div className="relative z-10 flex min-w-0 flex-1 flex-col justify-between py-5 pl-5 pr-4">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+            <span className="text-[13px] text-muted-foreground">
               Мой баланс
             </span>
-            <span className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground/70">
-              HHR · Tickets
-            </span>
+            {isError ? (
+              <button
+                type="button"
+                onClick={onRetry}
+                className="text-[12px] font-medium text-primary active:opacity-70"
+              >
+                Повторить
+              </button>
+            ) : null}
           </div>
 
           <div className="flex items-end justify-between gap-4">
@@ -94,15 +105,27 @@ export function TicketCard({
           className="relative z-10 flex shrink-0 items-end justify-end pb-5 pr-4"
           style={{ width: STUB_W }}
         >
-          <Link
-            to="/club/raffles"
-            aria-label="Поставить билеты"
-            className="inline-flex items-center gap-1.5 rounded-xl bg-primary/90 px-4 py-2.5 text-[13px] font-semibold text-primary-foreground shadow-[0_4px_14px_-4px_color-mix(in_oklab,var(--primary)_70%,transparent)] transition-all active:scale-[0.97] hover:brightness-110"
-          >
-            <Ticket className="h-4 w-4" strokeWidth={2.2} />
-            <span className="leading-none">Поставить</span>
-          </Link>
+          {empty ? (
+            <Link
+              to="/club/quests"
+              aria-label="Набрать билеты — перейти к квестам"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-white/[0.08] px-4 py-2.5 text-[13px] font-semibold text-foreground transition-all active:scale-[0.97]"
+            >
+              <Ticket className="h-4 w-4" strokeWidth={2.2} />
+              <span className="leading-none">Набрать</span>
+            </Link>
+          ) : (
+            <Link
+              to="/club/raffles"
+              aria-label="Поставить билеты"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-primary/90 px-4 py-2.5 text-[13px] font-semibold text-primary-foreground shadow-[0_4px_14px_-4px_color-mix(in_oklab,var(--primary)_70%,transparent)] transition-all active:scale-[0.97] hover:brightness-110"
+            >
+              <Ticket className="h-4 w-4" strokeWidth={2.2} />
+              <span className="leading-none">Поставить</span>
+            </Link>
+          )}
         </div>
+
 
         {/* перфорация — полукруглые вырезы в цвет фона страницы */}
         <div

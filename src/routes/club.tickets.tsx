@@ -39,9 +39,19 @@ function TicketsPage() {
     <main className="mx-auto w-full max-w-3xl px-4 py-5 md:py-8">
       <PageHeader title="Билеты" />
 
-      <TicketCard balance={balance} isLoading={balanceQ.isLoading} />
+      <TicketCard
+        balance={balance}
+        isLoading={balanceQ.isLoading}
+        isError={balanceQ.isError}
+        onRetry={() => balanceQ.refetch()}
+      />
 
-      <TicketLedger entries={entries} isLoading={historyQ.isLoading} />
+      <TicketLedger
+        entries={entries}
+        isLoading={historyQ.isLoading}
+        isError={historyQ.isError}
+        onRetry={() => historyQ.refetch()}
+      />
 
       {/* Откуда взять билеты — iOS inset list */}
       <section aria-label="Как набрать билеты" className="mb-2">

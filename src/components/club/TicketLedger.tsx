@@ -42,9 +42,13 @@ function summarize(entries: LedgerEntry[]) {
 export function TicketLedger({
   entries,
   isLoading,
+  isError,
+  onRetry,
 }: {
   entries: LedgerEntry[];
   isLoading?: boolean;
+  isError?: boolean;
+  onRetry?: () => void;
 }) {
   const [filter, setFilter] = useState<BackendTicketSource | "all">("all");
   const [expanded, setExpanded] = useState(false);
@@ -71,23 +75,25 @@ export function TicketLedger({
         История
       </h2>
 
-      {/* Сводка — только Получено / Потрачено (баланс уже сверху) */}
-      <div className="mb-3 grid grid-cols-2 gap-2">
-        <SummaryCard
-          label="Получено"
-          value={totals.income}
-          prefix="+"
-          accent="text-emerald-400"
-          icon={<ArrowDown className="h-4 w-4 text-emerald-400" strokeWidth={2} />}
-        />
-        <SummaryCard
-          label="Потрачено"
-          value={totals.outcome}
-          prefix="−"
-          accent="text-foreground"
-          icon={<ArrowUp className="h-4 w-4 text-muted-foreground" strokeWidth={2} />}
-        />
-      </div>
+      {/* Сводка — только когда есть операции (баланс уже сверху) */}
+      {entries.length > 0 && (
+        <div className="mb-3 grid grid-cols-2 gap-2">
+          <SummaryCard
+            label="Получено"
+            value={totals.income}
+            prefix="+"
+            accent="text-emerald-400"
+            icon={<ArrowDown className="h-4 w-4 text-emerald-400" strokeWidth={2} />}
+          />
+          <SummaryCard
+            label="Потрачено"
+            value={totals.outcome}
+            prefix="−"
+            accent="text-foreground"
+            icon={<ArrowUp className="h-4 w-4 text-muted-foreground" strokeWidth={2} />}
+          />
+        </div>
+      )}
 
       {/* iOS-сегментный фильтр */}
       {presentSources.length > 1 && (
@@ -123,7 +129,7 @@ export function TicketLedger({
       <div className="overflow-hidden rounded-2xl border border-white/[0.06] bg-card/40">
         {isLoading && entries.length === 0 ? (
           <div>
-            {Array.from({ length: 5 }).map((_, i) => (
+            {Array.from({ length: 2 }).map((_, i) => (
               <div key={i} className="flex items-center gap-3 border-b border-white/[0.04] px-4 py-3 last:border-b-0">
                 <Skeleton className="h-2 w-2 rounded-full" />
                 <div className="flex-1 space-y-1.5">
@@ -134,9 +140,24 @@ export function TicketLedger({
               </div>
             ))}
           </div>
+        ) : isError && entries.length === 0 ? (
+          <div className="flex flex-col items-center gap-2 px-4 py-8 text-center">
+            <span className="text-[13px] text-muted-foreground">Не удалось загрузить историю</span>
+            {onRetry && (
+              <button
+                type="button"
+                onClick={onRetry}
+                className="text-[13px] font-medium text-primary active:opacity-70"
+              >
+                Повторить
+              </button>
+            )}
+          </div>
         ) : filtered.length === 0 ? (
           <div className="px-4 py-10 text-center text-[13px] text-muted-foreground">
-            {entries.length === 0 ? "Пока пусто" : "Нет операций по фильтру"}
+            {entries.length === 0
+              ? "Пока пусто — выполни первый квест, и сюда упадут билеты"
+              : "Нет операций по фильтру"}
           </div>
         ) : (
           <ul className="divide-y divide-white/[0.05]">
