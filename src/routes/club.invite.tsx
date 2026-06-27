@@ -197,35 +197,49 @@ function InvitePage() {
             </p>
           </div>
         ) : (
-          <ul className="overflow-hidden rounded-2xl border border-white/[0.06] bg-card/40 divide-y divide-white/[0.05]">
-            {friends.map((f) => (
-              <li key={f.id} className="flex items-center gap-3 px-4 py-3">
-                <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/15 font-display text-[13px] font-black italic text-primary">
-                  {f.nick.slice(0, 2).toUpperCase()}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-[14px] font-semibold text-foreground">
-                    {f.nick}
+          <>
+            <ul className="overflow-hidden rounded-2xl border border-white/[0.06] bg-card/40 divide-y divide-white/[0.05]">
+              {friends.map((f) => (
+                <li key={f.id} className="flex items-center gap-3 px-4 py-3">
+                  <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/15 font-display text-[13px] font-black italic text-primary">
+                    {f.nick.slice(0, 2).toUpperCase()}
                   </div>
-                  <div className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-                    {f.joinedAt.slice(0, 10)}
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-[14px] font-semibold text-foreground">
+                      {f.nick}
+                    </div>
+                    <div className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
+                      {f.joinedAt.slice(0, 10)}
+                    </div>
                   </div>
-                </div>
-                <span
-                  className={`shrink-0 rounded-full border px-2 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wider ${
-                    f.status === "active"
-                      ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-300"
-                      : "border-white/[0.08] bg-white/[0.02] text-muted-foreground"
-                  }`}
-                >
-                  {f.status === "active" ? "Активен" : "Ожидание"}
-                </span>
-                <span className="flex shrink-0 items-center gap-0.5 font-mono text-[13px] font-bold tabular-nums text-primary">
-                  <Ticket className="h-3.5 w-3.5" />+{f.ticketsRewarded}
-                </span>
-              </li>
-            ))}
-          </ul>
+                  <span
+                    className={`shrink-0 rounded-full border px-2 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wider ${
+                      f.status === "active"
+                        ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-300"
+                        : "border-amber-400/30 bg-amber-400/[0.06] text-amber-300"
+                    }`}
+                    title={
+                      f.status === "active"
+                        ? "Билет начислен"
+                        : "Ждём, пока друг добавит телефон в профиль"
+                    }
+                  >
+                    {f.status === "active" ? "Активен" : "Без телефона"}
+                  </span>
+                  <span className="flex shrink-0 items-center gap-0.5 font-mono text-[13px] font-bold tabular-nums text-primary">
+                    <Ticket className="h-3.5 w-3.5" />+{f.ticketsRewarded}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            {friends.some((f) => f.status !== "active") && (
+              <p className="mt-3 px-1 text-[12px] leading-relaxed text-muted-foreground">
+                Билеты падают обоим только когда друг добавит телефон в профиль — это защита от
+                фейковых аккаунтов. Напомни ему открыть{" "}
+                <span className="font-mono text-foreground">«Профиль»</span> и заполнить номер.
+              </p>
+            )}
+          </>
         )}
       </section>
     </main>
