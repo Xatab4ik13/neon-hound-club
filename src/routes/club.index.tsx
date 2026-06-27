@@ -1852,7 +1852,9 @@ function CommentComposer({
   const submitText = useCallback(
     async (text: string) => {
       const clean = text.trim();
-      if (!clean || clean.length > COMMENT_MAX) return;
+      const img = pendingImage;
+      if (!img && (!clean || clean.length > COMMENT_MAX)) return;
+      if (clean.length > COMMENT_MAX) return;
       const now = Date.now();
       if (now - lastSentAt.current < COMMENT_MIN_INTERVAL_MS) return;
       lastSentAt.current = now;
@@ -1860,18 +1862,50 @@ function CommentComposer({
       try {
         await feedStore.addComment(postId, {
           author: meAuthor,
-          text: clean,
+          text: clean || undefined,
+          imageUrl: img?.url,
           parentId: replyTo?.commentId,
         });
         setValue("");
         setPanel(null);
+        if (img) {
+          try { URL.revokeObjectURL(img.preview); } catch { /* noop */ }
+        }
+        setPendingImage(null);
         onClearReply?.();
       } finally {
         setSubmitting(false);
       }
     },
-    [postId, replyTo, onClearReply, meAuthor],
+    [postId, replyTo, onClearReply, meAuthor, pendingImage],
   );
+
+  const handleFile = useCallback(async (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      hhToast.error("Только картинки");
+      return;
+    }
+    const MAX = 10 * 1024 * 1024;
+    if (file.size > MAX) {
+      hhToast.error("Файл больше 10 МБ");
+      return;
+    }
+    setAttachOpen(false);
+    const preview = URL.createObjectURL(file);
+    setPendingImage({ url: "", preview });
+    setUploading(true);
+    try {
+      const { uploadFileToS3 } = await import("@/lib/garage-api");
+      const url = await uploadFileToS3(file, "post", postId);
+      setPendingImage({ url, preview });
+    } catch {
+      hhToast.error("Не удалось загрузить фото");
+      try { URL.revokeObjectURL(preview); } catch { /* noop */ }
+      setPendingImage(null);
+    } finally {
+      setUploading(false);
+    }
+  }, [postId]);
 
   const insertEmoji = useCallback((e: string) => {
     setValue((v) => (v + e).slice(0, COMMENT_MAX));
