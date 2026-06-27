@@ -1775,6 +1775,10 @@ function CommentComposer({
   const [recent, setRecent] = useState<string[]>(() => loadRecent());
   const [submitting, setSubmitting] = useState(false);
   const [attachOpen, setAttachOpen] = useState(false);
+  const [pendingImage, setPendingImage] = useState<{ url: string; preview: string } | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
   const viewer = useViewer();
   const myProfileQ = useMyProfile();
   const myProfile = myProfileQ.data;
@@ -1788,7 +1792,8 @@ function CommentComposer({
   const meId = viewer.user?.id ?? "";
   const trimmed = value.trim();
   const overLimit = value.length > COMMENT_MAX;
-  const disabled = trimmed.length === 0 || overLimit || submitting;
+  const hasImage = !!pendingImage;
+  const disabled = (!hasImage && trimmed.length === 0) || overLimit || submitting || uploading;
   const wrapRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const lastSentAt = useRef(0);
