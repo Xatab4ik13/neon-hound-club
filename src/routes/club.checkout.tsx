@@ -1,11 +1,11 @@
 import { createFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { CheckCircle2, MapPin, Ticket, Truck, User } from "lucide-react";
+import { CheckCircle2, Loader2, MapPin, Ticket, Truck, User } from "lucide-react";
 import { PageHeader } from "@/components/club/PageHeader";
 import { PaymentBadges } from "@/components/brand/PaymentBadges";
 import { PayButton } from "@/components/brand/PayButton";
 import { DadataInput } from "@/components/ui/DadataInput";
-import type { DadataAddressData } from "@/lib/dadata";
+import { CdekDeliveryPicker, EMPTY_CDEK_STATE, type CdekPickerState } from "@/components/checkout/CdekDeliveryPicker";
 import { LEGAL } from "@/data/legal";
 import { useCart } from "@/hooks/use-cart";
 import { useViewer } from "@/hooks/use-viewer";
@@ -13,7 +13,7 @@ import { useViewer } from "@/hooks/use-viewer";
 import { useMyProfile, useMyAddress } from "@/lib/garage-api";
 import { formatRuPhone } from "@/lib/phone";
 import { hhToast } from "@/lib/hh-toast";
-import { BACKEND_URL } from "@/lib/api";
+import { apiFetch, BACKEND_URL } from "@/lib/api";
 import { startPayment } from "@/lib/pwa-pay";
 
 const PAY_ACTION = `${BACKEND_URL}/api/v1/payments/redirect`;
