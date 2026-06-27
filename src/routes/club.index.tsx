@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Fragment, useEffect, useMemo, useRef, useState, useCallback, memo } from "react";
 import { flushSync } from "react-dom";
-import { Send, Search as SearchIcon, Clock, Sticker, X, Pin, PinOff, Trash2, BarChart3, Share2, MessageCircle, Heart, Paperclip, Image as ImageIcon, Camera, FileText } from "lucide-react";
+import { Send, Search as SearchIcon, Clock, Sticker, X, Pin, PinOff, Trash2, BarChart3, Share2, MessageCircle, Heart, Paperclip, Image as ImageIcon, Camera } from "lucide-react";
 import { RANKS, type RankId } from "@/data/ranks";
 import { useFeedPosts, useFeedLoaded, feedStore, initialsOf, makeSlug, type FeedAuthor, type FeedComment, type FeedPost, type FeedPoll } from "@/data/feed-store";
 import { HellhoundAvatar, HellhoundChip } from "@/components/club/HellhoundPlaque";
@@ -622,7 +622,11 @@ const CommentsPreview = memo(function CommentsPreview({
               {last.author.nick}
             </div>
             <div className="mt-0.5 line-clamp-2 text-[13px] leading-snug text-foreground/85">
-              {last.text.startsWith("::sticker::") ? "🖼 Стикер" : last.text}
+              {last.kind === "sticker" || last.text.startsWith("::sticker::")
+                ? "🖼 Стикер"
+                : last.kind === "image" || last.imageUrl
+                ? last.text?.trim() ? `📷 ${last.text}` : "📷 Фото"
+                : last.text}
             </div>
           </div>
         </div>
@@ -1260,6 +1264,7 @@ const CommentItem = memo(function CommentItem({
   const count = comment.likes;
   const authorIsBlogger = author.isBlogger;
   const stickerUrl = getCommentStickerUrl(comment);
+  const imageUrl = comment.imageUrl ?? (comment.kind === "image" ? null : null);
   const stickerRef = useRef<StickerViewHandle | null>(null);
   const navigate = useNavigate();
   const myPacksQ = useMyStickerPacks();
@@ -1269,6 +1274,7 @@ const CommentItem = memo(function CommentItem({
     stickerPack?.productSlug &&
     !(myPacksQ.data ?? []).includes(stickerPack.lockSlug)
   );
+  const [imgViewerOpen, setImgViewerOpen] = useState(false);
 
   // Локальный текст для inline-edit
   const [draft, setDraft] = useState(comment.text);
@@ -1371,7 +1377,7 @@ const CommentItem = memo(function CommentItem({
           </span>
         </div>
 
-        {editing && !stickerUrl ? (
+        {editing && !stickerUrl && !imageUrl ? (
           <div className="mt-1.5">
             <textarea
               autoFocus
@@ -1408,6 +1414,39 @@ const CommentItem = memo(function CommentItem({
                 Отмена
               </button>
             </div>
+          </div>
+        ) : imageUrl ? (
+          <div className="relative mt-1 select-none">
+            <button
+              type="button"
+              onClick={() => {
+                haptic("light");
+                setImgViewerOpen(true);
+              }}
+              onContextMenu={handleContextMenu}
+              className="block max-w-[260px] overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.02] active:opacity-90 md:max-w-[300px]"
+              aria-label="Открыть фото"
+            >
+              <img
+                src={imageUrl}
+                alt={comment.text || "фото"}
+                loading="lazy"
+                decoding="async"
+                className="h-auto max-h-[360px] w-full object-cover"
+              />
+            </button>
+            {comment.text?.trim() && (
+              <p className={`mt-1.5 break-words leading-relaxed text-foreground/90 ${large ? "text-[14.5px]" : "text-[13.5px]"}`}>
+                {renderCommentText(comment.text, knownNicks)}
+              </p>
+            )}
+            {imgViewerOpen && (
+              <ImageViewer
+                src={imageUrl}
+                open={imgViewerOpen}
+                onClose={() => setImgViewerOpen(false)}
+              />
+            )}
           </div>
         ) : stickerUrl ? (
           <div
@@ -1736,6 +1775,10 @@ function CommentComposer({
   const [recent, setRecent] = useState<string[]>(() => loadRecent());
   const [submitting, setSubmitting] = useState(false);
   const [attachOpen, setAttachOpen] = useState(false);
+  const [pendingImage, setPendingImage] = useState<{ url: string; preview: string } | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
   const viewer = useViewer();
   const myProfileQ = useMyProfile();
   const myProfile = myProfileQ.data;
@@ -1749,7 +1792,8 @@ function CommentComposer({
   const meId = viewer.user?.id ?? "";
   const trimmed = value.trim();
   const overLimit = value.length > COMMENT_MAX;
-  const disabled = trimmed.length === 0 || overLimit || submitting;
+  const hasImage = !!pendingImage;
+  const disabled = (!hasImage && trimmed.length === 0) || overLimit || submitting || uploading;
   const wrapRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const lastSentAt = useRef(0);
@@ -1808,7 +1852,9 @@ function CommentComposer({
   const submitText = useCallback(
     async (text: string) => {
       const clean = text.trim();
-      if (!clean || clean.length > COMMENT_MAX) return;
+      const img = pendingImage;
+      if (!img && (!clean || clean.length > COMMENT_MAX)) return;
+      if (clean.length > COMMENT_MAX) return;
       const now = Date.now();
       if (now - lastSentAt.current < COMMENT_MIN_INTERVAL_MS) return;
       lastSentAt.current = now;
@@ -1816,18 +1862,50 @@ function CommentComposer({
       try {
         await feedStore.addComment(postId, {
           author: meAuthor,
-          text: clean,
+          text: clean || undefined,
+          imageUrl: img?.url,
           parentId: replyTo?.commentId,
         });
         setValue("");
         setPanel(null);
+        if (img) {
+          try { URL.revokeObjectURL(img.preview); } catch { /* noop */ }
+        }
+        setPendingImage(null);
         onClearReply?.();
       } finally {
         setSubmitting(false);
       }
     },
-    [postId, replyTo, onClearReply, meAuthor],
+    [postId, replyTo, onClearReply, meAuthor, pendingImage],
   );
+
+  const handleFile = useCallback(async (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      hhToast.error("Только картинки");
+      return;
+    }
+    const MAX = 10 * 1024 * 1024;
+    if (file.size > MAX) {
+      hhToast.error("Файл больше 10 МБ");
+      return;
+    }
+    setAttachOpen(false);
+    const preview = URL.createObjectURL(file);
+    setPendingImage({ url: "", preview });
+    setUploading(true);
+    try {
+      const { uploadFileToS3 } = await import("@/lib/garage-api");
+      const url = await uploadFileToS3(file, "post", postId);
+      setPendingImage({ url, preview });
+    } catch {
+      hhToast.error("Не удалось загрузить фото");
+      try { URL.revokeObjectURL(preview); } catch { /* noop */ }
+      setPendingImage(null);
+    } finally {
+      setUploading(false);
+    }
+  }, [postId]);
 
   const insertEmoji = useCallback((e: string) => {
     setValue((v) => (v + e).slice(0, COMMENT_MAX));
@@ -1944,6 +2022,58 @@ function CommentComposer({
           onPickSticker={sendSticker}
         />
       )}
+      {pendingImage && (
+        <div className="flex items-center gap-2 border-b border-white/[0.05] bg-white/[0.02] px-3 py-2">
+          <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border border-white/[0.08] bg-black/40">
+            <img src={pendingImage.preview} alt="" className="h-full w-full object-cover" />
+            {uploading && (
+              <div className="absolute inset-0 grid place-items-center bg-black/50">
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+              </div>
+            )}
+          </div>
+          <div className="min-w-0 flex-1 text-[12px] text-muted-foreground">
+            {uploading ? "Загружаю фото…" : "Фото готово. Добавь подпись (опционально) и отправь."}
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              const img = pendingImage;
+              try { URL.revokeObjectURL(img.preview); } catch { /* noop */ }
+              setPendingImage(null);
+            }}
+            aria-label="Убрать фото"
+            className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-muted-foreground hover:text-foreground"
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) void handleFile(f);
+          e.target.value = "";
+        }}
+      />
+      <input
+        ref={cameraInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) void handleFile(f);
+          e.target.value = "";
+        }}
+      />
+
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -2008,7 +2138,7 @@ function CommentComposer({
         </div>
 
         {/* Right: morphs between Sticker (when empty) and Send (when typing) */}
-        {trimmed.length === 0 ? (
+        {trimmed.length === 0 && !hasImage ? (
           <button
             type="button"
             onClick={() => {
@@ -2037,33 +2167,30 @@ function CommentComposer({
         )}
       </form>
 
-      {/* Attach sheet — пока заглушка, под будущую загрузку фото/файлов */}
+      {/* Attach sheet — фото из галереи или камера */}
       <IOSActionSheet
         open={attachOpen}
         onOpenChange={setAttachOpen}
         title="Прикрепить к комментарию"
-        description="Скоро: фото, камера и файлы"
+        description="JPG, PNG или WebP, до 10 МБ"
         items={[
           {
             key: "photo",
             label: "Фото из галереи",
             icon: <ImageIcon size={20} strokeWidth={1.7} />,
-            disabled: true,
-            onSelect: () => {},
+            onSelect: () => {
+              setAttachOpen(false);
+              fileInputRef.current?.click();
+            },
           },
           {
             key: "camera",
             label: "Сделать фото",
             icon: <Camera size={20} strokeWidth={1.7} />,
-            disabled: true,
-            onSelect: () => {},
-          },
-          {
-            key: "file",
-            label: "Файл",
-            icon: <FileText size={20} strokeWidth={1.7} />,
-            disabled: true,
-            onSelect: () => {},
+            onSelect: () => {
+              setAttachOpen(false);
+              cameraInputRef.current?.click();
+            },
           },
         ]}
       />

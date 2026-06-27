@@ -51,10 +51,12 @@ export type FeedComment = {
   /** ISO-метка редактирования, undefined если не редактировался. */
   editedAt?: string;
   text: string;
-  /** 'text' (по умолчанию) или 'sticker' — для рендеринга через <img>. */
-  kind: "text" | "sticker";
+  /** 'text' (по умолчанию), 'sticker' или 'image'. */
+  kind: "text" | "sticker" | "image";
   /** URL/id стикера когда kind === 'sticker'. */
   stickerId?: string;
+  /** URL картинки когда kind === 'image'. */
+  imageUrl?: string;
   /** id родительского коммента (для тредов). */
   parentId?: string;
   likes: number;
@@ -174,6 +176,7 @@ function mapComment(c: FeedCommentHydrated): FeedComment {
     text: c.text,
     kind: c.kind ?? "text",
     stickerId: c.stickerId ?? undefined,
+    imageUrl: c.imageUrl ?? undefined,
     parentId: c.parentId ?? undefined,
     likes: c.likes,
     liked: c.liked,
@@ -374,10 +377,13 @@ export const feedStore = {
       author: FeedAuthor;
       text?: string;
       stickerId?: string;
+      imageUrl?: string;
       parentId?: string;
     },
   ) {
     const isSticker = !!input.stickerId;
+    const isImage = !isSticker && !!input.imageUrl;
+    const kind: FeedComment["kind"] = isSticker ? "sticker" : isImage ? "image" : "text";
     const tempId = `tmp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     const optimistic: FeedComment = {
       id: tempId,
@@ -388,8 +394,9 @@ export const feedStore = {
       time: "только что",
       createdAt: new Date().toISOString(),
       text: isSticker ? "" : (input.text ?? ""),
-      kind: isSticker ? "sticker" : "text",
+      kind,
       stickerId: input.stickerId,
+      imageUrl: input.imageUrl,
       parentId: input.parentId,
       likes: 0,
       liked: false,
@@ -402,6 +409,8 @@ export const feedStore = {
     try {
       const apiInput = isSticker
         ? { kind: "sticker" as const, stickerId: input.stickerId!, parentId: input.parentId }
+        : isImage
+        ? { kind: "image" as const, imageUrl: input.imageUrl!, text: input.text, parentId: input.parentId }
         : { kind: "text" as const, text: input.text ?? "", parentId: input.parentId };
       const created = await addCommentApi(postId, apiInput);
       const real = mapComment(created);

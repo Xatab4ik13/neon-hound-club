@@ -78,20 +78,23 @@ const patchSchema = z.object({
   poll: pollSchema.nullable().optional(),
 });
 
-// Комментарий = текст ИЛИ стикер. Для треда — необязательный parentId.
-// Без discriminatedUnion: фронту удобнее присылать оба поля + kind.
+// Комментарий = текст ИЛИ стикер ИЛИ фото (с опциональной подписью).
+// Для треда — необязательный parentId. Без discriminatedUnion: фронту удобнее
+// присылать набор полей + kind.
 const commentSchema = z
   .object({
-    kind: z.enum(["text", "sticker"]).default("text"),
+    kind: z.enum(["text", "sticker", "image"]).default("text"),
     text: z.string().max(2000).optional(),
     stickerId: z.string().min(1).max(500).optional(),
+    imageUrl: z.string().url().max(2000).optional(),
     parentId: z.string().uuid().optional(),
   })
   .refine(
     (d) =>
       (d.kind === "text" && !!d.text && d.text.trim().length > 0) ||
-      (d.kind === "sticker" && !!d.stickerId),
-    { message: "Нужен текст или стикер" },
+      (d.kind === "sticker" && !!d.stickerId) ||
+      (d.kind === "image" && !!d.imageUrl),
+    { message: "Нужен текст, стикер или фото" },
   );
 
 const commentPatchSchema = z.object({ text: z.string().min(1).max(2000) });
@@ -139,6 +142,7 @@ async function hydratePosts(rows: typeof posts.$inferSelect[], viewerId: string 
         text: postComments.text,
         kind: postComments.kind,
         stickerId: postComments.stickerId,
+        imageUrl: postComments.imageUrl,
         parentId: postComments.parentId,
         createdAt: postComments.createdAt,
         editedAt: postComments.editedAt,
@@ -255,6 +259,7 @@ async function hydratePosts(rows: typeof posts.$inferSelect[], viewerId: string 
         text: c.text,
         kind: c.kind,
         stickerId: c.stickerId,
+        imageUrl: c.imageUrl,
         parentId: c.parentId,
         editedAt: c.editedAt,
         likes: commentLikeMap.get(c.id) ?? 0,
@@ -333,6 +338,7 @@ export async function feedRoutes(app: FastifyInstance) {
         text: postComments.text,
         kind: postComments.kind,
         stickerId: postComments.stickerId,
+        imageUrl: postComments.imageUrl,
         parentId: postComments.parentId,
         createdAt: postComments.createdAt,
         editedAt: postComments.editedAt,
@@ -440,21 +446,24 @@ export async function feedRoutes(app: FastifyInstance) {
       parentId = parent.id;
     }
 
-    const isSticker = parsed.data.kind === "sticker";
+    const k = parsed.data.kind;
+    const isSticker = k === "sticker";
+    const isImage = k === "image";
     const [row] = await db
       .insert(postComments)
       .values({
         postId: req.params.id,
         authorId: s.sub,
         parentId,
-        kind: parsed.data.kind,
+        kind: k,
         text: isSticker ? "" : (parsed.data.text ?? "").trim(),
         stickerId: isSticker ? (parsed.data.stickerId ?? null) : null,
+        imageUrl: isImage ? (parsed.data.imageUrl ?? null) : null,
       })
       .returning();
 
-    // +XP за активность (только за текст, чтобы стикерами не фармили).
-    if (!isSticker) {
+    // +XP за активность (только за текст, чтобы стикерами/картинками не фармили).
+    if (k === "text") {
       await awardXp({
         userId: s.sub,
         amount: 1,
@@ -485,6 +494,7 @@ export async function feedRoutes(app: FastifyInstance) {
       text: row.text,
       kind: row.kind,
       stickerId: row.stickerId,
+      imageUrl: row.imageUrl,
       parentId: row.parentId,
       editedAt: row.editedAt,
       createdAt: row.createdAt,
