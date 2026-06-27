@@ -243,9 +243,11 @@ function ClubCartPage() {
                   >
                     {i.name}
                   </Link>
-                  <div className="mt-1 text-[13px] text-muted-foreground">
-                    {i.size ? `Размер ${i.size}` : "Без размера"}
-                  </div>
+                  {i.size && (
+                    <div className="mt-1 text-[13px] text-muted-foreground">
+                      Размер {i.size}
+                    </div>
+                  )}
 
                   {i.ticketsBonus && i.ticketsBonus > 0 ? (
                     <div className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5">
