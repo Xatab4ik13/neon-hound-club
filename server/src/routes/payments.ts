@@ -114,6 +114,12 @@ const orderRedirectSchema = z.object({
   shipping_city: z.string().trim().max(80).optional().default("—"),
   shipping_address: z.string().trim().max(300).optional().default("—"),
   shipping_postal_code: z.string().trim().min(3).max(16).optional(),
+  // СДЭК-поля. Все опциональны на уровне схемы — серверный createOrderForUser
+  // сам проверит, что для physical/preorder они заданы.
+  cdek_city_code: z.coerce.number().int().positive().optional(),
+  cdek_pvz_code: z.string().trim().max(32).optional(),
+  cdek_pvz_address: z.string().trim().max(500).optional(),
+  shipping_mode: z.enum(["pvz", "courier", "none"]).optional(),
   comment: z.string().trim().max(1000).optional(),
   method: z.enum(PAYMENT_METHODS).optional(),
 });
