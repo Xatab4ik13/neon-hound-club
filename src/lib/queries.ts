@@ -81,7 +81,7 @@ export type QuestItem = {
 
 // ---------- SHOP TYPES ----------
 
-export type ProductKind = "physical" | "digital" | "preorder";
+export type ProductKind = "physical" | "preorder" | "virtual" | "digital";
 
 export type ShopProductListItem = {
   id: string;
@@ -105,6 +105,11 @@ export type ShopProduct = ShopProductListItem & {
   digitalFileName: string | null;
   shippingInfo: string;
   returnPolicy: string;
+  /** Габариты посылки для СДЭК. Заполнены только у physical/preorder. */
+  weightG: number | null;
+  lengthCm: number | null;
+  widthCm: number | null;
+  heightCm: number | null;
   createdAt: string;
   updatedAt: string;
 };

@@ -186,6 +186,11 @@ function emptyProduct(): CreateProductInput {
     shippingInfo: "",
     returnPolicy: "",
     sizes: [],
+    // Дефолты для расчёта СДЭК — типовая футболка в пакете.
+    weightG: 300,
+    lengthCm: 30,
+    widthCm: 25,
+    heightCm: 3,
   };
 }
 
@@ -338,6 +343,10 @@ function ProductsTab() {
             shippingInfo: editing.shippingInfo ?? "",
             returnPolicy: editing.returnPolicy ?? "",
             sizes: editing.sizes ?? [],
+            weightG: editing.weightG ?? 300,
+            lengthCm: editing.lengthCm ?? 30,
+            widthCm: editing.widthCm ?? 25,
+            heightCm: editing.heightCm ?? 3,
           }}
           onClose={() => setEditing(null)}
           onDone={() => {
@@ -501,9 +510,10 @@ function ProductModal({
               value={p.kind ?? "physical"}
               onChange={(e) => setP({ ...p, kind: e.target.value as ProductKind })}
             >
-              <option value="physical">Физический</option>
-              <option value="digital">Цифровой (файл)</option>
-              <option value="preorder">Предзаказ</option>
+              <option value="physical">Физический (в наличии)</option>
+              <option value="preorder">Физический предзаказ</option>
+              <option value="virtual">Виртуальный (Hell Pass / билеты / курс)</option>
+              <option value="digital">Цифровой файл (PDF/ZIP)</option>
             </Select>
           </Field>
           <Field label="Категория">

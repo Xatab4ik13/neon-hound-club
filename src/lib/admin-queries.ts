@@ -190,6 +190,11 @@ export type CreateProductInput = {
   shippingInfo?: string;
   returnPolicy?: string;
   sizes?: Array<{ label: string; stock: number | null }>;
+  /** Габариты для расчёта СДЭК. Обязательны на беке для physical/preorder. */
+  weightG?: number | null;
+  lengthCm?: number | null;
+  widthCm?: number | null;
+  heightCm?: number | null;
 };
 
 export function fetchAdminShopProducts() {
