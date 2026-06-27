@@ -195,7 +195,7 @@ export function IOSActionSheet({
                       "active:bg-white/[0.06] disabled:opacity-40",
                       i > 0 && "border-t border-white/[0.05]",
                       it.destructive
-                        ? "font-medium text-[hsl(var(--destructive,0_84%_60%))]"
+                        ? "font-medium text-destructive"
                         : "text-foreground",
                     )}
                   >
