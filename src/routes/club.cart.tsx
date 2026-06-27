@@ -469,7 +469,7 @@ function DesktopRow({
               {item.name}
             </Link>
             <div className="mt-1 text-[13px] text-muted-foreground">
-              {item.size ? `Размер ${item.size}` : "Без размера"} · {item.price.toLocaleString("ru-RU")} ₽
+              {item.size ? `Размер ${item.size} · ` : ""}{item.price.toLocaleString("ru-RU")} ₽
             </div>
             {item.ticketsBonus && item.ticketsBonus > 0 ? (
               <div className="mt-2 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5">
