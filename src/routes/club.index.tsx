@@ -1144,6 +1144,7 @@ const CommentItem = memo(function CommentItem({
   onCancelEdit,
   onLongPress,
   onMore,
+  onDoubleTap,
 }: {
   comment: Comment;
   /** Если задан — только эти @nick рендерятся как кликабельные ссылки. */
@@ -1157,6 +1158,8 @@ const CommentItem = memo(function CommentItem({
   onLongPress?: () => void;
   /** Клик по «…» — тот же action-sheet. */
   onMore?: () => void;
+  /** Двойной тап по тексту/стикеру — быстрая реакция 🔥. */
+  onDoubleTap?: () => void;
 }) {
   const liked = comment.liked;
   const author = comment.author;
@@ -1171,9 +1174,20 @@ const CommentItem = memo(function CommentItem({
     if (editing) setDraft(comment.text);
   }, [editing, comment.text]);
 
-  // Long-press detection (touch). На десктопе — contextmenu.
+  // 🔥-сплеш по двойному тапу
+  const [splash, setSplash] = useState(false);
+  const splashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const triggerSplash = useCallback(() => {
+    setSplash(true);
+    if (splashTimer.current) clearTimeout(splashTimer.current);
+    splashTimer.current = setTimeout(() => setSplash(false), 700);
+  }, []);
+  useEffect(() => () => { if (splashTimer.current) clearTimeout(splashTimer.current); }, []);
+
+  // Long-press + double-tap detection. Один обработчик для touch и click.
   const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const longPressedRef = useRef(false);
+  const lastTapRef = useRef(0);
   const handlePressStart = useCallback(() => {
     if (!onLongPress) return;
     longPressedRef.current = false;
@@ -1189,6 +1203,19 @@ const CommentItem = memo(function CommentItem({
       pressTimer.current = null;
     }
   }, []);
+  const handleTap = useCallback(() => {
+    if (longPressedRef.current) return;
+    if (!onDoubleTap) return;
+    const now = Date.now();
+    if (now - lastTapRef.current < 300) {
+      lastTapRef.current = 0;
+      haptic("success");
+      triggerSplash();
+      onDoubleTap();
+    } else {
+      lastTapRef.current = now;
+    }
+  }, [onDoubleTap, triggerSplash]);
   const handleContextMenu = useCallback(
     (e: React.MouseEvent) => {
       if (!onLongPress) return;
