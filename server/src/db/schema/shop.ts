@@ -47,11 +47,12 @@ export type ShopSubcategory = typeof shopSubcategories.$inferSelect;
 
 /**
  * Тип товара:
- *   physical — обычный, доставляется СДЭКом, есть stock и shipping.
+ *   physical — обычный, в наличии, доставляется СДЭКом, есть stock и вес/габариты.
+ *   preorder — оплата сразу, отгрузка с указанной даты (preorder_expected_at). Доставка СДЭКом.
+ *   virtual  — Hell Pass / билеты / курс Школы. Активация сразу после оплаты, без доставки и без файла.
  *   digital  — файл (PDF/JPG/ZIP) в MinIO. После оплаты — ссылка в кабинете покупателя.
- *   preorder — оплата сразу, отгрузка с указанной даты (preorder_expected_at).
  */
-export const PRODUCT_KINDS = ["physical", "digital", "preorder"] as const;
+export const PRODUCT_KINDS = ["physical", "preorder", "virtual", "digital"] as const;
 export type ProductKind = (typeof PRODUCT_KINDS)[number];
 
 /**
@@ -85,6 +86,11 @@ export const products = pgTable(
     shippingInfo: text("shipping_info").notNull().default(""),
     returnPolicy: text("return_policy").notNull().default(""),
     sizes: jsonb("sizes").$type<Array<{ label: string; stock: number | null }>>().notNull().default([]),
+    // Габариты для расчёта СДЭК. Обязательны для physical/preorder — иначе тариф не посчитать.
+    weightG: integer("weight_g"),
+    lengthCm: integer("length_cm"),
+    widthCm: integer("width_cm"),
+    heightCm: integer("height_cm"),
     stickerPackSlug: varchar("sticker_pack_slug", { length: 64 }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
