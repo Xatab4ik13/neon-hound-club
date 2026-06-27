@@ -555,13 +555,34 @@ function ClubCheckoutPage() {
                 </li>
               ))}
             </ul>
+            <div className="space-y-1.5 border-t border-white/[0.05] px-4 py-3">
+              <div className="flex items-center justify-between text-[13px]">
+                <span className="text-muted-foreground">Товары</span>
+                <span className="font-mono tabular-nums text-foreground">
+                  {total.toLocaleString("ru-RU")} ₽
+                </span>
+              </div>
+              {needsShipping && (
+                <div className="flex items-center justify-between text-[13px]">
+                  <span className="text-muted-foreground">Доставка СДЭК</span>
+                  <span className="font-mono tabular-nums text-foreground">
+                    {shipCalcLoading
+                      ? "…"
+                      : shipPrice != null
+                        ? `${shipPrice.toLocaleString("ru-RU")} ₽`
+                        : "—"}
+                  </span>
+                </div>
+              )}
+            </div>
             <div className="flex items-center justify-between border-t border-white/[0.05] px-4 py-3.5">
               <span className="text-[15px] font-semibold">Итого</span>
               <span className="font-display text-2xl font-black tabular-nums">
-                {total.toLocaleString("ru-RU")} ₽
+                {grandTotal.toLocaleString("ru-RU")} ₽
               </span>
             </div>
           </section>
+
 
           {ticketsTotal > 0 && (
             <div className="flex items-center gap-3 rounded-2xl border border-primary/25 bg-primary/[0.08] px-4 py-3">
