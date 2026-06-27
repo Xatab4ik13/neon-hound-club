@@ -42,9 +42,13 @@ function summarize(entries: LedgerEntry[]) {
 export function TicketLedger({
   entries,
   isLoading,
+  isError,
+  onRetry,
 }: {
   entries: LedgerEntry[];
   isLoading?: boolean;
+  isError?: boolean;
+  onRetry?: () => void;
 }) {
   const [filter, setFilter] = useState<BackendTicketSource | "all">("all");
   const [expanded, setExpanded] = useState(false);
