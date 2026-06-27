@@ -1377,7 +1377,7 @@ const CommentItem = memo(function CommentItem({
           </span>
         </div>
 
-        {editing && !stickerUrl ? (
+        {editing && !stickerUrl && !imageUrl ? (
           <div className="mt-1.5">
             <textarea
               autoFocus
