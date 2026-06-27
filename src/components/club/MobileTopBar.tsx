@@ -176,12 +176,15 @@ export function MobileTopBar() {
               }}
             />
           </span>
-          <span className="relative truncate font-display text-[15px] font-black italic tracking-tight text-white">
+          <span className="relative min-w-0 flex-1 truncate font-display text-[15px] font-black italic tracking-tight text-white">
             {nick || "—"}
           </span>
-          <span className="relative whitespace-nowrap font-mono text-[12px] font-bold tabular-nums">
+          <span className="relative ml-2 whitespace-nowrap font-mono text-[11px] font-bold tabular-nums">
             <span className="text-white">{xp.toLocaleString("ru-RU")}</span>
-            <span className="ml-1 text-white/60">/ {xpMax.toLocaleString("ru-RU")} XP</span>
+            {!isShop && (
+              <span className="ml-1 text-white/60">/ {xpMax.toLocaleString("ru-RU")}</span>
+            )}
+            <span className="ml-1 text-white/60">XP</span>
           </span>
         </Link>
 
@@ -214,10 +217,8 @@ export function MobileTopBar() {
           className="relative grid h-10 w-10 shrink-0 place-items-center text-foreground transition-transform active:scale-90 active:opacity-60"
         >
           <Bell className="h-[22px] w-[22px]" strokeWidth={1.9} />
-          <span
-            aria-hidden
-            className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-primary ring-2 ring-background"
-          />
+          {/* Красная точка зарезервирована под реальный счётчик непрочитанных.
+              Пока такого источника нет — точку не показываем, чтобы не врать юзеру. */}
         </button>
       </div>
       <NotificationsSheet open={notifOpen} onOpenChange={setNotifOpen} />
