@@ -1654,6 +1654,9 @@ const STICKER_PACKS: StickerPack[] = [
     coverIsImage: true,
     stickers: HELL_MINIONS_STICKERS.map(asStickerText),
     meta: HELL_MINIONS_PACK,
+    lockSlug: "hell-minions",
+    productSlug: STICKER_PACK_PRODUCT_SLUGS["hell-minions"],
+    priceRub: 300,
   },
   {
     id: "special",
