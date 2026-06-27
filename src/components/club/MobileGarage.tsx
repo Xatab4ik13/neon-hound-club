@@ -1430,25 +1430,40 @@ function Fab({ onClick }: { onClick: () => void }) {
 // ───────────── Empty states ─────────────
 
 function EmptyGarage({ onAdd }: { onAdd: () => void }) {
+  // Empty state центрируется по высоте экрана с учётом верхней top-bar
+  // (~56px + safe-area) и нижней tab-bar (~64px + safe-area).
+  // Карточка больше не висит в верхней трети с километрами пустого скролла.
   return (
-    <div className="px-4 pb-32 pt-8">
-      <h1 className="font-display text-[34px] font-black italic uppercase leading-none tracking-tight text-foreground">Гараж</h1>
-      <div className="mt-8 rounded-3xl border border-dashed border-white/[0.12] bg-card/30 p-10 text-center">
-        <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-primary/10 text-primary">
-          <Bike className="h-7 w-7" />
+    <div
+      className="flex flex-col px-4"
+      style={{
+        minHeight:
+          "calc(100dvh - 56px - 64px - env(safe-area-inset-top) - env(safe-area-inset-bottom))",
+      }}
+    >
+      <h1 className="mt-6 font-display text-[34px] font-black italic uppercase leading-none tracking-tight text-foreground">
+        Гараж
+      </h1>
+      <div className="flex flex-1 items-center justify-center py-6">
+        <div className="w-full rounded-3xl border border-dashed border-white/[0.12] bg-card/30 p-8 text-center">
+          <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-primary/10 text-primary">
+            <Bike className="h-7 w-7" />
+          </div>
+          <h2 className="mt-4 text-[20px] font-bold text-foreground">
+            Здесь будет твой мотик
+          </h2>
+          <p className="mt-1.5 text-[14px] text-muted-foreground">
+            Фото, документы, журнал сервиса и поездок — всё в одном месте.
+          </p>
+          <button
+            type="button"
+            onClick={onAdd}
+            className="mt-5 inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-[14px] font-semibold text-primary-foreground active:opacity-80"
+          >
+            <Plus className="h-4 w-4" />
+            Добавить байк
+          </button>
         </div>
-        <h2 className="mt-4 text-[20px] font-bold text-foreground">Здесь будет твой мотик</h2>
-        <p className="mt-1.5 text-[14px] text-muted-foreground">
-          Фото, документы, журнал сервиса и поездок
-        </p>
-        <button
-          type="button"
-          onClick={onAdd}
-          className="mt-5 inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-[14px] font-semibold text-primary-foreground active:opacity-80"
-        >
-          <Plus className="h-4 w-4" />
-          Добавить байк
-        </button>
       </div>
     </div>
   );
