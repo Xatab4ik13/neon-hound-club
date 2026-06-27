@@ -31,6 +31,9 @@ export function Countdown({ deadlineAt, compact = false, variant = "default" }: 
   }, []);
 
   const { days, hours, minutes, seconds, isOver } = diffParts(target, now);
+  // <24ч → warning: цифры окрашиваются в primary, чтобы таймер визуально
+  // выделялся среди прочих метаданных розыгрыша.
+  const urgent = !isOver && days === 0;
 
   if (isOver) {
     return (
@@ -41,7 +44,6 @@ export function Countdown({ deadlineAt, compact = false, variant = "default" }: 
   }
 
   if (variant === "tactical") {
-    // Список значащих разрядов: дни (если есть) → ч → м → с (если нет дней)
     const units: { value: string; label: string }[] = [];
     if (days > 0) units.push({ value: pad(days), label: "д" });
     units.push({ value: pad(hours), label: "ч" });
@@ -71,18 +73,23 @@ export function Countdown({ deadlineAt, compact = false, variant = "default" }: 
 
   return (
     <div className="flex items-baseline gap-1.5 font-mono tabular-nums">
-      {days > 0 && <Unit value={String(days)} label="д" />}
-      <Unit value={pad(hours)} label="ч" />
-      <Unit value={pad(minutes)} label="м" />
-      {!compact && <Unit value={pad(seconds)} label="с" />}
+      {days > 0 && <Unit value={String(days)} label="д" urgent={false} />}
+      <Unit value={pad(hours)} label="ч" urgent={urgent} />
+      <Unit value={pad(minutes)} label="м" urgent={urgent} />
+      {!compact && <Unit value={pad(seconds)} label="с" urgent={urgent} />}
     </div>
   );
 }
 
-function Unit({ value, label }: { value: string; label: string }) {
+function Unit({ value, label, urgent = false }: { value: string; label: string; urgent?: boolean }) {
   return (
     <span className="inline-flex items-baseline">
-      <span className="font-display text-base font-black italic text-foreground">
+      <span
+        className={
+          "font-display text-base font-black italic " +
+          (urgent ? "text-primary" : "text-foreground")
+        }
+      >
         {value}
       </span>
       <span className="ml-0.5 text-[9px] uppercase tracking-[0.2em] text-muted-foreground">
