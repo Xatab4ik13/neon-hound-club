@@ -1415,9 +1415,11 @@ const CommentItem = memo(function CommentItem({
             onTouchMove={handlePressEnd}
             onTouchCancel={handlePressEnd}
             onClick={() => {
-              // Telegram-style: одиночный тап = перезапуск анимации.
-              // Двойной тап продолжает работать через handleTap (реакция-сплеш).
-              stickerRef.current?.replay();
+              if (stickerLocked && stickerPack?.productSlug) {
+                haptic("light");
+                navigate({ to: "/club/shop/$productSlug", params: { productSlug: stickerPack.productSlug } });
+                return;
+              }
               haptic("light");
               handleTap();
             }}
@@ -1428,7 +1430,7 @@ const CommentItem = memo(function CommentItem({
               url={stickerUrl}
               alt="стикер"
               size={208}
-              loop={false}
+              loop
               className="h-48 w-48 select-none object-contain md:h-52 md:w-52"
             />
             {splash && <DoubleTapSplash />}
