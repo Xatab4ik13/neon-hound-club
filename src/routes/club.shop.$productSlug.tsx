@@ -352,31 +352,33 @@ function ProductView({ product }: { product: ShopProduct }) {
           </div>
         )}
 
-        {/* Кол-во */}
-        <div className="mt-6 flex items-center justify-between">
-          <span className="text-[13px] font-medium text-muted-foreground">Количество</span>
-          <div className="flex items-center overflow-hidden rounded-xl border border-white/[0.08] bg-white/[0.03]">
-            <button
-              type="button"
-              onClick={() => setQty((q) => Math.max(1, q - 1))}
-              className="grid h-10 w-10 place-items-center text-foreground active:bg-white/[0.06] disabled:opacity-40"
-              aria-label="Уменьшить"
-              disabled={qty <= 1}
-            >
-              <Minus className="h-4 w-4" />
-            </button>
-            <span className="w-10 text-center text-[15px] font-semibold tabular-nums">{qty}</span>
-            <button
-              type="button"
-              onClick={() => setQty((q) => Math.min(maxQty, q + 1))}
-              className="grid h-10 w-10 place-items-center text-foreground active:bg-white/[0.06] disabled:opacity-40"
-              aria-label="Увеличить"
-              disabled={qty >= maxQty}
-            >
-              <Plus className="h-4 w-4" />
-            </button>
+        {/* Кол-во (для digital не имеет смысла — это разовая разблокировка) */}
+        {!isDigital && (
+          <div className="mt-6 flex items-center justify-between">
+            <span className="text-[13px] font-medium text-muted-foreground">Количество</span>
+            <div className="flex items-center overflow-hidden rounded-xl border border-white/[0.08] bg-white/[0.03]">
+              <button
+                type="button"
+                onClick={() => setQty((q) => Math.max(1, q - 1))}
+                className="grid h-10 w-10 place-items-center text-foreground active:bg-white/[0.06] disabled:opacity-40"
+                aria-label="Уменьшить"
+                disabled={qty <= 1}
+              >
+                <Minus className="h-4 w-4" />
+              </button>
+              <span className="w-10 text-center text-[15px] font-semibold tabular-nums">{qty}</span>
+              <button
+                type="button"
+                onClick={() => setQty((q) => Math.min(maxQty, q + 1))}
+                className="grid h-10 w-10 place-items-center text-foreground active:bg-white/[0.06] disabled:opacity-40"
+                aria-label="Увеличить"
+                disabled={qty >= maxQty}
+              >
+                <Plus className="h-4 w-4" />
+              </button>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Аккордеоны */}
         <div className="mt-8 overflow-hidden rounded-2xl border border-white/[0.06] bg-card/40 divide-y divide-white/[0.05]">
