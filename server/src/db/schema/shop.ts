@@ -47,11 +47,12 @@ export type ShopSubcategory = typeof shopSubcategories.$inferSelect;
 
 /**
  * Тип товара:
- *   physical — обычный, доставляется СДЭКом, есть stock и shipping.
+ *   physical — обычный, в наличии, доставляется СДЭКом, есть stock и вес/габариты.
+ *   preorder — оплата сразу, отгрузка с указанной даты (preorder_expected_at). Доставка СДЭКом.
+ *   virtual  — Hell Pass / билеты / курс Школы. Активация сразу после оплаты, без доставки и без файла.
  *   digital  — файл (PDF/JPG/ZIP) в MinIO. После оплаты — ссылка в кабинете покупателя.
- *   preorder — оплата сразу, отгрузка с указанной даты (preorder_expected_at).
  */
-export const PRODUCT_KINDS = ["physical", "digital", "preorder"] as const;
+export const PRODUCT_KINDS = ["physical", "preorder", "virtual", "digital"] as const;
 export type ProductKind = (typeof PRODUCT_KINDS)[number];
 
 /**
@@ -85,6 +86,11 @@ export const products = pgTable(
     shippingInfo: text("shipping_info").notNull().default(""),
     returnPolicy: text("return_policy").notNull().default(""),
     sizes: jsonb("sizes").$type<Array<{ label: string; stock: number | null }>>().notNull().default([]),
+    // Габариты для расчёта СДЭК. Обязательны для physical/preorder — иначе тариф не посчитать.
+    weightG: integer("weight_g"),
+    lengthCm: integer("length_cm"),
+    widthCm: integer("width_cm"),
+    heightCm: integer("height_cm"),
     stickerPackSlug: varchar("sticker_pack_slug", { length: 64 }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
@@ -155,11 +161,23 @@ export const orders = pgTable(
       }>()
       .notNull(),
     comment: text("comment"),
+    /** Итоговая цена доставки СДЭК (на момент чекаута). 0 для virtual/digital. */
+    shippingPriceRub: integer("shipping_price_rub").notNull().default(0),
+    /** 'pvz' | 'courier' | 'none' (none = без доставки). */
+    shippingMode: varchar("shipping_mode", { length: 8 }).notNull().default("none"),
     cdekTrack: varchar("cdek_track", { length: 64 }),
+    /** UUID накладной СДЭК после createOrder. */
+    cdekUuid: varchar("cdek_uuid", { length: 64 }),
+    /** Тариф СДЭК (136 склад-ПВЗ, 137 склад-дверь). */
+    cdekTariffCode: integer("cdek_tariff_code"),
+    /** Сводка типов в заказе — для фильтров в /club/orders. */
+    kindSummary: varchar("kind_summary", { length: 16 }).notNull().default("physical"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
     paidAt: timestamp("paid_at", { withTimezone: true }),
     shippedAt: timestamp("shipped_at", { withTimezone: true }),
+    /** Для preorder: когда партия готова к отгрузке (выставляет админ). */
+    readyToShipAt: timestamp("ready_to_ship_at", { withTimezone: true }),
     /** Дедлайн оплаты для status='pending_payment'. После этого воркер сносит заказ и возвращает сток. */
     expiresAt: timestamp("expires_at", { withTimezone: true }),
   },
@@ -167,6 +185,7 @@ export const orders = pgTable(
     userIdx: index("orders_user_idx").on(t.userId),
     statusIdx: index("orders_status_idx").on(t.status),
     createdIdx: index("orders_created_idx").on(t.createdAt),
+    kindSummaryIdx: index("orders_kind_summary_idx").on(t.kindSummary),
   }),
 );
 
@@ -201,6 +220,8 @@ export const orderItems = pgTable(
     bonusTicketsSnapshot: integer("bonus_tickets_snapshot").notNull().default(0),
     qty: integer("qty").notNull(),
     sizeSnapshot: varchar("size_snapshot", { length: 24 }),
+    /** Снимок типа товара — нужен для фильтров и иконок даже после правки товара. */
+    kindSnapshot: varchar("kind_snapshot", { length: 16 }).notNull().default("physical").$type<ProductKind>(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => ({

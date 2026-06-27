@@ -1,92 +1,130 @@
-# Аудит навигации PWA и план улучшений
+## Что делаем
 
-Прошёл по всем основным маршрутам клуба (`/club`, `/club/shop`, `/club/tickets`, `/club/garage`, `/club/me`, `/club/quests`, `/club/raffles`, `/club/hell-ai`, `/club/invite`, `/club/hell-pass`, `/club/school`, `/club/cart`, `/club/orders`, `/club/help`, `/club/install`) в мобильном вьюпорте, плюс перечитал ядро навигации (`router.tsx`, `routes/club.tsx`, `MobileTransition.tsx`, `MobileTabBar.tsx`, `use-edge-swipe-back.ts`, оба `sw.js` / `service-worker.js`).
+1. На бэке — типизация товаров и интеграция СДЭК API (расчёт тарифа, список ПВЗ, создание накладной).
+2. В профиле — один дефолтный ПВЗ + ФИО/телефон, плюс «домашний адрес» для курьера. Подставляются в чекаут, можно менять.
+3. Новый чекаут с калькулятором СДЭК и витриной с разными бейджами под тип товара.
+4. Админка магазина: задаём вес/габариты, флаг `kind` (physical / preorder / virtual / digital), для preorder — дату отгрузки.
 
-Фатальных багов нет, маршруты возвращают 200. Но в PWA-режиме набирается ~10 мелких поведений, которые «выдают веб» и ломают ощущение нативного iOS-приложения. Сгруппировал по приоритетам — реализую только после твоего апрува, по пунктам.
-
----
-
-## Tier 1 — то, что бьёт по ощущению прямо сейчас
-
-### 1. Анимация перехода между вкладками TabBar выглядит «не нативно»
-`MobileTransition` считает «глубину» пути: переход между вкладками одного уровня (`/club` ↔ `/club/shop` ↔ `/club/tickets` ↔ `/club/garage`) попадает в ветку `direction === 0` → cross-fade на 180 мс. На настоящем iOS вкладки переключаются **мгновенно, без анимации**. Cross-fade на табах = «веб».
-**Фикс:** для переходов между корнями вкладок (`/club`, `/club/shop`, `/club/tickets`, `/club/garage`) отключить анимацию полностью — `initial=false`, мгновенная замена. Slide оставить только для push/pop (вкладка → подстраница и обратно).
-
-### 2. Повторный тап по активной вкладке ничего не делает
-Стандарт iOS: тап по уже активной вкладке скроллит её к началу (и закрывает открытые модалки/sheet'ы внутри). Сейчас `MobileTabBar` просто игнорирует тап по активной (`if (!active) haptic(...)`), `<Link>` к тому же пути — no-op.
-**Фикс:** при тапе по активной вкладке — `window.scrollTo({top:0, behavior:'smooth'})` + лёгкий хаптик. Для ленты дополнительно дёргать `feedStore.refresh()` опционально (обсудим).
-
-### 3. Scroll restoration ломает slide-анимацию
-В `router.tsx` включён `scrollRestoration: true`. При back-навигации новый layer въезжает с `x: -30% → 0`, а скролл восстанавливается **после** маунта → видно прыжок контента в момент завершения анимации. Особенно заметно на длинной ленте.
-**Фикс:** восстанавливать `scrollTop` синхронно в `useLayoutEffect` начального состояния `motion.div` (до старта анимации), либо отключить `scrollRestoration` у роутера и хранить скролл вручную в Map по pathname.
-
-### 4. Edge-swipe-back уводит из приложения
-`useEdgeSwipeBack` дёргает `router.history.back()`. Если юзер открыл подстраницу прямой ссылкой (deep-link из пуша или из браузера) — `history.length > 1`, но `back()` уведёт его обратно в Safari/на пустую страницу. На iOS жест должен fallback'ить на родительский маршрут.
-**Фикс:** если `history.state` не помечен как «наш push» — навигировать на родительский путь (`/club/shop/$slug` → `/club/shop`, `/club/orders/$id` → `/club/orders` и т.д.) через `router.navigate`.
-
-### 5. Дубль service-worker'ов
-В `public/` лежат `sw.js` (нормальный push-only) и `service-worker.js` (старый kill-switch, делающий `unregister()` + `client.navigate(url)`). Если у кого-то из юзеров остался зарегистрирован старый — он триггерит `navigate` на каждый activate → лишняя перезагрузка PWA-окна, мелькание splash-экрана.
-**Фикс:** оставить `service-worker.js` ровно как pure kill-switch (он такой и есть), но убедиться, что нигде в коде он больше не регистрируется. Через 1–2 недели — удалить файл совсем. Проверю, кто его регистрирует, и вычищу.
+Делаем поэтапно, чтобы каждый кусок можно было проверить отдельно.
 
 ---
 
-## Tier 2 — заметно при внимательном использовании
+## Этап 1. Типизация товаров (бек + админка)
 
-### 6. `defaultPreload: "intent"` + `defaultPreloadStaleTime: 0`
-На тач-устройствах "intent" = практически клик, выигрыша нет, но каждый hover/tap-down ре-фетчит loader'ы с нуля (stale=0). На медленной сети — двойной запрос.
-**Фикс:** `defaultPreloadStaleTime: 30_000` (минута запасного кеша между preload и реальной навигацией).
+**Миграция `0035_products_kind_dimensions.sql`:**
+- `products.kind` — enum `physical | preorder | virtual | digital`, default `physical`.
+- `products.weight_g` int (граммы), `length_cm`, `width_cm`, `height_cm` int — обязательны только для `physical/preorder`.
+- `products.preorder_ship_at` timestamptz nullable — для `preorder`, отображается на витрине как «Отгрузка с DD.MM».
+- `products.digital_file_url` text nullable — для `digital`, выдаётся в письме после оплаты.
 
-### 7. PullToRefresh активен на всех страницах, включая формы
-`PullToRefresh` обёрнут вокруг `<Outlet>` глобально. На страницах вроде `/club/cart`, `/club/checkout`, `/club/help/new` (формы) случайный pull-to-refresh посреди ввода стирает данные.
-**Фикс:** отключать pull-refresh на маршрутах с формами (явный whitelist маршрутов, где он осмыслен: лента, магазин, билеты, гараж, квесты, розыгрыши, заказы).
+**Где меняется:**
+- `server/src/db/schema/shop.ts` — поля.
+- `server/src/routes/shop.ts` (`GET /shop/products`, `GET /shop/products/:slug`) — отдаём новые поля.
+- `server/src/shop/admin.ts` (на хост-бэке `/opt/hhr/server`) — форма редактирования товара: селект `kind`, инпуты веса/габаритов, дата отгрузки, ссылка на файл. Невалидные комбинации (`physical` без веса) — 400.
+- Витрина `src/routes/club.shop.index.tsx` + `src/routes/club.shop.$productSlug.tsx`:
+  - бейдж «Предзаказ · с 15.08» (preorder), «Цифровой» (digital), «Доступ сразу» (virtual);
+  - блок «Доставка» показывается только для physical/preorder.
 
-### 8. Тапы по `<Link>` не дают тактильный отклик
-Только TabBar даёт haptic. Переход «карточка товара → страница товара», «комментарий → пост», «коммент аватар → профиль» — без отклика. На iOS PWA это сильно ощущается как «не приложение».
-**Фикс:** мини-хелпер `<AppLink>` поверх TanStack `Link`, который на mousedown/touchstart даёт `haptic("light")`. Прогнать по основным навигационным переходам в клубе.
+## Этап 2. Профиль: дефолтный ПВЗ + адрес
 
-### 9. Нет кнопки «назад» в MobileTopBar на подстраницах
-Edge-swipe — хорошо, но не все знают про жест, и в PWA на Android жеста с края нет. На подстраницах (`/club/shop/$slug`, `/club/orders/$id`, `/club/p/$postId`, `/club/help/$ticketId`, `/club/raffles/$id`, `/club/hell-pass/$tier`) нужна явная стрелка ←.
-**Фикс:** в `MobileTopBar` показывать back-arrow на любом пути глубже `/club/<root>` и на listing-страницах вести через `router.navigate` на родителя (не `history.back()` — см. п.4).
+Уже есть `delivery_addresses` (`server/src/db/migrations/0013_settings.sql`). Расширяем:
 
-### 10. `min-h-full` на анимируемом слое
-`<motion.div className="min-h-full">` в `MobileTransition` — у `<main>` нет явной высоты, поэтому `min-h-full` = 0. В момент `exit` старый слой схлопывается, бывает кратковременный «пустой» хвост под контентом до нижнего таб-бара.
-**Фикс:** добавить `min-h-[100dvh]` на motion-обёртку и `position:relative` + `min-h-[100dvh]` на `<main>`. Анимация перестанет «откусывать» низ страницы.
+**Миграция `0036_delivery_address_pvz.sql`:**
+- `delivery_addresses.cdek_pvz_code` varchar(32) — код ПВЗ СДЭК (`KRR123`).
+- `delivery_addresses.cdek_pvz_address` text — человекочитаемый адрес.
+- `delivery_addresses.cdek_city_code` int — код города в СДЭК (нужен для расчёта).
+- `delivery_addresses.street_address` text — для курьера (улица, дом, квартира).
+- `delivery_addresses.preferred_mode` varchar(8) default `pvz` — `pvz | courier`.
 
----
+**Экран `/club/me` → «Адрес доставки»:**
+- Селектор города (автокомплит через СДЭК `/location/cities`).
+- Если режим `pvz`: модалка с картой/списком ПВЗ (СДЭК `/deliverypoints`), юзер тапает — сохраняем code + адрес.
+- Если режим `courier`: поле улицы + квартира.
+- Кнопка «Проверить адрес» с галкой, чтобы клиент явно подтвердил перед оплатой (как ты просил).
+- `updated_at` показываем рядом: «Проверено 12.06.2026».
 
-## Tier 3 — мелочи и инфраструктура
+## Этап 3. СДЭК API на беке
 
-### 11. Heavy backdrop-filter на TabBar
-`bg-black/75 backdrop-blur-2xl backdrop-saturate-150` — две тяжёлых GPU-операции на фиксированном элементе. На iOS PWA при скролле длинной ленты заметные просадки FPS у iPhone XR/SE.
-**Фикс:** уменьшить до `backdrop-blur-xl` (или вообще `backdrop-blur-md`) + `bg-black/85` для компенсации прозрачности. Визуально почти не отличается, скролл становится плавнее.
+Новый модуль `server/src/lib/cdek.ts`:
+- OAuth (client_id/client_secret) с кешем токена в памяти на 50 мин.
+- `getCities(query)` — поиск города (для автокомплита).
+- `getPickupPoints(cityCode)` — список ПВЗ.
+- `calculate({ fromCityCode: KRASNODAR, toCityCode, weightG, dimensions, tariffCode })` — стоимость и срок.
+  - Тариф 136 (склад-ПВЗ) для `pvz`, тариф 137 (склад-дверь) для `courier`.
+- `createOrder({...})` — создание накладной, возвращает `cdek_uuid` + трек.
+- `getOrderStatus(uuid)` — статусы для трекинга.
 
-### 12. `_redirects` в `public/`
-Файл бесполезный для Lovable-хостинга (там SPA-fallback встроен), но и не вредит. Можно удалить, чтобы не путал.
+Секреты на VPS (`.env` бека): `CDEK_CLIENT_ID`, `CDEK_CLIENT_SECRET`, `CDEK_FROM_CITY_CODE=4350` (Краснодар), `CDEK_FROM_PVZ_CODE` (если фиксируем конкретный ПВЗ отправки).
 
-### 13. Боевые `console.warn` от TanStack про code-split
-`shop-info.tsx` и `club.hell-ai.tsx` экспортируют `ShopInfoPage` / `HellAiPage` помимо `Route` — TanStack ругается, эти экспорты не code-split'ятся и раздувают бандл. Перенести компоненты в отдельные файлы вне `src/routes/`.
+**Публичные ручки фронта:**
+- `GET /api/v1/cdek/cities?q=крас` — для автокомплита в профиле/чекауте.
+- `GET /api/v1/cdek/pvz?cityCode=4350` — список ПВЗ.
+- `POST /api/v1/cdek/calculate` — `{ items: [{productId, qty}], cityCode, mode }` → `{ price, days }`. Считаем суммарный вес/габариты на беке, ничего весового на фронте не доверяем.
 
-### 14. Префетч ассетов вкладок
-Сейчас при холодном входе на `/club` бандлы `/club/shop`, `/club/tickets`, `/club/garage` тянутся только при hover/touch. Для PWA имеет смысл при `idle` префетчить чанки 4 главных вкладок — переключение станет мгновенным.
-**Фикс:** в layout клуба `requestIdleCallback(() => router.preloadRoute(...))` для четырёх корневых вкладок.
+## Этап 4. Новый чекаут
 
----
-
-## Технический раздел (для меня, не для тебя)
+`src/routes/club.checkout.tsx` переписываем под три сценария по составу корзины:
 
 ```text
-src/router.tsx                 — defaultPreloadStaleTime: 30_000
-src/routes/club.tsx            — PullToRefresh whitelist, idle-preload tabs
-src/components/club/
-  MobileTransition.tsx         — TAB_ROOTS set, skip animation для tab↔tab
-                                 layout-effect scroll restore
-  MobileTabBar.tsx              — scrollToTop on re-tap of active
-  MobileTopBar.tsx              — back-arrow на подстраницах
-src/hooks/use-edge-swipe-back.ts — fallback на parent path вместо history.back
-src/components/ui/AppLink.tsx   — новый: Link + haptic
-public/service-worker.js        — проверить, что нигде не регистрируется
+корзина = только virtual/digital → форма «Получатель» (email уже из профиля), без СДЭК
+корзина = только physical/preorder → СДЭК-блок обязателен
+корзина = смешанная → две секции: «Доступ сразу» (virtual) + «Доставка» (physical/preorder)
 ```
+
+**Поток для physical:**
+1. Сверху — карточка с подставленным из профиля адресом + бейдж «Проверьте данные» (чекбокс должен быть отмечен, иначе кнопка «Оплатить» неактивна).
+2. Тогглер `ПВЗ / Курьер` (если режимы разрешены).
+3. Стоимость доставки появляется сразу под адресом — отдельной строкой в итоге. При смене города/режима — пересчёт через `POST /cdek/calculate`.
+4. Для preorder — серая плашка «Отгрузка с 15.08, придёт ~20.08» (срок СДЭК + дата).
+5. Поле «Комментарий курьеру» — опционально.
+
+**Поток для virtual:**
+- Никакого СДЭК. Только email подтверждения, итог = сумма товаров.
+
+**В `orders`:**
+- Уже есть `shipping jsonb` — туда снимок адреса на момент оплаты.
+- Добавляем в миграции: `shipping_price_rub` int, `cdek_uuid` varchar(64), `cdek_tariff_code` int, `kind_summary` varchar(16) (`physical|virtual|mixed`), `ready_to_ship_at` timestamptz (для preorder).
+- В `order_items` уже есть снимки названия/цены — добавим `kind_snapshot`.
+
+## Этап 5. Постоплатные хуки
+
+В webhook оплаты Т-Банка (`server/src/routes/payments.ts`):
+- physical/preorder в наличии → `cdek.createOrder()` сразу, сохраняем uuid и трек в `orders`. Preorder — только меняем статус на `awaiting_shipment`, накладную создаст админ кнопкой когда партия готова.
+- virtual → активация Hell Pass / зачисление билетов / выдача доступа к курсу — уже работает.
+- digital → отправляем письмо со ссылкой на файл (`digital_file_url`).
+
+## Этап 6. Витрина и фронт
+
+- Карточки товара: бейджи по `kind`, для preorder — большая плашка с датой.
+- Корзина `/club/cart`: группировка по `kind`, под группой physical — подсказка «Доставка считается на чекауте».
+- Список заказов `/club/orders`: фильтр-табы `Все | Физические | Цифровые | Предзаказы`.
+- Карточка заказа `/club/orders/$orderId`: для physical — трекинг СДЭК (заменяем мок `src/data/cdek-tracking.ts` на реальный `GET /api/v1/cdek/track/:orderId` → `cdek.getOrderStatus`).
 
 ---
 
-Это полный список. Я ничего не трогаю до твоего апрува. **Если хочешь — апрувни план целиком, и я пойду по Tier 1 → Tier 2 → Tier 3.** Либо скажи, какие пункты выкинуть / какие сделать первыми.
+## Технические заметки
+
+- Все запросы к СДЭК — только с бека, фронт никогда не видит токен СДЭК.
+- Кеш `calculate` в Redis/in-memory на 5 минут по ключу `{cityCode}:{mode}:{itemsHash}` чтобы не дёргать API при каждом ререндере чекаута.
+- Для preorder — заказ создаётся со статусом `awaiting_production`, в админке кнопка «Готов к отгрузке» переводит в `awaiting_shipment` и шлёт push клиенту.
+- Все денежные значения — копейки/рубли как сейчас (`price_rub int`).
+- Калькулятор показывает «~3-5 дней» (диапазон СДЭК), не точную дату.
+
+## Что нужно от тебя перед стартом
+
+- Креды СДЭК API (client_id/client_secret боевой и тестовой среды) — закинешь через `add_secret`.
+- Подтверждение, что склад отправки = Краснодар, и нужен ли конкретный ПВЗ отправителя или «любой по адресу X».
+- Список 2-3 текущих товаров с реальным весом/габаритами, чтобы я заполнил их в миграции для теста.
+
+---
+
+## Порядок реализации (по комитам)
+
+1. Миграции (`0035` + `0036`) + схемы Drizzle + админка товаров.
+2. `lib/cdek.ts` + публичные ручки cities/pvz/calculate.
+3. Профиль `/club/me` — новый блок «Адрес доставки» с выбором ПВЗ.
+4. Чекаут переписан под типы товаров + СДЭК-калькулятор.
+5. Webhook оплаты: создание накладной для physical, разделение veterual/digital.
+6. Витрина: бейджи, фильтры заказов, реальный трекинг.
+
+Каждый шаг можно проверить отдельно, прежде чем катить следующий.
