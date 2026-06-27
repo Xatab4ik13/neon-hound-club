@@ -80,7 +80,9 @@ export type Bike = typeof bikes.$inferSelect;
 export type NewBike = typeof bikes.$inferInsert;
 
 /**
- * Адрес доставки СДЭК. 1:1 к users. Пустые строки = "не заполнено".
+ * Адрес доставки СДЭК. 1:1 к users.
+ * Дефолтный ПВЗ + контакты подставляются в чекаут; юзер может изменить там же.
+ * verified_at — когда юзер последний раз нажал «Проверил данные» (для бейджа подтверждения).
  */
 export const deliveryAddresses = pgTable("delivery_addresses", {
   userId: uuid("user_id")
@@ -92,6 +94,13 @@ export const deliveryAddresses = pgTable("delivery_addresses", {
   postalCode: varchar("postal_code", { length: 16 }).notNull().default(""),
   pickupPoint: text("pickup_point").notNull().default(""),
   comment: text("comment").notNull().default(""),
+  // СДЭК-поля
+  cdekCityCode: integer("cdek_city_code"),
+  cdekPvzCode: varchar("cdek_pvz_code", { length: 32 }),
+  cdekPvzAddress: text("cdek_pvz_address"),
+  streetAddress: text("street_address").notNull().default(""),
+  preferredMode: varchar("preferred_mode", { length: 8 }).notNull().default("pvz"),
+  verifiedAt: timestamp("verified_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
