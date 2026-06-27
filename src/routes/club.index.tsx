@@ -2167,33 +2167,30 @@ function CommentComposer({
         )}
       </form>
 
-      {/* Attach sheet — пока заглушка, под будущую загрузку фото/файлов */}
+      {/* Attach sheet — фото из галереи или камера */}
       <IOSActionSheet
         open={attachOpen}
         onOpenChange={setAttachOpen}
         title="Прикрепить к комментарию"
-        description="Скоро: фото, камера и файлы"
+        description="JPG, PNG или WebP, до 10 МБ"
         items={[
           {
             key: "photo",
             label: "Фото из галереи",
             icon: <ImageIcon size={20} strokeWidth={1.7} />,
-            disabled: true,
-            onSelect: () => {},
+            onSelect: () => {
+              setAttachOpen(false);
+              fileInputRef.current?.click();
+            },
           },
           {
             key: "camera",
             label: "Сделать фото",
             icon: <Camera size={20} strokeWidth={1.7} />,
-            disabled: true,
-            onSelect: () => {},
-          },
-          {
-            key: "file",
-            label: "Файл",
-            icon: <FileText size={20} strokeWidth={1.7} />,
-            disabled: true,
-            onSelect: () => {},
+            onSelect: () => {
+              setAttachOpen(false);
+              cameraInputRef.current?.click();
+            },
           },
         ]}
       />
