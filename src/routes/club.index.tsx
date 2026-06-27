@@ -1696,6 +1696,7 @@ function CommentComposer({
   const [activePack, setActivePack] = useState<string>(STICKER_PACKS[0].id);
   const [recent, setRecent] = useState<string[]>(() => loadRecent());
   const [submitting, setSubmitting] = useState(false);
+  const [attachOpen, setAttachOpen] = useState(false);
   const viewer = useViewer();
   const myProfileQ = useMyProfile();
   const myProfile = myProfileQ.data;
