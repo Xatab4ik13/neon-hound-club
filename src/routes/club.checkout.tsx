@@ -371,8 +371,20 @@ function ClubCheckoutPage() {
         <input type="hidden" name="method" value="sbp" />
         <input type="hidden" name="shipping_fio" value={form.name} />
         <input type="hidden" name="shipping_phone" value={form.phone} />
-        <input type="hidden" name="shipping_city" value={cityFallback} />
-        <input type="hidden" name="shipping_address" value={addressFallback} />
+        <input type="hidden" name="shipping_city" value={cityForSubmit} />
+        <input type="hidden" name="shipping_address" value={shippingAddressForSubmit || "—"} />
+        <input type="hidden" name="shipping_mode" value={needsShipping ? cdek.mode : "none"} />
+        {needsShipping && cdek.cityCode ? (
+          <input type="hidden" name="cdek_city_code" value={String(cdek.cityCode)} />
+        ) : null}
+        {needsShipping && cdek.mode === "pvz" && cdek.pvzCode ? (
+          <>
+            <input type="hidden" name="cdek_pvz_code" value={cdek.pvzCode} />
+            {cdek.pvzAddress ? (
+              <input type="hidden" name="cdek_pvz_address" value={cdek.pvzAddress} />
+            ) : null}
+          </>
+        ) : null}
 
         {/* ЛЕВАЯ КОЛОНКА: данные получателя/доставки */}
         <div className="space-y-5">
