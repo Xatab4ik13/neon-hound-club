@@ -78,20 +78,23 @@ const patchSchema = z.object({
   poll: pollSchema.nullable().optional(),
 });
 
-// Комментарий = текст ИЛИ стикер. Для треда — необязательный parentId.
-// Без discriminatedUnion: фронту удобнее присылать оба поля + kind.
+// Комментарий = текст ИЛИ стикер ИЛИ фото (с опциональной подписью).
+// Для треда — необязательный parentId. Без discriminatedUnion: фронту удобнее
+// присылать набор полей + kind.
 const commentSchema = z
   .object({
-    kind: z.enum(["text", "sticker"]).default("text"),
+    kind: z.enum(["text", "sticker", "image"]).default("text"),
     text: z.string().max(2000).optional(),
     stickerId: z.string().min(1).max(500).optional(),
+    imageUrl: z.string().url().max(2000).optional(),
     parentId: z.string().uuid().optional(),
   })
   .refine(
     (d) =>
       (d.kind === "text" && !!d.text && d.text.trim().length > 0) ||
-      (d.kind === "sticker" && !!d.stickerId),
-    { message: "Нужен текст или стикер" },
+      (d.kind === "sticker" && !!d.stickerId) ||
+      (d.kind === "image" && !!d.imageUrl),
+    { message: "Нужен текст, стикер или фото" },
   );
 
 const commentPatchSchema = z.object({ text: z.string().min(1).max(2000) });
