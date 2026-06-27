@@ -745,13 +745,22 @@ function CommentsSheet({
     if (!open) return;
     const prev = prevCountRef.current;
     const next = post.comments.length;
-    if (next > prev) {
-      const last = post.comments[post.comments.length - 1];
-      const isMine = myId != null && last && last.author.id === myId;
-      if (isMine && last) {
-        setJustSentId(last.id);
-        setTimeout(() => setJustSentId((id) => (id === last.id ? null : id)), 600);
-        const isTopLevel = !last.parentId;
+    if (next > prev && myId != null) {
+      // Ищем САМЫЙ свежий мой коммент среди прилетевших, а не просто последний:
+      // SSE может прислать чужой коммент позже моего, и тогда мой не последний.
+      let mine: Comment | null = null;
+      let mineTs = 0;
+      for (let i = next - 1; i >= prev; i--) {
+        const c = post.comments[i];
+        if (!c || c.author.id !== myId) continue;
+        const t = c.createdAt ? new Date(c.createdAt).getTime() : 0;
+        if (t >= mineTs) { mine = c; mineTs = t; }
+      }
+      if (mine) {
+        const myComment = mine;
+        setJustSentId(myComment.id);
+        setTimeout(() => setJustSentId((id) => (id === myComment.id ? null : id)), 600);
+        const isTopLevel = !myComment.parentId;
         const el = listRef.current;
         const nearBottom = el
           ? el.scrollHeight - el.scrollTop - el.clientHeight < 240
