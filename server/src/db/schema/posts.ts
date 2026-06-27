@@ -47,10 +47,12 @@ export const postComments = pgTable(
     authorId: uuid("author_id").notNull().references(() => users.id, { onDelete: "cascade" }),
     // parent_id для тредов: ответ на коммент. Каскад на уровне БД (FK в миграции).
     parentId: uuid("parent_id"),
-    // 'text' | 'sticker' — на бэке валидируется CHECK-констрейнтом.
+    // 'text' | 'sticker' | 'image' — на бэке валидируется CHECK-констрейнтом.
     kind: varchar("kind", { length: 16 }).notNull().default("text"),
     // id (или url) стикера, когда kind = 'sticker'. null когда kind = 'text'.
     stickerId: text("sticker_id"),
+    // URL картинки, когда kind = 'image'. Может также присутствовать как вложение к тексту.
+    imageUrl: text("image_url"),
     text: text("text").notNull(),
     likes: integer("likes").notNull().default(0),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
