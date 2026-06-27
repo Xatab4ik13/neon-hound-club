@@ -54,10 +54,10 @@ export function MobileTabBar() {
     <>
       <nav
         aria-label="Основная навигация"
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-white/[0.06] bg-black/75 backdrop-blur-2xl backdrop-saturate-150 lg:hidden"
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-white/[0.06] bg-black/85 backdrop-blur-md lg:hidden"
         style={{
           paddingBottom: "env(safe-area-inset-bottom)",
-          WebkitBackdropFilter: "saturate(180%) blur(24px)",
+          WebkitBackdropFilter: "blur(12px)",
         }}
       >
         <ul className="mx-auto flex h-[64px] max-w-xl items-stretch px-1">
@@ -68,8 +68,17 @@ export function MobileTabBar() {
               <li key={tab.href} className="flex-1">
                 <Link
                   to={tab.href}
-                  onClick={() => {
-                    if (!active) haptic("selection");
+                  onClick={(e) => {
+                    // iOS-стандарт: тап по активной вкладке — скролл наверх.
+                    if (active) {
+                      e.preventDefault();
+                      haptic("light");
+                      if (typeof window !== "undefined") {
+                        window.scrollTo({ top: 0, behavior: "smooth" });
+                      }
+                    } else {
+                      haptic("selection");
+                    }
                   }}
                   className={itemClass(active)}
                 >
