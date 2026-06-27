@@ -122,8 +122,19 @@ function ProductView({ product }: { product: ShopProduct }) {
   const cover = gallery[slide] ?? gallery[0];
   const maxQty = product.stock && product.stock > 0 ? product.stock : 99;
 
+  const isDigital = product.kind === "digital";
+  const { items: cartItems } = useCart();
+  const alreadyInCart = isDigital
+    ? cartItems.some((it) => it.productId === product.id || it.slug === product.slug)
+    : false;
+
   const handleAdd = async (goToCart = false, originEl?: HTMLElement | null) => {
     if (sold) return;
+    if (alreadyInCart && !goToCart) {
+      haptic("light");
+      navigate({ to: "/club/cart" });
+      return;
+    }
     if (sizeMissing) {
       haptic("warning");
       hhToast.error("Выбери размер");
