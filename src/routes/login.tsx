@@ -127,20 +127,32 @@ function LoginPage() {
           <h1 className="font-display text-5xl italic uppercase font-bold leading-none tracking-tight text-white md:text-6xl">
             Проверь почту
           </h1>
-          <p className="mt-4 font-mono text-[12px] uppercase tracking-[0.2em] text-muted-foreground">
-            Письмо ушло
+          <p className={`mt-4 font-mono text-[12px] uppercase tracking-[0.2em] ${mailFailed ? "text-amber-400" : "text-muted-foreground"}`}>
+            {mailFailed ? "Письмо не доставлено" : "Письмо ушло"}
           </p>
-          <p className="mt-6 text-base leading-relaxed text-white/80">
-            Мы отправили ссылку для подтверждения на{" "}
-            <span className="font-mono text-primary">{pendingEmail}</span>. Открой письмо и нажми
-            кнопку — после этого зайдёшь в клуб.
-          </p>
+          {mailFailed ? (
+            <p className="mt-6 text-base leading-relaxed text-white/80">
+              Не получилось отправить ссылку на{" "}
+              <span className="font-mono text-primary">{pendingEmail}</span>. Аккаунт создан —
+              нажми «Отправить ещё раз» через пару минут или напиши в поддержку, если не помогает.
+            </p>
+          ) : (
+            <p className="mt-6 text-base leading-relaxed text-white/80">
+              Мы отправили ссылку для подтверждения на{" "}
+              <span className="font-mono text-primary">{pendingEmail}</span>. Открой письмо и нажми
+              кнопку — после этого зайдёшь в клуб.
+            </p>
+          )}
           <p className="mt-4 font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
             Не пришло? Проверь «Спам». Ссылка живёт 24 часа.
           </p>
 
           {resendMsg && (
-            <p className="mt-6 border border-primary/30 bg-primary/[0.06] px-3 py-2 font-mono text-[11px] uppercase tracking-wider text-primary">
+            <p className={`mt-6 border px-3 py-2 font-mono text-[11px] uppercase tracking-wider ${
+              mailFailed
+                ? "border-amber-400/40 bg-amber-400/[0.06] text-amber-300"
+                : "border-primary/30 bg-primary/[0.06] text-primary"
+            }`}>
               {resendMsg}
             </p>
           )}
