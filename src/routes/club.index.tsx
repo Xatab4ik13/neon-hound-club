@@ -1309,11 +1309,12 @@ const CommentItem = memo(function CommentItem({
           </div>
         ) : stickerUrl ? (
           <div
-            className="mt-1 select-none"
+            className="relative mt-1 select-none"
             onTouchStart={handlePressStart}
             onTouchEnd={handlePressEnd}
             onTouchMove={handlePressEnd}
             onTouchCancel={handlePressEnd}
+            onClick={handleTap}
             onContextMenu={handleContextMenu}
           >
             <img
@@ -1325,19 +1326,22 @@ const CommentItem = memo(function CommentItem({
               referrerPolicy="no-referrer"
               className="h-48 w-48 select-none object-contain md:h-52 md:w-52"
             />
+            {splash && <DoubleTapSplash />}
           </div>
         ) : (
           <div
-            className="mt-1 inline-block max-w-full select-text rounded-2xl rounded-tl-sm border border-white/[0.05] bg-white/[0.03] px-3 py-2"
+            className="relative mt-1 inline-block max-w-full select-text rounded-2xl rounded-tl-sm border border-white/[0.05] bg-white/[0.03] px-3 py-2"
             onTouchStart={handlePressStart}
             onTouchEnd={handlePressEnd}
             onTouchMove={handlePressEnd}
             onTouchCancel={handlePressEnd}
+            onClick={handleTap}
             onContextMenu={handleContextMenu}
           >
             <p className={`break-words leading-relaxed text-foreground/90 ${large ? "text-[14.5px]" : "text-[13.5px]"}`}>
               {renderCommentText(comment.text, knownNicks)}
             </p>
+            {splash && <DoubleTapSplash />}
           </div>
         )}
 
