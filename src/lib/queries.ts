@@ -650,7 +650,8 @@ export function unlikePost(id: string) {
 
 export type AddCommentInput =
   | { kind?: "text"; text: string; parentId?: string }
-  | { kind: "sticker"; stickerId: string; parentId?: string };
+  | { kind: "sticker"; stickerId: string; parentId?: string }
+  | { kind: "image"; imageUrl: string; text?: string; parentId?: string };
 
 export function addComment(postId: string, input: string | AddCommentInput) {
   const body =
