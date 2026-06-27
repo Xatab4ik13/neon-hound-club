@@ -1,6 +1,6 @@
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
-import { orders, orderItems, products, cartItems } from "../db/schema/shop.js";
+import { orders, orderItems, products, cartItems, type ProductKind } from "../db/schema/shop.js";
 import { users } from "../db/schema/users.js";
 import { userStickerPacks } from "../db/schema/stickers.js";
 import { ticketCredit } from "./tickets.js";
@@ -9,6 +9,7 @@ import { tryCompleteQuest } from "./quests.js";
 import { getActivePassPerks } from "./pass.js";
 import { sendMail } from "./mailer.js";
 import { orderConfirmedTemplate, type DigitalItem } from "./email-templates/order-confirmed.js";
+import { cdek, CDEK_TARIFFS, type CdekDeliveryMode } from "./cdek.js";
 
 const FRONTEND_ORIGIN = (process.env.FRONTEND_ORIGIN || "https://hhr.pro").replace(/\/$/, "");
 
