@@ -1029,7 +1029,7 @@ function CommentsSheet({
                     {isUnreadAnchor && (
                       <li
                         aria-hidden="true"
-                        className="!my-3 flex items-center gap-2 px-1"
+                        className="sticky top-0 z-10 !my-3 -mx-4 md:-mx-5 flex items-center gap-2 px-4 md:px-5 py-1.5 bg-[#0d0d0d]/92 backdrop-blur-md"
                       >
                         <span className="h-px flex-1 bg-gradient-to-r from-transparent to-primary/40" />
                         <span className="font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-primary">
