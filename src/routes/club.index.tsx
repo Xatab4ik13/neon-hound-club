@@ -929,6 +929,7 @@ function CommentsSheet({
         onReply={() => handleReply(c)}
         onLongPress={() => setActionTarget(c)}
         onMore={() => setActionTarget(c)}
+        onDoubleTap={() => commentReactionsStore.toggle(c.id, "🔥")}
       />
     );
 
