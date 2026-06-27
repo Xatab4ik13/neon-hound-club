@@ -176,6 +176,7 @@ function mapComment(c: FeedCommentHydrated): FeedComment {
     text: c.text,
     kind: c.kind ?? "text",
     stickerId: c.stickerId ?? undefined,
+    imageUrl: c.imageUrl ?? undefined,
     parentId: c.parentId ?? undefined,
     likes: c.likes,
     liked: c.liked,
