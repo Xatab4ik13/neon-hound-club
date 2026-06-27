@@ -171,7 +171,7 @@ export function TicketLedger({
           <button
             type="button"
             onClick={() => setExpanded(true)}
-            className="block w-full border-t border-white/[0.06] px-4 py-3 text-center text-[13px] font-medium text-primary transition-colors active:bg-white/[0.04]"
+            className="block w-full border-t border-white/[0.06] px-4 py-3 text-center text-[13px] font-medium text-muted-foreground transition-colors active:bg-white/[0.04]"
           >
             Показать ещё {hiddenCount}
           </button>
