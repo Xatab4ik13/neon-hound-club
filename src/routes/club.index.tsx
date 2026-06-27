@@ -2237,6 +2237,7 @@ function StickerPanel({
                     url={p.cover}
                     alt=""
                     size={28}
+                    preview
                     className="h-7 w-7 select-none object-contain"
                   />
                 ) : (
