@@ -1668,6 +1668,21 @@ const STICKER_PACKS: StickerPack[] = [
   },
 ];
 
+const STICKER_URL_TO_PACK: Map<string, StickerPack> = (() => {
+  const m = new Map<string, StickerPack>();
+  for (const p of STICKER_PACKS) {
+    for (const s of p.stickers) {
+      const u = parseSticker(s) ?? s;
+      if (!m.has(u)) m.set(u, p);
+    }
+  }
+  return m;
+})();
+
+function findPackByStickerUrl(url: string): StickerPack | undefined {
+  return STICKER_URL_TO_PACK.get(url);
+}
+
 const RECENT_STICKERS_KEY = "club:recent-stickers";
 
 function loadRecent(): string[] {
