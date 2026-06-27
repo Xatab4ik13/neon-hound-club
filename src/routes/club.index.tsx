@@ -2233,12 +2233,10 @@ function StickerPanel({
                 }`}
               >
                 {p.coverIsImage ? (
-                  <img
-                    src={p.cover}
+                  <StickerView
+                    url={p.cover}
                     alt=""
-                    width={28}
-                    height={28}
-                    draggable={false}
+                    size={28}
                     className="h-7 w-7 select-none object-contain"
                   />
                 ) : (
