@@ -6,7 +6,7 @@ import { requireAuth, type SessionPayload } from "../lib/auth.js";
 
 // Список всех платных паков. Блогер/админ получают их бесплатно — даже без
 // записи в user_sticker_packs. Когда добавим новый пак — дописать сюда.
-const ALL_PACK_SLUGS = ["special"] as const;
+const ALL_PACK_SLUGS = ["special", "hell-minions"] as const;
 
 export async function stickersRoutes(app: FastifyInstance) {
   // GET /api/v1/stickers/me — список slug'ов паков, доступных пользователю.
