@@ -18,10 +18,15 @@ function pluralTickets(n: number): string {
 export function TicketCard({
   balance,
   isLoading,
+  isError,
+  onRetry,
 }: {
   balance: number;
   isLoading?: boolean;
+  isError?: boolean;
+  onRetry?: () => void;
 }) {
+  const empty = !isLoading && !isError && balance === 0;
   const STUB_W = 104; // ширина «корешка» в px
 
   // Размер числа подстраиваем под длину — чтобы 1 000 000 не вылетал за край.
