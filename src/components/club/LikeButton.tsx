@@ -246,7 +246,7 @@ export function LikeButton({ liked, count, onToggle, onReact }: Props) {
             100% { transform: translate(-50%, -64px) scale(0.9); opacity: 0; }
           }
           @media (prefers-reduced-motion: reduce) {
-            [style*="like-pop"], [style*="like-burst"],
+            [style*="like-squash"], [style*="like-float"],
             [style*="reactions-pop"], [style*="reactions-stagger"], [style*="reactions-float"] {
               animation: none !important;
             }
