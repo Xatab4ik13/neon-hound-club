@@ -220,8 +220,143 @@ async function calculate(input: CdekCalcInput): Promise<CdekCalcResult> {
   };
 }
 
+// ---------- Накладные (заказы СДЭК) ----------
+
+export type CdekOrderInput = {
+  /** Тариф (136 склад-ПВЗ, 137 склад-дверь и т.п.). */
+  tariffCode: number;
+  /** Внешний номер — наш orderId, чтобы СДЭК знал, к чему привязка. */
+  externalNumber: string;
+  recipient: {
+    name: string;
+    phone: string; // в международном формате, начиная с '+'
+  };
+  /** Если указан pvz code — to_location не нужен, передаём delivery_point. */
+  toPvzCode?: string;
+  /** Иначе курьер — нужен городский код и улица. */
+  toLocation?: {
+    cityCode: number;
+    address: string;
+  };
+  items: Array<{
+    name: string;
+    wareKey: string; // артикул, передадим productId
+    cost: number; // объявленная стоимость за шт., рубли
+    weight: number; // граммы за шт.
+    amount: number; // количество
+  }>;
+  packages: Array<{
+    number: string;
+    weightG: number;
+    lengthCm: number;
+    widthCm: number;
+    heightCm: number;
+  }>;
+  comment?: string;
+};
+
+export type CdekCreateOrderResult = {
+  uuid: string;
+};
+
+async function createCdekOrder(input: CdekOrderInput): Promise<CdekCreateOrderResult> {
+  const fromCity = Number(process.env.CDEK_FROM_CITY_CODE ?? 435);
+  const senderName = process.env.CDEK_SENDER_NAME || "HELLHOUND Racing";
+  const senderPhone = process.env.CDEK_SENDER_PHONE || "+79000000000";
+  const shipmentPoint = process.env.CDEK_SHIPMENT_POINT || undefined;
+
+  const totalItemsByPackage = input.items.reduce((s, i) => s + i.amount, 0);
+  const perPackageItems = Math.max(1, Math.ceil(totalItemsByPackage / input.packages.length));
+
+  const body: Record<string, unknown> = {
+    type: 1, // 1 — интернет-магазин
+    tariff_code: input.tariffCode,
+    number: input.externalNumber,
+    comment: input.comment ?? `Order ${input.externalNumber.slice(0, 8)}`,
+    sender: { name: senderName, phones: [{ number: senderPhone }] },
+    recipient: { name: input.recipient.name, phones: [{ number: input.recipient.phone }] },
+    from_location: { code: fromCity },
+    packages: input.packages.map((p, i) => {
+      // распределим items по местам: для простоты — все в первое место.
+      const itemsForThisPackage =
+        i === 0
+          ? input.items.map((it) => ({
+              name: it.name.slice(0, 255),
+              ware_key: it.wareKey.slice(0, 50),
+              cost: it.cost,
+              weight: Math.max(1, it.weight),
+              amount: it.amount,
+              payment: { value: 0 },
+            }))
+          : [];
+      return {
+        number: p.number,
+        weight: Math.max(1, Math.round(p.weightG)),
+        length: Math.max(1, Math.round(p.lengthCm)),
+        width: Math.max(1, Math.round(p.widthCm)),
+        height: Math.max(1, Math.round(p.heightCm)),
+        items: itemsForThisPackage,
+      };
+    }),
+  };
+  void perPackageItems; // подсказка читателю — пока распределение упрощённое
+
+  if (input.toPvzCode) {
+    body.delivery_point = input.toPvzCode;
+  } else if (input.toLocation) {
+    body.to_location = { code: input.toLocation.cityCode, address: input.toLocation.address };
+  } else {
+    throw new Error("[cdek] createOrder: need toPvzCode or toLocation");
+  }
+  if (shipmentPoint) body.shipment_point = shipmentPoint;
+
+  type Resp = {
+    entity?: { uuid: string };
+    requests?: Array<{ state: string; errors?: Array<{ code: string; message: string }> }>;
+  };
+  const data = await cdekFetch<Resp>("/orders", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+  const errs = data.requests?.flatMap((r) => r.errors ?? []) ?? [];
+  if (errs.length) {
+    throw new Error(`[cdek] createOrder: ${errs.map((e) => `${e.code} ${e.message}`).join("; ")}`);
+  }
+  if (!data.entity?.uuid) {
+    throw new Error(`[cdek] createOrder: no uuid in response: ${JSON.stringify(data)}`);
+  }
+  return { uuid: data.entity.uuid };
+}
+
+export type CdekOrderInfo = {
+  uuid: string;
+  cdekNumber: string | null;
+  statusCode: string | null;
+  statusName: string | null;
+};
+
+async function getCdekOrder(uuid: string): Promise<CdekOrderInfo> {
+  type Resp = {
+    entity?: {
+      uuid: string;
+      cdek_number?: string;
+      statuses?: Array<{ code: string; name: string; date_time: string }>;
+    };
+  };
+  const data = await cdekFetch<Resp>(`/orders/${uuid}`);
+  const last = data.entity?.statuses?.[data.entity.statuses.length - 1];
+  return {
+    uuid,
+    cdekNumber: data.entity?.cdek_number ?? null,
+    statusCode: last?.code ?? null,
+    statusName: last?.name ?? null,
+  };
+}
+
 export const cdek = {
   searchCities,
   getPickupPoints,
   calculate,
+  createOrder: createCdekOrder,
+  getOrder: getCdekOrder,
 };
