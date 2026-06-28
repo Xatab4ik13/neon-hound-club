@@ -1447,7 +1447,7 @@ function EmptyGarage({ onAdd }: { onAdd: () => void }) {
       <div className="flex flex-1 items-center justify-center py-6">
         <div className="w-full rounded-3xl border border-dashed border-white/[0.12] bg-card/30 p-8 text-center">
           <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-primary/10 text-primary">
-            <Bike className="h-7 w-7" />
+            <PlumpGarage className="h-8 w-8" />
           </div>
           <h2 className="mt-4 text-[20px] font-bold text-foreground">
             Здесь будет твой мотик
