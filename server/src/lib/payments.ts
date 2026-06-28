@@ -17,6 +17,7 @@ import { passPurchases } from "../db/schema/pass.js";
 import { orders } from "../db/schema/shop.js";
 import { activatePassPurchase } from "./pass.js";
 import { markOrderPaid } from "./shop.js";
+import { recordAutoTaxForPayment } from "./tax.js";
 import {
   createOrder,
   verifyPaymentCallback,
@@ -308,6 +309,13 @@ export async function handleRaifNotification(
       await activatePassPurchase(payment.refId);
     } else if (payment.refType === "order") {
       await markOrderPaid(payment.refId);
+    }
+    // Авто-налог УСН — идемпотентно по (ref_type='tax', ref_id=payment.id).
+    try {
+      await recordAutoTaxForPayment(payment.id, payment.amountRub, new Date());
+    } catch (err) {
+      // не валим вебхук из-за бухгалтерии
+      console.error("recordAutoTaxForPayment failed", err);
     }
   }
 
