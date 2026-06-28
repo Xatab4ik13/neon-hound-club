@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Fragment, useEffect, useMemo, useRef, useState, useCallback, memo } from "react";
 import { flushSync } from "react-dom";
-import { Send, Search as SearchIcon, Clock, Sticker, X, Pin, PinOff, Trash2, BarChart3, Share2, MessageCircle, Heart, Paperclip, Image as ImageIcon, Camera } from "@/components/ui/icons";
+import { Send, Search as SearchIcon, Clock, Sticker, X, Pin, PinOff, Trash2, Heart, Image as ImageIcon, Camera, PlumpComment, PlumpShare, PlumpPoll, PlumpAttach } from "@/components/ui/icons";
 import { RANKS, type RankId } from "@/data/ranks";
 import { useFeedPosts, useFeedLoaded, feedStore, initialsOf, makeSlug, type FeedAuthor, type FeedComment, type FeedPost, type FeedPoll } from "@/data/feed-store";
 import { HellhoundAvatar, HellhoundChip } from "@/components/club/HellhoundPlaque";
@@ -222,7 +222,7 @@ export const PostCard = memo(function PostCard({ post, moderate = false }: { pos
         if (post.poll) {
           return (
             <div className="pointer-events-none absolute top-3 right-3 z-10 inline-flex items-center gap-1 rounded-md border border-primary/50 bg-[oklch(0.18_0.08_357.3)] px-2 py-1 font-mono text-[9px] font-black uppercase leading-none tracking-[0.18em] text-primary shadow-[0_4px_12px_rgba(0,0,0,0.45)]">
-              <BarChart3 className="h-2.5 w-2.5" strokeWidth={2.8} />
+              <PlumpPoll className="h-2.5 w-2.5" />
               Опрос
             </div>
           );
@@ -364,7 +364,7 @@ export const PostCard = memo(function PostCard({ post, moderate = false }: { pos
           aria-label="Комментарий"
           className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 font-mono text-[12px] font-bold tabular-nums text-foreground transition-all hover:border-primary/40 hover:text-primary active:scale-95"
         >
-          <MessageCircle className="h-4 w-4" strokeWidth={2} />
+          <PlumpComment className="h-4 w-4" />
           <span>{formatCount(post.commentsCount)}</span>
         </button>
 
@@ -374,7 +374,7 @@ export const PostCard = memo(function PostCard({ post, moderate = false }: { pos
           aria-label="Поделиться"
           className="ml-auto grid h-9 w-9 place-items-center rounded-full border border-white/[0.08] bg-white/[0.04] text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary active:scale-95"
         >
-          <Share2 className="h-4 w-4" strokeWidth={2} />
+          <PlumpShare className="h-4 w-4" />
         </button>
       </div>
 
@@ -2092,7 +2092,7 @@ function CommentComposer({
           className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:text-foreground active:scale-95"
           aria-label="Прикрепить"
         >
-          <Paperclip size={20} strokeWidth={1.7} />
+          <PlumpAttach className="h-5 w-5" />
         </button>
 
         {/* Center: input pill with inline emoji button on the right */}
