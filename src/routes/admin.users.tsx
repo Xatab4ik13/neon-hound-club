@@ -321,6 +321,9 @@ function UserDrawer({
             <Btn onClick={onGiftPass}>
               <Gift className="h-4 w-4" /> Подарить Hell Pass
             </Btn>
+            <Btn onClick={onGiftStickers}>
+              <Smile className="h-4 w-4" /> Подарить стикерпак
+            </Btn>
           </div>
         </div>
       )}
