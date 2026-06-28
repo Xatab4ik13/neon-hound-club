@@ -10,7 +10,10 @@ import {
   verifyPassword,
   setSessionCookie,
   clearSessionCookie,
+  setAdminSessionCookie,
+  clearAdminSessionCookie,
   requireAuth,
+  requireAdmin,
   type SessionPayload,
 } from "../lib/auth.js";
 import { sendMail } from "../lib/mailer.js";
@@ -140,12 +143,73 @@ export async function authRoutes(app: FastifyInstance) {
       });
     }
 
+    // Админам клубный вход запрещён — для них отдельная форма /admin
+    // и отдельная cookie hh_admin_sid. Иначе админ, залогинившись через
+    // /admin, светил бы свой профиль в шапке клуба.
+    if (u.role === "admin") {
+      return reply.code(403).send({
+        error: "admin_use_admin_login",
+        message: "Войди в админку через /admin",
+      });
+    }
+
     const payload: SessionPayload = { sub: u.id, role: u.role as SessionPayload["role"], nick: u.nick };
     await setSessionCookie(reply, payload);
 
     return reply.send({
       user: { id: u.id, email: u.email, nick: u.nick, role: u.role },
     });
+  });
+
+  // ===== Админский вход (отдельная cookie hh_admin_sid) =====
+  app.post("/admin/login", async (req, reply) => {
+    const parsed = loginSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return reply.code(400).send({ error: "invalid_input", message: "Проверь email и пароль" });
+    }
+    const { email, password } = parsed.data;
+
+    const [u] = await db.select().from(users).where(eq(users.email, email)).limit(1);
+    if (!u || !(await verifyPassword(password, u.passwordHash))) {
+      return reply.code(401).send({ error: "invalid_credentials", message: "Неверный email или пароль" });
+    }
+    if (u.blocked) {
+      return reply.code(403).send({ error: "user_blocked", message: "Аккаунт заблокирован" });
+    }
+    if (u.role !== "admin") {
+      return reply.code(403).send({ error: "forbidden", message: "Этот аккаунт не админ" });
+    }
+
+    const payload: SessionPayload = { sub: u.id, role: "admin", nick: u.nick };
+    await setAdminSessionCookie(reply, payload);
+
+    return reply.send({
+      user: { id: u.id, email: u.email, nick: u.nick, role: u.role },
+    });
+  });
+
+  app.post("/admin/logout", async (_req, reply) => {
+    clearAdminSessionCookie(reply);
+    return reply.send({ ok: true });
+  });
+
+  app.get("/admin/me", { preHandler: requireAdmin }, async (req, reply) => {
+    const session = req.user as SessionPayload;
+    const [u] = await db
+      .select({
+        id: users.id,
+        email: users.email,
+        nick: users.nick,
+        role: users.role,
+      })
+      .from(users)
+      .where(eq(users.id, session.sub))
+      .limit(1);
+    if (!u) {
+      clearAdminSessionCookie(reply);
+      return reply.code(401).send({ error: "unauthorized", message: "Сессия устарела" });
+    }
+    return reply.send({ user: u });
   });
 
   // GET чтобы можно было кликать прямо из письма

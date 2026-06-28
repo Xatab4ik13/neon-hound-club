@@ -1,60 +1,46 @@
-Переход с lucide-react на Streamline Core Solid делаем поэтапно, без одного большого прохода (он уже падал по таймауту).
+## Причина бага
 
-## Принцип
+Сейчас и клуб (`hhr.pro`), и админка (`hhr.pro/admin`) используют **одну и ту же cookie** `hh_sid` на родительском домене `.hhr.pro`. При логине в админку под `ez4boost@gmail.com` сервер ставит ту же cookie, и фронт клуба через `/api/v1/auth/me` видит того же пользователя — это и есть «аккаунт Hell c 54 билетами» на главной. Никакого второго аккаунта не существует, это просто та же сессия админа, отрисованная в клубной шапке.
 
-1. Создаём один файл `src/components/ui/icons.tsx` — это единая точка иконок проекта.
-2. Каждая иконка там — это React-компонент с тем же именем, что и в lucide (`Check`, `X`, `Settings` и т.д.), и тем же API (`size`, `className`, `color`, `strokeWidth` игнорируется).
-3. Импорты в коде меняем с `from "lucide-react"` на `from "@/components/ui/icons"` — построчно, файлами, партиями.
-4. Пока иконка не перенесена в `icons.tsx` — она временно ре-экспортится из lucide, чтобы ничего не сломалось. Удалим lucide только в самом конце.
+Чтобы вход в админку **не светил** админский профиль в клубе, нужны две независимые сессии.
 
-Таким образом на каждом этапе билд зелёный, и я могу остановиться/откатиться на любом шаге.
+## Что меняем
 
-## Этапы
+### Бэк (`server/`)
+1. Новые роуты под админку с отдельной cookie `hh_admin_sid`:
+   - `POST /api/v1/auth/admin/login` — принимает email/пароль, проверяет `role === "admin"`, ставит `hh_admin_sid` (httpOnly, `Path=/api/v1/admin` + `/api/v1/auth/admin`, SameSite=None+Secure в проде, domain = `.hhr.pro`).
+   - `POST /api/v1/auth/admin/logout` — чистит `hh_admin_sid`.
+   - `GET /api/v1/auth/admin/me` — возвращает админа из `hh_admin_sid`.
+2. `requireAdmin` (в `server/src/lib/auth.ts`) читает **только** `hh_admin_sid`, не клубную cookie. Клубные `requireAuth` / `loadSession` продолжают читать `hh_sid` и игнорируют админскую.
+3. Клубный `POST /api/v1/auth/login` запрещает вход админам (или просто не ставит клубную cookie для `role=admin`) — чтобы один и тот же email/пароль не давал клубную сессию админу. Админ для тестов клуба заведёт отдельного юзера.
 
-**Этап 0 — каркас (10 мин, без визуальных изменений)**
-- Создаю `src/components/ui/icons.tsx` с ре-экспортом всех 96 иконок из lucide-react как есть.
-- Прогоняю замену импортов во всём `src/` (`lucide-react` → `@/components/ui/icons`).
-- Билд должен быть зелёный, визуально ничего не поменяется.
-- Это даёт мне один файл, через который я дальше подменяю иконки по одной.
+### Фронт (`src/`)
+1. Новый контекст `AdminViewerProvider` (отдельный от `ViewerProvider`) в `src/hooks/use-admin-viewer.tsx`. Свои `signIn` / `signOut` / `me`, ходят на `/api/v1/auth/admin/*`. Свой ключ React Query, чтобы не пересекался с `["auth","me"]`.
+2. В `src/routes/admin.tsx` оборачиваем `<Outlet />` в `AdminViewerProvider` и читаем `useAdminViewer()` вместо `useViewer()`. `AdminLogin` использует админский `signIn`.
+3. Клубные компоненты продолжают читать `useViewer()` — он видит только клубную cookie. Если админ не залогинен в клубе отдельно, в шапке будет «Войти», как и должно быть.
+4. `apiFetch` уже шлёт `credentials: "include"` — обе cookie уедут на api, бэк сам выберет нужную по роуту.
 
-**Этап 1 — топ-20 ключевых иконок Streamline (то, что глаз цепляет сразу)**
+### Чистка «фантомного» аккаунта в браузере
+После деплоя пользователю один раз нужно выйти из клуба (или почистить cookie `hh_sid` на `.hhr.pro`) — старая общая cookie перестанет распознаваться клубным `/auth/me` после рестарта, и Hell исчезнет с главной.
 
-Навигация и базовый UI:
-`Check`, `X`, `ChevronDown`, `ChevronLeft`, `ChevronRight`, `ChevronUp`, `ArrowLeft`, `ArrowRight`, `Search`, `Settings`, `LogOut`, `User`, `Users`, `Bell`, `Plus`, `Minus`, `MoreHorizontal`, `Trash2`, `Edit`, `Heart`
+## Что НЕ трогаем
+- БД и таблицу `users` — данные корректны, дублей нет.
+- Логику ролей, JWT-секрет, экономику билетов.
+- Регистрацию обычных пользователей.
 
-Для каждой:
-- ищу в Streamline Core Solid вручную через API (с проверкой по названию + ручной white-list на проблемные: `X`=close-cross, `Zap`=lightning, `MoreHorizontal`=three-dots),
-- качаю SVG, кладу как inline React-компонент в `icons.tsx` поверх ре-экспорта,
-- проверяю билд после партии.
+## Технические детали (cookie scoping)
 
-**Этап 2 — фид и соц-активность (~15 иконок)**
-`MessageCircle`, `Share`, `Share2`, `Send`, `Eye`, `EyeOff`, `Pin`, `PinOff`, `Flag`, `Bookmark/Sticker`, `Camera`, `Image`, `Paperclip`, `Play`, `Volume2`, `VolumeX`
+```text
+hh_sid        Path=/   Domain=.hhr.pro   → клубный фронт + клубные API
+hh_admin_sid  Path=/   Domain=.hhr.pro   → только админский фронт + админские API
+```
 
-**Этап 3 — гейм-слой (Pass, билеты, тиры) (~12 иконок)**
-`Ticket`, `Trophy`, `Crown`, `Award`, `Gift`, `Sparkles`, `Zap`, `Lightbulb`, `Bot`, `ShieldCheck`, `KeyRound`, `Lock`
+Обе cookie уходят на `api.hhr.pro` (браузер не различает path при cross-site fetch), но бэк строго разделяет: клубные хэндлеры читают только `hh_sid`, админские — только `hh_admin_sid`. Логин в одну не создаёт сессию в другой.
 
-**Этап 4 — мерч и заказы (~10 иконок)**
-`ShoppingBag`, `Package`, `Truck`, `Tag/Sticker`, `Copy`, `Download`, `Upload`, `ExternalLink`, `Clock`, `Calendar`
+## Деплой
 
-**Этап 5 — мото/сервис/диагностика (~10 иконок)**
-`Bike`, `Wrench`, `Bug`, `MapPin`, `Phone`, `Smartphone`, `WifiOff`, `RefreshCw`, `RotateCcw`, `Save`
-
-**Этап 6 — оставшийся хвост (~20 иконок)**
-Алерты, чарты, бренд-логотипы (`Youtube`, `Instagram`, `Twitch`, `Apple`), `Loader2`, `GripVertical`, `PanelLeft`, `SlidersHorizontal`, `BarChart3`, `Newspaper`, `TrendingUp`, `Ban`, `HelpCircle`, `AlertCircle`, `AlertTriangle`, `CheckCircle2`, `XCircle`, `Circle`, `Pencil`.
-
-**Этап 7 — финальная уборка**
-- Убираю ре-экспорт из lucide в `icons.tsx`.
-- `bun remove lucide-react`.
-- Финальный билд + визуальный обход главной, фида, профиля, админки.
-
-## Что я делаю сейчас
-
-Только **Этап 0 + Этап 1** в этом сообщении (каркас + 20 ключевых иконок). После этого ты смотришь на превью, и если ок — идём дальше партиями по этапам.
-
-## Техническая часть (для справки)
-
-- API: `https://api.streamlinehq.com/v3/families/core-solid/icons?search=<query>` с `Authorization: Bearer $STREAMLINE_API_KEY` (ключ уже в `add_secret`).
-- Скачивание SVG: эндпоинт `download/svg` для выбранного hash.
-- SVG чищу: убираю `width/height`, ставлю `fill="currentColor"`, оборачиваю в `React.forwardRef` с пропсами `{size=24, className, ...rest}` → `<svg width={size} height={size} className={className} viewBox=... {...rest}>`.
-- `LucideIcon` тип ре-экспортирую как `ComponentType<{size?: number; className?: string}>` чтобы существующие сигнатуры (`icon: LucideIcon`) продолжали работать.
-- Бренд-логотипы (`Youtube`, `Instagram`, `Twitch`, `Apple`) — в Streamline Core Solid скорее всего отсутствуют как бренды, оставлю из lucide или возьму из Streamline `logos` family отдельно. Решу на Этапе 6.
+После мержа:
+```
+cd /opt/hhr && git pull && cd server && sudo docker compose up -d --build
+```
+Миграции не нужны — схема не меняется.
