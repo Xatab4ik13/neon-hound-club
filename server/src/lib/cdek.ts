@@ -19,10 +19,12 @@ type TokenCache = { token: string; expiresAt: number } | null;
 let tokenCache: TokenCache = null;
 
 function ensureCreds() {
-  const id = process.env.CDEK_CLIENT_ID;
-  const secret = process.env.CDEK_CLIENT_SECRET;
+  // CDEK_ACCOUNT / CDEK_SECURE_PASSWORD — официальная терминология договора;
+  // CDEK_CLIENT_ID / CDEK_CLIENT_SECRET — старые имена, оставлены ради совместимости.
+  const id = process.env.CDEK_ACCOUNT || process.env.CDEK_CLIENT_ID;
+  const secret = process.env.CDEK_SECURE_PASSWORD || process.env.CDEK_CLIENT_SECRET;
   if (!id || !secret) {
-    throw new Error("[cdek] CDEK_CLIENT_ID/CDEK_CLIENT_SECRET are not configured");
+    throw new Error("[cdek] CDEK_ACCOUNT/CDEK_SECURE_PASSWORD are not configured");
   }
   return { id, secret };
 }
