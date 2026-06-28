@@ -44,6 +44,7 @@ function UsersPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [giftOpen, setGiftOpen] = useState(false);
   const [giftPassOpen, setGiftPassOpen] = useState(false);
+  const [giftStickersOpen, setGiftStickersOpen] = useState(false);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState<AdminPageSize>(50);
 
