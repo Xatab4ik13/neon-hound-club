@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { Minus, Plus, ShoppingBag, Ticket, Trash2, ChevronLeft } from "@/components/ui/icons";
+import { Minus, Plus, ShoppingBag, PlumpTicket, Trash2, ChevronLeft } from "@/components/ui/icons";
 import { AnimatePresence, motion } from "framer-motion";
 // toast удалён — больше никаких всплывашек в проекте
 import { useCart, type CartItem } from "@/hooks/use-cart";
@@ -172,7 +172,7 @@ function ClubCartPage() {
 
           {ticketsTotal > 0 && (
             <div className="flex items-center gap-3 rounded-xl border border-primary/25 bg-primary/[0.08] px-3 py-2.5">
-              <Ticket className="h-4 w-4 shrink-0 text-primary" />
+              <PlumpTicket className="h-4 w-4 shrink-0 text-primary" />
               <div className="min-w-0 flex-1">
                 <div className="text-[13px] font-semibold text-primary">Бонус билетов</div>
                 <div className="text-[12px] text-muted-foreground">
@@ -251,7 +251,7 @@ function ClubCartPage() {
 
                   {i.ticketsBonus && i.ticketsBonus > 0 ? (
                     <div className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5">
-                      <Ticket className="h-3 w-3 text-primary" />
+                      <PlumpTicket className="h-3 w-3 text-primary" />
                       <span className="text-[12px] font-semibold text-primary">
                         +{i.ticketsBonus * i.qty} {ticketsWord(i.ticketsBonus * i.qty)}
                       </span>
@@ -324,7 +324,7 @@ function ClubCartPage() {
       {ticketsTotal > 0 && (
         <div className="mt-3 flex items-center gap-3 rounded-2xl border border-primary/25 bg-primary/[0.08] px-4 py-3">
           <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/20 text-primary">
-            <Ticket className="h-4 w-4" />
+            <PlumpTicket className="h-4 w-4" />
           </span>
           <div className="min-w-0 flex-1">
             <div className="text-[14px] font-semibold text-primary">Бонус билетов</div>
@@ -473,7 +473,7 @@ function DesktopRow({
             </div>
             {item.ticketsBonus && item.ticketsBonus > 0 ? (
               <div className="mt-2 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5">
-                <Ticket className="h-3 w-3 text-primary" />
+                <PlumpTicket className="h-3 w-3 text-primary" />
                 <span className="text-[12px] font-semibold text-primary">
                   +{item.ticketsBonus * item.qty} {ticketsWord(item.ticketsBonus * item.qty)}
                 </span>

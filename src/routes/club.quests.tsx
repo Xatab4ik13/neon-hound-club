@@ -7,7 +7,7 @@ import {
   Loader2,
   Smartphone,
   Sparkles,
-  Ticket,
+  PlumpTicket,
   Calendar,
   TrendingUp,
   ClipboardCheck,
@@ -323,7 +323,7 @@ function QuestCard({ q }: { q: QuestItem }) {
 function RewardPill({ tickets }: { tickets: number }) {
   return (
     <span className="inline-flex items-center gap-1 rounded-full bg-yellow-500/15 px-2 py-0.5 text-[12px] font-semibold tabular-nums text-yellow-300">
-      <Ticket className="h-3 w-3" />+{tickets}
+      <PlumpTicket className="h-3 w-3" />+{tickets}
     </span>
   );
 }

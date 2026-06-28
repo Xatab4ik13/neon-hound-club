@@ -7,7 +7,7 @@ import {
 } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronLeft, ChevronRight, Minus, Plus, ShoppingBag, Ticket } from "@/components/ui/icons";
+import { ChevronLeft, ChevronRight, Minus, Plus, ShoppingBag, PlumpTicket } from "@/components/ui/icons";
 import { hhToast } from "@/lib/hh-toast";
 import { useCart } from "@/hooks/use-cart";
 import { haptic } from "@/hooks/use-haptic";
@@ -312,7 +312,7 @@ function ProductView({ product }: { product: ShopProduct }) {
 
         {product.bonusTickets > 0 && (
           <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5">
-            <Ticket className="h-3.5 w-3.5 text-primary" />
+            <PlumpTicket className="h-3.5 w-3.5 text-primary" />
             <span className="text-[13px] font-medium text-primary">
               +{product.bonusTickets} {ticketsWord(product.bonusTickets)} после оплаты
             </span>

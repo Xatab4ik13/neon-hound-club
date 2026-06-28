@@ -1,7 +1,7 @@
 // Компактный блок рефералки для /club/me.
 
 import { Link } from "@tanstack/react-router";
-import { ArrowRight, Check, Copy, Ticket, Users } from "@/components/ui/icons";
+import { ArrowRight, Check, Copy, PlumpTicket, Users } from "@/components/ui/icons";
 import { useState } from "react";
 import {
   buildReferralUrl,
@@ -78,7 +78,7 @@ export function InviteBlock() {
             </span>
           </span>
           <span className="flex items-center gap-1.5">
-            <Ticket className="h-3.5 w-3.5 text-primary" />
+            <PlumpTicket className="h-3.5 w-3.5 text-primary" />
             Заработано:{" "}
             <span className="font-bold text-foreground tabular-nums">
               {totalTickets}

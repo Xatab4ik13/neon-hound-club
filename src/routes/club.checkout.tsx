@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { CheckCircle2, Loader2, MapPin, Ticket, Truck, User } from "@/components/ui/icons";
+import { CheckCircle2, Loader2, MapPin, PlumpTicket, Truck, User } from "@/components/ui/icons";
 import { PageHeader } from "@/components/club/PageHeader";
 import { PaymentBadges } from "@/components/brand/PaymentBadges";
 import { PayButton } from "@/components/brand/PayButton";
@@ -596,7 +596,7 @@ function ClubCheckoutPage() {
           {ticketsTotal > 0 && (
             <div className="flex items-center gap-3 rounded-2xl border border-primary/25 bg-primary/[0.08] px-4 py-3">
               <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/20 text-primary">
-                <Ticket className="h-4 w-4" />
+                <PlumpTicket className="h-4 w-4" />
               </span>
               <div className="min-w-0 flex-1">
                 <div className="font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-primary">

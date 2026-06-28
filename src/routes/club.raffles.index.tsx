@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronRight, Ticket, Trophy, ShieldCheck } from "@/components/ui/icons";
+import { ChevronRight, PlumpTicket, Trophy, ShieldCheck } from "@/components/ui/icons";
 import { Countdown } from "@/components/club/Countdown";
 import { PageHeader } from "@/components/club/PageHeader";
 import {
@@ -62,7 +62,7 @@ function RafflesPage() {
         >
           <Link to="/club/tickets" className="flex min-w-0 items-center gap-3 active:opacity-70">
             <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/15 text-primary">
-              <Ticket className="h-5 w-5" />
+              <PlumpTicket className="h-5 w-5" />
             </span>
             <span className="min-w-0">
               <span className="block font-mono text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
@@ -296,7 +296,7 @@ function RaffleCard({ raffle }: { raffle: RaffleListItem }) {
       </div>
       <div className="flex items-center justify-between gap-3 px-4 py-3">
         <span className="inline-flex items-center gap-1.5 font-mono text-[12px] text-muted-foreground">
-          <Ticket className="h-3.5 w-3.5 text-primary" />
+          <PlumpTicket className="h-3.5 w-3.5 text-primary" />
           {raffle.ticketCost} / билет
         </span>
         <Countdown deadlineAt={raffle.endsAt} compact />

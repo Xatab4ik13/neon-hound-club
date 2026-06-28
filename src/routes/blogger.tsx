@@ -1,6 +1,6 @@
 import { createFileRoute, Link, Outlet, redirect, useLocation, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Newspaper, Ticket, Bot, Settings, type LucideIcon } from "@/components/ui/icons";
+import { Newspaper, PlumpTicket, Bot, Settings, type LucideIcon } from "@/components/ui/icons";
 import type { QueryClient } from "@tanstack/react-query";
 import { HellhoundPlaqueLarge } from "@/components/club/HellhoundPlaque";
 import { BloggerMobileTopBar } from "@/components/blogger/BloggerMobileTopBar";
@@ -62,7 +62,7 @@ export const Route = createFileRoute("/blogger")({
 const NAV: { label: string; href: string; icon: LucideIcon }[] = [
   { label: "Лента", href: "/blogger", icon: Newspaper },
   { label: "Hell AI", href: "/blogger/hell-ai", icon: Bot },
-  { label: "Розыгрыши", href: "/blogger/raffles", icon: Ticket },
+  { label: "Розыгрыши", href: "/blogger/raffles", icon: PlumpTicket },
   { label: "Настройки", href: "/blogger/settings", icon: Settings },
 ];
 

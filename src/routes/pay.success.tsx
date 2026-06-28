@@ -3,7 +3,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { CheckCircle2, Loader2, Ticket, XCircle, AlertTriangle, Package } from "@/components/ui/icons";
+import { CheckCircle2, Loader2, PlumpTicket, XCircle, AlertTriangle, Package } from "@/components/ui/icons";
 import { z } from "zod";
 import { fetchPaymentStatus, qk, type PaymentStatus } from "@/lib/queries";
 import { ApiError } from "@/lib/api";
@@ -142,7 +142,7 @@ function ConfirmedState({
             to="/club"
             className="inline-flex items-center justify-center gap-2 bg-primary px-5 py-4 font-display text-xs font-black uppercase tracking-widest text-primary-foreground transition hover:opacity-90"
           >
-            <Ticket className="h-4 w-4" />
+            <PlumpTicket className="h-4 w-4" />
             В клуб
           </Link>
         ) : refId ? (

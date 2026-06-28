@@ -5,7 +5,7 @@
 
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Apple, Bell, BellOff, Check, Download, Share, Smartphone, Sparkles, Ticket } from "@/components/ui/icons";
+import { Apple, Bell, BellOff, Check, Download, Share, Smartphone, Sparkles, PlumpTicket } from "@/components/ui/icons";
 import { PageHeader } from "@/components/club/PageHeader";
 import {
   getPushPermission,
@@ -131,7 +131,7 @@ function InstallPage() {
 
         <div className="mt-4 flex flex-wrap gap-2">
           <Reward icon={<Sparkles className="h-3.5 w-3.5" />} text="+200 XP" />
-          <Reward icon={<Ticket className="h-3.5 w-3.5" />} text="+1 билет" />
+          <Reward icon={<PlumpTicket className="h-3.5 w-3.5" />} text="+1 билет" />
         </div>
       </section>
 

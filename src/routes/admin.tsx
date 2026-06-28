@@ -9,7 +9,7 @@ import {
   Target,
   Users,
   ShoppingBag,
-  Ticket,
+  PlumpTicket,
   Image as ImageIcon,
   Wallet,
   Bot,
@@ -149,7 +149,7 @@ const NAV: NavItem[] = [
   { to: "/admin/users", label: "Пользователи", icon: Users },
   { to: "/admin/shop", label: "Магазин", icon: ShoppingBag },
   { to: "/admin/orders", label: "Заказы", icon: Package },
-  { to: "/admin/tickets", label: "Билеты", icon: Ticket },
+  { to: "/admin/tickets", label: "Билеты", icon: PlumpTicket },
   { to: "/admin/support", label: "Помощь", icon: LifeBuoy },
   { to: "/admin/banners", label: "Баннеры", icon: ImageIcon },
 

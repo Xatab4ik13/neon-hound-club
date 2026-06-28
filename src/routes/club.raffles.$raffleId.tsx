@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Calendar, Check, Minus, Plus, Ticket, Trophy, Zap } from "@/components/ui/icons";
+import { ArrowLeft, Calendar, Check, Minus, Plus, PlumpTicket, Trophy, Zap } from "@/components/ui/icons";
 import { Countdown } from "@/components/club/Countdown";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useViewer } from "@/hooks/use-viewer";
@@ -237,7 +237,7 @@ function RaffleDetailContent({
           label="Мои билеты"
           value={
             <span className="flex items-baseline gap-1.5">
-              <Ticket className="h-4 w-4 self-center text-primary" />
+              <PlumpTicket className="h-4 w-4 self-center text-primary" />
               <span className="tabular-nums">{raffle.myEntries}</span>
             </span>
           }
@@ -408,7 +408,7 @@ function StakeControls({
           1 заявка — {ticketCost} {ticketWord}
         </div>
         <div className="flex items-center gap-1 font-mono text-[11px] uppercase tracking-wider text-foreground">
-          <Ticket className="h-3.5 w-3.5 text-primary" />
+          <PlumpTicket className="h-3.5 w-3.5 text-primary" />
           <span className="tabular-nums">{balance}</span>
         </div>
       </div>
