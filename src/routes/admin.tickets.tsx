@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Gift } from "@/components/ui/icons";
+import { Gift, PlumpTicket, TrendingUp, Trophy, PlumpUsers as Users } from "@/components/ui/icons";
 import {
   PageHeader,
   Panel,
@@ -13,13 +13,30 @@ import {
   Modal,
 } from "@/components/admin/ui";
 import { AdminPager, type AdminPageSize } from "@/components/admin/AdminPager";
-import { adminQk, creditTickets, fetchAdminTicketsJournal } from "@/lib/admin-queries";
+import {
+  creditTickets,
+  fetchAdminTicketsJournal,
+  fetchAdminTicketsStats,
+} from "@/lib/admin-queries";
 import { ApiError } from "@/lib/api";
 import { hhToast as toast } from "@/lib/hh-toast";
 
 export const Route = createFileRoute("/admin/tickets")({
   component: TicketsPage,
 });
+
+const SOURCE_LABEL: Record<string, string> = {
+  admin: "Админ",
+  quest: "Квест",
+  product_bonus: "Бонус за покупку",
+  pass_monthly: "Hell Pass",
+  raffle_entry: "Розыгрыш",
+  refund: "Возврат",
+};
+
+function fmt(n: number) {
+  return n.toLocaleString("ru-RU");
+}
 
 function TicketsPage() {
   const [giveOpen, setGiveOpen] = useState(false);
@@ -35,20 +52,98 @@ function TicketsPage() {
           </Btn>
         }
       />
-      <JournalPanel />
+      <StatsBlock />
+      <div className="mt-4">
+        <JournalPanel />
+      </div>
       <GiveModal open={giveOpen} onClose={() => setGiveOpen(false)} />
     </div>
   );
 }
 
-const SOURCE_LABEL: Record<string, string> = {
-  admin: "Админ",
-  quest: "Квест",
-  product_bonus: "Бонус",
-  pass_monthly: "Pass",
-  raffle_entry: "Розыгрыш",
-  refund: "Возврат",
-};
+function StatsBlock() {
+  const statsQ = useQuery({
+    queryKey: ["admin", "tickets", "stats"],
+    queryFn: fetchAdminTicketsStats,
+    refetchInterval: 60_000,
+  });
+  const s = statsQ.data;
+
+  const kpis = [
+    {
+      label: "На руках сейчас",
+      value: s ? fmt(s.totals.balance) : "—",
+      hint: s ? `${fmt(s.totals.users)} держателей` : "",
+      icon: PlumpTicket,
+    },
+    {
+      label: "Выпущено всего",
+      value: s ? fmt(s.totals.issued) : "—",
+      hint: s ? `+${fmt(s.last30.issued30)} за 30 дней` : "",
+      icon: TrendingUp,
+    },
+    {
+      label: "Сожжено в розыгрышах",
+      value: s ? fmt(s.totals.spentOnRaffles) : "—",
+      hint: s ? `всего сожжено: ${fmt(s.totals.spent)}` : "",
+      icon: Trophy,
+    },
+    {
+      label: "Операций",
+      value: s ? fmt(s.totals.ops) : "—",
+      hint: s ? `−${fmt(s.last30.spent30)} расход 30д` : "",
+      icon: Users,
+    },
+  ];
+
+  return (
+    <div className="space-y-3">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {kpis.map((k) => (
+          <div
+            key={k.label}
+            className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900"
+          >
+            <div className="flex items-start justify-between">
+              <div className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                {k.label}
+              </div>
+              <k.icon className="h-4 w-4 text-zinc-400" />
+            </div>
+            <div className="mt-2 text-2xl font-bold tabular-nums">{k.value}</div>
+            {k.hint && (
+              <div className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">{k.hint}</div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {s && s.bySource.length > 0 && (
+        <Panel>
+          <PanelHeader>
+            <div className="text-sm font-medium">Разбивка по источникам</div>
+          </PanelHeader>
+          <DataTable
+            headers={["Источник", "Выпущено", "Сожжено", "Чистое"]}
+            rows={s.bySource
+              .slice()
+              .sort((a, b) => b.issued - a.issued)
+              .map((r) => [
+                <span className="font-medium">{SOURCE_LABEL[r.source] ?? r.source}</span>,
+                <span className="tabular-nums text-emerald-600 dark:text-emerald-400">
+                  +{fmt(r.issued)}
+                </span>,
+                <span className="tabular-nums text-rose-600 dark:text-rose-400">
+                  {r.spent ? `−${fmt(r.spent)}` : "—"}
+                </span>,
+                <span className="tabular-nums font-semibold">{fmt(r.issued - r.spent)}</span>,
+              ])}
+          />
+        </Panel>
+      )}
+    </div>
+  );
+}
 
 function JournalPanel() {
   const [page, setPage] = useState(1);
@@ -131,6 +226,7 @@ function GiveModal({ open, onClose }: { open: boolean; onClose: () => void }) {
     onSuccess: (res) => {
       toast.success(`@${res.user.nick}: баланс ${res.balance}`);
       qc.invalidateQueries({ queryKey: ["admin", "tickets", "journal"] });
+      qc.invalidateQueries({ queryKey: ["admin", "tickets", "stats"] });
       setNick("");
       setAmount("10");
       setReason("");
