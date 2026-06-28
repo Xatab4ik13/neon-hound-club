@@ -4,7 +4,7 @@
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, PlumpPackage as Package, Phone, PlumpMap as MapPin, User as UserIcon, RefreshCw, PlumpClose as X, type LucideIcon } from "@/components/ui/icons";
+import { Loader2, PlumpPackage as Package, Phone, PlumpMap as MapPin, User as UserIcon, RefreshCw, PlumpClose as X, PlumpDownload as Download, type LucideIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
 import { ApiError } from "@/lib/api";
 import { AdminPager, type AdminPageSize } from "@/components/admin/AdminPager";
@@ -14,6 +14,7 @@ import {
   patchAdminOrder,
   createCdekWaybill,
   refreshCdekStatus,
+  downloadCdekWaybillPdf,
   qk,
   type ShopOrder,
   type ShopOrderStatus,
@@ -417,6 +418,7 @@ function CdekBlock({
   onChanged: () => void;
 }) {
   const [err, setErr] = useState<string | null>(null);
+  const [printing, setPrinting] = useState(false);
   const create = useMutation({
     mutationFn: () => createCdekWaybill(order.id),
     onSuccess: () => {
@@ -457,15 +459,39 @@ function CdekBlock({
               </div>
             )}
           </div>
-          <button
-            type="button"
-            disabled={refresh.isPending}
-            onClick={() => refresh.mutate()}
-            className="inline-flex items-center gap-1 rounded-md border border-zinc-200 px-3 py-1.5 text-xs hover:bg-zinc-100 disabled:opacity-50 dark:border-zinc-800 dark:hover:bg-zinc-800"
-          >
-            <RefreshCw className={cn("h-3.5 w-3.5", refresh.isPending && "animate-spin")} />
-            Обновить статус
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              disabled={refresh.isPending}
+              onClick={() => refresh.mutate()}
+              className="inline-flex items-center gap-1 rounded-md border border-zinc-200 px-3 py-1.5 text-xs hover:bg-zinc-100 disabled:opacity-50 dark:border-zinc-800 dark:hover:bg-zinc-800"
+            >
+              <RefreshCw className={cn("h-3.5 w-3.5", refresh.isPending && "animate-spin")} />
+              Обновить статус
+            </button>
+            <button
+              type="button"
+              disabled={printing}
+              onClick={async () => {
+                setErr(null);
+                setPrinting(true);
+                try {
+                  await downloadCdekWaybillPdf(
+                    order.id,
+                    `cdek-${order.cdekTrack ?? order.id.slice(0, 8)}.pdf`,
+                  );
+                } catch (e) {
+                  setErr(e instanceof ApiError ? e.message : "Не удалось скачать PDF");
+                } finally {
+                  setPrinting(false);
+                }
+              }}
+              className="inline-flex items-center gap-1 rounded-md border border-zinc-200 px-3 py-1.5 text-xs hover:bg-zinc-100 disabled:opacity-50 dark:border-zinc-800 dark:hover:bg-zinc-800"
+            >
+              {printing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+              PDF квитанции
+            </button>
+          </div>
         </>
       ) : (
         <>

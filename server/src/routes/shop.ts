@@ -26,6 +26,8 @@ import {
   refreshCdekStatusForOrder,
   CdekOrderError,
 } from "../lib/cdek-orders.js";
+import { cdek } from "../lib/cdek.js";
+import { syncCdekStatuses } from "../lib/cdek-sync.js";
 import { getActivePassPerks } from "../lib/pass.js";
 import { parsePagination } from "../lib/pagination.js";
 
@@ -638,7 +640,45 @@ export async function adminShopRoutes(app: FastifyInstance) {
     },
   );
 
-  // ----- CATEGORIES -----
+  // GET /api/v1/admin/shop/orders/:id/cdek/print — PDF-квитанция накладной.
+  app.get<{ Params: { id: string } }>(
+    "/orders/:id/cdek/print",
+    { preHandler: requireAdmin },
+    async (req, reply) => {
+      const [order] = await db
+        .select({ id: orders.id, cdekUuid: orders.cdekUuid, cdekTrack: orders.cdekTrack })
+        .from(orders)
+        .where(eq(orders.id, req.params.id))
+        .limit(1);
+      if (!order) return reply.code(404).send({ error: "not_found" });
+      if (!order.cdekUuid) return reply.code(409).send({ error: "no_waybill", message: "У заказа ещё нет накладной СДЭК" });
+      try {
+        const pdf = await cdek.printOrder(order.cdekUuid);
+        const fname = `cdek-${order.cdekTrack ?? order.id.slice(0, 8)}.pdf`;
+        reply
+          .header("Content-Type", "application/pdf")
+          .header("Content-Disposition", `inline; filename="${fname}"`)
+          .header("Cache-Control", "no-store");
+        return reply.send(pdf);
+      } catch (e: any) {
+        req.log.error({ err: e }, "cdek print failed");
+        return reply.code(502).send({ error: "cdek_unavailable", message: String(e?.message ?? e) });
+      }
+    },
+  );
+
+  // POST /api/v1/admin/shop/orders/cdek/sync — ручной запуск массовой синхронизации статусов.
+  app.post("/orders/cdek/sync", { preHandler: requireAdmin }, async (req, reply) => {
+    try {
+      const r = await syncCdekStatuses();
+      return r;
+    } catch (e: any) {
+      req.log.error({ err: e }, "cdek mass sync failed");
+      return reply.code(502).send({ error: "cdek_unavailable", message: String(e?.message ?? e) });
+    }
+  });
+
+
   app.get("/categories", { preHandler: requireAdmin }, async () => {
     const cats = await db.select().from(shopCategories).orderBy(asc(shopCategories.sort), asc(shopCategories.name));
     const subs = await db.select().from(shopSubcategories).orderBy(asc(shopSubcategories.sort), asc(shopSubcategories.name));
