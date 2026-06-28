@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { and, desc, eq, gte, lt, sql, sum, count } from "drizzle-orm";
+import { and, desc, eq, sql, sum, count } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { requireAdmin } from "../lib/auth.js";
 import { users } from "../db/schema/users.js";
@@ -14,11 +14,12 @@ export async function adminDashboardRoutes(app: FastifyInstance) {
 
   /** GET /api/v1/admin/dashboard — все KPI и таблицы для админ-дашборда. */
   app.get("/", async () => {
-    const now = new Date();
-    const d30 = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-    const d7 = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-    const d48h = new Date(now.getTime() + 48 * 60 * 60 * 1000);
-    const d7next = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const nowMs = Date.now();
+    const now = new Date(nowMs).toISOString();
+    const d30 = new Date(nowMs - 30 * 24 * 60 * 60 * 1000).toISOString();
+    const d7 = new Date(nowMs - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const d48h = new Date(nowMs + 48 * 60 * 60 * 1000).toISOString();
+    const d7next = new Date(nowMs + 7 * 24 * 60 * 60 * 1000).toISOString();
 
     // --- KPI ---
     // Выручка = подтверждённые банком платежи (orders + Hell Pass) за 30 дней.
@@ -26,17 +27,17 @@ export async function adminDashboardRoutes(app: FastifyInstance) {
     const [revenueRow] = await db
       .select({ total: sql<number>`COALESCE(SUM(${payments.amountRub}), 0)::int` })
       .from(payments)
-      .where(and(eq(payments.status, "confirmed"), gte(payments.updatedAt, d30)));
+      .where(and(eq(payments.status, "confirmed"), sql`${payments.updatedAt} >= ${d30}::timestamptz`));
 
     const [passActive] = await db
       .select({ c: sql<number>`COUNT(*)::int` })
       .from(passPurchases)
-      .where(and(eq(passPurchases.status, "active"), gte(passPurchases.expiresAt, now)));
+      .where(and(eq(passPurchases.status, "active"), sql`${passPurchases.expiresAt} >= ${now}::timestamptz`));
 
     const [newUsers7] = await db
       .select({ c: sql<number>`COUNT(*)::int` })
       .from(users)
-      .where(gte(users.createdAt, d7));
+      .where(sql`${users.createdAt} >= ${d7}::timestamptz`);
 
     const [ticketsTotal] = await db
       .select({ total: sql<number>`COALESCE(SUM(${ticketsLedger.amount}), 0)::int` })
@@ -58,7 +59,7 @@ export async function adminDashboardRoutes(app: FastifyInstance) {
     const [orders7] = await db
       .select({ c: sql<number>`COUNT(*)::int` })
       .from(orders)
-      .where(gte(orders.createdAt, d7));
+      .where(sql`${orders.createdAt} >= ${d7}::timestamptz`);
 
     // --- Last orders ---
     const lastOrders = await db
@@ -83,7 +84,13 @@ export async function adminDashboardRoutes(app: FastifyInstance) {
         endsAt: raffles.endsAt,
       })
       .from(raffles)
-      .where(and(eq(raffles.status, "active"), lt(raffles.endsAt, d48h), gte(raffles.endsAt, now)))
+      .where(
+        and(
+          eq(raffles.status, "active"),
+          sql`${raffles.endsAt} < ${d48h}::timestamptz`,
+          sql`${raffles.endsAt} >= ${now}::timestamptz`,
+        ),
+      )
       .orderBy(raffles.endsAt)
       .limit(5);
 
@@ -110,8 +117,8 @@ export async function adminDashboardRoutes(app: FastifyInstance) {
       .where(
         and(
           eq(passPurchases.status, "active"),
-          gte(passPurchases.expiresAt, now),
-          lt(passPurchases.expiresAt, d7next),
+          sql`${passPurchases.expiresAt} >= ${now}::timestamptz`,
+          sql`${passPurchases.expiresAt} < ${d7next}::timestamptz`,
         ),
       )
       .orderBy(passPurchases.expiresAt)
@@ -127,7 +134,7 @@ export async function adminDashboardRoutes(app: FastifyInstance) {
       })
       .from(orderItems)
       .innerJoin(orders, eq(orders.id, orderItems.orderId))
-      .where(and(eq(orders.status, "paid"), gte(orders.paidAt, d30)))
+      .where(and(eq(orders.status, "paid"), sql`${orders.paidAt} >= ${d30}::timestamptz`))
       .groupBy(orderItems.productId)
       .orderBy(sql`SUM(${orderItems.qty}) DESC`)
       .limit(5);
