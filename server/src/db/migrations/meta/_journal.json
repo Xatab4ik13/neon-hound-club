@@ -302,6 +302,20 @@
             "when": 1779890000000,
             "tag": "0042_orders_cdek",
             "breakpoints": true
+        },
+        {
+            "idx": 43,
+            "version": "7",
+            "when": 1779900000000,
+            "tag": "0043_tax_auto",
+            "breakpoints": true
+        },
+        {
+            "idx": 44,
+            "version": "7",
+            "when": 1779910000000,
+            "tag": "0044_orders_cdek_status",
+            "breakpoints": true
         }
     ]
 }
