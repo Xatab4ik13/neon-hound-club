@@ -119,6 +119,7 @@ function UsersPage() {
           onClose={() => setSelectedId(null)}
           onGift={() => setGiftOpen(true)}
           onGiftPass={() => setGiftPassOpen(true)}
+          onGiftStickers={() => setGiftStickersOpen(true)}
         />
       )}
 
@@ -127,6 +128,9 @@ function UsersPage() {
       )}
       {selectedId && giftPassOpen && (
         <GiftPassModal userId={selectedId} onClose={() => setGiftPassOpen(false)} />
+      )}
+      {selectedId && giftStickersOpen && (
+        <GiftStickersModal userId={selectedId} onClose={() => setGiftStickersOpen(false)} />
       )}
     </div>
   );
