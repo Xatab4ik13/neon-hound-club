@@ -479,6 +479,23 @@ export function fetchAdminTicketsJournal(opts?: { page?: number; pageSize?: numb
   );
 }
 
+export type AdminTicketsStats = {
+  totals: {
+    issued: number;
+    spent: number;
+    balance: number;
+    spentOnRaffles: number;
+    ops: number;
+    users: number;
+  };
+  last30: { issued30: number; spent30: number };
+  bySource: { source: string; issued: number; spent: number }[];
+};
+
+export function fetchAdminTicketsStats() {
+  return apiFetch<AdminTicketsStats>("/api/v1/admin/tickets/stats");
+}
+
 // ---------- PASS ADMIN ----------
 
 export function fetchAdminPassList(status?: PassRecord["status"]) {
