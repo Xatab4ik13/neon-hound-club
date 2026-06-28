@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Search, X, ShoppingBag, Ticket, SlidersHorizontal } from "@/components/ui/icons";
+import { Search, X, ShoppingBag, Ticket, SlidersHorizontal, PlumpStore } from "@/components/ui/icons";
 import { LazyImage } from "@/components/ui/lazy-image";
 import {
   fetchShopCategories,
@@ -332,7 +332,7 @@ function EmptyState({ hasQuery }: { hasQuery: boolean }) {
   return (
     <div className="grid place-items-center rounded-2xl border border-dashed border-white/[0.08] bg-card/40 px-6 py-16 text-center">
       <div className="grid h-12 w-12 place-items-center rounded-full bg-primary/10 text-primary">
-        <ShoppingBag className="h-5 w-5" />
+        <PlumpStore className="h-6 w-6" />
       </div>
       <div className="mt-4 text-[15px] font-semibold text-foreground">
         {hasQuery ? "Ничего не нашли" : "Здесь пока пусто"}

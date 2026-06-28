@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronRight, ShoppingBag, Ticket, Trophy } from "@/components/ui/icons";
+import { ChevronRight, Trophy, PlumpStore, PlumpTicket } from "@/components/ui/icons";
 import { TicketLedger } from "@/components/club/TicketLedger";
 import { TicketCard } from "@/components/club/TicketCard";
 import { PageHeader } from "@/components/club/PageHeader";
@@ -63,13 +63,13 @@ function TicketsPage() {
             title="Покупки в магазине"
             hint="К каждому товару — свой бонус билетов"
             to="/club/shop"
-            icon={<ShoppingBag className="h-4 w-4" />}
+            icon={<PlumpStore className="h-5 w-5" />}
           />
           <EarnRow
             title="Hell Pass"
             hint="Пакет билетов при покупке любого тира"
             to="/club/hell-pass"
-            icon={<Ticket className="h-4 w-4" />}
+            icon={<PlumpTicket className="h-5 w-5" />}
           />
           <EarnRow
             title="Квесты и активность"
