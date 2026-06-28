@@ -45,7 +45,7 @@ function NotFound() {
 
 function RaffleDetailPage() {
   const { raffleId } = Route.useParams();
-  const { isAuthed } = useViewer();
+  const { isAuthed, phoneVerified } = useViewer();
 
   const raffleQ = useQuery({
     queryKey: qk.raffle(raffleId),
@@ -73,6 +73,7 @@ function RaffleDetailPage() {
       raffle={raffleQ.data}
       balance={balanceQ.data?.balance ?? 0}
       isAuthed={isAuthed}
+      phoneVerified={phoneVerified}
     />
   );
 }
