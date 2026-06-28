@@ -69,6 +69,45 @@ export async function ticketsRoutes(app: FastifyInstance) {
 }
 
 export async function adminTicketsRoutes(app: FastifyInstance) {
+  // GET /api/v1/admin/tickets/stats — KPI + разбивка по источникам
+  app.get("/stats", { preHandler: requireAdmin }, async () => {
+    const d30 = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+    const [totals] = await db
+      .select({
+        issued: sql<number>`coalesce(sum(case when amount > 0 then amount else 0 end), 0)::int`,
+        spent: sql<number>`coalesce(sum(case when amount < 0 then -amount else 0 end), 0)::int`,
+        balance: sql<number>`coalesce(sum(amount), 0)::int`,
+        spentOnRaffles: sql<number>`coalesce(sum(case when source = 'raffle_entry' then -amount else 0 end), 0)::int`,
+        ops: sql<number>`count(*)::int`,
+        users: sql<number>`count(distinct user_id)::int`,
+      })
+      .from(ticketsLedger);
+
+    const [last30] = await db
+      .select({
+        issued30: sql<number>`coalesce(sum(case when amount > 0 then amount else 0 end), 0)::int`,
+        spent30: sql<number>`coalesce(sum(case when amount < 0 then -amount else 0 end), 0)::int`,
+      })
+      .from(ticketsLedger)
+      .where(sql`${ticketsLedger.createdAt} >= ${d30}`);
+
+    const bySourceRows = await db
+      .select({
+        source: ticketsLedger.source,
+        issued: sql<number>`coalesce(sum(case when amount > 0 then amount else 0 end), 0)::int`,
+        spent: sql<number>`coalesce(sum(case when amount < 0 then -amount else 0 end), 0)::int`,
+      })
+      .from(ticketsLedger)
+      .groupBy(ticketsLedger.source);
+
+    return {
+      totals: totals ?? { issued: 0, spent: 0, balance: 0, spentOnRaffles: 0, ops: 0, users: 0 },
+      last30: last30 ?? { issued30: 0, spent30: 0 },
+      bySource: bySourceRows,
+    };
+  });
+
   // GET /api/v1/admin/tickets/journal — общий журнал последних операций
   app.get("/journal", { preHandler: requireAdmin }, async (req) => {
     const { page, pageSize, offset } = parsePagination(req.query);
