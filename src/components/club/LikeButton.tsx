@@ -188,29 +188,30 @@ export function LikeButton({ liked, count, onToggle, onReact }: Props) {
             fill={liked ? "currentColor" : "none"}
             strokeWidth={2}
             style={{
-              animation: burstKey ? "like-pop var(--motion-slow) var(--ease-spring)" : undefined,
-              transformOrigin: "center",
+              animation: burstKey ? "like-squash 700ms cubic-bezier(.34,1.56,.64,1)" : undefined,
+              transformOrigin: "center bottom",
             }}
             key={burstKey}
           />
-          {burstKey > 0 && (
+          {burstKey > 0 && liked && (
             <span
               key={`burst-${burstKey}`}
               aria-hidden
               className="pointer-events-none absolute inset-0"
             >
-              {BURST.map((p, i) => (
+              {FLOATERS.map((t, i) => (
                 <span
                   key={i}
-                  className="absolute left-1/2 top-1/2 h-1 w-1 rounded-full bg-primary"
+                  className="absolute left-1/2 top-1/2 font-mono text-[10px] font-bold leading-none text-primary"
                   style={{
                     // @ts-expect-error custom CSS vars
-                    "--tx": `${p.x}px`,
-                    "--ty": `${p.y}px`,
-                    animation: `like-burst 520ms ${p.delay}ms var(--ease-out-soft) forwards`,
-                    opacity: 0,
+                    "--dx": `${(i - 1) * 14}px`,
+                    animation: `like-float 900ms ${i * 60}ms ease-out forwards`,
+                    textShadow: "0 2px 6px rgba(255,45,149,0.5)",
                   }}
-                />
+                >
+                  {t}
+                </span>
               ))}
             </span>
           )}
@@ -218,16 +219,17 @@ export function LikeButton({ liked, count, onToggle, onReact }: Props) {
         <span>{formatCount(count)}</span>
 
         <style>{`
-          @keyframes like-pop {
-            0%   { transform: scale(1); }
-            30%  { transform: scale(0.78); }
-            60%  { transform: scale(1.35); }
-            100% { transform: scale(1); }
+          @keyframes like-squash {
+            0%   { transform: scale(1, 1); }
+            20%  { transform: scale(1.3, 0.7); }
+            40%  { transform: scale(0.8, 1.3) translateY(-3px); }
+            70%  { transform: scale(1.1, 0.95); }
+            100% { transform: scale(1, 1); }
           }
-          @keyframes like-burst {
-            0%   { transform: translate(-50%, -50%) scale(0.4); opacity: 1; }
-            70%  { opacity: 1; }
-            100% { transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))) scale(0); opacity: 0; }
+          @keyframes like-float {
+            0%   { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+            30%  { opacity: 1; }
+            100% { transform: translate(calc(-50% + var(--dx)), -220%) scale(1); opacity: 0; }
           }
           @keyframes reactions-pop {
             0%   { transform: scale(0.5) translateY(8px); opacity: 0; }
