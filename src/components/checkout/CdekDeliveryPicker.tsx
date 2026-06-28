@@ -2,7 +2,7 @@
  * Виджет выбора доставки СДЭК на чекауте.
  * - Автокомплит города (СДЭК /location/cities).
  * - Переключатель ПВЗ / Курьер.
- * - Если ПВЗ: список пунктов выдачи с адресом и временем работы.
+ * - Если ПВЗ: интерактивная карта Яндекса с маркерами всех ПВЗ города + карточка выбранного.
  * - Если Курьер: одно поле адреса (улица, дом, кв.).
  *
  * Возвращает родителю своё состояние через onChange.
@@ -10,8 +10,9 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Check, Loader2, MapPin, Search, Truck } from "lucide-react";
+import { Check, Loader2, MapPin, Search, Truck, X } from "lucide-react";
 import { apiFetch } from "@/lib/api";
+import { loadYandexMaps } from "@/lib/yandex-maps";
 
 export type CdekPickerState = {
   cityCode: number | null;
@@ -62,7 +63,6 @@ export function CdekDeliveryPicker({
   const [pvzList, setPvzList] = useState<PvzItem[]>([]);
   const [pvzLoading, setPvzLoading] = useState(false);
   const [pvzError, setPvzError] = useState<string | null>(null);
-  const [pvzFilter, setPvzFilter] = useState("");
 
   // Дебаунс поиска города.
   useEffect(() => {
@@ -113,16 +113,10 @@ export function CdekDeliveryPicker({
     };
   }, [value.cityCode, value.mode]);
 
-  const filteredPvz = useMemo(() => {
-    const q = pvzFilter.trim().toLowerCase();
-    if (!q) return pvzList;
-    return pvzList.filter(
-      (p) =>
-        p.address.toLowerCase().includes(q) ||
-        p.name.toLowerCase().includes(q) ||
-        p.code.toLowerCase().includes(q),
-    );
-  }, [pvzList, pvzFilter]);
+  const pickedPvz = useMemo(
+    () => pvzList.find((p) => p.code === value.pvzCode) ?? null,
+    [pvzList, value.pvzCode],
+  );
 
   const pickCity = (c: CityItem) => {
     setCityQ(`${c.city}, ${c.region}`);
@@ -207,67 +201,42 @@ export function CdekDeliveryPicker({
         />
       </div>
 
-      {/* ПВЗ-список */}
+      {/* ПВЗ-карта */}
       {value.mode === "pvz" && value.cityCode != null && (
-        <div className="rounded-2xl border border-white/[0.06] bg-card/40">
-          <div className="border-b border-white/[0.05] px-3 py-2">
-            <input
-              value={pvzFilter}
-              onChange={(e) => setPvzFilter(e.target.value)}
-              placeholder="Поиск по адресу…"
-              className="w-full bg-transparent text-[14px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none"
-            />
-          </div>
-          <div className="max-h-72 overflow-auto">
-            {pvzLoading && (
-              <div className="flex items-center gap-2 px-3 py-4 text-[13px] text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin" /> Загружаем пункты выдачи…
+        <div className="space-y-3">
+          <PvzMap
+            items={pvzList}
+            loading={pvzLoading}
+            error={pvzError}
+            selectedCode={value.pvzCode}
+            onPick={pickPvz}
+          />
+          {pickedPvz && (
+            <div className="flex items-start gap-3 rounded-2xl border border-primary/40 bg-primary/[0.06] px-3 py-3">
+              <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-[14px] font-semibold text-foreground">
+                  {pickedPvz.name}
+                </div>
+                <div className="text-[12px] leading-snug text-muted-foreground">
+                  {pickedPvz.address}
+                </div>
+                {pickedPvz.workTime && (
+                  <div className="mt-0.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground/80">
+                    {pickedPvz.workTime}
+                  </div>
+                )}
               </div>
-            )}
-            {pvzError && <div className="px-3 py-4 text-[13px] text-destructive">{pvzError}</div>}
-            {!pvzLoading && !pvzError && filteredPvz.length === 0 && (
-              <div className="px-3 py-4 text-[13px] text-muted-foreground">
-                Ничего не найдено
-              </div>
-            )}
-            <ul className="divide-y divide-white/[0.05]">
-              {filteredPvz.slice(0, 50).map((p) => {
-                const picked = value.pvzCode === p.code;
-                return (
-                  <li key={p.code}>
-                    <button
-                      type="button"
-                      onClick={() => pickPvz(p)}
-                      className={`flex w-full items-start gap-3 px-3 py-2.5 text-left transition ${
-                        picked ? "bg-primary/[0.1]" : "hover:bg-white/[0.03]"
-                      }`}
-                    >
-                      <span
-                        className={`mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full border ${
-                          picked ? "border-primary bg-primary text-primary-foreground" : "border-white/20"
-                        }`}
-                      >
-                        {picked && <Check className="h-3 w-3" />}
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <div className="truncate text-[13px] font-semibold text-foreground">
-                          {p.name}
-                        </div>
-                        <div className="text-[12px] leading-snug text-muted-foreground">
-                          {p.address}
-                        </div>
-                        {p.workTime && (
-                          <div className="mt-0.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground/80">
-                            {p.workTime}
-                          </div>
-                        )}
-                      </div>
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
+              <button
+                type="button"
+                onClick={() => onChange({ ...value, pvzCode: null, pvzAddress: null })}
+                className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-white/[0.06] hover:text-foreground"
+                aria-label="Сбросить выбор"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          )}
         </div>
       )}
 
@@ -325,4 +294,250 @@ function ModeBtn({
       </div>
     </button>
   );
+}
+
+/**
+ * Карта ПВЗ. Создаётся один раз при первой готовности контейнера, потом
+ * только обновляются маркеры в кластерере. Если ключ Яндекса не задан или
+ * скрипт упал — показываем fallback-список, чтобы заказы не блокировать.
+ */
+function PvzMap({
+  items,
+  loading,
+  error,
+  selectedCode,
+  onPick,
+}: {
+  items: PvzItem[];
+  loading: boolean;
+  error: string | null;
+  selectedCode: string | null;
+  onPick: (p: PvzItem) => void;
+}) {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const mapRef = useRef<any>(null);
+  const clustererRef = useRef<any>(null);
+  const placemarksRef = useRef<Map<string, any>>(new Map());
+  const onPickRef = useRef(onPick);
+  const [mapError, setMapError] = useState<string | null>(null);
+  const [mapReady, setMapReady] = useState(false);
+
+  useEffect(() => {
+    onPickRef.current = onPick;
+  }, [onPick]);
+
+  // Инициализация карты (один раз).
+  useEffect(() => {
+    let cancelled = false;
+    loadYandexMaps()
+      .then((ymaps) => {
+        if (cancelled || !containerRef.current || mapRef.current) return;
+        const map = new ymaps.Map(containerRef.current, {
+          center: [55.751244, 37.618423], // Москва — временный центр, ниже подгоним по bbox
+          zoom: 10,
+          controls: ["zoomControl", "geolocationControl"],
+        }, {
+          suppressMapOpenBlock: true,
+        });
+        // На мобиле скроллим страницу, не карту.
+        map.behaviors.disable("scrollZoom");
+        const clusterer = new ymaps.Clusterer({
+          preset: "islands#invertedRedClusterIcons",
+          groupByCoordinates: false,
+          clusterDisableClickZoom: false,
+        });
+        map.geoObjects.add(clusterer);
+        mapRef.current = map;
+        clustererRef.current = clusterer;
+        setMapReady(true);
+      })
+      .catch((e) => {
+        if (cancelled) return;
+        console.error("[CdekDeliveryPicker] ymaps load failed:", e);
+        setMapError("Карта недоступна, выбери ПВЗ из списка ниже");
+      });
+    return () => {
+      cancelled = true;
+      if (mapRef.current) {
+        try {
+          mapRef.current.destroy();
+        } catch {}
+        mapRef.current = null;
+        clustererRef.current = null;
+        placemarksRef.current.clear();
+      }
+    };
+  }, []);
+
+  // Обновление маркеров при смене items.
+  useEffect(() => {
+    if (!mapReady || !clustererRef.current || !mapRef.current || !window.ymaps) return;
+    const ymaps = window.ymaps;
+    const clusterer = clustererRef.current;
+    clusterer.removeAll();
+    placemarksRef.current.clear();
+
+    if (items.length === 0) return;
+
+    const placemarks = items.map((p) => {
+      const pm = new ymaps.Placemark(
+        [p.lat, p.lng],
+        {
+          balloonContentHeader: `<strong>${escapeHtml(p.name)}</strong>`,
+          balloonContentBody: `
+            <div style="font-size:13px;line-height:1.4;max-width:240px">
+              <div style="color:#444">${escapeHtml(p.address)}</div>
+              ${p.workTime ? `<div style="margin-top:4px;color:#888;font-size:11px">${escapeHtml(p.workTime)}</div>` : ""}
+              <button id="pick-pvz-${p.code}" style="margin-top:8px;background:#ef2b2b;color:#fff;border:0;border-radius:8px;padding:8px 12px;font-weight:600;cursor:pointer;width:100%">Выбрать</button>
+            </div>
+          `,
+          hintContent: p.address,
+        },
+        {
+          preset: "islands#redIcon",
+        },
+      );
+      pm.events.add("balloonopen", () => {
+        // После того как balloon смонтирован — вешаем обработчик на кнопку.
+        setTimeout(() => {
+          const btn = document.getElementById(`pick-pvz-${p.code}`);
+          if (btn) {
+            btn.onclick = () => {
+              onPickRef.current(p);
+              mapRef.current?.balloon.close();
+            };
+          }
+        }, 0);
+      });
+      placemarksRef.current.set(p.code, pm);
+      return pm;
+    });
+    clusterer.add(placemarks);
+
+    // Подгоняем границы под все ПВЗ.
+    try {
+      const bounds = clusterer.getBounds();
+      if (bounds) {
+        mapRef.current.setBounds(bounds, { checkZoomRange: true, zoomMargin: 30 });
+      }
+    } catch {}
+  }, [items, mapReady]);
+
+  // Подсветка выбранного маркера.
+  useEffect(() => {
+    placemarksRef.current.forEach((pm, code) => {
+      pm.options.set(
+        "preset",
+        code === selectedCode ? "islands#blackStretchyIcon" : "islands#redIcon",
+      );
+    });
+  }, [selectedCode, items]);
+
+  if (mapError) {
+    return <PvzFallbackList items={items} loading={loading} error={error} selectedCode={selectedCode} onPick={onPick} />;
+  }
+
+  return (
+    <div className="relative overflow-hidden rounded-2xl border border-white/[0.06] bg-card/40">
+      <div
+        ref={containerRef}
+        className="h-[360px] w-full md:h-[480px]"
+        style={{ background: "#1a1a1a" }}
+      />
+      {(loading || !mapReady) && (
+        <div className="pointer-events-none absolute inset-0 grid place-items-center bg-background/60 backdrop-blur-sm">
+          <div className="flex items-center gap-2 rounded-full bg-background/80 px-3 py-1.5 text-[12px] text-muted-foreground">
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            {loading ? "Загружаем пункты выдачи…" : "Загружаем карту…"}
+          </div>
+        </div>
+      )}
+      {error && !loading && (
+        <div className="absolute inset-x-3 bottom-3 rounded-xl bg-destructive/90 px-3 py-2 text-[12px] text-destructive-foreground">
+          {error}
+        </div>
+      )}
+      {!loading && !error && items.length > 0 && (
+        <div className="pointer-events-none absolute left-3 top-3 rounded-full bg-background/85 px-3 py-1 text-[11px] font-medium text-foreground backdrop-blur">
+          {items.length} ПВЗ — тапни маркер
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PvzFallbackList({
+  items,
+  loading,
+  error,
+  selectedCode,
+  onPick,
+}: {
+  items: PvzItem[];
+  loading: boolean;
+  error: string | null;
+  selectedCode: string | null;
+  onPick: (p: PvzItem) => void;
+}) {
+  return (
+    <div className="rounded-2xl border border-white/[0.06] bg-card/40">
+      <div className="max-h-72 overflow-auto">
+        {loading && (
+          <div className="flex items-center gap-2 px-3 py-4 text-[13px] text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" /> Загружаем пункты выдачи…
+          </div>
+        )}
+        {error && <div className="px-3 py-4 text-[13px] text-destructive">{error}</div>}
+        {!loading && !error && items.length === 0 && (
+          <div className="px-3 py-4 text-[13px] text-muted-foreground">Ничего не найдено</div>
+        )}
+        <ul className="divide-y divide-white/[0.05]">
+          {items.slice(0, 100).map((p) => {
+            const picked = selectedCode === p.code;
+            return (
+              <li key={p.code}>
+                <button
+                  type="button"
+                  onClick={() => onPick(p)}
+                  className={`flex w-full items-start gap-3 px-3 py-2.5 text-left transition ${
+                    picked ? "bg-primary/[0.1]" : "hover:bg-white/[0.03]"
+                  }`}
+                >
+                  <span
+                    className={`mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full border ${
+                      picked ? "border-primary bg-primary text-primary-foreground" : "border-white/20"
+                    }`}
+                  >
+                    {picked && <Check className="h-3 w-3" />}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-[13px] font-semibold text-foreground">
+                      {p.name}
+                    </div>
+                    <div className="text-[12px] leading-snug text-muted-foreground">
+                      {p.address}
+                    </div>
+                    {p.workTime && (
+                      <div className="mt-0.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground/80">
+                        {p.workTime}
+                      </div>
+                    )}
+                  </div>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
