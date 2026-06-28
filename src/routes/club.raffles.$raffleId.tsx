@@ -45,7 +45,7 @@ function NotFound() {
 
 function RaffleDetailPage() {
   const { raffleId } = Route.useParams();
-  const { isAuthed } = useViewer();
+  const { isAuthed, phoneVerified } = useViewer();
 
   const raffleQ = useQuery({
     queryKey: qk.raffle(raffleId),
@@ -73,6 +73,7 @@ function RaffleDetailPage() {
       raffle={raffleQ.data}
       balance={balanceQ.data?.balance ?? 0}
       isAuthed={isAuthed}
+      phoneVerified={phoneVerified}
     />
   );
 }
@@ -114,10 +115,12 @@ function RaffleDetailContent({
   raffle,
   balance,
   isAuthed,
+  phoneVerified,
 }: {
   raffle: RaffleDetail;
   balance: number;
   isAuthed: boolean;
+  phoneVerified: boolean;
 }) {
   const qc = useQueryClient();
   const navigate = useNavigate();
@@ -125,6 +128,7 @@ function RaffleDetailContent({
   const [stake, setStake] = useState(0);
   const [flash, setFlash] = useState<string | null>(null);
   const finished = raffle.status === "finished";
+  const phoneRequired = isAuthed && !phoneVerified;
 
   const enterMut = useMutation({
     mutationFn: async () => {
@@ -147,9 +151,9 @@ function RaffleDetailContent({
     onError: (e) => {
       if (e instanceof ApiError) {
         toast.error(ENTER_ERRORS[e.code] ?? "Не удалось участвовать");
-        if (e.code === "phone_required") {
-          navigate({ to: "/club/me" });
-        }
+        // phone_required не должен сюда долетать — баннер блокирует кнопку.
+        // Но если бэк всё же отдал — мягко ведём в профиль.
+        if (e.code === "phone_required") navigate({ to: "/club/me" });
       } else {
         toast.error("Не удалось участвовать");
       }
@@ -321,6 +325,7 @@ function RaffleDetailContent({
               stake={stake}
               maxStake={maxStake}
               isAuthed={isAuthed}
+              phoneRequired={phoneRequired}
               isPending={enterMut.isPending}
               onStakeChange={(v) => setStake(Math.max(0, Math.min(maxStake, v)))}
               onStake={handleStake}
@@ -349,6 +354,7 @@ function RaffleDetailContent({
                 stake={stake}
                 maxStake={maxStake}
                 isAuthed={isAuthed}
+                phoneRequired={phoneRequired}
                 isPending={enterMut.isPending}
                 onStakeChange={(v) => setStake(Math.max(0, Math.min(maxStake, v)))}
                 onStake={handleStake}
@@ -381,6 +387,7 @@ function StakeControls({
   stake,
   maxStake,
   isAuthed,
+  phoneRequired,
   isPending,
   onStakeChange,
   onStake,
@@ -391,15 +398,47 @@ function StakeControls({
   stake: number;
   maxStake: number;
   isAuthed: boolean;
+  phoneRequired: boolean;
   isPending: boolean;
   onStakeChange: (v: number) => void;
   onStake: () => void;
   compact?: boolean;
 }) {
   const presets = [1, 5, maxStake].filter((v, i, arr) => v > 0 && arr.indexOf(v) === i);
-  const noBalance = isAuthed && maxStake <= 0;
+  const noBalance = isAuthed && maxStake <= 0 && !phoneRequired;
   const totalCost = stake * ticketCost;
   const ticketWord = pluralRu(ticketCost, ["билет", "билета", "билетов"]);
+
+  // Главный блок-стоппер: пока телефон не подтверждён — никаких ставок.
+  if (phoneRequired) {
+    return (
+      <div>
+        <div className="flex items-center justify-between">
+          <div className="font-mono text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+            1 заявка — {ticketCost} {ticketWord}
+          </div>
+          <div className="flex items-center gap-1 font-mono text-[11px] uppercase tracking-wider text-foreground">
+            <PlumpTicket className="h-3.5 w-3.5 text-primary" />
+            <span className="tabular-nums">{balance}</span>
+          </div>
+        </div>
+        <div className="mt-3 rounded-xl border border-amber-500/40 bg-amber-500/[0.08] p-3">
+          <div className="font-display text-[14px] font-black uppercase italic tracking-wider text-amber-200">
+            Нужен номер телефона
+          </div>
+          <p className="mt-1 text-[12px] leading-relaxed text-amber-100/80">
+            Чтобы участвовать, подтверди номер в профиле. Это защита от мультиаккаунтов — одно участие на человека.
+          </p>
+          <Link
+            to="/club/me"
+            className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-amber-400 py-2.5 font-display text-[13px] font-black uppercase italic tracking-wider text-black active:scale-[0.98]"
+          >
+            Указать номер →
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>

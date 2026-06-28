@@ -4,6 +4,7 @@ import { eq, or, sql } from "drizzle-orm";
 import crypto from "node:crypto";
 import { db } from "../db/client.js";
 import { users } from "../db/schema/users.js";
+import { profiles } from "../db/schema/profile.js";
 import { emailVerificationTokens } from "../db/schema/email-verification.js";
 import {
   hashPassword,
@@ -317,7 +318,17 @@ export async function authRoutes(app: FastifyInstance) {
       clearSessionCookie(reply);
       return reply.code(401).send({ error: "unauthorized", message: "Сессия устарела" });
     }
-    return reply.send({ user: u });
+
+    // Подтянуть статус телефона из profiles — нужно фронту, чтобы заранее
+    // показывать баннер «подтверди номер» в местах, где это обязательно
+    // (например, вход в розыгрыш).
+    const [prof] = await db
+      .select({ phoneE164: profiles.phoneE164 })
+      .from(profiles)
+      .where(eq(profiles.userId, session.sub))
+      .limit(1);
+
+    return reply.send({ user: { ...u, phoneVerified: !!prof?.phoneE164 } });
   });
 
   // POST /auth/change-password — смена пароля авторизованного юзера
