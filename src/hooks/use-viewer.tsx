@@ -154,6 +154,7 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
       nick: user?.nick ?? null,
       tier,
       tickets,
+      phoneVerified: !!user?.phoneVerified,
       hydrated: meQ.isFetched,
       signIn,
       signUp,
