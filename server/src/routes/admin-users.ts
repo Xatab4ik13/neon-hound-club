@@ -8,10 +8,19 @@ import { passPurchases, PASS_CONFIG, PASS_TIERS, type PassTier } from "../db/sch
 import { ticketsLedger } from "../db/schema/tickets.js";
 import { orders } from "../db/schema/shop.js";
 import { badges, userBadges } from "../db/schema/badges.js";
+import { userStickerPacks } from "../db/schema/stickers.js";
 import { requireAdmin, hashPassword } from "../lib/auth.js";
 import { getOrCreateReferralCode } from "../lib/referrals.js";
 import { activatePassPurchase } from "../lib/pass.js";
 import { parsePagination } from "../lib/pagination.js";
+
+// Список платных стикерпаков, которые админ может дарить.
+// Должен совпадать с ALL_PACK_SLUGS в server/src/routes/stickers.ts.
+const GIFTABLE_STICKER_PACKS = [
+  { slug: "special", title: "Special" },
+  { slug: "hell-minions", title: "Hell Minions" },
+] as const;
+const STICKER_PACK_SLUGS = GIFTABLE_STICKER_PACKS.map((p) => p.slug) as [string, ...string[]];
 
 
 /**
