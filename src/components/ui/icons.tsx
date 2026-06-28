@@ -10,6 +10,16 @@ import type { ComponentType, SVGProps } from "react";
 // Унифицированный тип иконки: подходит и для lucide-react, и для наших Plump-SVG.
 export type LucideIcon = ComponentType<SVGProps<SVGSVGElement> & { size?: number | string; strokeWidth?: number | string; absoluteStrokeWidth?: boolean }>;
 
+// Пропсы Plump-иконок: поддерживают size (как у lucide) — мапится на width/height.
+// strokeWidth/absoluteStrokeWidth принимаются для совместимости, но не используются (Plump — fill, без stroke).
+type IconProps = SVGProps<SVGSVGElement> & { size?: number | string; strokeWidth?: number | string; absoluteStrokeWidth?: boolean };
+
+function plumpProps({ size, strokeWidth: _sw, absoluteStrokeWidth: _asw, ...rest }: IconProps): SVGProps<SVGSVGElement> {
+  if (size != null) return { width: size, height: size, ...rest };
+  return rest;
+}
+
+
 export function PlumpFeed(props: IconProps) {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 48 48" {...plumpProps(props)}>
