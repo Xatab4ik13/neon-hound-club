@@ -283,7 +283,7 @@ function RaffleCard({ raffle }: { raffle: RaffleListItem }) {
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
         <span className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-primary px-2 py-0.5 font-mono text-[10px] font-black uppercase tracking-wider text-primary-foreground">
           <span className="h-1 w-1 animate-pulse rounded-full bg-white" />
-          LIVE
+          Идёт
         </span>
         <div className="absolute inset-x-3 bottom-3">
           <h3 className="font-display text-xl font-black uppercase italic leading-tight tracking-tight text-foreground">
