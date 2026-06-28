@@ -1,13 +1,15 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Newspaper, ShoppingBag, Ticket, Bike, MoreHorizontal, type LucideIcon } from "@/components/ui/icons";
+import { PlumpFeed, PlumpStore, PlumpTicket, PlumpGarage, PlumpMore } from "@/components/ui/icons";
 import { useState } from "react";
 import { MobileMoreSheet } from "./MobileMoreSheet";
 import { haptic } from "@/hooks/use-haptic";
 
+type TabIcon = React.ComponentType<React.SVGProps<SVGSVGElement>>;
+
 type Tab = {
   label: string;
   href: "/club" | "/club/shop" | "/club/tickets" | "/club/garage";
-  icon: LucideIcon;
+  icon: TabIcon;
   exact?: boolean;
 };
 
