@@ -5,8 +5,10 @@
  * Lucide-иконки остаются доступны для остальных мест.
  */
 export * from "lucide-react";
-export type { LucideIcon, LucideProps } from "lucide-react";
-import type { SVGProps } from "react";
+export type { LucideProps } from "lucide-react";
+import type { ComponentType, SVGProps } from "react";
+// Унифицированный тип иконки: подходит и для lucide-react, и для наших Plump-SVG.
+export type LucideIcon = ComponentType<SVGProps<SVGSVGElement> & { size?: number | string; strokeWidth?: number | string; absoluteStrokeWidth?: boolean }>;
 
 export function PlumpFeed(props: SVGProps<SVGSVGElement>) {
   return (

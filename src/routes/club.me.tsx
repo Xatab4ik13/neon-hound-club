@@ -2,10 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
-  Bike,
   Calendar,
   ChevronRight,
-  Gem,
   Image as ImageIcon,
   LogOut,
   MapPin,
@@ -13,6 +11,8 @@ import {
   Pencil,
   Settings,
   PlumpTicket as TicketIcon,
+  PlumpGarage as BikeIcon,
+  PlumpDiamond as GemIcon,
   Trophy,
   Check,
   Lock,
@@ -156,7 +156,7 @@ function MePage() {
               icon: Trophy,
             },
             { label: "Заказы", value: totalOrders, icon: Package },
-            { label: "Байки", value: bikesQ.data?.length ?? 0, icon: Bike },
+            { label: "Байки", value: bikesQ.data?.length ?? 0, icon: BikeIcon },
           ]}
         />
       </section>
@@ -383,7 +383,7 @@ function PassRow({ tier, daysLeft }: { tier: Tier | null; daysLeft: number | nul
   if (!tier) {
     return (
       <IOSListRow
-        icon={<Gem className="h-5 w-5" />}
+        icon={<GemIcon className="h-5 w-5" />}
         label="Без подписки"
         description="Открой Hell Pass и забери бонусы"
         chevron
@@ -397,7 +397,7 @@ function PassRow({ tier, daysLeft }: { tier: Tier | null; daysLeft: number | nul
       : tier.tagline;
   return (
     <IOSListRow
-      icon={<Gem className="h-5 w-5" style={{ color: tier.color }} />}
+      icon={<GemIcon className="h-5 w-5" style={{ color: tier.color }} />}
       label={
         <span className="flex items-center gap-2">
           Hell Pass
@@ -424,7 +424,7 @@ function PassDesktopRow({ tier, daysLeft }: { tier: Tier | null; daysLeft: numbe
   if (!tier) {
     return (
       <ActionRow
-        icon={<Gem className="h-5 w-5" />}
+        icon={<GemIcon className="h-5 w-5" />}
         label="Без подписки"
         description="Открой Hell Pass и забери бонусы"
         to="/club/hell-pass"
@@ -438,7 +438,7 @@ function PassDesktopRow({ tier, daysLeft }: { tier: Tier | null; daysLeft: numbe
       className="group flex w-full items-center gap-4 border border-white/[0.06] bg-card/40 px-4 py-4 text-left transition-colors hover:border-primary/40 hover:bg-white/[0.03] md:px-5"
     >
       <span className="shrink-0" style={{ color: tier.color }}>
-        <Gem className="h-5 w-5" />
+        <GemIcon className="h-5 w-5" />
       </span>
       <span className="min-w-0 flex-1">
         <span className="flex items-center gap-2">
@@ -638,7 +638,7 @@ function ProfileHero({ onSettings }: { onSettings: () => void }) {
             )}
             {profile && profile.bikesCount > 0 && (
               <span className="flex items-center gap-1.5">
-                <Bike className="h-3.5 w-3.5" />
+                <BikeIcon className="h-3.5 w-3.5" />
                 {profile.bikesCount} мото
               </span>
             )}
