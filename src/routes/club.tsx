@@ -1,3 +1,4 @@
+import "@fontsource-variable/outfit";
 import { createFileRoute, Link, Outlet, redirect, useLocation, useNavigate, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
@@ -174,7 +175,7 @@ function ClubLayout() {
   // Mobile shell — iOS-app feel: top bar + push/pop transition + bottom tab bar.
   if (isMobile) {
     return (
-      <div className="min-h-screen bg-background text-foreground">
+      <div data-club className="min-h-screen bg-background text-foreground">
         <OfflineBanner />
         <MobileTopBar />
         <main
@@ -200,7 +201,7 @@ function ClubLayout() {
 
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div data-club className="min-h-screen bg-background text-foreground">
       <div
         aria-hidden
         className="pointer-events-none fixed inset-0 opacity-[0.025]"

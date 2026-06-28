@@ -82,6 +82,11 @@
   --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Inter", system-ui, "Segoe UI", Roboto, sans-serif;
   --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", SFMono-Regular, Menlo, monospace;
 
+  /* Club/PWA scope: Outfit replaces Oswald as display font to match Plump Solid icons. */
+  [data-club] {
+    --font-display: "Outfit Variable", "Oswald", ui-sans-serif, system-ui, sans-serif;
+  }
+
   /* ───────── Motion language (Этап 2) ─────────
      Один easing-словарь и три длительности на всё приложение.
      Используем через var() — никогда не пишем magic-числа в компонентах. */
