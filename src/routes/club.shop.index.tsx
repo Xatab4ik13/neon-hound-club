@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Search, X, ShoppingBag, Ticket, SlidersHorizontal, PlumpStore } from "@/components/ui/icons";
+import { Search, X, PlumpStore, PlumpTicket, SlidersHorizontal, PlumpStore } from "@/components/ui/icons";
 import { LazyImage } from "@/components/ui/lazy-image";
 import {
   fetchShopCategories,
@@ -290,7 +290,7 @@ function ProductCard({ product }: { product: ShopProductListItem }) {
           />
         ) : (
           <div className="grid h-full w-full place-items-center text-muted-foreground/60">
-            <ShoppingBag className="h-8 w-8" />
+            <PlumpStore className="h-8 w-8" />
           </div>
         )}
         {sold && (
@@ -300,7 +300,7 @@ function ProductCard({ product }: { product: ShopProductListItem }) {
         )}
         {product.bonusTickets > 0 && (
           <span className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full bg-black/70 px-2 py-0.5 text-[11px] font-semibold text-primary backdrop-blur">
-            <Ticket className="h-3 w-3" />+{product.bonusTickets}
+            <PlumpTicket className="h-3 w-3" />+{product.bonusTickets}
           </span>
         )}
       </div>

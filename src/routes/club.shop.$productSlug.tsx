@@ -7,7 +7,7 @@ import {
 } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronLeft, ChevronRight, Minus, Plus, ShoppingBag, Ticket } from "@/components/ui/icons";
+import { ChevronLeft, ChevronRight, Minus, Plus, PlumpStore, PlumpCart, PlumpTicket } from "@/components/ui/icons";
 import { hhToast } from "@/lib/hh-toast";
 import { useCart } from "@/hooks/use-cart";
 import { haptic } from "@/hooks/use-haptic";
@@ -256,7 +256,7 @@ function ProductView({ product }: { product: ShopProduct }) {
           />
         ) : (
           <div className="grid h-full w-full place-items-center text-muted-foreground/40">
-            <ShoppingBag className="h-12 w-12" />
+            <PlumpStore className="h-12 w-12" />
           </div>
         )}
         {sold && (
@@ -312,7 +312,7 @@ function ProductView({ product }: { product: ShopProduct }) {
 
         {product.bonusTickets > 0 && (
           <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5">
-            <Ticket className="h-3.5 w-3.5 text-primary" />
+            <PlumpTicket className="h-3.5 w-3.5 text-primary" />
             <span className="text-[13px] font-medium text-primary">
               +{product.bonusTickets} {ticketsWord(product.bonusTickets)} после оплаты
             </span>
@@ -453,7 +453,7 @@ function ProductView({ product }: { product: ShopProduct }) {
             to="/club/cart"
             className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/[0.1] px-5 py-3.5 text-[14px] font-semibold text-foreground"
           >
-            <ShoppingBag className="h-4 w-4" /> Корзина
+            <PlumpCart className="h-4 w-4" /> Корзина
           </Link>
         </div>
       </section>

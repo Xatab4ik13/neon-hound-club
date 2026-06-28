@@ -5,7 +5,7 @@
 import { Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Package, ShoppingBag } from "@/components/ui/icons";
+import { Package, PlumpStore } from "@/components/ui/icons";
 import {
   fetchMyOrders,
   qk,
@@ -249,7 +249,7 @@ function OrdersEmpty() {
         to="/club/shop"
         className="mt-4 inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 font-mono text-[12px] font-bold uppercase tracking-wider text-primary-foreground active:scale-95"
       >
-        <ShoppingBag className="h-4 w-4" />В магазин
+        <PlumpStore className="h-4 w-4" />В магазин
       </Link>
     </div>
   );

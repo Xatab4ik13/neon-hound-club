@@ -1,7 +1,7 @@
 // Компактный блок челленджей для дашборда. Реальные данные с бэка.
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, Flag, Sparkles, Ticket } from "@/components/ui/icons";
+import { ArrowRight, Flag, Sparkles, PlumpTicket } from "@/components/ui/icons";
 import { fetchQuests, qk, type QuestItem } from "@/lib/queries";
 import { useViewer } from "@/hooks/use-viewer";
 
@@ -72,7 +72,7 @@ export function QuestsBlock() {
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <Ticket className="h-4 w-4 text-primary" strokeWidth={1.8} />
+            <PlumpTicket className="h-4 w-4 text-primary" strokeWidth={1.8} />
             <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
               Билеты:{" "}
               <span className="font-bold text-foreground tabular-nums">{ticketsEarned}</span>
@@ -125,7 +125,7 @@ export function QuestsBlock() {
                   )}
                   {quest.ticketsReward > 0 && (
                     <div className="flex items-center gap-1 font-mono text-[10px] font-bold text-yellow-400">
-                      <Ticket className="h-3 w-3" />+{quest.ticketsReward}
+                      <PlumpTicket className="h-3 w-3" />+{quest.ticketsReward}
                     </div>
                   )}
                 </div>

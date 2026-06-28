@@ -3,7 +3,7 @@
 // стеклянный фон, pill-подсветка активной вкладки, haptic-фидбек.
 
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Newspaper, Bot, Ticket, Settings, type LucideIcon } from "@/components/ui/icons";
+import { Newspaper, Bot, PlumpTicket, Settings, type LucideIcon } from "@/components/ui/icons";
 import { haptic } from "@/hooks/use-haptic";
 
 type Tab = {
@@ -16,7 +16,7 @@ type Tab = {
 const TABS: Tab[] = [
   { label: "Лента", href: "/blogger", icon: Newspaper, exact: true },
   { label: "Hell AI", href: "/blogger/hell-ai", icon: Bot },
-  { label: "Розыгрыши", href: "/blogger/raffles", icon: Ticket },
+  { label: "Розыгрыши", href: "/blogger/raffles", icon: PlumpTicket },
   { label: "Настройки", href: "/blogger/settings", icon: Settings },
 ];
 

@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMemo } from "react";
-import { ShoppingBag, Ticket } from "@/components/ui/icons";
+import { PlumpCart, PlumpTicket } from "@/components/ui/icons";
 import { Header } from "@/components/brand/Header";
 import { Footer } from "@/components/brand/Footer";
 import { Button } from "@/components/ui/button";
@@ -81,7 +81,7 @@ function CartPage() {
                         />
                       ) : (
                         <div className="grid size-full place-items-center text-muted-foreground/60">
-                          <ShoppingBag className="h-6 w-6" />
+                          <PlumpCart className="h-6 w-6" />
                         </div>
                       )}
                     </Link>
@@ -146,7 +146,7 @@ function CartPage() {
               {ticketsTotal > 0 && (
                 <div className="mt-4 flex items-center justify-between gap-2 rounded-md border border-primary/30 bg-primary/[0.08] px-3 py-2">
                   <div className="flex min-w-0 items-center gap-2">
-                    <Ticket className="h-4 w-4 shrink-0 text-primary" />
+                    <PlumpTicket className="h-4 w-4 shrink-0 text-primary" />
                     <span className="font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-primary">
                       Бонус билетов
                     </span>

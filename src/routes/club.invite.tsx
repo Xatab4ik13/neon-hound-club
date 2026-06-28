@@ -5,7 +5,7 @@ import {
   MessageCircle,
   Send,
   Share2,
-  Ticket,
+  PlumpTicket,
   Users,
 } from "@/components/ui/icons";
 import { useState } from "react";
@@ -77,7 +77,7 @@ function InvitePage() {
       {/* Reward hero card */}
       <section className="mb-5 overflow-hidden rounded-2xl border border-primary/25 bg-gradient-to-br from-primary/15 via-card/60 to-black px-5 py-6">
         <div className="flex items-center gap-2 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-primary">
-          <Ticket className="h-3.5 w-3.5" />
+          <PlumpTicket className="h-3.5 w-3.5" />
           Бонус обоим
         </div>
         <div className="mt-2 flex items-baseline gap-2">
@@ -103,7 +103,7 @@ function InvitePage() {
           value={friends.length}
         />
         <StatTile
-          icon={<Ticket className="h-4 w-4" />}
+          icon={<PlumpTicket className="h-4 w-4" />}
           label="Билетов"
           value={total}
         />
@@ -227,7 +227,7 @@ function InvitePage() {
                     {f.status === "active" ? "Активен" : "Без телефона"}
                   </span>
                   <span className="flex shrink-0 items-center gap-0.5 font-mono text-[13px] font-bold tabular-nums text-primary">
-                    <Ticket className="h-3.5 w-3.5" />+{f.ticketsRewarded}
+                    <PlumpTicket className="h-3.5 w-3.5" />+{f.ticketsRewarded}
                   </span>
                 </li>
               ))}

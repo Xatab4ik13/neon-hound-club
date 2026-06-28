@@ -4,7 +4,7 @@
 // Сверху — лёгкая глянцевая засветка и медленный «шиммер» в стиле iOS.
 
 import { Link } from "@tanstack/react-router";
-import { Ticket } from "@/components/ui/icons";
+import { PlumpTicket } from "@/components/ui/icons";
 
 
 function pluralTickets(n: number): string {
@@ -111,7 +111,7 @@ export function TicketCard({
               aria-label="Набрать билеты — перейти к квестам"
               className="inline-flex items-center gap-1.5 rounded-xl bg-white/[0.08] px-4 py-2.5 text-[13px] font-semibold text-foreground transition-all active:scale-[0.97]"
             >
-              <Ticket className="h-4 w-4" strokeWidth={2.2} />
+              <PlumpTicket className="h-4 w-4" strokeWidth={2.2} />
               <span className="leading-none">Набрать</span>
             </Link>
           ) : (
@@ -120,7 +120,7 @@ export function TicketCard({
               aria-label="Поставить билеты"
               className="inline-flex items-center gap-1.5 rounded-xl bg-primary/90 px-4 py-2.5 text-[13px] font-semibold text-primary-foreground shadow-[0_4px_14px_-4px_color-mix(in_oklab,var(--primary)_70%,transparent)] transition-all active:scale-[0.97] hover:brightness-110"
             >
-              <Ticket className="h-4 w-4" strokeWidth={2.2} />
+              <PlumpTicket className="h-4 w-4" strokeWidth={2.2} />
               <span className="leading-none">Поставить</span>
             </Link>
           )}

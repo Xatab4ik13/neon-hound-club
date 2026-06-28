@@ -1,7 +1,7 @@
 // Каталог тиров Hell Pass. Используется и на /hell-pass, и на /club/hell-pass.
 
 import {
-  Ticket,
+  PlumpTicket,
   Percent,
   Sparkles,
   Zap,
@@ -49,7 +49,7 @@ const SILVER_GROUPS: { title: string; perks: Perk[] }[] = [
     title: "Билеты",
     perks: [
       {
-        icon: Ticket,
+        icon: PlumpTicket,
         value: "3",
         label: "билета в месяц",
         detail:
@@ -97,7 +97,7 @@ const GOLD_GROUPS: { title: string; perks: Perk[] }[] = [
     title: "Билеты",
     perks: [
       {
-        icon: Ticket,
+        icon: PlumpTicket,
         value: "10",
         accent: true,
         label: "билетов в месяц (вместо 3)",
@@ -149,7 +149,7 @@ const PLATINUM_GROUPS: { title: string; perks: Perk[] }[] = [
     title: "Билеты и розыгрыши",
     perks: [
       {
-        icon: Ticket,
+        icon: PlumpTicket,
         value: "30",
         accent: true,
         label: "билетов в месяц (вместо 10)",

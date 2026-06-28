@@ -3,8 +3,8 @@ import { useEffect, useState } from "react";
 import {
   Newspaper,
   Bot,
-  Ticket,
-  ShoppingBag,
+  PlumpTicket,
+  PlumpStore,
   GraduationCap,
   Gem,
   User,
@@ -78,10 +78,10 @@ const NAV: { label: string; href: string; icon: LucideIcon; final?: boolean }[] 
   { label: "Лента", href: "/club", icon: Newspaper },
   { label: "Профиль", href: "/club/me", icon: User },
   { label: "Гараж", href: "/club/garage", icon: Bike },
-  { label: "Билеты", href: "/club/tickets", icon: Ticket },
-  { label: "Магазин", href: "/club/shop", icon: ShoppingBag },
+  { label: "Билеты", href: "/club/tickets", icon: PlumpTicket },
+  { label: "Магазин", href: "/club/shop", icon: PlumpStore },
   { label: "Квесты", href: "/club/quests", icon: Target },
-  { label: "Розыгрыши", href: "/club/raffles", icon: Ticket },
+  { label: "Розыгрыши", href: "/club/raffles", icon: PlumpTicket },
   { label: "Hell AI", href: "/club/hell-ai", icon: Bot },
   { label: "Пригласить", href: "/club/invite", icon: UserPlus },
   { label: "Школа", href: "/club/school", icon: GraduationCap },
@@ -413,7 +413,7 @@ function TopBar({ onMenu }: { onMenu: () => void }) {
           aria-label="Корзина"
           className="relative hidden h-10 w-10 items-center justify-center border border-white/[0.08] text-muted-foreground transition-colors hover:text-primary md:flex"
         >
-          <ShoppingBag className="h-[18px] w-[18px]" strokeWidth={1.8} />
+          <PlumpStore className="h-[18px] w-[18px]" strokeWidth={1.8} />
           {cartCount > 0 && (
             <span className="absolute -right-1.5 -top-1.5 grid h-5 min-w-[20px] place-items-center rounded-full bg-primary px-1 font-mono text-[10px] font-bold leading-none text-primary-foreground">
               {cartCount > 99 ? "99+" : cartCount}

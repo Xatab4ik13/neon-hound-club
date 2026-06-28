@@ -12,7 +12,7 @@ import {
   Package,
   Pencil,
   Settings,
-  Ticket as TicketIcon,
+  PlumpTicket as TicketIcon,
   Trophy,
   Check,
   Lock,
