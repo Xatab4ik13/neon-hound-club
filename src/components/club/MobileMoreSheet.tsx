@@ -1,18 +1,18 @@
 import { Link } from "@tanstack/react-router";
 import {
-  Gem,
-  Target,
-  UserPlus,
-  GraduationCap,
-  Settings,
-  LogOut,
   ChevronRight,
-  Bot,
-  ShoppingCart,
-  Ticket,
-  LifeBuoy,
-  type LucideIcon,
+  PlumpDiamond,
+  PlumpGift,
+  PlumpAI,
+  PlumpSchool,
+  PlumpInvite,
+  PlumpQuests,
+  PlumpCart,
+  PlumpHelp,
+  PlumpSettings,
+  PlumpLogout,
 } from "@/components/ui/icons";
+import type { SVGProps, ComponentType } from "react";
 import { Drawer } from "vaul";
 import { useEffect, useState } from "react";
 import { useCart } from "@/hooks/use-cart";
@@ -23,7 +23,7 @@ import { isStandalonePWA } from "@/lib/is-pwa";
 type Item = {
   label: string;
   href: string;
-  icon: LucideIcon;
+  icon: ComponentType<SVGProps<SVGSVGElement>>;
   subtitle?: string;
   badge?: number;
 };
@@ -33,21 +33,21 @@ function buildGroups(cartCount: number, isPwa: boolean): { title: string; items:
     {
       title: "Клуб",
       items: [
-        { label: "Hell Pass", href: "/club/hell-pass", icon: Gem, subtitle: "Подписка клуба" },
-        { label: "Розыгрыши", href: "/club/raffles", icon: Ticket },
-        { label: "Hell AI", href: "/club/hell-ai", icon: Bot, subtitle: "AI-механик по твоему мото" },
-        { label: "Школа", href: "/club/school", icon: GraduationCap },
+        { label: "Hell Pass", href: "/club/hell-pass", icon: PlumpDiamond, subtitle: "Подписка клуба" },
+        { label: "Розыгрыши", href: "/club/raffles", icon: PlumpGift },
+        { label: "Hell AI", href: "/club/hell-ai", icon: PlumpAI, subtitle: "AI-механик по твоему мото" },
+        { label: "Школа", href: "/club/school", icon: PlumpSchool },
       ],
     },
     {
       title: "Активность",
       items: [
-        { label: "Пригласить друга", href: "/club/invite", icon: UserPlus },
-        { label: "Квесты", href: "/club/quests", icon: Target },
+        { label: "Пригласить друга", href: "/club/invite", icon: PlumpInvite },
+        { label: "Квесты", href: "/club/quests", icon: PlumpQuests },
         {
           label: "Корзина",
           href: "/club/cart",
-          icon: ShoppingCart,
+          icon: PlumpCart,
           badge: cartCount > 0 ? cartCount : undefined,
         },
       ],
@@ -57,7 +57,7 @@ function buildGroups(cartCount: number, isPwa: boolean): { title: string; items:
   groups.push({
     title: "Поддержка",
     items: [
-      { label: "Помощь", href: "/club/help", icon: LifeBuoy, subtitle: "Баги, идеи, вопросы" },
+      { label: "Помощь", href: "/club/help", icon: PlumpHelp, subtitle: "Баги, идеи, вопросы" },
     ],
   });
 
@@ -126,7 +126,7 @@ export function MobileMoreSheet({
                         className="flex items-center gap-3 px-4 py-3.5 transition-colors active:bg-white/[0.04]"
                       >
                         <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
-                          <item.icon className="h-[18px] w-[18px]" strokeWidth={2} />
+                          <item.icon className="h-[18px] w-[18px]" />
                         </span>
                         <span className="min-w-0 flex-1">
                           <span className="block text-[16px] font-semibold text-foreground">
@@ -163,7 +163,7 @@ export function MobileMoreSheet({
                     className="flex items-center gap-3 px-4 py-3.5 transition-colors active:bg-white/[0.04]"
                   >
                     <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-white/[0.05] text-foreground">
-                      <Settings className="h-[18px] w-[18px]" strokeWidth={2} />
+                      <PlumpSettings className="h-[18px] w-[18px]" />
                     </span>
                     <span className="flex-1 text-[16px] font-semibold text-foreground">
                       Настройки
@@ -178,7 +178,7 @@ export function MobileMoreSheet({
                     className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors active:bg-white/[0.04]"
                   >
                     <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-red-500/10 text-red-400">
-                      <LogOut className="h-[18px] w-[18px]" strokeWidth={2} />
+                      <PlumpLogout className="h-[18px] w-[18px]" />
                     </span>
                     <span className="flex-1 text-[16px] font-semibold text-red-400">Выйти</span>
                   </button>
