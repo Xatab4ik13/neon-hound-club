@@ -25,4 +25,4 @@ SELECT
 FROM payments p
 LEFT JOIN system_settings s ON s.key = 'tax'
 WHERE p.status = 'confirmed'
-ON CONFLICT (ref_type, ref_id) DO NOTHING;
+ON CONFLICT (ref_type, ref_id) WHERE ref_type IS NOT NULL DO NOTHING;
