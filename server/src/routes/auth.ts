@@ -10,7 +10,10 @@ import {
   verifyPassword,
   setSessionCookie,
   clearSessionCookie,
+  setAdminSessionCookie,
+  clearAdminSessionCookie,
   requireAuth,
+  requireAdmin,
   type SessionPayload,
 } from "../lib/auth.js";
 import { sendMail } from "../lib/mailer.js";
