@@ -141,11 +141,13 @@ function UserDrawer({
   onClose,
   onGift,
   onGiftPass,
+  onGiftStickers,
 }: {
   userId: string;
   onClose: () => void;
   onGift: () => void;
   onGiftPass: () => void;
+  onGiftStickers: () => void;
 }) {
   const qc = useQueryClient();
   const userQ = useQuery({
