@@ -3,7 +3,7 @@
 
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Bot, RefreshCw, Save } from "lucide-react";
+import { Bot, RefreshCw, Save } from "@/components/ui/icons";
 import {
   PageHeader,
   Panel,

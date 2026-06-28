@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { WifiOff } from "lucide-react";
+import { WifiOff } from "@/components/ui/icons";
 
 // Тонкая плашка под статус-баром, когда устройство офлайн.
 // Появляется с slide-down, исчезает сама когда соединение восстановилось.

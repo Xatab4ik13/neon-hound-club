@@ -16,7 +16,7 @@ import {
   Trophy,
   Check,
   Lock,
-} from "lucide-react";
+} from "@/components/ui/icons";
 import { SettingsModal } from "@/components/club/SettingsModal";
 import { OrdersList } from "@/components/club/OrdersList";
 import { useMyProfile, useBikes } from "@/lib/garage-api";

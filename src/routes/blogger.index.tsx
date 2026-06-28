@@ -4,7 +4,7 @@
 
 import { createFileRoute } from "@tanstack/react-router";
 import { useRef, useState } from "react";
-import { Image as ImageIcon, Send, X, BarChart3, Plus } from "lucide-react";
+import { Image as ImageIcon, Send, X, BarChart3, Plus } from "@/components/ui/icons";
 import { feedStore, useFeedPosts, type FeedPoll } from "@/data/feed-store";
 import { HellhoundAvatar } from "@/components/club/HellhoundPlaque";
 import { useBloggerProfile } from "@/data/blogger-profile";

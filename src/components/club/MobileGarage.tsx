@@ -19,7 +19,7 @@ import {
   Upload,
   Wrench,
   X,
-} from "lucide-react";
+} from "@/components/ui/icons";
 import { motion, AnimatePresence } from "framer-motion";
 import placeholderBike from "@/assets/bikes/placeholder.png";
 import { IOSSheet } from "@/components/ios/IOSSheet";

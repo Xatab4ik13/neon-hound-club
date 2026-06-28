@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Trash2, KeyRound, Loader2 } from "lucide-react";
+import { Plus, Trash2, KeyRound, Loader2 } from "@/components/ui/icons";
 import {
   PageHeader,
   Panel,

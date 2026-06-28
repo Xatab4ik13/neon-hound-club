@@ -1,5 +1,5 @@
 import { Link, useRouter, useRouterState } from "@tanstack/react-router";
-import { Bell, ChevronLeft, ShoppingBag } from "lucide-react";
+import { Bell, ChevronLeft, ShoppingBag } from "@/components/ui/icons";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { RANKS } from "@/data/ranks";
 import type { RankMeta } from "@/data/ranks";

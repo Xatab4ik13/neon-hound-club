@@ -5,7 +5,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Edit, Trash2, CheckCircle2, Search } from "lucide-react";
+import { Plus, Edit, Trash2, CheckCircle2, Search } from "@/components/ui/icons";
 import { hhToast as toast } from "@/lib/hh-toast";
 import {
   PageHeader,

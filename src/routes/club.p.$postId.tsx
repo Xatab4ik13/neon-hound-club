@@ -3,7 +3,7 @@
 
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "@/components/ui/icons";
 import { fetchPost } from "@/lib/queries";
 import { mapPost } from "@/data/feed-store";
 import { PostCard } from "@/routes/club.index";

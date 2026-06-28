@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Ban, Gift, ShieldCheck, Trash2, Sparkles, Award } from "lucide-react";
+import { Ban, Gift, ShieldCheck, Trash2, Sparkles, Award } from "@/components/ui/icons";
 import {
   PageHeader,
   Panel,

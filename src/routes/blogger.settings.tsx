@@ -3,7 +3,7 @@
 
 import { createFileRoute } from "@tanstack/react-router";
 import { useRef, useState } from "react";
-import { Upload, Trash2, LogOut, Loader2 } from "lucide-react";
+import { Upload, Trash2, LogOut, Loader2 } from "@/components/ui/icons";
 import { HellhoundAvatar, HellhoundChip } from "@/components/club/HellhoundPlaque";
 import { useBloggerProfile } from "@/data/blogger-profile";
 import { useUpdateMyProfile, uploadFileToS3 } from "@/lib/garage-api";

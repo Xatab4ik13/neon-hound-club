@@ -5,7 +5,7 @@
 //
 // Перформанс: всё на transform/opacity (GPU). Размонтируется через 220ms после закрытия.
 
-import { Heart } from "lucide-react";
+import { Heart } from "@/components/ui/icons";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { haptic } from "@/hooks/use-haptic";
 

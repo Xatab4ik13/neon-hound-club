@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Upload, X, Plus, Loader2, Pencil, Trash2 } from "lucide-react";
+import { Upload, X, Plus, Loader2, Pencil, Trash2 } from "@/components/ui/icons";
 import {
   Dialog,
   DialogContent,

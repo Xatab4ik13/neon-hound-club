@@ -3,7 +3,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { CheckCircle2, Loader2, Ticket, XCircle, AlertTriangle, Package } from "lucide-react";
+import { CheckCircle2, Loader2, Ticket, XCircle, AlertTriangle, Package } from "@/components/ui/icons";
 import { z } from "zod";
 import { fetchPaymentStatus, qk, type PaymentStatus } from "@/lib/queries";
 import { ApiError } from "@/lib/api";

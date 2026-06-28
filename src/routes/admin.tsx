@@ -22,7 +22,7 @@ import {
   LogOut,
   Loader2,
   LifeBuoy,
-} from "lucide-react";
+} from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
 import { useViewer } from "@/hooks/use-viewer";
 import { ApiError } from "@/lib/api";

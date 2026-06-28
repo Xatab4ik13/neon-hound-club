@@ -7,7 +7,7 @@ import {
   Zap,
   Infinity as InfinityIcon,
   type LucideIcon,
-} from "lucide-react";
+} from "@/components/ui/icons";
 
 export type Perk = {
   icon: LucideIcon;

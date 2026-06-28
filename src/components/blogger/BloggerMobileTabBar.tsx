@@ -3,7 +3,7 @@
 // стеклянный фон, pill-подсветка активной вкладки, haptic-фидбек.
 
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Newspaper, Bot, Ticket, Settings, type LucideIcon } from "lucide-react";
+import { Newspaper, Bot, Ticket, Settings, type LucideIcon } from "@/components/ui/icons";
 import { haptic } from "@/hooks/use-haptic";
 
 type Tab = {

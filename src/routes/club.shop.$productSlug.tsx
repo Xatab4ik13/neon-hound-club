@@ -7,7 +7,7 @@ import {
 } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronLeft, ChevronRight, Minus, Plus, ShoppingBag, Ticket } from "lucide-react";
+import { ChevronLeft, ChevronRight, Minus, Plus, ShoppingBag, Ticket } from "@/components/ui/icons";
 import { hhToast } from "@/lib/hh-toast";
 import { useCart } from "@/hooks/use-cart";
 import { haptic } from "@/hooks/use-haptic";

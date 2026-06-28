@@ -19,7 +19,7 @@ import {
   Star,
   ChevronDown,
   ChevronUp,
-} from "lucide-react";
+} from "@/components/ui/icons";
 import { hhToast as toast } from "@/lib/hh-toast";
 import {
   PageHeader,

@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Gift } from "lucide-react";
+import { Gift } from "@/components/ui/icons";
 import {
   PageHeader,
   Panel,

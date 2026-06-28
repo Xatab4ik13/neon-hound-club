@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, Bike, Calendar, MapPin, Trophy } from "lucide-react";
+import { ArrowLeft, Bike, Calendar, MapPin, Trophy } from "@/components/ui/icons";
 import { RANKS, getRankSpan, type RankId } from "@/data/ranks";
 import { getUser, type PublicUser } from "@/data/users";
 import { PlaqueBackground } from "./club";

@@ -1,6 +1,6 @@
 import { createFileRoute, Link, Outlet, redirect, useLocation, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Newspaper, Ticket, Bot, Settings, type LucideIcon } from "lucide-react";
+import { Newspaper, Ticket, Bot, Settings, type LucideIcon } from "@/components/ui/icons";
 import type { QueryClient } from "@tanstack/react-query";
 import { HellhoundPlaqueLarge } from "@/components/club/HellhoundPlaque";
 import { BloggerMobileTopBar } from "@/components/blogger/BloggerMobileTopBar";

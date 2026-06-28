@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronRight, ShoppingBag, Ticket, Trophy } from "lucide-react";
+import { ChevronRight, ShoppingBag, Ticket, Trophy } from "@/components/ui/icons";
 import { TicketLedger } from "@/components/club/TicketLedger";
 import { TicketCard } from "@/components/club/TicketCard";
 import { PageHeader } from "@/components/club/PageHeader";
