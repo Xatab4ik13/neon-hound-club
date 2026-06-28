@@ -631,6 +631,7 @@ export type EconomyOverview = {
   income: number;
   expense: number;
   profit: number;
+  taxAccrued: number;
   monthly: { month: string; income: number; expense: number }[];
 };
 
@@ -707,6 +708,7 @@ export type SystemSettings = {
   club: { name: string; contact_email: string; support_url: string };
   hell_ai: { limit_silver: number; limit_gold: number; limit_platinum: number };
   admin_alerts: { new_orders: boolean; new_users: boolean };
+  tax: { rate_percent: number };
 };
 
 export function fetchAdminSettings() {

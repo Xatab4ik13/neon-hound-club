@@ -77,7 +77,7 @@ export async function adminEconomyRoutes(app: FastifyInstance) {
       .where(and(...payConds));
 
 
-    // ---- Ручные операции ----
+    // ---- Ручные операции + авто-налог (всё это лежит в economy_operations) ----
     const manualConds = [] as any[];
     if (fromDate) manualConds.push(gte(economyOperations.occurredAt, fromDate));
     if (toDate) manualConds.push(lte(economyOperations.occurredAt, toDate));
@@ -88,15 +88,25 @@ export async function adminEconomyRoutes(app: FastifyInstance) {
       .from(economyOperations)
       .where(manualWhere ? and(manualWhere, eq(economyOperations.type, "income")) : eq(economyOperations.type, "income"));
 
-    const [manualExpense] = await db
+    const [expenseTotalRow] = await db
       .select({ total: sql<number>`COALESCE(SUM(${economyOperations.amountRub}), 0)::int` })
       .from(economyOperations)
       .where(manualWhere ? and(manualWhere, eq(economyOperations.type, "expense")) : eq(economyOperations.type, "expense"));
 
-    const income = (paymentsIncome?.total ?? 0) + (manualIncome?.total ?? 0);
-    const expense = manualExpense?.total ?? 0;
+    const [taxAccruedRow] = await db
+      .select({ total: sql<number>`COALESCE(SUM(${economyOperations.amountRub}), 0)::int` })
+      .from(economyOperations)
+      .where(
+        manualWhere
+          ? and(manualWhere, eq(economyOperations.type, "expense"), eq(economyOperations.refType, "tax"))
+          : and(eq(economyOperations.type, "expense"), eq(economyOperations.refType, "tax")),
+      );
 
-    // ---- P&L по месяцам (последние 6) ----
+    const income = (paymentsIncome?.total ?? 0) + (manualIncome?.total ?? 0);
+    const expense = expenseTotalRow?.total ?? 0;
+    const taxAccrued = taxAccruedRow?.total ?? 0;
+
+    // ---- P&L по месяцам (последние 6). Расход теперь включает авто-налог. ----
     const monthly = await db.execute<{
       month: string;
       income: number;
@@ -114,7 +124,7 @@ export async function adminEconomyRoutes(app: FastifyInstance) {
           AND updated_at >= date_trunc('month', now()) - interval '5 months'
         GROUP BY 1
       ),
-      manual_m AS (
+      op_m AS (
         SELECT to_char(date_trunc('month', occurred_at), 'YYYY-MM') AS month,
                COALESCE(SUM(amount_rub) FILTER (WHERE type='income'), 0)::int AS income,
                COALESCE(SUM(amount_rub) FILTER (WHERE type='expense'), 0)::int AS expense
@@ -124,11 +134,11 @@ export async function adminEconomyRoutes(app: FastifyInstance) {
       )
       SELECT
         months.month,
-        (COALESCE(pay_m.amount, 0) + COALESCE(manual_m.income, 0))::int AS income,
-        COALESCE(manual_m.expense, 0)::int AS expense
+        (COALESCE(pay_m.amount, 0) + COALESCE(op_m.income, 0))::int AS income,
+        COALESCE(op_m.expense, 0)::int AS expense
       FROM months
       LEFT JOIN pay_m USING (month)
-      LEFT JOIN manual_m USING (month)
+      LEFT JOIN op_m USING (month)
       ORDER BY months.month
     `);
 
@@ -136,6 +146,7 @@ export async function adminEconomyRoutes(app: FastifyInstance) {
       income,
       expense,
       profit: income - expense,
+      taxAccrued,
       monthly: monthly.map((m: any) => ({
         month: m.month,
         income: Number(m.income) || 0,
@@ -212,17 +223,17 @@ export async function adminEconomyRoutes(app: FastifyInstance) {
     }
 
 
-    // Ручные операции
-    const conds = [eq(economyOperations.source, "manual")] as any[];
+    // Операции из economy_operations (ручные + авто-налог)
+    const conds = [] as any[];
     if (q.type !== "all") conds.push(eq(economyOperations.type, q.type));
     if (q.category) conds.push(eq(economyOperations.category, q.category));
-    const manualRows = await db
+    const opRows = await db
       .select()
       .from(economyOperations)
-      .where(and(...conds))
+      .where(conds.length ? and(...conds) : undefined)
       .orderBy(desc(economyOperations.occurredAt))
       .limit(q.limit);
-    for (const r of manualRows) {
+    for (const r of opRows) {
       items.push({
         id: r.id,
         occurredAt: r.occurredAt,
@@ -230,7 +241,7 @@ export async function adminEconomyRoutes(app: FastifyInstance) {
         category: r.category,
         amountRub: r.amountRub,
         note: r.note ?? "",
-        source: "manual",
+        source: (r.source as "auto" | "manual") ?? "manual",
         refType: r.refType,
         refId: r.refId,
         createdBy: r.createdBy,

@@ -6,7 +6,7 @@ import { systemSettings } from "../db/schema/economy.js";
 import { loadSession, requireAdmin, type SessionPayload } from "../lib/auth.js";
 
 const PUBLIC_KEYS = ["maintenance", "club"] as const;
-const ALL_KEYS = ["maintenance", "club", "hell_ai", "admin_alerts"] as const;
+const ALL_KEYS = ["maintenance", "club", "hell_ai", "admin_alerts", "tax"] as const;
 type Key = (typeof ALL_KEYS)[number];
 
 const valueSchemas: Record<Key, z.ZodType<any>> = {
@@ -27,6 +27,10 @@ const valueSchemas: Record<Key, z.ZodType<any>> = {
   admin_alerts: z.object({
     new_orders: z.boolean(),
     new_users: z.boolean(),
+  }),
+  tax: z.object({
+    // УСН доходы. 0 = не считать налог.
+    rate_percent: z.number().min(0).max(50),
   }),
 };
 

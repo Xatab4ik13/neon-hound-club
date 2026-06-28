@@ -162,6 +162,18 @@ function SettingsPage() {
           </Panel>
         )}
 
+        {/* Tax */}
+        {settingsQ.data ? (
+          <TaxPanel data={settingsQ.data} />
+        ) : (
+          <Panel>
+            <PanelHeader>
+              <h3 className="text-sm font-semibold">Налоги</h3>
+            </PanelHeader>
+            <SettingsLoading />
+          </Panel>
+        )}
+
         {/* Security */}
         <Panel>
           <PanelHeader>
@@ -366,6 +378,40 @@ function AlertsPanel({ data }: { data: SystemSettings }) {
           disabled={mut.isPending}
           onClick={() => mut.mutate({ new_orders: orders, new_users: users })}
         >
+          {mut.isPending ? "Сохраняем…" : "Сохранить"}
+        </Btn>
+      </div>
+    </Panel>
+  );
+}
+
+function TaxPanel({ data }: { data: SystemSettings }) {
+  const [rate, setRate] = useState(data.tax?.rate_percent ?? 7);
+  useEffect(() => {
+    setRate(data.tax?.rate_percent ?? 7);
+  }, [data]);
+  const mut = useSettingMutation("tax");
+  return (
+    <Panel>
+      <PanelHeader>
+        <h3 className="text-sm font-semibold">Налоги</h3>
+      </PanelHeader>
+      <div className="space-y-3 p-4">
+        <p className="text-xs text-zinc-500">
+          Ставка УСН (доходы). Применяется автоматически к каждой подтверждённой оплате —
+          создаётся операция «Налог УСН» в Экономике. 0 = не считать.
+        </p>
+        <Field label="Ставка, %">
+          <TextInput
+            type="number"
+            step="0.1"
+            min={0}
+            max={50}
+            value={rate}
+            onChange={(e) => setRate(Number(e.target.value))}
+          />
+        </Field>
+        <Btn variant="primary" disabled={mut.isPending} onClick={() => mut.mutate({ rate_percent: rate })}>
           {mut.isPending ? "Сохраняем…" : "Сохранить"}
         </Btn>
       </div>
