@@ -230,9 +230,19 @@ function UserDrawer({
       {u && (
         <div className="space-y-5">
           <div className="flex items-center gap-3">
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-zinc-200 text-xl font-bold dark:bg-zinc-800">
-              {u.nick[0]?.toUpperCase()}
-            </div>
+            {u.avatarUrl ? (
+              <img
+                src={u.avatarUrl}
+                alt={`@${u.nick}`}
+                loading="lazy"
+                decoding="async"
+                className="h-14 w-14 rounded-full object-cover ring-1 ring-zinc-200 dark:ring-zinc-800"
+              />
+            ) : (
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-zinc-200 to-zinc-300 text-xl font-bold text-zinc-700 dark:from-zinc-700 dark:to-zinc-800 dark:text-zinc-100">
+                {u.nick[0]?.toUpperCase()}
+              </div>
+            )}
             <div>
               <div className="text-lg font-semibold">@{u.nick}</div>
               <div className="text-xs text-zinc-500 dark:text-zinc-400">{u.email}</div>
