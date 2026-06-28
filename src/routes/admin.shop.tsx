@@ -19,7 +19,9 @@ import {
   Star,
   ChevronDown,
   ChevronUp,
+  type LucideIcon,
 } from "@/components/ui/icons";
+
 import { hhToast as toast } from "@/lib/hh-toast";
 import {
   PageHeader,
