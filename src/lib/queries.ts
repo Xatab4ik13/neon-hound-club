@@ -180,6 +180,10 @@ export type ShopOrder = {
   shipping: ShopOrderShipping;
   comment: string | null;
   cdekTrack: string | null;
+  cdekUuid: string | null;
+  cdekStatusCode: string | null;
+  cdekStatusName: string | null;
+  cdekStatusAt: string | null;
   createdAt: string;
   updatedAt: string;
   paidAt: string | null;
@@ -436,6 +440,25 @@ export async function patchAdminOrder(
     body: JSON.stringify(patch),
   });
 }
+
+export async function createCdekWaybill(orderId: string) {
+  return apiFetch<{ cdekUuid: string; cdekNumber: string | null; order: ShopOrderWithItems }>(
+    `/api/v1/admin/shop/orders/${orderId}/cdek/create`,
+    { method: "POST" },
+  );
+}
+
+export async function refreshCdekStatus(orderId: string) {
+  return apiFetch<{
+    cdekUuid: string;
+    cdekNumber: string | null;
+    statusCode: string | null;
+    statusName: string | null;
+    order: ShopOrderWithItems;
+  }>(`/api/v1/admin/shop/orders/${orderId}/cdek/refresh`, { method: "POST" });
+}
+
+
 
 // ---------- PAYMENTS (Raiffeisen) ----------
 

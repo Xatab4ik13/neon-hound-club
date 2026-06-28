@@ -12,6 +12,8 @@ import {
   fetchAdminOrders,
   fetchAdminOrder,
   patchAdminOrder,
+  createCdekWaybill,
+  refreshCdekStatus,
   qk,
   type ShopOrder,
   type ShopOrderStatus,
@@ -325,7 +327,14 @@ function OrderDrawer({ orderId, onClose }: { orderId: string; onClose: () => voi
             )}
           </Section>
 
-          <Section title="Трек СДЭК">
+          <Section title="Накладная СДЭК">
+            <CdekBlock order={order.data} onChanged={() => {
+              qc.invalidateQueries({ queryKey: qk.adminOrder(orderId) });
+              qc.invalidateQueries({ queryKey: ["admin", "orders"] });
+            }} />
+          </Section>
+
+          <Section title="Трек СДЭК (ручной ввод)">
             <div className="flex gap-2">
               <input
                 type="text"
@@ -396,6 +405,94 @@ function Row({ icon: Icon, children }: { icon: LucideIcon; children: React.React
     <div className="flex items-start gap-2 py-0.5 text-sm">
       <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-zinc-400" />
       <span>{children}</span>
+    </div>
+  );
+}
+
+function CdekBlock({
+  order,
+  onChanged,
+}: {
+  order: ShopOrder;
+  onChanged: () => void;
+}) {
+  const [err, setErr] = useState<string | null>(null);
+  const create = useMutation({
+    mutationFn: () => createCdekWaybill(order.id),
+    onSuccess: () => {
+      setErr(null);
+      onChanged();
+    },
+    onError: (e) => setErr(e instanceof ApiError ? e.message : "Не удалось создать накладную"),
+  });
+  const refresh = useMutation({
+    mutationFn: () => refreshCdekStatus(order.id),
+    onSuccess: () => {
+      setErr(null);
+      onChanged();
+    },
+    onError: (e) => setErr(e instanceof ApiError ? e.message : "Не удалось обновить статус"),
+  });
+
+  const hasWaybill = !!order.cdekUuid;
+  const canCreate =
+    !hasWaybill && (order.status === "paid" || order.status === "shipped" || order.status === "delivered");
+
+  return (
+    <div className="space-y-2">
+      {hasWaybill ? (
+        <>
+          <div className="rounded-md border border-zinc-200 bg-zinc-50 p-2 text-xs dark:border-zinc-800 dark:bg-zinc-900/60">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-zinc-500">Накладная</span>
+              <span className="font-mono">{order.cdekTrack || "—"}</span>
+            </div>
+            <div className="mt-1 flex items-center justify-between gap-2">
+              <span className="text-zinc-500">Статус СДЭК</span>
+              <span>{order.cdekStatusName || order.cdekStatusCode || "—"}</span>
+            </div>
+            {order.cdekStatusAt && (
+              <div className="mt-0.5 text-right text-[10px] text-zinc-500">
+                обновлено {fmtDate(order.cdekStatusAt)}
+              </div>
+            )}
+          </div>
+          <button
+            type="button"
+            disabled={refresh.isPending}
+            onClick={() => refresh.mutate()}
+            className="inline-flex items-center gap-1 rounded-md border border-zinc-200 px-3 py-1.5 text-xs hover:bg-zinc-100 disabled:opacity-50 dark:border-zinc-800 dark:hover:bg-zinc-800"
+          >
+            <RefreshCw className={cn("h-3.5 w-3.5", refresh.isPending && "animate-spin")} />
+            Обновить статус
+          </button>
+        </>
+      ) : (
+        <>
+          <p className="text-xs text-zinc-500">
+            Накладная ещё не создана. После создания СДЭК присвоит номер и трек.
+          </p>
+          <button
+            type="button"
+            disabled={!canCreate || create.isPending}
+            onClick={() => create.mutate()}
+            className="inline-flex items-center gap-1 rounded-md bg-zinc-900 px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50 dark:bg-white dark:text-zinc-900"
+          >
+            {create.isPending ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Package className="h-3.5 w-3.5" />
+            )}
+            Создать накладную СДЭК
+          </button>
+          {!canCreate && (
+            <div className="text-[11px] text-zinc-500">
+              Доступно после статуса «Оплачен».
+            </div>
+          )}
+        </>
+      )}
+      {err && <div className="text-xs text-rose-500">{err}</div>}
     </div>
   );
 }
