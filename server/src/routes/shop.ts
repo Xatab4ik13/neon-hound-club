@@ -26,6 +26,8 @@ import {
   refreshCdekStatusForOrder,
   CdekOrderError,
 } from "../lib/cdek-orders.js";
+import { cdek } from "../lib/cdek.js";
+import { syncCdekStatuses } from "../lib/cdek-sync.js";
 import { getActivePassPerks } from "../lib/pass.js";
 import { parsePagination } from "../lib/pagination.js";
 
