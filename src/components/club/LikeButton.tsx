@@ -25,11 +25,7 @@ type Props = {
   onReact?: (r: Reaction) => void;
 };
 
-const BURST = Array.from({ length: 6 }, (_, i) => {
-  const angle = (i * 360) / 6 - 90;
-  const rad = (angle * Math.PI) / 180;
-  return { x: Math.cos(rad) * 22, y: Math.sin(rad) * 22, delay: i * 12 };
-});
+const FLOATERS = ["+1", "♥", "✦"] as const;
 
 type Floater = { id: number; emoji: string };
 
