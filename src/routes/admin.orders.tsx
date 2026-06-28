@@ -12,6 +12,8 @@ import {
   fetchAdminOrders,
   fetchAdminOrder,
   patchAdminOrder,
+  createCdekWaybill,
+  refreshCdekStatus,
   qk,
   type ShopOrder,
   type ShopOrderStatus,
@@ -325,7 +327,14 @@ function OrderDrawer({ orderId, onClose }: { orderId: string; onClose: () => voi
             )}
           </Section>
 
-          <Section title="Трек СДЭК">
+          <Section title="Накладная СДЭК">
+            <CdekBlock order={order.data} onChanged={() => {
+              qc.invalidateQueries({ queryKey: qk.adminOrder(orderId) });
+              qc.invalidateQueries({ queryKey: ["admin", "orders"] });
+            }} />
+          </Section>
+
+          <Section title="Трек СДЭК (ручной ввод)">
             <div className="flex gap-2">
               <input
                 type="text"
