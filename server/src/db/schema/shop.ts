@@ -170,6 +170,10 @@ export const orders = pgTable(
     cdekUuid: varchar("cdek_uuid", { length: 64 }),
     /** Тариф СДЭК (136 склад-ПВЗ, 137 склад-дверь). */
     cdekTariffCode: integer("cdek_tariff_code"),
+    /** Последний полученный код статуса от СДЭК (CREATED, ACCEPTED, RECEIVED_AT_SHIPMENT_WAREHOUSE...). */
+    cdekStatusCode: varchar("cdek_status_code", { length: 32 }),
+    cdekStatusName: varchar("cdek_status_name", { length: 120 }),
+    cdekStatusAt: timestamp("cdek_status_at", { withTimezone: true }),
     /** Сводка типов в заказе — для фильтров в /club/orders. */
     kindSummary: varchar("kind_summary", { length: 16 }).notNull().default("physical"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
