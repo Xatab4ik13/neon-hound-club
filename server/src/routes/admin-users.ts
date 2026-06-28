@@ -347,6 +347,35 @@ export async function adminUsersRoutes(app: FastifyInstance) {
     }
     return { ok: true, tier, purchaseId: purchase!.id };
   });
+
+  // GET /api/v1/admin/users/sticker-packs — список паков, которые админ может подарить
+  app.get("/sticker-packs", async () => {
+    return { items: GIFTABLE_STICKER_PACKS };
+  });
+
+  // POST /api/v1/admin/users/:id/gift-stickers — подарить стикерпак
+  const giftStickersSchema = z.object({
+    packSlug: z.enum(STICKER_PACK_SLUGS),
+  });
+  app.post<{ Params: { id: string } }>("/:id/gift-stickers", async (req, reply) => {
+    const parsed = giftStickersSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return reply.code(400).send({ error: "invalid_input", message: parsed.error.issues[0]?.message });
+    }
+    const [u] = await db.select({ id: users.id }).from(users).where(eq(users.id, req.params.id)).limit(1);
+    if (!u) return reply.code(404).send({ error: "not_found" });
+
+    try {
+      await db
+        .insert(userStickerPacks)
+        .values({ userId: u.id, packSlug: parsed.data.packSlug, source: "gift" })
+        .onConflictDoNothing();
+    } catch (err: any) {
+      req.log.error({ err }, "gift stickers failed");
+      return reply.code(500).send({ error: "gift_failed" });
+    }
+    return { ok: true, packSlug: parsed.data.packSlug };
+  });
 }
 
 
