@@ -456,6 +456,9 @@ export async function refreshCdekStatus(orderId: string) {
     statusName: string | null;
     order: ShopOrderWithItems;
   }>(`/api/v1/admin/shop/orders/${orderId}/cdek/refresh`, { method: "POST" });
+}
+
+
 
 // ---------- PAYMENTS (Raiffeisen) ----------
 
