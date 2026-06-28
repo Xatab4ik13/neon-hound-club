@@ -115,10 +115,12 @@ function RaffleDetailContent({
   raffle,
   balance,
   isAuthed,
+  phoneVerified,
 }: {
   raffle: RaffleDetail;
   balance: number;
   isAuthed: boolean;
+  phoneVerified: boolean;
 }) {
   const qc = useQueryClient();
   const navigate = useNavigate();
@@ -126,6 +128,7 @@ function RaffleDetailContent({
   const [stake, setStake] = useState(0);
   const [flash, setFlash] = useState<string | null>(null);
   const finished = raffle.status === "finished";
+  const phoneRequired = isAuthed && !phoneVerified;
 
   const enterMut = useMutation({
     mutationFn: async () => {
@@ -148,9 +151,9 @@ function RaffleDetailContent({
     onError: (e) => {
       if (e instanceof ApiError) {
         toast.error(ENTER_ERRORS[e.code] ?? "Не удалось участвовать");
-        if (e.code === "phone_required") {
-          navigate({ to: "/club/me" });
-        }
+        // phone_required не должен сюда долетать — баннер блокирует кнопку.
+        // Но если бэк всё же отдал — мягко ведём в профиль.
+        if (e.code === "phone_required") navigate({ to: "/club/me" });
       } else {
         toast.error("Не удалось участвовать");
       }
