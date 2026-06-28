@@ -4,7 +4,7 @@
 
 import { createFileRoute } from "@tanstack/react-router";
 import { useRef, useState } from "react";
-import { Image as ImageIcon, Send, X, BarChart3, Plus } from "@/components/ui/icons";
+import { Image as ImageIcon, Send, X, Plus, PlumpPoll } from "@/components/ui/icons";
 import { feedStore, useFeedPosts, type FeedPoll } from "@/data/feed-store";
 import { HellhoundAvatar } from "@/components/club/HellhoundPlaque";
 import { useBloggerProfile } from "@/data/blogger-profile";
@@ -173,7 +173,7 @@ function Composer() {
         <div className="mx-3 mb-3 rounded-[16px] border border-white/[0.06] bg-black/30 p-4 md:mx-4 md:p-5">
           <div className="mb-3 flex items-center justify-between">
             <div className="inline-flex items-center gap-1.5 font-mono text-[11px] font-bold uppercase tracking-wider text-primary">
-              <BarChart3 className="h-3.5 w-3.5" /> Опрос
+              <PlumpPoll className="h-3.5 w-3.5" /> Опрос
             </div>
             <button
               type="button"
@@ -265,7 +265,7 @@ function Composer() {
             onClick={() => setPoll((p) => (p ? null : emptyPoll()))}
             className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 font-mono text-[11px] font-bold uppercase tracking-wider transition-colors hover:bg-white/[0.04] ${poll ? "text-primary" : "text-muted-foreground hover:text-primary"}`}
           >
-            <BarChart3 className="h-4 w-4" /> Опрос
+            <PlumpPoll className="h-4 w-4" /> Опрос
           </button>
           <input
             ref={fileRef}
