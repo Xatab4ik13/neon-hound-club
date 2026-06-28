@@ -223,17 +223,17 @@ export async function adminEconomyRoutes(app: FastifyInstance) {
     }
 
 
-    // Ручные операции
-    const conds = [eq(economyOperations.source, "manual")] as any[];
+    // Операции из economy_operations (ручные + авто-налог)
+    const conds = [] as any[];
     if (q.type !== "all") conds.push(eq(economyOperations.type, q.type));
     if (q.category) conds.push(eq(economyOperations.category, q.category));
-    const manualRows = await db
+    const opRows = await db
       .select()
       .from(economyOperations)
-      .where(and(...conds))
+      .where(conds.length ? and(...conds) : undefined)
       .orderBy(desc(economyOperations.occurredAt))
       .limit(q.limit);
-    for (const r of manualRows) {
+    for (const r of opRows) {
       items.push({
         id: r.id,
         occurredAt: r.occurredAt,
@@ -241,7 +241,7 @@ export async function adminEconomyRoutes(app: FastifyInstance) {
         category: r.category,
         amountRub: r.amountRub,
         note: r.note ?? "",
-        source: "manual",
+        source: (r.source as "auto" | "manual") ?? "manual",
         refType: r.refType,
         refId: r.refId,
         createdBy: r.createdBy,
