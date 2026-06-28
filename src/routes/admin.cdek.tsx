@@ -70,23 +70,49 @@ function AdminCdekPage() {
     delivered.refetch();
   }
 
+  const sync = useMutation({
+    mutationFn: () => syncCdekStatusesAll(),
+    onSuccess: () => refetchAll(),
+  });
+  const syncErr = sync.error instanceof ApiError ? sync.error.message : sync.error ? "Ошибка синхронизации" : null;
+
   return (
     <div className="flex h-full w-full flex-col">
       <header className="flex items-center justify-between border-b border-zinc-200 px-6 py-4 dark:border-zinc-800">
         <div>
           <h1 className="text-xl font-semibold">СДЭК — накладные</h1>
           <p className="text-xs text-zinc-500">
-            Все заказы со статусом «Оплачен» и выше. Создание и обновление статуса — в карточке заказа.
+            Все заказы со статусом «Оплачен» и выше. Статусы синхронизируются автоматически раз в час.
           </p>
+          {sync.data && (
+            <p className="mt-1 text-[11px] text-emerald-600 dark:text-emerald-400">
+              Синхронизировано: проверено {sync.data.scanned}, обновлено {sync.data.updated}
+              {sync.data.promoted.shipped ? `, → отправлено: ${sync.data.promoted.shipped}` : ""}
+              {sync.data.promoted.delivered ? `, → получено: ${sync.data.promoted.delivered}` : ""}
+              {sync.data.errors ? `, ошибок: ${sync.data.errors}` : ""}
+            </p>
+          )}
+          {syncErr && <p className="mt-1 text-[11px] text-rose-500">{syncErr}</p>}
         </div>
-        <button
-          type="button"
-          onClick={refetchAll}
-          className="inline-flex items-center gap-2 rounded-md border border-zinc-200 px-3 py-1.5 text-xs hover:bg-zinc-100 dark:border-zinc-800 dark:hover:bg-zinc-800"
-        >
-          <RefreshCw className={cn("h-3.5 w-3.5", isFetching && "animate-spin")} />
-          Обновить
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => sync.mutate()}
+            disabled={sync.isPending}
+            className="inline-flex items-center gap-2 rounded-md bg-zinc-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-zinc-800 disabled:opacity-50 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200"
+          >
+            <RefreshCw className={cn("h-3.5 w-3.5", sync.isPending && "animate-spin")} />
+            Синхронизировать статусы
+          </button>
+          <button
+            type="button"
+            onClick={refetchAll}
+            className="inline-flex items-center gap-2 rounded-md border border-zinc-200 px-3 py-1.5 text-xs hover:bg-zinc-100 dark:border-zinc-800 dark:hover:bg-zinc-800"
+          >
+            <RefreshCw className={cn("h-3.5 w-3.5", isFetching && "animate-spin")} />
+            Обновить
+          </button>
+        </div>
       </header>
 
       <div className="flex flex-wrap gap-1.5 border-b border-zinc-200 px-6 py-3 dark:border-zinc-800">
