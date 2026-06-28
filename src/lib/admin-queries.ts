@@ -489,7 +489,7 @@ export type AdminTicketsStats = {
     users: number;
   };
   last30: { issued30: number; spent30: number };
-  bySource: { source: string; issued: number; spent: number }[];
+  bySource: { source: string; issued: number; burned: number; held: number }[];
 };
 
 export function fetchAdminTicketsStats() {
