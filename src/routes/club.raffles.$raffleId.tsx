@@ -214,7 +214,7 @@ function RaffleDetailContent({
             }`}
           >
             {!finished && <span className="h-1 w-1 animate-pulse rounded-full bg-white" />}
-            {finished ? "Завершён" : "LIVE"}
+            {finished ? "Завершён" : "Идёт"}
           </span>
         </div>
       </div>

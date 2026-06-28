@@ -109,12 +109,12 @@ function TierCard({ tier, index }: { tier: Tier; index: number }) {
               className="font-mono text-[10px] font-bold italic uppercase tracking-widest"
               style={{ color: tier.color }}
             >
-              ★ Recommended
+              ★ Популярный
             </span>
           )}
           {tier.ultimate && (
             <span className="font-mono text-[10px] font-bold uppercase tracking-widest text-primary">
-              Ultimate
+              Максимум
             </span>
           )}
         </div>

@@ -117,11 +117,8 @@ export function Hero() {
                     <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/60" />
                     <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
                   </span>
-                  Акция / LIVE
+                  Акция / идёт
                 </div>
-                <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                  №{raffle.id.slice(0, 2).toUpperCase()}
-                </span>
               </div>
 
               {/* Image */}

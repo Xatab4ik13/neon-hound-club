@@ -1690,7 +1690,7 @@ function HellAiDesktop() {
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-60" />
                   <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary" />
                 </span>
-                hell ai · online
+                hell ai · на связи
               </div>
               <h1 className="bg-gradient-to-r from-foreground to-foreground/40 bg-clip-text pb-1 font-display text-3xl font-medium tracking-tight text-transparent md:text-4xl">
                 Чем помочь по твоему мото?
