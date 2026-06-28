@@ -14,10 +14,10 @@ type Tab = {
 };
 
 const TABS: Tab[] = [
-  { label: "Лента", href: "/club", icon: Newspaper, exact: true },
-  { label: "Магазин", href: "/club/shop", icon: ShoppingBag },
-  { label: "Билеты", href: "/club/tickets", icon: Ticket },
-  { label: "Гараж", href: "/club/garage", icon: Bike },
+  { label: "Лента", href: "/club", icon: PlumpFeed, exact: true },
+  { label: "Магазин", href: "/club/shop", icon: PlumpStore },
+  { label: "Билеты", href: "/club/tickets", icon: PlumpTicket },
+  { label: "Гараж", href: "/club/garage", icon: PlumpGarage },
 ];
 
 
