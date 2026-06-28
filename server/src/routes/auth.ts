@@ -4,6 +4,7 @@ import { eq, or, sql } from "drizzle-orm";
 import crypto from "node:crypto";
 import { db } from "../db/client.js";
 import { users } from "../db/schema/users.js";
+import { profiles } from "../db/schema/profile.js";
 import { emailVerificationTokens } from "../db/schema/email-verification.js";
 import {
   hashPassword,
