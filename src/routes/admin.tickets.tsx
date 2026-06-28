@@ -226,6 +226,7 @@ function GiveModal({ open, onClose }: { open: boolean; onClose: () => void }) {
     onSuccess: (res) => {
       toast.success(`@${res.user.nick}: баланс ${res.balance}`);
       qc.invalidateQueries({ queryKey: ["admin", "tickets", "journal"] });
+      qc.invalidateQueries({ queryKey: ["admin", "tickets", "stats"] });
       setNick("");
       setAmount("10");
       setReason("");
