@@ -222,13 +222,18 @@ function EconomyPage() {
 
       {tab === "overview" && (
         <>
-          <div className="mb-4 grid gap-3 sm:grid-cols-3">
+          <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <StatCard label="Доходы" value={fmtRub(overview?.income ?? 0)} tone="emerald" />
             <StatCard label="Расходы" value={fmtRub(overview?.expense ?? 0)} tone="rose" />
             <StatCard
               label="Чистая прибыль"
               value={fmtRub(profit)}
               tone={profit >= 0 ? "emerald" : "rose"}
+            />
+            <StatCard
+              label="Налог УСН (накоплено)"
+              value={fmtRub(overview?.taxAccrued ?? 0)}
+              tone="rose"
             />
           </div>
           <Panel>
