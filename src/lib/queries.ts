@@ -458,6 +458,42 @@ export async function refreshCdekStatus(orderId: string) {
   }>(`/api/v1/admin/shop/orders/${orderId}/cdek/refresh`, { method: "POST" });
 }
 
+export function cdekPrintUrl(orderId: string) {
+  return `${BACKEND_URL}/api/v1/admin/shop/orders/${orderId}/cdek/print`;
+}
+
+export async function downloadCdekWaybillPdf(orderId: string, filename = "cdek.pdf") {
+  const res = await fetch(cdekPrintUrl(orderId), { credentials: "include" });
+  if (!res.ok) {
+    let msg = "Не удалось получить PDF";
+    try {
+      const j = await res.json();
+      msg = (j?.message as string) || (j?.error as string) || msg;
+    } catch {
+      /* ignore */
+    }
+    throw new ApiError(res.status, "cdek_print_failed", msg);
+  }
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+export async function syncCdekStatusesAll() {
+  return apiFetch<{
+    scanned: number;
+    updated: number;
+    promoted: { shipped: number; delivered: number };
+    errors: number;
+  }>(`/api/v1/admin/shop/orders/cdek/sync`, { method: "POST" });
+}
+
 
 
 // ---------- PAYMENTS (Raiffeisen) ----------
