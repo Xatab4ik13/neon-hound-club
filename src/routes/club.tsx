@@ -1,3 +1,4 @@
+import "@fontsource-variable/outfit";
 import { createFileRoute, Link, Outlet, redirect, useLocation, useNavigate, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
