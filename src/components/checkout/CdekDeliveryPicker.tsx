@@ -21,6 +21,8 @@ export type CdekPickerState = {
   pvzCode: string | null;
   pvzAddress: string | null;
   street: string;
+  apartment: string;
+  entrance: string;
 };
 
 type CityItem = {
@@ -46,6 +48,8 @@ export const EMPTY_CDEK_STATE: CdekPickerState = {
   pvzCode: null,
   pvzAddress: null,
   street: "",
+  apartment: "",
+  entrance: "",
 };
 
 export function CdekDeliveryPicker({
