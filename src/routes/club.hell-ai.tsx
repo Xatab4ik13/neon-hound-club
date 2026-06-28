@@ -34,7 +34,7 @@ import {
   ArrowRight,
   Square,
   Search as SearchIcon,
-} from "lucide-react";
+} from "@/components/ui/icons";
 
 import { cn } from "@/lib/utils";
 import { apiFetch, ApiError } from "@/lib/api";

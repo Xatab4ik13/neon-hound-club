@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { CheckCircle2, Loader2, MapPin, Ticket, Truck, User } from "lucide-react";
+import { CheckCircle2, Loader2, MapPin, Ticket, Truck, User } from "@/components/ui/icons";
 import { PageHeader } from "@/components/club/PageHeader";
 import { PaymentBadges } from "@/components/brand/PaymentBadges";
 import { PayButton } from "@/components/brand/PayButton";

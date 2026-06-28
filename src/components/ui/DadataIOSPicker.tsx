@@ -3,7 +3,7 @@
 // inline-dropdown (DadataInput), т.к. там нет проблем с клавиатурой/overflow.
 
 import { useEffect, useRef, useState } from "react";
-import { Check, Plus, Search, X } from "lucide-react";
+import { Check, Plus, Search, X } from "@/components/ui/icons";
 import { IOSOverlay } from "@/components/ios/IOSOverlay";
 import {
   suggest,

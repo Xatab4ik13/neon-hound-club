@@ -1,7 +1,7 @@
 // Журнал байка: вкладки «Сервис» и «Поездки» с быстрым добавлением.
 
 import { useMemo, useState } from "react";
-import { AlertTriangle, Bike, Calendar, Plus, Trash2, Wrench } from "lucide-react";
+import { AlertTriangle, Bike, Calendar, Plus, Trash2, Wrench } from "@/components/ui/icons";
 import {
   bikeJournalStore,
   kmUntilNextService,

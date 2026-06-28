@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight } from "@/components/ui/icons";
 import { fetchHomeBanners, type HomeBanner } from "@/lib/queries";
 import { bannerBackgroundStyle } from "@/lib/banner-presets";
 

@@ -1,4 +1,4 @@
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2 } from "@/components/ui/icons";
 import placeholderBike from "@/assets/bikes/placeholder.png";
 import type { StoredBike } from "@/data/bike-storage";
 

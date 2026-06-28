@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { Bug, Lightbulb, HelpCircle, ChevronRight, Plus, Loader2 } from "lucide-react";
+import { Bug, Lightbulb, HelpCircle, ChevronRight, Plus, Loader2 } from "@/components/ui/icons";
 import { PageHeader } from "@/components/club/PageHeader";
 import { useViewer } from "@/hooks/use-viewer";
 import {

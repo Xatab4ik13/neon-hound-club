@@ -12,7 +12,7 @@ import {
   Ticket,
   LifeBuoy,
   type LucideIcon,
-} from "lucide-react";
+} from "@/components/ui/icons";
 import { Drawer } from "vaul";
 import { useEffect, useState } from "react";
 import { useCart } from "@/hooks/use-cart";

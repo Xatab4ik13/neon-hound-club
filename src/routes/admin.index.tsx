@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { TrendingUp, Users, Ticket, Trophy, ShoppingBag, Crown, Loader2 } from "lucide-react";
+import { TrendingUp, Users, Ticket, Trophy, ShoppingBag, Crown, Loader2 } from "@/components/ui/icons";
 import { fetchAdminDashboard } from "@/lib/admin-queries";
 
 export const Route = createFileRoute("/admin/")({

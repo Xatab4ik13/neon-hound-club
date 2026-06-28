@@ -15,7 +15,7 @@ import {
   X,
   Loader2,
   Camera,
-} from "lucide-react";
+} from "@/components/ui/icons";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useViewer } from "@/hooks/use-viewer";
 import { IOSSheet } from "@/components/ios/IOSSheet";

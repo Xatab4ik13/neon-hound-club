@@ -5,7 +5,7 @@
 
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Apple, Bell, BellOff, Check, Download, Share, Smartphone, Sparkles, Ticket } from "lucide-react";
+import { Apple, Bell, BellOff, Check, Download, Share, Smartphone, Sparkles, Ticket } from "@/components/ui/icons";
 import { PageHeader } from "@/components/club/PageHeader";
 import {
   getPushPermission,

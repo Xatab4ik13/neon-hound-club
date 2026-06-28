@@ -2,7 +2,7 @@
 // Авторизация — мок, хранение — useState в родителе.
 
 import { useRef, useState } from "react";
-import { X, Upload, Trash2 } from "lucide-react";
+import { X, Upload, Trash2 } from "@/components/ui/icons";
 import { HellhoundAvatar, HellhoundChip } from "@/components/club/HellhoundPlaque";
 
 export type BloggerProfile = {

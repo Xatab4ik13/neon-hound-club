@@ -4,7 +4,7 @@
 // Сверху — лёгкая глянцевая засветка и медленный «шиммер» в стиле iOS.
 
 import { Link } from "@tanstack/react-router";
-import { Ticket } from "lucide-react";
+import { Ticket } from "@/components/ui/icons";
 
 
 function pluralTickets(n: number): string {

@@ -7,7 +7,7 @@ import {
   Share2,
   Ticket,
   Users,
-} from "lucide-react";
+} from "@/components/ui/icons";
 import { useState } from "react";
 import { PageHeader } from "@/components/club/PageHeader";
 import {

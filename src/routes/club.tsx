@@ -12,7 +12,7 @@ import {
   Target,
   UserPlus,
   type LucideIcon,
-} from "lucide-react";
+} from "@/components/ui/icons";
 import type { QueryClient } from "@tanstack/react-query";
 
 

@@ -4,7 +4,7 @@
 import { useRef, useState, type ReactNode } from "react";
 import { motion } from "framer-motion";
 import { Drawer } from "vaul";
-import { Copy, RefreshCw, Share2, Check } from "lucide-react";
+import { Copy, RefreshCw, Share2, Check } from "@/components/ui/icons";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 

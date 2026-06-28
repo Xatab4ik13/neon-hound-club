@@ -1,63 +1,60 @@
-## Что делаем
+Переход с lucide-react на Streamline Core Solid делаем поэтапно, без одного большого прохода (он уже падал по таймауту).
 
-Заменяем текстовый список ПВЗ в `CdekDeliveryPicker` на интерактивную карту Яндекса с маркерами всех ПВЗ выбранного города. Курьерский режим не трогаем — там и так нормально работает DaData по адресу.
+## Принцип
 
-## UX
+1. Создаём один файл `src/components/ui/icons.tsx` — это единая точка иконок проекта.
+2. Каждая иконка там — это React-компонент с тем же именем, что и в lucide (`Check`, `X`, `Settings` и т.д.), и тем же API (`size`, `className`, `color`, `strokeWidth` игнорируется).
+3. Импорты в коде меняем с `from "lucide-react"` на `from "@/components/ui/icons"` — построчно, файлами, партиями.
+4. Пока иконка не перенесена в `icons.tsx` — она временно ре-экспортится из lucide, чтобы ничего не сломалось. Удалим lucide только в самом конце.
 
-```text
-[ Поиск города ] ───────────────────────
-[ ПВЗ ]  [ Курьер ]
+Таким образом на каждом этапе билд зелёный, и я могу остановиться/откатиться на любом шаге.
 
-┌─────────────────────────────────────┐
-│                                     │
-│        🗺️  Яндекс.Карта             │
-│           • • PVZ маркеры •         │
-│             • (кластеры на zoom-out)│
-│                                     │
-└─────────────────────────────────────┘
-   ↑ тап по маркеру → balloon: адрес,
-     время работы, [ Выбрать этот ПВЗ ]
+## Этапы
 
-▼ Выбранный ПВЗ
-   KSD23 · ул. Восточно-Кругликовская 30/2
-   Пн-Пт 09-21, Сб-Вс 10-20            [×]
-```
+**Этап 0 — каркас (10 мин, без визуальных изменений)**
+- Создаю `src/components/ui/icons.tsx` с ре-экспортом всех 96 иконок из lucide-react как есть.
+- Прогоняю замену импортов во всём `src/` (`lucide-react` → `@/components/ui/icons`).
+- Билд должен быть зелёный, визуально ничего не поменяется.
+- Это даёт мне один файл, через который я дальше подменяю иконки по одной.
 
-- Карта центрируется на bounding box всех ПВЗ города.
-- Маркеры кластеризуются (встроенный `ymaps.Clusterer`) — даже 200+ точек не лагают.
-- На мобиле карта высотой ~360px, на десктопе ~480px. Скролл страницы не блокируется (panning только двумя пальцами на мобиле — стандартный поведенческий флаг).
-- Под картой — компактная карточка выбранного ПВЗ с возможностью сменить. Полный список текстом не нужен.
-- Поиск ПВЗ по адресу внутри города — поле над картой (фильтрует маркеры локально, без новых запросов).
+**Этап 1 — топ-20 ключевых иконок Streamline (то, что глаз цепляет сразу)**
 
-## Технические детали
+Навигация и базовый UI:
+`Check`, `X`, `ChevronDown`, `ChevronLeft`, `ChevronRight`, `ChevronUp`, `ArrowLeft`, `ArrowRight`, `Search`, `Settings`, `LogOut`, `User`, `Users`, `Bell`, `Plus`, `Minus`, `MoreHorizontal`, `Trash2`, `Edit`, `Heart`
 
-**Карта.** Подгружаем Яндекс JS API `v=2.1` лениво (через `<script>` инжект в момент монтирования пикера, с дедупликацией), `lang=ru_RU&apikey=...`. Используем `ymaps.Map`, `ymaps.Placemark`, `ymaps.Clusterer`. AdvancedMarkerElement / 3D не нужны.
+Для каждой:
+- ищу в Streamline Core Solid вручную через API (с проверкой по названию + ручной white-list на проблемные: `X`=close-cross, `Zap`=lightning, `MoreHorizontal`=three-dots),
+- качаю SVG, кладу как inline React-компонент в `icons.tsx` поверх ре-экспорта,
+- проверяю билд после партии.
 
-**API-ключ.** Яндекс.Карты JS API требует ключ (бесплатный тариф — до 25к загрузок/сутки, нам с запасом). Ключ создаётся в кабинете developer.tech.yandex.ru → «JavaScript API и HTTP Геокодер». Это **публичный ключ** с привязкой к домену (`hhr.pro`, `localhost`) — лежит в коде/`.env` (`VITE_YANDEX_MAPS_API_KEY`), не секрет.
+**Этап 2 — фид и соц-активность (~15 иконок)**
+`MessageCircle`, `Share`, `Share2`, `Send`, `Eye`, `EyeOff`, `Pin`, `PinOff`, `Flag`, `Bookmark/Sticker`, `Camera`, `Image`, `Paperclip`, `Play`, `Volume2`, `VolumeX`
 
-**Данные.** Используем уже существующий `GET /api/v1/cdek/pvz?cityCode=...` — в ответе `code/name/address/workTime/lat/lng` (всё уже есть). Никаких изменений на бэке.
+**Этап 3 — гейм-слой (Pass, билеты, тиры) (~12 иконок)**
+`Ticket`, `Trophy`, `Crown`, `Award`, `Gift`, `Sparkles`, `Zap`, `Lightbulb`, `Bot`, `ShieldCheck`, `KeyRound`, `Lock`
 
-**Лагопрофилактика.**
-- Скрипт грузится один раз и кешируется браузером.
-- `Clusterer` дешёвый, тестировался на тысячах точек.
-- Карта инициализируется только когда выбран город (до этого — заглушка «выберите город»).
-- При смене города пересоздаём не карту, а только коллекцию placemark-ов (`clusterer.removeAll()` → `add()`).
-- Lazy import самого `CdekDeliveryPicker` через `React.lazy` в `club.checkout.tsx`, чтобы скрипт Яндекса не тянулся, пока юзер не дошёл до чекаута.
+**Этап 4 — мерч и заказы (~10 иконок)**
+`ShoppingBag`, `Package`, `Truck`, `Tag/Sticker`, `Copy`, `Download`, `Upload`, `ExternalLink`, `Clock`, `Calendar`
 
-**Файлы:**
-- `src/components/checkout/CdekDeliveryPicker.tsx` — переработка: добавляем карту, убираем текстовый список.
-- `src/lib/yandex-maps.ts` — новый, утилита `loadYandexMaps()` с промис-кешем загрузки скрипта.
-- `.env` (фронт) — `VITE_YANDEX_MAPS_API_KEY=...` (его вставит юзер).
+**Этап 5 — мото/сервис/диагностика (~10 иконок)**
+`Bike`, `Wrench`, `Bug`, `MapPin`, `Phone`, `Smartphone`, `WifiOff`, `RefreshCw`, `RotateCcw`, `Save`
 
-**Чего НЕ делаем:**
-- Не трогаем бэкенд, расчёт стоимости, схему `orders`.
-- Не делаем геолокацию «вы здесь» в этой итерации (можно добавить позже одной кнопкой `ymaps.geolocation.get()`).
-- Не делаем фильтры «постамат/примерка/оплата картой» — у нас сейчас единый список ПВЗ, эти атрибуты в `/cdek/pvz` не возвращаются. Если понадобится — расширим бэк.
+**Этап 6 — оставшийся хвост (~20 иконок)**
+Алерты, чарты, бренд-логотипы (`Youtube`, `Instagram`, `Twitch`, `Apple`), `Loader2`, `GripVertical`, `PanelLeft`, `SlidersHorizontal`, `BarChart3`, `Newspaper`, `TrendingUp`, `Ban`, `HelpCircle`, `AlertCircle`, `AlertTriangle`, `CheckCircle2`, `XCircle`, `Circle`, `Pencil`.
 
-## Что нужно от тебя перед стартом
+**Этап 7 — финальная уборка**
+- Убираю ре-экспорт из lucide в `icons.tsx`.
+- `bun remove lucide-react`.
+- Финальный билд + визуальный обход главной, фида, профиля, админки.
 
-1. Зарегистрировать ключ JS API на https://developer.tech.yandex.ru/services (раздел «JavaScript API и HTTP Геокодер», бесплатный тариф).
-2. В настройках ключа в HTTP-referrer добавить: `hhr.pro`, `*.hhr.pro`, `localhost`.
-3. Прислать ключ — добавлю в `.env`.
+## Что я делаю сейчас
 
-Параллельно начну переписывать пикер с заглушкой на ключ.
+Только **Этап 0 + Этап 1** в этом сообщении (каркас + 20 ключевых иконок). После этого ты смотришь на превью, и если ок — идём дальше партиями по этапам.
+
+## Техническая часть (для справки)
+
+- API: `https://api.streamlinehq.com/v3/families/core-solid/icons?search=<query>` с `Authorization: Bearer $STREAMLINE_API_KEY` (ключ уже в `add_secret`).
+- Скачивание SVG: эндпоинт `download/svg` для выбранного hash.
+- SVG чищу: убираю `width/height`, ставлю `fill="currentColor"`, оборачиваю в `React.forwardRef` с пропсами `{size=24, className, ...rest}` → `<svg width={size} height={size} className={className} viewBox=... {...rest}>`.
+- `LucideIcon` тип ре-экспортирую как `ComponentType<{size?: number; className?: string}>` чтобы существующие сигнатуры (`icon: LucideIcon`) продолжали работать.
+- Бренд-логотипы (`Youtube`, `Instagram`, `Twitch`, `Apple`) — в Streamline Core Solid скорее всего отсутствуют как бренды, оставлю из lucide или возьму из Streamline `logos` family отдельно. Решу на Этапе 6.

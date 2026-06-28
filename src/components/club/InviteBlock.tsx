@@ -1,7 +1,7 @@
 // Компактный блок рефералки для /club/me.
 
 import { Link } from "@tanstack/react-router";
-import { ArrowRight, Check, Copy, Ticket, Users } from "lucide-react";
+import { ArrowRight, Check, Copy, Ticket, Users } from "@/components/ui/icons";
 import { useState } from "react";
 import {
   buildReferralUrl,

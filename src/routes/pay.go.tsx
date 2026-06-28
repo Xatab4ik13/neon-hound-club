@@ -9,7 +9,7 @@
 
 import { useEffect } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowUpRight, ShieldCheck } from "lucide-react";
+import { ArrowUpRight, ShieldCheck } from "@/components/ui/icons";
 import { z } from "zod";
 
 const searchSchema = z.object({

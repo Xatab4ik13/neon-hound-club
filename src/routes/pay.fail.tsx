@@ -1,7 +1,7 @@
 // Страница возврата после неудачной оплаты в Т-Банке.
 
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { XCircle } from "lucide-react";
+import { XCircle } from "@/components/ui/icons";
 
 export const Route = createFileRoute("/pay/fail")({
   head: () => ({

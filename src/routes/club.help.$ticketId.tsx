@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Bug, Lightbulb, HelpCircle, Loader2 } from "lucide-react";
+import { ArrowLeft, Bug, Lightbulb, HelpCircle, Loader2 } from "@/components/ui/icons";
 import { PageHeader } from "@/components/club/PageHeader";
 import {
   getTicket,

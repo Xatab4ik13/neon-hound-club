@@ -1,7 +1,7 @@
 // Компактный блок челленджей для дашборда. Реальные данные с бэка.
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, Flag, Sparkles, Ticket } from "lucide-react";
+import { ArrowRight, Flag, Sparkles, Ticket } from "@/components/ui/icons";
 import { fetchQuests, qk, type QuestItem } from "@/lib/queries";
 import { useViewer } from "@/hooks/use-viewer";
 

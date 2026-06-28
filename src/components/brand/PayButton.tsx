@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2 } from "@/components/ui/icons";
 
 type Size = "md" | "lg";
 

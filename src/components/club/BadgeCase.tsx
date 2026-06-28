@@ -3,7 +3,7 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Lock } from "lucide-react";
+import { Lock } from "@/components/ui/icons";
 import { BadgeIcon } from "./BadgeIcon";
 import { fetchMyBadges, type MyBadge, type BadgeRarity } from "@/lib/queries";
 

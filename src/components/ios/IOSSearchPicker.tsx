@@ -2,7 +2,7 @@
 // Построен на IOSOverlay — единая логика scroll-lock, safe-area, клавиатуры.
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Check, Plus, Search, X } from "lucide-react";
+import { Check, Plus, Search, X } from "@/components/ui/icons";
 import { IOSOverlay } from "./IOSOverlay";
 import { cn } from "@/lib/utils";
 

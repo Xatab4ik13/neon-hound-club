@@ -12,7 +12,7 @@ import {
   TrendingUp,
   ClipboardCheck,
   CircleDashed,
-} from "lucide-react";
+} from "@/components/ui/icons";
 import { useEffect, useState } from "react";
 import { hhToast as toast } from "@/lib/hh-toast";
 import { checkQuest, confirmPwaInstall, fetchQuests, qk, type QuestItem } from "@/lib/queries";
