@@ -255,10 +255,19 @@ function ClubCheckoutPage() {
 
   const grandTotal = total + (shipPrice ?? 0);
 
+  const courierAddress = useMemo(() => {
+    const parts = [cdek.cityName, cdek.street.trim()].filter(Boolean);
+    const apt = cdek.apartment.trim();
+    const ent = cdek.entrance.trim();
+    if (apt) parts.push(`кв. ${apt}`);
+    if (ent) parts.push(`подъезд ${ent}`);
+    return parts.join(", ");
+  }, [cdek.cityName, cdek.street, cdek.apartment, cdek.entrance]);
+
   const shippingAddressForSubmit = needsShipping
     ? cdek.mode === "pvz"
       ? cdek.pvzAddress ?? ""
-      : `${cdek.cityName}, ${cdek.street}`.trim()
+      : courierAddress
     : "—";
   const cityForSubmit = needsShipping ? cdek.cityName || "—" : "—";
 

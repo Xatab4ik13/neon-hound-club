@@ -21,6 +21,8 @@ export type CdekPickerState = {
   pvzCode: string | null;
   pvzAddress: string | null;
   street: string;
+  apartment: string;
+  entrance: string;
 };
 
 type CityItem = {
@@ -46,6 +48,8 @@ export const EMPTY_CDEK_STATE: CdekPickerState = {
   pvzCode: null,
   pvzAddress: null,
   street: "",
+  apartment: "",
+  entrance: "",
 };
 
 export function CdekDeliveryPicker({
@@ -201,7 +205,7 @@ export function CdekDeliveryPicker({
         />
       </div>
 
-      {/* ПВЗ-карта */}
+      {/* ПВЗ-карта + поиск списком */}
       {value.mode === "pvz" && value.cityCode != null && (
         <div className="space-y-3">
           <PvzMap
@@ -237,21 +241,161 @@ export function CdekDeliveryPicker({
               </button>
             </div>
           )}
+          <PvzSearchableList
+            items={pvzList}
+            loading={pvzLoading}
+            error={pvzError}
+            selectedCode={value.pvzCode}
+            onPick={pickPvz}
+          />
         </div>
       )}
 
-      {/* Курьер: адрес */}
+      {/* Курьер: адрес — три строки */}
       {value.mode === "courier" && value.cityCode != null && (
-        <div>
-          <label className="mb-1 block px-1 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
-            Улица, дом, квартира
-          </label>
-          <input
-            value={value.street}
-            onChange={(e) => onChange({ ...value, street: e.target.value })}
-            placeholder="ул. Красная, 1, кв. 12"
-            className="w-full rounded-2xl border border-white/[0.08] bg-card/40 px-3 py-2.5 text-[15px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/40"
-          />
+        <div className="space-y-3">
+          <div>
+            <label className="mb-1 block px-1 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+              Улица, дом
+            </label>
+            <input
+              value={value.street}
+              onChange={(e) => onChange({ ...value, street: e.target.value })}
+              placeholder="ул. Красная, 1"
+              className="w-full rounded-2xl border border-white/[0.08] bg-card/40 px-3 py-2.5 text-[15px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/40"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="mb-1 block px-1 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                Квартира / офис
+              </label>
+              <input
+                value={value.apartment}
+                onChange={(e) => onChange({ ...value, apartment: e.target.value })}
+                placeholder="12"
+                className="w-full rounded-2xl border border-white/[0.08] bg-card/40 px-3 py-2.5 text-[15px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/40"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block px-1 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                Подъезд
+              </label>
+              <input
+                value={value.entrance}
+                onChange={(e) => onChange({ ...value, entrance: e.target.value })}
+                placeholder="3"
+                className="w-full rounded-2xl border border-white/[0.08] bg-card/40 px-3 py-2.5 text-[15px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/40"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PvzSearchableList({
+  items,
+  loading,
+  error,
+  selectedCode,
+  onPick,
+}: {
+  items: PvzItem[];
+  loading: boolean;
+  error: string | null;
+  selectedCode: string | null;
+  onPick: (p: PvzItem) => void;
+}) {
+  const [q, setQ] = useState("");
+  const filtered = useMemo(() => {
+    const needle = q.trim().toLowerCase();
+    if (!needle) return items;
+    return items.filter(
+      (p) =>
+        p.address.toLowerCase().includes(needle) ||
+        p.name.toLowerCase().includes(needle) ||
+        (p.workTime ?? "").toLowerCase().includes(needle),
+    );
+  }, [items, q]);
+
+  return (
+    <div className="rounded-2xl border border-white/[0.06] bg-card/40">
+      <div className="flex items-center gap-2 border-b border-white/[0.05] px-3 py-2">
+        <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
+        <input
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Поиск по адресу или названию ПВЗ"
+          className="min-w-0 flex-1 bg-transparent text-[14px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none"
+        />
+        {q && (
+          <button
+            type="button"
+            onClick={() => setQ("")}
+            className="grid h-6 w-6 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-white/[0.06] hover:text-foreground"
+            aria-label="Очистить"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        )}
+      </div>
+      <div className="max-h-80 overflow-auto">
+        {loading && (
+          <div className="flex items-center gap-2 px-3 py-4 text-[13px] text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" /> Загружаем пункты выдачи…
+          </div>
+        )}
+        {error && !loading && (
+          <div className="px-3 py-4 text-[13px] text-destructive">{error}</div>
+        )}
+        {!loading && !error && filtered.length === 0 && (
+          <div className="px-3 py-4 text-[13px] text-muted-foreground">
+            {items.length === 0 ? "Ничего не найдено" : "По запросу ничего не нашлось"}
+          </div>
+        )}
+        <ul className="divide-y divide-white/[0.05]">
+          {filtered.slice(0, 200).map((p) => {
+            const picked = selectedCode === p.code;
+            return (
+              <li key={p.code}>
+                <button
+                  type="button"
+                  onClick={() => onPick(p)}
+                  className={`flex w-full items-start gap-3 px-3 py-2.5 text-left transition ${
+                    picked ? "bg-primary/[0.1]" : "hover:bg-white/[0.03]"
+                  }`}
+                >
+                  <span
+                    className={`mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full border ${
+                      picked ? "border-primary bg-primary text-primary-foreground" : "border-white/20"
+                    }`}
+                  >
+                    {picked && <Check className="h-3 w-3" />}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-[13px] font-semibold text-foreground">
+                      {p.name}
+                    </div>
+                    <div className="text-[12px] leading-snug text-muted-foreground">
+                      {p.address}
+                    </div>
+                    {p.workTime && (
+                      <div className="mt-0.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground/80">
+                        {p.workTime}
+                      </div>
+                    )}
+                  </div>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+      {filtered.length > 0 && (
+        <div className="border-t border-white/[0.05] px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground/70">
+          {filtered.length} из {items.length}
         </div>
       )}
     </div>
