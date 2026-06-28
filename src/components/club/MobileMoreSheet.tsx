@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import {
-  ChevronRight,
+  PlumpArrowRight as ChevronRight,
   PlumpDiamond,
   PlumpGift,
   PlumpAI,

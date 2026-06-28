@@ -31,9 +31,9 @@ import {
   History as HistoryIcon,
   MessageSquarePlus,
   Trash2,
-  ArrowRight,
+  PlumpArrowRight as ArrowRight,
   Square,
-  Search as SearchIcon,
+  PlumpSearch as SearchIcon,
 } from "@/components/ui/icons";
 
 import { cn } from "@/lib/utils";

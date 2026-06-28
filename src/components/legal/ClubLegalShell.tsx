@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { ChevronLeft } from "@/components/ui/icons";
+import { PlumpArrowLeft as ChevronLeft } from "@/components/ui/icons";
 import { Link } from "@tanstack/react-router";
 import { LEGAL } from "@/data/legal";
 

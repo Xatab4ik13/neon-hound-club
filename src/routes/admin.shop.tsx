@@ -13,7 +13,7 @@ import {
   Plus,
   Edit,
   Trash2,
-  Package,
+  PlumpPackage as Package,
   Receipt,
   FolderTree,
   Star,

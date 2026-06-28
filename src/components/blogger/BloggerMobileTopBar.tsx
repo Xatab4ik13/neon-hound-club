@@ -3,7 +3,7 @@
 // Стилистика подтянута к клубному MobileTopBar (стеклянный фон, без колокольчика).
 
 import { useRouter, useRouterState } from "@tanstack/react-router";
-import { ChevronLeft } from "@/components/ui/icons";
+import { PlumpArrowLeft as ChevronLeft } from "@/components/ui/icons";
 import { HellhoundPlaqueLarge } from "@/components/club/HellhoundPlaque";
 import { useBloggerProfile } from "@/data/blogger-profile";
 

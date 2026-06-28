@@ -2,7 +2,7 @@
 // сюда тёмные токены сайта — используем Tailwind utility colors напрямую.
 
 import { cn } from "@/lib/utils";
-import { X, AlertTriangle, Image as ImageIcon } from "@/components/ui/icons";
+import { PlumpClose as X, AlertTriangle, PlumpImage as ImageIcon } from "@/components/ui/icons";
 import {
   useEffect,
   useState,

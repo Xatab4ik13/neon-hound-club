@@ -9,7 +9,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { X } from "@/components/ui/icons";
+import { PlumpClose as X } from "@/components/ui/icons";
 import { useThemeColor } from "@/hooks/use-theme-color";
 
 type Props = {

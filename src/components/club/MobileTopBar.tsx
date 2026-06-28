@@ -1,5 +1,5 @@
 import { Link, useRouter, useRouterState } from "@tanstack/react-router";
-import { Bell, ChevronLeft, PlumpCart } from "@/components/ui/icons";
+import { PlumpBell as Bell, PlumpArrowLeft as ChevronLeft, PlumpCart } from "@/components/ui/icons";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { RANKS } from "@/data/ranks";
 import type { RankMeta } from "@/data/ranks";

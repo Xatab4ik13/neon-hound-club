@@ -1,7 +1,7 @@
 // Компактный блок рефералки для /club/me.
 
 import { Link } from "@tanstack/react-router";
-import { ArrowRight, Check, Copy, PlumpTicket, Users } from "@/components/ui/icons";
+import { PlumpArrowRight as ArrowRight, Check, Copy, PlumpTicket, PlumpUsers as Users } from "@/components/ui/icons";
 import { useState } from "react";
 import {
   buildReferralUrl,

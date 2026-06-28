@@ -2,7 +2,7 @@
 
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronRight, Trophy, Users, PlumpTicket as TicketIcon } from "@/components/ui/icons";
+import { PlumpArrowRight as ChevronRight, Trophy, PlumpUsers as Users, PlumpTicket as TicketIcon } from "@/components/ui/icons";
 import { bloggerQk, fetchBloggerRaffles } from "@/lib/blogger-raffles";
 
 export const Route = createFileRoute("/blogger/raffles/")({

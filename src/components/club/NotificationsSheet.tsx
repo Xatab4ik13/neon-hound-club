@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Bell, BellOff, Download, Share, Plus, Check, AlertCircle } from "@/components/ui/icons";
+import { PlumpBell as Bell, BellOff, PlumpDownload as Download, Share, Plus, Check, AlertCircle } from "@/components/ui/icons";
 import { IOSSheet } from "@/components/ios/IOSSheet";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";

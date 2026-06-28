@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronRight, Trophy, PlumpStore, PlumpTicket } from "@/components/ui/icons";
+import { PlumpArrowRight as ChevronRight, Trophy, PlumpStore, PlumpTicket } from "@/components/ui/icons";
 import { TicketLedger } from "@/components/club/TicketLedger";
 import { TicketCard } from "@/components/club/TicketCard";
 import { PageHeader } from "@/components/club/PageHeader";

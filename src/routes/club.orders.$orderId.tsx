@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Loader2, Package, X } from "@/components/ui/icons";
+import { PlumpArrowLeft as ArrowLeft, Loader2, PlumpPackage as Package, PlumpClose as X } from "@/components/ui/icons";
 import { PageHeader } from "@/components/club/PageHeader";
 import { apiFetch } from "@/lib/api";
 import { fetchMyOrder, qk, type ShopOrderWithItems, type ShopOrderStatus } from "@/lib/queries";

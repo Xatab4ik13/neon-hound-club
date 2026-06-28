@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, Bike, Calendar, MapPin, Trophy } from "@/components/ui/icons";
+import { PlumpArrowLeft as ArrowLeft, Bike, Calendar, PlumpMap as MapPin, Trophy } from "@/components/ui/icons";
 import { RANKS, getRankSpan, type RankId } from "@/data/ranks";
 import { getUser, type PublicUser } from "@/data/users";
 import { PlaqueBackground } from "./club";

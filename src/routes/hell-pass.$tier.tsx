@@ -2,7 +2,7 @@
 // Аналог /club/hell-pass/$tier, но в публичном лэйауте и с CTA «Войти и оформить».
 
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { ArrowLeft, Check } from "@/components/ui/icons";
+import { PlumpArrowLeft as ArrowLeft, Check } from "@/components/ui/icons";
 import { Header } from "@/components/brand/Header";
 import { Footer } from "@/components/brand/Footer";
 import { getTier, type Perk, type Tier } from "@/data/hell-pass";
