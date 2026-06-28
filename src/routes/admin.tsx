@@ -167,88 +167,120 @@ const NAV: NavItem[] = [
 ];
 
 function AdminLayout() {
+  const { user, signOut } = useAdminViewer();
   const [theme, setTheme] = useState<"light" | "dark">(() => {
     if (typeof window === "undefined") return "dark";
     return (localStorage.getItem("admin-theme") as "light" | "dark" | null) ?? "dark";
   });
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
+  // Тема применяется на <html>, чтобы порталы (модалки, шторки)
+  // тоже подхватывали dark-вариант — иначе они остаются белыми.
   useEffect(() => {
-    if (typeof window !== "undefined") localStorage.setItem("admin-theme", theme);
+    if (typeof window === "undefined") return;
+    localStorage.setItem("admin-theme", theme);
+    const root = document.documentElement;
+    const hadDark = root.classList.contains("dark");
+    root.classList.add("hh-admin");
+    if (theme === "dark") root.classList.add("dark");
+    else root.classList.remove("dark");
+    return () => {
+      root.classList.remove("hh-admin");
+      if (!hadDark) root.classList.remove("dark");
+    };
   }, [theme]);
 
   useEffect(() => {
     setMobileOpen(false);
   }, [pathname]);
 
+  async function handleSignOut() {
+    if (signingOut) return;
+    setSigningOut(true);
+    try {
+      await signOut();
+    } finally {
+      setSigningOut(false);
+    }
+  }
+
   return (
-    <div className={cn(theme === "dark" ? "dark" : "")}>
-      <div className="flex min-h-screen w-full bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
-        {/* Sidebar — desktop */}
-        <aside className="hidden w-60 shrink-0 flex-col border-r border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900 md:flex">
-          <SidebarBrand />
-          <nav className="flex-1 space-y-0.5 overflow-y-auto p-2">
-            {NAV.map((item) => (
-              <NavLink key={item.to} item={item} active={isActive(pathname, item.to)} />
-            ))}
-          </nav>
-          <SidebarFooter />
-        </aside>
+    <div className="flex min-h-screen w-full bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
+      {/* Sidebar — desktop */}
+      <aside className="hidden w-60 shrink-0 flex-col border-r border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900 md:flex">
+        <SidebarBrand />
+        <nav className="flex-1 space-y-0.5 overflow-y-auto p-2">
+          {NAV.map((item) => (
+            <NavLink key={item.to} item={item} active={isActive(pathname, item.to)} />
+          ))}
+        </nav>
+        <SidebarFooter onSignOut={handleSignOut} signingOut={signingOut} />
+      </aside>
 
-        {/* Sidebar — mobile */}
-        {mobileOpen && (
-          <div className="fixed inset-0 z-50 md:hidden">
-            <div
-              className="absolute inset-0 bg-black/50"
-              onClick={() => setMobileOpen(false)}
-            />
-            <aside className="absolute left-0 top-0 flex h-full w-64 flex-col border-r border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
-              <SidebarBrand />
-              <nav className="flex-1 space-y-0.5 overflow-y-auto p-2">
-                {NAV.map((item) => (
-                  <NavLink key={item.to} item={item} active={isActive(pathname, item.to)} />
-                ))}
-              </nav>
-              <SidebarFooter />
-            </aside>
-          </div>
-        )}
-
-        {/* Main */}
-        <div className="flex min-w-0 flex-1 flex-col">
-          {/* Topbar */}
-          <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-zinc-200 bg-white px-3 dark:border-zinc-800 dark:bg-zinc-900 md:px-6">
-            <button
-              type="button"
-              className="rounded-md p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 md:hidden"
-              onClick={() => setMobileOpen(true)}
-              aria-label="Открыть меню"
-            >
-              <Menu className="h-5 w-5" />
-            </button>
-            <div className="flex-1 truncate text-sm font-medium text-zinc-500 dark:text-zinc-400">
-              {currentTitle(pathname)}
-            </div>
-            <button
-              type="button"
-              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              className="rounded-md p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-              aria-label="Переключить тему"
-            >
-              {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-            </button>
-            <div className="hidden h-6 w-px bg-zinc-200 dark:bg-zinc-800 sm:block" />
-            <div className="hidden text-right sm:block">
-              <div className="text-xs font-medium">admin@hellhound</div>
-              <div className="text-[10px] text-zinc-500 dark:text-zinc-400">Администратор</div>
-            </div>
-          </header>
-
-          <main className="flex-1 p-4 md:p-6">
-            <Outlet />
-          </main>
+      {/* Sidebar — mobile */}
+      {mobileOpen && (
+        <div className="fixed inset-0 z-50 md:hidden">
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={() => setMobileOpen(false)}
+          />
+          <aside className="absolute left-0 top-0 flex h-full w-64 flex-col border-r border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
+            <SidebarBrand />
+            <nav className="flex-1 space-y-0.5 overflow-y-auto p-2">
+              {NAV.map((item) => (
+                <NavLink key={item.to} item={item} active={isActive(pathname, item.to)} />
+              ))}
+            </nav>
+            <SidebarFooter onSignOut={handleSignOut} signingOut={signingOut} />
+          </aside>
         </div>
+      )}
+
+      {/* Main */}
+      <div className="flex min-w-0 flex-1 flex-col">
+        {/* Topbar */}
+        <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-zinc-200 bg-white px-3 dark:border-zinc-800 dark:bg-zinc-900 md:px-6">
+          <button
+            type="button"
+            className="rounded-md p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 md:hidden"
+            onClick={() => setMobileOpen(true)}
+            aria-label="Открыть меню"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+          <div className="flex-1 truncate text-sm font-medium text-zinc-500 dark:text-zinc-400">
+            {currentTitle(pathname)}
+          </div>
+          <button
+            type="button"
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            className="rounded-md p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+            aria-label="Переключить тему"
+          >
+            {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          </button>
+          <div className="hidden h-6 w-px bg-zinc-200 dark:bg-zinc-800 sm:block" />
+          <div className="hidden text-right sm:block">
+            <div className="text-xs font-medium">{user?.email ?? "—"}</div>
+            <div className="text-[10px] text-zinc-500 dark:text-zinc-400">Администратор</div>
+          </div>
+          <button
+            type="button"
+            onClick={handleSignOut}
+            disabled={signingOut}
+            className="hidden rounded-md p-2 text-zinc-500 hover:bg-zinc-100 hover:text-rose-600 disabled:opacity-50 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-rose-400 sm:inline-flex"
+            aria-label="Выйти из админки"
+            title="Выйти"
+          >
+            {signingOut ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogOut className="h-4 w-4" />}
+          </button>
+        </header>
+
+        <main className="flex-1 p-4 md:p-6">
+          <Outlet />
+        </main>
       </div>
     </div>
   );
@@ -270,9 +302,15 @@ function SidebarBrand() {
   );
 }
 
-function SidebarFooter() {
+function SidebarFooter({
+  onSignOut,
+  signingOut,
+}: {
+  onSignOut: () => void;
+  signingOut: boolean;
+}) {
   return (
-    <div className="border-t border-zinc-200 p-2 dark:border-zinc-800">
+    <div className="space-y-1 border-t border-zinc-200 p-2 dark:border-zinc-800">
       <Link
         to="/"
         className="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
@@ -280,6 +318,15 @@ function SidebarFooter() {
         <LogOut className="h-4 w-4" />
         На сайт
       </Link>
+      <button
+        type="button"
+        onClick={onSignOut}
+        disabled={signingOut}
+        className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-rose-600 hover:bg-rose-50 disabled:opacity-50 dark:text-rose-400 dark:hover:bg-rose-950/30"
+      >
+        {signingOut ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogOut className="h-4 w-4" />}
+        Выйти из админки
+      </button>
     </div>
   );
 }

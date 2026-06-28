@@ -578,3 +578,15 @@ body[data-modal-open="1"] [class*="plaque-"] {
 .hh-phone-input .PhoneInputCountrySelect:focus + .PhoneInputCountryIcon {
   outline: 2px solid var(--ring); outline-offset: 2px; border-radius: 2px;
 }
+
+/* Admin: тонкие скроллбары, чтобы не съедали верстку */
+html.hh-admin, html.hh-admin body { scrollbar-width: thin; }
+html.hh-admin *::-webkit-scrollbar { width: 8px; height: 8px; }
+html.hh-admin *::-webkit-scrollbar-track { background: transparent; }
+html.hh-admin *::-webkit-scrollbar-thumb {
+  background: color-mix(in oklab, currentColor 20%, transparent);
+  border-radius: 8px;
+}
+html.hh-admin *::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in oklab, currentColor 35%, transparent);
+}
