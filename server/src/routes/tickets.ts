@@ -42,7 +42,7 @@ export async function ticketsRoutes(app: FastifyInstance) {
     const { limit, cursor } = parsed.data;
 
     const where = cursor
-      ? sql`${ticketsLedger.userId} = ${session.sub} and ${ticketsLedger.createdAt} < ${new Date(cursor)}`
+      ? sql`${ticketsLedger.userId} = ${session.sub} and ${ticketsLedger.createdAt} < ${new Date(cursor).toISOString()}::timestamptz`
       : sql`${ticketsLedger.userId} = ${session.sub}`;
 
     const rows = await db
@@ -71,7 +71,7 @@ export async function ticketsRoutes(app: FastifyInstance) {
 export async function adminTicketsRoutes(app: FastifyInstance) {
   // GET /api/v1/admin/tickets/stats — KPI + разбивка по источникам
   app.get("/stats", { preHandler: requireAdmin }, async () => {
-    const d30 = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const d30 = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
 
     const [totals] = await db
       .select({
@@ -90,7 +90,7 @@ export async function adminTicketsRoutes(app: FastifyInstance) {
         spent30: sql<number>`coalesce(sum(case when amount < 0 then -amount else 0 end), 0)::int`,
       })
       .from(ticketsLedger)
-      .where(sql`${ticketsLedger.createdAt} >= ${d30}`);
+      .where(sql`${ticketsLedger.createdAt} >= ${d30}::timestamptz`);
 
     const bySourceRows = await db
       .select({
