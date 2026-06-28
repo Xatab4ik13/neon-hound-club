@@ -92,19 +92,65 @@ export async function adminTicketsRoutes(app: FastifyInstance) {
       .from(ticketsLedger)
       .where(sql`${ticketsLedger.createdAt} >= ${d30}::timestamptz`);
 
-    const bySourceRows = await db
+    // FIFO-разнос: для каждого юзера в хронологическом порядке
+    // кладём + в очередь партий с их source, а − съедает партии с головы.
+    // На выходе для каждого source: сколько выпущено, сколько из этого реально сожжено,
+    // сколько ещё лежит на руках.
+    const allRows = await db
       .select({
+        userId: ticketsLedger.userId,
         source: ticketsLedger.source,
-        issued: sql<number>`coalesce(sum(case when amount > 0 then amount else 0 end), 0)::int`,
-        spent: sql<number>`coalesce(sum(case when amount < 0 then -amount else 0 end), 0)::int`,
+        amount: ticketsLedger.amount,
       })
       .from(ticketsLedger)
-      .groupBy(ticketsLedger.source);
+      .orderBy(ticketsLedger.userId, ticketsLedger.createdAt, ticketsLedger.id);
+
+    type SourceAgg = { issued: number; burned: number; held: number };
+    const agg = new Map<string, SourceAgg>();
+    const bump = (src: string, key: keyof SourceAgg, n: number) => {
+      const cur = agg.get(src) ?? { issued: 0, burned: 0, held: 0 };
+      cur[key] += n;
+      agg.set(src, cur);
+    };
+
+    let curUser: string | null = null;
+    let queue: { source: string; left: number }[] = [];
+    for (const r of allRows) {
+      if (r.userId !== curUser) {
+        // финализируем хвост предыдущего юзера: остатки в партиях = «на руках»
+        for (const p of queue) if (p.left > 0) bump(p.source, "held", p.left);
+        curUser = r.userId;
+        queue = [];
+      }
+      if (r.amount > 0) {
+        bump(r.source, "issued", r.amount);
+        queue.push({ source: r.source, left: r.amount });
+      } else if (r.amount < 0) {
+        let need = -r.amount;
+        while (need > 0 && queue.length > 0) {
+          const head = queue[0]!;
+          const take = Math.min(head.left, need);
+          head.left -= take;
+          need -= take;
+          bump(head.source, "burned", take);
+          if (head.left === 0) queue.shift();
+        }
+        // если need > 0 — баланс уехал в минус (расхождение/правка вручную), игнорим
+      }
+    }
+    for (const p of queue) if (p.left > 0) bump(p.source, "held", p.left);
+
+    const bySource = Array.from(agg.entries()).map(([source, v]) => ({
+      source,
+      issued: v.issued,
+      burned: v.burned,
+      held: v.held,
+    }));
 
     return {
       totals: totals ?? { issued: 0, spent: 0, balance: 0, spentOnRaffles: 0, ops: 0, users: 0 },
       last30: last30 ?? { issued30: 0, spent30: 0 },
-      bySource: bySourceRows,
+      bySource,
     };
   });
 
