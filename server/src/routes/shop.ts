@@ -21,6 +21,11 @@ import {
   refundOrder,
   restockOrder,
 } from "../lib/shop.js";
+import {
+  createCdekWaybillForOrder,
+  refreshCdekStatusForOrder,
+  CdekOrderError,
+} from "../lib/cdek-orders.js";
 import { getActivePassPerks } from "../lib/pass.js";
 import { parsePagination } from "../lib/pagination.js";
 
@@ -594,6 +599,44 @@ export async function adminShopRoutes(app: FastifyInstance) {
     if (!full) return reply.code(404).send({ error: "not_found" });
     return full;
   });
+
+  // POST /api/v1/admin/shop/orders/:id/cdek/create — создать накладную в СДЭК
+  app.post<{ Params: { id: string } }>(
+    "/orders/:id/cdek/create",
+    { preHandler: requireAdmin },
+    async (req, reply) => {
+      try {
+        const r = await createCdekWaybillForOrder(req.params.id);
+        const full = await getOrderWithItems(req.params.id);
+        return { ...r, order: full };
+      } catch (e: any) {
+        if (e instanceof CdekOrderError) {
+          return reply.code(e.status).send({ error: e.code, message: e.message });
+        }
+        req.log.error({ err: e }, "cdek create waybill failed");
+        return reply.code(502).send({ error: "cdek_unavailable", message: String(e?.message ?? e) });
+      }
+    },
+  );
+
+  // POST /api/v1/admin/shop/orders/:id/cdek/refresh — подтянуть статус и cdek_number
+  app.post<{ Params: { id: string } }>(
+    "/orders/:id/cdek/refresh",
+    { preHandler: requireAdmin },
+    async (req, reply) => {
+      try {
+        const r = await refreshCdekStatusForOrder(req.params.id);
+        const full = await getOrderWithItems(req.params.id);
+        return { ...r, order: full };
+      } catch (e: any) {
+        if (e instanceof CdekOrderError) {
+          return reply.code(e.status).send({ error: e.code, message: e.message });
+        }
+        req.log.error({ err: e }, "cdek refresh failed");
+        return reply.code(502).send({ error: "cdek_unavailable", message: String(e?.message ?? e) });
+      }
+    },
+  );
 
   // ----- CATEGORIES -----
   app.get("/categories", { preHandler: requireAdmin }, async () => {
