@@ -418,6 +418,7 @@ function CdekBlock({
   onChanged: () => void;
 }) {
   const [err, setErr] = useState<string | null>(null);
+  const [printing, setPrinting] = useState(false);
   const create = useMutation({
     mutationFn: () => createCdekWaybill(order.id),
     onSuccess: () => {
