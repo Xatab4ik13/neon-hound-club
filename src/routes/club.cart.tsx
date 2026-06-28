@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { Minus, Plus, ShoppingBag, PlumpTicket, Trash2, ChevronLeft } from "@/components/ui/icons";
+import { Minus, Plus, PlumpCart, PlumpTicket, Trash2, ChevronLeft } from "@/components/ui/icons";
 import { AnimatePresence, motion } from "framer-motion";
 // toast удалён — больше никаких всплывашек в проекте
 import { useCart, type CartItem } from "@/hooks/use-cart";
@@ -51,7 +51,7 @@ function CartImage({
   if (!src || failed) {
     return (
       <div className={`${className} grid place-items-center text-muted-foreground/60`}>
-        <ShoppingBag className={iconSize} />
+        <PlumpCart className={iconSize} />
       </div>
     );
   }
@@ -422,7 +422,7 @@ function EmptyBlock() {
   return (
     <div className="grid place-items-center rounded-2xl border border-dashed border-white/[0.08] bg-card/40 px-6 py-16 text-center">
       <div className="grid h-14 w-14 place-items-center rounded-full bg-primary/10 text-primary">
-        <ShoppingBag className="h-6 w-6" />
+        <PlumpCart className="h-6 w-6" />
       </div>
       <div className="mt-4 text-[15px] font-semibold text-foreground">Корзина пуста</div>
       <p className="mt-1.5 max-w-[32ch] text-[14px] text-muted-foreground/80">

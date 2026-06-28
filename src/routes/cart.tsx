@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMemo } from "react";
-import { ShoppingBag, PlumpTicket } from "@/components/ui/icons";
+import { PlumpCart, PlumpTicket } from "@/components/ui/icons";
 import { Header } from "@/components/brand/Header";
 import { Footer } from "@/components/brand/Footer";
 import { Button } from "@/components/ui/button";
@@ -81,7 +81,7 @@ function CartPage() {
                         />
                       ) : (
                         <div className="grid size-full place-items-center text-muted-foreground/60">
-                          <ShoppingBag className="h-6 w-6" />
+                          <PlumpCart className="h-6 w-6" />
                         </div>
                       )}
                     </Link>

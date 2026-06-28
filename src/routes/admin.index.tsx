@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { TrendingUp, Users, PlumpTicket, Trophy, ShoppingBag, Crown, Loader2 } from "@/components/ui/icons";
+import { TrendingUp, Users, PlumpTicket, Trophy, PlumpStore, Crown, Loader2 } from "@/components/ui/icons";
 import { fetchAdminDashboard } from "@/lib/admin-queries";
 
 export const Route = createFileRoute("/admin/")({
@@ -61,7 +61,7 @@ function Dashboard() {
     { label: "Новых пользователей / 7д", value: String(data.kpi.newUsers7d), icon: Users },
     { label: "Билетов в обороте", value: data.kpi.ticketsInCirculation.toLocaleString("ru-RU"), icon: PlumpTicket },
     { label: "Активных розыгрышей", value: String(data.kpi.rafflesActive), delta: `${data.kpi.rafflesBankTickets.toLocaleString("ru-RU")} билетов в банке`, icon: Trophy },
-    { label: "Заказов за 7 дней", value: String(data.kpi.orders7d), icon: ShoppingBag },
+    { label: "Заказов за 7 дней", value: String(data.kpi.orders7d), icon: PlumpStore },
   ];
 
   return (

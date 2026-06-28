@@ -1,5 +1,5 @@
 import { Link, useRouter, useRouterState } from "@tanstack/react-router";
-import { Bell, ChevronLeft, ShoppingBag } from "@/components/ui/icons";
+import { Bell, ChevronLeft, PlumpCart } from "@/components/ui/icons";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { RANKS } from "@/data/ranks";
 import type { RankMeta } from "@/data/ranks";
@@ -197,7 +197,7 @@ export function MobileTopBar() {
             className="relative grid h-10 w-10 shrink-0 place-items-center text-foreground transition-transform active:scale-90 active:opacity-60"
           >
             <span key={`glow-${glow}`} className="absolute inset-0 hh-cart-glow" aria-hidden />
-            <ShoppingBag className="h-[22px] w-[22px]" strokeWidth={1.9} />
+            <PlumpCart className="h-[22px] w-[22px]" strokeWidth={1.9} />
             {cartCount > 0 && (
               <span
                 key={`badge-${bump}`}

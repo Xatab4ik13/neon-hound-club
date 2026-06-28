@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Search, X, ShoppingBag, PlumpTicket, SlidersHorizontal, PlumpStore } from "@/components/ui/icons";
+import { Search, X, PlumpStore, PlumpTicket, SlidersHorizontal, PlumpStore } from "@/components/ui/icons";
 import { LazyImage } from "@/components/ui/lazy-image";
 import {
   fetchShopCategories,
@@ -290,7 +290,7 @@ function ProductCard({ product }: { product: ShopProductListItem }) {
           />
         ) : (
           <div className="grid h-full w-full place-items-center text-muted-foreground/60">
-            <ShoppingBag className="h-8 w-8" />
+            <PlumpStore className="h-8 w-8" />
           </div>
         )}
         {sold && (
