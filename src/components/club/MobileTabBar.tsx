@@ -1,21 +1,23 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Newspaper, ShoppingBag, Ticket, Bike, MoreHorizontal, type LucideIcon } from "@/components/ui/icons";
+import { PlumpFeed, PlumpStore, PlumpTicket, PlumpGarage, PlumpMore } from "@/components/ui/icons";
 import { useState } from "react";
 import { MobileMoreSheet } from "./MobileMoreSheet";
 import { haptic } from "@/hooks/use-haptic";
 
+type TabIcon = React.ComponentType<React.SVGProps<SVGSVGElement>>;
+
 type Tab = {
   label: string;
   href: "/club" | "/club/shop" | "/club/tickets" | "/club/garage";
-  icon: LucideIcon;
+  icon: TabIcon;
   exact?: boolean;
 };
 
 const TABS: Tab[] = [
-  { label: "Лента", href: "/club", icon: Newspaper, exact: true },
-  { label: "Магазин", href: "/club/shop", icon: ShoppingBag },
-  { label: "Билеты", href: "/club/tickets", icon: Ticket },
-  { label: "Гараж", href: "/club/garage", icon: Bike },
+  { label: "Лента", href: "/club", icon: PlumpFeed, exact: true },
+  { label: "Магазин", href: "/club/shop", icon: PlumpStore },
+  { label: "Билеты", href: "/club/tickets", icon: PlumpTicket },
+  { label: "Гараж", href: "/club/garage", icon: PlumpGarage },
 ];
 
 
@@ -110,7 +112,7 @@ export function MobileTabBar() {
               aria-label="Открыть остальную навигацию"
             >
               <span className={pillClass(moreActive || moreOpen)}>
-                <MoreHorizontal
+                <PlumpMore
                   className="h-[24px] w-[24px]"
                   strokeWidth={moreActive || moreOpen ? 2.6 : 2}
                 />
