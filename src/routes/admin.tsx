@@ -24,7 +24,7 @@ import {
   LifeBuoy,
 } from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
-import { useViewer } from "@/hooks/use-viewer";
+import { AdminViewerProvider, useAdminViewer } from "@/hooks/use-admin-viewer";
 import { ApiError } from "@/lib/api";
 
 export const Route = createFileRoute("/admin")({
@@ -34,11 +34,22 @@ export const Route = createFileRoute("/admin")({
       { name: "robots", content: "noindex, nofollow" },
     ],
   }),
-  component: AdminGate,
+  component: AdminRoot,
 });
 
+function AdminRoot() {
+  // Админский контекст изолирован от клубного useViewer — отдельная cookie
+  // hh_admin_sid, отдельные роуты /api/v1/auth/admin/*. Вход сюда НЕ создаёт
+  // сессию в клубе и наоборот.
+  return (
+    <AdminViewerProvider>
+      <AdminGate />
+    </AdminViewerProvider>
+  );
+}
+
 function AdminGate() {
-  const { hydrated, isAuthed, user } = useViewer();
+  const { hydrated, isAuthed, user } = useAdminViewer();
 
   if (!hydrated) {
     return (
@@ -49,14 +60,14 @@ function AdminGate() {
   }
 
   if (!isAuthed || user?.role !== "admin") {
-    return <AdminLogin reason={isAuthed ? "not_admin" : "guest"} />;
+    return <AdminLogin />;
   }
 
   return <AdminLayout />;
 }
 
-function AdminLogin({ reason }: { reason: "guest" | "not_admin" }) {
-  const { signIn, signOut } = useViewer();
+function AdminLogin() {
+  const { signIn } = useAdminViewer();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -67,11 +78,7 @@ function AdminLogin({ reason }: { reason: "guest" | "not_admin" }) {
     setError(null);
     setBusy(true);
     try {
-      const u = await signIn(email.trim(), password);
-      if (u.role !== "admin") {
-        setError("Этот аккаунт не админ.");
-        await signOut().catch(() => {});
-      }
+      await signIn(email.trim(), password);
     } catch (err) {
       const msg =
         err instanceof ApiError
@@ -93,9 +100,7 @@ function AdminLogin({ reason }: { reason: "guest" | "not_admin" }) {
           <div>
             <div className="text-lg font-semibold">Вход в админку</div>
             <div className="mt-1 text-xs text-zinc-400">
-              {reason === "not_admin"
-                ? "Текущий аккаунт без прав администратора."
-                : "Только для администраторов HELLHOUND."}
+              Только для администраторов HELLHOUND.
             </div>
           </div>
           <div className="space-y-2">
