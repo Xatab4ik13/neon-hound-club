@@ -1,7 +1,7 @@
 // Единая точка для React Query-ключей и factory-функций для бэк-эндпоинтов.
 // Тонкая обёртка вокруг apiFetch — никакой бизнес-логики, только формы запросов и ответов.
 
-import { apiFetch } from "@/lib/api";
+import { apiFetch, ApiError, BACKEND_URL } from "@/lib/api";
 
 // ---------- TYPES (синхронны с server/src/db/schema) ----------
 
