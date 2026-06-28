@@ -121,24 +121,48 @@ function StatsBlock() {
       {s && s.bySource.length > 0 && (
         <Panel>
           <PanelHeader>
-            <div className="text-sm font-medium">Разбивка по источникам</div>
+            <div className="flex items-baseline justify-between gap-2">
+              <div className="text-sm font-medium">Разбивка по источникам</div>
+              <div className="text-xs text-zinc-500">
+                Кто откуда получил и сколько из этого реально сжёг · оценка по FIFO
+              </div>
+            </div>
           </PanelHeader>
-          <DataTable
-            headers={["Источник", "Выпущено", "Сожжено", "Чистое"]}
-            rows={s.bySource
+          <div className="divide-y divide-zinc-200 dark:divide-zinc-800">
+            {s.bySource
               .slice()
               .sort((a, b) => b.issued - a.issued)
-              .map((r) => [
-                <span className="font-medium">{SOURCE_LABEL[r.source] ?? r.source}</span>,
-                <span className="tabular-nums text-emerald-600 dark:text-emerald-400">
-                  +{fmt(r.issued)}
-                </span>,
-                <span className="tabular-nums text-rose-600 dark:text-rose-400">
-                  {r.spent ? `−${fmt(r.spent)}` : "—"}
-                </span>,
-                <span className="tabular-nums font-semibold">{fmt(r.issued - r.spent)}</span>,
-              ])}
-          />
+              .map((r) => {
+                const burnPct = r.issued > 0 ? Math.min(100, (r.burned / r.issued) * 100) : 0;
+                return (
+                  <div key={r.source} className="px-4 py-3">
+                    <div className="flex items-baseline justify-between gap-3">
+                      <div className="text-sm font-medium">
+                        {SOURCE_LABEL[r.source] ?? r.source}
+                      </div>
+                      <div className="flex gap-4 text-xs tabular-nums">
+                        <span className="text-emerald-600 dark:text-emerald-400">
+                          выпущено <b className="font-semibold">{fmt(r.issued)}</b>
+                        </span>
+                        <span className="text-rose-600 dark:text-rose-400">
+                          сожжено <b className="font-semibold">{fmt(r.burned)}</b>
+                        </span>
+                        <span className="text-zinc-700 dark:text-zinc-300">
+                          на руках <b className="font-semibold">{fmt(r.held)}</b>
+                        </span>
+                      </div>
+                    </div>
+                    <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
+                      <div
+                        className="h-full bg-rose-500/70"
+                        style={{ width: `${burnPct}%` }}
+                        title={`${burnPct.toFixed(0)}% сожжено`}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+          </div>
         </Panel>
       )}
     </div>
