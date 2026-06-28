@@ -4,7 +4,7 @@
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, PlumpPackage as Package, Phone, PlumpMap as MapPin, User as UserIcon, RefreshCw, PlumpClose as X, Download, type LucideIcon } from "@/components/ui/icons";
+import { Loader2, PlumpPackage as Package, Phone, PlumpMap as MapPin, User as UserIcon, RefreshCw, PlumpClose as X, PlumpDownload as Download, type LucideIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
 import { ApiError } from "@/lib/api";
 import { AdminPager, type AdminPageSize } from "@/components/admin/AdminPager";
