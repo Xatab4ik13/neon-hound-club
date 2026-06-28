@@ -445,6 +445,18 @@ export function giftPass(userId: string, tier: "silver" | "gold" | "platinum") {
   );
 }
 
+export type GiftableStickerPack = { slug: string; title: string };
+export function fetchGiftableStickerPacks() {
+  return apiFetch<{ items: GiftableStickerPack[] }>("/api/v1/admin/users/sticker-packs");
+}
+
+export function giftStickerPack(userId: string, packSlug: string) {
+  return apiFetch<{ ok: true; packSlug: string }>(
+    `/api/v1/admin/users/${userId}/gift-stickers`,
+    { method: "POST", body: JSON.stringify({ packSlug }) },
+  );
+}
+
 export type AdminLedgerRow = {
   id: string;
   userId: string;

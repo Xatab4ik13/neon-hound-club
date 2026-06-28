@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Ban, Gift, ShieldCheck, Trash2, Sparkles, Award } from "@/components/ui/icons";
+import { Ban, Gift, ShieldCheck, Trash2, Sparkles, Award, PlumpSmile as Smile } from "@/components/ui/icons";
 import {
   PageHeader,
   Panel,
@@ -23,7 +23,9 @@ import {
   fetchAdminUsers,
   fetchAdminUserBadges,
   fetchAdminBadges,
+  fetchGiftableStickerPacks,
   giftPass,
+  giftStickerPack,
   grantXp,
   awardBadge,
   patchAdminUser,
@@ -42,6 +44,7 @@ function UsersPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [giftOpen, setGiftOpen] = useState(false);
   const [giftPassOpen, setGiftPassOpen] = useState(false);
+  const [giftStickersOpen, setGiftStickersOpen] = useState(false);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState<AdminPageSize>(50);
 
@@ -116,6 +119,7 @@ function UsersPage() {
           onClose={() => setSelectedId(null)}
           onGift={() => setGiftOpen(true)}
           onGiftPass={() => setGiftPassOpen(true)}
+          onGiftStickers={() => setGiftStickersOpen(true)}
         />
       )}
 
@@ -124,6 +128,9 @@ function UsersPage() {
       )}
       {selectedId && giftPassOpen && (
         <GiftPassModal userId={selectedId} onClose={() => setGiftPassOpen(false)} />
+      )}
+      {selectedId && giftStickersOpen && (
+        <GiftStickersModal userId={selectedId} onClose={() => setGiftStickersOpen(false)} />
       )}
     </div>
   );
@@ -134,11 +141,13 @@ function UserDrawer({
   onClose,
   onGift,
   onGiftPass,
+  onGiftStickers,
 }: {
   userId: string;
   onClose: () => void;
   onGift: () => void;
   onGiftPass: () => void;
+  onGiftStickers: () => void;
 }) {
   const qc = useQueryClient();
   const userQ = useQuery({
@@ -221,9 +230,19 @@ function UserDrawer({
       {u && (
         <div className="space-y-5">
           <div className="flex items-center gap-3">
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-zinc-200 text-xl font-bold dark:bg-zinc-800">
-              {u.nick[0]?.toUpperCase()}
-            </div>
+            {u.avatarUrl ? (
+              <img
+                src={u.avatarUrl}
+                alt={`@${u.nick}`}
+                loading="lazy"
+                decoding="async"
+                className="h-14 w-14 rounded-full object-cover ring-1 ring-zinc-200 dark:ring-zinc-800"
+              />
+            ) : (
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-zinc-200 to-zinc-300 text-xl font-bold text-zinc-700 dark:from-zinc-700 dark:to-zinc-800 dark:text-zinc-100">
+                {u.nick[0]?.toUpperCase()}
+              </div>
+            )}
             <div>
               <div className="text-lg font-semibold">@{u.nick}</div>
               <div className="text-xs text-zinc-500 dark:text-zinc-400">{u.email}</div>
@@ -301,6 +320,9 @@ function UserDrawer({
             </Btn>
             <Btn onClick={onGiftPass}>
               <Gift className="h-4 w-4" /> Подарить Hell Pass
+            </Btn>
+            <Btn onClick={onGiftStickers}>
+              <Smile className="h-4 w-4" /> Подарить стикерпак
             </Btn>
           </div>
         </div>
@@ -568,6 +590,63 @@ function GiftPassModal({ userId, onClose }: { userId: string; onClose: () => voi
         <div className="flex justify-end gap-2 pt-2">
           <Btn onClick={onClose}>Отмена</Btn>
           <Btn variant="primary" disabled={mut.isPending} onClick={() => mut.mutate()}>
+            {mut.isPending ? "…" : "Подарить"}
+          </Btn>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+function GiftStickersModal({ userId, onClose }: { userId: string; onClose: () => void }) {
+  const qc = useQueryClient();
+  const packsQ = useQuery({
+    queryKey: ["admin", "sticker-packs"],
+    queryFn: fetchGiftableStickerPacks,
+  });
+  const [slug, setSlug] = useState("");
+
+  const mut = useMutation({
+    mutationFn: () => giftStickerPack(userId, slug),
+    onSuccess: () => {
+      toast.success("Стикерпак подарен");
+      qc.invalidateQueries({ queryKey: adminQk.user(userId) });
+      onClose();
+    },
+    onError: (e) => toast.error(e instanceof ApiError ? e.message : "Ошибка"),
+  });
+
+  const items = packsQ.data?.items ?? [];
+
+  return (
+    <Modal open onClose={onClose} title="Подарить стикерпак">
+      <div className="space-y-3">
+        <div className="text-xs text-zinc-500 dark:text-zinc-400">
+          Пак появится у пользователя сразу. Повторное дарение не дублируется.
+        </div>
+        <div className="space-y-2">
+          {packsQ.isLoading && (
+            <div className="text-sm text-zinc-500">Загрузка…</div>
+          )}
+          {items.map((p) => (
+            <button
+              key={p.slug}
+              type="button"
+              onClick={() => setSlug(p.slug)}
+              className={`w-full rounded-md border px-3 py-2 text-left text-sm transition ${
+                slug === p.slug
+                  ? "border-amber-500 bg-amber-50 dark:bg-amber-950/30"
+                  : "border-zinc-200 hover:border-zinc-400 dark:border-zinc-800 dark:hover:border-zinc-600"
+              }`}
+            >
+              <div className="font-semibold">{p.title}</div>
+              <div className="text-xs text-zinc-500">{p.slug}</div>
+            </button>
+          ))}
+        </div>
+        <div className="flex justify-end gap-2 pt-2">
+          <Btn onClick={onClose}>Отмена</Btn>
+          <Btn variant="primary" disabled={!slug || mut.isPending} onClick={() => mut.mutate()}>
             {mut.isPending ? "…" : "Подарить"}
           </Btn>
         </div>

@@ -8,10 +8,19 @@ import { passPurchases, PASS_CONFIG, PASS_TIERS, type PassTier } from "../db/sch
 import { ticketsLedger } from "../db/schema/tickets.js";
 import { orders } from "../db/schema/shop.js";
 import { badges, userBadges } from "../db/schema/badges.js";
+import { userStickerPacks } from "../db/schema/stickers.js";
 import { requireAdmin, hashPassword } from "../lib/auth.js";
 import { getOrCreateReferralCode } from "../lib/referrals.js";
 import { activatePassPurchase } from "../lib/pass.js";
 import { parsePagination } from "../lib/pagination.js";
+
+// Список платных стикерпаков, которые админ может дарить.
+// Должен совпадать с ALL_PACK_SLUGS в server/src/routes/stickers.ts.
+const GIFTABLE_STICKER_PACKS = [
+  { slug: "special", title: "Special" },
+  { slug: "hell-minions", title: "Hell Minions" },
+] as const;
+const STICKER_PACK_SLUGS = GIFTABLE_STICKER_PACKS.map((p) => p.slug) as [string, ...string[]];
 
 
 /**
@@ -337,6 +346,35 @@ export async function adminUsersRoutes(app: FastifyInstance) {
       return reply.code(500).send({ error: "activation_failed", reason: res.reason });
     }
     return { ok: true, tier, purchaseId: purchase!.id };
+  });
+
+  // GET /api/v1/admin/users/sticker-packs — список паков, которые админ может подарить
+  app.get("/sticker-packs", async () => {
+    return { items: GIFTABLE_STICKER_PACKS };
+  });
+
+  // POST /api/v1/admin/users/:id/gift-stickers — подарить стикерпак
+  const giftStickersSchema = z.object({
+    packSlug: z.enum(STICKER_PACK_SLUGS),
+  });
+  app.post<{ Params: { id: string } }>("/:id/gift-stickers", async (req, reply) => {
+    const parsed = giftStickersSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return reply.code(400).send({ error: "invalid_input", message: parsed.error.issues[0]?.message });
+    }
+    const [u] = await db.select({ id: users.id }).from(users).where(eq(users.id, req.params.id)).limit(1);
+    if (!u) return reply.code(404).send({ error: "not_found" });
+
+    try {
+      await db
+        .insert(userStickerPacks)
+        .values({ userId: u.id, packSlug: parsed.data.packSlug, source: "gift" })
+        .onConflictDoNothing();
+    } catch (err: any) {
+      req.log.error({ err }, "gift stickers failed");
+      return reply.code(500).send({ error: "gift_failed" });
+    }
+    return { ok: true, packSlug: parsed.data.packSlug };
   });
 }
 
