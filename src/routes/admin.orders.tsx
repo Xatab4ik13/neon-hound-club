@@ -391,7 +391,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-function Row({ icon: Icon, children }: { icon: typeof Package; children: React.ReactNode }) {
+function Row({ icon: Icon, children }: { icon: LucideIcon; children: React.ReactNode }) {
   return (
     <div className="flex items-start gap-2 py-0.5 text-sm">
       <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-zinc-400" />

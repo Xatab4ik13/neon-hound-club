@@ -88,7 +88,7 @@ export const Route = createFileRoute("/admin/shop")({
 
 type Tab = "products" | "categories" | "showcase" | "orders";
 
-const TABS: { key: Tab; label: string; icon: typeof Package }[] = [
+const TABS: { key: Tab; label: string; icon: LucideIcon }[] = [
   { key: "products", label: "Товары", icon: Package },
   { key: "categories", label: "Категории", icon: FolderTree },
   { key: "showcase", label: "Витрина", icon: Star },
