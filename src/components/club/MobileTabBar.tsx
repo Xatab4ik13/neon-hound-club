@@ -112,7 +112,7 @@ export function MobileTabBar() {
               aria-label="Открыть остальную навигацию"
             >
               <span className={pillClass(moreActive || moreOpen)}>
-                <MoreHorizontal
+                <PlumpMore
                   className="h-[24px] w-[24px]"
                   strokeWidth={moreActive || moreOpen ? 2.6 : 2}
                 />
