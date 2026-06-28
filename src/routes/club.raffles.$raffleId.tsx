@@ -325,6 +325,7 @@ function RaffleDetailContent({
               stake={stake}
               maxStake={maxStake}
               isAuthed={isAuthed}
+              phoneRequired={phoneRequired}
               isPending={enterMut.isPending}
               onStakeChange={(v) => setStake(Math.max(0, Math.min(maxStake, v)))}
               onStake={handleStake}
@@ -353,6 +354,7 @@ function RaffleDetailContent({
                 stake={stake}
                 maxStake={maxStake}
                 isAuthed={isAuthed}
+                phoneRequired={phoneRequired}
                 isPending={enterMut.isPending}
                 onStakeChange={(v) => setStake(Math.max(0, Math.min(maxStake, v)))}
                 onStake={handleStake}
