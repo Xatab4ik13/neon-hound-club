@@ -19,6 +19,7 @@ import {
   Upload,
   Wrench,
   X,
+  PlumpGarage,
 } from "@/components/ui/icons";
 import { motion, AnimatePresence } from "framer-motion";
 import placeholderBike from "@/assets/bikes/placeholder.png";
