@@ -353,10 +353,59 @@ async function getCdekOrder(uuid: string): Promise<CdekOrderInfo> {
   };
 }
 
+// ---------- Печать квитанции (PDF накладной) ----------
+
+/**
+ * Запрашивает у СДЭК PDF-квитанцию по uuid накладной.
+ * Двухшаговый процесс: POST /print/orders → uuid задания, GET /print/orders/{uuid} → опрос статуса и url PDF.
+ * Возвращает бинарь PDF.
+ */
+async function printCdekOrder(orderUuid: string, opts?: { copyCount?: number }): Promise<Buffer> {
+  type CreateResp = {
+    entity?: { uuid: string };
+    requests?: Array<{ state: string; errors?: Array<{ code: string; message: string }> }>;
+  };
+  const created = await cdekFetch<CreateResp>("/print/orders", {
+    method: "POST",
+    body: JSON.stringify({
+      orders: [{ order_uuid: orderUuid }],
+      copy_count: Math.max(1, Math.min(10, opts?.copyCount ?? 2)),
+    }),
+  });
+  const errs = created.requests?.flatMap((r) => r.errors ?? []) ?? [];
+  if (errs.length) throw new Error(`[cdek] print create: ${errs.map((e) => `${e.code} ${e.message}`).join("; ")}`);
+  const printUuid = created.entity?.uuid;
+  if (!printUuid) throw new Error("[cdek] print create: no uuid");
+
+  type StatusResp = {
+    entity?: { uuid: string; url?: string; statuses?: Array<{ code: string; name: string }> };
+  };
+  let url: string | null = null;
+  for (let attempt = 0; attempt < 15; attempt++) {
+    const info = await cdekFetch<StatusResp>(`/print/orders/${printUuid}`);
+    const last = info.entity?.statuses?.[info.entity.statuses.length - 1];
+    if (info.entity?.url && (last?.code === "READY" || last?.code === "ACCEPTED" || !last)) {
+      url = info.entity.url;
+      break;
+    }
+    if (last?.code === "INVALID" || last?.code === "REMOVED") {
+      throw new Error(`[cdek] print status: ${last.code} ${last.name}`);
+    }
+    await new Promise((r) => setTimeout(r, 1000));
+  }
+  if (!url) throw new Error("[cdek] print: timeout waiting for PDF");
+
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`[cdek] print download: ${res.status}`);
+  const ab = await res.arrayBuffer();
+  return Buffer.from(ab);
+}
+
 export const cdek = {
   searchCities,
   getPickupPoints,
   calculate,
   createOrder: createCdekOrder,
   getOrder: getCdekOrder,
+  printOrder: printCdekOrder,
 };
