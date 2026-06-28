@@ -10,7 +10,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Check, Loader2, MapPin, Search, Truck, X } from "@/components/ui/icons";
+import { Check, Loader2, PlumpMap as MapPin, PlumpSearch as Search, PlumpTruck as Truck, PlumpClose as X } from "@/components/ui/icons";
 import { apiFetch } from "@/lib/api";
 import { loadYandexMaps } from "@/lib/yandex-maps";
 

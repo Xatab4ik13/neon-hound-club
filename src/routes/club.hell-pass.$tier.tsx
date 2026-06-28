@@ -7,7 +7,7 @@
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
-import { ArrowLeft, Check } from "@/components/ui/icons";
+import { PlumpArrowLeft as ArrowLeft, Check } from "@/components/ui/icons";
 import { PayButton } from "@/components/brand/PayButton";
 import { getTier, type Perk, type Tier } from "@/data/hell-pass";
 import { fetchPassMe, qk, type PassTier } from "@/lib/queries";

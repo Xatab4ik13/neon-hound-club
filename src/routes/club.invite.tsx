@@ -6,7 +6,7 @@ import {
   Send,
   Share2,
   PlumpTicket,
-  Users,
+  PlumpUsers as Users,
 } from "@/components/ui/icons";
 import { useState } from "react";
 import { PageHeader } from "@/components/club/PageHeader";

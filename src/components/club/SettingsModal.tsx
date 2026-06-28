@@ -7,14 +7,14 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import {
   Bike,
-  Bell,
+  PlumpBell as Bell,
   ShieldAlert,
   LogOut,
   Trash2,
   User,
-  X,
+  PlumpClose as X,
   Loader2,
-  Camera,
+  PlumpCamera as Camera,
 } from "@/components/ui/icons";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useViewer } from "@/hooks/use-viewer";

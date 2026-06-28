@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { Minus, Plus, PlumpCart, PlumpTicket, Trash2, ChevronLeft } from "@/components/ui/icons";
+import { Minus, Plus, PlumpCart, PlumpTicket, Trash2, PlumpArrowLeft as ChevronLeft } from "@/components/ui/icons";
 import { AnimatePresence, motion } from "framer-motion";
 // toast удалён — больше никаких всплывашек в проекте
 import { useCart, type CartItem } from "@/hooks/use-cart";

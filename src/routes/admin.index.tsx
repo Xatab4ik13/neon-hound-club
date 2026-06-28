@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { TrendingUp, Users, PlumpTicket, Trophy, PlumpStore, Crown, Loader2 } from "@/components/ui/icons";
+import { TrendingUp, PlumpUsers as Users, PlumpTicket, Trophy, PlumpStore, Crown, Loader2 } from "@/components/ui/icons";
 import { fetchAdminDashboard } from "@/lib/admin-queries";
 
 export const Route = createFileRoute("/admin/")({

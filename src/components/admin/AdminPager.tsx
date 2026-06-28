@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight } from "@/components/ui/icons";
+import { PlumpArrowLeft as ChevronLeft, PlumpArrowRight as ChevronRight } from "@/components/ui/icons";
 
 export const ADMIN_PAGE_SIZE_OPTIONS = [50, 100, 200] as const;
 export type AdminPageSize = (typeof ADMIN_PAGE_SIZE_OPTIONS)[number];

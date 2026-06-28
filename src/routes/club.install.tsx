@@ -5,7 +5,7 @@
 
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Apple, Bell, BellOff, Check, Download, Share, Smartphone, Sparkles, PlumpTicket } from "@/components/ui/icons";
+import { Apple, PlumpBell as Bell, BellOff, Check, PlumpDownload as Download, Share, Smartphone, Sparkles, PlumpTicket } from "@/components/ui/icons";
 import { PageHeader } from "@/components/club/PageHeader";
 import {
   getPushPermission,

@@ -5,7 +5,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Edit, Trophy, Ban, Upload, X, Trash2, Users } from "@/components/ui/icons";
+import { Plus, Edit, Trophy, Ban, Upload, PlumpClose as X, Trash2, PlumpUsers as Users } from "@/components/ui/icons";
 import { hhToast as toast } from "@/lib/hh-toast";
 import {
   PageHeader,

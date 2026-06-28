@@ -4,7 +4,7 @@
 
 import { createFileRoute } from "@tanstack/react-router";
 import { useRef, useState } from "react";
-import { Image as ImageIcon, Send, X, Plus, PlumpPoll } from "@/components/ui/icons";
+import { PlumpImage as ImageIcon, Send, PlumpClose as X, Plus, PlumpPoll } from "@/components/ui/icons";
 import { feedStore, useFeedPosts, type FeedPoll } from "@/data/feed-store";
 import { HellhoundAvatar } from "@/components/club/HellhoundPlaque";
 import { useBloggerProfile } from "@/data/blogger-profile";

@@ -1,10 +1,11 @@
-// iOS-style top bar для /blogger. На «вкладках» — Hell-плашка во всю ширину.
+// iOS-style top bar для /blogger. На «вкладках» — Hell-плашка + колокольчик.
 // На вложенных страницах — chevron «Назад» + центрированный заголовок.
-// Стилистика подтянута к клубному MobileTopBar (стеклянный фон, без колокольчика).
 
 import { useRouter, useRouterState } from "@tanstack/react-router";
-import { ChevronLeft } from "@/components/ui/icons";
+import { useState } from "react";
+import { PlumpArrowLeft as ChevronLeft, PlumpBell as Bell } from "@/components/ui/icons";
 import { HellhoundPlaqueLarge } from "@/components/club/HellhoundPlaque";
+import { NotificationsSheet } from "@/components/club/NotificationsSheet";
 import { useBloggerProfile } from "@/data/blogger-profile";
 
 const TAB_PATHS = ["/blogger", "/blogger/hell-ai", "/blogger/raffles", "/blogger/settings"];
@@ -23,6 +24,7 @@ export function BloggerMobileTopBar({ onPlaqueClick }: { onPlaqueClick: () => vo
   const profile = useBloggerProfile();
   const isTab = TAB_PATHS.includes(pathname);
   const title = titleFor(pathname);
+  const [notifOpen, setNotifOpen] = useState(false);
 
   const handleBack = () => {
     if (typeof window !== "undefined" && window.history.length > 1) {
@@ -50,7 +52,16 @@ export function BloggerMobileTopBar({ onPlaqueClick }: { onPlaqueClick: () => vo
               onClick={onPlaqueClick}
             />
           </div>
+          <button
+            type="button"
+            onClick={() => setNotifOpen(true)}
+            aria-label="Уведомления"
+            className="relative grid h-10 w-10 shrink-0 place-items-center text-foreground transition-transform active:scale-90 active:opacity-60"
+          >
+            <Bell className="h-[22px] w-[22px]" />
+          </button>
         </div>
+        <NotificationsSheet open={notifOpen} onOpenChange={setNotifOpen} />
       </header>
     );
   }
@@ -71,7 +82,7 @@ export function BloggerMobileTopBar({ onPlaqueClick }: { onPlaqueClick: () => vo
             className="-ml-1 flex h-8 items-center pl-1 pr-2 text-primary active:opacity-60"
             aria-label="Назад"
           >
-            <ChevronLeft className="h-6 w-6" strokeWidth={2.2} />
+            <ChevronLeft className="h-6 w-6" />
             <span className="font-medium text-[15px]">Назад</span>
           </button>
         </div>

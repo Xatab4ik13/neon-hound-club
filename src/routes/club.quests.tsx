@@ -2,8 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Check,
-  ChevronRight,
-  Download,
+  PlumpArrowRight as ChevronRight,
+  PlumpDownload as Download,
   Loader2,
   Smartphone,
   Sparkles,

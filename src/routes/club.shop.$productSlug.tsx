@@ -7,7 +7,7 @@ import {
 } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronLeft, ChevronRight, Minus, Plus, PlumpStore, PlumpCart, PlumpTicket } from "@/components/ui/icons";
+import { PlumpArrowLeft as ChevronLeft, PlumpArrowRight as ChevronRight, Minus, Plus, PlumpStore, PlumpCart, PlumpTicket } from "@/components/ui/icons";
 import { hhToast } from "@/lib/hh-toast";
 import { useCart } from "@/hooks/use-cart";
 import { haptic } from "@/hooks/use-haptic";

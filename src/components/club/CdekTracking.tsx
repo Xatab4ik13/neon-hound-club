@@ -1,7 +1,7 @@
 // Раскрывающийся блок «Трек СДЭК» в карточке заказа.
 
 import { useState } from "react";
-import { Check, ChevronDown, ExternalLink, MapPin, Package, Truck } from "@/components/ui/icons";
+import { Check, ChevronDown, ExternalLink, PlumpMap as MapPin, PlumpPackage as Package, PlumpTruck as Truck } from "@/components/ui/icons";
 import {
   cdekProgressPct,
   CDEK_STATUS_LABEL,

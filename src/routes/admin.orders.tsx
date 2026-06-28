@@ -4,7 +4,7 @@
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Package, Phone, MapPin, User as UserIcon, RefreshCw, X } from "@/components/ui/icons";
+import { Loader2, PlumpPackage as Package, Phone, PlumpMap as MapPin, User as UserIcon, RefreshCw, PlumpClose as X, type LucideIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
 import { ApiError } from "@/lib/api";
 import { AdminPager, type AdminPageSize } from "@/components/admin/AdminPager";
@@ -391,7 +391,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-function Row({ icon: Icon, children }: { icon: typeof Package; children: React.ReactNode }) {
+function Row({ icon: Icon, children }: { icon: LucideIcon; children: React.ReactNode }) {
   return (
     <div className="flex items-start gap-2 py-0.5 text-sm">
       <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-zinc-400" />

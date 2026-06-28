@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { ArrowLeft, Bug, Lightbulb, HelpCircle, Loader2 } from "@/components/ui/icons";
+import { PlumpArrowLeft as ArrowLeft, Bug, Lightbulb, HelpCircle, Loader2 } from "@/components/ui/icons";
 import { PageHeader } from "@/components/club/PageHeader";
 import { createTicket, supportQk, type SupportCategory } from "@/lib/support-api";
 import { ApiError } from "@/lib/api";

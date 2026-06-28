@@ -3,11 +3,11 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Calendar,
-  ChevronRight,
-  Image as ImageIcon,
+  PlumpArrowRight as ChevronRight,
+  PlumpImage as ImageIcon,
   LogOut,
-  MapPin,
-  Package,
+  PlumpMap as MapPin,
+  PlumpPackage as Package,
   Pencil,
   Settings,
   PlumpTicket as TicketIcon,

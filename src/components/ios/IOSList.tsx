@@ -2,7 +2,7 @@
 // Используется в формах/настройках для тёмного "grouped inset" вида.
 
 import type { ReactNode } from "react";
-import { ChevronRight } from "@/components/ui/icons";
+import { PlumpArrowRight as ChevronRight } from "@/components/ui/icons";
 import { Link } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
 
