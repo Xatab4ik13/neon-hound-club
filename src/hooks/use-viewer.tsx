@@ -15,6 +15,8 @@ type SessionUser = {
   email: string;
   nick: string;
   role: "user" | "admin" | "blogger";
+  /** true если в profiles.phone_e164 что-то лежит. Бэк добавил позже — терпим undefined как false. */
+  phoneVerified?: boolean;
 };
 
 type Viewer = {
@@ -23,6 +25,7 @@ type Viewer = {
   nick: string | null;
   tier: Tier;
   tickets: number;
+  phoneVerified: boolean;
   /** false пока React Query не успела сходить за /me — нужно чтобы хедер не «прыгал». */
   hydrated: boolean;
 };
