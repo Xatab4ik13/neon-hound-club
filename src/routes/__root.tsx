@@ -115,6 +115,18 @@ function RootComponent() {
     captureRefFromUrl();
   }, []);
 
+  // На club.hhr.pro подменяем manifest и title на клубные.
+  // Делаем это рантайм-эффектом, потому что head() выполняется в т.ч. на сервере
+  // и не знает hostname конкретного запроса.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const { isClubHost } = require("@/lib/host") as typeof import("@/lib/host");
+    if (!isClubHost()) return;
+    const link = document.querySelector<HTMLLinkElement>('link[rel="manifest"]');
+    if (link) link.href = "/club-manifest.webmanifest";
+    document.title = "HELLHOUND Club";
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <ViewerProvider>
