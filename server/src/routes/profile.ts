@@ -64,6 +64,7 @@ export async function profileRoutes(app: FastifyInstance) {
         emailVerified: users.emailVerified,
         joinedAt: users.createdAt,
         phone: profiles.phone,
+        phoneVerifiedAt: profiles.phoneVerifiedAt,
         city: profiles.city,
         avatarUrl: profiles.avatarUrl,
         bio: profiles.bio,
@@ -84,10 +85,19 @@ export async function profileRoutes(app: FastifyInstance) {
     const xpTotal = await getXpTotal(session.sub);
     const rank = computeRank(xpTotal);
 
-    return { ...row, bikesCount, xpTotal, rank };
+    return {
+      ...row,
+      phoneVerified: !!row?.phoneVerifiedAt,
+      bikesCount,
+      xpTotal,
+      rank,
+    };
   });
 
-  // PATCH /api/v1/profile/me — частичное обновление
+  // PATCH /api/v1/profile/me — частичное обновление.
+  // ВНИМАНИЕ: поле `phone` больше нельзя задать здесь напрямую — телефон
+  // ставится ТОЛЬКО через /phone/send-code → /phone/verify. Если фронт
+  // (старая версия) пришлёт phone — мы молча его игнорируем.
   app.patch("/me", { preHandler: requireAuth }, async (req, reply) => {
     const parsed = patchProfileSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -96,82 +106,189 @@ export async function profileRoutes(app: FastifyInstance) {
     const session = req.user as SessionPayload;
     await ensureProfile(session.sub);
 
-    // Если меняется phone — валидируем как международный E.164 номер.
-    let normalizedPhone: string | null = null;
-    if (parsed.data.phone !== undefined && parsed.data.phone !== null) {
-      const raw = parsed.data.phone.trim();
-      // libphonenumber-js хочет ведущий "+" для международного парсинга.
-      const withPlus = raw.startsWith("+") ? raw : "+" + raw.replace(/\D/g, "");
-      const parsedPhone = parsePhoneNumberFromString(withPlus);
-      if (!parsedPhone || !parsedPhone.isValid()) {
-        return reply
-          .code(400)
-          .send({ error: "invalid_input", message: "Укажи корректный номер телефона в международном формате" });
-      }
-      // Храним в БД в E.164 (например, "+79991234567"). Триггер нормализует копию в phone_e164.
-      parsed.data.phone = parsedPhone.number;
-      normalizedPhone = parsedPhone.number.replace(/\D/g, "");
-
-      // Проверка уникальности по нормализованной форме.
-      const [dup] = await db
-        .select({ userId: profiles.userId })
-        .from(profiles)
-        .where(and(eq(profiles.phoneE164, normalizedPhone), sql`${profiles.userId} <> ${session.sub}`))
-        .limit(1);
-      if (dup) {
-        return reply
-          .code(409)
-          .send({ error: "phone_taken", message: "Этот номер уже привязан к другому аккаунту" });
-      }
-    }
+    // phone выпиливаем из апдейта — он управляется отдельным флоу верификации.
+    const { phone: _ignored, ...patch } = parsed.data;
+    void _ignored;
 
     // Если меняется avatarUrl — найдём старый и удалим из S3 после успешного апдейта.
     let oldAvatarToDelete: string | null = null;
-    if (parsed.data.avatarUrl !== undefined) {
+    if (patch.avatarUrl !== undefined) {
       const [prev] = await db
         .select({ avatarUrl: profiles.avatarUrl })
         .from(profiles)
         .where(eq(profiles.userId, session.sub))
         .limit(1);
-      if (prev?.avatarUrl && prev.avatarUrl !== parsed.data.avatarUrl) {
+      if (prev?.avatarUrl && prev.avatarUrl !== patch.avatarUrl) {
         oldAvatarToDelete = prev.avatarUrl;
       }
     }
 
-    try {
-      await db
-        .update(profiles)
-        .set({ ...parsed.data, updatedAt: new Date() })
-        .where(eq(profiles.userId, session.sub));
-    } catch (e: unknown) {
-      // На случай гонки: уникальный индекс БД поймает дубль.
-      const msg = (e as { message?: string })?.message ?? "";
-      if (msg.includes("profiles_phone_e164_uniq")) {
-        return reply
-          .code(409)
-          .send({ error: "phone_taken", message: "Этот номер уже привязан к другому аккаунту" });
-      }
-      throw e;
-    }
+    await db
+      .update(profiles)
+      .set({ ...patch, updatedAt: new Date() })
+      .where(eq(profiles.userId, session.sub));
 
     if (oldAvatarToDelete) await deleteByPublicUrl(oldAvatarToDelete);
 
     // Квест: профиль заполнен + есть мото в гараже.
     await tryCompleteQuest(session.sub, "profile_and_bike");
 
-    // Если телефон только что появился — пробуем активировать реферал
-    // (бонусы рефереру идут только за «настоящего» друга с телефоном).
-    if (parsed.data.phone) {
-      try {
-        const { activateReferral } = await import("../lib/referrals.js");
-        await activateReferral(session.sub);
-      } catch (e) {
-        req.log.error({ err: e }, "activateReferral on phone fill failed");
-      }
-    }
-
     return { ok: true };
   });
+
+  // ============================================================
+  // PHONE VERIFICATION (Telegram Gateway)
+  // ============================================================
+
+  app.post("/phone/send-code", { preHandler: requireAuth }, async (req, reply) => {
+    const session = req.user as SessionPayload;
+    const schema = z.object({ phone: z.string().trim().min(5).max(32) });
+    const parsed = schema.safeParse(req.body);
+    if (!parsed.success) {
+      return reply.code(400).send({ error: "invalid_input", message: "Укажи номер" });
+    }
+
+    const { normalizeToE164, checkSendRateLimit, logSend, generate6digitCode, isPhoneTakenByOther, CODE_TTL_SEC } =
+      await import("../lib/phone-verify.js");
+    const { sendVerificationMessage } = await import("../lib/telegram-gateway.js");
+
+    const e164 = normalizeToE164(parsed.data.phone);
+    if (!e164) {
+      return reply
+        .code(400)
+        .send({ error: "invalid_phone", message: "Укажи корректный номер в международном формате" });
+    }
+
+    if (await isPhoneTakenByOther(e164, session.sub)) {
+      return reply
+        .code(409)
+        .send({ error: "phone_taken", message: "Этот номер уже привязан к другому аккаунту" });
+    }
+
+    const ip = req.ip ?? null;
+    const limit = await checkSendRateLimit({ phoneE164: e164, ip });
+    if (!limit.ok) {
+      return reply
+        .code(429)
+        .header("Retry-After", String(limit.retryAfterSec))
+        .send({ error: "rate_limited", message: "Слишком часто. Подожди немного.", retryAfterSec: limit.retryAfterSec });
+    }
+
+    const code = generate6digitCode();
+    let sent;
+    try {
+      sent = await sendVerificationMessage({
+        phoneE164: e164,
+        code,
+        ttl: CODE_TTL_SEC,
+        payload: `verify:${session.sub}`,
+      });
+    } catch (e) {
+      const err = e as Error & { code?: string };
+      req.log.error({ err }, "telegram gateway send failed");
+      const status = err.code === "FLOOD_WAIT" ? 429 : 502;
+      return reply.code(status).send({ error: err.code ?? "gateway_failed", message: "Не удалось отправить код" });
+    }
+
+    await db.insert(phoneVerifications).values({
+      userId: session.sub,
+      phoneE164: e164,
+      purpose: "verify",
+      requestId: sent.request_id,
+      expiresAt: new Date(Date.now() + CODE_TTL_SEC * 1000),
+    });
+    await logSend({ phoneE164: e164, ip, purpose: "verify" });
+
+    return reply.send({
+      ok: true,
+      requestId: sent.request_id,
+      expiresInSec: CODE_TTL_SEC,
+      phoneMasked: e164.replace(/(\+\d{2})\d+(\d{2})$/, "$1•••$2"),
+    });
+  });
+
+  app.post("/phone/verify", { preHandler: requireAuth }, async (req, reply) => {
+    const session = req.user as SessionPayload;
+    const schema = z.object({
+      requestId: z.string().min(1).max(200),
+      code: z.string().trim().regex(/^\d{4,8}$/),
+    });
+    const parsed = schema.safeParse(req.body);
+    if (!parsed.success) {
+      return reply.code(400).send({ error: "invalid_input", message: "Неверный код" });
+    }
+
+    const { findActiveVerification, isPhoneTakenByOther, MAX_ATTEMPTS } = await import("../lib/phone-verify.js");
+    const { checkVerificationStatus } = await import("../lib/telegram-gateway.js");
+
+    const row = await findActiveVerification(parsed.data.requestId);
+    if (!row || row.userId !== session.sub || row.purpose !== "verify") {
+      return reply.code(404).send({ error: "request_not_found", message: "Код устарел, запроси новый" });
+    }
+    if (row.attempts >= MAX_ATTEMPTS) {
+      return reply.code(429).send({ error: "too_many_attempts", message: "Слишком много попыток" });
+    }
+
+    let status;
+    try {
+      status = await checkVerificationStatus({ requestId: row.requestId, code: parsed.data.code });
+    } catch (e) {
+      const err = e as Error & { code?: string };
+      req.log.error({ err }, "telegram check failed");
+      return reply.code(502).send({ error: "gateway_failed", message: "Ошибка проверки кода" });
+    }
+
+    await db
+      .update(phoneVerifications)
+      .set({ attempts: row.attempts + 1 })
+      .where(eq(phoneVerifications.id, row.id));
+
+    const vstatus = status.verification_status?.status;
+    if (vstatus !== "code_valid") {
+      const map: Record<string, { code: number; msg: string }> = {
+        code_invalid: { code: 400, msg: "Неверный код" },
+        code_max_attempts_exceeded: { code: 429, msg: "Слишком много попыток" },
+        expired: { code: 410, msg: "Код истёк, запроси новый" },
+      };
+      const m = map[vstatus ?? ""] ?? { code: 400, msg: "Не удалось подтвердить код" };
+      return reply.code(m.code).send({ error: vstatus ?? "code_failed", message: m.msg });
+    }
+
+    // Финальная проверка анти-мультиак (между send и verify номер мог занять кто-то ещё).
+    if (await isPhoneTakenByOther(row.phoneE164, session.sub)) {
+      return reply
+        .code(409)
+        .send({ error: "phone_taken", message: "Этот номер уже привязан к другому аккаунту" });
+    }
+
+    const phoneE164Digits = row.phoneE164.replace(/\D/g, "");
+    await db
+      .update(profiles)
+      .set({
+        phone: row.phoneE164,
+        phoneE164: phoneE164Digits,
+        phoneVerifiedAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(profiles.userId, session.sub));
+
+    await db
+      .update(phoneVerifications)
+      .set({ consumedAt: new Date() })
+      .where(eq(phoneVerifications.id, row.id));
+
+    // Если телефон только что появился — пробуем активировать реферал.
+    try {
+      const { activateReferral } = await import("../lib/referrals.js");
+      await activateReferral(session.sub);
+    } catch (e) {
+      req.log.error({ err: e }, "activateReferral on phone verify failed");
+    }
+
+    return reply.send({ ok: true, phoneVerified: true });
+  });
+
+
 
   // GET /api/v1/profile/:nick — публичный (для шеринга профиля)
   app.get<{ Params: { nick: string } }>("/:nick", async (req, reply) => {
