@@ -3,6 +3,8 @@ import { createPortal } from "react-dom";
 import { hhToast as toast } from "@/lib/hh-toast";
 import { Input } from "@/components/ui/input";
 import { PhoneInput } from "@/components/ui/phone-input";
+import { PhoneVerifyPanel } from "@/components/club/PhoneVerifyPanel";
+import { isValidPhoneNumber } from "libphonenumber-js";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import {
