@@ -118,8 +118,6 @@ function MePage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search.settings]);
-  const [bgSheetOpen, setBgSheetOpen] = useState(false);
-  const [ordersSheetOpen, setOrdersSheetOpen] = useState(false);
   const isMobile = useIsMobile();
   const { isAuthed, signOut } = useViewer();
   const profileQ = useMyProfile(isAuthed);
