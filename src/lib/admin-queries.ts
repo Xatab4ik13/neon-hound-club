@@ -100,6 +100,7 @@ export function fetchAdminUsers(opts?: {
   pageSize?: number;
   sort?: AdminUsersSort;
   dir?: "asc" | "desc";
+  role?: "user" | "blogger";
 }) {
   const sp = new URLSearchParams();
   if (opts?.q) sp.set("q", opts.q);
@@ -107,11 +108,13 @@ export function fetchAdminUsers(opts?: {
   if (opts?.pageSize) sp.set("pageSize", String(opts.pageSize));
   if (opts?.sort) sp.set("sort", opts.sort);
   if (opts?.dir) sp.set("dir", opts.dir);
+  if (opts?.role) sp.set("role", opts.role);
   const qs = sp.toString();
   return apiFetch<AdminListPage<AdminUserListItem>>(
     `/api/v1/admin/users/${qs ? `?${qs}` : ""}`,
   );
 }
+
 
 
 export function fetchAdminUser(id: string) {
