@@ -147,7 +147,6 @@ function HeroSlideCard({ slide }: { slide: Slide }) {
   const Cta = slide.isExternal ? (
     <a
       href={slide.to}
-      target="_blank"
       rel="noopener noreferrer"
       className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3.5 py-2 font-mono text-[11px] font-bold uppercase tracking-[0.18em] text-primary-foreground shadow-[0_4px_16px_rgba(0,0,0,0.35)] transition-transform active:scale-95"
     >
