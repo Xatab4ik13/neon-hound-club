@@ -128,9 +128,8 @@ export function HellhoundPlaqueLarge({
         >
           {nick}
         </div>
-        <div className="mt-0.5">
-          <HellhoundChip size="xs" />
-        </div>
+
+
       </div>
     </Wrap>
   );
