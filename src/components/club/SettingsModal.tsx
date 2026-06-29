@@ -65,8 +65,13 @@ function SettingsMobile({ open, onOpenChange }: Props) {
       onOpenChange={onOpenChange}
       fullHeight
       title="Профиль"
+      headerLeft={
+        <h2 className="truncate font-display text-[15px] font-black uppercase italic tracking-tight text-white">
+          Профиль
+        </h2>
+      }
     >
-      <div className="space-y-6 pb-4">
+      <div className="space-y-7 pb-8">
         <ProfileTab mobile />
         <NotifyTab mobile />
         <AccountTab mobile onClose={() => onOpenChange(false)} />
@@ -74,6 +79,162 @@ function SettingsMobile({ open, onOpenChange }: Props) {
     </IOSSheet>
   );
 }
+
+// ════════════════════════════════════════════════════════════════════
+// HH mobile primitives — premium dark, soft rounded, magenta accent
+// ════════════════════════════════════════════════════════════════════
+
+function HHSection({ title, footer, children, tone = "default" }: {
+  title: string;
+  footer?: React.ReactNode;
+  children: React.ReactNode;
+  tone?: "default" | "danger";
+}) {
+  return (
+    <section className="space-y-2">
+      <h3
+        className={
+          "ml-1 font-display text-[10px] font-black uppercase italic tracking-[0.2em] " +
+          (tone === "danger" ? "text-red-500/60" : "text-white/40")
+        }
+      >
+        {title}
+      </h3>
+      {children}
+      {footer && (
+        <p className="px-1 pt-1 text-[11px] leading-relaxed text-white/30">{footer}</p>
+      )}
+    </section>
+  );
+}
+
+function HHCard({ children, tone = "default", className = "" }: {
+  children: React.ReactNode;
+  tone?: "default" | "danger";
+  className?: string;
+}) {
+  const border = tone === "danger" ? "border-red-500/15" : "border-white/[0.08]";
+  const bg = tone === "danger" ? "bg-white/[0.02]" : "bg-white/5";
+  return (
+    <div className={`overflow-hidden rounded-2xl border ${border} ${bg} ${className}`}>
+      {children}
+    </div>
+  );
+}
+
+function HHInputField({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-1.5">
+      <label className="ml-1 font-display text-[10px] font-black uppercase italic tracking-[0.18em] text-white/45">
+        {label}
+      </label>
+      <div className="hh-input-wrap">{children}</div>
+    </div>
+  );
+}
+
+function HHToggleRow({
+  label,
+  description,
+  checked,
+  onChange,
+}: {
+  label: string;
+  description?: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-4 px-4 py-3.5 [&+&]:border-t [&+&]:border-white/[0.05]">
+      <div className="min-w-0">
+        <div className="text-[14px] font-semibold text-foreground">{label}</div>
+        {description && (
+          <div className="mt-0.5 text-[11px] leading-snug text-white/40">{description}</div>
+        )}
+      </div>
+      <Switch checked={checked} onCheckedChange={onChange} />
+    </div>
+  );
+}
+
+function HHActionRow({
+  icon,
+  label,
+  description,
+  tone = "default",
+  onClick,
+  chevron = true,
+  disabled,
+}: {
+  icon?: React.ReactNode;
+  label: string;
+  description?: string;
+  tone?: "default" | "danger";
+  onClick?: () => void;
+  chevron?: boolean;
+  disabled?: boolean;
+}) {
+  const isDanger = tone === "danger";
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className="group flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left transition-colors active:bg-white/[0.04] disabled:opacity-50 [&+&]:border-t [&+&]:border-white/[0.05]"
+    >
+      <div className="flex min-w-0 items-center gap-3">
+        {icon && (
+          <span
+            className={
+              "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl " +
+              (isDanger ? "bg-red-500/10 text-red-400" : "bg-white/[0.06] text-white/50")
+            }
+          >
+            {icon}
+          </span>
+        )}
+        <div className="min-w-0">
+          <div className={"text-[14px] font-semibold " + (isDanger ? "text-red-400" : "text-foreground")}>
+            {label}
+          </div>
+          {description && (
+            <div className={"mt-0.5 text-[11px] leading-snug " + (isDanger ? "text-red-400/50" : "text-white/40")}>
+              {description}
+            </div>
+          )}
+        </div>
+      </div>
+      {chevron && (
+        <svg className="h-4 w-4 shrink-0 text-white/25" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+          <path d="M9 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      )}
+    </button>
+  );
+}
+
+function HHSaveButton({
+  onClick,
+  loading,
+  children,
+}: {
+  onClick?: () => void;
+  loading?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={loading}
+      className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-5 py-4 font-display text-[13px] font-black uppercase italic tracking-[0.15em] text-primary-foreground shadow-[0_12px_28px_-10px_hsl(var(--primary)/0.55)] transition-all hover:brightness-110 active:scale-[0.98] disabled:opacity-60"
+    >
+      {loading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+      {children}
+    </button>
+  );
+}
+
 
 
 // ════════════════════════════════════════════════════════════════════
@@ -375,43 +536,83 @@ function ProfileTab({ mobile }: { mobile?: boolean }) {
       <>
         {hiddenFileInput}
 
-        <IOSListSection title="Фото профиля" footer="JPG/PNG до 10 МБ.">
-          <IOSListRow
-            label={me.avatarUrl ? "Заменить фото" : "Загрузить фото"}
-            description={avatarUploading ? "Загружаем…" : "Видно другим в профиле"}
-            trailing={
-              avatarUploading ? (
-                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-              ) : (
-                <Avatar url={me.avatarUrl} size={44} />
-              )
-            }
-            chevron={!avatarUploading}
-            onClick={avatarUploading ? undefined : onPickAvatar}
-          />
-        </IOSListSection>
+        <HHSection title="Фото профиля" footer="JPG/PNG до 10 МБ. Видно другим в профиле.">
+          <HHCard>
+            <button
+              type="button"
+              onClick={avatarUploading ? undefined : onPickAvatar}
+              disabled={avatarUploading}
+              className="flex w-full items-center justify-between gap-4 p-4 text-left transition-colors active:bg-white/[0.04] disabled:opacity-60"
+            >
+              <div className="min-w-0">
+                <div className="text-[14px] font-semibold text-foreground">
+                  {me.avatarUrl ? "Заменить фото" : "Загрузить фото"}
+                </div>
+                <div className="mt-0.5 text-[11px] text-white/40">
+                  {avatarUploading ? "Загружаем…" : "JPG/PNG до 10 МБ"}
+                </div>
+              </div>
+              <div className="relative shrink-0">
+                {avatarUploading ? (
+                  <div className="grid h-14 w-14 place-items-center rounded-2xl border-2 border-white/10 bg-white/[0.04]">
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  </div>
+                ) : (
+                  <>
+                    <span
+                      className="grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-2xl border-2 border-white/10 bg-white/[0.06] text-muted-foreground shadow-lg"
+                    >
+                      {me.avatarUrl ? (
+                        <img src={me.avatarUrl} alt="" className="h-full w-full object-cover" />
+                      ) : (
+                        <User className="h-1/2 w-1/2" />
+                      )}
+                    </span>
+                    <span className="absolute -bottom-1 -right-1 grid h-6 w-6 place-items-center rounded-lg bg-primary text-primary-foreground shadow-lg ring-2 ring-[#0d0d0d]">
+                      <Camera className="h-3 w-3" />
+                    </span>
+                  </>
+                )}
+              </div>
+            </button>
+          </HHCard>
+        </HHSection>
 
-        <IOSListSection title="Профиль" footer="Ник менять нельзя. Город и телефон — в любой момент.">
-          <IOSField label="Ник">
-            <Input value={me.nick} readOnly disabled />
-          </IOSField>
-          <IOSField label="Город">
-            <Input value={city} onChange={(e) => setCity(e.target.value)} maxLength={64} placeholder="Москва" />
-          </IOSField>
-          <IOSField label="Телефон">
-            <PhoneInput value={phone} onChange={(v) => setPhone(v ?? "")} />
-          </IOSField>
-        </IOSListSection>
+        <HHSection title="Профиль" footer="Ник менять нельзя. Город и телефон — в любой момент.">
+          <div className="space-y-3">
+            <HHInputField label="Ник">
+              <Input value={me.nick} readOnly disabled className="h-12 rounded-xl border-white/[0.08] bg-white/5 px-4 text-[14px] focus-visible:border-primary/40 focus-visible:ring-1 focus-visible:ring-primary/20" />
+            </HHInputField>
+            <HHInputField label="Город">
+              <Input
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+                maxLength={64}
+                placeholder="Москва"
+                className="h-12 rounded-xl border-white/[0.08] bg-white/5 px-4 text-[14px] focus-visible:border-primary/40 focus-visible:ring-1 focus-visible:ring-primary/20"
+              />
+            </HHInputField>
+            <HHInputField label="Телефон">
+              <PhoneInput
+                value={phone}
+                onChange={(v) => setPhone(v ?? "")}
+                className="hh-phone-rounded"
+              />
+            </HHInputField>
 
-        <div className="px-4 pt-1">
-          <PrimaryButton full onClick={onSave} loading={updateMut.isPending}>
+          </div>
+        </HHSection>
+
+        <div className="pt-1">
+          <HHSaveButton onClick={onSave} loading={updateMut.isPending}>
             Сохранить профиль
-          </PrimaryButton>
+          </HHSaveButton>
         </div>
 
       </>
     );
   }
+
 
   return (
     <div className="space-y-8">
@@ -531,19 +732,24 @@ function NotifyTab({ mobile }: { mobile?: boolean }) {
   if (mobile) {
     return (
       <>
-        <IOSListSection title="Email" footer={meQ.data?.email}>
-          <IOSToggleRow label="Розыгрыши и итоги" description="Запуск, последний день, победитель" checked={p.emailRaffles} onChange={toggle("emailRaffles")} />
-          <IOSToggleRow label="Заказы" description="Оплата, отправка, доставка" checked={p.emailOrders} onChange={toggle("emailOrders")} />
-          <IOSToggleRow label="Новости клуба" description="Анонсы мерча и видео" checked={p.emailNews} onChange={toggle("emailNews")} />
-        </IOSListSection>
-        <IOSListSection title="Push в браузере" footer="Работает в установленной PWA после разрешения уведомлений.">
-          <IOSToggleRow label="Розыгрыши и итоги" checked={p.pushRaffles} onChange={toggle("pushRaffles")} />
-          <IOSToggleRow label="Заказы" checked={p.pushOrders} onChange={toggle("pushOrders")} />
-          <IOSToggleRow label="Новости клуба" checked={p.pushNews} onChange={toggle("pushNews")} />
-        </IOSListSection>
+        <HHSection title="Email" footer={meQ.data?.email}>
+          <HHCard>
+            <HHToggleRow label="Розыгрыши и итоги" description="Запуск, последний день, победитель" checked={p.emailRaffles} onChange={toggle("emailRaffles")} />
+            <HHToggleRow label="Заказы" description="Оплата, отправка, доставка" checked={p.emailOrders} onChange={toggle("emailOrders")} />
+            <HHToggleRow label="Новости клуба" description="Анонсы мерча и видео" checked={p.emailNews} onChange={toggle("emailNews")} />
+          </HHCard>
+        </HHSection>
+        <HHSection title="Push в браузере" footer="Работает в установленной PWA после разрешения уведомлений.">
+          <HHCard>
+            <HHToggleRow label="Розыгрыши и итоги" checked={p.pushRaffles} onChange={toggle("pushRaffles")} />
+            <HHToggleRow label="Заказы" checked={p.pushOrders} onChange={toggle("pushOrders")} />
+            <HHToggleRow label="Новости клуба" checked={p.pushNews} onChange={toggle("pushNews")} />
+          </HHCard>
+        </HHSection>
       </>
     );
   }
+
   return (
     <div className="space-y-8">
       <ChannelBlock title="Email" desc={meQ.data?.email ?? ""}>
@@ -679,38 +885,41 @@ function AccountTab({ mobile, onClose }: { mobile?: boolean; onClose?: () => voi
   const delMatch = delConfirm.trim().toLowerCase() === myNick.toLowerCase() && myNick.length > 0;
 
   if (mobile) {
+    const inputCls = "h-12 rounded-xl border-white/[0.08] bg-white/5 px-4 text-[14px] focus-visible:border-primary/40 focus-visible:ring-1 focus-visible:ring-primary/20";
     return (
       <>
-        <IOSListSection title="Контакты" footer="Email — для входа. Смена email пока через поддержку.">
-          <IOSField label="Email">
-            <Input type="email" value={meQ.data?.email ?? ""} readOnly disabled />
-          </IOSField>
-        </IOSListSection>
+        <HHSection title="Контакты" footer="Email — для входа. Смена email пока через поддержку.">
+          <HHInputField label="Email">
+            <Input type="email" value={meQ.data?.email ?? ""} readOnly disabled className={inputCls} />
+          </HHInputField>
+        </HHSection>
 
-        <IOSListSection title="Пароль">
+        <HHSection title="Пароль">
           {!pwOpen ? (
-            <IOSListRow label="Сменить пароль" chevron onClick={() => { setPwOpen(true); setPwMsg(null); }} />
+            <HHCard>
+              <HHActionRow label="Сменить пароль" onClick={() => { setPwOpen(true); setPwMsg(null); }} />
+            </HHCard>
           ) : (
-            <>
-              <IOSField label="Текущий пароль">
-                <Input type="password" value={pwCurrent} onChange={(e) => setPwCurrent(e.target.value)} autoComplete="current-password" />
-              </IOSField>
-              <IOSField label="Новый пароль">
-                <Input type="password" value={pwNew} onChange={(e) => setPwNew(e.target.value)} autoComplete="new-password" />
-              </IOSField>
-              <IOSField
-                label="Повторите новый"
-                hint={pwMsg && (
-                  <span className={pwMsg.kind === "ok" ? "text-primary" : "text-red-400"}>{pwMsg.text}</span>
-                )}
-              >
-                <Input type="password" value={pwNew2} onChange={(e) => setPwNew2(e.target.value)} autoComplete="new-password" />
-              </IOSField>
-              <div className="flex items-center gap-2 px-4 py-3">
+            <div className="space-y-3">
+              <HHInputField label="Текущий пароль">
+                <Input type="password" value={pwCurrent} onChange={(e) => setPwCurrent(e.target.value)} autoComplete="current-password" className={inputCls} />
+              </HHInputField>
+              <HHInputField label="Новый пароль">
+                <Input type="password" value={pwNew} onChange={(e) => setPwNew(e.target.value)} autoComplete="new-password" className={inputCls} />
+              </HHInputField>
+              <HHInputField label="Повторите новый">
+                <Input type="password" value={pwNew2} onChange={(e) => setPwNew2(e.target.value)} autoComplete="new-password" className={inputCls} />
+              </HHInputField>
+              {pwMsg && (
+                <p className={"px-1 text-[12px] " + (pwMsg.kind === "ok" ? "text-primary" : "text-red-400")}>
+                  {pwMsg.text}
+                </p>
+              )}
+              <div className="flex items-center gap-2 pt-1">
                 <button
                   type="button"
                   onClick={() => { setPwOpen(false); setPwMsg(null); setPwCurrent(""); setPwNew(""); setPwNew2(""); }}
-                  className="flex-1 rounded-lg bg-white/[0.05] py-2 font-mono text-[11px] font-bold uppercase tracking-wider text-muted-foreground active:opacity-70"
+                  className="flex-1 rounded-xl border border-white/[0.08] bg-white/[0.04] py-3 font-mono text-[11px] font-bold uppercase tracking-wider text-muted-foreground active:opacity-70"
                 >
                   Отмена
                 </button>
@@ -718,46 +927,52 @@ function AccountTab({ mobile, onClose }: { mobile?: boolean; onClose?: () => voi
                   type="button"
                   onClick={handleSavePassword}
                   disabled={changePwMut.isPending}
-                  className="flex-1 rounded-lg bg-primary py-2 font-mono text-[11px] font-bold uppercase tracking-wider text-primary-foreground active:opacity-80 disabled:opacity-50"
+                  className="flex-1 rounded-xl bg-primary py-3 font-mono text-[11px] font-bold uppercase tracking-wider text-primary-foreground shadow-[0_8px_20px_-8px_hsl(var(--primary)/0.55)] active:opacity-80 disabled:opacity-50"
                 >
                   {changePwMut.isPending ? "…" : "Сохранить"}
                 </button>
               </div>
-            </>
+            </div>
           )}
-        </IOSListSection>
+        </HHSection>
 
-        <IOSListSection title="Опасная зона">
-          <IOSListRow
-            icon={<LogOut className="h-[18px] w-[18px]" />}
-            label="Выйти из аккаунта"
-            description="Завершить сессию на этом устройстве"
-            tone="danger"
-            chevron
-            onClick={onLogout}
-          />
-          {!delOpen ? (
-            <IOSListRow
-              icon={<Trash2 className="h-[18px] w-[18px]" />}
-              label="Удалить аккаунт"
-              description="Билеты, заказы и история обнулятся"
+        <HHSection title="Опасная зона" tone="danger">
+          <HHCard tone="danger">
+            <HHActionRow
+              icon={<LogOut className="h-[18px] w-[18px]" />}
+              label="Выйти из аккаунта"
+              description="Завершить сессию на этом устройстве"
               tone="danger"
-              chevron
-              onClick={() => setDelOpen(true)}
+              onClick={onLogout}
             />
-          ) : (
-            <>
-              <IOSField
-                label={`Введи свой ник «${myNick}» для подтверждения`}
-                hint="Действие необратимо. Все данные будут стёрты."
-              >
-                <Input value={delConfirm} onChange={(e) => setDelConfirm(e.target.value)} autoCapitalize="none" autoCorrect="off" spellCheck={false} />
-              </IOSField>
-              <div className="flex items-center gap-2 px-4 py-3">
+            {!delOpen ? (
+              <HHActionRow
+                icon={<Trash2 className="h-[18px] w-[18px]" />}
+                label="Удалить аккаунт"
+                description="Билеты, заказы и история обнулятся"
+                tone="danger"
+                onClick={() => setDelOpen(true)}
+              />
+            ) : null}
+          </HHCard>
+          {delOpen && (
+            <div className="space-y-3 pt-2">
+              <HHInputField label={`Введи свой ник «${myNick}» для подтверждения`}>
+                <Input
+                  value={delConfirm}
+                  onChange={(e) => setDelConfirm(e.target.value)}
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  className={inputCls}
+                />
+              </HHInputField>
+              <p className="px-1 text-[11px] text-red-400/70">Действие необратимо. Все данные будут стёрты.</p>
+              <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={() => { setDelOpen(false); setDelConfirm(""); }}
-                  className="flex-1 rounded-lg bg-white/[0.05] py-2 font-mono text-[11px] font-bold uppercase tracking-wider text-muted-foreground active:opacity-70"
+                  className="flex-1 rounded-xl border border-white/[0.08] bg-white/[0.04] py-3 font-mono text-[11px] font-bold uppercase tracking-wider text-muted-foreground active:opacity-70"
                 >
                   Отмена
                 </button>
@@ -765,14 +980,14 @@ function AccountTab({ mobile, onClose }: { mobile?: boolean; onClose?: () => voi
                   type="button"
                   onClick={onDelete}
                   disabled={!delMatch || deleteMut.isPending}
-                  className="flex-1 rounded-lg bg-red-500 py-2 font-mono text-[11px] font-bold uppercase tracking-wider text-white active:opacity-80 disabled:opacity-40"
+                  className="flex-1 rounded-xl bg-red-500 py-3 font-mono text-[11px] font-bold uppercase tracking-wider text-white shadow-[0_8px_20px_-8px_rgba(239,68,68,0.5)] active:opacity-80 disabled:opacity-40"
                 >
                   {deleteMut.isPending ? "…" : "Удалить"}
                 </button>
               </div>
-            </>
+            </div>
           )}
-        </IOSListSection>
+        </HHSection>
         <IOSConfirm
           open={confirmLogout}
           onOpenChange={setConfirmLogout}
@@ -785,6 +1000,7 @@ function AccountTab({ mobile, onClose }: { mobile?: boolean; onClose?: () => voi
       </>
     );
   }
+
 
   return (
     <>
