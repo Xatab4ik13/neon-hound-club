@@ -732,19 +732,24 @@ function NotifyTab({ mobile }: { mobile?: boolean }) {
   if (mobile) {
     return (
       <>
-        <IOSListSection title="Email" footer={meQ.data?.email}>
-          <IOSToggleRow label="Розыгрыши и итоги" description="Запуск, последний день, победитель" checked={p.emailRaffles} onChange={toggle("emailRaffles")} />
-          <IOSToggleRow label="Заказы" description="Оплата, отправка, доставка" checked={p.emailOrders} onChange={toggle("emailOrders")} />
-          <IOSToggleRow label="Новости клуба" description="Анонсы мерча и видео" checked={p.emailNews} onChange={toggle("emailNews")} />
-        </IOSListSection>
-        <IOSListSection title="Push в браузере" footer="Работает в установленной PWA после разрешения уведомлений.">
-          <IOSToggleRow label="Розыгрыши и итоги" checked={p.pushRaffles} onChange={toggle("pushRaffles")} />
-          <IOSToggleRow label="Заказы" checked={p.pushOrders} onChange={toggle("pushOrders")} />
-          <IOSToggleRow label="Новости клуба" checked={p.pushNews} onChange={toggle("pushNews")} />
-        </IOSListSection>
+        <HHSection title="Email" footer={meQ.data?.email}>
+          <HHCard>
+            <HHToggleRow label="Розыгрыши и итоги" description="Запуск, последний день, победитель" checked={p.emailRaffles} onChange={toggle("emailRaffles")} />
+            <HHToggleRow label="Заказы" description="Оплата, отправка, доставка" checked={p.emailOrders} onChange={toggle("emailOrders")} />
+            <HHToggleRow label="Новости клуба" description="Анонсы мерча и видео" checked={p.emailNews} onChange={toggle("emailNews")} />
+          </HHCard>
+        </HHSection>
+        <HHSection title="Push в браузере" footer="Работает в установленной PWA после разрешения уведомлений.">
+          <HHCard>
+            <HHToggleRow label="Розыгрыши и итоги" checked={p.pushRaffles} onChange={toggle("pushRaffles")} />
+            <HHToggleRow label="Заказы" checked={p.pushOrders} onChange={toggle("pushOrders")} />
+            <HHToggleRow label="Новости клуба" checked={p.pushNews} onChange={toggle("pushNews")} />
+          </HHCard>
+        </HHSection>
       </>
     );
   }
+
   return (
     <div className="space-y-8">
       <ChannelBlock title="Email" desc={meQ.data?.email ?? ""}>
