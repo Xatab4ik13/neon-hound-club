@@ -371,6 +371,19 @@ export function PlumpSmile(props: IconProps) {
   );
 }
 
+export function PlumpSticker(props: IconProps) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 48 48" {...plumpProps(props)}>
+      <path
+        fill="currentColor"
+        fillRule="evenodd"
+        d="M0.5 24C0.5 11.0213 11.0213 0.5 24 0.5S47.5 11.0213 47.5 24 36.9787 47.5 24 47.5 0.5 36.9787 0.5 24ZM15 14c1.1046 0 2 0.8954 2 2v2c0 1.1046 -0.8954 2 -2 2s-2 -0.8954 -2 -2v-2c0 -1.1046 0.8954 -2 2 -2Zm16 2c0 -1.1046 0.8954 -2 2 -2s2 0.8954 2 2v2c0 1.1046 -0.8954 2 -2 2s-2 -0.8954 -2 -2v-2Zm-7.8957 21.7882c-0.9876 -0.4946 -1.3872 -1.6962 -0.8925 -2.6839C24.8814 29.7742 29.9809 26 36 26c1.1046 0 2 0.8954 2 2s-0.8954 2 -2 2c-4.2363 0 -8.0908 2.661 -10.2118 6.8957 -0.4946 0.9876 -1.6962 1.3872 -2.6839 0.8925Z"
+        clipRule="evenodd"
+      />
+    </svg>
+  );
+}
+
 export function PlumpTruck(props: IconProps) {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 48 48" {...plumpProps(props)}>
