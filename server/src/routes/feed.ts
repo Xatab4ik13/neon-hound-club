@@ -680,16 +680,74 @@ export async function adminFeedRoutes(app: FastifyInstance) {
     return { items: rows, total: totalRows[0]?.c ?? 0, page, pageSize };
   });
 
+  // POST /api/v1/admin/feed/posts — создать пост от имени блогера/админа.
+  // Поведение идентично POST /api/v1/posts: XP, квест, SSE, push. Меняется только authorId.
+  const adminCreateSchema = createSchema.and(
+    z.object({ authorId: z.string().uuid() }),
+  );
+  app.post("/posts", async (req, reply) => {
+    const parsed = adminCreateSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return reply.code(400).send({ error: "invalid", message: parsed.error.issues[0]?.message });
+    }
+    const d = parsed.data;
+    // Автор должен быть blogger или admin — иначе теряем смысл "поста в ленте".
+    const [author] = await db
+      .select({ id: users.id, role: users.role })
+      .from(users)
+      .where(eq(users.id, d.authorId))
+      .limit(1);
+    if (!author) return reply.code(404).send({ error: "author_not_found" });
+    if (author.role !== "blogger" && author.role !== "admin") {
+      return reply.code(400).send({ error: "author_not_blogger" });
+    }
+
+    const [row] = await db
+      .insert(posts)
+      .values({
+        authorId: author.id,
+        text: d.text.trim(),
+        imageUrl: d.imageUrl ?? null,
+        pinned: d.pinned ?? false,
+        poll: d.poll
+          ? { ...d.poll, anonymous: d.poll.anonymous, multi: d.poll.multi, closed: d.poll.closed }
+          : null,
+      })
+      .returning();
+    await awardXp({
+      userId: author.id,
+      amount: 25,
+      source: "admin",
+      reason: "feed_post",
+      refType: "post",
+      refId: row.id,
+      idempotent: true,
+    }).catch(() => null);
+    await addQuestProgress(author.id, "posts_5_blogger", 1).catch(() => null);
+    publishFeedEvent("post.created", { postId: row.id });
+    void import("../lib/push.js").then(({ pushToAll }) =>
+      pushToAll({
+        title: "Новый пост в ленте",
+        body: row.text.slice(0, 140),
+        url: "/club",
+        tag: `post:${row.id}`,
+      }),
+    );
+    return row;
+  });
 
   // POST /api/v1/admin/feed/posts/:id/restore
   app.post<{ Params: { id: string } }>("/posts/:id/restore", async (req) => {
     await db.update(posts).set({ deletedAt: null }).where(eq(posts.id, req.params.id));
+    publishFeedEvent("post.updated", { postId: req.params.id });
     return { ok: true };
   });
 
   // DELETE /api/v1/admin/feed/posts/:id — hard delete
   app.delete<{ Params: { id: string } }>("/posts/:id", async (req) => {
     await db.delete(posts).where(eq(posts.id, req.params.id));
+    publishFeedEvent("post.deleted", { postId: req.params.id });
     return { ok: true };
   });
 }
+
