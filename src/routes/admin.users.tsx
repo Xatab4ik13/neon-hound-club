@@ -286,9 +286,11 @@ function UserDrawer({
           <Section title="Активность">
             <InfoRow label="Регистрация" value={new Date(u.createdAt).toLocaleString("ru-RU")} />
             <InfoRow label="Email подтверждён" value={u.emailVerified ? "да" : "нет"} />
+            <InfoRow label="Телефон подтверждён" value={u.phoneVerified ? "да" : "нет"} />
             <InfoRow label="Роль" value={u.role} />
             <InfoRow label="Статус" value={u.blocked ? "забанен" : "активен"} />
           </Section>
+
 
           <Section title="Билеты">
             <Metric label="Баланс" value={String(u.ticketsBalance)} />
