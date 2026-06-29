@@ -49,6 +49,10 @@ function UsersPage() {
   const [giftStickersOpen, setGiftStickersOpen] = useState(false);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState<AdminPageSize>(50);
+  const [sort, setSort] = useState<{ key: AdminUsersSort; dir: "asc" | "desc" }>({
+    key: "createdAt",
+    dir: "desc",
+  });
 
   // дебаунс поиска
   if (query !== debounced) {
@@ -59,8 +63,15 @@ function UsersPage() {
   }
 
   const listQ = useQuery({
-    queryKey: [...adminQk.users(debounced), page, pageSize],
-    queryFn: () => fetchAdminUsers({ q: debounced || undefined, page, pageSize }),
+    queryKey: [...adminQk.users(debounced), page, pageSize, sort.key, sort.dir],
+    queryFn: () =>
+      fetchAdminUsers({
+        q: debounced || undefined,
+        page,
+        pageSize,
+        sort: sort.key,
+        dir: sort.dir,
+      }),
     placeholderData: (prev) => prev,
   });
 
@@ -82,14 +93,31 @@ function UsersPage() {
 
       <Panel>
         <DataTable
-          headers={["Ник", "Email", "Город", "Роль", "Статус", "Регистрация", ""]}
+          sort={sort}
+          onSortChange={(key, dir) => {
+            setSort({ key: key as AdminUsersSort, dir });
+            setPage(1);
+          }}
+          headers={[
+            { label: "Ник", sortKey: "nick" },
+            { label: "Email", sortKey: "email" },
+            { label: "Город", sortKey: "city" },
+            { label: "Роль", sortKey: "role" },
+            { label: "Email ✓", sortKey: "emailVerified" },
+            { label: "Телефон ✓", sortKey: "phoneVerified" },
+            { label: "Статус", sortKey: "status" },
+            { label: "Регистрация", sortKey: "createdAt" },
+            "",
+          ]}
           rows={items.map((u) => [
             <span className="font-medium">@{u.nick}</span>,
             <span className="text-zinc-600 dark:text-zinc-300">{u.email}</span>,
             <span>{u.city ?? "—"}</span>,
             <Badge tone={u.role === "admin" ? "rose" : "zinc"}>{u.role}</Badge>,
-            <Badge tone={u.blocked ? "rose" : u.emailVerified ? "emerald" : "amber"}>
-              {u.blocked ? "Бан" : u.emailVerified ? "Активен" : "Не подтв."}
+            <VerifiedDot ok={u.emailVerified} />,
+            <VerifiedDot ok={u.phoneVerified} />,
+            <Badge tone={u.blocked ? "rose" : "emerald"}>
+              {u.blocked ? "Бан" : "Активен"}
             </Badge>,
             <span className="tabular-nums text-zinc-500 dark:text-zinc-400">
               {new Date(u.createdAt).toLocaleDateString("ru-RU")}
@@ -114,6 +142,7 @@ function UsersPage() {
           }}
         />
       </Panel>
+
 
       {selectedId && (
         <UserDrawer
