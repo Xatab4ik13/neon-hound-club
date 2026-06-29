@@ -56,7 +56,26 @@ const RANK_BY_ID = Object.fromEntries(RANKS.map((r) => [r.id, r])) as Record<
 function ClubFeedPage() {
   const posts = useFeedPosts();
   const loaded = useFeedLoaded();
+  const { isAuthed, hydrated } = useViewer();
   const showSkeleton = !loaded && posts.length === 0;
+
+  // 1) Если стоит установленная PWA и юзер сидит на основном домене —
+  //    мгновенно уводим на club.hhr.pro. В обычном браузере не трогаем.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (isClubHost()) return;
+    if (!isStandalone()) return;
+    const { pathname, search, hash } = window.location;
+    window.location.replace(clubUrl(pathname + search + hash));
+  }, []);
+
+  // 2) На club.hhr.pro неавторизованных уводим на /login.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!isClubHost()) return;
+    if (!hydrated) return;
+    if (!isAuthed) window.location.replace("/login");
+  }, [hydrated, isAuthed]);
 
   return (
     <main className="mx-auto w-full max-w-[640px] px-3 py-5 md:px-4 md:py-10">
