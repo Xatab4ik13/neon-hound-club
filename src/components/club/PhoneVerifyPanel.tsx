@@ -32,7 +32,9 @@ export function PhoneVerifyPanel({ phone, canSend, onVerified }: Props) {
   const [digits, setDigits] = useState<string[]>(() => Array(CODE_LEN).fill(""));
   const [secondsLeft, setSecondsLeft] = useState(0);
   const [resendIn, setResendIn] = useState(0);
+  const [sendError, setSendError] = useState<string | null>(null);
   const inputsRef = useRef<Array<HTMLInputElement | null>>([]);
+  const lastTouchSendAtRef = useRef(0);
 
   // Если номер изменили — сбрасываем флоу.
   useEffect(() => {
@@ -40,6 +42,7 @@ export function PhoneVerifyPanel({ phone, canSend, onVerified }: Props) {
     setRequestId(null);
     setDigits(Array(CODE_LEN).fill(""));
     setSecondsLeft(0);
+    setSendError(null);
   }, [phone]);
 
   // Таймеры (TTL кода + ресенд).
@@ -54,6 +57,12 @@ export function PhoneVerifyPanel({ phone, canSend, onVerified }: Props) {
 
   const code = useMemo(() => digits.join(""), [digits]);
 
+  const fallbackMask = (raw: string) => {
+    const digitsOnly = raw.replace(/\D/g, "");
+    if (digitsOnly.length < 6) return raw;
+    return `+${digitsOnly.slice(0, Math.min(2, digitsOnly.length - 2))}•••${digitsOnly.slice(-2)}`;
+  };
+
   const handleSend = async () => {
     // Лишний клик / нет номера — игнор.
     if (sendMut.isPending) return;
@@ -61,6 +70,17 @@ export function PhoneVerifyPanel({ phone, canSend, onVerified }: Props) {
       toast.error("Сначала введи номер");
       return;
     }
+
+    // Сразу показываем ячейки кода в рамках тапа — пользователь видит реакцию,
+    // а iOS получает поле one-time-code до прихода уведомления.
+    setStage("code");
+    setRequestId(null);
+    setPhoneMasked(fallbackMask(phone));
+    setSendError(null);
+    setSecondsLeft(0);
+    setDigits(Array(CODE_LEN).fill(""));
+    setTimeout(() => inputsRef.current[0]?.focus(), 30);
+
     try {
       // Серверу отдаём номер как есть — он сам нормализует через libphonenumber-js.
       const r = await sendMut.mutateAsync(phone);
@@ -81,12 +101,24 @@ export function PhoneVerifyPanel({ phone, canSend, onVerified }: Props) {
             : err.status === 400
               ? "Неверный формат номера"
               : err.message || "Не удалось отправить код";
+      setSendError(msg);
+      setResendIn(0);
       toast.error(msg);
     }
   };
 
+  const triggerSendFromTap = () => {
+    lastTouchSendAtRef.current = Date.now();
+    void handleSend();
+  };
+
+  const triggerSendFromClick = () => {
+    if (Date.now() - lastTouchSendAtRef.current < 700) return;
+    void handleSend();
+  };
+
   const tryVerify = async (full: string) => {
-    if (!requestId || full.length !== CODE_LEN) return;
+    if (!requestId || full.length !== CODE_LEN || verifyMut.isPending) return;
     try {
       await verifyMut.mutateAsync({ requestId, code: full });
       toast.success("Телефон подтверждён");
@@ -101,6 +133,12 @@ export function PhoneVerifyPanel({ phone, canSend, onVerified }: Props) {
     }
   };
 
+  useEffect(() => {
+    if (stage !== "code" || !requestId || code.length !== CODE_LEN || verifyMut.isPending) return;
+    void tryVerify(code);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [code, requestId, stage]);
+
   const setDigit = (i: number, v: string) => {
     const onlyDigits = v.replace(/\D/g, "");
     if (onlyDigits.length > 1) {
@@ -113,7 +151,6 @@ export function PhoneVerifyPanel({ phone, canSend, onVerified }: Props) {
       const filled = next.join("");
       if (filled.length === CODE_LEN) {
         inputsRef.current[CODE_LEN - 1]?.blur();
-        void tryVerify(filled);
       } else {
         inputsRef.current[Math.min(onlyDigits.length, CODE_LEN - 1)]?.focus();
       }
@@ -126,7 +163,6 @@ export function PhoneVerifyPanel({ phone, canSend, onVerified }: Props) {
     const filled = next.join("");
     if (filled.length === CODE_LEN) {
       inputsRef.current[i]?.blur();
-      void tryVerify(filled);
     }
   };
 
@@ -150,7 +186,11 @@ export function PhoneVerifyPanel({ phone, canSend, onVerified }: Props) {
     return (
       <button
         type="button"
-        onClick={handleSend}
+        onTouchEnd={(e) => {
+          e.preventDefault();
+          triggerSendFromTap();
+        }}
+        onClick={triggerSendFromClick}
         disabled={sendMut.isPending}
         className={cn(
           "mt-3 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-primary/40 bg-primary/10 px-4 text-[13px] font-semibold uppercase tracking-wider text-primary transition-colors",
@@ -171,10 +211,20 @@ export function PhoneVerifyPanel({ phone, canSend, onVerified }: Props) {
   return (
     <div className="mt-3 space-y-3 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
       <div className="text-[12px] text-white/60">
-        Код отправлен в Telegram на{" "}
-        <span className="font-mono text-white/80">{phoneMasked}</span>
-        {secondsLeft > 0 && (
-          <span className="text-white/40"> · действует {fmtTime(secondsLeft)}</span>
+        {sendMut.isPending ? (
+          <span className="inline-flex items-center gap-1.5">
+            <Loader2 className="h-3 w-3 animate-spin" /> Отправляем код…
+          </span>
+        ) : sendError ? (
+          <span className="text-red-300/80">{sendError}</span>
+        ) : (
+          <>
+            Код отправлен в Telegram на{" "}
+            <span className="font-mono text-white/80">{phoneMasked}</span>
+            {secondsLeft > 0 && (
+              <span className="text-white/40"> · действует {fmtTime(secondsLeft)}</span>
+            )}
+          </>
         )}
       </div>
 
@@ -194,7 +244,7 @@ export function PhoneVerifyPanel({ phone, canSend, onVerified }: Props) {
             autoComplete={i === 0 ? "one-time-code" : "off"}
             autoCapitalize="off"
             maxLength={i === 0 ? CODE_LEN : 1}
-            disabled={verifyMut.isPending}
+            disabled={!requestId || verifyMut.isPending}
             aria-label={`Цифра ${i + 1} из ${CODE_LEN}`}
             className={cn(
               "h-12 w-full min-w-0 rounded-xl border bg-white/5 text-center font-mono text-lg font-semibold text-white transition-colors",
@@ -210,7 +260,11 @@ export function PhoneVerifyPanel({ phone, canSend, onVerified }: Props) {
       <div className="flex items-center justify-between gap-2 text-[12px]">
         <button
           type="button"
-          onClick={handleSend}
+          onTouchEnd={(e) => {
+            e.preventDefault();
+            triggerSendFromTap();
+          }}
+          onClick={triggerSendFromClick}
           disabled={resendIn > 0 || sendMut.isPending}
           className="text-primary disabled:cursor-not-allowed disabled:text-white/30"
         >
