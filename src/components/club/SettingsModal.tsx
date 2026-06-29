@@ -622,19 +622,21 @@ function ProfileTab({ mobile }: { mobile?: boolean }) {
                 onChange={(v) => setPhone(v ?? "")}
                 className="hh-phone-rounded"
               />
-              {(() => {
-                const isValid = !!phone && isValidPhoneNumber(phone);
-                const sameAsSaved = phone === (me.phone ?? "");
-                if (sameAsSaved && me.phoneVerified) return null;
-                if (!isValid) return null;
-                return (
-                  <PhoneVerifyPanel
-                    phone={phone}
-                    canSend={isValid}
-                  />
-                );
-              })()}
             </HHInputField>
+            {/* Подтверждение телефона — отдельным блоком, чтобы layout/клик не зависел от обёртки поля. */}
+            {(() => {
+              const trimmed = (phone || "").trim();
+              const isValid = trimmed ? isValidPhoneNumber(trimmed) : false;
+              const sameAsSaved = trimmed === (me.phone ?? "");
+              if (sameAsSaved && me.phoneVerified) return null;
+              if (!trimmed) return null;
+              return (
+                <PhoneVerifyPanel
+                  phone={trimmed}
+                  canSend={isValid}
+                />
+              );
+            })()}
 
           </div>
         </HHSection>
