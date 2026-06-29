@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useViewer } from "@/hooks/use-viewer";
 import { ApiError } from "@/lib/api";
-import { isClubHost } from "@/lib/host";
+import { isClubHost, isMobileDevice, clubUrl } from "@/lib/host";
 import {
   PlumpEye,
   PlumpEyeOff,
@@ -75,7 +75,14 @@ function LoginPage() {
     setBusy(true);
     try {
       const user = await signIn(id, password);
-      navigate({ to: user.role === "blogger" ? "/blogger" : "/club" });
+      const target = user.role === "blogger" ? "/blogger" : "/club";
+      // Мобила на основном домене → редирект на club.hhr.pro,
+      // чтобы PWA ставилась с правильного origin. Cookie на .hhr.pro общая.
+      if (target === "/club" && !isClubHost() && isMobileDevice()) {
+        window.location.replace(clubUrl(target));
+        return;
+      }
+      navigate({ to: target });
     } catch (err) {
       if (err instanceof ApiError && err.status === 403 && isEmail(id)) {
         setPendingEmail(id.toLowerCase());
