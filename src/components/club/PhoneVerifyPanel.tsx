@@ -151,10 +151,11 @@ export function PhoneVerifyPanel({ phone, canSend, onVerified }: Props) {
       <button
         type="button"
         onClick={handleSend}
-        disabled={!canSend || sendMut.isPending}
+        disabled={sendMut.isPending}
         className={cn(
-          "mt-2 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-primary/40 bg-primary/10 px-4 text-[13px] font-semibold uppercase tracking-wider text-primary transition-colors",
+          "mt-3 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-primary/40 bg-primary/10 px-4 text-[13px] font-semibold uppercase tracking-wider text-primary transition-colors",
           "hover:bg-primary/15 disabled:cursor-not-allowed disabled:opacity-50",
+          !canSend && "opacity-60",
         )}
       >
         {sendMut.isPending ? (
