@@ -25,6 +25,12 @@ export function isStandalone(): boolean {
   }
 }
 
+/** Мобильное устройство (iOS / Android) — по UA. */
+export function isMobileDevice(): boolean {
+  if (typeof navigator === "undefined") return false;
+  return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+}
+
 /** Абсолютный URL на клубном поддомене для текущего пути. */
 export function clubUrl(pathAndQuery: string): string {
   const path = pathAndQuery.startsWith("/") ? pathAndQuery : `/${pathAndQuery}`;
