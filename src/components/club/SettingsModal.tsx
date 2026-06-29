@@ -594,12 +594,31 @@ function ProfileTab({ mobile }: { mobile?: boolean }) {
                 className="h-12 rounded-xl border-white/[0.08] bg-white/5 px-4 text-[14px] focus-visible:border-primary/40 focus-visible:ring-1 focus-visible:ring-primary/20"
               />
             </HHInputField>
-            <HHInputField label="Телефон">
+            <HHInputField
+              label="Телефон"
+              hint={
+                me.phoneVerified && phone === (me.phone ?? "")
+                  ? "Номер подтверждён через Telegram"
+                  : undefined
+              }
+            >
               <PhoneInput
                 value={phone}
                 onChange={(v) => setPhone(v ?? "")}
                 className="hh-phone-rounded"
               />
+              {(() => {
+                const isValid = !!phone && isValidPhoneNumber(phone);
+                const sameAsSaved = phone === (me.phone ?? "");
+                if (sameAsSaved && me.phoneVerified) return null;
+                if (!isValid) return null;
+                return (
+                  <PhoneVerifyPanel
+                    phone={phone}
+                    canSend={isValid}
+                  />
+                );
+              })()}
             </HHInputField>
 
           </div>
