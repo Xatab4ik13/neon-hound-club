@@ -3,6 +3,12 @@ import { useState } from "react";
 import { useViewer } from "@/hooks/use-viewer";
 import { ApiError } from "@/lib/api";
 import { isClubHost } from "@/lib/host";
+import {
+  PlumpEye,
+  PlumpEyeOff,
+  PlumpArrowRight,
+  PlumpArrowLeft,
+} from "@/components/ui/icons";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
@@ -37,7 +43,6 @@ function looksLikePhone(v: string) {
 function LoginPage() {
   const navigate = useNavigate();
   const { signIn, signUp, resendVerification } = useViewer();
-  // На club.hhr.pro регистрации нет — она живёт на основном домене.
   const onClub = isClubHost();
   const [mode, setMode] = useState<Mode>("login");
 
@@ -73,7 +78,6 @@ function LoginPage() {
       navigate({ to: user.role === "blogger" ? "/blogger" : "/club" });
     } catch (err) {
       if (err instanceof ApiError && err.status === 403 && isEmail(id)) {
-        // email_not_verified — только для email-логина
         setPendingEmail(id.toLowerCase());
         setMailFailed(false);
       } else {
@@ -124,22 +128,26 @@ function LoginPage() {
     }
   };
 
+  // ───────── pending email screen ─────────
   if (pendingEmail) {
     return (
       <main className="relative min-h-screen overflow-hidden bg-black pt-20">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute left-1/2 top-1/3 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-30 blur-[120px]"
-          style={{ background: "var(--primary)" }}
-        />
+        <BgDecor />
         <div
           className="relative z-10 mx-auto flex min-h-[calc(100vh-5rem)] w-full max-w-[480px] flex-col px-6 py-10 md:py-16"
           style={{ animation: "page-fade-zoom 500ms cubic-bezier(0.16, 1, 0.3, 1) both" }}
         >
-          <h1 className="font-display text-5xl italic uppercase font-bold leading-none tracking-tight text-white md:text-6xl">
-            Проверь почту
+          <Eyebrow>{onClub ? "Club · Confirm" : "Confirm · HHR.PRO"}</Eyebrow>
+          <h1 className="mt-4 font-display text-[56px] italic uppercase font-black leading-[0.9] tracking-tight text-white md:text-7xl">
+            Проверь
+            <br />
+            почту
           </h1>
-          <p className={`mt-4 font-mono text-[12px] uppercase tracking-[0.2em] ${mailFailed ? "text-amber-400" : "text-muted-foreground"}`}>
+          <p
+            className={`mt-5 font-mono text-[12px] uppercase tracking-[0.2em] ${
+              mailFailed ? "text-amber-400" : "text-muted-foreground"
+            }`}
+          >
             {mailFailed ? "Письмо не доставлено" : "Письмо ушло"}
           </p>
           {mailFailed ? (
@@ -160,11 +168,13 @@ function LoginPage() {
           </p>
 
           {resendMsg && (
-            <p className={`mt-6 border px-3 py-2 font-mono text-[11px] uppercase tracking-wider ${
-              mailFailed
-                ? "border-amber-400/40 bg-amber-400/[0.06] text-amber-300"
-                : "border-primary/30 bg-primary/[0.06] text-primary"
-            }`}>
+            <p
+              className={`mt-6 border px-3 py-2 font-mono text-[11px] uppercase tracking-wider ${
+                mailFailed
+                  ? "border-amber-400/40 bg-amber-400/[0.06] text-amber-300"
+                  : "border-primary/30 bg-primary/[0.06] text-primary"
+              }`}
+            >
               {resendMsg}
             </p>
           )}
@@ -185,9 +195,10 @@ function LoginPage() {
                 setResendMsg("");
                 setError("");
               }}
-              className="block w-full py-3 font-mono text-[11px] uppercase tracking-[0.22em] text-muted-foreground hover:text-white"
+              className="inline-flex w-full items-center justify-center gap-2 py-3 font-mono text-[11px] uppercase tracking-[0.22em] text-muted-foreground hover:text-white"
             >
-              ← Назад
+              <PlumpArrowLeft className="h-3.5 w-3.5" />
+              Назад
             </button>
           </div>
         </div>
@@ -195,73 +206,73 @@ function LoginPage() {
     );
   }
 
-
+  // ───────── main login/register screen ─────────
   return (
-    <main className="relative min-h-screen overflow-hidden bg-black pt-20">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-[0.05]"
-        style={{
-          backgroundImage:
-            "repeating-linear-gradient(45deg, var(--primary) 0, var(--primary) 1px, transparent 0, transparent 22px)",
-        }}
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute left-1/2 top-1/3 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-30 blur-[120px]"
-        style={{ background: "var(--primary)" }}
-      />
+    <main className="relative min-h-screen overflow-hidden bg-black pt-16 md:pt-20">
+      <BgDecor />
 
       <div
-        className="relative z-10 mx-auto flex min-h-[calc(100vh-5rem)] w-full max-w-[480px] flex-col px-6 py-10 md:py-16"
+        className="relative z-10 mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-[480px] flex-col px-6 py-8 md:min-h-[calc(100vh-5rem)] md:py-16"
         style={{ animation: "page-fade-zoom 500ms cubic-bezier(0.16, 1, 0.3, 1) both" }}
       >
-        <div className="mb-8">
-          <h1
-            className="font-display text-5xl italic uppercase font-bold leading-none tracking-tight text-white md:text-6xl"
-            style={{
-              textShadow: "0 0 20px color-mix(in oklab, var(--primary) 25%, transparent)",
-            }}
-          >
-            {mode === "login" ? "Войти" : "В клуб"}
-          </h1>
-          <p className="mt-3 font-mono text-[12px] uppercase tracking-[0.2em] text-muted-foreground">
-            {mode === "login" ? "Email или телефон + пароль" : "Регистрация: email, ник, пароль"}
-          </p>
+        <Eyebrow>{onClub ? "Club · Access" : "HHR.PRO · Access"}</Eyebrow>
+
+        <h1
+          className="mt-3 font-display text-[56px] italic uppercase font-black leading-[0.9] tracking-tight text-white md:text-7xl"
+          style={{
+            textShadow:
+              "0 0 24px color-mix(in oklab, var(--primary) 28%, transparent)",
+          }}
+        >
+          {mode === "login" ? (
+            <>
+              Войти
+              <br />в клуб
+            </>
+          ) : (
+            <>
+              Стать
+              <br />
+              своим
+            </>
+          )}
+        </h1>
+        <p className="mt-3 font-mono text-[11px] uppercase tracking-[0.22em] text-muted-foreground">
+          {mode === "login"
+            ? "Email или телефон · пароль"
+            : "Email · ник · пароль"}
+        </p>
+
+        <div className="mb-7 mt-8 grid grid-cols-2 border border-white/10">
+          {(["login", "register"] as Mode[]).map((m) => {
+            const active = mode === m;
+            return (
+              <button
+                key={m}
+                type="button"
+                onClick={() => {
+                  setMode(m);
+                  setError("");
+                }}
+                className={`relative h-12 overflow-hidden font-display text-sm italic uppercase font-bold tracking-widest transition-colors ${
+                  active ? "text-black" : "text-muted-foreground hover:text-white"
+                }`}
+              >
+                <span
+                  aria-hidden
+                  className={`absolute inset-0 bg-primary transition-transform duration-300 ${
+                    active ? "translate-y-0" : "translate-y-full"
+                  }`}
+                />
+                <span className="relative z-10">
+                  {m === "login" ? "Вход" : "Регистрация"}
+                </span>
+              </button>
+            );
+          })}
         </div>
 
-        {!onClub && (
-          <div className="mb-8 grid grid-cols-2 border border-white/10">
-            {(["login", "register"] as Mode[]).map((m) => {
-              const active = mode === m;
-              return (
-                <button
-                  key={m}
-                  type="button"
-                  onClick={() => {
-                    setMode(m);
-                    setError("");
-                  }}
-                  className={`relative h-12 overflow-hidden font-display text-sm italic uppercase font-bold tracking-widest transition-colors ${
-                    active ? "text-black" : "text-muted-foreground hover:text-white"
-                  }`}
-                >
-                  <span
-                    aria-hidden
-                    className={`absolute inset-0 transition-transform duration-300 ${
-                      active ? "translate-y-0 bg-primary" : "translate-y-full bg-primary"
-                    }`}
-                  />
-                  <span className="relative z-10">
-                    {m === "login" ? "Вход" : "Регистрация"}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        )}
-
-        {mode === "login" || onClub ? (
+        {mode === "login" ? (
           <form onSubmit={handleLogin} className="space-y-5">
             <FieldLabel label="Email или телефон">
               <input
@@ -271,54 +282,31 @@ function LoginPage() {
                 value={loginId}
                 onChange={(e) => setLoginId(e.target.value)}
                 placeholder="you@example.com или +7 999 ..."
-                className="h-14 w-full border border-white/15 bg-white/[0.02] px-4 font-mono text-base tracking-wider text-white outline-none transition-colors placeholder:text-white/20 focus:border-primary focus:bg-white/[0.04]"
+                className={INPUT_CLASS}
               />
             </FieldLabel>
 
             <FieldLabel label="Пароль">
-              <input
-                type="password"
-                autoComplete="current-password"
+              <PasswordField
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={setPassword}
+                autoComplete="current-password"
                 placeholder="••••••••"
-                className="h-14 w-full border border-white/15 bg-white/[0.02] px-4 font-mono text-base tracking-wider text-white outline-none transition-colors placeholder:text-white/20 focus:border-primary focus:bg-white/[0.04]"
               />
             </FieldLabel>
 
             <div className="flex justify-end">
-              {onClub ? (
-                <a
-                  href="https://hhr.pro/forgot-password"
-                  className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground transition-colors hover:text-primary"
-                >
-                  Забыли пароль?
-                </a>
-              ) : (
-                <Link
-                  to="/forgot-password"
-                  className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground transition-colors hover:text-primary"
-                >
-                  Забыли пароль?
-                </Link>
-              )}
+              <Link
+                to="/forgot-password"
+                className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground transition-colors hover:text-primary"
+              >
+                Забыли пароль?
+              </Link>
             </div>
 
             {error && <ErrorLine>{error}</ErrorLine>}
 
             <SubmitButton busy={busy}>Войти</SubmitButton>
-
-            {onClub && (
-              <p className="pt-2 text-center font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-                Нет аккаунта?{" "}
-                <a
-                  href="https://hhr.pro/login"
-                  className="text-primary transition-colors hover:underline"
-                >
-                  Зарегистрироваться →
-                </a>
-              </p>
-            )}
           </form>
         ) : (
           <form onSubmit={handleRegister} className="space-y-5">
@@ -329,7 +317,7 @@ function LoginPage() {
                 value={regEmail}
                 onChange={(e) => setRegEmail(e.target.value)}
                 placeholder="you@example.com"
-                className="h-14 w-full border border-white/15 bg-white/[0.02] px-4 font-mono text-base tracking-wider text-white outline-none transition-colors placeholder:text-white/20 focus:border-primary focus:bg-white/[0.04]"
+                className={INPUT_CLASS}
               />
             </FieldLabel>
 
@@ -340,29 +328,25 @@ function LoginPage() {
                 value={regNick}
                 onChange={(e) => setRegNick(e.target.value)}
                 placeholder="asphalt_dog"
-                className="h-14 w-full border border-white/15 bg-white/[0.02] px-4 font-mono text-base tracking-wider text-white outline-none transition-colors placeholder:text-white/20 focus:border-primary focus:bg-white/[0.04]"
+                className={INPUT_CLASS}
               />
             </FieldLabel>
 
             <FieldLabel label="Пароль">
-              <input
-                type="password"
-                autoComplete="new-password"
+              <PasswordField
                 value={regPassword}
-                onChange={(e) => setRegPassword(e.target.value)}
+                onChange={setRegPassword}
+                autoComplete="new-password"
                 placeholder="минимум 8 символов"
-                className="h-14 w-full border border-white/15 bg-white/[0.02] px-4 font-mono text-base tracking-wider text-white outline-none transition-colors placeholder:text-white/20 focus:border-primary focus:bg-white/[0.04]"
               />
             </FieldLabel>
 
             <FieldLabel label="Повторите пароль">
-              <input
-                type="password"
-                autoComplete="new-password"
+              <PasswordField
                 value={regPassword2}
-                onChange={(e) => setRegPassword2(e.target.value)}
+                onChange={setRegPassword2}
+                autoComplete="new-password"
                 placeholder="••••••••"
-                className="h-14 w-full border border-white/15 bg-white/[0.02] px-4 font-mono text-base tracking-wider text-white outline-none transition-colors placeholder:text-white/20 focus:border-primary focus:bg-white/[0.04]"
               />
             </FieldLabel>
 
@@ -376,16 +360,100 @@ function LoginPage() {
           </form>
         )}
 
-        <div className="mt-auto pt-12">
-          <Link
-            to="/"
-            className="inline-block font-mono text-[11px] uppercase tracking-[0.22em] text-muted-foreground transition-colors hover:text-primary"
-          >
-            ← На главную
-          </Link>
+        <div className="mt-auto flex items-center justify-between gap-4 pt-12">
+          {onClub ? (
+            <a
+              href="https://hhr.pro"
+              className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.22em] text-muted-foreground transition-colors hover:text-primary"
+            >
+              <PlumpArrowLeft className="h-3.5 w-3.5" />
+              На сайт
+            </a>
+          ) : (
+            <Link
+              to="/"
+              className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.22em] text-muted-foreground transition-colors hover:text-primary"
+            >
+              <PlumpArrowLeft className="h-3.5 w-3.5" />
+              На главную
+            </Link>
+          )}
+          <span className="font-mono text-[10px] uppercase tracking-[0.3em] text-white/20">
+            HELLHOUND · HHR.PRO
+          </span>
         </div>
       </div>
     </main>
+  );
+}
+
+// ───────── shared bits ─────────
+
+const INPUT_CLASS =
+  "h-14 w-full border border-white/15 bg-white/[0.02] px-4 font-mono text-base tracking-wider text-white outline-none transition-colors placeholder:text-white/20 focus:border-primary focus:bg-white/[0.04]";
+
+function BgDecor() {
+  return (
+    <>
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 opacity-[0.05]"
+        style={{
+          backgroundImage:
+            "repeating-linear-gradient(45deg, var(--primary) 0, var(--primary) 1px, transparent 0, transparent 22px)",
+        }}
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute left-1/2 top-1/3 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-30 blur-[120px]"
+        style={{ background: "var(--primary)" }}
+      />
+    </>
+  );
+}
+
+function Eyebrow({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex items-center gap-3">
+      <span className="h-[2px] w-8 bg-primary" />
+      <span className="font-mono text-[10px] uppercase tracking-[0.32em] text-primary">
+        {children}
+      </span>
+    </div>
+  );
+}
+
+function PasswordField({
+  value,
+  onChange,
+  autoComplete,
+  placeholder,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  autoComplete: string;
+  placeholder?: string;
+}) {
+  const [show, setShow] = useState(false);
+  return (
+    <div className="relative">
+      <input
+        type={show ? "text" : "password"}
+        autoComplete={autoComplete}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className={`${INPUT_CLASS} pr-12`}
+      />
+      <button
+        type="button"
+        onClick={() => setShow((s) => !s)}
+        aria-label={show ? "Скрыть пароль" : "Показать пароль"}
+        className="absolute inset-y-0 right-0 grid w-12 place-items-center text-muted-foreground transition-colors hover:text-primary"
+      >
+        {show ? <PlumpEyeOff className="h-5 w-5" /> : <PlumpEye className="h-5 w-5" />}
+      </button>
+    </div>
   );
 }
 
@@ -426,7 +494,14 @@ function SubmitButton({ children, busy }: { children: React.ReactNode; busy?: bo
         aria-hidden
         className="absolute inset-0 bg-white opacity-0 transition-opacity group-hover:opacity-10"
       />
-      <span className="relative z-10">{busy ? "..." : children}</span>
+      <span className="relative z-10 inline-flex items-center justify-center gap-3">
+        {busy ? "..." : (
+          <>
+            {children}
+            <PlumpArrowRight className="h-6 w-6" />
+          </>
+        )}
+      </span>
     </button>
   );
 }
