@@ -596,9 +596,10 @@ function ProfileTab({ mobile }: { mobile?: boolean }) {
               <PhoneInput
                 value={phone}
                 onChange={(v) => setPhone(v ?? "")}
-                inputClassName="h-12 rounded-xl border-white/[0.08] bg-white/5 px-4 text-[14px] focus-visible:border-primary/40 focus-visible:ring-1 focus-visible:ring-primary/20"
+                className="hh-phone-rounded"
               />
             </HHInputField>
+
           </div>
         </HHSection>
 
