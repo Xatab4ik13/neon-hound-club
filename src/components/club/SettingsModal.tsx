@@ -3,6 +3,8 @@ import { createPortal } from "react-dom";
 import { hhToast as toast } from "@/lib/hh-toast";
 import { Input } from "@/components/ui/input";
 import { PhoneInput } from "@/components/ui/phone-input";
+import { PhoneVerifyPanel } from "@/components/club/PhoneVerifyPanel";
+import { isValidPhoneNumber } from "libphonenumber-js";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -122,12 +124,27 @@ function HHCard({ children, tone = "default", className = "" }: {
   );
 }
 
-function HHInputField({ label, children }: { label: string; children: React.ReactNode }) {
+function HHInputField({
+  label,
+  hint,
+  children,
+}: {
+  label: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="space-y-1.5">
-      <label className="ml-1 font-display text-[10px] font-black uppercase italic tracking-[0.18em] text-white/45">
-        {label}
-      </label>
+      <div className="flex items-center justify-between gap-2 px-1">
+        <label className="font-display text-[10px] font-black uppercase italic tracking-[0.18em] text-white/45">
+          {label}
+        </label>
+        {hint && (
+          <span className="font-mono text-[10px] uppercase tracking-wider text-primary/80">
+            ✓ {hint}
+          </span>
+        )}
+      </div>
       <div className="hh-input-wrap">{children}</div>
     </div>
   );
@@ -592,12 +609,31 @@ function ProfileTab({ mobile }: { mobile?: boolean }) {
                 className="h-12 rounded-xl border-white/[0.08] bg-white/5 px-4 text-[14px] focus-visible:border-primary/40 focus-visible:ring-1 focus-visible:ring-primary/20"
               />
             </HHInputField>
-            <HHInputField label="Телефон">
+            <HHInputField
+              label="Телефон"
+              hint={
+                me.phoneVerified && phone === (me.phone ?? "")
+                  ? "Номер подтверждён через Telegram"
+                  : undefined
+              }
+            >
               <PhoneInput
                 value={phone}
                 onChange={(v) => setPhone(v ?? "")}
                 className="hh-phone-rounded"
               />
+              {(() => {
+                const isValid = !!phone && isValidPhoneNumber(phone);
+                const sameAsSaved = phone === (me.phone ?? "");
+                if (sameAsSaved && me.phoneVerified) return null;
+                if (!isValid) return null;
+                return (
+                  <PhoneVerifyPanel
+                    phone={phone}
+                    canSend={isValid}
+                  />
+                );
+              })()}
             </HHInputField>
 
           </div>

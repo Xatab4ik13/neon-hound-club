@@ -59,6 +59,8 @@ export type MyProfile = {
   emailVerified: boolean;
   joinedAt: string;
   phone: string | null;
+  /** true если телефон подтверждён через Telegram Gateway (phone_verified_at IS NOT NULL). */
+  phoneVerified: boolean;
   city: string | null;
   avatarUrl: string | null;
   bio: string | null;
@@ -131,10 +133,43 @@ export function usePublicProfile(nick: string) {
 export function useUpdateMyProfile() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (patch: Partial<Omit<MyProfile, "userId" | "email" | "nick" | "role" | "emailVerified" | "joinedAt" | "bikesCount">>) =>
+    mutationFn: (patch: Partial<Omit<MyProfile, "userId" | "email" | "nick" | "role" | "emailVerified" | "joinedAt" | "bikesCount" | "phoneVerified">>) =>
       apiFetch<{ ok: true }>("/api/v1/profile/me", {
         method: "PATCH",
         body: JSON.stringify(patch),
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: gqk.myProfile });
+    },
+  });
+}
+
+// ---------- PHONE VERIFICATION (Telegram Gateway) ----------
+
+export type PhoneSendCodeResp = {
+  ok: true;
+  requestId: string;
+  expiresInSec: number;
+  phoneMasked: string;
+};
+
+export function usePhoneSendCode() {
+  return useMutation({
+    mutationFn: (phone: string) =>
+      apiFetch<PhoneSendCodeResp>("/api/v1/profile/phone/send-code", {
+        method: "POST",
+        body: JSON.stringify({ phone }),
+      }),
+  });
+}
+
+export function usePhoneVerify() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (vars: { requestId: string; code: string }) =>
+      apiFetch<{ ok: true; phoneVerified: true }>("/api/v1/profile/phone/verify", {
+        method: "POST",
+        body: JSON.stringify(vars),
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: gqk.myProfile });
