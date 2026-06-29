@@ -230,44 +230,47 @@ function LoginPage() {
           </p>
         </div>
 
-        <div className="mb-8 grid grid-cols-2 border border-white/10">
-          {(["login", "register"] as Mode[]).map((m) => {
-            const active = mode === m;
-            return (
-              <button
-                key={m}
-                type="button"
-                onClick={() => {
-                  setMode(m);
-                  setError("");
-                }}
-                className={`relative h-12 overflow-hidden font-display text-sm italic uppercase font-bold tracking-widest transition-colors ${
-                  active ? "text-black" : "text-muted-foreground hover:text-white"
-                }`}
-              >
-                <span
-                  aria-hidden
-                  className={`absolute inset-0 transition-transform duration-300 ${
-                    active ? "translate-y-0 bg-primary" : "translate-y-full bg-primary"
+        {!onClub && (
+          <div className="mb-8 grid grid-cols-2 border border-white/10">
+            {(["login", "register"] as Mode[]).map((m) => {
+              const active = mode === m;
+              return (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => {
+                    setMode(m);
+                    setError("");
+                  }}
+                  className={`relative h-12 overflow-hidden font-display text-sm italic uppercase font-bold tracking-widest transition-colors ${
+                    active ? "text-black" : "text-muted-foreground hover:text-white"
                   }`}
-                />
-                <span className="relative z-10">
-                  {m === "login" ? "Вход" : "Регистрация"}
-                </span>
-              </button>
-            );
-          })}
-        </div>
+                >
+                  <span
+                    aria-hidden
+                    className={`absolute inset-0 transition-transform duration-300 ${
+                      active ? "translate-y-0 bg-primary" : "translate-y-full bg-primary"
+                    }`}
+                  />
+                  <span className="relative z-10">
+                    {m === "login" ? "Вход" : "Регистрация"}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        )}
 
-        {mode === "login" ? (
+        {mode === "login" || onClub ? (
           <form onSubmit={handleLogin} className="space-y-5">
-            <FieldLabel label="Email">
+            <FieldLabel label="Email или телефон">
               <input
-                type="email"
-                autoComplete="email"
-                value={loginEmail}
-                onChange={(e) => setLoginEmail(e.target.value)}
-                placeholder="you@example.com"
+                type="text"
+                inputMode="email"
+                autoComplete="username"
+                value={loginId}
+                onChange={(e) => setLoginId(e.target.value)}
+                placeholder="you@example.com или +7 999 ..."
                 className="h-14 w-full border border-white/15 bg-white/[0.02] px-4 font-mono text-base tracking-wider text-white outline-none transition-colors placeholder:text-white/20 focus:border-primary focus:bg-white/[0.04]"
               />
             </FieldLabel>
@@ -284,17 +287,38 @@ function LoginPage() {
             </FieldLabel>
 
             <div className="flex justify-end">
-              <Link
-                to="/forgot-password"
-                className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground transition-colors hover:text-primary"
-              >
-                Забыли пароль?
-              </Link>
+              {onClub ? (
+                <a
+                  href="https://hhr.pro/forgot-password"
+                  className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground transition-colors hover:text-primary"
+                >
+                  Забыли пароль?
+                </a>
+              ) : (
+                <Link
+                  to="/forgot-password"
+                  className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground transition-colors hover:text-primary"
+                >
+                  Забыли пароль?
+                </Link>
+              )}
             </div>
 
             {error && <ErrorLine>{error}</ErrorLine>}
 
             <SubmitButton busy={busy}>Войти</SubmitButton>
+
+            {onClub && (
+              <p className="pt-2 text-center font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+                Нет аккаунта?{" "}
+                <a
+                  href="https://hhr.pro/login"
+                  className="text-primary transition-colors hover:underline"
+                >
+                  Зарегистрироваться →
+                </a>
+              </p>
+            )}
           </form>
         ) : (
           <form onSubmit={handleRegister} className="space-y-5">
