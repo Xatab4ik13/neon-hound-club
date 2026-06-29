@@ -55,8 +55,14 @@ export function PhoneVerifyPanel({ phone, canSend, onVerified }: Props) {
   const code = useMemo(() => digits.join(""), [digits]);
 
   const handleSend = async () => {
-    if (!canSend || sendMut.isPending) return;
+    // Лишний клик / нет номера — игнор.
+    if (sendMut.isPending) return;
+    if (!phone) {
+      toast.error("Сначала введи номер");
+      return;
+    }
     try {
+      // Серверу отдаём номер как есть — он сам нормализует через libphonenumber-js.
       const r = await sendMut.mutateAsync(phone);
       setRequestId(r.requestId);
       setPhoneMasked(r.phoneMasked);
@@ -72,7 +78,9 @@ export function PhoneVerifyPanel({ phone, canSend, onVerified }: Props) {
           ? "Слишком часто. Подожди немного."
           : err.status === 409
             ? "Этот номер уже привязан к другому аккаунту"
-            : err.message || "Не удалось отправить код";
+            : err.status === 400
+              ? "Неверный формат номера"
+              : err.message || "Не удалось отправить код";
       toast.error(msg);
     }
   };
@@ -143,10 +151,11 @@ export function PhoneVerifyPanel({ phone, canSend, onVerified }: Props) {
       <button
         type="button"
         onClick={handleSend}
-        disabled={!canSend || sendMut.isPending}
+        disabled={sendMut.isPending}
         className={cn(
-          "mt-2 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-primary/40 bg-primary/10 px-4 text-[13px] font-semibold uppercase tracking-wider text-primary transition-colors",
+          "mt-3 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-primary/40 bg-primary/10 px-4 text-[13px] font-semibold uppercase tracking-wider text-primary transition-colors",
           "hover:bg-primary/15 disabled:cursor-not-allowed disabled:opacity-50",
+          !canSend && "opacity-60",
         )}
       >
         {sendMut.isPending ? (
