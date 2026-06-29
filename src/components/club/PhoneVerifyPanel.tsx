@@ -216,7 +216,7 @@ export function PhoneVerifyPanel({ phone, canSend, onVerified }: Props) {
             <Loader2 className="h-3 w-3 animate-spin" /> Отправляем код…
           </span>
         ) : sendError ? (
-          <span className="text-red-300/80">{sendError}</span>
+          <span className="text-destructive/80">{sendError}</span>
         ) : (
           <>
             Код отправлен в Telegram на{" "}
