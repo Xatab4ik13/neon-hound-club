@@ -2153,7 +2153,7 @@ function CommentComposer({
             className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:text-foreground active:scale-95"
             aria-label="Стикеры"
           >
-            <Sticker size={22} strokeWidth={1.6} />
+            <Sticker size={22} />
           </button>
         ) : (
           <button
