@@ -70,21 +70,30 @@ export async function attachReferral(invitedUserId: string, rawCode: string): Pr
 }
 
 /** Активировать реферала — обоим по билету + XP рефереру.
- *  Активируем ТОЛЬКО когда у приглашённого заполнен (и нормализован) телефон —
- *  это защита от мультиаков: фейковые акки без реального номера не приносят бонусов.
+ *  Гейт от мультиаков: активируем ТОЛЬКО когда у приглашённого подтверждены
+ *  и email, и телефон. Иначе фейковые акки приносили бы билеты.
  */
 export async function activateReferral(invitedUserId: string): Promise<void> {
   const [row] = await db.select().from(referrals).where(eq(referrals.invitedUserId, invitedUserId)).limit(1);
   if (!row || row.status === "active") return;
 
-  // Гейт: телефон должен быть подтверждён в profiles.phone_e164
+  // Гейт 1: email подтверждён
+  const [u] = await db
+    .select({ emailVerified: users.emailVerified })
+    .from(users)
+    .where(eq(users.id, invitedUserId))
+    .limit(1);
+  if (!u?.emailVerified) return;
+
+  // Гейт 2: телефон подтверждён (есть phone_verified_at)
   const { profiles } = await import("../db/schema/profile.js");
   const [prof] = await db
-    .select({ phoneE164: profiles.phoneE164 })
+    .select({ phoneVerifiedAt: profiles.phoneVerifiedAt })
     .from(profiles)
     .where(eq(profiles.userId, invitedUserId))
     .limit(1);
-  if (!prof?.phoneE164) return;
+  if (!prof?.phoneVerifiedAt) return;
+
 
 
   await db
