@@ -104,7 +104,20 @@ function deriveRankView(rank: RankInfo | null | undefined, customBg: PlaqueBg | 
 }
 
 function MePage() {
-  const [settingsOpen, setSettingsOpen] = useState(false);
+  const search = useSearch({ from: "/club/me" });
+  const navigate = useNavigate();
+  const [settingsOpen, setSettingsOpen] = useState(search.settings === "1");
+  const [bgSheetOpen, setBgSheetOpen] = useState(false);
+  const [ordersSheetOpen, setOrdersSheetOpen] = useState(false);
+
+  // Снимаем ?settings=1 из URL после открытия, чтобы не открывалось повторно при рефреше.
+  useEffect(() => {
+    if (search.settings === "1") {
+      setSettingsOpen(true);
+      navigate({ to: "/club/me", search: {}, replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search.settings]);
   const [bgSheetOpen, setBgSheetOpen] = useState(false);
   const [ordersSheetOpen, setOrdersSheetOpen] = useState(false);
   const isMobile = useIsMobile();
