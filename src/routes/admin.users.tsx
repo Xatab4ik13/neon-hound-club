@@ -30,7 +30,9 @@ import {
   awardBadge,
   patchAdminUser,
   type AdminUserListItem,
+  type AdminUsersSort,
 } from "@/lib/admin-queries";
+
 import { ApiError } from "@/lib/api";
 import { hhToast as toast } from "@/lib/hh-toast";
 
@@ -47,6 +49,10 @@ function UsersPage() {
   const [giftStickersOpen, setGiftStickersOpen] = useState(false);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState<AdminPageSize>(50);
+  const [sort, setSort] = useState<{ key: AdminUsersSort; dir: "asc" | "desc" }>({
+    key: "createdAt",
+    dir: "desc",
+  });
 
   // дебаунс поиска
   if (query !== debounced) {
@@ -57,8 +63,15 @@ function UsersPage() {
   }
 
   const listQ = useQuery({
-    queryKey: [...adminQk.users(debounced), page, pageSize],
-    queryFn: () => fetchAdminUsers({ q: debounced || undefined, page, pageSize }),
+    queryKey: [...adminQk.users(debounced), page, pageSize, sort.key, sort.dir],
+    queryFn: () =>
+      fetchAdminUsers({
+        q: debounced || undefined,
+        page,
+        pageSize,
+        sort: sort.key,
+        dir: sort.dir,
+      }),
     placeholderData: (prev) => prev,
   });
 
@@ -80,14 +93,31 @@ function UsersPage() {
 
       <Panel>
         <DataTable
-          headers={["Ник", "Email", "Город", "Роль", "Статус", "Регистрация", ""]}
+          sort={sort}
+          onSortChange={(key, dir) => {
+            setSort({ key: key as AdminUsersSort, dir });
+            setPage(1);
+          }}
+          headers={[
+            { label: "Ник", sortKey: "nick" },
+            { label: "Email", sortKey: "email" },
+            { label: "Город", sortKey: "city" },
+            { label: "Роль", sortKey: "role" },
+            { label: "Email ✓", sortKey: "emailVerified" },
+            { label: "Телефон ✓", sortKey: "phoneVerified" },
+            { label: "Статус", sortKey: "status" },
+            { label: "Регистрация", sortKey: "createdAt" },
+            "",
+          ]}
           rows={items.map((u) => [
             <span className="font-medium">@{u.nick}</span>,
             <span className="text-zinc-600 dark:text-zinc-300">{u.email}</span>,
             <span>{u.city ?? "—"}</span>,
             <Badge tone={u.role === "admin" ? "rose" : "zinc"}>{u.role}</Badge>,
-            <Badge tone={u.blocked ? "rose" : u.emailVerified ? "emerald" : "amber"}>
-              {u.blocked ? "Бан" : u.emailVerified ? "Активен" : "Не подтв."}
+            <VerifiedDot ok={u.emailVerified} />,
+            <VerifiedDot ok={u.phoneVerified} />,
+            <Badge tone={u.blocked ? "rose" : "emerald"}>
+              {u.blocked ? "Бан" : "Активен"}
             </Badge>,
             <span className="tabular-nums text-zinc-500 dark:text-zinc-400">
               {new Date(u.createdAt).toLocaleDateString("ru-RU")}
@@ -112,6 +142,7 @@ function UsersPage() {
           }}
         />
       </Panel>
+
 
       {selectedId && (
         <UserDrawer
@@ -255,9 +286,11 @@ function UserDrawer({
           <Section title="Активность">
             <InfoRow label="Регистрация" value={new Date(u.createdAt).toLocaleString("ru-RU")} />
             <InfoRow label="Email подтверждён" value={u.emailVerified ? "да" : "нет"} />
+            <InfoRow label="Телефон подтверждён" value={u.phoneVerified ? "да" : "нет"} />
             <InfoRow label="Роль" value={u.role} />
             <InfoRow label="Статус" value={u.blocked ? "забанен" : "активен"} />
           </Section>
+
 
           <Section title="Билеты">
             <Metric label="Баланс" value={String(u.ticketsBalance)} />
@@ -379,6 +412,27 @@ function InfoRow({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
+
+function VerifiedDot({ ok }: { ok: boolean }) {
+  return ok ? (
+    <span
+      aria-label="Подтверждён"
+      title="Подтверждён"
+      className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+    >
+      <svg viewBox="0 0 16 16" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+        <path d="M3.5 8.5l3 3 6-7" />
+      </svg>
+    </span>
+  ) : (
+    <span
+      aria-label="Не подтверждён"
+      title="Не подтверждён"
+      className="inline-block h-2 w-2 rounded-full bg-zinc-300 dark:bg-zinc-700"
+    />
+  );
+}
+
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (

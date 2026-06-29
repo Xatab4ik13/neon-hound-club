@@ -190,12 +190,27 @@ export function Badge({
   );
 }
 
+export type DataTableSortDir = "asc" | "desc";
+export type DataTableHeader =
+  | string
+  | {
+      label: string;
+      /** Ключ сортировки. Если не задан — заголовок неактивный. */
+      sortKey?: string;
+    };
+
 export function DataTable({
   headers,
   rows,
+  sort,
+  onSortChange,
 }: {
-  headers: string[];
+  headers: DataTableHeader[];
   rows: ReactNode[][];
+  /** Текущая сортировка (ключ + направление). */
+  sort?: { key: string; dir: DataTableSortDir };
+  /** Колбэк при клике на сортируемый заголовок. */
+  onSortChange?: (key: string, dir: DataTableSortDir) => void;
 }) {
   return (
     <div className="-mx-4 overflow-x-auto px-4 md:mx-0 md:px-0">
@@ -203,11 +218,39 @@ export function DataTable({
 
         <thead className="bg-zinc-50 dark:bg-zinc-900/50">
           <tr className="text-left text-xs uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-            {headers.map((h) => (
-              <th key={h} className="whitespace-nowrap px-4 py-2.5 font-medium">
-                {h}
-              </th>
-            ))}
+            {headers.map((h, idx) => {
+              const isObj = typeof h === "object";
+              const label = isObj ? h.label : h;
+              const sortKey = isObj ? h.sortKey : undefined;
+              const active = sort && sortKey && sort.key === sortKey;
+              const arrow = active ? (sort!.dir === "asc" ? "▲" : "▼") : "";
+              if (!sortKey || !onSortChange) {
+                return (
+                  <th key={`${label}-${idx}`} className="whitespace-nowrap px-4 py-2.5 font-medium">
+                    {label}
+                  </th>
+                );
+              }
+              return (
+                <th key={`${label}-${idx}`} className="whitespace-nowrap px-4 py-2.5 font-medium">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const nextDir: DataTableSortDir =
+                        active && sort!.dir === "asc" ? "desc" : "asc";
+                      onSortChange(sortKey, nextDir);
+                    }}
+                    className={cn(
+                      "inline-flex select-none items-center gap-1 uppercase tracking-wider hover:text-zinc-900 dark:hover:text-zinc-100",
+                      active && "text-zinc-900 dark:text-zinc-100",
+                    )}
+                  >
+                    <span>{label}</span>
+                    <span className="text-[10px] opacity-70">{arrow || "↕"}</span>
+                  </button>
+                </th>
+              );
+            })}
           </tr>
         </thead>
         <tbody>
@@ -229,6 +272,7 @@ export function DataTable({
     </div>
   );
 }
+
 
 export function StubPage({
   title,

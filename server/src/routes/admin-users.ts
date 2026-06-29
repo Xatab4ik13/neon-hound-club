@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { and, desc, eq, ilike, ne, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, ilike, ne, or, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { users } from "../db/schema/users.js";
 import { profiles } from "../db/schema/profile.js";
@@ -30,10 +30,26 @@ const STICKER_PACK_SLUGS = GIFTABLE_STICKER_PACKS.map((p) => p.slug) as [string,
 export async function adminUsersRoutes(app: FastifyInstance) {
   app.addHook("preHandler", requireAdmin);
 
-  // GET /api/v1/admin/users?q=&page=&pageSize=
+  // GET /api/v1/admin/users?q=&page=&pageSize=&sort=&dir=
   app.get("/", async (req) => {
     const q = z
-      .object({ q: z.string().trim().max(120).optional() })
+      .object({
+        q: z.string().trim().max(120).optional(),
+        sort: z
+          .enum([
+            "nick",
+            "email",
+            "city",
+            "role",
+            "emailVerified",
+            "phoneVerified",
+            "status",
+            "createdAt",
+          ])
+          .optional()
+          .default("createdAt"),
+        dir: z.enum(["asc", "desc"]).optional().default("desc"),
+      })
       .parse(req.query ?? {});
     const { page, pageSize, offset } = parsePagination(req.query);
 
@@ -46,6 +62,25 @@ export async function adminUsersRoutes(app: FastifyInstance) {
       ? and(ne(users.role, "admin"), searchWhere)
       : ne(users.role, "admin");
 
+    // Маппинг колонки сортировки на SQL-выражение.
+    const phoneVerifiedExpr = sql`(${profiles.phoneVerifiedAt} IS NOT NULL)`;
+    // status: сначала заблокированные (true), потом активные — единый признак для сортировки.
+    const statusExpr = sql`${users.blocked}`;
+    const sortMap = {
+      nick: sql`lower(${users.nick})`,
+      email: sql`lower(${users.email})`,
+      city: sql`lower(coalesce(${profiles.city}, ''))`,
+      role: users.role,
+      emailVerified: users.emailVerified,
+      phoneVerified: phoneVerifiedExpr,
+      status: statusExpr,
+      createdAt: users.createdAt,
+    } as const;
+    const sortCol = sortMap[q.sort];
+    const orderExpr = q.dir === "asc" ? asc(sortCol as any) : desc(sortCol as any);
+    // Стабильный вторичный порядок, чтобы пагинация не «прыгала» при равных значениях.
+    const orderBy = [orderExpr, desc(users.createdAt)];
+
     const [rows, totalRows] = await Promise.all([
       db
         .select({
@@ -54,6 +89,7 @@ export async function adminUsersRoutes(app: FastifyInstance) {
           nick: users.nick,
           role: users.role,
           emailVerified: users.emailVerified,
+          phoneVerified: phoneVerifiedExpr.as("phone_verified"),
           blocked: users.blocked,
           createdAt: users.createdAt,
           city: profiles.city,
@@ -63,7 +99,7 @@ export async function adminUsersRoutes(app: FastifyInstance) {
         .from(users)
         .leftJoin(profiles, eq(profiles.userId, users.id))
         .where(where)
-        .orderBy(desc(users.createdAt))
+        .orderBy(...orderBy)
         .limit(pageSize)
         .offset(offset),
       db
@@ -75,6 +111,7 @@ export async function adminUsersRoutes(app: FastifyInstance) {
     return { items: rows, total: totalRows[0]?.c ?? 0, page, pageSize };
   });
 
+
   // GET /api/v1/admin/users/:id — карточка с агрегатами
   app.get<{ Params: { id: string } }>("/:id", async (req, reply) => {
     const [u] = await db
@@ -84,6 +121,9 @@ export async function adminUsersRoutes(app: FastifyInstance) {
         nick: users.nick,
         role: users.role,
         emailVerified: users.emailVerified,
+        phoneVerified: sql<boolean>`(${profiles.phoneVerifiedAt} IS NOT NULL)`.as(
+          "phone_verified",
+        ),
         blocked: users.blocked,
         blockedAt: users.blockedAt,
         createdAt: users.createdAt,
@@ -96,6 +136,7 @@ export async function adminUsersRoutes(app: FastifyInstance) {
       .leftJoin(profiles, eq(profiles.userId, users.id))
       .where(eq(users.id, req.params.id))
       .limit(1);
+
 
     if (!u) return reply.code(404).send({ error: "not_found" });
 
