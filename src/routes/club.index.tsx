@@ -2357,8 +2357,8 @@ function StickerPanel({
                       </div>
                       {pack.productSlug && (
                         <Link
-                          to="/club/shop/$slug"
-                          params={{ slug: pack.productSlug }}
+                          to="/club/shop/$productSlug"
+                          params={{ productSlug: pack.productSlug }}
                           className="inline-flex items-center justify-center rounded-full bg-primary px-4 py-1.5 text-[12px] font-semibold text-primary-foreground"
                         >
                           Купить{pack.priceRub ? ` · ${pack.priceRub} ₽` : ""}
