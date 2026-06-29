@@ -1,11 +1,23 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { PlumpArrowRight as ChevronRight, Trophy, PlumpStore, PlumpTicket } from "@/components/ui/icons";
+import {
+  PlumpArrowRight as ChevronRight,
+  Trophy,
+  PlumpStore,
+  PlumpTicket,
+} from "@/components/ui/icons";
+import { ShieldAlert } from "lucide-react";
 import { TicketLedger } from "@/components/club/TicketLedger";
 import { TicketCard } from "@/components/club/TicketCard";
 import { PageHeader } from "@/components/club/PageHeader";
-import { fetchTicketsBalance, fetchTicketsHistory, qk } from "@/lib/queries";
+import {
+  fetchTicketsBalance,
+  fetchTicketsHistory,
+  fetchHomeRaffles,
+  qk,
+} from "@/lib/queries";
 import { useViewer } from "@/hooks/use-viewer";
+import { useMyProfile } from "@/lib/garage-api";
 
 export const Route = createFileRoute("/club/tickets")({
   head: () => ({
@@ -31,13 +43,28 @@ function TicketsPage() {
     queryFn: () => fetchTicketsHistory(60),
     enabled: isAuthed,
   });
+  const profileQ = useMyProfile(isAuthed);
+  const rafflesQ = useQuery({
+    queryKey: qk.raffles,
+    queryFn: fetchHomeRaffles,
+    staleTime: 60_000,
+  });
 
   const balance = balanceQ.data?.balance ?? 0;
   const entries = historyQ.data?.items ?? [];
 
+  // Активный розыгрыш — первый со статусом "active" (бэк сортирует по дедлайну).
+  const activeRaffle = (rafflesQ.data?.items ?? []).find((r) => r.status === "active") ?? null;
+
+  // Если телефон не подтверждён — показываем плашку. Если у нас ещё нет данных профиля
+  // или юзер не залогинен — ничего не показываем.
+  const phoneNeedsVerify = isAuthed && profileQ.data && !profileQ.data.phoneVerified;
+
   return (
     <main className="mx-auto w-full max-w-3xl px-4 py-5 md:py-8">
       <PageHeader title="Билеты" />
+
+      {phoneNeedsVerify && <PhoneVerifyBanner />}
 
       <TicketCard
         balance={balance}
@@ -45,6 +72,30 @@ function TicketsPage() {
         isError={balanceQ.isError}
         onRetry={() => balanceQ.refetch()}
       />
+
+      {activeRaffle && (
+        <Link
+          to="/club/raffles/$raffleId"
+          params={{ raffleId: activeRaffle.id }}
+          className="mb-4 flex items-center gap-3 rounded-2xl border border-primary/30 bg-primary/[0.07] px-4 py-3 transition-colors active:bg-primary/[0.12]"
+        >
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary/15 text-primary">
+            <Trophy className="h-4 w-4" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block font-mono text-[10px] uppercase tracking-widest text-primary/80">
+              Активный розыгрыш
+            </span>
+            <span className="mt-0.5 block truncate text-[14px] font-semibold text-foreground">
+              {activeRaffle.title}
+            </span>
+          </span>
+          <span className="shrink-0 font-mono text-[11px] font-bold uppercase tracking-wider text-primary">
+            Открыть
+          </span>
+          <ChevronRight className="h-4 w-4 shrink-0 text-primary/70" />
+        </Link>
+      )}
 
       <TicketLedger
         entries={entries}
@@ -83,6 +134,36 @@ function TicketsPage() {
   );
 }
 
+/**
+ * Плашка «телефон не подтверждён» — клик ведёт в профиль и сразу открывает
+ * SettingsModal на вкладке «Профиль» (см. validateSearch в club.me).
+ */
+function PhoneVerifyBanner() {
+  return (
+    <Link
+      to="/club/me"
+      search={{ settings: "1" }}
+      className="mb-4 flex items-center gap-3 rounded-2xl border border-amber-400/30 bg-amber-400/[0.06] px-4 py-3 transition-colors active:bg-amber-400/[0.12]"
+    >
+      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-amber-400/15 text-amber-300">
+        <ShieldAlert className="h-4 w-4" />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-[14px] font-semibold text-foreground">
+          Номер телефона не подтверждён
+        </span>
+        <span className="mt-0.5 block truncate text-[12px] text-muted-foreground">
+          Нужно для участия в розыгрышах
+        </span>
+      </span>
+      <span className="shrink-0 font-mono text-[11px] font-bold uppercase tracking-wider text-amber-300">
+        Подтвердить
+      </span>
+      <ChevronRight className="h-4 w-4 shrink-0 text-amber-300/70" />
+    </Link>
+  );
+}
+
 function EarnRow({
   title,
   hint,
@@ -112,4 +193,3 @@ function EarnRow({
     </li>
   );
 }
-

@@ -1,5 +1,5 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Calendar,
@@ -52,6 +52,12 @@ export const Route = createFileRoute("/club/me")({
       { name: "robots", content: "noindex" },
     ],
   }),
+  // ?settings=1 — открыть SettingsModal на табе «Профиль» (например, при клике
+  // «Подтвердить номер» с других страниц).
+  validateSearch: (search: Record<string, unknown>): { settings?: "1" } => {
+    const v = search.settings;
+    return v === "1" || v === 1 ? { settings: "1" } : {};
+  },
   component: MePage,
 });
 
@@ -98,9 +104,20 @@ function deriveRankView(rank: RankInfo | null | undefined, customBg: PlaqueBg | 
 }
 
 function MePage() {
-  const [settingsOpen, setSettingsOpen] = useState(false);
+  const search = useSearch({ from: "/club/me" });
+  const navigate = useNavigate();
+  const [settingsOpen, setSettingsOpen] = useState(search.settings === "1");
   const [bgSheetOpen, setBgSheetOpen] = useState(false);
   const [ordersSheetOpen, setOrdersSheetOpen] = useState(false);
+
+  // Снимаем ?settings=1 из URL после открытия, чтобы не открывалось повторно при рефреше.
+  useEffect(() => {
+    if (search.settings === "1") {
+      setSettingsOpen(true);
+      navigate({ to: "/club/me", search: {}, replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search.settings]);
   const isMobile = useIsMobile();
   const { isAuthed, signOut } = useViewer();
   const profileQ = useMyProfile(isAuthed);
