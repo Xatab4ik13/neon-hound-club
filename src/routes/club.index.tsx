@@ -2356,14 +2356,13 @@ function StickerPanel({
                         {pack.title} открывается после покупки в магазине.
                       </div>
                       {pack.productSlug && (
-                        <a
-                          href={`/club/shop/${pack.productSlug}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
+                        <Link
+                          to="/club/shop/$productSlug"
+                          params={{ productSlug: pack.productSlug }}
                           className="inline-flex items-center justify-center rounded-full bg-primary px-4 py-1.5 text-[12px] font-semibold text-primary-foreground"
                         >
                           Купить{pack.priceRub ? ` · ${pack.priceRub} ₽` : ""}
-                        </a>
+                        </Link>
                       )}
                     </div>
                   </div>
