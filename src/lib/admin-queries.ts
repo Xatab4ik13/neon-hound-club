@@ -41,12 +41,23 @@ export type AdminUserListItem = {
   nick: string;
   role: "user" | "admin" | "blogger";
   emailVerified: boolean;
+  phoneVerified: boolean;
   blocked: boolean;
   createdAt: string;
   city: string | null;
   avatarUrl: string | null;
   phone: string | null;
 };
+
+export type AdminUsersSort =
+  | "nick"
+  | "email"
+  | "city"
+  | "role"
+  | "emailVerified"
+  | "phoneVerified"
+  | "status"
+  | "createdAt";
 
 export type AdminUserDetail = AdminUserListItem & {
   blockedAt: string | null;
@@ -83,16 +94,25 @@ export type AdminRaffleWinner = {
 
 export type AdminListPage<T> = { items: T[]; total: number; page: number; pageSize: number };
 
-export function fetchAdminUsers(opts?: { q?: string; page?: number; pageSize?: number }) {
+export function fetchAdminUsers(opts?: {
+  q?: string;
+  page?: number;
+  pageSize?: number;
+  sort?: AdminUsersSort;
+  dir?: "asc" | "desc";
+}) {
   const sp = new URLSearchParams();
   if (opts?.q) sp.set("q", opts.q);
   if (opts?.page) sp.set("page", String(opts.page));
   if (opts?.pageSize) sp.set("pageSize", String(opts.pageSize));
+  if (opts?.sort) sp.set("sort", opts.sort);
+  if (opts?.dir) sp.set("dir", opts.dir);
   const qs = sp.toString();
   return apiFetch<AdminListPage<AdminUserListItem>>(
     `/api/v1/admin/users/${qs ? `?${qs}` : ""}`,
   );
 }
+
 
 export function fetchAdminUser(id: string) {
   return apiFetch<AdminUserDetail>(`/api/v1/admin/users/${id}`);
