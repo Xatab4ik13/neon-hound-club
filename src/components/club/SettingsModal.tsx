@@ -613,9 +613,10 @@ function ProfileTab({ mobile }: { mobile?: boolean }) {
               label="Телефон"
               hint={
                 me.phoneVerified && phone === (me.phone ?? "")
-                  ? "Номер подтверждён через Telegram"
+                  ? "Подтверждён"
                   : undefined
               }
+
             >
               <PhoneInput
                 value={phone}
