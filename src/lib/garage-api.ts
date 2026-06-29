@@ -59,6 +59,8 @@ export type MyProfile = {
   emailVerified: boolean;
   joinedAt: string;
   phone: string | null;
+  /** true если телефон подтверждён через Telegram Gateway (phone_verified_at IS NOT NULL). */
+  phoneVerified: boolean;
   city: string | null;
   avatarUrl: string | null;
   bio: string | null;
