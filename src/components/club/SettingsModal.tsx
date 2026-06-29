@@ -609,18 +609,11 @@ function ProfileTab({ mobile }: { mobile?: boolean }) {
                 className="h-12 rounded-xl border-white/[0.08] bg-white/5 px-4 text-[14px] focus-visible:border-primary/40 focus-visible:ring-1 focus-visible:ring-primary/20"
               />
             </HHInputField>
-            <HHInputField
-              label="Телефон"
-              hint={
-                me.phoneVerified && phone === (me.phone ?? "")
-                  ? "Подтверждён"
-                  : undefined
-              }
-
-            >
+            <HHInputField label="Телефон">
               <PhoneInput
                 value={phone}
                 onChange={(v) => setPhone(v ?? "")}
+                verified={me.phoneVerified && phone === (me.phone ?? "")}
                 className="hh-phone-rounded"
               />
             </HHInputField>
