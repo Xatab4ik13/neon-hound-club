@@ -65,8 +65,13 @@ function SettingsMobile({ open, onOpenChange }: Props) {
       onOpenChange={onOpenChange}
       fullHeight
       title="Профиль"
+      headerLeft={
+        <h2 className="truncate font-display text-[15px] font-black uppercase italic tracking-tight text-white">
+          Профиль
+        </h2>
+      }
     >
-      <div className="space-y-6 pb-4">
+      <div className="space-y-7 pb-8">
         <ProfileTab mobile />
         <NotifyTab mobile />
         <AccountTab mobile onClose={() => onOpenChange(false)} />
@@ -74,6 +79,162 @@ function SettingsMobile({ open, onOpenChange }: Props) {
     </IOSSheet>
   );
 }
+
+// ════════════════════════════════════════════════════════════════════
+// HH mobile primitives — premium dark, soft rounded, magenta accent
+// ════════════════════════════════════════════════════════════════════
+
+function HHSection({ title, footer, children, tone = "default" }: {
+  title: string;
+  footer?: React.ReactNode;
+  children: React.ReactNode;
+  tone?: "default" | "danger";
+}) {
+  return (
+    <section className="space-y-2">
+      <h3
+        className={
+          "ml-1 font-display text-[10px] font-black uppercase italic tracking-[0.2em] " +
+          (tone === "danger" ? "text-red-500/60" : "text-white/40")
+        }
+      >
+        {title}
+      </h3>
+      {children}
+      {footer && (
+        <p className="px-1 pt-1 text-[11px] leading-relaxed text-white/30">{footer}</p>
+      )}
+    </section>
+  );
+}
+
+function HHCard({ children, tone = "default", className = "" }: {
+  children: React.ReactNode;
+  tone?: "default" | "danger";
+  className?: string;
+}) {
+  const border = tone === "danger" ? "border-red-500/15" : "border-white/[0.08]";
+  const bg = tone === "danger" ? "bg-white/[0.02]" : "bg-white/5";
+  return (
+    <div className={`overflow-hidden rounded-2xl border ${border} ${bg} ${className}`}>
+      {children}
+    </div>
+  );
+}
+
+function HHInputField({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-1.5">
+      <label className="ml-1 font-display text-[10px] font-black uppercase italic tracking-[0.18em] text-white/45">
+        {label}
+      </label>
+      <div className="hh-input-wrap">{children}</div>
+    </div>
+  );
+}
+
+function HHToggleRow({
+  label,
+  description,
+  checked,
+  onChange,
+}: {
+  label: string;
+  description?: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-4 px-4 py-3.5 [&+&]:border-t [&+&]:border-white/[0.05]">
+      <div className="min-w-0">
+        <div className="text-[14px] font-semibold text-foreground">{label}</div>
+        {description && (
+          <div className="mt-0.5 text-[11px] leading-snug text-white/40">{description}</div>
+        )}
+      </div>
+      <Switch checked={checked} onCheckedChange={onChange} />
+    </div>
+  );
+}
+
+function HHActionRow({
+  icon,
+  label,
+  description,
+  tone = "default",
+  onClick,
+  chevron = true,
+  disabled,
+}: {
+  icon?: React.ReactNode;
+  label: string;
+  description?: string;
+  tone?: "default" | "danger";
+  onClick?: () => void;
+  chevron?: boolean;
+  disabled?: boolean;
+}) {
+  const isDanger = tone === "danger";
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className="group flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left transition-colors active:bg-white/[0.04] disabled:opacity-50 [&+&]:border-t [&+&]:border-white/[0.05]"
+    >
+      <div className="flex min-w-0 items-center gap-3">
+        {icon && (
+          <span
+            className={
+              "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl " +
+              (isDanger ? "bg-red-500/10 text-red-400" : "bg-white/[0.06] text-white/50")
+            }
+          >
+            {icon}
+          </span>
+        )}
+        <div className="min-w-0">
+          <div className={"text-[14px] font-semibold " + (isDanger ? "text-red-400" : "text-foreground")}>
+            {label}
+          </div>
+          {description && (
+            <div className={"mt-0.5 text-[11px] leading-snug " + (isDanger ? "text-red-400/50" : "text-white/40")}>
+              {description}
+            </div>
+          )}
+        </div>
+      </div>
+      {chevron && (
+        <svg className="h-4 w-4 shrink-0 text-white/25" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+          <path d="M9 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      )}
+    </button>
+  );
+}
+
+function HHSaveButton({
+  onClick,
+  loading,
+  children,
+}: {
+  onClick?: () => void;
+  loading?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={loading}
+      className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-5 py-4 font-display text-[13px] font-black uppercase italic tracking-[0.15em] text-primary-foreground shadow-[0_12px_28px_-10px_hsl(var(--primary)/0.55)] transition-all hover:brightness-110 active:scale-[0.98] disabled:opacity-60"
+    >
+      {loading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+      {children}
+    </button>
+  );
+}
+
 
 
 // ════════════════════════════════════════════════════════════════════
