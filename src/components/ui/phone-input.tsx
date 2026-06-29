@@ -121,18 +121,40 @@ export const PhoneInput = forwardRef<HTMLInputElement, Props>(function PhoneInpu
         <ChevronDown className="size-4 text-white/40" />
       </button>
 
-      <PhoneInputBase
-        ref={ref as never}
-        country={country}
-        international
-        withCountryCallingCode
-        value={normalizedValue}
-        onChange={(v) => onChange?.((v as string) ?? "")}
-        placeholder={placeholder ?? example}
-        autoComplete={autoComplete}
-        required={required}
-        className="flex h-12 w-full min-w-0 rounded-xl border border-white/10 bg-white/5 px-4 text-base text-white ring-offset-background placeholder:text-white/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 disabled:cursor-not-allowed disabled:opacity-50"
-      />
+      <div className="relative flex-1 min-w-0">
+        <PhoneInputBase
+          ref={ref as never}
+          country={country}
+          international
+          withCountryCallingCode
+          value={normalizedValue}
+          onChange={(v) => onChange?.((v as string) ?? "")}
+          placeholder={placeholder ?? example}
+          autoComplete={autoComplete}
+          required={required}
+          className={cn(
+            "flex h-12 w-full min-w-0 rounded-xl border border-white/10 bg-white/5 px-4 text-base text-white ring-offset-background placeholder:text-white/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 disabled:cursor-not-allowed disabled:opacity-50",
+            verified && "pr-11",
+          )}
+        />
+        {verified && (
+          <span
+            className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-green-500"
+            aria-label="Номер подтверждён"
+          >
+            <svg className="h-5 w-5" viewBox="0 0 20 20" fill="none">
+              <circle cx="10" cy="10" r="9" fill="currentColor" />
+              <path
+                d="M6 10.5L8.5 13L14 7.5"
+                stroke="var(--foreground)"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </span>
+        )}
+      </div>
 
       {open && (
         <div
