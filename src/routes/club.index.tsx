@@ -263,7 +263,7 @@ export const PostCard = memo(function PostCard({ post, moderate = false }: { pos
               <span className="truncate font-display text-[15px] font-black uppercase italic tracking-tight text-foreground">
                 {author.nick}
               </span>
-              {authorIsBlogger && <HellhoundChip size="sm" />}
+              
             </div>
             <RelativeTime
               iso={post.createdAt}
