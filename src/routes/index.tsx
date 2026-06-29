@@ -73,6 +73,14 @@ const XP_HOW = XP_HOW_IDS.map((id) => {
 
 function Index() {
   const { isAuthed } = useViewer();
+
+  // На club.hhr.pro корня лендинга нет — мгновенно уводим в /club.
+  useEffect(() => {
+    if (typeof window !== "undefined" && isClubHost()) {
+      window.location.replace("/club");
+    }
+  }, []);
+
   const { data: showcase } = useQuery({
     queryKey: qk.shopShowcase,
     queryFn: fetchShopShowcase,
