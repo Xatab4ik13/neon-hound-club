@@ -137,8 +137,7 @@ function LoginPage() {
           className="relative z-10 mx-auto flex min-h-[calc(100vh-5rem)] w-full max-w-[480px] flex-col px-6 py-10 md:py-16"
           style={{ animation: "page-fade-zoom 500ms cubic-bezier(0.16, 1, 0.3, 1) both" }}
         >
-          <Eyebrow>{onClub ? "Club · Confirm" : "Confirm · HHR.PRO"}</Eyebrow>
-          <h1 className="mt-4 font-display text-[56px] italic uppercase font-black leading-[0.9] tracking-tight text-white md:text-7xl">
+          <h1 className="font-display text-[56px] italic uppercase font-black leading-[0.9] tracking-tight text-white md:text-7xl">
             Проверь
             <br />
             почту
@@ -215,10 +214,8 @@ function LoginPage() {
         className="relative z-10 mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-[480px] flex-col px-6 py-8 md:min-h-[calc(100vh-5rem)] md:py-16"
         style={{ animation: "page-fade-zoom 500ms cubic-bezier(0.16, 1, 0.3, 1) both" }}
       >
-        <Eyebrow>{onClub ? "Club · Access" : "HHR.PRO · Access"}</Eyebrow>
-
         <h1
-          className="mt-3 font-display text-[56px] italic uppercase font-black leading-[0.9] tracking-tight text-white md:text-7xl"
+          className="font-display text-[56px] italic uppercase font-black leading-[0.9] tracking-tight text-white md:text-7xl"
           style={{
             textShadow:
               "0 0 24px color-mix(in oklab, var(--primary) 28%, transparent)",
@@ -360,7 +357,7 @@ function LoginPage() {
           </form>
         )}
 
-        <div className="mt-auto flex items-center justify-between gap-4 pt-12">
+        <div className="mt-auto flex items-center gap-4 pt-12">
           {onClub ? (
             <a
               href="https://hhr.pro"
@@ -378,9 +375,6 @@ function LoginPage() {
               На главную
             </Link>
           )}
-          <span className="font-mono text-[10px] uppercase tracking-[0.3em] text-white/20">
-            HELLHOUND · HHR.PRO
-          </span>
         </div>
       </div>
     </main>
@@ -409,17 +403,6 @@ function BgDecor() {
         style={{ background: "var(--primary)" }}
       />
     </>
-  );
-}
-
-function Eyebrow({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="flex items-center gap-3">
-      <span className="h-[2px] w-8 bg-primary" />
-      <span className="font-mono text-[10px] uppercase tracking-[0.32em] text-primary">
-        {children}
-      </span>
-    </div>
   );
 }
 
