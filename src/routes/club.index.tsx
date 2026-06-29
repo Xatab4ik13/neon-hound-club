@@ -263,7 +263,7 @@ export const PostCard = memo(function PostCard({ post, moderate = false }: { pos
               <span className="truncate font-display text-[15px] font-black uppercase italic tracking-tight text-foreground">
                 {author.nick}
               </span>
-              {authorIsBlogger && <HellhoundChip size="sm" />}
+              
             </div>
             <RelativeTime
               iso={post.createdAt}
@@ -1357,9 +1357,7 @@ const CommentItem = memo(function CommentItem({
               {author.nick}
             </span>
           </UserLink>
-          {authorIsBlogger ? (
-            <HellhoundChip size="xs" />
-          ) : (
+          {!authorIsBlogger && (
             <span
               className="shrink-0 rounded-md border px-1.5 py-px font-mono text-[8px] font-bold uppercase tracking-wider"
               style={{ color: rank.accent, borderColor: rank.accentSoft, background: `${rank.accent}10` }}
@@ -1367,6 +1365,7 @@ const CommentItem = memo(function CommentItem({
               {rank.short}
             </span>
           )}
+
           <span className="ml-auto shrink-0 font-mono text-[10px] uppercase tracking-wider text-muted-foreground/70">
             {comment.time}
             {comment.editedAt && (

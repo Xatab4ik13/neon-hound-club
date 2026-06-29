@@ -79,9 +79,8 @@ export function BloggerProfileModal({
               <div className="truncate font-display text-xl font-black italic uppercase tracking-tight">
                 {profile.nick}
               </div>
-              <div className="mt-1.5">
-                <HellhoundChip size="sm" />
-              </div>
+
+
               <div className="mt-2 flex gap-2">
                 <button
                   type="button"
