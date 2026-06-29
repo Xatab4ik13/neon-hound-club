@@ -183,8 +183,6 @@ export function PhoneVerifyPanel({ phone, canSend, onVerified }: Props) {
             inputMode="numeric"
             // iOS: автозаполнение из приходящего SMS-уведомления (для не-SMS работает как обычное цифровое поле).
             autoComplete={i === 0 ? "one-time-code" : "off"}
-            // Подсказка iOS Keyboard, что это «код подтверждения».
-            // @ts-expect-error iOS-only attribute, см. https://webkit.org/blog/11312/meet-face-id-and-touch-id-for-the-web/
             autoCapitalize="off"
             maxLength={i === 0 ? CODE_LEN : 1}
             disabled={verifyMut.isPending}
