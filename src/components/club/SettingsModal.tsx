@@ -885,38 +885,41 @@ function AccountTab({ mobile, onClose }: { mobile?: boolean; onClose?: () => voi
   const delMatch = delConfirm.trim().toLowerCase() === myNick.toLowerCase() && myNick.length > 0;
 
   if (mobile) {
+    const inputCls = "h-12 rounded-xl border-white/[0.08] bg-white/5 px-4 text-[14px] focus-visible:border-primary/40 focus-visible:ring-1 focus-visible:ring-primary/20";
     return (
       <>
-        <IOSListSection title="Контакты" footer="Email — для входа. Смена email пока через поддержку.">
-          <IOSField label="Email">
-            <Input type="email" value={meQ.data?.email ?? ""} readOnly disabled />
-          </IOSField>
-        </IOSListSection>
+        <HHSection title="Контакты" footer="Email — для входа. Смена email пока через поддержку.">
+          <HHInputField label="Email">
+            <Input type="email" value={meQ.data?.email ?? ""} readOnly disabled className={inputCls} />
+          </HHInputField>
+        </HHSection>
 
-        <IOSListSection title="Пароль">
+        <HHSection title="Пароль">
           {!pwOpen ? (
-            <IOSListRow label="Сменить пароль" chevron onClick={() => { setPwOpen(true); setPwMsg(null); }} />
+            <HHCard>
+              <HHActionRow label="Сменить пароль" onClick={() => { setPwOpen(true); setPwMsg(null); }} />
+            </HHCard>
           ) : (
-            <>
-              <IOSField label="Текущий пароль">
-                <Input type="password" value={pwCurrent} onChange={(e) => setPwCurrent(e.target.value)} autoComplete="current-password" />
-              </IOSField>
-              <IOSField label="Новый пароль">
-                <Input type="password" value={pwNew} onChange={(e) => setPwNew(e.target.value)} autoComplete="new-password" />
-              </IOSField>
-              <IOSField
-                label="Повторите новый"
-                hint={pwMsg && (
-                  <span className={pwMsg.kind === "ok" ? "text-primary" : "text-red-400"}>{pwMsg.text}</span>
-                )}
-              >
-                <Input type="password" value={pwNew2} onChange={(e) => setPwNew2(e.target.value)} autoComplete="new-password" />
-              </IOSField>
-              <div className="flex items-center gap-2 px-4 py-3">
+            <div className="space-y-3">
+              <HHInputField label="Текущий пароль">
+                <Input type="password" value={pwCurrent} onChange={(e) => setPwCurrent(e.target.value)} autoComplete="current-password" className={inputCls} />
+              </HHInputField>
+              <HHInputField label="Новый пароль">
+                <Input type="password" value={pwNew} onChange={(e) => setPwNew(e.target.value)} autoComplete="new-password" className={inputCls} />
+              </HHInputField>
+              <HHInputField label="Повторите новый">
+                <Input type="password" value={pwNew2} onChange={(e) => setPwNew2(e.target.value)} autoComplete="new-password" className={inputCls} />
+              </HHInputField>
+              {pwMsg && (
+                <p className={"px-1 text-[12px] " + (pwMsg.kind === "ok" ? "text-primary" : "text-red-400")}>
+                  {pwMsg.text}
+                </p>
+              )}
+              <div className="flex items-center gap-2 pt-1">
                 <button
                   type="button"
                   onClick={() => { setPwOpen(false); setPwMsg(null); setPwCurrent(""); setPwNew(""); setPwNew2(""); }}
-                  className="flex-1 rounded-lg bg-white/[0.05] py-2 font-mono text-[11px] font-bold uppercase tracking-wider text-muted-foreground active:opacity-70"
+                  className="flex-1 rounded-xl border border-white/[0.08] bg-white/[0.04] py-3 font-mono text-[11px] font-bold uppercase tracking-wider text-muted-foreground active:opacity-70"
                 >
                   Отмена
                 </button>
@@ -924,46 +927,52 @@ function AccountTab({ mobile, onClose }: { mobile?: boolean; onClose?: () => voi
                   type="button"
                   onClick={handleSavePassword}
                   disabled={changePwMut.isPending}
-                  className="flex-1 rounded-lg bg-primary py-2 font-mono text-[11px] font-bold uppercase tracking-wider text-primary-foreground active:opacity-80 disabled:opacity-50"
+                  className="flex-1 rounded-xl bg-primary py-3 font-mono text-[11px] font-bold uppercase tracking-wider text-primary-foreground shadow-[0_8px_20px_-8px_hsl(var(--primary)/0.55)] active:opacity-80 disabled:opacity-50"
                 >
                   {changePwMut.isPending ? "…" : "Сохранить"}
                 </button>
               </div>
-            </>
+            </div>
           )}
-        </IOSListSection>
+        </HHSection>
 
-        <IOSListSection title="Опасная зона">
-          <IOSListRow
-            icon={<LogOut className="h-[18px] w-[18px]" />}
-            label="Выйти из аккаунта"
-            description="Завершить сессию на этом устройстве"
-            tone="danger"
-            chevron
-            onClick={onLogout}
-          />
-          {!delOpen ? (
-            <IOSListRow
-              icon={<Trash2 className="h-[18px] w-[18px]" />}
-              label="Удалить аккаунт"
-              description="Билеты, заказы и история обнулятся"
+        <HHSection title="Опасная зона" tone="danger">
+          <HHCard tone="danger">
+            <HHActionRow
+              icon={<LogOut className="h-[18px] w-[18px]" />}
+              label="Выйти из аккаунта"
+              description="Завершить сессию на этом устройстве"
               tone="danger"
-              chevron
-              onClick={() => setDelOpen(true)}
+              onClick={onLogout}
             />
-          ) : (
-            <>
-              <IOSField
-                label={`Введи свой ник «${myNick}» для подтверждения`}
-                hint="Действие необратимо. Все данные будут стёрты."
-              >
-                <Input value={delConfirm} onChange={(e) => setDelConfirm(e.target.value)} autoCapitalize="none" autoCorrect="off" spellCheck={false} />
-              </IOSField>
-              <div className="flex items-center gap-2 px-4 py-3">
+            {!delOpen ? (
+              <HHActionRow
+                icon={<Trash2 className="h-[18px] w-[18px]" />}
+                label="Удалить аккаунт"
+                description="Билеты, заказы и история обнулятся"
+                tone="danger"
+                onClick={() => setDelOpen(true)}
+              />
+            ) : null}
+          </HHCard>
+          {delOpen && (
+            <div className="space-y-3 pt-2">
+              <HHInputField label={`Введи свой ник «${myNick}» для подтверждения`}>
+                <Input
+                  value={delConfirm}
+                  onChange={(e) => setDelConfirm(e.target.value)}
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  className={inputCls}
+                />
+              </HHInputField>
+              <p className="px-1 text-[11px] text-red-400/70">Действие необратимо. Все данные будут стёрты.</p>
+              <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={() => { setDelOpen(false); setDelConfirm(""); }}
-                  className="flex-1 rounded-lg bg-white/[0.05] py-2 font-mono text-[11px] font-bold uppercase tracking-wider text-muted-foreground active:opacity-70"
+                  className="flex-1 rounded-xl border border-white/[0.08] bg-white/[0.04] py-3 font-mono text-[11px] font-bold uppercase tracking-wider text-muted-foreground active:opacity-70"
                 >
                   Отмена
                 </button>
@@ -971,14 +980,14 @@ function AccountTab({ mobile, onClose }: { mobile?: boolean; onClose?: () => voi
                   type="button"
                   onClick={onDelete}
                   disabled={!delMatch || deleteMut.isPending}
-                  className="flex-1 rounded-lg bg-red-500 py-2 font-mono text-[11px] font-bold uppercase tracking-wider text-white active:opacity-80 disabled:opacity-40"
+                  className="flex-1 rounded-xl bg-red-500 py-3 font-mono text-[11px] font-bold uppercase tracking-wider text-white shadow-[0_8px_20px_-8px_rgba(239,68,68,0.5)] active:opacity-80 disabled:opacity-40"
                 >
                   {deleteMut.isPending ? "…" : "Удалить"}
                 </button>
               </div>
-            </>
+            </div>
           )}
-        </IOSListSection>
+        </HHSection>
         <IOSConfirm
           open={confirmLogout}
           onOpenChange={setConfirmLogout}
@@ -991,6 +1000,7 @@ function AccountTab({ mobile, onClose }: { mobile?: boolean; onClose?: () => voi
       </>
     );
   }
+
 
   return (
     <>
