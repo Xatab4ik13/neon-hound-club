@@ -35,6 +35,9 @@ export const profiles = pgTable(
     instagram: varchar("instagram", { length: 80 }), // только handle, без url
     telegram: varchar("telegram", { length: 80 }),
     youtube: varchar("youtube", { length: 120 }),
+    // NULL = телефон не подтверждён через Telegram Gateway. Только при non-null
+    // юзер допускается в розыгрыши и может логиниться/восстанавливать пароль по номеру.
+    phoneVerifiedAt: timestamp("phone_verified_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
