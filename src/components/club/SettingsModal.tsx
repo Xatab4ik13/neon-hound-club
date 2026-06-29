@@ -124,12 +124,27 @@ function HHCard({ children, tone = "default", className = "" }: {
   );
 }
 
-function HHInputField({ label, children }: { label: string; children: React.ReactNode }) {
+function HHInputField({
+  label,
+  hint,
+  children,
+}: {
+  label: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="space-y-1.5">
-      <label className="ml-1 font-display text-[10px] font-black uppercase italic tracking-[0.18em] text-white/45">
-        {label}
-      </label>
+      <div className="flex items-center justify-between gap-2 px-1">
+        <label className="font-display text-[10px] font-black uppercase italic tracking-[0.18em] text-white/45">
+          {label}
+        </label>
+        {hint && (
+          <span className="font-mono text-[10px] uppercase tracking-wider text-primary/80">
+            ✓ {hint}
+          </span>
+        )}
+      </div>
       <div className="hh-input-wrap">{children}</div>
     </div>
   );
