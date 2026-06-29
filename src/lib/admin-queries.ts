@@ -31,7 +31,9 @@ export const adminQk = {
   quests: ["admin", "quests"] as const,
   raffles: ["admin", "raffles"] as const,
   passList: (status?: string) => ["admin", "pass", status ?? "all"] as const,
+  feedPosts: ["admin", "feed", "posts"] as const,
 };
+
 
 // ---------- USERS ----------
 
