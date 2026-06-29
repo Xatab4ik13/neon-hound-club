@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useViewer } from "@/hooks/use-viewer";
 import { ApiError } from "@/lib/api";
+import { isClubHost } from "@/lib/host";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
@@ -9,13 +10,14 @@ export const Route = createFileRoute("/login")({
       { title: "Вход в HELLHOUND Racing Club" },
       {
         name: "description",
-        content: "Вход и регистрация в HELLHOUND Racing Club по email и паролю.",
+        content: "Вход в HELLHOUND Racing Club по email или номеру телефона.",
       },
       { property: "og:title", content: "Вход в HELLHOUND Racing Club" },
       {
         property: "og:description",
-        content: "Вход по email и паролю. Регистрация по email, нику и паролю.",
+        content: "Вход по email или подтверждённому номеру телефона.",
       },
+      { name: "robots", content: "noindex" },
     ],
   }),
   component: LoginPage,
@@ -27,13 +29,20 @@ function isEmail(v: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
 }
 
+function looksLikePhone(v: string) {
+  const t = v.trim();
+  return !t.includes("@") && /^[+\d][\d\s()-]{4,}$/.test(t);
+}
+
 function LoginPage() {
   const navigate = useNavigate();
   const { signIn, signUp, resendVerification } = useViewer();
+  // На club.hhr.pro регистрации нет — она живёт на основном домене.
+  const onClub = isClubHost();
   const [mode, setMode] = useState<Mode>("login");
 
   // login state
-  const [loginEmail, setLoginEmail] = useState("");
+  const [loginId, setLoginId] = useState("");
   const [password, setPassword] = useState("");
 
   // register state
@@ -53,16 +62,19 @@ function LoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    if (!isEmail(loginEmail)) return setError("Введите корректный email");
+    const id = loginId.trim();
+    if (!id) return setError("Введите email или телефон");
+    if (!isEmail(id) && !looksLikePhone(id))
+      return setError("Введите корректный email или номер телефона");
     if (password.length < 8) return setError("Пароль минимум 8 символов");
     setBusy(true);
     try {
-      const user = await signIn(loginEmail, password);
+      const user = await signIn(id, password);
       navigate({ to: user.role === "blogger" ? "/blogger" : "/club" });
     } catch (err) {
-      if (err instanceof ApiError && err.status === 403) {
-        // email_not_verified
-        setPendingEmail(loginEmail.trim().toLowerCase());
+      if (err instanceof ApiError && err.status === 403 && isEmail(id)) {
+        // email_not_verified — только для email-логина
+        setPendingEmail(id.toLowerCase());
         setMailFailed(false);
       } else {
         setError(toMessage(err, "Не удалось войти"));
