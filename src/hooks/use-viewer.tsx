@@ -33,7 +33,7 @@ type Viewer = {
 export type SignUpResult = { ok: true; pendingVerification: true; email: string; mailDelivered: boolean };
 
 type ViewerContextValue = Viewer & {
-  signIn: (email: string, password: string) => Promise<SessionUser>;
+  signIn: (identifier: string, password: string) => Promise<SessionUser>;
   signUp: (email: string, password: string, nick: string) => Promise<SignUpResult>;
   resendVerification: (email: string) => Promise<{ mailDelivered: boolean }>;
   refetchMe: () => Promise<void>;
