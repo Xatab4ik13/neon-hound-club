@@ -55,8 +55,14 @@ export function PhoneVerifyPanel({ phone, canSend, onVerified }: Props) {
   const code = useMemo(() => digits.join(""), [digits]);
 
   const handleSend = async () => {
-    if (!canSend || sendMut.isPending) return;
+    // Лишний клик / нет номера — игнор.
+    if (sendMut.isPending) return;
+    if (!phone) {
+      toast.error("Сначала введи номер");
+      return;
+    }
     try {
+      // Серверу отдаём номер как есть — он сам нормализует через libphonenumber-js.
       const r = await sendMut.mutateAsync(phone);
       setRequestId(r.requestId);
       setPhoneMasked(r.phoneMasked);
@@ -72,7 +78,9 @@ export function PhoneVerifyPanel({ phone, canSend, onVerified }: Props) {
           ? "Слишком часто. Подожди немного."
           : err.status === 409
             ? "Этот номер уже привязан к другому аккаунту"
-            : err.message || "Не удалось отправить код";
+            : err.status === 400
+              ? "Неверный формат номера"
+              : err.message || "Не удалось отправить код";
       toast.error(msg);
     }
   };
