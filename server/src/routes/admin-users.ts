@@ -121,6 +121,9 @@ export async function adminUsersRoutes(app: FastifyInstance) {
         nick: users.nick,
         role: users.role,
         emailVerified: users.emailVerified,
+        phoneVerified: sql<boolean>`(${profiles.phoneVerifiedAt} IS NOT NULL)`.as(
+          "phone_verified",
+        ),
         blocked: users.blocked,
         blockedAt: users.blockedAt,
         createdAt: users.createdAt,
@@ -133,6 +136,7 @@ export async function adminUsersRoutes(app: FastifyInstance) {
       .leftJoin(profiles, eq(profiles.userId, users.id))
       .where(eq(users.id, req.params.id))
       .limit(1);
+
 
     if (!u) return reply.code(404).send({ error: "not_found" });
 
