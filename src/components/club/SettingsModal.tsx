@@ -681,7 +681,7 @@ function ProfileTab({ mobile }: { mobile?: boolean }) {
             <Input value={city} onChange={(e) => setCity(e.target.value)} maxLength={64} />
           </Field>
           <Field label="Телефон">
-            <PhoneInput value={phone} onChange={(v) => setPhone(v ?? "")} />
+            <PhoneInput value={phone} onChange={(v) => setPhone(v ?? "")} verified={me.phoneVerified && phone === (me.phone ?? "")} />
           </Field>
           <Field label="О себе">
             <Input value={bio} onChange={(e) => setBio(e.target.value)} maxLength={300} />
