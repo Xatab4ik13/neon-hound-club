@@ -1,10 +1,10 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { and, desc, eq, sql } from "drizzle-orm";
-import { parsePhoneNumberFromString } from "libphonenumber-js";
 import { db } from "../db/client.js";
 import { users } from "../db/schema/users.js";
 import { profiles, bikes, deliveryAddresses, notificationPrefs } from "../db/schema/profile.js";
+import { phoneVerifications } from "../db/schema/phone-verifications.js";
 import { requireAuth, type SessionPayload } from "../lib/auth.js";
 import { isOurS3Url, deleteByPublicUrl } from "../lib/s3.js";
 import { tryCompleteQuest } from "../lib/quests.js";
