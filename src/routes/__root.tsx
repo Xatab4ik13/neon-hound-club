@@ -11,6 +11,7 @@ import { CartProvider } from "@/hooks/use-cart";
 import { PaymentErrorWatcher } from "@/components/brand/PaymentErrorWatcher";
 import { useEffect } from "react";
 import { captureRefFromUrl } from "@/data/referral";
+import { isClubHost } from "@/lib/host";
 
 function NotFoundComponent() {
   return (
