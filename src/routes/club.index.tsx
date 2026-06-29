@@ -59,15 +59,10 @@ function ClubFeedPage() {
   const { isAuthed, hydrated } = useViewer();
   const showSkeleton = !loaded && posts.length === 0;
 
-  // 1) Если стоит установленная PWA и юзер сидит на основном домене —
-  //    мгновенно уводим на club.hhr.pro. В обычном браузере не трогаем.
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (isClubHost()) return;
-    if (!isStandalone()) return;
-    const { pathname, search, hash } = window.location;
-    window.location.replace(clubUrl(pathname + search + hash));
-  }, []);
+  // Внутри уже установленной PWA НИКОГДА не уводим на другой origin —
+  // iOS откроет cross-origin в встроенном Safari (видны адресная строка
+  // и кнопки браузера). Поддоменная история — только до установки,
+  // в обычном браузере; этим занимается редирект после логина.
 
   // 2) На club.hhr.pro неавторизованных уводим на /login.
   useEffect(() => {
