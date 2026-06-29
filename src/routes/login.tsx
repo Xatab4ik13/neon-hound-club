@@ -226,7 +226,7 @@ function LoginPage() {
             {mode === "login" ? "Войти" : "В клуб"}
           </h1>
           <p className="mt-3 font-mono text-[12px] uppercase tracking-[0.2em] text-muted-foreground">
-            {mode === "login" ? "Email и пароль" : "Регистрация: email, ник, пароль"}
+            {mode === "login" ? "Email или телефон + пароль" : "Регистрация: email, ник, пароль"}
           </p>
         </div>
 
