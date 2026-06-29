@@ -9,7 +9,22 @@
  * пользователя через checkVerificationStatus(request_id, code).
  */
 
+import { ProxyAgent, fetch as undiciFetch, type Dispatcher } from "undici";
+
 const BASE = "https://gatewayapi.telegram.org";
+
+let cachedDispatcher: Dispatcher | null | undefined;
+
+function getDispatcher(): Dispatcher | undefined {
+  if (cachedDispatcher !== undefined) return cachedDispatcher ?? undefined;
+  const url = process.env.TELEGRAM_PROXY_URL;
+  if (!url) {
+    cachedDispatcher = null;
+    return undefined;
+  }
+  cachedDispatcher = new ProxyAgent(url);
+  return cachedDispatcher;
+}
 
 type GatewayResponse<T> =
   | { ok: true; result: T }
@@ -20,13 +35,15 @@ async function call<T>(method: string, body: Record<string, unknown>): Promise<T
   if (!token) {
     throw new Error("TELEGRAM_GATEWAY_API_TOKEN is not configured");
   }
-  const res = await fetch(`${BASE}/${method}`, {
+  const dispatcher = getDispatcher();
+  const res = await undiciFetch(`${BASE}/${method}`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify(body),
+    ...(dispatcher ? { dispatcher } : {}),
   });
   let data: GatewayResponse<T>;
   try {
@@ -42,6 +59,7 @@ async function call<T>(method: string, body: Record<string, unknown>): Promise<T
   }
   return data.result;
 }
+
 
 export type SentVerification = {
   request_id: string;
