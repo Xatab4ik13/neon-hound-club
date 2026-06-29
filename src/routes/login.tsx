@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useViewer } from "@/hooks/use-viewer";
 import { ApiError } from "@/lib/api";
-import { isClubHost, isMobileDevice, clubUrl } from "@/lib/host";
+import { isClubHost, isMobileDevice, isStandalone, clubUrl } from "@/lib/host";
 import {
   PlumpEye,
   PlumpEyeOff,
