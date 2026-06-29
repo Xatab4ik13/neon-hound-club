@@ -62,6 +62,7 @@ import { Route as AdminRafflesRouteImport } from './routes/admin.raffles'
 import { Route as AdminQuestsRouteImport } from './routes/admin.quests'
 import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
 import { Route as AdminHellAiRouteImport } from './routes/admin.hell-ai'
+import { Route as AdminFeedRouteImport } from './routes/admin.feed'
 import { Route as AdminEconomyRouteImport } from './routes/admin.economy'
 import { Route as AdminCdekRouteImport } from './routes/admin.cdek'
 import { Route as AdminBannersRouteImport } from './routes/admin.banners'
@@ -349,6 +350,11 @@ const AdminHellAiRoute = AdminHellAiRouteImport.update({
   path: '/hell-ai',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminFeedRoute = AdminFeedRouteImport.update({
+  id: '/feed',
+  path: '/feed',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminEconomyRoute = AdminEconomyRouteImport.update({
   id: '/economy',
   path: '/economy',
@@ -472,6 +478,7 @@ export interface FileRoutesByFullPath {
   '/admin/banners': typeof AdminBannersRoute
   '/admin/cdek': typeof AdminCdekRoute
   '/admin/economy': typeof AdminEconomyRoute
+  '/admin/feed': typeof AdminFeedRoute
   '/admin/hell-ai': typeof AdminHellAiRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/quests': typeof AdminQuestsRoute
@@ -545,6 +552,7 @@ export interface FileRoutesByTo {
   '/admin/banners': typeof AdminBannersRoute
   '/admin/cdek': typeof AdminCdekRoute
   '/admin/economy': typeof AdminEconomyRoute
+  '/admin/feed': typeof AdminFeedRoute
   '/admin/hell-ai': typeof AdminHellAiRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/quests': typeof AdminQuestsRoute
@@ -622,6 +630,7 @@ export interface FileRoutesById {
   '/admin/banners': typeof AdminBannersRoute
   '/admin/cdek': typeof AdminCdekRoute
   '/admin/economy': typeof AdminEconomyRoute
+  '/admin/feed': typeof AdminFeedRoute
   '/admin/hell-ai': typeof AdminHellAiRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/quests': typeof AdminQuestsRoute
@@ -700,6 +709,7 @@ export interface FileRouteTypes {
     | '/admin/banners'
     | '/admin/cdek'
     | '/admin/economy'
+    | '/admin/feed'
     | '/admin/hell-ai'
     | '/admin/orders'
     | '/admin/quests'
@@ -773,6 +783,7 @@ export interface FileRouteTypes {
     | '/admin/banners'
     | '/admin/cdek'
     | '/admin/economy'
+    | '/admin/feed'
     | '/admin/hell-ai'
     | '/admin/orders'
     | '/admin/quests'
@@ -849,6 +860,7 @@ export interface FileRouteTypes {
     | '/admin/banners'
     | '/admin/cdek'
     | '/admin/economy'
+    | '/admin/feed'
     | '/admin/hell-ai'
     | '/admin/orders'
     | '/admin/quests'
@@ -1312,6 +1324,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminHellAiRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/feed': {
+      id: '/admin/feed'
+      path: '/feed'
+      fullPath: '/admin/feed'
+      preLoaderRoute: typeof AdminFeedRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/economy': {
       id: '/admin/economy'
       path: '/economy'
@@ -1466,6 +1485,7 @@ interface AdminRouteChildren {
   AdminBannersRoute: typeof AdminBannersRoute
   AdminCdekRoute: typeof AdminCdekRoute
   AdminEconomyRoute: typeof AdminEconomyRoute
+  AdminFeedRoute: typeof AdminFeedRoute
   AdminHellAiRoute: typeof AdminHellAiRoute
   AdminOrdersRoute: typeof AdminOrdersRoute
   AdminQuestsRoute: typeof AdminQuestsRoute
@@ -1483,6 +1503,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminBannersRoute: AdminBannersRoute,
   AdminCdekRoute: AdminCdekRoute,
   AdminEconomyRoute: AdminEconomyRoute,
+  AdminFeedRoute: AdminFeedRoute,
   AdminHellAiRoute: AdminHellAiRoute,
   AdminOrdersRoute: AdminOrdersRoute,
   AdminQuestsRoute: AdminQuestsRoute,

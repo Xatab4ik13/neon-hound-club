@@ -31,7 +31,9 @@ export const adminQk = {
   quests: ["admin", "quests"] as const,
   raffles: ["admin", "raffles"] as const,
   passList: (status?: string) => ["admin", "pass", status ?? "all"] as const,
+  feedPosts: ["admin", "feed", "posts"] as const,
 };
+
 
 // ---------- USERS ----------
 
@@ -100,6 +102,7 @@ export function fetchAdminUsers(opts?: {
   pageSize?: number;
   sort?: AdminUsersSort;
   dir?: "asc" | "desc";
+  role?: "user" | "blogger";
 }) {
   const sp = new URLSearchParams();
   if (opts?.q) sp.set("q", opts.q);
@@ -107,11 +110,13 @@ export function fetchAdminUsers(opts?: {
   if (opts?.pageSize) sp.set("pageSize", String(opts.pageSize));
   if (opts?.sort) sp.set("sort", opts.sort);
   if (opts?.dir) sp.set("dir", opts.dir);
+  if (opts?.role) sp.set("role", opts.role);
   const qs = sp.toString();
   return apiFetch<AdminListPage<AdminUserListItem>>(
     `/api/v1/admin/users/${qs ? `?${qs}` : ""}`,
   );
 }
+
 
 
 export function fetchAdminUser(id: string) {
@@ -778,6 +783,58 @@ export function patchAdminHomeBanner(id: string, patch: Partial<HomeBannerInput>
     method: "PATCH",
     body: JSON.stringify(patch),
   });
+}
+
+// ---------- ADMIN FEED ----------
+
+export type AdminFeedPostListItem = {
+  id: string;
+  authorId: string;
+  nick: string;
+  text: string;
+  imageUrl: string | null;
+  pinned: boolean;
+  deletedAt: string | null;
+  createdAt: string;
+};
+
+export type AdminCreatePostInput = {
+  authorId: string;
+  text: string;
+  imageUrl?: string | null;
+  pinned?: boolean;
+  poll?: {
+    question: string;
+    anonymous: boolean;
+    multi: boolean;
+    closed?: boolean;
+    options: { id: string; text: string }[];
+  } | null;
+};
+
+export function fetchAdminFeedPosts(opts?: { page?: number; pageSize?: number }) {
+  const sp = new URLSearchParams();
+  if (opts?.page) sp.set("page", String(opts.page));
+  if (opts?.pageSize) sp.set("pageSize", String(opts.pageSize));
+  const qs = sp.toString();
+  return apiFetch<AdminListPage<AdminFeedPostListItem>>(
+    `/api/v1/admin/feed/posts${qs ? `?${qs}` : ""}`,
+  );
+}
+
+export function createAdminFeedPost(input: AdminCreatePostInput) {
+  return apiFetch<{ id: string }>(`/api/v1/admin/feed/posts`, {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export function deleteAdminFeedPost(id: string) {
+  return apiFetch<{ ok: true }>(`/api/v1/admin/feed/posts/${id}`, { method: "DELETE" });
+}
+
+export function restoreAdminFeedPost(id: string) {
+  return apiFetch<{ ok: true }>(`/api/v1/admin/feed/posts/${id}/restore`, { method: "POST" });
 }
 
 export function deleteAdminHomeBanner(id: string) {

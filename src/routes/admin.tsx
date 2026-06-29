@@ -11,6 +11,7 @@ import {
   PlumpStore,
   PlumpTicket,
   PlumpImage as ImageIcon,
+  PlumpFeed,
   Wallet,
   Bot,
   GraduationCap,
@@ -23,6 +24,7 @@ import {
   Loader2,
   LifeBuoy,
 } from "@/components/ui/icons";
+
 import { cn } from "@/lib/utils";
 import { AdminViewerProvider, useAdminViewer } from "@/hooks/use-admin-viewer";
 import { ApiError } from "@/lib/api";
@@ -152,7 +154,9 @@ const NAV: NavItem[] = [
   { to: "/admin/raffles", label: "Розыгрыши", icon: Trophy },
   { to: "/admin/quests", label: "Челленджи", icon: Target },
   { to: "/admin/users", label: "Пользователи", icon: Users },
+  { to: "/admin/feed", label: "Лента", icon: PlumpFeed },
   { to: "/admin/shop", label: "Магазин", icon: PlumpStore },
+
   { to: "/admin/orders", label: "Заказы", icon: Package },
   { to: "/admin/tickets", label: "Билеты", icon: PlumpTicket },
   { to: "/admin/support", label: "Помощь", icon: LifeBuoy },
