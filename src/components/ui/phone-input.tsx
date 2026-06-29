@@ -37,7 +37,7 @@ function flagEmoji(country: string): string {
  * флаг-кнопка, выпадающий список с поиском, автоформат и помощь по длине номера для выбранной страны.
  */
 export const PhoneInput = forwardRef<HTMLInputElement, Props>(function PhoneInput(
-  { value, defaultValue, onChange, placeholder, className, required, autoComplete = "tel" },
+  { value, defaultValue, onChange, placeholder, className, required, autoComplete = "tel", verified },
   ref,
 ) {
   // Определяем стартовую страну: если в value уже есть номер — берём из него, иначе RU.
