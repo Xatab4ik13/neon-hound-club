@@ -11,6 +11,7 @@ import { CartProvider } from "@/hooks/use-cart";
 import { PaymentErrorWatcher } from "@/components/brand/PaymentErrorWatcher";
 import { useEffect } from "react";
 import { captureRefFromUrl } from "@/data/referral";
+import { isClubHost } from "@/lib/host";
 
 function NotFoundComponent() {
   return (
@@ -113,6 +114,17 @@ function RootComponent() {
 
   useEffect(() => {
     captureRefFromUrl();
+  }, []);
+
+  // На club.hhr.pro подменяем manifest и title на клубные.
+  // Делаем это рантайм-эффектом, потому что head() выполняется в т.ч. на сервере
+  // и не знает hostname конкретного запроса.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!isClubHost()) return;
+    const link = document.querySelector<HTMLLinkElement>('link[rel="manifest"]');
+    if (link) link.href = "/club-manifest.webmanifest";
+    document.title = "HELLHOUND Club";
   }, []);
 
   return (

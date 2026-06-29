@@ -33,7 +33,7 @@ type Viewer = {
 export type SignUpResult = { ok: true; pendingVerification: true; email: string; mailDelivered: boolean };
 
 type ViewerContextValue = Viewer & {
-  signIn: (email: string, password: string) => Promise<SessionUser>;
+  signIn: (identifier: string, password: string) => Promise<SessionUser>;
   signUp: (email: string, password: string, nick: string) => Promise<SignUpResult>;
   resendVerification: (email: string) => Promise<{ mailDelivered: boolean }>;
   refetchMe: () => Promise<void>;
@@ -85,11 +85,21 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
   });
 
   const signIn = useCallback(
-    async (email: string, password: string) => {
-      await apiFetch<{ user: SessionUser }>("/api/v1/auth/login", {
-        method: "POST",
-        body: JSON.stringify({ email, password }),
-      });
+    async (identifier: string, password: string) => {
+      const id = identifier.trim();
+      // Если в строке цифры/+/пробелы/скобки/дефис и нет «@» — считаем телефоном.
+      const looksLikePhone = !id.includes("@") && /^[+\d][\d\s()-]{4,}$/.test(id);
+      if (looksLikePhone) {
+        await apiFetch<{ user: SessionUser }>("/api/v1/auth/login-by-phone", {
+          method: "POST",
+          body: JSON.stringify({ phone: id, password }),
+        });
+      } else {
+        await apiFetch<{ user: SessionUser }>("/api/v1/auth/login", {
+          method: "POST",
+          body: JSON.stringify({ email: id, password }),
+        });
+      }
       const user = await fetchMe();
       if (!user) {
         throw new ApiError(401, "session_not_persisted", "Сессия не сохранилась. Обнови страницу и войди ещё раз");
