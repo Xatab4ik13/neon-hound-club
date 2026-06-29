@@ -536,43 +536,82 @@ function ProfileTab({ mobile }: { mobile?: boolean }) {
       <>
         {hiddenFileInput}
 
-        <IOSListSection title="Фото профиля" footer="JPG/PNG до 10 МБ.">
-          <IOSListRow
-            label={me.avatarUrl ? "Заменить фото" : "Загрузить фото"}
-            description={avatarUploading ? "Загружаем…" : "Видно другим в профиле"}
-            trailing={
-              avatarUploading ? (
-                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-              ) : (
-                <Avatar url={me.avatarUrl} size={44} />
-              )
-            }
-            chevron={!avatarUploading}
-            onClick={avatarUploading ? undefined : onPickAvatar}
-          />
-        </IOSListSection>
+        <HHSection title="Фото профиля" footer="JPG/PNG до 10 МБ. Видно другим в профиле.">
+          <HHCard>
+            <button
+              type="button"
+              onClick={avatarUploading ? undefined : onPickAvatar}
+              disabled={avatarUploading}
+              className="flex w-full items-center justify-between gap-4 p-4 text-left transition-colors active:bg-white/[0.04] disabled:opacity-60"
+            >
+              <div className="min-w-0">
+                <div className="text-[14px] font-semibold text-foreground">
+                  {me.avatarUrl ? "Заменить фото" : "Загрузить фото"}
+                </div>
+                <div className="mt-0.5 text-[11px] text-white/40">
+                  {avatarUploading ? "Загружаем…" : "JPG/PNG до 10 МБ"}
+                </div>
+              </div>
+              <div className="relative shrink-0">
+                {avatarUploading ? (
+                  <div className="grid h-14 w-14 place-items-center rounded-2xl border-2 border-white/10 bg-white/[0.04]">
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  </div>
+                ) : (
+                  <>
+                    <span
+                      className="grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-2xl border-2 border-white/10 bg-white/[0.06] text-muted-foreground shadow-lg"
+                    >
+                      {me.avatarUrl ? (
+                        <img src={me.avatarUrl} alt="" className="h-full w-full object-cover" />
+                      ) : (
+                        <User className="h-1/2 w-1/2" />
+                      )}
+                    </span>
+                    <span className="absolute -bottom-1 -right-1 grid h-6 w-6 place-items-center rounded-lg bg-primary text-primary-foreground shadow-lg ring-2 ring-[#0d0d0d]">
+                      <Camera className="h-3 w-3" />
+                    </span>
+                  </>
+                )}
+              </div>
+            </button>
+          </HHCard>
+        </HHSection>
 
-        <IOSListSection title="Профиль" footer="Ник менять нельзя. Город и телефон — в любой момент.">
-          <IOSField label="Ник">
-            <Input value={me.nick} readOnly disabled />
-          </IOSField>
-          <IOSField label="Город">
-            <Input value={city} onChange={(e) => setCity(e.target.value)} maxLength={64} placeholder="Москва" />
-          </IOSField>
-          <IOSField label="Телефон">
-            <PhoneInput value={phone} onChange={(v) => setPhone(v ?? "")} />
-          </IOSField>
-        </IOSListSection>
+        <HHSection title="Профиль" footer="Ник менять нельзя. Город и телефон — в любой момент.">
+          <div className="space-y-3">
+            <HHInputField label="Ник">
+              <Input value={me.nick} readOnly disabled className="h-12 rounded-xl border-white/[0.08] bg-white/5 px-4 text-[14px] focus-visible:border-primary/40 focus-visible:ring-1 focus-visible:ring-primary/20" />
+            </HHInputField>
+            <HHInputField label="Город">
+              <Input
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+                maxLength={64}
+                placeholder="Москва"
+                className="h-12 rounded-xl border-white/[0.08] bg-white/5 px-4 text-[14px] focus-visible:border-primary/40 focus-visible:ring-1 focus-visible:ring-primary/20"
+              />
+            </HHInputField>
+            <HHInputField label="Телефон">
+              <PhoneInput
+                value={phone}
+                onChange={(v) => setPhone(v ?? "")}
+                inputClassName="h-12 rounded-xl border-white/[0.08] bg-white/5 px-4 text-[14px] focus-visible:border-primary/40 focus-visible:ring-1 focus-visible:ring-primary/20"
+              />
+            </HHInputField>
+          </div>
+        </HHSection>
 
-        <div className="px-4 pt-1">
-          <PrimaryButton full onClick={onSave} loading={updateMut.isPending}>
+        <div className="pt-1">
+          <HHSaveButton onClick={onSave} loading={updateMut.isPending}>
             Сохранить профиль
-          </PrimaryButton>
+          </HHSaveButton>
         </div>
 
       </>
     );
   }
+
 
   return (
     <div className="space-y-8">
