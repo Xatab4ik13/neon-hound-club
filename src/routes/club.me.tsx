@@ -52,6 +52,11 @@ export const Route = createFileRoute("/club/me")({
       { name: "robots", content: "noindex" },
     ],
   }),
+  // ?settings=1 — открыть SettingsModal на табе «Профиль» (например, при клике
+  // «Подтвердить номер» с других страниц).
+  validateSearch: (search: Record<string, unknown>) => ({
+    settings: search.settings === "1" || search.settings === 1 ? ("1" as const) : undefined,
+  }),
   component: MePage,
 });
 
