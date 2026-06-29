@@ -18,6 +18,7 @@ type Props = {
   className?: string;
   required?: boolean;
   autoComplete?: string;
+  verified?: boolean;
 };
 
 /** Эмодзи-флаг по двухбуквенному ISO-коду. */
