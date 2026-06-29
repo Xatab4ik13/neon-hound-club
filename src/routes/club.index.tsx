@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Fragment, useEffect, useMemo, useRef, useState, useCallback, memo } from "react";
 import { flushSync } from "react-dom";
-import { Send, PlumpSearch as SearchIcon, Clock, Sticker, PlumpClose as X, Pin, PinOff, Trash2, Heart, PlumpImage as ImageIcon, PlumpCamera as Camera, PlumpComment, PlumpShare, PlumpPoll, PlumpAttach } from "@/components/ui/icons";
+import { Send, PlumpSearch as SearchIcon, Clock, PlumpSticker as Sticker, PlumpClose as X, Pin, PinOff, Trash2, Heart, PlumpImage as ImageIcon, PlumpCamera as Camera, PlumpComment, PlumpShare, PlumpPoll, PlumpAttach } from "@/components/ui/icons";
 import { RANKS, type RankId } from "@/data/ranks";
 import { useFeedPosts, useFeedLoaded, feedStore, initialsOf, makeSlug, type FeedAuthor, type FeedComment, type FeedPost, type FeedPoll } from "@/data/feed-store";
 import { HellhoundAvatar, HellhoundChip } from "@/components/club/HellhoundPlaque";
@@ -2153,7 +2153,7 @@ function CommentComposer({
             className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:text-foreground active:scale-95"
             aria-label="Стикеры"
           >
-            <Sticker size={22} strokeWidth={1.6} />
+            <Sticker size={22} />
           </button>
         ) : (
           <button
