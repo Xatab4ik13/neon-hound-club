@@ -85,11 +85,21 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
   });
 
   const signIn = useCallback(
-    async (email: string, password: string) => {
-      await apiFetch<{ user: SessionUser }>("/api/v1/auth/login", {
-        method: "POST",
-        body: JSON.stringify({ email, password }),
-      });
+    async (identifier: string, password: string) => {
+      const id = identifier.trim();
+      // Если в строке цифры/+/пробелы/скобки/дефис и нет «@» — считаем телефоном.
+      const looksLikePhone = !id.includes("@") && /^[+\d][\d\s()-]{4,}$/.test(id);
+      if (looksLikePhone) {
+        await apiFetch<{ user: SessionUser }>("/api/v1/auth/login-by-phone", {
+          method: "POST",
+          body: JSON.stringify({ phone: id, password }),
+        });
+      } else {
+        await apiFetch<{ user: SessionUser }>("/api/v1/auth/login", {
+          method: "POST",
+          body: JSON.stringify({ email: id, password }),
+        });
+      }
       const user = await fetchMe();
       if (!user) {
         throw new ApiError(401, "session_not_persisted", "Сессия не сохранилась. Обнови страницу и войди ещё раз");
