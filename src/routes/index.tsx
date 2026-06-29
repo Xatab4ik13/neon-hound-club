@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { Header } from "@/components/brand/Header";
 import { Footer } from "@/components/brand/Footer";
 import { Hero } from "@/components/brand/Hero";
@@ -7,6 +8,7 @@ import { useViewer } from "@/hooks/use-viewer";
 import { fetchShopShowcase, qk } from "@/lib/queries";
 import { RANKS, XP_THRESHOLDS, type RankId } from "@/data/ranks";
 import { XP_SOURCES } from "@/data/xp-sources";
+import { isClubHost } from "@/lib/host";
 import pinkR6 from "@/assets/pink-r6.jpg";
 
 
