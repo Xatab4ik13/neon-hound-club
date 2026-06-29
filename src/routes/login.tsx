@@ -76,9 +76,11 @@ function LoginPage() {
     try {
       const user = await signIn(id, password);
       const target = user.role === "blogger" ? "/blogger" : "/club";
-      // Мобила на основном домене → редирект на club.hhr.pro,
+      // Мобила в обычном браузере на основном домене → редирект на club.hhr.pro,
       // чтобы PWA ставилась с правильного origin. Cookie на .hhr.pro общая.
-      if (target === "/club" && !isClubHost() && isMobileDevice()) {
+      // ВАЖНО: если уже стоит установленная PWA (standalone) — не уходим
+      // на другой origin, иначе iOS откроет cross-origin во встроенном Safari.
+      if (target === "/club" && !isClubHost() && isMobileDevice() && !isStandalone()) {
         window.location.replace(clubUrl(target));
         return;
       }
