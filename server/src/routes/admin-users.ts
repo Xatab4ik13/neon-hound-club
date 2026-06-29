@@ -30,7 +30,7 @@ const STICKER_PACK_SLUGS = GIFTABLE_STICKER_PACKS.map((p) => p.slug) as [string,
 export async function adminUsersRoutes(app: FastifyInstance) {
   app.addHook("preHandler", requireAdmin);
 
-  // GET /api/v1/admin/users?q=&page=&pageSize=&sort=&dir=
+  // GET /api/v1/admin/users?q=&page=&pageSize=&sort=&dir=&role=
   app.get("/", async (req) => {
     const q = z
       .object({
@@ -49,6 +49,7 @@ export async function adminUsersRoutes(app: FastifyInstance) {
           .optional()
           .default("createdAt"),
         dir: z.enum(["asc", "desc"]).optional().default("desc"),
+        role: z.enum(["user", "blogger"]).optional(),
       })
       .parse(req.query ?? {});
     const { page, pageSize, offset } = parsePagination(req.query);
@@ -58,9 +59,11 @@ export async function adminUsersRoutes(app: FastifyInstance) {
       ? or(ilike(users.email, `%${search}%`), ilike(users.nick, `%${search}%`))
       : undefined;
     // Админы — не клубные юзеры, они живут в /api/v1/admin/staff.
-    const where = searchWhere
-      ? and(ne(users.role, "admin"), searchWhere)
-      : ne(users.role, "admin");
+    const conditions = [ne(users.role, "admin")];
+    if (searchWhere) conditions.push(searchWhere);
+    if (q.role) conditions.push(eq(users.role, q.role));
+    const where = conditions.length === 1 ? conditions[0] : and(...conditions);
+
 
     // Маппинг колонки сортировки на SQL-выражение.
     const phoneVerifiedExpr = sql`(${profiles.phoneVerifiedAt} IS NOT NULL)`;
