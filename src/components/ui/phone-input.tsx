@@ -1,13 +1,14 @@
-import { forwardRef, useMemo, useState } from "react";
+import { forwardRef, useEffect, useMemo, useRef, useState } from "react";
 import PhoneInputBase, {
   getCountries,
   getCountryCallingCode,
   type Country,
 } from "react-phone-number-input/input";
+import { getExampleNumber, parsePhoneNumberFromString } from "libphonenumber-js";
+import examples from "libphonenumber-js/examples.mobile.json";
 import ruLabels from "react-phone-number-input/locale/ru.json";
 import { ChevronDown, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 type Props = {
   value?: string;
@@ -19,7 +20,7 @@ type Props = {
   autoComplete?: string;
 };
 
-/** Эмодзи-флаг из двухбуквенного ISO-кода страны. */
+/** Эмодзи-флаг по двухбуквенному ISO-коду. */
 function flagEmoji(country: string): string {
   if (!country || country.length !== 2) return "🏳️";
   const A = 0x1f1e6;
@@ -31,16 +32,46 @@ function flagEmoji(country: string): string {
 }
 
 /**
- * Международное поле телефона (E.164) с кастомным селектом страны:
- * флаг + поиск + код страны. Тёмная тема, скруглённые формы.
+ * Поле телефона (E.164) с кастомным селектом страны:
+ * флаг-кнопка, выпадающий список с поиском, автоформат и помощь по длине номера для выбранной страны.
  */
 export const PhoneInput = forwardRef<HTMLInputElement, Props>(function PhoneInput(
   { value, defaultValue, onChange, placeholder, className, required, autoComplete = "tel" },
   ref,
 ) {
-  const [country, setCountry] = useState<Country>("RU");
+  // Определяем стартовую страну: если в value уже есть номер — берём из него, иначе RU.
+  const initialCountry = useMemo<Country>(() => {
+    const v = value ?? defaultValue ?? "";
+    const parsed = v ? parsePhoneNumberFromString(v) : undefined;
+    return (parsed?.country as Country) ?? "RU";
+  }, [value, defaultValue]);
+
+  const [country, setCountry] = useState<Country>(initialCountry);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  // Закрытие по клику снаружи + Esc.
+  useEffect(() => {
+    if (!open) return;
+    function onDown(e: MouseEvent | TouchEvent) {
+      if (!wrapRef.current?.contains(e.target as Node)) setOpen(false);
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("touchstart", onDown);
+    document.addEventListener("keydown", onKey);
+    // Фокус в поиск.
+    setTimeout(() => searchRef.current?.focus(), 10);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("touchstart", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
 
   const countries = useMemo(() => {
     const list = getCountries().map((c) => ({
@@ -63,31 +94,48 @@ export const PhoneInput = forwardRef<HTMLInputElement, Props>(function PhoneInpu
     );
   }, [countries, query]);
 
-  const dial = `+${getCountryCallingCode(country)}`;
+  // Пример-плейсхолдер в формате выбранной страны — даёт юзеру понять длину.
+  const example = useMemo(() => {
+    const ex = getExampleNumber(country, examples);
+    return ex?.formatInternational() ?? `+${getCountryCallingCode(country)}`;
+  }, [country]);
 
   return (
-    <div className={cn("hh-phone-input flex items-stretch gap-2", className)}>
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <button
-            type="button"
-            className="flex h-12 items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 text-sm text-white transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
-            aria-label="Выбор страны"
-          >
-            <span className="text-xl leading-none">{flagEmoji(country)}</span>
-            <span className="font-mono text-white/70">{dial}</span>
-            <ChevronDown className="size-4 text-white/40" />
-          </button>
-        </PopoverTrigger>
-        <PopoverContent
-          align="start"
-          sideOffset={8}
-          className="w-[280px] rounded-2xl border-white/10 bg-[#0c0c10] p-0 text-white shadow-2xl"
+    <div ref={wrapRef} className={cn("hh-phone-input relative flex items-stretch gap-2", className)}>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex h-12 shrink-0 items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-3 transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+        aria-label="Выбор страны"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+      >
+        <span className="text-2xl leading-none">{flagEmoji(country)}</span>
+        <ChevronDown className="size-4 text-white/40" />
+      </button>
+
+      <PhoneInputBase
+        ref={ref as never}
+        country={country}
+        international
+        withCountryCallingCode
+        value={value ?? defaultValue ?? ""}
+        onChange={(v) => onChange?.((v as string) ?? "")}
+        placeholder={placeholder ?? example}
+        autoComplete={autoComplete}
+        required={required}
+        className="flex h-12 w-full min-w-0 rounded-xl border border-white/10 bg-white/5 px-4 text-base text-white ring-offset-background placeholder:text-white/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 disabled:cursor-not-allowed disabled:opacity-50"
+      />
+
+      {open && (
+        <div
+          role="listbox"
+          className="absolute left-0 top-[calc(100%+8px)] z-50 w-[min(320px,100%)] overflow-hidden rounded-2xl border border-white/10 bg-[#0c0c10] shadow-2xl"
         >
           <div className="flex items-center gap-2 border-b border-white/10 px-3 py-2.5">
             <Search className="size-4 text-white/40" />
             <input
-              autoFocus
+              ref={searchRef}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Поиск страны"
@@ -108,7 +156,7 @@ export const PhoneInput = forwardRef<HTMLInputElement, Props>(function PhoneInpu
                       setQuery("");
                     }}
                     className={cn(
-                      "flex w-full items-center gap-3 px-3 py-2 text-left text-sm transition-colors hover:bg-white/5",
+                      "flex w-full items-center gap-3 px-3 py-2 text-left text-sm text-white transition-colors hover:bg-white/5",
                       c.code === country && "bg-primary/15 text-primary",
                     )}
                   >
@@ -120,21 +168,8 @@ export const PhoneInput = forwardRef<HTMLInputElement, Props>(function PhoneInpu
               ))
             )}
           </ul>
-        </PopoverContent>
-      </Popover>
-
-      <PhoneInputBase
-        ref={ref as never}
-        country={country}
-        international
-        withCountryCallingCode
-        value={value ?? defaultValue ?? ""}
-        onChange={(v) => onChange?.((v as string) ?? "")}
-        placeholder={placeholder ?? `${dial} 999 123-45-67`}
-        autoComplete={autoComplete}
-        required={required}
-        className="flex h-12 w-full rounded-xl border border-white/10 bg-white/5 px-4 text-base text-white ring-offset-background placeholder:text-white/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 disabled:cursor-not-allowed disabled:opacity-50"
-      />
+        </div>
+      )}
     </div>
   );
 });
