@@ -52,6 +52,12 @@ export const PhoneInput = forwardRef<HTMLInputElement, Props>(function PhoneInpu
   const wrapRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
+  const normalizedValue = useMemo(() => {
+    const raw = value ?? defaultValue ?? "";
+    if (!raw) return "";
+    return parsePhoneNumberFromString(raw)?.number ?? raw;
+  }, [value, defaultValue]);
+
   // Закрытие по клику снаружи + Esc.
   useEffect(() => {
     if (!open) return;
@@ -119,7 +125,7 @@ export const PhoneInput = forwardRef<HTMLInputElement, Props>(function PhoneInpu
         country={country}
         international
         withCountryCallingCode
-        value={value ?? defaultValue ?? ""}
+        value={normalizedValue}
         onChange={(v) => onChange?.((v as string) ?? "")}
         placeholder={placeholder ?? example}
         autoComplete={autoComplete}
