@@ -121,7 +121,6 @@ function RootComponent() {
   // и не знает hostname конкретного запроса.
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const { isClubHost } = require("@/lib/host") as typeof import("@/lib/host");
     if (!isClubHost()) return;
     const link = document.querySelector<HTMLLinkElement>('link[rel="manifest"]');
     if (link) link.href = "/club-manifest.webmanifest";
