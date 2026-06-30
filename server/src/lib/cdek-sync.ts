@@ -17,6 +17,28 @@ import { cdek } from "./cdek.js";
 
 const TERMINAL_ORDER_STATUSES = ["delivered", "cancelled", "refunded"] as const;
 const DELIVERED_CDEK_CODES = new Set(["DELIVERED"]);
+// «Отправлен» = посылка физически в руках СДЭК. До этого статус заказа
+// остаётся «Оплачен», а в карточке видно cdek_status_name (Создана / Принят).
+const SHIPPED_CDEK_CODES = new Set([
+  "ACCEPTED_AT_SHIPMENT_WAREHOUSE",
+  "RECEIVED_AT_SHIPMENT_WAREHOUSE",
+  "TAKEN_BY_TRANSPORTER_FROM_SENDER",
+  "SENT_TO_TRANSIT_CITY",
+  "ACCEPTED_IN_TRANSIT_CITY",
+  "ACCEPTED_AT_TRANSIT_WAREHOUSE",
+  "RECEIVED_AT_TRANSIT_WAREHOUSE",
+  "READY_TO_SHIP_AT_TRANSIT_OFFICE",
+  "TAKEN_BY_TRANSPORTER_FROM_TRANSIT_CITY",
+  "SENT_TO_SENDER_CITY",
+  "ACCEPTED_IN_RECEIVER_CITY",
+  "ACCEPTED_AT_PICK_UP_POINT",
+  "RECEIVED_AT_PICK_UP_POINT",
+  "TAKEN_BY_COURIER",
+  "DELIVERING",
+  "READY_FOR_PICKUP",
+  "READY_TO_SHIP_AT_SENDING_OFFICE",
+]);
+
 
 export type CdekSyncResult = {
   scanned: number;
