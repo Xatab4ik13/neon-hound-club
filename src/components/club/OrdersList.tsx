@@ -6,6 +6,7 @@ import { Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { PlumpPackage as Package, PlumpStore } from "@/components/ui/icons";
+import { Illustration } from "@/components/club/Illustration";
 import {
   fetchMyOrders,
   qk,
