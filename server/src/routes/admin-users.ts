@@ -138,6 +138,10 @@ export async function adminUsersRoutes(app: FastifyInstance) {
         blocked: users.blocked,
         blockedAt: users.blockedAt,
         createdAt: users.createdAt,
+        lastSeenAt: users.lastSeenAt,
+        hasPush: sql<boolean>`EXISTS (SELECT 1 FROM ${pushSubscriptions} ps WHERE ps.user_id = ${users.id})`.as(
+          "has_push",
+        ),
         city: profiles.city,
         avatarUrl: profiles.avatarUrl,
         phone: profiles.phone,
