@@ -93,7 +93,7 @@ function ClubCheckoutPage() {
     setForm((f) => {
       const next = { ...f };
       const t = touchedRef.current;
-      if (!t.has("name") && !next.name && p.nick) next.name = p.nick;
+      // Имя не префиллим из ника профиля — нужен реальный получатель.
       if (!t.has("email") && !next.email && p.email) next.email = p.email;
       if (!t.has("phone") && !next.phone && p.phone) next.phone = formatRuPhone(p.phone);
       if (!t.has("city") && !next.city && p.city) next.city = p.city;
