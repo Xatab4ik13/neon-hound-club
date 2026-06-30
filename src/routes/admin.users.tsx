@@ -101,24 +101,20 @@ function UsersPage() {
           headers={[
             { label: "Ник", sortKey: "nick" },
             { label: "Email", sortKey: "email" },
-            { label: "Город", sortKey: "city" },
-            { label: "Роль", sortKey: "role" },
             { label: "Email ✓", sortKey: "emailVerified" },
             { label: "Телефон ✓", sortKey: "phoneVerified" },
-            { label: "Статус", sortKey: "status" },
+            { label: "Онлайн", sortKey: "lastSeenAt" },
+            { label: "Пуш", sortKey: "hasPush" },
             { label: "Регистрация", sortKey: "createdAt" },
             "",
           ]}
           rows={items.map((u) => [
             <span className="font-medium">@{u.nick}</span>,
             <span className="text-zinc-600 dark:text-zinc-300">{u.email}</span>,
-            <span>{u.city ?? "—"}</span>,
-            <Badge tone={u.role === "admin" ? "rose" : "zinc"}>{u.role}</Badge>,
             <VerifiedDot ok={u.emailVerified} />,
             <VerifiedDot ok={u.phoneVerified} />,
-            <Badge tone={u.blocked ? "rose" : "emerald"}>
-              {u.blocked ? "Бан" : "Активен"}
-            </Badge>,
+            <OnlineCell lastSeenAt={u.lastSeenAt} />,
+            <VerifiedDot ok={u.hasPush} />,
             <span className="tabular-nums text-zinc-500 dark:text-zinc-400">
               {new Date(u.createdAt).toLocaleDateString("ru-RU")}
             </span>,
