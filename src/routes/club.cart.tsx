@@ -7,6 +7,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useCart, type CartItem } from "@/hooks/use-cart";
 import { useViewer } from "@/hooks/use-viewer";
 import { haptic } from "@/hooks/use-haptic";
+import { Illustration } from "@/components/club/Illustration";
 
 export const Route = createFileRoute("/club/cart")({
   head: () => ({
