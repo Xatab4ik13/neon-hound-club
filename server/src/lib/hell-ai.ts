@@ -119,7 +119,7 @@ export function buildSystemPrompt(opts: {
   return parts.join("\n");
 }
 
-/** Лимит вопросов на тир за период действия Pass (30 дней). */
+/** Лимит вопросов на тир за скользящее окно 24 часа. */
 export type AiLimits = {
   silver: number;
   gold: number;
@@ -127,19 +127,21 @@ export type AiLimits = {
 };
 
 /**
- * Лимиты ОСНОВНОЙ модели тира.
- * silver/gold — после лимита /ask возвращает 429.
- * platinum — после лимита /ask продолжает работать на быстрой модели (без счётчика).
+ * Лимиты по тирам Pass — вопросов в сутки (rolling 24h).
+ * Превышение → 429. Для platinum значение работает как hard-cap от спама,
+ * наружу клиенту он показывается как «безлимит».
  */
 export const AI_LIMITS_DEFAULT: AiLimits = {
-  silver: 30,
-  gold: 200,
-  platinum: 300,
+  silver: 15,
+  gold: 40,
+  platinum: 150,
 };
 
+/** Бесплатный режим (без активного Pass): 3 вопроса в сутки на умной модели. */
+export const FREE_PER_DAY = 3;
+
 /**
- * Модель по тиру. Для silver/gold — быстрая. Для platinum — умная,
- * после превышения лимита роут переключает её на быструю.
+ * Модель по тиру. Все тиры (и free) — одна и та же умная модель.
  * Имя модели НЕ возвращается клиенту — клиент видит только "Hell AI".
  */
 export const TIER_PRIMARY_MODEL: Record<"silver" | "gold" | "platinum", string> = {
@@ -148,5 +150,5 @@ export const TIER_PRIMARY_MODEL: Record<"silver" | "gold" | "platinum", string> 
   platinum: "openrouter/auto",
 };
 
-/** Модель для platinum после превышения лимита умной модели. */
-export const PLATINUM_FALLBACK_MODEL = "openrouter/auto";
+/** Модель для бесплатных вопросов — та же умная. */
+export const FREE_MODEL = TIER_PRIMARY_MODEL.platinum;
