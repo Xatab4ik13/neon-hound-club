@@ -16,9 +16,10 @@ import { isClubHost } from "@/lib/host";
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="max-w-md text-center">
-        <h1 className="text-7xl font-bold text-foreground">404</h1>
-        <h2 className="mt-4 text-xl font-semibold text-foreground">Страница не найдена</h2>
+      <div className="flex max-w-md flex-col items-center text-center">
+        <Illustration name="page-not-found" className="h-56 w-56 text-foreground/80" />
+        <h1 className="mt-2 text-5xl font-bold text-foreground">404</h1>
+        <h2 className="mt-3 text-xl font-semibold text-foreground">Страница не найдена</h2>
         <p className="mt-2 text-sm text-muted-foreground">
           Такой страницы не существует или она была перемещена.
         </p>
