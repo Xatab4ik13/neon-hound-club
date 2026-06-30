@@ -364,6 +364,31 @@ function BannerEditor({
           </div>
         </Field>
 
+        <Field
+          label="Заголовок"
+          hint="Крупный текст. Для переноса на новую строку — нажми Enter в поле."
+        >
+          <TextArea
+            rows={2}
+            value={form.title}
+            onChange={(e) => setF("title", e.target.value)}
+            placeholder="BLACK HOUND&#10;JACKET"
+            maxLength={120}
+          />
+        </Field>
+
+        <Field
+          label="Подпись под заголовком"
+          hint="Мелкая строка под заголовком (например «открытие в ленте»). Оставь пустым, чтобы убрать."
+        >
+          <TextInput
+            value={form.eyebrow ?? ""}
+            onChange={(e) => setF("eyebrow", e.target.value)}
+            placeholder="Лимит 50 шт. · −15% по Gold Pass"
+            maxLength={120}
+          />
+        </Field>
+
         {/* Картинка */}
         <Field
           label="Фон баннера"
@@ -421,32 +446,6 @@ function BannerEditor({
               )}
             </div>
           </div>
-        </Field>
-
-
-        <Field
-          label="Заголовок"
-          hint="Крупный текст. Для переноса на новую строку — нажми Enter в поле."
-        >
-          <TextArea
-            rows={2}
-            value={form.title}
-            onChange={(e) => setF("title", e.target.value)}
-            placeholder="BLACK HOUND&#10;JACKET"
-            maxLength={120}
-          />
-        </Field>
-
-        <Field
-          label="Подпись над заголовком"
-          hint="Мелкая строка-надстрочник. Можно оставить пустой."
-        >
-          <TextInput
-            value={form.eyebrow ?? ""}
-            onChange={(e) => setF("eyebrow", e.target.value)}
-            placeholder="Лимит 50 шт. · −15% по Gold Pass"
-            maxLength={120}
-          />
         </Field>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
