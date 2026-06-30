@@ -265,9 +265,13 @@ async function createCdekOrder(input: CdekOrderInput): Promise<CdekCreateOrderRe
   const senderPhone = process.env.CDEK_SENDER_PHONE || "+79000000000";
   const shipmentPoint = process.env.CDEK_SHIPMENT_POINT || undefined;
 
-  const totalItemsByPackage = input.items.reduce((s, i) => s + i.amount, 0);
-  const perPackageItems = Math.max(1, Math.ceil(totalItemsByPackage / input.packages.length));
-
+  // Один пакет на позицию заказа. Внутри пакета — соответствующий item с amount=qty.
+  // Каждый пакет ДОЛЖЕН иметь items, иначе СДЭК отвечает packages[i].items is empty.
+  if (input.packages.length !== input.items.length) {
+    throw new Error(
+      `[cdek] createOrder: packages count (${input.packages.length}) must equal items count (${input.items.length})`,
+    );
+  }
   const body: Record<string, unknown> = {
     type: 1, // 1 — интернет-магазин
     tariff_code: input.tariffCode,
@@ -277,29 +281,26 @@ async function createCdekOrder(input: CdekOrderInput): Promise<CdekCreateOrderRe
     recipient: { name: input.recipient.name, phones: [{ number: input.recipient.phone }] },
     from_location: { code: fromCity },
     packages: input.packages.map((p, i) => {
-      // распределим items по местам: для простоты — все в первое место.
-      const itemsForThisPackage =
-        i === 0
-          ? input.items.map((it) => ({
-              name: it.name.slice(0, 255),
-              ware_key: it.wareKey.slice(0, 50),
-              cost: it.cost,
-              weight: Math.max(1, it.weight),
-              amount: it.amount,
-              payment: { value: 0 },
-            }))
-          : [];
+      const it = input.items[i]!;
       return {
         number: p.number,
         weight: Math.max(1, Math.round(p.weightG)),
         length: Math.max(1, Math.round(p.lengthCm)),
         width: Math.max(1, Math.round(p.widthCm)),
         height: Math.max(1, Math.round(p.heightCm)),
-        items: itemsForThisPackage,
+        items: [
+          {
+            name: it.name.slice(0, 255),
+            ware_key: it.wareKey.slice(0, 50),
+            cost: it.cost,
+            weight: Math.max(1, it.weight),
+            amount: it.amount,
+            payment: { value: 0 },
+          },
+        ],
       };
     }),
   };
-  void perPackageItems; // подсказка читателю — пока распределение упрощённое
 
   if (input.toPvzCode) {
     body.delivery_point = input.toPvzCode;
