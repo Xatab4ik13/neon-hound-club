@@ -1,6 +1,6 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import bcrypt from "bcryptjs";
-import { eq } from "drizzle-orm";
+import { and, eq, or, isNull, lt, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { users } from "../db/schema/users.js";
 
@@ -90,6 +90,23 @@ async function hydrateFreshSession(
   };
 
   (req as FastifyRequest & { user: SessionPayload }).user = fresh;
+
+  // Throttled "last seen" — обновляем не чаще раза в 30 сек, чтобы не нагружать БД.
+  // Ошибки глотаем — это не должно ломать запрос.
+  void db
+    .update(users)
+    .set({ lastSeenAt: new Date() })
+    .where(
+      and(
+        eq(users.id, row.id),
+        or(
+          isNull(users.lastSeenAt),
+          lt(users.lastSeenAt, sql`now() - interval '30 seconds'`),
+        ),
+      ),
+    )
+    .catch(() => {});
+
   return fresh;
 }
 
