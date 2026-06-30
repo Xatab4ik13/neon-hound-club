@@ -92,10 +92,13 @@ export async function syncCdekStatuses(opts: { limit?: number } = {}): Promise<C
       if (info.statusCode && DELIVERED_CDEK_CODES.has(info.statusCode) && row.status !== "delivered") {
         patch.status = "delivered";
         result.promoted.delivered += 1;
-      } else if (info.cdekNumber && !row.cdekTrack && row.status === "paid") {
+      } else if (info.statusCode && SHIPPED_CDEK_CODES.has(info.statusCode) && row.status === "paid") {
+        // Только когда посылка реально у СДЭК (принят на склад, забран курьером и т.п.).
         patch.status = "shipped";
+        patch.shippedAt = new Date();
         result.promoted.shipped += 1;
       }
+
 
       await db.update(orders).set(patch).where(eq(orders.id, row.id));
       result.updated += 1;
