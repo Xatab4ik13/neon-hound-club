@@ -158,6 +158,7 @@ function AdminCdekPage() {
                   <th className="px-3 py-2 text-left font-medium">Трек</th>
                   <th className="px-3 py-2 text-left font-medium">Статус СДЭК</th>
                   <th className="px-3 py-2 text-left font-medium">Обновлено</th>
+                  <th className="px-3 py-2 text-right font-medium">PDF</th>
                 </tr>
               </thead>
               <tbody>
@@ -188,6 +189,9 @@ function AdminCdekPage() {
                     <td className="px-3 py-2.5 text-xs text-zinc-500">
                       {o.cdekStatusAt ? fmtDate(o.cdekStatusAt) : "—"}
                     </td>
+                    <td className="px-3 py-2.5 text-right">
+                      {o.cdekUuid ? <PdfButton order={o} /> : <span className="text-zinc-400 text-xs">—</span>}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -195,6 +199,39 @@ function AdminCdekPage() {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function PdfButton({ order }: { order: ShopOrder }) {
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  return (
+    <div className="flex items-center justify-end gap-2">
+      {err && <span className="text-[10px] text-rose-500">{err}</span>}
+      <button
+        type="button"
+        disabled={busy}
+        title="Скачать PDF квитанции"
+        onClick={async () => {
+          setErr(null);
+          setBusy(true);
+          try {
+            await downloadCdekWaybillPdf(
+              order.id,
+              `cdek-${order.cdekTrack ?? order.id.slice(0, 8)}.pdf`,
+            );
+          } catch (e) {
+            setErr(e instanceof ApiError ? e.message : "Ошибка");
+          } finally {
+            setBusy(false);
+          }
+        }}
+        className="inline-flex items-center gap-1 rounded-md border border-zinc-200 px-2 py-1 text-xs hover:bg-zinc-100 disabled:opacity-50 dark:border-zinc-800 dark:hover:bg-zinc-800"
+      >
+        {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+        PDF
+      </button>
     </div>
   );
 }
