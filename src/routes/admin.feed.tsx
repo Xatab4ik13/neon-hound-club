@@ -23,6 +23,7 @@ import {
   Send,
   Trash2,
   RotateCcw,
+  Pencil,
 } from "@/components/ui/icons";
 import {
   adminQk,
@@ -31,8 +32,10 @@ import {
   createAdminFeedPost,
   deleteAdminFeedPost,
   restoreAdminFeedPost,
+  updateAdminFeedPost,
   type AdminUserListItem,
   type AdminCreatePostInput,
+  type AdminFeedPostListItem,
 } from "@/lib/admin-queries";
 import { uploadFileToS3 } from "@/lib/garage-api";
 import { hhToast as toast } from "@/lib/hh-toast";
