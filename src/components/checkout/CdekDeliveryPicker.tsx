@@ -187,6 +187,15 @@ export function CdekDeliveryPicker({
             }}
             onFocus={() => setCityOpen(true)}
             onBlur={() => setTimeout(() => setCityOpen(false), 120)}
+            onKeyDown={(e) => {
+              // Enter — выбираем точное совпадение или первый вариант.
+              if (e.key === "Enter" && cityOpts.length > 0 && !value.cityCode) {
+                e.preventDefault();
+                const needle = cityQ.trim().toLowerCase();
+                const pick = cityOpts.find((c) => c.city.toLowerCase() === needle) ?? cityOpts[0];
+                pickCity(pick);
+              }
+            }}
             placeholder="Москва, Краснодар, …"
             className="min-w-0 flex-1 bg-transparent text-[15px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none"
           />
