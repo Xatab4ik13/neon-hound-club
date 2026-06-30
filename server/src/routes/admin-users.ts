@@ -9,6 +9,7 @@ import { ticketsLedger } from "../db/schema/tickets.js";
 import { orders } from "../db/schema/shop.js";
 import { badges, userBadges } from "../db/schema/badges.js";
 import { userStickerPacks } from "../db/schema/stickers.js";
+import { pushSubscriptions } from "../db/schema/push.js";
 import { requireAdmin, hashPassword } from "../lib/auth.js";
 import { getOrCreateReferralCode } from "../lib/referrals.js";
 import { activatePassPurchase } from "../lib/pass.js";
@@ -44,6 +45,8 @@ export async function adminUsersRoutes(app: FastifyInstance) {
             "emailVerified",
             "phoneVerified",
             "status",
+            "lastSeenAt",
+            "hasPush",
             "createdAt",
           ])
           .optional()
@@ -67,6 +70,7 @@ export async function adminUsersRoutes(app: FastifyInstance) {
 
     // Маппинг колонки сортировки на SQL-выражение.
     const phoneVerifiedExpr = sql`(${profiles.phoneVerifiedAt} IS NOT NULL)`;
+    const hasPushExpr = sql<boolean>`EXISTS (SELECT 1 FROM ${pushSubscriptions} ps WHERE ps.user_id = ${users.id})`;
     // status: сначала заблокированные (true), потом активные — единый признак для сортировки.
     const statusExpr = sql`${users.blocked}`;
     const sortMap = {
@@ -77,6 +81,8 @@ export async function adminUsersRoutes(app: FastifyInstance) {
       emailVerified: users.emailVerified,
       phoneVerified: phoneVerifiedExpr,
       status: statusExpr,
+      lastSeenAt: sql`${users.lastSeenAt} NULLS LAST`,
+      hasPush: hasPushExpr,
       createdAt: users.createdAt,
     } as const;
     const sortCol = sortMap[q.sort];
@@ -95,6 +101,8 @@ export async function adminUsersRoutes(app: FastifyInstance) {
           phoneVerified: phoneVerifiedExpr.as("phone_verified"),
           blocked: users.blocked,
           createdAt: users.createdAt,
+          lastSeenAt: users.lastSeenAt,
+          hasPush: hasPushExpr.as("has_push"),
           city: profiles.city,
           avatarUrl: profiles.avatarUrl,
           phone: profiles.phone,
