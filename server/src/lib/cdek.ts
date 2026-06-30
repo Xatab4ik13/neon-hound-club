@@ -409,7 +409,9 @@ async function printCdekOrder(orderUuid: string, opts?: { copyCount?: number }):
   }
   if (!url) throw new Error("[cdek] print: timeout waiting for PDF");
 
-  const res = await fetch(url);
+  // Ссылка на PDF тоже защищена — нужен тот же Bearer-токен.
+  const token = await getToken();
+  const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
   if (!res.ok) throw new Error(`[cdek] print download: ${res.status}`);
   const ab = await res.arrayBuffer();
   return Buffer.from(ab);
