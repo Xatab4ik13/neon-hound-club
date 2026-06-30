@@ -101,24 +101,20 @@ function UsersPage() {
           headers={[
             { label: "Ник", sortKey: "nick" },
             { label: "Email", sortKey: "email" },
-            { label: "Город", sortKey: "city" },
-            { label: "Роль", sortKey: "role" },
             { label: "Email ✓", sortKey: "emailVerified" },
             { label: "Телефон ✓", sortKey: "phoneVerified" },
-            { label: "Статус", sortKey: "status" },
+            { label: "Онлайн", sortKey: "lastSeenAt" },
+            { label: "Пуш", sortKey: "hasPush" },
             { label: "Регистрация", sortKey: "createdAt" },
             "",
           ]}
           rows={items.map((u) => [
             <span className="font-medium">@{u.nick}</span>,
             <span className="text-zinc-600 dark:text-zinc-300">{u.email}</span>,
-            <span>{u.city ?? "—"}</span>,
-            <Badge tone={u.role === "admin" ? "rose" : "zinc"}>{u.role}</Badge>,
             <VerifiedDot ok={u.emailVerified} />,
             <VerifiedDot ok={u.phoneVerified} />,
-            <Badge tone={u.blocked ? "rose" : "emerald"}>
-              {u.blocked ? "Бан" : "Активен"}
-            </Badge>,
+            <OnlineCell lastSeenAt={u.lastSeenAt} />,
+            <VerifiedDot ok={u.hasPush} />,
             <span className="tabular-nums text-zinc-500 dark:text-zinc-400">
               {new Date(u.createdAt).toLocaleDateString("ru-RU")}
             </span>,
@@ -285,9 +281,22 @@ function UserDrawer({
 
           <Section title="Активность">
             <InfoRow label="Регистрация" value={new Date(u.createdAt).toLocaleString("ru-RU")} />
+            <InfoRow
+              label="Последний раз онлайн"
+              value={
+                u.lastSeenAt
+                  ? (() => {
+                      const diff = Date.now() - new Date(u.lastSeenAt).getTime();
+                      return diff < 5 * 60 * 1000
+                        ? "сейчас онлайн"
+                        : `${formatAgo(diff)} (${new Date(u.lastSeenAt).toLocaleString("ru-RU")})`;
+                    })()
+                  : "никогда"
+              }
+            />
+            <InfoRow label="Пуш-уведомления" value={u.hasPush ? "включены" : "выключены"} />
             <InfoRow label="Email подтверждён" value={u.emailVerified ? "да" : "нет"} />
             <InfoRow label="Телефон подтверждён" value={u.phoneVerified ? "да" : "нет"} />
-            <InfoRow label="Роль" value={u.role} />
             <InfoRow label="Статус" value={u.blocked ? "забанен" : "активен"} />
           </Section>
 
@@ -416,8 +425,8 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 function VerifiedDot({ ok }: { ok: boolean }) {
   return ok ? (
     <span
-      aria-label="Подтверждён"
-      title="Подтверждён"
+      aria-label="Да"
+      title="Да"
       className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
     >
       <svg viewBox="0 0 16 16" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
@@ -426,11 +435,48 @@ function VerifiedDot({ ok }: { ok: boolean }) {
     </span>
   ) : (
     <span
-      aria-label="Не подтверждён"
-      title="Не подтверждён"
+      aria-label="Нет"
+      title="Нет"
       className="inline-block h-2 w-2 rounded-full bg-zinc-300 dark:bg-zinc-700"
     />
   );
+}
+
+function OnlineCell({ lastSeenAt }: { lastSeenAt: string | null }) {
+  if (!lastSeenAt) {
+    return <span className="text-xs text-zinc-400">никогда</span>;
+  }
+  const last = new Date(lastSeenAt).getTime();
+  const diffMs = Date.now() - last;
+  const online = diffMs < 5 * 60 * 1000;
+  if (online) {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+        <span className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_0_3px_rgba(16,185,129,0.18)]" />
+        онлайн
+      </span>
+    );
+  }
+  return (
+    <span
+      className="text-xs tabular-nums text-zinc-500 dark:text-zinc-400"
+      title={new Date(lastSeenAt).toLocaleString("ru-RU")}
+    >
+      {formatAgo(diffMs)}
+    </span>
+  );
+}
+
+function formatAgo(ms: number): string {
+  const min = Math.floor(ms / 60000);
+  if (min < 60) return `${min} мин назад`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return `${hr} ч назад`;
+  const d = Math.floor(hr / 24);
+  if (d < 30) return `${d} д назад`;
+  const mo = Math.floor(d / 30);
+  if (mo < 12) return `${mo} мес назад`;
+  return `${Math.floor(mo / 12)} г назад`;
 }
 
 

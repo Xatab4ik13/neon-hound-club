@@ -46,6 +46,8 @@ export type AdminUserListItem = {
   phoneVerified: boolean;
   blocked: boolean;
   createdAt: string;
+  lastSeenAt: string | null;
+  hasPush: boolean;
   city: string | null;
   avatarUrl: string | null;
   phone: string | null;
@@ -59,6 +61,8 @@ export type AdminUsersSort =
   | "emailVerified"
   | "phoneVerified"
   | "status"
+  | "lastSeenAt"
+  | "hasPush"
   | "createdAt";
 
 export type AdminUserDetail = AdminUserListItem & {

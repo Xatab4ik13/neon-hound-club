@@ -15,6 +15,9 @@ export const users = pgTable(
     blockedAt: timestamp("blocked_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    // Обновляется в hydrateFreshSession не чаще раза в 30 сек.
+    // "Онлайн" в админке = lastSeenAt в пределах ~5 минут.
+    lastSeenAt: timestamp("last_seen_at", { withTimezone: true }),
   },
   (t) => ({
     emailIdx: index("users_email_idx").on(t.email),
