@@ -12,6 +12,7 @@ import { PaymentErrorWatcher } from "@/components/brand/PaymentErrorWatcher";
 import { useEffect } from "react";
 import { captureRefFromUrl } from "@/data/referral";
 import { isClubHost } from "@/lib/host";
+import { Illustration } from "@/components/club/Illustration";
 
 function NotFoundComponent() {
   return (
