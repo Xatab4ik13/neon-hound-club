@@ -333,7 +333,7 @@ export const PostCard = memo(function PostCard({ post, moderate = false }: { pos
 
 
       {post.text && (
-        <p className="px-4 pb-3 pt-3 text-[15px] leading-[1.55] text-foreground/90 md:px-5">{post.text}</p>
+        <p className="whitespace-pre-wrap break-words px-4 pb-3 pt-3 text-[15px] leading-[1.55] text-foreground/90 md:px-5">{post.text}</p>
       )}
 
       {post.poll && <PollBlock poll={post.poll} postId={post.id} />}
