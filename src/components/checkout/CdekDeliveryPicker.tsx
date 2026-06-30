@@ -12,6 +12,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, Loader2, PlumpMap as MapPin, PlumpSearch as Search, PlumpTruck as Truck, PlumpClose as X } from "@/components/ui/icons";
 import { apiFetch } from "@/lib/api";
+import { suggest, type DadataAddressData } from "@/lib/dadata";
 import { loadYandexMaps } from "@/lib/yandex-maps";
 
 export type CdekPickerState = {
@@ -25,11 +26,15 @@ export type CdekPickerState = {
   entrance: string;
 };
 
+// Подсказка из DaData: показываем юзеру город + регион,
+// а resolve в код СДЭК делаем по fias_id (надёжнее всего).
 type CityItem = {
-  code: number;
+  fiasId: string | null;
+  kladrId: string | null;
+  postalCode: string | null;
   city: string;
   region: string;
-  postalCodes: string[];
+  display: string;
 };
 
 type PvzItem = {
@@ -51,6 +56,7 @@ export const EMPTY_CDEK_STATE: CdekPickerState = {
   apartment: "",
   entrance: "",
 };
+
 
 export function CdekDeliveryPicker({
   value,
