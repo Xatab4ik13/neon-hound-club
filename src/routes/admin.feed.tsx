@@ -51,6 +51,7 @@ function AdminFeedPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState<AdminPageSize>(50);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [editing, setEditing] = useState<AdminFeedPostListItem | null>(null);
 
   const qc = useQueryClient();
 
