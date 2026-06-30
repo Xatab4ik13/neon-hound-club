@@ -455,6 +455,7 @@ export async function hellAiRoutes(app: FastifyInstance) {
           role: "assistant",
           content: finalAnswer,
           bikeId: bikeId ?? null,
+          passId: passIdForInsert,
           model: finalModel,
           tokensIn,
           tokensOut,
