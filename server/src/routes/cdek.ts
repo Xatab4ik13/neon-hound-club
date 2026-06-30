@@ -104,15 +104,14 @@ export async function cdekRoutes(app: FastifyInstance) {
           message: "У товара не заданы вес и габариты — обратитесь в поддержку",
         });
       }
-      // Каждая единица — отдельное место (так точнее в СДЭК).
-      for (let k = 0; k < it.qty; k++) {
-        packages.push({
-          weightG: p.weightG,
-          lengthCm: p.lengthCm,
-          widthCm: p.widthCm,
-          heightCm: p.heightCm,
-        });
-      }
+      // Одно место СДЭК на позицию заказа: вес = вес единицы × qty, габариты единицы.
+      // Так считаем доставку так же, как потом создаём накладную в cdek-orders.ts.
+      packages.push({
+        weightG: p.weightG * it.qty,
+        lengthCm: p.lengthCm,
+        widthCm: p.widthCm,
+        heightCm: p.heightCm,
+      });
     }
 
     if (packages.length === 0) {

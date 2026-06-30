@@ -87,6 +87,8 @@ export async function createCdekWaybillForOrder(orderId: string): Promise<{
         409,
       );
     }
+    // Одно место СДЭК на позицию заказа. Вес = вес единицы × qty.
+    // Items внутри места: одна запись с amount=qty (СДЭК требует items в каждом package).
     cdekItems.push({
       name: it.title,
       wareKey: it.productId!,
@@ -94,15 +96,13 @@ export async function createCdekWaybillForOrder(orderId: string): Promise<{
       weight: p.weightG,
       amount: it.qty,
     });
-    for (let k = 0; k < it.qty; k++) {
-      packages.push({
-        number: `${it.id}-${k + 1}`,
-        weightG: p.weightG,
-        lengthCm: p.lengthCm,
-        widthCm: p.widthCm,
-        heightCm: p.heightCm,
-      });
-    }
+    packages.push({
+      number: it.id,
+      weightG: p.weightG * it.qty,
+      lengthCm: p.lengthCm,
+      widthCm: p.widthCm,
+      heightCm: p.heightCm,
+    });
   }
 
   if (packages.length === 0) {
