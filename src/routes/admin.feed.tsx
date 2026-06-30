@@ -188,7 +188,170 @@ function AdminFeedPage() {
         message="Пост будет удалён из ленты. Восстановить можно отсюда же."
         confirmLabel="Удалить"
       />
+
+      <EditPostModal
+        post={editing}
+        onClose={() => setEditing(null)}
+        onSaved={() => {
+          qc.invalidateQueries({ queryKey: adminQk.feedPosts });
+          setEditing(null);
+        }}
+      />
     </div>
+  );
+}
+
+// ───────── Edit modal ─────────
+
+function EditPostModal({
+  post,
+  onClose,
+  onSaved,
+}: {
+  post: AdminFeedPostListItem | null;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [text, setText] = useState("");
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [pinned, setPinned] = useState(false);
+  const [file, setFile] = useState<File | null>(null);
+  const [busy, setBusy] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  // Сброс полей при открытии нового поста
+  const openId = post?.id ?? null;
+  const lastIdRef = useRef<string | null>(null);
+  if (openId !== lastIdRef.current) {
+    lastIdRef.current = openId;
+    setText(post?.text ?? "");
+    setImageUrl(post?.imageUrl ?? null);
+    setPinned(post?.pinned ?? false);
+    setFile(null);
+  }
+
+  if (!post) return null;
+
+  const save = async () => {
+    setBusy(true);
+    try {
+      let finalImage: string | null = imageUrl;
+      if (file) finalImage = await uploadFileToS3(file, "post");
+      const trimmed = text.trim();
+      if (!trimmed && !finalImage) {
+        toast.error("Нужен текст или картинка");
+        setBusy(false);
+        return;
+      }
+      await updateAdminFeedPost(post.id, {
+        text: trimmed,
+        imageUrl: finalImage,
+        pinned,
+      });
+      toast.success("Сохранено");
+      onSaved();
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : "Не удалось сохранить");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const onFile = (f: File | null) => {
+    if (!f) return;
+    setFile(f);
+    const r = new FileReader();
+    r.onload = () => setImageUrl(String(r.result));
+    r.readAsDataURL(f);
+  };
+
+  return (
+    <Modal
+      open={!!post}
+      onClose={onClose}
+      title={`Редактирование поста @${post.nick}`}
+      size="lg"
+      footer={
+        <>
+          <Btn variant="ghost" onClick={onClose} disabled={busy}>
+            Отмена
+          </Btn>
+          <Btn variant="primary" onClick={save} disabled={busy}>
+            {busy ? "Сохраняем…" : "Сохранить"}
+          </Btn>
+        </>
+      }
+    >
+      <div className="space-y-4">
+        <div>
+          <div className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+            Текст
+          </div>
+          <textarea
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            rows={10}
+            maxLength={4000}
+            className="block min-h-[220px] w-full resize-y whitespace-pre-wrap break-words rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm leading-relaxed outline-none focus:border-primary/40 dark:border-zinc-800 dark:bg-zinc-950"
+          />
+          <div className="mt-1 text-right text-[11px] text-zinc-400">{text.length} / 4000</div>
+        </div>
+
+        <div>
+          <div className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+            Картинка
+          </div>
+          {imageUrl ? (
+            <div className="relative overflow-hidden rounded-md border border-zinc-200 dark:border-zinc-800">
+              <img
+                src={imageUrl}
+                alt=""
+                loading="lazy"
+                decoding="async"
+                className="max-h-[300px] w-full object-contain"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  setImageUrl(null);
+                  setFile(null);
+                  if (fileRef.current) fileRef.current.value = "";
+                }}
+                aria-label="Удалить картинку"
+                className="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-full bg-black/70 text-white hover:bg-black"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              className="inline-flex items-center gap-1.5 rounded-md border border-dashed border-zinc-300 px-3 py-2 text-xs font-semibold uppercase tracking-wider text-zinc-600 hover:border-primary/40 hover:text-primary dark:border-zinc-700 dark:text-zinc-400"
+            >
+              <ImageIcon className="h-4 w-4" /> Загрузить фото
+            </button>
+          )}
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => onFile(e.target.files?.[0] ?? null)}
+          />
+        </div>
+
+        <label className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-zinc-200 px-2.5 py-1 text-xs text-zinc-600 has-[:checked]:border-primary/40 has-[:checked]:text-primary dark:border-zinc-800 dark:text-zinc-400">
+          <input
+            type="checkbox"
+            checked={pinned}
+            onChange={(e) => setPinned(e.target.checked)}
+            className="h-3 w-3 accent-primary"
+          />
+          Закрепить
+        </label>
+      </div>
+    </Modal>
   );
 }
 
