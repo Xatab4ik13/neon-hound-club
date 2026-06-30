@@ -145,24 +145,42 @@ export async function hellAiRoutes(app: FastifyInstance) {
     const session = req.user as SessionPayload;
     // admin / blogger — безлимит без пасса
     if (session.role === "admin" || session.role === "blogger") {
-      return { tier: "staff", limit: -1, used: 0, left: -1, unlimited: true, expiresAt: null };
+      return { tier: "staff", limit: -1, used: 0, left: -1, unlimited: true, expiresAt: null, resetAt: null };
     }
     const pass = await getActivePass(session.sub);
+
+    // Без активного Pass — free-режим: 3 вопроса / 24h.
+    if (!pass) {
+      const used = await countUsed24h(session.sub, null);
+      const left = Math.max(0, FREE_PER_DAY - used);
+      const resetAt = used > 0 ? await nextResetAt(session.sub, null) : null;
+      return {
+        tier: "free",
+        limit: FREE_PER_DAY,
+        used,
+        left,
+        unlimited: false,
+        expiresAt: null,
+        resetAt,
+      };
+    }
+
+    // С активным Pass — лимит per-24h по этому пассу.
     const limits = await loadLimits();
-    if (!pass) return { tier: null, limit: 0, used: 0, left: 0, unlimited: false };
     const tier = pass.tier as TierKey;
     const limit = limits[tier];
-    const since = pass.paidAt ?? pass.createdAt;
-    const used = await countUsed(session.sub, since);
-    // Platinum: после лимита фолбэк на быструю модель — для клиента это «безлимит».
-    const unlimited = tier === "platinum";
+    const used = await countUsed24h(session.sub, pass.id);
+    const resetAt = used > 0 ? await nextResetAt(session.sub, pass.id) : null;
+    // Platinum: для UI показываем как «безлимит», пока не упёрся в hard-cap.
+    const showUnlimited = tier === "platinum" && used < limit;
     return {
       tier,
-      limit: unlimited ? -1 : limit,
+      limit: showUnlimited ? -1 : limit,
       used,
-      left: unlimited ? -1 : Math.max(0, limit - used),
-      unlimited,
+      left: showUnlimited ? -1 : Math.max(0, limit - used),
+      unlimited: showUnlimited,
       expiresAt: pass.expiresAt?.toISOString() ?? null,
+      resetAt,
     };
   });
 
@@ -175,43 +193,12 @@ export async function hellAiRoutes(app: FastifyInstance) {
     }
     const { question, bikeId, chatId } = parsed.data;
 
-    const isStaff = session.role === "admin" || session.role === "blogger";
-
-    // 1. Проверка активного Pass (стафф пропускает).
-    let pass: Awaited<ReturnType<typeof getActivePass>> | null = null;
-    // Модель для этого запроса — выбираем по тиру, с учётом лимита (для platinum).
-    let modelForRequest: string = TIER_PRIMARY_MODEL.silver;
-    if (!isStaff) {
-      pass = await getActivePass(session.sub);
-      if (!pass) {
-        return reply.code(403).send({
-          error: "no_pass",
-          message: "Hell AI доступен с активным Hell Pass. Активируй любой тир.",
-        });
-      }
-
-      const limits = await loadLimits();
-      const tier = pass.tier as TierKey;
-      const limit = limits[tier];
-      const since = pass.paidAt ?? pass.createdAt;
-      const used = await countUsed(session.sub, since);
-
-      if (tier === "platinum") {
-        // Platinum: после лимита переключаемся на быструю модель, отвечаем без счётчика.
-        modelForRequest = used >= limit ? PLATINUM_FALLBACK_MODEL : TIER_PRIMARY_MODEL.platinum;
-      } else {
-        modelForRequest = TIER_PRIMARY_MODEL[tier];
-        if (used >= limit) {
-          return reply.code(429).send({
-            error: "limit_reached",
-            message: `Лимит ${limit} вопросов на этот период исчерпан. Обновится при покупке следующего Pass.`,
-          });
-        }
-      }
-    } else {
-      // Стафф — основная модель из настроек админки (резерв на «потестить»).
-      modelForRequest = TIER_PRIMARY_MODEL.platinum;
+    const ctx = await resolveAskContext(session);
+    if (!ctx.ok) {
+      return reply.code(ctx.status).send({ error: ctx.error, message: ctx.message });
     }
+    const { isStaff, passIdForInsert, model: modelForRequest } = ctx;
+
 
     // 3. Контекст и system prompt.
     const settings = await loadAiSettings();
