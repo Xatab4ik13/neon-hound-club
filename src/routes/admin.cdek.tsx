@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Download, Loader2, RefreshCw } from "@/components/ui/icons";
+import { Loader2, RefreshCw, PlumpDownload as Download } from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
 import { ApiError } from "@/lib/api";
 import { downloadCdekWaybillPdf, fetchAdminOrders, syncCdekStatusesAll, type ShopOrder } from "@/lib/queries";
