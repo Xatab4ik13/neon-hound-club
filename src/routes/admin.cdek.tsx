@@ -1,10 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Loader2, RefreshCw } from "@/components/ui/icons";
+import { Download, Loader2, RefreshCw } from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
 import { ApiError } from "@/lib/api";
-import { fetchAdminOrders, syncCdekStatusesAll, type ShopOrder } from "@/lib/queries";
+import { downloadCdekWaybillPdf, fetchAdminOrders, syncCdekStatusesAll, type ShopOrder } from "@/lib/queries";
+
 
 export const Route = createFileRoute("/admin/cdek")({
   head: () => ({
