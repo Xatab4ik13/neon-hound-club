@@ -24,6 +24,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import placeholderBike from "@/assets/bikes/placeholder.png";
 import { IOSSheet } from "@/components/ios/IOSSheet";
+import { Illustration } from "@/components/club/Illustration";
 import { IOSListRow, IOSListSection } from "@/components/ios/IOSList";
 import { saveBikes, type StoredBike } from "@/data/bike-storage";
 import {
@@ -1447,9 +1448,11 @@ function EmptyGarage({ onAdd }: { onAdd: () => void }) {
       </h1>
       <div className="flex flex-1 items-center justify-center py-6">
         <div className="w-full rounded-3xl border border-dashed border-white/[0.12] bg-card/30 p-8 text-center">
-          <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-primary/10 text-primary">
-            <PlumpGarage className="h-8 w-8" />
-          </div>
+          <Illustration
+            name="motorcycle"
+            className="mx-auto h-40 w-40 text-foreground/70"
+          />
+          <PlumpGarage className="hidden" />
           <h2 className="mt-4 text-[20px] font-bold text-foreground">
             Здесь будет твой мотик
           </h2>
