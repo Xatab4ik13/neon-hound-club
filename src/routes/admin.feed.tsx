@@ -148,9 +148,14 @@ function AdminFeedPage() {
                 <RotateCcw className="h-4 w-4" /> Восстановить
               </Btn>
             ) : (
-              <Btn variant="ghost" onClick={() => setConfirmDelete(p.id)}>
-                <Trash2 className="h-4 w-4" /> Удалить
-              </Btn>
+              <div className="flex items-center gap-1">
+                <Btn variant="ghost" onClick={() => setEditing(p)}>
+                  <Pencil className="h-4 w-4" /> Править
+                </Btn>
+                <Btn variant="ghost" onClick={() => setConfirmDelete(p.id)}>
+                  <Trash2 className="h-4 w-4" /> Удалить
+                </Btn>
+              </div>
             ),
           ])}
         />
