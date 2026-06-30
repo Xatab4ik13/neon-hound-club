@@ -318,7 +318,7 @@ function HellAiPanel({ data }: { data: SystemSettings }) {
       </PanelHeader>
       <div className="space-y-3 p-4">
         <p className="text-xs text-zinc-500">
-          Лимит вопросов на 30 дней действия Pass. Для Platinum −1 = безлимит.
+          Вопросов в сутки (скользящее окно 24h). Дефолты: Silver 15 / Gold 40 / Platinum 150 (hard-cap, для юзера это «безлимит»). Free-юзеры без Pass — 3/сутки, зашито в коде.
         </p>
         <div className="grid grid-cols-3 gap-3">
           <Field label="Silver">

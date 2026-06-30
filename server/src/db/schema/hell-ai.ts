@@ -26,6 +26,8 @@ export const aiMessages = pgTable(
     role: varchar("role", { length: 16 }).notNull(),
     content: text("content").notNull(),
     bikeId: uuid("bike_id"),
+    /** Pass, к которому привязано сообщение. NULL = free-режим (учитывается в 3/24h). */
+    passId: uuid("pass_id"),
     model: varchar("model", { length: 80 }),
     tokensIn: integer("tokens_in"),
     tokensOut: integer("tokens_out"),

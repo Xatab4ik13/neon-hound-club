@@ -63,18 +63,21 @@ export const Route = createFileRoute("/club/hell-ai")({
 });
 
 // ── Тариф / квоты ─────────────────────────────────────────────────────────
-type PassTier = "guest" | "silver" | "gold" | "platinum" | "staff";
+type PassTier = "guest" | "free" | "silver" | "gold" | "platinum" | "staff";
 type HellAiStatus = {
-  tier: "silver" | "gold" | "platinum" | "staff" | null;
+  tier: "free" | "silver" | "gold" | "platinum" | "staff" | null;
   limit: number;
   used: number;
   left: number;
   unlimited: boolean;
   expiresAt: string | null;
+  /** ISO-время, когда освободится первый слот в скользящем окне 24h. null = окно пустое. */
+  resetAt?: string | null;
 };
 
 const TIER_LABEL: Record<PassTier, string> = {
   guest: "Без Hell Pass",
+  free: "Бесплатно",
   silver: "Silver",
   gold: "Gold",
   platinum: "Platinum",
@@ -408,7 +411,7 @@ function errorToMessage(err: unknown): string {
     if (err.status === 401) return "Войди в аккаунт, чтобы пользоваться Hell AI.";
     if (err.status === 403) return "Hell AI доступен с Hell Pass. Активируй любой тир.";
     if (err.status === 409) return err.message || "Подожди, предыдущий ответ ещё идёт.";
-    if (err.status === 429) return err.message || "Лимит вопросов на этот месяц исчерпан.";
+    if (err.status === 429) return err.message || "Дневной лимит вопросов исчерпан. Активируй Hell Pass для большего лимита.";
     if (err.status === 503) return err.message || "Hell AI перегружен, попробуй ещё раз через минуту.";
     return err.message || "Hell AI временно недоступен.";
   }
@@ -1016,7 +1019,7 @@ function HellAiMobile() {
               <ArrowRight className="h-5 w-5" />
             </Link>
             <p className="mt-2 px-1 text-center text-[13px] text-muted-foreground">
-              AI-механик по твоему мото · 20/100/∞ вопросов на 30 дней
+              AI-механик по твоему мото · 3 бесплатно в день, до 40+ с Hell Pass
             </p>
           </div>
         </div>
