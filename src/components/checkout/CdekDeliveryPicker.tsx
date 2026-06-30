@@ -70,7 +70,8 @@ export function CdekDeliveryPicker({
 
   // Дебаунс поиска города.
   useEffect(() => {
-    if (cityQ.trim().length < 2) {
+    const q = cityQ.trim();
+    if (q.length < 2) {
       setCityOpts([]);
       return;
     }
@@ -78,9 +79,31 @@ export function CdekDeliveryPicker({
       setCityLoading(true);
       try {
         const r = await apiFetch<{ items: CityItem[] }>(
-          `/api/v1/cdek/cities?q=${encodeURIComponent(cityQ.trim())}`,
+          `/api/v1/cdek/cities?q=${encodeURIComponent(q)}`,
         );
-        setCityOpts(r.items ?? []);
+        const items = r.items ?? [];
+        setCityOpts(items);
+        // Автоподхват: если юзер ввёл город полностью правильно и не нажал
+        // на подсказку (Москва, Санкт-Петербург и т.п.) — выбираем сами.
+        // Триггерим, только пока город ещё не выбран.
+        if (!value.cityCode && items.length > 0) {
+          const needle = q.toLowerCase();
+          const exact =
+            items.find((c) => c.city.toLowerCase() === needle) ??
+            // одна подсказка и юзер ввёл префикс длиной >= 3 — тоже считаем выбором
+            (items.length === 1 && needle.length >= 3 ? items[0] : null);
+          if (exact) {
+            setCityQ(`${exact.city}, ${exact.region}`);
+            setCityOpen(false);
+            onChange({
+              ...value,
+              cityCode: exact.code,
+              cityName: exact.city,
+              pvzCode: null,
+              pvzAddress: null,
+            });
+          }
+        }
       } catch {
         setCityOpts([]);
       } finally {
@@ -88,6 +111,8 @@ export function CdekDeliveryPicker({
       }
     }, 250);
     return () => clearTimeout(t);
+    // value намеренно не в deps — иначе после выбора эффект бы перезапускался.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cityQ]);
 
   // При смене города — загружаем ПВЗ.
