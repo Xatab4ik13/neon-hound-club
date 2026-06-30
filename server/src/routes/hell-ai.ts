@@ -257,6 +257,7 @@ export async function hellAiRoutes(app: FastifyInstance) {
         role: "user",
         content: question,
         bikeId: bikeId ?? null,
+        passId: passIdForInsert,
         model: modelForRequest,
       });
 
@@ -275,6 +276,7 @@ export async function hellAiRoutes(app: FastifyInstance) {
           role: "assistant",
           content: result.answer,
           bikeId: bikeId ?? null,
+          passId: passIdForInsert,
           model: result.model,
           tokensIn: result.tokensIn,
           tokensOut: result.tokensOut,
@@ -294,6 +296,7 @@ export async function hellAiRoutes(app: FastifyInstance) {
           role: "assistant",
           content: `[ERROR] ${message}`,
           bikeId: bikeId ?? null,
+          passId: passIdForInsert,
           model: modelForRequest,
           error: true,
         });
