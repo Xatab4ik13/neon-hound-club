@@ -232,13 +232,13 @@ export function CdekDeliveryPicker({
             placeholder="Москва, Краснодар, …"
             className="min-w-0 flex-1 bg-transparent text-[15px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none"
           />
-          {cityLoading && <Loader2 className="h-4 w-4 shrink-0 animate-spin text-muted-foreground" />}
-          {value.cityCode && !cityLoading && <Check className="h-4 w-4 shrink-0 text-primary" />}
+          {(cityLoading || cityResolving) && <Loader2 className="h-4 w-4 shrink-0 animate-spin text-muted-foreground" />}
+          {value.cityCode && !cityLoading && !cityResolving && <Check className="h-4 w-4 shrink-0 text-primary" />}
         </div>
         {cityOpen && cityOpts.length > 0 && (
           <ul className="absolute z-20 mt-1 max-h-72 w-full overflow-auto rounded-xl border border-white/10 bg-background/95 shadow-lg backdrop-blur">
-            {cityOpts.map((c) => (
-              <li key={c.code}>
+            {cityOpts.map((c, i) => (
+              <li key={`${c.fiasId ?? c.kladrId ?? c.postalCode ?? "x"}-${i}`}>
                 <button
                   type="button"
                   onMouseDown={(e) => e.preventDefault()}
