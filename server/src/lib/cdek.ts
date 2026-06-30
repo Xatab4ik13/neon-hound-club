@@ -113,6 +113,19 @@ async function searchCities(query: string, limit = 10): Promise<CdekCity[]> {
   return data;
 }
 
+async function resolveCity(opts: { fiasGuid?: string; postalCode?: string }): Promise<CdekCity[]> {
+  const params = new URLSearchParams({ country_codes: "RU", size: "5" });
+  if (opts.fiasGuid) params.set("fias_guid", opts.fiasGuid);
+  if (opts.postalCode) params.set("postal_code", opts.postalCode);
+  const cacheKey = `resolve:${opts.fiasGuid ?? ""}:${opts.postalCode ?? ""}`;
+  const cached = citiesCache.get(cacheKey);
+  if (cached && Date.now() - cached.at < 60 * 60_000) return cached.data;
+  const data = await cdekFetch<CdekCity[]>(`/location/cities?${params.toString()}`);
+  citiesCache.set(cacheKey, { at: Date.now(), data });
+  return data;
+}
+
+
 // ---------- ПВЗ ----------
 
 export type CdekPvz = {
