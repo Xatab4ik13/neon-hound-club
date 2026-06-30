@@ -330,6 +330,13 @@
             "when": 1782100000000,
             "tag": "0046_ai_messages_pass_id",
             "breakpoints": true
+        },
+        {
+            "idx": 47,
+            "version": "7",
+            "when": 1782200000000,
+            "tag": "0047_users_last_seen_at",
+            "breakpoints": true
         }
     ]
 }
