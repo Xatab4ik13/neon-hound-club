@@ -110,7 +110,7 @@ function ClubCheckoutPage() {
     setForm((f) => {
       const next = { ...f };
       const t = touchedRef.current;
-      if (!t.has("name") && a.fullName) next.name = a.fullName;
+      // Имя не подставляем из сохранённого адреса — пусть подтвердят вручную.
       if (!t.has("phone") && a.phone) next.phone = formatRuPhone(a.phone);
       if (!t.has("city") && a.city) next.city = a.city;
       return next;
