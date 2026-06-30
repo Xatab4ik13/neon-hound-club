@@ -2,13 +2,22 @@
 
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { and, eq, gt, gte, sql, desc } from "drizzle-orm";
+import { and, eq, gt, gte, sql, desc, isNull } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { requireAuth, type SessionPayload } from "../lib/auth.js";
 import { aiMessages } from "../db/schema/hell-ai.js";
 import { passPurchases } from "../db/schema/pass.js";
 import { systemSettings } from "../db/schema/economy.js";
-import { loadAiSettings, loadUserGarage, buildSystemPrompt, AI_LIMITS_DEFAULT, TIER_PRIMARY_MODEL, PLATINUM_FALLBACK_MODEL, type AiLimits } from "../lib/hell-ai.js";
+import {
+  loadAiSettings,
+  loadUserGarage,
+  buildSystemPrompt,
+  AI_LIMITS_DEFAULT,
+  TIER_PRIMARY_MODEL,
+  FREE_PER_DAY,
+  FREE_MODEL,
+  type AiLimits,
+} from "../lib/hell-ai.js";
 import { chatCompletion, streamChatCompletion, OpenRouterError, type ChatMessage } from "../lib/openrouter.js";
 import { acquireGlobalSlot, releaseGlobalSlot, acquireUserLock, releaseUserLock, AiBusyError, AiUserBusyError } from "../lib/ai-throttle.js";
 import { addQuestProgress } from "../lib/quests.js";
@@ -20,6 +29,7 @@ const askSchema = z.object({
 });
 
 type TierKey = "silver" | "gold" | "platinum";
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 async function loadLimits(): Promise<AiLimits> {
   const [row] = await db.select().from(systemSettings).where(eq(systemSettings.key, "hell_ai")).limit(1);
@@ -48,13 +58,86 @@ async function getActivePass(userId: string) {
   return row ?? null;
 }
 
-async function countUsed(userId: string, since: Date): Promise<number> {
+/** Кол-во user-сообщений юзера в скользящем окне 24h. Если passId=null — считаем free-вопросы. */
+async function countUsed24h(userId: string, passId: string | null): Promise<number> {
+  const since = new Date(Date.now() - DAY_MS);
   const [row] = await db
     .select({ n: sql<number>`count(*)::int` })
     .from(aiMessages)
-    .where(and(eq(aiMessages.userId, userId), eq(aiMessages.role, "user"), gte(aiMessages.createdAt, since)));
+    .where(
+      and(
+        eq(aiMessages.userId, userId),
+        eq(aiMessages.role, "user"),
+        passId === null ? isNull(aiMessages.passId) : eq(aiMessages.passId, passId),
+        gte(aiMessages.createdAt, since),
+      ),
+    );
   return row?.n ?? 0;
 }
+
+/** ISO-время, когда «освободится» первый слот в окне 24h. null = окно пустое. */
+async function nextResetAt(userId: string, passId: string | null): Promise<string | null> {
+  const since = new Date(Date.now() - DAY_MS);
+  const [row] = await db
+    .select({ ts: aiMessages.createdAt })
+    .from(aiMessages)
+    .where(
+      and(
+        eq(aiMessages.userId, userId),
+        eq(aiMessages.role, "user"),
+        passId === null ? isNull(aiMessages.passId) : eq(aiMessages.passId, passId),
+        gte(aiMessages.createdAt, since),
+      ),
+    )
+    .orderBy(aiMessages.createdAt)
+    .limit(1);
+  if (!row) return null;
+  return new Date(row.ts.getTime() + DAY_MS).toISOString();
+}
+
+/** Резолв контекста запроса. Возвращает либо ошибку (status+code+msg) либо параметры запроса. */
+type Resolved =
+  | { ok: false; status: number; error: string; message: string }
+  | {
+      ok: true;
+      isStaff: boolean;
+      passIdForInsert: string | null;
+      model: string;
+    };
+
+async function resolveAskContext(session: SessionPayload): Promise<Resolved> {
+  const isStaff = session.role === "admin" || session.role === "blogger";
+  if (isStaff) {
+    return { ok: true, isStaff: true, passIdForInsert: null, model: TIER_PRIMARY_MODEL.platinum };
+  }
+  const pass = await getActivePass(session.sub);
+  if (!pass) {
+    const used = await countUsed24h(session.sub, null);
+    if (used >= FREE_PER_DAY) {
+      return {
+        ok: false,
+        status: 429,
+        error: "free_limit_reached",
+        message: `Бесплатные ${FREE_PER_DAY} вопроса в сутки исчерпаны. Активируй Hell Pass — Silver / Gold / Platinum.`,
+      };
+    }
+    return { ok: true, isStaff: false, passIdForInsert: null, model: FREE_MODEL };
+  }
+  const limits = await loadLimits();
+  const tier = pass.tier as TierKey;
+  const limit = limits[tier];
+  const used = await countUsed24h(session.sub, pass.id);
+  if (used >= limit) {
+    return {
+      ok: false,
+      status: 429,
+      error: "limit_reached",
+      message: `Лимит ${limit} вопросов в сутки исчерпан. Слоты освобождаются по скользящему окну 24 часа.`,
+    };
+  }
+  return { ok: true, isStaff: false, passIdForInsert: pass.id, model: TIER_PRIMARY_MODEL[tier] };
+}
+
 
 export async function hellAiRoutes(app: FastifyInstance) {
   // Статус: текущий тир, лимит, осталось.
