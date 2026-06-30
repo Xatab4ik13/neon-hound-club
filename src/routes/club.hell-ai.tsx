@@ -1019,7 +1019,7 @@ function HellAiMobile() {
               <ArrowRight className="h-5 w-5" />
             </Link>
             <p className="mt-2 px-1 text-center text-[13px] text-muted-foreground">
-              AI-механик по твоему мото · 20/100/∞ вопросов на 30 дней
+              AI-механик по твоему мото · 3 бесплатно в день, до 40+ с Hell Pass
             </p>
           </div>
         </div>
