@@ -417,6 +417,7 @@ async function printCdekOrder(orderUuid: string, opts?: { copyCount?: number }):
 
 export const cdek = {
   searchCities,
+  resolveCity,
   getPickupPoints,
   calculate,
   createOrder: createCdekOrder,
