@@ -837,6 +837,21 @@ export function restoreAdminFeedPost(id: string) {
   return apiFetch<{ ok: true }>(`/api/v1/admin/feed/posts/${id}/restore`, { method: "POST" });
 }
 
+export type AdminUpdatePostInput = {
+  text?: string;
+  imageUrl?: string | null;
+  pinned?: boolean;
+};
+
+// Используем общий PATCH /api/v1/posts/:id — он уже разрешает редактирование
+// любого поста для роли admin.
+export function updateAdminFeedPost(id: string, patch: AdminUpdatePostInput) {
+  return apiFetch<{ id: string }>(`/api/v1/posts/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(patch),
+  });
+}
+
 export function deleteAdminHomeBanner(id: string) {
   return apiFetch<{ ok: true }>(`/api/v1/admin/home/banners/${id}`, { method: "DELETE" });
 }
