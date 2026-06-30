@@ -331,30 +331,11 @@ export async function hellAiRoutes(app: FastifyInstance) {
       return reply.code(400).send({ error: "invalid", message: parsed.error.issues[0]?.message ?? "bad input" });
     }
     const { question, bikeId, chatId } = parsed.data;
-    const isStaff = session.role === "admin" || session.role === "blogger";
-
-    let modelForRequest: string = TIER_PRIMARY_MODEL.silver;
-    if (!isStaff) {
-      const pass = await getActivePass(session.sub);
-      if (!pass) {
-        return reply.code(403).send({ error: "no_pass", message: "Hell AI доступен с активным Hell Pass. Активируй любой тир." });
-      }
-      const limits = await loadLimits();
-      const tier = pass.tier as TierKey;
-      const limit = limits[tier];
-      const since = pass.paidAt ?? pass.createdAt;
-      const used = await countUsed(session.sub, since);
-      if (tier === "platinum") {
-        modelForRequest = used >= limit ? PLATINUM_FALLBACK_MODEL : TIER_PRIMARY_MODEL.platinum;
-      } else {
-        modelForRequest = TIER_PRIMARY_MODEL[tier];
-        if (used >= limit) {
-          return reply.code(429).send({ error: "limit_reached", message: `Лимит ${limit} вопросов на этот период исчерпан. Обновится при покупке следующего Pass.` });
-        }
-      }
-    } else {
-      modelForRequest = TIER_PRIMARY_MODEL.platinum;
+    const ctx = await resolveAskContext(session);
+    if (!ctx.ok) {
+      return reply.code(ctx.status).send({ error: ctx.error, message: ctx.message });
     }
+    const { isStaff, passIdForInsert, model: modelForRequest } = ctx;
 
     const settings = await loadAiSettings();
     const garage = await loadUserGarage(session.sub);
