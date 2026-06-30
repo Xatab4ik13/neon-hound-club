@@ -62,8 +62,10 @@ function ClubCheckoutPage() {
   const addressQ = useMyAddress();
 
   const [agree, setAgree] = useState(false);
+  // Имя НЕ префиллим из nick/профиля: для накладной нужно реальное ФИО,
+  // а ник часто не совпадает с паспортным именем. Пусть юзер вводит руками.
   const [form, setForm] = useState<CheckoutProfile>({
-    name: user?.nick ?? "",
+    name: "",
     phone: "",
     email: user?.email ?? "",
     city: "",
@@ -75,7 +77,9 @@ function ClubCheckoutPage() {
   useEffect(() => {
     const saved = readProfile();
     setForm((f) => ({
-      name: saved.name || f.name,
+      // Имя НЕ восстанавливаем из localStorage — чтобы каждый раз вводили
+      // получателя осознанно (иначе накладная уйдёт на старое имя).
+      name: f.name,
       phone: saved.phone || f.phone,
       email: saved.email || f.email,
       city: saved.city || f.city,
@@ -89,7 +93,7 @@ function ClubCheckoutPage() {
     setForm((f) => {
       const next = { ...f };
       const t = touchedRef.current;
-      if (!t.has("name") && !next.name && p.nick) next.name = p.nick;
+      // Имя не префиллим из ника профиля — нужен реальный получатель.
       if (!t.has("email") && !next.email && p.email) next.email = p.email;
       if (!t.has("phone") && !next.phone && p.phone) next.phone = formatRuPhone(p.phone);
       if (!t.has("city") && !next.city && p.city) next.city = p.city;
@@ -106,7 +110,7 @@ function ClubCheckoutPage() {
     setForm((f) => {
       const next = { ...f };
       const t = touchedRef.current;
-      if (!t.has("name") && a.fullName) next.name = a.fullName;
+      // Имя не подставляем из сохранённого адреса — пусть подтвердят вручную.
       if (!t.has("phone") && a.phone) next.phone = formatRuPhone(a.phone);
       if (!t.has("city") && a.city) next.city = a.city;
       return next;
