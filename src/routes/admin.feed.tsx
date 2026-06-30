@@ -409,9 +409,9 @@ function Composer({
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder={`Что у тебя нового, @${author.nick}?`}
-          rows={4}
+          rows={10}
           maxLength={4000}
-          className="w-full resize-none rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-primary/40 dark:border-zinc-800 dark:bg-zinc-950"
+          className="block min-h-[220px] w-full resize-y whitespace-pre-wrap break-words rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm leading-relaxed outline-none focus:border-primary/40 dark:border-zinc-800 dark:bg-zinc-950"
         />
         <div className="mt-1 text-right text-[11px] text-zinc-400">{text.length} / 4000</div>
       </div>
