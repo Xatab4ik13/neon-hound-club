@@ -62,8 +62,10 @@ function ClubCheckoutPage() {
   const addressQ = useMyAddress();
 
   const [agree, setAgree] = useState(false);
+  // Имя НЕ префиллим из nick/профиля: для накладной нужно реальное ФИО,
+  // а ник часто не совпадает с паспортным именем. Пусть юзер вводит руками.
   const [form, setForm] = useState<CheckoutProfile>({
-    name: user?.nick ?? "",
+    name: "",
     phone: "",
     email: user?.email ?? "",
     city: "",
