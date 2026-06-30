@@ -63,18 +63,21 @@ export const Route = createFileRoute("/club/hell-ai")({
 });
 
 // ── Тариф / квоты ─────────────────────────────────────────────────────────
-type PassTier = "guest" | "silver" | "gold" | "platinum" | "staff";
+type PassTier = "guest" | "free" | "silver" | "gold" | "platinum" | "staff";
 type HellAiStatus = {
-  tier: "silver" | "gold" | "platinum" | "staff" | null;
+  tier: "free" | "silver" | "gold" | "platinum" | "staff" | null;
   limit: number;
   used: number;
   left: number;
   unlimited: boolean;
   expiresAt: string | null;
+  /** ISO-время, когда освободится первый слот в скользящем окне 24h. null = окно пустое. */
+  resetAt?: string | null;
 };
 
 const TIER_LABEL: Record<PassTier, string> = {
   guest: "Без Hell Pass",
+  free: "Бесплатно",
   silver: "Silver",
   gold: "Gold",
   platinum: "Platinum",
