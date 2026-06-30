@@ -12,6 +12,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, Loader2, PlumpMap as MapPin, PlumpSearch as Search, PlumpTruck as Truck, PlumpClose as X } from "@/components/ui/icons";
 import { apiFetch } from "@/lib/api";
+import { suggest, type DadataAddressData } from "@/lib/dadata";
 import { loadYandexMaps } from "@/lib/yandex-maps";
 
 export type CdekPickerState = {
@@ -25,11 +26,15 @@ export type CdekPickerState = {
   entrance: string;
 };
 
+// Подсказка из DaData: показываем юзеру город + регион,
+// а resolve в код СДЭК делаем по fias_id (надёжнее всего).
 type CityItem = {
-  code: number;
+  fiasId: string | null;
+  kladrId: string | null;
+  postalCode: string | null;
   city: string;
   region: string;
-  postalCodes: string[];
+  display: string;
 };
 
 type PvzItem = {
@@ -52,6 +57,7 @@ export const EMPTY_CDEK_STATE: CdekPickerState = {
   entrance: "",
 };
 
+
 export function CdekDeliveryPicker({
   value,
   onChange,
@@ -68,51 +74,55 @@ export function CdekDeliveryPicker({
   const [pvzLoading, setPvzLoading] = useState(false);
   const [pvzError, setPvzError] = useState<string | null>(null);
 
-  // Дебаунс поиска города.
+  // Автокомплит города через DaData — она умеет префиксный поиск
+  // ("Мо" → Москва, Мончегорск, …). Дальше резолвим в код СДЭК по fias_id.
   useEffect(() => {
     const q = cityQ.trim();
     if (q.length < 2) {
       setCityOpts([]);
       return;
     }
+    const ctrl = new AbortController();
     const t = setTimeout(async () => {
       setCityLoading(true);
       try {
-        const r = await apiFetch<{ items: CityItem[] }>(
-          `/api/v1/cdek/cities?q=${encodeURIComponent(q)}`,
-        );
-        const items = r.items ?? [];
+        const suggestions = await suggest<DadataAddressData>("address", q, {
+          count: 10,
+          // from_bound=city + to_bound=settlement = подсказки только уровня
+          // город/населённый пункт, без улиц/домов.
+          params: {
+            from_bound: { value: "city" },
+            to_bound: { value: "settlement" },
+            locations: [{ country: "*" }],
+          },
+          signal: ctrl.signal,
+        });
+        const items: CityItem[] = suggestions
+          .map((s) => {
+            const d = s.data;
+            const name = d.city ?? d.settlement ?? null;
+            if (!name) return null;
+            return {
+              fiasId: d.fias_id ?? null,
+              kladrId: d.kladr_id ?? null,
+              postalCode: d.postal_code ?? null,
+              city: name,
+              region: d.region_with_type ?? d.region ?? "",
+              display: s.value,
+            } satisfies CityItem;
+          })
+          .filter((x): x is CityItem => x != null);
         setCityOpts(items);
-        // Автоподхват: если юзер ввёл город полностью правильно и не нажал
-        // на подсказку (Москва, Санкт-Петербург и т.п.) — выбираем сами.
-        // Триггерим, только пока город ещё не выбран.
-        if (!value.cityCode && items.length > 0) {
-          const needle = q.toLowerCase();
-          const exact =
-            items.find((c) => c.city.toLowerCase() === needle) ??
-            // одна подсказка и юзер ввёл префикс длиной >= 3 — тоже считаем выбором
-            (items.length === 1 && needle.length >= 3 ? items[0] : null);
-          if (exact) {
-            setCityQ(`${exact.city}, ${exact.region}`);
-            setCityOpen(false);
-            onChange({
-              ...value,
-              cityCode: exact.code,
-              cityName: exact.city,
-              pvzCode: null,
-              pvzAddress: null,
-            });
-          }
-        }
       } catch {
         setCityOpts([]);
       } finally {
         setCityLoading(false);
       }
-    }, 250);
-    return () => clearTimeout(t);
-    // value намеренно не в deps — иначе после выбора эффект бы перезапускался.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, 200);
+    return () => {
+      clearTimeout(t);
+      ctrl.abort();
+    };
   }, [cityQ]);
 
   // При смене города — загружаем ПВЗ.
@@ -147,16 +157,38 @@ export function CdekDeliveryPicker({
     [pvzList, value.pvzCode],
   );
 
-  const pickCity = (c: CityItem) => {
-    setCityQ(`${c.city}, ${c.region}`);
+  const [cityResolving, setCityResolving] = useState(false);
+
+  const pickCity = async (c: CityItem) => {
+    setCityQ(c.region ? `${c.city}, ${c.region}` : c.city);
     setCityOpen(false);
-    onChange({
-      ...value,
-      cityCode: c.code,
-      cityName: c.city,
-      pvzCode: null,
-      pvzAddress: null,
-    });
+    setCityResolving(true);
+    try {
+      const params = new URLSearchParams();
+      if (c.fiasId) params.set("fias", c.fiasId);
+      if (c.postalCode) params.set("postalCode", c.postalCode);
+      const r = await apiFetch<{ code: number; city: string; region: string }>(
+        `/api/v1/cdek/city-resolve?${params.toString()}`,
+      );
+      onChange({
+        ...value,
+        cityCode: r.code,
+        cityName: r.city,
+        pvzCode: null,
+        pvzAddress: null,
+      });
+    } catch {
+      // Если СДЭК не нашёл — оставим поле как есть, юзер увидит отсутствие карты.
+      onChange({
+        ...value,
+        cityCode: null,
+        cityName: c.city,
+        pvzCode: null,
+        pvzAddress: null,
+      });
+    } finally {
+      setCityResolving(false);
+    }
   };
 
   const setMode = (mode: "pvz" | "courier") => {
@@ -166,6 +198,7 @@ export function CdekDeliveryPicker({
   const pickPvz = (p: PvzItem) => {
     onChange({ ...value, pvzCode: p.code, pvzAddress: p.address });
   };
+
 
   return (
     <div className="space-y-4">
@@ -199,13 +232,13 @@ export function CdekDeliveryPicker({
             placeholder="Москва, Краснодар, …"
             className="min-w-0 flex-1 bg-transparent text-[15px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none"
           />
-          {cityLoading && <Loader2 className="h-4 w-4 shrink-0 animate-spin text-muted-foreground" />}
-          {value.cityCode && !cityLoading && <Check className="h-4 w-4 shrink-0 text-primary" />}
+          {(cityLoading || cityResolving) && <Loader2 className="h-4 w-4 shrink-0 animate-spin text-muted-foreground" />}
+          {value.cityCode && !cityLoading && !cityResolving && <Check className="h-4 w-4 shrink-0 text-primary" />}
         </div>
         {cityOpen && cityOpts.length > 0 && (
           <ul className="absolute z-20 mt-1 max-h-72 w-full overflow-auto rounded-xl border border-white/10 bg-background/95 shadow-lg backdrop-blur">
-            {cityOpts.map((c) => (
-              <li key={c.code}>
+            {cityOpts.map((c, i) => (
+              <li key={`${c.fiasId ?? c.kladrId ?? c.postalCode ?? "x"}-${i}`}>
                 <button
                   type="button"
                   onMouseDown={(e) => e.preventDefault()}

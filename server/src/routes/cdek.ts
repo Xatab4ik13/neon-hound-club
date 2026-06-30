@@ -34,6 +34,32 @@ export async function cdekRoutes(app: FastifyInstance) {
     }
   });
 
+  // Резолв города в код СДЭК по FIAS GUID (или postal_code как fallback).
+  // Фронт сначала ищет через DaData (умеет префикс), потом мапит в СДЭК.
+  app.get("/city-resolve", async (req, reply) => {
+    const q = req.query as { fias?: string; postalCode?: string };
+    const fias = q.fias?.trim();
+    const postal = q.postalCode?.trim();
+    if (!fias && !postal) {
+      return reply.code(400).send({ error: "fias_or_postal_required" });
+    }
+    try {
+      const items = await cdek.resolveCity({ fiasGuid: fias, postalCode: postal });
+      const first = items[0];
+      if (!first) return reply.code(404).send({ error: "not_found" });
+      return {
+        code: first.code,
+        city: first.city,
+        region: first.region,
+        postalCodes: first.postal_codes ?? [],
+      };
+    } catch (e) {
+      req.log.error({ err: e }, "cdek city-resolve failed");
+      return reply.code(502).send({ error: "cdek_unavailable" });
+    }
+  });
+
+
   app.get("/pvz", async (req, reply) => {
     const cityCode = Number((req.query as { cityCode?: string }).cityCode);
     if (!Number.isFinite(cityCode) || cityCode <= 0) {
