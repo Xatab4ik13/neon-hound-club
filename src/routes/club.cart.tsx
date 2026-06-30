@@ -7,6 +7,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useCart, type CartItem } from "@/hooks/use-cart";
 import { useViewer } from "@/hooks/use-viewer";
 import { haptic } from "@/hooks/use-haptic";
+import { Illustration } from "@/components/club/Illustration";
 
 export const Route = createFileRoute("/club/cart")({
   head: () => ({
@@ -420,11 +421,9 @@ function DesktopHeader({ title, subtitle }: { title: string; subtitle?: string }
 
 function EmptyBlock() {
   return (
-    <div className="grid place-items-center rounded-2xl border border-dashed border-white/[0.08] bg-card/40 px-6 py-16 text-center">
-      <div className="grid h-14 w-14 place-items-center rounded-full bg-primary/10 text-primary">
-        <PlumpCart className="h-6 w-6" />
-      </div>
-      <div className="mt-4 text-[15px] font-semibold text-foreground">Корзина пуста</div>
+    <div className="grid place-items-center rounded-2xl border border-dashed border-white/[0.08] bg-card/40 px-6 py-12 text-center">
+      <Illustration name="empty-order" className="h-44 w-44 text-foreground/75" />
+      <div className="mt-2 text-[15px] font-semibold text-foreground">Корзина пуста</div>
       <p className="mt-1.5 max-w-[32ch] text-[14px] text-muted-foreground/80">
         Загляни в магазин клуба — мерч, экипировка, открытки с бонусом билетов.
       </p>
