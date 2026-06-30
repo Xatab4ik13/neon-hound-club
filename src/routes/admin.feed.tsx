@@ -13,6 +13,7 @@ import {
   Btn,
   TextInput,
   ConfirmModal,
+  Modal,
 } from "@/components/admin/ui";
 import { AdminPager, type AdminPageSize } from "@/components/admin/AdminPager";
 import {
