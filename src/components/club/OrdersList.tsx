@@ -238,11 +238,9 @@ function ExpiresChip({ expiresAt }: { expiresAt: string }) {
 
 function OrdersEmpty() {
   return (
-    <div className="grid place-items-center rounded-2xl border border-dashed border-white/[0.08] bg-card/30 px-6 py-12 text-center">
-      <div className="grid h-12 w-12 place-items-center rounded-full bg-primary/10 text-primary">
-        <Package className="h-5 w-5" />
-      </div>
-      <p className="mt-3 max-w-[28ch] text-[13px] text-muted-foreground">
+    <div className="grid place-items-center rounded-2xl border border-dashed border-white/[0.08] bg-card/30 px-6 py-10 text-center">
+      <Illustration name="empty-order" className="h-40 w-40 text-foreground/75" />
+      <p className="mt-2 max-w-[28ch] text-[13px] text-muted-foreground">
         Здесь пока пусто. Загляни в магазин клуба.
       </p>
       <Link
