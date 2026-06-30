@@ -77,7 +77,9 @@ function ClubCheckoutPage() {
   useEffect(() => {
     const saved = readProfile();
     setForm((f) => ({
-      name: saved.name || f.name,
+      // Имя НЕ восстанавливаем из localStorage — чтобы каждый раз вводили
+      // получателя осознанно (иначе накладная уйдёт на старое имя).
+      name: f.name,
       phone: saved.phone || f.phone,
       email: saved.email || f.email,
       city: saved.city || f.city,
