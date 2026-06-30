@@ -490,6 +490,7 @@ export async function hellAiRoutes(app: FastifyInstance) {
           role: "assistant",
           content: `[ERROR] ${message}`,
           bikeId: bikeId ?? null,
+          passId: passIdForInsert,
           model: modelForRequest,
           error: true,
         });
