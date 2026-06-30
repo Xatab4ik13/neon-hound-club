@@ -24,6 +24,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import placeholderBike from "@/assets/bikes/placeholder.png";
 import { IOSSheet } from "@/components/ios/IOSSheet";
+import { Illustration } from "@/components/club/Illustration";
 import { IOSListRow, IOSListSection } from "@/components/ios/IOSList";
 import { saveBikes, type StoredBike } from "@/data/bike-storage";
 import {
