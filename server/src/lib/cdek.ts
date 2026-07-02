@@ -367,54 +367,75 @@ async function getCdekOrder(uuid: string): Promise<CdekOrderInfo> {
   };
 }
 
-// ---------- Печать квитанции (PDF накладной) ----------
+// ---------- Печать квитанции (PDF накладной) и штрихкодов (наклейки) ----------
 
 /**
- * Запрашивает у СДЭК PDF-квитанцию по uuid накладной.
- * Двухшаговый процесс: POST /print/orders → uuid задания, GET /print/orders/{uuid} → опрос статуса и url PDF.
- * Возвращает бинарь PDF.
+ * Универсальный опрос job-очереди печати СДЭК.
+ * endpoint: "orders" (квитанция накладной) или "barcodes" (штрихкод-наклейки на места).
+ * Двухшаговый процесс: POST /print/{endpoint} → uuid задания, GET /print/{endpoint}/{uuid} → опрос статуса и url PDF.
  */
-async function printCdekOrder(orderUuid: string, opts?: { copyCount?: number }): Promise<Buffer> {
+async function runCdekPrintJob(
+  endpoint: "orders" | "barcodes",
+  orderUuid: string,
+  body: Record<string, unknown>,
+): Promise<Buffer> {
   type CreateResp = {
     entity?: { uuid: string };
     requests?: Array<{ state: string; errors?: Array<{ code: string; message: string }> }>;
   };
-  const created = await cdekFetch<CreateResp>("/print/orders", {
+  const created = await cdekFetch<CreateResp>(`/print/${endpoint}`, {
     method: "POST",
-    body: JSON.stringify({
-      orders: [{ order_uuid: orderUuid }],
-      copy_count: Math.max(1, Math.min(10, opts?.copyCount ?? 2)),
-    }),
+    body: JSON.stringify({ orders: [{ order_uuid: orderUuid }], ...body }),
   });
   const errs = created.requests?.flatMap((r) => r.errors ?? []) ?? [];
-  if (errs.length) throw new Error(`[cdek] print create: ${errs.map((e) => `${e.code} ${e.message}`).join("; ")}`);
+  if (errs.length) throw new Error(`[cdek] print ${endpoint} create: ${errs.map((e) => `${e.code} ${e.message}`).join("; ")}`);
   const printUuid = created.entity?.uuid;
-  if (!printUuid) throw new Error("[cdek] print create: no uuid");
+  if (!printUuid) throw new Error(`[cdek] print ${endpoint} create: no uuid`);
 
   type StatusResp = {
     entity?: { uuid: string; url?: string; statuses?: Array<{ code: string; name: string }> };
   };
   let url: string | null = null;
   for (let attempt = 0; attempt < 15; attempt++) {
-    const info = await cdekFetch<StatusResp>(`/print/orders/${printUuid}`);
+    const info = await cdekFetch<StatusResp>(`/print/${endpoint}/${printUuid}`);
     const last = info.entity?.statuses?.[info.entity.statuses.length - 1];
     if (info.entity?.url && (last?.code === "READY" || last?.code === "ACCEPTED" || !last)) {
       url = info.entity.url;
       break;
     }
     if (last?.code === "INVALID" || last?.code === "REMOVED") {
-      throw new Error(`[cdek] print status: ${last.code} ${last.name}`);
+      throw new Error(`[cdek] print ${endpoint} status: ${last.code} ${last.name}`);
     }
     await new Promise((r) => setTimeout(r, 1000));
   }
-  if (!url) throw new Error("[cdek] print: timeout waiting for PDF");
+  if (!url) throw new Error(`[cdek] print ${endpoint}: timeout waiting for PDF`);
 
   // Ссылка на PDF тоже защищена — нужен тот же Bearer-токен.
   const token = await getToken();
   const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-  if (!res.ok) throw new Error(`[cdek] print download: ${res.status}`);
+  if (!res.ok) throw new Error(`[cdek] print ${endpoint} download: ${res.status}`);
   const ab = await res.arrayBuffer();
   return Buffer.from(ab);
+}
+
+async function printCdekOrder(orderUuid: string, opts?: { copyCount?: number }): Promise<Buffer> {
+  return runCdekPrintJob("orders", orderUuid, {
+    copy_count: Math.max(1, Math.min(10, opts?.copyCount ?? 2)),
+  });
+}
+
+/**
+ * Печать штрихкод-наклеек на места посылки (клеим на коробку).
+ * format: A4 | A5 | A6 — размер листа. По умолчанию A6 (одна наклейка на лист, стандарт для термопринтера/наклеек).
+ */
+async function printCdekBarcodes(
+  orderUuid: string,
+  opts?: { copyCount?: number; format?: "A4" | "A5" | "A6" },
+): Promise<Buffer> {
+  return runCdekPrintJob("barcodes", orderUuid, {
+    copy_count: Math.max(1, Math.min(10, opts?.copyCount ?? 1)),
+    format: opts?.format ?? "A6",
+  });
 }
 
 export const cdek = {
@@ -425,4 +446,6 @@ export const cdek = {
   createOrder: createCdekOrder,
   getOrder: getCdekOrder,
   printOrder: printCdekOrder,
+  printBarcodes: printCdekBarcodes,
 };
+
