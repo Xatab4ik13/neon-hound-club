@@ -299,8 +299,16 @@ async function grantStickerPacksFromOrder(orderId: string, userId: string): Prom
 export async function markOrderPaid(orderId: string): Promise<{ ok: boolean; reason?: string }> {
   const [order] = await db.select().from(orders).where(eq(orders.id, orderId)).limit(1);
   if (!order) return { ok: false, reason: "order_not_found" };
-  if (order.status === "paid" || order.status === "shipped" || order.status === "delivered") {
-    // уже оплачен ранее — всё равно перепроверим начисление билетов (idempotent)
+  // "Оплаченные и активные" статусы — заказ уже проведён (билеты начислены, деньги учтены).
+  // Повторный вебхук не должен всё пересчитать заново, но проверку начислений оставляем идемпотентной.
+  const alreadyPaid =
+    order.status === "paid" ||
+    order.status === "awaiting_stock" ||
+    order.status === "ready_to_ship" ||
+    order.status === "waybill_created" ||
+    order.status === "shipped" ||
+    order.status === "delivered";
+  if (alreadyPaid) {
     if (order.bonusTicketsTotal > 0) {
       await ticketCredit({
         userId: order.userId,
@@ -319,9 +327,19 @@ export async function markOrderPaid(orderId: string): Promise<{ ok: boolean; rea
     return { ok: false, reason: "order_terminal_state" };
   }
 
+  // Если в заказе есть хотя бы одна позиция-предзаказ — идём в awaiting_stock,
+  // иначе сразу paid (собираем и отправляем).
+  const itemKinds = await db
+    .select({ kind: products.kind })
+    .from(orderItems)
+    .leftJoin(products, eq(orderItems.productId, products.id))
+    .where(eq(orderItems.orderId, orderId));
+  const hasPreorder = itemKinds.some((r) => r.kind === "preorder");
+  const nextStatus = hasPreorder ? "awaiting_stock" : "paid";
+
   await db
     .update(orders)
-    .set({ status: "paid", paidAt: new Date(), updatedAt: new Date() })
+    .set({ status: nextStatus, paidAt: new Date(), updatedAt: new Date() })
     .where(eq(orders.id, orderId));
 
   if (order.bonusTicketsTotal > 0) {
