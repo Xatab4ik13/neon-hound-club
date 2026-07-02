@@ -580,6 +580,7 @@ export async function adminShopRoutes(app: FastifyInstance) {
 
       const patch: Record<string, unknown> = { status, updatedAt: new Date() };
       if (status === "shipped") patch.shippedAt = new Date();
+      if (status === "ready_to_ship") patch.readyToShipAt = new Date();
       const [row] = await db.update(orders).set(patch).where(eq(orders.id, req.params.id)).returning();
       if (!row) return reply.code(404).send({ error: "not_found" });
 

@@ -32,7 +32,16 @@ export async function createCdekWaybillForOrder(orderId: string): Promise<{
     const info = await cdek.getOrder(order.cdekUuid).catch(() => null);
     return { cdekUuid: order.cdekUuid, cdekNumber: info?.cdekNumber ?? order.cdekTrack ?? null };
   }
-  if (order.status === "pending_payment" || order.status === "cancelled" || order.status === "refunded") {
+  // Накладную создаём для оплаченного заказа в любом «активном» состоянии.
+  // Запрещаем только неоплаченные/терминальные.
+  const allowedForWaybill = new Set([
+    "paid",
+    "awaiting_stock",
+    "ready_to_ship",
+    "waybill_created",
+    "shipped",
+  ]);
+  if (!allowedForWaybill.has(order.status)) {
     throw new CdekOrderError("order_not_payable_state", "Накладная создаётся только для оплаченных заказов");
   }
 
@@ -125,6 +134,13 @@ export async function createCdekWaybillForOrder(orderId: string): Promise<{
   // Пробуем сразу подтянуть cdek_number (часто доступен не сразу, тогда null).
   const info = await cdek.getOrder(created.uuid).catch(() => null);
 
+  // Продвигаем статус заказа: paid/awaiting_stock/ready_to_ship → waybill_created.
+  // Если уже waybill_created/shipped/delivered — статус не трогаем.
+  const shouldPromoteStatus =
+    order.status === "paid" ||
+    order.status === "awaiting_stock" ||
+    order.status === "ready_to_ship";
+
   await db
     .update(orders)
     .set({
@@ -135,6 +151,7 @@ export async function createCdekWaybillForOrder(orderId: string): Promise<{
       cdekStatusName: info?.statusName ?? "Создана",
       cdekStatusAt: new Date(),
       updatedAt: new Date(),
+      ...(shouldPromoteStatus ? { status: "waybill_created" as const } : {}),
     })
     .where(eq(orders.id, order.id));
 

@@ -16,7 +16,10 @@ import {
 
 const STATUS_LABEL: Record<ShopOrderStatus, string> = {
   pending_payment: "Ожидает оплаты",
-  paid: "Оплачен",
+  paid: "Оплачен, собираем",
+  awaiting_stock: "Ждём поступления",
+  ready_to_ship: "Собираем",
+  waybill_created: "Скоро отправим",
   shipped: "В пути",
   delivered: "Доставлен",
   cancelled: "Отменён",
@@ -26,13 +29,23 @@ const STATUS_LABEL: Record<ShopOrderStatus, string> = {
 const STATUS_TONE: Record<ShopOrderStatus, string> = {
   pending_payment: "border-red-500/40 bg-red-500/10 text-red-300",
   paid: "border-primary/40 bg-primary/10 text-primary",
+  awaiting_stock: "border-amber-500/40 bg-amber-500/10 text-amber-300",
+  ready_to_ship: "border-primary/40 bg-primary/10 text-primary",
+  waybill_created: "border-primary/40 bg-primary/10 text-primary",
   shipped: "border-primary/40 bg-primary/10 text-primary",
   delivered: "border-white/[0.08] bg-white/[0.03] text-muted-foreground",
   cancelled: "border-white/[0.08] bg-white/[0.03] text-muted-foreground",
   refunded: "border-amber-500/40 bg-amber-500/10 text-amber-300",
 };
 
-const ACTIVE: ShopOrderStatus[] = ["pending_payment", "paid", "shipped"];
+const ACTIVE: ShopOrderStatus[] = [
+  "pending_payment",
+  "paid",
+  "awaiting_stock",
+  "ready_to_ship",
+  "waybill_created",
+  "shipped",
+];
 const DONE: ShopOrderStatus[] = ["delivered", "cancelled", "refunded"];
 
 type Filter = "all" | "active" | "done";
@@ -190,11 +203,14 @@ function OrderCard({ order }: { order: ShopOrder }) {
               {order.status === "pending_payment" && order.expiresAt && (
                 <ExpiresChip expiresAt={order.expiresAt} />
               )}
-              {order.bonusTicketsTotal > 0 && order.status === "paid" && (
-                <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-primary">
-                  +{order.bonusTicketsTotal} 🎟
-                </span>
-              )}
+              {order.bonusTicketsTotal > 0 &&
+                order.status !== "pending_payment" &&
+                order.status !== "cancelled" &&
+                order.status !== "refunded" && (
+                  <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-primary">
+                    +{order.bonusTicketsTotal} 🎟
+                  </span>
+                )}
             </div>
             {cancelReason && (
               <div className="mt-1 text-[11px] text-muted-foreground/80">{cancelReason}</div>

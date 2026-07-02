@@ -30,6 +30,9 @@ export const Route = createFileRoute("/admin/orders")({
 const STATUS_LABEL: Record<ShopOrderStatus, string> = {
   pending_payment: "Ждёт оплаты",
   paid: "Оплачен",
+  awaiting_stock: "Ждём партию",
+  ready_to_ship: "Готов к отправке",
+  waybill_created: "Накладная создана",
   shipped: "Отправлен",
   delivered: "Получен",
   cancelled: "Отменён",
@@ -39,6 +42,9 @@ const STATUS_LABEL: Record<ShopOrderStatus, string> = {
 const STATUS_TONE: Record<ShopOrderStatus, string> = {
   pending_payment: "bg-amber-500/15 text-amber-700 dark:text-amber-300",
   paid: "bg-blue-500/15 text-blue-700 dark:text-blue-300",
+  awaiting_stock: "bg-amber-500/15 text-amber-700 dark:text-amber-300",
+  ready_to_ship: "bg-sky-500/15 text-sky-700 dark:text-sky-300",
+  waybill_created: "bg-indigo-500/15 text-indigo-700 dark:text-indigo-300",
   shipped: "bg-violet-500/15 text-violet-700 dark:text-violet-300",
   delivered: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
   cancelled: "bg-rose-500/15 text-rose-700 dark:text-rose-300",
@@ -49,6 +55,9 @@ const FILTERS: { key: ShopOrderStatus | "all"; label: string }[] = [
   { key: "all", label: "Все" },
   { key: "pending_payment", label: "Ждут оплаты" },
   { key: "paid", label: "Оплачены" },
+  { key: "awaiting_stock", label: "Ждут партию" },
+  { key: "ready_to_ship", label: "Готовы к отправке" },
+  { key: "waybill_created", label: "Накладная создана" },
   { key: "shipped", label: "Отправлены" },
   { key: "delivered", label: "Получены" },
   { key: "cancelled", label: "Отменены" },
@@ -219,7 +228,15 @@ function OrdersTable({
 
 const NEXT_STATUSES: Record<ShopOrderStatus, ShopOrderStatus[]> = {
   pending_payment: ["paid", "cancelled"],
-  paid: ["shipped", "cancelled", "refunded"],
+  // Из paid: пометить готовым к отправке, либо сразу «отправлен» (fallback, если СДЭК-вебхук не пришёл), либо отмена/возврат.
+  paid: ["ready_to_ship", "shipped", "cancelled", "refunded"],
+  // Предзаказ ждёт партии — двигаем в ready_to_ship, когда партия приехала.
+  awaiting_stock: ["ready_to_ship", "cancelled", "refunded"],
+  // Готов к отправке — накладную обычно создают кнопкой «Создать накладную» (это автоматом переведёт в waybill_created),
+  // но оставляем fallback на shipped и возврат.
+  ready_to_ship: ["shipped", "cancelled", "refunded"],
+  // Накладная создана — обычно вебхук сам поставит shipped, но есть ручной fallback.
+  waybill_created: ["shipped", "refunded"],
   shipped: ["delivered", "refunded"],
   delivered: ["refunded"],
   cancelled: [],
@@ -438,7 +455,12 @@ function CdekBlock({
 
   const hasWaybill = !!order.cdekUuid;
   const canCreate =
-    !hasWaybill && (order.status === "paid" || order.status === "shipped" || order.status === "delivered");
+    !hasWaybill &&
+    (order.status === "paid" ||
+      order.status === "awaiting_stock" ||
+      order.status === "ready_to_ship" ||
+      order.status === "shipped" ||
+      order.status === "delivered");
 
   return (
     <div className="space-y-2">

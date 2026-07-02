@@ -1,9 +1,9 @@
 import type { FastifyInstance } from "fastify";
-import { and, desc, eq, sql, sum, count } from "drizzle-orm";
+import { and, desc, eq, inArray, sql, sum, count } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { requireAdmin } from "../lib/auth.js";
 import { users } from "../db/schema/users.js";
-import { orders, orderItems, products } from "../db/schema/shop.js";
+import { orders, orderItems, products, PAID_ORDER_STATUSES } from "../db/schema/shop.js";
 import { passPurchases } from "../db/schema/pass.js";
 import { raffles, raffleEntries } from "../db/schema/raffles.js";
 import { ticketsLedger } from "../db/schema/tickets.js";
@@ -134,7 +134,12 @@ export async function adminDashboardRoutes(app: FastifyInstance) {
       })
       .from(orderItems)
       .innerJoin(orders, eq(orders.id, orderItems.orderId))
-      .where(and(eq(orders.status, "paid"), sql`${orders.paidAt} >= ${d30}::timestamptz`))
+      .where(
+        and(
+          inArray(orders.status, PAID_ORDER_STATUSES as unknown as string[]),
+          sql`${orders.paidAt} >= ${d30}::timestamptz`,
+        ),
+      )
       .groupBy(orderItems.productId)
       .orderBy(sql`SUM(${orderItems.qty}) DESC`)
       .limit(5);

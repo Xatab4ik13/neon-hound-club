@@ -19,7 +19,10 @@ export const Route = createFileRoute("/club/orders/$orderId")({
 
 const STATUS_LABEL: Record<ShopOrderStatus, string> = {
   pending_payment: "Ожидает оплаты",
-  paid: "Оплачен",
+  paid: "Оплачен, собираем",
+  awaiting_stock: "Ждём поступления",
+  ready_to_ship: "Собираем",
+  waybill_created: "Скоро отправим",
   shipped: "В пути",
   delivered: "Доставлен",
   cancelled: "Отменён",
@@ -29,6 +32,9 @@ const STATUS_LABEL: Record<ShopOrderStatus, string> = {
 const STATUS_TONE: Record<ShopOrderStatus, string> = {
   pending_payment: "border-amber-500/40 bg-amber-500/10 text-amber-300",
   paid: "border-primary/40 bg-primary/10 text-primary",
+  awaiting_stock: "border-amber-500/40 bg-amber-500/10 text-amber-300",
+  ready_to_ship: "border-primary/40 bg-primary/10 text-primary",
+  waybill_created: "border-primary/40 bg-primary/10 text-primary",
   shipped: "border-primary/40 bg-primary/10 text-primary",
   delivered: "border-white/[0.08] bg-white/[0.03] text-muted-foreground",
   cancelled: "border-white/[0.08] bg-white/[0.03] text-muted-foreground",

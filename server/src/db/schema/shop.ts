@@ -129,12 +129,15 @@ export type ShopShowcaseRow = typeof shopShowcase.$inferSelect;
 /**
  * Заказ.
  * status:
- *   'pending_payment' — создан, ждём оплату (платёжку подключим позже)
- *   'paid'            — оплачен, можно собирать. ТУТ начисляем bonus_tickets через ledger (идемпотентно).
- *   'shipped'         — отправлен, есть СДЭК-трек
- *   'delivered'       — получен
- *   'cancelled'       — отменён до оплаты
- *   'refunded'        — оплачен и возвращён (билеты снимаем компенсирующей строкой)
+ *   'pending_payment'  — создан, ждём оплату
+ *   'paid'             — оплачен обычный товар. ТУТ начисляем bonus_tickets через ledger (идемпотентно).
+ *   'awaiting_stock'   — оплачен предзаказ, ждём поступление партии на склад
+ *   'ready_to_ship'    — товар готов к отправке, накладной ещё нет (админ пометил вручную)
+ *   'waybill_created'  — создана накладная СДЭК (cdek_uuid есть), посылка ещё у нас
+ *   'shipped'          — принят СДЭК (автоматом по вебхуку или вручную)
+ *   'delivered'        — получен
+ *   'cancelled'        — отменён до оплаты
+ *   'refunded'         — оплачен и возвращён (билеты снимаем компенсирующей строкой)
  *
  * shipping — снимок адреса/контактов на момент заказа (jsonb, чтобы менять профиль безопасно).
  */
@@ -199,12 +202,28 @@ export type NewOrder = typeof orders.$inferInsert;
 export const ORDER_STATUSES = [
   "pending_payment",
   "paid",
+  "awaiting_stock",
+  "ready_to_ship",
+  "waybill_created",
   "shipped",
   "delivered",
   "cancelled",
   "refunded",
 ] as const;
 export type OrderStatus = (typeof ORDER_STATUSES)[number];
+
+/**
+ * Статусы, при которых заказ считается "оплаченным и активным" (билеты начислены, деньги у нас).
+ * Используется в местах, где раньше писали status IN ('paid','shipped','delivered').
+ */
+export const PAID_ORDER_STATUSES = [
+  "paid",
+  "awaiting_stock",
+  "ready_to_ship",
+  "waybill_created",
+  "shipped",
+  "delivered",
+] as const;
 
 /**
  * Позиция заказа.
