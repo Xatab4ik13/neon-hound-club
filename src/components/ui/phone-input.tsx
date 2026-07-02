@@ -81,9 +81,12 @@ export const PhoneInput = forwardRef<HTMLInputElement, Props>(function PhoneInpu
   }, [open]);
 
   const countries = useMemo(() => {
+    const labelOverrides: Record<string, string> = {
+      BY: "Беларусь",
+    };
     const list = getCountries().map((c) => ({
       code: c as Country,
-      name: (ruLabels as Record<string, string>)[c] ?? c,
+      name: labelOverrides[c] ?? (ruLabels as Record<string, string>)[c] ?? c,
       dial: `+${getCountryCallingCode(c as Country)}`,
     }));
     list.sort((a, b) => a.name.localeCompare(b.name, "ru"));
