@@ -32,6 +32,8 @@ export const adminQk = {
   raffles: ["admin", "raffles"] as const,
   passList: (status?: string) => ["admin", "pass", status ?? "all"] as const,
   feedPosts: ["admin", "feed", "posts"] as const,
+  usersStats: ["admin", "users", "stats"] as const,
+
 };
 
 
@@ -120,6 +122,17 @@ export function fetchAdminUsers(opts?: {
     `/api/v1/admin/users/${qs ? `?${qs}` : ""}`,
   );
 }
+
+export type AdminUsersStats = {
+  total: number;
+  phoneVerified: number;
+  hasPush: number;
+};
+
+export function fetchAdminUsersStats() {
+  return apiFetch<AdminUsersStats>(`/api/v1/admin/users/stats`);
+}
+
 
 
 

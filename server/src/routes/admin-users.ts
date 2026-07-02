@@ -123,8 +123,29 @@ export async function adminUsersRoutes(app: FastifyInstance) {
   });
 
 
+  // GET /api/v1/admin/users/stats — краткая статистика для шапки списка
+  // (сколько подтвердили телефон / включили пуш из общего числа клубных юзеров).
+  // Админы исключены — они не клубные пользователи.
+  app.get("/stats", async () => {
+    const [row] = await db
+      .select({
+        total: sql<number>`count(*)::int`,
+        phoneVerified: sql<number>`count(*) filter (where ${profiles.phoneVerifiedAt} is not null)::int`,
+        hasPush: sql<number>`count(*) filter (where exists (select 1 from ${pushSubscriptions} ps where ps.user_id = ${users.id}))::int`,
+      })
+      .from(users)
+      .leftJoin(profiles, eq(profiles.userId, users.id))
+      .where(ne(users.role, "admin"));
+    return {
+      total: Number(row?.total ?? 0),
+      phoneVerified: Number(row?.phoneVerified ?? 0),
+      hasPush: Number(row?.hasPush ?? 0),
+    };
+  });
+
   // GET /api/v1/admin/users/:id — карточка с агрегатами
   app.get<{ Params: { id: string } }>("/:id", async (req, reply) => {
+
     const [u] = await db
       .select({
         id: users.id,

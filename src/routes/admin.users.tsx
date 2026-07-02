@@ -21,6 +21,7 @@ import {
   deleteAdminUser,
   fetchAdminUser,
   fetchAdminUsers,
+  fetchAdminUsersStats,
   fetchAdminUserBadges,
   fetchAdminBadges,
   fetchGiftableStickerPacks,
@@ -32,6 +33,7 @@ import {
   type AdminUserListItem,
   type AdminUsersSort,
 } from "@/lib/admin-queries";
+
 
 import { ApiError } from "@/lib/api";
 import { hhToast as toast } from "@/lib/hh-toast";
@@ -78,18 +80,32 @@ function UsersPage() {
   const items = listQ.data?.items ?? [];
   const total = listQ.data?.total ?? 0;
 
+  const statsQ = useQuery({
+    queryKey: adminQk.usersStats,
+    queryFn: fetchAdminUsersStats,
+    staleTime: 60_000,
+  });
+  const stats = statsQ.data;
+
   return (
     <div>
       <PageHeader title="Пользователи" description={`Всего: ${total}`} />
 
-      <div className="mb-3 flex gap-2">
+      <div className="mb-3 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <TextInput
           placeholder="Поиск по нику или email…"
           className="max-w-md"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
+        {stats && (
+          <div className="flex flex-wrap items-center gap-2 text-[13px]">
+            <StatPill label="Телефон ✓" value={stats.phoneVerified} total={stats.total} />
+            <StatPill label="Пуш вкл" value={stats.hasPush} total={stats.total} />
+          </div>
+        )}
       </div>
+
 
       <Panel>
         <DataTable
@@ -754,3 +770,18 @@ function GiftStickersModal({ userId, onClose }: { userId: string; onClose: () =>
     </Modal>
   );
 }
+
+function StatPill({ label, value, total }: { label: string; value: number; total: number }) {
+  const pct = total > 0 ? Math.round((value / total) * 100) : 0;
+  return (
+    <div className="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-white px-3 py-1.5 dark:border-zinc-800 dark:bg-zinc-900">
+      <span className="text-zinc-500 dark:text-zinc-400">{label}</span>
+      <span className="font-semibold tabular-nums text-zinc-900 dark:text-zinc-100">
+        {value}
+        <span className="text-zinc-400"> / {total}</span>
+      </span>
+      <span className="text-[11px] tabular-nums text-zinc-400">{pct}%</span>
+    </div>
+  );
+}
+
