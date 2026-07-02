@@ -149,6 +149,9 @@ export type ShopShowcaseItem = {
 export type ShopOrderStatus =
   | "pending_payment"
   | "paid"
+  | "awaiting_stock"
+  | "ready_to_ship"
+  | "waybill_created"
   | "shipped"
   | "delivered"
   | "cancelled"
