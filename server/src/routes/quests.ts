@@ -178,7 +178,12 @@ async function checkAutoCondition(code: string, userId: string): Promise<boolean
       const [o] = await db
         .select({ id: orders.id })
         .from(orders)
-        .where(and(eq(orders.userId, userId), eq(orders.status, "paid")))
+        .where(
+          and(
+            eq(orders.userId, userId),
+            inArray(orders.status, PAID_ORDER_STATUSES as unknown as string[]),
+          ),
+        )
         .limit(1);
       return !!o;
     }
