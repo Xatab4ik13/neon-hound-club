@@ -114,6 +114,9 @@ const KIND_TONE: Record<ProductKind, "zinc" | "emerald" | "amber" | "blue"> = {
 const STATUS_LABEL: Record<ShopOrderStatus, string> = {
   pending_payment: "Ждёт оплаты",
   paid: "Оплачен",
+  awaiting_stock: "Ждём партию",
+  ready_to_ship: "Готов к отправке",
+  waybill_created: "Накладная создана",
   shipped: "Отправлен",
   delivered: "Получен",
   cancelled: "Отменён",
@@ -123,6 +126,9 @@ const STATUS_LABEL: Record<ShopOrderStatus, string> = {
 const STATUS_TONE: Record<ShopOrderStatus, "zinc" | "emerald" | "amber" | "rose" | "blue"> = {
   pending_payment: "amber",
   paid: "blue",
+  awaiting_stock: "amber",
+  ready_to_ship: "blue",
+  waybill_created: "blue",
   shipped: "blue",
   delivered: "emerald",
   cancelled: "rose",
