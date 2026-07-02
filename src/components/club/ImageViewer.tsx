@@ -245,11 +245,15 @@ export function ImageViewer({ src, open, onClose, onDoubleTap, transitionName }:
       style={{
         background: `rgba(0,0,0,${0.94 * fade})`,
         transition: dragging ? undefined : "background 220ms",
+        // Radix Dialog/Sheet ставит pointer-events:none на body — портал наследует
+        // это и клики (крестик, тап-вне-картинки) перестают работать в PWA.
+        pointerEvents: "auto",
       }}
       onClick={(e) => {
         if (e.target === e.currentTarget && scale === 1) onClose();
       }}
     >
+
       <button
         type="button"
         onClick={onClose}
