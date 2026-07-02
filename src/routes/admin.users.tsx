@@ -770,3 +770,18 @@ function GiftStickersModal({ userId, onClose }: { userId: string; onClose: () =>
     </Modal>
   );
 }
+
+function StatPill({ label, value, total }: { label: string; value: number; total: number }) {
+  const pct = total > 0 ? Math.round((value / total) * 100) : 0;
+  return (
+    <div className="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-white px-3 py-1.5 dark:border-zinc-800 dark:bg-zinc-900">
+      <span className="text-zinc-500 dark:text-zinc-400">{label}</span>
+      <span className="font-semibold tabular-nums text-zinc-900 dark:text-zinc-100">
+        {value}
+        <span className="text-zinc-400"> / {total}</span>
+      </span>
+      <span className="text-[11px] tabular-nums text-zinc-400">{pct}%</span>
+    </div>
+  );
+}
+
