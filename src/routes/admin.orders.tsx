@@ -15,6 +15,8 @@ import {
   createCdekWaybill,
   refreshCdekStatus,
   downloadCdekWaybillPdf,
+  downloadCdekBarcodesPdf,
+
   qk,
   type ShopOrder,
   type ShopOrderStatus,
