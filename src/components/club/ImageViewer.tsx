@@ -187,9 +187,18 @@ export function ImageViewer({ src, open, onClose, onDoubleTap, transitionName }:
             handleDoubleTap(e.clientX, e.clientY);
           } else {
             lastTap.current = now;
+            // Одиночный тап по картинке при 1× — закрываем через задержку,
+            // если за это время не пришёл второй тап (double-tap для зума).
+            if (scale === 1 && !onDoubleTap) {
+              const stamp = lastTap.current;
+              window.setTimeout(() => {
+                if (lastTap.current === stamp) onClose();
+              }, DOUBLE_TAP_MS + 20);
+            }
           }
         }
       } else if (pointers.size === 1) {
+
         // Один палец остался после пинча → продолжаем как pan/swipe.
         const [only] = Array.from(pointers.values());
         gestureRef.current = {
@@ -236,11 +245,15 @@ export function ImageViewer({ src, open, onClose, onDoubleTap, transitionName }:
       style={{
         background: `rgba(0,0,0,${0.94 * fade})`,
         transition: dragging ? undefined : "background 220ms",
+        // Radix Dialog/Sheet ставит pointer-events:none на body — портал наследует
+        // это и клики (крестик, тап-вне-картинки) перестают работать в PWA.
+        pointerEvents: "auto",
       }}
       onClick={(e) => {
         if (e.target === e.currentTarget && scale === 1) onClose();
       }}
     >
+
       <button
         type="button"
         onClick={onClose}
