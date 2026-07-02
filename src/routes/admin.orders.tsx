@@ -517,6 +517,30 @@ function CdekBlock({
               {printing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
               PDF квитанции
             </button>
+            <button
+              type="button"
+              disabled={printingBarcodes}
+              onClick={async () => {
+                setErr(null);
+                setPrintingBarcodes(true);
+                try {
+                  await downloadCdekBarcodesPdf(
+                    order.id,
+                    `cdek-barcodes-${order.cdekTrack ?? order.id.slice(0, 8)}.pdf`,
+                  );
+                } catch (e) {
+                  setErr(e instanceof ApiError ? e.message : "Не удалось скачать наклейку");
+                } finally {
+                  setPrintingBarcodes(false);
+                }
+              }}
+              className="inline-flex items-center gap-1 rounded-md border border-zinc-200 px-3 py-1.5 text-xs hover:bg-zinc-100 disabled:opacity-50 dark:border-zinc-800 dark:hover:bg-zinc-800"
+              title="ШК-наклейка для приклеивания на коробку (A6)"
+            >
+              {printingBarcodes ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Package className="h-3.5 w-3.5" />}
+              Наклейка ШК
+            </button>
+
           </div>
         </>
       ) : (
