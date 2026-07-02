@@ -452,7 +452,14 @@ async function sendOrderConfirmedEmail(orderId: string): Promise<void> {
 export async function refundOrder(orderId: string): Promise<{ ok: boolean; reason?: string }> {
   const [order] = await db.select().from(orders).where(eq(orders.id, orderId)).limit(1);
   if (!order) return { ok: false, reason: "order_not_found" };
-  if (order.status !== "paid" && order.status !== "shipped" && order.status !== "delivered") {
+  if (
+    order.status !== "paid" &&
+    order.status !== "awaiting_stock" &&
+    order.status !== "ready_to_ship" &&
+    order.status !== "waybill_created" &&
+    order.status !== "shipped" &&
+    order.status !== "delivered"
+  ) {
     return { ok: false, reason: "order_not_paid" };
   }
 
