@@ -203,11 +203,14 @@ function OrderCard({ order }: { order: ShopOrder }) {
               {order.status === "pending_payment" && order.expiresAt && (
                 <ExpiresChip expiresAt={order.expiresAt} />
               )}
-              {order.bonusTicketsTotal > 0 && order.status === "paid" && (
-                <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-primary">
-                  +{order.bonusTicketsTotal} 🎟
-                </span>
-              )}
+              {order.bonusTicketsTotal > 0 &&
+                order.status !== "pending_payment" &&
+                order.status !== "cancelled" &&
+                order.status !== "refunded" && (
+                  <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-primary">
+                    +{order.bonusTicketsTotal} 🎟
+                  </span>
+                )}
             </div>
             {cancelReason && (
               <div className="mt-1 text-[11px] text-muted-foreground/80">{cancelReason}</div>
