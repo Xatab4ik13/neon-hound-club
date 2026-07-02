@@ -32,6 +32,8 @@ export const adminQk = {
   raffles: ["admin", "raffles"] as const,
   passList: (status?: string) => ["admin", "pass", status ?? "all"] as const,
   feedPosts: ["admin", "feed", "posts"] as const,
+  usersStats: ["admin", "users", "stats"] as const,
+
 };
 
 
