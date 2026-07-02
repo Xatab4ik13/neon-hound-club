@@ -32,7 +32,16 @@ export async function createCdekWaybillForOrder(orderId: string): Promise<{
     const info = await cdek.getOrder(order.cdekUuid).catch(() => null);
     return { cdekUuid: order.cdekUuid, cdekNumber: info?.cdekNumber ?? order.cdekTrack ?? null };
   }
-  if (order.status === "pending_payment" || order.status === "cancelled" || order.status === "refunded") {
+  // Накладную создаём для оплаченного заказа в любом «активном» состоянии.
+  // Запрещаем только неоплаченные/терминальные.
+  const allowedForWaybill = new Set([
+    "paid",
+    "awaiting_stock",
+    "ready_to_ship",
+    "waybill_created",
+    "shipped",
+  ]);
+  if (!allowedForWaybill.has(order.status)) {
     throw new CdekOrderError("order_not_payable_state", "Накладная создаётся только для оплаченных заказов");
   }
 
