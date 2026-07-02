@@ -184,7 +184,7 @@ export async function adminUsersRoutes(app: FastifyInstance) {
       .where(
         and(
           eq(orders.userId, u.id),
-          sql`${orders.status} in ('paid','shipped','delivered')`,
+          sql`${orders.status} in ('paid','awaiting_stock','ready_to_ship','waybill_created','shipped','delivered')`,
         ),
       );
 
