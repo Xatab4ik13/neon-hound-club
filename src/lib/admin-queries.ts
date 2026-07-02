@@ -121,6 +121,17 @@ export function fetchAdminUsers(opts?: {
   );
 }
 
+export type AdminUsersStats = {
+  total: number;
+  phoneVerified: number;
+  hasPush: number;
+};
+
+export function fetchAdminUsersStats() {
+  return apiFetch<AdminUsersStats>(`/api/v1/admin/users/stats`);
+}
+
+
 
 
 export function fetchAdminUser(id: string) {
