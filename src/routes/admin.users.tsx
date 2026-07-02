@@ -80,18 +80,32 @@ function UsersPage() {
   const items = listQ.data?.items ?? [];
   const total = listQ.data?.total ?? 0;
 
+  const statsQ = useQuery({
+    queryKey: adminQk.usersStats,
+    queryFn: fetchAdminUsersStats,
+    staleTime: 60_000,
+  });
+  const stats = statsQ.data;
+
   return (
     <div>
       <PageHeader title="Пользователи" description={`Всего: ${total}`} />
 
-      <div className="mb-3 flex gap-2">
+      <div className="mb-3 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <TextInput
           placeholder="Поиск по нику или email…"
           className="max-w-md"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
+        {stats && (
+          <div className="flex flex-wrap items-center gap-2 text-[13px]">
+            <StatPill label="Телефон ✓" value={stats.phoneVerified} total={stats.total} />
+            <StatPill label="Пуш вкл" value={stats.hasPush} total={stats.total} />
+          </div>
+        )}
       </div>
+
 
       <Panel>
         <DataTable
