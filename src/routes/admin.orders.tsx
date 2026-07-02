@@ -455,7 +455,12 @@ function CdekBlock({
 
   const hasWaybill = !!order.cdekUuid;
   const canCreate =
-    !hasWaybill && (order.status === "paid" || order.status === "shipped" || order.status === "delivered");
+    !hasWaybill &&
+    (order.status === "paid" ||
+      order.status === "awaiting_stock" ||
+      order.status === "ready_to_ship" ||
+      order.status === "shipped" ||
+      order.status === "delivered");
 
   return (
     <div className="space-y-2">
