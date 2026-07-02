@@ -1,7 +1,7 @@
 import { Link, useRouter, useRouterState } from "@tanstack/react-router";
 import { PlumpBell as Bell, PlumpArrowLeft as ChevronLeft, PlumpCart } from "@/components/ui/icons";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { RANKS } from "@/data/ranks";
+import { useEffect, useRef, useState } from "react";
+import { RANKS, getRankSpan, type RankId } from "@/data/ranks";
 import type { RankMeta } from "@/data/ranks";
 import { useCurrentRank } from "@/data/rank-state";
 import { useCart } from "@/hooks/use-cart";
@@ -33,17 +33,16 @@ function parentPath(pathname: string): string | null {
 export function MobileTopBar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const router = useRouter();
-  const { rank, xp, xpMax, xpPct } = useCurrentRank();
+  const mockRank = useCurrentRank();
   const viewer = useViewer();
   const myProfile = useMyProfile(viewer.isAuthed);
-  const effectiveRank: RankMeta = useMemo(() => {
-    const rid = myProfile.data?.rank?.rankId;
-    if (rid) {
-      const found = RANKS.find((r) => r.id === rid);
-      if (found) return found;
-    }
-    return rank;
-  }, [myProfile.data?.rank?.rankId, rank]);
+  const realRankId = myProfile.data?.rank?.rankId as RankId | undefined;
+  const realRankIdx = realRankId ? RANKS.findIndex((r) => r.id === realRankId) : -1;
+  const effectiveRank: RankMeta = realRankIdx >= 0 ? RANKS[realRankIdx] : mockRank.rank;
+  // Числа XP: если есть реальный профиль — берём из него, иначе dev-мок.
+  const xp = myProfile.data ? myProfile.data.rank.inRank : mockRank.xp;
+  const xpMax = realRankIdx >= 0 ? getRankSpan(realRankIdx) : mockRank.xpMax;
+  const xpPct = myProfile.data ? myProfile.data.rank.pct : mockRank.xpPct;
   const avatarUrl = myProfile.data?.avatarUrl ?? null;
   const nick = myProfile.data?.nick ?? viewer.nick ?? "";
   const { count: cartCount } = useCart();
