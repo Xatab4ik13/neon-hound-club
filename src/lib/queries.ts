@@ -465,8 +465,12 @@ export function cdekPrintUrl(orderId: string) {
   return `${BACKEND_URL}/api/v1/admin/shop/orders/${orderId}/cdek/print`;
 }
 
-export async function downloadCdekWaybillPdf(orderId: string, filename = "cdek.pdf") {
-  const res = await fetch(cdekPrintUrl(orderId), { credentials: "include" });
+export function cdekBarcodesUrl(orderId: string, format: "A4" | "A5" | "A6" = "A6") {
+  return `${BACKEND_URL}/api/v1/admin/shop/orders/${orderId}/cdek/barcodes?format=${format}`;
+}
+
+async function downloadPdfViaUrl(url: string, filename: string, errCode: string) {
+  const res = await fetch(url, { credentials: "include" });
   if (!res.ok) {
     let msg = "Не удалось получить PDF";
     try {
@@ -475,18 +479,31 @@ export async function downloadCdekWaybillPdf(orderId: string, filename = "cdek.p
     } catch {
       /* ignore */
     }
-    throw new ApiError(res.status, "cdek_print_failed", msg);
+    throw new ApiError(res.status, errCode, msg);
   }
   const blob = await res.blob();
-  const url = URL.createObjectURL(blob);
+  const objUrl = URL.createObjectURL(blob);
   const a = document.createElement("a");
-  a.href = url;
+  a.href = objUrl;
   a.download = filename;
   document.body.appendChild(a);
   a.click();
   a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  setTimeout(() => URL.revokeObjectURL(objUrl), 1000);
 }
+
+export async function downloadCdekWaybillPdf(orderId: string, filename = "cdek.pdf") {
+  return downloadPdfViaUrl(cdekPrintUrl(orderId), filename, "cdek_print_failed");
+}
+
+export async function downloadCdekBarcodesPdf(
+  orderId: string,
+  filename = "cdek-barcodes.pdf",
+  format: "A4" | "A5" | "A6" = "A6",
+) {
+  return downloadPdfViaUrl(cdekBarcodesUrl(orderId, format), filename, "cdek_barcodes_failed");
+}
+
 
 export async function syncCdekStatusesAll() {
   return apiFetch<{
