@@ -134,7 +134,12 @@ export async function adminDashboardRoutes(app: FastifyInstance) {
       })
       .from(orderItems)
       .innerJoin(orders, eq(orders.id, orderItems.orderId))
-      .where(and(eq(orders.status, "paid"), sql`${orders.paidAt} >= ${d30}::timestamptz`))
+      .where(
+        and(
+          inArray(orders.status, PAID_ORDER_STATUSES as unknown as string[]),
+          sql`${orders.paidAt} >= ${d30}::timestamptz`,
+        ),
+      )
       .groupBy(orderItems.productId)
       .orderBy(sql`SUM(${orderItems.qty}) DESC`)
       .limit(5);
