@@ -22,9 +22,13 @@ export function Illustration({
   return (
     <div
       aria-hidden
-      className={className}
+      // [&>svg] переопределяет жёстко зашитые в исходнике width/height="400"
+      // и preserveAspectRatio, чтобы картинка занимала контейнер по классам
+      // (h-* w-*) и не вылезала за пределы, налезая на текст.
+      className={`grid place-items-center overflow-hidden [&>svg]:h-full [&>svg]:w-full [&>svg]:max-h-full [&>svg]:max-w-full ${className}`}
       // SVG-инлайн, чтобы currentColor работал и можно было красить через text-*
       dangerouslySetInnerHTML={{ __html: SRC[name] }}
     />
   );
 }
+
