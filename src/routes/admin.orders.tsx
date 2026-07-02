@@ -228,7 +228,15 @@ function OrdersTable({
 
 const NEXT_STATUSES: Record<ShopOrderStatus, ShopOrderStatus[]> = {
   pending_payment: ["paid", "cancelled"],
-  paid: ["shipped", "cancelled", "refunded"],
+  // Из paid: пометить готовым к отправке, либо сразу «отправлен» (fallback, если СДЭК-вебхук не пришёл), либо отмена/возврат.
+  paid: ["ready_to_ship", "shipped", "cancelled", "refunded"],
+  // Предзаказ ждёт партии — двигаем в ready_to_ship, когда партия приехала.
+  awaiting_stock: ["ready_to_ship", "cancelled", "refunded"],
+  // Готов к отправке — накладную обычно создают кнопкой «Создать накладную» (это автоматом переведёт в waybill_created),
+  // но оставляем fallback на shipped и возврат.
+  ready_to_ship: ["shipped", "cancelled", "refunded"],
+  // Накладная создана — обычно вебхук сам поставит shipped, но есть ручной fallback.
+  waybill_created: ["shipped", "refunded"],
   shipped: ["delivered", "refunded"],
   delivered: ["refunded"],
   cancelled: [],
