@@ -10,7 +10,7 @@ import {
   QUEST_CATEGORIES,
 } from "../db/schema/quests.js";
 import { profiles, bikes } from "../db/schema/profile.js";
-import { orders } from "../db/schema/shop.js";
+import { orders, PAID_ORDER_STATUSES } from "../db/schema/shop.js";
 import { users } from "../db/schema/users.js";
 import { requireAuth, requireAdmin, type SessionPayload } from "../lib/auth.js";
 import {
