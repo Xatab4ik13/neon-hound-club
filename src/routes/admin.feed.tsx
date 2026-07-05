@@ -25,6 +25,8 @@ import {
   Trash2,
   RotateCcw,
   Pencil,
+  Pin,
+  PinOff,
 } from "@/components/ui/icons";
 import {
   adminQk,
@@ -75,6 +77,16 @@ function AdminFeedPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: adminQk.feedPosts });
       toast.success("Пост восстановлен");
+    },
+    onError: (e) => toast.error(e instanceof ApiError ? e.message : "Ошибка"),
+  });
+
+  const pinMut = useMutation({
+    mutationFn: ({ id, pinned }: { id: string; pinned: boolean }) =>
+      updateAdminFeedPost(id, { pinned }),
+    onSuccess: (_d, vars) => {
+      qc.invalidateQueries({ queryKey: adminQk.feedPosts });
+      toast.success(vars.pinned ? "Пост закреплён" : "Пост откреплён");
     },
     onError: (e) => toast.error(e instanceof ApiError ? e.message : "Ошибка"),
   });
@@ -149,6 +161,20 @@ function AdminFeedPage() {
               </Btn>
             ) : (
               <div className="flex items-center gap-1">
+                <Btn
+                  variant="ghost"
+                  onClick={() => pinMut.mutate({ id: p.id, pinned: !p.pinned })}
+                >
+                  {p.pinned ? (
+                    <>
+                      <PinOff className="h-4 w-4" /> Открепить
+                    </>
+                  ) : (
+                    <>
+                      <Pin className="h-4 w-4" /> Закрепить
+                    </>
+                  )}
+                </Btn>
                 <Btn variant="ghost" onClick={() => setEditing(p)}>
                   <Pencil className="h-4 w-4" /> Править
                 </Btn>
