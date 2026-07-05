@@ -161,6 +161,20 @@ function AdminFeedPage() {
               </Btn>
             ) : (
               <div className="flex items-center gap-1">
+                <Btn
+                  variant="ghost"
+                  onClick={() => pinMut.mutate({ id: p.id, pinned: !p.pinned })}
+                >
+                  {p.pinned ? (
+                    <>
+                      <PinOff className="h-4 w-4" /> Открепить
+                    </>
+                  ) : (
+                    <>
+                      <Pin className="h-4 w-4" /> Закрепить
+                    </>
+                  )}
+                </Btn>
                 <Btn variant="ghost" onClick={() => setEditing(p)}>
                   <Pencil className="h-4 w-4" /> Править
                 </Btn>
