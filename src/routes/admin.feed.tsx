@@ -81,6 +81,16 @@ function AdminFeedPage() {
     onError: (e) => toast.error(e instanceof ApiError ? e.message : "Ошибка"),
   });
 
+  const pinMut = useMutation({
+    mutationFn: ({ id, pinned }: { id: string; pinned: boolean }) =>
+      updateAdminFeedPost(id, { pinned }),
+    onSuccess: (_d, vars) => {
+      qc.invalidateQueries({ queryKey: adminQk.feedPosts });
+      toast.success(vars.pinned ? "Пост закреплён" : "Пост откреплён");
+    },
+    onError: (e) => toast.error(e instanceof ApiError ? e.message : "Ошибка"),
+  });
+
   const items = postsQ.data?.items ?? [];
   const total = postsQ.data?.total ?? 0;
 
