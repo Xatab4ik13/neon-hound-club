@@ -25,6 +25,8 @@ import {
   Trash2,
   RotateCcw,
   Pencil,
+  Pin,
+  PinOff,
 } from "@/components/ui/icons";
 import {
   adminQk,
