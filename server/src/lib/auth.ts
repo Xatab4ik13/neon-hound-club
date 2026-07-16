@@ -135,6 +135,29 @@ export async function requireAuth(req: FastifyRequest, reply: FastifyReply): Pro
   }
 }
 
+/** preHandler: принимает ЛЮБУЮ валидную сессию — клубную (hh_sid) или админскую
+ *  (hh_admin_sid). Нужно для эндпоинтов, которыми пользуются и юзеры клуба, и
+ *  админка (например, /uploads/direct для картинок товаров). */
+export async function requireAuthOrAdmin(req: FastifyRequest, reply: FastifyReply): Promise<void> {
+  // 1) Пробуем админскую cookie.
+  const adminDecoded = await verifyAdminToken(req);
+  if (adminDecoded) {
+    const fresh = await hydrateFreshSession(req, adminDecoded.sub);
+    if (fresh) return;
+  }
+  // 2) Фолбэк на клубную сессию.
+  try {
+    await req.jwtVerify();
+    const tokenUser = req.user as SessionPayload;
+    const fresh = await hydrateFreshSession(req, tokenUser.sub);
+    if (!fresh) {
+      return reply.code(401).send({ error: "unauthorized", message: "Сессия устарела" });
+    }
+  } catch {
+    return reply.code(401).send({ error: "unauthorized", message: "Требуется вход" });
+  }
+}
+
 /** Верифицируем токен из админской cookie вручную — плагин @fastify/jwt
  *  настроен на hh_sid, поэтому req.jwtVerify() сюда не подходит. */
 async function verifyAdminToken(req: FastifyRequest): Promise<SessionPayload | null> {
