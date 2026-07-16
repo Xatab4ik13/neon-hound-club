@@ -28,7 +28,7 @@ const signSchema = z.object({
  * Авторизация обязательна. Категории product / raffle — только для админов.
  */
 export async function uploadsRoutes(app: FastifyInstance) {
-  app.post("/sign", { preHandler: requireAuth }, async (req, reply) => {
+  app.post("/sign", { preHandler: requireAuthOrAdmin }, async (req, reply) => {
     const parsed = signSchema.safeParse(req.body);
     if (!parsed.success) {
       return reply.code(400).send({ error: "bad_request", message: parsed.error.message });
@@ -72,7 +72,7 @@ export async function uploadsRoutes(app: FastifyInstance) {
    * сам и возвращает публичный URL. Нужен, когда presigned PUT недоступен
    * из браузера (внутренний хост MinIO, mixed content и т.п.).
    */
-  app.post("/direct", { preHandler: requireAuth }, async (req, reply) => {
+  app.post("/direct", { preHandler: requireAuthOrAdmin }, async (req, reply) => {
     const user = req.user as SessionPayload;
     const mp = await req.file();
     if (!mp) {
