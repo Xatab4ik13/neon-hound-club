@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
-import { requireAuth, type SessionPayload } from "../lib/auth.js";
+import { requireAuthOrAdmin, type SessionPayload } from "../lib/auth.js";
 import {
   S3_BUCKET,
   UPLOAD_RULES,
