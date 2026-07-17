@@ -327,9 +327,11 @@ function OrderDrawer({ orderId, onClose }: { orderId: string; onClose: () => voi
                     <div className="truncate font-medium">{it.titleSnapshot}</div>
                     <div className="text-xs text-zinc-500">
                       {it.qty} × {fmtMoney(it.priceRubSnapshot)}
+                      {it.sizeSnapshot && ` · размер ${it.sizeSnapshot}`}
                       {it.bonusTicketsSnapshot > 0 && ` · +${it.bonusTicketsSnapshot}🎫 за шт.`}
                     </div>
                   </div>
+
                   <div className="shrink-0 font-mono text-xs font-semibold">
                     {fmtMoney(it.priceRubSnapshot * it.qty)}
                   </div>

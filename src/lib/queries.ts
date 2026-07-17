@@ -202,11 +202,13 @@ export type ShopOrderItem = {
   orderId: string;
   productId: string | null;
   titleSnapshot: string;
+  sizeSnapshot: string | null;
   priceRubSnapshot: number;
   bonusTicketsSnapshot: number;
   qty: number;
   createdAt: string;
 };
+
 
 export type ShopOrderWithItems = ShopOrder & { items: ShopOrderItem[] };
 
