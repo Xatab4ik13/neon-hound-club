@@ -743,6 +743,24 @@ export async function adminFeedRoutes(app: FastifyInstance) {
     return { ok: true };
   });
 
+  // PATCH /api/v1/admin/feed/posts/:id — правка (пин/текст/картинка) под админской cookie.
+  app.patch<{ Params: { id: string } }>("/posts/:id", async (req, reply) => {
+    const parsed = patchSchema.safeParse(req.body);
+    if (!parsed.success) return reply.code(400).send({ error: "invalid" });
+    const [p] = await db.select().from(posts).where(eq(posts.id, req.params.id)).limit(1);
+    if (!p) return reply.code(404).send({ error: "not_found" });
+
+    const data: Record<string, unknown> = { updatedAt: new Date() };
+    if (parsed.data.text !== undefined) data.text = parsed.data.text;
+    if (parsed.data.imageUrl !== undefined) data.imageUrl = parsed.data.imageUrl;
+    if (parsed.data.pinned !== undefined) data.pinned = parsed.data.pinned;
+    if (parsed.data.poll !== undefined) data.poll = parsed.data.poll;
+
+    const [row] = await db.update(posts).set(data).where(eq(posts.id, req.params.id)).returning();
+    publishFeedEvent("post.updated", { postId: req.params.id });
+    return row;
+  });
+
   // DELETE /api/v1/admin/feed/posts/:id — hard delete
   app.delete<{ Params: { id: string } }>("/posts/:id", async (req) => {
     await db.delete(posts).where(eq(posts.id, req.params.id));
@@ -750,4 +768,5 @@ export async function adminFeedRoutes(app: FastifyInstance) {
     return { ok: true };
   });
 }
+
 
