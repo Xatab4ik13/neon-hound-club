@@ -6,6 +6,7 @@ import { fetchHomeRaffles, type HomeRaffleItem } from "@/lib/queries";
 import pinkR6 from "@/assets/pink-r6.jpg";
 import heroBgAsset from "@/assets/hero-bg-new.jpg.asset.json";
 import vanyaAsset from "@/assets/vanya-presenter.png.asset.json";
+import hhrLogoAsset from "@/assets/hhr-logo.png.asset.json";
 
 /**
  * Hero — HELLHOUND Racing Club.
@@ -81,13 +82,20 @@ export function Hero() {
           className="pointer-events-auto absolute left-0 top-1/2 z-20 flex -translate-y-1/2 flex-col px-6 md:px-12"
           style={{ maxWidth: "clamp(320px, 30vw, 520px)" }}
         >
-          <h1 className="font-display text-5xl font-black uppercase leading-[0.95] tracking-tight text-foreground xl:text-6xl">
-            HELLHOUND
+          <div className="mb-4">
+            <img
+              src={hhrLogoAsset.url}
+              alt="HHR"
+              className="h-16 w-auto object-contain xl:h-20"
+            />
+          </div>
+          <h1 className="font-display text-6xl font-black uppercase leading-[0.9] tracking-tight xl:text-8xl">
+            <span className="text-primary">HELLHOUND</span>
             <br />
-            <span className="text-primary">Racing</span> Club
+            <span className="text-foreground">Racing Club</span>
           </h1>
-          <p className="mt-5 max-w-[36ch] text-base leading-relaxed text-muted-foreground xl:text-lg">
-            Мерч, Race Pass, гараж и розыгрыши. Hell AI — механик по твоему мото, уровни райдера и приватный контент Hell.
+          <p className="mt-6 max-w-[36ch] text-lg font-medium leading-relaxed text-foreground/80 xl:text-xl">
+            Создано теми, кто едет.
           </p>
         </div>
 
@@ -137,13 +145,20 @@ export function Hero() {
       <div className="relative mx-auto grid w-full max-w-7xl grid-cols-1 items-end gap-8 lg:hidden">
         {/* Заголовок и описание */}
         <div className="relative z-20 order-1 px-6 pt-8 text-center sm:pt-12">
-          <h1 className="font-display text-4xl font-black uppercase leading-[0.95] tracking-tight text-foreground sm:text-5xl">
-            HELLHOUND
+          <div className="mb-3 flex justify-center">
+            <img
+              src={hhrLogoAsset.url}
+              alt="HHR"
+              className="h-14 w-auto object-contain sm:h-16"
+            />
+          </div>
+          <h1 className="font-display text-5xl font-black uppercase leading-[0.9] tracking-tight text-foreground sm:text-6xl">
+            <span className="text-primary">HELLHOUND</span>
             <br />
-            <span className="text-primary">Racing</span> Club
+            <span className="text-foreground">Racing Club</span>
           </h1>
-          <p className="mx-auto mt-4 max-w-[36ch] text-sm leading-relaxed text-muted-foreground sm:text-base">
-            Мерч, Race Pass, гараж и розыгрыши. Hell AI — механик по твоему мото, уровни райдера и приватный контент Hell.
+          <p className="mx-auto mt-4 max-w-[36ch] text-base font-medium leading-relaxed text-foreground/80 sm:text-lg">
+            Создано теми, кто едет.
           </p>
         </div>
 
