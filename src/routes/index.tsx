@@ -128,7 +128,7 @@ function Index() {
               </div>
             </div>
 
-            <div className="flex flex-col items-end gap-2 lg:flex-row lg:items-end">
+            <div className="flex flex-col items-end lg:flex-row lg:items-end">
               {/* Ваня слева — крупный, прижат к левой границе сайта */}
               <div className="relative hidden shrink-0 lg:block lg:w-[55%]">
                 <img
