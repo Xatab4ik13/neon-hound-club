@@ -114,7 +114,7 @@ export function Hero() {
         <div
           className="absolute right-0"
           style={{
-            bottom: "clamp(calc(60px + 3cm), calc(8vh + 3cm), calc(120px + 3cm))",
+            bottom: "clamp(calc(20px + 3cm), calc(4vh + 3cm), calc(80px + 3cm))",
             width: "clamp(440px, 34vw, 640px)",
           }}
         >
@@ -126,6 +126,12 @@ export function Hero() {
             src={vanyaAsset.url}
             alt="Ваня — HELLHOUND Racing"
             className="relative z-10 h-auto w-full object-contain drop-shadow-[0_20px_40px_rgba(0,0,0,0.6)]"
+            style={{
+              WebkitMaskImage:
+                "linear-gradient(to bottom, black 0%, black 78%, transparent 100%)",
+              maskImage:
+                "linear-gradient(to bottom, black 0%, black 78%, transparent 100%)",
+            }}
           />
         </div>
 
@@ -185,6 +191,12 @@ export function Hero() {
             src={vanyaAsset.url}
             alt="Ваня — HELLHOUND Racing"
             className="relative z-10 h-auto w-[380px] max-w-full object-contain drop-shadow-[0_20px_40px_rgba(0,0,0,0.6)] sm:w-[460px]"
+            style={{
+              WebkitMaskImage:
+                "linear-gradient(to bottom, black 0%, black 80%, transparent 100%)",
+              maskImage:
+                "linear-gradient(to bottom, black 0%, black 80%, transparent 100%)",
+            }}
           />
         </div>
 
