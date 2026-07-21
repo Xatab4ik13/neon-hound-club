@@ -1,6 +1,6 @@
 import { PlumpAI, PlumpGarage, PlumpStore, PlumpTicket, PlumpDiamond } from "@/components/ui/icons";
-import vanyaAsset from "@/assets/vanya-helmet.webp.asset.json";
-import phoneAsset from "@/assets/phone-mockup.webp.asset.json";
+import vanyaAsset from "@/assets/vanya-helmet.webp";
+import phoneAsset from "@/assets/phone-mockup.webp";
 
 const FEATURES = [
   {
