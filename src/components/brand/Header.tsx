@@ -78,12 +78,10 @@ export function Header() {
           {/* Desktop burger — replaces text nav */}
           <button
             type="button"
-            onClick={() => setMenuOpen(true)}
-            aria-label="Открыть меню"
-            aria-expanded={menuOpen}
-            className="group relative hidden h-11 w-11 items-center justify-center border border-primary/40 text-foreground transition-colors hover:border-primary hover:text-primary md:inline-flex"
+            aria-label="Меню"
+            className="relative hidden h-14 w-16 items-center justify-center text-foreground md:inline-flex"
           >
-            <PlumpMenu className="h-6 w-6" />
+            <PlumpMenu className="h-9 w-9" />
           </button>
 
 
@@ -180,13 +178,11 @@ export function Header() {
           {/* Mobile burger */}
           <button
             type="button"
-            onClick={() => setMenuOpen(true)}
-            aria-label="Открыть меню"
-            aria-expanded={menuOpen}
-            className="group relative ml-auto flex h-11 w-11 items-center justify-center border border-primary/40 text-primary transition-colors hover:border-primary md:hidden"
+            aria-label="Меню"
+            className="relative ml-auto flex h-14 w-16 items-center justify-center text-primary md:hidden"
           >
             <span className="sr-only">Меню</span>
-            <PlumpMenu className="h-6 w-6" />
+            <PlumpMenu className="h-9 w-9" />
           </button>
 
 
