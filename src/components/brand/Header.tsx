@@ -1,5 +1,7 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import hhrLogo from "@/assets/hhr-logo.png.asset.json";
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -50,10 +52,11 @@ export function Header() {
           <Link
             to="/"
             aria-label="HELLHOUND Racing Club"
-            className="flex-shrink-0 font-display text-2xl font-bold tracking-tighter text-primary"
+            className="flex-shrink-0"
           >
-            HELLHOUND
+            <img src={hhrLogo.url} alt="HELLHOUND Racing" className="h-14 w-auto" />
           </Link>
+
 
           {/* Desktop nav */}
           <div className="hidden items-center gap-1 md:flex">
@@ -250,11 +253,11 @@ function MobileMenu({
           <Link
             to="/"
             onClick={onClose}
-            className="font-display text-2xl italic uppercase tracking-tighter text-primary"
-            style={{ textShadow: "0 0 10px color-mix(in oklab, var(--primary) 30%, transparent)" }}
+            aria-label="HELLHOUND Racing"
           >
-            HELLHOUND
+            <img src={hhrLogo.url} alt="HELLHOUND Racing" className="h-12 w-auto" />
           </Link>
+
           <button
             type="button"
             onClick={onClose}
