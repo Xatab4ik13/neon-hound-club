@@ -30,6 +30,22 @@ const FEATURES = [
   },
 ];
 
+function PhoneMockup({ className }: { className?: string }) {
+  return (
+    <div className={`relative shrink-0 ${className}`}>
+      <img
+        src={phoneAsset}
+        alt="Мокап приложения HELLHOUND"
+        width={1024}
+        height={1024}
+        loading="lazy"
+        className="h-auto w-full drop-shadow-2xl"
+      />
+      <div className="absolute left-[7%] top-[3%] -z-10 h-[94%] w-[86%] rounded-[2.2rem] bg-black md:rounded-[2.8rem]" />
+    </div>
+  );
+}
+
 export function AppShowcase() {
   return (
     <section id="app" className="relative overflow-hidden bg-surface px-6 py-20 md:py-28">
@@ -44,34 +60,52 @@ export function AppShowcase() {
           </h2>
         </div>
 
-        {/* Композиция */}
-        <div className="relative flex min-h-[560px] flex-col md:min-h-[720px] lg:min-h-[580px] lg:flex-row lg:items-center">
-          {/* Ваня — слева. На мобильном вверху, на десктопе внизу позади телефона */}
+        {/* Мобильная композиция */}
+        <div className="flex flex-col gap-6 md:hidden">
+          <div className="flex items-end justify-between">
+            <img
+              src={vanyaAsset}
+              alt="Ваня — HELLHOUND Racing"
+              width={1264}
+              height={848}
+              loading="lazy"
+              className="h-auto w-[42%] max-w-[180px] object-contain"
+            />
+            <PhoneMockup className="w-[45%] max-w-[190px]" />
+          </div>
+          <div className="grid w-full gap-3">
+            {FEATURES.map((f) => {
+              const Icon = f.icon;
+              return (
+                <div
+                  key={f.title}
+                  className="rounded-2xl border-[3px] border-foreground bg-card p-4 shadow-[6px_6px_0_0_hsl(var(--foreground))]"
+                >
+                  <div className="mb-3 flex items-center gap-3">
+                    <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border-2 border-foreground bg-primary text-primary-foreground">
+                      <Icon size={22} />
+                    </span>
+                    <h3 className="font-display text-lg uppercase tracking-tight">{f.title}</h3>
+                  </div>
+                  <p className="text-sm leading-relaxed text-muted-foreground">{f.desc}</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Десктопная композиция */}
+        <div className="relative hidden min-h-[580px] md:block lg:flex lg:min-h-[540px] lg:flex-row lg:items-center">
           <img
             src={vanyaAsset}
             alt="Ваня — HELLHOUND Racing"
             width={1264}
             height={848}
             loading="lazy"
-            className="pointer-events-none absolute left-0 top-[70px] z-10 h-auto w-[40%] max-w-[180px] -translate-x-[2%] object-contain md:bottom-0 md:top-auto md:w-[38%] md:max-w-[320px] md:-translate-x-[4%] lg:z-0 lg:w-[24%] lg:max-w-[300px] lg:-translate-x-[2%] lg:translate-y-0"
+            className="pointer-events-none absolute bottom-0 left-0 z-0 h-auto w-[30%] max-w-[320px] -translate-x-[4%] object-contain lg:w-[24%] lg:max-w-[300px] lg:-translate-x-[2%]"
           />
-
-          {/* Телефон — справа на мобильном, центр на десктопе */}
-          <div className="absolute right-4 top-[60px] z-10 w-[150px] md:static md:mx-auto md:w-[250px] lg:absolute lg:left-[28%] lg:top-1/2 lg:w-[300px] lg:-translate-y-1/2">
-            <img
-              src={phoneAsset}
-              alt="Мокап приложения HELLHOUND"
-              width={1024}
-              height={1024}
-              loading="lazy"
-              className="h-auto w-full drop-shadow-2xl"
-            />
-            {/* Экран-заглушка */}
-            <div className="absolute left-[7%] top-[3%] -z-10 h-[94%] w-[86%] rounded-[2.2rem] bg-black md:rounded-[2.8rem]" />
-          </div>
-
-          {/* Плашки с фичами — справа */}
-          <div className="relative z-20 mt-12 grid w-full gap-3 sm:grid-cols-2 lg:ml-auto lg:mt-0 lg:w-[46%] lg:pl-6">
+          <PhoneMockup className="absolute left-[24%] top-1/2 z-10 w-[250px] -translate-y-1/2 lg:w-[300px]" />
+          <div className="relative z-20 grid w-full gap-3 sm:grid-cols-2 lg:ml-auto lg:w-[46%] lg:pl-6">
             {FEATURES.map((f) => {
               const Icon = f.icon;
               return (
