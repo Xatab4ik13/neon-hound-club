@@ -1,7 +1,7 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import hhrLogo from "@/assets/hhr-logo.png.asset.json";
-import { PlumpCart, PlumpMenu, PlumpDoorEnter, PlumpDoorExit, PlumpCircle } from "@/components/ui/icons";
+import { PlumpCart, PlumpMenu, PlumpDoorEnter, PlumpDoorExit } from "@/components/ui/icons";
 
 import {
   DropdownMenu,
@@ -126,9 +126,8 @@ export function Header() {
                       aria-label="Профиль"
                       className="relative grid h-14 w-14 place-items-center text-foreground outline-none focus:outline-none"
                     >
-                      <span className="relative grid h-9 w-9 place-items-center">
-                        <PlumpCircle className="absolute inset-0 h-full w-full text-foreground" />
-                        <span className="relative grid h-[74%] w-[74%] overflow-hidden rounded-full bg-primary/15">
+                      <span className="relative grid h-8 w-8 place-items-center rounded-full border-2 border-foreground">
+                        <span className="relative grid h-[88%] w-[88%] overflow-hidden rounded-full bg-primary/15">
                           {avatarUrl ? (
                             <img
                               src={avatarUrl}
