@@ -11,6 +11,8 @@ import { RANKS, XP_THRESHOLDS, type RankId } from "@/data/ranks";
 import { XP_SOURCES } from "@/data/xp-sources";
 import { isClubHost } from "@/lib/host";
 import pinkR6 from "@/assets/pink-r6.jpg";
+import vanyaBike from "@/assets/vanya-bike.png";
+
 
 
 export const Route = createFileRoute("/")({
