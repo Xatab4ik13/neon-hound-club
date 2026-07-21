@@ -73,23 +73,55 @@ export function Hero() {
         className="pointer-events-none absolute inset-0 bg-gradient-to-t from-background via-transparent to-background/30"
       />
 
-      {/* VANYA — прижат к правому краю viewport'а */}
-      <div className="pointer-events-none absolute bottom-14 right-0 z-10 hidden items-end lg:flex">
+      {/* DESKTOP-сцена: Ваня прижат к правому краю viewport'а, облако — на фиксированном
+          расстоянии от него через clamp(). Пропорции сохраняются на любом мониторе. */}
+      <div className="pointer-events-none absolute inset-0 z-10 hidden lg:block">
+        {/* Ваня */}
         <div
-          aria-hidden
-          className="pointer-events-none absolute inset-x-4 bottom-0 h-1/2 rounded-full bg-primary/25 blur-3xl"
-        />
-        <img
-          src={vanyaAsset.url}
-          alt="Ваня — HELLHOUND Racing"
-          className="relative z-10 h-auto w-[560px] object-contain drop-shadow-[0_20px_40px_rgba(0,0,0,0.6)] xl:w-[680px] 2xl:w-[760px]"
-        />
+          className="absolute right-0"
+          style={{
+            bottom: "clamp(40px, 6vh, 96px)",
+            width: "clamp(440px, 34vw, 640px)",
+          }}
+        >
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-4 bottom-0 h-1/2 rounded-full bg-primary/25 blur-3xl"
+          />
+          <img
+            src={vanyaAsset.url}
+            alt="Ваня — HELLHOUND Racing"
+            className="relative z-10 h-auto w-full object-contain drop-shadow-[0_20px_40px_rgba(0,0,0,0.6)]"
+          />
+        </div>
+
+        {/* Облако розыгрыша — позиционируется от правого края, чтобы держать
+            фиксированное расстояние до Вани */}
+        {raffle ? (
+          <div
+            className="pointer-events-auto absolute z-20"
+            style={{
+              right: "clamp(360px, 27vw, 500px)",
+              bottom: "clamp(80px, 12vh, 180px)",
+              width: "clamp(340px, 26vw, 460px)",
+            }}
+          >
+            <RaffleCloud
+              image={image}
+              href={raffleHref}
+              days={days}
+              hours={hours}
+              minutes={minutes}
+              seconds={seconds}
+            />
+          </div>
+        ) : null}
       </div>
 
-      <div className="relative mx-auto grid w-full max-w-7xl grid-cols-1 items-end gap-8 lg:grid-cols-12 lg:items-center lg:gap-4">
-        {/* RAFFLE "CLOUD" — на десктопе перекрывает Ваню (по центру его жеста) */}
+      {/* MOBILE / TABLET — вертикальный стек */}
+      <div className="relative mx-auto grid w-full max-w-7xl grid-cols-1 items-end gap-8 lg:hidden">
         {raffle ? (
-          <div className="relative z-20 order-2 lg:order-1 lg:col-span-7 lg:col-start-4 xl:col-span-6 xl:col-start-5 lg:translate-x-[calc(2.5rem+1cm)] xl:translate-x-[calc(4rem+1cm)] 2xl:translate-x-[calc(5rem+1cm)]">
+          <div className="relative z-20 order-2">
             <RaffleCloud
               image={image}
               href={raffleHref}
@@ -101,8 +133,7 @@ export function Hero() {
           </div>
         ) : null}
 
-        {/* VANYA на мобилке — inline */}
-        <div className="relative order-1 flex justify-center lg:hidden">
+        <div className="relative order-1 flex justify-center">
           <img
             src={vanyaAsset.url}
             alt="Ваня — HELLHOUND Racing"
