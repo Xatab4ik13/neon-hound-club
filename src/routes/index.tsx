@@ -221,7 +221,7 @@ function Index() {
                         <div className="px-1 pb-1">
                           <div className="mb-1 flex items-baseline justify-between gap-2 text-sm font-medium uppercase">
                             <span>{p.title}</span>
-                            <span className="font-mono">{p.priceRub.toLocaleString("ru-RU")} ₽</span>
+                            <PlumpPrice value={p.priceRub} />
                           </div>
                           <div className={`text-[10px] uppercase tracking-widest ${statusColor}`}>
                             {statusLabel}
