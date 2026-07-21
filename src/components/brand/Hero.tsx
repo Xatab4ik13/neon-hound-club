@@ -12,7 +12,7 @@ import vanyaAsset from "@/assets/vanya-presenter.png.asset.json";
 /**
  * Hero — HELLHOUND Racing Club.
  * Композиция: Ваня (PNG) слева показывает на плашку активного розыгрыша справа.
- * Плашка — «облако» (несимметричный blob), сверху лейбл, посередине картинка приза,
+ * Плашка — скруглённая рамка, сверху картинка приза без обрезки,
  * снизу таймер без рамок и отдельная кнопка "Участвовать".
  */
 
@@ -32,9 +32,6 @@ function useCountdown(target: Date | null) {
 }
 
 const pad = (n: number) => n.toString().padStart(2, "0");
-
-// асимметричные радиусы = «облако»
-const cloudRadius = "62% 38% 55% 45% / 45% 55% 45% 55%";
 
 export function Hero() {
   const { isAuthed } = useViewer();
@@ -131,9 +128,8 @@ export function Hero() {
           />
         </div>
 
-        {/* Облако розыгрыша — позиционируется от правого края, чтобы держать
-            фиксированное расстояние до Вани. Размер чуть увеличен, но не выше
-            размера картинки приза. */}
+        {/* Плашка розыгрыша — позиционируется от правого края, чтобы держать
+            фиксированное расстояние до Вани. */}
         {raffle ? (
           <div
             className="pointer-events-auto absolute z-20"
@@ -154,7 +150,7 @@ export function Hero() {
           </div>
         ) : null}
 
-        {/* Комикс-стрелка от Вани к облаку розыгрыша */}
+        {/* Комикс-стрелка от Вани к плашке розыгрыша */}
         {raffle ? (
           <div
             className="pointer-events-none absolute z-30 hidden lg:block"
@@ -283,22 +279,20 @@ function RaffleCloud({
 }) {
   return (
     <div className="relative mx-auto max-w-md">
-      {/* Облако с картинкой приза (cover — заполняет всё облако) */}
+      {/* Скруглённая рамка с картинкой приза (contain — без обрезки) */}
       <Link
         to={href}
         aria-label="Открыть розыгрыш"
-        className="group relative block aspect-[5/4] w-full overflow-hidden border border-primary/30 bg-card/60 shadow-[0_30px_80px_-20px_hsl(var(--primary)/0.5)] backdrop-blur-sm transition-transform duration-500 hover:scale-[1.015]"
-        style={{ borderRadius: cloudRadius }}
+        className="group relative block w-full overflow-hidden rounded-3xl border border-primary/30 bg-card/60 shadow-[0_30px_80px_-20px_hsl(var(--primary)/0.5)] backdrop-blur-sm transition-transform duration-500 hover:scale-[1.015]"
       >
         <img
           src={image}
           alt="Главный приз розыгрыша"
-          className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.04]"
+          className="h-auto w-full object-contain transition-transform duration-700 group-hover:scale-[1.04]"
         />
         <span
           aria-hidden
-          className="pointer-events-none absolute inset-0 ring-1 ring-inset ring-primary/20"
-          style={{ borderRadius: cloudRadius }}
+          className="pointer-events-none absolute inset-0 rounded-3xl ring-1 ring-inset ring-primary/20"
         />
       </Link>
 
