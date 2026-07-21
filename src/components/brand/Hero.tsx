@@ -102,7 +102,7 @@ export function Hero() {
             className="pointer-events-auto absolute z-20"
             style={{
               right: "clamp(200px, 16vw, 310px)",
-              bottom: "clamp(190px, 25vh, 340px)",
+              bottom: "clamp(calc(190px + 1cm), calc(25vh + 1cm), calc(340px + 1cm))",
               width: "clamp(340px, 26vw, 460px)",
             }}
           >
