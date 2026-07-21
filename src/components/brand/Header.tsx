@@ -83,11 +83,11 @@ export function Header() {
             })}
           </div>
 
-          {/* Centered logo (absolute, so nav on left stays truly left) */}
+          {/* Centered logo — anchored to header top so it only overflows below */}
           <Link
             to="/"
             aria-label="HELLHOUND Racing Club"
-            className="pointer-events-auto absolute left-1/2 top-1/2 flex h-full -translate-x-1/2 -translate-y-1/2 items-center"
+            className="pointer-events-auto absolute left-1/2 top-0 flex h-full -translate-x-1/2 items-start"
           >
             <img
               src={hhrLogo.url}
