@@ -131,7 +131,7 @@ function Index() {
 
             <div className="flex flex-col items-end lg:flex-row lg:items-end">
               {/* Ваня слева — крупный, прижат к левой границе сайта */}
-              <div className="relative hidden shrink-0 lg:block lg:w-[55%]">
+              <div className="relative hidden shrink-0 lg:block lg:w-[52%]">
                 <img
                   src={vanyaBike}
                   alt="Ваня — HELLHOUND Racing"
@@ -149,8 +149,8 @@ function Index() {
               </div>
 
               {/* Товары справа — 3 в ряд на десктопе */}
-              <div className="w-full px-6 lg:w-[45%] lg:pl-2 lg:pr-6">
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="w-full px-6 lg:w-[48%] lg:-translate-x-[4vw] lg:-translate-y-[6vw] lg:pl-0 lg:pr-6">
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {showcaseItems.map((p) => {
                     const sold = p.stock !== null && p.stock <= 0;
                     const statusLabel = sold
@@ -168,7 +168,7 @@ function Index() {
                         key={p.id}
                         to="/shop/$productSlug"
                         params={{ productSlug: p.slug }}
-                        className="group rounded-xl border border-border bg-card p-2 ring-1 ring-black/5 transition-colors hover:border-primary/40"
+                        className="group rounded-xl border border-border bg-card p-3 ring-1 ring-black/5 transition-colors hover:border-primary/40"
                       >
                         <div className="mb-3 overflow-hidden rounded-lg border border-border">
                           <img
@@ -181,11 +181,11 @@ function Index() {
                           />
                         </div>
                         <div className="px-1 pb-1">
-                          <div className="mb-1 flex items-baseline justify-between gap-2 text-xs font-medium uppercase">
+                          <div className="mb-1 flex items-baseline justify-between gap-2 text-sm font-medium uppercase">
                             <span>{p.title}</span>
                             <span className="font-mono">{p.priceRub.toLocaleString("ru-RU")} ₽</span>
                           </div>
-                          <div className={`text-[9px] uppercase tracking-widest ${statusColor}`}>
+                          <div className={`text-[10px] uppercase tracking-widest ${statusColor}`}>
                             {statusLabel}
                           </div>
                         </div>
