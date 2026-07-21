@@ -144,7 +144,7 @@ function Index() {
                   src={vybiraySpeech.url}
                   alt="Выбирай лучшее!"
                   loading="lazy"
-                  className="pointer-events-none absolute left-0 top-[10%] w-[22%] translate-y-[1cm] -rotate-[6deg] object-contain"
+                  className="pointer-events-none absolute left-0 top-[10%] w-[22%] translate-x-[1cm] translate-y-[1cm] -rotate-[6deg] object-contain"
                 />
               </div>
 
