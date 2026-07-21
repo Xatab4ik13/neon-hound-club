@@ -2,6 +2,21 @@ import { Link, useLocation } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import hhrLogo from "@/assets/hhr-logo.png.asset.json";
 import { PlumpCart, PlumpMenu, PlumpDoorEnter, PlumpDoorExit } from "@/components/ui/icons";
+import navShop from "@/assets/nav/nav-shop.jpg";
+import navPass from "@/assets/nav/nav-pass.jpg";
+import navSchool from "@/assets/nav/nav-school.jpg";
+import navDelivery from "@/assets/nav/nav-delivery.jpg";
+import navAbout from "@/assets/nav/nav-about.jpg";
+
+const NAV_IMAGES: Record<string, string> = {
+  "/shop": navShop,
+  "/hell-pass": navPass,
+  "/school": navSchool,
+  "/shop-info": navDelivery,
+  "/about": navAbout,
+};
+
+const PLATE_CLIP = "polygon(0 10%, 10% 0, 100% 0, 100% 90%, 90% 100%, 0 100%)";
 
 import {
   DropdownMenu,
