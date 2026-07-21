@@ -59,7 +59,7 @@ export function AppShowcase() {
           {/* Телефон — центр-справа, слегка наклонён */}
           <div className="relative z-10 mx-auto w-[220px] shrink-0 translate-y-4 md:w-[280px] lg:mx-0 lg:ml-auto lg:w-[300px] lg:-translate-x-[10%]">
             <img
-              src={phoneAsset.url}
+              src={phoneAsset}
               alt="Мокап приложения HELLHOUND"
               width={1024}
               height={1024}
