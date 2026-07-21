@@ -76,6 +76,21 @@ export function Hero() {
       {/* DESKTOP-сцена: Ваня прижат к правому краю viewport'а, облако — на фиксированном
           расстоянии от него через clamp(). Пропорции сохраняются на любом мониторе. */}
       <div className="pointer-events-none absolute inset-0 z-10 hidden lg:block">
+        {/* Левый текст */}
+        <div
+          className="pointer-events-auto absolute left-0 top-1/2 z-20 flex -translate-y-1/2 flex-col px-6 md:px-12"
+          style={{ maxWidth: "clamp(320px, 30vw, 520px)" }}
+        >
+          <h1 className="font-display text-5xl font-black uppercase leading-[0.95] tracking-tight text-foreground xl:text-6xl">
+            HELLHOUND
+            <br />
+            <span className="text-primary">Racing</span> Club
+          </h1>
+          <p className="mt-5 max-w-[36ch] text-base leading-relaxed text-muted-foreground xl:text-lg">
+            Мерч, Race Pass, гараж и розыгрыши. Hell AI — механик по твоему мото, уровни райдера и приватный контент Hell.
+          </p>
+        </div>
+
         {/* Ваня */}
         <div
           className="absolute right-0"
@@ -120,8 +135,28 @@ export function Hero() {
 
       {/* MOBILE / TABLET — вертикальный стек */}
       <div className="relative mx-auto grid w-full max-w-7xl grid-cols-1 items-end gap-8 lg:hidden">
+        {/* Заголовок и описание */}
+        <div className="relative z-20 order-1 px-6 pt-8 text-center sm:pt-12">
+          <h1 className="font-display text-4xl font-black uppercase leading-[0.95] tracking-tight text-foreground sm:text-5xl">
+            HELLHOUND
+            <br />
+            <span className="text-primary">Racing</span> Club
+          </h1>
+          <p className="mx-auto mt-4 max-w-[36ch] text-sm leading-relaxed text-muted-foreground sm:text-base">
+            Мерч, Race Pass, гараж и розыгрыши. Hell AI — механик по твоему мото, уровни райдера и приватный контент Hell.
+          </p>
+        </div>
+
+        <div className="relative order-2 flex justify-center">
+          <img
+            src={vanyaAsset.url}
+            alt="Ваня — HELLHOUND Racing"
+            className="relative z-10 h-auto w-[380px] max-w-full object-contain drop-shadow-[0_20px_40px_rgba(0,0,0,0.6)] sm:w-[460px]"
+          />
+        </div>
+
         {raffle ? (
-          <div className="relative z-20 order-2">
+          <div className="relative z-20 order-3">
             <RaffleCloud
               image={image}
               href={raffleHref}
@@ -132,14 +167,6 @@ export function Hero() {
             />
           </div>
         ) : null}
-
-        <div className="relative order-1 flex justify-center">
-          <img
-            src={vanyaAsset.url}
-            alt="Ваня — HELLHOUND Racing"
-            className="relative z-10 h-auto w-[380px] max-w-full object-contain drop-shadow-[0_20px_40px_rgba(0,0,0,0.6)] sm:w-[460px]"
-          />
-        </div>
       </div>
     </section>
   );
