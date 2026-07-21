@@ -130,7 +130,7 @@ function Index() {
 
             <div className="flex flex-col items-end gap-2 lg:flex-row lg:items-end">
               {/* Ваня слева — крупный, прижат к левой границе сайта */}
-              <div className="relative hidden shrink-0 lg:block lg:w-[45%]">
+              <div className="relative hidden shrink-0 lg:block lg:w-[55%]">
                 <img
                   src={vanyaBike}
                   alt="Ваня — HELLHOUND Racing"
@@ -142,7 +142,7 @@ function Index() {
               </div>
 
               {/* Товары справа — 3 в ряд на десктопе */}
-              <div className="w-full px-6 lg:w-[55%] lg:pl-2 lg:pr-6">
+              <div className="w-full px-6 lg:w-[45%] lg:pl-2 lg:pr-6">
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                   {showcaseItems.map((p) => {
                     const sold = p.stock !== null && p.stock <= 0;
