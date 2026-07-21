@@ -301,6 +301,29 @@
         <span class="sys"><span class="led"></span>Запуск системы</span>
       </div>
     </div>
+    <script>
+      // В Lovable preview/iframe boot-сплэш может залипать из-за кеша/HMR iframe.
+      // Скрываем его сразу в редакторе, не трогая прод и PWA.
+      (function () {
+        try {
+          var h = location.hostname;
+          var inIframe = window.self !== window.top;
+          var isLovablePreview =
+            h.indexOf("id-preview--") === 0 ||
+            h.indexOf("preview--") === 0 ||
+            h === "lovableproject.com" ||
+            h.endsWith(".lovableproject.com") ||
+            h === "lovableproject-dev.com" ||
+            h.endsWith(".lovableproject-dev.com") ||
+            h === "beta.lovable.dev" ||
+            h.endsWith(".beta.lovable.dev");
+          if (inIframe || isLovablePreview) {
+            var b = document.getElementById("hh-boot");
+            if (b) b.parentNode.removeChild(b);
+          }
+        } catch (e) {}
+      })();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
