@@ -110,9 +110,9 @@ export function orderConfirmedTemplate(opts: {
     ticketsBonus > 0
       ? `
         <tr><td style="padding:0 32px 24px;">
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#1a0a14;border:1px solid #ff2d95;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#1a0a14;border:1px solid #f000c0;">
             <tr><td style="padding:14px 18px;">
-              <div style="font-family:'SFMono-Regular',Menlo,Consolas,monospace;font-size:11px;letter-spacing:0.16em;color:#ff2d95;text-transform:uppercase;margin-bottom:4px;">
+              <div style="font-family:'SFMono-Regular',Menlo,Consolas,monospace;font-size:11px;letter-spacing:0.16em;color:#f000c0;text-transform:uppercase;margin-bottom:4px;">
                 Бонус
               </div>
               <div style="font-family:'Arial Black',Impact,sans-serif;font-style:italic;font-weight:900;font-size:20px;color:#fff;text-transform:uppercase;">
@@ -140,7 +140,7 @@ export function orderConfirmedTemplate(opts: {
 
         <tr><td style="padding:32px 32px 8px;">
           <div style="font-family:'Arial Black',Impact,sans-serif;font-style:italic;font-weight:900;font-size:28px;letter-spacing:0.04em;color:#fff;text-transform:uppercase;">
-            HELL<span style="color:#ff2d95;">HOUND</span> RACING
+            HELL<span style="color:#f000c0;">HOUND</span> RACING
           </div>
           <div style="font-family:'SFMono-Regular',Menlo,Consolas,monospace;font-size:11px;letter-spacing:0.22em;color:#777;text-transform:uppercase;margin-top:6px;">
             Заказ ${escapeHtml(orderNumber)}
@@ -176,7 +176,7 @@ export function orderConfirmedTemplate(opts: {
 
         <tr><td style="padding:24px 32px 28px;">
           <table role="presentation" cellpadding="0" cellspacing="0" border="0">
-            <tr><td bgcolor="#ff2d95" style="background:#ff2d95;">
+            <tr><td bgcolor="#f000c0" style="background:#f000c0;">
               <a href="${orderUrl}" target="_blank"
                  style="display:inline-block;padding:18px 36px;font-family:'Arial Black',Impact,sans-serif;font-style:italic;font-weight:900;font-size:16px;letter-spacing:0.14em;color:#fff;text-decoration:none;text-transform:uppercase;">
                 Открыть заказ
@@ -196,8 +196,8 @@ export function orderConfirmedTemplate(opts: {
           <p style="margin:0;font-size:13px;line-height:1.55;color:#999;">
             ${
               isDigital
-                ? `Все покупки и ссылки на скачивание — в личном кабинете на <a href="https://hhr.pro/club/orders" style="color:#ff2d95;text-decoration:none;">hhr.pro/club/orders</a>.`
-                : `Статус, трек-номер СДЭК и история заказов — в личном кабинете на <a href="https://hhr.pro/club/orders" style="color:#ff2d95;text-decoration:none;">hhr.pro/club/orders</a>.`
+                ? `Все покупки и ссылки на скачивание — в личном кабинете на <a href="https://hhr.pro/club/orders" style="color:#f000c0;text-decoration:none;">hhr.pro/club/orders</a>.`
+                : `Статус, трек-номер СДЭК и история заказов — в личном кабинете на <a href="https://hhr.pro/club/orders" style="color:#f000c0;text-decoration:none;">hhr.pro/club/orders</a>.`
             }
           </p>
         </td></tr>

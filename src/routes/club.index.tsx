@@ -224,7 +224,7 @@ export const PostCard = memo(function PostCard({ post, moderate = false }: { pos
               background:
                 "linear-gradient(155deg, oklch(0.22 0.09 357.3 / 0.55) 0%, oklch(0.16 0.05 357.3 / 0.45) 38%, oklch(0.14 0.01 280 / 0.6) 100%)",
               boxShadow:
-                "0 8px 40px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.04), 0 0 32px -8px rgba(255,45,149,0.35)",
+                "0 8px 40px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.04), 0 0 32px -8px rgba(240,0,192,0.35)",
             }
           : {
               background:
@@ -1119,7 +1119,7 @@ function CommentsSheet({
           )}
           <style>{`
             @keyframes comment-highlight {
-              0%   { background-color: rgba(255,45,149,0.18); }
+              0%   { background-color: rgba(240,0,192,0.18); }
               100% { background-color: transparent; }
             }
             @keyframes comment-flyin {

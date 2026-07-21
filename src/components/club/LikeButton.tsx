@@ -172,7 +172,7 @@ export function LikeButton({ liked, count, onToggle, onReact }: Props) {
         aria-pressed={liked}
         className={`relative inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 font-mono text-[12px] font-bold tabular-nums select-none transition-colors active:scale-95 ${
           liked
-            ? "bg-primary text-primary-foreground shadow-[0_4px_14px_rgba(255,45,149,0.35)]"
+            ? "bg-primary text-primary-foreground shadow-[0_4px_14px_rgba(240,0,192,0.35)]"
             : "border border-white/[0.08] bg-white/[0.04] text-foreground hover:border-primary/40 hover:text-primary"
         }`}
         style={{
@@ -207,7 +207,7 @@ export function LikeButton({ liked, count, onToggle, onReact }: Props) {
                     // @ts-expect-error custom CSS vars
                     "--dx": `${(i - 1) * 14}px`,
                     animation: `like-float 900ms ${i * 60}ms ease-out forwards`,
-                    textShadow: "0 2px 6px rgba(255,45,149,0.5)",
+                    textShadow: "0 2px 6px rgba(240,0,192,0.5)",
                   }}
                 >
                   {t}

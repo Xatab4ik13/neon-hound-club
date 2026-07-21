@@ -39,7 +39,7 @@ export function ReactionsBar({ postId }: Props) {
             aria-pressed={isMine}
             className={`inline-flex h-7 items-center gap-1 rounded-full border px-2 font-mono text-[11px] font-bold tabular-nums transition-all active:scale-90 ${
               isMine
-                ? "border-primary/60 bg-primary/15 text-primary shadow-[0_2px_8px_rgba(255,45,149,0.25)]"
+                ? "border-primary/60 bg-primary/15 text-primary shadow-[0_2px_8px_rgba(240,0,192,0.25)]"
                 : "border-white/[0.08] bg-white/[0.04] text-foreground/85 hover:border-white/15"
             }`}
             style={{
