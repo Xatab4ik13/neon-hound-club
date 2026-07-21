@@ -8,7 +8,7 @@ import heroBgAsset from "@/assets/hero-bg-new.jpg.asset.json";
 import vanyaAsset from "@/assets/vanya-presenter.png.asset.json";
 
 /**
- * Hero — HELLONAUND Racing Club.
+ * Hero — HELLHOUND Racing Club.
  * Композиция: Ваня (PNG) слева показывает на плашку активного розыгрыша справа.
  * Плашка — «облако» (несимметричный blob), сверху лейбл, посередине картинка приза,
  * снизу таймер без рамок и отдельная кнопка "Участвовать".
@@ -74,7 +74,7 @@ export function Hero() {
       />
 
       {/* DESKTOP-сцена: Ваня прижат к правому краю viewport'а, облако — на фиксированном
-          расстоянии от него через clamp(). Пропорции сохрандятся на любом мониторе. */}
+          расстоянии от него через clamp(). Пропорции сохраняются на любом мониторе. */}
       <div className="pointer-events-none absolute inset-0 z-10 hidden lg:block">
         {/* Ваня */}
         <div
