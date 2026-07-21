@@ -333,11 +333,12 @@ function RaffleCloud({
             {i < 3 ? (
               <span
                 aria-hidden
-                className={`leading-none text-primary ${
-                  compact ? "text-xl" : "text-[42px]"
+                className={`flex flex-col justify-center gap-1 ${
+                  compact ? "h-4 px-0.5" : "h-10 px-1"
                 }`}
               >
-                :
+                <span className={`rounded-full bg-primary ${compact ? "h-1 w-1" : "h-2 w-2"}`} />
+                <span className={`rounded-full bg-primary ${compact ? "h-1 w-1" : "h-2 w-2"}`} />
               </span>
             ) : null}
           </div>
