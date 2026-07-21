@@ -133,7 +133,7 @@ export function Hero() {
             <div
               className="pointer-events-none absolute z-30"
               style={{
-                top: "-18%",
+                top: "calc(-18% - 3cm)",
                 right: "12%",
                 width: "clamp(200px, 20vw, 320px)",
               }}
