@@ -126,6 +126,29 @@ export function Hero() {
                 "linear-gradient(to bottom, black 0%, black 78%, transparent 100%)",
             }}
           />
+
+          {/* Бабл из комикса над шлемом Вани */}
+          {raffle ? (
+            <div
+              className="pointer-events-none absolute z-30 -translate-y-[8%]"
+              style={{
+                top: "0",
+                right: "5%",
+                width: "clamp(180px, 16vw, 260px)",
+              }}
+            >
+              <div className="relative rounded-2xl border-2 border-black bg-white px-4 py-3 shadow-[4px_4px_0_0_rgba(0,0,0,1)]">
+                <p className="text-center font-display text-sm font-black uppercase leading-tight tracking-wide text-black sm:text-base">
+                  Залетай в розыгрыш
+                </p>
+                {/* Хвостик бабла */}
+                <span
+                  aria-hidden
+                  className="absolute -bottom-2 right-8 h-4 w-4 rotate-45 border-b-2 border-r-2 border-black bg-white"
+                />
+              </div>
+            </div>
+          ) : null}
         </div>
 
         {/* Плашка розыгрыша — позиционируется от правого края, чтобы держать
