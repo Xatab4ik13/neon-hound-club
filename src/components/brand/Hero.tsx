@@ -82,7 +82,7 @@ export function Hero() {
       <div className="pointer-events-none absolute inset-0 z-10 hidden lg:block">
         {/* Левый текст — опущен, верх HELLHOUND на уровне лейбла «Активный розыгрыш» */}
         <div
-          className="pointer-events-auto absolute left-0 top-[16%] z-20 flex flex-col px-6 md:px-12"
+          className="pointer-events-auto absolute left-0 top-[calc(16%+1cm)] z-20 flex flex-col px-6 md:px-12"
           style={{ maxWidth: "clamp(360px, 34vw, 600px)" }}
         >
           <h1 className="font-display text-7xl font-black uppercase leading-[0.88] tracking-tight xl:text-9xl">
