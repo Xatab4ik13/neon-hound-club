@@ -8,7 +8,7 @@ import heroBgAsset from "@/assets/hero-bg-new.jpg.asset.json";
 import vanyaAsset from "@/assets/vanya-presenter.png.asset.json";
 
 /**
- * Hero — HELLHOUND Racing Club.
+ * Hero — HELLONAUND Racing Club.
  * Композиция: Ваня (PNG) слева показывает на плашку активного розыгрыша справа.
  * Плашка — «облако» (несимметричный blob), сверху лейбл, посередине картинка приза,
  * снизу таймер без рамок и отдельная кнопка "Участвовать".
@@ -74,7 +74,7 @@ export function Hero() {
       />
 
       {/* DESKTOP-сцена: Ваня прижат к правому краю viewport'а, облако — на фиксированном
-          расстоянии от него через clamp(). Пропорции сохраняются на любом мониторе. */}
+          расстоянии от него через clamp(). Пропорции сохрандятся на любом мониторе. */}
       <div className="pointer-events-none absolute inset-0 z-10 hidden lg:block">
         {/* Ваня */}
         <div
@@ -83,7 +83,23 @@ export function Hero() {
             bottom: "clamp(calc(60px + 3cm), calc(8vh + 3cm), calc(120px + 3cm))",
             width: "clamp(440px, 34vw, 640px)",
           }}
-...
+        >
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-4 bottom-0 h-1/2 rounded-full bg-primary/25 blur-3xl"
+          />
+          <img
+            src={vanyaAsset.url}
+            alt="Ваня — HELLHOUND Racing"
+            className="relative z-10 h-auto w-full object-contain drop-shadow-[0_20px_40px_rgba(0,0,0,0.6)]"
+          />
+        </div>
+
+        {/* Облако розыгрыша — позиционируется от правого края, чтобы держать
+            фиксированное расстояние до Вани */}
+        {raffle ? (
+          <div
+            className="pointer-events-auto absolute z-20"
             style={{
               right: "clamp(200px, 16vw, 310px)",
               bottom: "clamp(calc(190px + 3cm), calc(25vh + 3cm), calc(340px + 3cm))",
@@ -125,8 +141,6 @@ export function Hero() {
           />
         </div>
       </div>
-
-
     </section>
   );
 }
@@ -177,8 +191,6 @@ function RaffleCloud({
         />
       </Link>
 
-
-
       {/* Таймер — прозрачный, без рамок */}
       <div className="mt-6 flex items-end justify-center gap-4 sm:gap-6">
         {[
@@ -207,7 +219,6 @@ function RaffleCloud({
           </div>
         ))}
       </div>
-
     </div>
   );
 }
