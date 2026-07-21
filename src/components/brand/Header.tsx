@@ -97,9 +97,15 @@ export function Header() {
             type="button"
             aria-label={menuOpen ? "Закрыть меню" : "Меню"}
             onClick={() => setMenuOpen((v) => !v)}
-            className="relative z-[70] hidden h-14 w-16 items-center justify-center text-foreground md:inline-flex"
+            className="relative z-[70] hidden h-14 w-16 items-center justify-center md:inline-flex"
           >
-            <PlumpMenu className="h-9 w-9" />
+            <PlumpMenu
+              className={`h-9 w-9 transition-transform duration-200 ease-out ${
+                menuOpen
+                  ? "rotate-90 scale-110 text-primary"
+                  : "text-foreground"
+              }`}
+            />
           </button>
 
 
@@ -211,7 +217,11 @@ export function Header() {
             className="relative z-[70] ml-auto flex h-14 w-16 items-center justify-center text-primary md:hidden"
           >
             <span className="sr-only">Меню</span>
-            <PlumpMenu className="h-9 w-9" />
+            <PlumpMenu
+              className={`h-9 w-9 transition-transform duration-200 ease-out ${
+                menuOpen ? "rotate-90 scale-110" : "rotate-0 scale-100"
+              }`}
+            />
           </button>
 
 
@@ -281,8 +291,8 @@ function DesktopPlatesMenu({
                 <span
                   className={`font-display text-[26px] italic font-black uppercase leading-none tracking-tight text-center transition-colors duration-150 ease-out ${
                     isActive
-                      ? "text-primary-foreground"
-                      : "text-foreground group-hover:text-primary-foreground"
+                      ? "text-black"
+                      : "text-foreground group-hover:text-black"
                   }`}
                 >
                   {item.label}
