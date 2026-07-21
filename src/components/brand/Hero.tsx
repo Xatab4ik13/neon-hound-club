@@ -81,7 +81,7 @@ export function Hero() {
       {/* DESKTOP-сцена: Ваня прижат к правому краю viewport'а, облако — на фиксированном
           расстоянии от него через clamp(). Пропорции сохраняются на любом мониторе. */}
       <div className="pointer-events-none absolute inset-0 z-10 hidden lg:block">
-        {/* Левый текст — опущен, верх HELLHOUND на уровне лейбла «Активный розыгрыш» */}
+        {/* Левый текст — опущен */}
         <div
           className="pointer-events-auto absolute left-0 top-[calc(16%+1cm)] z-20 flex flex-col px-6 md:px-12"
           style={{ maxWidth: "clamp(360px, 34vw, 600px)" }}
@@ -132,14 +132,15 @@ export function Hero() {
         </div>
 
         {/* Облако розыгрыша — позиционируется от правого края, чтобы держать
-            фиксированное расстояние до Вани */}
+            фиксированное расстояние до Вани. Размер чуть увеличен, но не выше
+            размера картинки приза. */}
         {raffle ? (
           <div
             className="pointer-events-auto absolute z-20"
             style={{
               right: "clamp(200px, 16vw, 310px)",
               bottom: "clamp(calc(190px + 3cm), calc(25vh + 3cm), calc(340px + 3cm))",
-              width: "clamp(340px, 26vw, 460px)",
+              width: "clamp(360px, 28vw, 480px)",
             }}
           >
             <RaffleCloud
@@ -221,13 +222,6 @@ function RaffleCloud({
 }) {
   return (
     <div className="relative mx-auto max-w-md">
-      {/* Лейбл сверху — в цвет пунктов меню (скрыт в компактной мобильной раскладке) */}
-      {!compact && (
-        <div className="mb-4 text-center font-display text-sm font-bold uppercase tracking-[0.3em] text-muted-foreground sm:text-base">
-          Активный розыгрыш
-        </div>
-      )}
-
       {/* Облако с картинкой приза (cover — заполняет всё облако) */}
       <Link
         to={href}
