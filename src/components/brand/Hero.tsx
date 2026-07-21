@@ -156,8 +156,8 @@ export function Hero() {
 
       {/* MOBILE / TABLET — вертикальный стек */}
       <div className="relative mx-auto grid w-full max-w-7xl grid-cols-1 items-end gap-8 lg:hidden">
-        {/* Заголовок и описание */}
-        <div className="relative z-20 order-1 flex flex-col items-center px-6 pt-6 text-center sm:pt-10">
+        {/* Заголовок и описание — опущены вниз, чтобы логотип в шапке не перекрывал */}
+        <div className="relative z-20 order-1 flex flex-col items-center px-6 pt-24 text-center sm:pt-32">
           <h1 className="font-display text-6xl font-black uppercase leading-[0.88] tracking-tight text-foreground sm:text-7xl">
             <span className="text-primary">HELLHOUND</span>
             <br />
@@ -166,48 +166,37 @@ export function Hero() {
           <p className="mx-auto mt-5 max-w-[38ch] text-lg font-semibold uppercase leading-snug tracking-[0.18em] text-foreground/70 sm:text-xl">
             Создано теми, кто едет
           </p>
-          <Link
-            to={isAuthed ? "/club" : "/login"}
-            className="group relative mt-6 inline-flex items-center overflow-hidden bg-primary px-10 py-4 font-display text-lg font-black uppercase italic tracking-widest text-black shadow-[0_0_40px_-12px_hsl(var(--primary)/0.55)] transition-all duration-300 hover:scale-[1.03] hover:shadow-[0_0_55px_-8px_hsl(var(--primary)/0.75)] active:scale-[0.97]"
-            style={{ clipPath: "polygon(0 15%, 100% 0, 100% 100%, 0 85%)" }}
-          >
-            <span
-              aria-hidden
-              className="absolute inset-0 bg-white opacity-0 transition-opacity group-hover:opacity-10"
-            />
-            <span className="relative z-10 inline-flex items-center justify-center gap-3">
-              Вступить в клуб
-              <PlumpArrowRight className="h-5 w-5" />
-            </span>
-          </Link>
         </div>
 
-        <div className="relative order-2 flex justify-center">
-          <img
-            src={vanyaAsset.url}
-            alt="Ваня — HELLHOUND Racing"
-            className="relative z-10 h-auto w-[380px] max-w-full object-contain drop-shadow-[0_20px_40px_rgba(0,0,0,0.6)] sm:w-[460px]"
-            style={{
-              WebkitMaskImage:
-                "linear-gradient(to bottom, black 0%, black 80%, transparent 100%)",
-              maskImage:
-                "linear-gradient(to bottom, black 0%, black 80%, transparent 100%)",
-            }}
-          />
-        </div>
-
-        {raffle ? (
-          <div className="relative z-20 order-3">
-            <RaffleCloud
-              image={image}
-              href={raffleHref}
-              days={days}
-              hours={hours}
-              minutes={minutes}
-              seconds={seconds}
+        {/* Ваня + розыгрыш в одну линию */}
+        <div className="relative order-2 flex items-end justify-center gap-3 px-4 sm:gap-6">
+          {raffle ? (
+            <div className="relative z-20 w-1/2 max-w-[260px] pb-4">
+              <RaffleCloud
+                image={image}
+                href={raffleHref}
+                days={days}
+                hours={hours}
+                minutes={minutes}
+                seconds={seconds}
+                compact
+              />
+            </div>
+          ) : null}
+          <div className="relative w-1/2 max-w-[260px]">
+            <img
+              src={vanyaAsset.url}
+              alt="Ваня — HELLHOUND Racing"
+              className="relative z-10 h-auto w-full object-contain drop-shadow-[0_20px_40px_rgba(0,0,0,0.6)]"
+              style={{
+                WebkitMaskImage:
+                  "linear-gradient(to bottom, black 0%, black 80%, transparent 100%)",
+                maskImage:
+                  "linear-gradient(to bottom, black 0%, black 80%, transparent 100%)",
+              }}
             />
           </div>
-        ) : null}
+        </div>
       </div>
     </section>
   );
