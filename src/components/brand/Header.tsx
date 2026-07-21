@@ -1,7 +1,7 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import hhrLogo from "@/assets/hhr-logo.png.asset.json";
-import { PlumpCart } from "@/components/ui/icons";
+import { PlumpCart, PlumpMenu } from "@/components/ui/icons";
 
 import {
   DropdownMenu,
@@ -75,34 +75,17 @@ export function Header() {
       >
 
         <div className="relative flex h-20 w-full items-center justify-between pl-4 pr-4 md:pl-6 md:pr-8">
-          {/* Desktop nav — left edge */}
-          <div className="hidden items-center gap-1 md:flex">
-            {NAV.map((item) => {
-              const isActive =
-                pathname === item.href || pathname.startsWith(item.href + "/");
-              return (
-                <Link
-                  key={item.label}
-                  to={item.href}
-                  className={`group relative px-2 py-2.5 text-[15px] font-bold uppercase tracking-[0.16em] transition-colors duration-300 ${
-                    isActive
-                      ? "text-primary"
-                      : "text-foreground hover:text-primary"
-                  }`}
-                >
-                  <span className="relative z-10">{item.label}</span>
-                  <span
-                    aria-hidden
-                    className={`absolute inset-0 rounded-full transition-all duration-300 ${
-                      isActive
-                        ? "scale-100 bg-primary/10 opacity-100"
-                        : "scale-95 bg-white/5 opacity-0 group-hover:scale-100 group-hover:opacity-100"
-                    }`}
-                  />
-                </Link>
-              );
-            })}
-          </div>
+          {/* Desktop burger — replaces text nav */}
+          <button
+            type="button"
+            onClick={() => setMenuOpen(true)}
+            aria-label="Открыть меню"
+            aria-expanded={menuOpen}
+            className="group relative hidden h-11 w-11 items-center justify-center border border-primary/40 text-foreground transition-colors hover:border-primary hover:text-primary md:inline-flex"
+          >
+            <PlumpMenu className="h-6 w-6" />
+          </button>
+
 
           {/* Centered logo — anchored to header top so it only overflows below */}
           <Link
@@ -200,15 +183,12 @@ export function Header() {
             onClick={() => setMenuOpen(true)}
             aria-label="Открыть меню"
             aria-expanded={menuOpen}
-            className="group relative ml-auto flex h-11 w-11 items-center justify-center border border-primary/40 transition-colors hover:border-primary md:hidden"
+            className="group relative ml-auto flex h-11 w-11 items-center justify-center border border-primary/40 text-primary transition-colors hover:border-primary md:hidden"
           >
             <span className="sr-only">Меню</span>
-            <span aria-hidden className="flex flex-col items-center justify-center gap-[5px]">
-              <span className="block h-[2px] w-5 bg-primary transition-transform" />
-              <span className="block h-[2px] w-5 bg-primary transition-transform" />
-              <span className="block h-[2px] w-3 self-end bg-primary transition-transform" />
-            </span>
+            <PlumpMenu className="h-6 w-6" />
           </button>
+
 
         </div>
       </nav>
@@ -243,8 +223,9 @@ function MobileMenu({
       role="dialog"
       aria-modal="true"
       aria-hidden={!open}
-      className={`fixed inset-0 z-[60] md:hidden ${open ? "pointer-events-auto" : "pointer-events-none"}`}
+      className={`fixed inset-0 z-[60] ${open ? "pointer-events-auto" : "pointer-events-none"}`}
     >
+
       {/* Backdrop */}
       <div
         onClick={onClose}
