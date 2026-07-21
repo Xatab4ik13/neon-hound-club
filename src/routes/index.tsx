@@ -1,5 +1,44 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { PlumpArrowRight } from "@/components/ui/icons";
+import {
+  PlumpArrowRight,
+  PlumpNumber0,
+  PlumpNumber1,
+  PlumpNumber2,
+  PlumpNumber3,
+  PlumpNumber4,
+  PlumpNumber5,
+  PlumpNumber6,
+  PlumpNumber7,
+  PlumpNumber8,
+  PlumpNumber9,
+} from "@/components/ui/icons";
+
+const PRICE_DIGIT_ICONS = [
+  PlumpNumber0,
+  PlumpNumber1,
+  PlumpNumber2,
+  PlumpNumber3,
+  PlumpNumber4,
+  PlumpNumber5,
+  PlumpNumber6,
+  PlumpNumber7,
+  PlumpNumber8,
+  PlumpNumber9,
+];
+
+function PlumpPrice({ value, size = 22 }: { value: number; size?: number }) {
+  const digits = Math.round(value).toString().split("");
+  return (
+    <span className="inline-flex items-center leading-none" aria-label={`${value} ₽`}>
+      {digits.map((d, i) => {
+        if (d === " ") return <span key={i} style={{ width: size * 0.25 }} />;
+        const Icon = PRICE_DIGIT_ICONS[Number(d)];
+        return <Icon key={i} size={size} />;
+      })}
+      <span className="ml-1 font-mono text-sm">₽</span>
+    </span>
+  );
+}
 import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { Header } from "@/components/brand/Header";
@@ -182,7 +221,7 @@ function Index() {
                         <div className="px-1 pb-1">
                           <div className="mb-1 flex items-baseline justify-between gap-2 text-sm font-medium uppercase">
                             <span>{p.title}</span>
-                            <span className="font-mono">{p.priceRub.toLocaleString("ru-RU")} ₽</span>
+                            <PlumpPrice value={p.priceRub} />
                           </div>
                           <div className={`text-[10px] uppercase tracking-widest ${statusColor}`}>
                             {statusLabel}
