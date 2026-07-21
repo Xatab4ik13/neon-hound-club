@@ -137,7 +137,7 @@ function Index() {
                   width={1024}
                   height={768}
                   loading="lazy"
-                  className="h-auto w-full translate-x-[-5cm] translate-y-[3cm] object-contain"
+                  className="h-auto w-full translate-x-[-5cm] translate-y-[4cm] object-contain"
                 />
               </div>
 
