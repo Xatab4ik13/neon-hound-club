@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useViewer } from "@/hooks/use-viewer";
 import { fetchHomeRaffles, type HomeRaffleItem } from "@/lib/queries";
 import pinkR6 from "@/assets/pink-r6.jpg";
-import heroBg from "@/assets/hero-bg.jpg";
+import heroBgAsset from "@/assets/hero-bg-new.jpg.asset.json";
 import vanyaAsset from "@/assets/vanya-presenter.png.asset.json";
 
 /**
@@ -57,7 +57,7 @@ export function Hero() {
     <section className="relative -mt-20 flex min-h-[100svh] items-center overflow-hidden px-6 pb-20 pt-32 md:px-12 md:pb-28 md:pt-36">
       {/* BG image */}
       <img
-        src={heroBg}
+        src={heroBgAsset.url}
         alt=""
         aria-hidden
         width={1920}
