@@ -287,9 +287,9 @@ function DesktopPlatesMenu({
                 className="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
                 style={{ background: "hsl(var(--primary) / 0.35)" }}
               />
-              <div className="absolute inset-y-0 left-6 flex items-center">
+              <div className="absolute inset-0 flex items-center justify-center px-4">
                 <span
-                  className={`font-display text-[26px] italic font-black uppercase leading-none tracking-tight transition-colors duration-300 ${
+                  className={`font-display text-[26px] italic font-black uppercase leading-none tracking-tight text-center transition-colors duration-300 ${
                     isActive
                       ? "text-primary"
                       : "text-foreground group-hover:text-primary"
