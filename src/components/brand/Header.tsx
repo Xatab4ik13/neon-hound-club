@@ -248,61 +248,51 @@ function DesktopPlatesMenu({
       {/* Click-catcher (no dim, no blur — plates float over the site) */}
       <div onClick={onClose} className="absolute inset-0" />
 
-      {/* Plates row */}
-      <div className="pointer-events-none absolute inset-0 flex items-center justify-center px-8 pt-24">
-        <div className="grid w-full max-w-[1400px] grid-cols-5 gap-5">
-          {NAV.map((item, i) => {
-            const isActive =
-              pathname === item.href || pathname.startsWith(item.href + "/");
-            const bg = NAV_IMAGES[item.href];
-            return (
-              <Link
-                key={item.href}
-                to={item.href}
-                onClick={onClose}
-                className={`group pointer-events-auto relative block aspect-[3/5] overflow-hidden rounded-3xl shadow-2xl shadow-black/50 transition-all duration-500 ${
-                  open
-                    ? "translate-y-0 opacity-100"
-                    : "translate-y-16 opacity-0"
-                }`}
-                style={{
-                  transitionDelay: open ? `${i * 90}ms` : "0ms",
-                  transitionTimingFunction: "cubic-bezier(0.16,1,0.3,1)",
-                }}
-              >
-                <img
-                  src={bg}
-                  alt=""
-                  loading="lazy"
-                  className="absolute inset-0 h-full w-full object-cover brightness-[0.55] transition-all duration-700 group-hover:scale-105 group-hover:brightness-90"
-                />
-                <div
-                  aria-hidden
-                  className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent"
-                />
-                <div
-                  aria-hidden
-                  className="absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100"
-                  style={{
-                    background:
-                      "linear-gradient(180deg, transparent 40%, hsl(var(--primary) / 0.35) 100%)",
-                  }}
-                />
-                <div className="absolute inset-x-6 bottom-8">
-                  <span
-                    className={`font-display text-[34px] italic font-bold uppercase leading-[0.95] tracking-tight transition-colors duration-300 ${
-                      isActive
-                        ? "text-primary"
-                        : "text-white group-hover:text-primary"
-                    }`}
-                  >
-                    {item.label}
-                  </span>
-                </div>
-              </Link>
-            );
-          })}
-        </div>
+      {/* Plates column — vertical stack from the left */}
+      <div className="pointer-events-none absolute inset-y-0 left-0 flex flex-col justify-start gap-4 px-6 pt-24 pb-8">
+        {NAV.map((item, i) => {
+          const isActive =
+            pathname === item.href || pathname.startsWith(item.href + "/");
+          const bg = NAV_IMAGES[item.href];
+          return (
+            <Link
+              key={item.href}
+              to={item.href}
+              onClick={onClose}
+              className={`group pointer-events-auto relative block h-[72px] w-[340px] overflow-hidden rounded-2xl border-2 border-white shadow-xl shadow-black/50 transition-all duration-500 ${
+                open
+                  ? "translate-x-0 opacity-100"
+                  : "-translate-x-16 opacity-0"
+              }`}
+              style={{
+                transitionDelay: open ? `${i * 80}ms` : "0ms",
+                transitionTimingFunction: "cubic-bezier(0.16,1,0.3,1)",
+              }}
+            >
+              <img
+                src={bg}
+                alt=""
+                loading="lazy"
+                className="absolute inset-0 h-full w-full object-cover brightness-[0.55] transition-all duration-700 group-hover:scale-105 group-hover:brightness-90"
+              />
+              <div
+                aria-hidden
+                className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/30 to-transparent"
+              />
+              <div className="absolute inset-y-0 left-5 flex items-center">
+                <span
+                  className={`font-display text-[22px] italic font-bold uppercase leading-none tracking-tight transition-colors duration-300 ${
+                    isActive
+                      ? "text-primary"
+                      : "text-white group-hover:text-primary"
+                  }`}
+                >
+                  {item.label}
+                </span>
+              </div>
+            </Link>
+          );
+        })}
       </div>
     </div>
   );
