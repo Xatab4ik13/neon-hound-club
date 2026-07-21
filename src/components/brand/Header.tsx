@@ -1,6 +1,7 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import hhrLogo from "@/assets/hhr-logo.png.asset.json";
+import { PlumpCart } from "@/components/ui/icons";
 
 import {
   DropdownMenu,
@@ -12,6 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useViewer } from "@/hooks/use-viewer";
 import { useCart } from "@/hooks/use-cart";
+import { useMyProfile } from "@/lib/garage-api";
 
 
 const NAV = [
@@ -23,8 +25,11 @@ const NAV = [
 ];
 
 export function Header() {
-  const { isAuthed, nick, tier, tickets, signOut, hydrated } = useViewer();
+  const { isAuthed, nick, signOut, hydrated } = useViewer();
   const cartCount = useCart().count;
+  const myProfile = useMyProfile(isAuthed);
+  const avatarUrl = myProfile.data?.avatarUrl ?? null;
+  const displayNick = myProfile.data?.nick ?? nick ?? "";
 
   const { pathname } = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -48,23 +53,8 @@ export function Header() {
   return (
     <>
       <nav className="fixed top-0 z-50 w-full border-b border-white/5 bg-background/80 backdrop-blur-md">
-        <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6 md:px-8">
-          <Link
-            to="/"
-            aria-label="HELLHOUND Racing Club"
-            className="relative flex h-full flex-shrink-0 items-center"
-          >
-            <img
-              src={hhrLogo.url}
-              alt="HELLHOUND Racing"
-              className="pointer-events-none h-[120%] w-auto"
-            />
-          </Link>
-
-
-
-
-          {/* Desktop nav */}
+        <div className="relative flex h-20 w-full items-center justify-between pl-4 pr-4 md:pl-6 md:pr-8">
+          {/* Desktop nav — left edge */}
           <div className="hidden items-center gap-1 md:flex">
             {NAV.map((item) => {
               const isActive =
@@ -73,7 +63,7 @@ export function Header() {
                 <Link
                   key={item.label}
                   to={item.href}
-                  className={`group relative px-5 py-2.5 text-[13px] font-medium uppercase tracking-[0.18em] transition-colors duration-300 ${
+                  className={`group relative px-4 py-2.5 text-[13px] font-medium uppercase tracking-[0.18em] transition-colors duration-300 ${
                     isActive
                       ? "text-primary"
                       : "text-muted-foreground hover:text-foreground"
@@ -93,55 +83,57 @@ export function Header() {
             })}
           </div>
 
+          {/* Centered logo (absolute, so nav on left stays truly left) */}
+          <Link
+            to="/"
+            aria-label="HELLHOUND Racing Club"
+            className="pointer-events-auto absolute left-1/2 top-1/2 flex h-full -translate-x-1/2 -translate-y-1/2 items-center"
+          >
+            <img
+              src={hhrLogo.url}
+              alt="HELLHOUND Racing"
+              className="pointer-events-none h-[144%] w-auto"
+            />
+          </Link>
+
           {/* Desktop cart + login */}
-          <div className="hidden items-center gap-5 md:flex">
+          <div className="hidden items-center gap-4 md:flex">
             <Link
               to="/cart"
               aria-label="Корзина"
-              className="relative text-muted-foreground transition-colors hover:text-primary"
+              className="relative grid h-10 w-10 place-items-center text-foreground transition-transform active:scale-90"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="22"
-                height="22"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-              </svg>
-              <span className="absolute -right-2 -top-1 rounded-sm bg-primary px-1 font-mono text-[10px] leading-tight text-primary-foreground">
-                {cartCount}
-              </span>
+              <PlumpCart className="h-[22px] w-[22px]" strokeWidth={1.9} />
+              {cartCount > 0 && (
+                <span className="absolute right-0.5 top-0.5 grid h-[16px] min-w-[16px] place-items-center rounded-full bg-primary px-1 font-mono text-[9px] font-bold leading-none text-primary-foreground ring-2 ring-background">
+                  {cartCount > 99 ? "99+" : cartCount}
+                </span>
+              )}
             </Link>
 
             {!hydrated ? (
-              // Заглушка пока читаем localStorage — резервируем место чтобы избежать CLS.
-              <div aria-hidden className="h-10 w-[140px]" />
+              <div aria-hidden className="h-10 w-10" />
             ) : isAuthed ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button
                     type="button"
-                    className="group flex items-center gap-2.5 rounded-full border border-primary/30 py-1 pl-1 pr-4 text-left transition-colors hover:border-primary"
+                    aria-label="Профиль"
+                    className="relative grid h-10 w-10 shrink-0 overflow-hidden rounded-full bg-primary/15 text-primary ring-2 ring-primary/40 transition-transform hover:ring-primary active:scale-95"
                   >
-                    <span
-                      aria-hidden
-                      className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/15 font-mono text-[11px] font-bold uppercase text-primary"
-                    >
-                      {nick?.slice(0, 2) ?? "—"}
-                    </span>
-                    <span className="flex flex-col leading-tight">
-                      <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-foreground">
-                        {nick}
+                    {avatarUrl ? (
+                      <img
+                        src={avatarUrl}
+                        alt=""
+                        loading="lazy"
+                        decoding="async"
+                        className="absolute inset-0 h-full w-full object-cover"
+                      />
+                    ) : (
+                      <span className="grid h-full w-full place-items-center font-mono text-[11px] font-bold uppercase text-primary">
+                        {displayNick ? displayNick.slice(0, 2) : "—"}
                       </span>
-                      <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-primary">
-                        {tier ?? ""} · {tickets} б.
-                      </span>
-                    </span>
+                    )}
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
@@ -196,8 +188,10 @@ export function Header() {
               <span className="block h-[2px] w-3 self-end bg-primary transition-transform" />
             </span>
           </button>
+
         </div>
       </nav>
+
 
       <MobileMenu
         open={menuOpen}
