@@ -292,8 +292,6 @@ function DesktopPlatesMenu({
           );
         })}
       </div>
-        })}
-      </div>
     </div>
   );
 }
