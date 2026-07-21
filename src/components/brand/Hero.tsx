@@ -134,7 +134,7 @@ export function Hero() {
               className="pointer-events-none absolute z-30"
               style={{
                 top: "calc(-18% - 4cm)",
-                right: "12%",
+                right: "calc(12% + 2cm)",
                 width: "clamp(200px, 20vw, 320px)",
               }}
             >
