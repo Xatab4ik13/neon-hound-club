@@ -126,6 +126,29 @@ export function Hero() {
                 "linear-gradient(to bottom, black 0%, black 78%, transparent 100%)",
             }}
           />
+
+          {/* Бабл из комикса над шлемом Вани */}
+          {raffle ? (
+            <div
+              className="pointer-events-none absolute z-30 -translate-y-[8%]"
+              style={{
+                top: "0",
+                right: "5%",
+                width: "clamp(180px, 16vw, 260px)",
+              }}
+            >
+              <div className="relative rounded-2xl border-2 border-black bg-white px-4 py-3 shadow-[4px_4px_0_0_rgba(0,0,0,1)]">
+                <p className="text-center font-display text-sm font-black uppercase leading-tight tracking-wide text-black sm:text-base">
+                  Залетай в розыгрыш
+                </p>
+                {/* Хвостик бабла */}
+                <span
+                  aria-hidden
+                  className="absolute -bottom-2 right-8 h-4 w-4 rotate-45 border-b-2 border-r-2 border-black bg-white"
+                />
+              </div>
+            </div>
+          ) : null}
         </div>
 
         {/* Плашка розыгрыша — позиционируется от правого края, чтобы держать
@@ -150,66 +173,6 @@ export function Hero() {
           </div>
         ) : null}
 
-        {/* Комикс-стрелка от Вани к плашке розыгрыша */}
-        {raffle ? (
-          <div
-            className="pointer-events-none absolute z-30 hidden lg:block"
-            style={{
-              right: "clamp(420px, 33vw, 600px)",
-              bottom: "clamp(calc(240px + 3cm), calc(30vh + 3cm), calc(420px + 3cm))",
-              width: "clamp(200px, 16vw, 300px)",
-            }}
-          >
-            <svg
-              viewBox="0 0 200 180"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-auto w-full"
-            >
-              {/* Жирная белая дуга */}
-              <path
-                d="M165 155 C 130 150, 80 130, 55 75"
-                stroke="white"
-                strokeWidth="14"
-                strokeLinecap="round"
-                fill="none"
-              />
-              {/* Контур дуги */}
-              <path
-                d="M165 155 C 130 150, 80 130, 55 75"
-                stroke="black"
-                strokeWidth="2"
-                strokeLinecap="round"
-                fill="none"
-              />
-              {/* Наконечник стрелки */}
-              <path
-                d="M38 82 L58 72 L62 94 Z"
-                fill="white"
-                stroke="black"
-                strokeWidth="2"
-                strokeLinejoin="round"
-              />
-            </svg>
-
-            {/* Бабл из комикса */}
-            <div
-              className="absolute left-0 top-0 -translate-x-[10%] -translate-y-[20%] rotate-[-6deg]"
-              style={{ width: "clamp(130px, 11vw, 180px)" }}
-            >
-              <div className="relative rounded-2xl border-2 border-black bg-white px-3 py-2 shadow-[4px_4px_0_0_rgba(0,0,0,1)]">
-                <p className="text-center font-display text-xs font-black uppercase leading-tight tracking-wide text-black sm:text-sm">
-                  Залетай в розыгрыш
-                </p>
-                {/* Хвостик бабла */}
-                <span
-                  aria-hidden
-                  className="absolute -bottom-2 right-6 h-4 w-4 rotate-45 border-b-2 border-r-2 border-black bg-white"
-                />
-              </div>
-            </div>
-          </div>
-        ) : null}
       </div>
 
       {/* MOBILE / TABLET — вертикальный стек */}
