@@ -113,7 +113,7 @@ export function Header() {
             <img
               src={hhrLogo.url}
               alt="HELLHOUND Racing"
-              className="pointer-events-none h-[144%] w-auto"
+              className="pointer-events-none h-[280%] w-auto md:h-[144%]"
             />
           </Link>
 
@@ -200,7 +200,7 @@ export function Header() {
             onClick={() => setMenuOpen(true)}
             aria-label="Открыть меню"
             aria-expanded={menuOpen}
-            className="group relative flex h-11 w-11 items-center justify-center border border-primary/40 transition-colors hover:border-primary md:hidden"
+            className="group relative ml-auto flex h-11 w-11 items-center justify-center border border-primary/40 transition-colors hover:border-primary md:hidden"
           >
             <span className="sr-only">Меню</span>
             <span aria-hidden className="flex flex-col items-center justify-center gap-[5px]">

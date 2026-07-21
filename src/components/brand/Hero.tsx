@@ -156,8 +156,8 @@ export function Hero() {
 
       {/* MOBILE / TABLET — вертикальный стек */}
       <div className="relative mx-auto grid w-full max-w-7xl grid-cols-1 items-end gap-8 lg:hidden">
-        {/* Заголовок и описание */}
-        <div className="relative z-20 order-1 flex flex-col items-center px-6 pt-6 text-center sm:pt-10">
+        {/* Заголовок и описание — опущены вниз, чтобы логотип в шапке не перекрывал */}
+        <div className="relative z-20 order-1 flex flex-col items-center px-6 pt-24 text-center sm:pt-32">
           <h1 className="font-display text-6xl font-black uppercase leading-[0.88] tracking-tight text-foreground sm:text-7xl">
             <span className="text-primary">HELLHOUND</span>
             <br />
@@ -166,48 +166,37 @@ export function Hero() {
           <p className="mx-auto mt-5 max-w-[38ch] text-lg font-semibold uppercase leading-snug tracking-[0.18em] text-foreground/70 sm:text-xl">
             Создано теми, кто едет
           </p>
-          <Link
-            to={isAuthed ? "/club" : "/login"}
-            className="group relative mt-6 inline-flex items-center overflow-hidden bg-primary px-10 py-4 font-display text-lg font-black uppercase italic tracking-widest text-black shadow-[0_0_40px_-12px_hsl(var(--primary)/0.55)] transition-all duration-300 hover:scale-[1.03] hover:shadow-[0_0_55px_-8px_hsl(var(--primary)/0.75)] active:scale-[0.97]"
-            style={{ clipPath: "polygon(0 15%, 100% 0, 100% 100%, 0 85%)" }}
-          >
-            <span
-              aria-hidden
-              className="absolute inset-0 bg-white opacity-0 transition-opacity group-hover:opacity-10"
-            />
-            <span className="relative z-10 inline-flex items-center justify-center gap-3">
-              Вступить в клуб
-              <PlumpArrowRight className="h-5 w-5" />
-            </span>
-          </Link>
         </div>
 
-        <div className="relative order-2 flex justify-center">
-          <img
-            src={vanyaAsset.url}
-            alt="Ваня — HELLHOUND Racing"
-            className="relative z-10 h-auto w-[380px] max-w-full object-contain drop-shadow-[0_20px_40px_rgba(0,0,0,0.6)] sm:w-[460px]"
-            style={{
-              WebkitMaskImage:
-                "linear-gradient(to bottom, black 0%, black 80%, transparent 100%)",
-              maskImage:
-                "linear-gradient(to bottom, black 0%, black 80%, transparent 100%)",
-            }}
-          />
-        </div>
-
-        {raffle ? (
-          <div className="relative z-20 order-3">
-            <RaffleCloud
-              image={image}
-              href={raffleHref}
-              days={days}
-              hours={hours}
-              minutes={minutes}
-              seconds={seconds}
+        {/* Ваня + розыгрыш в одну линию */}
+        <div className="relative order-2 flex items-end justify-center gap-3 px-4 sm:gap-6">
+          {raffle ? (
+            <div className="relative z-20 w-1/2 max-w-[260px] pb-4">
+              <RaffleCloud
+                image={image}
+                href={raffleHref}
+                days={days}
+                hours={hours}
+                minutes={minutes}
+                seconds={seconds}
+                compact
+              />
+            </div>
+          ) : null}
+          <div className="relative w-1/2 max-w-[260px]">
+            <img
+              src={vanyaAsset.url}
+              alt="Ваня — HELLHOUND Racing"
+              className="relative z-10 h-auto w-full object-contain drop-shadow-[0_20px_40px_rgba(0,0,0,0.6)]"
+              style={{
+                WebkitMaskImage:
+                  "linear-gradient(to bottom, black 0%, black 80%, transparent 100%)",
+                maskImage:
+                  "linear-gradient(to bottom, black 0%, black 80%, transparent 100%)",
+              }}
             />
           </div>
-        ) : null}
+        </div>
       </div>
     </section>
   );
@@ -220,6 +209,7 @@ function RaffleCloud({
   hours,
   minutes,
   seconds,
+  compact = false,
 }: {
   image: string;
   href: string;
@@ -227,11 +217,16 @@ function RaffleCloud({
   hours: number;
   minutes: number;
   seconds: number;
+  compact?: boolean;
 }) {
   return (
     <div className="relative mx-auto max-w-md">
       {/* Лейбл сверху — в цвет пунктов меню */}
-      <div className="mb-4 text-center font-display text-sm font-bold uppercase tracking-[0.3em] text-muted-foreground sm:text-base">
+      <div
+        className={`text-center font-display font-bold uppercase tracking-[0.3em] text-muted-foreground ${
+          compact ? "mb-2 text-[10px]" : "mb-4 text-sm sm:text-base"
+        }`}
+      >
         Активный розыгрыш
       </div>
 
@@ -247,7 +242,6 @@ function RaffleCloud({
           alt="Главный приз розыгрыша"
           className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.04]"
         />
-        {/* лёгкое магента-свечение по краю */}
         <span
           aria-hidden
           className="pointer-events-none absolute inset-0 ring-1 ring-inset ring-primary/20"
@@ -256,26 +250,43 @@ function RaffleCloud({
       </Link>
 
       {/* Таймер — прозрачный, без рамок */}
-      <div className="mt-6 flex items-end justify-center gap-4 sm:gap-6">
+      <div
+        className={`flex items-end justify-center ${
+          compact ? "mt-3 gap-1.5" : "mt-6 gap-4 sm:gap-6"
+        }`}
+      >
         {[
           { v: days, l: "дни" },
           { v: hours, l: "часы" },
           { v: minutes, l: "мин" },
           { v: seconds, l: "сек" },
         ].map((u, i) => (
-          <div key={u.l} className="flex items-end gap-4 sm:gap-6">
+          <div
+            key={u.l}
+            className={`flex items-end ${compact ? "gap-1.5" : "gap-4 sm:gap-6"}`}
+          >
             <div className="flex flex-col items-center">
-              <span className="font-display text-4xl tabular-nums leading-none text-foreground sm:text-5xl">
+              <span
+                className={`font-display tabular-nums leading-none text-foreground ${
+                  compact ? "text-lg" : "text-4xl sm:text-5xl"
+                }`}
+              >
                 {pad(u.v)}
               </span>
-              <span className="mt-2 font-mono text-[9px] uppercase tracking-[0.25em] text-muted-foreground">
+              <span
+                className={`font-mono uppercase tracking-[0.25em] text-muted-foreground ${
+                  compact ? "mt-1 text-[7px]" : "mt-2 text-[9px]"
+                }`}
+              >
                 {u.l}
               </span>
             </div>
             {i < 3 ? (
               <span
                 aria-hidden
-                className="font-display text-4xl leading-none text-primary/50 sm:text-5xl"
+                className={`font-display leading-none text-primary/50 ${
+                  compact ? "text-lg" : "text-4xl sm:text-5xl"
+                }`}
               >
                 :
               </span>
