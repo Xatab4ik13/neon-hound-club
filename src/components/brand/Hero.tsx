@@ -7,7 +7,7 @@ import { PlumpArrowRight } from "@/components/ui/icons";
 import pinkR6 from "@/assets/pink-r6.jpg";
 import heroBgAsset from "@/assets/hero-bg-new.jpg.asset.json";
 import vanyaAsset from "@/assets/vanya-presenter.png.asset.json";
-import comicBubble from "@/assets/comic-bubble-new.png.asset.json";
+import comicBubble from "@/assets/zaletay-bubble.png.asset.json";
 
 
 /**
@@ -133,9 +133,9 @@ export function Hero() {
             <div
               className="pointer-events-none absolute z-30"
               style={{
-                top: "0",
-                right: "22%",
-                width: "clamp(140px, 12vw, 200px)",
+                top: "-8%",
+                right: "38%",
+                width: "clamp(180px, 18vw, 300px)",
               }}
             >
               <img
