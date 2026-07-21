@@ -88,7 +88,7 @@ export function Hero() {
             <span className="text-foreground">Racing Club</span>
           </h1>
           <p className="mt-6 max-w-[38ch] text-xl font-semibold uppercase leading-snug tracking-[0.18em] text-foreground/70 xl:text-2xl">
-            Создано теми, кто едет.
+            Создано теми, кто едет
           </p>
         </div>
 
@@ -144,7 +144,7 @@ export function Hero() {
             <span className="text-foreground">Racing Club</span>
           </h1>
           <p className="mx-auto mt-5 max-w-[38ch] text-lg font-semibold uppercase leading-snug tracking-[0.18em] text-foreground/70 sm:text-xl">
-            Создано теми, кто едет.
+            Создано теми, кто едет
           </p>
         </div>
 
