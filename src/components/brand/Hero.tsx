@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/icons";
 import pinkR6 from "@/assets/pink-r6.jpg";
 import heroBgAsset from "@/assets/hero-bg-new.jpg.asset.json";
-import vanyaAsset from "@/assets/vanya-presenter.png.asset.json";
+import vanyaAsset from "@/assets/vanya-presenter.webp.asset.json";
 import comicBubble from "@/assets/zaletay-bubble.png.asset.json";
 
 
