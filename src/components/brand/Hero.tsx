@@ -88,8 +88,8 @@ export function Hero() {
           </div>
         ) : null}
 
-        {/* RIGHT — VANYA */}
-        <div className="relative order-1 flex justify-center lg:order-2 lg:col-span-6 lg:justify-start">
+        {/* RIGHT — VANYA, вплотную к правому краю */}
+        <div className="relative order-1 flex justify-center lg:order-2 lg:col-span-6 lg:-mr-12 lg:justify-end xl:-mr-24">
           {/* мягкое магента-свечение под Ваней */}
           <div
             aria-hidden
@@ -98,9 +98,10 @@ export function Hero() {
           <img
             src={vanyaAsset.url}
             alt="Ваня — HELLHOUND Racing"
-            className="relative z-10 h-auto w-[380px] max-w-full object-contain drop-shadow-[0_20px_40px_rgba(0,0,0,0.6)] sm:w-[460px] lg:w-[560px] xl:w-[620px]"
+            className="relative z-10 h-auto w-[380px] max-w-full object-contain drop-shadow-[0_20px_40px_rgba(0,0,0,0.6)] sm:w-[460px] lg:w-[560px] xl:w-[640px]"
           />
         </div>
+
       </div>
 
     </section>
@@ -128,12 +129,12 @@ function RaffleCloud({
 
   return (
     <div className="relative mx-auto max-w-md">
-      {/* Лейбл сверху — по центру, жирный, заглавными */}
-      <div className="mb-4 text-center font-display text-sm font-bold uppercase tracking-[0.3em] text-primary sm:text-base">
+      {/* Лейбл сверху — в цвет пунктов меню */}
+      <div className="mb-4 text-center font-display text-sm font-bold uppercase tracking-[0.3em] text-muted-foreground sm:text-base">
         Активный розыгрыш
       </div>
 
-      {/* Облако с картинкой приза (contain — видно целиком) */}
+      {/* Облако с картинкой приза (cover — заполняет всё облако) */}
       <Link
         to={href}
         aria-label="Открыть розыгрыш"
@@ -143,7 +144,7 @@ function RaffleCloud({
         <img
           src={image}
           alt="Главный приз розыгрыша"
-          className="h-full w-full object-contain p-4 transition-transform duration-700 group-hover:scale-[1.04]"
+          className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.04]"
         />
         {/* лёгкое магента-свечение по краю */}
         <span
@@ -152,6 +153,7 @@ function RaffleCloud({
           style={{ borderRadius: cloudRadius }}
         />
       </Link>
+
 
 
       {/* Таймер — прозрачный, без рамок */}
@@ -183,23 +185,6 @@ function RaffleCloud({
         ))}
       </div>
 
-      {/* Кнопка "Участвовать" — отдельная, в стиле CTA */}
-      <div className="mt-6 flex justify-center">
-        <Link
-          to={href}
-          className="group relative inline-block overflow-hidden bg-primary px-10 py-4 text-center font-display text-lg italic font-bold uppercase tracking-widest text-black transition-all duration-300 active:scale-[0.97]"
-          style={{ clipPath: "polygon(0 15%, 100% 0, 100% 100%, 0 85%)" }}
-        >
-          <span
-            aria-hidden
-            className="absolute inset-0 bg-white opacity-0 transition-opacity group-hover:opacity-10"
-          />
-          <span className="relative z-10 inline-flex items-center gap-3">
-            Участвовать
-            <span className="transition-transform group-hover:translate-x-1">→</span>
-          </span>
-        </Link>
-      </div>
     </div>
   );
 }
