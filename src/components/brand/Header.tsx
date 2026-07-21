@@ -16,7 +16,7 @@ const NAV_IMAGES: Record<string, string> = {
   "/about": navAbout,
 };
 
-const PLATE_CLIP = "polygon(0 10%, 10% 0, 100% 0, 100% 90%, 90% 100%, 0 100%)";
+
 
 import {
   DropdownMenu,
