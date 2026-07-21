@@ -3,7 +3,19 @@ import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useViewer } from "@/hooks/use-viewer";
 import { fetchHomeRaffles, type HomeRaffleItem } from "@/lib/queries";
-import { PlumpArrowRight } from "@/components/ui/icons";
+import {
+  PlumpArrowRight,
+  PlumpNumber0,
+  PlumpNumber1,
+  PlumpNumber2,
+  PlumpNumber3,
+  PlumpNumber4,
+  PlumpNumber5,
+  PlumpNumber6,
+  PlumpNumber7,
+  PlumpNumber8,
+  PlumpNumber9,
+} from "@/components/ui/icons";
 import pinkR6 from "@/assets/pink-r6.jpg";
 import heroBgAsset from "@/assets/hero-bg-new.jpg.asset.json";
 import vanyaAsset from "@/assets/vanya-presenter.png.asset.json";
