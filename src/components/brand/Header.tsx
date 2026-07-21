@@ -189,8 +189,6 @@ export function Header() {
             </span>
           </button>
 
-          {/* Mobile spacer to balance burger so absolute-centered logo stays visually centered */}
-          <div aria-hidden className="h-11 w-11 md:hidden" />
         </div>
       </nav>
 
