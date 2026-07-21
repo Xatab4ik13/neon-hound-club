@@ -44,10 +44,9 @@ import { useEffect } from "react";
 import { Header } from "@/components/brand/Header";
 import { Footer } from "@/components/brand/Footer";
 import { Hero } from "@/components/brand/Hero";
+import { AppShowcase } from "@/components/brand/AppShowcase";
 import { useViewer } from "@/hooks/use-viewer";
 import { fetchShopShowcase, qk } from "@/lib/queries";
-import { RANKS, XP_THRESHOLDS, type RankId } from "@/data/ranks";
-import { XP_SOURCES } from "@/data/xp-sources";
 import { isClubHost } from "@/lib/host";
 import pinkR6 from "@/assets/pink-r6.jpg";
 import vanyaBike from "@/assets/vanya-bike.webp";
@@ -78,41 +77,6 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
-// Подписи рангов для главной (продуктовая редактура поверх RANKS из бэка).
-const RANK_TAGLINE: Record<RankId, { tag: string; hint: string }> = {
-  "rookie":       { tag: "Старт",          hint: "сразу после регистрации" },
-  "pit-crew":     { tag: "Свой",           hint: "первая неделя активности" },
-  "road-captain": { tag: "Регуляр",        hint: "1–1.5 месяца" },
-  "alpha-hound":  { tag: "Ядро",           hint: "3–4 месяца" },
-  "hell-legend":  { tag: "Элита (≈5%)",    hint: "10–14 месяцев" },
-};
-
-// Лестница рангов — собираем из источника правды (src/data/ranks.ts).
-const RANK_LADDER = RANKS.map((r, i) => {
-  const from = XP_THRESHOLDS[i];
-  const next = XP_THRESHOLDS[i + 1];
-  return {
-    num: String(i + 1).padStart(2, "0"),
-    label: r.label,
-    accent: r.accent,
-    from,
-    rangeLabel: next
-      ? `${from.toLocaleString("ru-RU")} — ${(next - 1).toLocaleString("ru-RU")} XP`
-      : `${from.toLocaleString("ru-RU")}+ XP`,
-    tag: RANK_TAGLINE[r.id].tag,
-    hint: RANK_TAGLINE[r.id].hint,
-  };
-});
-
-// Топ-3 источника XP для главной — берём из общего справочника по id.
-const XP_HOW_IDS = ["postcard-buy", "merch-buy", "pass-platinum"] as const;
-const XP_HOW = XP_HOW_IDS.map((id) => {
-  const src = XP_SOURCES.find((s) => s.id === id)!;
-  // Для главной упрощаем: Hell Pass показываем диапазоном.
-  if (id === "pass-platinum") return { title: "Hell Pass (ежемесячно)", value: "+50…400 XP" };
-  if (id === "postcard-buy")  return { title: "Билет в розыгрыш", value: "+5 XP" };
-  return { title: src.title, value: src.xp };
-});
 
 function Index() {
   const { isAuthed } = useViewer();
@@ -238,97 +202,8 @@ function Index() {
         )}
 
 
-        {/* CLUB / HIERARCHY */}
-        <section id="club" className="px-6 py-24">
-          <div className="mx-auto max-w-7xl">
-            <div className="grid gap-16 lg:grid-cols-2">
-              {/* Лестница рангов */}
-              <div>
-                <div className="mb-3 font-mono text-xs uppercase tracking-widest text-primary">
-                  Клуб
-                </div>
-                <h2 className="mb-3 font-display text-5xl uppercase tracking-tighter">
-                  Лестница рангов
-                </h2>
-                <p className="mb-8 max-w-[44ch] text-sm text-muted-foreground">
-                  Ранг растёт за реальные действия: участие в розыгрышах, покупки
-                  мерча, подписка Hell Pass. Без накруток.
-                </p>
-                <div className="space-y-3">
-                  {RANK_LADDER.map((r) => (
-                    <div
-                      key={r.num}
-                      className="flex items-center justify-between rounded-lg border border-border bg-surface p-4"
-                    >
-                      <div className="flex items-center gap-4">
-                        <span className="font-mono text-sm text-muted-foreground">
-                          {r.num}
-                        </span>
-                        <div className="flex flex-col">
-                          <span
-                            className="font-display text-base uppercase tracking-widest"
-                            style={{ color: r.accent }}
-                          >
-                            {r.label}
-                          </span>
-                          <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                            {r.tag} · {r.hint}
-                          </span>
-                        </div>
-                      </div>
-                      <span className="font-mono text-xs tabular-nums text-muted-foreground">
-                        {r.rangeLabel}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Как качать ранг */}
-              <div className="flex flex-col justify-center rounded-xl border border-border bg-surface p-10">
-                <div className="mb-2 text-xs uppercase tracking-widest text-muted-foreground">
-                  Как качать ранг
-                </div>
-                <h3 className="mb-6 font-display text-3xl uppercase tracking-tight">
-                  XP за реальные действия
-                </h3>
-                <ul className="space-y-4">
-                  {XP_HOW.map((s) => (
-                    <li
-                      key={s.title}
-                      className="flex items-baseline justify-between gap-4 border-b border-border/60 pb-3 last:border-0 last:pb-0"
-                    >
-                      <span className="text-sm text-foreground">{s.title}</span>
-                      <span className="font-mono text-sm font-bold tabular-nums text-primary">
-                        {s.value}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-
-                <p className="mt-6 max-w-[44ch] text-pretty text-sm text-muted-foreground">
-                  Плюс прохождение курсов Школы, daily-стрики и сезонные квесты.
-                  Победа в розыгрыше — отдельно.
-                </p>
-
-                <div className="mt-8 flex flex-wrap gap-3">
-                  <Link
-                    to={isAuthed ? "/club/me" : "/login"}
-                    className="inline-flex items-center gap-2 border border-primary/60 bg-primary/10 px-5 py-3 font-mono text-[11px] font-bold uppercase tracking-widest text-primary transition-colors hover:bg-primary/20"
-                  >
-                    {isAuthed ? "Мой прогресс" : "Войти в клуб"}
-                  </Link>
-                  <Link
-                    to="/hell-pass"
-                    className="inline-flex items-center gap-2 border border-border px-5 py-3 font-mono text-[11px] font-bold uppercase tracking-widest text-muted-foreground transition-colors hover:border-foreground/40 hover:text-foreground"
-                  >
-                    Hell Pass
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
+        {/* APP SHOWCASE */}
+        <AppShowcase />
 
       </main>
 
