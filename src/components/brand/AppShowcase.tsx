@@ -48,7 +48,7 @@ export function AppShowcase() {
         <div className="relative flex min-h-[520px] flex-col items-center gap-8 md:min-h-[640px] lg:flex-row lg:items-end lg:gap-0">
           {/* Ваня — слева, прижат к низу секции */}
           <img
-            src={vanyaAsset.url}
+            src={vanyaAsset}
             alt="Ваня — HELLHOUND Racing"
             width={1536}
             height={1024}
