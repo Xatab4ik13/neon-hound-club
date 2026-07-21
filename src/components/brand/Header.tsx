@@ -256,31 +256,39 @@ function DesktopPlatesMenu({
           const isActive =
             pathname === item.href || pathname.startsWith(item.href + "/");
           return (
-            <Link
+            <div
               key={item.href}
-              to={item.href}
-              onClick={onClose}
-              className={`group pointer-events-auto relative flex h-[84px] w-[360px] items-center justify-center rounded-2xl border-[3px] border-foreground bg-card px-4 transition-all duration-500 hover:bg-primary ${
-                open
-                  ? "translate-x-0 opacity-100"
-                  : "-translate-x-20 opacity-0"
-              } ${isActive ? "bg-primary" : ""}`}
+              className="pointer-events-none"
               style={{
-                transitionDelay: open ? `${i * 80}ms` : "0ms",
-                transitionTimingFunction: "cubic-bezier(0.16,1,0.3,1)",
-                boxShadow: "6px 6px 0 0 hsl(var(--foreground))",
+                transform: open ? "translateX(0)" : "translateX(-80px)",
+                opacity: open ? 1 : 0,
+                transition:
+                  "transform 420ms cubic-bezier(0.16,1,0.3,1), opacity 420ms cubic-bezier(0.16,1,0.3,1)",
+                transitionDelay: open ? `${i * 60}ms` : "0ms",
+                willChange: "transform, opacity",
               }}
             >
-              <span
-                className={`font-display text-[26px] italic font-black uppercase leading-none tracking-tight text-center transition-colors duration-300 ${
-                  isActive
-                    ? "text-primary-foreground"
-                    : "text-foreground group-hover:text-primary-foreground"
+              <Link
+                to={item.href}
+                onClick={onClose}
+                className={`group pointer-events-auto relative flex h-[84px] w-[360px] items-center justify-center rounded-2xl border-[3px] border-foreground bg-card px-4 transition-[background-color,color,transform] duration-150 ease-out hover:bg-primary active:scale-[0.98] ${
+                  isActive ? "bg-primary" : ""
                 }`}
+                style={{
+                  boxShadow: "6px 6px 0 0 hsl(var(--foreground))",
+                }}
               >
-                {item.label}
-              </span>
-            </Link>
+                <span
+                  className={`font-display text-[26px] italic font-black uppercase leading-none tracking-tight text-center transition-colors duration-150 ease-out ${
+                    isActive
+                      ? "text-primary-foreground"
+                      : "text-foreground group-hover:text-primary-foreground"
+                  }`}
+                >
+                  {item.label}
+                </span>
+              </Link>
+            </div>
           );
         })}
       </div>
