@@ -3,7 +3,19 @@ import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useViewer } from "@/hooks/use-viewer";
 import { fetchHomeRaffles, type HomeRaffleItem } from "@/lib/queries";
-import { PlumpArrowRight } from "@/components/ui/icons";
+import {
+  PlumpArrowRight,
+  PlumpNumber0,
+  PlumpNumber1,
+  PlumpNumber2,
+  PlumpNumber3,
+  PlumpNumber4,
+  PlumpNumber5,
+  PlumpNumber6,
+  PlumpNumber7,
+  PlumpNumber8,
+  PlumpNumber9,
+} from "@/components/ui/icons";
 import pinkR6 from "@/assets/pink-r6.jpg";
 import heroBgAsset from "@/assets/hero-bg-new.jpg.asset.json";
 import vanyaAsset from "@/assets/vanya-presenter.png.asset.json";
@@ -33,6 +45,39 @@ function useCountdown(target: Date | null) {
 }
 
 const pad = (n: number) => n.toString().padStart(2, "0");
+
+const DIGIT_ICONS = [
+  PlumpNumber0,
+  PlumpNumber1,
+  PlumpNumber2,
+  PlumpNumber3,
+  PlumpNumber4,
+  PlumpNumber5,
+  PlumpNumber6,
+  PlumpNumber7,
+  PlumpNumber8,
+  PlumpNumber9,
+];
+
+function PlumpDigitPair({
+  value,
+  compact,
+}: {
+  value: number;
+  compact?: boolean;
+}) {
+  const str = pad(value);
+  const size = compact ? 18 : 42;
+  const First = DIGIT_ICONS[Number(str[0])];
+  const Second = DIGIT_ICONS[Number(str[1])];
+  return (
+    <span className="inline-flex items-center leading-none" aria-label={String(value)}>
+      <First size={size} />
+      <Second size={size} />
+    </span>
+  );
+}
+
 
 export function Hero() {
   const { isAuthed } = useViewer();
@@ -276,13 +321,7 @@ function RaffleCloud({
             className={`flex items-end ${compact ? "gap-1.5" : "gap-4 sm:gap-6"}`}
           >
             <div className="flex flex-col items-center">
-              <span
-                className={`font-display tabular-nums leading-none text-foreground ${
-                  compact ? "text-lg" : "text-4xl sm:text-5xl"
-                }`}
-              >
-                {pad(u.v)}
-              </span>
+              <PlumpDigitPair value={u.v} compact={compact} />
               <span
                 className={`font-mono uppercase tracking-[0.25em] text-muted-foreground ${
                   compact ? "mt-1 text-[7px]" : "mt-2 text-[9px]"
@@ -294,11 +333,12 @@ function RaffleCloud({
             {i < 3 ? (
               <span
                 aria-hidden
-                className={`font-display leading-none text-primary/50 ${
-                  compact ? "text-lg" : "text-4xl sm:text-5xl"
+                className={`flex flex-col justify-center gap-1 ${
+                  compact ? "h-4 px-0.5" : "h-10 px-1"
                 }`}
               >
-                :
+                <span className={`rounded-full bg-primary ${compact ? "h-1 w-1" : "h-2 w-2"}`} />
+                <span className={`rounded-full bg-primary ${compact ? "h-1 w-1" : "h-2 w-2"}`} />
               </span>
             ) : null}
           </div>
