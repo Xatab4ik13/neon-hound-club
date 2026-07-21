@@ -250,16 +250,12 @@ function RaffleCloud({
       <Link
         to={href}
         aria-label="Открыть розыгрыш"
-        className="group relative block w-full overflow-hidden rounded-3xl border border-primary/30 bg-card/60 shadow-[0_30px_80px_-20px_hsl(var(--primary)/0.5)] backdrop-blur-sm transition-transform duration-500 hover:scale-[1.015]"
+        className="group relative block w-full overflow-hidden rounded-3xl border-[3px] border-foreground bg-card/60 shadow-[6px_6px_0_0_hsl(var(--foreground)),0_30px_80px_-20px_hsl(var(--primary)/0.35)] backdrop-blur-sm transition-transform duration-500 hover:scale-[1.015]"
       >
         <img
           src={image}
           alt="Главный приз розыгрыша"
           className="h-auto w-full object-contain transition-transform duration-700 group-hover:scale-[1.04]"
-        />
-        <span
-          aria-hidden
-          className="pointer-events-none absolute inset-0 rounded-3xl ring-1 ring-inset ring-primary/20"
         />
       </Link>
 
