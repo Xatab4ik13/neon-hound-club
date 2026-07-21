@@ -137,7 +137,7 @@ function Index() {
                   width={1024}
                   height={768}
                   loading="lazy"
-                  className="h-auto w-full translate-y-[2cm] object-contain drop-shadow-[0_30px_60px_rgba(0,0,0,0.45)]"
+                  className="h-auto w-full translate-y-[3cm] object-contain drop-shadow-[0_30px_60px_rgba(0,0,0,0.45)]"
                 />
               </div>
 
