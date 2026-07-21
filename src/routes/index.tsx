@@ -26,7 +26,7 @@ const PRICE_DIGIT_ICONS = [
   PlumpNumber9,
 ];
 
-function PlumpPrice({ value, size = 22 }: { value: number; size?: number }) {
+function PlumpPrice({ value, size = 13 }: { value: number; size?: number }) {
   const digits = Math.round(value).toString().split("");
   return (
     <span className="inline-flex items-center leading-none" aria-label={`${value} ₽`}>
