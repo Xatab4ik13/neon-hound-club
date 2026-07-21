@@ -276,7 +276,7 @@ function MobileMenu({
             onClick={onClose}
             aria-label="HELLHOUND Racing"
           >
-            <img src={hhrLogo.url} alt="HELLHOUND Racing" className="h-12 w-auto" />
+            <img src={hhrLogo.url} alt="HELLHOUND Racing" className="h-24 w-auto" />
           </Link>
 
           <button
