@@ -98,7 +98,7 @@ export function Hero() {
           <img
             src={vanyaAsset.url}
             alt="Ваня — HELLHOUND Racing"
-            className="relative z-10 h-auto w-[380px] max-w-full -scale-x-100 object-contain drop-shadow-[0_20px_40px_rgba(0,0,0,0.6)] sm:w-[460px] lg:w-[560px] xl:w-[620px]"
+            className="relative z-10 h-auto w-[380px] max-w-full object-contain drop-shadow-[0_20px_40px_rgba(0,0,0,0.6)] sm:w-[460px] lg:w-[560px] xl:w-[620px]"
           />
         </div>
       </div>
