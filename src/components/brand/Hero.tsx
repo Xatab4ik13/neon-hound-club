@@ -132,14 +132,15 @@ export function Hero() {
         </div>
 
         {/* Облако розыгрыша — позиционируется от правого края, чтобы держать
-            фиксированное расстояние до Вани */}
+            фиксированное расстояние до Вани. Размер чуть увеличен, но не выше
+            размера картинки приза. */}
         {raffle ? (
           <div
             className="pointer-events-auto absolute z-20"
             style={{
               right: "clamp(200px, 16vw, 310px)",
               bottom: "clamp(calc(190px + 3cm), calc(25vh + 3cm), calc(340px + 3cm))",
-              width: "clamp(340px, 26vw, 460px)",
+              width: "clamp(360px, 28vw, 480px)",
             }}
           >
             <RaffleCloud
