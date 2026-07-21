@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useViewer } from "@/hooks/use-viewer";
 import { fetchHomeRaffles, type HomeRaffleItem } from "@/lib/queries";
 import pinkR6 from "@/assets/pink-r6.jpg";
+import heroBg from "@/assets/hero-bg.jpg";
 
 /**
  * Hero — HELLHOUND Racing Club.
