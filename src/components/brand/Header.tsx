@@ -113,7 +113,7 @@ export function Header() {
             <img
               src={hhrLogo.url}
               alt="HELLHOUND Racing"
-              className="pointer-events-none h-[144%] w-auto"
+              className="pointer-events-none h-[187%] w-auto"
             />
           </Link>
 
