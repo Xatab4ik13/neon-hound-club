@@ -25,8 +25,11 @@ const NAV = [
 ];
 
 export function Header() {
-  const { isAuthed, nick, tier, tickets, signOut, hydrated } = useViewer();
+  const { isAuthed, nick, signOut, hydrated } = useViewer();
   const cartCount = useCart().count;
+  const myProfile = useMyProfile(isAuthed);
+  const avatarUrl = myProfile.data?.avatarUrl ?? null;
+  const displayNick = myProfile.data?.nick ?? nick ?? "";
 
   const { pathname } = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
