@@ -133,9 +133,9 @@ export function Hero() {
             <div
               className="pointer-events-none absolute z-30"
               style={{
-                top: "-18%",
-                right: "2%",
-                width: "clamp(200px, 18vw, 300px)",
+                top: "-62%",
+                right: "6%",
+                width: "clamp(220px, 20vw, 340px)",
               }}
             >
               <img
@@ -148,8 +148,8 @@ export function Hero() {
                 loading="eager"
               />
               <p
-                className="absolute left-1/2 top-[42%] w-[80%] -translate-x-1/2 -translate-y-1/2 text-center font-display text-sm font-black uppercase leading-tight tracking-wide text-black sm:text-base"
-                style={{ textShadow: "0 0 2px rgba(255,255,255,0.8)" }}
+                className="absolute left-1/2 top-[40%] w-[78%] -translate-x-1/2 -translate-y-1/2 text-center font-display text-base font-black uppercase leading-tight tracking-wide text-black sm:text-lg"
+                style={{ textShadow: "0 0 3px rgba(255,255,255,0.9)" }}
               >
                 Залетай в розыгрыш
               </p>
