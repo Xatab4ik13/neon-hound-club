@@ -9,6 +9,7 @@ import navDelivery from "@/assets/nav/nav-delivery.jpg";
 import navAbout from "@/assets/nav/nav-about.jpg";
 
 const NAV_IMAGES: Record<string, string> = {
+  "/": navAbout,
   "/shop": navShop,
   "/hell-pass": navPass,
   "/school": navSchool,
