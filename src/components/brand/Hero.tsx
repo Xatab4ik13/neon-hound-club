@@ -80,29 +80,13 @@ export function Hero() {
         <div
           className="absolute right-0"
           style={{
-            bottom: "clamp(calc(60px + 2cm), calc(8vh + 2cm), calc(120px + 2cm))",
+            bottom: "clamp(calc(60px + 3cm), calc(8vh + 3cm), calc(120px + 3cm))",
             width: "clamp(440px, 34vw, 640px)",
           }}
-        >
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-x-4 bottom-0 h-1/2 rounded-full bg-primary/25 blur-3xl"
-          />
-          <img
-            src={vanyaAsset.url}
-            alt="Ваня — HELLHOUND Racing"
-            className="relative z-10 h-auto w-full object-contain drop-shadow-[0_20px_40px_rgba(0,0,0,0.6)]"
-          />
-        </div>
-
-        {/* Облако розыгрыша — позиционируется от правого края, чтобы держать
-            фиксированное расстояние до Вани */}
-        {raffle ? (
-          <div
-            className="pointer-events-auto absolute z-20"
+...
             style={{
               right: "clamp(200px, 16vw, 310px)",
-              bottom: "clamp(calc(190px + 2cm), calc(25vh + 2cm), calc(340px + 2cm))",
+              bottom: "clamp(calc(190px + 3cm), calc(25vh + 3cm), calc(340px + 3cm))",
               width: "clamp(340px, 26vw, 460px)",
             }}
           >
