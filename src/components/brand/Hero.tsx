@@ -80,7 +80,7 @@ export function Hero() {
         <div
           className="absolute right-0"
           style={{
-            bottom: "clamp(60px, 8vh, 120px)",
+            bottom: "clamp(calc(60px + 1cm), calc(8vh + 1cm), calc(120px + 1cm))",
             width: "clamp(440px, 34vw, 640px)",
           }}
         >
