@@ -77,41 +77,6 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
-// Подписи рангов для главной (продуктовая редактура поверх RANKS из бэка).
-const RANK_TAGLINE: Record<RankId, { tag: string; hint: string }> = {
-  "rookie":       { tag: "Старт",          hint: "сразу после регистрации" },
-  "pit-crew":     { tag: "Свой",           hint: "первая неделя активности" },
-  "road-captain": { tag: "Регуляр",        hint: "1–1.5 месяца" },
-  "alpha-hound":  { tag: "Ядро",           hint: "3–4 месяца" },
-  "hell-legend":  { tag: "Элита (≈5%)",    hint: "10–14 месяцев" },
-};
-
-// Лестница рангов — собираем из источника правды (src/data/ranks.ts).
-const RANK_LADDER = RANKS.map((r, i) => {
-  const from = XP_THRESHOLDS[i];
-  const next = XP_THRESHOLDS[i + 1];
-  return {
-    num: String(i + 1).padStart(2, "0"),
-    label: r.label,
-    accent: r.accent,
-    from,
-    rangeLabel: next
-      ? `${from.toLocaleString("ru-RU")} — ${(next - 1).toLocaleString("ru-RU")} XP`
-      : `${from.toLocaleString("ru-RU")}+ XP`,
-    tag: RANK_TAGLINE[r.id].tag,
-    hint: RANK_TAGLINE[r.id].hint,
-  };
-});
-
-// Топ-3 источника XP для главной — берём из общего справочника по id.
-const XP_HOW_IDS = ["postcard-buy", "merch-buy", "pass-platinum"] as const;
-const XP_HOW = XP_HOW_IDS.map((id) => {
-  const src = XP_SOURCES.find((s) => s.id === id)!;
-  // Для главной упрощаем: Hell Pass показываем диапазоном.
-  if (id === "pass-platinum") return { title: "Hell Pass (ежемесячно)", value: "+50…400 XP" };
-  if (id === "postcard-buy")  return { title: "Билет в розыгрыш", value: "+5 XP" };
-  return { title: src.title, value: src.xp };
-});
 
 function Index() {
   const { isAuthed } = useViewer();
