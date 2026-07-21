@@ -55,11 +55,25 @@ export function Hero() {
 
   return (
     <section className="relative overflow-hidden px-6 py-20 md:px-12 md:py-28">
-      {/* Фоновое розовое свечение */}
+      {/* BG image */}
+      <img
+        src={heroBg}
+        alt=""
+        aria-hidden
+        width={1920}
+        height={1088}
+        className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-70"
+      />
+      {/* Vignette / затемнение слева для читаемости текста */}
       <div
         aria-hidden
-        className="pointer-events-none absolute -left-40 top-1/2 h-[480px] w-[480px] -translate-y-1/2 rounded-full bg-primary/20 blur-[160px]"
+        className="pointer-events-none absolute inset-0 bg-gradient-to-r from-background via-background/85 to-background/30"
       />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 bg-gradient-to-t from-background via-transparent to-background/40"
+      />
+
 
       <div className="relative mx-auto grid max-w-7xl grid-cols-1 items-center gap-12 lg:grid-cols-12 lg:gap-16">
         {/* LEFT — BRAND + SLOGAN + CTA */}
