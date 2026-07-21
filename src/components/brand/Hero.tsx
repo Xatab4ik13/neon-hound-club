@@ -73,6 +73,19 @@ export function Hero() {
         className="pointer-events-none absolute inset-0 bg-gradient-to-t from-background via-transparent to-background/30"
       />
 
+      {/* VANYA — прижат к правому краю viewport'а */}
+      <div className="pointer-events-none absolute bottom-0 right-0 z-10 hidden items-end lg:flex">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-4 bottom-0 h-1/2 rounded-full bg-primary/25 blur-3xl"
+        />
+        <img
+          src={vanyaAsset.url}
+          alt="Ваня — HELLHOUND Racing"
+          className="relative z-10 h-auto w-[560px] object-contain drop-shadow-[0_20px_40px_rgba(0,0,0,0.6)] xl:w-[680px] 2xl:w-[760px]"
+        />
+      </div>
+
       <div className="relative mx-auto grid w-full max-w-7xl grid-cols-1 items-end gap-8 lg:grid-cols-12 lg:items-center lg:gap-4">
         {/* LEFT — RAFFLE "CLOUD" */}
         {raffle ? (
@@ -88,21 +101,16 @@ export function Hero() {
           </div>
         ) : null}
 
-        {/* RIGHT — VANYA, вплотную к правому краю */}
-        <div className="relative order-1 flex justify-center lg:order-2 lg:col-span-6 lg:-mr-12 lg:justify-end xl:-mr-24">
-          {/* мягкое магента-свечение под Ваней */}
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-x-4 bottom-0 h-1/2 rounded-full bg-primary/25 blur-3xl"
-          />
+        {/* VANYA на мобилке — inline */}
+        <div className="relative order-1 flex justify-center lg:hidden">
           <img
             src={vanyaAsset.url}
             alt="Ваня — HELLHOUND Racing"
-            className="relative z-10 h-auto w-[380px] max-w-full object-contain drop-shadow-[0_20px_40px_rgba(0,0,0,0.6)] sm:w-[460px] lg:w-[560px] xl:w-[640px]"
+            className="relative z-10 h-auto w-[380px] max-w-full object-contain drop-shadow-[0_20px_40px_rgba(0,0,0,0.6)] sm:w-[460px]"
           />
         </div>
-
       </div>
+
 
     </section>
   );
