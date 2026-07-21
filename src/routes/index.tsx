@@ -12,6 +12,7 @@ import { XP_SOURCES } from "@/data/xp-sources";
 import { isClubHost } from "@/lib/host";
 import pinkR6 from "@/assets/pink-r6.jpg";
 import vanyaBike from "@/assets/vanya-bike.png";
+import vybiraySpeech from "@/assets/vybiray-luchshee.png.asset.json";
 
 
 
@@ -138,6 +139,12 @@ function Index() {
                   height={768}
                   loading="lazy"
                   className="h-auto w-full translate-x-[-5cm] translate-y-[4cm] object-contain"
+                />
+                <img
+                  src={vybiraySpeech.url}
+                  alt="Выбирай лучшее!"
+                  loading="lazy"
+                  className="pointer-events-none absolute left-[38%] top-[10%] w-[22%] -rotate-[6deg] object-contain"
                 />
               </div>
 
