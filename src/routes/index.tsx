@@ -109,7 +109,7 @@ function Index() {
         {showcaseItems.length > 0 && (
           <section id="drop" className="bg-surface pb-24 pt-8 md:pt-12">
             <div className="mx-auto max-w-7xl px-6">
-              <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,0.42fr)_minmax(0,1fr)] lg:gap-12">
+              <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,0.55fr)_minmax(0,1fr)] lg:gap-12">
                 {/* Ваня слева — только на десктопе, где есть место для горизонтального разделения */}
                 <div className="relative hidden lg:block">
                   <div className="sticky top-28">
