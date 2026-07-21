@@ -7,7 +7,7 @@ import { PlumpArrowRight } from "@/components/ui/icons";
 import pinkR6 from "@/assets/pink-r6.jpg";
 import heroBgAsset from "@/assets/hero-bg-new.jpg.asset.json";
 import vanyaAsset from "@/assets/vanya-presenter.png.asset.json";
-import comicBubble from "@/assets/comic-bubble.png";
+import comicBubble from "@/assets/comic-bubble-new.png.asset.json";
 
 
 /**
@@ -133,13 +133,13 @@ export function Hero() {
             <div
               className="pointer-events-none absolute z-30"
               style={{
-                top: "-95%",
-                right: "18%",
-                width: "clamp(190px, 17vw, 280px)",
+                top: "0",
+                right: "22%",
+                width: "clamp(140px, 12vw, 200px)",
               }}
             >
               <img
-                src={comicBubble}
+                src={comicBubble.url}
                 alt=""
                 aria-hidden
                 width={1024}
@@ -147,12 +147,6 @@ export function Hero() {
                 className="h-auto w-full"
                 loading="eager"
               />
-              <p
-                className="absolute left-1/2 top-[40%] w-[78%] -translate-x-1/2 -translate-y-1/2 text-center font-display text-sm font-black uppercase leading-tight tracking-wide text-black sm:text-base"
-                style={{ textShadow: "0 0 3px rgba(255,255,255,0.9)" }}
-              >
-                Залетай в розыгрыш
-              </p>
             </div>
           ) : null}
         </div>
