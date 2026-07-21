@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { PlumpArrowRight } from "@/components/ui/icons";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { Header } from "@/components/brand/Header";
@@ -108,14 +109,23 @@ function Index() {
         {/* POPULAR PRODUCTS */}
         {showcaseItems.length > 0 && (
           <section id="drop" className="relative bg-surface pb-24 pt-8 md:pt-12">
-            {/* Заголовок слева, на одной линии с бургером */}
-            <div className="px-6 md:px-8">
-              <div className="mb-3 font-mono text-xs uppercase tracking-widest text-primary">
-                Магазин
+            {/* Заголовок слева, кнопка справа на одной линии */}
+            <div className="flex flex-col items-start gap-4 px-6 md:flex-row md:items-center md:justify-between md:px-8">
+              <div>
+                <div className="mb-3 font-mono text-xs uppercase tracking-widest text-primary">
+                  Магазин
+                </div>
+                <h2 className="text-balance font-display text-4xl uppercase tracking-tight md:text-5xl">
+                  Популярные товары
+                </h2>
               </div>
-              <h2 className="text-balance font-display text-4xl uppercase tracking-tight md:text-5xl">
-                Популярные товары
-              </h2>
+              <Link
+                to="/shop"
+                className="group inline-flex items-center gap-2 rounded-2xl border-[3px] border-foreground bg-card px-5 py-3 font-display text-xs font-black uppercase tracking-widest text-foreground shadow-[6px_6px_0_0_hsl(var(--foreground))] transition-all duration-150 ease-out hover:-translate-x-1.5 hover:-translate-y-1.5 hover:text-primary hover:shadow-[8px_8px_0_0_hsl(var(--foreground))] active:scale-[0.98]"
+              >
+                Смотреть больше
+                <PlumpArrowRight className="h-4 w-4 transition-transform duration-150 group-hover:translate-x-0.5" />
+              </Link>
             </div>
 
             <div className="flex flex-col items-end lg:flex-row lg:items-end">
