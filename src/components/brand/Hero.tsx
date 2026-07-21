@@ -222,13 +222,6 @@ function RaffleCloud({
 }) {
   return (
     <div className="relative mx-auto max-w-md">
-      {/* Лейбл сверху — в цвет пунктов меню (скрыт в компактной мобильной раскладке) */}
-      {!compact && (
-        <div className="mb-4 text-center font-display text-sm font-bold uppercase tracking-[0.3em] text-muted-foreground sm:text-base">
-          Активный розыгрыш
-        </div>
-      )}
-
       {/* Облако с картинкой приза (cover — заполняет всё облако) */}
       <Link
         to={href}
