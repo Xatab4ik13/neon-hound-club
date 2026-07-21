@@ -9,6 +9,7 @@ import navDelivery from "@/assets/nav/nav-delivery.jpg";
 import navAbout from "@/assets/nav/nav-about.jpg";
 
 const NAV_IMAGES: Record<string, string> = {
+  "/": navAbout,
   "/shop": navShop,
   "/hell-pass": navPass,
   "/school": navSchool,
@@ -32,6 +33,7 @@ import { useMyProfile } from "@/lib/garage-api";
 
 
 const NAV = [
+  { label: "Главная", href: "/" },
   { label: "Магазин", href: "/shop" },
   { label: "Hell Pass", href: "/hell-pass" },
   { label: "Школа", href: "/school" },
