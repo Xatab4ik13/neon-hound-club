@@ -81,20 +81,24 @@ export function Hero() {
       <div className="pointer-events-none absolute inset-0 z-10 hidden lg:block">
         {/* Левый текст — опущен */}
         <div
-          className="pointer-events-auto absolute left-0 top-[calc(16%+1cm)] z-20 flex flex-col px-6 md:px-12"
-          style={{ maxWidth: "clamp(360px, 34vw, 600px)" }}
+          className="pointer-events-auto absolute z-20 flex flex-col px-6 md:px-12"
+          style={{
+            left: "2cm",
+            top: "calc(16% + 4cm)",
+            maxWidth: "clamp(380px, 36vw, 640px)",
+          }}
         >
-          <h1 className="font-display text-7xl font-black uppercase leading-[0.88] tracking-tight xl:text-9xl">
+          <h1 className="font-display text-8xl font-black uppercase leading-[0.88] tracking-tight xl:text-[10.5rem]">
             <span className="text-primary">HELLHOUND</span>
             <br />
             <span className="text-foreground">Racing Club</span>
           </h1>
-          <p className="mt-6 max-w-[38ch] text-xl font-semibold uppercase leading-snug tracking-[0.18em] text-foreground/70 xl:text-2xl">
+          <p className="mt-7 max-w-[38ch] text-2xl font-semibold uppercase leading-snug tracking-[0.18em] text-foreground/70 xl:text-3xl">
             Создано теми, кто едет
           </p>
           <Link
             to={isAuthed ? "/club" : "/login"}
-            className="group relative mt-8 inline-flex w-fit items-center overflow-hidden bg-primary px-12 py-5 font-display text-xl font-black uppercase italic tracking-widest text-black shadow-[0_0_40px_-12px_hsl(var(--primary)/0.55)] transition-all duration-300 hover:scale-[1.03] hover:shadow-[0_0_55px_-8px_hsl(var(--primary)/0.75)] active:scale-[0.97]"
+            className="group relative mt-9 inline-flex w-fit items-center overflow-hidden bg-primary px-14 py-6 font-display text-2xl font-black uppercase italic tracking-widest text-black shadow-[0_0_40px_-12px_hsl(var(--primary)/0.55)] transition-all duration-300 hover:scale-[1.03] hover:shadow-[0_0_55px_-8px_hsl(var(--primary)/0.75)] active:scale-[0.97]"
             style={{ clipPath: "polygon(0 15%, 100% 0, 100% 100%, 0 85%)" }}
           >
             <span
@@ -103,7 +107,7 @@ export function Hero() {
             />
             <span className="relative z-10 inline-flex items-center justify-center gap-3">
               Вступить в клуб
-              <PlumpArrowRight className="h-6 w-6" />
+              <PlumpArrowRight className="h-7 w-7" />
             </span>
           </Link>
         </div>
