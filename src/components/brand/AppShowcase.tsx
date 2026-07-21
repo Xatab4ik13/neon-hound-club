@@ -45,19 +45,19 @@ export function AppShowcase() {
         </div>
 
         {/* Композиция */}
-        <div className="relative flex min-h-[640px] flex-col items-center md:min-h-[760px] lg:min-h-[540px] lg:flex-row lg:items-center">
-          {/* Ваня — слева, прижат к низу. На мобильном поверх фона, на десктопе позади телефона */}
+        <div className="relative flex min-h-[480px] flex-col items-center md:min-h-[720px] lg:min-h-[580px] lg:flex-row lg:items-center">
+          {/* Ваня — слева, прижат к низу. На мобильном торчит слева от телефона, на десктопе позади */}
           <img
             src={vanyaAsset}
             alt="Ваня — HELLHOUND Racing"
             width={1264}
             height={848}
             loading="lazy"
-            className="pointer-events-none absolute bottom-0 left-0 z-10 h-auto w-[52%] max-w-[260px] -translate-x-[5%] translate-y-[4%] object-contain md:w-[40%] md:max-w-[340px] md:-translate-x-[6%] lg:z-0 lg:w-[26%] lg:max-w-[340px] lg:-translate-x-[8%] lg:translate-y-[6%]"
+            className="pointer-events-none absolute bottom-0 left-0 z-10 h-auto w-[45%] max-w-[200px] -translate-x-[2%] translate-y-[2%] object-contain md:w-[38%] md:max-w-[320px] md:-translate-x-[4%] lg:z-0 lg:w-[24%] lg:max-w-[300px] lg:-translate-x-[6%] lg:translate-y-0"
           />
 
-          {/* Телефон — центр */}
-          <div className="relative z-10 mx-auto w-[190px] shrink-0 pt-2 md:w-[250px] lg:absolute lg:left-[24%] lg:top-1/2 lg:w-[300px] lg:-translate-y-1/2">
+          {/* Телефон — справа на мобильном, центр на десктопе */}
+          <div className="relative z-10 mb-6 ml-auto mr-6 w-[160px] shrink-0 pt-2 md:mx-auto md:mb-0 md:w-[250px] lg:absolute lg:left-[26%] lg:top-1/2 lg:w-[300px] lg:-translate-y-1/2">
             <img
               src={phoneAsset}
               alt="Мокап приложения HELLHOUND"
