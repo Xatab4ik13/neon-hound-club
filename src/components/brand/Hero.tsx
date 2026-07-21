@@ -166,10 +166,17 @@ export function Hero() {
           </p>
           <Link
             to={isAuthed ? "/club" : "/login"}
-            className="mt-6 inline-flex items-center bg-primary px-10 py-4 font-display text-lg font-black uppercase tracking-wider text-primary-foreground shadow-[0_0_40px_-12px_hsl(var(--primary)/0.55)] transition-all duration-300 hover:scale-[1.03] hover:shadow-[0_0_55px_-8px_hsl(var(--primary)/0.75)]"
-            style={{ borderRadius: cloudRadius }}
+            className="group relative mt-6 inline-flex items-center overflow-hidden bg-primary px-10 py-4 font-display text-lg font-black uppercase italic tracking-widest text-black shadow-[0_0_40px_-12px_hsl(var(--primary)/0.55)] transition-all duration-300 hover:scale-[1.03] hover:shadow-[0_0_55px_-8px_hsl(var(--primary)/0.75)] active:scale-[0.97]"
+            style={{ clipPath: "polygon(0 15%, 100% 0, 100% 100%, 0 85%)" }}
           >
-            Вступить в клуб
+            <span
+              aria-hidden
+              className="absolute inset-0 bg-white opacity-0 transition-opacity group-hover:opacity-10"
+            />
+            <span className="relative z-10 inline-flex items-center justify-center gap-3">
+              Вступить в клуб
+              <PlumpArrowRight className="h-5 w-5" />
+            </span>
           </Link>
         </div>
 
