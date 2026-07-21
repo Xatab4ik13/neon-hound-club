@@ -118,10 +118,6 @@ export function Hero() {
             width: "clamp(440px, 34vw, 640px)",
           }}
         >
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-x-4 bottom-0 h-1/2 rounded-full bg-primary/25 blur-3xl"
-          />
           <img
             src={vanyaAsset.url}
             alt="Ваня — HELLHOUND Racing"
