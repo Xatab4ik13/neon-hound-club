@@ -138,7 +138,13 @@ export function Hero() {
             <br />
             <span className="text-foreground">Racing Club</span>
           </h1>
-          <p className="mt-7 max-w-[38ch] text-2xl font-semibold uppercase leading-snug tracking-[0.18em] text-foreground/70 xl:text-3xl">
+          <p
+            className="mt-7 max-w-[38ch] text-2xl font-black uppercase leading-snug tracking-[0.12em] text-primary xl:text-3xl"
+            style={{
+              WebkitTextStroke: "2px hsl(var(--foreground))",
+              textShadow: "4px 4px 0 hsl(var(--foreground))",
+            }}
+          >
             Создано теми, кто едет
           </p>
           <Link
@@ -228,7 +234,13 @@ export function Hero() {
             <br />
             <span className="text-foreground">Racing Club</span>
           </h1>
-          <p className="mx-auto mt-5 max-w-[38ch] text-lg font-semibold uppercase leading-snug tracking-[0.18em] text-foreground/70 sm:text-xl">
+          <p
+            className="mx-auto mt-5 max-w-[38ch] text-lg font-black uppercase leading-snug tracking-[0.12em] text-primary sm:text-xl"
+            style={{
+              WebkitTextStroke: "1.5px hsl(var(--foreground))",
+              textShadow: "3px 3px 0 hsl(var(--foreground))",
+            }}
+          >
             Создано теми, кто едет
           </p>
         </div>
