@@ -209,6 +209,7 @@ function RaffleCloud({
   hours,
   minutes,
   seconds,
+  compact = false,
 }: {
   image: string;
   href: string;
@@ -216,11 +217,16 @@ function RaffleCloud({
   hours: number;
   minutes: number;
   seconds: number;
+  compact?: boolean;
 }) {
   return (
     <div className="relative mx-auto max-w-md">
       {/* Лейбл сверху — в цвет пунктов меню */}
-      <div className="mb-4 text-center font-display text-sm font-bold uppercase tracking-[0.3em] text-muted-foreground sm:text-base">
+      <div
+        className={`text-center font-display font-bold uppercase tracking-[0.3em] text-muted-foreground ${
+          compact ? "mb-2 text-[10px]" : "mb-4 text-sm sm:text-base"
+        }`}
+      >
         Активный розыгрыш
       </div>
 
@@ -236,7 +242,6 @@ function RaffleCloud({
           alt="Главный приз розыгрыша"
           className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.04]"
         />
-        {/* лёгкое магента-свечение по краю */}
         <span
           aria-hidden
           className="pointer-events-none absolute inset-0 ring-1 ring-inset ring-primary/20"
@@ -245,26 +250,43 @@ function RaffleCloud({
       </Link>
 
       {/* Таймер — прозрачный, без рамок */}
-      <div className="mt-6 flex items-end justify-center gap-4 sm:gap-6">
+      <div
+        className={`flex items-end justify-center ${
+          compact ? "mt-3 gap-1.5" : "mt-6 gap-4 sm:gap-6"
+        }`}
+      >
         {[
           { v: days, l: "дни" },
           { v: hours, l: "часы" },
           { v: minutes, l: "мин" },
           { v: seconds, l: "сек" },
         ].map((u, i) => (
-          <div key={u.l} className="flex items-end gap-4 sm:gap-6">
+          <div
+            key={u.l}
+            className={`flex items-end ${compact ? "gap-1.5" : "gap-4 sm:gap-6"}`}
+          >
             <div className="flex flex-col items-center">
-              <span className="font-display text-4xl tabular-nums leading-none text-foreground sm:text-5xl">
+              <span
+                className={`font-display tabular-nums leading-none text-foreground ${
+                  compact ? "text-lg" : "text-4xl sm:text-5xl"
+                }`}
+              >
                 {pad(u.v)}
               </span>
-              <span className="mt-2 font-mono text-[9px] uppercase tracking-[0.25em] text-muted-foreground">
+              <span
+                className={`font-mono uppercase tracking-[0.25em] text-muted-foreground ${
+                  compact ? "mt-1 text-[7px]" : "mt-2 text-[9px]"
+                }`}
+              >
                 {u.l}
               </span>
             </div>
             {i < 3 ? (
               <span
                 aria-hidden
-                className="font-display text-4xl leading-none text-primary/50 sm:text-5xl"
+                className={`font-display leading-none text-primary/50 ${
+                  compact ? "text-lg" : "text-4xl sm:text-5xl"
+                }`}
               >
                 :
               </span>
