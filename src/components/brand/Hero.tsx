@@ -5,11 +5,13 @@ import { useViewer } from "@/hooks/use-viewer";
 import { fetchHomeRaffles, type HomeRaffleItem } from "@/lib/queries";
 import pinkR6 from "@/assets/pink-r6.jpg";
 import heroBg from "@/assets/hero-bg.jpg";
+import vanyaAsset from "@/assets/vanya-presenter.png.asset.json";
 
 /**
  * Hero — HELLHOUND Racing Club.
- * Слева: имя клуба + слоган + CTA.
- * Справа: плашка активного конкурса (мотоцикл + таймер) — данные из бекенда.
+ * Композиция: Ваня (PNG) слева показывает на плашку активного розыгрыша справа.
+ * Плашка — «облако» (несимметричный blob), сверху лейбл, посередине картинка приза,
+ * снизу таймер без рамок и отдельная кнопка "Участвовать".
  */
 
 function useCountdown(target: Date | null) {
@@ -42,8 +44,6 @@ export function Hero() {
   const endsAt = raffle ? new Date(raffle.endsAt) : null;
   const { days, hours, minutes, seconds } = useCountdown(endsAt);
 
-  const prizeLabel =
-    raffle?.prizes?.[0]?.name ?? raffle?.prize ?? raffle?.title ?? "";
   const image = raffle?.imageUrl || pinkR6;
   const raffleHref = raffle
     ? isAuthed
@@ -54,7 +54,7 @@ export function Hero() {
       : "/login";
 
   return (
-    <section className="relative -mt-20 flex min-h-[100svh] items-center overflow-hidden px-6 pb-20 pt-40 md:px-12 md:pb-28 md:pt-44">
+    <section className="relative -mt-20 flex min-h-[100svh] items-center overflow-hidden px-6 pb-20 pt-32 md:px-12 md:pb-28 md:pt-36">
       {/* BG image */}
       <img
         src={heroBg}
@@ -64,136 +64,144 @@ export function Hero() {
         height={1088}
         className="pointer-events-none absolute inset-0 h-full w-full object-cover object-center"
       />
-      {/* Vignette / затемнение слева для читаемости текста */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 bg-gradient-to-r from-background via-background/70 to-background/10"
+        className="pointer-events-none absolute inset-0 bg-gradient-to-r from-background/90 via-background/40 to-background/60"
       />
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 bg-gradient-to-t from-background via-transparent to-background/30"
       />
 
-
-
-      <div className="relative mx-auto grid max-w-7xl grid-cols-1 items-center gap-12 lg:grid-cols-12 lg:gap-16">
-        {/* LEFT — BRAND + SLOGAN + CTA */}
-        <div className="min-w-0 lg:col-span-8">
-          <h1 className="font-display uppercase leading-[0.85] tracking-tighter">
-            <span className="block text-foreground [font-size:clamp(3rem,12vw,11rem)]">
-              HELL<span className="text-primary">HOUND</span>
-            </span>
-            <span className="mt-3 block font-display text-2xl uppercase tracking-[0.25em] text-muted-foreground sm:text-3xl lg:text-4xl">
-              Racing Club
-            </span>
-          </h1>
-
-          <p className="mt-8 max-w-[36ch] text-pretty text-lg text-muted-foreground md:text-xl">
-            Магазин. Школа. Гараж. Призы. AI-механик. Для тех, кто живёт
-            мото-комьюнити.
-          </p>
-
-          <div className="mt-10 flex flex-wrap items-center gap-6">
-            <Link
-              to={isAuthed ? "/club" : "/login"}
-              className="group relative inline-block overflow-hidden bg-primary px-10 py-5 text-center font-display text-xl italic font-bold uppercase tracking-widest text-black transition-all duration-300 active:scale-[0.97]"
-              style={{ clipPath: "polygon(0 15%, 100% 0, 100% 100%, 0 85%)" }}
-            >
-              <span
-                aria-hidden
-                className="absolute inset-0 bg-white opacity-0 transition-opacity group-hover:opacity-10"
-              />
-              <span className="relative z-10 inline-flex items-center gap-3">
-                {isAuthed ? "В клуб" : "Войти в клуб"}
-                <span className="transition-transform group-hover:translate-x-1">→</span>
-              </span>
-            </Link>
-            <div className="flex flex-col">
-              <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground/70">
-                Регистрация
-              </span>
-              <span className="font-display text-xl uppercase text-foreground">
-                Бесплатно
-              </span>
-            </div>
-          </div>
+      <div className="relative mx-auto grid w-full max-w-7xl grid-cols-1 items-end gap-8 lg:grid-cols-12 lg:items-center lg:gap-4">
+        {/* LEFT — VANYA */}
+        <div className="relative flex justify-center lg:col-span-6 lg:justify-end">
+          {/* мягкое магента-свечение под Ваней */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-4 bottom-0 h-1/2 rounded-full bg-primary/25 blur-3xl"
+          />
+          <img
+            src={vanyaAsset.url}
+            alt="Ваня — HELLHOUND Racing"
+            className="relative z-10 h-auto w-[380px] max-w-full object-contain drop-shadow-[0_20px_40px_rgba(0,0,0,0.6)] sm:w-[460px] lg:w-[560px] xl:w-[620px]"
+          />
         </div>
 
-        {/* RIGHT — RAFFLE CARD */}
+        {/* RIGHT — RAFFLE "CLOUD" */}
         {raffle ? (
-          <aside className="lg:col-span-4">
-            <Link
-              to={raffleHref}
-              className="group relative block overflow-hidden border border-border bg-card transition-colors hover:border-primary/50"
-            >
-              {/* Header */}
-              <div className="flex items-center justify-between border-b border-border px-5 py-3">
-                <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.2em] text-primary">
-                  <span className="relative flex h-2 w-2">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/60" />
-                    <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
-                  </span>
-                  Акция / идёт
-                </div>
-              </div>
-
-              {/* Image */}
-              <div className="relative aspect-[4/3] overflow-hidden bg-surface">
-                <img
-                  src={image}
-                  alt={prizeLabel ? `${prizeLabel} — главный приз акции` : "Главный приз акции"}
-                  width={1200}
-                  height={900}
-                  className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-card via-card/30 to-transparent" />
-                <div className="absolute bottom-4 left-5 right-5">
-                  <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                    Главный приз
-                  </div>
-                  <div className="font-display text-2xl uppercase tracking-tight text-foreground md:text-3xl">
-                    {prizeLabel}
-                  </div>
-                </div>
-              </div>
-
-              {/* Countdown */}
-              <div className="px-5 py-5">
-                <div className="mb-3 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                  До конца акции
-
-                </div>
-                <div className="grid grid-cols-4 gap-2">
-                  {[
-                    { v: days, l: "дни" },
-                    { v: hours, l: "часы" },
-                    { v: minutes, l: "мин" },
-                    { v: seconds, l: "сек" },
-                  ].map((u) => (
-                    <div
-                      key={u.l}
-                      className="flex flex-col items-center border border-border bg-background py-3"
-                    >
-                      <span className="font-display text-3xl tabular-nums leading-none text-foreground">
-                        {pad(u.v)}
-                      </span>
-                      <span className="mt-1 font-mono text-[9px] uppercase tracking-[0.2em] text-muted-foreground">
-                        {u.l}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="mt-5 flex items-center justify-end border-t border-border pt-4">
-                  <span className="text-sm font-medium uppercase tracking-[0.15em] text-primary transition-transform group-hover:translate-x-1">
-                    Участвовать →
-                  </span>
-                </div>
-              </div>
-            </Link>
-          </aside>
+          <div className="relative lg:col-span-6">
+            <RaffleCloud
+              image={image}
+              href={raffleHref}
+              days={days}
+              hours={hours}
+              minutes={minutes}
+              seconds={seconds}
+            />
+          </div>
         ) : null}
       </div>
     </section>
+  );
+}
+
+function RaffleCloud({
+  image,
+  href,
+  days,
+  hours,
+  minutes,
+  seconds,
+}: {
+  image: string;
+  href: string;
+  days: number;
+  hours: number;
+  minutes: number;
+  seconds: number;
+}) {
+  // асимметричные радиусы = «облако»
+  const cloudRadius =
+    "62% 38% 55% 45% / 45% 55% 45% 55%";
+
+  return (
+    <div className="relative mx-auto max-w-md">
+      {/* Лейбл сверху */}
+      <div className="mb-4 flex items-center gap-2 pl-2 font-mono text-[11px] uppercase tracking-[0.25em] text-primary">
+        <span className="relative flex h-2 w-2">
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/60" />
+          <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
+        </span>
+        Активный розыгрыш
+      </div>
+
+      {/* Облако с картинкой приза */}
+      <Link
+        to={href}
+        aria-label="Открыть розыгрыш"
+        className="group relative block aspect-[5/4] w-full overflow-hidden border border-primary/30 bg-card/60 shadow-[0_30px_80px_-20px_hsl(var(--primary)/0.5)] backdrop-blur-sm transition-transform duration-500 hover:scale-[1.015]"
+        style={{ borderRadius: cloudRadius }}
+      >
+        <img
+          src={image}
+          alt="Главный приз розыгрыша"
+          className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.04]"
+        />
+        {/* лёгкое магента-свечение по краю */}
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-0 ring-1 ring-inset ring-primary/20"
+          style={{ borderRadius: cloudRadius }}
+        />
+      </Link>
+
+      {/* Таймер — прозрачный, без рамок */}
+      <div className="mt-6 flex items-end justify-center gap-4 sm:gap-6">
+        {[
+          { v: days, l: "дни" },
+          { v: hours, l: "часы" },
+          { v: minutes, l: "мин" },
+          { v: seconds, l: "сек" },
+        ].map((u, i) => (
+          <div key={u.l} className="flex items-end gap-4 sm:gap-6">
+            <div className="flex flex-col items-center">
+              <span className="font-display text-4xl tabular-nums leading-none text-foreground sm:text-5xl">
+                {pad(u.v)}
+              </span>
+              <span className="mt-2 font-mono text-[9px] uppercase tracking-[0.25em] text-muted-foreground">
+                {u.l}
+              </span>
+            </div>
+            {i < 3 ? (
+              <span
+                aria-hidden
+                className="font-display text-4xl leading-none text-primary/50 sm:text-5xl"
+              >
+                :
+              </span>
+            ) : null}
+          </div>
+        ))}
+      </div>
+
+      {/* Кнопка "Участвовать" — отдельная, в стиле CTA */}
+      <div className="mt-6 flex justify-center">
+        <Link
+          to={href}
+          className="group relative inline-block overflow-hidden bg-primary px-10 py-4 text-center font-display text-lg italic font-bold uppercase tracking-widest text-black transition-all duration-300 active:scale-[0.97]"
+          style={{ clipPath: "polygon(0 15%, 100% 0, 100% 100%, 0 85%)" }}
+        >
+          <span
+            aria-hidden
+            className="absolute inset-0 bg-white opacity-0 transition-opacity group-hover:opacity-10"
+          />
+          <span className="relative z-10 inline-flex items-center gap-3">
+            Участвовать
+            <span className="transition-transform group-hover:translate-x-1">→</span>
+          </span>
+        </Link>
+      </div>
+    </div>
   );
 }
