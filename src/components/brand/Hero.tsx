@@ -168,10 +168,10 @@ export function Hero() {
           </p>
         </div>
 
-        {/* Ваня + розыгрыш в одну линию */}
-        <div className="relative order-2 flex items-end justify-center gap-3 px-4 sm:gap-6">
+        {/* Ваня + розыгрыш в одну линию, вплотную */}
+        <div className="relative order-2 flex items-end justify-center px-2">
           {raffle ? (
-            <div className="relative z-20 w-1/2 max-w-[260px] pb-4">
+            <div className="relative z-20 w-[52%] max-w-[280px] pb-2 -mr-4">
               <RaffleCloud
                 image={image}
                 href={raffleHref}
@@ -183,7 +183,7 @@ export function Hero() {
               />
             </div>
           ) : null}
-          <div className="relative w-1/2 max-w-[260px]">
+          <div className="relative w-[52%] max-w-[280px] -ml-4">
             <img
               src={vanyaAsset.url}
               alt="Ваня — HELLHOUND Racing"
@@ -221,14 +221,12 @@ function RaffleCloud({
 }) {
   return (
     <div className="relative mx-auto max-w-md">
-      {/* Лейбл сверху — в цвет пунктов меню */}
-      <div
-        className={`text-center font-display font-bold uppercase tracking-[0.3em] text-muted-foreground ${
-          compact ? "mb-2 text-[10px]" : "mb-4 text-sm sm:text-base"
-        }`}
-      >
-        Активный розыгрыш
-      </div>
+      {/* Лейбл сверху — в цвет пунктов меню (скрыт в компактной мобильной раскладке) */}
+      {!compact && (
+        <div className="mb-4 text-center font-display text-sm font-bold uppercase tracking-[0.3em] text-muted-foreground sm:text-base">
+          Активный розыгрыш
+        </div>
+      )}
 
       {/* Облако с картинкой приза (cover — заполняет всё облако) */}
       <Link
