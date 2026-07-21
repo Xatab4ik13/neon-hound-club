@@ -32,6 +32,7 @@ import { useMyProfile } from "@/lib/garage-api";
 
 
 const NAV = [
+  { label: "Главная", href: "/" },
   { label: "Магазин", href: "/shop" },
   { label: "Hell Pass", href: "/hell-pass" },
   { label: "Школа", href: "/school" },
