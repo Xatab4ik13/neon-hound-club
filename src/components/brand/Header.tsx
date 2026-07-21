@@ -126,7 +126,7 @@ export function Header() {
                       aria-label="Профиль"
                       className="relative grid h-16 w-16 place-items-center text-foreground outline-none focus:outline-none"
                     >
-                      <span className="relative grid h-16 w-16 place-items-center rounded-full border-2 border-foreground">
+                      <span className="relative grid h-12 w-12 place-items-center rounded-full border-2 border-foreground">
                         <span className="relative grid h-[88%] w-[88%] overflow-hidden rounded-full bg-primary/15">
                           {avatarUrl ? (
                             <img
