@@ -321,13 +321,7 @@ function RaffleCloud({
             className={`flex items-end ${compact ? "gap-1.5" : "gap-4 sm:gap-6"}`}
           >
             <div className="flex flex-col items-center">
-              <span
-                className={`font-display tabular-nums leading-none text-foreground ${
-                  compact ? "text-lg" : "text-4xl sm:text-5xl"
-                }`}
-              >
-                {pad(u.v)}
-              </span>
+              <PlumpDigitPair value={u.v} compact={compact} />
               <span
                 className={`font-mono uppercase tracking-[0.25em] text-muted-foreground ${
                   compact ? "mt-1 text-[7px]" : "mt-2 text-[9px]"
