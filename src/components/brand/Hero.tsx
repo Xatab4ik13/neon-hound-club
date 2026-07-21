@@ -6,6 +6,7 @@ import { fetchHomeRaffles, type HomeRaffleItem } from "@/lib/queries";
 import pinkR6 from "@/assets/pink-r6.jpg";
 import heroBgAsset from "@/assets/hero-bg-new.jpg.asset.json";
 import vanyaAsset from "@/assets/vanya-presenter.png.asset.json";
+import hhrLogoAsset from "@/assets/hhr-logo.png.asset.json";
 
 /**
  * Hero — HELLHOUND Racing Club.
