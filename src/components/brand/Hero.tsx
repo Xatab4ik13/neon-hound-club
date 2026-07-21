@@ -90,6 +90,13 @@ export function Hero() {
           <p className="mt-6 max-w-[38ch] text-xl font-semibold uppercase leading-snug tracking-[0.18em] text-foreground/70 xl:text-2xl">
             Создано теми, кто едет
           </p>
+          <Link
+            to={isAuthed ? "/club" : "/login"}
+            className="mt-8 inline-flex w-fit items-center bg-primary px-10 py-4 font-display text-lg font-black uppercase tracking-wider text-primary-foreground shadow-[0_0_40px_-12px_hsl(var(--primary)/0.55)] transition-all duration-300 hover:scale-[1.03] hover:shadow-[0_0_55px_-8px_hsl(var(--primary)/0.75)]"
+            style={{ borderRadius: cloudRadius }}
+          >
+            Вступить в клуб
+          </Link>
         </div>
 
         {/* Ваня */}
