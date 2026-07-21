@@ -12,6 +12,7 @@ import { XP_SOURCES } from "@/data/xp-sources";
 import { isClubHost } from "@/lib/host";
 import pinkR6 from "@/assets/pink-r6.jpg";
 import vanyaBike from "@/assets/vanya-bike.png";
+import vybiraySpeech from "@/assets/vybiray-luchshee.png.asset.json";
 
 
 
