@@ -198,10 +198,6 @@ function RaffleCloud({
   minutes: number;
   seconds: number;
 }) {
-  // асимметричные радиусы = «облако»
-  const cloudRadius =
-    "62% 38% 55% 45% / 45% 55% 45% 55%";
-
   return (
     <div className="relative mx-auto max-w-md">
       {/* Лейбл сверху — в цвет пунктов меню */}
