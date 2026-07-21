@@ -89,7 +89,7 @@ export function Hero() {
       <div className="relative mx-auto grid w-full max-w-7xl grid-cols-1 items-end gap-8 lg:grid-cols-12 lg:items-center lg:gap-4">
         {/* RAFFLE "CLOUD" — на десктопе перекрывает Ваню (по центру его жеста) */}
         {raffle ? (
-          <div className="relative z-20 order-2 lg:order-1 lg:col-span-7 lg:col-start-4 xl:col-span-6 xl:col-start-5">
+          <div className="relative z-20 order-2 lg:order-1 lg:col-span-7 lg:col-start-4 xl:col-span-6 xl:col-start-5 lg:translate-x-10 xl:translate-x-16 2xl:translate-x-20">
             <RaffleCloud
               image={image}
               href={raffleHref}
