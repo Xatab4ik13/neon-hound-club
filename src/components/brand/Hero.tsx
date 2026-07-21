@@ -74,7 +74,7 @@ export function Hero() {
       />
 
       {/* VANYA — прижат к правому краю viewport'а */}
-      <div className="pointer-events-none absolute bottom-0 right-0 z-10 hidden items-end lg:flex">
+      <div className="pointer-events-none absolute bottom-14 right-0 z-10 hidden items-end lg:flex">
         <div
           aria-hidden
           className="pointer-events-none absolute inset-x-4 bottom-0 h-1/2 rounded-full bg-primary/25 blur-3xl"
