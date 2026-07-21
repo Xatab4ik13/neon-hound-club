@@ -52,10 +52,15 @@ export function Header() {
           <Link
             to="/"
             aria-label="HELLHOUND Racing Club"
-            className="flex h-full flex-shrink-0 items-center"
+            className="relative flex h-full flex-shrink-0 items-center"
           >
-            <img src={hhrLogo.url} alt="HELLHOUND Racing" className="h-full w-auto py-1" />
+            <img
+              src={hhrLogo.url}
+              alt="HELLHOUND Racing"
+              className="pointer-events-none h-[120%] w-auto"
+            />
           </Link>
+
 
 
 
