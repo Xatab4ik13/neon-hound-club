@@ -119,7 +119,7 @@ export function Header() {
                   <button
                     type="button"
                     aria-label="Профиль"
-                    className="relative grid h-10 w-10 shrink-0 overflow-hidden rounded-full bg-primary/15 text-primary ring-2 ring-primary/40 transition-transform hover:ring-primary active:scale-95"
+                    className="relative grid aspect-square h-10 w-10 shrink-0 overflow-hidden rounded-full bg-primary/15 text-primary ring-2 ring-primary/40 transition-transform hover:ring-primary focus:outline-none focus-visible:ring-primary active:scale-95"
                   >
                     {avatarUrl ? (
                       <img
