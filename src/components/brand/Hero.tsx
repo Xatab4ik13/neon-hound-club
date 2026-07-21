@@ -80,7 +80,7 @@ export function Hero() {
         <div
           className="absolute right-0"
           style={{
-            bottom: "clamp(calc(60px + 2cm), calc(8vh + 2cm), calc(120px + 2cm))",
+            bottom: "clamp(calc(60px + 3cm), calc(8vh + 3cm), calc(120px + 3cm))",
             width: "clamp(440px, 34vw, 640px)",
           }}
         >
@@ -102,7 +102,7 @@ export function Hero() {
             className="pointer-events-auto absolute z-20"
             style={{
               right: "clamp(200px, 16vw, 310px)",
-              bottom: "clamp(calc(190px + 2cm), calc(25vh + 2cm), calc(340px + 2cm))",
+              bottom: "clamp(calc(190px + 3cm), calc(25vh + 3cm), calc(340px + 3cm))",
               width: "clamp(340px, 26vw, 460px)",
             }}
           >
@@ -141,8 +141,6 @@ export function Hero() {
           />
         </div>
       </div>
-
-
     </section>
   );
 }
@@ -193,8 +191,6 @@ function RaffleCloud({
         />
       </Link>
 
-
-
       {/* Таймер — прозрачный, без рамок */}
       <div className="mt-6 flex items-end justify-center gap-4 sm:gap-6">
         {[
@@ -223,7 +219,6 @@ function RaffleCloud({
           </div>
         ))}
       </div>
-
     </div>
   );
 }
