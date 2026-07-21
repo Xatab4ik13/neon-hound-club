@@ -109,84 +109,82 @@ function Index() {
         {showcaseItems.length > 0 && (
           <section id="drop" className="bg-surface pb-24 pt-8 md:pt-12">
             <div className="mx-auto max-w-7xl px-6">
-              <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,0.55fr)_minmax(0,1fr)] lg:gap-12">
-                {/* Ваня слева — только на десктопе, где есть место для горизонтального разделения */}
-                <div className="relative hidden lg:block">
-                  <div className="sticky top-28">
-                    <img
-                      src={vanyaBike}
-                      alt="Ваня — HELLHOUND Racing"
-                      width={1024}
-                      height={768}
-                      loading="lazy"
-                      className="h-auto w-full object-contain drop-shadow-[0_30px_60px_rgba(0,0,0,0.45)]"
-                    />
-                  </div>
-                </div>
-
-                {/* Товары справа */}
+              <div className="mb-8 flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
                 <div>
-                  <div className="mb-12 flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
-                    <div>
-                      <div className="mb-3 font-mono text-xs uppercase tracking-widest text-primary">
-                        Магазин
-                      </div>
-                      <h2 className="text-balance font-display text-4xl uppercase tracking-tight md:text-5xl">
-                        Популярные товары
-                      </h2>
-                    </div>
-                    <Link
-                      to="/shop"
-                      className="group inline-flex items-center gap-2 rounded-2xl border-[3px] border-foreground bg-card px-5 py-3 font-display text-xs font-black uppercase tracking-widest text-foreground shadow-[6px_6px_0_0_hsl(var(--foreground))] transition-all duration-150 ease-out hover:-translate-x-1.5 hover:-translate-y-1.5 hover:text-primary hover:shadow-[8px_8px_0_0_hsl(var(--foreground))] active:scale-[0.98]"
-                    >
-                      Смотреть больше
-                      <PlumpArrowRight className="h-4 w-4 transition-transform duration-150 group-hover:translate-x-0.5" />
-                    </Link>
+                  <div className="mb-3 font-mono text-xs uppercase tracking-widest text-primary">
+                    Магазин
                   </div>
+                  <h2 className="text-balance font-display text-4xl uppercase tracking-tight md:text-5xl">
+                    Популярные товары
+                  </h2>
+                </div>
+                <Link
+                  to="/shop"
+                  className="group inline-flex items-center gap-2 rounded-2xl border-[3px] border-foreground bg-card px-5 py-3 font-display text-xs font-black uppercase tracking-widest text-foreground shadow-[6px_6px_0_0_hsl(var(--foreground))] transition-all duration-150 ease-out hover:-translate-x-1.5 hover:-translate-y-1.5 hover:text-primary hover:shadow-[8px_8px_0_0_hsl(var(--foreground))] active:scale-[0.98]"
+                >
+                  Смотреть больше
+                  <PlumpArrowRight className="h-4 w-4 transition-transform duration-150 group-hover:translate-x-0.5" />
+                </Link>
+              </div>
+            </div>
 
-                  <div className="grid gap-6 md:grid-cols-2">
-                    {showcaseItems.map((p) => {
-                      const sold = p.stock !== null && p.stock <= 0;
-                      const statusLabel = sold
-                        ? "Распродано"
-                        : p.kind === "preorder"
-                          ? "Предзаказ"
-                          : p.stock !== null && p.stock <= 24
-                            ? `Осталось ${p.stock}`
-                            : "В наличии";
-                      const statusColor = sold || p.kind !== "preorder" && (p.stock === null || p.stock > 24)
-                        ? "text-muted-foreground"
-                        : "text-primary";
-                      return (
-                        <Link
-                          key={p.id}
-                          to="/shop/$productSlug"
-                          params={{ productSlug: p.slug }}
-                          className="group rounded-xl border border-border bg-card p-2 ring-1 ring-black/5 transition-colors hover:border-primary/40"
-                        >
-                          <div className="mb-4 overflow-hidden rounded-lg border border-border">
-                            <img
-                              src={p.images[0] ?? pinkR6}
-                              alt={p.title}
-                              width={768}
-                              height={1024}
-                              loading="lazy"
-                              className="aspect-[3/4] w-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
-                            />
+            <div className="flex flex-col items-end lg:flex-row lg:items-end">
+              {/* Ваня слева — крупный, прижат к левой границе сайта */}
+              <div className="relative hidden shrink-0 lg:block lg:w-[55%]">
+                <img
+                  src={vanyaBike}
+                  alt="Ваня — HELLHOUND Racing"
+                  width={1024}
+                  height={768}
+                  loading="lazy"
+                  className="h-auto w-full object-contain drop-shadow-[0_30px_60px_rgba(0,0,0,0.45)]"
+                />
+              </div>
+
+              {/* Товары справа — 3 в ряд на десктопе */}
+              <div className="w-full px-6 lg:w-[45%] lg:pl-2 lg:pr-6">
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {showcaseItems.map((p) => {
+                    const sold = p.stock !== null && p.stock <= 0;
+                    const statusLabel = sold
+                      ? "Распродано"
+                      : p.kind === "preorder"
+                        ? "Предзаказ"
+                        : p.stock !== null && p.stock <= 24
+                          ? `Осталось ${p.stock}`
+                          : "В наличии";
+                    const statusColor = sold || p.kind !== "preorder" && (p.stock === null || p.stock > 24)
+                      ? "text-muted-foreground"
+                      : "text-primary";
+                    return (
+                      <Link
+                        key={p.id}
+                        to="/shop/$productSlug"
+                        params={{ productSlug: p.slug }}
+                        className="group rounded-xl border border-border bg-card p-2 ring-1 ring-black/5 transition-colors hover:border-primary/40"
+                      >
+                        <div className="mb-3 overflow-hidden rounded-lg border border-border">
+                          <img
+                            src={p.images[0] ?? pinkR6}
+                            alt={p.title}
+                            width={768}
+                            height={1024}
+                            loading="lazy"
+                            className="aspect-[3/4] w-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+                          />
+                        </div>
+                        <div className="px-1 pb-1">
+                          <div className="mb-1 flex items-baseline justify-between gap-2 text-xs font-medium uppercase">
+                            <span>{p.title}</span>
+                            <span className="font-mono">{p.priceRub.toLocaleString("ru-RU")} ₽</span>
                           </div>
-                          <div className="px-2 pb-2">
-                            <div className="mb-1 flex items-baseline justify-between gap-2 text-sm font-medium uppercase">
-                              <span>{p.title}</span>
-                              <span className="font-mono">{p.priceRub.toLocaleString("ru-RU")} ₽</span>
-                            </div>
-                            <div className={`text-[10px] uppercase tracking-widest ${statusColor}`}>
-                              {statusLabel}
-                            </div>
+                          <div className={`text-[9px] uppercase tracking-widest ${statusColor}`}>
+                            {statusLabel}
                           </div>
-                        </Link>
-                      );
-                    })}
-                  </div>
+                        </div>
+                      </Link>
+                    );
+                  })}
                 </div>
               </div>
             </div>
