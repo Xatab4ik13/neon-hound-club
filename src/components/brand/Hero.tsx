@@ -32,6 +32,9 @@ function useCountdown(target: Date | null) {
 
 const pad = (n: number) => n.toString().padStart(2, "0");
 
+// асимметричные радиусы = «облако»
+const cloudRadius = "62% 38% 55% 45% / 45% 55% 45% 55%";
+
 export function Hero() {
   const { isAuthed } = useViewer();
 
