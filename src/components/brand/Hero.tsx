@@ -137,20 +137,13 @@ export function Hero() {
       {/* MOBILE / TABLET — вертикальный стек */}
       <div className="relative mx-auto grid w-full max-w-7xl grid-cols-1 items-end gap-8 lg:hidden">
         {/* Заголовок и описание */}
-        <div className="relative z-20 order-1 px-6 pt-8 text-center sm:pt-12">
-          <div className="mb-3 flex justify-center">
-            <img
-              src={hhrLogoAsset.url}
-              alt="HHR"
-              className="h-14 w-auto object-contain sm:h-16"
-            />
-          </div>
-          <h1 className="font-display text-5xl font-black uppercase leading-[0.9] tracking-tight text-foreground sm:text-6xl">
+        <div className="relative z-20 order-1 px-6 pt-6 text-center sm:pt-10">
+          <h1 className="font-display text-6xl font-black uppercase leading-[0.88] tracking-tight text-foreground sm:text-7xl">
             <span className="text-primary">HELLHOUND</span>
             <br />
             <span className="text-foreground">Racing Club</span>
           </h1>
-          <p className="mx-auto mt-4 max-w-[36ch] text-base font-medium leading-relaxed text-foreground/80 sm:text-lg">
+          <p className="mx-auto mt-5 max-w-[38ch] text-lg font-semibold uppercase leading-snug tracking-[0.18em] text-foreground/70 sm:text-xl">
             Создано теми, кто едет.
           </p>
         </div>
