@@ -333,7 +333,7 @@ function RaffleCloud({
             {i < 3 ? (
               <span
                 aria-hidden
-                className={`font-display leading-none text-primary ${
+                className={`leading-none text-primary ${
                   compact ? "text-xl" : "text-[42px]"
                 }`}
               >
