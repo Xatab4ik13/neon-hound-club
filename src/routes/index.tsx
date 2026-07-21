@@ -140,6 +140,12 @@ function Index() {
                   loading="lazy"
                   className="h-auto w-full translate-x-[-5cm] translate-y-[4cm] object-contain"
                 />
+                <img
+                  src={vybiraySpeech.url}
+                  alt="Выбирай лучшее!"
+                  loading="lazy"
+                  className="pointer-events-none absolute left-[38%] top-[10%] w-[22%] -rotate-[6deg] object-contain"
+                />
               </div>
 
               {/* Товары справа — 3 в ряд на десктопе */}
