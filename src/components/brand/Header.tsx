@@ -1,7 +1,7 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import hhrLogo from "@/assets/hhr-logo.png.asset.json";
-import { PlumpCart, PlumpMenu } from "@/components/ui/icons";
+import { PlumpCart, PlumpMenu, PlumpDoorEnter, PlumpDoorExit, PlumpCircle } from "@/components/ui/icons";
 
 import {
   DropdownMenu,
