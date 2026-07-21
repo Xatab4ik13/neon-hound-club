@@ -133,9 +133,9 @@ export function Hero() {
             <div
               className="pointer-events-none absolute z-30"
               style={{
-                top: "-110%",
-                right: "10%",
-                width: "clamp(200px, 18vw, 300px)",
+                top: "-95%",
+                right: "18%",
+                width: "clamp(190px, 17vw, 280px)",
               }}
             >
               <img
