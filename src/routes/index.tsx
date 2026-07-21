@@ -150,7 +150,7 @@ function Index() {
 
               {/* Товары справа — 3 в ряд на десктопе */}
               <div className="w-full px-6 lg:w-[48%] lg:-translate-x-[4vw] lg:-translate-y-[6vw] lg:pl-0 lg:pr-6">
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:scale-[1.2] lg:origin-bottom-right">
                   {showcaseItems.map((p) => {
                     const sold = p.stock !== null && p.stock <= 0;
                     const statusLabel = sold
