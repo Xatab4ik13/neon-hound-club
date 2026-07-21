@@ -7,6 +7,7 @@ import { PlumpArrowRight } from "@/components/ui/icons";
 import pinkR6 from "@/assets/pink-r6.jpg";
 import heroBgAsset from "@/assets/hero-bg-new.jpg.asset.json";
 import vanyaAsset from "@/assets/vanya-presenter.png.asset.json";
+import comicBubble from "@/assets/comic-bubble.png";
 
 
 /**
@@ -130,23 +131,28 @@ export function Hero() {
           {/* Бабл из комикса над шлемом Вани */}
           {raffle ? (
             <div
-              className="pointer-events-none absolute z-30 -translate-y-[8%]"
+              className="pointer-events-none absolute z-30"
               style={{
-                top: "0",
-                right: "5%",
-                width: "clamp(180px, 16vw, 260px)",
+                top: "-95%",
+                right: "18%",
+                width: "clamp(190px, 17vw, 280px)",
               }}
             >
-              <div className="relative rounded-2xl border-2 border-black bg-white px-4 py-3 shadow-[4px_4px_0_0_rgba(0,0,0,1)]">
-                <p className="text-center font-display text-sm font-black uppercase leading-tight tracking-wide text-black sm:text-base">
-                  Залетай в розыгрыш
-                </p>
-                {/* Хвостик бабла */}
-                <span
-                  aria-hidden
-                  className="absolute -bottom-2 right-8 h-4 w-4 rotate-45 border-b-2 border-r-2 border-black bg-white"
-                />
-              </div>
+              <img
+                src={comicBubble}
+                alt=""
+                aria-hidden
+                width={1024}
+                height={1024}
+                className="h-auto w-full"
+                loading="eager"
+              />
+              <p
+                className="absolute left-1/2 top-[40%] w-[78%] -translate-x-1/2 -translate-y-1/2 text-center font-display text-sm font-black uppercase leading-tight tracking-wide text-black sm:text-base"
+                style={{ textShadow: "0 0 3px rgba(255,255,255,0.9)" }}
+              >
+                Залетай в розыгрыш
+              </p>
             </div>
           ) : null}
         </div>
