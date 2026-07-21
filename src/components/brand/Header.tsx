@@ -250,57 +250,36 @@ function DesktopPlatesMenu({
       {/* Click-catcher (no dim, no blur — plates float over the site) */}
       <div onClick={onClose} className="absolute inset-0" />
 
-      {/* Plates column — Plump Solid style: chunky black outline + hard offset drop */}
+      {/* Plates column — Plump Solid style: white outline + hard white offset drop */}
       <div className="pointer-events-none absolute inset-y-0 left-0 flex flex-col justify-start gap-5 px-8 pt-28 pb-8">
         {NAV.map((item, i) => {
           const isActive =
             pathname === item.href || pathname.startsWith(item.href + "/");
-          const bg = NAV_IMAGES[item.href];
           return (
             <Link
               key={item.href}
               to={item.href}
               onClick={onClose}
-              className={`group pointer-events-auto relative block h-[84px] w-[360px] overflow-hidden rounded-2xl border-[3px] border-foreground bg-background transition-all duration-500 ${
+              className={`group pointer-events-auto relative flex h-[84px] w-[360px] items-center justify-center rounded-2xl border-[3px] border-foreground bg-card px-4 transition-all duration-500 hover:bg-primary ${
                 open
                   ? "translate-x-0 opacity-100"
                   : "-translate-x-20 opacity-0"
-              }`}
+              } ${isActive ? "bg-primary" : ""}`}
               style={{
                 transitionDelay: open ? `${i * 80}ms` : "0ms",
                 transitionTimingFunction: "cubic-bezier(0.16,1,0.3,1)",
                 boxShadow: "6px 6px 0 0 hsl(var(--foreground))",
               }}
             >
-              <img
-                src={bg}
-                alt=""
-                loading="lazy"
-                className="absolute inset-0 h-full w-full object-cover brightness-[0.45] transition-transform duration-700 group-hover:scale-105"
-              />
-              <div
-                aria-hidden
-                className="absolute inset-0 bg-gradient-to-r from-background/85 via-background/40 to-transparent"
-              />
-              <div
-                aria-hidden
-                className="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-                style={{ background: "hsl(var(--primary) / 0.35)" }}
-              />
-              <div className="absolute inset-0 flex items-center justify-center px-4">
-                <span
-                  className={`font-display text-[26px] italic font-black uppercase leading-none tracking-tight text-center transition-colors duration-300 ${
-                    isActive
-                      ? "text-primary"
-                      : "text-foreground group-hover:text-primary"
-                  }`}
-                  style={{
-                    WebkitTextStroke: "0.5px hsl(var(--foreground))",
-                  }}
-                >
-                  {item.label}
-                </span>
-              </div>
+              <span
+                className={`font-display text-[26px] italic font-black uppercase leading-none tracking-tight text-center transition-colors duration-300 ${
+                  isActive
+                    ? "text-primary-foreground"
+                    : "text-foreground group-hover:text-primary-foreground"
+                }`}
+              >
+                {item.label}
+              </span>
             </Link>
           );
         })}
