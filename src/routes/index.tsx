@@ -96,9 +96,15 @@ function Index() {
         {/* HERO */}
         <Hero />
 
+        {/* Плавный переход от Hero к магазину */}
+        <div
+          aria-hidden
+          className="h-24 w-full bg-gradient-to-b from-background via-background/60 to-surface md:h-32"
+        />
+
         {/* POPULAR PRODUCTS */}
         {showcaseItems.length > 0 && (
-          <section id="drop" className="bg-surface py-24">
+          <section id="drop" className="bg-surface pb-24 pt-8 md:pt-12">
             <div className="mx-auto max-w-7xl px-6">
               <div className="mb-12 flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
                 <div>
