@@ -93,8 +93,9 @@ export function Header() {
           {/* Desktop burger — replaces text nav */}
           <button
             type="button"
-            aria-label="Меню"
-            className="relative hidden h-14 w-16 items-center justify-center text-foreground md:inline-flex"
+            aria-label={menuOpen ? "Закрыть меню" : "Меню"}
+            onClick={() => setMenuOpen((v) => !v)}
+            className="relative z-[70] hidden h-14 w-16 items-center justify-center text-foreground md:inline-flex"
           >
             <PlumpMenu className="h-9 w-9" />
           </button>
