@@ -54,7 +54,7 @@ export function Hero() {
       : "/login";
 
   return (
-    <section className="relative overflow-hidden px-6 py-20 md:px-12 md:py-28">
+    <section className="relative -mt-20 flex min-h-[100svh] items-center overflow-hidden px-6 pb-20 pt-40 md:px-12 md:pb-28 md:pt-44">
       {/* BG image */}
       <img
         src={heroBg}
@@ -62,17 +62,18 @@ export function Hero() {
         aria-hidden
         width={1920}
         height={1088}
-        className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-70"
+        className="pointer-events-none absolute inset-0 h-full w-full object-cover object-center"
       />
       {/* Vignette / затемнение слева для читаемости текста */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 bg-gradient-to-r from-background via-background/85 to-background/30"
+        className="pointer-events-none absolute inset-0 bg-gradient-to-r from-background via-background/70 to-background/10"
       />
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 bg-gradient-to-t from-background via-transparent to-background/40"
+        className="pointer-events-none absolute inset-0 bg-gradient-to-t from-background via-transparent to-background/30"
       />
+
 
 
       <div className="relative mx-auto grid max-w-7xl grid-cols-1 items-center gap-12 lg:grid-cols-12 lg:gap-16">

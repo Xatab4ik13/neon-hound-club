@@ -33,11 +33,23 @@ export function Header() {
 
   const { pathname } = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  // Transparent-over-hero режим только на главной
+  const overHero = pathname === "/";
 
   // Close menu on route change
   useEffect(() => {
     setMenuOpen(false);
   }, [pathname]);
+
+  // Track scroll to swap transparent → solid header
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 24);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   // Lock body scroll when menu is open
   useEffect(() => {
@@ -50,9 +62,18 @@ export function Header() {
     }
   }, [menuOpen]);
 
+  const transparent = overHero && !scrolled;
+
   return (
     <>
-      <nav className="fixed top-0 z-50 w-full border-b border-white/5 bg-background/80 backdrop-blur-md">
+      <nav
+        className={`fixed top-0 z-50 w-full transition-colors duration-300 ${
+          transparent
+            ? "border-b border-transparent bg-transparent backdrop-blur-0"
+            : "border-b border-white/5 bg-background/80 backdrop-blur-md"
+        }`}
+      >
+
         <div className="relative flex h-20 w-full items-center justify-between pl-4 pr-4 md:pl-6 md:pr-8">
           {/* Desktop nav — left edge */}
           <div className="hidden items-center gap-1 md:flex">
