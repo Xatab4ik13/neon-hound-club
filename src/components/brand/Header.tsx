@@ -63,7 +63,7 @@ export function Header() {
                 <Link
                   key={item.label}
                   to={item.href}
-                  className={`group relative px-4 py-2.5 text-[13px] font-medium uppercase tracking-[0.18em] transition-colors duration-300 ${
+                  className={`group relative px-2 py-2.5 text-[13px] font-medium uppercase tracking-[0.18em] transition-colors duration-300 ${
                     isActive
                       ? "text-primary"
                       : "text-muted-foreground hover:text-foreground"
