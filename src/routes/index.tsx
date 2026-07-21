@@ -138,13 +138,13 @@ function Index() {
                   width={1024}
                   height={768}
                   loading="lazy"
-                  className="h-auto w-full translate-x-[-5cm] translate-y-[4cm] object-contain"
+                  className="h-auto w-full translate-x-[-9vw] translate-y-[7.2vw] object-contain"
                 />
                 <img
                   src={vybiraySpeech.url}
                   alt="Выбирай лучшее!"
                   loading="lazy"
-                  className="pointer-events-none absolute left-0 top-[10%] w-[22%] translate-x-[1cm] translate-y-[1cm] -rotate-[6deg] object-contain"
+                  className="pointer-events-none absolute left-0 top-[10%] w-[22%] translate-x-[1.8vw] translate-y-[1.8vw] -rotate-[6deg] object-contain"
                 />
               </div>
 
