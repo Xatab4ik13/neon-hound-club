@@ -103,77 +103,86 @@ export function Header() {
             <Link
               to="/cart"
               aria-label="Корзина"
-              className="relative grid h-10 w-10 place-items-center text-foreground transition-transform active:scale-90"
+              className="relative grid h-14 w-14 place-items-center text-foreground transition-transform active:scale-90"
             >
-              <PlumpCart className="h-[22px] w-[22px]" strokeWidth={1.9} />
+              <PlumpCart className="h-9 w-9" strokeWidth={1.9} />
               {cartCount > 0 && (
-                <span className="absolute right-0.5 top-0.5 grid h-[16px] min-w-[16px] place-items-center rounded-full bg-primary px-1 font-mono text-[9px] font-bold leading-none text-primary-foreground ring-2 ring-background">
+                <span className="absolute right-1 top-1 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-primary px-1 font-mono text-[10px] font-bold leading-none text-primary-foreground ring-2 ring-background">
                   {cartCount > 99 ? "99+" : cartCount}
                 </span>
               )}
             </Link>
 
             {!hydrated ? (
-              <div aria-hidden className="h-10 w-10" />
+              <div aria-hidden className="h-14 w-14" />
             ) : isAuthed ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button
-                    type="button"
-                    aria-label="Профиль"
-                    className="relative grid aspect-square h-10 w-10 shrink-0 overflow-hidden rounded-full bg-primary/15 text-primary ring-2 ring-primary/40 transition-transform hover:ring-primary focus:outline-none focus-visible:ring-primary active:scale-95"
-                  >
-                    {avatarUrl ? (
-                      <img
-                        src={avatarUrl}
-                        alt=""
-                        loading="lazy"
-                        decoding="async"
-                        className="absolute inset-0 h-full w-full object-cover"
-                      />
-                    ) : (
-                      <span className="grid h-full w-full place-items-center font-mono text-[11px] font-bold uppercase text-primary">
-                        {displayNick ? displayNick.slice(0, 2) : "—"}
+              <>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      aria-label="Профиль"
+                      className="relative grid h-14 w-14 place-items-center text-foreground outline-none focus:outline-none"
+                    >
+                      <span className="relative grid h-9 w-9 place-items-center">
+                        <PlumpCircle className="absolute inset-0 h-full w-full text-foreground" />
+                        <span className="relative grid h-[74%] w-[74%] overflow-hidden rounded-full bg-primary/15">
+                          {avatarUrl ? (
+                            <img
+                              src={avatarUrl}
+                              alt=""
+                              loading="lazy"
+                              decoding="async"
+                              className="absolute inset-0 h-full w-full object-cover"
+                            />
+                          ) : (
+                            <span className="grid h-full w-full place-items-center font-mono text-[10px] font-bold uppercase text-primary">
+                              {displayNick ? displayNick.slice(0, 2) : "—"}
+                            </span>
+                          )}
+                        </span>
                       </span>
-                    )}
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  align="end"
-                  className="w-56 border-border bg-background"
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    align="end"
+                    className="w-56 border-border bg-background"
+                  >
+                    <DropdownMenuLabel className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+                      Личный кабинет
+                    </DropdownMenuLabel>
+                    <DropdownMenuItem asChild>
+                      <Link to="/club">Главная клуба</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/club/me">Мой гараж</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/club/hell-pass">Hell Pass</Link>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                <button
+                  type="button"
+                  onClick={() => void signOut()}
+                  aria-label="Выйти"
+                  className="relative grid h-14 w-14 place-items-center text-foreground transition-transform active:scale-90"
                 >
-                  <DropdownMenuLabel className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-                    Личный кабинет
-                  </DropdownMenuLabel>
-                  <DropdownMenuItem asChild>
-                    <Link to="/club">Главная клуба</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/club/me">Мой гараж</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/club/hell-pass">Hell Pass</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onSelect={() => void signOut()}>Выйти</DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                  <PlumpDoorExit className="h-9 w-9" />
+                </button>
+              </>
             ) : (
               <Link
                 to="/login"
-                className="group relative overflow-hidden rounded-full border border-primary/30 px-6 py-2 font-mono text-[11px] font-medium uppercase tracking-[0.2em] text-primary transition-all duration-300 hover:border-primary hover:shadow-[0_0_15px_hsl(var(--primary)/0.3)]"
+                aria-label="Войти"
+                className="relative grid h-14 w-14 place-items-center text-foreground transition-transform active:scale-90"
               >
-                <span className="relative z-10 transition-colors duration-300 group-hover:text-primary-foreground">
-                  Войти
-                </span>
-                <span
-                  aria-hidden
-                  className="absolute inset-0 translate-y-full bg-primary transition-transform duration-300 group-hover:translate-y-0"
-                />
+                <PlumpDoorEnter className="h-9 w-9" />
               </Link>
             )}
 
           </div>
+
 
           {/* Mobile burger */}
           <button
