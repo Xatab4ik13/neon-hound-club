@@ -35,7 +35,7 @@ export function AppShowcase() {
     <section id="app" className="relative overflow-hidden bg-surface px-6 py-20 md:py-28">
       <div className="mx-auto max-w-7xl">
         {/* Заголовок */}
-        <div className="mb-10 md:mb-16">
+        <div className="mb-8 md:mb-12">
           <div className="mb-3 font-mono text-xs uppercase tracking-widest text-primary">
             Мобильное приложение
           </div>
@@ -45,19 +45,19 @@ export function AppShowcase() {
         </div>
 
         {/* Композиция */}
-        <div className="relative flex min-h-[520px] flex-col items-center gap-8 md:min-h-[640px] lg:flex-row lg:items-end lg:gap-0">
-          {/* Ваня — слева, прижат к низу секции */}
+        <div className="relative flex min-h-[580px] flex-col items-center md:min-h-[720px] lg:min-h-[520px] lg:flex-row lg:items-center">
+          {/* Ваня — слева, прижат к низу, позади телефона */}
           <img
             src={vanyaAsset}
             alt="Ваня — HELLHOUND Racing"
-            width={1536}
-            height={1024}
+            width={1264}
+            height={848}
             loading="lazy"
-            className="pointer-events-none absolute bottom-0 left-0 z-0 h-auto w-[90%] max-w-[520px] -translate-x-[10%] translate-y-[8%] object-contain md:w-[70%] md:max-w-[620px] lg:w-[55%] lg:max-w-[680px] lg:-translate-x-[5%]"
+            className="pointer-events-none absolute bottom-0 left-0 z-0 h-auto w-[65%] max-w-[360px] -translate-x-[8%] translate-y-[6%] object-contain md:w-[50%] md:max-w-[420px] lg:w-[38%] lg:max-w-[460px] lg:-translate-x-[5%] lg:translate-y-[8%]"
           />
 
-          {/* Телефон — центр-справа, слегка наклонён */}
-          <div className="relative z-10 mx-auto w-[220px] shrink-0 translate-y-4 md:w-[280px] lg:mx-0 lg:ml-auto lg:w-[300px] lg:-translate-x-[10%]">
+          {/* Телефон — центр, на переднем плане */}
+          <div className="relative z-10 mx-auto w-[200px] shrink-0 pt-4 md:w-[260px] lg:absolute lg:left-[32%] lg:top-1/2 lg:w-[280px] lg:-translate-y-1/2">
             <img
               src={phoneAsset}
               alt="Мокап приложения HELLHOUND"
@@ -71,7 +71,7 @@ export function AppShowcase() {
           </div>
 
           {/* Плашки с фичами — справа */}
-          <div className="relative z-20 grid w-full gap-3 sm:grid-cols-2 lg:w-[42%] lg:pl-8">
+          <div className="relative z-20 mt-8 grid w-full gap-3 sm:grid-cols-2 lg:ml-auto lg:mt-0 lg:w-[46%] lg:pl-6">
             {FEATURES.map((f) => {
               const Icon = f.icon;
               return (
