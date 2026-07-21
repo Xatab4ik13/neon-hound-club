@@ -79,22 +79,15 @@ export function Hero() {
       <div className="pointer-events-none absolute inset-0 z-10 hidden lg:block">
         {/* Левый текст */}
         <div
-          className="pointer-events-auto absolute left-0 top-1/2 z-20 flex -translate-y-1/2 flex-col px-6 md:px-12"
-          style={{ maxWidth: "clamp(320px, 30vw, 520px)" }}
+          className="pointer-events-auto absolute left-0 top-[38%] z-20 flex -translate-y-1/2 flex-col px-6 md:px-12"
+          style={{ maxWidth: "clamp(360px, 34vw, 600px)" }}
         >
-          <div className="mb-4">
-            <img
-              src={hhrLogoAsset.url}
-              alt="HHR"
-              className="h-16 w-auto object-contain xl:h-20"
-            />
-          </div>
-          <h1 className="font-display text-6xl font-black uppercase leading-[0.9] tracking-tight xl:text-8xl">
+          <h1 className="font-display text-7xl font-black uppercase leading-[0.88] tracking-tight xl:text-9xl">
             <span className="text-primary">HELLHOUND</span>
             <br />
             <span className="text-foreground">Racing Club</span>
           </h1>
-          <p className="mt-6 max-w-[36ch] text-lg font-medium leading-relaxed text-foreground/80 xl:text-xl">
+          <p className="mt-6 max-w-[38ch] text-xl font-semibold uppercase leading-snug tracking-[0.18em] text-foreground/70 xl:text-2xl">
             Создано теми, кто едет.
           </p>
         </div>
