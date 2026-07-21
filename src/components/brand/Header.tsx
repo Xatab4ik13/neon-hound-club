@@ -16,7 +16,7 @@ const NAV_IMAGES: Record<string, string> = {
   "/about": navAbout,
 };
 
-const PLATE_CLIP = "polygon(0 10%, 10% 0, 100% 0, 100% 90%, 90% 100%, 0 100%)";
+
 
 import {
   DropdownMenu,
@@ -245,13 +245,8 @@ function DesktopPlatesMenu({
         open ? "pointer-events-auto" : "pointer-events-none"
       }`}
     >
-      {/* Backdrop */}
-      <div
-        onClick={onClose}
-        className={`absolute inset-0 bg-black/70 backdrop-blur-md transition-opacity duration-500 ${
-          open ? "opacity-100" : "opacity-0"
-        }`}
-      />
+      {/* Click-catcher (no dim, no blur — plates float over the site) */}
+      <div onClick={onClose} className="absolute inset-0" />
 
       {/* Plates row */}
       <div className="pointer-events-none absolute inset-0 flex items-center justify-center px-8 pt-24">
@@ -265,13 +260,12 @@ function DesktopPlatesMenu({
                 key={item.href}
                 to={item.href}
                 onClick={onClose}
-                className={`group pointer-events-auto relative block aspect-[3/5] overflow-hidden transition-all duration-500 ${
+                className={`group pointer-events-auto relative block aspect-[3/5] overflow-hidden rounded-3xl shadow-2xl shadow-black/50 transition-all duration-500 ${
                   open
                     ? "translate-y-0 opacity-100"
                     : "translate-y-16 opacity-0"
                 }`}
                 style={{
-                  clipPath: PLATE_CLIP,
                   transitionDelay: open ? `${i * 90}ms` : "0ms",
                   transitionTimingFunction: "cubic-bezier(0.16,1,0.3,1)",
                 }}
@@ -294,10 +288,7 @@ function DesktopPlatesMenu({
                       "linear-gradient(180deg, transparent 40%, hsl(var(--primary) / 0.35) 100%)",
                   }}
                 />
-                <div className="absolute inset-x-6 bottom-8 flex flex-col gap-2">
-                  <span className="font-mono text-[10px] uppercase tracking-[0.28em] text-primary">
-                    {String(i + 1).padStart(2, "0")}
-                  </span>
+                <div className="absolute inset-x-6 bottom-8">
                   <span
                     className={`font-display text-[34px] italic font-bold uppercase leading-[0.95] tracking-tight transition-colors duration-300 ${
                       isActive
