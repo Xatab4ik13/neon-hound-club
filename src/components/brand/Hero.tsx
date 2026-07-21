@@ -80,7 +80,7 @@ export function Hero() {
         <div
           className="absolute right-0"
           style={{
-            bottom: "clamp(40px, 6vh, 96px)",
+            bottom: "clamp(60px, 8vh, 120px)",
             width: "clamp(440px, 34vw, 640px)",
           }}
         >
@@ -101,8 +101,8 @@ export function Hero() {
           <div
             className="pointer-events-auto absolute z-20"
             style={{
-              right: "clamp(240px, 19vw, 360px)",
-              bottom: "clamp(160px, 22vh, 300px)",
+              right: "clamp(200px, 16vw, 310px)",
+              bottom: "clamp(190px, 25vh, 340px)",
               width: "clamp(340px, 26vw, 460px)",
             }}
           >
