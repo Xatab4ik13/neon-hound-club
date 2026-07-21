@@ -45,7 +45,7 @@ export function AppShowcase() {
         </div>
 
         {/* Композиция */}
-        <div className="relative flex min-h-[580px] flex-col items-center md:min-h-[720px] lg:min-h-[520px] lg:flex-row lg:items-center">
+        <div className="relative flex min-h-[640px] flex-col items-center md:min-h-[760px] lg:min-h-[540px] lg:flex-row">
           {/* Ваня — слева, прижат к низу, позади телефона */}
           <img
             src={vanyaAsset}
@@ -53,11 +53,11 @@ export function AppShowcase() {
             width={1264}
             height={848}
             loading="lazy"
-            className="pointer-events-none absolute bottom-0 left-0 z-0 h-auto w-[65%] max-w-[360px] -translate-x-[8%] translate-y-[6%] object-contain md:w-[50%] md:max-w-[420px] lg:w-[38%] lg:max-w-[460px] lg:-translate-x-[5%] lg:translate-y-[8%]"
+            className="pointer-events-none absolute bottom-0 left-0 z-0 h-auto w-[55%] max-w-[260px] -translate-x-[5%] translate-y-[6%] object-contain md:w-[42%] md:max-w-[340px] md:-translate-x-[8%] lg:w-[30%] lg:max-w-[360px] lg:-translate-x-[15%] lg:translate-y-[8%]"
           />
 
           {/* Телефон — центр, на переднем плане */}
-          <div className="relative z-10 mx-auto w-[200px] shrink-0 pt-4 md:w-[260px] lg:absolute lg:left-[32%] lg:top-1/2 lg:w-[280px] lg:-translate-y-1/2">
+          <div className="relative z-10 mx-auto w-[210px] shrink-0 pt-2 md:w-[270px] lg:absolute lg:left-[28%] lg:top-1/2 lg:w-[300px] lg:-translate-y-1/2">
             <img
               src={phoneAsset}
               alt="Мокап приложения HELLHOUND"
@@ -71,7 +71,7 @@ export function AppShowcase() {
           </div>
 
           {/* Плашки с фичами — справа */}
-          <div className="relative z-20 mt-8 grid w-full gap-3 sm:grid-cols-2 lg:ml-auto lg:mt-0 lg:w-[46%] lg:pl-6">
+          <div className="relative z-20 mt-10 grid w-full gap-3 sm:grid-cols-2 lg:ml-auto lg:mt-0 lg:w-[46%] lg:pl-6">
             {FEATURES.map((f) => {
               const Icon = f.icon;
               return (
