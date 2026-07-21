@@ -81,7 +81,7 @@ export function Hero() {
       {/* DESKTOP-сцена: Ваня прижат к правому краю viewport'а, облако — на фиксированном
           расстоянии от него через clamp(). Пропорции сохраняются на любом мониторе. */}
       <div className="pointer-events-none absolute inset-0 z-10 hidden lg:block">
-        {/* Левый текст — опущен, верх HELLHOUND на уровне лейбла «Активный розыгрыш» */}
+        {/* Левый текст — опущен */}
         <div
           className="pointer-events-auto absolute left-0 top-[calc(16%+1cm)] z-20 flex flex-col px-6 md:px-12"
           style={{ maxWidth: "clamp(360px, 34vw, 600px)" }}
