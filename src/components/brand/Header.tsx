@@ -217,7 +217,11 @@ export function Header() {
             className="relative z-[70] ml-auto flex h-14 w-16 items-center justify-center text-primary md:hidden"
           >
             <span className="sr-only">Меню</span>
-            <PlumpMenu className="h-9 w-9" />
+            <PlumpMenu
+              className={`h-9 w-9 transition-transform duration-200 ease-out ${
+                menuOpen ? "rotate-90 scale-110" : "rotate-0 scale-100"
+              }`}
+            />
           </button>
 
 
