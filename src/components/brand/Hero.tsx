@@ -74,23 +74,9 @@ export function Hero() {
       />
 
       <div className="relative mx-auto grid w-full max-w-7xl grid-cols-1 items-end gap-8 lg:grid-cols-12 lg:items-center lg:gap-4">
-        {/* LEFT — VANYA */}
-        <div className="relative flex justify-center lg:col-span-6 lg:justify-end">
-          {/* мягкое магента-свечение под Ваней */}
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-x-4 bottom-0 h-1/2 rounded-full bg-primary/25 blur-3xl"
-          />
-          <img
-            src={vanyaAsset.url}
-            alt="Ваня — HELLHOUND Racing"
-            className="relative z-10 h-auto w-[380px] max-w-full object-contain drop-shadow-[0_20px_40px_rgba(0,0,0,0.6)] sm:w-[460px] lg:w-[560px] xl:w-[620px]"
-          />
-        </div>
-
-        {/* RIGHT — RAFFLE "CLOUD" */}
+        {/* LEFT — RAFFLE "CLOUD" */}
         {raffle ? (
-          <div className="relative lg:col-span-6">
+          <div className="relative order-2 lg:order-1 lg:col-span-6">
             <RaffleCloud
               image={image}
               href={raffleHref}
@@ -101,7 +87,22 @@ export function Hero() {
             />
           </div>
         ) : null}
+
+        {/* RIGHT — VANYA */}
+        <div className="relative order-1 flex justify-center lg:order-2 lg:col-span-6 lg:justify-start">
+          {/* мягкое магента-свечение под Ваней */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-4 bottom-0 h-1/2 rounded-full bg-primary/25 blur-3xl"
+          />
+          <img
+            src={vanyaAsset.url}
+            alt="Ваня — HELLHOUND Racing"
+            className="relative z-10 h-auto w-[380px] max-w-full -scale-x-100 object-contain drop-shadow-[0_20px_40px_rgba(0,0,0,0.6)] sm:w-[460px] lg:w-[560px] xl:w-[620px]"
+          />
+        </div>
       </div>
+
     </section>
   );
 }
@@ -127,16 +128,12 @@ function RaffleCloud({
 
   return (
     <div className="relative mx-auto max-w-md">
-      {/* Лейбл сверху */}
-      <div className="mb-4 flex items-center gap-2 pl-2 font-mono text-[11px] uppercase tracking-[0.25em] text-primary">
-        <span className="relative flex h-2 w-2">
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/60" />
-          <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
-        </span>
+      {/* Лейбл сверху — по центру, жирный, заглавными */}
+      <div className="mb-4 text-center font-display text-sm font-bold uppercase tracking-[0.3em] text-primary sm:text-base">
         Активный розыгрыш
       </div>
 
-      {/* Облако с картинкой приза */}
+      {/* Облако с картинкой приза (contain — видно целиком) */}
       <Link
         to={href}
         aria-label="Открыть розыгрыш"
@@ -146,7 +143,7 @@ function RaffleCloud({
         <img
           src={image}
           alt="Главный приз розыгрыша"
-          className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.04]"
+          className="h-full w-full object-contain p-4 transition-transform duration-700 group-hover:scale-[1.04]"
         />
         {/* лёгкое магента-свечение по краю */}
         <span
@@ -155,6 +152,7 @@ function RaffleCloud({
           style={{ borderRadius: cloudRadius }}
         />
       </Link>
+
 
       {/* Таймер — прозрачный, без рамок */}
       <div className="mt-6 flex items-end justify-center gap-4 sm:gap-6">
