@@ -108,25 +108,15 @@ function Index() {
 
         {/* POPULAR PRODUCTS */}
         {showcaseItems.length > 0 && (
-          <section id="drop" className="bg-surface pb-24 pt-8 md:pt-12">
-            <div className="mx-auto max-w-7xl px-6">
-              <div className="mb-8 flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
-                <div>
-                  <div className="mb-3 font-mono text-xs uppercase tracking-widest text-primary">
-                    Магазин
-                  </div>
-                  <h2 className="text-balance font-display text-4xl uppercase tracking-tight md:text-5xl">
-                    Популярные товары
-                  </h2>
-                </div>
-                <Link
-                  to="/shop"
-                  className="group inline-flex items-center gap-2 rounded-2xl border-[3px] border-foreground bg-card px-5 py-3 font-display text-xs font-black uppercase tracking-widest text-foreground shadow-[6px_6px_0_0_hsl(var(--foreground))] transition-all duration-150 ease-out hover:-translate-x-1.5 hover:-translate-y-1.5 hover:text-primary hover:shadow-[8px_8px_0_0_hsl(var(--foreground))] active:scale-[0.98]"
-                >
-                  Смотреть больше
-                  <PlumpArrowRight className="h-4 w-4 transition-transform duration-150 group-hover:translate-x-0.5" />
-                </Link>
+          <section id="drop" className="relative bg-surface pb-24 pt-8 md:pt-12">
+            {/* Заголовок слева, на одной линии с бургером */}
+            <div className="px-6 md:px-8">
+              <div className="mb-3 font-mono text-xs uppercase tracking-widest text-primary">
+                Магазин
               </div>
+              <h2 className="text-balance font-display text-4xl uppercase tracking-tight md:text-5xl">
+                Популярные товары
+              </h2>
             </div>
 
             <div className="flex flex-col items-end lg:flex-row lg:items-end">
@@ -148,8 +138,8 @@ function Index() {
                 />
               </div>
 
-              {/* Товары справа — 3 в ряд на десктопе */}
-              <div className="w-full px-6 lg:w-[48%] lg:-translate-x-[4vw] lg:-translate-y-[6vw] lg:pl-0 lg:pr-6">
+              {/* Товары справа — 3 в ряд на десктопе, опущены на 1 см ниже */}
+              <div className="w-full px-6 lg:w-[48%] lg:-translate-x-[4vw] lg:-translate-y-[calc(6vw_-_1cm)] lg:pl-0 lg:pr-6">
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:scale-[1.2] lg:origin-bottom-right">
                   {showcaseItems.map((p) => {
                     const sold = p.stock !== null && p.stock <= 0;
@@ -194,6 +184,17 @@ function Index() {
                   })}
                 </div>
               </div>
+            </div>
+
+            {/* Кнопка внизу справа */}
+            <div className="mt-8 flex justify-end px-6 md:px-8">
+              <Link
+                to="/shop"
+                className="group inline-flex items-center gap-2 rounded-2xl border-[3px] border-foreground bg-card px-5 py-3 font-display text-xs font-black uppercase tracking-widest text-foreground shadow-[6px_6px_0_0_hsl(var(--foreground))] transition-all duration-150 ease-out hover:-translate-x-1.5 hover:-translate-y-1.5 hover:text-primary hover:shadow-[8px_8px_0_0_hsl(var(--foreground))] active:scale-[0.98]"
+              >
+                Смотреть больше
+                <PlumpArrowRight className="h-4 w-4 transition-transform duration-150 group-hover:translate-x-0.5" />
+              </Link>
             </div>
           </section>
         )}
