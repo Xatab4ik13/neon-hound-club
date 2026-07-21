@@ -291,8 +291,8 @@ function DesktopPlatesMenu({
                 <span
                   className={`font-display text-[26px] italic font-black uppercase leading-none tracking-tight text-center transition-colors duration-150 ease-out ${
                     isActive
-                      ? "text-primary-foreground"
-                      : "text-foreground group-hover:text-primary-foreground"
+                      ? "text-black"
+                      : "text-foreground group-hover:text-black"
                   }`}
                 >
                   {item.label}
