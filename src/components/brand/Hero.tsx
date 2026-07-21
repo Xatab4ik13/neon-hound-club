@@ -147,7 +147,7 @@ export function Hero() {
       {/* MOBILE / TABLET — вертикальный стек */}
       <div className="relative mx-auto grid w-full max-w-7xl grid-cols-1 items-end gap-8 lg:hidden">
         {/* Заголовок и описание */}
-        <div className="relative z-20 order-1 px-6 pt-6 text-center sm:pt-10">
+        <div className="relative z-20 order-1 flex flex-col items-center px-6 pt-6 text-center sm:pt-10">
           <h1 className="font-display text-6xl font-black uppercase leading-[0.88] tracking-tight text-foreground sm:text-7xl">
             <span className="text-primary">HELLHOUND</span>
             <br />
@@ -156,6 +156,13 @@ export function Hero() {
           <p className="mx-auto mt-5 max-w-[38ch] text-lg font-semibold uppercase leading-snug tracking-[0.18em] text-foreground/70 sm:text-xl">
             Создано теми, кто едет
           </p>
+          <Link
+            to={isAuthed ? "/club" : "/login"}
+            className="mt-6 inline-flex items-center bg-primary px-10 py-4 font-display text-lg font-black uppercase tracking-wider text-primary-foreground shadow-[0_0_40px_-12px_hsl(var(--primary)/0.55)] transition-all duration-300 hover:scale-[1.03] hover:shadow-[0_0_55px_-8px_hsl(var(--primary)/0.75)]"
+            style={{ borderRadius: cloudRadius }}
+          >
+            Вступить в клуб
+          </Link>
         </div>
 
         <div className="relative order-2 flex justify-center">
