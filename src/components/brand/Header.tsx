@@ -116,7 +116,7 @@ export function Header() {
             )}
 
             {!hydrated ? (
-              <div aria-hidden className="h-14 w-14" />
+              <div aria-hidden className="h-16 w-16" />
             ) : isAuthed ? (
               <>
                 <DropdownMenu>
@@ -124,9 +124,9 @@ export function Header() {
                     <button
                       type="button"
                       aria-label="Профиль"
-                      className="relative grid h-14 w-14 place-items-center text-foreground outline-none focus:outline-none"
+                      className="relative grid h-16 w-16 place-items-center text-foreground outline-none focus:outline-none"
                     >
-                      <span className="relative grid h-8 w-8 place-items-center rounded-full border-2 border-foreground">
+                      <span className="relative grid h-16 w-16 place-items-center rounded-full border-2 border-foreground">
                         <span className="relative grid h-[88%] w-[88%] overflow-hidden rounded-full bg-primary/15">
                           {avatarUrl ? (
                             <img
@@ -137,7 +137,7 @@ export function Header() {
                               className="absolute inset-0 h-full w-full object-cover"
                             />
                           ) : (
-                            <span className="grid h-full w-full place-items-center font-mono text-[10px] font-bold uppercase text-primary">
+                            <span className="grid h-full w-full place-items-center font-mono text-lg font-bold uppercase text-primary">
                               {displayNick ? displayNick.slice(0, 2) : "—"}
                             </span>
                           )}
