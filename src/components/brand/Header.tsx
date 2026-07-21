@@ -206,6 +206,12 @@ export function Header() {
               </Link>
             )}
 
+            <Link
+              to="/shop"
+              className="inline-flex h-12 items-center justify-center rounded-2xl border-[3px] border-foreground bg-card px-4 font-display text-[11px] font-black uppercase tracking-widest text-foreground shadow-[6px_6px_0_0_hsl(var(--foreground))] transition-all duration-150 ease-out hover:-translate-x-1.5 hover:-translate-y-1.5 hover:text-primary hover:shadow-[8px_8px_0_0_hsl(var(--foreground))] active:scale-[0.98]"
+            >
+              Популярные товары
+            </Link>
           </div>
 
 

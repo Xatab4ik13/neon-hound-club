@@ -1,5 +1,4 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { PlumpArrowRight } from "@/components/ui/icons";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { Header } from "@/components/brand/Header";
@@ -186,16 +185,6 @@ function Index() {
               </div>
             </div>
 
-            {/* Кнопка внизу справа */}
-            <div className="mt-8 flex justify-end px-6 md:px-8">
-              <Link
-                to="/shop"
-                className="group inline-flex items-center gap-2 rounded-2xl border-[3px] border-foreground bg-card px-5 py-3 font-display text-xs font-black uppercase tracking-widest text-foreground shadow-[6px_6px_0_0_hsl(var(--foreground))] transition-all duration-150 ease-out hover:-translate-x-1.5 hover:-translate-y-1.5 hover:text-primary hover:shadow-[8px_8px_0_0_hsl(var(--foreground))] active:scale-[0.98]"
-              >
-                Смотреть больше
-                <PlumpArrowRight className="h-4 w-4 transition-transform duration-150 group-hover:translate-x-0.5" />
-              </Link>
-            </div>
           </section>
         )}
 
