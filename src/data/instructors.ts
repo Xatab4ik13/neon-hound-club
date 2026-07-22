@@ -17,6 +17,7 @@ import nikitaAsset from "@/assets/instructors/nikita.webp.asset.json";
 import nkGal01 from "@/assets/instructors/nikita-gallery/nikita-01.webp.asset.json";
 import nkGal02 from "@/assets/instructors/nikita-gallery/nikita-02.webp.asset.json";
 import nkGal03 from "@/assets/instructors/nikita-gallery/nikita-03.webp.asset.json";
+import nkGal04 from "@/assets/instructors/nikita-gallery/nikita-04.webp.asset.json";
 import pavelAsset from "@/assets/instructors/pavel.webp.asset.json";
 import haixAsset from "@/assets/instructors/haix.webp.asset.json";
 import hxGal01 from "@/assets/instructors/haix-gallery/haix-01.webp.asset.json";
