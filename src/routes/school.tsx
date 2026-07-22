@@ -2,6 +2,12 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { Header } from "@/components/brand/Header";
 import { Footer } from "@/components/brand/Footer";
+import stanislavAsset from "@/assets/instructors/stanislav.webp.asset.json";
+import semenAsset from "@/assets/instructors/semen.webp.asset.json";
+import nikitaAsset from "@/assets/instructors/nikita.webp.asset.json";
+import pavelAsset from "@/assets/instructors/pavel.webp.asset.json";
+import haixAsset from "@/assets/instructors/haix.webp.asset.json";
+
 
 
 export const Route = createFileRoute("/school")({
@@ -28,47 +34,18 @@ export const Route = createFileRoute("/school")({
 type Instructor = {
   id: string;
   name: string;
-  city: string;
-  specialization: string;
-  experience: string;
+  photo: string;
   // Оттенок фоновой рамки-плашки — чтобы карточки не сливались.
-  tone: "primary" | "yellow" | "cyan" | "lime";
+  tone: "primary" | "yellow" | "cyan" | "lime" | "violet";
 };
 
-// MOCK — реальные инструктора появятся позже.
+// Города и специализации подставим позже, когда пришлёт клиент.
 const INSTRUCTORS: Instructor[] = [
-  {
-    id: "1",
-    name: "Ваня",
-    city: "Москва",
-    specialization: "Спорт / трек",
-    experience: "10 лет",
-    tone: "primary",
-  },
-  {
-    id: "2",
-    name: "Макс",
-    city: "Санкт-Петербург",
-    specialization: "Новичкам",
-    experience: "6 лет",
-    tone: "yellow",
-  },
-  {
-    id: "3",
-    name: "Дима",
-    city: "Сочи",
-    specialization: "Эндуро / офф-роуд",
-    experience: "8 лет",
-    tone: "cyan",
-  },
-  {
-    id: "4",
-    name: "Артём",
-    city: "Казань",
-    specialization: "Городская езда",
-    experience: "5 лет",
-    tone: "lime",
-  },
+  { id: "stanislav", name: "Станислав", photo: stanislavAsset.url, tone: "primary" },
+  { id: "semen",     name: "Семён",     photo: semenAsset.url,     tone: "yellow" },
+  { id: "nikita",    name: "Никита",    photo: nikitaAsset.url,    tone: "cyan" },
+  { id: "pavel",     name: "Павел",     photo: pavelAsset.url,     tone: "lime" },
+  { id: "haix",      name: "HaiX",      photo: haixAsset.url,      tone: "violet" },
 ];
 
 const TONE_BG: Record<Instructor["tone"], string> = {
@@ -76,7 +53,9 @@ const TONE_BG: Record<Instructor["tone"], string> = {
   yellow: "bg-[#FFD93D]",
   cyan: "bg-[#3DDBD9]",
   lime: "bg-[#B6FF3C]",
+  violet: "bg-[#C6A8FF]",
 };
+
 
 function SchoolPage() {
   const [mode, setMode] = useState<"online" | "offline">("offline");
@@ -176,22 +155,15 @@ function InstructorCard({
       <div
         className={`relative overflow-hidden rounded-3xl border-[3px] border-foreground ${TONE_BG[instructor.tone]} shadow-[8px_8px_0_0_hsl(var(--foreground))] transition-transform duration-200 ease-out hover:-translate-x-1 hover:-translate-y-1 hover:shadow-[10px_10px_0_0_hsl(var(--foreground))]`}
       >
-        {/* Портрет-плейсхолдер (силуэт). Заменится реальными вырезанными фото. */}
-        <div className="relative aspect-[3/4] w-full">
-          <div className="absolute inset-0 bg-gradient-to-b from-black/0 via-black/10 to-black/40" />
-          <svg
-            viewBox="0 0 200 260"
-            className="absolute inset-0 h-full w-full"
-            aria-hidden
-          >
-            {/* Плечи + голова силуэтом */}
-            <circle cx="100" cy="90" r="42" fill="hsl(var(--foreground))" fillOpacity="0.85" />
-            <path
-              d="M20 260 C 30 190, 70 160, 100 160 C 130 160, 170 190, 180 260 Z"
-              fill="hsl(var(--foreground))"
-              fillOpacity="0.85"
-            />
-          </svg>
+        {/* Портрет инструктора */}
+        <div className="relative aspect-[3/4] w-full overflow-hidden">
+          <img
+            src={instructor.photo}
+            alt={instructor.name}
+            loading="lazy"
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/0 via-black/0 to-black/30" />
         </div>
 
         {/* Имя внизу карточки */}
@@ -202,39 +174,6 @@ function InstructorCard({
         </div>
 
       </div>
-
-      {/* Плашки сверху/по краям — город, спец, стаж */}
-      <div className="pointer-events-none absolute -top-3 left-3 -rotate-[4deg]">
-        <PlumpTag>{instructor.city}</PlumpTag>
-      </div>
-      <div className="pointer-events-none absolute -right-2 top-10 rotate-[6deg]">
-        <PlumpTag variant="dark">{instructor.specialization}</PlumpTag>
-      </div>
-      <div className="pointer-events-none absolute -bottom-3 right-6 -rotate-[3deg]">
-        <PlumpTag variant="accent">Опыт {instructor.experience}</PlumpTag>
-      </div>
     </article>
-  );
-}
-
-function PlumpTag({
-  children,
-  variant = "light",
-}: {
-  children: React.ReactNode;
-  variant?: "light" | "dark" | "accent";
-}) {
-  const styles =
-    variant === "dark"
-      ? "bg-foreground text-background"
-      : variant === "accent"
-        ? "bg-primary text-primary-foreground"
-        : "bg-card text-foreground";
-  return (
-    <span
-      className={`inline-block rounded-full border-[3px] border-foreground px-3 py-1 font-display text-[10px] font-black uppercase tracking-widest shadow-[3px_3px_0_0_hsl(var(--foreground))] md:text-xs ${styles}`}
-    >
-      {children}
-    </span>
   );
 }
