@@ -385,9 +385,10 @@ function ProductView({ product }: { product: ShopProduct }) {
             <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
               Цена
             </span>
-            <span className="font-display text-lg text-primary">
-              {product.priceRub.toLocaleString("ru-RU")} ₽
+            <span className="text-primary">
+              <PlumpPrice value={product.priceRub} size={18} />
             </span>
+
           </div>
           <button
             disabled={isSold}
