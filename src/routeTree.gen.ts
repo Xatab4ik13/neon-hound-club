@@ -11,7 +11,6 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VerifyEmailRouteImport } from './routes/verify-email'
 import { Route as ShopInfoRouteImport } from './routes/shop-info'
-import { Route as SchoolRouteImport } from './routes/school'
 import { Route as LogosRouteImport } from './routes/logos'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LikeLabRouteImport } from './routes/like-lab'
@@ -23,6 +22,7 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ShopIndexRouteImport } from './routes/shop.index'
+import { Route as SchoolIndexRouteImport } from './routes/school.index'
 import { Route as HellPassIndexRouteImport } from './routes/hell-pass.index'
 import { Route as ClubIndexRouteImport } from './routes/club.index'
 import { Route as CheckoutIndexRouteImport } from './routes/checkout.index'
@@ -96,11 +96,6 @@ const ShopInfoRoute = ShopInfoRouteImport.update({
   path: '/shop-info',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SchoolRoute = SchoolRouteImport.update({
-  id: '/school',
-  path: '/school',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const LogosRoute = LogosRouteImport.update({
   id: '/logos',
   path: '/logos',
@@ -154,6 +149,11 @@ const IndexRoute = IndexRouteImport.update({
 const ShopIndexRoute = ShopIndexRouteImport.update({
   id: '/shop/',
   path: '/shop/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SchoolIndexRoute = SchoolIndexRouteImport.update({
+  id: '/school/',
+  path: '/school/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HellPassIndexRoute = HellPassIndexRouteImport.update({
@@ -478,7 +478,6 @@ export interface FileRoutesByFullPath {
   '/like-lab': typeof LikeLabRoute
   '/login': typeof LoginRoute
   '/logos': typeof LogosRoute
-  '/school': typeof SchoolRouteWithChildren
   '/shop-info': typeof ShopInfoRoute
   '/verify-email': typeof VerifyEmailRoute
   '/admin/banners': typeof AdminBannersRoute
@@ -525,6 +524,7 @@ export interface FileRoutesByFullPath {
   '/checkout/': typeof CheckoutIndexRoute
   '/club/': typeof ClubIndexRoute
   '/hell-pass/': typeof HellPassIndexRoute
+  '/school/': typeof SchoolIndexRoute
   '/shop/': typeof ShopIndexRoute
   '/blogger/raffles/$raffleId': typeof BloggerRafflesRaffleIdRoute
   '/club/hell-pass/$tier': typeof ClubHellPassTierRoute
@@ -553,7 +553,6 @@ export interface FileRoutesByTo {
   '/like-lab': typeof LikeLabRoute
   '/login': typeof LoginRoute
   '/logos': typeof LogosRoute
-  '/school': typeof SchoolRouteWithChildren
   '/shop-info': typeof ShopInfoRoute
   '/verify-email': typeof VerifyEmailRoute
   '/admin/banners': typeof AdminBannersRoute
@@ -600,6 +599,7 @@ export interface FileRoutesByTo {
   '/checkout': typeof CheckoutIndexRoute
   '/club': typeof ClubIndexRoute
   '/hell-pass': typeof HellPassIndexRoute
+  '/school': typeof SchoolIndexRoute
   '/shop': typeof ShopIndexRoute
   '/blogger/raffles/$raffleId': typeof BloggerRafflesRaffleIdRoute
   '/club/hell-pass/$tier': typeof ClubHellPassTierRoute
@@ -632,7 +632,6 @@ export interface FileRoutesById {
   '/like-lab': typeof LikeLabRoute
   '/login': typeof LoginRoute
   '/logos': typeof LogosRoute
-  '/school': typeof SchoolRouteWithChildren
   '/shop-info': typeof ShopInfoRoute
   '/verify-email': typeof VerifyEmailRoute
   '/admin/banners': typeof AdminBannersRoute
@@ -679,6 +678,7 @@ export interface FileRoutesById {
   '/checkout/': typeof CheckoutIndexRoute
   '/club/': typeof ClubIndexRoute
   '/hell-pass/': typeof HellPassIndexRoute
+  '/school/': typeof SchoolIndexRoute
   '/shop/': typeof ShopIndexRoute
   '/blogger/raffles/$raffleId': typeof BloggerRafflesRaffleIdRoute
   '/club/hell-pass/$tier': typeof ClubHellPassTierRoute
@@ -712,7 +712,6 @@ export interface FileRouteTypes {
     | '/like-lab'
     | '/login'
     | '/logos'
-    | '/school'
     | '/shop-info'
     | '/verify-email'
     | '/admin/banners'
@@ -759,6 +758,7 @@ export interface FileRouteTypes {
     | '/checkout/'
     | '/club/'
     | '/hell-pass/'
+    | '/school/'
     | '/shop/'
     | '/blogger/raffles/$raffleId'
     | '/club/hell-pass/$tier'
@@ -787,7 +787,6 @@ export interface FileRouteTypes {
     | '/like-lab'
     | '/login'
     | '/logos'
-    | '/school'
     | '/shop-info'
     | '/verify-email'
     | '/admin/banners'
@@ -834,6 +833,7 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/club'
     | '/hell-pass'
+    | '/school'
     | '/shop'
     | '/blogger/raffles/$raffleId'
     | '/club/hell-pass/$tier'
@@ -865,7 +865,6 @@ export interface FileRouteTypes {
     | '/like-lab'
     | '/login'
     | '/logos'
-    | '/school'
     | '/shop-info'
     | '/verify-email'
     | '/admin/banners'
@@ -912,6 +911,7 @@ export interface FileRouteTypes {
     | '/checkout/'
     | '/club/'
     | '/hell-pass/'
+    | '/school/'
     | '/shop/'
     | '/blogger/raffles/$raffleId'
     | '/club/hell-pass/$tier'
@@ -944,7 +944,6 @@ export interface RootRouteChildren {
   LikeLabRoute: typeof LikeLabRoute
   LoginRoute: typeof LoginRoute
   LogosRoute: typeof LogosRoute
-  SchoolRoute: typeof SchoolRouteWithChildren
   ShopInfoRoute: typeof ShopInfoRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
   CheckoutSuccessRoute: typeof CheckoutSuccessRoute
@@ -960,6 +959,7 @@ export interface RootRouteChildren {
   ShopProductSlugRoute: typeof ShopProductSlugRoute
   CheckoutIndexRoute: typeof CheckoutIndexRoute
   HellPassIndexRoute: typeof HellPassIndexRoute
+  SchoolIndexRoute: typeof SchoolIndexRoute
   ShopIndexRoute: typeof ShopIndexRoute
 }
 
@@ -977,13 +977,6 @@ declare module '@tanstack/react-router' {
       path: '/shop-info'
       fullPath: '/shop-info'
       preLoaderRoute: typeof ShopInfoRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/school': {
-      id: '/school'
-      path: '/school'
-      fullPath: '/school'
-      preLoaderRoute: typeof SchoolRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/logos': {
@@ -1061,6 +1054,13 @@ declare module '@tanstack/react-router' {
       path: '/shop'
       fullPath: '/shop/'
       preLoaderRoute: typeof ShopIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/school/': {
+      id: '/school/'
+      path: '/school'
+      fullPath: '/school/'
+      preLoaderRoute: typeof SchoolIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/hell-pass/': {
@@ -1621,17 +1621,6 @@ const ClubRouteChildren: ClubRouteChildren = {
 
 const ClubRouteWithChildren = ClubRoute._addFileChildren(ClubRouteChildren)
 
-interface SchoolRouteChildren {
-  SchoolInstructorIdRoute: typeof SchoolInstructorIdRoute
-}
-
-const SchoolRouteChildren: SchoolRouteChildren = {
-  SchoolInstructorIdRoute: SchoolInstructorIdRoute,
-}
-
-const SchoolRouteWithChildren =
-  SchoolRoute._addFileChildren(SchoolRouteChildren)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
@@ -1643,7 +1632,6 @@ const rootRouteChildren: RootRouteChildren = {
   LikeLabRoute: LikeLabRoute,
   LoginRoute: LoginRoute,
   LogosRoute: LogosRoute,
-  SchoolRoute: SchoolRouteWithChildren,
   ShopInfoRoute: ShopInfoRoute,
   VerifyEmailRoute: VerifyEmailRoute,
   CheckoutSuccessRoute: CheckoutSuccessRoute,
@@ -1659,6 +1647,7 @@ const rootRouteChildren: RootRouteChildren = {
   ShopProductSlugRoute: ShopProductSlugRoute,
   CheckoutIndexRoute: CheckoutIndexRoute,
   HellPassIndexRoute: HellPassIndexRoute,
+  SchoolIndexRoute: SchoolIndexRoute,
   ShopIndexRoute: ShopIndexRoute,
 }
 export const routeTree = rootRouteImport
