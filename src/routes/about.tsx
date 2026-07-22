@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/icons";
 import { Header } from "@/components/brand/Header";
 import { Footer } from "@/components/brand/Footer";
+import vanyaGarageAsset from "@/assets/vanya-garage.png.asset.json";
 
 export const Route = createFileRoute("/about")({
   head: () => ({
