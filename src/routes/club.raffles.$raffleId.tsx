@@ -451,7 +451,7 @@ function StakeControls({
         </div>
         <div className="flex items-center gap-1 font-mono text-[11px] uppercase tracking-wider text-foreground">
           <PlumpTicket className="h-3.5 w-3.5 text-primary" />
-          <span className="tabular-nums">{balance}</span>
+          <PlumpNum value={balance} size={11} />
         </div>
       </div>
 
