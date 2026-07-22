@@ -41,7 +41,7 @@ export function Footer() {
                 aria-label={s.label}
                 className="grid h-9 w-9 place-items-center rounded-lg border-[3px] border-foreground bg-card text-foreground shadow-[2px_2px_0_0_hsl(var(--foreground))] transition-all hover:-translate-y-0.5 hover:bg-primary hover:text-black hover:shadow-[3px_3px_0_0_hsl(var(--foreground))] active:translate-y-0 active:shadow-[1px_1px_0_0_hsl(var(--foreground))]"
               >
-                <img src={s.icon} alt="" className="h-4 w-4" />
+                <img src={s.icon} alt="" className="h-4 w-4 brightness-0 invert" />
               </a>
             ))}
           </div>
