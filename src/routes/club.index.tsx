@@ -1021,7 +1021,7 @@ function CommentsSheet({
   };
 
   return (
-    <IOSSheet
+    <AdaptiveSheet
       open={open}
       onOpenChange={onOpenChange}
       title={`Комментарии · ${post.commentsCount}`}
@@ -1180,16 +1180,16 @@ function CommentsSheet({
       />
 
       {/* Главный action-sheet — открывается по long-press / кнопке «…» */}
-      <IOSActionSheet
+      <AdaptiveActionSheet
         open={actionTarget !== null}
-        onOpenChange={(v) => !v && setActionTarget(null)}
+        onOpenChange={(v: boolean) => !v && setActionTarget(null)}
         items={actionTarget ? buildActionItems(actionTarget) : []}
       />
 
       {/* Выбор реакции — горизонтальный ряд из 5 эмодзи */}
-      <IOSActionSheet
+      <AdaptiveActionSheet
         open={reactionFor !== null}
-        onOpenChange={(v) => !v && setReactionFor(null)}
+        onOpenChange={(v: boolean) => !v && setReactionFor(null)}
         title="Реакция"
         variant="emojiRow"
         items={REACTIONS.map<ActionSheetItem>((r) => ({
@@ -1200,7 +1200,7 @@ function CommentsSheet({
           },
         }))}
       />
-    </IOSSheet>
+    </AdaptiveSheet>
   );
 }
 
