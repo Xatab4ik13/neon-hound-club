@@ -150,8 +150,8 @@ function HellAiAdminPage() {
         <StatCard label="Вопросов / мес" value={stats?.totalQuestions ?? "—"} />
         <StatCard label="Ответов / мес" value={stats?.totalAnswers ?? "—"} />
         <StatCard label="Уник. юзеров" value={stats?.uniqueUsers ?? "—"} />
-        <StatCard label="Tokens in" value={stats?.tokensIn?.toLocaleString("ru-RU") ?? "—"} />
-        <StatCard label="Tokens out" value={stats?.tokensOut?.toLocaleString("ru-RU") ?? "—"} />
+        <StatCard label="Tokens in" value={stats?.tokensIn ?? "—"} />
+        <StatCard label="Tokens out" value={stats?.tokensOut ?? "—"} />
       </div>
 
       {/* Настройки */}
