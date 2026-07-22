@@ -280,7 +280,7 @@ function ProductCard({ product }: { product: ShopProductListItem }) {
     <Link
       to="/club/shop/$productSlug"
       params={{ productSlug: product.slug }}
-      className="group block overflow-hidden rounded-2xl border border-white/[0.06] bg-card/40 transition-all active:scale-[0.98] md:hover:border-primary/30"
+      className="group block overflow-hidden rounded-2xl border-[2px] border-foreground bg-card shadow-[4px_4px_0_0_hsl(var(--foreground))] transition-all active:scale-[0.98] md:hover:-translate-x-0.5 md:hover:-translate-y-0.5 md:hover:shadow-[6px_6px_0_0_hsl(var(--foreground))]"
     >
       <div className="relative aspect-square overflow-hidden bg-surface">
         {cover ? (
@@ -319,7 +319,7 @@ function ProductCard({ product }: { product: ShopProductListItem }) {
 
 function CardSkeleton() {
   return (
-    <div className="overflow-hidden rounded-2xl border border-white/[0.06] bg-card/40">
+    <div className="overflow-hidden rounded-2xl border-[2px] border-foreground bg-card shadow-[4px_4px_0_0_hsl(var(--foreground))]">
       <div className="skeleton-shimmer aspect-square w-full" />
       <div className="space-y-2 p-3">
         <div className="skeleton-shimmer h-3.5 w-3/4 rounded" />
