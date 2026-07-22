@@ -95,14 +95,15 @@ function CartPage() {
                       >
                         {i.name}
                       </Link>
-                      <div className="mt-1 text-[11px] text-muted-foreground sm:text-xs">
-                        {i.size ? `Размер ${i.size}` : "—"} ·{" "}
-                        {i.price.toLocaleString("ru-RU")} ₽
+                      <div className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground sm:text-xs">
+                        <span>{i.size ? `Размер ${i.size}` : "—"} ·</span>
+                        <PlumpPrice value={i.price} size={12} />
                       </div>
                     </div>
-                    <div className="shrink-0 whitespace-nowrap text-right font-mono text-sm">
-                      {(i.price * i.qty).toLocaleString("ru-RU")} ₽
+                    <div className="shrink-0 whitespace-nowrap text-right">
+                      <PlumpPrice value={i.price * i.qty} size={14} />
                     </div>
+
                   </div>
                   <div className="mt-3 flex items-center justify-between gap-3">
                     <div className="flex items-center border border-border">
