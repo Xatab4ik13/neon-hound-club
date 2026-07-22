@@ -32,7 +32,7 @@ const FEATURES = [
 export function AppShowcase() {
   return (
     <section id="app" className="relative overflow-hidden bg-surface px-6 py-20 md:py-28">
-      <div className="mx-auto max-w-7xl">
+      <div className="w-full px-6 md:px-8">
         {/* Заголовок */}
         <div className="mb-8 md:mb-12">
           <div className="mb-3 font-mono text-xs uppercase tracking-widest text-primary">
@@ -43,7 +43,7 @@ export function AppShowcase() {
           </h2>
         </div>
 
-        <div className="grid grid-cols-1 gap-10 lg:grid-cols-2 lg:items-center lg:gap-12">
+        <div className="grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] lg:items-center lg:gap-12">
           {/* Левая колонка — фичи */}
           <div className="grid gap-3 sm:grid-cols-2">
             {FEATURES.map((f) => {
@@ -73,7 +73,7 @@ export function AppShowcase() {
               width={1024}
               height={1024}
               loading="lazy"
-              className="h-auto w-full max-w-[1170px] object-contain drop-shadow-2xl"
+              className="h-auto w-full object-contain drop-shadow-2xl"
             />
           </div>
         </div>
