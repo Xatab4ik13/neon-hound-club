@@ -10,6 +10,7 @@ import {
 import { Header } from "@/components/brand/Header";
 import { Footer } from "@/components/brand/Footer";
 import vanyaGarageAsset from "@/assets/vanya-garage.png.asset.json";
+import vanyaMerchAsset from "@/assets/vanya-merch.png.asset.json";
 
 export const Route = createFileRoute("/about")({
   head: () => ({
@@ -123,6 +124,7 @@ const FEATURES: Feature[] = [
       "Билеты за каждую покупку — потом на них разыгрываем призы",
     ],
     bg: "surface",
+    image: vanyaMerchAsset.url,
   },
   {
     title: "Розыгрыши и новости мотоспорта",
