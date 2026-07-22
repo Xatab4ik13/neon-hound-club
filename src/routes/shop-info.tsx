@@ -129,10 +129,6 @@ export default function ShopInfoPage() {
           }}
         />
         <div className="relative mx-auto max-w-7xl px-6 pt-32 pb-20 md:pt-40 md:pb-24">
-          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1.5 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-            <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-            Покупателям
-          </div>
           <h1 className="max-w-3xl text-balance font-display text-5xl uppercase leading-[0.95] tracking-tight md:text-7xl">
             Оплата <span className="text-primary">и</span> доставка
           </h1>
