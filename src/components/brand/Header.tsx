@@ -130,6 +130,7 @@ export function Header() {
               <Link
                 to="/cart"
                 aria-label="Корзина"
+                data-cart-anchor
                 className="relative grid h-14 w-14 place-items-center text-foreground transition-transform active:scale-90"
               >
                 <PlumpCart className="h-9 w-9" strokeWidth={1.9} />
