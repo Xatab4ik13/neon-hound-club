@@ -192,19 +192,15 @@ function InstructorCard({
               fillOpacity="0.85"
             />
           </svg>
-
-          {/* Номер / стаж в углу */}
-          <div className="absolute right-3 top-3 rounded-full border-[2px] border-foreground bg-card px-2.5 py-1">
-            <PlumpNum value={String(index + 1).padStart(2, "0")} size={12} />
-          </div>
         </div>
 
         {/* Имя внизу карточки */}
         <div className="border-t-[3px] border-foreground bg-card px-4 py-3">
-          <div className="font-display text-2xl font-black uppercase italic leading-none tracking-tight text-foreground">
+          <div className="font-display text-2xl font-black uppercase leading-none tracking-tight text-foreground">
             {instructor.name}
           </div>
         </div>
+
       </div>
 
       {/* Плашки сверху/по краям — город, спец, стаж */}
