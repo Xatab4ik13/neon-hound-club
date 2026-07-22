@@ -355,7 +355,7 @@ function RaffleCard({
       </div>
       <div className="flex items-center justify-between gap-3 px-4 py-3">
         <span className="inline-flex items-center gap-1.5 font-mono text-[12px] text-muted-foreground">
-          <span className="grid h-6 w-6 place-items-center rounded-lg border-[2px] border-foreground bg-primary">
+          <span className="grid h-6 w-6 place-items-center rounded-lg border-[2px] border-foreground bg-[#FFD93D]">
             <PlumpTicket className="h-3.5 w-3.5 text-black" />
           </span>
           <PlumpNum value={raffle.ticketCost} size={13} className="text-foreground" />
