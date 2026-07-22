@@ -248,7 +248,7 @@ export function Hero() {
         {/* Ваня + розыгрыш в одну линию, вплотную */}
         <div className="relative order-2 flex items-end justify-center px-2">
           {raffle ? (
-            <div className="relative z-20 w-[52%] max-w-[280px] pb-2 -mr-4">
+            <div className="relative z-20 w-[58%] max-w-[310px] pb-2 -mr-5">
               <RaffleCloud
                 image={image}
                 href={raffleHref}
@@ -260,7 +260,7 @@ export function Hero() {
               />
             </div>
           ) : null}
-          <div className="relative w-[52%] max-w-[280px] -ml-4">
+          <div className="relative w-[58%] max-w-[310px] -ml-5">
             {/* Бабл из комикса над шлемом Вани (мобилка) */}
             {raffle ? (
               <img
@@ -269,7 +269,7 @@ export function Hero() {
                 aria-hidden
                 width={512}
                 height={512}
-                className="pointer-events-none absolute -top-16 right-4 z-30 h-auto w-[62%] max-w-[180px] -rotate-[6deg]"
+                className="pointer-events-none absolute -top-[4.5rem] right-4 z-30 h-auto w-[70%] max-w-[200px] -rotate-[6deg]"
                 loading="eager"
               />
             ) : null}
