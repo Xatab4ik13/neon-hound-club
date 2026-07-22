@@ -139,21 +139,17 @@ function SchoolPage() {
 
 function OnlineSoon() {
   return (
-    <div className="flex min-h-[40vh] flex-col items-center justify-center text-center">
-      <div className="rounded-2xl border-[3px] border-foreground bg-card px-8 py-10 shadow-[8px_8px_0_0_hsl(var(--foreground))] md:px-14 md:py-14">
-        <p className="mb-3 font-mono text-[11px] uppercase tracking-[0.3em] text-primary">
-          Онлайн-курсы
-        </p>
-        <div className="font-display text-5xl font-black uppercase italic tracking-tight md:text-7xl">
-          Скоро
-        </div>
-        <p className="mt-4 font-mono text-xs uppercase tracking-widest text-muted-foreground">
-          Готовим программу
-        </p>
+    <div className="flex min-h-[50vh] flex-col items-center justify-center text-center">
+      <div className="font-display text-7xl font-black uppercase leading-[0.88] tracking-tight text-foreground md:text-9xl">
+        Скоро
       </div>
+      <p className="mt-6 font-display text-2xl font-black uppercase tracking-tight text-muted-foreground md:text-4xl">
+        Готовим программу
+      </p>
     </div>
   );
 }
+
 
 function InstructorsGrid() {
   return (
