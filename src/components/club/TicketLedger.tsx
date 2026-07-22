@@ -1,23 +1,24 @@
 import { useMemo, useState } from "react";
-import { ArrowDown, ArrowUp } from "@/components/ui/icons";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PlumpNum } from "@/components/brand/PlumpNum";
 import type { LedgerEntry, BackendTicketSource } from "@/lib/queries";
 
 /**
- * Журнал билетов в iOS-стиле: скруглённые контейнеры, сегментный фильтр,
- * строка = цветная точка источника + название + дата + сумма.
+ * История билетов в Plump-стиле: толстая рамка карточки, hard-shadow, цветные
+ * сегментные чипы фильтра, строки-разделители 2px, знак операции — плашка
+ * с цветным фоном (лайм / фиолет).
  */
 
 const SOURCE_META: Record<
   BackendTicketSource,
-  { label: string; dot: string }
+  { label: string; bg: string }
 > = {
-  pass_monthly:  { label: "Hell Pass",      dot: "bg-violet-400" },
-  quest:         { label: "Квест",          dot: "bg-emerald-400" },
-  product_bonus: { label: "Бонус за товар", dot: "bg-primary" },
-  raffle_entry:  { label: "Розыгрыш",       dot: "bg-amber-400" },
-  admin:         { label: "Админ",          dot: "bg-white/40" },
-  refund:        { label: "Возврат",        dot: "bg-white/40" },
+  pass_monthly:  { label: "Hell Pass",      bg: "bg-[#C6A8FF]" },
+  quest:         { label: "Квест",          bg: "bg-[#B6FF3C]" },
+  product_bonus: { label: "Бонус за товар", bg: "bg-[#FFD93D]" },
+  raffle_entry:  { label: "Розыгрыш",       bg: "bg-[#6EE7FF]" },
+  admin:         { label: "Админ",          bg: "bg-white" },
+  refund:        { label: "Возврат",        bg: "bg-white" },
 };
 
 const ALL_SOURCES: BackendTicketSource[] = [
@@ -57,7 +58,7 @@ export function TicketLedger({
     () => (filter === "all" ? entries : entries.filter((e) => e.source === filter)),
     [entries, filter],
   );
-  const COLLAPSED = 2;
+  const COLLAPSED = 3;
   const visible = expanded ? filtered : filtered.slice(0, COLLAPSED);
   const hiddenCount = Math.max(0, filtered.length - visible.length);
 
@@ -71,35 +72,32 @@ export function TicketLedger({
 
   return (
     <section aria-label="История билетов" className="mb-8">
-      <h2 className="mb-3 px-1 text-[17px] font-semibold text-foreground">
+      <h2 className="mb-3 px-1 inline-flex items-center gap-1.5 font-display text-sm font-black uppercase italic tracking-widest text-foreground">
         История
       </h2>
 
-      {/* Сводка — только когда есть операции (баланс уже сверху) */}
+      {/* Сводка */}
       {entries.length > 0 && (
-        <div className="mb-3 grid grid-cols-2 gap-2">
-          <SummaryCard
+        <div className="mb-4 grid grid-cols-2 gap-3">
+          <SummaryTile
             label="Получено"
             value={totals.income}
-            prefix="+"
-            accent="text-emerald-400"
-            icon={<ArrowDown className="h-4 w-4 text-emerald-400" strokeWidth={2} />}
+            sign="+"
+            bg="bg-[#B6FF3C]"
           />
-          <SummaryCard
+          <SummaryTile
             label="Потрачено"
             value={totals.outcome}
-            prefix="−"
-            accent="text-muted-foreground"
-            icon={<ArrowUp className="h-4 w-4 text-muted-foreground" strokeWidth={2} />}
-            muted
+            sign="−"
+            bg="bg-[#C6A8FF]"
           />
         </div>
       )}
 
-      {/* iOS-сегментный фильтр */}
+      {/* Фильтр — Plump-чипы */}
       {presentSources.length > 1 && (
         <div
-          className="-mx-4 mb-3 flex gap-1.5 overflow-x-auto px-4 [scrollbar-width:none] md:mx-0 md:flex-wrap md:px-0 [&::-webkit-scrollbar]:hidden"
+          className="-mx-4 mb-4 flex gap-2 overflow-x-auto px-4 [scrollbar-width:none] md:mx-0 md:flex-wrap md:px-0 [&::-webkit-scrollbar]:hidden"
           role="tablist"
           aria-label="Фильтр по источнику"
         >
@@ -114,10 +112,10 @@ export function TicketLedger({
                 aria-selected={isActive}
                 onClick={() => setFilter(s)}
                 className={
-                  "shrink-0 rounded-full px-3.5 py-1.5 text-[13px] font-medium transition-colors " +
+                  "shrink-0 rounded-full border-[3px] border-foreground px-3 py-1 font-display text-[11px] font-black uppercase italic tracking-tighter transition-transform active:translate-x-[1px] active:translate-y-[1px] " +
                   (isActive
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-white/[0.06] text-muted-foreground active:bg-white/[0.1]")
+                    ? "bg-foreground text-background shadow-[2px_2px_0_0_hsl(var(--foreground))]"
+                    : "bg-card text-foreground shadow-[2px_2px_0_0_hsl(var(--foreground))] active:shadow-[1px_1px_0_0_hsl(var(--foreground))]")
                 }
               >
                 {label}
@@ -127,43 +125,48 @@ export function TicketLedger({
         </div>
       )}
 
-      <div className="overflow-hidden rounded-2xl border border-white/[0.06] bg-card/40">
+      <div className="overflow-hidden rounded-3xl border-[3px] border-foreground bg-card shadow-[4px_4px_0_0_hsl(var(--foreground))]">
         {isLoading && entries.length === 0 ? (
           <div>
-            {Array.from({ length: 2 }).map((_, i) => (
-              <div key={i} className="flex items-center gap-3 border-b border-white/[0.04] px-4 py-3 last:border-b-0">
-                <Skeleton className="h-2 w-2 rounded-full" />
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div
+                key={i}
+                className="flex items-center gap-3 border-b-[2px] border-foreground/80 px-4 py-3 last:border-b-0"
+              >
+                <Skeleton className="h-8 w-8 rounded-lg" />
                 <div className="flex-1 space-y-1.5">
                   <Skeleton className="h-3.5 w-1/3" />
                   <Skeleton className="h-3 w-1/2" />
                 </div>
-                <Skeleton className="h-4 w-12 rounded-md" />
+                <Skeleton className="h-6 w-14 rounded-md" />
               </div>
             ))}
           </div>
         ) : isError && entries.length === 0 ? (
-          <div className="flex flex-col items-center gap-2 px-4 py-8 text-center">
-            <span className="text-[13px] text-muted-foreground">Не удалось загрузить историю</span>
+          <div className="flex flex-col items-center gap-2 px-4 py-10 text-center">
+            <span className="font-mono text-[12px] font-bold uppercase tracking-widest text-muted-foreground">
+              Не удалось загрузить историю
+            </span>
             {onRetry && (
               <button
                 type="button"
                 onClick={onRetry}
-                className="text-[13px] font-medium text-primary active:opacity-70"
+                className="rounded-full border-[3px] border-foreground bg-[#B6FF3C] px-3 py-1 font-display text-[11px] font-black uppercase italic tracking-tighter text-black shadow-[2px_2px_0_0_hsl(var(--foreground))] active:translate-x-[1px] active:translate-y-[1px] active:shadow-[1px_1px_0_0_hsl(var(--foreground))]"
               >
                 Повторить
               </button>
             )}
           </div>
         ) : filtered.length === 0 ? (
-          <div className="px-4 py-10 text-center text-[13px] text-muted-foreground">
+          <div className="px-4 py-10 text-center font-mono text-[12px] font-bold uppercase tracking-widest text-muted-foreground">
             {entries.length === 0
               ? "Пока пусто — выполни первый квест, и сюда упадут билеты"
               : "Нет операций по фильтру"}
           </div>
         ) : (
-          <ul className="divide-y divide-white/[0.05]">
-            {visible.map((e) => (
-              <LedgerRow key={e.id} entry={e} />
+          <ul>
+            {visible.map((e, i) => (
+              <LedgerRow key={e.id} entry={e} isLast={i === visible.length - 1 && hiddenCount === 0} />
             ))}
           </ul>
         )}
@@ -172,7 +175,7 @@ export function TicketLedger({
           <button
             type="button"
             onClick={() => setExpanded(true)}
-            className="block w-full border-t border-white/[0.06] px-4 py-3 text-center text-[13px] font-medium text-muted-foreground transition-colors active:bg-white/[0.04]"
+            className="block w-full border-t-[3px] border-foreground bg-card px-4 py-3 text-center font-display text-[12px] font-black uppercase italic tracking-tighter text-foreground transition-colors active:bg-foreground/10"
           >
             Показать ещё {hiddenCount}
           </button>
@@ -181,24 +184,24 @@ export function TicketLedger({
           <button
             type="button"
             onClick={() => setExpanded(false)}
-            className="block w-full border-t border-white/[0.06] px-4 py-3 text-center text-[13px] font-medium text-muted-foreground transition-colors active:bg-white/[0.04]"
+            className="block w-full border-t-[3px] border-foreground bg-card px-4 py-3 text-center font-display text-[12px] font-black uppercase italic tracking-tighter text-foreground transition-colors active:bg-foreground/10"
           >
             Свернуть
           </button>
         )}
 
         {filter !== "all" && filtered.length > 0 && (
-          <div className="flex items-center justify-between border-t border-white/[0.06] bg-black/20 px-4 py-2.5 text-[12px] text-muted-foreground">
+          <div className="flex items-center justify-between border-t-[3px] border-foreground bg-background/40 px-4 py-2.5 font-mono text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
             <span>Итог по фильтру</span>
-            <span className="tabular-nums">
+            <span className="inline-flex items-center gap-2 tabular-nums">
               {visibleTotals.income > 0 && (
-                <span className="text-emerald-400">+{visibleTotals.income}</span>
+                <span className="text-[#B6FF3C]">+{visibleTotals.income}</span>
               )}
               {visibleTotals.income > 0 && visibleTotals.outcome > 0 && (
-                <span className="mx-1 opacity-40">·</span>
+                <span className="opacity-40">·</span>
               )}
               {visibleTotals.outcome > 0 && (
-                <span className="text-foreground">−{visibleTotals.outcome}</span>
+                <span className="text-[#C6A8FF]">−{visibleTotals.outcome}</span>
               )}
             </span>
           </div>
@@ -208,55 +211,54 @@ export function TicketLedger({
   );
 }
 
-function SummaryCard({
+function SummaryTile({
   label,
   value,
-  prefix = "",
-  accent,
-  icon,
-  muted = false,
+  sign,
+  bg,
 }: {
   label: string;
   value: number;
-  prefix?: string;
-  accent: string;
-  icon: React.ReactNode;
-  muted?: boolean;
+  sign: "+" | "−";
+  bg: string;
 }) {
   return (
-    <div className="flex items-center gap-3 rounded-2xl border border-white/[0.06] bg-card/40 px-4 py-3">
-      <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/[0.04]">
-        {icon}
-      </div>
-      <div className="flex min-w-0 flex-col">
-        <span
-          className={
-            (muted ? "text-[18px] font-medium" : "text-[22px] font-semibold") +
-            " leading-none tabular-nums " +
-            accent
-          }
-        >
-          {prefix}
-          {value.toLocaleString("ru-RU")}
-        </span>
-        <span className="mt-1 text-[12px] text-muted-foreground">{label}</span>
-      </div>
+    <div
+      className={`flex flex-col rounded-2xl border-[3px] border-foreground ${bg} px-3 py-2.5 shadow-[3px_3px_0_0_hsl(var(--foreground))]`}
+    >
+      <span className="font-mono text-[10px] font-bold uppercase tracking-widest text-black/70">
+        {label}
+      </span>
+      <span className="mt-1 inline-flex items-baseline gap-1 text-black">
+        <span className="font-display text-[20px] font-black italic leading-none">{sign}</span>
+        <PlumpNum value={value} size={22} format className="text-black" />
+      </span>
     </div>
   );
 }
 
-function LedgerRow({ entry }: { entry: LedgerEntry }) {
+function LedgerRow({ entry, isLast }: { entry: LedgerEntry; isLast: boolean }) {
   const isPositive = entry.amount > 0;
   const meta = SOURCE_META[entry.source] ?? SOURCE_META.admin;
 
   return (
-    <li className="flex items-center gap-3 px-4 py-3 transition-colors active:bg-white/[0.03]">
-      <span className={"h-2 w-2 shrink-0 rounded-full " + meta.dot} aria-hidden />
+    <li
+      className={
+        "flex items-center gap-3 px-4 py-3 transition-colors active:bg-foreground/5 " +
+        (isLast ? "" : "border-b-[2px] border-foreground/80")
+      }
+    >
+      <span
+        aria-hidden
+        className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg border-[2px] border-foreground ${meta.bg}`}
+      >
+        <span className="font-display text-[13px] font-black italic leading-none text-black">
+          {meta.label.charAt(0)}
+        </span>
+      </span>
       <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <span className="truncate text-[15px] text-foreground">{entry.reason}</span>
-        </div>
-        <div className="mt-0.5 flex items-center gap-1.5 text-[12px] text-muted-foreground">
+        <div className="truncate text-[14px] font-semibold text-foreground">{entry.reason}</div>
+        <div className="mt-0.5 flex items-center gap-1.5 font-mono text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
           <span>{meta.label}</span>
           <span className="opacity-40">·</span>
           <span>{formatDate(entry.createdAt)}</span>
@@ -264,8 +266,8 @@ function LedgerRow({ entry }: { entry: LedgerEntry }) {
       </div>
       <div
         className={
-          "shrink-0 whitespace-nowrap text-right text-[15px] font-semibold tabular-nums " +
-          (isPositive ? "text-emerald-400" : "text-foreground")
+          "shrink-0 whitespace-nowrap rounded-lg border-[2px] border-foreground px-2 py-0.5 font-display text-[13px] font-black italic tracking-tight tabular-nums " +
+          (isPositive ? "bg-[#B6FF3C] text-black" : "bg-card text-foreground")
         }
       >
         {isPositive ? "+" : "−"}
