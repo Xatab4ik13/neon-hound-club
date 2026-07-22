@@ -77,23 +77,24 @@ function TicketsPage() {
         <Link
           to="/club/raffles/$raffleId"
           params={{ raffleId: activeRaffle.id }}
-          className="mb-4 flex items-center gap-3 rounded-2xl border border-primary/30 bg-primary/[0.07] px-4 py-3 transition-colors active:bg-primary/[0.12]"
+          className="group relative mb-5 flex items-center gap-3 rounded-2xl border-[2px] border-foreground bg-card px-4 py-3 shadow-[4px_4px_0_0_hsl(var(--foreground))] transition-transform active:translate-x-[2px] active:translate-y-[2px] active:shadow-[2px_2px_0_0_hsl(var(--foreground))]"
         >
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary/15 text-primary">
-            <Trophy className="h-4 w-4" />
+          <span className="absolute -left-1.5 -top-2.5 z-10 inline-flex -rotate-3 items-center gap-1 rounded-lg border-[2px] border-foreground bg-[#B6FF3C] px-2 py-0.5 font-display text-[10px] font-black uppercase italic tracking-tight text-black shadow-[2px_2px_0_0_hsl(var(--foreground))]">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-black" />
+            Идёт сейчас
           </span>
-          <span className="min-w-0 flex-1">
-            <span className="block font-mono text-[10px] uppercase tracking-widest text-primary/80">
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border-[2px] border-foreground bg-[#C6A8FF] shadow-[2px_2px_0_0_hsl(var(--foreground))]">
+            <Trophy className="h-4 w-4 text-black" />
+          </span>
+          <span className="min-w-0 flex-1 pt-1">
+            <span className="block font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
               Активный розыгрыш
             </span>
             <span className="mt-0.5 block truncate text-[14px] font-semibold text-foreground">
               {activeRaffle.title}
             </span>
           </span>
-          <span className="shrink-0 font-mono text-[11px] font-bold uppercase tracking-wider text-primary">
-            Открыть
-          </span>
-          <ChevronRight className="h-4 w-4 shrink-0 text-primary/70" />
+          <ChevronRight className="h-4 w-4 shrink-0 text-foreground/70" />
         </Link>
       )}
 
