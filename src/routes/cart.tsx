@@ -114,9 +114,10 @@ function CartPage() {
                       >
                         −
                       </button>
-                      <span className="w-8 text-center font-mono text-sm">
-                        {i.qty}
+                      <span className="flex w-8 items-center justify-center">
+                        <PlumpNum value={i.qty} size={12} />
                       </span>
+
                       <button
                         onClick={() => setQty(i.id, i.qty + 1)}
                         className="flex size-8 items-center justify-center text-muted-foreground hover:text-primary"
