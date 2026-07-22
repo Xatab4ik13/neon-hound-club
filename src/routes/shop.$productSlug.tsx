@@ -478,15 +478,6 @@ function ProductView({ product }: { product: ShopProduct }) {
           </section>
         </div>
 
-            </button>
-            <Link
-              to="/cart"
-              className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/[0.1] px-5 py-3.5 text-[14px] font-semibold text-foreground"
-            >
-              <PlumpCart className="h-4 w-4" /> Корзина
-            </Link>
-          </div>
-        </section>
 
         {/* Mobile sticky CTA */}
         <div
