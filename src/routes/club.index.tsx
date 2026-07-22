@@ -5,9 +5,10 @@ import { Send, PlumpSearch as SearchIcon, Clock, PlumpSticker as Sticker, PlumpC
 import { RANKS, type RankId } from "@/data/ranks";
 import { useFeedPosts, useFeedLoaded, feedStore, initialsOf, makeSlug, type FeedAuthor, type FeedComment, type FeedPost, type FeedPoll } from "@/data/feed-store";
 import { HellhoundAvatar, HellhoundChip } from "@/components/club/HellhoundPlaque";
-import { IOSSheet } from "@/components/ios/IOSSheet";
 import { IOSConfirm } from "@/components/ios/IOSConfirm";
-import { IOSActionSheet, type ActionSheetItem } from "@/components/ios/IOSActionSheet";
+import { AdaptiveSheet } from "@/components/club/AdaptiveSheet";
+import { AdaptiveActionSheet } from "@/components/club/AdaptiveActionSheet";
+import type { ActionSheetItem } from "@/components/club/AdaptiveActionSheet";
 import { useViewer } from "@/hooks/use-viewer";
 import { useMyProfile } from "@/lib/garage-api";
 import { useMyStickerPacks, STICKER_PACK_PRODUCT_SLUGS } from "@/lib/stickers-api";
@@ -1020,7 +1021,7 @@ function CommentsSheet({
   };
 
   return (
-    <IOSSheet
+    <AdaptiveSheet
       open={open}
       onOpenChange={onOpenChange}
       title={`Комментарии · ${post.commentsCount}`}
@@ -1179,16 +1180,16 @@ function CommentsSheet({
       />
 
       {/* Главный action-sheet — открывается по long-press / кнопке «…» */}
-      <IOSActionSheet
+      <AdaptiveActionSheet
         open={actionTarget !== null}
-        onOpenChange={(v) => !v && setActionTarget(null)}
+        onOpenChange={(v: boolean) => !v && setActionTarget(null)}
         items={actionTarget ? buildActionItems(actionTarget) : []}
       />
 
       {/* Выбор реакции — горизонтальный ряд из 5 эмодзи */}
-      <IOSActionSheet
+      <AdaptiveActionSheet
         open={reactionFor !== null}
-        onOpenChange={(v) => !v && setReactionFor(null)}
+        onOpenChange={(v: boolean) => !v && setReactionFor(null)}
         title="Реакция"
         variant="emojiRow"
         items={REACTIONS.map<ActionSheetItem>((r) => ({
@@ -1199,7 +1200,7 @@ function CommentsSheet({
           },
         }))}
       />
-    </IOSSheet>
+    </AdaptiveSheet>
   );
 }
 
@@ -2182,7 +2183,7 @@ function CommentComposer({
       </form>
 
       {/* Attach sheet — фото из галереи или камера */}
-      <IOSActionSheet
+      <AdaptiveActionSheet
         open={attachOpen}
         onOpenChange={setAttachOpen}
         title="Прикрепить к комментарию"
