@@ -139,6 +139,7 @@ const FEATURES: Feature[] = [
       "Всё прозрачно: правила, участники и результаты — на виду",
     ],
     bg: "background",
+    image: vanyaRafflesAsset.url,
   },
   {
     title: "Школа Hellhound",
