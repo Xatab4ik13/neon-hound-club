@@ -8,6 +8,11 @@ import stGal06 from "@/assets/instructors/stanislav-gallery/stanislav-06.webp.as
 import stGal07 from "@/assets/instructors/stanislav-gallery/stanislav-07.webp.asset.json";
 import stGal08 from "@/assets/instructors/stanislav-gallery/stanislav-08.webp.asset.json";
 import semenAsset from "@/assets/instructors/semen.webp.asset.json";
+import smGal01 from "@/assets/instructors/semen-gallery/semen-01.webp.asset.json";
+import smGal02 from "@/assets/instructors/semen-gallery/semen-02.webp.asset.json";
+import smGal03 from "@/assets/instructors/semen-gallery/semen-03.webp.asset.json";
+import smGal04 from "@/assets/instructors/semen-gallery/semen-04.webp.asset.json";
+import smGal05 from "@/assets/instructors/semen-gallery/semen-05.webp.asset.json";
 import nikitaAsset from "@/assets/instructors/nikita.webp.asset.json";
 import pavelAsset from "@/assets/instructors/pavel.webp.asset.json";
 import haixAsset from "@/assets/instructors/haix.webp.asset.json";
@@ -258,16 +263,20 @@ export const INSTRUCTORS: Instructor[] = [
     city: "Краснодар",
     experience: 11,
     tone: "yellow",
-    tagline: "11 лет в мото, инструктор-практик",
+    tagline: "Спортсмен мирового класса, мотоджимхана",
     bio: [
-      "В седле с 2014 года. За это время — от учебной 250-ки до литра. Знаю, как ведёт себя байк в любой ситуации, и умею объяснять это простым языком.",
-      "Занятия строю индивидуально: сначала смотрю, что умеешь, потом строим план. Никакой воды и заезженных методичек — только то, что реально пригодится на дороге.",
+      "Меня зовут Никитин Семён. Действующий спортсмен мирового класса по мотоджимхане, многократный призёр и победитель соревнований, обладатель рекордов России и мира. В спорте — более 11 лет.",
+      "Профессиональный мотоинструктор: обучаю не только с нуля, но и тренирую спортсменов. Спорт даёт углублённые знания управления мотоциклом — моя цель донести их простым языком, чтобы гражданский мотоциклист понял и начал применять.",
+      "Главная особенность — внимательный, чуткий подход. Особое внимание уделяю ощущениям на мотоцикле и психологии мотоцикла. Научу ехать уверенно и получать удовольствие от себя на мотоцикле в каждом повороте.",
     ],
-    specialties: ["Город", "Трасса", "Разбор техники"],
-    skills: DEFAULT_SKILLS,
+    specialties: ["Мотоджимхана", "Спорт", "Психология мотоцикла"],
+    skills: STANISLAV_SKILLS,
     location: KRD_LOCATION,
     schedule: DEFAULT_SCHEDULE,
-    gallery: [],
+    gallery: [smGal01.url, smGal02.url, smGal03.url, smGal04.url, smGal05.url],
+    courses: STANISLAV_COURSES,
+    upcomingCourses: STANISLAV_UPCOMING,
+    approach: STANISLAV_APPROACH,
   },
   {
     id: "nikita",
