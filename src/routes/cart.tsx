@@ -141,9 +141,10 @@ function CartPage() {
                 <span className="text-xs uppercase tracking-widest text-muted-foreground">
                   Итого
                 </span>
-                <span className="font-display text-2xl font-black">
-                  {total.toLocaleString("ru-RU")} ₽
+                <span>
+                  <PlumpPrice value={total} size={22} />
                 </span>
+
               </div>
 
               {/* Бонус билетов — только из ticketsBonus на товарах */}
