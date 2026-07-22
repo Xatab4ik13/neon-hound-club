@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   PlumpAI,
@@ -6,7 +6,6 @@ import {
   PlumpStore,
   PlumpTicket,
   PlumpSchool,
-  PlumpArrowRight,
 } from "@/components/ui/icons";
 import { Header } from "@/components/brand/Header";
 import { Footer } from "@/components/brand/Footer";
@@ -113,7 +112,7 @@ const FEATURES: Feature[] = [
   {
     title: "Мерч и амуниция клуба",
     Icon: PlumpStore,
-    lead: "Лимитированный мерч HELLHOUND и вещи от партнёров. Всё внутри клуба, с доставкой по России.",
+    lead: "С доставкой по России и странам СНГ. Это мерч «Амуниция клуба».",
     bullets: [
       "Одежда, аксессуары и коллекционные вещи ограниченным тиражом",
       "Предзаказы на новинки, о которых знают участники клуба",
@@ -257,93 +256,6 @@ function AboutPage() {
           );
         })}
 
-        {/* ПРИНЦИПЫ КЛУБА */}
-        <section className="relative overflow-hidden bg-background py-20 md:py-28">
-          <div className="relative w-full pl-4 pr-6 md:pl-6 md:pr-12">
-            <Reveal>
-              <h2 className="font-display text-4xl font-black uppercase leading-[0.95] tracking-tight md:text-6xl">
-                Принципы клуба
-              </h2>
-            </Reveal>
-
-            <div className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {[
-                {
-                  t: "Без пафоса",
-                  d: "Никаких «сезонов» и «закрытых доступов», если за ними нет реального продукта.",
-                },
-                {
-                  t: "Райдер, а не турист",
-                  d: "Клуб для тех, кто реально ездит. Всё, что делаем, — из практики, а не из презентаций.",
-                },
-                {
-                  t: "Честные правила",
-                  d: "Условия розыгрышей, доставки и оплаты — прямо в приложении, а не мелким шрифтом внизу.",
-                },
-                {
-                  t: "Свой мерч",
-                  d: "Лимитированные тиражи, а не бесконечный поток одинаковых футболок.",
-                },
-                {
-                  t: "Полезный AI",
-                  d: "Hell AI отвечает по твоему мотоциклу. Никакой имитации Хелла и генерации картинок.",
-                },
-                {
-                  t: "Приложение сначала",
-                  d: "Основной опыт — в приложении. Лендинг — точка входа, а не «главная поляна» клуба.",
-                },
-              ].map((p, i) => (
-                <Reveal key={p.t} delay={i * 60}>
-                  <div className="h-full rounded-2xl border-[3px] border-foreground bg-card p-5 shadow-[6px_6px_0_0_hsl(var(--foreground))] transition-all duration-150 ease-out hover:-translate-x-1 hover:-translate-y-1 hover:shadow-[8px_8px_0_0_hsl(var(--foreground))]">
-                    <div className="font-display text-xl uppercase tracking-tight text-foreground">
-                      {p.t}
-                    </div>
-                    <p className="mt-2 text-sm text-muted-foreground">{p.d}</p>
-                  </div>
-                </Reveal>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* ФИНАЛЬНЫЙ CTA */}
-        <section className="relative overflow-hidden bg-surface py-24 md:py-32">
-          <div
-            aria-hidden
-            className="pointer-events-none absolute left-1/2 top-1/2 h-[50vh] w-[80vw] -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/15 blur-[160px]"
-          />
-          <div className="relative w-full pl-4 pr-6 md:pl-6 md:pr-12">
-            <Reveal>
-              <h2 className="max-w-[16ch] font-display text-5xl font-black uppercase leading-[0.9] tracking-tight md:text-7xl xl:text-8xl">
-                Готов? <span className="text-primary">Залетай в клуб.</span>
-              </h2>
-            </Reveal>
-            <Reveal delay={100}>
-              <p className="mt-6 max-w-xl text-base text-muted-foreground md:text-lg">
-                Регистрация занимает минуту. Дальше — гараж, билеты, мерч,
-                школа и Hell AI на связи.
-              </p>
-            </Reveal>
-            <Reveal delay={180}>
-              <div className="mt-10 flex flex-wrap gap-4">
-                <Link
-                  to="/login"
-                  className="group inline-flex items-center gap-3 rounded-2xl border-[3px] border-foreground bg-primary px-8 py-4 font-display text-lg font-black uppercase tracking-widest text-black shadow-[6px_6px_0_0_hsl(var(--foreground))] transition-all duration-150 ease-out hover:-translate-x-1.5 hover:-translate-y-1.5 hover:shadow-[8px_8px_0_0_hsl(var(--foreground))] active:scale-[0.98]"
-                >
-                  Вступить в клуб
-                  <PlumpArrowRight className="h-6 w-6 transition-transform duration-150 group-hover:translate-x-0.5" />
-                </Link>
-                <Link
-                  to="/shop"
-                  className="group inline-flex items-center gap-3 rounded-2xl border-[3px] border-foreground bg-card px-8 py-4 font-display text-lg font-black uppercase tracking-widest text-foreground shadow-[6px_6px_0_0_hsl(var(--foreground))] transition-all duration-150 ease-out hover:-translate-x-1.5 hover:-translate-y-1.5 hover:text-primary hover:shadow-[8px_8px_0_0_hsl(var(--foreground))] active:scale-[0.98]"
-                >
-                  Смотреть магазин
-                  <PlumpArrowRight className="h-6 w-6 transition-transform duration-150 group-hover:translate-x-0.5" />
-                </Link>
-              </div>
-            </Reveal>
-          </div>
-        </section>
       </main>
 
       <Footer />
