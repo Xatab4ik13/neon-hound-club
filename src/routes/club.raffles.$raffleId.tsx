@@ -229,7 +229,7 @@ function RaffleDetailContent({
         </span>
 
         <div
-          className="relative aspect-[358/288] overflow-hidden rounded-[2rem] border-[3px] border-foreground bg-black shadow-[8px_8px_0_0_#F000C0] animate-fade-in"
+          className="relative aspect-[358/288] overflow-hidden rounded-[2rem] border-[3px] border-foreground bg-black animate-fade-in"
         >
           {raffle.imageUrl && (
             <img
