@@ -1,6 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Header } from "@/components/brand/Header";
 import { Footer } from "@/components/brand/Footer";
+import cdekLogo from "@/assets/cdek-logo.svg.asset.json";
+
 
 
 export const Route = createFileRoute("/shop-info")({
