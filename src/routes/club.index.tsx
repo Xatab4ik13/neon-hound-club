@@ -8,7 +8,7 @@ import { HellhoundAvatar, HellhoundChip } from "@/components/club/HellhoundPlaqu
 import { IOSConfirm } from "@/components/ios/IOSConfirm";
 import { AdaptiveSheet } from "@/components/club/AdaptiveSheet";
 import { AdaptiveActionSheet } from "@/components/club/AdaptiveActionSheet";
-import type { ActionSheetItem } from "@/components/ios/IOSActionSheet";
+import type { ActionSheetItem } from "@/components/club/AdaptiveActionSheet";
 import { useViewer } from "@/hooks/use-viewer";
 import { useMyProfile } from "@/lib/garage-api";
 import { useMyStickerPacks, STICKER_PACK_PRODUCT_SLUGS } from "@/lib/stickers-api";
