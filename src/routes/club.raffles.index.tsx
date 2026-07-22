@@ -64,7 +64,7 @@ function RafflesPage() {
           className="mb-6 flex items-center justify-between gap-3 rounded-3xl border-[3px] border-foreground bg-card px-4 py-3 shadow-[6px_6px_0_0_hsl(var(--foreground))]"
         >
           <Link to="/club/tickets" className="flex min-w-0 items-center gap-3 active:opacity-70">
-            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border-[3px] border-foreground bg-primary shadow-[3px_3px_0_0_hsl(var(--foreground))]">
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border-[3px] border-foreground bg-[#FFD93D] shadow-[3px_3px_0_0_hsl(var(--foreground))]">
               <PlumpTicket className="h-5 w-5 text-black" />
             </span>
             <span className="min-w-0">
@@ -77,8 +77,8 @@ function RafflesPage() {
             </span>
           </Link>
           <Link
-            to="/club/tickets"
-            className="shrink-0 rounded-full bg-primary px-3 py-1.5 font-display text-[11px] font-black uppercase tracking-widest text-primary-foreground active:scale-95"
+            to="/club/quests"
+            className="shrink-0 rounded-full border-[3px] border-foreground bg-foreground px-3 py-1.5 font-display text-[11px] font-black uppercase tracking-widest text-background shadow-[3px_3px_0_0_hsl(var(--foreground))] active:translate-x-[1px] active:translate-y-[1px] active:shadow-[1px_1px_0_0_hsl(var(--foreground))]"
           >
             Как набрать
           </Link>
