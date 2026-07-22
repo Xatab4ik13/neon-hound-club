@@ -2,6 +2,8 @@ import { Link, useLocation } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import hhrLogo from "@/assets/hhr-logo.png.asset.json";
 import { PlumpCart, PlumpMenu, PlumpDoorEnter, PlumpDoorExit } from "@/components/ui/icons";
+import { PlumpNum } from "@/components/brand/PlumpNum";
+
 import navShop from "@/assets/nav/nav-shop.jpg";
 import navPass from "@/assets/nav/nav-pass.jpg";
 import navSchool from "@/assets/nav/nav-school.jpg";
