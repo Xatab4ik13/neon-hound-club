@@ -275,7 +275,6 @@ function RaffleDetailContent({
         />
         <StatCard
           label={finished ? "Всего заявок" : "До закрытия"}
-          shadowColor="#3DDBD9"
           delayMs={160}
           value={
             finished ? (
