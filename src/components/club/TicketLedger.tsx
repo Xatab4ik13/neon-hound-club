@@ -12,12 +12,12 @@ const SOURCE_META: Record<
   BackendTicketSource,
   { label: string; dot: string }
 > = {
-  pass_monthly:  { label: "Hell Pass",      dot: "bg-violet-400" },
-  quest:         { label: "Квест",          dot: "bg-emerald-400" },
-  product_bonus: { label: "Бонус за товар", dot: "bg-primary" },
-  raffle_entry:  { label: "Розыгрыш",       dot: "bg-amber-400" },
+  pass_monthly:  { label: "Hell Pass",      dot: "bg-[#C6A8FF]" },
+  quest:         { label: "Квест",          dot: "bg-[#B6FF3C]" },
+  product_bonus: { label: "Бонус за товар", dot: "bg-[#FFD93D]" },
+  raffle_entry:  { label: "Розыгрыш",       dot: "bg-[#FF8A3D]" },
   admin:         { label: "Админ",          dot: "bg-white/40" },
-  refund:        { label: "Возврат",        dot: "bg-white/40" },
+  refund:        { label: "Возврат",        dot: "bg-[#6EE7FF]" },
 };
 
 const ALL_SOURCES: BackendTicketSource[] = [
@@ -82,15 +82,17 @@ export function TicketLedger({
             label="Получено"
             value={totals.income}
             prefix="+"
-            accent="text-emerald-400"
-            icon={<ArrowDown className="h-4 w-4 text-emerald-400" strokeWidth={2} />}
+            accent="text-[#B6FF3C]"
+            icon={<ArrowDown className="h-4 w-4 text-black" strokeWidth={2.5} />}
+            tone="bg-[#B6FF3C]"
           />
           <SummaryCard
             label="Потрачено"
             value={totals.outcome}
             prefix="−"
-            accent="text-muted-foreground"
-            icon={<ArrowUp className="h-4 w-4 text-muted-foreground" strokeWidth={2} />}
+            accent="text-[#FF5A5A]"
+            icon={<ArrowUp className="h-4 w-4 text-black" strokeWidth={2.5} />}
+            tone="bg-[#FF8A8A]"
             muted
           />
         </div>
@@ -214,6 +216,7 @@ function SummaryCard({
   prefix = "",
   accent,
   icon,
+  tone,
   muted = false,
 }: {
   label: string;
@@ -221,11 +224,12 @@ function SummaryCard({
   prefix?: string;
   accent: string;
   icon: React.ReactNode;
+  tone: string;
   muted?: boolean;
 }) {
   return (
     <div className="flex items-center gap-3 rounded-2xl border border-white/[0.06] bg-card/40 px-4 py-3">
-      <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/[0.04]">
+      <div className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl border-[2px] border-foreground shadow-[2px_2px_0_0_hsl(var(--foreground))] ${tone}`}>
         {icon}
       </div>
       <div className="flex min-w-0 flex-col">
@@ -251,7 +255,13 @@ function LedgerRow({ entry }: { entry: LedgerEntry }) {
 
   return (
     <li className="flex items-center gap-3 px-4 py-3 transition-colors active:bg-white/[0.03]">
-      <span className={"h-2 w-2 shrink-0 rounded-full " + meta.dot} aria-hidden />
+      <span
+        className={
+          "grid h-7 w-7 shrink-0 place-items-center rounded-lg border-[2px] border-foreground shadow-[2px_2px_0_0_hsl(var(--foreground))] " +
+          meta.dot
+        }
+        aria-hidden
+      />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <span className="truncate text-[15px] text-foreground">{entry.reason}</span>
@@ -264,8 +274,8 @@ function LedgerRow({ entry }: { entry: LedgerEntry }) {
       </div>
       <div
         className={
-          "shrink-0 whitespace-nowrap text-right text-[15px] font-semibold tabular-nums " +
-          (isPositive ? "text-emerald-400" : "text-foreground")
+          "shrink-0 whitespace-nowrap text-right font-display text-[16px] font-black italic tabular-nums " +
+          (isPositive ? "text-[#B6FF3C]" : "text-[#FF5A5A]")
         }
       >
         {isPositive ? "+" : "−"}
