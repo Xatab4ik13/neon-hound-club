@@ -217,9 +217,10 @@ function ProductView({ product }: { product: ShopProduct }) {
                 </h1>
 
                 <div className="mt-6 flex items-baseline gap-3">
-                  <span className="font-display text-3xl tracking-tight text-primary">
-                    {product.priceRub.toLocaleString("ru-RU")} ₽
+                  <span className="text-primary">
+                    <PlumpPrice value={product.priceRub} size={30} />
                   </span>
+
                   {isSold && (
                     <span className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
                       нет в наличии
