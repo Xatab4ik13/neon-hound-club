@@ -251,7 +251,13 @@ function LedgerRow({ entry }: { entry: LedgerEntry }) {
 
   return (
     <li className="flex items-center gap-3 px-4 py-3 transition-colors active:bg-white/[0.03]">
-      <span className={"h-2 w-2 shrink-0 rounded-full " + meta.dot} aria-hidden />
+      <span
+        className={
+          "grid h-7 w-7 shrink-0 place-items-center rounded-lg border-[2px] border-foreground shadow-[2px_2px_0_0_hsl(var(--foreground))] " +
+          meta.dot
+        }
+        aria-hidden
+      />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <span className="truncate text-[15px] text-foreground">{entry.reason}</span>
@@ -264,8 +270,8 @@ function LedgerRow({ entry }: { entry: LedgerEntry }) {
       </div>
       <div
         className={
-          "shrink-0 whitespace-nowrap text-right text-[15px] font-semibold tabular-nums " +
-          (isPositive ? "text-emerald-400" : "text-foreground")
+          "shrink-0 whitespace-nowrap text-right font-display text-[16px] font-black italic tabular-nums " +
+          (isPositive ? "text-[#B6FF3C]" : "text-[#FF5A5A]")
         }
       >
         {isPositive ? "+" : "−"}
