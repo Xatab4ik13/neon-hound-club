@@ -326,7 +326,7 @@ function QuestCard({
       {/* Progress bar */}
       {(q.kind === "monthly" || q.kind === "ladder") && (
         <div className="mt-4 flex items-center gap-3">
-          <div className="relative h-3 flex-1 overflow-hidden rounded-full border-[3px] border-foreground bg-card">
+          <div className="relative h-3 flex-1 overflow-hidden rounded-full border-[3px] border-foreground bg-background">
             <div
               className="absolute inset-y-0 left-0 transition-[width] duration-500 ease-out"
               style={{
