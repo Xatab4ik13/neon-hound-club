@@ -31,7 +31,7 @@ function SchoolPage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Header />
-      <main className="mx-auto max-w-6xl px-4 pb-24 pt-24 md:pt-32">
+      <main className="mx-auto max-w-6xl px-4 pb-24 pt-40 md:pt-48">
         <div className="text-center">
           <h1 className="font-display text-5xl font-black uppercase leading-[0.88] tracking-tight md:text-7xl">
             Школа HELLHOUND
