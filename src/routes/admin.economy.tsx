@@ -490,12 +490,12 @@ function MonthlyBars({ data }: { data: { month: string; income: number; expense:
           <div className="flex h-full w-full items-end justify-center gap-1">
             <div
               className="w-1/3 rounded-t bg-emerald-500/80"
-              style={ height: `${(m.income / max) * 100}%` }
+              style={{ height: `${(m.income / max) * 100}%` }}
               title={`Доход: ${m.income.toLocaleString("ru-RU")} ₽`}
             />
             <div
               className="w-1/3 rounded-t bg-rose-500/80"
-              style={ height: `${(m.expense / max) * 100}%` }
+              style={{ height: `${(m.expense / max) * 100}%` }}
               title={`Расход: ${m.expense.toLocaleString("ru-RU")} ₽`}
             />
           </div>
