@@ -563,7 +563,7 @@ function GalleryLightbox({
 
   if (!open || index === null) return null;
   const src = instructor.gallery[index];
-  const tilt = index % 2 === 0 ? "-rotate-2" : "rotate-2";
+  const endRot = index % 2 === 0 ? "-2deg" : "2deg";
 
   return (
     <div
@@ -575,9 +575,10 @@ function GalleryLightbox({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className={`relative ${tilt} w-full max-w-4xl origin-center`}
+        className="relative w-full max-w-4xl origin-center"
         style={{
-          animation: "lightbox-pop 260ms cubic-bezier(0.22, 1, 0.36, 1) both",
+          animation: "lightbox-pop 300ms cubic-bezier(0.22, 1, 0.36, 1) both",
+          ["--end-rot" as any]: endRot,
           willChange: "transform, opacity",
         }}
       >
