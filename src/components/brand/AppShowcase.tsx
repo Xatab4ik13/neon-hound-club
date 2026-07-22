@@ -36,7 +36,7 @@ const FEATURES = [
 
 export function AppShowcase() {
   return (
-    <section id="app" className="relative overflow-hidden bg-background px-6 py-28 md:py-40">
+    <section id="app" className="relative overflow-hidden bg-background px-6 py-16 md:py-40">
       {/* Мягкое розовое свечение за мокапом */}
       <div
         aria-hidden
@@ -55,8 +55,20 @@ export function AppShowcase() {
         </div>
 
         <div className="grid grid-cols-1 gap-10 lg:grid-cols-2 lg:items-center lg:gap-12">
-          {/* Левая колонка — фичи */}
-          <div className="grid gap-3 sm:grid-cols-2">
+          {/* Мокап телефона — на мобилке сверху, на десктопе справа */}
+          <div className="relative order-1 flex items-center justify-center lg:order-2 lg:justify-end">
+            <img
+              src={phoneLarge.url}
+              alt="Мокап приложения HELLHOUND"
+              width={1024}
+              height={1024}
+              loading="lazy"
+              className="relative h-auto w-full max-w-[780px] object-contain drop-shadow-2xl"
+            />
+          </div>
+
+          {/* Фичи — на мобилке снизу, на десктопе слева */}
+          <div className="order-2 grid gap-3 sm:grid-cols-2 lg:order-1">
             {FEATURES.map((f) => {
               const Icon = f.icon;
               return (
@@ -74,18 +86,6 @@ export function AppShowcase() {
                 </div>
               );
             })}
-          </div>
-
-          {/* Правая колонка — мокап телефона */}
-          <div className="relative flex items-center justify-center lg:justify-end">
-            <img
-              src={phoneLarge.url}
-              alt="Мокап приложения HELLHOUND"
-              width={1024}
-              height={1024}
-              loading="lazy"
-              className="relative h-auto w-full max-w-[780px] object-contain drop-shadow-2xl"
-            />
           </div>
         </div>
       </div>
