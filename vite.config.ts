@@ -36,6 +36,7 @@ function lovableAssetJsonRewrite(): Plugin {
 // Build output: dist/index.html + dist/assets/*. Deploys as static frontend.
 export default defineConfig({
   plugins: [
+    lovableAssetJsonRewrite(),
     tanstackRouter({
       target: "react",
       autoCodeSplitting: true,
