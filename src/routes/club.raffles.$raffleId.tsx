@@ -324,7 +324,7 @@ function RaffleDetailContent({
 
       {/* DESCRIPTION */}
       {raffle.description && (
-        <section className="mb-6 rounded-3xl border-[3px] border-foreground bg-card p-5 shadow-[6px_6px_0_0_hsl(var(--foreground))]">
+        <section className="mb-6 rounded-3xl bg-card p-5">
           <div className="space-y-3 text-[14px] leading-relaxed text-foreground/85">
             {raffle.description.split(/\n\n+/).map((p, i) => (
               <p key={i} className="whitespace-pre-line">
