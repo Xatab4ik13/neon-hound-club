@@ -221,6 +221,7 @@ export function Header() {
             type="button"
             aria-label={menuOpen ? "Закрыть меню" : "Меню"}
             onClick={() => setMenuOpen((v) => !v)}
+            data-cart-anchor
             className="relative z-[70] ml-auto flex h-14 w-16 items-center justify-center text-primary md:hidden"
           >
             <span className="sr-only">Меню</span>
