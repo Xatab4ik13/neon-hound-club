@@ -229,7 +229,7 @@ function RaffleDetailContent({
         </span>
 
         <div
-          className="relative aspect-[358/288] overflow-hidden rounded-[2rem] border-[3px] border-foreground bg-black shadow-[8px_8px_0_0_#F000C0] animate-fade-in"
+          className="relative aspect-[358/288] overflow-hidden rounded-[2rem] border-[3px] border-foreground bg-black animate-fade-in"
         >
           {raffle.imageUrl && (
             <img
@@ -263,7 +263,6 @@ function RaffleDetailContent({
       <section className="mb-6 grid grid-cols-2 gap-4">
         <StatCard
           label="Мои билеты"
-          shadowColor="#FFD93D"
           delayMs={80}
           value={
             <div className="flex items-center gap-2">
@@ -276,7 +275,6 @@ function RaffleDetailContent({
         />
         <StatCard
           label={finished ? "Всего заявок" : "До закрытия"}
-          shadowColor="#3DDBD9"
           delayMs={160}
           value={
             finished ? (
@@ -419,19 +417,16 @@ function RaffleDetailContent({
 function StatCard({
   label,
   value,
-  shadowColor,
   delayMs,
 }: {
   label: string;
   value: React.ReactNode;
-  shadowColor: string;
   delayMs: number;
 }) {
   return (
     <div
       className="rounded-3xl border-[3px] border-foreground bg-card p-4 animate-fade-in"
       style={{
-        boxShadow: `6px 6px 0 0 ${shadowColor}`,
         animationDelay: `${delayMs}ms`,
         animationFillMode: "both",
       }}
