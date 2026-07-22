@@ -634,9 +634,9 @@ function GalleryLightbox({
 
       <style>{`
         @keyframes lightbox-pop {
-          0%   { opacity: 0; transform: scale(0.82) rotate(-8deg); }
+          0%   { opacity: 0; transform: scale(0.82) rotate(calc(var(--end-rot) * -3)); }
           60%  { opacity: 1; }
-          100% { opacity: 1; transform: scale(1) rotate(0deg); }
+          100% { opacity: 1; transform: scale(1) rotate(var(--end-rot)); }
         }
       `}</style>
     </div>
