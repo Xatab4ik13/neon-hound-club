@@ -2,7 +2,16 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { PlumpArrowLeft as ArrowLeft, Calendar, Check, Minus, Plus, PlumpTicket, Trophy, Zap } from "@/components/ui/icons";
+import {
+  PlumpArrowLeft as ArrowLeft,
+  Calendar,
+  Check,
+  Minus,
+  Plus,
+  PlumpTicket,
+  Trophy,
+  Zap,
+} from "@/components/ui/icons";
 import { PlumpNum } from "@/components/brand/PlumpNum";
 
 import { Countdown } from "@/components/club/Countdown";
@@ -37,9 +46,9 @@ function NotFound() {
       </h1>
       <Link
         to="/club/raffles"
-        className="mt-6 inline-flex items-center gap-2 rounded-xl border border-primary/40 px-4 py-2 font-mono text-xs uppercase tracking-wider text-primary active:scale-95"
+        className="mt-6 inline-flex items-center gap-2 rounded-full border-[3px] border-foreground bg-card px-4 py-2 font-mono text-[11px] font-bold uppercase tracking-widest text-foreground shadow-[4px_4px_0_0_hsl(var(--foreground))] active:translate-x-[2px] active:translate-y-[2px] active:shadow-[2px_2px_0_0_hsl(var(--foreground))]"
       >
-        <ArrowLeft className="h-3 w-3" />к розыгрышам
+        <ArrowLeft className="h-3.5 w-3.5" />к розыгрышам
       </Link>
     </div>
   );
@@ -64,7 +73,7 @@ function RaffleDetailPage() {
   if (raffleQ.isLoading) {
     return (
       <main className="mx-auto w-full max-w-3xl px-4 py-8">
-        <div className="skeleton-shimmer h-64 rounded-2xl" />
+        <div className="skeleton-shimmer h-64 rounded-3xl" />
       </main>
     );
   }
@@ -80,7 +89,7 @@ function RaffleDetailPage() {
   );
 }
 
-function formatDeadline(iso: string) {
+function formatDeadlineShort(iso: string) {
   try {
     return new Date(iso).toLocaleString("ru-RU", {
       day: "2-digit",
@@ -112,7 +121,6 @@ const ENTER_ERRORS: Record<string, string> = {
   phone_taken: "Этот номер уже привязан к другому аккаунту",
 };
 
-
 function RaffleDetailContent({
   raffle,
   balance,
@@ -129,12 +137,12 @@ function RaffleDetailContent({
   const isMobile = useIsMobile();
   const [stake, setStake] = useState(0);
   const [flash, setFlash] = useState<string | null>(null);
+  const [stakeBump, setStakeBump] = useState(0);
   const finished = raffle.status === "finished";
   const phoneRequired = isAuthed && !phoneVerified;
 
   const enterMut = useMutation({
     mutationFn: async () => {
-      // N последовательных заявок (каждая = 1 билет = ticketCost)
       let lastBalance = balance;
       for (let i = 0; i < stake; i++) {
         const r = await enterRaffle(raffle.id);
@@ -153,8 +161,6 @@ function RaffleDetailContent({
     onError: (e) => {
       if (e instanceof ApiError) {
         toast.error(ENTER_ERRORS[e.code] ?? "Не удалось участвовать");
-        // phone_required не должен сюда долетать — баннер блокирует кнопку.
-        // Но если бэк всё же отдал — мягко ведём в профиль.
         if (e.code === "phone_required") navigate({ to: "/club/me" });
       } else {
         toast.error("Не удалось участвовать");
@@ -168,6 +174,12 @@ function RaffleDetailContent({
     return () => clearTimeout(id);
   }, [flash]);
 
+  const changeStake = (v: number) => {
+    const clamped = Math.max(0, Math.min(maxStake, v));
+    if (clamped !== stake) setStakeBump((b) => b + 1);
+    setStake(clamped);
+  };
+
   const handleStake = () => {
     if (!isAuthed) {
       navigate({ to: "/login" });
@@ -177,9 +189,7 @@ function RaffleDetailContent({
     enterMut.mutate();
   };
 
-  // максимум сколько заявок юзер может купить за текущий баланс
   const maxByBalance = Math.floor(balance / raffle.ticketCost);
-  // c учётом лимита
   const remainingByLimit =
     raffle.maxEntriesPerUser != null
       ? Math.max(0, raffle.maxEntriesPerUser - raffle.myEntries)
@@ -187,180 +197,216 @@ function RaffleDetailContent({
   const maxStake = Math.min(maxByBalance, remainingByLimit);
 
   return (
-    <main className="relative mx-auto w-full max-w-3xl px-4 py-5 md:py-8">
+    <main className="relative mx-auto w-full max-w-3xl px-4 py-4 md:py-8">
+      {/* back link */}
       <Link
         to="/club/raffles"
-        className="inline-flex items-center gap-1.5 font-mono text-[11px] font-bold uppercase tracking-wider text-muted-foreground active:opacity-60"
+        className="mb-5 inline-flex items-center gap-2 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground transition-colors hover:text-foreground"
       >
         <ArrowLeft className="h-3.5 w-3.5" />к розыгрышам
       </Link>
 
+      {/* flash toast */}
       {flash && (
-        <div className="fixed left-1/2 top-16 z-50 -translate-x-1/2 rounded-xl border border-emerald-500/40 bg-black/85 px-4 py-2 font-mono text-[12px] uppercase tracking-wider text-emerald-300 shadow-lg backdrop-blur">
-          <Check className="mr-1.5 inline h-3.5 w-3.5" />
+        <div
+          className="fixed left-1/2 top-16 z-[70] -translate-x-1/2 animate-fade-in rounded-2xl border-[3px] border-foreground bg-[#B6FF3C] px-4 py-2 font-display text-[13px] font-black uppercase italic tracking-widest text-black shadow-[4px_4px_0_0_hsl(var(--foreground))]"
+        >
+          <Check className="mr-1.5 inline h-4 w-4" strokeWidth={3} />
           {flash}
         </div>
       )}
 
-      <div className="mt-4 overflow-hidden rounded-2xl border border-white/[0.08] bg-card/40">
-        <div className="relative aspect-[16/10] overflow-hidden bg-black">
+      {/* HERO */}
+      <section className="relative mb-9">
+        {/* status sticker */}
+        <span
+          className={`absolute -left-1 -top-3 z-20 inline-flex items-center gap-1.5 -rotate-3 rounded-2xl border-[3px] border-foreground px-3 py-1.5 font-display text-[12px] font-black uppercase italic tracking-tighter text-black shadow-[4px_4px_0_0_hsl(var(--foreground))] ${
+            finished ? "bg-[#C6A8FF]" : "bg-[#B6FF3C]"
+          }`}
+        >
+          {!finished && <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-black" />}
+          {finished ? "Завершён" : "Идёт сейчас"}
+        </span>
+
+        <div
+          className="relative aspect-[358/288] overflow-hidden rounded-[2rem] border-[3px] border-foreground bg-black shadow-[8px_8px_0_0_#C6A8FF] animate-fade-in"
+        >
           {raffle.imageUrl && (
             <img
               src={raffle.imageUrl}
               alt={raffle.title}
-              className="absolute inset-0 h-full w-full object-cover"
+              className="h-full w-full object-cover transition-transform duration-[6000ms] ease-out hover:scale-[1.06]"
             />
           )}
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
-          <span
-            className={`absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-mono text-[10px] font-black uppercase tracking-wider ${
-              finished
-                ? "bg-white/10 text-foreground"
-                : "bg-primary text-primary-foreground"
-            }`}
-          >
-            {!finished && <span className="h-1 w-1 animate-pulse rounded-full bg-white" />}
-            {finished ? "Завершён" : "Идёт"}
-          </span>
         </div>
-      </div>
 
-      <section className="mt-5">
-        <h1 className="font-display text-3xl font-black uppercase italic leading-tight tracking-tight text-foreground md:text-4xl">
+        {/* ticket cost sticker */}
+        <span className="absolute -bottom-4 -right-2 z-20 inline-flex items-center gap-1 rotate-2 rounded-xl border-[3px] border-foreground bg-[#FFD93D] px-3 py-1 font-mono text-[10px] font-black uppercase tracking-widest text-black shadow-[4px_4px_0_0_hsl(var(--foreground))]">
+          <PlumpTicket className="h-3.5 w-3.5" />
+          <PlumpNum value={raffle.ticketCost} size={11} /> / билет
+        </span>
+      </section>
+
+      {/* TITLE */}
+      <section className="mb-6">
+        <h1 className="font-display text-[38px] font-black uppercase italic leading-[0.9] tracking-tight text-foreground md:text-5xl">
           {raffle.title}
         </h1>
         {raffle.prize && (
-          <p className="mt-1.5 text-[14px] text-muted-foreground">{raffle.prize}</p>
+          <p className="mt-2 font-mono text-[11px] font-bold uppercase tracking-widest text-[#C6A8FF]">
+            {raffle.prize}
+          </p>
         )}
-        <div className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/[0.08] px-3 py-1 font-mono text-[11px] uppercase tracking-wider text-primary">
-          <Calendar className="h-3 w-3" />
-          до {formatDeadline(raffle.endsAt)}
-        </div>
       </section>
 
-      <section className="mt-4 grid grid-cols-2 gap-2">
-        <StatTile
+      {/* STATS ROW */}
+      <section className="mb-6 grid grid-cols-2 gap-4">
+        <StatCard
           label="Мои билеты"
+          shadowColor="#FFD93D"
+          delayMs={80}
           value={
-            <span className="flex items-baseline gap-1.5">
-              <PlumpTicket className="h-4 w-4 self-center text-primary" />
-              <span className="tabular-nums">{raffle.myEntries}</span>
-            </span>
+            <div className="flex items-center gap-2">
+              <PlumpNum value={raffle.myEntries} size={38} />
+              <span className="grid h-6 w-8 place-items-center rounded-md border-[2px] border-foreground bg-[#FFD93D]">
+                <PlumpTicket className="h-3.5 w-3.5 text-black" />
+              </span>
+            </div>
           }
         />
-        <StatTile
+        <StatCard
           label={finished ? "Всего заявок" : "До закрытия"}
+          shadowColor="#3DDBD9"
+          delayMs={160}
           value={
             finished ? (
-              <span className="tabular-nums">{raffle.totalEntries}</span>
+              <PlumpNum value={raffle.totalEntries} size={30} format />
             ) : (
-              <Countdown deadlineAt={raffle.endsAt} compact />
+              <div className="text-foreground">
+                <Countdown deadlineAt={raffle.endsAt} compact />
+              </div>
             )
           }
         />
       </section>
 
+      {/* DEADLINE CHIP */}
+      {!finished && (
+        <section
+          className="mb-6 flex items-center justify-between gap-3 rounded-2xl border-[3px] border-foreground bg-[#3DDBD9] px-4 py-3 text-black shadow-[4px_4px_0_0_hsl(var(--foreground))] animate-fade-in"
+        >
+          <span className="inline-flex items-center gap-2 font-mono text-[10px] font-bold uppercase tracking-widest">
+            <Calendar className="h-3.5 w-3.5" strokeWidth={2.5} />
+            Завершение
+          </span>
+          <span className="font-display text-[13px] font-black uppercase italic tracking-tight">
+            {formatDeadlineShort(raffle.endsAt)}
+          </span>
+        </section>
+      )}
+
+      {/* WINNER */}
       {finished && raffle.winnerNick && (
-        <section className="mt-4 flex items-center gap-3 rounded-2xl border border-emerald-500/30 bg-emerald-500/[0.05] px-4 py-3">
-          <Trophy className="h-5 w-5 text-emerald-400" />
+        <section className="mb-6 flex items-center gap-3 rounded-3xl border-[3px] border-foreground bg-[#B6FF3C] px-4 py-4 text-black shadow-[6px_6px_0_0_hsl(var(--foreground))] animate-fade-in">
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border-[3px] border-foreground bg-background shadow-[3px_3px_0_0_hsl(var(--foreground))]">
+            <Trophy className="h-5 w-5 text-[#B6FF3C]" strokeWidth={2.5} />
+          </span>
           <div className="min-w-0 flex-1">
-            <div className="font-mono text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+            <div className="font-mono text-[10px] font-bold uppercase tracking-widest">
               Победитель
             </div>
-            <div className="truncate font-display text-lg font-black italic text-foreground">
+            <div className="truncate font-display text-xl font-black uppercase italic">
               @{raffle.winnerNick}
             </div>
           </div>
         </section>
       )}
 
+      {/* DESCRIPTION */}
       {raffle.description && (
-        <section className="mt-6 space-y-3.5 text-[15px] leading-relaxed">
-          {raffle.description.split(/\n\n+/).map((p, i) => (
-            <p key={i} className="whitespace-pre-line text-foreground/85">
-              {p}
-            </p>
-          ))}
+        <section className="mb-6 rounded-3xl border-[3px] border-foreground bg-card p-5 shadow-[6px_6px_0_0_hsl(var(--foreground))]">
+          <div className="space-y-3 text-[14px] leading-relaxed text-foreground/85">
+            {raffle.description.split(/\n\n+/).map((p, i) => (
+              <p key={i} className="whitespace-pre-line">
+                {p}
+              </p>
+            ))}
+          </div>
         </section>
       )}
 
-      <section className="mt-6 rounded-2xl border border-white/[0.06] bg-card/40 p-4">
-        <h2 className="font-display text-[13px] font-black uppercase italic tracking-wider text-foreground">
-          Условия участия
-        </h2>
-        <p className="mt-1.5 text-[12px] leading-relaxed text-muted-foreground">
-          Стимулирующее мероприятие в порядке ст. 9 ФЗ-38 «О рекламе». Участие
-          возможно без покупок — билеты выдаются за активность в клубе. НДФЛ с
-          призов платит организатор. К участию допускаются лица 18+ из РФ и стран
-          СНГ.
+      {/* LEGAL */}
+      <section className="mb-8 border-t-[2px] border-dashed border-foreground/20 pt-4">
+        <p className="mb-3 text-[12px] leading-relaxed text-muted-foreground">
+          Стимулирующее мероприятие в порядке ст. 9 ФЗ-38 «О рекламе». Билеты можно
+          получить бесплатно за активность в клубе — покупка не обязательна. НДФЛ с
+          призов платит организатор. 18+, РФ и СНГ.
         </p>
-        <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5 text-[12px]">
+        <div className="flex flex-wrap gap-x-4 gap-y-1.5">
           <Link
             to="/club/legal/promo-rules"
-            className="font-mono text-[11px] font-bold uppercase tracking-wider text-primary hover:underline"
+            className="font-mono text-[10px] font-bold uppercase tracking-widest text-[#3DDBD9] underline decoration-2 underline-offset-4"
           >
-            Полные правила →
+            Полные правила
           </Link>
           <Link
             to="/club/legal/requisites"
-            className="text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+            className="font-mono text-[10px] font-bold uppercase tracking-widest text-muted-foreground underline decoration-2 underline-offset-4 hover:text-foreground"
           >
             Организатор
           </Link>
           <Link
             to="/club/legal/privacy"
-            className="text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+            className="font-mono text-[10px] font-bold uppercase tracking-widest text-muted-foreground underline decoration-2 underline-offset-4 hover:text-foreground"
           >
             Персональные данные
           </Link>
         </div>
       </section>
 
-      {!finished && isMobile && <div aria-hidden className="h-56" />}
+      {/* spacer for sticky panel */}
+      {!finished && isMobile && <div aria-hidden className="h-72" />}
 
+      {/* desktop / non-mobile stake panel inline */}
       {!finished && !isMobile && (
-        <section className="mt-8 pb-8">
-          <div className="rounded-2xl border border-white/[0.08] bg-card/60 p-4 shadow-[0_16px_40px_-24px_rgba(0,0,0,0.7)] backdrop-blur-md">
-            <StakeControls
-              ticketCost={raffle.ticketCost}
-              balance={balance}
-              stake={stake}
-              maxStake={maxStake}
-              isAuthed={isAuthed}
-              phoneRequired={phoneRequired}
-              isPending={enterMut.isPending}
-              onStakeChange={(v) => setStake(Math.max(0, Math.min(maxStake, v)))}
-              onStake={handleStake}
-            />
-          </div>
-        </section>
+        <StakePanel
+          ticketCost={raffle.ticketCost}
+          balance={balance}
+          stake={stake}
+          stakeBump={stakeBump}
+          maxStake={maxStake}
+          isAuthed={isAuthed}
+          phoneRequired={phoneRequired}
+          isPending={enterMut.isPending}
+          onStakeChange={changeStake}
+          onStake={handleStake}
+        />
       )}
 
+      {/* mobile sticky */}
       {!finished && isMobile && typeof document !== "undefined" &&
         createPortal(
           <div
-            className="fixed inset-x-0 z-[60] border-t border-white/[0.08] bg-[#0d0d0d]/95 backdrop-blur-xl"
+            className="fixed inset-x-0 z-[60] px-3"
             style={{
               bottom: "calc(64px + env(safe-area-inset-bottom))",
-              paddingLeft: "max(16px, env(safe-area-inset-left))",
-              paddingRight: "max(16px, env(safe-area-inset-right))",
-              paddingTop: 12,
-              paddingBottom: 12,
-              boxShadow: "0 -8px 24px -12px rgba(0,0,0,0.6)",
+              paddingLeft: "max(12px, env(safe-area-inset-left))",
+              paddingRight: "max(12px, env(safe-area-inset-right))",
             }}
           >
-            <div className="mx-auto w-full max-w-3xl">
-              <StakeControls
+            <div className="mx-auto w-full max-w-3xl animate-in slide-in-from-bottom-4 duration-300">
+              <StakePanel
                 ticketCost={raffle.ticketCost}
                 balance={balance}
                 stake={stake}
+                stakeBump={stakeBump}
                 maxStake={maxStake}
                 isAuthed={isAuthed}
                 phoneRequired={phoneRequired}
                 isPending={enterMut.isPending}
-                onStakeChange={(v) => setStake(Math.max(0, Math.min(maxStake, v)))}
+                onStakeChange={changeStake}
                 onStake={handleStake}
-                compact
+                sticky
               />
             </div>
           </div>,
@@ -370,71 +416,89 @@ function RaffleDetailContent({
   );
 }
 
-function StatTile({ label, value }: { label: string; value: React.ReactNode }) {
+function StatCard({
+  label,
+  value,
+  shadowColor,
+  delayMs,
+}: {
+  label: string;
+  value: React.ReactNode;
+  shadowColor: string;
+  delayMs: number;
+}) {
   return (
-    <div className="rounded-2xl border border-white/[0.06] bg-card/40 px-4 py-3">
-      <div className="font-mono text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+    <div
+      className="rounded-3xl border-[3px] border-foreground bg-card p-4 animate-fade-in"
+      style={{
+        boxShadow: `6px 6px 0 0 ${shadowColor}`,
+        animationDelay: `${delayMs}ms`,
+        animationFillMode: "both",
+      }}
+    >
+      <p className="mb-3 font-mono text-[9px] font-bold uppercase tracking-widest text-muted-foreground">
         {label}
-      </div>
-      <div className="mt-1 font-display text-xl font-black italic tabular-nums text-foreground">
-        {value}
-      </div>
+      </p>
+      <div className="text-foreground">{value}</div>
     </div>
   );
 }
 
-function StakeControls({
+function StakePanel({
   ticketCost,
   balance,
   stake,
+  stakeBump,
   maxStake,
   isAuthed,
   phoneRequired,
   isPending,
   onStakeChange,
   onStake,
-  compact = false,
+  sticky = false,
 }: {
   ticketCost: number;
   balance: number;
   stake: number;
+  stakeBump: number;
   maxStake: number;
   isAuthed: boolean;
   phoneRequired: boolean;
   isPending: boolean;
   onStakeChange: (v: number) => void;
   onStake: () => void;
-  compact?: boolean;
+  sticky?: boolean;
 }) {
   const presets = [1, 5, maxStake].filter((v, i, arr) => v > 0 && arr.indexOf(v) === i);
   const noBalance = isAuthed && maxStake <= 0 && !phoneRequired;
   const totalCost = stake * ticketCost;
   const ticketWord = pluralRu(ticketCost, ["билет", "билета", "билетов"]);
 
-  // Главный блок-стоппер: пока телефон не подтверждён — никаких ставок.
+  // Phone-required blocker
   if (phoneRequired) {
     return (
-      <div>
+      <div
+        className={`relative rounded-[2rem] border-[3px] border-foreground bg-card p-5 ${
+          sticky ? "shadow-[0_-8px_24px_-6px_rgba(0,0,0,0.7)]" : "shadow-[6px_6px_0_0_hsl(var(--foreground))]"
+        }`}
+      >
+        {sticky && <Perforation />}
         <div className="flex items-center justify-between">
-          <div className="font-mono text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+          <div className="font-mono text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
             1 заявка — {ticketCost} {ticketWord}
           </div>
-          <div className="flex items-center gap-1 font-mono text-[11px] uppercase tracking-wider text-foreground">
-            <PlumpTicket className="h-3.5 w-3.5 text-primary" />
-            <PlumpNum value={balance} size={11} />
-
-          </div>
+          <BalanceChip balance={balance} />
         </div>
-        <div className="mt-3 rounded-xl border border-amber-500/40 bg-amber-500/[0.08] p-3">
-          <div className="font-display text-[14px] font-black uppercase italic tracking-wider text-amber-200">
+        <div className="mt-4 rounded-2xl border-[3px] border-foreground bg-[#FFD93D] p-4 text-black shadow-[3px_3px_0_0_hsl(var(--foreground))]">
+          <div className="font-display text-[15px] font-black uppercase italic tracking-tight">
             Нужен номер телефона
           </div>
-          <p className="mt-1 text-[12px] leading-relaxed text-amber-100/80">
+          <p className="mt-1 text-[12px] leading-relaxed">
             Чтобы участвовать, подтверди номер в профиле. Это защита от мультиаккаунтов — одно участие на человека.
           </p>
           <Link
             to="/club/me"
-            className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-amber-400 py-2.5 font-display text-[13px] font-black uppercase italic tracking-wider text-black active:scale-[0.98]"
+            className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border-[3px] border-foreground bg-background py-2.5 font-display text-[13px] font-black uppercase italic tracking-widest text-foreground shadow-[3px_3px_0_0_hsl(var(--foreground))] active:translate-x-[2px] active:translate-y-[2px] active:shadow-[1px_1px_0_0_hsl(var(--foreground))]"
           >
             Указать номер →
           </Link>
@@ -444,65 +508,98 @@ function StakeControls({
   }
 
   return (
-    <div>
+    <div
+      className={`relative rounded-[2rem] border-[3px] border-foreground bg-card p-5 ${
+        sticky
+          ? "shadow-[0_-8px_24px_-6px_rgba(0,0,0,0.7)]"
+          : "shadow-[6px_6px_0_0_hsl(var(--foreground))]"
+      }`}
+    >
+      {sticky && <Perforation />}
+
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="font-mono text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-          1 заявка — {ticketCost} {ticketWord}
+        <div className="font-mono text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+          1 заявка —{" "}
+          <span className="text-foreground">
+            {ticketCost} {ticketWord}
+          </span>
         </div>
-        <div className="flex items-center gap-1 font-mono text-[11px] uppercase tracking-wider text-foreground">
-          <PlumpTicket className="h-3.5 w-3.5 text-primary" />
-          <PlumpNum value={balance} size={11} />
-        </div>
+        <BalanceChip balance={balance} />
       </div>
 
-      <div className={`mt-2 flex items-center gap-3 ${compact ? "" : "py-1"}`}>
+      {/* Stepper */}
+      <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl border-[3px] border-foreground bg-background/60 p-2">
         <StepBtn onClick={() => onStakeChange(stake - 1)} disabled={stake <= 0}>
-          <Minus className="h-4 w-4" />
+          <Minus className="h-5 w-5" strokeWidth={3} />
         </StepBtn>
-        <div className="flex flex-1 justify-center text-foreground">
-          <PlumpNum value={stake} size={28} />
+        <div
+          key={`bump-${stakeBump}`}
+          className="flex flex-1 justify-center text-foreground animate-scale-in"
+        >
+          <PlumpNum value={stake} size={44} />
         </div>
-
         <StepBtn onClick={() => onStakeChange(stake + 1)} disabled={stake >= maxStake}>
-          <Plus className="h-4 w-4" />
+          <Plus className="h-5 w-5" strokeWidth={3} />
         </StepBtn>
       </div>
 
+      {/* Presets */}
       {presets.length > 0 && (
-        <div className="mt-2 flex gap-1.5">
-          {presets.map((v, i) => (
-            <button
-              key={`${v}-${i}`}
-              type="button"
-              onClick={() => onStakeChange(v)}
-              disabled={v > maxStake}
-              className="flex-1 rounded-lg border border-white/[0.08] bg-white/[0.02] py-1.5 font-mono text-[11px] font-bold uppercase tracking-wider text-muted-foreground transition-colors active:bg-white/[0.06] disabled:opacity-30"
-            >
-              {i === presets.length - 1 && v === maxStake && v > 1 ? "MAX" : `×${v}`}
-            </button>
-          ))}
+        <div className="mt-3 grid grid-cols-3 gap-2">
+          {presets.map((v, i) => {
+            const isMax = i === presets.length - 1 && v === maxStake && v > 1;
+            const active = stake === v;
+            return (
+              <button
+                key={`${v}-${i}`}
+                type="button"
+                onClick={() => onStakeChange(v)}
+                disabled={v > maxStake}
+                className={`rounded-xl border-[3px] border-foreground py-2 font-display text-[12px] font-black uppercase italic tracking-widest transition-all active:translate-x-[1px] active:translate-y-[1px] disabled:opacity-30 ${
+                  active
+                    ? "bg-foreground text-background shadow-[2px_2px_0_0_hsl(var(--foreground))]"
+                    : isMax
+                      ? "bg-[#FFD93D] text-black shadow-[3px_3px_0_0_hsl(var(--foreground))] active:shadow-[1px_1px_0_0_hsl(var(--foreground))]"
+                      : "bg-card text-foreground shadow-[3px_3px_0_0_hsl(var(--foreground))] active:shadow-[1px_1px_0_0_hsl(var(--foreground))]"
+                }`}
+              >
+                {isMax ? "MAX" : `×${v}`}
+              </button>
+            );
+          })}
         </div>
       )}
 
+      {/* CTA */}
       <button
         type="button"
         onClick={onStake}
         disabled={!isAuthed || stake <= 0 || stake > maxStake || isPending}
-        className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 font-display text-[15px] font-black uppercase italic tracking-wider text-primary-foreground transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"
+        className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl border-[3px] border-foreground bg-[#B6FF3C] py-4 font-display text-[17px] font-black uppercase italic tracking-tight text-black shadow-[6px_6px_0_0_hsl(var(--foreground))] transition-transform hover:-translate-y-0.5 active:translate-x-[3px] active:translate-y-[3px] active:shadow-[2px_2px_0_0_hsl(var(--foreground))] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0"
       >
-        <Zap className="h-4 w-4" />
+        <Zap className="h-5 w-5" strokeWidth={2.5} />
         {!isAuthed ? "Войти" : isPending ? "..." : `Поставить · ${totalCost}`}
       </button>
 
       {noBalance && (
         <Link
           to="/club/tickets"
-          className="mt-2 block text-center font-mono text-[11px] uppercase tracking-wider text-primary active:opacity-60"
+          className="mt-3 block text-center font-mono text-[10px] font-bold uppercase tracking-widest text-[#FFD93D] underline decoration-2 underline-offset-4"
         >
           Билетов не хватает — как их набрать →
         </Link>
       )}
     </div>
+  );
+}
+
+function BalanceChip({ balance }: { balance: number }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-full border-[2px] border-foreground bg-[#FFD93D] px-2.5 py-1 text-black shadow-[2px_2px_0_0_hsl(var(--foreground))]">
+      <PlumpTicket className="h-3.5 w-3.5" />
+      <PlumpNum value={balance} size={12} format />
+    </span>
   );
 }
 
@@ -520,9 +617,22 @@ function StepBtn({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/[0.1] bg-white/[0.02] text-foreground transition-all active:scale-90 disabled:opacity-30"
+      className="grid h-12 w-12 shrink-0 place-items-center rounded-xl border-[3px] border-foreground bg-card text-foreground shadow-[3px_3px_0_0_hsl(var(--foreground))] transition-transform active:translate-x-[2px] active:translate-y-[2px] active:shadow-[1px_1px_0_0_hsl(var(--foreground))] disabled:opacity-30"
     >
       {children}
     </button>
+  );
+}
+
+function Perforation() {
+  return (
+    <div className="pointer-events-none absolute inset-x-4 -top-[9px] flex justify-between">
+      {Array.from({ length: 12 }).map((_, i) => (
+        <span
+          key={i}
+          className="h-3 w-3 rounded-full border-b-[3px] border-foreground bg-background"
+        />
+      ))}
+    </div>
   );
 }
