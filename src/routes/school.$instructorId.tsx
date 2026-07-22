@@ -75,9 +75,18 @@ function InstructorPage() {
       <main className="mx-auto max-w-6xl px-4 pb-24 pt-24 md:pt-32">
         <BackLink />
         <Hero instructor={instructor} onCta={scrollToSchedule} />
+        {instructor.courses && instructor.courses.length > 0 && (
+          <CoursesSection instructor={instructor} onCta={scrollToSchedule} />
+        )}
         <SkillsSection instructor={instructor} />
+        {instructor.approach && instructor.approach.length > 0 && (
+          <ApproachSection instructor={instructor} />
+        )}
         <LocationSection instructor={instructor} />
         <ScheduleSection instructor={instructor} scheduleRef={scheduleRef} />
+        {instructor.upcomingCourses && instructor.upcomingCourses.length > 0 && (
+          <UpcomingSection instructor={instructor} />
+        )}
         <GallerySection instructor={instructor} />
         <OtherInstructors currentSlug={instructor.slug} />
       </main>
