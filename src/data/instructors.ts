@@ -19,6 +19,12 @@ import nkGal02 from "@/assets/instructors/nikita-gallery/nikita-02.webp.asset.js
 import nkGal03 from "@/assets/instructors/nikita-gallery/nikita-03.webp.asset.json";
 import nkGal04 from "@/assets/instructors/nikita-gallery/nikita-04.webp.asset.json";
 import pavelAsset from "@/assets/instructors/pavel.webp.asset.json";
+import pvGal01 from "@/assets/instructors/pavel-gallery/pavel-01.webp.asset.json";
+import pvGal02 from "@/assets/instructors/pavel-gallery/pavel-02.webp.asset.json";
+import pvGal03 from "@/assets/instructors/pavel-gallery/pavel-03.webp.asset.json";
+import pvGal04 from "@/assets/instructors/pavel-gallery/pavel-04.webp.asset.json";
+import pvGal05 from "@/assets/instructors/pavel-gallery/pavel-05.webp.asset.json";
+import pvGal06 from "@/assets/instructors/pavel-gallery/pavel-06.webp.asset.json";
 import haixAsset from "@/assets/instructors/haix.webp.asset.json";
 import hxGal01 from "@/assets/instructors/haix-gallery/haix-01.webp.asset.json";
 import hxGal02 from "@/assets/instructors/haix-gallery/haix-02.webp.asset.json";
@@ -369,16 +375,46 @@ export const INSTRUCTORS: Instructor[] = [
     city: "Москва",
     experience: 3,
     tone: "lime",
-    tagline: "3 года активной практики, свежий взгляд",
+    tagline: "12 лет в седле, призёр мотоджимханы ЮФО",
     bio: [
-      "Молодой инструктор, но с большим налётом. Каждый день в седле, знаю все актуальные приколы дорог и байков.",
-      "Занятия — драйвовые, без занудства. Разложу технику по полочкам, объясню на пальцах, покажу, повторим.",
+      "Мне 20 лет, из них 12 я провёл на мотоцикле. Инструктором работаю 3 года.",
+      "Участвовал в соревнованиях по мотоджимхане чемпионата ЮФО, призёр класса «Спортсмены».",
+      "Работаю в основном с новичками — обучаю с полного нуля. Есть запрос на спортивную езду — только приветствуется.",
     ],
-    specialties: ["С нуля", "Площадка", "Драйв"],
-    skills: DEFAULT_SKILLS,
+    specialties: ["С нуля", "Джимхана", "Спорт"],
+    skills: [
+      { title: "С полного нуля", text: "Обучаю даже тех, кто никогда не сидел на велосипеде. Посадка, сцепление, газ, тормоз — всё по шагам." },
+      { title: "Азы стантрайдинга", text: "База трюковой езды: контроль газа и сцепления, работа с балансом, первые wheelie в безопасной среде." },
+      { title: "Контраварийная подготовка", text: "Экстренное торможение, объезд препятствия, работа в скользких условиях. То, что реально спасает на дороге." },
+      { title: "Спортивная мотоджимхана", text: "Работа с конусами, восьмёрки, змейки, развороты в габарит. Готовлю к спортивным стартам, если есть запрос." },
+      { title: "Шоссейно-кольцевые гонки", text: "Подготовка к трек-дням и ШКМГ: траектории, наклоны, работа корпусом, тайминг тормоза и газа." },
+      { title: "Стратегия в городе", text: "Как читать трафик, где занимать полосу, как не попадать в слепые зоны. Разбор реальных ситуаций." },
+    ],
     location: MSK_LOCATION,
     schedule: DEFAULT_SCHEDULE,
-    gallery: [],
+    gallery: [pvGal01.url, pvGal02.url, pvGal03.url, pvGal04.url, pvGal05.url, pvGal06.url],
+    courses: [
+      {
+        title: "Индивидуальное занятие",
+        duration: "2 часа · площадка",
+        price: 12000,
+        priceFrom: true,
+        description:
+          "Персональная тренировка один на один. Программа собирается под твои задачи и уровень — от первого выезда до подготовки к спорту. Итоговая стоимость зависит от аренды мотоцикла, экипировки и дополнительного спортивного оборудования.",
+        includes: [
+          "2 часа чистой практики",
+          "Индивидуальная программа под твой уровень",
+          "Разбор техники и работа над ошибками",
+          "Мотоцикл и экипировка в аренду — по договорённости",
+        ],
+      },
+    ],
+    approach: [
+      "Работаю с любым уровнем: от полного нуля до спортивной подготовки. Программу подбираю индивидуально под задачи и запросы.",
+      "Главное — регулярность. Приходишь, занимаешься системно — получаешь безопасное и уверенное счастье на мотоцикле.",
+      "Погода не важна, тренируемся при любой. Мотоциклы и экипировка в аренду есть — приходить со своим не обязательно.",
+      "Основная площадка — Москва, Крылатское. Готов выезжать в другой город или на конкретный трек по договорённости.",
+    ],
   },
   {
     id: "haix",
