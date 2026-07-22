@@ -1,5 +1,5 @@
 import { PlumpAI, PlumpGarage, PlumpStore, PlumpTicket, PlumpDiamond } from "@/components/ui/icons";
-import phoneLarge from "@/assets/phone-mockup-large.png";
+import phoneLarge from "@/assets/phone-mockup-hhr.png.asset.json";
 
 const FEATURES = [
   {
@@ -68,7 +68,7 @@ export function AppShowcase() {
           {/* Правая колонка — мокап телефона */}
           <div className="flex items-center justify-center lg:justify-end">
             <img
-              src={phoneLarge}
+              src={phoneLarge.url}
               alt="Мокап приложения HELLHOUND"
               width={1024}
               height={1024}
