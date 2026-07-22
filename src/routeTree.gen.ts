@@ -187,9 +187,9 @@ const ShopProductSlugRoute = ShopProductSlugRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const SchoolInstructorIdRoute = SchoolInstructorIdRouteImport.update({
-  id: '/$instructorId',
-  path: '/$instructorId',
-  getParentRoute: () => SchoolRoute,
+  id: '/school/$instructorId',
+  path: '/school/$instructorId',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const PaySuccessRoute = PaySuccessRouteImport.update({
   id: '/pay/success',
@@ -956,6 +956,7 @@ export interface RootRouteChildren {
   PayFailRoute: typeof PayFailRoute
   PayGoRoute: typeof PayGoRoute
   PaySuccessRoute: typeof PaySuccessRoute
+  SchoolInstructorIdRoute: typeof SchoolInstructorIdRoute
   ShopProductSlugRoute: typeof ShopProductSlugRoute
   CheckoutIndexRoute: typeof CheckoutIndexRoute
   HellPassIndexRoute: typeof HellPassIndexRoute
@@ -1107,10 +1108,10 @@ declare module '@tanstack/react-router' {
     }
     '/school/$instructorId': {
       id: '/school/$instructorId'
-      path: '/$instructorId'
+      path: '/school/$instructorId'
       fullPath: '/school/$instructorId'
       preLoaderRoute: typeof SchoolInstructorIdRouteImport
-      parentRoute: typeof SchoolRoute
+      parentRoute: typeof rootRouteImport
     }
     '/pay/success': {
       id: '/pay/success'
@@ -1644,6 +1645,7 @@ const rootRouteChildren: RootRouteChildren = {
   PayFailRoute: PayFailRoute,
   PayGoRoute: PayGoRoute,
   PaySuccessRoute: PaySuccessRoute,
+  SchoolInstructorIdRoute: SchoolInstructorIdRoute,
   ShopProductSlugRoute: ShopProductSlugRoute,
   CheckoutIndexRoute: CheckoutIndexRoute,
   HellPassIndexRoute: HellPassIndexRoute,
