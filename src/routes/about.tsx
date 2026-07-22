@@ -11,6 +11,7 @@ import { Header } from "@/components/brand/Header";
 import { Footer } from "@/components/brand/Footer";
 import vanyaGarageAsset from "@/assets/vanya-garage.png.asset.json";
 import vanyaMerchAsset from "@/assets/vanya-merch.png.asset.json";
+import vanyaRafflesAsset from "@/assets/vanya-raffles.png.asset.json";
 
 export const Route = createFileRoute("/about")({
   head: () => ({
@@ -138,6 +139,7 @@ const FEATURES: Feature[] = [
       "Всё прозрачно: правила, участники и результаты — на виду",
     ],
     bg: "background",
+    image: vanyaRafflesAsset.url,
   },
   {
     title: "Школа Hellhound",
@@ -275,7 +277,11 @@ function AboutPage() {
                           src={f.image}
                           alt={f.title}
                           className={`relative z-10 w-full object-contain ${
-                            f.image === vanyaGarageAsset.url ? "max-w-[680px]" : "max-w-[520px]"
+                            f.image === vanyaGarageAsset.url
+                              ? "max-w-[680px]"
+                              : f.image === vanyaRafflesAsset.url
+                                ? "max-w-[640px]"
+                                : "max-w-[520px]"
                           }`}
                         />
                       </div>
