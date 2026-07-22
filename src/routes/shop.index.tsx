@@ -3,6 +3,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Header } from "@/components/brand/Header";
 import { Footer } from "@/components/brand/Footer";
+import { PlumpPrice } from "@/components/brand/PlumpNum";
+
 import {
   fetchShopCategories,
   fetchShopProducts,
