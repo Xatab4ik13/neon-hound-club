@@ -133,7 +133,7 @@ function OnlineSoon() {
 
 function InstructorsGrid() {
   return (
-    <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="grid gap-10 pt-4 sm:grid-cols-2 lg:grid-cols-3">
       {INSTRUCTORS.map((it, i) => (
         <InstructorCard key={it.id} instructor={it} index={i} />
       ))}
@@ -150,6 +150,7 @@ function InstructorCard({
 }) {
   // Чередуем лёгкий наклон карточкам для «живого» ощущения.
   const skew = index % 2 === 0 ? "-rotate-1" : "rotate-1";
+  const expLabel = `${instructor.experience} ${instructor.experience < 5 ? "года" : "лет"} стажа`;
   return (
     <article className={`group relative ${skew}`}>
       {/* Толстая plump-рамка */}
@@ -165,16 +166,6 @@ function InstructorCard({
             className="absolute inset-0 h-full w-full object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-b from-black/0 via-black/0 to-black/30" />
-
-          {/* Плашки с городом и стажем */}
-          <div className="absolute left-3 right-3 top-3 flex flex-wrap gap-2">
-            <span className="rounded-full border-2 border-foreground bg-card px-3 py-1 font-mono text-[10px] font-black uppercase tracking-wider text-foreground shadow-[2px_2px_0_0_hsl(var(--foreground))]">
-              {instructor.city}
-            </span>
-            <span className="rounded-full border-2 border-foreground bg-card px-3 py-1 font-mono text-[10px] font-black uppercase tracking-wider text-foreground shadow-[2px_2px_0_0_hsl(var(--foreground))]">
-              {instructor.experience} {instructor.experience < 5 ? "года" : "лет"} стажа
-            </span>
-          </div>
         </div>
 
         {/* Имя внизу карточки */}
@@ -183,8 +174,40 @@ function InstructorCard({
             {instructor.name}
           </div>
         </div>
+      </div>
 
+      {/* Плашки с городом, статусом и стажем — вне карточки, как в mock */}
+      <div className="pointer-events-none absolute -top-3 left-3 -rotate-[4deg]">
+        <PlumpTag>{instructor.city}</PlumpTag>
+      </div>
+      <div className="pointer-events-none absolute -right-2 top-10 rotate-[6deg]">
+        <PlumpTag variant="dark">Мото инструктор</PlumpTag>
+      </div>
+      <div className="pointer-events-none absolute -bottom-3 right-6 -rotate-[3deg]">
+        <PlumpTag variant="accent">Опыт {expLabel}</PlumpTag>
       </div>
     </article>
+  );
+}
+
+function PlumpTag({
+  children,
+  variant = "light",
+}: {
+  children: React.ReactNode;
+  variant?: "light" | "dark" | "accent";
+}) {
+  const styles =
+    variant === "dark"
+      ? "bg-foreground text-background"
+      : variant === "accent"
+        ? "bg-primary text-primary-foreground"
+        : "bg-card text-foreground";
+  return (
+    <span
+      className={`inline-block rounded-full border-[3px] border-foreground px-3 py-1 font-display text-[10px] font-black uppercase tracking-widest shadow-[3px_3px_0_0_hsl(var(--foreground))] md:text-xs ${styles}`}
+    >
+      {children}
+    </span>
   );
 }
