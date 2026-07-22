@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/club/PageHeader";
 import { apiFetch } from "@/lib/api";
 import { fetchMyOrder, qk, type ShopOrderWithItems, type ShopOrderStatus } from "@/lib/queries";
 import { payExistingOrderInPwa } from "@/lib/pwa-pay";
+import { PlumpPrice } from "@/components/brand/PlumpNum";
 
 export const Route = createFileRoute("/club/orders/$orderId")({
   head: () => ({
@@ -153,7 +154,7 @@ function OrderDetailPage() {
                 </div>
               </div>
               <div className="shrink-0 font-mono text-sm font-bold tabular-nums text-foreground">
-                {(it.priceRubSnapshot * it.qty).toLocaleString("ru-RU")} ₽
+                <PlumpPrice value={(it.priceRubSnapshot * it.qty)} />
               </div>
             </li>
           ))}
@@ -163,7 +164,7 @@ function OrderDetailPage() {
             Итого
           </span>
           <span className="font-mono text-base font-bold tabular-nums text-foreground">
-            {order.totalRub.toLocaleString("ru-RU")} ₽
+            <PlumpPrice value={order.totalRub} />
           </span>
         </div>
       </section>
@@ -254,7 +255,7 @@ function PayBlock({
       className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-primary py-4 font-display text-sm font-black uppercase italic tracking-widest text-primary-foreground active:scale-[0.99] disabled:opacity-60"
     >
       {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-      Оплатить {totalRub.toLocaleString("ru-RU")} ₽
+      Оплатить <PlumpPrice value={totalRub} />
     </button>
   );
 }
