@@ -45,6 +45,10 @@ function InstructorPage() {
     scheduleRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "auto" });
+  }, [instructorId]);
+
   if (!instructor) {
     return (
       <div className="min-h-screen bg-background text-foreground">
