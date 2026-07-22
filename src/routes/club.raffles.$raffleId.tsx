@@ -229,7 +229,7 @@ function RaffleDetailContent({
         </span>
 
         <div
-          className="relative aspect-[358/288] overflow-hidden rounded-[2rem] border-[3px] border-foreground bg-black shadow-[8px_8px_0_0_#C6A8FF] animate-fade-in"
+          className="relative aspect-[358/288] overflow-hidden rounded-[2rem] border-[3px] border-foreground bg-black shadow-[8px_8px_0_0_#F000C0] animate-fade-in"
         >
           {raffle.imageUrl && (
             <img
@@ -293,7 +293,7 @@ function RaffleDetailContent({
       {/* DEADLINE CHIP */}
       {!finished && (
         <section
-          className="mb-6 flex items-center justify-between gap-3 rounded-2xl border-[3px] border-foreground bg-[#3DDBD9] px-4 py-3 text-black shadow-[4px_4px_0_0_hsl(var(--foreground))] animate-fade-in"
+          className="mb-6 flex items-center justify-between gap-3 rounded-2xl bg-[#3DDBD9] px-4 py-3 text-black animate-fade-in"
         >
           <span className="inline-flex items-center gap-2 font-mono text-[10px] font-bold uppercase tracking-widest">
             <Calendar className="h-3.5 w-3.5" strokeWidth={2.5} />
@@ -324,7 +324,7 @@ function RaffleDetailContent({
 
       {/* DESCRIPTION */}
       {raffle.description && (
-        <section className="mb-6 rounded-3xl border-[3px] border-foreground bg-card p-5 shadow-[6px_6px_0_0_hsl(var(--foreground))]">
+        <section className="mb-6 rounded-3xl bg-card p-5">
           <div className="space-y-3 text-[14px] leading-relaxed text-foreground/85">
             {raffle.description.split(/\n\n+/).map((p, i) => (
               <p key={i} className="whitespace-pre-line">
