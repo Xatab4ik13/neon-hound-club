@@ -1,100 +1,81 @@
 import { Link } from "@tanstack/react-router";
-import { Logo } from "./Logo";
 import { PaymentBadges } from "./PaymentBadges";
 import { LEGAL } from "@/data/legal";
+import hhrLogo from "@/assets/hhr-logo.png.asset.json";
+import youtubeIcon from "@/assets/social/youtube.svg";
+import telegramIcon from "@/assets/social/telegram.svg";
+import twitchIcon from "@/assets/social/twitch.svg";
 
 const SOCIALS = [
-  { label: "YouTube",  href: "https://www.youtube.com/@HELLHOUNDRacing" },
-  { label: "Telegram", href: "https://t.me/hell666hound" },
-  { label: "Twitch",   href: "https://www.twitch.tv/hellhound" },
+  { label: "YouTube", href: "https://www.youtube.com/@HELLHOUNDRacing", icon: youtubeIcon },
+  { label: "Telegram", href: "https://t.me/hell666hound", icon: telegramIcon },
+  { label: "Twitch", href: "https://www.twitch.tv/hellhound", icon: twitchIcon },
 ] as const;
 
 export function Footer() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="relative border-t border-border bg-background">
-      {/* верхний тонкий неоновый штрих */}
-      <div className="h-px w-full bg-gradient-to-r from-transparent via-primary/60 to-transparent" />
-
+    <footer className="relative bg-white text-black">
       <div className="mx-auto max-w-7xl px-6 pt-14 pb-8">
-        {/* верхний блок */}
-        <div className="grid gap-12 md:grid-cols-12">
-          {/* бренд */}
-          <div className="md:col-span-4">
-            <Logo className="mb-4" />
-            <p className="max-w-[34ch] text-sm leading-relaxed text-muted-foreground">
-              Андеграундный мото-клуб HELLHOUND. Лимитированный мерч,
-              Hell Pass, ранги, гараж и розыгрыши — без накруток.
-            </p>
-            <div className="mt-6 inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1.5 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />
-              в&nbsp;сети · пинг 14&nbsp;ms
-            </div>
-          </div>
+        {/* Логотип по центру */}
+        <div className="flex justify-center">
+          <img
+            src={hhrLogo.url}
+            alt="HELLHOUND Racing"
+            className="h-20 w-auto md:h-24"
+          />
+        </div>
 
+        {/* Соцсети — Plump плашки */}
+        <div className="mt-8 flex justify-center gap-4">
+          {SOCIALS.map((s) => (
+            <a
+              key={s.label}
+              href={s.href}
+              target="_blank"
+              rel="noreferrer"
+              aria-label={s.label}
+              className="grid h-14 w-14 place-items-center rounded-2xl border-[3px] border-black bg-white shadow-[4px_4px_0_0_#000] transition-transform hover:-translate-y-0.5 hover:shadow-[5px_5px_0_0_#000] active:translate-y-0 active:shadow-[2px_2px_0_0_#000]"
+            >
+              <img src={s.icon} alt="" className="h-6 w-6" />
+            </a>
+          ))}
+        </div>
+
+        {/* верхний блок */}
+        <div className="mt-12 grid gap-10 md:grid-cols-12">
           {/* навигация */}
-          <div className="md:col-span-2">
-            <div className="mb-4 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+          <div className="md:col-span-4">
+            <div className="mb-4 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-black/50">
               Клуб
             </div>
             <ul className="space-y-2.5 text-sm">
               <li><Link to="/shop" className="transition-colors hover:text-primary">Магазин</Link></li>
               <li><Link to="/hell-pass" className="transition-colors hover:text-primary">Hell Pass</Link></li>
               <li><Link to="/school" className="transition-colors hover:text-primary">Школа</Link></li>
-              
               <li><Link to="/about" className="transition-colors hover:text-primary">О клубе</Link></li>
             </ul>
           </div>
 
-          {/* соцсети */}
-          <div className="md:col-span-2">
-            <div className="mb-4 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
-              Соцсети
-            </div>
-            <ul className="space-y-2.5 text-sm">
-              {SOCIALS.map((s) => (
-                <li key={s.label}>
-                  <a
-                    href={s.href}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-2 transition-colors hover:text-primary"
-                  >
-                    {s.label}
-                    <span aria-hidden className="text-[10px] text-muted-foreground">↗</span>
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-
           {/* документы */}
-          <div className="md:col-span-4">
-            <div className="mb-4 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+          <div className="md:col-span-8">
+            <div className="mb-4 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-black/50">
               Документы
             </div>
             <ul className="grid grid-cols-1 gap-2.5 text-sm sm:grid-cols-2">
               <li><Link to="/shop-info" className="transition-colors hover:text-primary">Оплата и доставка</Link></li>
-             <li><Link to="/legal/offer" className="transition-colors hover:text-primary">Публичная оферта</Link></li>
-             <li><Link to="/legal/terms" className="transition-colors hover:text-primary">Пользовательское соглашение</Link></li>
-             <li><Link to="/legal/privacy" className="transition-colors hover:text-primary">Политика ПДн</Link></li>
-             <li><Link to="/legal/promo-rules" className="transition-colors hover:text-primary">Правила розыгрышей</Link></li>
-             <li><Link to="/legal/requisites" className="transition-colors hover:text-primary">Реквизиты</Link></li>
+              <li><Link to="/legal/offer" className="transition-colors hover:text-primary">Публичная оферта</Link></li>
+              <li><Link to="/legal/terms" className="transition-colors hover:text-primary">Пользовательское соглашение</Link></li>
+              <li><Link to="/legal/privacy" className="transition-colors hover:text-primary">Политика ПДн</Link></li>
+              <li><Link to="/legal/promo-rules" className="transition-colors hover:text-primary">Правила розыгрышей</Link></li>
+              <li><Link to="/legal/requisites" className="transition-colors hover:text-primary">Реквизиты</Link></li>
             </ul>
 
-            <div className="mt-6 flex flex-col gap-2">
-              <a
-                href={LEGAL.contactTelegram}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex w-fit items-center gap-2 rounded-md border border-border bg-surface px-4 py-2 font-mono text-[11px] font-bold uppercase tracking-widest transition-colors hover:border-primary/60 hover:text-primary"
-              >
-                Поддержка · Telegram →
-              </a>
+            <div className="mt-6">
               <a
                 href={`mailto:${LEGAL.contactEmail}`}
-                className="inline-flex w-fit items-center gap-2 font-mono text-[11px] uppercase tracking-widest text-muted-foreground transition-colors hover:text-primary"
+                className="inline-flex w-fit items-center gap-2 font-mono text-[11px] uppercase tracking-widest text-black/60 transition-colors hover:text-primary"
               >
                 {LEGAL.contactEmail}
               </a>
@@ -103,19 +84,19 @@ export function Footer() {
         </div>
 
         {/* разделитель */}
-        <div className="mt-12 border-t border-border/60" />
+        <div className="mt-12 border-t-[3px] border-black" />
 
         {/* платёжные системы */}
         <div className="mt-6 flex flex-col items-start gap-3 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-3">
-            <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+            <span className="font-mono text-[10px] uppercase tracking-widest text-black/50">
               Принимаем
             </span>
             <PaymentBadges size="sm" />
           </div>
           <Link
             to="/shop-info"
-            className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground transition-colors hover:text-primary"
+            className="font-mono text-[11px] uppercase tracking-widest text-black/60 transition-colors hover:text-primary"
           >
             Оплата и доставка →
           </Link>
@@ -123,11 +104,11 @@ export function Footer() {
 
         {/* нижняя строка: реквизиты ИП по 152-ФЗ */}
         <div className="mt-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div className="font-mono text-[11px] leading-relaxed text-muted-foreground">
+          <div className="font-mono text-[11px] leading-relaxed text-black/60">
             {LEGAL.shortName} · ОГРНИП {LEGAL.ogrnip} · ИНН {LEGAL.inn}
             <span className="hidden md:inline"> · {LEGAL.addressShort}</span>
           </div>
-          <div className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+          <div className="font-mono text-[11px] uppercase tracking-widest text-black/60">
             © {year} {LEGAL.brand}
           </div>
         </div>
