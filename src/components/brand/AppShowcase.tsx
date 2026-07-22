@@ -1,6 +1,5 @@
 import { PlumpAI, PlumpGarage, PlumpStore, PlumpTicket, PlumpDiamond } from "@/components/ui/icons";
-import vanyaAsset from "@/assets/vanya-helmet.webp";
-import phoneAsset from "@/assets/phone-mockup.webp";
+import phoneLarge from "@/assets/phone-mockup-large.png";
 
 const FEATURES = [
   {
@@ -30,22 +29,6 @@ const FEATURES = [
   },
 ];
 
-function PhoneMockup({ className }: { className?: string }) {
-  return (
-    <div className={`relative shrink-0 ${className}`}>
-      <img
-        src={phoneAsset}
-        alt="Мокап приложения HELLHOUND"
-        width={1024}
-        height={1024}
-        loading="lazy"
-        className="h-auto w-full drop-shadow-2xl"
-      />
-      <div className="absolute left-[7%] top-[3%] -z-10 h-[94%] w-[86%] rounded-[2.2rem] bg-black md:rounded-[2.8rem]" />
-    </div>
-  );
-}
-
 export function AppShowcase() {
   return (
     <section id="app" className="relative overflow-hidden bg-surface px-6 py-20 md:py-28">
@@ -60,52 +43,9 @@ export function AppShowcase() {
           </h2>
         </div>
 
-        {/* Мобильная композиция */}
-        <div className="flex flex-col gap-6 md:hidden">
-          <div className="flex items-end justify-between">
-            <img
-              src={vanyaAsset}
-              alt="Ваня — HELLHOUND Racing"
-              width={1264}
-              height={848}
-              loading="lazy"
-              className="h-auto w-[42%] max-w-[180px] object-contain"
-            />
-            <PhoneMockup className="w-[45%] max-w-[190px]" />
-          </div>
-          <div className="grid w-full gap-3">
-            {FEATURES.map((f) => {
-              const Icon = f.icon;
-              return (
-                <div
-                  key={f.title}
-                  className="rounded-2xl border-[3px] border-foreground bg-card p-4 shadow-[6px_6px_0_0_hsl(var(--foreground))]"
-                >
-                  <div className="mb-3 flex items-center gap-3">
-                    <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border-2 border-foreground bg-primary text-primary-foreground">
-                      <Icon size={22} />
-                    </span>
-                    <h3 className="font-display text-lg uppercase tracking-tight">{f.title}</h3>
-                  </div>
-                  <p className="text-sm leading-relaxed text-muted-foreground">{f.desc}</p>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Десктопная композиция */}
-        <div className="relative hidden min-h-[580px] md:block lg:flex lg:min-h-[540px] lg:flex-row lg:items-center">
-          <img
-            src={vanyaAsset}
-            alt="Ваня — HELLHOUND Racing"
-            width={1264}
-            height={848}
-            loading="lazy"
-            className="pointer-events-none absolute bottom-0 left-0 z-0 h-auto w-[30%] max-w-[320px] -translate-x-[4%] object-contain lg:w-[24%] lg:max-w-[300px] lg:-translate-x-[2%]"
-          />
-          <PhoneMockup className="absolute left-[24%] top-1/2 z-10 w-[250px] -translate-y-1/2 lg:w-[300px]" />
-          <div className="relative z-20 grid w-full gap-3 sm:grid-cols-2 lg:ml-auto lg:w-[46%] lg:pl-6">
+        <div className="grid grid-cols-1 gap-10 lg:grid-cols-2 lg:items-center lg:gap-12">
+          {/* Левая колонка — фичи */}
+          <div className="grid gap-3 sm:grid-cols-2">
             {FEATURES.map((f) => {
               const Icon = f.icon;
               return (
@@ -124,10 +64,22 @@ export function AppShowcase() {
               );
             })}
           </div>
+
+          {/* Правая колонка — мокап телефона */}
+          <div className="flex items-center justify-center lg:justify-end">
+            <img
+              src={phoneLarge}
+              alt="Мокап приложения HELLHOUND"
+              width={1024}
+              height={1024}
+              loading="lazy"
+              className="h-auto w-full max-w-[520px] object-contain drop-shadow-2xl"
+            />
+          </div>
         </div>
 
         {/* Подсказка про скриншот */}
-        <p className="relative z-20 mt-10 max-w-[50ch] text-sm text-muted-foreground md:mt-14">
+        <p className="mt-10 max-w-[50ch] text-sm text-muted-foreground md:mt-14">
           Скоро сюда подложим реальные скриншоты из приложения. Пока смотрим на композицию и текст.
         </p>
       </div>
