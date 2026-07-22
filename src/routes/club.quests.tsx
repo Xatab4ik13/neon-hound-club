@@ -168,7 +168,7 @@ function InstallAppQuest() {
   return (
     <Link
       to="/club/install"
-      className="mb-6 block -rotate-1 rounded-3xl border-[3px] border-foreground bg-[#FFD93D] p-4 shadow-[8px_8px_0_0_hsl(var(--foreground))] transition-transform duration-200 ease-out hover:-translate-x-1 hover:-translate-y-1 hover:shadow-[10px_10px_0_0_hsl(var(--foreground))] active:scale-[0.99] md:p-5"
+      className="mb-6 block -rotate-1 rounded-3xl border-[3px] border-foreground bg-[#FFD93D] p-4 text-black shadow-[8px_8px_0_0_hsl(var(--foreground))] transition-transform duration-200 ease-out hover:-translate-x-1 hover:-translate-y-1 hover:shadow-[10px_10px_0_0_hsl(var(--foreground))] active:scale-[0.99] md:p-5"
     >
       <div className="flex items-center gap-4">
         <span
@@ -177,24 +177,24 @@ function InstallAppQuest() {
           }`}
         >
           {installed ? (
-            <Check className="h-6 w-6 text-foreground" strokeWidth={3} />
+            <Check className="h-6 w-6 text-black" strokeWidth={3} />
           ) : (
             <Smartphone className="h-6 w-6 text-foreground" strokeWidth={2.5} />
           )}
         </span>
 
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.15em] text-foreground/70">
+          <div className="flex items-center gap-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.15em] text-black/70">
             <PlumpDownload className="h-3.5 w-3.5" />
             Установи приложение
           </div>
-          <div className="mt-1 font-display text-lg font-black uppercase leading-tight tracking-tight text-foreground md:text-xl">
+          <div className="mt-1 font-display text-lg font-black uppercase leading-tight tracking-tight text-black md:text-xl">
             {installed ? "Клуб уже в кармане" : "Клуб на главный экран"}
           </div>
         </div>
 
         <PlumpRewardChip tickets={1} />
-        <PlumpArrowRight className="h-5 w-5 shrink-0 text-foreground" />
+        <PlumpArrowRight className="h-5 w-5 shrink-0 text-black" />
       </div>
     </Link>
   );
