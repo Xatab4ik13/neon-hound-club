@@ -10,6 +10,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { PlumpArrowLeft as ArrowLeft, Play, RotateCcw, Trophy, Volume2, VolumeX } from "@/components/ui/icons";
 import { hhToast as toast } from "@/lib/hh-toast";
 import { playSpin, playWin } from "@/lib/roller-sfx";
+import { PlumpNum } from "@/components/brand/PlumpNum";
 import {
   bloggerQk,
   fetchRaffleBoard,
