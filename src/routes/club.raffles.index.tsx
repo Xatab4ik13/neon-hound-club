@@ -14,6 +14,7 @@ import { PageHeader } from "@/components/club/PageHeader";
 import {
   fetchMyRaffles,
   fetchRaffles,
+  fetchTicketsBalance,
   qk,
   type MyRaffleItem,
   type RaffleListItem,
