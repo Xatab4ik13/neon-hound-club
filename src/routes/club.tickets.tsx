@@ -115,19 +115,22 @@ function TicketsPage() {
             title="Покупки в магазине"
             hint="К каждому товару — свой бонус билетов"
             to="/club/shop"
-            icon={<PlumpStore className="h-5 w-5" />}
+            icon={<PlumpStore className="h-5 w-5 text-black" />}
+            tone="bg-[#FFD93D]"
           />
           <EarnRow
             title="Hell Pass"
             hint="Пакет билетов при покупке любого тира"
             to="/club/hell-pass"
-            icon={<PlumpTicket className="h-5 w-5" />}
+            icon={<PlumpTicket className="h-5 w-5 text-black" />}
+            tone="bg-[#C6A8FF]"
           />
           <EarnRow
             title="Квесты и активность"
             hint="Задания клуба — за каждое начисляются билеты"
             to="/club/quests"
-            icon={<Trophy className="h-4 w-4" />}
+            icon={<Trophy className="h-4 w-4 text-black" />}
+            tone="bg-[#B6FF3C]"
           />
         </ul>
       </section>
