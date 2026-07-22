@@ -14,6 +14,12 @@ const SOCIALS = [
   { label: "Twitch", href: "https://www.twitch.tv/hellhound", icon: twitchIcon },
 ] as const;
 
+const PAYMENTS = [
+  { label: "Visa", icon: visaLogo, height: "h-4" },
+  { label: "Mastercard", icon: mastercardLogo, height: "h-5" },
+  { label: "МИР", icon: mirLogo, height: "h-4" },
+] as const;
+
 export function Footer() {
   const year = new Date().getFullYear();
 
@@ -57,10 +63,15 @@ export function Footer() {
             <li><Link to="/legal/requisites" className="transition-colors hover:text-primary">Реквизиты</Link></li>
           </ul>
 
-          <div className="flex items-center gap-2.5 rounded-lg bg-white px-2.5 py-1.5">
-            <img src={visaLogo} alt="Visa" className="h-5 w-auto" />
-            <img src={mastercardLogo} alt="Mastercard" className="h-6 w-auto" />
-            <img src={mirLogo} alt="МИР" className="h-4 w-auto" />
+          <div className="flex items-center gap-2.5">
+            {PAYMENTS.map((p) => (
+              <div
+                key={p.label}
+                className="grid h-9 min-w-[3.5rem] place-items-center rounded-lg border-[3px] border-foreground bg-card px-3 text-foreground shadow-[2px_2px_0_0_hsl(var(--foreground))]"
+              >
+                <img src={p.icon} alt={p.label} className={`w-auto ${p.height}`} />
+              </div>
+            ))}
           </div>
         </div>
 
