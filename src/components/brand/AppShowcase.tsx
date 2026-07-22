@@ -40,7 +40,7 @@ export function AppShowcase() {
       {/* Мягкое розовое свечение за мокапом */}
       <div
         aria-hidden
-        className="pointer-events-none absolute right-0 top-1/2 h-[70vh] w-[70vh] -translate-y-1/2 translate-x-1/4 rounded-full bg-primary/10 blur-[120px]"
+        className="pointer-events-none absolute right-0 top-1/2 h-[75vh] w-[75vh] -translate-y-1/2 translate-x-1/4 rounded-full bg-primary/15 blur-[130px]"
       />
 
       <div className="relative w-full px-6 md:px-8">
@@ -63,7 +63,7 @@ export function AppShowcase() {
               width={1024}
               height={1024}
               loading="lazy"
-              className="relative h-auto w-full max-w-[780px] object-contain drop-shadow-2xl"
+              className="relative h-auto w-full max-w-[890px] object-contain drop-shadow-2xl"
             />
           </div>
 
