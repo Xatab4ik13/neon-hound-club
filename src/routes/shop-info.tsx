@@ -1,6 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Header } from "@/components/brand/Header";
 import { Footer } from "@/components/brand/Footer";
+import cdekLogo from "@/assets/cdek-logo.svg.asset.json";
+
 
 
 export const Route = createFileRoute("/shop-info")({
@@ -69,25 +71,15 @@ function MirMark() {
 
 function CdekMark() {
   return (
-    <svg viewBox="0 0 120 32" className="h-8 w-auto" aria-label="СДЭК">
-      <text
-        x="0"
-        y="24"
-        fontFamily="Arial Black, Arial, sans-serif"
-        fontSize="26"
-        fontWeight="900"
-        fill="#1AB248"
-        letterSpacing="-0.5"
-      >
-        CDEK
-      </text>
-      <path
-        d="M78 10 L96 10 L92 16 L96 22 L78 22 L82 16 Z"
-        fill="#1AB248"
-      />
-    </svg>
+    <img
+      src={cdekLogo.url}
+      alt="СДЭК"
+      className="h-7 w-auto"
+      loading="lazy"
+    />
   );
 }
+
 
 function PochtaMark() {
   return (
@@ -305,9 +297,10 @@ export default function ShopInfoPage() {
               личность, и номер отправления.
             </FeatureCard>
             <FeatureCard icon={<MailIcon />} title="Если не пришло">
-              Срок доставки истёк, а посылки нет — пиши в Telegram-поддержку.
-              Свяжемся со службой доставки и разберёмся.
+              Срок доставки истёк, а посылки нет — открой тикет в нашей
+              поддержке. Свяжемся со службой доставки и разберёмся.
             </FeatureCard>
+
           </div>
         </div>
       </section>
