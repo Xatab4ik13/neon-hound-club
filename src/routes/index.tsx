@@ -202,6 +202,12 @@ function Index() {
         )}
 
 
+        {/* Плавный переход от магазина к блоку приложения */}
+        <div
+          aria-hidden
+          className="h-24 w-full bg-gradient-to-b from-surface via-surface/60 to-background md:h-32"
+        />
+
         {/* APP SHOWCASE */}
         <AppShowcase />
 

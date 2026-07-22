@@ -31,8 +31,14 @@ const FEATURES = [
 
 export function AppShowcase() {
   return (
-    <section id="app" className="relative overflow-hidden bg-surface px-6 py-20 md:py-28">
-      <div className="w-full px-6 md:px-8">
+    <section id="app" className="relative overflow-hidden bg-background px-6 py-20 md:py-28">
+      {/* Мягкое розовое свечение за мокапом */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute right-0 top-1/2 h-[70vh] w-[70vh] -translate-y-1/2 translate-x-1/4 rounded-full bg-primary/10 blur-[120px]"
+      />
+
+      <div className="relative w-full px-6 md:px-8">
         {/* Заголовок */}
         <div className="mb-8 md:mb-12">
           <div className="mb-3 font-mono text-xs uppercase tracking-widest text-primary">
@@ -66,14 +72,14 @@ export function AppShowcase() {
           </div>
 
           {/* Правая колонка — мокап телефона */}
-          <div className="flex items-center justify-center lg:justify-end">
+          <div className="relative flex items-center justify-center lg:justify-end">
             <img
               src={phoneLarge.url}
               alt="Мокап приложения HELLHOUND"
               width={1024}
               height={1024}
               loading="lazy"
-              className="h-auto w-full max-w-[780px] object-contain drop-shadow-2xl"
+              className="relative h-auto w-full max-w-[780px] object-contain drop-shadow-2xl"
             />
           </div>
         </div>
