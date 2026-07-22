@@ -275,31 +275,22 @@ function QuestCard({
           : CircleDashed;
 
   const tone = CARD_TONES[index % CARD_TONES.length];
-  const rotate = index % 2 === 0 ? "-rotate-1" : "rotate-1";
-  const bg = done ? "bg-card" : TONE_BG[tone];
-  const opacity = done ? "opacity-80" : "";
+  const iconBg = done ? "bg-[#B6FF3C]" : TONE_BG[tone];
 
   return (
     <article
-      className={`skill-card ${rotate} relative rounded-3xl border-[3px] border-foreground ${bg} p-5 shadow-[8px_8px_0_0_hsl(var(--foreground))] ${opacity} ${
-        visible ? "skill-card--in" : "skill-card--pre"
-      }`}
+      className={`skill-card relative rounded-3xl border-[3px] border-foreground bg-card p-5 shadow-[6px_6px_0_0_hsl(var(--foreground))] ${
+        done ? "opacity-70" : ""
+      } ${visible ? "skill-card--in" : "skill-card--pre"}`}
       style={{
-        animationDelay: visible ? `${index * 90}ms` : "0ms",
+        animationDelay: visible ? `${index * 70}ms` : "0ms",
         willChange: "transform, opacity",
       }}
     >
-      {/* Number badge */}
-      <div className="pointer-events-none absolute -left-3 -top-3 grid h-10 w-10 place-items-center rounded-full border-[3px] border-foreground bg-foreground text-background shadow-[3px_3px_0_0_hsl(var(--foreground))]">
-        <PlumpNum value={index + 1} size={14} />
-      </div>
-
       {/* Header row */}
       <div className="flex items-start gap-3">
         <span
-          className={`grid h-11 w-11 shrink-0 place-items-center rounded-2xl border-[3px] border-foreground shadow-[3px_3px_0_0_hsl(var(--foreground))] ${
-            done ? "bg-[#B6FF3C]" : "bg-card"
-          }`}
+          className={`grid h-11 w-11 shrink-0 place-items-center rounded-2xl border-[3px] border-foreground ${iconBg} shadow-[3px_3px_0_0_hsl(var(--foreground))]`}
         >
           {done ? (
             <Check className="h-5 w-5 text-foreground" strokeWidth={3} />
@@ -316,7 +307,7 @@ function QuestCard({
           >
             {q.title}
           </h3>
-          <p className="mt-1.5 text-[13.5px] leading-snug text-foreground/80">
+          <p className="mt-1.5 text-[13.5px] leading-snug text-muted-foreground">
             {q.description}
           </p>
         </div>
@@ -324,7 +315,7 @@ function QuestCard({
         <div className="flex shrink-0 flex-col items-end gap-1.5">
           {q.ticketsReward > 0 && <PlumpRewardChip tickets={q.ticketsReward} />}
           {q.xpReward > 0 && (
-            <div className="inline-flex items-center gap-1 rounded-full border-[3px] border-foreground bg-card px-2.5 py-0.5 font-mono text-[10px] font-bold uppercase tracking-widest text-foreground shadow-[2px_2px_0_0_hsl(var(--foreground))]">
+            <div className="inline-flex items-center gap-1 rounded-full border-2 border-foreground/50 bg-background px-2.5 py-0.5 font-mono text-[10px] font-bold uppercase tracking-widest text-foreground">
               <Sparkles className="h-3 w-3" />
               {q.ladder ? `${earnedLadderXp}/${q.xpReward}` : `+${q.xpReward}`} XP
             </div>
@@ -335,7 +326,7 @@ function QuestCard({
       {/* Progress bar */}
       {(q.kind === "monthly" || q.kind === "ladder") && (
         <div className="mt-4 flex items-center gap-3">
-          <div className="relative h-3 flex-1 overflow-hidden rounded-full border-[3px] border-foreground bg-card">
+          <div className="relative h-3 flex-1 overflow-hidden rounded-full border-[3px] border-foreground bg-background">
             <div
               className="absolute inset-y-0 left-0 transition-[width] duration-500 ease-out"
               style={{
