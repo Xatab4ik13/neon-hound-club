@@ -21,11 +21,11 @@ export function Footer() {
     <footer className="relative bg-white text-black">
       <div
         aria-hidden
-        className="pointer-events-none h-24 w-full -mt-24 bg-gradient-to-b from-transparent to-white"
+        className="pointer-events-none h-12 w-full -mt-12 bg-gradient-to-b from-transparent to-white"
       />
-      <div className="mx-auto max-w-7xl px-6 py-5">
+      <div className="mx-auto max-w-7xl px-6 py-3">
         {/* Верх: логотип слева, соцсети справа */}
-        <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
+        <div className="flex flex-col items-center justify-between gap-3 md:flex-row">
           <img
             src={hhrLogo.url}
             alt="HELLHOUND Racing"
@@ -49,7 +49,7 @@ export function Footer() {
         </div>
 
         {/* Разделитель */}
-        <div className="mt-4 border-t-[3px] border-black" />
+        <div className="mt-2.5 border-t-[3px] border-black" />
 
         {/* Средний ряд: документы + платёжные логотипы */}
         <div className="mt-3 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
