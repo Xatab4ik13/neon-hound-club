@@ -3,6 +3,8 @@ import { useMemo } from "react";
 import { PlumpCart, PlumpTicket } from "@/components/ui/icons";
 import { Header } from "@/components/brand/Header";
 import { Footer } from "@/components/brand/Footer";
+import { PlumpNum, PlumpPrice } from "@/components/brand/PlumpNum";
+
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/hooks/use-cart";
 import { useViewer } from "@/hooks/use-viewer";
