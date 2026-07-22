@@ -155,22 +155,15 @@ function InstructorCard({
       <div
         className={`relative overflow-hidden rounded-3xl border-[3px] border-foreground ${TONE_BG[instructor.tone]} shadow-[8px_8px_0_0_hsl(var(--foreground))] transition-transform duration-200 ease-out hover:-translate-x-1 hover:-translate-y-1 hover:shadow-[10px_10px_0_0_hsl(var(--foreground))]`}
       >
-        {/* Портрет-плейсхолдер (силуэт). Заменится реальными вырезанными фото. */}
-        <div className="relative aspect-[3/4] w-full">
-          <div className="absolute inset-0 bg-gradient-to-b from-black/0 via-black/10 to-black/40" />
-          <svg
-            viewBox="0 0 200 260"
-            className="absolute inset-0 h-full w-full"
-            aria-hidden
-          >
-            {/* Плечи + голова силуэтом */}
-            <circle cx="100" cy="90" r="42" fill="hsl(var(--foreground))" fillOpacity="0.85" />
-            <path
-              d="M20 260 C 30 190, 70 160, 100 160 C 130 160, 170 190, 180 260 Z"
-              fill="hsl(var(--foreground))"
-              fillOpacity="0.85"
-            />
-          </svg>
+        {/* Портрет инструктора */}
+        <div className="relative aspect-[3/4] w-full overflow-hidden">
+          <img
+            src={instructor.photo}
+            alt={instructor.name}
+            loading="lazy"
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/0 via-black/0 to-black/30" />
         </div>
 
         {/* Имя внизу карточки */}
@@ -181,20 +174,10 @@ function InstructorCard({
         </div>
 
       </div>
-
-      {/* Плашки сверху/по краям — город, спец, стаж */}
-      <div className="pointer-events-none absolute -top-3 left-3 -rotate-[4deg]">
-        <PlumpTag>{instructor.city}</PlumpTag>
-      </div>
-      <div className="pointer-events-none absolute -right-2 top-10 rotate-[6deg]">
-        <PlumpTag variant="dark">{instructor.specialization}</PlumpTag>
-      </div>
-      <div className="pointer-events-none absolute -bottom-3 right-6 -rotate-[3deg]">
-        <PlumpTag variant="accent">Опыт {instructor.experience}</PlumpTag>
-      </div>
     </article>
   );
 }
+
 
 function PlumpTag({
   children,
