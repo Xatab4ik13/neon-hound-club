@@ -456,10 +456,13 @@ function MobileMenu({
             </span>
             <span className="font-display text-xl italic uppercase tracking-widest text-white transition-colors duration-500 group-hover:text-primary">
               Корзина{" "}
-              <span className="ml-1 align-top font-mono text-sm opacity-70">
-                [{cartCount}]
+              <span className="ml-1 inline-flex items-center gap-0.5 align-baseline text-white opacity-70">
+                <span className="font-mono text-sm">[</span>
+                <PlumpNum value={cartCount} size={12} />
+                <span className="font-mono text-sm">]</span>
               </span>
             </span>
+
           </Link>
 
           <Link
