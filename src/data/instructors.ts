@@ -8,6 +8,11 @@ import stGal06 from "@/assets/instructors/stanislav-gallery/stanislav-06.webp.as
 import stGal07 from "@/assets/instructors/stanislav-gallery/stanislav-07.webp.asset.json";
 import stGal08 from "@/assets/instructors/stanislav-gallery/stanislav-08.webp.asset.json";
 import semenAsset from "@/assets/instructors/semen.webp.asset.json";
+import smGal01 from "@/assets/instructors/semen-gallery/semen-01.webp.asset.json";
+import smGal02 from "@/assets/instructors/semen-gallery/semen-02.webp.asset.json";
+import smGal03 from "@/assets/instructors/semen-gallery/semen-03.webp.asset.json";
+import smGal04 from "@/assets/instructors/semen-gallery/semen-04.webp.asset.json";
+import smGal05 from "@/assets/instructors/semen-gallery/semen-05.webp.asset.json";
 import nikitaAsset from "@/assets/instructors/nikita.webp.asset.json";
 import pavelAsset from "@/assets/instructors/pavel.webp.asset.json";
 import haixAsset from "@/assets/instructors/haix.webp.asset.json";
