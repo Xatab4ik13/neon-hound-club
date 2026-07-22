@@ -580,13 +580,16 @@ function ClubCheckoutPage() {
               {needsShipping && (
                 <div className="flex items-center justify-between text-[13px]">
                   <span className="text-muted-foreground">Доставка СДЭК</span>
-                  <span className="font-mono tabular-nums text-foreground">
-                    {shipCalcLoading
-                      ? "…"
-                      : shipPrice != null
-                        ? `$<PlumpPrice value={shipPrice} />`
-                        : "—"}
+                  <span className="text-foreground">
+                    {shipCalcLoading ? (
+                      "…"
+                    ) : shipPrice != null ? (
+                      <PlumpPrice value={shipPrice} />
+                    ) : (
+                      "—"
+                    )}
                   </span>
+
                 </div>
               )}
             </div>
