@@ -261,6 +261,18 @@ export function Hero() {
             </div>
           ) : null}
           <div className="relative w-[52%] max-w-[280px] -ml-4">
+            {/* Бабл из комикса над шлемом Вани (мобилка) */}
+            {raffle ? (
+              <img
+                src={comicBubble.url}
+                alt=""
+                aria-hidden
+                width={512}
+                height={512}
+                className="pointer-events-none absolute -top-16 right-4 z-30 h-auto w-[62%] max-w-[180px] -rotate-[6deg]"
+                loading="eager"
+              />
+            ) : null}
             <img
               src={vanyaAsset.url}
               alt="Ваня — HELLHOUND Racing"
