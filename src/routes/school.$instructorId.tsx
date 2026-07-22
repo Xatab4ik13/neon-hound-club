@@ -731,7 +731,7 @@ function GalleryLightbox({
           type="button"
           onClick={beginClose}
           aria-label="Закрыть"
-          className="absolute -right-3 -top-3 inline-flex h-11 w-11 items-center justify-center rounded-full border-[3px] border-foreground bg-primary text-primary-foreground shadow-[4px_4px_0_0_hsl(var(--foreground))] md:-right-5 md:-top-5"
+          className="absolute -top-16 right-0 inline-flex h-11 w-11 items-center justify-center rounded-full border-[3px] border-foreground bg-primary text-primary-foreground shadow-[4px_4px_0_0_hsl(var(--foreground))] md:-top-20 md:h-12 md:w-12"
           style={{
             opacity: chromeVisible ? 1 : 0,
             pointerEvents: chromeVisible ? "auto" : "none",
