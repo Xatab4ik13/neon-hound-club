@@ -131,8 +131,8 @@ const DEFAULT_SCHEDULE: ScheduleDay[] = [
 
 const KRD_LOCATION: Location = {
   address: "г. Краснодар, «Усадьба Фамилия»",
-  lat: 45.077,
-  lng: 38.986,
+  lat: 45.29168,
+  lng: 39.316308,
   note: "Возможно выездное обучение в другом городе или стране — по договорённости.",
 };
 
