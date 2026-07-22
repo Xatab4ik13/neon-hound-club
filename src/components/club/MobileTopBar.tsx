@@ -208,11 +208,16 @@ export function MobileTopBar() {
             {cartCount > 0 && (
               <span
                 key={`badge-${bump}`}
-                className="hh-cart-bump absolute right-0.5 top-0.5 grid h-[16px] min-w-[16px] place-items-center rounded-full bg-primary px-1 font-mono text-[9px] font-bold leading-none text-primary-foreground ring-2 ring-background"
+                className="hh-cart-bump absolute right-0.5 top-0.5 grid h-[16px] min-w-[16px] place-items-center rounded-full bg-primary px-1 leading-none text-primary-foreground ring-2 ring-background"
               >
-                {cartCount > 99 ? "99+" : cartCount}
+                {cartCount > 99 ? (
+                  <span className="font-mono text-[9px] font-bold">99+</span>
+                ) : (
+                  <PlumpNum value={cartCount} size={9} />
+                )}
               </span>
             )}
+
           </Link>
         )}
 
