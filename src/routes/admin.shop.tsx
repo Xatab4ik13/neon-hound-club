@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/icons";
 
 import { hhToast as toast } from "@/lib/hh-toast";
+import { PlumpNum, PlumpPrice } from "@/components/brand/PlumpNum";
 import {
   PageHeader,
   Panel,
@@ -298,9 +299,9 @@ function ProductsTab() {
                 ) : (
                   <span className="text-xs text-zinc-400">—</span>
                 ),
-                `${p.priceRub.toLocaleString("ru-RU")} ₽`,
-                p.bonusTickets > 0 ? `+${p.bonusTickets} 🎟` : "—",
-                p.kind === "digital" ? "∞" : p.stock === null ? "∞" : p.stock,
+                <PlumpPrice value={p.priceRub} size={13} />,
+                p.bonusTickets > 0 ? <span className="inline-flex items-center gap-0.5">+<PlumpNum value={p.bonusTickets} size={12} /> 🎟</span> : "—",
+                p.kind === "digital" ? "∞" : p.stock === null ? "∞" : <PlumpNum value={p.stock} size={13} />,
                 <Badge tone={p.active ? "emerald" : "zinc"}>
                   {p.active ? "Активен" : "Скрыт"}
                 </Badge>,
@@ -1525,7 +1526,7 @@ function ShowcaseTab() {
                   <div className="flex-1">
                     <div className="font-medium">{p?.title ?? "(удалён)"}</div>
                     <div className="text-xs text-zinc-500">
-                      {p ? `${p.priceRub.toLocaleString("ru-RU")} ₽` : id}
+                      {p ? <PlumpPrice value={p.priceRub} size={11} /> : id}
                     </div>
                   </div>
                   <Btn variant="ghost" onClick={() => move(id, -1)} disabled={i === 0}>
@@ -1573,8 +1574,8 @@ function ShowcaseTab() {
                 )}
                 <div className="flex-1">
                   <div className="font-medium">{p.title}</div>
-                  <div className="text-xs text-zinc-500">
-                    {p.priceRub.toLocaleString("ru-RU")} ₽ · {KIND_LABEL[p.kind]}
+                  <div className="inline-flex items-center gap-1 text-xs text-zinc-500">
+                    <PlumpPrice value={p.priceRub} size={11} /> · {KIND_LABEL[p.kind]}
                   </div>
                 </div>
                 <Btn variant="ghost" onClick={() => add(p.id)}>
@@ -1646,8 +1647,8 @@ function OrdersTab() {
                 {o.shipping.fio}
                 <div className="text-[11px] text-zinc-500">{o.shipping.city}</div>
               </div>,
-              `${o.totalRub.toLocaleString("ru-RU")} ₽`,
-              o.bonusTicketsTotal > 0 ? `+${o.bonusTicketsTotal} 🎟` : "—",
+              <PlumpPrice value={o.totalRub} size={13} />,
+              o.bonusTicketsTotal > 0 ? <span className="inline-flex items-center gap-0.5">+<PlumpNum value={o.bonusTicketsTotal} size={12} /> 🎟</span> : "—",
               <Badge tone={STATUS_TONE[o.status]}>{STATUS_LABEL[o.status]}</Badge>,
               o.cdekTrack ? <code className="text-xs">{o.cdekTrack}</code> : "—",
               <Btn variant="ghost" onClick={() => setOpenId(o.id)}>
@@ -1735,25 +1736,25 @@ function OrderDrawer({ orderId, onClose }: { orderId: string; onClose: () => voi
                 <li key={it.id} className="flex items-center justify-between py-2">
                   <div>
                     <div className="font-medium">{it.titleSnapshot}</div>
-                    <div className="text-xs text-zinc-500">
-                      ×{it.qty}
-                      {it.bonusTicketsSnapshot > 0 && ` · +${it.bonusTicketsSnapshot} 🎟 за шт.`}
+                    <div className="inline-flex flex-wrap items-center gap-1 text-xs text-zinc-500">
+                      ×<PlumpNum value={it.qty} size={11} />
+                      {it.bonusTicketsSnapshot > 0 && <span>· +<PlumpNum value={it.bonusTicketsSnapshot} size={11} /> 🎟 за шт.</span>}
                     </div>
                   </div>
                   <div className="text-right">
-                    <div>{(it.priceRubSnapshot * it.qty).toLocaleString("ru-RU")} ₽</div>
+                    <div><PlumpPrice value={it.priceRubSnapshot * it.qty} size={13} /></div>
                   </div>
                 </li>
               ))}
             </ul>
             <div className="mt-2 flex justify-between border-t border-zinc-200 pt-2 font-semibold dark:border-zinc-800">
               <span>Итого</span>
-              <span>{data.totalRub.toLocaleString("ru-RU")} ₽</span>
+              <span><PlumpPrice value={data.totalRub} size={14} /></span>
             </div>
             {data.bonusTicketsTotal > 0 && (
               <div className="flex justify-between text-xs text-emerald-600 dark:text-emerald-400">
                 <span>Билетов начислено</span>
-                <span>+{data.bonusTicketsTotal} 🎟</span>
+                <span className="inline-flex items-center gap-0.5">+<PlumpNum value={data.bonusTicketsTotal} size={11} /> 🎟</span>
               </div>
             )}
           </div>
