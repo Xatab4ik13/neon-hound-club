@@ -2,6 +2,12 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { Header } from "@/components/brand/Header";
 import { Footer } from "@/components/brand/Footer";
+import stanislavAsset from "@/assets/instructors/stanislav.webp.asset.json";
+import semenAsset from "@/assets/instructors/semen.webp.asset.json";
+import nikitaAsset from "@/assets/instructors/nikita.webp.asset.json";
+import pavelAsset from "@/assets/instructors/pavel.webp.asset.json";
+import haixAsset from "@/assets/instructors/haix.webp.asset.json";
+
 
 
 export const Route = createFileRoute("/school")({
