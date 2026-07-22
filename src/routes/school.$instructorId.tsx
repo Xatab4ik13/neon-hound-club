@@ -439,35 +439,75 @@ function SlotBtn({
 /* ---------- Gallery ---------- */
 
 function GallerySection({ instructor }: { instructor: Instructor }) {
+  const scrollerRef = useRef<HTMLDivElement | null>(null);
+  const scrollBy = (dir: 1 | -1) => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    const step = el.clientWidth * 0.85;
+    el.scrollBy({ left: dir * step, behavior: "smooth" });
+  };
+
   if (instructor.gallery.length === 0) {
     return (
       <section className="mt-20 md:mt-28">
-        <SectionHeading kicker="Кадры" title="Фото с занятий" />
         <div className="flex flex-col items-center justify-center gap-3 rounded-3xl border-[3px] border-dashed border-foreground/40 bg-card/40 p-12 text-center">
           <PlumpCamera className="h-10 w-10 text-primary" />
           <p className="font-display text-xl font-black uppercase tracking-tight text-foreground">
-            Скоро добавим
-          </p>
-          <p className="max-w-md text-sm text-muted-foreground">
-            {instructor.name} готовит подборку кадров с площадки и с городских выездов.
+            Скоро добавим кадры
           </p>
         </div>
       </section>
     );
   }
-  const rotates = ["-rotate-2", "rotate-1", "-rotate-1", "rotate-2", "-rotate-1"];
+
+  const rotates = ["-rotate-2", "rotate-1", "-rotate-1", "rotate-2"];
+
   return (
     <section className="mt-20 md:mt-28">
-      <SectionHeading kicker="Кадры" title="Фото с занятий" />
-      <div className="grid gap-6 md:grid-cols-3">
-        {instructor.gallery.map((src, i) => (
-          <div
-            key={src}
-            className={`overflow-hidden rounded-2xl border-[3px] border-foreground ${TONE_BG[instructor.tone]} shadow-[6px_6px_0_0_hsl(var(--foreground))] ${rotates[i % rotates.length]} ${i === 0 ? "md:col-span-2 md:row-span-2" : ""}`}
+      <div className="relative">
+        <div
+          ref={scrollerRef}
+          className="flex snap-x snap-mandatory gap-5 overflow-x-auto pb-4 pt-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
+          {instructor.gallery.map((src, i) => (
+            <div
+              key={src}
+              className={`shrink-0 snap-start ${rotates[i % rotates.length]} basis-[80%] sm:basis-[45%] md:basis-[32%] lg:basis-[26%]`}
+            >
+              <div
+                className={`overflow-hidden rounded-2xl border-[3px] border-foreground ${TONE_BG[instructor.tone]} shadow-[6px_6px_0_0_hsl(var(--foreground))]`}
+              >
+                <div className="aspect-[4/3] w-full">
+                  <img
+                    src={src}
+                    alt={`${instructor.name} — кадр ${i + 1}`}
+                    loading="lazy"
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-4 flex items-center justify-end gap-3">
+          <button
+            type="button"
+            onClick={() => scrollBy(-1)}
+            aria-label="Назад"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-full border-[3px] border-foreground bg-card shadow-[4px_4px_0_0_hsl(var(--foreground))] transition-transform duration-100 hover:-translate-y-0.5"
           >
-            <img src={src} alt={`${instructor.name} — фото ${i + 1}`} loading="lazy" className="h-full w-full object-cover" />
-          </div>
-        ))}
+            <PlumpArrowLeft className="h-5 w-5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => scrollBy(1)}
+            aria-label="Вперёд"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-full border-[3px] border-foreground bg-primary text-primary-foreground shadow-[4px_4px_0_0_hsl(var(--foreground))] transition-transform duration-100 hover:-translate-y-0.5"
+          >
+            <PlumpArrowRight className="h-5 w-5" />
+          </button>
+        </div>
       </div>
     </section>
   );
