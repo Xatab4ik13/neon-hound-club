@@ -50,7 +50,7 @@ import { fetchShopShowcase, qk } from "@/lib/queries";
 import { isClubHost } from "@/lib/host";
 import pinkR6 from "@/assets/pink-r6.jpg";
 import vanyaBike from "@/assets/vanya-bike.webp";
-import vybiraySpeech from "@/assets/vybiray-luchshee.png.asset.json";
+import vybiraySpeech from "@/assets/vybiray-luchshee.webp.asset.json";
 
 
 
