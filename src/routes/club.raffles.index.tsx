@@ -289,16 +289,18 @@ function RaffleCard({
   raffle,
   index,
   visible,
+  finished = false,
 }: {
   raffle: RaffleListItem;
   index: number;
   visible: boolean;
+  finished?: boolean;
 }) {
   return (
     <Link
       to="/club/raffles/$raffleId"
       params={{ raffleId: raffle.id }}
-      className={`skill-card group relative block overflow-hidden rounded-3xl border-[3px] border-foreground bg-card shadow-[6px_6px_0_0_hsl(var(--foreground))] transition-transform duration-200 ease-out active:translate-x-[2px] active:translate-y-[2px] active:shadow-[3px_3px_0_0_hsl(var(--foreground))] ${
+      className={`skill-card group relative block rounded-3xl border-[3px] border-foreground bg-card shadow-[6px_6px_0_0_hsl(var(--foreground))] transition-transform duration-200 ease-out active:translate-x-[2px] active:translate-y-[2px] active:shadow-[3px_3px_0_0_hsl(var(--foreground))] ${
         visible ? "skill-card--in" : "skill-card--pre"
       }`}
       style={{
@@ -306,20 +308,28 @@ function RaffleCard({
         willChange: "transform, opacity",
       }}
     >
-      <div className="relative aspect-[16/10] overflow-hidden border-b-[3px] border-foreground bg-black">
+      {/* status sticker — same style as detail page */}
+      <span
+        className={`absolute -left-2 -top-3 z-20 inline-flex items-center gap-1.5 -rotate-3 rounded-2xl border-[3px] border-foreground px-2.5 py-1 font-display text-[11px] font-black uppercase italic tracking-tighter text-black shadow-[3px_3px_0_0_hsl(var(--foreground))] ${
+          finished ? "bg-[#C6A8FF]" : "bg-[#B6FF3C]"
+        }`}
+      >
+        {!finished && <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-black" />}
+        {finished ? "Завершён" : "Идёт сейчас"}
+      </span>
+
+      <div className="relative aspect-[16/10] overflow-hidden rounded-t-[calc(1.5rem-3px)] border-b-[3px] border-foreground bg-black">
         {raffle.imageUrl && (
           <img
             src={raffle.imageUrl}
             alt={raffle.title}
             loading="lazy"
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            className={`h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 ${
+              finished ? "grayscale opacity-80" : ""
+            }`}
           />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
-        <span className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full border-[3px] border-foreground bg-[#B6FF3C] px-2.5 py-0.5 font-display text-[10px] font-black uppercase tracking-widest text-black shadow-[2px_2px_0_0_hsl(var(--foreground))]">
-          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-black" />
-          Идёт
-        </span>
         <div className="absolute inset-x-3 bottom-3">
           <h3 className="font-display text-xl font-black uppercase italic leading-tight tracking-tight text-foreground">
             {raffle.title}
@@ -337,7 +347,13 @@ function RaffleCard({
           <PlumpNum value={raffle.ticketCost} size={13} className="text-foreground" />
           <span>/ билет</span>
         </span>
-        <Countdown deadlineAt={raffle.endsAt} compact />
+        {finished ? (
+          <span className="font-mono text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
+            {formatMonth(raffle.endsAt)}
+          </span>
+        ) : (
+          <Countdown deadlineAt={raffle.endsAt} compact />
+        )}
       </div>
     </Link>
   );
