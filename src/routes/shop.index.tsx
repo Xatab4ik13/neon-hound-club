@@ -89,6 +89,12 @@ function ShopPage() {
   }, [products, debouncedQ, sort, activeCat, activeSub]);
 
   const selectCat = (id: string) => {
+    // клик по уже активной категории → сбрасываем в «Все»
+    if (id !== "all" && id === activeCat) {
+      setActiveCat("all");
+      setActiveSub(null);
+      return;
+    }
     setActiveCat(id);
     setActiveSub(null);
   };
