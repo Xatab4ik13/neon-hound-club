@@ -82,15 +82,17 @@ export function TicketLedger({
             label="Получено"
             value={totals.income}
             prefix="+"
-            accent="text-emerald-400"
-            icon={<ArrowDown className="h-4 w-4 text-emerald-400" strokeWidth={2} />}
+            accent="text-[#B6FF3C]"
+            icon={<ArrowDown className="h-4 w-4 text-black" strokeWidth={2.5} />}
+            tone="bg-[#B6FF3C]"
           />
           <SummaryCard
             label="Потрачено"
             value={totals.outcome}
             prefix="−"
-            accent="text-muted-foreground"
-            icon={<ArrowUp className="h-4 w-4 text-muted-foreground" strokeWidth={2} />}
+            accent="text-[#FF5A5A]"
+            icon={<ArrowUp className="h-4 w-4 text-black" strokeWidth={2.5} />}
+            tone="bg-[#FF8A8A]"
             muted
           />
         </div>
