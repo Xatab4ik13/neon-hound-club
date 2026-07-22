@@ -2183,7 +2183,7 @@ function CommentComposer({
       </form>
 
       {/* Attach sheet — фото из галереи или камера */}
-      <IOSActionSheet
+      <AdaptiveActionSheet
         open={attachOpen}
         onOpenChange={setAttachOpen}
         title="Прикрепить к комментарию"
