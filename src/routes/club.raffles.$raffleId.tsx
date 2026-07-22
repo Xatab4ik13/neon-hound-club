@@ -419,19 +419,16 @@ function RaffleDetailContent({
 function StatCard({
   label,
   value,
-  shadowColor,
   delayMs,
 }: {
   label: string;
   value: React.ReactNode;
-  shadowColor: string;
   delayMs: number;
 }) {
   return (
     <div
       className="rounded-3xl border-[3px] border-foreground bg-card p-4 animate-fade-in"
       style={{
-        boxShadow: `6px 6px 0 0 ${shadowColor}`,
         animationDelay: `${delayMs}ms`,
         animationFillMode: "both",
       }}
