@@ -228,8 +228,8 @@ function ProductView({ product }: { product: ShopProduct }) {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Header />
-      <main className="mx-auto w-full max-w-3xl pb-[calc(160px+env(safe-area-inset-bottom))] pt-16 md:pb-12 md:pt-24">
-        <div className="flex items-center justify-between px-4 pt-3">
+      <main className="mx-auto w-full max-w-6xl px-4 pb-[calc(160px+env(safe-area-inset-bottom))] pt-16 md:px-8 md:pb-16 md:pt-24">
+        <div className="flex items-center justify-between pt-3">
           <Link
             to="/shop"
             className="-ml-1 inline-flex items-center gap-0.5 text-[15px] text-primary active:opacity-60 md:text-[17px]"
@@ -243,211 +243,241 @@ function ProductView({ product }: { product: ShopProduct }) {
           )}
         </div>
 
-        {/* Галерея */}
-        <section
-          className="relative mt-3 aspect-square w-full overflow-hidden bg-surface md:rounded-2xl"
-          onTouchStart={onTouchStart}
-          onTouchMove={onTouchMove}
-          onTouchEnd={onTouchEnd}
-          style={{ touchAction: "pan-y" }}
-        >
-          {cover ? (
-            <LazyImage
-              key={cover}
-              src={cover}
-              alt={product.title}
-              eager
-              className="absolute inset-0 h-full w-full object-cover"
-            />
-          ) : (
-            <div className="grid h-full w-full place-items-center text-muted-foreground/40">
-              <PlumpStore className="h-12 w-12" />
-            </div>
-          )}
-          {sold && (
-            <span className="absolute left-3 top-3 z-10 rounded-full bg-black/70 px-2.5 py-1 text-[12px] font-medium text-foreground backdrop-blur">
-              Распродано
-            </span>
-          )}
+        <div className="mt-4 grid gap-6 md:mt-8 md:grid-cols-[minmax(0,1fr)_minmax(0,440px)] md:gap-10 lg:gap-14">
+          {/* LEFT: галерея */}
+          <div className="md:sticky md:top-24 md:self-start">
+            <section
+              className="relative aspect-square w-full overflow-hidden rounded-2xl bg-surface"
+              onTouchStart={onTouchStart}
+              onTouchMove={onTouchMove}
+              onTouchEnd={onTouchEnd}
+              style={{ touchAction: "pan-y" }}
+            >
+              {cover ? (
+                <LazyImage
+                  key={cover}
+                  src={cover}
+                  alt={product.title}
+                  eager
+                  className="absolute inset-0 h-full w-full object-cover"
+                />
+              ) : (
+                <div className="grid h-full w-full place-items-center text-muted-foreground/40">
+                  <PlumpStore className="h-12 w-12" />
+                </div>
+              )}
+              {sold && (
+                <span className="absolute left-3 top-3 z-10 rounded-full bg-black/70 px-2.5 py-1 text-[12px] font-medium text-foreground backdrop-blur">
+                  Распродано
+                </span>
+              )}
 
-          {gallery.length > 1 && (
-            <>
-              <button
-                type="button"
-                onClick={prev}
-                aria-label="Назад"
-                className="absolute left-3 top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-black/50 text-foreground backdrop-blur active:scale-95 md:grid"
-              >
-                <ChevronLeft className="h-5 w-5" />
-              </button>
-              <button
-                type="button"
-                onClick={next}
-                aria-label="Дальше"
-                className="absolute right-3 top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-black/50 text-foreground backdrop-blur active:scale-95 md:grid"
-              >
-                <ChevronRight className="h-5 w-5" />
-              </button>
-              <div className="absolute bottom-3 left-1/2 z-10 flex -translate-x-1/2 items-center gap-1.5">
-                {gallery.map((_, i) => (
-                  <span
-                    key={i}
-                    className={`h-1.5 rounded-full transition-all ${
-                      i === slide ? "w-4 bg-foreground" : "w-1.5 bg-foreground/40"
+              {gallery.length > 1 && (
+                <>
+                  <button
+                    type="button"
+                    onClick={prev}
+                    aria-label="Назад"
+                    className="absolute left-3 top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-black/50 text-foreground backdrop-blur active:scale-95 md:grid"
+                  >
+                    <ChevronLeft className="h-5 w-5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={next}
+                    aria-label="Дальше"
+                    className="absolute right-3 top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-black/50 text-foreground backdrop-blur active:scale-95 md:grid"
+                  >
+                    <ChevronRight className="h-5 w-5" />
+                  </button>
+                  <div className="absolute bottom-3 left-1/2 z-10 flex -translate-x-1/2 items-center gap-1.5 md:hidden">
+                    {gallery.map((_, i) => (
+                      <span
+                        key={i}
+                        className={`h-1.5 rounded-full transition-all ${
+                          i === slide ? "w-4 bg-foreground" : "w-1.5 bg-foreground/40"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                </>
+              )}
+            </section>
+
+            {/* Thumbnails (desktop) */}
+            {gallery.length > 1 && (
+              <div className="mt-3 hidden gap-2 md:grid md:grid-cols-5">
+                {gallery.map((src, i) => (
+                  <button
+                    key={src + i}
+                    type="button"
+                    onClick={() => setSlide(i)}
+                    className={`relative aspect-square overflow-hidden rounded-lg border transition-all ${
+                      i === slide
+                        ? "border-primary ring-2 ring-primary/30"
+                        : "border-white/[0.08] hover:border-white/[0.2]"
                     }`}
-                  />
+                  >
+                    <img src={src} alt="" className="absolute inset-0 h-full w-full object-cover" />
+                  </button>
                 ))}
               </div>
-            </>
-          )}
-        </section>
-
-        <section className="px-4 pt-5">
-          <h1 className="text-[24px] font-bold leading-tight tracking-[-0.01em] text-foreground md:text-[28px]">
-            {product.title}
-          </h1>
-
-          <div className="mt-3 flex items-baseline gap-3">
-            <span className="text-[26px] font-bold tabular-nums text-foreground">
-              <PlumpPrice value={product.priceRub} />
-            </span>
+            )}
           </div>
 
-          {product.bonusTickets > 0 && (
-            <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5">
-              <PlumpTicket className="h-3.5 w-3.5 text-primary" />
-              <span className="text-[13px] font-medium text-primary">
-                +{product.bonusTickets} {ticketsWord(product.bonusTickets)} после оплаты
+          {/* RIGHT: инфо-панель */}
+          <section>
+            <h1 className="text-[24px] font-bold leading-tight tracking-[-0.01em] text-foreground md:text-[32px]">
+              {product.title}
+            </h1>
+
+            <div className="mt-3 flex items-baseline gap-3">
+              <span className="text-[28px] font-bold tabular-nums text-foreground md:text-[32px]">
+                <PlumpPrice value={product.priceRub} />
               </span>
             </div>
-          )}
 
-          {needsSize && (
-            <div className="mt-6">
-              <div className="mb-2 flex items-center justify-between">
-                <span className="text-[13px] font-medium text-muted-foreground">Размер</span>
-                {size && <span className="text-[13px] font-semibold text-foreground">{size}</span>}
+            {product.bonusTickets > 0 && (
+              <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5">
+                <PlumpTicket className="h-3.5 w-3.5 text-primary" />
+                <span className="text-[13px] font-medium text-primary">
+                  +{product.bonusTickets} {ticketsWord(product.bonusTickets)} после оплаты
+                </span>
               </div>
-              <div className="flex flex-wrap gap-2">
-                {sizes.map((s) => {
-                  const isActive = s.label === size;
-                  const isOut = s.stock !== null && s.stock <= 0;
-                  return (
-                    <button
-                      key={s.label}
-                      type="button"
-                      disabled={isOut}
-                      onClick={() => setSize(s.label)}
-                      className={`min-w-[48px] rounded-xl border px-4 py-2.5 text-[15px] font-semibold transition-all active:scale-95 ${
-                        isOut
-                          ? "border-white/[0.04] bg-white/[0.02] text-muted-foreground/40 line-through"
-                          : isActive
-                            ? "border-primary bg-primary text-primary-foreground shadow-[0_0_0_3px_hsl(var(--primary)/0.25)]"
-                            : "border-white/[0.08] bg-white/[0.03] text-foreground"
-                      }`}
-                    >
-                      {s.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {!isDigital && (
-            <div className="mt-6 flex items-center justify-between">
-              <span className="text-[13px] font-medium text-muted-foreground">Количество</span>
-              <div className="flex items-center overflow-hidden rounded-xl border border-white/[0.08] bg-white/[0.03]">
-                <button
-                  type="button"
-                  onClick={() => setQty((q) => Math.max(1, q - 1))}
-                  className="grid h-10 w-10 place-items-center text-foreground active:bg-white/[0.06] disabled:opacity-40"
-                  aria-label="Уменьшить"
-                  disabled={qty <= 1}
-                >
-                  <Minus className="h-4 w-4" />
-                </button>
-                <span className="w-10 text-center text-[15px] font-semibold tabular-nums">{qty}</span>
-                <button
-                  type="button"
-                  onClick={() => setQty((q) => Math.min(maxQty, q + 1))}
-                  className="grid h-10 w-10 place-items-center text-foreground active:bg-white/[0.06] disabled:opacity-40"
-                  aria-label="Увеличить"
-                  disabled={qty >= maxQty}
-                >
-                  <Plus className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-          )}
-
-          <div className="mt-8 overflow-hidden rounded-2xl border border-white/[0.06] bg-card/40 divide-y divide-white/[0.05]">
-            {product.description && (
-              <Accordion
-                label="Описание"
-                open={open === "desc"}
-                onToggle={() => setOpen(open === "desc" ? null : "desc")}
-              >
-                <p className="whitespace-pre-line text-[15px] leading-relaxed text-muted-foreground">
-                  {product.description}
-                </p>
-              </Accordion>
             )}
+
+            {needsSize && (
+              <div className="mt-6">
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="text-[13px] font-medium text-muted-foreground">Размер</span>
+                  {size && <span className="text-[13px] font-semibold text-foreground">{size}</span>}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {sizes.map((s) => {
+                    const isActive = s.label === size;
+                    const isOut = s.stock !== null && s.stock <= 0;
+                    return (
+                      <button
+                        key={s.label}
+                        type="button"
+                        disabled={isOut}
+                        onClick={() => setSize(s.label)}
+                        className={`min-w-[48px] rounded-xl border px-4 py-2.5 text-[15px] font-semibold transition-all active:scale-95 ${
+                          isOut
+                            ? "border-white/[0.04] bg-white/[0.02] text-muted-foreground/40 line-through"
+                            : isActive
+                              ? "border-primary bg-primary text-primary-foreground shadow-[0_0_0_3px_hsl(var(--primary)/0.25)]"
+                              : "border-white/[0.08] bg-white/[0.03] text-foreground hover:border-white/[0.2]"
+                        }`}
+                      >
+                        {s.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {!isDigital && (
-              <Accordion
-                label="Доставка"
-                open={open === "ship"}
-                onToggle={() => setOpen(open === "ship" ? null : "ship")}
+              <div className="mt-6 flex items-center justify-between">
+                <span className="text-[13px] font-medium text-muted-foreground">Количество</span>
+                <div className="flex items-center overflow-hidden rounded-xl border border-white/[0.08] bg-white/[0.03]">
+                  <button
+                    type="button"
+                    onClick={() => setQty((q) => Math.max(1, q - 1))}
+                    className="grid h-10 w-10 place-items-center text-foreground active:bg-white/[0.06] disabled:opacity-40"
+                    aria-label="Уменьшить"
+                    disabled={qty <= 1}
+                  >
+                    <Minus className="h-4 w-4" />
+                  </button>
+                  <span className="w-10 text-center text-[15px] font-semibold tabular-nums">{qty}</span>
+                  <button
+                    type="button"
+                    onClick={() => setQty((q) => Math.min(maxQty, q + 1))}
+                    className="grid h-10 w-10 place-items-center text-foreground active:bg-white/[0.06] disabled:opacity-40"
+                    aria-label="Увеличить"
+                    disabled={qty >= maxQty}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Desktop CTA */}
+            <div className="mt-6 hidden gap-3 md:flex">
+              <button
+                type="button"
+                disabled={sold || sizeMissing}
+                onClick={(e) => handleAdd(false, e.currentTarget)}
+                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-primary px-8 py-4 text-[15px] font-semibold text-primary-foreground transition-all hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-primary/30 disabled:text-primary-foreground/60"
               >
-                {product.shippingInfo?.trim() ? (
+                {sold
+                  ? "Распродано"
+                  : sizeMissing
+                    ? "Выберите размер"
+                    : alreadyInCart
+                      ? "В корзине · перейти"
+                      : "В корзину"}
+              </button>
+              <Link
+                to="/cart"
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/[0.1] px-5 py-4 text-[14px] font-semibold text-foreground hover:border-white/[0.2]"
+                aria-label="Корзина"
+              >
+                <PlumpCart className="h-4 w-4" />
+              </Link>
+            </div>
+
+            <div className="mt-6 overflow-hidden rounded-2xl border border-white/[0.06] bg-card/40 divide-y divide-white/[0.05]">
+              {product.description && (
+                <Accordion
+                  label="Описание"
+                  open={open === "desc"}
+                  onToggle={() => setOpen(open === "desc" ? null : "desc")}
+                >
                   <p className="whitespace-pre-line text-[15px] leading-relaxed text-muted-foreground">
-                    {product.shippingInfo}
+                    {product.description}
                   </p>
-                ) : (
-                  <ul className="space-y-2 text-[15px] leading-relaxed text-muted-foreground">
-                    <li>· СДЭК по РФ — 2–7 дней.</li>
-                    <li>· Самовывоз из гаража HELLHOUND в Москве.</li>
-                  </ul>
-                )}
-              </Accordion>
-            )}
-            {!isDigital && (
-              <Accordion
-                label="Возврат"
-                open={open === "returns"}
-                onToggle={() => setOpen(open === "returns" ? null : "returns")}
-              >
-                <p className="whitespace-pre-line text-[15px] leading-relaxed text-muted-foreground">
-                  Возврат в течение 14 дней с момента получения, если товар не был в употреблении,
-                  сохранены товарный вид, потребительские свойства, ярлыки и упаковка. Деньги
-                  возвращаются на ту же карту, которой была произведена оплата. Подробнее —
-                  на странице <a href="/shop-info" className="text-primary underline-offset-2 hover:underline">«Оплата и доставка»</a> и в публичной оферте.
-                </p>
-              </Accordion>
-            )}
-          </div>
-
-          {/* Desktop inline CTA */}
-          <div className="mt-6 hidden items-center gap-4 rounded-2xl border border-white/[0.06] bg-card/40 p-4 md:flex">
-            <div className="flex flex-col">
-              <span className="text-[12px] text-muted-foreground">Итого</span>
-              <span className="text-[22px] font-bold tabular-nums text-foreground">
-                <PlumpPrice value={product.priceRub * qty} />
-              </span>
+                </Accordion>
+              )}
+              {!isDigital && (
+                <Accordion
+                  label="Доставка"
+                  open={open === "ship"}
+                  onToggle={() => setOpen(open === "ship" ? null : "ship")}
+                >
+                  {product.shippingInfo?.trim() ? (
+                    <p className="whitespace-pre-line text-[15px] leading-relaxed text-muted-foreground">
+                      {product.shippingInfo}
+                    </p>
+                  ) : (
+                    <ul className="space-y-2 text-[15px] leading-relaxed text-muted-foreground">
+                      <li>· СДЭК по РФ — 2–7 дней.</li>
+                      <li>· Самовывоз из гаража HELLHOUND в Москве.</li>
+                    </ul>
+                  )}
+                </Accordion>
+              )}
+              {!isDigital && (
+                <Accordion
+                  label="Возврат"
+                  open={open === "returns"}
+                  onToggle={() => setOpen(open === "returns" ? null : "returns")}
+                >
+                  <p className="whitespace-pre-line text-[15px] leading-relaxed text-muted-foreground">
+                    Возврат в течение 14 дней с момента получения, если товар не был в употреблении,
+                    сохранены товарный вид, потребительские свойства, ярлыки и упаковка. Деньги
+                    возвращаются на ту же карту, которой была произведена оплата. Подробнее —
+                    на странице <a href="/shop-info" className="text-primary underline-offset-2 hover:underline">«Оплата и доставка»</a> и в публичной оферте.
+                  </p>
+                </Accordion>
+              )}
             </div>
-            <button
-              type="button"
-              disabled={sold || sizeMissing}
-              onClick={(e) => handleAdd(false, e.currentTarget)}
-              className="ml-auto inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-8 py-3.5 text-[15px] font-semibold text-primary-foreground transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-primary/30 disabled:text-primary-foreground/60"
-            >
-              {sold
-                ? "Распродано"
-                : sizeMissing
-                  ? "Выберите размер"
-                  : alreadyInCart
-                    ? "В корзине · перейти"
-                    : "В корзину"}
+          </section>
+        </div>
+
             </button>
             <Link
               to="/cart"
