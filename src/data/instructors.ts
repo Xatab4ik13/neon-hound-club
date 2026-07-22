@@ -19,6 +19,12 @@ import nkGal02 from "@/assets/instructors/nikita-gallery/nikita-02.webp.asset.js
 import nkGal03 from "@/assets/instructors/nikita-gallery/nikita-03.webp.asset.json";
 import nkGal04 from "@/assets/instructors/nikita-gallery/nikita-04.webp.asset.json";
 import pavelAsset from "@/assets/instructors/pavel.webp.asset.json";
+import pvGal01 from "@/assets/instructors/pavel-gallery/pavel-01.webp.asset.json";
+import pvGal02 from "@/assets/instructors/pavel-gallery/pavel-02.webp.asset.json";
+import pvGal03 from "@/assets/instructors/pavel-gallery/pavel-03.webp.asset.json";
+import pvGal04 from "@/assets/instructors/pavel-gallery/pavel-04.webp.asset.json";
+import pvGal05 from "@/assets/instructors/pavel-gallery/pavel-05.webp.asset.json";
+import pvGal06 from "@/assets/instructors/pavel-gallery/pavel-06.webp.asset.json";
 import haixAsset from "@/assets/instructors/haix.webp.asset.json";
 import hxGal01 from "@/assets/instructors/haix-gallery/haix-01.webp.asset.json";
 import hxGal02 from "@/assets/instructors/haix-gallery/haix-02.webp.asset.json";
