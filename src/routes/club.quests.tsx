@@ -293,9 +293,9 @@ function QuestCard({
           className={`grid h-11 w-11 shrink-0 place-items-center rounded-2xl border-[3px] border-foreground ${iconBg} shadow-[3px_3px_0_0_hsl(var(--foreground))]`}
         >
           {done ? (
-            <Check className="h-5 w-5 text-foreground" strokeWidth={3} />
+            <Check className="h-5 w-5 text-black" strokeWidth={3} />
           ) : (
-            <Icon className="h-5 w-5 text-foreground" strokeWidth={2.5} />
+            <Icon className="h-5 w-5 text-black" strokeWidth={2.5} />
           )}
         </span>
 
