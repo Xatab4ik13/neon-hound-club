@@ -8,7 +8,6 @@ import { Loader2, PlumpPackage as Package, Phone, PlumpMap as MapPin, User as Us
 import { cn } from "@/lib/utils";
 import { ApiError } from "@/lib/api";
 import { AdminPager, type AdminPageSize } from "@/components/admin/AdminPager";
-import { PlumpNum, PlumpPrice } from "@/components/brand/PlumpNum";
 import {
   fetchAdminOrders,
   fetchAdminOrder,
@@ -212,7 +211,7 @@ function OrdersTable({
                 <div className="text-xs text-zinc-500">{o.shipping.phone}</div>
               </td>
               <td className="px-3 py-2.5 text-xs text-zinc-600 dark:text-zinc-400">{o.shipping.city}</td>
-              <td className="px-3 py-2.5 text-right font-mono text-xs font-semibold"><PlumpPrice value={o.totalRub} size={13} /></td>
+              <td className="px-3 py-2.5 text-right font-mono text-xs font-semibold">{`${(o.totalRub).toLocaleString("ru-RU")} ₽`}</td>
               <td className="px-3 py-2.5">
                 <span className={cn("inline-block rounded-md px-2 py-0.5 text-xs font-medium", STATUS_TONE[o.status])}>
                   {STATUS_LABEL[o.status]}
@@ -327,21 +326,21 @@ function OrderDrawer({ orderId, onClose }: { orderId: string; onClose: () => voi
                   <div className="min-w-0">
                     <div className="truncate font-medium">{it.titleSnapshot}</div>
                     <div className="inline-flex flex-wrap items-center gap-1 text-xs text-zinc-500">
-                      <PlumpNum value={it.qty} size={12} /> × <PlumpPrice value={it.priceRubSnapshot} size={12} />
+                      {(it.qty)} × {`${(it.priceRubSnapshot).toLocaleString("ru-RU")} ₽`}
                       {it.sizeSnapshot && <span>· размер {it.sizeSnapshot}</span>}
-                      {it.bonusTicketsSnapshot > 0 && <span>· +<PlumpNum value={it.bonusTicketsSnapshot} size={11} />🎫 за шт.</span>}
+                      {it.bonusTicketsSnapshot > 0 && <span>· +{(it.bonusTicketsSnapshot)}🎫 за шт.</span>}
                     </div>
                   </div>
 
                   <div className="shrink-0 font-mono text-xs font-semibold">
-                    <PlumpPrice value={it.priceRubSnapshot * it.qty} size={12} />
+                    {`${(it.priceRubSnapshot * it.qty).toLocaleString("ru-RU")} ₽`}
                   </div>
                 </li>
               ))}
             </ul>
             <div className="mt-3 flex justify-between border-t border-zinc-100 pt-2 text-sm font-semibold dark:border-zinc-800">
               <span>Итого</span>
-              <span className="font-mono"><PlumpPrice value={order.data.totalRub} size={14} /></span>
+              <span className="font-mono">{`${(order.data.totalRub).toLocaleString("ru-RU")} ₽`}</span>
             </div>
             {order.data.bonusTicketsTotal > 0 && (
               <div className="mt-1 text-right text-xs text-zinc-500">

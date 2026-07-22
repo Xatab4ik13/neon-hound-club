@@ -34,10 +34,9 @@ const SOURCE_LABEL: Record<string, string> = {
   refund: "Возврат",
 };
 
-import { PlumpNum } from "@/components/brand/PlumpNum";
 
 function fmt(n: number): React.ReactNode {
-  return <PlumpNum value={n} format />;
+  return (n).toLocaleString("ru-RU");
 }
 
 function TicketsPage() {
@@ -207,7 +206,7 @@ function JournalPanel() {
             }`}
           >
             {row.amount > 0 ? "+" : row.amount < 0 ? "−" : ""}
-            <PlumpNum value={Math.abs(row.amount)} size={13} />
+            {(Math.abs(row.amount))}
           </span>,
           <span className="text-xs uppercase tracking-wider text-zinc-500">
             {SOURCE_LABEL[row.source] ?? row.source}
