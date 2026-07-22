@@ -495,7 +495,8 @@ function ClubCheckoutPage() {
                     {shipCalcLoading ? (
                       <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                     ) : shipPrice != null ? (
-                      `$<PlumpPrice value={shipPrice} />`
+                      <PlumpPrice value={shipPrice} />
+
                     ) : (
                       "—"
                     )}
