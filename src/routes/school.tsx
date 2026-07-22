@@ -1,14 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { Header } from "@/components/brand/Header";
 import { Footer } from "@/components/brand/Footer";
-import stanislavAsset from "@/assets/instructors/stanislav.webp.asset.json";
-import semenAsset from "@/assets/instructors/semen.webp.asset.json";
-import nikitaAsset from "@/assets/instructors/nikita.webp.asset.json";
-import pavelAsset from "@/assets/instructors/pavel.webp.asset.json";
-import haixAsset from "@/assets/instructors/haix.webp.asset.json";
-
-
+import { INSTRUCTORS, TONE_BG, type Instructor } from "@/data/instructors";
 
 export const Route = createFileRoute("/school")({
   head: () => ({
@@ -31,33 +25,6 @@ export const Route = createFileRoute("/school")({
   component: SchoolPage,
 });
 
-type Instructor = {
-  id: string;
-  name: string;
-  photo: string;
-  city: string;
-  experience: number;
-  // Оттенок фоновой рамки-плашки — чтобы карточки не сливались.
-  tone: "primary" | "yellow" | "cyan" | "lime" | "violet";
-};
-
-const INSTRUCTORS: Instructor[] = [
-  { id: "stanislav", name: "Станислав", photo: stanislavAsset.url, city: "Краснодар", experience: 10, tone: "primary" },
-  { id: "semen",     name: "Семён",     photo: semenAsset.url,     city: "Краснодар", experience: 11, tone: "yellow" },
-  { id: "nikita",    name: "Никита",    photo: nikitaAsset.url,    city: "Москва",    experience: 6,  tone: "cyan" },
-  { id: "pavel",     name: "Павел",     photo: pavelAsset.url,     city: "Москва",    experience: 3,  tone: "lime" },
-  { id: "haix",      name: "HaiX",      photo: haixAsset.url,      city: "Москва",    experience: 6,  tone: "violet" },
-];
-
-const TONE_BG: Record<Instructor["tone"], string> = {
-  primary: "bg-primary",
-  yellow: "bg-[#FFD93D]",
-  cyan: "bg-[#3DDBD9]",
-  lime: "bg-[#B6FF3C]",
-  violet: "bg-[#C6A8FF]",
-};
-
-
 function SchoolPage() {
   const [mode, setMode] = useState<"online" | "offline">("offline");
 
@@ -65,7 +32,6 @@ function SchoolPage() {
     <div className="min-h-screen bg-background text-foreground">
       <Header />
       <main className="mx-auto max-w-6xl px-4 pb-24 pt-24 md:pt-32">
-        {/* HEADER */}
         <div className="text-center">
           <h1 className="font-display text-5xl font-black uppercase leading-[0.88] tracking-tight md:text-7xl">
             Школа HELLHOUND
@@ -75,8 +41,6 @@ function SchoolPage() {
           </p>
         </div>
 
-
-        {/* SEGMENTED TOGGLE — plump */}
         <div className="mt-10 flex justify-center">
           <div className="inline-flex rounded-2xl border-[3px] border-foreground bg-card p-1 shadow-[6px_6px_0_0_hsl(var(--foreground))]">
             <button
@@ -104,7 +68,6 @@ function SchoolPage() {
           </div>
         </div>
 
-        {/* CONTENT */}
         <div className="mt-12">
           {mode === "online" ? <OnlineSoon /> : <InstructorsGrid />}
         </div>
@@ -127,7 +90,6 @@ function OnlineSoon() {
   );
 }
 
-
 function InstructorsGrid() {
   return (
     <div className="grid gap-10 pt-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -145,16 +107,17 @@ function InstructorCard({
   instructor: Instructor;
   index: number;
 }) {
-  // Чередуем лёгкий наклон карточкам для «живого» ощущения.
   const skew = index % 2 === 0 ? "-rotate-1" : "rotate-1";
   const expLabel = `${instructor.experience} ${instructor.experience < 5 ? "года" : "лет"} стажа`;
   return (
-    <article className={`group relative ${skew}`}>
-      {/* Толстая plump-рамка */}
+    <Link
+      to="/school/$instructorId"
+      params={{ instructorId: instructor.slug }}
+      className={`group relative block ${skew}`}
+    >
       <div
-        className={`relative overflow-hidden rounded-3xl border-[3px] border-foreground ${TONE_BG[instructor.tone]} shadow-[8px_8px_0_0_hsl(var(--foreground))] transition-transform duration-200 ease-out hover:-translate-x-1 hover:-translate-y-1 hover:shadow-[10px_10px_0_0_hsl(var(--foreground))]`}
+        className={`relative overflow-hidden rounded-3xl border-[3px] border-foreground ${TONE_BG[instructor.tone]} shadow-[8px_8px_0_0_hsl(var(--foreground))] transition-transform duration-200 ease-out group-hover:-translate-x-1 group-hover:-translate-y-1 group-hover:shadow-[10px_10px_0_0_hsl(var(--foreground))]`}
       >
-        {/* Портрет инструктора */}
         <div className="relative aspect-[3/4] w-full overflow-hidden">
           <img
             src={instructor.photo}
@@ -165,7 +128,6 @@ function InstructorCard({
           <div className="absolute inset-0 bg-gradient-to-b from-black/0 via-black/0 to-black/30" />
         </div>
 
-        {/* Имя внизу карточки */}
         <div className="border-t-[3px] border-foreground bg-card px-4 py-3">
           <div className="font-display text-2xl font-black uppercase leading-none tracking-tight text-foreground">
             {instructor.name}
@@ -173,14 +135,13 @@ function InstructorCard({
         </div>
       </div>
 
-      {/* Плашки с городом и стажем — вне карточки, как в mock */}
       <div className="pointer-events-none absolute -top-3 left-3 -rotate-[4deg]">
         <PlumpTag>{instructor.city}</PlumpTag>
       </div>
       <div className="pointer-events-none absolute -bottom-3 right-6 -rotate-[3deg]">
         <PlumpTag variant="accent">{expLabel}</PlumpTag>
       </div>
-    </article>
+    </Link>
   );
 }
 
