@@ -64,7 +64,7 @@ function RafflesPage() {
           className="mb-6 flex items-center justify-between gap-3 rounded-3xl border-[3px] border-foreground bg-card px-4 py-3 shadow-[6px_6px_0_0_hsl(var(--foreground))]"
         >
           <Link to="/club/tickets" className="flex min-w-0 items-center gap-3 active:opacity-70">
-            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border-[3px] border-foreground bg-primary shadow-[3px_3px_0_0_hsl(var(--foreground))]">
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border-[3px] border-foreground bg-[#FFD93D] shadow-[3px_3px_0_0_hsl(var(--foreground))]">
               <PlumpTicket className="h-5 w-5 text-black" />
             </span>
             <span className="min-w-0">
@@ -78,7 +78,7 @@ function RafflesPage() {
           </Link>
           <Link
             to="/club/tickets"
-            className="shrink-0 rounded-full bg-primary px-3 py-1.5 font-display text-[11px] font-black uppercase tracking-widest text-primary-foreground active:scale-95"
+            className="shrink-0 rounded-full border-[3px] border-foreground bg-foreground px-3 py-1.5 font-display text-[11px] font-black uppercase tracking-widest text-background shadow-[3px_3px_0_0_hsl(var(--foreground))] active:translate-x-[1px] active:translate-y-[1px] active:shadow-[1px_1px_0_0_hsl(var(--foreground))]"
           >
             Как набрать
           </Link>
@@ -268,7 +268,7 @@ function MyRaffleRow({ raffle }: { raffle: MyRaffleItem }) {
     ? { label: "Выигрыш", bg: "bg-[#B6FF3C]", tone: "text-black" }
     : finished
       ? { label: "Не выиграл", bg: "bg-background", tone: "text-muted-foreground" }
-      : { label: "В игре", bg: "bg-primary", tone: "text-primary-foreground" };
+      : { label: "В игре", bg: "bg-[#FFD93D]", tone: "text-black" };
   return (
     <li className="flex items-center gap-3 rounded-2xl border-[3px] border-foreground bg-card px-3 py-3 shadow-[4px_4px_0_0_hsl(var(--foreground))]">
       <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl border-[2px] border-foreground bg-black">
@@ -340,8 +340,8 @@ function RaffleCard({
           />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
-        <span className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-primary px-2.5 py-0.5 font-display text-[10px] font-black uppercase tracking-widest text-primary-foreground">
-          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white" />
+        <span className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full border-[3px] border-foreground bg-[#B6FF3C] px-2.5 py-0.5 font-display text-[10px] font-black uppercase tracking-widest text-black shadow-[2px_2px_0_0_hsl(var(--foreground))]">
+          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-black" />
           Идёт
         </span>
         <div className="absolute inset-x-3 bottom-3">
@@ -355,7 +355,7 @@ function RaffleCard({
       </div>
       <div className="flex items-center justify-between gap-3 px-4 py-3">
         <span className="inline-flex items-center gap-1.5 font-mono text-[12px] text-muted-foreground">
-          <span className="grid h-6 w-6 place-items-center rounded-lg border-[2px] border-foreground bg-primary">
+          <span className="grid h-6 w-6 place-items-center rounded-lg border-[2px] border-foreground bg-[#FFD93D]">
             <PlumpTicket className="h-3.5 w-3.5 text-black" />
           </span>
           <PlumpNum value={raffle.ticketCost} size={13} className="text-foreground" />
