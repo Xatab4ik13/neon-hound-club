@@ -77,7 +77,7 @@ function RafflesPage() {
             </span>
           </Link>
           <Link
-            to="/club/quests"
+            to="/club/tickets"
             className="shrink-0 rounded-full border-[3px] border-foreground bg-foreground px-3 py-1.5 font-display text-[11px] font-black uppercase tracking-widest text-background shadow-[3px_3px_0_0_hsl(var(--foreground))] active:translate-x-[1px] active:translate-y-[1px] active:shadow-[1px_1px_0_0_hsl(var(--foreground))]"
           >
             Как набрать
