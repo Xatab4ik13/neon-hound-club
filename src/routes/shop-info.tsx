@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Header } from "@/components/brand/Header";
 import { Footer } from "@/components/brand/Footer";
-import { LEGAL } from "@/data/legal";
+
 
 export const Route = createFileRoute("/shop-info")({
   head: () => ({
