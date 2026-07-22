@@ -67,6 +67,59 @@ function MirMark() {
   );
 }
 
+function CdekMark() {
+  return (
+    <svg viewBox="0 0 120 32" className="h-8 w-auto" aria-label="СДЭК">
+      <text
+        x="0"
+        y="24"
+        fontFamily="Arial Black, Arial, sans-serif"
+        fontSize="26"
+        fontWeight="900"
+        fill="#1AB248"
+        letterSpacing="-0.5"
+      >
+        CDEK
+      </text>
+      <path
+        d="M78 10 L96 10 L92 16 L96 22 L78 22 L82 16 Z"
+        fill="#1AB248"
+      />
+    </svg>
+  );
+}
+
+function PochtaMark() {
+  return (
+    <svg viewBox="0 0 160 32" className="h-8 w-auto" aria-label="Почта России">
+      <rect x="0" y="6" width="20" height="20" rx="2" fill="#1965C4" />
+      <path d="M2 9 L10 16 L18 9" stroke="#FFFFFF" strokeWidth="1.6" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+      <text
+        x="26"
+        y="15"
+        fontFamily="Arial Black, Arial, sans-serif"
+        fontSize="10"
+        fontWeight="900"
+        fill="#1965C4"
+        letterSpacing="0.5"
+      >
+        ПОЧТА
+      </text>
+      <text
+        x="26"
+        y="27"
+        fontFamily="Arial Black, Arial, sans-serif"
+        fontSize="10"
+        fontWeight="900"
+        fill="#1965C4"
+        letterSpacing="0.5"
+      >
+        РОССИИ
+      </text>
+    </svg>
+  );
+}
+
 /* ===================== Icons ===================== */
 
 function ShieldIcon() {
