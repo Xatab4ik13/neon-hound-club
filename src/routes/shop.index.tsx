@@ -3,6 +3,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Header } from "@/components/brand/Header";
 import { Footer } from "@/components/brand/Footer";
+import { PlumpPrice } from "@/components/brand/PlumpNum";
+
 import {
   fetchShopCategories,
   fetchShopProducts,
@@ -509,9 +511,10 @@ function ProductCard({ product, index }: { product: ShopProductListItem; index: 
         <h3 className="text-sm font-medium uppercase tracking-wider">
           {product.title}
         </h3>
-        <span className="whitespace-nowrap font-mono text-sm text-foreground">
-          {product.priceRub.toLocaleString("ru-RU")} ₽
+        <span className="whitespace-nowrap text-foreground">
+          <PlumpPrice value={product.priceRub} size={14} />
         </span>
+
       </div>
 
       {product.bonusTickets > 0 ? (

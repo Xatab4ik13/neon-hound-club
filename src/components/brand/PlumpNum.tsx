@@ -111,11 +111,12 @@ export function PlumpNum({
       {suffix ? (
         <span
           className="ml-1 font-mono font-black"
-          style={{ fontSize: Math.round(size * 0.7), lineHeight: 1 }}
+          style={{ fontSize: Math.round(size * 0.95), lineHeight: 1 }}
         >
           {suffix}
         </span>
       ) : null}
+
     </span>
   );
 }

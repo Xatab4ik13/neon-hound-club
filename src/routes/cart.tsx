@@ -3,6 +3,8 @@ import { useMemo } from "react";
 import { PlumpCart, PlumpTicket } from "@/components/ui/icons";
 import { Header } from "@/components/brand/Header";
 import { Footer } from "@/components/brand/Footer";
+import { PlumpNum, PlumpPrice } from "@/components/brand/PlumpNum";
+
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/hooks/use-cart";
 import { useViewer } from "@/hooks/use-viewer";
@@ -93,14 +95,15 @@ function CartPage() {
                       >
                         {i.name}
                       </Link>
-                      <div className="mt-1 text-[11px] text-muted-foreground sm:text-xs">
-                        {i.size ? `Размер ${i.size}` : "—"} ·{" "}
-                        {i.price.toLocaleString("ru-RU")} ₽
+                      <div className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground sm:text-xs">
+                        <span>{i.size ? `Размер ${i.size}` : "—"} ·</span>
+                        <PlumpPrice value={i.price} size={12} />
                       </div>
                     </div>
-                    <div className="shrink-0 whitespace-nowrap text-right font-mono text-sm">
-                      {(i.price * i.qty).toLocaleString("ru-RU")} ₽
+                    <div className="shrink-0 whitespace-nowrap text-right">
+                      <PlumpPrice value={i.price * i.qty} size={14} />
                     </div>
+
                   </div>
                   <div className="mt-3 flex items-center justify-between gap-3">
                     <div className="flex items-center border border-border">
@@ -111,9 +114,10 @@ function CartPage() {
                       >
                         −
                       </button>
-                      <span className="w-8 text-center font-mono text-sm">
-                        {i.qty}
+                      <span className="flex w-8 items-center justify-center">
+                        <PlumpNum value={i.qty} size={12} />
                       </span>
+
                       <button
                         onClick={() => setQty(i.id, i.qty + 1)}
                         className="flex size-8 items-center justify-center text-muted-foreground hover:text-primary"
@@ -137,9 +141,10 @@ function CartPage() {
                 <span className="text-xs uppercase tracking-widest text-muted-foreground">
                   Итого
                 </span>
-                <span className="font-display text-2xl font-black">
-                  {total.toLocaleString("ru-RU")} ₽
+                <span>
+                  <PlumpPrice value={total} size={22} />
                 </span>
+
               </div>
 
               {/* Бонус билетов — только из ticketsBonus на товарах */}

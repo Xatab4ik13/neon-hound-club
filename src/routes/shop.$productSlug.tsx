@@ -10,6 +10,8 @@ import { useQuery } from "@tanstack/react-query";
 import { hhToast } from "@/lib/hh-toast";
 import { Header } from "@/components/brand/Header";
 import { Footer } from "@/components/brand/Footer";
+import { PlumpPrice } from "@/components/brand/PlumpNum";
+
 import { useCart } from "@/hooks/use-cart";
 import { ApiError } from "@/lib/api";
 import { fetchShopProduct, qk, type ShopProduct } from "@/lib/queries";
@@ -215,9 +217,10 @@ function ProductView({ product }: { product: ShopProduct }) {
                 </h1>
 
                 <div className="mt-6 flex items-baseline gap-3">
-                  <span className="font-display text-3xl tracking-tight text-primary">
-                    {product.priceRub.toLocaleString("ru-RU")} ₽
+                  <span className="text-primary">
+                    <PlumpPrice value={product.priceRub} size={30} />
                   </span>
+
                   {isSold && (
                     <span className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
                       нет в наличии
@@ -382,9 +385,10 @@ function ProductView({ product }: { product: ShopProduct }) {
             <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
               Цена
             </span>
-            <span className="font-display text-lg text-primary">
-              {product.priceRub.toLocaleString("ru-RU")} ₽
+            <span className="text-primary">
+              <PlumpPrice value={product.priceRub} size={18} />
             </span>
+
           </div>
           <button
             disabled={isSold}
