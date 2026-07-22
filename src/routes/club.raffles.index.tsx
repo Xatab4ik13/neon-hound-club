@@ -268,7 +268,7 @@ function MyRaffleRow({ raffle }: { raffle: MyRaffleItem }) {
     ? { label: "Выигрыш", bg: "bg-[#B6FF3C]", tone: "text-black" }
     : finished
       ? { label: "Не выиграл", bg: "bg-background", tone: "text-muted-foreground" }
-      : { label: "В игре", bg: "bg-primary", tone: "text-primary-foreground" };
+      : { label: "В игре", bg: "bg-[#FFD93D]", tone: "text-black" };
   return (
     <li className="flex items-center gap-3 rounded-2xl border-[3px] border-foreground bg-card px-3 py-3 shadow-[4px_4px_0_0_hsl(var(--foreground))]">
       <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl border-[2px] border-foreground bg-black">
