@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Header } from "@/components/brand/Header";
 import { Footer } from "@/components/brand/Footer";
-import { LEGAL } from "@/data/legal";
+
 
 export const Route = createFileRoute("/shop-info")({
   head: () => ({
@@ -62,6 +62,59 @@ function MirMark() {
         letterSpacing="0"
       >
         МИР
+      </text>
+    </svg>
+  );
+}
+
+function CdekMark() {
+  return (
+    <svg viewBox="0 0 120 32" className="h-8 w-auto" aria-label="СДЭК">
+      <text
+        x="0"
+        y="24"
+        fontFamily="Arial Black, Arial, sans-serif"
+        fontSize="26"
+        fontWeight="900"
+        fill="#1AB248"
+        letterSpacing="-0.5"
+      >
+        CDEK
+      </text>
+      <path
+        d="M78 10 L96 10 L92 16 L96 22 L78 22 L82 16 Z"
+        fill="#1AB248"
+      />
+    </svg>
+  );
+}
+
+function PochtaMark() {
+  return (
+    <svg viewBox="0 0 160 32" className="h-8 w-auto" aria-label="Почта России">
+      <rect x="0" y="6" width="20" height="20" rx="2" fill="#1965C4" />
+      <path d="M2 9 L10 16 L18 9" stroke="#FFFFFF" strokeWidth="1.6" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+      <text
+        x="26"
+        y="15"
+        fontFamily="Arial Black, Arial, sans-serif"
+        fontSize="10"
+        fontWeight="900"
+        fill="#1965C4"
+        letterSpacing="0.5"
+      >
+        ПОЧТА
+      </text>
+      <text
+        x="26"
+        y="27"
+        fontFamily="Arial Black, Arial, sans-serif"
+        fontSize="10"
+        fontWeight="900"
+        fill="#1965C4"
+        letterSpacing="0.5"
+      >
+        РОССИИ
       </text>
     </svg>
   );
@@ -129,10 +182,6 @@ export default function ShopInfoPage() {
           }}
         />
         <div className="relative mx-auto max-w-7xl px-6 pt-32 pb-20 md:pt-40 md:pb-24">
-          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1.5 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-            <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-            Покупателям
-          </div>
           <h1 className="max-w-3xl text-balance font-display text-5xl uppercase leading-[0.95] tracking-tight md:text-7xl">
             Оплата <span className="text-primary">и</span> доставка
           </h1>
@@ -202,13 +251,6 @@ export default function ShopInfoPage() {
               чек отдельным письмом.
             </FeatureCard>
           </div>
-
-          <div className="mt-8 rounded-md border border-primary/30 bg-background/60 p-5 font-mono text-[12px] leading-relaxed text-foreground/85">
-            <span className="text-primary">⌘ </span>
-            Сайт и магазин <strong className="text-foreground">не получают и не хранят</strong> номер
-            карты, срок действия и CVV/CVC. Эта информация известна только
-            твоему банку и платёжной системе.
-          </div>
         </div>
       </section>
 
@@ -222,11 +264,21 @@ export default function ShopInfoPage() {
               tag="Основной"
               name="СДЭК"
               text="До пункта выдачи или курьером до двери. Доступно во всех городах присутствия СДЭК на территории РФ."
+              logo={<CdekMark />}
             />
             <CarrierCard
               tag="По согласованию"
               name="Почта России"
               text="Для населённых пунктов, где нет СДЭК. Оформляется через поддержку после оплаты."
+              logo={<PochtaMark />}
+            />
+          </div>
+
+          <div className="mt-4">
+            <CarrierCard
+              tag="По запросу"
+              name="Страны СНГ"
+              text="Отправляем в Беларусь, Казахстан, Армению, Кыргызстан и другие страны СНГ. Стоимость и сроки уточняются через поддержку до оплаты."
             />
           </div>
 
@@ -296,45 +348,19 @@ export default function ShopInfoPage() {
       {/* SUPPORT */}
       <section className="border-b border-border">
         <div className="mx-auto max-w-7xl px-6 py-20">
-          <SectionHead eyebrow="Связь" title="Если что-то пошло не так" />
-          <div className="mt-10 grid gap-4 md:grid-cols-2">
-            <a
-              href={LEGAL.contactTelegram}
-              target="_blank"
-              rel="noreferrer"
-              className="group relative overflow-hidden rounded-md border border-border bg-surface p-6 transition-colors hover:border-primary"
-            >
-              <div className="mb-4 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                Оперативно
-              </div>
-              <div className="font-display text-2xl uppercase tracking-tight">
-                Telegram-поддержка
-              </div>
-              <div className="mt-2 font-mono text-sm text-primary">@hell666hound</div>
-              <div className="mt-4 text-sm text-muted-foreground">
-                Заказы, возвраты, доставка, технические вопросы.
-              </div>
-            </a>
-            <a
-              href={`mailto:${LEGAL.contactEmail}`}
-              className="group relative overflow-hidden rounded-md border border-border bg-surface p-6 transition-colors hover:border-primary"
-            >
-              <div className="mb-4 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                Официально
-              </div>
-              <div className="font-display text-2xl uppercase tracking-tight">
-                Email
-              </div>
-              <div className="mt-2 font-mono text-sm text-primary">{LEGAL.contactEmail}</div>
-              <div className="mt-4 text-sm text-muted-foreground">
-                Документы, обращения по 152-ФЗ, претензии.
-              </div>
-            </a>
-          </div>
-
-          <p className="mt-12 font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
-            Продавец: {LEGAL.shortName} · ОГРНИП {LEGAL.ogrnip} · ИНН {LEGAL.inn} · {LEGAL.address}
+          <SectionHead eyebrow="Поддержка" title="Если что-то пошло не так" />
+          <p className="mt-6 max-w-3xl text-base leading-relaxed text-muted-foreground">
+            Все вопросы по заказам, оплате и доставке решаются через систему
+            тикетов внутри клуба. Опишите проблему — ответим и разберёмся.
           </p>
+          <div className="mt-8">
+            <Link
+              to="/club/help"
+              className="inline-flex items-center gap-2 rounded-md border border-primary bg-primary px-6 py-3 font-mono text-[11px] font-bold uppercase tracking-widest text-primary-foreground transition-opacity hover:opacity-90"
+            >
+              Открыть тикет →
+            </Link>
+          </div>
         </div>
       </section>
 
@@ -414,13 +440,28 @@ function FeatureCard({
   );
 }
 
-function CarrierCard({ tag, name, text }: { tag: string; name: string; text: string }) {
+function CarrierCard({
+  tag,
+  name,
+  text,
+  logo,
+}: {
+  tag: string;
+  name: string;
+  text: string;
+  logo?: React.ReactNode;
+}) {
   return (
     <div className="relative overflow-hidden rounded-md border border-border bg-surface p-6">
-      <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-        {tag}
+      <div className="flex items-start justify-between gap-4">
+        <div className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+          {tag}
+        </div>
+        {logo ? (
+          <div className="flex h-10 items-center justify-end">{logo}</div>
+        ) : null}
       </div>
-      <div className="font-display text-3xl uppercase tracking-tight">{name}</div>
+      <div className="mt-4 font-display text-3xl uppercase tracking-tight">{name}</div>
       <p className="mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">{text}</p>
     </div>
   );
