@@ -47,6 +47,8 @@ export function AdaptiveSheet({
       <DialogContent
         className={cn(
           "flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden border-white/[0.08] bg-[#0d0d0d] p-0 text-foreground",
+          // отключаем тяжёлые slide+zoom, оставляем только fade — иначе лагает при большом списке
+          "!duration-150 data-[state=open]:!zoom-in-100 data-[state=closed]:!zoom-out-100 data-[state=open]:!slide-in-from-left-0 data-[state=open]:!slide-in-from-top-0 data-[state=closed]:!slide-out-to-left-0 data-[state=closed]:!slide-out-to-top-0",
           fullHeight && "h-[85vh] max-h-[900px]",
           contentClassName,
         )}
