@@ -153,6 +153,7 @@ const FEATURES: Feature[] = [
       "Прогресс сохраняется в профиле",
     ],
     bg: "surface",
+    image: vanyaSchoolAsset.url,
   },
 ];
 
