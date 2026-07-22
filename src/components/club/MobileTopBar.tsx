@@ -180,13 +180,19 @@ export function MobileTopBar() {
           <span className="relative min-w-0 flex-1 truncate font-display text-[15px] font-black italic tracking-tight text-white">
             {nick || "—"}
           </span>
-          <span className="relative ml-2 whitespace-nowrap font-mono text-[11px] font-bold tabular-nums">
-            <span className="text-white">{xp.toLocaleString("ru-RU")}</span>
+          <span className="relative ml-2 inline-flex items-center gap-1 whitespace-nowrap">
+            <span className="text-white">
+              <PlumpNum value={xp} size={12} format />
+            </span>
             {!isShop && (
-              <span className="ml-1 text-white/60">/ {xpMax.toLocaleString("ru-RU")}</span>
+              <span className="inline-flex items-center gap-0.5 text-white/60">
+                <span className="font-mono text-[11px] font-black">/</span>
+                <PlumpNum value={xpMax} size={12} format />
+              </span>
             )}
-            <span className="ml-1 text-white/60">XP</span>
+            <span className="ml-0.5 font-mono text-[11px] font-bold text-white/60">XP</span>
           </span>
+
         </Link>
 
         {/* Корзина — только на страницах магазина */}
