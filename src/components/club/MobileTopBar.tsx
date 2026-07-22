@@ -1,5 +1,7 @@
 import { Link, useRouter, useRouterState } from "@tanstack/react-router";
 import { PlumpBell as Bell, PlumpArrowLeft as ChevronLeft, PlumpCart } from "@/components/ui/icons";
+import { PlumpNum } from "@/components/brand/PlumpNum";
+
 import { useEffect, useRef, useState } from "react";
 import { RANKS, getRankSpan, type RankId } from "@/data/ranks";
 import type { RankMeta } from "@/data/ranks";
