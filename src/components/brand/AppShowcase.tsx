@@ -36,7 +36,7 @@ const FEATURES = [
 
 export function AppShowcase() {
   return (
-    <section id="app" className="relative overflow-hidden bg-background px-6 py-20 md:py-28">
+    <section id="app" className="relative overflow-hidden bg-background px-6 py-28 md:py-40">
       {/* Мягкое розовое свечение за мокапом */}
       <div
         aria-hidden
