@@ -1,6 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { PlumpArrowRight as ChevronRight, PlumpTicket, Trophy, ShieldCheck } from "@/components/ui/icons";
+import { PlumpNum } from "@/components/brand/PlumpNum";
+
 import { Countdown } from "@/components/club/Countdown";
 import { PageHeader } from "@/components/club/PageHeader";
 import {
