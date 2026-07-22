@@ -78,13 +78,13 @@ export function TicketCard({
           </div>
 
           <div className="flex items-end justify-between gap-4">
-            <div className="flex min-w-0 items-baseline gap-2">
-              <span
-                className={`${numberSize} font-semibold leading-none tabular-nums text-foreground`}
-              >
-                {formatted}
-              </span>
-              <span className="pb-1.5 text-[14px] text-muted-foreground">
+            <div className="flex min-w-0 items-end gap-2">
+              {isLoading ? (
+                <span className="font-display text-[64px] font-black italic leading-none text-foreground">—</span>
+              ) : (
+                <PlumpNum value={balance} size={numberSize} format />
+              )}
+              <span className="pb-2 text-[13px] text-muted-foreground">
                 {pluralTickets(balance)}
               </span>
             </div>
