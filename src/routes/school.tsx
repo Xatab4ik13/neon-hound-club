@@ -67,9 +67,6 @@ function SchoolPage() {
       <main className="mx-auto max-w-6xl px-4 pb-24 pt-24 md:pt-32">
         {/* HEADER */}
         <div className="text-center">
-          <p className="mb-3 font-mono text-[11px] uppercase tracking-[0.3em] text-primary">
-            Школа
-          </p>
           <h1 className="font-display text-5xl font-black uppercase leading-[0.88] tracking-tight md:text-7xl">
             Школа HELLHOUND
           </h1>
