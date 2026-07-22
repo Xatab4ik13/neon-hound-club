@@ -188,23 +188,62 @@ function CoursesSection({
   onCta: () => void;
 }) {
   const courses = instructor.courses ?? [];
+  const gridRef = useRef<HTMLDivElement | null>(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setVisible(true);
+      return;
+    }
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) {
+            setVisible(true);
+            io.disconnect();
+            break;
+          }
+        }
+      },
+      { threshold: 0.15, rootMargin: "0px 0px -10% 0px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
   return (
     <section>
       <SectionHeading kicker="Форматы" title="Стоимость обучения" />
-      <div className="grid gap-6 md:grid-cols-2">
+      <div ref={gridRef} className="grid gap-6 [perspective:1200px] md:grid-cols-2">
         {courses.map((course, i) => {
           const rotate = i % 2 === 0 ? "-rotate-1" : "rotate-1";
           const bg = i % 2 === 0 ? "bg-primary" : "bg-card";
           const fg = i % 2 === 0 ? "text-primary-foreground" : "text-foreground";
           const sub = i % 2 === 0 ? "text-primary-foreground/85" : "text-foreground/80";
           const chipBg = i % 2 === 0 ? "bg-card text-foreground" : "bg-foreground text-background";
+          const side = i % 2 === 0 ? "course-card--left" : "course-card--right";
           return (
             <article
               key={course.title}
-              className={`${rotate} flex flex-col rounded-3xl border-[3px] border-foreground ${bg} p-5 shadow-[8px_8px_0_0_hsl(var(--foreground))] md:p-6`}
+              className={`course-card ${side} ${rotate} flex flex-col rounded-3xl border-[3px] border-foreground ${bg} p-5 shadow-[8px_8px_0_0_hsl(var(--foreground))] md:p-6 ${
+                visible ? "course-card--in" : "course-card--pre"
+              }`}
+              style={{
+                animationDelay: visible ? `${i * 140}ms` : "0ms",
+                willChange: "transform, opacity",
+              }}
             >
               <div
-                className={`mb-4 inline-flex w-fit items-center rounded-full border-[3px] border-foreground px-3 py-1 font-display text-[11px] font-black uppercase tracking-widest shadow-[3px_3px_0_0_hsl(var(--foreground))] ${chipBg}`}
+                className={`course-chip mb-4 inline-flex w-fit items-center rounded-full border-[3px] border-foreground px-3 py-1 font-display text-[11px] font-black uppercase tracking-widest shadow-[3px_3px_0_0_hsl(var(--foreground))] ${chipBg} ${
+                  visible ? "course-chip--in" : "course-chip--pre"
+                }`}
+                style={{
+                  animationDelay: visible ? `${i * 140 + 380}ms` : "0ms",
+                  willChange: "transform, opacity",
+                }}
               >
                 {course.duration}
               </div>
