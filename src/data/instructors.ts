@@ -16,6 +16,15 @@ import smGal05 from "@/assets/instructors/semen-gallery/semen-05.webp.asset.json
 import nikitaAsset from "@/assets/instructors/nikita.webp.asset.json";
 import pavelAsset from "@/assets/instructors/pavel.webp.asset.json";
 import haixAsset from "@/assets/instructors/haix.webp.asset.json";
+import hxGal01 from "@/assets/instructors/haix-gallery/haix-01.webp.asset.json";
+import hxGal02 from "@/assets/instructors/haix-gallery/haix-02.webp.asset.json";
+import hxGal03 from "@/assets/instructors/haix-gallery/haix-03.webp.asset.json";
+import hxGal04 from "@/assets/instructors/haix-gallery/haix-04.webp.asset.json";
+import hxGal05 from "@/assets/instructors/haix-gallery/haix-05.webp.asset.json";
+import hxGal06 from "@/assets/instructors/haix-gallery/haix-06.webp.asset.json";
+import hxGal07 from "@/assets/instructors/haix-gallery/haix-07.webp.asset.json";
+import hxGal08 from "@/assets/instructors/haix-gallery/haix-08.webp.asset.json";
+import hxGal09 from "@/assets/instructors/haix-gallery/haix-09.webp.asset.json";
 
 export type InstructorTone = "primary" | "yellow" | "cyan" | "lime" | "violet";
 
