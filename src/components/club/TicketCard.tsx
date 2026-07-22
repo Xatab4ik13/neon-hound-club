@@ -34,8 +34,8 @@ export function TicketCard({
   // Размер числа подстраиваем под длину — чтобы 1 000 000 не вылетал за край.
   const formatted = isLoading ? "—" : balance.toLocaleString("ru-RU");
   const len = formatted.length;
-  const numberSize =
-    len <= 4 ? "text-[76px]" : len <= 6 ? "text-[60px]" : len <= 8 ? "text-[48px]" : "text-[38px]";
+  const numberSize = len <= 4 ? 68 : len <= 6 ? 54 : len <= 8 ? 42 : 34;
+
 
   return (
     <section aria-label="Баланс билетов" className="relative mb-6">
