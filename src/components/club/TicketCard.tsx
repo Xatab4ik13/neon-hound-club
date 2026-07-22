@@ -39,7 +39,7 @@ export function TicketCard({
 
   return (
     <section aria-label="Баланс билетов" className="relative mb-6">
-      <div className="relative flex h-[220px] overflow-hidden rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/15 via-card/70 to-black shadow-[0_8px_28px_-12px_color-mix(in_oklab,var(--primary)_45%,transparent)]">
+      <div className="relative flex h-[220px] overflow-hidden rounded-2xl border-[2px] border-primary/30 bg-gradient-to-br from-primary/15 via-card/70 to-black shadow-[0_8px_28px_-12px_color-mix(in_oklab,var(--primary)_45%,transparent)]">
         {/* мягкое свечение */}
         <div
           aria-hidden
