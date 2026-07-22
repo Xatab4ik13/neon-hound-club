@@ -459,9 +459,10 @@ function StakeControls({
         <StepBtn onClick={() => onStakeChange(stake - 1)} disabled={stake <= 0}>
           <Minus className="h-4 w-4" />
         </StepBtn>
-        <div className="flex-1 text-center font-display text-3xl font-black italic leading-none tabular-nums text-foreground">
-          {stake}
+        <div className="flex flex-1 justify-center text-foreground">
+          <PlumpNum value={stake} size={28} />
         </div>
+
         <StepBtn onClick={() => onStakeChange(stake + 1)} disabled={stake >= maxStake}>
           <Plus className="h-4 w-4" />
         </StepBtn>
