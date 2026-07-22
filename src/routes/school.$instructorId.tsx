@@ -818,3 +818,135 @@ function OtherInstructors({ currentSlug }: { currentSlug: string }) {
     </section>
   );
 }
+
+/* ---------- Courses ---------- */
+
+function CoursesSection({
+  instructor,
+  onCta,
+}: {
+  instructor: Instructor;
+  onCta: () => void;
+}) {
+  const courses = instructor.courses ?? [];
+  return (
+    <section className="mt-20 md:mt-28">
+      <SectionHeading kicker="Форматы" title="Стоимость обучения" />
+      <div className="grid gap-6 md:grid-cols-2">
+        {courses.map((course, i) => {
+          const rotate = i % 2 === 0 ? "-rotate-1" : "rotate-1";
+          const bg = i % 2 === 0 ? "bg-primary" : "bg-card";
+          const fg = i % 2 === 0 ? "text-primary-foreground" : "text-foreground";
+          const sub = i % 2 === 0 ? "text-primary-foreground/85" : "text-foreground/80";
+          const chipBg = i % 2 === 0 ? "bg-card text-foreground" : "bg-foreground text-background";
+          return (
+            <article
+              key={course.title}
+              className={`${rotate} flex flex-col rounded-3xl border-[3px] border-foreground ${bg} p-6 shadow-[8px_8px_0_0_hsl(var(--foreground))] transition-transform duration-150 hover:-translate-y-1 hover:shadow-[10px_10px_0_0_hsl(var(--foreground))]`}
+            >
+              <div
+                className={`mb-4 inline-flex w-fit items-center rounded-full border-[3px] border-foreground px-3 py-1 font-display text-[11px] font-black uppercase tracking-widest shadow-[3px_3px_0_0_hsl(var(--foreground))] ${chipBg}`}
+              >
+                {course.duration}
+              </div>
+              <h3 className={`font-display text-2xl font-black uppercase leading-tight tracking-tight md:text-3xl ${fg}`}>
+                {course.title}
+              </h3>
+              <p className={`mt-3 text-sm leading-relaxed ${sub}`}>{course.description}</p>
+
+              {course.includes && course.includes.length > 0 && (
+                <ul className={`mt-4 space-y-1.5 text-sm ${sub}`}>
+                  {course.includes.map((line) => (
+                    <li key={line} className="flex gap-2">
+                      <span className={`mt-2 inline-block h-1.5 w-1.5 shrink-0 rounded-full ${i % 2 === 0 ? "bg-primary-foreground" : "bg-primary"}`} />
+                      <span>{line}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              <div className="mt-6 flex flex-wrap items-baseline justify-between gap-4 border-t-[3px] border-foreground/20 pt-4">
+                <div className={`flex items-baseline gap-2 ${fg}`}>
+                  {course.priceFrom && (
+                    <span className="font-mono text-[11px] uppercase tracking-widest opacity-80">
+                      от
+                    </span>
+                  )}
+                  <PlumpNum value={course.price} size={26} format suffix="₽" />
+                </div>
+                <button
+                  type="button"
+                  onClick={onCta}
+                  className={`inline-flex items-center gap-1.5 rounded-full border-[3px] border-foreground px-4 py-2 font-display text-xs font-black uppercase tracking-widest shadow-[4px_4px_0_0_hsl(var(--foreground))] transition-transform duration-150 hover:-translate-y-0.5 ${
+                    i % 2 === 0 ? "bg-foreground text-background" : "bg-primary text-primary-foreground"
+                  }`}
+                >
+                  Записаться <PlumpArrowRight className="h-4 w-4" />
+                </button>
+              </div>
+            </article>
+          );
+        })}
+      </div>
+      <p className="mt-4 text-center font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+        Оплата обучения проходит через HELLHOUND. Онлайн-чат с тренером — скоро.
+      </p>
+    </section>
+  );
+}
+
+/* ---------- Approach ---------- */
+
+function ApproachSection({ instructor }: { instructor: Instructor }) {
+  const items = instructor.approach ?? [];
+  return (
+    <section className="mt-20 md:mt-28">
+      <SectionHeading kicker="Подход" title="Как проходят тренировки" />
+      <div className="rounded-3xl border-[3px] border-foreground bg-foreground p-6 shadow-[8px_8px_0_0_hsl(var(--primary))] md:p-10">
+        <div className="grid gap-5 md:grid-cols-2">
+          {items.map((text, i) => (
+            <div
+              key={i}
+              className="flex gap-4 rounded-2xl border-[3px] border-background/20 bg-background/5 p-5"
+            >
+              <div className="shrink-0">
+                <PlumpNum value={i + 1} size={26} className="text-primary" />
+              </div>
+              <p className="text-sm leading-relaxed text-background md:text-base">{text}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ---------- Upcoming courses ---------- */
+
+function UpcomingSection({ instructor }: { instructor: Instructor }) {
+  const items = instructor.upcomingCourses ?? [];
+  return (
+    <section className="mt-20 md:mt-28">
+      <SectionHeading kicker="Скоро · с 2027" title="Новые курсы в разработке" />
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {items.map((c, i) => {
+          const tone = SKILL_TONES[i % SKILL_TONES.length];
+          const rotate = i % 2 === 0 ? "-rotate-1" : "rotate-1";
+          return (
+            <div
+              key={c.title}
+              className={`${rotate} relative rounded-2xl border-[3px] border-foreground ${TONE_BG[tone]} p-5 shadow-[6px_6px_0_0_hsl(var(--foreground))]`}
+            >
+              <div className="mb-3 inline-flex items-center rounded-full border-[3px] border-foreground bg-card px-2.5 py-0.5 font-display text-[10px] font-black uppercase tracking-widest text-foreground">
+                Скоро
+              </div>
+              <p className="font-display text-base font-black uppercase leading-tight tracking-tight text-black md:text-lg">
+                {c.title}
+              </p>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
