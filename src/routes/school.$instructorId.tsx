@@ -1,0 +1,535 @@
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useRef, useState } from "react";
+import { Header } from "@/components/brand/Header";
+import { Footer } from "@/components/brand/Footer";
+import { PlumpArrowLeft, PlumpArrowRight, PlumpMap, PlumpCamera } from "@/components/ui/icons";
+import {
+  getInstructorBySlug,
+  INSTRUCTORS,
+  TONE_BG,
+  type Instructor,
+  type Slot,
+} from "@/data/instructors";
+import { loadYandexMaps } from "@/lib/yandex-maps";
+
+export const Route = createFileRoute("/school/$instructorId")({
+  head: ({ params }) => {
+    const it = getInstructorBySlug(params.instructorId);
+    const title = it
+      ? `${it.name} — инструктор Школы HELLHOUND, ${it.city}`
+      : "Инструктор — Школа HELLHOUND";
+    const description = it
+      ? `${it.name}, ${it.city}. ${it.experience} лет стажа. ${it.tagline}.`
+      : "Инструктор Школы HELLHOUND.";
+    return {
+      meta: [
+        { title },
+        { name: "description", content: description },
+        { property: "og:title", content: title },
+        { property: "og:description", content: description },
+        { property: "og:type", content: "profile" },
+      ],
+      links: it
+        ? [{ rel: "canonical", href: `/school/${it.slug}` }]
+        : [],
+    };
+  },
+  component: InstructorPage,
+});
+
+function InstructorPage() {
+  const { instructorId } = Route.useParams();
+  const instructor = getInstructorBySlug(instructorId);
+  const scheduleRef = useRef<HTMLDivElement | null>(null);
+  const scrollToSchedule = () => {
+    scheduleRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  if (!instructor) {
+    return (
+      <div className="min-h-screen bg-background text-foreground">
+        <Header />
+        <main className="mx-auto max-w-3xl px-4 py-24 text-center">
+          <h1 className="font-display text-4xl font-black uppercase tracking-tight">
+            Инструктор не найден
+          </h1>
+          <Link
+            to="/school"
+            className="mt-6 inline-flex items-center gap-2 font-display text-sm font-black uppercase tracking-widest text-primary"
+          >
+            <PlumpArrowLeft className="h-4 w-4" /> К списку инструкторов
+          </Link>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background text-foreground">
+      <Header />
+      <main className="mx-auto max-w-6xl px-4 pb-24 pt-24 md:pt-32">
+        <BackLink />
+        <Hero instructor={instructor} onCta={scrollToSchedule} />
+        <SkillsSection instructor={instructor} />
+        <LocationSection instructor={instructor} />
+        <ScheduleSection instructor={instructor} scheduleRef={scheduleRef} />
+        <GallerySection instructor={instructor} />
+        <FinalCta onClick={scrollToSchedule} />
+        <OtherInstructors currentSlug={instructor.slug} />
+      </main>
+      <Footer />
+    </div>
+  );
+}
+
+/* ---------- Back link ---------- */
+
+function BackLink() {
+  return (
+    <Link
+      to="/school"
+      className="inline-flex items-center gap-2 font-display text-xs font-black uppercase tracking-widest text-foreground/70 transition-colors hover:text-primary"
+    >
+      <PlumpArrowLeft className="h-4 w-4" />
+      Все инструкторы
+    </Link>
+  );
+}
+
+/* ---------- Hero ---------- */
+
+function Hero({ instructor, onCta }: { instructor: Instructor; onCta: () => void }) {
+  const tone = TONE_BG[instructor.tone];
+  const expLabel = `${instructor.experience} ${instructor.experience < 5 ? "года" : "лет"} стажа`;
+
+  return (
+    <section className="mt-6 grid gap-10 md:mt-10 md:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] md:items-center">
+      {/* Портрет */}
+      <div className="relative -rotate-2">
+        <div
+          className={`relative overflow-hidden rounded-3xl border-[3px] border-foreground ${tone} shadow-[10px_10px_0_0_hsl(var(--foreground))]`}
+        >
+          <div className="relative aspect-[3/4] w-full overflow-hidden">
+            <img
+              src={instructor.photo}
+              alt={instructor.name}
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-black/0 to-black/30" />
+          </div>
+        </div>
+
+        <div className="pointer-events-none absolute -top-4 left-4 -rotate-[6deg]">
+          <PlumpTag>{instructor.city}</PlumpTag>
+        </div>
+        <div className="pointer-events-none absolute -bottom-4 right-6 rotate-[4deg]">
+          <PlumpTag variant="accent">{expLabel}</PlumpTag>
+        </div>
+      </div>
+
+      {/* Инфо */}
+      <div>
+        <p className="font-mono text-[11px] uppercase tracking-widest text-primary">
+          Инструктор Школы HELLHOUND
+        </p>
+        <h1 className="mt-2 font-display text-5xl font-black uppercase leading-[0.88] tracking-tight text-foreground md:text-7xl">
+          {instructor.name}
+        </h1>
+        <p className="mt-4 font-display text-lg font-black uppercase tracking-tight text-muted-foreground md:text-xl">
+          {instructor.tagline}
+        </p>
+
+        <div className="mt-5 flex flex-wrap gap-2">
+          {instructor.specialties.map((s, i) => (
+            <span
+              key={s}
+              className={`inline-block rounded-full border-[3px] border-foreground px-3 py-1 font-display text-[11px] font-black uppercase tracking-widest shadow-[3px_3px_0_0_hsl(var(--foreground))] ${
+                i % 2 === 0 ? "bg-card text-foreground" : "bg-foreground text-background"
+              }`}
+            >
+              {s}
+            </span>
+          ))}
+        </div>
+
+        <div className="mt-6 space-y-3 text-base leading-relaxed text-foreground/85">
+          {instructor.bio.map((p) => (
+            <p key={p}>{p}</p>
+          ))}
+        </div>
+
+        <div className="mt-8 flex flex-wrap gap-3">
+          <SkewButton onClick={onCta}>
+            Записаться <PlumpArrowRight className="ml-2 h-4 w-4" />
+          </SkewButton>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function SkewButton({
+  children,
+  onClick,
+}: {
+  children: React.ReactNode;
+  onClick?: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="group relative inline-flex -skew-x-[10deg] items-center border-[3px] border-foreground bg-primary px-6 py-3 shadow-[6px_6px_0_0_hsl(var(--foreground))] transition-transform duration-150 hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[8px_8px_0_0_hsl(var(--foreground))]"
+    >
+      <span className="flex skew-x-[10deg] items-center font-display text-sm font-black uppercase tracking-widest text-primary-foreground md:text-base">
+        {children}
+      </span>
+    </button>
+  );
+}
+
+function PlumpTag({
+  children,
+  variant = "light",
+}: {
+  children: React.ReactNode;
+  variant?: "light" | "dark" | "accent";
+}) {
+  const styles =
+    variant === "dark"
+      ? "bg-foreground text-background"
+      : variant === "accent"
+        ? "bg-primary text-primary-foreground"
+        : "bg-card text-foreground";
+  return (
+    <span
+      className={`inline-block rounded-full border-[3px] border-foreground px-3 py-1 font-display text-[10px] font-black uppercase tracking-widest shadow-[3px_3px_0_0_hsl(var(--foreground))] md:text-xs ${styles}`}
+    >
+      {children}
+    </span>
+  );
+}
+
+/* ---------- Section heading ---------- */
+
+function SectionHeading({ kicker, title }: { kicker: string; title: string }) {
+  return (
+    <div className="mb-8">
+      <p className="font-mono text-[11px] uppercase tracking-widest text-primary">{kicker}</p>
+      <h2 className="mt-2 font-display text-3xl font-black uppercase leading-[0.9] tracking-tight text-foreground md:text-5xl">
+        {title}
+      </h2>
+    </div>
+  );
+}
+
+/* ---------- Skills ---------- */
+
+const SKILL_TONES = ["primary", "yellow", "cyan", "lime", "violet", "primary"] as const;
+
+function SkillsSection({ instructor }: { instructor: Instructor }) {
+  return (
+    <section className="mt-20 md:mt-28">
+      <SectionHeading kicker="Что дам" title="Чему научу" />
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {instructor.skills.map((s, i) => {
+          const tone = SKILL_TONES[i % SKILL_TONES.length];
+          const rotate = i % 2 === 0 ? "-rotate-1" : "rotate-1";
+          return (
+            <article
+              key={s.title}
+              className={`${rotate} rounded-2xl border-[3px] border-foreground ${TONE_BG[tone]} p-5 shadow-[6px_6px_0_0_hsl(var(--foreground))] transition-transform duration-150 hover:-translate-y-1 hover:shadow-[8px_8px_0_0_hsl(var(--foreground))]`}
+            >
+              <div className="mb-3 inline-flex items-center justify-center rounded-full border-[3px] border-foreground bg-card px-3 py-1 font-display text-xs font-black uppercase tracking-widest text-foreground">
+                {String(i + 1).padStart(2, "0")}
+              </div>
+              <h3 className="font-display text-xl font-black uppercase leading-tight tracking-tight text-black">
+                {s.title}
+              </h3>
+              <p className="mt-2 text-sm leading-relaxed text-black/80">{s.text}</p>
+            </article>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+/* ---------- Location + Map ---------- */
+
+function LocationSection({ instructor }: { instructor: Instructor }) {
+  const mapRef = useRef<HTMLDivElement | null>(null);
+  const [mapReady, setMapReady] = useState(false);
+  const [mapFailed, setMapFailed] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    let map: any;
+    loadYandexMaps()
+      .then((ymaps) => {
+        if (!mounted || !mapRef.current) return;
+        map = new ymaps.Map(mapRef.current, {
+          center: [instructor.location.lat, instructor.location.lng],
+          zoom: 14,
+          controls: ["zoomControl"],
+        });
+        const placemark = new ymaps.Placemark(
+          [instructor.location.lat, instructor.location.lng],
+          { balloonContent: instructor.location.address },
+          { preset: "islands#redDotIcon" },
+        );
+        map.geoObjects.add(placemark);
+        map.behaviors.disable("scrollZoom");
+        setMapReady(true);
+      })
+      .catch(() => {
+        if (mounted) setMapFailed(true);
+      });
+    return () => {
+      mounted = false;
+      if (map) map.destroy();
+    };
+  }, [instructor.location.lat, instructor.location.lng, instructor.location.address]);
+
+  const externalMapUrl = `https://yandex.ru/maps/?text=${encodeURIComponent(instructor.location.address)}`;
+
+  return (
+    <section className="mt-20 md:mt-28">
+      <SectionHeading kicker="Место" title="Где занимаемся" />
+      <div className="grid gap-6 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+        <div className="relative overflow-hidden rounded-3xl border-[3px] border-foreground bg-card shadow-[8px_8px_0_0_hsl(var(--foreground))]">
+          <div ref={mapRef} className="aspect-[4/3] w-full md:aspect-auto md:h-full md:min-h-[340px]" />
+          {!mapReady && !mapFailed && (
+            <div className="absolute inset-0 flex items-center justify-center bg-card font-mono text-xs uppercase tracking-widest text-muted-foreground">
+              Загружаем карту…
+            </div>
+          )}
+          {mapFailed && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-card p-6 text-center">
+              <PlumpMap className="h-10 w-10 text-primary" />
+              <p className="font-display text-lg font-black uppercase tracking-tight text-foreground">
+                Открой на Яндекс.Картах
+              </p>
+              <a
+                href={externalMapUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-2 inline-flex items-center gap-2 rounded-full border-[3px] border-foreground bg-primary px-4 py-2 font-display text-xs font-black uppercase tracking-widest text-primary-foreground shadow-[4px_4px_0_0_hsl(var(--foreground))]"
+              >
+                Открыть карту <PlumpArrowRight className="h-4 w-4" />
+              </a>
+            </div>
+          )}
+        </div>
+
+        <div className="flex flex-col justify-between gap-6 rounded-3xl border-[3px] border-foreground bg-primary p-6 shadow-[8px_8px_0_0_hsl(var(--foreground))]">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full border-[3px] border-foreground bg-card px-3 py-1 font-display text-[11px] font-black uppercase tracking-widest text-foreground shadow-[3px_3px_0_0_hsl(var(--foreground))]">
+              <PlumpMap className="h-4 w-4" /> {instructor.city}
+            </div>
+            <p className="mt-4 font-display text-xl font-black uppercase leading-tight tracking-tight text-primary-foreground md:text-2xl">
+              {instructor.location.address}
+            </p>
+            {instructor.location.note && (
+              <p className="mt-3 text-sm leading-relaxed text-primary-foreground/90">
+                {instructor.location.note}
+              </p>
+            )}
+          </div>
+          <a
+            href={externalMapUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center justify-center gap-2 rounded-full border-[3px] border-foreground bg-foreground px-5 py-3 font-display text-xs font-black uppercase tracking-widest text-background shadow-[4px_4px_0_0_hsl(var(--background))] transition-transform duration-150 hover:-translate-y-0.5"
+          >
+            Построить маршрут <PlumpArrowRight className="h-4 w-4" />
+          </a>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ---------- Schedule ---------- */
+
+function ScheduleSection({
+  instructor,
+  scheduleRef,
+}: {
+  instructor: Instructor;
+  scheduleRef: React.RefObject<HTMLDivElement | null>;
+}) {
+  const [picked, setPicked] = useState<string | null>(null);
+
+  return (
+    <section ref={scheduleRef} className="mt-20 scroll-mt-24 md:mt-28">
+      <SectionHeading kicker="Ближайшая неделя" title="Свободные слоты" />
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {instructor.schedule.map((day, i) => (
+          <div
+            key={day.date}
+            className={`rounded-2xl border-[3px] border-foreground ${i % 2 === 0 ? "bg-card" : "bg-primary/10"} p-4 shadow-[6px_6px_0_0_hsl(var(--foreground))]`}
+          >
+            <div className="mb-3 flex items-baseline justify-between">
+              <span className="font-display text-2xl font-black uppercase leading-none tracking-tight text-foreground">
+                {day.weekday}
+              </span>
+              <span className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+                {day.date}
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {day.slots.map((slot) => (
+                <SlotBtn
+                  key={`${day.date}-${slot.time}`}
+                  slot={slot}
+                  picked={picked === `${day.date}-${slot.time}`}
+                  onPick={() => setPicked(`${day.date}-${slot.time}`)}
+                />
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-6 rounded-2xl border-[3px] border-dashed border-foreground/40 bg-card/40 p-4 text-center font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+        {picked
+          ? "Слот выбран. Скоро сможешь записаться прямо здесь — сейчас пиши в поддержку клуба."
+          : "Выбери слот. Настоящая запись появится совсем скоро."}
+      </div>
+    </section>
+  );
+}
+
+function SlotBtn({
+  slot,
+  picked,
+  onPick,
+}: {
+  slot: Slot;
+  picked: boolean;
+  onPick: () => void;
+}) {
+  if (slot.status === "booked") {
+    return (
+      <span className="inline-flex items-center rounded-full border-[3px] border-foreground/30 bg-muted px-3 py-1 font-display text-xs font-black uppercase tracking-widest text-muted-foreground line-through">
+        {slot.time}
+      </span>
+    );
+  }
+  return (
+    <button
+      type="button"
+      onClick={onPick}
+      className={`inline-flex items-center rounded-full border-[3px] border-foreground px-3 py-1 font-display text-xs font-black uppercase tracking-widest shadow-[3px_3px_0_0_hsl(var(--foreground))] transition-transform duration-100 hover:-translate-y-0.5 ${
+        picked ? "bg-primary text-primary-foreground" : "bg-card text-foreground hover:bg-primary/10"
+      }`}
+    >
+      {slot.time}
+    </button>
+  );
+}
+
+/* ---------- Gallery ---------- */
+
+function GallerySection({ instructor }: { instructor: Instructor }) {
+  if (instructor.gallery.length === 0) {
+    return (
+      <section className="mt-20 md:mt-28">
+        <SectionHeading kicker="Кадры" title="Фото с занятий" />
+        <div className="flex flex-col items-center justify-center gap-3 rounded-3xl border-[3px] border-dashed border-foreground/40 bg-card/40 p-12 text-center">
+          <PlumpCamera className="h-10 w-10 text-primary" />
+          <p className="font-display text-xl font-black uppercase tracking-tight text-foreground">
+            Скоро добавим
+          </p>
+          <p className="max-w-md text-sm text-muted-foreground">
+            {instructor.name} готовит подборку кадров с площадки и с городских выездов.
+          </p>
+        </div>
+      </section>
+    );
+  }
+  const rotates = ["-rotate-2", "rotate-1", "-rotate-1", "rotate-2", "-rotate-1"];
+  return (
+    <section className="mt-20 md:mt-28">
+      <SectionHeading kicker="Кадры" title="Фото с занятий" />
+      <div className="grid gap-6 md:grid-cols-3">
+        {instructor.gallery.map((src, i) => (
+          <div
+            key={src}
+            className={`overflow-hidden rounded-2xl border-[3px] border-foreground ${TONE_BG[instructor.tone]} shadow-[6px_6px_0_0_hsl(var(--foreground))] ${rotates[i % rotates.length]} ${i === 0 ? "md:col-span-2 md:row-span-2" : ""}`}
+          >
+            <img src={src} alt={`${instructor.name} — фото ${i + 1}`} loading="lazy" className="h-full w-full object-cover" />
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+/* ---------- Final CTA ---------- */
+
+function FinalCta({ onClick }: { onClick: () => void }) {
+  return (
+    <section className="mt-20 md:mt-28">
+      <div className="relative overflow-hidden rounded-3xl border-[3px] border-foreground bg-primary p-8 text-center shadow-[10px_10px_0_0_hsl(var(--foreground))] md:p-14">
+        <h2 className="font-display text-4xl font-black uppercase leading-[0.9] tracking-tight text-primary-foreground md:text-6xl">
+          Готов сесть на байк?
+        </h2>
+        <p className="mx-auto mt-4 max-w-xl font-display text-base font-black uppercase tracking-tight text-primary-foreground/90 md:text-xl">
+          Выбирай удобный слот и записывайся. Всё остальное — наша забота.
+        </p>
+        <div className="mt-6 flex justify-center">
+          <button
+            type="button"
+            onClick={onClick}
+            className="inline-flex -skew-x-[10deg] items-center border-[3px] border-foreground bg-foreground px-6 py-3 shadow-[6px_6px_0_0_hsl(var(--foreground))]"
+          >
+            <span className="flex skew-x-[10deg] items-center font-display text-sm font-black uppercase tracking-widest text-background md:text-base">
+              Выбрать слот <PlumpArrowRight className="ml-2 h-4 w-4" />
+            </span>
+          </button>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ---------- Other instructors ---------- */
+
+function OtherInstructors({ currentSlug }: { currentSlug: string }) {
+  const others = INSTRUCTORS.filter((it) => it.slug !== currentSlug).slice(0, 4);
+  return (
+    <section className="mt-20 md:mt-28">
+      <SectionHeading kicker="Другие" title="Ещё инструкторы" />
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        {others.map((it, i) => (
+          <Link
+            key={it.id}
+            to="/school/$instructorId"
+            params={{ instructorId: it.slug }}
+            className={`group block ${i % 2 === 0 ? "-rotate-1" : "rotate-1"}`}
+          >
+            <div
+              className={`relative overflow-hidden rounded-2xl border-[3px] border-foreground ${TONE_BG[it.tone]} shadow-[6px_6px_0_0_hsl(var(--foreground))] transition-transform duration-150 group-hover:-translate-y-1 group-hover:shadow-[8px_8px_0_0_hsl(var(--foreground))]`}
+            >
+              <div className="relative aspect-[3/4] w-full overflow-hidden">
+                <img src={it.photo} alt={it.name} loading="lazy" className="absolute inset-0 h-full w-full object-cover" />
+              </div>
+              <div className="border-t-[3px] border-foreground bg-card px-3 py-2">
+                <div className="font-display text-lg font-black uppercase leading-none tracking-tight text-foreground">
+                  {it.name}
+                </div>
+                <div className="mt-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                  {it.city}
+                </div>
+              </div>
+            </div>
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+}
