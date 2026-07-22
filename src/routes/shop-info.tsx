@@ -302,7 +302,7 @@ export default function ShopInfoPage() {
           </p>
           <div className="mt-8">
             <Link
-              to="/club/support"
+              to="/club/help"
               className="inline-flex items-center gap-2 rounded-md border border-primary bg-primary px-6 py-3 font-mono text-[11px] font-bold uppercase tracking-widest text-primary-foreground transition-opacity hover:opacity-90"
             >
               Открыть тикет →
