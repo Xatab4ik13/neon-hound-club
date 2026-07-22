@@ -263,7 +263,6 @@ function RaffleDetailContent({
       <section className="mb-6 grid grid-cols-2 gap-4">
         <StatCard
           label="Мои билеты"
-          shadowColor="#FFD93D"
           delayMs={80}
           value={
             <div className="flex items-center gap-2">
