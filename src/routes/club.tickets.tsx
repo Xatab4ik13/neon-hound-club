@@ -110,7 +110,7 @@ function TicketsPage() {
         <h2 className="mb-3 px-1 text-[17px] font-semibold text-foreground">
           Как набрать билеты
         </h2>
-        <ul className="overflow-hidden rounded-2xl border border-white/[0.06] bg-card/40">
+        <ul className="overflow-hidden rounded-2xl border-[2px] border-foreground bg-card shadow-[4px_4px_0_0_hsl(var(--foreground))]">
           <EarnRow
             title="Покупки в магазине"
             hint="К каждому товару — свой бонус билетов"
