@@ -173,11 +173,13 @@ function EarnRow({
   hint,
   icon,
   to,
+  tone,
 }: {
   title: string;
   hint: string;
   icon: React.ReactNode;
   to: "/club/shop" | "/club/hell-pass" | "/club/quests";
+  tone: string;
 }) {
   return (
     <li className="border-b border-white/[0.05] last:border-b-0">
@@ -185,7 +187,9 @@ function EarnRow({
         to={to}
         className="flex items-center gap-3 px-4 py-3.5 transition-colors active:bg-white/[0.04]"
       >
-        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
+        <span
+          className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl border-[2px] border-foreground ${tone} shadow-[2px_2px_0_0_hsl(var(--foreground))]`}
+        >
           {icon}
         </span>
         <span className="min-w-0 flex-1">
