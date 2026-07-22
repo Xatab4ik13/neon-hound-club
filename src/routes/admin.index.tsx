@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { TrendingUp, PlumpUsers as Users, PlumpTicket, Trophy, PlumpStore, Crown, Loader2 } from "@/components/ui/icons";
 import { fetchAdminDashboard } from "@/lib/admin-queries";
+import { PlumpNum, PlumpPrice } from "@/components/brand/PlumpNum";
 
 export const Route = createFileRoute("/admin/")({
   component: Dashboard,
@@ -55,13 +56,22 @@ function Dashboard() {
     return <div className="rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950 dark:text-rose-300">Не удалось загрузить дашборд</div>;
   }
 
-  const stats = [
-    { label: "Выручка за 30 дней", value: fmtRub(data.kpi.revenue30d), icon: TrendingUp },
-    { label: "Активных Hell Pass", value: String(data.kpi.passActive), icon: Crown },
-    { label: "Новых пользователей / 7д", value: String(data.kpi.newUsers7d), icon: Users },
-    { label: "Билетов в обороте", value: data.kpi.ticketsInCirculation.toLocaleString("ru-RU"), icon: PlumpTicket },
-    { label: "Активных розыгрышей", value: String(data.kpi.rafflesActive), delta: `${data.kpi.rafflesBankTickets.toLocaleString("ru-RU")} билетов в банке`, icon: Trophy },
-    { label: "Заказов за 7 дней", value: String(data.kpi.orders7d), icon: PlumpStore },
+  const stats: { label: string; value: React.ReactNode; delta?: React.ReactNode; icon: React.ComponentType<{ className?: string }> }[] = [
+    { label: "Выручка за 30 дней", value: <PlumpPrice value={data.kpi.revenue30d} size={22} />, icon: TrendingUp },
+    { label: "Активных Hell Pass", value: <PlumpNum value={data.kpi.passActive} size={22} />, icon: Crown },
+    { label: "Новых пользователей / 7д", value: <PlumpNum value={data.kpi.newUsers7d} size={22} />, icon: Users },
+    { label: "Билетов в обороте", value: <PlumpNum value={data.kpi.ticketsInCirculation} size={22} format />, icon: PlumpTicket },
+    {
+      label: "Активных розыгрышей",
+      value: <PlumpNum value={data.kpi.rafflesActive} size={22} />,
+      delta: (
+        <span className="inline-flex items-center gap-1">
+          <PlumpNum value={data.kpi.rafflesBankTickets} size={11} format /> билетов в банке
+        </span>
+      ),
+      icon: Trophy,
+    },
+    { label: "Заказов за 7 дней", value: <PlumpNum value={data.kpi.orders7d} size={22} />, icon: PlumpStore },
   ];
 
   return (

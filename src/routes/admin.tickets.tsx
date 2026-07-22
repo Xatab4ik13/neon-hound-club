@@ -34,8 +34,10 @@ const SOURCE_LABEL: Record<string, string> = {
   refund: "Возврат",
 };
 
-function fmt(n: number) {
-  return n.toLocaleString("ru-RU");
+import { PlumpNum } from "@/components/brand/PlumpNum";
+
+function fmt(n: number): React.ReactNode {
+  return <PlumpNum value={n} format />;
 }
 
 function TicketsPage() {
@@ -69,29 +71,29 @@ function StatsBlock() {
   });
   const s = statsQ.data;
 
-  const kpis = [
+  const kpis: { label: string; value: React.ReactNode; hint: React.ReactNode; icon: React.ComponentType<{ className?: string }> }[] = [
     {
       label: "На руках сейчас",
       value: s ? fmt(s.totals.balance) : "—",
-      hint: s ? `${fmt(s.totals.users)} держателей` : "",
+      hint: s ? <span>{fmt(s.totals.users)} держателей</span> : "",
       icon: PlumpTicket,
     },
     {
       label: "Выпущено всего",
       value: s ? fmt(s.totals.issued) : "—",
-      hint: s ? `+${fmt(s.last30.issued30)} за 30 дней` : "",
+      hint: s ? <span>+{fmt(s.last30.issued30)} за 30 дней</span> : "",
       icon: TrendingUp,
     },
     {
       label: "Сожжено в розыгрышах",
       value: s ? fmt(s.totals.spentOnRaffles) : "—",
-      hint: s ? `всего сожжено: ${fmt(s.totals.spent)}` : "",
+      hint: s ? <span>всего сожжено: {fmt(s.totals.spent)}</span> : "",
       icon: Trophy,
     },
     {
       label: "Операций",
       value: s ? fmt(s.totals.ops) : "—",
-      hint: s ? `−${fmt(s.last30.spent30)} расход 30д` : "",
+      hint: s ? <span>−{fmt(s.last30.spent30)} расход 30д</span> : "",
       icon: Users,
     },
   ];
@@ -200,12 +202,12 @@ function JournalPanel() {
           </span>,
           <span className="font-medium">@{row.nick ?? "—"}</span>,
           <span
-            className={`tabular-nums font-semibold ${
+            className={`tabular-nums font-semibold inline-flex items-center ${
               row.amount >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
             }`}
           >
-            {row.amount > 0 ? "+" : ""}
-            {row.amount}
+            {row.amount > 0 ? "+" : row.amount < 0 ? "−" : ""}
+            <PlumpNum value={Math.abs(row.amount)} size={13} />
           </span>,
           <span className="text-xs uppercase tracking-wider text-zinc-500">
             {SOURCE_LABEL[row.source] ?? row.source}

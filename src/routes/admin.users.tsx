@@ -37,6 +37,7 @@ import {
 
 import { ApiError } from "@/lib/api";
 import { hhToast as toast } from "@/lib/hh-toast";
+import { PlumpNum, PlumpPrice } from "@/components/brand/PlumpNum";
 
 export const Route = createFileRoute("/admin/users")({
   component: UsersPage,
@@ -318,17 +319,17 @@ function UserDrawer({
 
 
           <Section title="Билеты">
-            <Metric label="Баланс" value={String(u.ticketsBalance)} />
-            <Metric label="Всего заработано" value={String(u.ticketsEarned)} />
+            <Metric label="Баланс" value={<PlumpNum value={u.ticketsBalance} size={18} format />} />
+            <Metric label="Всего заработано" value={<PlumpNum value={u.ticketsEarned} size={18} format />} />
           </Section>
 
           <Section title="Магазин">
-            <Metric label="Потрачено" value={`${u.totalSpentRub.toLocaleString("ru-RU")} ₽`} />
-            <Metric label="Заказов" value={String(u.ordersCount)} />
+            <Metric label="Потрачено" value={<PlumpPrice value={u.totalSpentRub} size={18} />} />
+            <Metric label="Заказов" value={<PlumpNum value={u.ordersCount} size={18} />} />
           </Section>
 
           <Section title="Ранг / XP">
-            <Metric label="XP" value={String(u.xpTotal)} />
+            <Metric label="XP" value={<PlumpNum value={u.xpTotal} size={18} format />} />
             <Metric label="Ранг" value={u.rank?.rankLabel ?? "—"} />
             <div className="col-span-2 flex gap-2">
               <Btn onClick={() => setXpOpen(true)}>
@@ -496,7 +497,7 @@ function formatAgo(ms: number): string {
 }
 
 
-function Metric({ label, value }: { label: string; value: string }) {
+function Metric({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="rounded-md border border-zinc-200 px-3 py-2 dark:border-zinc-800">
       <div className="text-[10px] uppercase tracking-wider text-zinc-500">{label}</div>
@@ -776,11 +777,12 @@ function StatPill({ label, value, total }: { label: string; value: number; total
   return (
     <div className="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-white px-3 py-1.5 dark:border-zinc-800 dark:bg-zinc-900">
       <span className="text-zinc-500 dark:text-zinc-400">{label}</span>
-      <span className="font-semibold tabular-nums text-zinc-900 dark:text-zinc-100">
-        {value}
-        <span className="text-zinc-400"> / {total}</span>
+      <span className="inline-flex items-center gap-1 font-semibold tabular-nums text-zinc-900 dark:text-zinc-100">
+        <PlumpNum value={value} size={13} />
+        <span className="text-zinc-400">/</span>
+        <PlumpNum value={total} size={13} className="text-zinc-400" />
       </span>
-      <span className="text-[11px] tabular-nums text-zinc-400">{pct}%</span>
+      <PlumpNum value={pct} size={11} suffix="%" className="text-zinc-400" />
     </div>
   );
 }

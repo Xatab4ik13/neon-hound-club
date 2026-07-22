@@ -19,6 +19,7 @@ import {
 import { cn } from "@/lib/utils";
 import { ApiError } from "@/lib/api";
 import { hhToast as toast } from "@/lib/hh-toast";
+import { PlumpPrice } from "@/components/brand/PlumpNum";
 import {
   fetchEconomyOverview,
   fetchEconomyOperations,
@@ -223,16 +224,16 @@ function EconomyPage() {
       {tab === "overview" && (
         <>
           <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <StatCard label="Доходы" value={fmtRub(overview?.income ?? 0)} tone="emerald" />
-            <StatCard label="Расходы" value={fmtRub(overview?.expense ?? 0)} tone="rose" />
+            <StatCard label="Доходы" value={<PlumpPrice value={overview?.income ?? 0} size={22} />} tone="emerald" />
+            <StatCard label="Расходы" value={<PlumpPrice value={overview?.expense ?? 0} size={22} />} tone="rose" />
             <StatCard
               label="Чистая прибыль"
-              value={fmtRub(profit)}
+              value={<PlumpPrice value={profit} size={22} />}
               tone={profit >= 0 ? "emerald" : "rose"}
             />
             <StatCard
               label="Налог УСН (накоплено)"
-              value={fmtRub(overview?.taxAccrued ?? 0)}
+              value={<PlumpPrice value={overview?.taxAccrued ?? 0} size={22} />}
               tone="rose"
             />
           </div>
@@ -297,7 +298,7 @@ function EconomyPage() {
                   )}
                 >
                   {o.type === "income" ? "+" : "−"}
-                  {o.amountRub.toLocaleString("ru-RU")} ₽
+                  <PlumpPrice value={o.amountRub} size={13} />
                 </span>,
                 <Badge tone={o.source === "auto" ? "blue" : "zinc"}>
                   {o.source === "auto" ? "Авто" : "Ручная"}
@@ -381,7 +382,7 @@ function EconomyPage() {
                 <span className="font-medium">{p.name}</span>,
                 <Badge tone="violet">{p.share}%</Badge>,
                 <span className="font-medium tabular-nums">
-                  {Math.max(0, Math.round((profit * p.share) / 100)).toLocaleString("ru-RU")} ₽
+                  <PlumpPrice value={Math.max(0, Math.round((profit * p.share) / 100))} size={13} />
                 </span>,
                 <div className="flex gap-1">
                   <Btn
@@ -462,7 +463,7 @@ function EconomyPage() {
   );
 }
 
-function StatCard({ label, value, tone }: { label: string; value: string; tone: "emerald" | "rose" }) {
+function StatCard({ label, value, tone }: { label: string; value: React.ReactNode; tone: "emerald" | "rose" }) {
   return (
     <div className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
       <div className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">{label}</div>

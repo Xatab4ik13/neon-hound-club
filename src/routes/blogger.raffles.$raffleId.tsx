@@ -10,6 +10,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { PlumpArrowLeft as ArrowLeft, Play, RotateCcw, Trophy, Volume2, VolumeX } from "@/components/ui/icons";
 import { hhToast as toast } from "@/lib/hh-toast";
 import { playSpin, playWin } from "@/lib/roller-sfx";
+import { PlumpNum } from "@/components/brand/PlumpNum";
 import {
   bloggerQk,
   fetchRaffleBoard,
@@ -255,9 +256,9 @@ function BloggerRaffleDetailPage() {
             <h1 className="font-display text-3xl font-black italic uppercase tracking-tight md:text-4xl">
               {board.raffle.title}
             </h1>
-            <p className="mt-1.5 text-sm text-muted-foreground">
-              {board.participants.length.toLocaleString("ru-RU")} участников ·{" "}
-              {totalT.toLocaleString("ru-RU")} билетов в пуле
+            <p className="mt-1.5 inline-flex flex-wrap items-center gap-1 text-sm text-muted-foreground">
+              <PlumpNum value={board.participants.length} size={13} format /> участников ·{" "}
+              <PlumpNum value={totalT} size={13} format /> билетов в пуле
               {finished && <span className="ml-2 text-primary">· завершён</span>}
             </p>
           </div>
