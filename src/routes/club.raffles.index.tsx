@@ -36,6 +36,11 @@ function RafflesPage() {
   const { isAuthed } = useViewer();
 
   const rafflesQ = useQuery({ queryKey: qk.raffles, queryFn: fetchRaffles });
+  const balanceQ = useQuery({
+    queryKey: qk.ticketsBalance,
+    queryFn: fetchTicketsBalance,
+    enabled: isAuthed,
+  });
   const myQ = useQuery({
     queryKey: qk.myRaffles,
     queryFn: fetchMyRaffles,
@@ -47,6 +52,7 @@ function RafflesPage() {
   const finished = all.filter((r) => r.status === "finished");
   const my = myQ.data?.items ?? [];
   const wonCount = my.filter((r) => r.won).length;
+  const balance = balanceQ.data?.balance ?? 0;
 
   return (
     <main className="mx-auto w-full max-w-3xl px-4 py-5 pb-[calc(env(safe-area-inset-bottom)+96px)] md:py-8">
