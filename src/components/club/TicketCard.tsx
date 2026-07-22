@@ -5,6 +5,8 @@
 
 import { Link } from "@tanstack/react-router";
 import { PlumpTicket } from "@/components/ui/icons";
+import { PlumpNum } from "@/components/brand/PlumpNum";
+
 
 
 function pluralTickets(n: number): string {
