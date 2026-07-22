@@ -25,6 +25,17 @@ export type SlotStatus = "free" | "booked";
 export type Slot = { time: string; status: SlotStatus };
 export type ScheduleDay = { weekday: string; date: string; slots: Slot[] };
 
+export type Course = {
+  title: string;
+  duration: string;
+  price: number;
+  priceFrom?: boolean;
+  description: string;
+  includes?: string[];
+};
+
+export type UpcomingCourse = { title: string };
+
 export type Instructor = {
   id: string;
   slug: string;
@@ -40,6 +51,9 @@ export type Instructor = {
   location: Location;
   schedule: ScheduleDay[];
   gallery: string[];
+  courses?: Course[];
+  upcomingCourses?: UpcomingCourse[];
+  approach?: string[];
 };
 
 const DEFAULT_SKILLS: Skill[] = [
