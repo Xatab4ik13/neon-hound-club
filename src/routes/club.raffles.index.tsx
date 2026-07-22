@@ -118,35 +118,11 @@ function RafflesPage() {
 
       {finished.length > 0 && (
         <section aria-label="Архив клуба" className="mb-8">
-          <SectionTitle>Архив клуба</SectionTitle>
-          <ul className="mt-3 flex flex-col gap-4">
-            {finished.map((p) => (
-              <li
-                key={p.id}
-                className="flex items-center gap-3 rounded-2xl border-[3px] border-foreground bg-card px-3 py-3 shadow-[4px_4px_0_0_hsl(var(--foreground))]"
-              >
-                <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl border-[2px] border-foreground bg-black">
-                  {p.imageUrl && (
-                    <img
-                      src={p.imageUrl}
-                      alt=""
-                      loading="lazy"
-                      className="h-full w-full object-cover grayscale opacity-90"
-                    />
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="truncate font-display text-[15px] font-black uppercase tracking-tight text-foreground">
-                    {p.title}
-                  </div>
-                  <div className="mt-0.5 text-[12px] text-muted-foreground">
-                    {formatMonth(p.endsAt)}
-                  </div>
-                </div>
-                <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-              </li>
-            ))}
-          </ul>
+          <SectionTitle>
+            Архив клуба <span className="opacity-60">·</span>{" "}
+            <PlumpNum value={finished.length} size={12} />
+          </SectionTitle>
+          <CardsGrid items={finished} finished />
         </section>
       )}
 
