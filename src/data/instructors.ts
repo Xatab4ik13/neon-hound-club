@@ -3,6 +3,10 @@ import semenAsset from "@/assets/instructors/semen.webp.asset.json";
 import nikitaAsset from "@/assets/instructors/nikita.webp.asset.json";
 import pavelAsset from "@/assets/instructors/pavel.webp.asset.json";
 import haixAsset from "@/assets/instructors/haix.webp.asset.json";
+import stanislavShot1 from "@/assets/instructors/stanislav-gallery/stanislav-14-01-08.jpg.asset.json";
+import stanislavShot2 from "@/assets/instructors/stanislav-gallery/stanislav-14-08-07.jpg.asset.json";
+import stanislavShot3 from "@/assets/instructors/stanislav-gallery/stanislav-14-10-37.jpg.asset.json";
+import stanislavShot4 from "@/assets/instructors/stanislav-gallery/stanislav-14-11-37.jpg.asset.json";
 
 export type InstructorTone = "primary" | "yellow" | "cyan" | "lime" | "violet";
 
@@ -139,7 +143,12 @@ export const INSTRUCTORS: Instructor[] = [
     skills: DEFAULT_SKILLS,
     location: KRD_LOCATION,
     schedule: DEFAULT_SCHEDULE,
-    gallery: [],
+    gallery: [
+      stanislavShot1.url,
+      stanislavShot2.url,
+      stanislavShot3.url,
+      stanislavShot4.url,
+    ],
   },
   {
     id: "semen",
