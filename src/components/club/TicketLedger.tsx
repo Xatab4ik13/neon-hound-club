@@ -257,7 +257,7 @@ function LedgerRow({ entry }: { entry: LedgerEntry }) {
     <li className="flex items-center gap-3 px-4 py-3 transition-colors active:bg-white/[0.03]">
       <span
         className={
-          "grid h-7 w-7 shrink-0 place-items-center rounded-lg border-[2px] border-foreground shadow-[2px_2px_0_0_hsl(var(--foreground))] " +
+          "h-4 w-4 shrink-0 rounded-md border-[1.5px] border-foreground " +
           meta.dot
         }
         aria-hidden
