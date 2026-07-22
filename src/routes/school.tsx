@@ -165,6 +165,16 @@ function InstructorCard({
             className="absolute inset-0 h-full w-full object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-b from-black/0 via-black/0 to-black/30" />
+
+          {/* Плашки с городом и стажем */}
+          <div className="absolute left-3 right-3 top-3 flex flex-wrap gap-2">
+            <span className="rounded-full border-2 border-foreground bg-card px-3 py-1 font-mono text-[10px] font-black uppercase tracking-wider text-foreground shadow-[2px_2px_0_0_hsl(var(--foreground))]">
+              {instructor.city}
+            </span>
+            <span className="rounded-full border-2 border-foreground bg-card px-3 py-1 font-mono text-[10px] font-black uppercase tracking-wider text-foreground shadow-[2px_2px_0_0_hsl(var(--foreground))]">
+              {instructor.experience} {instructor.experience < 5 ? "года" : "лет"} стажа
+            </span>
+          </div>
         </div>
 
         {/* Имя внизу карточки */}
