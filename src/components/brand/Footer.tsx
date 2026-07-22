@@ -52,8 +52,8 @@ export function Footer() {
         <div className="mt-2.5 border-t-[3px] border-black" />
 
         {/* Средний ряд: документы + платёжные логотипы */}
-        <div className="mt-3 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <ul className="flex flex-wrap gap-x-4 gap-y-1.5 text-xs">
+        <div className="mt-2 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+          <ul className="flex flex-wrap gap-x-4 gap-y-1 text-xs">
             <li><Link to="/legal/offer" className="transition-colors hover:text-primary">Оферта</Link></li>
             <li><Link to="/legal/terms" className="transition-colors hover:text-primary">Соглашение</Link></li>
             <li><Link to="/legal/privacy" className="transition-colors hover:text-primary">Политика ПДн</Link></li>
@@ -69,7 +69,7 @@ export function Footer() {
         </div>
 
         {/* Низ: реквизиты + копирайт */}
-        <div className="mt-3 flex flex-col gap-1.5 font-mono text-[10px] text-black/60 md:flex-row md:items-center md:justify-between">
+        <div className="mt-2 flex flex-col gap-1 font-mono text-[10px] text-black/60 md:flex-row md:items-center md:justify-between">
           <div>
             {LEGAL.shortName} · ОГРНИП {LEGAL.ogrnip} · ИНН {LEGAL.inn}
           </div>
