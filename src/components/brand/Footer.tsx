@@ -18,10 +18,7 @@ export function Footer() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="relative bg-background text-foreground">
-      {/* Мягкая верхняя граница вместо резкой белой линии */}
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
-
+    <footer className="bg-background text-foreground">
       <div className="mx-auto max-w-7xl px-6 py-3">
         {/* Верх: логотип слева, соцсети справа */}
         <div className="flex flex-col items-center justify-between gap-3 md:flex-row">
