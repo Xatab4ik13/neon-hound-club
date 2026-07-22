@@ -34,47 +34,18 @@ export const Route = createFileRoute("/school")({
 type Instructor = {
   id: string;
   name: string;
-  city: string;
-  specialization: string;
-  experience: string;
+  photo: string;
   // Оттенок фоновой рамки-плашки — чтобы карточки не сливались.
-  tone: "primary" | "yellow" | "cyan" | "lime";
+  tone: "primary" | "yellow" | "cyan" | "lime" | "violet";
 };
 
-// MOCK — реальные инструктора появятся позже.
+// Города и специализации подставим позже, когда пришлёт клиент.
 const INSTRUCTORS: Instructor[] = [
-  {
-    id: "1",
-    name: "Ваня",
-    city: "Москва",
-    specialization: "Спорт / трек",
-    experience: "10 лет",
-    tone: "primary",
-  },
-  {
-    id: "2",
-    name: "Макс",
-    city: "Санкт-Петербург",
-    specialization: "Новичкам",
-    experience: "6 лет",
-    tone: "yellow",
-  },
-  {
-    id: "3",
-    name: "Дима",
-    city: "Сочи",
-    specialization: "Эндуро / офф-роуд",
-    experience: "8 лет",
-    tone: "cyan",
-  },
-  {
-    id: "4",
-    name: "Артём",
-    city: "Казань",
-    specialization: "Городская езда",
-    experience: "5 лет",
-    tone: "lime",
-  },
+  { id: "stanislav", name: "Станислав", photo: stanislavAsset.url, tone: "primary" },
+  { id: "semen",     name: "Семён",     photo: semenAsset.url,     tone: "yellow" },
+  { id: "nikita",    name: "Никита",    photo: nikitaAsset.url,    tone: "cyan" },
+  { id: "pavel",     name: "Павел",     photo: pavelAsset.url,     tone: "lime" },
+  { id: "haix",      name: "HaiX",      photo: haixAsset.url,      tone: "violet" },
 ];
 
 const TONE_BG: Record<Instructor["tone"], string> = {
@@ -82,7 +53,9 @@ const TONE_BG: Record<Instructor["tone"], string> = {
   yellow: "bg-[#FFD93D]",
   cyan: "bg-[#3DDBD9]",
   lime: "bg-[#B6FF3C]",
+  violet: "bg-[#C6A8FF]",
 };
+
 
 function SchoolPage() {
   const [mode, setMode] = useState<"online" | "offline">("offline");
