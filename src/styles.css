@@ -618,3 +618,45 @@ html.hh-admin *::-webkit-scrollbar-thumb {
 html.hh-admin *::-webkit-scrollbar-thumb:hover {
   background: color-mix(in oklab, currentColor 35%, transparent);
 }
+
+/* Skill cards "stack drop" animation — iOS-feel */
+@keyframes skill-drop {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, -140px, 0) rotate(var(--skill-rot, 0deg)) scale(0.9);
+  }
+  55% {
+    opacity: 1;
+    transform: translate3d(0, 12px, 0) rotate(var(--skill-rot, 0deg)) scale(1.02);
+  }
+  75% {
+    transform: translate3d(0, -6px, 0) rotate(var(--skill-rot, 0deg)) scale(0.995);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) rotate(var(--skill-rot, 0deg)) scale(1);
+  }
+}
+
+.skill-card {
+  transform-origin: 50% 0%;
+}
+.skill-card.-rotate-1 { --skill-rot: -1deg; }
+.skill-card.rotate-1  { --skill-rot: 1deg; }
+
+.skill-card--pre {
+  opacity: 0;
+  transform: translate3d(0, -140px, 0) rotate(var(--skill-rot, 0deg)) scale(0.9);
+}
+.skill-card--in {
+  animation: skill-drop 720ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skill-card--pre,
+  .skill-card--in {
+    animation: none !important;
+    opacity: 1;
+    transform: rotate(var(--skill-rot, 0deg));
+  }
+}

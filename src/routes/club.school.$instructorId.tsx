@@ -256,17 +256,50 @@ function CoursesSection({
 /* ---------- Skills (plump grid like landing) ---------- */
 
 function SkillsSection({ instructor }: { instructor: Instructor }) {
+  const gridRef = useRef<HTMLDivElement | null>(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el) return;
+    // Respect reduced motion
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setVisible(true);
+      return;
+    }
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) {
+            setVisible(true);
+            io.disconnect();
+            break;
+          }
+        }
+      },
+      { threshold: 0.15, rootMargin: "0px 0px -10% 0px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
   return (
     <section>
       <SectionHeading kicker="Что дам" title="Чему научу" />
-      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      <div ref={gridRef} className="grid gap-5 [perspective:1000px] sm:grid-cols-2 lg:grid-cols-3">
         {instructor.skills.map((s, i) => {
           const tone = SKILL_TONES[i % SKILL_TONES.length];
           const rotate = i % 2 === 0 ? "-rotate-1" : "rotate-1";
           return (
             <article
               key={s.title}
-              className={`${rotate} rounded-2xl border-[3px] border-foreground ${TONE_BG[tone]} p-5 shadow-[6px_6px_0_0_hsl(var(--foreground))]`}
+              className={`skill-card ${rotate} rounded-2xl border-[3px] border-foreground ${TONE_BG[tone]} p-5 shadow-[6px_6px_0_0_hsl(var(--foreground))] ${
+                visible ? "skill-card--in" : "skill-card--pre"
+              }`}
+              style={{
+                animationDelay: visible ? `${i * 90}ms` : "0ms",
+                willChange: "transform, opacity",
+              }}
             >
               <div className="mb-3 inline-flex items-center justify-center rounded-full border-[3px] border-foreground bg-card px-3 py-1 font-display text-xs font-black uppercase tracking-widest text-foreground">
                 {String(i + 1).padStart(2, "0")}
