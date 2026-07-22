@@ -1525,7 +1525,7 @@ function ShowcaseTab() {
                   <div className="flex-1">
                     <div className="font-medium">{p?.title ?? "(удалён)"}</div>
                     <div className="text-xs text-zinc-500">
-                      {p ? `${(p.priceRub).toLocaleString("ru-RU") ₽`} : id}
+                      {p ? `${(p.priceRub).toLocaleString("ru-RU")} ₽` : id}
                     </div>
                   </div>
                   <Btn variant="ghost" onClick={() => move(id, -1)} disabled={i === 0}>
