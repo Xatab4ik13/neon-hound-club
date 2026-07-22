@@ -888,9 +888,6 @@ function CoursesSection({
           );
         })}
       </div>
-      <p className="mt-4 text-center font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
-        Оплата обучения проходит через HELLHOUND. Онлайн-чат с тренером — скоро.
-      </p>
     </section>
   );
 }
