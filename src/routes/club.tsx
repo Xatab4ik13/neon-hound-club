@@ -253,7 +253,7 @@ function SidebarBody({
           <img
             src={hhrLogo.url}
             alt="HELLHOUND Racing"
-            className="h-14 w-auto"
+            className="h-[4.6rem] w-auto"
             draggable={false}
           />
         </Link>
