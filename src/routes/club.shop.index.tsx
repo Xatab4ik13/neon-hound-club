@@ -280,7 +280,7 @@ function ProductCard({ product }: { product: ShopProductListItem }) {
     <Link
       to="/club/shop/$productSlug"
       params={{ productSlug: product.slug }}
-      className="group block overflow-hidden rounded-2xl border border-white/[0.06] bg-card/40 transition-all active:scale-[0.98] md:hover:border-primary/30"
+      className="group block overflow-hidden rounded-2xl border-[2px] border-foreground bg-card shadow-[4px_4px_0_0_hsl(var(--foreground))] transition-all active:scale-[0.98] md:hover:-translate-x-0.5 md:hover:-translate-y-0.5 md:hover:shadow-[6px_6px_0_0_hsl(var(--foreground))]"
     >
       <div className="relative aspect-square overflow-hidden bg-surface">
         {cover ? (
@@ -295,25 +295,7 @@ function ProductCard({ product }: { product: ShopProductListItem }) {
           </div>
         )}
         {sold && (
-          <span className="absolute left-2 top-2 rounded-full bg-black/70 px-2.5 py-0.5 text-[11px] font-medium text-foreground backdrop-blur">
-            Распродано
-          </span>
-        )}
-        {product.bonusTickets > 0 && (
-          <span className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full bg-black/70 px-2 py-0.5 text-[11px] font-semibold text-primary backdrop-blur">
-            <PlumpTicket className="h-3 w-3" />+{product.bonusTickets}
-          </span>
-        )}
-      </div>
-      <div className="px-3 py-2.5">
-        <div className="line-clamp-2 text-[14px] font-medium leading-snug text-foreground">
-          {product.title}
-        </div>
-        <div className="mt-1.5 text-[15px] font-semibold tabular-nums text-foreground">
-          <PlumpPrice value={product.priceRub} />
-        </div>
-      </div>
-    </Link>
+          <span className="absolute left-2 top-2 rounded-full bg-black/70 px-2.5 py-0.5 text-[11px] font-medium ...
   );
 }
 
