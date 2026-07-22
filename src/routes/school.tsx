@@ -176,15 +176,12 @@ function InstructorCard({
         </div>
       </div>
 
-      {/* Плашки с городом, статусом и стажем — вне карточки, как в mock */}
+      {/* Плашки с городом и стажем — вне карточки, как в mock */}
       <div className="pointer-events-none absolute -top-3 left-3 -rotate-[4deg]">
         <PlumpTag>{instructor.city}</PlumpTag>
       </div>
-      <div className="pointer-events-none absolute -right-2 top-10 rotate-[6deg]">
-        <PlumpTag variant="dark">Мото инструктор</PlumpTag>
-      </div>
       <div className="pointer-events-none absolute -bottom-3 right-6 -rotate-[3deg]">
-        <PlumpTag variant="accent">Опыт {expLabel}</PlumpTag>
+        <PlumpTag variant="accent">{expLabel}</PlumpTag>
       </div>
     </article>
   );
