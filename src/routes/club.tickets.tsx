@@ -53,11 +53,7 @@ function TicketsPage() {
   const balance = balanceQ.data?.balance ?? 0;
   const entries = historyQ.data?.items ?? [];
 
-  // Активный розыгрыш — первый со статусом "active" (бэк сортирует по дедлайну).
   const activeRaffle = (rafflesQ.data?.items ?? []).find((r) => r.status === "active") ?? null;
-
-  // Если телефон не подтверждён — показываем плашку. Если у нас ещё нет данных профиля
-  // или юзер не залогинен — ничего не показываем.
   const phoneNeedsVerify = isAuthed && profileQ.data && !profileQ.data.phoneVerified;
 
   return (
@@ -77,23 +73,24 @@ function TicketsPage() {
         <Link
           to="/club/raffles/$raffleId"
           params={{ raffleId: activeRaffle.id }}
-          className="mb-4 flex items-center gap-3 rounded-2xl border border-primary/30 bg-primary/[0.07] px-4 py-3 transition-colors active:bg-primary/[0.12]"
+          className="group relative mb-8 flex items-center gap-3 rounded-3xl border-[3px] border-foreground bg-card px-4 py-3 shadow-[6px_6px_0_0_hsl(var(--foreground))] transition-transform active:translate-x-[2px] active:translate-y-[2px] active:shadow-[3px_3px_0_0_hsl(var(--foreground))]"
         >
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary/15 text-primary">
-            <Trophy className="h-4 w-4" />
+          <span className="absolute -left-2 -top-3 z-10 inline-flex -rotate-3 items-center gap-1.5 rounded-2xl border-[3px] border-foreground bg-[#B6FF3C] px-2.5 py-1 font-display text-[10px] font-black uppercase italic tracking-tighter text-black shadow-[3px_3px_0_0_hsl(var(--foreground))]">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-black" />
+            Идёт сейчас
           </span>
-          <span className="min-w-0 flex-1">
-            <span className="block font-mono text-[10px] uppercase tracking-widest text-primary/80">
+          <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl border-[3px] border-foreground bg-[#C6A8FF] shadow-[3px_3px_0_0_hsl(var(--foreground))]">
+            <Trophy className="h-5 w-5 text-black" />
+          </span>
+          <span className="min-w-0 flex-1 pt-1">
+            <span className="block font-mono text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
               Активный розыгрыш
             </span>
-            <span className="mt-0.5 block truncate text-[14px] font-semibold text-foreground">
+            <span className="mt-0.5 block truncate font-display text-[15px] font-black uppercase italic tracking-tight text-foreground">
               {activeRaffle.title}
             </span>
           </span>
-          <span className="shrink-0 font-mono text-[11px] font-bold uppercase tracking-wider text-primary">
-            Открыть
-          </span>
-          <ChevronRight className="h-4 w-4 shrink-0 text-primary/70" />
+          <ChevronRight className="h-5 w-5 shrink-0 text-foreground transition-transform group-hover:translate-x-0.5" />
         </Link>
       )}
 
@@ -104,29 +101,31 @@ function TicketsPage() {
         onRetry={() => historyQ.refetch()}
       />
 
-      {/* Откуда взять билеты — iOS inset list */}
       <section aria-label="Как набрать билеты" className="mb-2">
-        <h2 className="mb-3 px-1 text-[17px] font-semibold text-foreground">
+        <h2 className="mb-3 px-1 inline-flex items-center gap-1.5 font-display text-sm font-black uppercase italic tracking-widest text-foreground">
           Как набрать билеты
         </h2>
-        <ul className="overflow-hidden rounded-2xl border border-white/[0.06] bg-card/40">
+        <ul className="flex flex-col gap-3">
           <EarnRow
             title="Покупки в магазине"
             hint="К каждому товару — свой бонус билетов"
             to="/club/shop"
-            icon={<PlumpStore className="h-5 w-5" />}
+            icon={<PlumpStore className="h-5 w-5 text-black" />}
+            tone="bg-[#FFD93D]"
           />
           <EarnRow
             title="Hell Pass"
             hint="Пакет билетов при покупке любого тира"
             to="/club/hell-pass"
-            icon={<PlumpTicket className="h-5 w-5" />}
+            icon={<PlumpTicket className="h-5 w-5 text-black" />}
+            tone="bg-[#C6A8FF]"
           />
           <EarnRow
             title="Квесты и активность"
             hint="Задания клуба — за каждое начисляются билеты"
             to="/club/quests"
-            icon={<Trophy className="h-4 w-4" />}
+            icon={<Trophy className="h-5 w-5 text-black" />}
+            tone="bg-[#B6FF3C]"
           />
         </ul>
       </section>
@@ -134,32 +133,27 @@ function TicketsPage() {
   );
 }
 
-/**
- * Плашка «телефон не подтверждён» — клик ведёт в профиль и сразу открывает
- * SettingsModal на вкладке «Профиль» (см. validateSearch в club.me).
- */
 function PhoneVerifyBanner() {
   return (
     <Link
       to="/club/me"
       search={{ settings: "1" }}
-      className="mb-4 flex items-center gap-3 rounded-2xl border border-amber-400/30 bg-amber-400/[0.06] px-4 py-3 transition-colors active:bg-amber-400/[0.12]"
+      className="mb-6 flex items-center gap-3 rounded-3xl border-[3px] border-foreground bg-[#FFD93D] px-4 py-3 shadow-[6px_6px_0_0_hsl(var(--foreground))] transition-transform active:translate-x-[2px] active:translate-y-[2px] active:shadow-[3px_3px_0_0_hsl(var(--foreground))]"
     >
-      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-amber-400/15 text-amber-300">
-        <ShieldAlert className="h-4 w-4" />
+      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl border-[3px] border-foreground bg-background shadow-[3px_3px_0_0_hsl(var(--foreground))]">
+        <ShieldAlert className="h-5 w-5 text-[#FFD93D]" />
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block text-[14px] font-semibold text-foreground">
-          Номер телефона не подтверждён
+        <span className="block font-display text-[14px] font-black uppercase italic tracking-tight text-black">
+          Телефон не подтверждён
         </span>
-        <span className="mt-0.5 block truncate text-[12px] text-muted-foreground">
+        <span className="mt-0.5 block truncate font-mono text-[10px] font-bold uppercase tracking-widest text-black/70">
           Нужно для участия в розыгрышах
         </span>
       </span>
-      <span className="shrink-0 font-mono text-[11px] font-bold uppercase tracking-wider text-amber-300">
+      <span className="shrink-0 rounded-full border-[3px] border-foreground bg-foreground px-3 py-1 font-display text-[11px] font-black uppercase italic tracking-tighter text-background shadow-[2px_2px_0_0_hsl(var(--foreground))]">
         Подтвердить
       </span>
-      <ChevronRight className="h-4 w-4 shrink-0 text-amber-300/70" />
     </Link>
   );
 }
@@ -169,26 +163,32 @@ function EarnRow({
   hint,
   icon,
   to,
+  tone,
 }: {
   title: string;
   hint: string;
   icon: React.ReactNode;
   to: "/club/shop" | "/club/hell-pass" | "/club/quests";
+  tone: string;
 }) {
   return (
-    <li className="border-b border-white/[0.05] last:border-b-0">
+    <li>
       <Link
         to={to}
-        className="flex items-center gap-3 px-4 py-3.5 transition-colors active:bg-white/[0.04]"
+        className="flex items-center gap-3 rounded-2xl border-[3px] border-foreground bg-card px-3 py-3 shadow-[4px_4px_0_0_hsl(var(--foreground))] transition-transform active:translate-x-[2px] active:translate-y-[2px] active:shadow-[2px_2px_0_0_hsl(var(--foreground))]"
       >
-        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
+        <span
+          className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl border-[3px] border-foreground ${tone} shadow-[3px_3px_0_0_hsl(var(--foreground))]`}
+        >
           {icon}
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block text-[15px] font-medium text-foreground">{title}</span>
+          <span className="block font-display text-[15px] font-black uppercase italic tracking-tight text-foreground">
+            {title}
+          </span>
           <span className="mt-0.5 block truncate text-[12px] text-muted-foreground">{hint}</span>
         </span>
-        <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/60" />
+        <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
       </Link>
     </li>
   );
