@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Header } from "@/components/brand/Header";
 import { Footer } from "@/components/brand/Footer";
 import cdekLogo from "@/assets/cdek-logo.svg.asset.json";
+import russianPostLogo from "@/assets/russian-post-logo.svg.asset.json";
 
 
 
@@ -83,32 +84,12 @@ function CdekMark() {
 
 function PochtaMark() {
   return (
-    <svg viewBox="0 0 160 32" className="h-8 w-auto" aria-label="Почта России">
-      <rect x="0" y="6" width="20" height="20" rx="2" fill="#1965C4" />
-      <path d="M2 9 L10 16 L18 9" stroke="#FFFFFF" strokeWidth="1.6" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-      <text
-        x="26"
-        y="15"
-        fontFamily="Arial Black, Arial, sans-serif"
-        fontSize="10"
-        fontWeight="900"
-        fill="#1965C4"
-        letterSpacing="0.5"
-      >
-        ПОЧТА
-      </text>
-      <text
-        x="26"
-        y="27"
-        fontFamily="Arial Black, Arial, sans-serif"
-        fontSize="10"
-        fontWeight="900"
-        fill="#1965C4"
-        letterSpacing="0.5"
-      >
-        РОССИИ
-      </text>
-    </svg>
+    <img
+      src={russianPostLogo.url}
+      alt="Почта России"
+      className="h-8 w-auto"
+      loading="lazy"
+    />
   );
 }
 
