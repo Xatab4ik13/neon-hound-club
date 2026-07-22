@@ -387,13 +387,28 @@ function FeatureCard({
   );
 }
 
-function CarrierCard({ tag, name, text }: { tag: string; name: string; text: string }) {
+function CarrierCard({
+  tag,
+  name,
+  text,
+  logo,
+}: {
+  tag: string;
+  name: string;
+  text: string;
+  logo?: React.ReactNode;
+}) {
   return (
     <div className="relative overflow-hidden rounded-md border border-border bg-surface p-6">
-      <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-        {tag}
+      <div className="flex items-start justify-between gap-4">
+        <div className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+          {tag}
+        </div>
+        {logo ? (
+          <div className="flex h-10 items-center justify-end">{logo}</div>
+        ) : null}
       </div>
-      <div className="font-display text-3xl uppercase tracking-tight">{name}</div>
+      <div className="mt-4 font-display text-3xl uppercase tracking-tight">{name}</div>
       <p className="mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">{text}</p>
     </div>
   );
