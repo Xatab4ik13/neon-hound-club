@@ -300,7 +300,7 @@ function ProductsTab() {
                 ),
                 `${(p.priceRub).toLocaleString("ru-RU")} ₽`,
                 p.bonusTickets > 0 ? <span className="inline-flex items-center gap-0.5">+{(p.bonusTickets)} 🎟</span> : "—",
-                p.kind === "digital" ? "∞" : p.stock === null ? "∞" : {(p.stock)},
+                p.kind === "digital" ? "∞" : p.stock === null ? "∞" : p.stock,
                 <Badge tone={p.active ? "emerald" : "zinc"}>
                   {p.active ? "Активен" : "Скрыт"}
                 </Badge>,
