@@ -12,12 +12,12 @@ const SOURCE_META: Record<
   BackendTicketSource,
   { label: string; dot: string }
 > = {
-  pass_monthly:  { label: "Hell Pass",      dot: "bg-violet-400" },
-  quest:         { label: "Квест",          dot: "bg-emerald-400" },
-  product_bonus: { label: "Бонус за товар", dot: "bg-primary" },
-  raffle_entry:  { label: "Розыгрыш",       dot: "bg-amber-400" },
+  pass_monthly:  { label: "Hell Pass",      dot: "bg-[#C6A8FF]" },
+  quest:         { label: "Квест",          dot: "bg-[#B6FF3C]" },
+  product_bonus: { label: "Бонус за товар", dot: "bg-[#FFD93D]" },
+  raffle_entry:  { label: "Розыгрыш",       dot: "bg-[#FF8A3D]" },
   admin:         { label: "Админ",          dot: "bg-white/40" },
-  refund:        { label: "Возврат",        dot: "bg-white/40" },
+  refund:        { label: "Возврат",        dot: "bg-[#6EE7FF]" },
 };
 
 const ALL_SOURCES: BackendTicketSource[] = [
