@@ -250,6 +250,7 @@ export const INSTRUCTORS: Instructor[] = [
     upcomingCourses: STANISLAV_UPCOMING,
     approach: STANISLAV_APPROACH,
   },
+  {
     id: "semen",
     slug: "semen",
     name: "Семён",
