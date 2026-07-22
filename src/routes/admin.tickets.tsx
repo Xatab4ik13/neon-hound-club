@@ -36,7 +36,7 @@ const SOURCE_LABEL: Record<string, string> = {
 
 
 function fmt(n: number): React.ReactNode {
-  return {(n).toLocaleString("ru-RU")};
+  return (n).toLocaleString("ru-RU");
 }
 
 function TicketsPage() {

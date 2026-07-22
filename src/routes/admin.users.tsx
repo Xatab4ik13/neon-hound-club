@@ -318,17 +318,17 @@ function UserDrawer({
 
 
           <Section title="Билеты">
-            <Metric label="Баланс" value={{(u.ticketsBalance).toLocaleString("ru-RU")}} />
-            <Metric label="Всего заработано" value={{(u.ticketsEarned).toLocaleString("ru-RU")}} />
+            <Metric label="Баланс" value={(u.ticketsBalance).toLocaleString("ru-RU")} />
+            <Metric label="Всего заработано" value={(u.ticketsEarned).toLocaleString("ru-RU")} />
           </Section>
 
           <Section title="Магазин">
-            <Metric label="Потрачено" value={{`${(u.totalSpentRub).toLocaleString("ru-RU")} ₽`}} />
-            <Metric label="Заказов" value={{(u.ordersCount)}} />
+            <Metric label="Потрачено" value={`${(u.totalSpentRub).toLocaleString("ru-RU")} ₽`} />
+            <Metric label="Заказов" value={(u.ordersCount)} />
           </Section>
 
           <Section title="Ранг / XP">
-            <Metric label="XP" value={{(u.xpTotal).toLocaleString("ru-RU")}} />
+            <Metric label="XP" value={(u.xpTotal).toLocaleString("ru-RU")} />
             <Metric label="Ранг" value={u.rank?.rankLabel ?? "—"} />
             <div className="col-span-2 flex gap-2">
               <Btn onClick={() => setXpOpen(true)}>

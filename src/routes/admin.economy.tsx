@@ -223,16 +223,16 @@ function EconomyPage() {
       {tab === "overview" && (
         <>
           <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <StatCard label="Доходы" value={{`${(overview?.income ?? 0).toLocaleString("ru-RU")} ₽`}} tone="emerald" />
-            <StatCard label="Расходы" value={{`${(overview?.expense ?? 0).toLocaleString("ru-RU")} ₽`}} tone="rose" />
+            <StatCard label="Доходы" value={`${(overview?.income ?? 0).toLocaleString("ru-RU")} ₽`} tone="emerald" />
+            <StatCard label="Расходы" value={`${(overview?.expense ?? 0).toLocaleString("ru-RU")} ₽`} tone="rose" />
             <StatCard
               label="Чистая прибыль"
-              value={{`${(profit).toLocaleString("ru-RU")} ₽`}}
+              value={`${(profit).toLocaleString("ru-RU")} ₽`}
               tone={profit >= 0 ? "emerald" : "rose"}
             />
             <StatCard
               label="Налог УСН (накоплено)"
-              value={{`${(overview?.taxAccrued ?? 0).toLocaleString("ru-RU")} ₽`}}
+              value={`${(overview?.taxAccrued ?? 0).toLocaleString("ru-RU")} ₽`}
               tone="rose"
             />
           </div>
@@ -490,12 +490,12 @@ function MonthlyBars({ data }: { data: { month: string; income: number; expense:
           <div className="flex h-full w-full items-end justify-center gap-1">
             <div
               className="w-1/3 rounded-t bg-emerald-500/80"
-              style={{ height: `${(m.income / max) * 100}%` }}
+              style={ height: `${(m.income / max) * 100}%` }
               title={`Доход: ${m.income.toLocaleString("ru-RU")} ₽`}
             />
             <div
               className="w-1/3 rounded-t bg-rose-500/80"
-              style={{ height: `${(m.expense / max) * 100}%` }}
+              style={ height: `${(m.expense / max) * 100}%` }
               title={`Расход: ${m.expense.toLocaleString("ru-RU")} ₽`}
             />
           </div>
