@@ -77,13 +77,13 @@ function TicketsPage() {
         <Link
           to="/club/raffles/$raffleId"
           params={{ raffleId: activeRaffle.id }}
-          className="group relative mb-5 flex items-center gap-3 rounded-2xl border-[2px] border-foreground bg-card px-4 py-3 shadow-[4px_4px_0_0_hsl(var(--foreground))] transition-transform active:translate-x-[2px] active:translate-y-[2px] active:shadow-[2px_2px_0_0_hsl(var(--foreground))]"
+          className="group relative mb-5 flex items-center gap-3 rounded-2xl bg-card px-4 py-3 transition-transform active:scale-[0.98]"
         >
-          <span className="absolute -left-1.5 -top-2.5 z-10 inline-flex -rotate-3 items-center gap-1 rounded-lg border-[2px] border-foreground bg-[#B6FF3C] px-2 py-0.5 font-display text-[10px] font-black uppercase italic tracking-tight text-black shadow-[2px_2px_0_0_hsl(var(--foreground))]">
+          <span className="absolute -left-1.5 -top-2.5 z-10 inline-flex -rotate-3 items-center gap-1 rounded-lg bg-[#B6FF3C] px-2 py-0.5 font-display text-[10px] font-black uppercase italic tracking-tight text-black">
             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-black" />
-            Идёт сейчас
+            Идёт сейчу
           </span>
-          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border-[2px] border-foreground bg-[#C6A8FF] shadow-[2px_2px_0_0_hsl(var(--foreground))]">
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#C6A8FF]">
             <Trophy className="h-4 w-4 text-black" />
           </span>
           <span className="min-w-0 flex-1 pt-1">
