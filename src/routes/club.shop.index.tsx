@@ -10,6 +10,7 @@ import {
   type ShopProductListItem,
 } from "@/lib/queries";
 import { SPECIAL_PACK_COVER } from "@/assets/stickers/special";
+import { PlumpPrice } from "@/components/brand/PlumpNum";
 
 export const Route = createFileRoute("/club/shop/")({
   head: () => ({
@@ -309,7 +310,7 @@ function ProductCard({ product }: { product: ShopProductListItem }) {
           {product.title}
         </div>
         <div className="mt-1.5 text-[15px] font-semibold tabular-nums text-foreground">
-          {product.priceRub.toLocaleString("ru-RU")} ₽
+          <PlumpPrice value={product.priceRub} />
         </div>
       </div>
     </Link>

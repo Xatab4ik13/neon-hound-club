@@ -1,6 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { PlumpArrowRight as ChevronRight, PlumpTicket, Trophy, ShieldCheck } from "@/components/ui/icons";
+import { PlumpNum } from "@/components/brand/PlumpNum";
+
 import { Countdown } from "@/components/club/Countdown";
 import { PageHeader } from "@/components/club/PageHeader";
 import {
@@ -68,10 +70,11 @@ function RafflesPage() {
               <span className="block font-mono text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                 Мой баланс
               </span>
-              <span className="block font-display text-2xl font-black italic leading-none tabular-nums text-foreground">
-                {balance}
+              <span className="block text-foreground">
+                <PlumpNum value={balance} size={22} format />
               </span>
             </span>
+
           </Link>
           <Link
             to="/club/tickets"

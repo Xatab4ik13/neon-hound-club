@@ -24,6 +24,7 @@ function ticketsWord(n: number) {
   return "билетов";
 }
 import { SPECIAL_PACK_COVER } from "@/assets/stickers/special";
+import { PlumpPrice } from "@/components/brand/PlumpNum";
 
 export const Route = createFileRoute("/club/shop/$productSlug")({
   head: ({ params }) => ({
@@ -306,7 +307,7 @@ function ProductView({ product }: { product: ShopProduct }) {
 
         <div className="mt-3 flex items-baseline gap-3">
           <span className="text-[26px] font-bold tabular-nums text-foreground">
-            {product.priceRub.toLocaleString("ru-RU")} ₽
+            <PlumpPrice value={product.priceRub} />
           </span>
         </div>
 
@@ -432,7 +433,7 @@ function ProductView({ product }: { product: ShopProduct }) {
           <div className="flex flex-col">
             <span className="text-[12px] text-muted-foreground">Итого</span>
             <span className="text-[22px] font-bold tabular-nums text-foreground">
-              {(product.priceRub * qty).toLocaleString("ru-RU")} ₽
+              <PlumpPrice value={(product.priceRub * qty)} />
             </span>
           </div>
           <button
@@ -470,7 +471,7 @@ function ProductView({ product }: { product: ShopProduct }) {
           <div className="flex flex-col">
             <span className="text-[11px] text-muted-foreground">Цена</span>
             <span className="text-[18px] font-bold tabular-nums text-foreground">
-              {(product.priceRub * qty).toLocaleString("ru-RU")} ₽
+              <PlumpPrice value={(product.priceRub * qty)} />
             </span>
           </div>
           <button

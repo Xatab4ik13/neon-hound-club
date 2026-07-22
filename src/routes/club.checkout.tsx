@@ -15,6 +15,7 @@ import { formatRuPhone } from "@/lib/phone";
 import { hhToast } from "@/lib/hh-toast";
 import { apiFetch, BACKEND_URL } from "@/lib/api";
 import { startPayment } from "@/lib/pwa-pay";
+import { PlumpPrice } from "@/components/brand/PlumpNum";
 
 const PAY_ACTION = `${BACKEND_URL}/api/v1/payments/redirect`;
 
@@ -494,7 +495,8 @@ function ClubCheckoutPage() {
                     {shipCalcLoading ? (
                       <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                     ) : shipPrice != null ? (
-                      `${shipPrice.toLocaleString("ru-RU")} ₽`
+                      <PlumpPrice value={shipPrice} />
+
                     ) : (
                       "—"
                     )}
@@ -563,7 +565,7 @@ function ClubCheckoutPage() {
                     </div>
                   </div>
                   <span className="font-mono text-[13px] tabular-nums text-foreground">
-                    {(i.price * i.qty).toLocaleString("ru-RU")} ₽
+                    <PlumpPrice value={(i.price * i.qty)} />
                   </span>
                 </li>
               ))}
@@ -572,26 +574,29 @@ function ClubCheckoutPage() {
               <div className="flex items-center justify-between text-[13px]">
                 <span className="text-muted-foreground">Товары</span>
                 <span className="font-mono tabular-nums text-foreground">
-                  {total.toLocaleString("ru-RU")} ₽
+                  <PlumpPrice value={total} />
                 </span>
               </div>
               {needsShipping && (
                 <div className="flex items-center justify-between text-[13px]">
                   <span className="text-muted-foreground">Доставка СДЭК</span>
-                  <span className="font-mono tabular-nums text-foreground">
-                    {shipCalcLoading
-                      ? "…"
-                      : shipPrice != null
-                        ? `${shipPrice.toLocaleString("ru-RU")} ₽`
-                        : "—"}
+                  <span className="text-foreground">
+                    {shipCalcLoading ? (
+                      "…"
+                    ) : shipPrice != null ? (
+                      <PlumpPrice value={shipPrice} />
+                    ) : (
+                      "—"
+                    )}
                   </span>
+
                 </div>
               )}
             </div>
             <div className="flex items-center justify-between border-t border-white/[0.05] px-4 py-3.5">
               <span className="text-[15px] font-semibold">Итого</span>
               <span className="font-display text-2xl font-black tabular-nums">
-                {grandTotal.toLocaleString("ru-RU")} ₽
+                <PlumpPrice value={grandTotal} />
               </span>
             </div>
           </section>

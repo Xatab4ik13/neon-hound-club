@@ -5,6 +5,8 @@
 
 import { Link } from "@tanstack/react-router";
 import { PlumpTicket } from "@/components/ui/icons";
+import { PlumpNum } from "@/components/brand/PlumpNum";
+
 
 
 function pluralTickets(n: number): string {
@@ -32,8 +34,8 @@ export function TicketCard({
   // Размер числа подстраиваем под длину — чтобы 1 000 000 не вылетал за край.
   const formatted = isLoading ? "—" : balance.toLocaleString("ru-RU");
   const len = formatted.length;
-  const numberSize =
-    len <= 4 ? "text-[76px]" : len <= 6 ? "text-[60px]" : len <= 8 ? "text-[48px]" : "text-[38px]";
+  const numberSize = len <= 4 ? 68 : len <= 6 ? 54 : len <= 8 ? 42 : 34;
+
 
   return (
     <section aria-label="Баланс билетов" className="relative mb-6">
@@ -77,11 +79,10 @@ export function TicketCard({
 
           <div className="flex items-end justify-between gap-4">
             <div className="flex min-w-0 items-baseline gap-2">
-              <span
-                className={`${numberSize} font-semibold leading-none tabular-nums text-foreground`}
-              >
-                {formatted}
+              <span className="text-foreground">
+                {isLoading ? "—" : <PlumpNum value={balance} size={numberSize} format />}
               </span>
+
               <span className="pb-1.5 text-[14px] text-muted-foreground">
                 {pluralTickets(balance)}
               </span>

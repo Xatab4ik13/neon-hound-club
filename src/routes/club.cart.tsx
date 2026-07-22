@@ -8,6 +8,7 @@ import { useCart, type CartItem } from "@/hooks/use-cart";
 import { useViewer } from "@/hooks/use-viewer";
 import { haptic } from "@/hooks/use-haptic";
 import { Illustration } from "@/components/club/Illustration";
+import { PlumpPrice } from "@/components/brand/PlumpNum";
 
 export const Route = createFileRoute("/club/cart")({
   head: () => ({
@@ -156,7 +157,7 @@ function ClubCartPage() {
           <div className="space-y-3 border-b border-white/[0.06] pb-4">
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Товары</span>
-              <span className="tabular-nums">{total.toLocaleString("ru-RU")} ₽</span>
+              <span className="tabular-nums"><PlumpPrice value={total} /></span>
             </div>
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Доставка</span>
@@ -167,7 +168,7 @@ function ClubCartPage() {
           <div className="flex items-baseline justify-between">
             <span className="text-sm text-muted-foreground">Итого</span>
             <span className="text-3xl font-bold tabular-nums text-foreground">
-              {total.toLocaleString("ru-RU")} ₽
+              <PlumpPrice value={total} />
             </span>
           </div>
 
@@ -282,7 +283,7 @@ function ClubCartPage() {
                       </button>
                     </div>
                     <span className="text-[16px] font-bold tabular-nums text-foreground">
-                      {(i.price * i.qty).toLocaleString("ru-RU")} ₽
+                      <PlumpPrice value={(i.price * i.qty)} />
                     </span>
                   </div>
                 </div>
@@ -306,7 +307,7 @@ function ClubCartPage() {
           <div className="flex items-center justify-between px-4 py-3">
             <span className="text-[15px] text-muted-foreground">Товары</span>
             <span className="text-[15px] tabular-nums text-foreground">
-              {total.toLocaleString("ru-RU")} ₽
+              <PlumpPrice value={total} />
             </span>
           </div>
           <div className="flex items-center justify-between px-4 py-3">
@@ -316,7 +317,7 @@ function ClubCartPage() {
           <div className="flex items-center justify-between px-4 py-3.5">
             <span className="text-[16px] font-semibold text-foreground">Итого</span>
             <span className="text-2xl font-bold tabular-nums text-foreground">
-              {total.toLocaleString("ru-RU")} ₽
+              <PlumpPrice value={total} />
             </span>
           </div>
         </div>
@@ -357,7 +358,7 @@ function ClubCartPage() {
               <div className="flex flex-col">
                 <span className="text-[12px] text-muted-foreground">К оплате</span>
                 <span className="text-[18px] font-bold tabular-nums text-foreground">
-                  {total.toLocaleString("ru-RU")} ₽
+                  <PlumpPrice value={total} />
                 </span>
               </div>
               <button
@@ -468,7 +469,7 @@ function DesktopRow({
               {item.name}
             </Link>
             <div className="mt-1 text-[13px] text-muted-foreground">
-              {item.size ? `Размер ${item.size} · ` : ""}{item.price.toLocaleString("ru-RU")} ₽
+              {item.size ? `Размер ${item.size} · ` : ""}<PlumpPrice value={item.price} />
             </div>
             {item.ticketsBonus && item.ticketsBonus > 0 ? (
               <div className="mt-2 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5">
@@ -480,7 +481,7 @@ function DesktopRow({
             ) : null}
           </div>
           <div className="shrink-0 text-right text-lg font-bold tabular-nums text-foreground">
-            {(item.price * item.qty).toLocaleString("ru-RU")} ₽
+            <PlumpPrice value={(item.price * item.qty)} />
           </div>
         </div>
 

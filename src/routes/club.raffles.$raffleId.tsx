@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { PlumpArrowLeft as ArrowLeft, Calendar, Check, Minus, Plus, PlumpTicket, Trophy, Zap } from "@/components/ui/icons";
+import { PlumpNum } from "@/components/brand/PlumpNum";
+
 import { Countdown } from "@/components/club/Countdown";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useViewer } from "@/hooks/use-viewer";
@@ -419,7 +421,8 @@ function StakeControls({
           </div>
           <div className="flex items-center gap-1 font-mono text-[11px] uppercase tracking-wider text-foreground">
             <PlumpTicket className="h-3.5 w-3.5 text-primary" />
-            <span className="tabular-nums">{balance}</span>
+            <PlumpNum value={balance} size={11} />
+
           </div>
         </div>
         <div className="mt-3 rounded-xl border border-amber-500/40 bg-amber-500/[0.08] p-3">
@@ -448,7 +451,7 @@ function StakeControls({
         </div>
         <div className="flex items-center gap-1 font-mono text-[11px] uppercase tracking-wider text-foreground">
           <PlumpTicket className="h-3.5 w-3.5 text-primary" />
-          <span className="tabular-nums">{balance}</span>
+          <PlumpNum value={balance} size={11} />
         </div>
       </div>
 
@@ -456,9 +459,10 @@ function StakeControls({
         <StepBtn onClick={() => onStakeChange(stake - 1)} disabled={stake <= 0}>
           <Minus className="h-4 w-4" />
         </StepBtn>
-        <div className="flex-1 text-center font-display text-3xl font-black italic leading-none tabular-nums text-foreground">
-          {stake}
+        <div className="flex flex-1 justify-center text-foreground">
+          <PlumpNum value={stake} size={28} />
         </div>
+
         <StepBtn onClick={() => onStakeChange(stake + 1)} disabled={stake >= maxStake}>
           <Plus className="h-4 w-4" />
         </StepBtn>

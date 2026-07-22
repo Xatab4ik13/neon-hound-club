@@ -2,6 +2,8 @@ import { Link, useLocation } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import hhrLogo from "@/assets/hhr-logo.png.asset.json";
 import { PlumpCart, PlumpMenu, PlumpDoorEnter, PlumpDoorExit } from "@/components/ui/icons";
+import { PlumpNum } from "@/components/brand/PlumpNum";
+
 import navShop from "@/assets/nav/nav-shop.jpg";
 import navPass from "@/assets/nav/nav-pass.jpg";
 import navSchool from "@/assets/nav/nav-school.jpg";
@@ -132,10 +134,15 @@ export function Header() {
               >
                 <PlumpCart className="h-9 w-9" strokeWidth={1.9} />
                 {cartCount > 0 && (
-                  <span className="absolute right-1 top-1 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-primary px-1 font-mono text-[10px] font-bold leading-none text-primary-foreground ring-2 ring-background">
-                    {cartCount > 99 ? "99+" : cartCount}
+                  <span className="absolute right-1 top-1 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-primary px-1 leading-none text-primary-foreground ring-2 ring-background">
+                    {cartCount > 99 ? (
+                      <span className="font-mono text-[10px] font-bold">99+</span>
+                    ) : (
+                      <PlumpNum value={cartCount} size={10} />
+                    )}
                   </span>
                 )}
+
               </Link>
             )}
 
@@ -449,10 +456,13 @@ function MobileMenu({
             </span>
             <span className="font-display text-xl italic uppercase tracking-widest text-white transition-colors duration-500 group-hover:text-primary">
               Корзина{" "}
-              <span className="ml-1 align-top font-mono text-sm opacity-70">
-                [{cartCount}]
+              <span className="ml-1 inline-flex items-center gap-0.5 align-baseline text-white opacity-70">
+                <span className="font-mono text-sm">[</span>
+                <PlumpNum value={cartCount} size={12} />
+                <span className="font-mono text-sm">]</span>
               </span>
             </span>
+
           </Link>
 
           <Link
