@@ -139,7 +139,7 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
   );
 }
 
-function CardsGrid({ items }: { items: RaffleListItem[] }) {
+function CardsGrid({ items, finished = false }: { items: RaffleListItem[]; finished?: boolean }) {
   const gridRef = useRef<HTMLDivElement | null>(null);
   const [visible, setVisible] = useState(false);
 
@@ -167,9 +167,9 @@ function CardsGrid({ items }: { items: RaffleListItem[] }) {
   }, []);
 
   return (
-    <div ref={gridRef} className="grid grid-cols-1 gap-5 [perspective:1000px] sm:grid-cols-2">
+    <div ref={gridRef} className="grid grid-cols-1 gap-6 pt-2 [perspective:1000px] sm:grid-cols-2">
       {items.map((r, i) => (
-        <RaffleCard key={r.id} raffle={r} index={i} visible={visible} />
+        <RaffleCard key={r.id} raffle={r} index={i} visible={visible} finished={finished} />
       ))}
     </div>
   );
