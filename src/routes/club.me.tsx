@@ -17,6 +17,8 @@ import {
   Check,
   Lock,
 } from "@/components/ui/icons";
+import { PlumpNum } from "@/components/brand/PlumpNum";
+
 import { SettingsModal } from "@/components/club/SettingsModal";
 import { OrdersList } from "@/components/club/OrdersList";
 import { useMyProfile, useBikes } from "@/lib/garage-api";
