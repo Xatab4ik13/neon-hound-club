@@ -293,7 +293,7 @@ function RaffleDetailContent({
       {/* DEADLINE CHIP */}
       {!finished && (
         <section
-          className="mb-6 flex items-center justify-between gap-3 rounded-2xl border-[3px] border-foreground bg-[#3DDBD9] px-4 py-3 text-black shadow-[4px_4px_0_0_hsl(var(--foreground))] animate-fade-in"
+          className="mb-6 flex items-center justify-between gap-3 rounded-2xl bg-[#3DDBD9] px-4 py-3 text-black animate-fade-in"
         >
           <span className="inline-flex items-center gap-2 font-mono text-[10px] font-bold uppercase tracking-widest">
             <Calendar className="h-3.5 w-3.5" strokeWidth={2.5} />
