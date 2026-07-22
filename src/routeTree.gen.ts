@@ -29,6 +29,7 @@ import { Route as CheckoutIndexRouteImport } from './routes/checkout.index'
 import { Route as BloggerIndexRouteImport } from './routes/blogger.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as ShopProductSlugRouteImport } from './routes/shop.$productSlug'
+import { Route as SchoolInstructorIdRouteImport } from './routes/school.$instructorId'
 import { Route as PaySuccessRouteImport } from './routes/pay.success'
 import { Route as PayGoRouteImport } from './routes/pay.go'
 import { Route as PayFailRouteImport } from './routes/pay.fail'
@@ -184,6 +185,11 @@ const ShopProductSlugRoute = ShopProductSlugRouteImport.update({
   id: '/shop/$productSlug',
   path: '/shop/$productSlug',
   getParentRoute: () => rootRouteImport,
+} as any)
+const SchoolInstructorIdRoute = SchoolInstructorIdRouteImport.update({
+  id: '/$instructorId',
+  path: '/$instructorId',
+  getParentRoute: () => SchoolRoute,
 } as any)
 const PaySuccessRoute = PaySuccessRouteImport.update({
   id: '/pay/success',
@@ -472,7 +478,7 @@ export interface FileRoutesByFullPath {
   '/like-lab': typeof LikeLabRoute
   '/login': typeof LoginRoute
   '/logos': typeof LogosRoute
-  '/school': typeof SchoolRoute
+  '/school': typeof SchoolRouteWithChildren
   '/shop-info': typeof ShopInfoRoute
   '/verify-email': typeof VerifyEmailRoute
   '/admin/banners': typeof AdminBannersRoute
@@ -512,6 +518,7 @@ export interface FileRoutesByFullPath {
   '/pay/fail': typeof PayFailRoute
   '/pay/go': typeof PayGoRoute
   '/pay/success': typeof PaySuccessRoute
+  '/school/$instructorId': typeof SchoolInstructorIdRoute
   '/shop/$productSlug': typeof ShopProductSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/blogger/': typeof BloggerIndexRoute
@@ -546,7 +553,7 @@ export interface FileRoutesByTo {
   '/like-lab': typeof LikeLabRoute
   '/login': typeof LoginRoute
   '/logos': typeof LogosRoute
-  '/school': typeof SchoolRoute
+  '/school': typeof SchoolRouteWithChildren
   '/shop-info': typeof ShopInfoRoute
   '/verify-email': typeof VerifyEmailRoute
   '/admin/banners': typeof AdminBannersRoute
@@ -586,6 +593,7 @@ export interface FileRoutesByTo {
   '/pay/fail': typeof PayFailRoute
   '/pay/go': typeof PayGoRoute
   '/pay/success': typeof PaySuccessRoute
+  '/school/$instructorId': typeof SchoolInstructorIdRoute
   '/shop/$productSlug': typeof ShopProductSlugRoute
   '/admin': typeof AdminIndexRoute
   '/blogger': typeof BloggerIndexRoute
@@ -624,7 +632,7 @@ export interface FileRoutesById {
   '/like-lab': typeof LikeLabRoute
   '/login': typeof LoginRoute
   '/logos': typeof LogosRoute
-  '/school': typeof SchoolRoute
+  '/school': typeof SchoolRouteWithChildren
   '/shop-info': typeof ShopInfoRoute
   '/verify-email': typeof VerifyEmailRoute
   '/admin/banners': typeof AdminBannersRoute
@@ -664,6 +672,7 @@ export interface FileRoutesById {
   '/pay/fail': typeof PayFailRoute
   '/pay/go': typeof PayGoRoute
   '/pay/success': typeof PaySuccessRoute
+  '/school/$instructorId': typeof SchoolInstructorIdRoute
   '/shop/$productSlug': typeof ShopProductSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/blogger/': typeof BloggerIndexRoute
@@ -743,6 +752,7 @@ export interface FileRouteTypes {
     | '/pay/fail'
     | '/pay/go'
     | '/pay/success'
+    | '/school/$instructorId'
     | '/shop/$productSlug'
     | '/admin/'
     | '/blogger/'
@@ -817,6 +827,7 @@ export interface FileRouteTypes {
     | '/pay/fail'
     | '/pay/go'
     | '/pay/success'
+    | '/school/$instructorId'
     | '/shop/$productSlug'
     | '/admin'
     | '/blogger'
@@ -894,6 +905,7 @@ export interface FileRouteTypes {
     | '/pay/fail'
     | '/pay/go'
     | '/pay/success'
+    | '/school/$instructorId'
     | '/shop/$productSlug'
     | '/admin/'
     | '/blogger/'
@@ -932,7 +944,7 @@ export interface RootRouteChildren {
   LikeLabRoute: typeof LikeLabRoute
   LoginRoute: typeof LoginRoute
   LogosRoute: typeof LogosRoute
-  SchoolRoute: typeof SchoolRoute
+  SchoolRoute: typeof SchoolRouteWithChildren
   ShopInfoRoute: typeof ShopInfoRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
   CheckoutSuccessRoute: typeof CheckoutSuccessRoute
@@ -1092,6 +1104,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/shop/$productSlug'
       preLoaderRoute: typeof ShopProductSlugRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/school/$instructorId': {
+      id: '/school/$instructorId'
+      path: '/$instructorId'
+      fullPath: '/school/$instructorId'
+      preLoaderRoute: typeof SchoolInstructorIdRouteImport
+      parentRoute: typeof SchoolRoute
     }
     '/pay/success': {
       id: '/pay/success'
@@ -1602,6 +1621,17 @@ const ClubRouteChildren: ClubRouteChildren = {
 
 const ClubRouteWithChildren = ClubRoute._addFileChildren(ClubRouteChildren)
 
+interface SchoolRouteChildren {
+  SchoolInstructorIdRoute: typeof SchoolInstructorIdRoute
+}
+
+const SchoolRouteChildren: SchoolRouteChildren = {
+  SchoolInstructorIdRoute: SchoolInstructorIdRoute,
+}
+
+const SchoolRouteWithChildren =
+  SchoolRoute._addFileChildren(SchoolRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
@@ -1613,7 +1643,7 @@ const rootRouteChildren: RootRouteChildren = {
   LikeLabRoute: LikeLabRoute,
   LoginRoute: LoginRoute,
   LogosRoute: LogosRoute,
-  SchoolRoute: SchoolRoute,
+  SchoolRoute: SchoolRouteWithChildren,
   ShopInfoRoute: ShopInfoRoute,
   VerifyEmailRoute: VerifyEmailRoute,
   CheckoutSuccessRoute: CheckoutSuccessRoute,

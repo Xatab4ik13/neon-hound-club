@@ -1,4 +1,4 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { Header } from "@/components/brand/Header";
 import { Footer } from "@/components/brand/Footer";
@@ -34,20 +34,36 @@ export const Route = createFileRoute("/school/$instructorId")({
         : [],
     };
   },
-  loader: ({ params }) => {
-    const it = getInstructorBySlug(params.instructorId);
-    if (!it) throw notFound();
-    return { instructor: it };
-  },
   component: InstructorPage,
 });
 
 function InstructorPage() {
-  const { instructor } = Route.useLoaderData();
+  const { instructorId } = Route.useParams();
+  const instructor = getInstructorBySlug(instructorId);
   const scheduleRef = useRef<HTMLDivElement | null>(null);
   const scrollToSchedule = () => {
     scheduleRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
+
+  if (!instructor) {
+    return (
+      <div className="min-h-screen bg-background text-foreground">
+        <Header />
+        <main className="mx-auto max-w-3xl px-4 py-24 text-center">
+          <h1 className="font-display text-4xl font-black uppercase tracking-tight">
+            Инструктор не найден
+          </h1>
+          <Link
+            to="/school"
+            className="mt-6 inline-flex items-center gap-2 font-display text-sm font-black uppercase tracking-widest text-primary"
+          >
+            <PlumpArrowLeft className="h-4 w-4" /> К списку инструкторов
+          </Link>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background text-foreground">
