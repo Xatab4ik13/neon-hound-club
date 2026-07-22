@@ -340,8 +340,8 @@ function RaffleCard({
           />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
-        <span className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-primary px-2.5 py-0.5 font-display text-[10px] font-black uppercase tracking-widest text-primary-foreground">
-          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white" />
+        <span className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full border-[3px] border-foreground bg-[#B6FF3C] px-2.5 py-0.5 font-display text-[10px] font-black uppercase tracking-widest text-black shadow-[2px_2px_0_0_hsl(var(--foreground))]">
+          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-black" />
           Идёт
         </span>
         <div className="absolute inset-x-3 bottom-3">
