@@ -200,11 +200,6 @@ export default function ShopInfoPage() {
           </div>
         </div>
       </section>
-            карты, срок действия и CVV/CVC. Эта информация известна только
-            твоему банку и платёжной системе.
-          </div>
-        </div>
-      </section>
 
       {/* DELIVERY */}
       <section className="border-b border-border">
