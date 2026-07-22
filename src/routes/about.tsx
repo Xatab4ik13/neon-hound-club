@@ -215,7 +215,11 @@ function AboutPage() {
           return (
             <section
               key={f.title}
-              className={`relative overflow-hidden ${bgClass} py-20 md:py-28`}
+              className={`relative overflow-hidden ${bgClass} ${
+                f.title === "Школа Hellhound"
+                  ? "py-28 md:py-40 min-h-[70vh] flex items-center"
+                  : "py-20 md:py-28"
+              }`}
             >
               <div
                 aria-hidden
