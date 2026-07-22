@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { Header } from "@/components/brand/Header";
 import { Footer } from "@/components/brand/Footer";
-import { PlumpNum } from "@/components/brand/PlumpNum";
+
 
 export const Route = createFileRoute("/school")({
   head: () => ({
