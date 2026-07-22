@@ -1,4 +1,12 @@
 import stanislavAsset from "@/assets/instructors/stanislav.webp.asset.json";
+import stGal01 from "@/assets/instructors/stanislav-gallery/stanislav-01.webp.asset.json";
+import stGal02 from "@/assets/instructors/stanislav-gallery/stanislav-02.webp.asset.json";
+import stGal03 from "@/assets/instructors/stanislav-gallery/stanislav-03.webp.asset.json";
+import stGal04 from "@/assets/instructors/stanislav-gallery/stanislav-04.webp.asset.json";
+import stGal05 from "@/assets/instructors/stanislav-gallery/stanislav-05.webp.asset.json";
+import stGal06 from "@/assets/instructors/stanislav-gallery/stanislav-06.webp.asset.json";
+import stGal07 from "@/assets/instructors/stanislav-gallery/stanislav-07.webp.asset.json";
+import stGal08 from "@/assets/instructors/stanislav-gallery/stanislav-08.webp.asset.json";
 import semenAsset from "@/assets/instructors/semen.webp.asset.json";
 import nikitaAsset from "@/assets/instructors/nikita.webp.asset.json";
 import pavelAsset from "@/assets/instructors/pavel.webp.asset.json";
@@ -139,7 +147,7 @@ export const INSTRUCTORS: Instructor[] = [
     skills: DEFAULT_SKILLS,
     location: KRD_LOCATION,
     schedule: DEFAULT_SCHEDULE,
-    gallery: [],
+    gallery: [stGal01.url, stGal02.url, stGal03.url, stGal04.url, stGal05.url, stGal06.url, stGal07.url, stGal08.url],
   },
   {
     id: "semen",
