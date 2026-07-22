@@ -694,7 +694,7 @@ function ProfileHero({ onSettings }: { onSettings: () => void }) {
                   <span className="font-bold" style={{ color: rank.accent }}>
                     {next.label}
                   </span>{" "}
-                  · <span className="font-bold tabular-nums text-foreground">{xpMax - xp}</span> XP
+                  · <span style={{ color: "hsl(var(--foreground))" }}><PlumpNum value={xpMax - xp} size={12} format /></span> XP
                 </span>
               ) : null}
             </div>
