@@ -63,7 +63,7 @@ export function AppShowcase() {
               width={1024}
               height={1024}
               loading="lazy"
-              className="relative h-auto w-full max-w-[890px] object-contain drop-shadow-2xl"
+              className="relative h-auto w-full max-w-[520px] scale-110 object-contain drop-shadow-2xl sm:max-w-[640px] sm:scale-105 md:max-w-[780px] md:scale-100 lg:max-w-[890px]"
             />
           </div>
 
