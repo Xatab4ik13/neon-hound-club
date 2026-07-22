@@ -18,7 +18,9 @@ export function Footer() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="relative border-t-[3px] border-black bg-white text-black">
+    <footer className="relative bg-background text-foreground">
+      {/* Мягкая верхняя граница вместо резкой белой линии */}
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
 
       <div className="mx-auto max-w-7xl px-6 py-3">
         {/* Верх: логотип слева, соцсети справа */}
@@ -37,20 +39,20 @@ export function Footer() {
                 target="_blank"
                 rel="noreferrer"
                 aria-label={s.label}
-                className="grid h-9 w-9 place-items-center rounded-lg border-[3px] border-black bg-white shadow-[2px_2px_0_0_#000] transition-transform hover:-translate-y-0.5 hover:shadow-[3px_3px_0_0_#000] active:translate-y-0 active:shadow-[1px_1px_0_0_#000]"
+                className="grid h-9 w-9 place-items-center rounded-lg border-[3px] border-foreground bg-card text-foreground shadow-[2px_2px_0_0_hsl(var(--foreground))] transition-all hover:-translate-y-0.5 hover:bg-primary hover:text-black hover:shadow-[3px_3px_0_0_hsl(var(--foreground))] active:translate-y-0 active:shadow-[1px_1px_0_0_hsl(var(--foreground))]"
               >
-                <img src={s.icon} alt="" className="h-4 w-4" />
+                <img src={s.icon} alt="" className="h-4 w-4 brightness-0 invert" />
               </a>
             ))}
           </div>
         </div>
 
         {/* Разделитель */}
-        <div className="mt-2.5 border-t-[3px] border-black" />
+        <div className="mt-2.5 border-t border-border" />
 
         {/* Средний ряд: документы + платёжные логотипы */}
         <div className="mt-2 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-          <ul className="flex flex-wrap gap-x-4 gap-y-1 text-xs">
+          <ul className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
             <li><Link to="/legal/offer" className="transition-colors hover:text-primary">Оферта</Link></li>
             <li><Link to="/legal/terms" className="transition-colors hover:text-primary">Соглашение</Link></li>
             <li><Link to="/legal/privacy" className="transition-colors hover:text-primary">Политика ПДн</Link></li>
@@ -58,7 +60,7 @@ export function Footer() {
             <li><Link to="/legal/requisites" className="transition-colors hover:text-primary">Реквизиты</Link></li>
           </ul>
 
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2.5 rounded-lg bg-white px-2.5 py-1.5">
             <img src={visaLogo} alt="Visa" className="h-5 w-auto" />
             <img src={mastercardLogo} alt="Mastercard" className="h-6 w-auto" />
             <img src={mirLogo} alt="МИР" className="h-4 w-auto" />
@@ -66,7 +68,7 @@ export function Footer() {
         </div>
 
         {/* Низ: реквизиты + копирайт */}
-        <div className="mt-2 flex flex-col gap-1 font-mono text-[10px] text-black/60 md:flex-row md:items-center md:justify-between">
+        <div className="mt-2 flex flex-col gap-1 font-mono text-[10px] text-muted-foreground md:flex-row md:items-center md:justify-between">
           <div>
             {LEGAL.shortName} · ОГРНИП {LEGAL.ogrnip} · ИНН {LEGAL.inn}
           </div>
