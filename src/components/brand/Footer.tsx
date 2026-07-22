@@ -21,7 +21,7 @@ export function Footer() {
     <footer className="relative bg-white text-black">
       <div
         aria-hidden
-        className="pointer-events-none h-12 w-full -mt-12 bg-gradient-to-b from-transparent to-white"
+        className="pointer-events-none absolute inset-x-0 -top-12 h-12 bg-gradient-to-b from-transparent to-white"
       />
       <div className="mx-auto max-w-7xl px-6 py-3">
         {/* Верх: логотип слева, соцсети справа */}
