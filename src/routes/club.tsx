@@ -30,6 +30,8 @@ import { PullToRefresh } from "@/components/club/PullToRefresh";
 import { OfflineBanner } from "@/components/club/OfflineBanner";
 import { useEdgeSwipeBack } from "@/hooks/use-edge-swipe-back";
 import { apiFetch, ApiError } from "@/lib/api";
+import hhrLogo from "@/assets/hhr-logo.png.asset.json";
+
 
 type MeUser = { id: string; email: string; nick: string; role: "user" | "admin" | "blogger" };
 
