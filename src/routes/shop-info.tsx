@@ -198,10 +198,8 @@ export default function ShopInfoPage() {
               чек отдельным письмом.
             </FeatureCard>
           </div>
-
-          <div className="mt-8 rounded-md border border-primary/30 bg-background/60 p-5 font-mono text-[12px] leading-relaxed text-foreground/85">
-            <span className="text-primary">⌘ </span>
-            Сайт и магазин <strong className="text-foreground">не получают и не хранят</strong> номер
+        </div>
+      </section>
             карты, срок действия и CVV/CVC. Эта информация известна только
             твоему банку и платёжной системе.
           </div>
