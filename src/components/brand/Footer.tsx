@@ -19,6 +19,10 @@ export function Footer() {
 
   return (
     <footer className="relative bg-white text-black">
+      <div
+        aria-hidden
+        className="pointer-events-none h-24 w-full -mt-24 bg-gradient-to-b from-transparent to-white"
+      />
       <div className="mx-auto max-w-7xl px-6 py-8">
         {/* Верх: логотип слева, соцсети справа */}
         <div className="flex flex-col items-center justify-between gap-6 md:flex-row">
