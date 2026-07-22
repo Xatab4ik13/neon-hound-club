@@ -5,9 +5,10 @@ import { Send, PlumpSearch as SearchIcon, Clock, PlumpSticker as Sticker, PlumpC
 import { RANKS, type RankId } from "@/data/ranks";
 import { useFeedPosts, useFeedLoaded, feedStore, initialsOf, makeSlug, type FeedAuthor, type FeedComment, type FeedPost, type FeedPoll } from "@/data/feed-store";
 import { HellhoundAvatar, HellhoundChip } from "@/components/club/HellhoundPlaque";
-import { IOSSheet } from "@/components/ios/IOSSheet";
 import { IOSConfirm } from "@/components/ios/IOSConfirm";
-import { IOSActionSheet, type ActionSheetItem } from "@/components/ios/IOSActionSheet";
+import { AdaptiveSheet } from "@/components/club/AdaptiveSheet";
+import { AdaptiveActionSheet } from "@/components/club/AdaptiveActionSheet";
+import type { ActionSheetItem } from "@/components/ios/IOSActionSheet";
 import { useViewer } from "@/hooks/use-viewer";
 import { useMyProfile } from "@/lib/garage-api";
 import { useMyStickerPacks, STICKER_PACK_PRODUCT_SLUGS } from "@/lib/stickers-api";
