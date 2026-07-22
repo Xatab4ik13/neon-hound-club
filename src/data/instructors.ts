@@ -143,7 +143,12 @@ export const INSTRUCTORS: Instructor[] = [
     skills: DEFAULT_SKILLS,
     location: KRD_LOCATION,
     schedule: DEFAULT_SCHEDULE,
-    gallery: [],
+    gallery: [
+      stanislavShot1.url,
+      stanislavShot2.url,
+      stanislavShot3.url,
+      stanislavShot4.url,
+    ],
   },
   {
     id: "semen",
