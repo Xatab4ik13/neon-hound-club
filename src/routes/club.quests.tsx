@@ -132,10 +132,10 @@ function StatTile({
     <div
       className={`rounded-2xl border-[3px] border-foreground ${TONE_BG[tone]} px-3 py-3 shadow-[4px_4px_0_0_hsl(var(--foreground))]`}
     >
-      <div className="font-mono text-[10px] font-bold uppercase tracking-[0.15em] text-foreground/70">
+      <div className="font-mono text-[10px] font-bold uppercase tracking-[0.15em] text-black/70">
         {label}
       </div>
-      <div className="mt-1.5 text-foreground">
+      <div className="mt-1.5 text-black">
         {isNum ? (
           <PlumpNum value={value as number} size={22} format />
         ) : (
