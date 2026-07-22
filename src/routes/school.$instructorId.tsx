@@ -72,7 +72,7 @@ function InstructorPage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Header />
-      <main className="mx-auto max-w-6xl px-4 pb-24 pt-24 md:pt-32">
+      <main className="w-full px-4 pb-24 pt-24 md:px-10 md:pt-32 lg:px-16">
         <BackLink />
         <Hero instructor={instructor} onCta={scrollToSchedule} />
         <SkillsSection instructor={instructor} />
