@@ -298,7 +298,7 @@ function ProductsTab() {
                 ) : (
                   <span className="text-xs text-zinc-400">—</span>
                 ),
-                {`${(p.priceRub).toLocaleString("ru-RU")} ₽`},
+                `${(p.priceRub).toLocaleString("ru-RU")} ₽`,
                 p.bonusTickets > 0 ? <span className="inline-flex items-center gap-0.5">+{(p.bonusTickets)} 🎟</span> : "—",
                 p.kind === "digital" ? "∞" : p.stock === null ? "∞" : {(p.stock)},
                 <Badge tone={p.active ? "emerald" : "zinc"}>
@@ -1525,7 +1525,7 @@ function ShowcaseTab() {
                   <div className="flex-1">
                     <div className="font-medium">{p?.title ?? "(удалён)"}</div>
                     <div className="text-xs text-zinc-500">
-                      {p ? {`${(p.priceRub).toLocaleString("ru-RU")} ₽`} : id}
+                      {p ? `${(p.priceRub).toLocaleString("ru-RU") ₽`} : id}
                     </div>
                   </div>
                   <Btn variant="ghost" onClick={() => move(id, -1)} disabled={i === 0}>
@@ -1646,7 +1646,7 @@ function OrdersTab() {
                 {o.shipping.fio}
                 <div className="text-[11px] text-zinc-500">{o.shipping.city}</div>
               </div>,
-              {`${(o.totalRub).toLocaleString("ru-RU")} ₽`},
+              `${(o.totalRub).toLocaleString("ru-RU")} ₽`,
               o.bonusTicketsTotal > 0 ? <span className="inline-flex items-center gap-0.5">+{(o.bonusTicketsTotal)} 🎟</span> : "—",
               <Badge tone={STATUS_TONE[o.status]}>{STATUS_LABEL[o.status]}</Badge>,
               o.cdekTrack ? <code className="text-xs">{o.cdekTrack}</code> : "—",

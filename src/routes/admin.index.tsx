@@ -56,13 +56,13 @@ function Dashboard() {
   }
 
   const stats: { label: string; value: React.ReactNode; delta?: React.ReactNode; icon: React.ComponentType<{ className?: string }> }[] = [
-    { label: "Выручка за 30 дней", value: {`${(data.kpi.revenue30d).toLocaleString("ru-RU")} ₽`}, icon: TrendingUp },
-    { label: "Активных Hell Pass", value: {(data.kpi.passActive)}, icon: Crown },
-    { label: "Новых пользователей / 7д", value: {(data.kpi.newUsers7d)}, icon: Users },
-    { label: "Билетов в обороте", value: {(data.kpi.ticketsInCirculation).toLocaleString("ru-RU")}, icon: PlumpTicket },
+    { label: "Выручка за 30 дней", value: `${(data.kpi.revenue30d).toLocaleString("ru-RU")} ₽`, icon: TrendingUp },
+    { label: "Активных Hell Pass", value: (data.kpi.passActive), icon: Crown },
+    { label: "Новых пользователей / 7д", value: (data.kpi.newUsers7d), icon: Users },
+    { label: "Билетов в обороте", value: (data.kpi.ticketsInCirculation).toLocaleString("ru-RU"), icon: PlumpTicket },
     {
       label: "Активных розыгрышей",
-      value: {(data.kpi.rafflesActive)},
+      value: (data.kpi.rafflesActive),
       delta: (
         <span className="inline-flex items-center gap-1">
           {(data.kpi.rafflesBankTickets).toLocaleString("ru-RU")} билетов в банке
@@ -70,7 +70,7 @@ function Dashboard() {
       ),
       icon: Trophy,
     },
-    { label: "Заказов за 7 дней", value: {(data.kpi.orders7d)}, icon: PlumpStore },
+    { label: "Заказов за 7 дней", value: (data.kpi.orders7d), icon: PlumpStore },
   ];
 
   return (
