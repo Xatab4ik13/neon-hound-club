@@ -1447,7 +1447,7 @@ function EmptyGarage({ onAdd }: { onAdd: () => void }) {
         Гараж
       </h1>
       <div className="flex flex-1 items-center justify-center py-6">
-        <div className="w-full rounded-[28px] border-[2px] border-foreground bg-background p-8 text-center shadow-[4px_4px_0_0_hsl(var(--foreground))]">
+        <div className="w-full rounded-[28px] bg-background p-8 text-center">
           <Illustration
             name="motorcycle"
             className="mx-auto h-40 w-40 text-foreground/80"
@@ -1462,7 +1462,7 @@ function EmptyGarage({ onAdd }: { onAdd: () => void }) {
           <button
             type="button"
             onClick={onAdd}
-            className="mt-5 inline-flex items-center gap-2 rounded-full border-[2px] border-foreground bg-primary px-5 py-2.5 text-[14px] font-bold text-primary-foreground shadow-[3px_3px_0_0_hsl(var(--foreground))] active:translate-x-[1px] active:translate-y-[1px] active:shadow-[1px_1px_0_0_hsl(var(--foreground))]"
+            className="mt-5 inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-[14px] font-bold text-primary-foreground active:scale-95"
           >
             <Plus className="h-4 w-4" />
             Добавить байк

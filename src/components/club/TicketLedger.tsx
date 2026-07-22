@@ -129,7 +129,7 @@ export function TicketLedger({
         </div>
       )}
 
-      <div className="overflow-hidden rounded-2xl border-[2px] border-foreground bg-card shadow-[4px_4px_0_0_hsl(var(--foreground))]">
+      <div className="overflow-hidden rounded-2xl bg-card">
         {isLoading && entries.length === 0 ? (
           <div>
             {Array.from({ length: 2 }).map((_, i) => (
@@ -228,8 +228,8 @@ function SummaryCard({
   muted?: boolean;
 }) {
   return (
-    <div className="flex items-center gap-3 rounded-2xl border-[2px] border-foreground bg-card px-4 py-3 shadow-[4px_4px_0_0_hsl(var(--foreground))]">
-      <div className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl border-[2px] border-foreground shadow-[2px_2px_0_0_hsl(var(--foreground))] ${tone}`}>
+    <div className="flex items-center gap-3 rounded-2xl bg-card px-4 py-3">
+      <div className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl ${tone}`}>
         {icon}
       </div>
       <div className="flex min-w-0 flex-col">
