@@ -440,6 +440,7 @@ function SlotBtn({
 
 function GallerySection({ instructor }: { instructor: Instructor }) {
   const scrollerRef = useRef<HTMLDivElement | null>(null);
+  const [openIndex, setOpenIndex] = useState<number | null>(null);
   const scrollBy = (dir: 1 | -1) => {
     const el = scrollerRef.current;
     if (!el) return;
@@ -470,9 +471,11 @@ function GallerySection({ instructor }: { instructor: Instructor }) {
           className="flex snap-x snap-mandatory gap-5 overflow-x-auto pb-4 pt-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
           {instructor.gallery.map((src, i) => (
-            <div
+            <button
+              type="button"
               key={src}
-              className={`shrink-0 snap-start ${rotates[i % rotates.length]} basis-[80%] sm:basis-[45%] md:basis-[32%] lg:basis-[26%]`}
+              onClick={() => setOpenIndex(i)}
+              className={`shrink-0 snap-start ${rotates[i % rotates.length]} basis-[80%] cursor-zoom-in transition-transform duration-200 hover:-translate-y-1 active:scale-[0.98] sm:basis-[45%] md:basis-[32%] lg:basis-[26%]`}
             >
               <div
                 className={`overflow-hidden rounded-2xl border-[3px] border-foreground ${TONE_BG[instructor.tone]} shadow-[6px_6px_0_0_hsl(var(--foreground))]`}
@@ -486,7 +489,7 @@ function GallerySection({ instructor }: { instructor: Instructor }) {
                   />
                 </div>
               </div>
-            </div>
+            </button>
           ))}
         </div>
 
@@ -509,7 +512,134 @@ function GallerySection({ instructor }: { instructor: Instructor }) {
           </button>
         </div>
       </div>
+
+      <GalleryLightbox
+        instructor={instructor}
+        index={openIndex}
+        onClose={() => setOpenIndex(null)}
+        onPrev={() =>
+          setOpenIndex((i) =>
+            i === null ? i : (i - 1 + instructor.gallery.length) % instructor.gallery.length,
+          )
+        }
+        onNext={() =>
+          setOpenIndex((i) => (i === null ? i : (i + 1) % instructor.gallery.length))
+        }
+      />
     </section>
+  );
+}
+
+function GalleryLightbox({
+  instructor,
+  index,
+  onClose,
+  onPrev,
+  onNext,
+}: {
+  instructor: Instructor;
+  index: number | null;
+  onClose: () => void;
+  onPrev: () => void;
+  onNext: () => void;
+}) {
+  const open = index !== null;
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+      else if (e.key === "ArrowLeft") onPrev();
+      else if (e.key === "ArrowRight") onNext();
+    };
+    window.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [open, onClose, onPrev, onNext]);
+
+  if (!open || index === null) return null;
+  const src = instructor.gallery[index];
+  const endRot = index % 2 === 0 ? "-2deg" : "2deg";
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      onClick={onClose}
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-background/85 p-4 backdrop-blur-sm animate-fade-in md:p-8"
+      style={{ willChange: "opacity" }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="relative w-full max-w-4xl origin-center"
+        style={{
+          animation: "lightbox-pop 300ms cubic-bezier(0.22, 1, 0.36, 1) both",
+          ["--end-rot" as any]: endRot,
+          willChange: "transform, opacity",
+        }}
+      >
+        <div
+          className={`overflow-hidden rounded-3xl border-[3px] border-foreground ${TONE_BG[instructor.tone]} shadow-[12px_12px_0_0_hsl(var(--foreground))]`}
+        >
+          <div className="aspect-[4/3] w-full bg-black">
+            <img
+              src={src}
+              alt={`${instructor.name} — кадр ${index + 1}`}
+              className="h-full w-full object-cover"
+              draggable={false}
+            />
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Закрыть"
+          className="absolute -right-3 -top-3 inline-flex h-11 w-11 items-center justify-center rounded-full border-[3px] border-foreground bg-primary text-primary-foreground shadow-[4px_4px_0_0_hsl(var(--foreground))] transition-transform duration-100 hover:-translate-y-0.5 md:-right-5 md:-top-5"
+        >
+          <span className="font-display text-xl font-black leading-none">×</span>
+        </button>
+      </div>
+
+      {instructor.gallery.length > 1 && (
+        <>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onPrev();
+            }}
+            aria-label="Предыдущее"
+            className="absolute left-3 top-1/2 inline-flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border-[3px] border-foreground bg-card shadow-[4px_4px_0_0_hsl(var(--foreground))] transition-transform duration-100 hover:-translate-y-[calc(50%+2px)] md:left-6"
+          >
+            <PlumpArrowLeft className="h-5 w-5" />
+          </button>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onNext();
+            }}
+            aria-label="Следующее"
+            className="absolute right-3 top-1/2 inline-flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border-[3px] border-foreground bg-primary text-primary-foreground shadow-[4px_4px_0_0_hsl(var(--foreground))] transition-transform duration-100 hover:-translate-y-[calc(50%+2px)] md:right-6"
+          >
+            <PlumpArrowRight className="h-5 w-5" />
+          </button>
+        </>
+      )}
+
+      <style>{`
+        @keyframes lightbox-pop {
+          0%   { opacity: 0; transform: scale(0.82) rotate(calc(var(--end-rot) * -3)); }
+          60%  { opacity: 1; }
+          100% { opacity: 1; transform: scale(1) rotate(var(--end-rot)); }
+        }
+      `}</style>
+    </div>
   );
 }
 
