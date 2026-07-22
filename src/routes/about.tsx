@@ -277,7 +277,11 @@ function AboutPage() {
                           src={f.image}
                           alt={f.title}
                           className={`relative z-10 w-full object-contain ${
-                            f.image === vanyaGarageAsset.url ? "max-w-[680px]" : "max-w-[520px]"
+                            f.image === vanyaGarageAsset.url
+                              ? "max-w-[680px]"
+                              : f.image === vanyaRafflesAsset.url
+                                ? "max-w-[640px]"
+                                : "max-w-[520px]"
                           }`}
                         />
                       </div>
