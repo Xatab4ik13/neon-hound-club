@@ -79,7 +79,6 @@ function InstructorPage() {
         <LocationSection instructor={instructor} />
         <ScheduleSection instructor={instructor} scheduleRef={scheduleRef} />
         <GallerySection instructor={instructor} />
-        <FinalCta onClick={scrollToSchedule} />
         <OtherInstructors currentSlug={instructor.slug} />
       </main>
       <Footer />
