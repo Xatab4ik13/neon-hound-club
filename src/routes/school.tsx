@@ -84,19 +84,20 @@ function SchoolPage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Header />
-      <main className="mx-auto max-w-6xl px-4 pb-24 pt-10 md:pt-16">
+      <main className="mx-auto max-w-6xl px-4 pb-24 pt-24 md:pt-32">
         {/* HEADER */}
         <div className="text-center">
           <p className="mb-3 font-mono text-[11px] uppercase tracking-[0.3em] text-primary">
             Школа
           </p>
-          <h1 className="font-display text-5xl font-black uppercase italic tracking-tight md:text-7xl">
+          <h1 className="font-display text-5xl font-black uppercase leading-[0.88] tracking-tight md:text-7xl">
             Школа HELLHOUND
           </h1>
           <p className="mx-auto mt-4 max-w-xl font-mono text-xs uppercase tracking-widest text-muted-foreground md:text-sm">
             Учись у тех, кто реально катает
           </p>
         </div>
+
 
         {/* SEGMENTED TOGGLE — plump */}
         <div className="mt-10 flex justify-center">
