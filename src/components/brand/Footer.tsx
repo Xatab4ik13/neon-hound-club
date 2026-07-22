@@ -1,10 +1,12 @@
 import { Link } from "@tanstack/react-router";
-import { PaymentBadges } from "./PaymentBadges";
 import { LEGAL } from "@/data/legal";
 import hhrLogo from "@/assets/hhr-logo.png.asset.json";
 import youtubeIcon from "@/assets/social/youtube.svg";
 import telegramIcon from "@/assets/social/telegram.svg";
 import twitchIcon from "@/assets/social/twitch.svg";
+import visaLogo from "@/assets/payments/visa.svg";
+import mastercardLogo from "@/assets/payments/mastercard.svg";
+import mirLogo from "@/assets/payments/mir.svg";
 
 const SOCIALS = [
   { label: "YouTube", href: "https://www.youtube.com/@HELLHOUNDRacing", icon: youtubeIcon },
@@ -17,98 +19,57 @@ export function Footer() {
 
   return (
     <footer className="relative bg-white text-black">
-      <div className="mx-auto max-w-7xl px-6 pt-14 pb-8">
-        {/* Логотип по центру */}
-        <div className="flex justify-center">
+      <div className="mx-auto max-w-7xl px-6 py-8">
+        {/* Верх: логотип слева, соцсети справа */}
+        <div className="flex flex-col items-center justify-between gap-6 md:flex-row">
           <img
             src={hhrLogo.url}
             alt="HELLHOUND Racing"
-            className="h-20 w-auto md:h-24"
+            className="h-12 w-auto md:h-14"
           />
-        </div>
 
-        {/* Соцсети — Plump плашки */}
-        <div className="mt-8 flex justify-center gap-4">
-          {SOCIALS.map((s) => (
-            <a
-              key={s.label}
-              href={s.href}
-              target="_blank"
-              rel="noreferrer"
-              aria-label={s.label}
-              className="grid h-14 w-14 place-items-center rounded-2xl border-[3px] border-black bg-white shadow-[4px_4px_0_0_#000] transition-transform hover:-translate-y-0.5 hover:shadow-[5px_5px_0_0_#000] active:translate-y-0 active:shadow-[2px_2px_0_0_#000]"
-            >
-              <img src={s.icon} alt="" className="h-6 w-6" />
-            </a>
-          ))}
-        </div>
-
-        {/* верхний блок */}
-        <div className="mt-12 grid gap-10 md:grid-cols-12">
-          {/* навигация */}
-          <div className="md:col-span-4">
-            <div className="mb-4 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-black/50">
-              Клуб
-            </div>
-            <ul className="space-y-2.5 text-sm">
-              <li><Link to="/shop" className="transition-colors hover:text-primary">Магазин</Link></li>
-              <li><Link to="/hell-pass" className="transition-colors hover:text-primary">Hell Pass</Link></li>
-              <li><Link to="/school" className="transition-colors hover:text-primary">Школа</Link></li>
-              <li><Link to="/about" className="transition-colors hover:text-primary">О клубе</Link></li>
-            </ul>
-          </div>
-
-          {/* документы */}
-          <div className="md:col-span-8">
-            <div className="mb-4 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-black/50">
-              Документы
-            </div>
-            <ul className="grid grid-cols-1 gap-2.5 text-sm sm:grid-cols-2">
-              <li><Link to="/shop-info" className="transition-colors hover:text-primary">Оплата и доставка</Link></li>
-              <li><Link to="/legal/offer" className="transition-colors hover:text-primary">Публичная оферта</Link></li>
-              <li><Link to="/legal/terms" className="transition-colors hover:text-primary">Пользовательское соглашение</Link></li>
-              <li><Link to="/legal/privacy" className="transition-colors hover:text-primary">Политика ПДн</Link></li>
-              <li><Link to="/legal/promo-rules" className="transition-colors hover:text-primary">Правила розыгрышей</Link></li>
-              <li><Link to="/legal/requisites" className="transition-colors hover:text-primary">Реквизиты</Link></li>
-            </ul>
-
-            <div className="mt-6">
+          <div className="flex gap-3">
+            {SOCIALS.map((s) => (
               <a
-                href={`mailto:${LEGAL.contactEmail}`}
-                className="inline-flex w-fit items-center gap-2 font-mono text-[11px] uppercase tracking-widest text-black/60 transition-colors hover:text-primary"
+                key={s.label}
+                href={s.href}
+                target="_blank"
+                rel="noreferrer"
+                aria-label={s.label}
+                className="grid h-11 w-11 place-items-center rounded-xl border-[3px] border-black bg-white shadow-[3px_3px_0_0_#000] transition-transform hover:-translate-y-0.5 hover:shadow-[4px_4px_0_0_#000] active:translate-y-0 active:shadow-[2px_2px_0_0_#000]"
               >
-                {LEGAL.contactEmail}
+                <img src={s.icon} alt="" className="h-5 w-5" />
               </a>
-            </div>
+            ))}
           </div>
         </div>
 
-        {/* разделитель */}
-        <div className="mt-12 border-t-[3px] border-black" />
+        {/* Разделитель */}
+        <div className="mt-6 border-t-[3px] border-black" />
 
-        {/* платёжные системы */}
-        <div className="mt-6 flex flex-col items-start gap-3 md:flex-row md:items-center md:justify-between">
+        {/* Средний ряд: документы + платёжные логотипы */}
+        <div className="mt-5 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <ul className="flex flex-wrap gap-x-5 gap-y-2 text-sm">
+            <li><Link to="/legal/offer" className="transition-colors hover:text-primary">Оферта</Link></li>
+            <li><Link to="/legal/terms" className="transition-colors hover:text-primary">Соглашение</Link></li>
+            <li><Link to="/legal/privacy" className="transition-colors hover:text-primary">Политика ПДн</Link></li>
+            <li><Link to="/legal/promo-rules" className="transition-colors hover:text-primary">Правила розыгрышей</Link></li>
+            <li><Link to="/legal/requisites" className="transition-colors hover:text-primary">Реквизиты</Link></li>
+          </ul>
+
           <div className="flex items-center gap-3">
-            <span className="font-mono text-[10px] uppercase tracking-widest text-black/50">
-              Принимаем
-            </span>
-            <PaymentBadges size="sm" />
+            <img src={visaLogo} alt="Visa" className="h-6 w-auto" />
+            <img src={mastercardLogo} alt="Mastercard" className="h-7 w-auto" />
+            <img src={mirLogo} alt="МИР" className="h-5 w-auto" />
           </div>
-          <Link
-            to="/shop-info"
-            className="font-mono text-[11px] uppercase tracking-widest text-black/60 transition-colors hover:text-primary"
-          >
-            Оплата и доставка →
-          </Link>
         </div>
 
-        {/* нижняя строка: реквизиты ИП по 152-ФЗ */}
-        <div className="mt-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div className="font-mono text-[11px] leading-relaxed text-black/60">
+        {/* Низ: реквизиты + копирайт */}
+        <div className="mt-5 flex flex-col gap-2 font-mono text-[11px] text-black/60 md:flex-row md:items-center md:justify-between">
+          <div>
             {LEGAL.shortName} · ОГРНИП {LEGAL.ogrnip} · ИНН {LEGAL.inn}
-            <span className="hidden md:inline"> · {LEGAL.addressShort}</span>
           </div>
-          <div className="font-mono text-[11px] uppercase tracking-widest text-black/60">
+          <div className="uppercase tracking-widest">
             © {year} {LEGAL.brand}
           </div>
         </div>
