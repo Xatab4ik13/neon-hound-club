@@ -14,7 +14,6 @@ import { PageHeader } from "@/components/club/PageHeader";
 import {
   fetchMyRaffles,
   fetchRaffles,
-  fetchTicketsBalance,
   qk,
   type MyRaffleItem,
   type RaffleListItem,
@@ -36,11 +35,6 @@ function RafflesPage() {
   const { isAuthed } = useViewer();
 
   const rafflesQ = useQuery({ queryKey: qk.raffles, queryFn: fetchRaffles });
-  const balanceQ = useQuery({
-    queryKey: qk.ticketsBalance,
-    queryFn: fetchTicketsBalance,
-    enabled: isAuthed,
-  });
   const myQ = useQuery({
     queryKey: qk.myRaffles,
     queryFn: fetchMyRaffles,
@@ -52,38 +46,10 @@ function RafflesPage() {
   const finished = all.filter((r) => r.status === "finished");
   const my = myQ.data?.items ?? [];
   const wonCount = my.filter((r) => r.won).length;
-  const balance = balanceQ.data?.balance ?? 0;
 
   return (
     <main className="mx-auto w-full max-w-3xl px-4 py-5 pb-[calc(env(safe-area-inset-bottom)+96px)] md:py-8">
       <PageHeader title="Розыгрыши" />
-
-      {isAuthed && (
-        <section
-          aria-label="Баланс"
-          className="mb-6 flex items-center justify-between gap-3 rounded-3xl border-[3px] border-foreground bg-card px-4 py-3 shadow-[6px_6px_0_0_hsl(var(--foreground))]"
-        >
-          <Link to="/club/tickets" className="flex min-w-0 items-center gap-3 active:opacity-70">
-            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border-[3px] border-foreground bg-[#FFD93D] shadow-[3px_3px_0_0_hsl(var(--foreground))]">
-              <PlumpTicket className="h-5 w-5 text-black" />
-            </span>
-            <span className="min-w-0">
-              <span className="block font-mono text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground">
-                Мой баланс
-              </span>
-              <span className="block text-foreground">
-                <PlumpNum value={balance} size={22} format />
-              </span>
-            </span>
-          </Link>
-          <Link
-            to="/club/tickets"
-            className="shrink-0 rounded-full border-[3px] border-foreground bg-foreground px-3 py-1.5 font-display text-[11px] font-black uppercase tracking-widest text-background shadow-[3px_3px_0_0_hsl(var(--foreground))] active:translate-x-[1px] active:translate-y-[1px] active:shadow-[1px_1px_0_0_hsl(var(--foreground))]"
-          >
-            Как набрать
-          </Link>
-        </section>
-      )}
 
       <section aria-label="Активные розыгрыши" className="mb-8">
         <SectionTitle>
@@ -178,7 +144,7 @@ function CardsGrid({ items, finished = false }: { items: RaffleListItem[]; finis
 function LegalNotice() {
   return (
     <section aria-label="Юридическая информация" className="mt-8">
-      <details className="group rounded-2xl border-[3px] border-foreground bg-card shadow-[4px_4px_0_0_hsl(var(--foreground))]">
+      <details className="group rounded-2xl bg-card">
         <summary className="flex cursor-pointer list-none items-center gap-3 px-4 py-3 [&::-webkit-details-marker]:hidden">
           <ShieldCheck className="h-4 w-4 shrink-0 text-muted-foreground" />
           <span className="flex-1 font-mono text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
@@ -246,7 +212,7 @@ function MyRaffleRow({ raffle }: { raffle: MyRaffleItem }) {
       ? { label: "Не выиграл", bg: "bg-background", tone: "text-muted-foreground" }
       : { label: "В игре", bg: "bg-[#FFD93D]", tone: "text-black" };
   return (
-    <li className="flex items-center gap-3 rounded-2xl border-[3px] border-foreground bg-card px-3 py-3 shadow-[4px_4px_0_0_hsl(var(--foreground))]">
+    <li className="flex items-center gap-3 rounded-2xl bg-card px-3 py-3">
       <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl border-[2px] border-foreground bg-black">
         {raffle.imageUrl && (
           <img
