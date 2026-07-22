@@ -442,36 +442,61 @@ function GallerySection({ instructor }: { instructor: Instructor }) {
   if (instructor.gallery.length === 0) {
     return (
       <section className="mt-20 md:mt-28">
-        <SectionHeading kicker="Кадры" title="Фото с занятий" />
+        <SectionHeading kicker="Кадры" title="Кадры инструктора" />
         <div className="flex flex-col items-center justify-center gap-3 rounded-3xl border-[3px] border-dashed border-foreground/40 bg-card/40 p-12 text-center">
           <PlumpCamera className="h-10 w-10 text-primary" />
           <p className="font-display text-xl font-black uppercase tracking-tight text-foreground">
             Скоро добавим
           </p>
           <p className="max-w-md text-sm text-muted-foreground">
-            {instructor.name} готовит подборку кадров с площадки и с городских выездов.
+            {instructor.name} готовит подборку кадров.
           </p>
         </div>
       </section>
     );
   }
-  const rotates = ["-rotate-2", "rotate-1", "-rotate-1", "rotate-2", "-rotate-1"];
+
+  // Random-ish "fridge magnet" polaroid layout: many tiles, mixed sizes & rotations.
+  const tones: Array<keyof typeof TONE_BG> = ["primary", "yellow", "cyan", "lime", "violet"];
+  const rotates = ["-rotate-3", "rotate-2", "-rotate-1", "rotate-3", "-rotate-2", "rotate-1"];
+  const spans = [
+    "col-span-2 row-span-2",
+    "col-span-2 row-span-1",
+    "col-span-1 row-span-2",
+    "col-span-1 row-span-1",
+    "col-span-2 row-span-1",
+    "col-span-1 row-span-1",
+  ];
+
   return (
     <section className="mt-20 md:mt-28">
-      <SectionHeading kicker="Кадры" title="Фото с занятий" />
-      <div className="grid gap-6 md:grid-cols-3">
-        {instructor.gallery.map((src, i) => (
-          <div
-            key={src}
-            className={`overflow-hidden rounded-2xl border-[3px] border-foreground ${TONE_BG[instructor.tone]} shadow-[6px_6px_0_0_hsl(var(--foreground))] ${rotates[i % rotates.length]} ${i === 0 ? "md:col-span-2 md:row-span-2" : ""}`}
-          >
-            <img src={src} alt={`${instructor.name} — фото ${i + 1}`} loading="lazy" className="h-full w-full object-cover" />
-          </div>
-        ))}
+      <SectionHeading kicker="Кадры" title="С площадки и трека" />
+      <div
+        className="relative grid auto-rows-[120px] grid-cols-4 gap-5 md:auto-rows-[160px] md:grid-cols-6 md:gap-8 lg:auto-rows-[200px] lg:grid-cols-8"
+      >
+        {instructor.gallery.map((src, i) => {
+          const tone = tones[i % tones.length];
+          const rot = rotates[i % rotates.length];
+          const span = spans[i % spans.length];
+          return (
+            <div
+              key={src}
+              className={`${span} ${rot} group relative overflow-hidden rounded-2xl border-[3px] border-foreground ${TONE_BG[tone]} p-2 shadow-[8px_8px_0_0_hsl(var(--foreground))] transition-transform duration-200 hover:-translate-y-1 hover:rotate-0 hover:shadow-[12px_12px_0_0_hsl(var(--foreground))]`}
+            >
+              <img
+                src={src}
+                alt={`${instructor.name} — фото ${i + 1}`}
+                loading="lazy"
+                className="h-full w-full rounded-xl object-cover"
+              />
+            </div>
+          );
+        })}
       </div>
     </section>
   );
 }
+
 
 /* ---------- Final CTA ---------- */
 
