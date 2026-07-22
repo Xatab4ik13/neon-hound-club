@@ -325,12 +325,12 @@ export const INSTRUCTORS: Instructor[] = [
       note: "Тренирую только на своей площадке в Крылатском. К ученику не выезжаю.",
     },
     schedule: DEFAULT_SCHEDULE,
-    gallery: [nkGal01.url, nkGal02.url, nkGal03.url],
+    gallery: [nkGal01.url, nkGal02.url, nkGal03.url, nkGal04.url],
     courses: [
       {
         title: "Индивидуальное занятие",
         duration: "1 час · площадка в Крылатском",
-        price: 5000,
+        price: 6000,
         description:
           "Персональная тренировка по станту. Всё включено: мотоцикл, экипировка, площадка. Достаточно прийти самому.",
         includes: [
@@ -342,8 +342,8 @@ export const INSTRUCTORS: Instructor[] = [
       },
       {
         title: "Пакет из 10 занятий",
-        duration: "10 × 1 час · выгоднее на 10 000 ₽",
-        price: 40000,
+        duration: "10 × 1 час · выгоднее на 12 000 ₽",
+        price: 48000,
         description:
           "Абонемент на 10 занятий по станту. Оптимальный формат, чтобы реально прокачать трюки: от wheelie с места до баланс-поинта.",
         includes: [
