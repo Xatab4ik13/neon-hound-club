@@ -40,7 +40,6 @@ import { Route as LegalPrivacyRouteImport } from './routes/legal.privacy'
 import { Route as LegalOfferRouteImport } from './routes/legal.offer'
 import { Route as HellPassTierRouteImport } from './routes/hell-pass.$tier'
 import { Route as ClubTicketsRouteImport } from './routes/club.tickets'
-import { Route as ClubSchoolRouteImport } from './routes/club.school'
 import { Route as ClubRankRouteImport } from './routes/club.rank'
 import { Route as ClubQuestsRouteImport } from './routes/club.quests'
 import { Route as ClubMeRouteImport } from './routes/club.me'
@@ -68,6 +67,7 @@ import { Route as AdminEconomyRouteImport } from './routes/admin.economy'
 import { Route as AdminCdekRouteImport } from './routes/admin.cdek'
 import { Route as AdminBannersRouteImport } from './routes/admin.banners'
 import { Route as ClubShopIndexRouteImport } from './routes/club.shop.index'
+import { Route as ClubSchoolIndexRouteImport } from './routes/club.school.index'
 import { Route as ClubRafflesIndexRouteImport } from './routes/club.raffles.index'
 import { Route as ClubOrdersIndexRouteImport } from './routes/club.orders.index'
 import { Route as ClubHelpIndexRouteImport } from './routes/club.help.index'
@@ -75,6 +75,7 @@ import { Route as ClubHellPassIndexRouteImport } from './routes/club.hell-pass.i
 import { Route as BloggerRafflesIndexRouteImport } from './routes/blogger.raffles.index'
 import { Route as ClubUNickRouteImport } from './routes/club.u.$nick'
 import { Route as ClubShopProductSlugRouteImport } from './routes/club.shop.$productSlug'
+import { Route as ClubSchoolInstructorIdRouteImport } from './routes/club.school.$instructorId'
 import { Route as ClubRafflesRaffleIdRouteImport } from './routes/club.raffles.$raffleId'
 import { Route as ClubPPostIdRouteImport } from './routes/club.p.$postId'
 import { Route as ClubOrdersOrderIdRouteImport } from './routes/club.orders.$orderId'
@@ -241,11 +242,6 @@ const ClubTicketsRoute = ClubTicketsRouteImport.update({
   path: '/tickets',
   getParentRoute: () => ClubRoute,
 } as any)
-const ClubSchoolRoute = ClubSchoolRouteImport.update({
-  id: '/school',
-  path: '/school',
-  getParentRoute: () => ClubRoute,
-} as any)
 const ClubRankRoute = ClubRankRouteImport.update({
   id: '/rank',
   path: '/rank',
@@ -381,6 +377,11 @@ const ClubShopIndexRoute = ClubShopIndexRouteImport.update({
   path: '/shop/',
   getParentRoute: () => ClubRoute,
 } as any)
+const ClubSchoolIndexRoute = ClubSchoolIndexRouteImport.update({
+  id: '/school/',
+  path: '/school/',
+  getParentRoute: () => ClubRoute,
+} as any)
 const ClubRafflesIndexRoute = ClubRafflesIndexRouteImport.update({
   id: '/raffles/',
   path: '/raffles/',
@@ -414,6 +415,11 @@ const ClubUNickRoute = ClubUNickRouteImport.update({
 const ClubShopProductSlugRoute = ClubShopProductSlugRouteImport.update({
   id: '/shop/$productSlug',
   path: '/shop/$productSlug',
+  getParentRoute: () => ClubRoute,
+} as any)
+const ClubSchoolInstructorIdRoute = ClubSchoolInstructorIdRouteImport.update({
+  id: '/school/$instructorId',
+  path: '/school/$instructorId',
   getParentRoute: () => ClubRoute,
 } as any)
 const ClubRafflesRaffleIdRoute = ClubRafflesRaffleIdRouteImport.update({
@@ -506,7 +512,6 @@ export interface FileRoutesByFullPath {
   '/club/me': typeof ClubMeRoute
   '/club/quests': typeof ClubQuestsRoute
   '/club/rank': typeof ClubRankRoute
-  '/club/school': typeof ClubSchoolRoute
   '/club/tickets': typeof ClubTicketsRoute
   '/hell-pass/$tier': typeof HellPassTierRoute
   '/legal/offer': typeof LegalOfferRoute
@@ -536,6 +541,7 @@ export interface FileRoutesByFullPath {
   '/club/orders/$orderId': typeof ClubOrdersOrderIdRoute
   '/club/p/$postId': typeof ClubPPostIdRoute
   '/club/raffles/$raffleId': typeof ClubRafflesRaffleIdRoute
+  '/club/school/$instructorId': typeof ClubSchoolInstructorIdRoute
   '/club/shop/$productSlug': typeof ClubShopProductSlugRoute
   '/club/u/$nick': typeof ClubUNickRoute
   '/blogger/raffles/': typeof BloggerRafflesIndexRoute
@@ -543,6 +549,7 @@ export interface FileRoutesByFullPath {
   '/club/help/': typeof ClubHelpIndexRoute
   '/club/orders/': typeof ClubOrdersIndexRoute
   '/club/raffles/': typeof ClubRafflesIndexRoute
+  '/club/school/': typeof ClubSchoolIndexRoute
   '/club/shop/': typeof ClubShopIndexRoute
 }
 export interface FileRoutesByTo {
@@ -581,7 +588,6 @@ export interface FileRoutesByTo {
   '/club/me': typeof ClubMeRoute
   '/club/quests': typeof ClubQuestsRoute
   '/club/rank': typeof ClubRankRoute
-  '/club/school': typeof ClubSchoolRoute
   '/club/tickets': typeof ClubTicketsRoute
   '/hell-pass/$tier': typeof HellPassTierRoute
   '/legal/offer': typeof LegalOfferRoute
@@ -611,6 +617,7 @@ export interface FileRoutesByTo {
   '/club/orders/$orderId': typeof ClubOrdersOrderIdRoute
   '/club/p/$postId': typeof ClubPPostIdRoute
   '/club/raffles/$raffleId': typeof ClubRafflesRaffleIdRoute
+  '/club/school/$instructorId': typeof ClubSchoolInstructorIdRoute
   '/club/shop/$productSlug': typeof ClubShopProductSlugRoute
   '/club/u/$nick': typeof ClubUNickRoute
   '/blogger/raffles': typeof BloggerRafflesIndexRoute
@@ -618,6 +625,7 @@ export interface FileRoutesByTo {
   '/club/help': typeof ClubHelpIndexRoute
   '/club/orders': typeof ClubOrdersIndexRoute
   '/club/raffles': typeof ClubRafflesIndexRoute
+  '/club/school': typeof ClubSchoolIndexRoute
   '/club/shop': typeof ClubShopIndexRoute
 }
 export interface FileRoutesById {
@@ -660,7 +668,6 @@ export interface FileRoutesById {
   '/club/me': typeof ClubMeRoute
   '/club/quests': typeof ClubQuestsRoute
   '/club/rank': typeof ClubRankRoute
-  '/club/school': typeof ClubSchoolRoute
   '/club/tickets': typeof ClubTicketsRoute
   '/hell-pass/$tier': typeof HellPassTierRoute
   '/legal/offer': typeof LegalOfferRoute
@@ -690,6 +697,7 @@ export interface FileRoutesById {
   '/club/orders/$orderId': typeof ClubOrdersOrderIdRoute
   '/club/p/$postId': typeof ClubPPostIdRoute
   '/club/raffles/$raffleId': typeof ClubRafflesRaffleIdRoute
+  '/club/school/$instructorId': typeof ClubSchoolInstructorIdRoute
   '/club/shop/$productSlug': typeof ClubShopProductSlugRoute
   '/club/u/$nick': typeof ClubUNickRoute
   '/blogger/raffles/': typeof BloggerRafflesIndexRoute
@@ -697,6 +705,7 @@ export interface FileRoutesById {
   '/club/help/': typeof ClubHelpIndexRoute
   '/club/orders/': typeof ClubOrdersIndexRoute
   '/club/raffles/': typeof ClubRafflesIndexRoute
+  '/club/school/': typeof ClubSchoolIndexRoute
   '/club/shop/': typeof ClubShopIndexRoute
 }
 export interface FileRouteTypes {
@@ -740,7 +749,6 @@ export interface FileRouteTypes {
     | '/club/me'
     | '/club/quests'
     | '/club/rank'
-    | '/club/school'
     | '/club/tickets'
     | '/hell-pass/$tier'
     | '/legal/offer'
@@ -770,6 +778,7 @@ export interface FileRouteTypes {
     | '/club/orders/$orderId'
     | '/club/p/$postId'
     | '/club/raffles/$raffleId'
+    | '/club/school/$instructorId'
     | '/club/shop/$productSlug'
     | '/club/u/$nick'
     | '/blogger/raffles/'
@@ -777,6 +786,7 @@ export interface FileRouteTypes {
     | '/club/help/'
     | '/club/orders/'
     | '/club/raffles/'
+    | '/club/school/'
     | '/club/shop/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -815,7 +825,6 @@ export interface FileRouteTypes {
     | '/club/me'
     | '/club/quests'
     | '/club/rank'
-    | '/club/school'
     | '/club/tickets'
     | '/hell-pass/$tier'
     | '/legal/offer'
@@ -845,6 +854,7 @@ export interface FileRouteTypes {
     | '/club/orders/$orderId'
     | '/club/p/$postId'
     | '/club/raffles/$raffleId'
+    | '/club/school/$instructorId'
     | '/club/shop/$productSlug'
     | '/club/u/$nick'
     | '/blogger/raffles'
@@ -852,6 +862,7 @@ export interface FileRouteTypes {
     | '/club/help'
     | '/club/orders'
     | '/club/raffles'
+    | '/club/school'
     | '/club/shop'
   id:
     | '__root__'
@@ -893,7 +904,6 @@ export interface FileRouteTypes {
     | '/club/me'
     | '/club/quests'
     | '/club/rank'
-    | '/club/school'
     | '/club/tickets'
     | '/hell-pass/$tier'
     | '/legal/offer'
@@ -923,6 +933,7 @@ export interface FileRouteTypes {
     | '/club/orders/$orderId'
     | '/club/p/$postId'
     | '/club/raffles/$raffleId'
+    | '/club/school/$instructorId'
     | '/club/shop/$productSlug'
     | '/club/u/$nick'
     | '/blogger/raffles/'
@@ -930,6 +941,7 @@ export interface FileRouteTypes {
     | '/club/help/'
     | '/club/orders/'
     | '/club/raffles/'
+    | '/club/school/'
     | '/club/shop/'
   fileRoutesById: FileRoutesById
 }
@@ -1183,13 +1195,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ClubTicketsRouteImport
       parentRoute: typeof ClubRoute
     }
-    '/club/school': {
-      id: '/club/school'
-      path: '/school'
-      fullPath: '/club/school'
-      preLoaderRoute: typeof ClubSchoolRouteImport
-      parentRoute: typeof ClubRoute
-    }
     '/club/rank': {
       id: '/club/rank'
       path: '/rank'
@@ -1379,6 +1384,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ClubShopIndexRouteImport
       parentRoute: typeof ClubRoute
     }
+    '/club/school/': {
+      id: '/club/school/'
+      path: '/school'
+      fullPath: '/club/school/'
+      preLoaderRoute: typeof ClubSchoolIndexRouteImport
+      parentRoute: typeof ClubRoute
+    }
     '/club/raffles/': {
       id: '/club/raffles/'
       path: '/raffles'
@@ -1426,6 +1438,13 @@ declare module '@tanstack/react-router' {
       path: '/shop/$productSlug'
       fullPath: '/club/shop/$productSlug'
       preLoaderRoute: typeof ClubShopProductSlugRouteImport
+      parentRoute: typeof ClubRoute
+    }
+    '/club/school/$instructorId': {
+      id: '/club/school/$instructorId'
+      path: '/school/$instructorId'
+      fullPath: '/club/school/$instructorId'
+      preLoaderRoute: typeof ClubSchoolInstructorIdRouteImport
       parentRoute: typeof ClubRoute
     }
     '/club/raffles/$raffleId': {
@@ -1568,7 +1587,6 @@ interface ClubRouteChildren {
   ClubMeRoute: typeof ClubMeRoute
   ClubQuestsRoute: typeof ClubQuestsRoute
   ClubRankRoute: typeof ClubRankRoute
-  ClubSchoolRoute: typeof ClubSchoolRoute
   ClubTicketsRoute: typeof ClubTicketsRoute
   ClubIndexRoute: typeof ClubIndexRoute
   ClubHellPassTierRoute: typeof ClubHellPassTierRoute
@@ -1580,12 +1598,14 @@ interface ClubRouteChildren {
   ClubOrdersOrderIdRoute: typeof ClubOrdersOrderIdRoute
   ClubPPostIdRoute: typeof ClubPPostIdRoute
   ClubRafflesRaffleIdRoute: typeof ClubRafflesRaffleIdRoute
+  ClubSchoolInstructorIdRoute: typeof ClubSchoolInstructorIdRoute
   ClubShopProductSlugRoute: typeof ClubShopProductSlugRoute
   ClubUNickRoute: typeof ClubUNickRoute
   ClubHellPassIndexRoute: typeof ClubHellPassIndexRoute
   ClubHelpIndexRoute: typeof ClubHelpIndexRoute
   ClubOrdersIndexRoute: typeof ClubOrdersIndexRoute
   ClubRafflesIndexRoute: typeof ClubRafflesIndexRoute
+  ClubSchoolIndexRoute: typeof ClubSchoolIndexRoute
   ClubShopIndexRoute: typeof ClubShopIndexRoute
 }
 
@@ -1599,7 +1619,6 @@ const ClubRouteChildren: ClubRouteChildren = {
   ClubMeRoute: ClubMeRoute,
   ClubQuestsRoute: ClubQuestsRoute,
   ClubRankRoute: ClubRankRoute,
-  ClubSchoolRoute: ClubSchoolRoute,
   ClubTicketsRoute: ClubTicketsRoute,
   ClubIndexRoute: ClubIndexRoute,
   ClubHellPassTierRoute: ClubHellPassTierRoute,
@@ -1611,12 +1630,14 @@ const ClubRouteChildren: ClubRouteChildren = {
   ClubOrdersOrderIdRoute: ClubOrdersOrderIdRoute,
   ClubPPostIdRoute: ClubPPostIdRoute,
   ClubRafflesRaffleIdRoute: ClubRafflesRaffleIdRoute,
+  ClubSchoolInstructorIdRoute: ClubSchoolInstructorIdRoute,
   ClubShopProductSlugRoute: ClubShopProductSlugRoute,
   ClubUNickRoute: ClubUNickRoute,
   ClubHellPassIndexRoute: ClubHellPassIndexRoute,
   ClubHelpIndexRoute: ClubHelpIndexRoute,
   ClubOrdersIndexRoute: ClubOrdersIndexRoute,
   ClubRafflesIndexRoute: ClubRafflesIndexRoute,
+  ClubSchoolIndexRoute: ClubSchoolIndexRoute,
   ClubShopIndexRoute: ClubShopIndexRoute,
 }
 
