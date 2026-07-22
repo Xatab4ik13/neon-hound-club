@@ -230,7 +230,7 @@ function AboutPage() {
                       : "max-w-3xl"
                   } ${!f.image && !alignRight ? "ml-auto" : ""}`}
                 >
-                  <Reveal from={alignRight ? "left" : "right"}>
+                  <Reveal from={alignRight ? "left" : "right"} className={f.image && !alignRight ? "lg:order-2" : ""}>
                     <div>
                       <div className="mb-5 inline-flex h-14 w-14 items-center justify-center rounded-xl border-[3px] border-foreground bg-primary text-primary-foreground shadow-[4px_4px_0_0_hsl(var(--foreground))]">
                         <f.Icon size={30} />
@@ -263,16 +263,12 @@ function AboutPage() {
                   </Reveal>
 
                   {f.image && (
-                    <Reveal from={alignRight ? "right" : "left"} delay={160}>
+                    <Reveal from={alignRight ? "right" : "left"} delay={160} className={!alignRight ? "lg:order-1" : ""}>
                       <div className="relative flex items-center justify-center">
-                        <div
-                          aria-hidden
-                          className="absolute inset-0 rounded-3xl bg-primary/20 blur-[80px]"
-                        />
                         <img
                           src={f.image}
-                          alt="Ваня в гараже HELLHOUND"
-                          className="relative z-10 w-full max-w-[520px] object-contain drop-shadow-2xl"
+                          alt={f.title}
+                          className="relative z-10 w-full max-w-[520px] object-contain"
                         />
                       </div>
                     </Reveal>
