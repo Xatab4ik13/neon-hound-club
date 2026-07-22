@@ -11,21 +11,18 @@ import { readFileSync } from "node:fs";
 // served. The CDN base defaults to the project's preview subdomain which
 // serves the same immutable assets over public CORS.
 function lovableAssetJsonRewrite(): Plugin {
-  const CDN_BASE =
+  const CDN_BASE = (
     process.env.VITE_LOVABLE_ASSET_BASE ||
-    "https://id-preview--684793f4-d120-461e-9357-79d82baeb567.lovable.app";
+    "https://id-preview--684793f4-d120-461e-9357-79d82baeb567.lovable.app"
+  ).replace(/\/$/, "");
   return {
     name: "lovable-asset-json-rewrite",
-    enforce: "pre",
-    transform(_code, id) {
+    enforce: "post",
+    transform(code, id) {
       if (!id.endsWith(".asset.json")) return null;
-      const raw = readFileSync(id.split("?")[0], "utf-8");
-      const data = JSON.parse(raw);
-      if (typeof data.url === "string" && data.url.startsWith("/__l5e/")) {
-        data.url = CDN_BASE.replace(/\/$/, "") + data.url;
-      }
+      if (!code.includes("/__l5e/")) return null;
       return {
-        code: `export default ${JSON.stringify(data)};`,
+        code: code.replace(/"\/__l5e\//g, `"${CDN_BASE}/__l5e/`),
         map: null,
       };
     },
