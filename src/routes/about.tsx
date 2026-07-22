@@ -124,6 +124,7 @@ const FEATURES: Feature[] = [
       "Билеты за каждую покупку — потом на них разыгрываем призы",
     ],
     bg: "surface",
+    image: vanyaMerchAsset.url,
   },
   {
     title: "Розыгрыши и новости мотоспорта",
