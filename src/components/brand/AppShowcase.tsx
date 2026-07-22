@@ -43,7 +43,7 @@ export function AppShowcase() {
           </h2>
         </div>
 
-        <div className="grid grid-cols-1 gap-10 lg:grid-cols-2 lg:items-center lg:gap-12">
+        <div className="grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] lg:items-center lg:gap-12">
           {/* Левая колонка — фичи */}
           <div className="grid gap-3 sm:grid-cols-2">
             {FEATURES.map((f) => {
@@ -73,7 +73,7 @@ export function AppShowcase() {
               width={1024}
               height={1024}
               loading="lazy"
-              className="h-auto w-full max-w-[1755px] object-contain drop-shadow-2xl"
+              className="h-auto w-full object-contain drop-shadow-2xl"
             />
           </div>
         </div>
