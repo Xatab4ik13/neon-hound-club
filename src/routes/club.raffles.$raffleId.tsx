@@ -478,18 +478,17 @@ function StakePanel({
   if (phoneRequired) {
     return (
       <div
-        className={`relative rounded-[2rem] border-[3px] border-foreground bg-card p-5 ${
+        className={`relative rounded-[2rem] border-[3px] border-foreground bg-card p-4 ${
           sticky ? "shadow-[0_-8px_24px_-6px_rgba(0,0,0,0.7)]" : "shadow-[6px_6px_0_0_hsl(var(--foreground))]"
         }`}
       >
-        {sticky && <Perforation />}
         <div className="flex items-center justify-between">
           <div className="font-mono text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
             1 заявка — {ticketCost} {ticketWord}
           </div>
           <BalanceChip balance={balance} />
         </div>
-        <div className="mt-4 rounded-2xl border-[3px] border-foreground bg-[#FFD93D] p-4 text-black shadow-[3px_3px_0_0_hsl(var(--foreground))]">
+        <div className="mt-3 rounded-2xl border-[3px] border-foreground bg-[#FFD93D] p-4 text-black shadow-[3px_3px_0_0_hsl(var(--foreground))]">
           <div className="font-display text-[15px] font-black uppercase italic tracking-tight">
             Нужен номер телефона
           </div>
@@ -509,14 +508,12 @@ function StakePanel({
 
   return (
     <div
-      className={`relative rounded-[2rem] border-[3px] border-foreground bg-card p-5 ${
+      className={`relative rounded-[2rem] border-[3px] border-foreground bg-card p-4 ${
         sticky
           ? "shadow-[0_-8px_24px_-6px_rgba(0,0,0,0.7)]"
           : "shadow-[6px_6px_0_0_hsl(var(--foreground))]"
       }`}
     >
-      {sticky && <Perforation />}
-
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="font-mono text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
@@ -529,7 +526,7 @@ function StakePanel({
       </div>
 
       {/* Stepper */}
-      <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl border-[3px] border-foreground bg-background/60 p-2">
+      <div className="mt-3 flex items-center justify-between gap-3 rounded-2xl border-[3px] border-foreground bg-background/60 p-2">
         <StepBtn onClick={() => onStakeChange(stake - 1)} disabled={stake <= 0}>
           <Minus className="h-5 w-5" strokeWidth={3} />
         </StepBtn>
@@ -537,7 +534,7 @@ function StakePanel({
           key={`bump-${stakeBump}`}
           className="flex flex-1 justify-center text-foreground animate-scale-in"
         >
-          <PlumpNum value={stake} size={44} />
+          <PlumpNum value={stake} size={40} />
         </div>
         <StepBtn onClick={() => onStakeChange(stake + 1)} disabled={stake >= maxStake}>
           <Plus className="h-5 w-5" strokeWidth={3} />
@@ -546,7 +543,7 @@ function StakePanel({
 
       {/* Presets */}
       {presets.length > 0 && (
-        <div className="mt-3 grid grid-cols-3 gap-2">
+        <div className="mt-2.5 grid grid-cols-3 gap-2">
           {presets.map((v, i) => {
             const isMax = i === presets.length - 1 && v === maxStake && v > 1;
             const active = stake === v;
@@ -556,7 +553,7 @@ function StakePanel({
                 type="button"
                 onClick={() => onStakeChange(v)}
                 disabled={v > maxStake}
-                className={`rounded-xl border-[3px] border-foreground py-2 font-display text-[12px] font-black uppercase italic tracking-widest transition-all active:translate-x-[1px] active:translate-y-[1px] disabled:opacity-30 ${
+                className={`rounded-xl border-[3px] border-foreground py-1.5 font-display text-[12px] font-black uppercase italic tracking-widest transition-all active:translate-x-[1px] active:translate-y-[1px] disabled:opacity-30 ${
                   active
                     ? "bg-foreground text-background shadow-[2px_2px_0_0_hsl(var(--foreground))]"
                     : isMax
@@ -576,7 +573,7 @@ function StakePanel({
         type="button"
         onClick={onStake}
         disabled={!isAuthed || stake <= 0 || stake > maxStake || isPending}
-        className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl border-[3px] border-foreground bg-[#B6FF3C] py-4 font-display text-[17px] font-black uppercase italic tracking-tight text-black shadow-[6px_6px_0_0_hsl(var(--foreground))] transition-transform hover:-translate-y-0.5 active:translate-x-[3px] active:translate-y-[3px] active:shadow-[2px_2px_0_0_hsl(var(--foreground))] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0"
+        className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border-[3px] border-foreground bg-[#B6FF3C] py-3.5 font-display text-[17px] font-black uppercase italic tracking-tight text-black shadow-[6px_6px_0_0_hsl(var(--foreground))] transition-transform hover:-translate-y-0.5 active:translate-x-[3px] active:translate-y-[3px] active:shadow-[2px_2px_0_0_hsl(var(--foreground))] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0"
       >
         <Zap className="h-5 w-5" strokeWidth={2.5} />
         {!isAuthed ? "Войти" : isPending ? "..." : `Поставить · ${totalCost}`}
@@ -585,7 +582,7 @@ function StakePanel({
       {noBalance && (
         <Link
           to="/club/tickets"
-          className="mt-3 block text-center font-mono text-[10px] font-bold uppercase tracking-widest text-[#FFD93D] underline decoration-2 underline-offset-4"
+          className="mt-2.5 block text-center font-mono text-[10px] font-bold uppercase tracking-widest text-[#FFD93D] underline decoration-2 underline-offset-4"
         >
           Билетов не хватает — как их набрать →
         </Link>
@@ -617,22 +614,9 @@ function StepBtn({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="grid h-12 w-12 shrink-0 place-items-center rounded-xl border-[3px] border-foreground bg-card text-foreground shadow-[3px_3px_0_0_hsl(var(--foreground))] transition-transform active:translate-x-[2px] active:translate-y-[2px] active:shadow-[1px_1px_0_0_hsl(var(--foreground))] disabled:opacity-30"
+      className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border-[3px] border-foreground bg-card text-foreground shadow-[3px_3px_0_0_hsl(var(--foreground))] transition-transform active:translate-x-[2px] active:translate-y-[2px] active:shadow-[1px_1px_0_0_hsl(var(--foreground))] disabled:opacity-30"
     >
       {children}
     </button>
-  );
-}
-
-function Perforation() {
-  return (
-    <div className="pointer-events-none absolute inset-x-4 -top-[9px] flex justify-between">
-      {Array.from({ length: 12 }).map((_, i) => (
-        <span
-          key={i}
-          className="h-3 w-3 rounded-full border-b-[3px] border-foreground bg-background"
-        />
-      ))}
-    </div>
   );
 }
