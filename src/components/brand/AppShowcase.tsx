@@ -1,4 +1,4 @@
-import { PlumpAI, PlumpGarage, PlumpStore, PlumpTicket, PlumpDiamond } from "@/components/ui/icons";
+import { PlumpAI, PlumpGarage, PlumpStore, PlumpTicket, PlumpSchool, PlumpFeed } from "@/components/ui/icons";
 import phoneLarge from "@/assets/phone-mockup-hhr.png.asset.json";
 
 const FEATURES = [
@@ -14,18 +14,23 @@ const FEATURES = [
   },
   {
     icon: PlumpStore,
-    title: "Мерч",
-    desc: "Лимитированные дропы, размеры в наличии и предзаказы — без сторонних магазинов.",
+    title: "Магазин",
+    desc: "Мерч, амуниция и предзаказы. Всё в одном месте — без сторонних магазинов.",
   },
   {
     icon: PlumpTicket,
     title: "Розыгрыши",
-    desc: "Билеты за активность и покупки. Участвуй в розыгрышах мерча и Pass.",
+    desc: "Билеты за активность и покупки. Участвуй в розыгрышах мотоциклов и крупных призов от амбассадоров клуба.",
   },
   {
-    icon: PlumpDiamond,
-    title: "Hell Pass",
-    desc: "30 дней доступа к AI, квестам и бонусам. Без автопродления — продлеваешь сам.",
+    icon: PlumpSchool,
+    title: "Школа",
+    desc: "Выбери инструктора в своём городе или смотри видеокурсы, чтобы ездить увереннее.",
+  },
+  {
+    icon: PlumpFeed,
+    title: "Новости",
+    desc: "Самые свежие новости из мира мотоспорта — коротко и по делу.",
   },
 ];
 
@@ -83,11 +88,6 @@ export function AppShowcase() {
             />
           </div>
         </div>
-
-        {/* Подсказка про скриншот */}
-        <p className="mt-10 max-w-[50ch] text-sm text-muted-foreground md:mt-14">
-          Скоро сюда подложим реальные скриншоты из приложения. Пока смотрим на композицию и текст.
-        </p>
       </div>
     </section>
   );
