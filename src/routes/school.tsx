@@ -177,26 +177,3 @@ function InstructorCard({
     </article>
   );
 }
-
-
-function PlumpTag({
-  children,
-  variant = "light",
-}: {
-  children: React.ReactNode;
-  variant?: "light" | "dark" | "accent";
-}) {
-  const styles =
-    variant === "dark"
-      ? "bg-foreground text-background"
-      : variant === "accent"
-        ? "bg-primary text-primary-foreground"
-        : "bg-card text-foreground";
-  return (
-    <span
-      className={`inline-block rounded-full border-[3px] border-foreground px-3 py-1 font-display text-[10px] font-black uppercase tracking-widest shadow-[3px_3px_0_0_hsl(var(--foreground))] md:text-xs ${styles}`}
-    >
-      {children}
-    </span>
-  );
-}
