@@ -358,7 +358,7 @@ function ScheduleSection({
   scheduleRef,
 }: {
   instructor: Instructor;
-  scheduleRef: React.RefObject<HTMLDivElement>;
+  scheduleRef: React.RefObject<HTMLDivElement | null>;
 }) {
   const [picked, setPicked] = useState<string | null>(null);
 
