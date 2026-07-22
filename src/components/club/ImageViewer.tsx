@@ -248,6 +248,12 @@ export function ImageViewer({ src, open, onClose, onDoubleTap, transitionName }:
         // Radix Dialog/Sheet ставит pointer-events:none на body — портал наследует
         // это и клики (крестик, тап-вне-картинки) перестают работать в PWA.
         pointerEvents: "auto",
+        // Оставляем сверху полосу под крестик, снизу — симметричный отступ,
+        // чтобы фото не упиралось в край экрана и кнопка не лежала на картинке.
+        paddingTop: "calc(env(safe-area-inset-top) + 4rem)",
+        paddingBottom: "calc(env(safe-area-inset-bottom) + 1rem)",
+        paddingLeft: "1rem",
+        paddingRight: "1rem",
       }}
       onClick={(e) => {
         if (e.target === e.currentTarget && scale === 1) onClose();
@@ -258,7 +264,7 @@ export function ImageViewer({ src, open, onClose, onDoubleTap, transitionName }:
         type="button"
         onClick={onClose}
         aria-label="Закрыть"
-        className="absolute right-4 top-[max(1rem,env(safe-area-inset-top))] z-10 grid h-10 w-10 place-items-center rounded-full bg-white/10 text-white backdrop-blur"
+        className="absolute right-3 top-[max(0.75rem,env(safe-area-inset-top))] z-10 grid h-10 w-10 place-items-center rounded-full bg-white/10 text-white backdrop-blur hover:bg-white/20"
       >
         <X size={20} />
       </button>
