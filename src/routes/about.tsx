@@ -265,10 +265,18 @@ function AboutPage() {
                   {f.image && (
                     <Reveal from={alignRight ? "right" : "left"} delay={160} className={!alignRight ? "lg:order-1" : ""}>
                       <div className="relative flex items-center justify-center">
+                        {f.image === vanyaGarageAsset.url && (
+                          <div
+                            aria-hidden
+                            className="absolute inset-0 rounded-full bg-primary/10 blur-[120px]"
+                          />
+                        )}
                         <img
                           src={f.image}
                           alt={f.title}
-                          className="relative z-10 w-full max-w-[520px] object-contain"
+                          className={`relative z-10 w-full object-contain ${
+                            f.image === vanyaGarageAsset.url ? "max-w-[680px]" : "max-w-[520px]"
+                          }`}
                         />
                       </div>
                     </Reveal>
