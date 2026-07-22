@@ -280,9 +280,9 @@ function ProductCard({ product }: { product: ShopProductListItem }) {
     <Link
       to="/club/shop/$productSlug"
       params={{ productSlug: product.slug }}
-      className="group block overflow-hidden rounded-2xl bg-card transition-all active:scale-[0.98]"
+      className="group relative block rounded-2xl bg-card transition-all active:scale-[0.98]"
     >
-      <div className="relative aspect-square overflow-hidden bg-surface">
+      <div className="relative aspect-square overflow-hidden rounded-t-2xl bg-surface">
         {cover ? (
           <LazyImage
             src={cover}
@@ -300,12 +300,12 @@ function ProductCard({ product }: { product: ShopProductListItem }) {
           </span>
         )}
         {product.bonusTickets > 0 && (
-          <span className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full bg-black/70 px-2 py-0.5 text-[11px] font-semibold text-primary backdrop-blur">
+          <span className="absolute -right-2 top-3 z-10 inline-flex rotate-3 items-center gap-1 rounded-lg border-[2px] border-foreground bg-[#B6FF3C] px-2 py-1 font-display text-[10px] font-black uppercase italic tracking-tight text-black shadow-[2px_2px_0_0_hsl(var(--foreground))]">
             <PlumpTicket className="h-3 w-3" />+{product.bonusTickets}
           </span>
         )}
       </div>
-      <div className="px-3 py-2.5">
+      <div className="rounded-b-2xl px-3 py-2.5">
         <div className="line-clamp-2 text-[14px] font-medium leading-snug text-foreground">
           {product.title}
         </div>
