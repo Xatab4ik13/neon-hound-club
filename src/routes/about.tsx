@@ -9,10 +9,10 @@ import {
 } from "@/components/ui/icons";
 import { Header } from "@/components/brand/Header";
 import { Footer } from "@/components/brand/Footer";
-import vanyaGarageAsset from "@/assets/vanya-garage.png.asset.json";
-import vanyaMerchAsset from "@/assets/vanya-merch.png.asset.json";
-import vanyaRafflesAsset from "@/assets/vanya-raffles.png.asset.json";
-import vanyaSchoolAsset from "@/assets/vanya-school.png.asset.json";
+import vanyaGarageAsset from "@/assets/vanya-garage.webp.asset.json";
+import vanyaMerchAsset from "@/assets/vanya-merch.webp.asset.json";
+import vanyaRafflesAsset from "@/assets/vanya-raffles.webp.asset.json";
+import vanyaSchoolAsset from "@/assets/vanya-school.webp.asset.json";
 
 export const Route = createFileRoute("/about")({
   head: () => ({

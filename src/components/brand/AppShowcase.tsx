@@ -1,5 +1,5 @@
 import { PlumpAI, PlumpGarage, PlumpStore, PlumpTicket, PlumpSchool, PlumpFeed } from "@/components/ui/icons";
-import phoneLarge from "@/assets/phone-mockup-hhr.png.asset.json";
+import phoneLarge from "@/assets/phone-mockup-hhr.webp.asset.json";
 
 const FEATURES = [
   {
