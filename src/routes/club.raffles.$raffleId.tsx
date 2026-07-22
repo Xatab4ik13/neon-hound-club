@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { PlumpArrowLeft as ArrowLeft, Calendar, Check, Minus, Plus, PlumpTicket, Trophy, Zap } from "@/components/ui/icons";
+import { PlumpNum } from "@/components/brand/PlumpNum";
+
 import { Countdown } from "@/components/club/Countdown";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useViewer } from "@/hooks/use-viewer";
