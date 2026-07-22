@@ -4,7 +4,7 @@ import { Header } from "@/components/brand/Header";
 import { Footer } from "@/components/brand/Footer";
 import { INSTRUCTORS, TONE_BG, type Instructor } from "@/data/instructors";
 
-export const Route = createFileRoute("/school")({
+export const Route = createFileRoute("/school/")({
   head: () => ({
     meta: [
       { title: "Школа HELLHOUND — онлайн-курсы и инструкторы" },
