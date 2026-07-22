@@ -336,7 +336,7 @@ function MobileMenu({
 
       {/* Panel */}
       <div
-        className={`absolute inset-0 flex flex-col overflow-hidden bg-black transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+        className={`absolute inset-0 flex flex-col overflow-y-auto overscroll-contain bg-black transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
           open ? "translate-x-0" : "translate-x-full"
         }`}
       >
