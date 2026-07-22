@@ -437,9 +437,12 @@ function SlotBtn({
 
 /* ---------- Gallery ---------- */
 
+type OriginRect = { x: number; y: number; w: number; h: number; rotate: string };
+
 function GallerySection({ instructor }: { instructor: Instructor }) {
   const scrollerRef = useRef<HTMLDivElement | null>(null);
   const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const [origin, setOrigin] = useState<OriginRect | null>(null);
   const scrollBy = (dir: 1 | -1) => {
     const el = scrollerRef.current;
     if (!el) return;
@@ -461,6 +464,19 @@ function GallerySection({ instructor }: { instructor: Instructor }) {
   }
 
   const rotates = ["-rotate-2", "rotate-1", "-rotate-1", "rotate-2"];
+  const rotateDeg = ["-2deg", "1deg", "-1deg", "2deg"];
+
+  const openAt = (i: number, el: HTMLElement) => {
+    const r = el.getBoundingClientRect();
+    setOrigin({
+      x: r.left,
+      y: r.top,
+      w: r.width,
+      h: r.height,
+      rotate: rotateDeg[i % rotateDeg.length],
+    });
+    setOpenIndex(i);
+  };
 
   return (
     <section className="mt-20 md:mt-28">
@@ -473,8 +489,8 @@ function GallerySection({ instructor }: { instructor: Instructor }) {
             <button
               type="button"
               key={src}
-              onClick={() => setOpenIndex(i)}
-              className={`shrink-0 snap-start ${rotates[i % rotates.length]} basis-[80%] cursor-zoom-in transition-transform duration-200 hover:-translate-y-1 active:scale-[0.98] sm:basis-[45%] md:basis-[32%] lg:basis-[26%]`}
+              onClick={(e) => openAt(i, e.currentTarget)}
+              className={`shrink-0 snap-start ${rotates[i % rotates.length]} basis-[80%] transition-transform duration-200 hover:-translate-y-1 active:scale-[0.98] sm:basis-[45%] md:basis-[32%] lg:basis-[26%]`}
             >
               <div
                 className={`overflow-hidden rounded-2xl border-[3px] border-foreground ${TONE_BG[instructor.tone]} shadow-[6px_6px_0_0_hsl(var(--foreground))]`}
@@ -515,6 +531,7 @@ function GallerySection({ instructor }: { instructor: Instructor }) {
       <GalleryLightbox
         instructor={instructor}
         index={openIndex}
+        origin={origin}
         onClose={() => setOpenIndex(null)}
         onPrev={() =>
           setOpenIndex((i) =>
@@ -532,22 +549,70 @@ function GallerySection({ instructor }: { instructor: Instructor }) {
 function GalleryLightbox({
   instructor,
   index,
+  origin,
   onClose,
   onPrev,
   onNext,
 }: {
   instructor: Instructor;
   index: number | null;
+  origin: OriginRect | null;
   onClose: () => void;
   onPrev: () => void;
   onNext: () => void;
 }) {
-  const open = index !== null;
+  const open = index !== null && origin !== null;
+  const [phase, setPhase] = useState<"closed" | "opening" | "open" | "closing">("closed");
+  const frameRef = useRef<HTMLDivElement | null>(null);
+  const [target, setTarget] = useState<{ w: number; h: number; x: number; y: number } | null>(
+    null,
+  );
 
+  // Compute final destination rect (centered, aspect 4:3, capped to viewport)
+  useEffect(() => {
+    if (!open) return;
+    const compute = () => {
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      const padding = vw < 768 ? 24 : 64;
+      const maxW = Math.min(vw - padding * 2, 1000);
+      const maxH = vh - padding * 2;
+      let w = maxW;
+      let h = (w * 3) / 4;
+      if (h > maxH) {
+        h = maxH;
+        w = (h * 4) / 3;
+      }
+      setTarget({ w, h, x: (vw - w) / 2, y: (vh - h) / 2 });
+    };
+    compute();
+    window.addEventListener("resize", compute);
+    return () => window.removeEventListener("resize", compute);
+  }, [open]);
+
+  // Drive phase: closed -> opening -> open
+  useEffect(() => {
+    if (!open) {
+      setPhase("closed");
+      return;
+    }
+    setPhase("opening");
+    // two rAFs to ensure initial styles are painted before transitioning
+    const r1 = requestAnimationFrame(() => {
+      const r2 = requestAnimationFrame(() => setPhase("open"));
+      (r1 as any)._r2 = r2;
+    });
+    return () => {
+      cancelAnimationFrame(r1);
+      if ((r1 as any)._r2) cancelAnimationFrame((r1 as any)._r2);
+    };
+  }, [open, index]);
+
+  // Body scroll lock + keyboard
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") beginClose();
       else if (e.key === "ArrowLeft") onPrev();
       else if (e.key === "ArrowRight") onNext();
     };
@@ -558,47 +623,86 @@ function GalleryLightbox({
       window.removeEventListener("keydown", onKey);
       document.body.style.overflow = prev;
     };
-  }, [open, onClose, onPrev, onNext]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, onPrev, onNext]);
 
-  if (!open || index === null) return null;
+  const beginClose = () => {
+    if (phase === "closing") return;
+    setPhase("closing");
+  };
+
+  const onFrameTransitionEnd = (e: React.TransitionEvent) => {
+    if (e.propertyName !== "transform") return;
+    if (phase === "closing") onClose();
+  };
+
+  if (!open || !target || index === null || !origin) return null;
+
+  // FLIP: compute initial transform from target to origin
+  const scaleX = origin.w / target.w;
+  const scaleY = origin.h / target.h;
+  const dx = origin.x - target.x;
+  const dy = origin.y - target.y;
+
+  const collapsed = phase === "opening" || phase === "closing";
   const src = instructor.gallery[index];
-  const endRot = index % 2 === 0 ? "-2deg" : "2deg";
+
+  const frameStyle: React.CSSProperties = {
+    position: "fixed",
+    left: target.x,
+    top: target.y,
+    width: target.w,
+    height: target.h,
+    transformOrigin: "top left",
+    transform: collapsed
+      ? `translate3d(${dx}px, ${dy}px, 0) scale(${scaleX}, ${scaleY}) rotate(${origin.rotate})`
+      : `translate3d(0, 0, 0) scale(1, 1) rotate(0deg)`,
+    transition:
+      "transform 460ms cubic-bezier(0.22, 1, 0.36, 1)",
+    willChange: "transform",
+  };
+
+  const backdropOpacity = phase === "open" ? 1 : 0;
 
   return (
     <div
       role="dialog"
       aria-modal="true"
-      onClick={onClose}
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-background/85 p-4 backdrop-blur-sm animate-fade-in md:p-8"
-      style={{ willChange: "opacity" }}
+      onClick={beginClose}
+      className="fixed inset-0 z-[100]"
     >
       <div
-        onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-4xl origin-center"
+        className="absolute inset-0 bg-background/85 backdrop-blur-sm"
         style={{
-          animation: "lightbox-pop 300ms cubic-bezier(0.22, 1, 0.36, 1) both",
-          ["--end-rot" as any]: endRot,
-          willChange: "transform, opacity",
+          opacity: backdropOpacity,
+          transition: "opacity 320ms ease-out",
+          willChange: "opacity",
         }}
+      />
+
+      <div
+        ref={frameRef}
+        onClick={(e) => e.stopPropagation()}
+        onTransitionEnd={onFrameTransitionEnd}
+        style={frameStyle}
       >
         <div
-          className={`overflow-hidden rounded-3xl border-[3px] border-foreground ${TONE_BG[instructor.tone]} shadow-[12px_12px_0_0_hsl(var(--foreground))]`}
+          className={`h-full w-full overflow-hidden rounded-2xl border-[3px] border-foreground ${TONE_BG[instructor.tone]} shadow-[12px_12px_0_0_hsl(var(--foreground))]`}
         >
-          <div className="aspect-[4/3] w-full bg-black">
-            <img
-              src={src}
-              alt={`${instructor.name} — кадр ${index + 1}`}
-              className="h-full w-full object-cover"
-              draggable={false}
-            />
-          </div>
+          <img
+            src={src}
+            alt={`${instructor.name} — кадр ${index + 1}`}
+            className="h-full w-full object-cover"
+            draggable={false}
+          />
         </div>
 
         <button
           type="button"
-          onClick={onClose}
+          onClick={beginClose}
           aria-label="Закрыть"
-          className="absolute -right-3 -top-3 inline-flex h-11 w-11 items-center justify-center rounded-full border-[3px] border-foreground bg-primary text-primary-foreground shadow-[4px_4px_0_0_hsl(var(--foreground))] transition-transform duration-100 hover:-translate-y-0.5 md:-right-5 md:-top-5"
+          className="absolute -right-3 -top-3 inline-flex h-11 w-11 items-center justify-center rounded-full border-[3px] border-foreground bg-primary text-primary-foreground shadow-[4px_4px_0_0_hsl(var(--foreground))] md:-right-5 md:-top-5"
+          style={{ opacity: phase === "open" ? 1 : 0, transition: "opacity 200ms ease-out 120ms" }}
         >
           <span className="font-display text-xl font-black leading-none">×</span>
         </button>
@@ -613,7 +717,8 @@ function GalleryLightbox({
               onPrev();
             }}
             aria-label="Предыдущее"
-            className="absolute left-3 top-1/2 inline-flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border-[3px] border-foreground bg-card shadow-[4px_4px_0_0_hsl(var(--foreground))] transition-transform duration-100 hover:-translate-y-[calc(50%+2px)] md:left-6"
+            className="absolute left-3 top-1/2 inline-flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border-[3px] border-foreground bg-card shadow-[4px_4px_0_0_hsl(var(--foreground))] md:left-6"
+            style={{ opacity: phase === "open" ? 1 : 0, transition: "opacity 200ms ease-out 120ms" }}
           >
             <PlumpArrowLeft className="h-5 w-5" />
           </button>
@@ -624,49 +729,14 @@ function GalleryLightbox({
               onNext();
             }}
             aria-label="Следующее"
-            className="absolute right-3 top-1/2 inline-flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border-[3px] border-foreground bg-primary text-primary-foreground shadow-[4px_4px_0_0_hsl(var(--foreground))] transition-transform duration-100 hover:-translate-y-[calc(50%+2px)] md:right-6"
+            className="absolute right-3 top-1/2 inline-flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border-[3px] border-foreground bg-primary text-primary-foreground shadow-[4px_4px_0_0_hsl(var(--foreground))] md:right-6"
+            style={{ opacity: phase === "open" ? 1 : 0, transition: "opacity 200ms ease-out 120ms" }}
           >
             <PlumpArrowRight className="h-5 w-5" />
           </button>
         </>
       )}
-
-      <style>{`
-        @keyframes lightbox-pop {
-          0%   { opacity: 0; transform: scale(0.82) rotate(calc(var(--end-rot) * -3)); }
-          60%  { opacity: 1; }
-          100% { opacity: 1; transform: scale(1) rotate(var(--end-rot)); }
-        }
-      `}</style>
     </div>
-  );
-}
-
-/* ---------- Final CTA ---------- */
-
-function FinalCta({ onClick }: { onClick: () => void }) {
-  return (
-    <section className="mt-20 md:mt-28">
-      <div className="relative overflow-hidden rounded-3xl border-[3px] border-foreground bg-primary p-8 text-center shadow-[10px_10px_0_0_hsl(var(--foreground))] md:p-14">
-        <h2 className="font-display text-4xl font-black uppercase leading-[0.9] tracking-tight text-primary-foreground md:text-6xl">
-          Готов сесть на байк?
-        </h2>
-        <p className="mx-auto mt-4 max-w-xl font-display text-base font-black uppercase tracking-tight text-primary-foreground/90 md:text-xl">
-          Выбирай удобный слот и записывайся. Всё остальное — наша забота.
-        </p>
-        <div className="mt-6 flex justify-center">
-          <button
-            type="button"
-            onClick={onClick}
-            className="inline-flex -skew-x-[10deg] items-center border-[3px] border-foreground bg-foreground px-6 py-3 shadow-[6px_6px_0_0_hsl(var(--foreground))]"
-          >
-            <span className="flex skew-x-[10deg] items-center font-display text-sm font-black uppercase tracking-widest text-background md:text-base">
-              Выбрать слот <PlumpArrowRight className="ml-2 h-4 w-4" />
-            </span>
-          </button>
-        </div>
-      </div>
-    </section>
   );
 }
 
