@@ -131,8 +131,26 @@ function Index() {
               </Link>
             </div>
 
+            {/* Ваня на мото — мобильная версия: широкий баннер над сеткой */}
+            <div className="relative mt-6 block px-6 lg:hidden">
+              <img
+                src={vanyaBike}
+                alt="Ваня — HELLHOUND Racing"
+                width={1024}
+                height={768}
+                loading="lazy"
+                className="mx-auto h-auto w-full max-w-[520px] object-contain"
+              />
+              <img
+                src={vybiraySpeech.url}
+                alt="Выбирай лучшее!"
+                loading="lazy"
+                className="pointer-events-none absolute left-2 top-0 w-[34%] max-w-[160px] -rotate-[6deg] object-contain sm:left-6"
+              />
+            </div>
+
             <div className="flex flex-col items-end lg:flex-row lg:items-end">
-              {/* Ваня слева — крупный, прижат к левой границе сайта */}
+              {/* Ваня слева — крупный, прижат к левой границе сайта (только десктоп) */}
               <div className="relative hidden shrink-0 lg:block lg:w-[52%]">
                 <img
                   src={vanyaBike}
