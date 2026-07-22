@@ -118,35 +118,11 @@ function RafflesPage() {
 
       {finished.length > 0 && (
         <section aria-label="Архив клуба" className="mb-8">
-          <SectionTitle>Архив клуба</SectionTitle>
-          <ul className="mt-3 flex flex-col gap-4">
-            {finished.map((p) => (
-              <li
-                key={p.id}
-                className="flex items-center gap-3 rounded-2xl border-[3px] border-foreground bg-card px-3 py-3 shadow-[4px_4px_0_0_hsl(var(--foreground))]"
-              >
-                <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl border-[2px] border-foreground bg-black">
-                  {p.imageUrl && (
-                    <img
-                      src={p.imageUrl}
-                      alt=""
-                      loading="lazy"
-                      className="h-full w-full object-cover grayscale opacity-90"
-                    />
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="truncate font-display text-[15px] font-black uppercase tracking-tight text-foreground">
-                    {p.title}
-                  </div>
-                  <div className="mt-0.5 text-[12px] text-muted-foreground">
-                    {formatMonth(p.endsAt)}
-                  </div>
-                </div>
-                <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-              </li>
-            ))}
-          </ul>
+          <SectionTitle>
+            Архив клуба <span className="opacity-60">·</span>{" "}
+            <PlumpNum value={finished.length} size={12} />
+          </SectionTitle>
+          <CardsGrid items={finished} finished />
         </section>
       )}
 
@@ -163,7 +139,7 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
   );
 }
 
-function CardsGrid({ items }: { items: RaffleListItem[] }) {
+function CardsGrid({ items, finished = false }: { items: RaffleListItem[]; finished?: boolean }) {
   const gridRef = useRef<HTMLDivElement | null>(null);
   const [visible, setVisible] = useState(false);
 
@@ -191,9 +167,9 @@ function CardsGrid({ items }: { items: RaffleListItem[] }) {
   }, []);
 
   return (
-    <div ref={gridRef} className="grid grid-cols-1 gap-5 [perspective:1000px] sm:grid-cols-2">
+    <div ref={gridRef} className="grid grid-cols-1 gap-6 pt-2 [perspective:1000px] sm:grid-cols-2">
       {items.map((r, i) => (
-        <RaffleCard key={r.id} raffle={r} index={i} visible={visible} />
+        <RaffleCard key={r.id} raffle={r} index={i} visible={visible} finished={finished} />
       ))}
     </div>
   );
@@ -313,16 +289,18 @@ function RaffleCard({
   raffle,
   index,
   visible,
+  finished = false,
 }: {
   raffle: RaffleListItem;
   index: number;
   visible: boolean;
+  finished?: boolean;
 }) {
   return (
     <Link
       to="/club/raffles/$raffleId"
       params={{ raffleId: raffle.id }}
-      className={`skill-card group relative block overflow-hidden rounded-3xl border-[3px] border-foreground bg-card shadow-[6px_6px_0_0_hsl(var(--foreground))] transition-transform duration-200 ease-out active:translate-x-[2px] active:translate-y-[2px] active:shadow-[3px_3px_0_0_hsl(var(--foreground))] ${
+      className={`skill-card group relative block rounded-3xl border-[3px] border-foreground bg-card shadow-[6px_6px_0_0_hsl(var(--foreground))] transition-transform duration-200 ease-out active:translate-x-[2px] active:translate-y-[2px] active:shadow-[3px_3px_0_0_hsl(var(--foreground))] ${
         visible ? "skill-card--in" : "skill-card--pre"
       }`}
       style={{
@@ -330,20 +308,28 @@ function RaffleCard({
         willChange: "transform, opacity",
       }}
     >
-      <div className="relative aspect-[16/10] overflow-hidden border-b-[3px] border-foreground bg-black">
+      {/* status sticker — same style as detail page */}
+      <span
+        className={`absolute -left-2 -top-3 z-20 inline-flex items-center gap-1.5 -rotate-3 rounded-2xl border-[3px] border-foreground px-2.5 py-1 font-display text-[11px] font-black uppercase italic tracking-tighter text-black shadow-[3px_3px_0_0_hsl(var(--foreground))] ${
+          finished ? "bg-[#C6A8FF]" : "bg-[#B6FF3C]"
+        }`}
+      >
+        {!finished && <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-black" />}
+        {finished ? "Завершён" : "Идёт сейчас"}
+      </span>
+
+      <div className="relative aspect-[16/10] overflow-hidden rounded-t-[calc(1.5rem-3px)] border-b-[3px] border-foreground bg-black">
         {raffle.imageUrl && (
           <img
             src={raffle.imageUrl}
             alt={raffle.title}
             loading="lazy"
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            className={`h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 ${
+              finished ? "grayscale opacity-80" : ""
+            }`}
           />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
-        <span className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full border-[3px] border-foreground bg-[#B6FF3C] px-2.5 py-0.5 font-display text-[10px] font-black uppercase tracking-widest text-black shadow-[2px_2px_0_0_hsl(var(--foreground))]">
-          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-black" />
-          Идёт
-        </span>
         <div className="absolute inset-x-3 bottom-3">
           <h3 className="font-display text-xl font-black uppercase italic leading-tight tracking-tight text-foreground">
             {raffle.title}
@@ -361,7 +347,13 @@ function RaffleCard({
           <PlumpNum value={raffle.ticketCost} size={13} className="text-foreground" />
           <span>/ билет</span>
         </span>
-        <Countdown deadlineAt={raffle.endsAt} compact />
+        {finished ? (
+          <span className="font-mono text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
+            {formatMonth(raffle.endsAt)}
+          </span>
+        ) : (
+          <Countdown deadlineAt={raffle.endsAt} compact />
+        )}
       </div>
     </Link>
   );
