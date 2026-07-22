@@ -3,6 +3,8 @@ import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { IOSActionSheet, type ActionSheetItem } from "@/components/ios/IOSActionSheet";
+
+export type { ActionSheetItem };
 import {
   Dialog,
   DialogContent,
