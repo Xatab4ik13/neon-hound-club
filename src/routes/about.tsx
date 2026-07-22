@@ -6,7 +6,6 @@ import {
   PlumpStore,
   PlumpTicket,
   PlumpSchool,
-  PlumpArrowRight,
 } from "@/components/ui/icons";
 import { Header } from "@/components/brand/Header";
 import { Footer } from "@/components/brand/Footer";
