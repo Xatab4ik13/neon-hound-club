@@ -94,6 +94,7 @@ type Feature = {
   lead: string;
   bullets: string[];
   bg: "background" | "surface";
+  image?: string;
 };
 
 const FEATURES: Feature[] = [
@@ -109,6 +110,7 @@ const FEATURES: Feature[] = [
       "Разбирается со странным звуком, ошибкой на приборке, регламентом ТО",
     ],
     bg: "background",
+    image: vanyaGarageAsset.url,
   },
   {
     title: "Мерч и амуниция клуба",
