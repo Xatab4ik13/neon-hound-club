@@ -35,17 +35,18 @@ type Instructor = {
   id: string;
   name: string;
   photo: string;
+  city: string;
+  experience: number;
   // Оттенок фоновой рамки-плашки — чтобы карточки не сливались.
   tone: "primary" | "yellow" | "cyan" | "lime" | "violet";
 };
 
-// Города и специализации подставим позже, когда пришлёт клиент.
 const INSTRUCTORS: Instructor[] = [
-  { id: "stanislav", name: "Станислав", photo: stanislavAsset.url, tone: "primary" },
-  { id: "semen",     name: "Семён",     photo: semenAsset.url,     tone: "yellow" },
-  { id: "nikita",    name: "Никита",    photo: nikitaAsset.url,    tone: "cyan" },
-  { id: "pavel",     name: "Павел",     photo: pavelAsset.url,     tone: "lime" },
-  { id: "haix",      name: "HaiX",      photo: haixAsset.url,      tone: "violet" },
+  { id: "stanislav", name: "Станислав", photo: stanislavAsset.url, city: "Краснодар", experience: 10, tone: "primary" },
+  { id: "semen",     name: "Семён",     photo: semenAsset.url,     city: "Краснодар", experience: 11, tone: "yellow" },
+  { id: "nikita",    name: "Никита",    photo: nikitaAsset.url,    city: "Москва",    experience: 6,  tone: "cyan" },
+  { id: "pavel",     name: "Павел",     photo: pavelAsset.url,     city: "Москва",    experience: 3,  tone: "lime" },
+  { id: "haix",      name: "HaiX",      photo: haixAsset.url,      city: "Москва",    experience: 6,  tone: "violet" },
 ];
 
 const TONE_BG: Record<Instructor["tone"], string> = {
@@ -164,6 +165,16 @@ function InstructorCard({
             className="absolute inset-0 h-full w-full object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-b from-black/0 via-black/0 to-black/30" />
+
+          {/* Плашки с городом и стажем */}
+          <div className="absolute left-3 right-3 top-3 flex flex-wrap gap-2">
+            <span className="rounded-full border-2 border-foreground bg-card px-3 py-1 font-mono text-[10px] font-black uppercase tracking-wider text-foreground shadow-[2px_2px_0_0_hsl(var(--foreground))]">
+              {instructor.city}
+            </span>
+            <span className="rounded-full border-2 border-foreground bg-card px-3 py-1 font-mono text-[10px] font-black uppercase tracking-wider text-foreground shadow-[2px_2px_0_0_hsl(var(--foreground))]">
+              {instructor.experience} {instructor.experience < 5 ? "года" : "лет"} стажа
+            </span>
+          </div>
         </div>
 
         {/* Имя внизу карточки */}
