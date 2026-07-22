@@ -30,6 +30,8 @@ import { PullToRefresh } from "@/components/club/PullToRefresh";
 import { OfflineBanner } from "@/components/club/OfflineBanner";
 import { useEdgeSwipeBack } from "@/hooks/use-edge-swipe-back";
 import { apiFetch, ApiError } from "@/lib/api";
+import hhrLogo from "@/assets/hhr-logo.png.asset.json";
+
 
 type MeUser = { id: string; email: string; nick: string; role: "user" | "admin" | "blogger" };
 
@@ -246,16 +248,17 @@ function SidebarBody({
         <div className="absolute -bottom-10 -left-16 h-64 w-64 rounded-full bg-primary/30 blur-[100px]" />
       </div>
 
-      <div className="relative z-10 px-6 pb-5 pt-7">
+      <div className="relative z-10 flex items-center justify-center px-6 pb-5 pt-7">
         <Link to="/" onClick={onNavigate} className="block" aria-label="HELLHOUND home">
-          <span
-            className="block font-display text-3xl font-black tracking-tight text-foreground"
-            style={{ textShadow: "0 0 8px color-mix(in oklab, var(--primary) 25%, transparent)" }}
-          >
-            HELL<span className="italic text-primary">HOUND</span>
-          </span>
+          <img
+            src={hhrLogo.url}
+            alt="HELLHOUND Racing"
+            className="h-14 w-auto"
+            draggable={false}
+          />
         </Link>
       </div>
+
 
       <nav className="relative z-10 flex-1 overflow-y-auto px-4 py-2">
         <ul className="flex flex-col gap-3">
