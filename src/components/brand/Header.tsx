@@ -287,7 +287,10 @@ function DesktopPlatesMenu({
               <Link
                 to={item.href}
                 onClick={onClose}
-                className={`group pointer-events-auto relative flex h-[84px] w-[360px] items-center justify-center rounded-2xl border-[3px] border-foreground bg-card px-4 transition-[background-color,color,transform] duration-150 ease-out hover:bg-primary active:scale-[0.98] ${
+                tabIndex={open ? 0 : -1}
+                className={`group relative flex h-[84px] w-[360px] items-center justify-center rounded-2xl border-[3px] border-foreground bg-card px-4 transition-[background-color,color,transform] duration-150 ease-out hover:bg-primary active:scale-[0.98] ${
+                  open ? "pointer-events-auto" : "pointer-events-none"
+                } ${
                   isActive ? "bg-primary" : ""
                 }`}
                 style={{
