@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Header } from "@/components/brand/Header";
 import { Footer } from "@/components/brand/Footer";
 import { PlumpArrowLeft, PlumpArrowRight, PlumpMap, PlumpCamera } from "@/components/ui/icons";
@@ -564,18 +564,19 @@ function GalleryLightbox({
   const open = index !== null && origin !== null;
   const [phase, setPhase] = useState<"closed" | "opening" | "open" | "closing">("closed");
   const frameRef = useRef<HTMLDivElement | null>(null);
+  const wasOpenRef = useRef(false);
   const [target, setTarget] = useState<{ w: number; h: number; x: number; y: number } | null>(
     null,
   );
 
-  // Compute final destination rect (centered, aspect 4:3, capped to viewport)
-  useEffect(() => {
+  // Compute final destination rect before paint to avoid first-frame jumps.
+  useLayoutEffect(() => {
     if (!open) return;
     const compute = () => {
       const vw = window.innerWidth;
       const vh = window.innerHeight;
-      const padding = vw < 768 ? 24 : 64;
-      const maxW = Math.min(vw - padding * 2, 1000);
+      const padding = vw < 768 ? 18 : 56;
+      const maxW = Math.min(vw - padding * 2, 1040);
       const maxH = vh - padding * 2;
       let w = maxW;
       let h = (w * 3) / 4;
@@ -590,12 +591,18 @@ function GalleryLightbox({
     return () => window.removeEventListener("resize", compute);
   }, [open]);
 
-  // Drive phase: closed -> opening -> open
+  // Drive phase only when the lightbox actually opens. Changing images must not re-run the flyout.
   useEffect(() => {
     if (!open) {
+      wasOpenRef.current = false;
       setPhase("closed");
       return;
     }
+    if (wasOpenRef.current) {
+      setPhase("open");
+      return;
+    }
+    wasOpenRef.current = true;
     setPhase("opening");
     // two rAFs to ensure initial styles are painted before transitioning
     const r1 = requestAnimationFrame(() => {
@@ -606,7 +613,7 @@ function GalleryLightbox({
       cancelAnimationFrame(r1);
       if ((r1 as any)._r2) cancelAnimationFrame((r1 as any)._r2);
     };
-  }, [open, index]);
+  }, [open]);
 
   // Body scroll lock + keyboard
   useEffect(() => {
@@ -658,11 +665,15 @@ function GalleryLightbox({
       ? `translate3d(${dx}px, ${dy}px, 0) scale(${scaleX}, ${scaleY}) rotate(${origin.rotate})`
       : `translate3d(0, 0, 0) scale(1, 1) rotate(0deg)`,
     transition:
-      "transform 460ms cubic-bezier(0.22, 1, 0.36, 1)",
+      "transform 420ms cubic-bezier(0.2, 0.86, 0.18, 1)",
     willChange: "transform",
+    backfaceVisibility: "hidden",
+    contain: "layout paint style",
+    isolation: "isolate",
   };
 
-  const backdropOpacity = phase === "open" ? 1 : 0;
+  const backdropOpacity = phase === "open" ? 0.92 : phase === "closing" ? 0 : 0;
+  const chromeVisible = phase === "open";
 
   return (
     <div
@@ -672,10 +683,10 @@ function GalleryLightbox({
       className="fixed inset-0 z-[100]"
     >
       <div
-        className="absolute inset-0 bg-background/85 backdrop-blur-sm"
+        className="absolute inset-0 bg-background"
         style={{
           opacity: backdropOpacity,
-          transition: "opacity 320ms ease-out",
+          transition: "opacity 220ms linear",
           willChange: "opacity",
         }}
       />
@@ -687,7 +698,7 @@ function GalleryLightbox({
         style={frameStyle}
       >
         <div
-          className={`h-full w-full overflow-hidden rounded-2xl border-[3px] border-foreground ${TONE_BG[instructor.tone]} shadow-[12px_12px_0_0_hsl(var(--foreground))]`}
+          className={`h-full w-full overflow-hidden rounded-2xl border-[3px] border-foreground ${TONE_BG[instructor.tone]}`}
         >
           <img
             src={src}
@@ -696,13 +707,26 @@ function GalleryLightbox({
             draggable={false}
           />
         </div>
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 rounded-2xl shadow-[10px_10px_0_0_hsl(var(--foreground))] md:shadow-[14px_14px_0_0_hsl(var(--foreground))]"
+          style={{
+            opacity: chromeVisible ? 1 : 0,
+            transition: "opacity 120ms linear 180ms",
+            willChange: "opacity",
+          }}
+        />
 
         <button
           type="button"
           onClick={beginClose}
           aria-label="Закрыть"
           className="absolute -right-3 -top-3 inline-flex h-11 w-11 items-center justify-center rounded-full border-[3px] border-foreground bg-primary text-primary-foreground shadow-[4px_4px_0_0_hsl(var(--foreground))] md:-right-5 md:-top-5"
-          style={{ opacity: phase === "open" ? 1 : 0, transition: "opacity 200ms ease-out 120ms" }}
+          style={{
+            opacity: chromeVisible ? 1 : 0,
+            pointerEvents: chromeVisible ? "auto" : "none",
+            transition: "opacity 120ms linear 160ms",
+          }}
         >
           <span className="font-display text-xl font-black leading-none">×</span>
         </button>
@@ -718,7 +742,11 @@ function GalleryLightbox({
             }}
             aria-label="Предыдущее"
             className="absolute left-3 top-1/2 inline-flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border-[3px] border-foreground bg-card shadow-[4px_4px_0_0_hsl(var(--foreground))] md:left-6"
-            style={{ opacity: phase === "open" ? 1 : 0, transition: "opacity 200ms ease-out 120ms" }}
+            style={{
+              opacity: chromeVisible ? 1 : 0,
+              pointerEvents: chromeVisible ? "auto" : "none",
+              transition: "opacity 120ms linear 160ms",
+            }}
           >
             <PlumpArrowLeft className="h-5 w-5" />
           </button>
@@ -730,7 +758,11 @@ function GalleryLightbox({
             }}
             aria-label="Следующее"
             className="absolute right-3 top-1/2 inline-flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border-[3px] border-foreground bg-primary text-primary-foreground shadow-[4px_4px_0_0_hsl(var(--foreground))] md:right-6"
-            style={{ opacity: phase === "open" ? 1 : 0, transition: "opacity 200ms ease-out 120ms" }}
+            style={{
+              opacity: chromeVisible ? 1 : 0,
+              pointerEvents: chromeVisible ? "auto" : "none",
+              transition: "opacity 120ms linear 160ms",
+            }}
           >
             <PlumpArrowRight className="h-5 w-5" />
           </button>
