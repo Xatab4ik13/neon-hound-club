@@ -204,7 +204,7 @@ function AboutPage() {
           </div>
         </section>
 
-        {/* ФИЧИ В ШАХМАТКУ (без картинок и номеров) */}
+        {/* ФИЧИ В ШАХМАТКУ */}
         {FEATURES.map((f, idx) => {
           const alignRight = idx % 2 === 0;
           const bgClass = f.bg === "surface" ? "bg-surface" : "bg-background";
@@ -221,39 +221,61 @@ function AboutPage() {
               />
 
               <div className="relative w-full pl-4 pr-6 md:pl-6 md:pr-12">
-                <Reveal from={alignRight ? "left" : "right"}>
-                  <div
-                    className={`max-w-3xl ${alignRight ? "" : "ml-auto"}`}
-                  >
-                    <div className="mb-5 inline-flex h-14 w-14 items-center justify-center rounded-xl border-[3px] border-foreground bg-primary text-primary-foreground shadow-[4px_4px_0_0_hsl(var(--foreground))]">
-                      <f.Icon size={30} />
+                <div
+                  className={`grid items-center gap-8 ${
+                    f.image
+                      ? "lg:grid-cols-2 lg:gap-12"
+                      : "max-w-3xl"
+                  } ${!f.image && !alignRight ? "ml-auto" : ""}`}
+                >
+                  <Reveal from={alignRight ? "left" : "right"}>
+                    <div>
+                      <div className="mb-5 inline-flex h-14 w-14 items-center justify-center rounded-xl border-[3px] border-foreground bg-primary text-primary-foreground shadow-[4px_4px_0_0_hsl(var(--foreground))]">
+                        <f.Icon size={30} />
+                      </div>
+
+                      <h2 className="font-display text-4xl font-black uppercase leading-[0.95] tracking-tight text-foreground md:text-6xl">
+                        {f.title}
+                      </h2>
+
+                      <p className="mt-5 text-base text-muted-foreground md:text-lg">
+                        {f.lead}
+                      </p>
+
+                      <ul className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+                        {f.bullets.map((b, i) => (
+                          <Reveal key={b} delay={80 + i * 60}>
+                            <li className="flex h-full items-start gap-3 rounded-xl border-2 border-foreground/80 bg-card p-3.5 shadow-[3px_3px_0_0_hsl(var(--foreground))]">
+                              <span
+                                aria-hidden
+                                className="mt-1 inline-block h-3 w-3 shrink-0 rounded-sm bg-primary ring-2 ring-foreground"
+                              />
+                              <span className="text-sm leading-relaxed text-foreground md:text-[15px]">
+                                {b}
+                              </span>
+                            </li>
+                          </Reveal>
+                        ))}
+                      </ul>
                     </div>
+                  </Reveal>
 
-                    <h2 className="font-display text-4xl font-black uppercase leading-[0.95] tracking-tight text-foreground md:text-6xl">
-                      {f.title}
-                    </h2>
-
-                    <p className="mt-5 text-base text-muted-foreground md:text-lg">
-                      {f.lead}
-                    </p>
-
-                    <ul className="mt-6 grid gap-3 sm:grid-cols-2">
-                      {f.bullets.map((b, i) => (
-                        <Reveal key={b} delay={80 + i * 60}>
-                          <li className="flex h-full items-start gap-3 rounded-xl border-2 border-foreground/80 bg-card p-3.5 shadow-[3px_3px_0_0_hsl(var(--foreground))]">
-                            <span
-                              aria-hidden
-                              className="mt-1 inline-block h-3 w-3 shrink-0 rounded-sm bg-primary ring-2 ring-foreground"
-                            />
-                            <span className="text-sm leading-relaxed text-foreground md:text-[15px]">
-                              {b}
-                            </span>
-                          </li>
-                        </Reveal>
-                      ))}
-                    </ul>
-                  </div>
-                </Reveal>
+                  {f.image && (
+                    <Reveal from={alignRight ? "right" : "left"} delay={160}>
+                      <div className="relative flex items-center justify-center">
+                        <div
+                          aria-hidden
+                          className="absolute inset-0 rounded-3xl bg-primary/20 blur-[80px]"
+                        />
+                        <img
+                          src={f.image}
+                          alt="Ваня в гараже HELLHOUND"
+                          className="relative z-10 w-full max-w-[520px] object-contain drop-shadow-2xl"
+                        />
+                      </div>
+                    </Reveal>
+                  )}
+                </div>
               </div>
             </section>
           );
