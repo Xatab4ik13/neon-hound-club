@@ -660,3 +660,53 @@ html.hh-admin *::-webkit-scrollbar-thumb:hover {
     transform: rotate(var(--skill-rot, 0deg));
   }
 }
+
+/* Course cards "slide-in from sides" + chip drop */
+@keyframes course-slide-left {
+  0%   { opacity: 0; transform: translate3d(-60vw, 20px, 0) rotate(var(--course-rot, -1deg)) scale(0.9); }
+  60%  { opacity: 1; transform: translate3d(0, 0, 0) rotate(calc(var(--course-rot, -1deg) - 2deg)) scale(1.02); }
+  100% { opacity: 1; transform: translate3d(0, 0, 0) rotate(var(--course-rot, -1deg)) scale(1); }
+}
+@keyframes course-slide-right {
+  0%   { opacity: 0; transform: translate3d(60vw, 20px, 0) rotate(var(--course-rot, 1deg)) scale(0.9); }
+  60%  { opacity: 1; transform: translate3d(0, 0, 0) rotate(calc(var(--course-rot, 1deg) + 2deg)) scale(1.02); }
+  100% { opacity: 1; transform: translate3d(0, 0, 0) rotate(var(--course-rot, 1deg)) scale(1); }
+}
+@keyframes chip-drop {
+  0%   { opacity: 0; transform: translate3d(0, -40px, 0) rotate(-12deg) scale(0.6); }
+  55%  { opacity: 1; transform: translate3d(0, 6px, 0) rotate(4deg) scale(1.08); }
+  75%  { transform: translate3d(0, -2px, 0) rotate(-2deg) scale(0.98); }
+  100% { opacity: 1; transform: translate3d(0, 0, 0) rotate(0deg) scale(1); }
+}
+
+.course-card { transform-origin: 50% 50%; }
+.course-card.-rotate-1 { --course-rot: -1deg; }
+.course-card.rotate-1  { --course-rot: 1deg; }
+
+.course-card--pre { opacity: 0; }
+.course-card--left.course-card--pre  { transform: translate3d(-60vw, 20px, 0) rotate(var(--course-rot)) scale(0.9); }
+.course-card--right.course-card--pre { transform: translate3d(60vw, 20px, 0) rotate(var(--course-rot)) scale(0.9); }
+
+.course-card--left.course-card--in {
+  animation: course-slide-left 780ms cubic-bezier(0.34, 1.4, 0.5, 1) both;
+}
+.course-card--right.course-card--in {
+  animation: course-slide-right 780ms cubic-bezier(0.34, 1.4, 0.5, 1) both;
+}
+
+.course-chip { transform-origin: 50% 0%; }
+.course-chip--pre { opacity: 0; transform: translate3d(0, -40px, 0) rotate(-12deg) scale(0.6); }
+.course-chip--in {
+  animation: chip-drop 620ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .course-card--pre, .course-card--in,
+  .course-chip--pre, .course-chip--in {
+    animation: none !important;
+    opacity: 1;
+    transform: none;
+  }
+  .course-card.-rotate-1 { transform: rotate(-1deg); }
+  .course-card.rotate-1  { transform: rotate(1deg); }
+}
