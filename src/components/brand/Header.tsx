@@ -130,6 +130,7 @@ export function Header() {
               <Link
                 to="/cart"
                 aria-label="Корзина"
+                data-cart-anchor
                 className="relative grid h-14 w-14 place-items-center text-foreground transition-transform active:scale-90"
               >
                 <PlumpCart className="h-9 w-9" strokeWidth={1.9} />
@@ -220,6 +221,7 @@ export function Header() {
             type="button"
             aria-label={menuOpen ? "Закрыть меню" : "Меню"}
             onClick={() => setMenuOpen((v) => !v)}
+            data-cart-anchor
             className="relative z-[70] ml-auto flex h-14 w-16 items-center justify-center text-primary md:hidden"
           >
             <span className="sr-only">Меню</span>
