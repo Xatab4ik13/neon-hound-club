@@ -2,12 +2,17 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import {
   PlumpArrowLeft,
-  PlumpArrowRight as ChevronRight,
+  PlumpArrowRight,
   PlumpMap,
   PlumpCamera,
 } from "@/components/ui/icons";
 import { PlumpNum } from "@/components/brand/PlumpNum";
-import { getInstructorBySlug, type Instructor, type Slot } from "@/data/instructors";
+import {
+  getInstructorBySlug,
+  TONE_BG,
+  type Instructor,
+  type Slot,
+} from "@/data/instructors";
 import { loadYandexMaps } from "@/lib/yandex-maps";
 import { ImageViewer } from "@/components/club/ImageViewer";
 
@@ -30,6 +35,8 @@ export const Route = createFileRoute("/club/school/$instructorId")({
   },
   component: ClubInstructorPage,
 });
+
+const SKILL_TONES = ["primary", "yellow", "cyan", "lime", "violet", "primary"] as const;
 
 function ClubInstructorPage() {
   const { instructorId } = Route.useParams();
@@ -60,10 +67,10 @@ function ClubInstructorPage() {
     scheduleRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
 
   return (
-    <main className="mx-auto w-full max-w-3xl pb-24">
+    <main className="mx-auto w-full max-w-5xl pb-24">
       <Hero instructor={instructor} />
 
-      <div className="space-y-6 px-4 pt-5">
+      <div className="space-y-14 px-4 pt-6 md:space-y-20 md:px-6">
         <BackRow />
         <BioSection instructor={instructor} />
         {instructor.courses && instructor.courses.length > 0 && (
@@ -76,15 +83,13 @@ function ClubInstructorPage() {
         <LocationSection instructor={instructor} />
         <ScheduleSection instructor={instructor} scheduleRef={scheduleRef} />
         <GallerySection instructor={instructor} />
-        <FinalCta onCta={scrollToSchedule} />
+        <BottomActions onSchedule={scrollToSchedule} />
       </div>
-
-      <StickyCta onCta={scrollToSchedule} />
     </main>
   );
 }
 
-/* ---------- Hero ---------- */
+/* ---------- Hero (kept as-is per user request) ---------- */
 
 function Hero({ instructor }: { instructor: Instructor }) {
   const expLabel = `${instructor.experience} ${instructor.experience < 5 ? "года" : "лет"} стажа`;
@@ -99,15 +104,15 @@ function Hero({ instructor }: { instructor: Instructor }) {
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
       </div>
 
-      <div className="absolute inset-x-4 bottom-4">
-        <div className="flex flex-wrap gap-1.5">
-          <Chip>{instructor.city}</Chip>
-          <Chip>{expLabel}</Chip>
+      <div className="absolute inset-x-4 bottom-4 md:inset-x-8 md:bottom-8">
+        <div className="flex flex-wrap gap-2">
+          <HeroChip>{instructor.city}</HeroChip>
+          <HeroChip>{expLabel}</HeroChip>
         </div>
-        <h1 className="mt-2 font-display text-4xl font-black uppercase italic leading-[0.9] tracking-tight text-white md:text-6xl">
+        <h1 className="mt-3 font-display text-4xl font-black uppercase italic leading-[0.9] tracking-tight text-white md:text-7xl">
           {instructor.name}
         </h1>
-        <p className="mt-1 max-w-md font-mono text-[11px] uppercase tracking-widest text-white/80 md:text-xs">
+        <p className="mt-2 max-w-md font-mono text-[11px] uppercase tracking-widest text-white/80 md:text-xs">
           {instructor.tagline}
         </p>
       </div>
@@ -115,7 +120,7 @@ function Hero({ instructor }: { instructor: Instructor }) {
   );
 }
 
-function Chip({ children }: { children: React.ReactNode }) {
+function HeroChip({ children }: { children: React.ReactNode }) {
   return (
     <span className="inline-flex items-center rounded-full bg-white/10 px-2.5 py-1 font-mono text-[10px] uppercase tracking-widest text-white backdrop-blur-md">
       {children}
@@ -134,22 +139,24 @@ function BackRow() {
   );
 }
 
-/* ---------- Bio + Specialties ---------- */
+/* ---------- Plump specialties + Bio ---------- */
 
 function BioSection({ instructor }: { instructor: Instructor }) {
   return (
     <section>
-      <div className="flex flex-wrap gap-1.5">
-        {instructor.specialties.map((s) => (
+      <div className="flex flex-wrap gap-2">
+        {instructor.specialties.map((s, i) => (
           <span
             key={s}
-            className="rounded-full border border-primary/30 bg-primary/10 px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-widest text-primary"
+            className={`inline-block rounded-full border-[3px] border-foreground px-3 py-1 font-display text-[11px] font-black uppercase tracking-widest shadow-[3px_3px_0_0_hsl(var(--foreground))] ${
+              i % 2 === 0 ? "bg-card text-foreground" : "bg-foreground text-background"
+            }`}
           >
             {s}
           </span>
         ))}
       </div>
-      <div className="mt-4 space-y-3 text-[15px] leading-relaxed text-foreground/85">
+      <div className="mt-5 space-y-3 text-[15px] leading-relaxed text-foreground/85 md:text-base">
         {instructor.bio.map((p) => (
           <p key={p}>{p}</p>
         ))}
@@ -158,15 +165,13 @@ function BioSection({ instructor }: { instructor: Instructor }) {
   );
 }
 
-/* ---------- Section heading ---------- */
+/* ---------- Section heading (plump landing style) ---------- */
 
-function SectionHeading({ title, kicker }: { title: string; kicker?: string }) {
+function SectionHeading({ kicker, title }: { kicker: string; title: string }) {
   return (
-    <div className="mb-3 px-1">
-      {kicker && (
-        <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-primary">{kicker}</p>
-      )}
-      <h2 className="mt-1 font-display text-xl font-black uppercase italic tracking-tight text-foreground md:text-2xl">
+    <div className="mb-6 md:mb-8">
+      <p className="font-mono text-[11px] uppercase tracking-widest text-primary">{kicker}</p>
+      <h2 className="mt-2 font-display text-3xl font-black uppercase leading-[0.9] tracking-tight text-foreground md:text-5xl">
         {title}
       </h2>
     </div>
@@ -182,104 +187,123 @@ function CoursesSection({
   instructor: Instructor;
   onCta: () => void;
 }) {
+  const courses = instructor.courses ?? [];
   return (
     <section>
       <SectionHeading kicker="Форматы" title="Стоимость обучения" />
-      <div className="space-y-3">
-        {(instructor.courses ?? []).map((c) => (
-          <article
-            key={c.title}
-            className="overflow-hidden rounded-2xl border border-white/[0.06] bg-card/60"
-          >
-            <div className="px-4 py-4">
-              <div className="inline-flex rounded-full bg-white/[0.05] px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                {c.duration}
+      <div className="grid gap-6 md:grid-cols-2">
+        {courses.map((course, i) => {
+          const rotate = i % 2 === 0 ? "-rotate-1" : "rotate-1";
+          const bg = i % 2 === 0 ? "bg-primary" : "bg-card";
+          const fg = i % 2 === 0 ? "text-primary-foreground" : "text-foreground";
+          const sub = i % 2 === 0 ? "text-primary-foreground/85" : "text-foreground/80";
+          const chipBg = i % 2 === 0 ? "bg-card text-foreground" : "bg-foreground text-background";
+          return (
+            <article
+              key={course.title}
+              className={`${rotate} flex flex-col rounded-3xl border-[3px] border-foreground ${bg} p-5 shadow-[8px_8px_0_0_hsl(var(--foreground))] md:p-6`}
+            >
+              <div
+                className={`mb-4 inline-flex w-fit items-center rounded-full border-[3px] border-foreground px-3 py-1 font-display text-[11px] font-black uppercase tracking-widest shadow-[3px_3px_0_0_hsl(var(--foreground))] ${chipBg}`}
+              >
+                {course.duration}
               </div>
-              <h3 className="mt-2 font-display text-lg font-black uppercase italic tracking-tight text-foreground">
-                {c.title}
+              <h3 className={`font-display text-xl font-black uppercase leading-tight tracking-tight md:text-2xl ${fg}`}>
+                {course.title}
               </h3>
-              <p className="mt-2 text-sm leading-relaxed text-foreground/75">{c.description}</p>
-              {c.includes && c.includes.length > 0 && (
-                <ul className="mt-3 space-y-1.5 text-sm text-foreground/70">
-                  {c.includes.map((line) => (
+              <p className={`mt-3 text-sm leading-relaxed ${sub}`}>{course.description}</p>
+
+              {course.includes && course.includes.length > 0 && (
+                <ul className={`mt-4 space-y-1.5 text-sm ${sub}`}>
+                  {course.includes.map((line) => (
                     <li key={line} className="flex gap-2">
-                      <span className="mt-2 inline-block h-1 w-1 shrink-0 rounded-full bg-primary" />
+                      <span
+                        className={`mt-2 inline-block h-1.5 w-1.5 shrink-0 rounded-full ${i % 2 === 0 ? "bg-primary-foreground" : "bg-primary"}`}
+                      />
                       <span>{line}</span>
                     </li>
                   ))}
                 </ul>
               )}
-            </div>
-            <div className="flex items-center justify-between gap-3 border-t border-white/[0.06] bg-black/30 px-4 py-3">
-              <div className="flex items-baseline gap-1.5">
-                {c.priceFrom && (
-                  <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                    от
-                  </span>
-                )}
-                <PlumpNum value={c.price} size={18} format suffix="₽" />
+
+              <div className="mt-6 flex flex-wrap items-baseline justify-between gap-4 border-t-[3px] border-foreground/20 pt-4">
+                <div className={`flex items-baseline gap-2 ${fg}`}>
+                  {course.priceFrom && (
+                    <span className="font-mono text-[11px] uppercase tracking-widest opacity-80">
+                      от
+                    </span>
+                  )}
+                  <PlumpNum value={course.price} size={24} format suffix="₽" />
+                </div>
+                <button
+                  type="button"
+                  onClick={onCta}
+                  className={`inline-flex items-center gap-1.5 rounded-full border-[3px] border-foreground px-4 py-2 font-display text-xs font-black uppercase tracking-widest shadow-[4px_4px_0_0_hsl(var(--foreground))] ${
+                    i % 2 === 0 ? "bg-foreground text-background" : "bg-primary text-primary-foreground"
+                  }`}
+                >
+                  Записаться <PlumpArrowRight className="h-4 w-4" />
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={onCta}
-                className="inline-flex items-center gap-1 rounded-full bg-primary px-4 py-1.5 font-mono text-[11px] font-bold uppercase tracking-widest text-primary-foreground active:scale-95"
-              >
-                Выбрать <ChevronRight className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          </article>
-        ))}
+            </article>
+          );
+        })}
       </div>
     </section>
   );
 }
 
-/* ---------- Skills ---------- */
+/* ---------- Skills (plump grid like landing) ---------- */
 
 function SkillsSection({ instructor }: { instructor: Instructor }) {
   return (
     <section>
-      <SectionHeading kicker="Программа" title="Чему научишься" />
-      <div className="overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.03]">
-        {instructor.skills.map((s, i) => (
-          <div
-            key={s.title}
-            className={`flex gap-3 px-4 py-3 ${i > 0 ? "border-t border-white/[0.05]" : ""}`}
-          >
-            <div className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full bg-primary/15 font-mono text-[10px] font-bold text-primary">
-              {String(i + 1).padStart(2, "0")}
-            </div>
-            <div className="min-w-0">
-              <div className="font-display text-sm font-black uppercase tracking-tight text-foreground">
-                {s.title}
+      <SectionHeading kicker="Что дам" title="Чему научу" />
+      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        {instructor.skills.map((s, i) => {
+          const tone = SKILL_TONES[i % SKILL_TONES.length];
+          const rotate = i % 2 === 0 ? "-rotate-1" : "rotate-1";
+          return (
+            <article
+              key={s.title}
+              className={`${rotate} rounded-2xl border-[3px] border-foreground ${TONE_BG[tone]} p-5 shadow-[6px_6px_0_0_hsl(var(--foreground))]`}
+            >
+              <div className="mb-3 inline-flex items-center justify-center rounded-full border-[3px] border-foreground bg-card px-3 py-1 font-display text-xs font-black uppercase tracking-widest text-foreground">
+                {String(i + 1).padStart(2, "0")}
               </div>
-              <p className="mt-1 text-[13px] leading-relaxed text-foreground/70">{s.text}</p>
-            </div>
-          </div>
-        ))}
+              <h3 className="font-display text-lg font-black uppercase leading-tight tracking-tight text-black md:text-xl">
+                {s.title}
+              </h3>
+              <p className="mt-2 text-sm leading-relaxed text-black/80">{s.text}</p>
+            </article>
+          );
+        })}
       </div>
     </section>
   );
 }
 
-/* ---------- Approach ---------- */
+/* ---------- Approach (plump dark block like landing) ---------- */
 
 function ApproachSection({ instructor }: { instructor: Instructor }) {
+  const items = instructor.approach ?? [];
   return (
     <section>
       <SectionHeading kicker="Подход" title="Как проходят тренировки" />
-      <div className="space-y-2">
-        {(instructor.approach ?? []).map((text, i) => (
-          <div
-            key={i}
-            className="flex gap-3 rounded-2xl border border-white/[0.06] bg-card/40 px-4 py-3"
-          >
-            <div className="mt-0.5 font-mono text-[11px] font-bold text-primary">
-              {String(i + 1).padStart(2, "0")}
+      <div className="rounded-3xl border-[3px] border-foreground bg-foreground p-5 shadow-[8px_8px_0_0_hsl(var(--primary))] md:p-8">
+        <div className="grid gap-4 md:grid-cols-2 md:gap-5">
+          {items.map((text, i) => (
+            <div
+              key={i}
+              className="flex gap-4 rounded-2xl border-[3px] border-background/20 bg-background/5 p-4 md:p-5"
+            >
+              <div className="shrink-0">
+                <PlumpNum value={i + 1} size={24} className="text-primary" />
+              </div>
+              <p className="text-sm leading-relaxed text-background md:text-base">{text}</p>
             </div>
-            <p className="text-[13px] leading-relaxed text-foreground/80">{text}</p>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </section>
   );
@@ -326,44 +350,50 @@ function LocationSection({ instructor }: { instructor: Instructor }) {
   return (
     <section>
       <SectionHeading kicker="Место" title="Где занимаемся" />
-      <div className="overflow-hidden rounded-2xl border border-white/[0.06] bg-card/60">
-        <div className="relative">
-          <div ref={mapRef} className="aspect-[16/10] w-full bg-black" />
+      <div className="grid gap-5 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+        <div className="relative overflow-hidden rounded-3xl border-[3px] border-foreground bg-card shadow-[8px_8px_0_0_hsl(var(--foreground))]">
+          <div ref={mapRef} className="aspect-[4/3] w-full md:aspect-auto md:h-full md:min-h-[320px]" />
           {!mapReady && !mapFailed && (
-            <div className="absolute inset-0 flex items-center justify-center font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+            <div className="absolute inset-0 flex items-center justify-center bg-card font-mono text-xs uppercase tracking-widest text-muted-foreground">
               Загружаем карту…
             </div>
           )}
           {mapFailed && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-4 text-center">
-              <PlumpMap className="h-8 w-8 text-primary" />
-              <p className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
-                Открой на Яндекс.Картах
-              </p>
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-card p-6 text-center">
+              <PlumpMap className="h-10 w-10 text-primary" />
+              <a
+                href={externalMapUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-2 inline-flex items-center gap-2 rounded-full border-[3px] border-foreground bg-primary px-4 py-2 font-display text-xs font-black uppercase tracking-widest text-primary-foreground shadow-[4px_4px_0_0_hsl(var(--foreground))]"
+              >
+                Открыть карту <PlumpArrowRight className="h-4 w-4" />
+              </a>
             </div>
           )}
         </div>
-        <div className="px-4 py-3">
-          <div className="flex items-start gap-2">
-            <PlumpMap className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-            <div className="min-w-0">
-              <div className="text-sm font-medium leading-snug text-foreground">
-                {instructor.location.address}
-              </div>
-              {instructor.location.note && (
-                <p className="mt-1 text-[12px] leading-relaxed text-muted-foreground">
-                  {instructor.location.note}
-                </p>
-              )}
+
+        <div className="flex flex-col justify-between gap-5 rounded-3xl border-[3px] border-foreground bg-primary p-5 shadow-[8px_8px_0_0_hsl(var(--foreground))] md:p-6">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full border-[3px] border-foreground bg-card px-3 py-1 font-display text-[11px] font-black uppercase tracking-widest text-foreground shadow-[3px_3px_0_0_hsl(var(--foreground))]">
+              <PlumpMap className="h-4 w-4" /> {instructor.city}
             </div>
+            <p className="mt-4 font-display text-lg font-black uppercase leading-tight tracking-tight text-primary-foreground md:text-xl">
+              {instructor.location.address}
+            </p>
+            {instructor.location.note && (
+              <p className="mt-3 text-sm leading-relaxed text-primary-foreground/90">
+                {instructor.location.note}
+              </p>
+            )}
           </div>
           <a
             href={externalMapUrl}
             target="_blank"
             rel="noreferrer"
-            className="mt-3 inline-flex items-center gap-1 font-mono text-[11px] font-bold uppercase tracking-widest text-primary"
+            className="inline-flex items-center justify-center gap-2 rounded-full border-[3px] border-foreground bg-foreground px-5 py-3 font-display text-xs font-black uppercase tracking-widest text-background shadow-[4px_4px_0_0_hsl(var(--background))]"
           >
-            Построить маршрут <ChevronRight className="h-3.5 w-3.5" />
+            Построить маршрут <PlumpArrowRight className="h-4 w-4" />
           </a>
         </div>
       </div>
@@ -371,7 +401,7 @@ function LocationSection({ instructor }: { instructor: Instructor }) {
   );
 }
 
-/* ---------- Schedule ---------- */
+/* ---------- Schedule (wider, plump) ---------- */
 
 function ScheduleSection({
   instructor,
@@ -384,21 +414,21 @@ function ScheduleSection({
   return (
     <section ref={scheduleRef} className="scroll-mt-4">
       <SectionHeading kicker="Ближайшая неделя" title="Свободные слоты" />
-      <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {instructor.schedule.map((day) => (
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {instructor.schedule.map((day, i) => (
           <div
             key={day.date}
-            className="w-[160px] shrink-0 snap-start rounded-2xl border border-white/[0.06] bg-card/60 p-3"
+            className={`rounded-2xl border-[3px] border-foreground ${i % 2 === 0 ? "bg-card" : "bg-primary/10"} p-4 shadow-[6px_6px_0_0_hsl(var(--foreground))]`}
           >
-            <div className="mb-2 flex items-baseline justify-between">
-              <span className="font-display text-base font-black uppercase italic leading-none tracking-tight text-foreground">
+            <div className="mb-3 flex items-baseline justify-between">
+              <span className="font-display text-2xl font-black uppercase leading-none tracking-tight text-foreground">
                 {day.weekday}
               </span>
-              <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+              <span className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
                 {day.date}
               </span>
             </div>
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-wrap gap-2">
               {day.slots.map((slot) => (
                 <SlotBtn
                   key={`${day.date}-${slot.time}`}
@@ -411,7 +441,7 @@ function ScheduleSection({
           </div>
         ))}
       </div>
-      <div className="mt-3 rounded-xl border border-dashed border-white/10 bg-white/[0.02] px-3 py-2 text-center font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+      <div className="mt-5 rounded-2xl border-[3px] border-dashed border-foreground/40 bg-card/40 p-4 text-center font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
         {picked
           ? "Слот выбран. Скоро запись прямо здесь — пока пиши в помощь клуба."
           : "Выбери слот. Настоящая запись появится скоро."}
@@ -431,7 +461,7 @@ function SlotBtn({
 }) {
   if (slot.status === "booked") {
     return (
-      <span className="rounded-full border border-white/[0.06] bg-white/[0.02] px-2.5 py-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground line-through">
+      <span className="inline-flex items-center rounded-full border-[3px] border-foreground/30 bg-muted px-3 py-1 font-display text-xs font-black uppercase tracking-widest text-muted-foreground line-through">
         {slot.time}
       </span>
     );
@@ -440,10 +470,8 @@ function SlotBtn({
     <button
       type="button"
       onClick={onPick}
-      className={`rounded-full px-2.5 py-1 font-mono text-[10px] font-bold uppercase tracking-widest transition-colors active:scale-95 ${
-        picked
-          ? "bg-primary text-primary-foreground"
-          : "border border-primary/30 bg-primary/10 text-primary"
+      className={`inline-flex items-center rounded-full border-[3px] border-foreground px-3 py-1 font-display text-xs font-black uppercase tracking-widest shadow-[3px_3px_0_0_hsl(var(--foreground))] ${
+        picked ? "bg-primary text-primary-foreground" : "bg-card text-foreground"
       }`}
     >
       {slot.time}
@@ -451,18 +479,25 @@ function SlotBtn({
   );
 }
 
-/* ---------- Gallery ---------- */
+/* ---------- Gallery (swipeable, one-per-screen) ---------- */
 
 function GallerySection({ instructor }: { instructor: Instructor }) {
+  const scrollerRef = useRef<HTMLDivElement | null>(null);
   const [openIdx, setOpenIdx] = useState<number | null>(null);
+
+  const scrollBy = (dir: 1 | -1) => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    el.scrollBy({ left: dir * el.clientWidth, behavior: "smooth" });
+  };
 
   if (instructor.gallery.length === 0) {
     return (
       <section>
         <SectionHeading kicker="Кадры" title="Галерея" />
-        <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-white/10 bg-white/[0.02] p-10 text-center">
+        <div className="flex flex-col items-center justify-center gap-2 rounded-3xl border-[3px] border-dashed border-foreground/40 bg-card/40 p-10 text-center">
           <PlumpCamera className="h-8 w-8 text-muted-foreground" />
-          <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+          <p className="font-display text-lg font-black uppercase tracking-tight text-foreground">
             Скоро добавим кадры
           </p>
         </div>
@@ -470,25 +505,62 @@ function GallerySection({ instructor }: { instructor: Instructor }) {
     );
   }
 
+  const rotates = ["-rotate-2", "rotate-1", "-rotate-1", "rotate-2"];
+
   return (
     <section>
       <SectionHeading kicker="Кадры" title="Галерея" />
-      <div className="grid grid-cols-2 gap-1.5 md:grid-cols-3">
-        {instructor.gallery.map((src, i) => (
+      <div className="relative -mx-4 md:-mx-6">
+        <div
+          ref={scrollerRef}
+          className="flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-4 pt-2 md:px-6 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
+          {instructor.gallery.map((src, i) => (
+            <button
+              type="button"
+              key={src}
+              onClick={() => setOpenIdx(i)}
+              className={`w-[calc(100vw-2rem)] shrink-0 snap-center md:w-[calc(100%-3rem)] ${rotates[i % rotates.length]}`}
+              style={{ maxWidth: "100%" }}
+            >
+              <div
+                className={`overflow-hidden rounded-2xl border-[3px] border-foreground ${TONE_BG[instructor.tone]} shadow-[8px_8px_0_0_hsl(var(--foreground))]`}
+              >
+                <div className="aspect-[4/5] w-full">
+                  <img
+                    src={src}
+                    alt={`${instructor.name} — кадр ${i + 1}`}
+                    loading="lazy"
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="mt-4 flex items-center justify-between px-1">
+        <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+          Свайпай влево/вправо
+        </span>
+        <div className="flex items-center gap-3">
           <button
-            key={src}
             type="button"
-            onClick={() => setOpenIdx(i)}
-            className="relative aspect-square overflow-hidden rounded-xl bg-black active:scale-[0.98]"
+            onClick={() => scrollBy(-1)}
+            aria-label="Назад"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-full border-[3px] border-foreground bg-card shadow-[4px_4px_0_0_hsl(var(--foreground))]"
           >
-            <img
-              src={src}
-              alt={`${instructor.name} — кадр ${i + 1}`}
-              loading="lazy"
-              className="absolute inset-0 h-full w-full object-cover"
-            />
+            <PlumpArrowLeft className="h-5 w-5" />
           </button>
-        ))}
+          <button
+            type="button"
+            onClick={() => scrollBy(1)}
+            aria-label="Вперёд"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-full border-[3px] border-foreground bg-primary text-primary-foreground shadow-[4px_4px_0_0_hsl(var(--foreground))]"
+          >
+            <PlumpArrowRight className="h-5 w-5" />
+          </button>
+        </div>
       </div>
       {openIdx !== null && (
         <ImageViewer
@@ -501,40 +573,24 @@ function GallerySection({ instructor }: { instructor: Instructor }) {
   );
 }
 
-/* ---------- Final CTA + Sticky CTA ---------- */
+/* ---------- Bottom actions (replaces FinalCta + StickyCta) ---------- */
 
-function FinalCta({ onCta }: { onCta: () => void }) {
+function BottomActions({ onSchedule }: { onSchedule: () => void }) {
   return (
-    <section className="mt-4 overflow-hidden rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/20 via-card/60 to-black p-5 text-center">
-      <h2 className="font-display text-2xl font-black uppercase italic tracking-tight text-foreground">
-        Готов записаться?
-      </h2>
-      <p className="mt-1 font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
-        Выбери свободный слот выше
-      </p>
+    <div className="flex flex-col items-stretch gap-3 pt-4 sm:flex-row sm:justify-center">
       <button
         type="button"
-        onClick={onCta}
-        className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-primary px-5 py-2 font-mono text-[11px] font-bold uppercase tracking-widest text-primary-foreground active:scale-95"
+        onClick={onSchedule}
+        className="inline-flex items-center justify-center gap-2 rounded-full border-[3px] border-foreground bg-card px-6 py-3 font-display text-sm font-black uppercase tracking-widest text-foreground shadow-[6px_6px_0_0_hsl(var(--foreground))]"
       >
-        К расписанию <ChevronRight className="h-4 w-4" />
+        К расписанию <PlumpArrowRight className="h-4 w-4" />
       </button>
-    </section>
-  );
-}
-
-function StickyCta({ onCta }: { onCta: () => void }) {
-  return (
-    <div
-      className="pointer-events-none fixed inset-x-0 z-30 flex justify-center px-4 md:hidden"
-      style={{ bottom: "calc(64px + env(safe-area-inset-bottom) + 12px)" }}
-    >
       <button
         type="button"
-        onClick={onCta}
-        className="pointer-events-auto inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 font-mono text-[12px] font-bold uppercase tracking-widest text-primary-foreground shadow-[0_10px_30px_-8px_hsl(var(--primary))] active:scale-95"
+        onClick={onSchedule}
+        className="inline-flex items-center justify-center gap-2 rounded-full border-[3px] border-foreground bg-primary px-6 py-3 font-display text-sm font-black uppercase tracking-widest text-primary-foreground shadow-[6px_6px_0_0_hsl(var(--foreground))]"
       >
-        Записаться <ChevronRight className="h-4 w-4" />
+        Записаться <PlumpArrowRight className="h-4 w-4" />
       </button>
     </div>
   );
