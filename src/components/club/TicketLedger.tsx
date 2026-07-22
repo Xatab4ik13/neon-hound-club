@@ -216,6 +216,7 @@ function SummaryCard({
   prefix = "",
   accent,
   icon,
+  tone,
   muted = false,
 }: {
   label: string;
@@ -223,11 +224,12 @@ function SummaryCard({
   prefix?: string;
   accent: string;
   icon: React.ReactNode;
+  tone: string;
   muted?: boolean;
 }) {
   return (
     <div className="flex items-center gap-3 rounded-2xl border border-white/[0.06] bg-card/40 px-4 py-3">
-      <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/[0.04]">
+      <div className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl border-[2px] border-foreground shadow-[2px_2px_0_0_hsl(var(--foreground))] ${tone}`}>
         {icon}
       </div>
       <div className="flex min-w-0 flex-col">
