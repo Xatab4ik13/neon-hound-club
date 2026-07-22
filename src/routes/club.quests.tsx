@@ -385,7 +385,7 @@ function QuestCard({
 
 function PlumpRewardChip({ tickets }: { tickets: number }) {
   return (
-    <span className="inline-flex items-center gap-1 rounded-full border-[3px] border-foreground bg-[#FFD93D] px-2.5 py-0.5 font-display text-[12px] font-black uppercase tracking-widest text-foreground shadow-[2px_2px_0_0_hsl(var(--foreground))]">
+    <span className="inline-flex items-center gap-1 rounded-full border-[3px] border-foreground bg-[#FFD93D] px-2.5 py-0.5 font-display text-[12px] font-black uppercase tracking-widest text-black shadow-[2px_2px_0_0_hsl(var(--foreground))]">
       <PlumpTicket className="h-3.5 w-3.5" />+{tickets}
     </span>
   );
