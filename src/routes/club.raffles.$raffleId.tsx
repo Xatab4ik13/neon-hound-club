@@ -478,8 +478,10 @@ function StakePanel({
   if (phoneRequired) {
     return (
       <div
-        className={`relative rounded-[2rem] border-[3px] border-foreground bg-card p-4 ${
-          sticky ? "shadow-[0_-8px_24px_-6px_rgba(0,0,0,0.7)]" : "shadow-[6px_6px_0_0_hsl(var(--foreground))]"
+        className={`relative rounded-[2rem] p-4 ${
+          sticky
+            ? "bg-card shadow-[0_-8px_24px_-6px_rgba(0,0,0,0.7)]"
+            : "border-[3px] border-foreground bg-card shadow-[6px_6px_0_0_hsl(var(--foreground))]"
         }`}
       >
         <div className="flex items-center justify-between">
@@ -508,10 +510,10 @@ function StakePanel({
 
   return (
     <div
-      className={`relative rounded-[2rem] border-[3px] border-foreground bg-card p-4 ${
+      className={`relative rounded-[2rem] p-4 ${
         sticky
-          ? "shadow-[0_-8px_24px_-6px_rgba(0,0,0,0.7)]"
-          : "shadow-[6px_6px_0_0_hsl(var(--foreground))]"
+          ? "bg-card shadow-[0_-8px_24px_-6px_rgba(0,0,0,0.7)]"
+          : "border-[3px] border-foreground bg-card shadow-[6px_6px_0_0_hsl(var(--foreground))]"
       }`}
     >
       {/* Header */}
