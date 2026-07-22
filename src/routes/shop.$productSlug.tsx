@@ -10,6 +10,8 @@ import { useQuery } from "@tanstack/react-query";
 import { hhToast } from "@/lib/hh-toast";
 import { Header } from "@/components/brand/Header";
 import { Footer } from "@/components/brand/Footer";
+import { PlumpPrice } from "@/components/brand/PlumpNum";
+
 import { useCart } from "@/hooks/use-cart";
 import { ApiError } from "@/lib/api";
 import { fetchShopProduct, qk, type ShopProduct } from "@/lib/queries";
