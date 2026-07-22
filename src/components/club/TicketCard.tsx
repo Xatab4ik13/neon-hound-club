@@ -1,10 +1,13 @@
-// Plump-стилизованная карточка баланса: билет с перфорацией по вертикали,
-// слева — число + подпись, справа «корешок» с CTA. Толстая рамка, hard-shadow,
-// жёлтый стикер-иконка билета сверху.
+// Карточка баланса в форме отрывного билета.
+// Слева — основная часть с числом и CTA, справа — узкий «корешок».
+// Полукруглые вырезы по бокам пунктирной линии отрыва имитируют перфорацию.
+// Сверху — лёгкая глянцевая засветка и медленный «шиммер» в стиле iOS.
 
 import { Link } from "@tanstack/react-router";
 import { PlumpTicket } from "@/components/ui/icons";
 import { PlumpNum } from "@/components/brand/PlumpNum";
+
+
 
 function pluralTickets(n: number): string {
   const mod10 = n % 10;
@@ -26,94 +29,116 @@ export function TicketCard({
   onRetry?: () => void;
 }) {
   const empty = !isLoading && !isError && balance === 0;
-  const STUB_W = 116;
+  const STUB_W = 104; // ширина «корешка» в px
 
+  // Размер числа подстраиваем под длину — чтобы 1 000 000 не вылетал за край.
   const formatted = isLoading ? "—" : balance.toLocaleString("ru-RU");
   const len = formatted.length;
-  const numberSize = len <= 4 ? 64 : len <= 6 ? 52 : len <= 8 ? 40 : 32;
+  const numberSize = len <= 4 ? 68 : len <= 6 ? 54 : len <= 8 ? 42 : 34;
+
 
   return (
-    <section aria-label="Баланс билетов" className="relative mb-8 animate-fade-in">
-      {/* жёлтый стикер-иконка сверху слева, как «печать» на билете */}
-      <span className="absolute -left-2 -top-3 z-20 inline-flex -rotate-3 items-center gap-1.5 rounded-2xl border-[3px] border-foreground bg-[#FFD93D] px-2.5 py-1 font-display text-[11px] font-black uppercase italic tracking-tighter text-black shadow-[3px_3px_0_0_hsl(var(--foreground))]">
-        <PlumpTicket className="h-3.5 w-3.5" />
-        Мой баланс
-      </span>
+    <section aria-label="Баланс билетов" className="relative mb-6">
+      <div className="relative flex h-[220px] overflow-hidden rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/15 via-card/70 to-black shadow-[0_8px_28px_-12px_color-mix(in_oklab,var(--primary)_45%,transparent)]">
+        {/* мягкое свечение */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -left-8 -top-10 h-52 w-52 rounded-full bg-primary/25 blur-3xl"
+        />
+        {/* тонкая диагональная защитная сетка */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 opacity-[0.06] mix-blend-overlay"
+          style={{
+            backgroundImage:
+              "repeating-linear-gradient(45deg, #fff 0 1px, transparent 1px 8px)",
+          }}
+        />
+        {/* верхний глянец — узкая полоса света сверху, как на iOS-карточках */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/[0.09] to-transparent"
+        />
 
-      <div className="relative flex h-[188px] overflow-hidden rounded-3xl border-[3px] border-foreground bg-card shadow-[6px_6px_0_0_hsl(var(--foreground))]">
         {/* основная часть */}
-        <div className="relative z-10 flex min-w-0 flex-1 flex-col justify-end py-5 pl-5 pr-4">
-          <div className="flex items-end gap-2">
-            <span className="text-foreground">
-              {isLoading ? (
-                <span className="font-display text-[64px] font-black italic leading-none">—</span>
-              ) : (
-                <PlumpNum value={balance} size={numberSize} format />
-              )}
+        <div className="relative z-10 flex min-w-0 flex-1 flex-col justify-between py-5 pl-5 pr-4">
+          <div className="flex items-center justify-between">
+            <span className="text-[13px] text-muted-foreground">
+              Мой баланс
             </span>
-            <span className="pb-2 font-mono text-[12px] font-bold uppercase tracking-widest text-muted-foreground">
-              {pluralTickets(balance)}
-            </span>
+            {isError ? (
+              <button
+                type="button"
+                onClick={onRetry}
+                className="text-[12px] font-medium text-primary active:opacity-70"
+              >
+                Повторить
+              </button>
+            ) : null}
           </div>
 
-          {isError && (
-            <button
-              type="button"
-              onClick={onRetry}
-              className="mt-2 self-start font-mono text-[11px] font-bold uppercase tracking-widest text-[#B6FF3C] active:opacity-70"
-            >
-              Повторить загрузку
-            </button>
-          )}
+          <div className="flex items-end justify-between gap-4">
+            <div className="flex min-w-0 items-baseline gap-2">
+              <span
+                className={`${numberSize} font-semibold leading-none tabular-nums text-foreground`}
+              >
+                {formatted}
+              </span>
+              <span className="pb-1.5 text-[14px] text-muted-foreground">
+                {pluralTickets(balance)}
+              </span>
+            </div>
+          </div>
         </div>
 
         {/* линия отрыва */}
         <div aria-hidden className="relative shrink-0" style={{ width: 0 }}>
           <div
-            className="absolute inset-y-4"
+            className="absolute inset-y-3"
             style={{
-              left: -1.5,
-              borderLeft: "3px dashed hsl(var(--foreground))",
+              left: -0.5,
+              borderLeft: "1.5px dashed color-mix(in oklab, white 18%, transparent)",
             }}
           />
         </div>
 
-        {/* «корешок» — CTA */}
+        {/* «корешок» — горизонтальная кнопка "Поставить" в правом нижнем углу */}
         <div
-          className="relative z-10 flex shrink-0 items-center justify-center px-3"
+          className="relative z-10 flex shrink-0 items-end justify-end pb-5 pr-4"
           style={{ width: STUB_W }}
         >
           {empty ? (
             <Link
               to="/club/quests"
               aria-label="Набрать билеты — перейти к квестам"
-              className="inline-flex flex-col items-center justify-center gap-1 rounded-2xl border-[3px] border-foreground bg-[#B6FF3C] px-3 py-3 font-display text-[12px] font-black uppercase italic tracking-tighter text-black shadow-[3px_3px_0_0_hsl(var(--foreground))] transition-all active:translate-x-[1px] active:translate-y-[1px] active:shadow-[1px_1px_0_0_hsl(var(--foreground))]"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-white/[0.08] px-4 py-2.5 text-[13px] font-semibold text-foreground transition-all active:scale-[0.97]"
             >
-              <PlumpTicket className="h-5 w-5" />
-              Набрать
+              <PlumpTicket className="h-4 w-4" strokeWidth={2.2} />
+              <span className="leading-none">Набрать</span>
             </Link>
           ) : (
             <Link
               to="/club/raffles"
               aria-label="Поставить билеты"
-              className="inline-flex flex-col items-center justify-center gap-1 rounded-2xl border-[3px] border-foreground bg-[#B6FF3C] px-3 py-3 font-display text-[12px] font-black uppercase italic tracking-tighter text-black shadow-[3px_3px_0_0_hsl(var(--foreground))] transition-all active:translate-x-[1px] active:translate-y-[1px] active:shadow-[1px_1px_0_0_hsl(var(--foreground))]"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-primary/90 px-4 py-2.5 text-[13px] font-semibold text-primary-foreground shadow-[0_4px_14px_-4px_color-mix(in_oklab,var(--primary)_70%,transparent)] transition-all active:scale-[0.97] hover:brightness-110"
             >
-              <PlumpTicket className="h-5 w-5" />
-              Поставить
+              <PlumpTicket className="h-4 w-4" strokeWidth={2.2} />
+              <span className="leading-none">Поставить</span>
             </Link>
           )}
         </div>
 
-        {/* перфорация */}
+
+        {/* перфорация — полукруглые вырезы в цвет фона страницы */}
         <div
           aria-hidden
-          className="absolute h-5 w-5 rounded-full border-[3px] border-foreground bg-background"
-          style={{ top: -12, right: STUB_W - 10 }}
+          className="absolute h-4 w-4 rounded-full bg-background"
+          style={{ top: -8, right: STUB_W - 8 }}
         />
         <div
           aria-hidden
-          className="absolute h-5 w-5 rounded-full border-[3px] border-foreground bg-background"
-          style={{ bottom: -12, right: STUB_W - 10 }}
+          className="absolute h-4 w-4 rounded-full bg-background"
+          style={{ bottom: -8, right: STUB_W - 8 }}
         />
       </div>
     </section>
