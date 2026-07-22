@@ -1,8 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { PageHeader } from "@/components/club/PageHeader";
-import { PlumpArrowRight as ChevronRight } from "@/components/ui/icons";
-import { INSTRUCTORS, type Instructor } from "@/data/instructors";
+import { INSTRUCTORS, TONE_BG, type Instructor } from "@/data/instructors";
 
 export const Route = createFileRoute("/club/school/")({
   head: () => ({
@@ -21,19 +20,21 @@ function ClubSchoolPage() {
   const [tab, setTab] = useState<Tab>("instructors");
 
   return (
-    <main className="mx-auto w-full max-w-3xl px-4 py-5 md:py-8">
+    <main className="mx-auto w-full max-w-5xl px-4 py-5 md:py-8">
       <PageHeader title="Школа" subtitle="учись у тех, кто катает" />
 
-      <div className="mb-5 grid grid-cols-2 gap-1 rounded-2xl border border-white/[0.06] bg-white/[0.03] p-1">
-        <TabBtn active={tab === "instructors"} onClick={() => setTab("instructors")}>
-          Инструкторы
-        </TabBtn>
-        <TabBtn active={tab === "online"} onClick={() => setTab("online")}>
-          Онлайн-курсы
-        </TabBtn>
+      <div className="mb-8 flex justify-center">
+        <div className="inline-flex rounded-2xl border-[3px] border-foreground bg-card p-1 shadow-[6px_6px_0_0_hsl(var(--foreground))]">
+          <TabBtn active={tab === "instructors"} onClick={() => setTab("instructors")}>
+            Инструкторы
+          </TabBtn>
+          <TabBtn active={tab === "online"} onClick={() => setTab("online")}>
+            Онлайн-курсы
+          </TabBtn>
+        </div>
       </div>
 
-      {tab === "instructors" ? <InstructorsList /> : <OnlineSoon />}
+      {tab === "instructors" ? <InstructorsGrid /> : <OnlineSoon />}
     </main>
   );
 }
@@ -51,10 +52,10 @@ function TabBtn({
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-xl py-2.5 font-mono text-[11px] font-bold uppercase tracking-widest transition-colors ${
+      className={`rounded-xl px-4 py-2 font-display text-xs font-black uppercase tracking-widest transition-colors ${
         active
           ? "bg-primary text-primary-foreground"
-          : "text-muted-foreground hover:text-foreground"
+          : "text-foreground hover:text-primary"
       }`}
     >
       {children}
@@ -62,83 +63,78 @@ function TabBtn({
   );
 }
 
-function InstructorsList() {
+function InstructorsGrid() {
   return (
-    <div className="grid gap-4 md:grid-cols-2">
-      {INSTRUCTORS.map((it) => (
-        <InstructorCard key={it.id} instructor={it} />
+    <div className="grid gap-10 pt-4 sm:grid-cols-2 lg:grid-cols-3">
+      {INSTRUCTORS.map((it, i) => (
+        <InstructorCard key={it.id} instructor={it} index={i} />
       ))}
     </div>
   );
 }
 
-function InstructorCard({ instructor }: { instructor: Instructor }) {
-  const expLabel = `${instructor.experience} ${instructor.experience < 5 ? "года" : "лет"}`;
-  const priceFrom = instructor.courses?.reduce<number | null>(
-    (min, c) => (min === null || c.price < min ? c.price : min),
-    null,
-  );
-
+function InstructorCard({
+  instructor,
+  index,
+}: {
+  instructor: Instructor;
+  index: number;
+}) {
+  const skew = index % 2 === 0 ? "-rotate-1" : "rotate-1";
+  const expLabel = `${instructor.experience} ${instructor.experience < 5 ? "года" : "лет"} стажа`;
   return (
     <Link
       to="/club/school/$instructorId"
       params={{ instructorId: instructor.slug }}
-      className="group block overflow-hidden rounded-2xl border border-white/[0.06] bg-card/60 transition-colors active:scale-[0.99]"
+      className={`group relative block ${skew}`}
     >
-      <div className="relative aspect-[16/10] w-full overflow-hidden bg-black">
-        <img
-          src={instructor.photo}
-          alt={instructor.name}
-          loading="lazy"
-          className="absolute inset-0 h-full w-full object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
-        <div className="absolute left-3 top-3 flex flex-wrap gap-1.5">
-          <Chip>{instructor.city}</Chip>
-          <Chip>{expLabel} стажа</Chip>
+      <div
+        className={`relative overflow-hidden rounded-3xl border-[3px] border-foreground ${TONE_BG[instructor.tone]} shadow-[8px_8px_0_0_hsl(var(--foreground))] transition-transform duration-200 ease-out group-hover:-translate-x-1 group-hover:-translate-y-1 group-hover:shadow-[10px_10px_0_0_hsl(var(--foreground))]`}
+      >
+        <div className="relative aspect-[3/4] w-full overflow-hidden">
+          <img
+            src={instructor.photo}
+            alt={instructor.name}
+            loading="lazy"
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/0 via-black/0 to-black/30" />
         </div>
-        <div className="absolute inset-x-3 bottom-3">
-          <div className="font-display text-2xl font-black uppercase italic leading-none tracking-tight text-white">
+
+        <div className="border-t-[3px] border-foreground bg-card px-4 py-3">
+          <div className="font-display text-2xl font-black uppercase leading-none tracking-tight text-foreground">
             {instructor.name}
-          </div>
-          <div className="mt-1 font-mono text-[10px] uppercase tracking-widest text-white/70">
-            {instructor.tagline}
           </div>
         </div>
       </div>
 
-      <div className="flex items-center justify-between gap-3 px-4 py-3">
-        <div className="flex min-w-0 flex-wrap gap-1.5">
-          {instructor.specialties.slice(0, 3).map((s) => (
-            <span
-              key={s}
-              className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 font-mono text-[10px] uppercase tracking-widest text-muted-foreground"
-            >
-              {s}
-            </span>
-          ))}
-        </div>
-        <div className="flex shrink-0 items-center gap-1 text-primary">
-          {priceFrom !== null && priceFrom !== undefined && (
-            <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-              от {formatK(priceFrom)}
-            </span>
-          )}
-          <ChevronRight className="h-4 w-4" />
-        </div>
+      <div className="pointer-events-none absolute -top-3 left-3 -rotate-[4deg]">
+        <PlumpTag>{instructor.city}</PlumpTag>
+      </div>
+      <div className="pointer-events-none absolute -bottom-3 right-6 -rotate-[3deg]">
+        <PlumpTag variant="accent">{expLabel}</PlumpTag>
       </div>
     </Link>
   );
 }
 
-function formatK(n: number): string {
-  if (n >= 1000) return `${Math.round(n / 1000)}k ₽`;
-  return `${n} ₽`;
-}
-
-function Chip({ children }: { children: React.ReactNode }) {
+function PlumpTag({
+  children,
+  variant = "light",
+}: {
+  children: React.ReactNode;
+  variant?: "light" | "dark" | "accent";
+}) {
+  const styles =
+    variant === "dark"
+      ? "bg-foreground text-background"
+      : variant === "accent"
+        ? "bg-primary text-primary-foreground"
+        : "bg-card text-foreground";
   return (
-    <span className="inline-flex items-center rounded-full bg-black/60 px-2 py-0.5 font-mono text-[10px] uppercase tracking-widest text-white backdrop-blur-sm">
+    <span
+      className={`inline-block rounded-full border-[3px] border-foreground px-3 py-1 font-display text-[10px] font-black uppercase tracking-widest shadow-[3px_3px_0_0_hsl(var(--foreground))] md:text-xs ${styles}`}
+    >
       {children}
     </span>
   );
@@ -146,13 +142,12 @@ function Chip({ children }: { children: React.ReactNode }) {
 
 function OnlineSoon() {
   return (
-    <div className="flex min-h-[40vh] flex-col items-center justify-center rounded-2xl border border-dashed border-white/10 bg-white/[0.02] px-6 py-16 text-center">
-      <p className="font-mono text-[11px] uppercase tracking-[0.3em] text-primary">Скоро</p>
-      <h2 className="mt-3 font-display text-3xl font-black uppercase italic tracking-tight text-foreground md:text-4xl">
+    <div className="flex min-h-[50vh] flex-col items-center justify-center text-center">
+      <div className="font-display text-7xl font-black uppercase leading-[0.88] tracking-tight text-foreground md:text-9xl">
+        Скоро
+      </div>
+      <p className="mt-6 font-display text-2xl font-black uppercase tracking-tight text-muted-foreground md:text-4xl">
         Готовим программу
-      </h2>
-      <p className="mt-3 max-w-sm font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
-        Онлайн-курсы школы появятся здесь
       </p>
     </div>
   );
