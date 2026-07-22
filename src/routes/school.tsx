@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { Header } from "@/components/brand/Header";
 import { Footer } from "@/components/brand/Footer";
-import { PlumpNum } from "@/components/brand/PlumpNum";
+
 
 export const Route = createFileRoute("/school")({
   head: () => ({
@@ -84,19 +84,20 @@ function SchoolPage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Header />
-      <main className="mx-auto max-w-6xl px-4 pb-24 pt-10 md:pt-16">
+      <main className="mx-auto max-w-6xl px-4 pb-24 pt-24 md:pt-32">
         {/* HEADER */}
         <div className="text-center">
           <p className="mb-3 font-mono text-[11px] uppercase tracking-[0.3em] text-primary">
             Школа
           </p>
-          <h1 className="font-display text-5xl font-black uppercase italic tracking-tight md:text-7xl">
+          <h1 className="font-display text-5xl font-black uppercase leading-[0.88] tracking-tight md:text-7xl">
             Школа HELLHOUND
           </h1>
           <p className="mx-auto mt-4 max-w-xl font-mono text-xs uppercase tracking-widest text-muted-foreground md:text-sm">
             Учись у тех, кто реально катает
           </p>
         </div>
+
 
         {/* SEGMENTED TOGGLE — plump */}
         <div className="mt-10 flex justify-center">
@@ -138,21 +139,17 @@ function SchoolPage() {
 
 function OnlineSoon() {
   return (
-    <div className="flex min-h-[40vh] flex-col items-center justify-center text-center">
-      <div className="rounded-2xl border-[3px] border-foreground bg-card px-8 py-10 shadow-[8px_8px_0_0_hsl(var(--foreground))] md:px-14 md:py-14">
-        <p className="mb-3 font-mono text-[11px] uppercase tracking-[0.3em] text-primary">
-          Онлайн-курсы
-        </p>
-        <div className="font-display text-5xl font-black uppercase italic tracking-tight md:text-7xl">
-          Скоро
-        </div>
-        <p className="mt-4 font-mono text-xs uppercase tracking-widest text-muted-foreground">
-          Готовим программу
-        </p>
+    <div className="flex min-h-[50vh] flex-col items-center justify-center text-center">
+      <div className="font-display text-7xl font-black uppercase leading-[0.88] tracking-tight text-foreground md:text-9xl">
+        Скоро
       </div>
+      <p className="mt-6 font-display text-2xl font-black uppercase tracking-tight text-muted-foreground md:text-4xl">
+        Готовим программу
+      </p>
     </div>
   );
 }
+
 
 function InstructorsGrid() {
   return (
@@ -195,19 +192,15 @@ function InstructorCard({
               fillOpacity="0.85"
             />
           </svg>
-
-          {/* Номер / стаж в углу */}
-          <div className="absolute right-3 top-3 rounded-full border-[2px] border-foreground bg-card px-2.5 py-1">
-            <PlumpNum value={String(index + 1).padStart(2, "0")} size={12} />
-          </div>
         </div>
 
         {/* Имя внизу карточки */}
         <div className="border-t-[3px] border-foreground bg-card px-4 py-3">
-          <div className="font-display text-2xl font-black uppercase italic leading-none tracking-tight text-foreground">
+          <div className="font-display text-2xl font-black uppercase leading-none tracking-tight text-foreground">
             {instructor.name}
           </div>
         </div>
+
       </div>
 
       {/* Плашки сверху/по краям — город, спец, стаж */}
