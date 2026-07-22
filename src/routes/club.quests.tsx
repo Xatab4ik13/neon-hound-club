@@ -132,10 +132,10 @@ function StatTile({
     <div
       className={`rounded-2xl border-[3px] border-foreground ${TONE_BG[tone]} px-3 py-3 shadow-[4px_4px_0_0_hsl(var(--foreground))]`}
     >
-      <div className="font-mono text-[10px] font-bold uppercase tracking-[0.15em] text-foreground/70">
+      <div className="font-mono text-[10px] font-bold uppercase tracking-[0.15em] text-black/70">
         {label}
       </div>
-      <div className="mt-1.5 text-foreground">
+      <div className="mt-1.5 text-black">
         {isNum ? (
           <PlumpNum value={value as number} size={22} format />
         ) : (
@@ -168,7 +168,7 @@ function InstallAppQuest() {
   return (
     <Link
       to="/club/install"
-      className="mb-6 block -rotate-1 rounded-3xl border-[3px] border-foreground bg-[#FFD93D] p-4 shadow-[8px_8px_0_0_hsl(var(--foreground))] transition-transform duration-200 ease-out hover:-translate-x-1 hover:-translate-y-1 hover:shadow-[10px_10px_0_0_hsl(var(--foreground))] active:scale-[0.99] md:p-5"
+      className="mb-6 block -rotate-1 rounded-3xl border-[3px] border-foreground bg-[#FFD93D] p-4 text-black shadow-[8px_8px_0_0_hsl(var(--foreground))] transition-transform duration-200 ease-out hover:-translate-x-1 hover:-translate-y-1 hover:shadow-[10px_10px_0_0_hsl(var(--foreground))] active:scale-[0.99] md:p-5"
     >
       <div className="flex items-center gap-4">
         <span
@@ -177,24 +177,24 @@ function InstallAppQuest() {
           }`}
         >
           {installed ? (
-            <Check className="h-6 w-6 text-foreground" strokeWidth={3} />
+            <Check className="h-6 w-6 text-black" strokeWidth={3} />
           ) : (
             <Smartphone className="h-6 w-6 text-foreground" strokeWidth={2.5} />
           )}
         </span>
 
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.15em] text-foreground/70">
+          <div className="flex items-center gap-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.15em] text-black/70">
             <PlumpDownload className="h-3.5 w-3.5" />
             Установи приложение
           </div>
-          <div className="mt-1 font-display text-lg font-black uppercase leading-tight tracking-tight text-foreground md:text-xl">
+          <div className="mt-1 font-display text-lg font-black uppercase leading-tight tracking-tight text-black md:text-xl">
             {installed ? "Клуб уже в кармане" : "Клуб на главный экран"}
           </div>
         </div>
 
         <PlumpRewardChip tickets={1} />
-        <PlumpArrowRight className="h-5 w-5 shrink-0 text-foreground" />
+        <PlumpArrowRight className="h-5 w-5 shrink-0 text-black" />
       </div>
     </Link>
   );
@@ -293,9 +293,9 @@ function QuestCard({
           className={`grid h-11 w-11 shrink-0 place-items-center rounded-2xl border-[3px] border-foreground ${iconBg} shadow-[3px_3px_0_0_hsl(var(--foreground))]`}
         >
           {done ? (
-            <Check className="h-5 w-5 text-foreground" strokeWidth={3} />
+            <Check className="h-5 w-5 text-black" strokeWidth={3} />
           ) : (
-            <Icon className="h-5 w-5 text-foreground" strokeWidth={2.5} />
+            <Icon className="h-5 w-5 text-black" strokeWidth={2.5} />
           )}
         </span>
 
@@ -385,7 +385,7 @@ function QuestCard({
 
 function PlumpRewardChip({ tickets }: { tickets: number }) {
   return (
-    <span className="inline-flex items-center gap-1 rounded-full border-[3px] border-foreground bg-[#FFD93D] px-2.5 py-0.5 font-display text-[12px] font-black uppercase tracking-widest text-foreground shadow-[2px_2px_0_0_hsl(var(--foreground))]">
+    <span className="inline-flex items-center gap-1 rounded-full border-[3px] border-foreground bg-[#FFD93D] px-2.5 py-0.5 font-display text-[12px] font-black uppercase tracking-widest text-black shadow-[2px_2px_0_0_hsl(var(--foreground))]">
       <PlumpTicket className="h-3.5 w-3.5" />+{tickets}
     </span>
   );
