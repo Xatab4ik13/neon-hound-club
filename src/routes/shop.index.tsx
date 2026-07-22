@@ -1,10 +1,16 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Header } from "@/components/brand/Header";
 import { Footer } from "@/components/brand/Footer";
-import { PlumpPrice } from "@/components/brand/PlumpNum";
-
+import {
+  PlumpSearch as Search,
+  PlumpClose as X,
+  PlumpStore,
+  PlumpTicket,
+  SlidersHorizontal,
+} from "@/components/ui/icons";
+import { LazyImage } from "@/components/ui/lazy-image";
 import {
   fetchShopCategories,
   fetchShopProducts,
@@ -12,8 +18,7 @@ import {
   type ShopProductListItem,
 } from "@/lib/queries";
 import { SPECIAL_PACK_COVER } from "@/assets/stickers/special";
-import { useCart } from "@/hooks/use-cart";
-import { hhToast } from "@/lib/hh-toast";
+import { PlumpPrice } from "@/components/brand/PlumpNum";
 
 export const Route = createFileRoute("/shop/")({
   head: () => ({
@@ -35,28 +40,27 @@ export const Route = createFileRoute("/shop/")({
   component: ShopPage,
 });
 
-type SubcategoryView = { slug: string; name: string; count: number };
-type CategoryView = {
-  slug: string; // category id (или "all")
-  name: string;
-  count: number;
-  sub: SubcategoryView[];
-};
-
-const SORTS = [
-  { id: "new", label: "Новые" },
-  { id: "price-asc", label: "Цена ↑" },
-  { id: "price-desc", label: "Цена ↓" },
+type Sort = "new" | "price-asc" | "price-desc";
+const SORTS: { id: Sort; label: string }[] = [
+  { id: "new", label: "Сначала новые" },
+  { id: "price-asc", label: "Сначала дешёвые" },
+  { id: "price-desc", label: "Сначала дорогие" },
 ];
 
 function ShopPage() {
+  const [q, setQ] = useState("");
+  const [debouncedQ, setDebouncedQ] = useState("");
+  const [sort, setSort] = useState<Sort>("new");
+  const [sortOpen, setSortOpen] = useState(false);
   const [activeCat, setActiveCat] = useState<string>("all");
   const [activeSub, setActiveSub] = useState<string | null>(null);
-  const [openCats, setOpenCats] = useState<Record<string, boolean>>({});
-  const [sort, setSort] = useState("new");
-  const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const { data: productsData } = useQuery({
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQ(q.trim().toLowerCase()), 180);
+    return () => clearTimeout(t);
+  }, [q]);
+
+  const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: qk.shopProducts,
     queryFn: fetchShopProducts,
   });
@@ -65,470 +69,308 @@ function ShopPage() {
     queryFn: fetchShopCategories,
   });
 
-  const products = productsData?.items ?? [];
-
-  // Категории дерево из бэка + "Всё" сверху
-  const CATEGORIES: CategoryView[] = useMemo(() => {
-    const list = catsData?.items ?? [];
-    const byCat = (catId: string) => products.filter((p) => p.categoryId === catId);
-    const bySub = (subId: string) => products.filter((p) => p.subcategoryId === subId);
-    return [
-      { slug: "all", name: "Всё", count: products.length, sub: [] },
-      ...list.map((c) => ({
-        slug: c.id,
-        name: c.name,
-        count: byCat(c.id).length,
-        sub: c.subs.map((s) => ({ slug: s.id, name: s.name, count: bySub(s.id).length })),
-      })),
-    ];
-  }, [catsData, products]);
-
-  useEffect(() => {
-    if (!sidebarOpen) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prev;
-    };
-  }, [sidebarOpen]);
+  const products = data?.items ?? [];
+  const categories = catsData?.items ?? [];
+  const activeCatObj = categories.find((c) => c.id === activeCat);
+  const subs = activeCatObj?.subs ?? [];
 
   const filtered = useMemo(() => {
-    let list = products.filter((p) => {
-      if (activeCat === "all") return true;
-      if (activeSub) return p.categoryId === activeCat && p.subcategoryId === activeSub;
-      return p.categoryId === activeCat;
-    });
-    if (sort === "price-asc") list = [...list].sort((a, b) => a.priceRub - b.priceRub);
-    if (sort === "price-desc") list = [...list].sort((a, b) => b.priceRub - a.priceRub);
+    let list = products.slice();
+    if (activeCat !== "all") {
+      list = list.filter((p) => {
+        if (activeSub) return p.categoryId === activeCat && p.subcategoryId === activeSub;
+        return p.categoryId === activeCat;
+      });
+    }
+    if (debouncedQ) list = list.filter((p) => p.title.toLowerCase().includes(debouncedQ));
+    if (sort === "price-asc") list.sort((a, b) => a.priceRub - b.priceRub);
+    if (sort === "price-desc") list.sort((a, b) => b.priceRub - a.priceRub);
     return list;
-  }, [products, activeCat, activeSub, sort]);
+  }, [products, debouncedQ, sort, activeCat, activeSub]);
 
-  const toggleCat = (slug: string) => {
-    setOpenCats((s) => ({ ...s, [slug]: !s[slug] }));
-  };
-
-  const selectCat = (slug: string) => {
-    setActiveCat(slug);
+  const selectCat = (id: string) => {
+    setActiveCat(id);
     setActiveSub(null);
-    setSidebarOpen(false);
-    if (slug !== "all") setOpenCats((s) => ({ ...s, [slug]: true }));
   };
 
-  const selectSub = (cat: string, sub: string) => {
-    setActiveCat(cat);
-    setActiveSub(sub);
-    setSidebarOpen(false);
-  };
-
-  const activeCategoryObj = CATEGORIES.find((c) => c.slug === activeCat);
-  const activeSubObj = activeCategoryObj?.sub.find((s) => s.slug === activeSub);
-
-
+  const catScrollRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const el = catScrollRef.current?.querySelector<HTMLElement>("[data-active='true']");
+    el?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+  }, [activeCat]);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Header />
+      <main className="mx-auto w-full max-w-6xl px-4 pt-20 pb-16 md:max-w-6xl md:px-8 md:pt-28 md:pb-24">
+        <header className="mb-4 md:mb-8">
+          <h1 className="text-[34px] font-bold leading-tight tracking-[-0.02em] text-foreground md:text-4xl">
+            Магазин
+          </h1>
+          <p className="mt-1 text-[15px] text-muted-foreground md:text-sm">
+            Мерч, экипировка, цифровые товары
+          </p>
+        </header>
 
-      <main className="pt-20">
-        <div className="mx-auto max-w-7xl px-6 py-12 md:px-8">
-          {/* Заголовок */}
-          <header className="mb-10 flex flex-col gap-3">
-            <div className="font-mono text-xs uppercase tracking-[0.3em] text-primary">
-              Магазин
-            </div>
-            <h1 className="font-display text-5xl uppercase tracking-tighter md:text-6xl">
-              Магазин клуба
-            </h1>
-            <p className="max-w-[60ch] text-pretty text-muted-foreground">
-              Мерч HELLHOUND, товары от партнёров и б/у вещи участников клуба. Всё в одном месте.
-            </p>
-          </header>
-
-          {/* Mobile filter trigger — big asymmetric CTA */}
-          <button
-            onClick={() => setSidebarOpen(true)}
-            style={{ clipPath: "polygon(0 15%, 100% 0, 100% 100%, 0 85%)" }}
-            className="group relative mb-8 flex w-full items-center justify-between gap-3 overflow-hidden bg-primary px-6 py-5 text-left transition-transform active:scale-[0.98] lg:hidden"
-          >
-            <span
-              aria-hidden
-              className="absolute inset-0 opacity-[0.08]"
-              style={{
-                backgroundImage:
-                  "repeating-linear-gradient(45deg, #000 0, #000 1px, transparent 0, transparent 12px)",
-              }}
+        <div className="mb-3 flex items-center gap-2">
+          <div className="relative flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="text"
+              inputMode="search"
+              enterKeyHint="search"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Поиск"
+              className="h-11 w-full rounded-xl border border-white/[0.06] bg-white/[0.04] pl-9 pr-9 text-[16px] text-foreground placeholder:text-muted-foreground focus:border-primary/40 focus:outline-none"
             />
-            <span className="relative z-10 flex items-center gap-3">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="square" className="text-black">
-                <line x1="4" y1="6" x2="20" y2="6" />
-                <line x1="7" y1="12" x2="17" y2="12" />
-                <line x1="10" y1="18" x2="14" y2="18" />
-              </svg>
-              <span className="font-display text-2xl italic font-bold uppercase tracking-wider text-black">
-                Категории
-              </span>
-            </span>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="square" className="relative z-10 text-black">
-              <path d="M9 6l6 6-6 6" />
-            </svg>
-          </button>
-
-          <div className="grid gap-10 lg:grid-cols-[260px_1fr]">
-            {/* SIDEBAR */}
-            {/* Mobile backdrop */}
-            <div
-              onClick={() => setSidebarOpen(false)}
-              aria-hidden
-              className={`fixed inset-0 z-40 bg-black/80 backdrop-blur-sm transition-opacity duration-300 lg:hidden ${
-                sidebarOpen ? "opacity-100" : "pointer-events-none opacity-0"
-              }`}
-            />
-            <aside
-              role={sidebarOpen ? "dialog" : undefined}
-              aria-modal={sidebarOpen ? true : undefined}
-              className={`fixed inset-y-0 left-0 z-50 flex w-[88%] max-w-[380px] transform flex-col overflow-hidden bg-black transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] lg:relative lg:inset-auto lg:z-auto lg:w-auto lg:max-w-none lg:transform-none lg:bg-transparent ${
-                sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-              }`}
+            {q && (
+              <button
+                type="button"
+                onClick={() => setQ("")}
+                className="absolute right-2 top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-full bg-white/[0.08] text-muted-foreground active:scale-95"
+                aria-label="Очистить"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setSortOpen((v) => !v)}
+              aria-label="Сортировка"
+              aria-expanded={sortOpen}
+              className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-white/[0.06] bg-white/[0.04] text-foreground active:scale-95"
             >
-              {/* Rally stripes bg (mobile only) */}
-              <div
-                aria-hidden
-                className="pointer-events-none absolute inset-0 opacity-[0.04] lg:hidden"
-                style={{
-                  backgroundImage:
-                    "repeating-linear-gradient(45deg, var(--primary) 0, var(--primary) 1px, transparent 0, transparent 20px)",
-                }}
-              />
-
-              {/* Mobile header */}
-              <div className="relative z-10 flex items-center justify-between px-8 pt-12 pb-8 lg:hidden">
-                <span
-                  className="font-display text-2xl italic uppercase tracking-tighter text-primary"
-                  style={{ textShadow: "0 0 10px color-mix(in oklab, var(--primary) 30%, transparent)" }}
-                >
-                  Категории
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setSidebarOpen(false)}
-                  aria-label="Закрыть"
-                  className="group relative flex h-12 w-12 items-center justify-center transition-transform active:scale-90"
-                >
-                  <span
-                    aria-hidden
-                    className="absolute inset-0 border border-primary/30 transition-colors duration-500 group-hover:border-primary"
-                  />
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="square" className="relative z-10 text-primary">
-                    <path d="M18 6L6 18M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-
-              <nav className="relative z-10 flex-1 overflow-y-auto border-t border-white/[0.04] px-6 pb-10 pt-6 lg:sticky lg:top-28 lg:overflow-visible lg:border-t-0 lg:px-0 lg:pt-0">
-                <div className="mb-5 hidden font-mono text-[10px] uppercase tracking-[0.3em] text-muted-foreground lg:block">
-                  Каталог
-                </div>
-                <ul className="flex flex-col gap-2.5">
-                  {CATEGORIES.map((cat) => {
-                    const isActive = activeCat === cat.slug && !activeSub;
-                    const hasSub = cat.sub.length > 0;
-                    const isOpen = hasSub
-                      ? (openCats[cat.slug] ?? false) || activeCat === cat.slug
-                      : false;
-
+              <SlidersHorizontal className="h-4 w-4" />
+            </button>
+            {sortOpen && (
+              <>
+                <div
+                  className="fixed inset-0 z-40"
+                  onClick={() => setSortOpen(false)}
+                  aria-hidden
+                />
+                <div className="absolute right-0 top-full z-50 mt-2 w-60 overflow-hidden rounded-xl border border-white/[0.08] bg-[#111]/98 p-1 shadow-2xl backdrop-blur-xl">
+                  {SORTS.map((s) => {
+                    const active = s.id === sort;
                     return (
-                      <li key={cat.slug} className="flex flex-col gap-2">
-                        <div
-                          className={`relative transition-transform duration-300 ${
-                            isActive ? "translate-x-2" : "hover:translate-x-1"
-                          }`}
-                        >
-                          {/* Pink accent bar (active only) */}
-                          {isActive && (
-                            <span
-                              aria-hidden
-                              className="absolute -left-1.5 top-0 bottom-0 z-10 w-[5px] bg-primary shadow-[0_0_15px_hsl(var(--primary)/0.6)]"
-                            />
-                          )}
-
-                          <button
-                            onClick={() => {
-                              selectCat(cat.slug);
-                              if (hasSub) toggleCat(cat.slug);
-                            }}
-                            style={{
-                              clipPath:
-                                "polygon(0 0, 92% 0, 100% 100%, 0% 100%)",
-                            }}
-                            className={`group flex w-full items-center px-5 py-3 text-left transition-colors duration-200 ${
-                              isActive
-                                ? "bg-primary"
-                                : "border-l-2 border-transparent bg-card hover:border-primary hover:bg-surface"
-                            }`}
-                          >
-                            <span
-                              className={`font-display text-xl font-medium uppercase tracking-wider transition-colors ${
-                                isActive
-                                  ? "text-background"
-                                  : "text-muted-foreground group-hover:text-foreground"
-                              }`}
-                            >
-                              {cat.name}
-                            </span>
-                          </button>
-                        </div>
-
-                        {hasSub && (
-                          <div
-                            className="grid transition-all duration-300 ease-out"
-                            style={{ gridTemplateRows: isOpen ? "1fr" : "0fr" }}
-                          >
-                            <div className="overflow-hidden">
-                              <ul className="ml-5 flex flex-col gap-1 pt-1">
-                                {cat.sub.map((s, i) => {
-                                  const subActive =
-                                    activeCat === cat.slug &&
-                                    activeSub === s.slug;
-                                  return (
-                                    <li key={s.slug}>
-                                      <button
-                                        onClick={() =>
-                                          selectSub(cat.slug, s.slug)
-                                        }
-                                        style={{
-                                          animation: isOpen
-                                            ? `shop-card-in 0.35s ease-out backwards`
-                                            : undefined,
-                                          animationDelay: isOpen
-                                            ? `${i * 50}ms`
-                                            : undefined,
-                                        }}
-                                        className="group/sub flex w-full items-center gap-3 py-1 transition-transform duration-200 hover:translate-x-1"
-                                      >
-                                        <span
-                                          aria-hidden
-                                          className={`h-4 w-1 transition-colors ${
-                                            subActive
-                                              ? "bg-primary"
-                                              : "bg-border group-hover/sub:bg-primary"
-                                          }`}
-                                        />
-                                        <span
-                                          className={`font-display text-sm uppercase tracking-widest transition-colors ${
-                                            subActive
-                                              ? "text-foreground"
-                                              : "text-muted-foreground group-hover/sub:text-foreground"
-                                          }`}
-                                        >
-                                          {s.name}
-                                        </span>
-                                      </button>
-                                    </li>
-                                  );
-                                })}
-                              </ul>
-                            </div>
-                          </div>
-                        )}
-                      </li>
+                      <button
+                        key={s.id}
+                        type="button"
+                        onClick={() => {
+                          setSort(s.id);
+                          setSortOpen(false);
+                        }}
+                        className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-[14px] transition-colors active:bg-white/[0.06] ${
+                          active ? "text-primary" : "text-foreground"
+                        }`}
+                      >
+                        <span>{s.label}</span>
+                        {active && <span aria-hidden>✓</span>}
+                      </button>
                     );
                   })}
-                </ul>
-              </nav>
-            </aside>
-
-            {/* GRID */}
-            <section>
-              {/* Toolbar */}
-              <div className="mb-6 flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4">
-                <div className="flex items-baseline gap-3">
-                  <span className="font-display text-2xl uppercase tracking-tight">
-                    {activeSubObj?.name ?? activeCategoryObj?.name ?? "Всё"}
-                  </span>
-                  <span className="font-mono text-xs text-muted-foreground">
-                    {filtered.length} {filtered.length === 1 ? "товар" : "товаров"}
-                  </span>
                 </div>
-
-                <div className="flex items-center gap-1 rounded-full border border-border p-1">
-                  {SORTS.map((s) => (
-                    <button
-                      key={s.id}
-                      onClick={() => setSort(s.id)}
-                      className={`rounded-full px-3 py-1.5 text-[11px] font-medium uppercase tracking-widest transition-colors ${
-                        sort === s.id
-                          ? "bg-primary/10 text-primary"
-                          : "text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      {s.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Cards */}
-              {filtered.length === 0 ? (
-                <div className="flex min-h-[320px] flex-col items-center justify-center rounded-xl border border-dashed border-border text-center">
-                  <div className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
-                    Пока пусто
-                  </div>
-                  <p className="mt-2 max-w-[28ch] text-sm text-muted-foreground/80">
-                    В этой категории ещё нет товаров. Скоро завезём.
-                  </p>
-                </div>
-              ) : (
-                <div
-                  key={`${activeCat}-${activeSub}-${sort}`}
-                  className="grid grid-cols-2 gap-3 sm:gap-5 xl:grid-cols-3"
-                >
-                  {filtered.map((p, i) => (
-                    <ProductCard key={p.id} product={p} index={i} />
-                  ))}
-                </div>
-              )}
-            </section>
+              </>
+            )}
           </div>
         </div>
-      </main>
 
+        <div
+          ref={catScrollRef}
+          className="-mx-4 mb-3 flex gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
+          <Chip data-active={activeCat === "all"} active={activeCat === "all"} onClick={() => selectCat("all")}>
+            Все
+          </Chip>
+          {categories.map((c) => (
+            <Chip
+              key={c.id}
+              data-active={activeCat === c.id}
+              active={activeCat === c.id}
+              onClick={() => selectCat(c.id)}
+            >
+              {c.name}
+            </Chip>
+          ))}
+        </div>
+
+        {subs.length > 0 && (
+          <div className="-mx-4 mb-4 flex gap-1.5 overflow-x-auto px-4 pb-1 md:mx-0 md:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <SubChip active={activeSub === null} onClick={() => setActiveSub(null)}>
+              Всё
+            </SubChip>
+            {subs.map((s) => (
+              <SubChip key={s.id} active={activeSub === s.id} onClick={() => setActiveSub(s.id)}>
+                {s.name}
+              </SubChip>
+            ))}
+          </div>
+        )}
+
+        {isLoading ? (
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <CardSkeleton key={i} />
+            ))}
+          </div>
+        ) : isError ? (
+          <ErrorState
+            message={(error as Error)?.message ?? "Не получилось загрузить"}
+            onRetry={() => refetch()}
+          />
+        ) : filtered.length === 0 ? (
+          <EmptyState hasQuery={Boolean(debouncedQ)} />
+        ) : (
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4">
+            {filtered.map((p) => (
+              <ProductCard key={p.id} product={p} />
+            ))}
+          </div>
+        )}
+      </main>
       <Footer />
     </div>
   );
 }
 
-function ticketsWord(n: number) {
-  const mod10 = n % 10;
-  const mod100 = n % 100;
-  if (mod10 === 1 && mod100 !== 11) return "билет";
-  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return "билета";
-  return "билетов";
+function Chip({
+  active,
+  onClick,
+  children,
+  ...rest
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+} & React.HTMLAttributes<HTMLButtonElement>) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`shrink-0 rounded-full px-4 py-2 text-[14px] font-medium transition-all active:scale-95 ${
+        active
+          ? "bg-primary text-primary-foreground"
+          : "border border-white/[0.08] bg-white/[0.03] text-muted-foreground"
+      }`}
+      {...rest}
+    >
+      {children}
+    </button>
+  );
 }
 
-function ProductCard({ product, index }: { product: ShopProductListItem; index: number }) {
-  const [hover, setHover] = useState(false);
-  const cart = useCart();
-  const [adding, setAdding] = useState(false);
+function SubChip({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`shrink-0 rounded-full px-3 py-1.5 text-[13px] font-medium transition-all active:scale-95 ${
+        active
+          ? "bg-primary/15 text-primary"
+          : "bg-white/[0.03] text-muted-foreground/80"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
 
+function ProductCard({ product }: { product: ShopProductListItem }) {
   const sold = product.stock !== null && product.stock <= 0;
-  const hasSizes = product.sizes.length > 0;
-  const canQuickAdd = !sold && product.kind !== "preorder" && !hasSizes;
-  const badgeLabel = sold
-    ? "Распродано"
-    : product.kind === "preorder"
-      ? "Предзаказ"
-      : product.kind === "digital"
-        ? "Цифровой"
-        : null;
-  const badgeClass = sold
-    ? "bg-background/80 text-muted-foreground border border-border"
-    : product.kind === "preorder"
-      ? "bg-foreground text-background"
-      : "bg-primary text-primary-foreground";
-
-  const cover = product.images[0] ?? (product.slug === "stickerpack-special" ? SPECIAL_PACK_COVER : undefined);
-
-  const handleQuickAdd = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (adding) return;
-    setAdding(true);
-    try {
-      await cart.add({
-        productId: product.id,
-        slug: product.slug,
-        name: product.title,
-        price: product.priceRub,
-        image: cover ?? "",
-        size: null,
-        ticketsBonus: product.bonusTickets,
-        kind: product.kind,
-      });
-      hhToast.success("Добавлено в корзину", { description: product.title });
-    } catch (err) {
-      hhToast.error("Не удалось добавить", {
-        description: err instanceof Error ? err.message : "Попробуй ещё раз",
-      });
-    } finally {
-      setAdding(false);
-    }
-  };
-
+  const cover =
+    product.images[0] ?? (product.slug === "stickerpack-special" ? SPECIAL_PACK_COVER : undefined);
   return (
     <Link
       to="/shop/$productSlug"
       params={{ productSlug: product.slug }}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-      style={{
-        animation: "shop-card-in 0.5s ease-out backwards",
-        animationDelay: `${index * 60}ms`,
-      }}
-      className="group relative block overflow-hidden rounded-xl border border-border bg-card transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-[0_20px_40px_-20px_hsl(var(--primary)/0.3)]"
+      className="group block overflow-hidden rounded-2xl border border-white/[0.06] bg-card/40 transition-all active:scale-[0.98] md:hover:border-primary/30"
     >
-      <div className="relative aspect-[4/5] overflow-hidden bg-surface">
+      <div className="relative aspect-square overflow-hidden bg-surface">
         {cover ? (
-          <img
+          <LazyImage
             src={cover}
             alt={product.title}
-            loading="lazy"
-            className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+            className="absolute inset-0 h-full w-full object-cover md:transition-transform md:duration-500 md:group-hover:scale-[1.03]"
           />
         ) : (
-          <div className="h-full w-full bg-surface" />
+          <div className="grid h-full w-full place-items-center text-muted-foreground/60">
+            <PlumpStore className="h-8 w-8" />
+          </div>
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-card/90 via-transparent to-transparent opacity-60" />
-
-        {badgeLabel && (
-          <span
-            className={`absolute left-3 top-3 rounded-full px-2.5 py-1 font-mono text-[10px] font-medium uppercase tracking-widest ${badgeClass}`}
-          >
-            {badgeLabel}
+        {sold && (
+          <span className="absolute left-2 top-2 rounded-full bg-black/70 px-2.5 py-0.5 text-[11px] font-medium text-foreground backdrop-blur">
+            Распродано
           </span>
         )}
-
-        {/* Quick add */}
-        {canQuickAdd && (
-          <button
-            type="button"
-            onClick={handleQuickAdd}
-            disabled={adding}
-            aria-label={`Добавить ${product.title} в корзину`}
-            className={`absolute bottom-3 left-3 right-3 flex items-center justify-center gap-2 rounded-full bg-primary py-2.5 text-xs font-semibold uppercase tracking-widest text-primary-foreground transition-all duration-300 disabled:opacity-60 ${
-              hover
-                ? "translate-y-0 opacity-100"
-                : "pointer-events-none translate-y-3 opacity-0"
-            }`}
-          >
-            {adding ? "Добавляю…" : "В корзину"}
-            <span aria-hidden>+</span>
-          </button>
+        {product.bonusTickets > 0 && (
+          <span className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full bg-black/70 px-2 py-0.5 text-[11px] font-semibold text-primary backdrop-blur">
+            <PlumpTicket className="h-3 w-3" />+{product.bonusTickets}
+          </span>
         )}
       </div>
-
-
-      <div className="flex flex-col gap-1 px-4 py-4 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3">
-        <h3 className="text-sm font-medium uppercase tracking-wider">
+      <div className="px-3 py-2.5">
+        <div className="line-clamp-2 text-[14px] font-medium leading-snug text-foreground">
           {product.title}
-        </h3>
-        <span className="whitespace-nowrap text-foreground">
-          <PlumpPrice value={product.priceRub} size={14} />
-        </span>
-
-      </div>
-
-      {product.bonusTickets > 0 ? (
-        <div className="flex items-center gap-1.5 border-t border-border/60 px-4 py-2.5">
-          <span
-            aria-hidden
-            className="inline-block h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_8px_hsl(var(--primary)/0.7)]"
-          />
-          <span className="font-mono text-[11px] uppercase tracking-widest text-primary">
-            +{product.bonusTickets} {ticketsWord(product.bonusTickets)} в подарок
-          </span>
         </div>
-      ) : null}
-
+        <div className="mt-1.5 text-[15px] font-semibold tabular-nums text-foreground">
+          <PlumpPrice value={product.priceRub} />
+        </div>
+      </div>
     </Link>
+  );
+}
+
+function CardSkeleton() {
+  return (
+    <div className="overflow-hidden rounded-2xl border border-white/[0.06] bg-card/40">
+      <div className="skeleton-shimmer aspect-square w-full" />
+      <div className="space-y-2 p-3">
+        <div className="skeleton-shimmer h-3.5 w-3/4 rounded" />
+        <div className="skeleton-shimmer h-4 w-1/3 rounded" />
+      </div>
+    </div>
+  );
+}
+
+function EmptyState({ hasQuery }: { hasQuery: boolean }) {
+  return (
+    <div className="grid place-items-center rounded-2xl border border-dashed border-white/[0.08] bg-card/40 px-6 py-16 text-center">
+      <div className="grid h-12 w-12 place-items-center rounded-full bg-primary/10 text-primary">
+        <PlumpStore className="h-6 w-6" />
+      </div>
+      <div className="mt-4 text-[15px] font-semibold text-foreground">
+        {hasQuery ? "Ничего не нашли" : "Здесь пока пусто"}
+      </div>
+      <p className="mt-1.5 max-w-[34ch] text-[14px] text-muted-foreground">
+        {hasQuery ? "Попробуй другой запрос." : "В этой категории пока ничего нет. Загляни позже."}
+      </p>
+    </div>
+  );
+}
+
+function ErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return (
+    <div className="grid place-items-center rounded-2xl border border-dashed border-red-500/30 bg-red-500/[0.04] px-6 py-12 text-center">
+      <div className="text-[15px] font-semibold text-red-300">Ошибка</div>
+      <p className="mt-1.5 max-w-[34ch] text-[14px] text-muted-foreground/80">{message}</p>
+      <button
+        type="button"
+        onClick={onRetry}
+        className="mt-4 rounded-xl border border-white/[0.1] px-5 py-2.5 text-[14px] font-semibold active:scale-95"
+      >
+        Повторить
+      </button>
+    </div>
   );
 }
