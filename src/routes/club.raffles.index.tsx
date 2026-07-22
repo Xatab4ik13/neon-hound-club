@@ -144,7 +144,7 @@ function CardsGrid({ items, finished = false }: { items: RaffleListItem[]; finis
 function LegalNotice() {
   return (
     <section aria-label="Юридическая информация" className="mt-8">
-      <details className="group rounded-2xl border-[3px] border-foreground bg-card shadow-[4px_4px_0_0_hsl(var(--foreground))]">
+      <details className="group rounded-2xl bg-card">
         <summary className="flex cursor-pointer list-none items-center gap-3 px-4 py-3 [&::-webkit-details-marker]:hidden">
           <ShieldCheck className="h-4 w-4 shrink-0 text-muted-foreground" />
           <span className="flex-1 font-mono text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
