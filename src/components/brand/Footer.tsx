@@ -14,6 +14,12 @@ const SOCIALS = [
   { label: "Twitch", href: "https://www.twitch.tv/hellhound", icon: twitchIcon },
 ] as const;
 
+const PAYMENTS = [
+  { label: "Visa", icon: visaLogo, height: "h-4" },
+  { label: "Mastercard", icon: mastercardLogo, height: "h-5" },
+  { label: "МИР", icon: mirLogo, height: "h-4" },
+] as const;
+
 export function Footer() {
   const year = new Date().getFullYear();
 
