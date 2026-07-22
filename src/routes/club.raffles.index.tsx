@@ -60,14 +60,14 @@ function RafflesPage() {
       {isAuthed && (
         <section
           aria-label="Баланс"
-          className="mb-6 flex items-center justify-between gap-3 rounded-3xl border-[3px] border-foreground bg-card px-4 py-3 shadow-[6px_6px_0_0_hsl(var(--foreground))]"
+          className="mb-5 flex items-center justify-between gap-3 rounded-2xl border border-primary/25 bg-gradient-to-br from-primary/10 via-card/60 to-black px-4 py-3"
         >
           <Link to="/club/tickets" className="flex min-w-0 items-center gap-3 active:opacity-70">
-            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border-[3px] border-foreground bg-primary shadow-[3px_3px_0_0_hsl(var(--foreground))]">
-              <PlumpTicket className="h-5 w-5 text-black" />
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/15 text-primary">
+              <PlumpTicket className="h-5 w-5" />
             </span>
             <span className="min-w-0">
-              <span className="block font-mono text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground">
+              <span className="block font-mono text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                 Мой баланс
               </span>
               <span className="block text-foreground">
@@ -77,23 +77,23 @@ function RafflesPage() {
           </Link>
           <Link
             to="/club/tickets"
-            className="shrink-0 rounded-full border-[3px] border-foreground bg-primary px-3 py-1.5 font-display text-[11px] font-black uppercase tracking-widest text-black shadow-[3px_3px_0_0_hsl(var(--foreground))] active:translate-x-[1px] active:translate-y-[1px] active:shadow-[1px_1px_0_0_hsl(var(--foreground))]"
+            className="shrink-0 rounded-full bg-primary px-3 py-1.5 font-mono text-[11px] font-bold uppercase tracking-wider text-primary-foreground active:scale-95"
           >
             Как набрать
           </Link>
         </section>
       )}
 
-      <section aria-label="Активные розыгрыши" className="mb-8">
-        <SectionTitle>
+      <section aria-label="Активные розыгрыши" className="mb-7">
+        <h2 className="mb-2 px-1 inline-flex items-center gap-1.5 font-display text-sm font-black uppercase italic tracking-widest text-foreground">
           Активные · <PlumpNum value={active.length} size={12} />
-        </SectionTitle>
+        </h2>
         {rafflesQ.isLoading ? (
           <SkeletonGrid />
         ) : active.length === 0 ? (
           <EmptyBlock text="Пока нет активных розыгрышей" />
         ) : (
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {active.map((r) => (
               <RaffleCard key={r.id} raffle={r} />
             ))}
@@ -102,15 +102,17 @@ function RafflesPage() {
       </section>
 
       {isAuthed && my.length > 0 && (
-        <section aria-label="Мои розыгрыши" className="mb-8">
+        <section aria-label="Мои завершённые" className="mb-7">
           <div className="mb-2 flex items-end justify-between px-1">
-            <SectionTitle>Я участвовал</SectionTitle>
-            <span className="inline-flex items-center gap-1 font-mono text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+            <h2 className="font-display text-sm font-black uppercase italic tracking-widest text-foreground">
+              Я участвовал
+            </h2>
+            <span className="inline-flex items-center gap-1 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
               <PlumpNum value={wonCount} size={11} /> выиграно из{" "}
               <PlumpNum value={my.filter((r) => r.status === "finished").length} size={11} />
             </span>
           </div>
-          <ul className="flex flex-col gap-3">
+          <ul className="overflow-hidden rounded-2xl border border-white/[0.06] bg-card/40 divide-y divide-white/[0.05]">
             {my.map((r) => (
               <MyRaffleRow key={r.id} raffle={r} />
             ))}
@@ -119,15 +121,14 @@ function RafflesPage() {
       )}
 
       {finished.length > 0 && (
-        <section aria-label="Архив клуба" className="mb-8">
-          <SectionTitle>Архив клуба</SectionTitle>
-          <ul className="mt-2 flex flex-col gap-3">
+        <section aria-label="Архив клуба">
+          <h2 className="mb-2 px-1 font-display text-sm font-black uppercase italic tracking-widest text-foreground">
+            Архив клуба
+          </h2>
+          <ul className="overflow-hidden rounded-2xl border border-white/[0.06] bg-card/40 divide-y divide-white/[0.05]">
             {finished.map((p) => (
-              <li
-                key={p.id}
-                className="flex items-center gap-3 rounded-2xl border-[3px] border-foreground bg-card px-3 py-3 shadow-[4px_4px_0_0_hsl(var(--foreground))]"
-              >
-                <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl border-[2px] border-foreground bg-black">
+              <li key={p.id} className="flex items-center gap-3 px-3 py-3">
+                <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-white/[0.06] bg-black">
                   {p.imageUrl && (
                     <img
                       src={p.imageUrl}
@@ -138,9 +139,7 @@ function RafflesPage() {
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="truncate font-display text-[15px] font-black uppercase tracking-tight text-foreground">
-                    {p.title}
-                  </div>
+                  <div className="truncate text-[15px] font-semibold text-foreground">{p.title}</div>
                   <div className="mt-0.5 text-[12px] text-muted-foreground">
                     {formatMonth(p.endsAt)}
                   </div>
@@ -157,28 +156,18 @@ function RafflesPage() {
   );
 }
 
-function SectionTitle({ children }: { children: React.ReactNode }) {
-  return (
-    <h2 className="mb-3 px-1 inline-flex items-center gap-1 font-display text-sm font-black uppercase italic tracking-widest text-foreground">
-      {children}
-    </h2>
-  );
-}
-
 function LegalNotice() {
   return (
-    <section aria-label="Юридическая информация" className="mt-8">
-      <details className="group rounded-2xl border-[3px] border-foreground bg-card shadow-[4px_4px_0_0_hsl(var(--foreground))]">
+    <section aria-label="Юридическая информация" className="mt-10">
+      <details className="group rounded-2xl border border-white/[0.06] bg-card/40">
         <summary className="flex cursor-pointer list-none items-center gap-3 px-4 py-3 [&::-webkit-details-marker]:hidden">
-          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border-[2px] border-foreground bg-background">
-            <ShieldCheck className="h-4 w-4 text-foreground" />
-          </span>
-          <span className="flex-1 font-mono text-[11px] font-bold uppercase tracking-widest text-foreground">
+          <ShieldCheck className="h-4 w-4 shrink-0 text-muted-foreground" />
+          <span className="flex-1 font-mono text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
             Юр. информация о розыгрышах
           </span>
           <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-90" />
         </summary>
-        <div className="border-t-[3px] border-foreground px-4 py-4">
+        <div className="border-t border-white/[0.06] px-4 py-4">
           <p className="text-[12px] leading-relaxed text-muted-foreground">
             Розыгрыши проводятся в порядке ст. 9 ФЗ-38 «О рекламе». Билеты можно получить{" "}
             <span className="text-foreground">бесплатно</span> за активность в клубе — покупка не
@@ -187,7 +176,7 @@ function LegalNotice() {
           <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[12px]">
             <Link
               to="/club/legal/promo-rules"
-              className="inline-flex items-center gap-1 font-mono text-[11px] font-bold uppercase tracking-widest text-primary hover:underline"
+              className="inline-flex items-center gap-1 font-mono text-[11px] font-bold uppercase tracking-wider text-primary hover:underline"
             >
               Полные правила
               <ChevronRight className="h-3 w-3" />
@@ -213,7 +202,7 @@ function LegalNotice() {
 
 function EmptyBlock({ text }: { text: string }) {
   return (
-    <div className="rounded-3xl border-[3px] border-foreground bg-card px-4 py-10 text-center font-display text-sm font-black uppercase tracking-widest text-muted-foreground shadow-[4px_4px_0_0_hsl(var(--foreground))]">
+    <div className="rounded-2xl border border-white/[0.06] bg-card/40 px-4 py-8 text-center font-mono text-[12px] uppercase tracking-wider text-muted-foreground">
       {text}
     </div>
   );
@@ -221,9 +210,9 @@ function EmptyBlock({ text }: { text: string }) {
 
 function SkeletonGrid() {
   return (
-    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
       {[0, 1].map((i) => (
-        <div key={i} className="skeleton-shimmer aspect-[16/10] rounded-3xl" />
+        <div key={i} className="skeleton-shimmer aspect-[16/10] rounded-2xl" />
       ))}
     </div>
   );
@@ -233,8 +222,8 @@ function MyRaffleRow({ raffle }: { raffle: MyRaffleItem }) {
   const won = raffle.won;
   const finished = raffle.status === "finished";
   return (
-    <li className="flex items-center gap-3 rounded-2xl border-[3px] border-foreground bg-card px-3 py-3 shadow-[4px_4px_0_0_hsl(var(--foreground))]">
-      <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl border-[2px] border-foreground bg-black">
+    <li className="flex items-center gap-3 px-3 py-3">
+      <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-white/[0.06] bg-black">
         {raffle.imageUrl && (
           <img
             src={raffle.imageUrl}
@@ -246,10 +235,8 @@ function MyRaffleRow({ raffle }: { raffle: MyRaffleItem }) {
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5">
-          {won && <Trophy className="h-3.5 w-3.5 shrink-0 text-emerald-400" />}
-          <span className="truncate font-display text-[15px] font-black uppercase tracking-tight text-foreground">
-            {raffle.title}
-          </span>
+          {won && <Trophy className="h-3 w-3 shrink-0 text-emerald-400" />}
+          <span className="truncate text-[15px] font-semibold text-foreground">{raffle.title}</span>
         </div>
         {won && raffle.wonPrizes.length > 0 && (
           <div className="mt-0.5 truncate text-[12px] font-semibold text-emerald-300">
@@ -264,12 +251,12 @@ function MyRaffleRow({ raffle }: { raffle: MyRaffleItem }) {
         </div>
       </div>
       <span
-        className={`shrink-0 rounded-full border-[3px] border-foreground px-2.5 py-0.5 font-display text-[10px] font-black uppercase tracking-widest shadow-[2px_2px_0_0_hsl(var(--foreground))] ${
+        className={`shrink-0 rounded-full px-2.5 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wider ${
           won
-            ? "bg-emerald-400 text-black"
+            ? "bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500/30"
             : finished
-              ? "bg-background text-muted-foreground"
-              : "bg-primary text-black"
+              ? "bg-white/[0.04] text-muted-foreground ring-1 ring-white/[0.08]"
+              : "bg-primary text-primary-foreground"
         }`}
       >
         {won ? "Выигрыш" : finished ? "Не выиграл" : "В игре"}
@@ -283,9 +270,9 @@ function RaffleCard({ raffle }: { raffle: RaffleListItem }) {
     <Link
       to="/club/raffles/$raffleId"
       params={{ raffleId: raffle.id }}
-      className="group relative block overflow-hidden rounded-3xl border-[3px] border-foreground bg-card shadow-[8px_8px_0_0_hsl(var(--foreground))] transition-transform duration-200 ease-out hover:-translate-x-1 hover:-translate-y-1 hover:shadow-[10px_10px_0_0_hsl(var(--foreground))] active:translate-x-[2px] active:translate-y-[2px] active:shadow-[4px_4px_0_0_hsl(var(--foreground))]"
+      className="group relative block overflow-hidden rounded-2xl border border-white/[0.08] bg-card/40 transition-colors active:bg-white/[0.03]"
     >
-      <div className="relative aspect-[16/10] overflow-hidden border-b-[3px] border-foreground bg-black">
+      <div className="relative aspect-[16/10] overflow-hidden bg-black">
         {raffle.imageUrl && (
           <img
             src={raffle.imageUrl}
@@ -295,8 +282,8 @@ function RaffleCard({ raffle }: { raffle: RaffleListItem }) {
           />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
-        <span className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full border-[3px] border-foreground bg-primary px-2.5 py-0.5 font-display text-[10px] font-black uppercase tracking-widest text-black shadow-[2px_2px_0_0_hsl(var(--foreground))]">
-          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-black" />
+        <span className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-primary px-2 py-0.5 font-mono text-[10px] font-black uppercase tracking-wider text-primary-foreground">
+          <span className="h-1 w-1 animate-pulse rounded-full bg-white" />
           Идёт
         </span>
         <div className="absolute inset-x-3 bottom-3">
@@ -309,12 +296,10 @@ function RaffleCard({ raffle }: { raffle: RaffleListItem }) {
         </div>
       </div>
       <div className="flex items-center justify-between gap-3 px-4 py-3">
-        <span className="inline-flex items-center gap-1.5 font-mono text-[12px] text-foreground">
-          <span className="grid h-6 w-6 place-items-center rounded-md border-[2px] border-foreground bg-primary">
-            <PlumpTicket className="h-3.5 w-3.5 text-black" />
-          </span>
-          <PlumpNum value={raffle.ticketCost} size={13} />
-          <span className="text-muted-foreground">/ билет</span>
+        <span className="inline-flex items-center gap-1.5 font-mono text-[12px] text-muted-foreground">
+          <PlumpTicket className="h-3.5 w-3.5 text-primary" />
+          <PlumpNum value={raffle.ticketCost} size={13} className="text-foreground" />
+          <span>/ билет</span>
         </span>
         <Countdown deadlineAt={raffle.endsAt} compact />
       </div>
