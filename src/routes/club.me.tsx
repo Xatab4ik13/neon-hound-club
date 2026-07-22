@@ -327,9 +327,10 @@ function StatGrid({
         >
           <Icon className="h-5 w-5 shrink-0 text-primary" strokeWidth={1.8} />
           <div className="flex min-w-0 flex-col">
-            <span className="font-display text-2xl font-black italic leading-none text-foreground tabular-nums md:text-3xl">
-              {value}
+            <span className="text-foreground md:scale-110 md:origin-left">
+              <PlumpNum value={value} size={26} format />
             </span>
+
             <span className="mt-1 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
               {label}
             </span>
