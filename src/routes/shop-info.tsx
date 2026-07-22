@@ -295,45 +295,19 @@ export default function ShopInfoPage() {
       {/* SUPPORT */}
       <section className="border-b border-border">
         <div className="mx-auto max-w-7xl px-6 py-20">
-          <SectionHead eyebrow="Связь" title="Если что-то пошло не так" />
-          <div className="mt-10 grid gap-4 md:grid-cols-2">
-            <a
-              href={LEGAL.contactTelegram}
-              target="_blank"
-              rel="noreferrer"
-              className="group relative overflow-hidden rounded-md border border-border bg-surface p-6 transition-colors hover:border-primary"
-            >
-              <div className="mb-4 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                Оперативно
-              </div>
-              <div className="font-display text-2xl uppercase tracking-tight">
-                Telegram-поддержка
-              </div>
-              <div className="mt-2 font-mono text-sm text-primary">@hell666hound</div>
-              <div className="mt-4 text-sm text-muted-foreground">
-                Заказы, возвраты, доставка, технические вопросы.
-              </div>
-            </a>
-            <a
-              href={`mailto:${LEGAL.contactEmail}`}
-              className="group relative overflow-hidden rounded-md border border-border bg-surface p-6 transition-colors hover:border-primary"
-            >
-              <div className="mb-4 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                Официально
-              </div>
-              <div className="font-display text-2xl uppercase tracking-tight">
-                Email
-              </div>
-              <div className="mt-2 font-mono text-sm text-primary">{LEGAL.contactEmail}</div>
-              <div className="mt-4 text-sm text-muted-foreground">
-                Документы, обращения по 152-ФЗ, претензии.
-              </div>
-            </a>
-          </div>
-
-          <p className="mt-12 font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
-            Продавец: {LEGAL.shortName} · ОГРНИП {LEGAL.ogrnip} · ИНН {LEGAL.inn} · {LEGAL.address}
+          <SectionHead eyebrow="Поддержка" title="Если что-то пошло не так" />
+          <p className="mt-6 max-w-3xl text-base leading-relaxed text-muted-foreground">
+            Все вопросы по заказам, оплате и доставке решаются через систему
+            тикетов внутри клуба. Опишите проблему — ответим и разберёмся.
           </p>
+          <div className="mt-8">
+            <Link
+              to="/club/support"
+              className="inline-flex items-center gap-2 rounded-md border border-primary bg-primary px-6 py-3 font-mono text-[11px] font-bold uppercase tracking-widest text-primary-foreground transition-opacity hover:opacity-90"
+            >
+              Открыть тикет →
+            </Link>
+          </div>
         </div>
       </section>
 
