@@ -18,11 +18,8 @@ export function Footer() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="relative bg-white text-black">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 -top-12 h-12 bg-gradient-to-b from-transparent to-white"
-      />
+    <footer className="relative border-t-[3px] border-black bg-white text-black">
+
       <div className="mx-auto max-w-7xl px-6 py-3">
         {/* Верх: логотип слева, соцсети справа */}
         <div className="flex flex-col items-center justify-between gap-3 md:flex-row">
