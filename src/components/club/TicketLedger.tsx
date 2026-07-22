@@ -129,7 +129,7 @@ export function TicketLedger({
         </div>
       )}
 
-      <div className="overflow-hidden rounded-2xl border border-white/[0.06] bg-card/40">
+      <div className="overflow-hidden rounded-2xl border-[2px] border-foreground bg-card shadow-[4px_4px_0_0_hsl(var(--foreground))]">
         {isLoading && entries.length === 0 ? (
           <div>
             {Array.from({ length: 2 }).map((_, i) => (
