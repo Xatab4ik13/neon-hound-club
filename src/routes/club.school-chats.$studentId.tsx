@@ -3,7 +3,6 @@
 
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { PlumpArrowLeft as ArrowLeft } from "@/components/ui/icons";
 import { useMockInstructorRole } from "@/hooks/use-instructor-mock-role";
 import { getInstructorAccount, getMockStudent } from "@/data/instructor-accounts";
 import {
@@ -69,13 +68,6 @@ function SchoolChatRoom() {
         className="flex shrink-0 items-center gap-3 border-b border-white/[0.06] bg-black/70 px-3"
         style={{ height: headerH }}
       >
-        <Link
-          to="/club/school-chats"
-          aria-label="Назад"
-          className="grid h-9 w-9 place-items-center rounded-full text-primary active:scale-95"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </Link>
         <div className="grid h-8 w-8 place-items-center rounded-full bg-gradient-to-br from-primary/70 to-primary/30 font-display text-sm font-black uppercase text-black">
           {student.nick.slice(0, 1)}
         </div>

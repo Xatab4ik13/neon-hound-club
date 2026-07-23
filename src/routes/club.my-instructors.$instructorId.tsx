@@ -3,7 +3,6 @@
 
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo } from "react";
-import { PlumpArrowLeft as ArrowLeft } from "@/components/ui/icons";
 import { useViewer } from "@/hooks/use-viewer";
 import { getInstructorBySlug } from "@/data/instructors";
 import {
@@ -76,13 +75,6 @@ function MyInstructorChatRoom() {
         className="flex shrink-0 items-center gap-3 border-b border-white/[0.06] bg-black/70 px-3"
         style={{ height: headerH }}
       >
-        <Link
-          to="/club/my-instructors"
-          aria-label="Назад"
-          className="grid h-9 w-9 place-items-center rounded-full text-primary active:scale-95"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </Link>
         <img
           src={instructor.photo}
           alt={instructor.name}
