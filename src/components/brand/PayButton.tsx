@@ -52,7 +52,7 @@ function Base({
       value={value}
       onClick={handleClick}
       disabled={disabled}
-      className={`inline-flex w-full touch-manipulation items-center justify-center gap-2 rounded-2xl bg-primary font-display text-sm font-black uppercase italic tracking-widest text-primary-foreground shadow-[0_10px_30px_-10px_hsl(var(--primary)/0.6)] transition-[transform,opacity,box-shadow] active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none ${SIZE[size]} ${className}`}
+      className={`inline-flex w-full touch-manipulation items-center justify-center gap-2 rounded-2xl bg-primary font-display text-sm font-black uppercase  tracking-widest text-primary-foreground shadow-[0_10px_30px_-10px_hsl(var(--primary)/0.6)] transition-[transform,opacity,box-shadow] active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none ${SIZE[size]} ${className}`}
     >
       <span className="flex min-w-0 items-center gap-2">
         {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}

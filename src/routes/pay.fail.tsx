@@ -17,7 +17,7 @@ function PayFailPage() {
   return (
     <main className="mx-auto flex min-h-[60vh] w-full max-w-md flex-col items-center justify-center px-4 py-16 text-center">
       <XCircle className="h-14 w-14 text-destructive" />
-      <h1 className="mt-6 font-display text-3xl font-black uppercase italic">
+      <h1 className="mt-6 font-display text-3xl font-black uppercase">
         Платёж отменён
       </h1>
       <p className="mt-3 text-sm text-muted-foreground">

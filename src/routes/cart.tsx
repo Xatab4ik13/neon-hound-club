@@ -45,7 +45,7 @@ function CartPage() {
         <p className="font-mono text-[11px] uppercase tracking-[0.3em] text-primary">
           Корзина
         </p>
-        <h1 className="mt-3 font-display text-4xl font-black uppercase italic tracking-tight md:text-5xl">
+        <h1 className="mt-3 font-display text-4xl font-black uppercase  tracking-tight md:text-5xl">
           Ваш заказ
         </h1>
 
@@ -156,7 +156,7 @@ function CartPage() {
                       Бонус билетов
                     </span>
                   </div>
-                  <span className="whitespace-nowrap font-display text-xl font-black italic tabular-nums text-primary">
+                  <span className="whitespace-nowrap font-display text-xl font-black  tabular-nums text-primary">
                     +{ticketsTotal} {ticketsWord(ticketsTotal)}
                   </span>
                 </div>

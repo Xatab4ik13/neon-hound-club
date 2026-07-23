@@ -65,7 +65,7 @@ export function BloggerProfileModal({
       <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose} />
       <div className="relative z-10 w-full max-w-lg border border-white/10 bg-background shadow-2xl">
         <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
-          <div className="font-display text-lg font-black italic uppercase tracking-tight">Профиль</div>
+          <div className="font-display text-lg font-black  uppercase tracking-tight">Профиль</div>
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground" aria-label="Закрыть">
             <X className="h-5 w-5" />
           </button>
@@ -76,7 +76,7 @@ export function BloggerProfileModal({
           <div className="flex items-center gap-4">
             <HellhoundAvatar size={72} initials={profile.initials} avatarUrl={profile.avatarUrl} />
             <div className="min-w-0 flex-1">
-              <div className="truncate font-display text-xl font-black italic uppercase tracking-tight">
+              <div className="truncate font-display text-xl font-black  uppercase tracking-tight">
                 {profile.nick}
               </div>
 

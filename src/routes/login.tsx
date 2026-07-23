@@ -146,7 +146,7 @@ function LoginPage() {
           className="relative z-10 mx-auto flex min-h-[calc(100vh-5rem)] w-full max-w-[480px] flex-col px-6 py-10 md:py-16"
           style={{ animation: "page-fade-zoom 500ms cubic-bezier(0.16, 1, 0.3, 1) both" }}
         >
-          <h1 className="font-display text-[56px] italic uppercase font-black leading-[0.9] tracking-tight text-white md:text-7xl">
+          <h1 className="font-display text-[56px]  uppercase font-black leading-[0.9] tracking-tight text-white md:text-7xl">
             Проверь
             <br />
             почту
@@ -224,7 +224,7 @@ function LoginPage() {
         style={{ animation: "page-fade-zoom 500ms cubic-bezier(0.16, 1, 0.3, 1) both" }}
       >
         <h1
-          className="font-display text-[56px] italic uppercase font-black leading-[0.9] tracking-tight text-white md:text-7xl"
+          className="font-display text-[56px]  uppercase font-black leading-[0.9] tracking-tight text-white md:text-7xl"
           style={{
             textShadow:
               "0 0 24px color-mix(in oklab, var(--primary) 28%, transparent)",
@@ -260,7 +260,7 @@ function LoginPage() {
                   setMode(m);
                   setError("");
                 }}
-                className={`relative h-12 overflow-hidden font-display text-sm italic uppercase font-bold tracking-widest transition-colors ${
+                className={`relative h-12 overflow-hidden font-display text-sm  uppercase font-bold tracking-widest transition-colors ${
                   active ? "text-black" : "text-muted-foreground hover:text-white"
                 }`}
               >
@@ -479,7 +479,7 @@ function SubmitButton({ children, busy }: { children: React.ReactNode; busy?: bo
     <button
       type="submit"
       disabled={busy}
-      className="group relative block w-full overflow-hidden bg-primary py-6 text-center font-display text-2xl italic uppercase font-bold tracking-widest text-black transition-all duration-300 active:scale-[0.97] disabled:opacity-60"
+      className="group relative block w-full overflow-hidden bg-primary py-6 text-center font-display text-2xl  uppercase font-bold tracking-widest text-black transition-all duration-300 active:scale-[0.97] disabled:opacity-60"
       style={{ clipPath: "polygon(0 15%, 100% 0, 100% 100%, 0 85%)" }}
     >
       <span

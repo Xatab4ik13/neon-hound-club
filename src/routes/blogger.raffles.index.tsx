@@ -19,7 +19,7 @@ function BloggerRafflesPage() {
   return (
     <main className="relative flex-1 px-4 py-8 md:px-8 md:py-10">
       <div className="mx-auto max-w-5xl">
-        <h1 className="font-display text-3xl font-black italic uppercase tracking-tight md:text-4xl">
+        <h1 className="font-display text-3xl font-black  uppercase tracking-tight md:text-4xl">
           Розыгрыши
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
@@ -55,7 +55,7 @@ function BloggerRafflesPage() {
                   className="group relative flex flex-col border border-white/[0.08] bg-card/40 p-5 transition-colors hover:border-primary/50"
                 >
                   <div className="flex items-start justify-between gap-3">
-                    <h2 className="font-display text-xl font-black italic uppercase tracking-tight transition-colors group-hover:text-primary">
+                    <h2 className="font-display text-xl font-black  uppercase tracking-tight transition-colors group-hover:text-primary">
                       {r.title}
                     </h2>
                     <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-1 group-hover:text-primary" />
@@ -104,7 +104,7 @@ function Stat({
         {icon}
         {label}
       </span>
-      <span className="font-display text-lg font-black italic">{value}</span>
+      <span className="font-display text-lg font-black">{value}</span>
     </div>
   );
 }

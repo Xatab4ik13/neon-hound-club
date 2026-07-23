@@ -25,7 +25,7 @@ function SuccessPage() {
         <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-primary/10 text-primary">
           <span className="font-display text-2xl">✓</span>
         </div>
-        <h1 className="mt-6 font-display text-4xl font-black uppercase italic tracking-tight md:text-5xl">
+        <h1 className="mt-6 font-display text-4xl font-black uppercase  tracking-tight md:text-5xl">
           Заказ принят
         </h1>
         <p className="mt-4 text-sm text-muted-foreground">

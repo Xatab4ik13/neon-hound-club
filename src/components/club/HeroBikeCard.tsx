@@ -106,11 +106,11 @@ export function HeroBikeCard({ bike, onEdit, onDelete }: Props) {
             <div className="mb-1 font-mono text-[10px] uppercase tracking-[0.3em] text-primary">
               Основной байк
             </div>
-            <h3 className="truncate font-display text-3xl font-black uppercase italic tracking-tight text-foreground md:text-4xl">
+            <h3 className="truncate font-display text-3xl font-black uppercase  tracking-tight text-foreground md:text-4xl">
               {bike.brand} {bike.model}
             </h3>
             {bike.nickname && (
-              <div className="mt-1 font-mono text-[11px] italic text-muted-foreground">
+              <div className="mt-1 font-mono text-[11px]  text-muted-foreground">
                 «{bike.nickname}»
               </div>
             )}
@@ -119,7 +119,7 @@ export function HeroBikeCard({ bike, onEdit, onDelete }: Props) {
             <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
               Год
             </div>
-            <div className="font-display text-xl font-black italic tabular-nums text-foreground">
+            <div className="font-display text-xl font-black  tabular-nums text-foreground">
               {bike.year}
             </div>
             {bike.mileage && (

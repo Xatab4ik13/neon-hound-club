@@ -68,7 +68,7 @@ function SettingsMobile({ open, onOpenChange }: Props) {
       fullHeight
       title="Профиль"
       headerLeft={
-        <h2 className="truncate font-display text-[15px] font-black uppercase italic tracking-tight text-white">
+        <h2 className="truncate font-display text-[15px] font-black uppercase  tracking-tight text-white">
           Профиль
         </h2>
       }
@@ -96,7 +96,7 @@ function HHSection({ title, footer, children, tone = "default" }: {
     <section className="space-y-2">
       <h3
         className={
-          "ml-1 font-display text-[10px] font-black uppercase italic tracking-[0.2em] " +
+          "ml-1 font-display text-[10px] font-black uppercase  tracking-[0.2em] " +
           (tone === "danger" ? "text-red-500/60" : "text-white/40")
         }
       >
@@ -136,7 +136,7 @@ function HHInputField({
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between gap-2 px-1">
-        <label className="font-display text-[10px] font-black uppercase italic tracking-[0.18em] text-white/45">
+        <label className="font-display text-[10px] font-black uppercase  tracking-[0.18em] text-white/45">
           {label}
         </label>
         {hint && (
@@ -244,7 +244,7 @@ function HHSaveButton({
       type="button"
       onClick={onClick}
       disabled={loading}
-      className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-5 py-4 font-display text-[13px] font-black uppercase italic tracking-[0.15em] text-primary-foreground shadow-[0_12px_28px_-10px_hsl(var(--primary)/0.55)] transition-all hover:brightness-110 active:scale-[0.98] disabled:opacity-60"
+      className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-5 py-4 font-display text-[13px] font-black uppercase  tracking-[0.15em] text-primary-foreground shadow-[0_12px_28px_-10px_hsl(var(--primary)/0.55)] transition-all hover:brightness-110 active:scale-[0.98] disabled:opacity-60"
     >
       {loading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
       {children}
@@ -296,7 +296,7 @@ function SettingsDesktop({ open, onOpenChange }: Props) {
         onMouseDown={(e) => e.stopPropagation()}
       >
         <div className="flex shrink-0 items-center justify-between gap-4 border-b border-white/[0.06] px-5 py-4 sm:px-7 sm:py-5">
-          <h2 id="settings-title" className="font-display text-lg font-black uppercase italic tracking-tight sm:text-xl">
+          <h2 id="settings-title" className="font-display text-lg font-black uppercase  tracking-tight sm:text-xl">
             Настройки
           </h2>
           <button
@@ -358,7 +358,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <h3 className="mb-4 font-display text-sm font-black uppercase italic tracking-widest text-foreground">
+    <h3 className="mb-4 font-display text-sm font-black uppercase  tracking-widest text-foreground">
       {children}
     </h3>
   );
@@ -803,7 +803,7 @@ function ChannelBlock({ title, desc, children }: { title: string; desc: string; 
   return (
     <div>
       <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2 border-b border-white/[0.06] pb-2">
-        <h3 className="font-display text-sm font-black uppercase italic tracking-widest text-foreground">{title}</h3>
+        <h3 className="font-display text-sm font-black uppercase  tracking-widest text-foreground">{title}</h3>
         <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">{desc}</span>
       </div>
       <div className="divide-y divide-white/[0.04]">{children}</div>
@@ -1104,7 +1104,7 @@ function AccountTab({ mobile, onClose }: { mobile?: boolean; onClose?: () => voi
       <div className="border border-red-500/30 bg-red-500/[0.03] p-5">
         <div className="mb-4 flex items-center gap-2">
           <ShieldAlert className="h-4 w-4 text-red-400" />
-          <h3 className="font-display text-sm font-black uppercase italic tracking-widest text-red-400">
+          <h3 className="font-display text-sm font-black uppercase  tracking-widest text-red-400">
             Опасная зона
           </h3>
         </div>

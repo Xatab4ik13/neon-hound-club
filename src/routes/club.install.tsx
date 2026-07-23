@@ -121,7 +121,7 @@ function InstallPage() {
           <Bell className="h-3.5 w-3.5" />
           Пуши и быстрый доступ
         </div>
-        <div className="mt-2 font-display text-[26px] font-black italic uppercase leading-tight tracking-tight text-foreground">
+        <div className="mt-2 font-display text-[26px] font-black  uppercase leading-tight tracking-tight text-foreground">
           Поставь клуб на&nbsp;экран
         </div>
         <p className="mt-2 text-[14px] leading-snug text-muted-foreground">
@@ -245,7 +245,7 @@ function PushBlock() {
           type="button"
           onClick={enable}
           disabled={busy || permission === "denied"}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 font-display text-[14px] font-black uppercase italic tracking-wider text-primary-foreground active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 font-display text-[14px] font-black uppercase  tracking-wider text-primary-foreground active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Bell className="h-4 w-4" />
           {permission === "denied" ? "Уведомления заблокированы" : "Включить уведомления"}
@@ -313,7 +313,7 @@ function AndroidInstall({
           type="button"
           onClick={onInstall}
           disabled={!canInstall}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3.5 font-display text-[15px] font-black uppercase italic tracking-wider text-primary-foreground transition-opacity active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3.5 font-display text-[15px] font-black uppercase  tracking-wider text-primary-foreground transition-opacity active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Download className="h-4 w-4" />
           Установить приложение

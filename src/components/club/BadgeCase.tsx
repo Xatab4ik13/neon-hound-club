@@ -40,7 +40,7 @@ export function BadgeCase() {
           >
             ID: BADGES / INVENTORY
           </div>
-          <h2 className="mt-2 font-display text-sm font-black uppercase italic tracking-widest text-foreground">
+          <h2 className="mt-2 font-display text-sm font-black uppercase  tracking-widest text-foreground">
             Значки
           </h2>
         </div>
@@ -117,7 +117,7 @@ function PinnedSlot({ badge, onClick }: { badge: MyBadge; onClick: () => void })
       <div className="relative">
         <BadgeIcon id={badge.code} color={r.color} soft={r.soft} size={56} animated premium={premium} />
       </div>
-      <div className="relative mt-2 font-display text-[10px] font-black uppercase italic tracking-wider text-foreground md:text-[11px]">
+      <div className="relative mt-2 font-display text-[10px] font-black uppercase  tracking-wider text-foreground md:text-[11px]">
         {badge.name}
       </div>
       <div
@@ -170,7 +170,7 @@ function BadgeDetail({ badge, onClose }: { badge: MyBadge; onClose: () => void }
             {r.label}
             {badge.issue && <span className="ml-2 text-muted-foreground">· {badge.issue}</span>}
           </div>
-          <h3 className="mt-2 font-display text-2xl font-black uppercase italic tracking-tighter text-foreground">
+          <h3 className="mt-2 font-display text-2xl font-black uppercase  tracking-tighter text-foreground">
             {badge.name}
           </h3>
           <p className="mt-2 max-w-sm text-sm text-muted-foreground">{badge.description}</p>

@@ -47,7 +47,7 @@ export const Route = createFileRoute("/club/hell-pass/$tier")({
 function NotFoundPage() {
   return (
     <main className="mx-auto w-full max-w-3xl px-4 py-16 text-center">
-      <h1 className="font-display text-3xl font-black uppercase italic tracking-tight">
+      <h1 className="font-display text-3xl font-black uppercase  tracking-tight">
         Тир не найден
       </h1>
       <Link
@@ -63,7 +63,7 @@ function NotFoundPage() {
 function ErrorPage({ error }: { error: Error }) {
   return (
     <main className="mx-auto w-full max-w-3xl px-4 py-16 text-center">
-      <h1 className="font-display text-2xl font-black uppercase italic">
+      <h1 className="font-display text-2xl font-black uppercase">
         Что-то сломалось
       </h1>
       <p className="mt-3 font-mono text-xs text-muted-foreground">{error.message}</p>
@@ -147,14 +147,14 @@ function TierDetailPage() {
         <div>
           <div className="flex items-baseline gap-4">
             <h1
-              className="font-display text-5xl font-black uppercase italic leading-none tracking-tighter md:text-7xl"
+              className="font-display text-5xl font-black uppercase  leading-none tracking-tighter md:text-7xl"
               style={{ color: tier.color }}
             >
               {tier.name}
             </h1>
             {tier.recommended && (
               <span
-                className="font-mono text-[10px] font-bold italic uppercase tracking-widest"
+                className="font-mono text-[10px] font-bold  uppercase tracking-widest"
                 style={{ color: tier.color }}
               >
                 ★ Популярный
@@ -177,14 +177,14 @@ function TierDetailPage() {
           )}
 
           <section className="mt-8 border border-white/10 bg-[#0f0f0f] p-6">
-            <h2 className="font-display text-sm font-black uppercase italic tracking-widest text-white/60">
+            <h2 className="font-display text-sm font-black uppercase  tracking-widest text-white/60">
               Кому подходит
             </h2>
             <p className="mt-2 text-base text-white/85">{tier.forWhom}</p>
           </section>
 
           <section className="mt-10">
-            <h2 className="font-display text-2xl font-black uppercase italic tracking-tight text-foreground md:text-3xl">
+            <h2 className="font-display text-2xl font-black uppercase  tracking-tight text-foreground md:text-3xl">
               Что внутри
             </h2>
 
@@ -192,7 +192,7 @@ function TierDetailPage() {
               {tier.groups.map((group) => (
                 <div key={group.title}>
                   <h3
-                    className="mb-4 font-display text-xs font-black uppercase italic tracking-widest"
+                    className="mb-4 font-display text-xs font-black uppercase  tracking-widest"
                     style={{ color: tier.color }}
                   >
                     {group.title}

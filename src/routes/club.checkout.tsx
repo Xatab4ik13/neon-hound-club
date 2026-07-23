@@ -615,7 +615,7 @@ function ClubCheckoutPage() {
                   Начислим после оплаты — для розыгрышей клуба.
                 </div>
               </div>
-              <span className="font-display text-xl font-black italic tabular-nums text-primary">
+              <span className="font-display text-xl font-black  tabular-nums text-primary">
                 +{ticketsTotal}
               </span>
             </div>

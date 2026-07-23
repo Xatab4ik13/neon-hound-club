@@ -79,7 +79,7 @@ function TicketsPage() {
           params={{ raffleId: activeRaffle.id }}
           className="group relative mb-5 flex items-center gap-3 rounded-2xl bg-card px-4 py-3 transition-transform active:scale-[0.98]"
         >
-          <span className="absolute -left-1.5 -top-2.5 z-10 inline-flex -rotate-3 items-center gap-1 rounded-lg bg-[#B6FF3C] px-2 py-0.5 font-display text-[10px] font-black uppercase italic tracking-tight text-black">
+          <span className="absolute -left-1.5 -top-2.5 z-10 inline-flex -rotate-3 items-center gap-1 rounded-lg bg-[#B6FF3C] px-2 py-0.5 font-display text-[10px] font-black uppercase  tracking-tight text-black">
             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-black" />
             Идёт сейчас
           </span>

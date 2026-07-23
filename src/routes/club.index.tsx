@@ -294,7 +294,7 @@ export const PostCard = memo(function PostCard({ post, moderate = false }: { pos
           )}
           <div className="min-w-0 flex-1">
             <div className="flex items-baseline gap-2">
-              <span className="truncate font-display text-[15px] font-black uppercase italic tracking-tight text-foreground">
+              <span className="truncate font-display text-[15px] font-black uppercase  tracking-tight text-foreground">
                 {author.nick}
               </span>
               
@@ -472,7 +472,7 @@ function PollBlock({ poll, postId }: { poll: FeedPoll; postId: string }) {
   return (
     <div className="mx-3 mb-3 rounded-[16px] border border-white/[0.06] bg-black/30 p-4 md:mx-4 md:p-5">
       <div className="mb-1 flex items-start justify-between gap-3">
-        <h3 className="font-display text-[15px] font-black uppercase italic leading-tight tracking-tight text-foreground">
+        <h3 className="font-display text-[15px] font-black uppercase  leading-tight tracking-tight text-foreground">
           {poll.question}
         </h3>
         {poll.closed && (
@@ -1389,7 +1389,7 @@ const CommentItem = memo(function CommentItem({
         <div className="flex items-center gap-2">
           <UserLink slug={author.slug} disabled={authorIsBlogger} className="min-w-0 truncate">
             <span
-              className={`truncate font-display font-bold uppercase italic tracking-tight transition-opacity hover:opacity-80 ${large ? "text-[14px]" : "text-[13px]"}`}
+              className={`truncate font-display font-bold uppercase  tracking-tight transition-opacity hover:opacity-80 ${large ? "text-[14px]" : "text-[13px]"}`}
               style={{ color: authorIsBlogger ? undefined : rank.accent }}
             >
               {author.nick}
@@ -1647,7 +1647,7 @@ function RankAvatar({
         />
       ) : (
         <span
-          className="relative font-display font-black uppercase italic"
+          className="relative font-display font-black uppercase"
           style={{ color: rank.accent, fontSize: Math.round(size * 0.32) }}
         >
           {initials}

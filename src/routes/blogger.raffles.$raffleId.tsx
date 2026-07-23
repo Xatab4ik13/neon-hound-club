@@ -252,7 +252,7 @@ function BloggerRaffleDetailPage() {
 
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h1 className="font-display text-3xl font-black italic uppercase tracking-tight md:text-4xl">
+            <h1 className="font-display text-3xl font-black  uppercase tracking-tight md:text-4xl">
               {board.raffle.title}
             </h1>
             <p className="mt-1.5 inline-flex flex-wrap items-center gap-1 text-sm text-muted-foreground">
@@ -282,7 +282,7 @@ function BloggerRaffleDetailPage() {
                   type="button"
                   onClick={startSpin}
                   disabled={!canSpin}
-                  className="inline-flex items-center gap-2 border border-primary bg-primary px-6 py-3 font-display text-lg font-black italic uppercase tracking-tight text-primary-foreground transition-all hover:shadow-[0_0_28px_-4px_rgba(255,45,74,0.6)] disabled:opacity-30"
+                  className="inline-flex items-center gap-2 border border-primary bg-primary px-6 py-3 font-display text-lg font-black  uppercase tracking-tight text-primary-foreground transition-all hover:shadow-[0_0_28px_-4px_rgba(255,45,74,0.6)] disabled:opacity-30"
                 >
                   <Play className="h-5 w-5" />
                   {drawMu.isPending ? "…" : "Крутить"}
@@ -293,7 +293,7 @@ function BloggerRaffleDetailPage() {
                     type="button"
                     onClick={startSpin}
                     disabled={!canRespin}
-                    className="inline-flex items-center gap-2 border border-primary/50 bg-primary/10 px-6 py-3 font-display text-lg font-black italic uppercase tracking-tight text-primary transition-all hover:bg-primary/20 disabled:opacity-30"
+                    className="inline-flex items-center gap-2 border border-primary/50 bg-primary/10 px-6 py-3 font-display text-lg font-black  uppercase tracking-tight text-primary transition-all hover:bg-primary/20 disabled:opacity-30"
                   >
                     <RotateCcw className="h-5 w-5" /> Крутить ещё раз
                   </button>
@@ -301,7 +301,7 @@ function BloggerRaffleDetailPage() {
                     type="button"
                     onClick={confirmAndContinue}
                     disabled={confirmMu.isPending}
-                    className="inline-flex items-center gap-2 border border-primary bg-primary px-6 py-3 font-display text-lg font-black italic uppercase tracking-tight text-primary-foreground transition-all hover:shadow-[0_0_28px_-4px_rgba(255,45,74,0.6)] disabled:opacity-50"
+                    className="inline-flex items-center gap-2 border border-primary bg-primary px-6 py-3 font-display text-lg font-black  uppercase tracking-tight text-primary-foreground transition-all hover:shadow-[0_0_28px_-4px_rgba(255,45,74,0.6)] disabled:opacity-50"
                   >
                     <Trophy className="h-5 w-5" /> {confirmMu.isPending ? "Фиксируем…" : "Зафиксировать"}
                   </button>
@@ -310,7 +310,7 @@ function BloggerRaffleDetailPage() {
                 <button
                   type="button"
                   onClick={resetForNext}
-                  className="inline-flex items-center gap-2 border border-primary/50 bg-primary/10 px-6 py-3 font-display text-lg font-black italic uppercase tracking-tight text-primary"
+                  className="inline-flex items-center gap-2 border border-primary/50 bg-primary/10 px-6 py-3 font-display text-lg font-black  uppercase tracking-tight text-primary"
                 >
                   <RotateCcw className="h-5 w-5" /> Следующий розыгрыш
                 </button>
@@ -523,14 +523,14 @@ function RollerCard({ card, highlight }: { card: StripCard; highlight: boolean }
             />
           ) : (
             <span
-              className="font-display text-2xl font-black italic uppercase leading-none"
+              className="font-display text-2xl font-black  uppercase leading-none"
               style={{ color: accent }}
             >
               {initials}
             </span>
           )}
         </div>
-        <div className="w-full truncate text-center font-display text-[13px] font-black italic uppercase leading-tight tracking-tight">
+        <div className="w-full truncate text-center font-display text-[13px] font-black  uppercase leading-tight tracking-tight">
           {card.nick}
         </div>
         <div
@@ -562,7 +562,7 @@ function PrizeBanner({
       <div className="font-mono text-[10px] font-bold uppercase tracking-[0.25em] text-primary">
         {candidate ? "Победитель приза" : prize ? "Разыгрываем" : "Выбери приз справа"}
       </div>
-      <div className="mt-1 font-display text-xl font-black italic uppercase tracking-tight">
+      <div className="mt-1 font-display text-xl font-black  uppercase tracking-tight">
         {prize?.name ?? "—"}
       </div>
     </div>
@@ -601,7 +601,7 @@ function WinnerCard({
             <img src={candidate.avatarUrl} alt={candidate.nick} className="h-full w-full object-cover" />
           ) : (
             <span
-              className="font-display text-2xl font-black italic uppercase"
+              className="font-display text-2xl font-black  uppercase"
               style={{ color: rank.accent }}
             >
               {initials}
@@ -609,7 +609,7 @@ function WinnerCard({
           )}
         </div>
         <div className="text-left">
-          <div className="font-display text-2xl font-black italic uppercase tracking-tight">
+          <div className="font-display text-2xl font-black  uppercase tracking-tight">
             {candidate.nick}
           </div>
           <div className="mt-1 flex items-center gap-2">
@@ -647,7 +647,7 @@ function WinnersLog({ board }: { board: RaffleBoard }) {
       <ul className="divide-y divide-white/[0.04]">
         {board.winners.map((w) => (
           <li key={w.id} className="flex items-center justify-between gap-2 px-4 py-2.5">
-            <span className="truncate font-display text-[13px] font-bold uppercase italic">
+            <span className="truncate font-display text-[13px] font-bold uppercase">
               {w.nick}
             </span>
             <span className="shrink-0 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">

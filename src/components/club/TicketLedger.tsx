@@ -235,7 +235,7 @@ function SummaryCard({
       <div className="flex min-w-0 flex-col">
         <span
           className={
-            (muted ? "font-display text-[22px] font-black italic" : "font-display text-[26px] font-black italic") +
+            (muted ? "font-display text-[22px] font-black" : "font-display text-[26px] font-black") +
             " leading-none tabular-nums " +
             accent
           }
@@ -274,7 +274,7 @@ function LedgerRow({ entry }: { entry: LedgerEntry }) {
       </div>
       <div
         className={
-          "shrink-0 whitespace-nowrap text-right font-display text-[16px] font-black italic tabular-nums " +
+          "shrink-0 whitespace-nowrap text-right font-display text-[16px] font-black  tabular-nums " +
           (isPositive ? "text-[#B6FF3C]" : "text-[#FF5A5A]")
         }
       >

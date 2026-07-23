@@ -543,7 +543,7 @@ export function BikeFormModal({ open, onOpenChange, bike, onSave }: Props) {
     <Dialog open={open} onOpenChange={requestClose}>
       <DialogContent className="max-h-[92vh] overflow-y-auto border-white/[0.08] bg-[#0b0b0b] sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle className="font-display text-xl font-black uppercase italic tracking-tight">
+          <DialogTitle className="font-display text-xl font-black uppercase  tracking-tight">
             {bike ? "Редактировать байк" : "Добавить байк"}
           </DialogTitle>
           <DialogDescription className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">

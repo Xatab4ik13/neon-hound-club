@@ -28,7 +28,7 @@ function BloggerFeedPage() {
   return (
     <main className="mx-auto w-full max-w-[640px] px-3 py-5 md:px-4 md:py-10">
       <div className="mb-5 flex items-center justify-between px-2">
-        <h1 className="font-display text-lg font-black uppercase italic tracking-tight text-foreground">
+        <h1 className="font-display text-lg font-black uppercase  tracking-tight text-foreground">
           Лента
         </h1>
       </div>

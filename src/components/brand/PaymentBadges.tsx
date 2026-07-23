@@ -18,7 +18,7 @@ function VisaMark({ size }: { size: Size }) {
         y="22"
         fontFamily="Arial Black, Arial, sans-serif"
         fontSize="26"
-        fontStyle="italic"
+        fontStyle=""
         fontWeight="900"
         fill="currentColor"
         letterSpacing="-1"

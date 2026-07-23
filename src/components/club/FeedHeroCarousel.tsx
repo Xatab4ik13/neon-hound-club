@@ -185,7 +185,7 @@ function HeroSlideCard({ slide, index }: { slide: Slide; index: number }) {
 
       <div className="relative flex h-full flex-col justify-between p-5">
         <div className="pt-2">
-          <h2 className="whitespace-pre-line font-display text-[28px] font-black uppercase italic leading-[0.95] tracking-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]">
+          <h2 className="whitespace-pre-line font-display text-[28px] font-black uppercase  leading-[0.95] tracking-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]">
             {slide.title}
           </h2>
           {slide.eyebrow && (
