@@ -135,19 +135,12 @@ function NewsPostCard({ post }: { post: NewsPost }) {
             </div>
 
             <div className="min-w-0 flex-1">
-              <div className="flex items-baseline gap-2">
-                <span
-                  className="truncate font-display text-[13px] font-black uppercase italic tracking-wider"
-                  style={{ color: NEWS_COLOR }}
-                >
-                  {post.category}
-                </span>
-              </div>
               <RelativeTime
                 iso={post.createdAt}
                 className="mt-0.5 block font-mono text-[10px] uppercase tracking-[0.18em] tabular-nums text-muted-foreground"
               />
             </div>
+
           </header>
 
           {/* Заголовок новости — жирным, крупнее чем body */}
