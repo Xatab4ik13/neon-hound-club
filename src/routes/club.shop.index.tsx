@@ -168,14 +168,20 @@ function ClubShopPage() {
         ref={catScrollRef}
         className="-mx-4 mb-3 flex gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
-        <Chip data-active={activeCat === "all"} active={activeCat === "all"} onClick={() => selectCat("all")}>
+        <Chip
+          data-active={activeCat === "all"}
+          active={activeCat === "all"}
+          color={CHIP_COLORS[0]}
+          onClick={() => selectCat("all")}
+        >
           Все
         </Chip>
-        {categories.map((c) => (
+        {categories.map((c, i) => (
           <Chip
             key={c.id}
             data-active={activeCat === c.id}
             active={activeCat === c.id}
+            color={CHIP_COLORS[(i + 1) % CHIP_COLORS.length]}
             onClick={() => selectCat(c.id)}
           >
             {c.name}
