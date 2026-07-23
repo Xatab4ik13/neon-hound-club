@@ -238,12 +238,7 @@ function VipChatPage() {
                           </div>
                         )}
                         {m.text && (
-                          <p
-                            className={cn(
-                              "whitespace-pre-wrap break-words font-display text-[14px] font-bold uppercase leading-snug tracking-tight",
-                              isMine ? "text-black" : "text-black",
-                            )}
-                          >
+                          <p className="whitespace-pre-wrap break-words font-display text-[14px] font-bold uppercase leading-snug tracking-tight text-black">
                             {m.text}
                           </p>
                         )}
