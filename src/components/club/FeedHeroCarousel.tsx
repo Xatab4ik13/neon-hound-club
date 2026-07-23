@@ -132,11 +132,13 @@ export function FeedHeroCarousel({ accent }: { accent?: string } = {}) {
                 aria-label={`Слайд ${i + 1}`}
                 onClick={() => setIndex(i)}
                 className={`h-1.5 rounded-full transition-all duration-300 ${
-                  active ? "w-6 bg-primary" : "w-1.5 bg-white/20 hover:bg-white/40"
+                  active ? "w-6" : "w-1.5 bg-white/20 hover:bg-white/40"
                 }`}
+                style={active ? { background: accent ?? "hsl(var(--primary))" } : undefined}
               />
             );
           })}
+
         </div>
       )}
     </section>
