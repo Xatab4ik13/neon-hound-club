@@ -197,7 +197,7 @@ export function Hero() {
       {/* MOBILE / TABLET — вертикальный стек */}
       <div className="relative mx-auto grid w-full max-w-7xl grid-cols-1 items-end gap-8 lg:hidden">
         {/* Заголовок и описание — опущены вниз, чтобы логотип в шапке не перекрывал */}
-        <div className="relative z-20 order-1 flex flex-col items-center px-6 pt-24 text-center sm:pt-32">
+        <div className="relative z-20 order-1 flex flex-col items-center px-6 pt-16 text-center sm:pt-20">
           <h1 className="font-display text-6xl font-black uppercase leading-[0.88] tracking-tight text-foreground sm:text-7xl">
             <span className="text-primary">HELLHOUND</span>
             <br />
@@ -212,20 +212,10 @@ export function Hero() {
           >
             Создано теми, кто едет
           </p>
-
-          <Link
-            to={isAuthed ? "/club" : "/login"}
-            className="group relative mt-7 inline-flex w-fit items-center rounded-2xl border-[3px] border-foreground bg-primary px-8 py-4 font-display text-lg font-black uppercase italic tracking-widest text-black shadow-[6px_6px_0_0_hsl(var(--foreground))] transition-all duration-150 ease-out hover:-translate-x-1.5 hover:-translate-y-1.5 hover:shadow-[8px_8px_0_0_hsl(var(--foreground))] active:scale-[0.98] sm:px-10 sm:py-5 sm:text-xl"
-          >
-            <span className="relative z-10 inline-flex items-center justify-center gap-3">
-              Вступить в клуб
-              <PlumpArrowRight className="h-6 w-6" />
-            </span>
-          </Link>
         </div>
 
         {/* Ваня + розыгрыш в одну линию, вплотную */}
-        <div className="relative order-2 flex items-end justify-center px-2">
+        <div className="relative order-2 -mt-2 flex items-end justify-center px-2">
           {raffle ? (
             <div className="relative z-20 w-[58%] max-w-[310px] pb-2 -mr-5">
               <RaffleCloud
@@ -265,6 +255,20 @@ export function Hero() {
             />
           </div>
         </div>
+
+        {/* Кнопка — под Ваней */}
+        <div className="relative z-20 order-3 -mt-4 flex justify-center px-6 pb-4">
+          <Link
+            to={isAuthed ? "/club" : "/login"}
+            className="group relative inline-flex w-fit items-center rounded-2xl border-[3px] border-foreground bg-primary px-8 py-4 font-display text-lg font-black uppercase italic tracking-widest text-black shadow-[6px_6px_0_0_hsl(var(--foreground))] transition-all duration-150 ease-out hover:-translate-x-1.5 hover:-translate-y-1.5 hover:shadow-[8px_8px_0_0_hsl(var(--foreground))] active:scale-[0.98] sm:px-10 sm:py-5 sm:text-xl"
+          >
+            <span className="relative z-10 inline-flex items-center justify-center gap-3">
+              Вступить в клуб
+              <PlumpArrowRight className="h-6 w-6" />
+            </span>
+          </Link>
+        </div>
+
       </div>
     </section>
   );
