@@ -108,15 +108,10 @@ function SchoolChatsList() {
                         {last ? formatWhen(last.createdAt) : ""}
                       </span>
                     </div>
-                    <div className="mt-0.5 flex items-center gap-1.5">
-                      {isMine && (
-                        <span className="shrink-0 rounded-md bg-[#B6FF3C]/15 px-1.5 py-[1px] font-mono text-[9px] font-bold uppercase tracking-widest text-[#B6FF3C]">
-                          Ты
-                        </span>
-                      )}
+                    <div className="mt-0.5">
                       <span
                         className={cn(
-                          "truncate text-[13px]",
+                          "truncate text-[13px] block",
                           isMine ? "text-muted-foreground" : "text-foreground/80",
                         )}
                       >
