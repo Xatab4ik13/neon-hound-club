@@ -213,7 +213,7 @@ function NewsPostCard({ post }: { post: NewsPost }) {
 
             <button
               type="button"
-              onClick={() => hhToast.info("Комментарии подключим скоро")}
+              onClick={openComments}
               aria-label="Комментарий"
               className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 font-mono text-[12px] font-bold tabular-nums text-foreground transition-all active:scale-95"
               style={{ color: NEWS_COLOR }}
