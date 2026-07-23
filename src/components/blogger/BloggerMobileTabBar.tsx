@@ -11,14 +11,14 @@ type TabIcon = LucideIcon | React.ComponentType<React.SVGProps<SVGSVGElement>>;
 
 type Tab = {
   label: string;
-  href: "/blogger" | "/club/vip-chat" | "/blogger/raffles";
+  href: "/blogger" | "/blogger/chats" | "/blogger/raffles";
   icon: TabIcon;
   exact?: boolean;
 };
 
 const TABS: Tab[] = [
   { label: "Лента", href: "/blogger", icon: Newspaper, exact: true },
-  { label: "VIP чат", href: "/club/vip-chat", icon: PlumpChat },
+  { label: "VIP чат", href: "/blogger/chats", icon: PlumpChat },
   { label: "Розыгрыши", href: "/blogger/raffles", icon: PlumpTicket },
 ];
 
