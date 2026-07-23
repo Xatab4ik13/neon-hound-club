@@ -269,6 +269,19 @@ export function MockChatRoom({
           }}
           className="flex items-end gap-2 px-3 py-2.5"
         >
+          {onSendInvoice && (
+            <button
+              type="button"
+              onClick={() => {
+                haptic("light");
+                setInvoiceOpen(true);
+              }}
+              aria-label="Выставить счёт"
+              className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-[#B6FF3C]/40 bg-[#B6FF3C]/10 text-[#B6FF3C] transition-transform active:scale-95"
+            >
+              <Receipt size={18} strokeWidth={2.25} />
+            </button>
+          )}
           <div className="flex min-w-0 flex-1 items-end gap-1 rounded-3xl border border-white/[0.08] bg-black/60 pl-3 pr-1 py-1 focus-within:border-[#B6FF3C]/60 focus-within:shadow-[0_0_0_3px_rgba(182,255,60,0.10)]">
             <textarea
               ref={textareaRef}
@@ -302,6 +315,90 @@ export function MockChatRoom({
             <Send size={18} strokeWidth={2} className="-translate-x-[1px]" />
           </button>
         </form>
+      </div>
+
+      {onSendInvoice && (
+        <InvoiceComposer
+          open={invoiceOpen}
+          onOpenChange={setInvoiceOpen}
+          onSubmit={(draft) => onSendInvoice(draft)}
+        />
+      )}
+      {onPayInvoice && (
+        <PayInvoiceSheet
+          open={!!payInvoice}
+          onOpenChange={(v) => {
+            if (!v) setPayInvoice(null);
+          }}
+          amountTotal={payInvoice ? invoiceTotalForStudent(payInvoice.amount) : 0}
+          onSubmit={(payer) => {
+            if (payInvoice) onPayInvoice(payInvoice.id, payer);
+            setPayInvoice(null);
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function InvoiceCard({
+  invoice,
+  viewer,
+  onPay,
+}: {
+  invoice: InvoicePayload;
+  viewer: "instructor" | "student";
+  onPay?: () => void;
+}) {
+  const paid = invoice.status === "paid";
+  const total = invoiceTotalForStudent(invoice.amount);
+  const shown = viewer === "student" ? total : invoice.amount;
+  const when = new Date(invoice.dateTime).toLocaleString("ru-RU", {
+    day: "2-digit",
+    month: "long",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  return (
+    <div className="w-[280px] max-w-full overflow-hidden rounded-2xl border border-[#B6FF3C]/30 bg-white text-black shadow-[0_8px_24px_-12px_rgba(182,255,60,0.35)]">
+      <div className="flex items-center justify-between bg-[#B6FF3C] px-3 py-1.5">
+        <span className="font-display text-[11px] font-black uppercase tracking-widest text-black">
+          Счёт
+        </span>
+        <span className="font-mono text-[10px] font-bold uppercase tracking-widest text-black/70">
+          {paid ? "Оплачено" : "К оплате"}
+        </span>
+      </div>
+      <div className="flex flex-col gap-2 px-3 py-3">
+        <div className="font-display text-[22px] font-black leading-none tracking-tight text-black">
+          {shown.toLocaleString("ru-RU")} ₽
+        </div>
+        <div className="flex flex-wrap gap-x-3 gap-y-1 font-mono text-[10px] font-bold uppercase tracking-widest text-black/60">
+          <span>{invoice.hours} ч</span>
+          <span>{when}</span>
+        </div>
+        <p className="font-display text-[13px] font-bold leading-snug tracking-tight text-black/80">
+          {invoice.description}
+        </p>
+        {viewer === "student" && !paid && onPay && (
+          <button
+            type="button"
+            onClick={onPay}
+            className="mt-1 rounded-xl bg-black px-3 py-2 font-display text-[13px] font-black uppercase tracking-tight text-[#B6FF3C] transition-transform active:scale-95"
+          >
+            Оплатить {total.toLocaleString("ru-RU")} ₽
+          </button>
+        )}
+        {viewer === "instructor" && !paid && (
+          <div className="mt-1 rounded-xl bg-black/5 px-3 py-2 text-center font-mono text-[10px] font-bold uppercase tracking-widest text-black/50">
+            Ожидает оплаты
+          </div>
+        )}
+        {paid && (
+          <div className="mt-1 rounded-xl bg-black/90 px-3 py-2 text-center font-mono text-[10px] font-bold uppercase tracking-widest text-[#B6FF3C]">
+            Оплачено ✓
+          </div>
+        )}
       </div>
     </div>
   );
