@@ -26,6 +26,8 @@ type Props = {
   /** Свой контент шапки слева (по умолчанию заголовок). */
   headerLeft?: ReactNode;
   contentClassName?: string;
+  /** Кастомный цвет CTA-кнопки «Готово». По умолчанию — text-primary (розовый). */
+  doneAccent?: string;
 };
 
 
@@ -42,6 +44,7 @@ export function IOSSheet({
   children,
   headerLeft,
   contentClassName,
+  doneAccent,
 }: Props) {
   const close = () => onOpenChange(false);
   useThemeColor(open ? "#0d0d0d" : null);
@@ -123,6 +126,7 @@ export function IOSSheet({
               type="button"
               onClick={onDone ?? close}
               disabled={doneDisabled}
+              style={doneAccent ? { color: doneAccent } : undefined}
               className="shrink-0 font-mono text-[12px] font-bold uppercase tracking-wider text-primary active:opacity-60 disabled:cursor-not-allowed disabled:text-muted-foreground/40 disabled:active:opacity-100"
             >
               {doneLabel}

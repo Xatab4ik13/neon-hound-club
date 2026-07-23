@@ -15,19 +15,20 @@ type Props = {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   postId: string;
-  postTitle?: string;
+  commentsCount?: number;
 };
 
 // Салатовый акцент NEWS-ленты
 const NEWS_COLOR = "#B6FF3C";
 
-export function NewsCommentsSheet({ open, onOpenChange, postTitle }: Props) {
+export function NewsCommentsSheet({ open, onOpenChange, commentsCount = 0 }: Props) {
   return (
     <AdaptiveSheet
       open={open}
       onOpenChange={onOpenChange}
-      title={postTitle ? `Комментарии · ${postTitle}` : "Комментарии"}
+      title={`Комментарии · ${commentsCount}`}
       fullHeight
+      doneAccent={NEWS_COLOR}
     >
       <div className="flex h-full min-h-[60vh] flex-col">
         {/* Пустое состояние */}
