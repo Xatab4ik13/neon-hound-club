@@ -110,6 +110,11 @@ function VipChatPage() {
   const ownedPacksQ = useMyStickerPacks(!!myProfile);
   const ownedPacks = ownedPacksQ.data ?? [];
 
+  // Сообщения, уже присутствовавшие при открытии чата — не анимируем.
+  // Анимация вылета применяется только к новым сообщениям, пришедшим/отправленным
+  // в текущей сессии, пока пользователь сидит в чате.
+  const initialIdsRef = useRef<Set<string>>(new Set(INITIAL_MESSAGES.map((m) => m.id)));
+
   // Автоскролл вниз при появлении сообщений/аттача.
   useEffect(() => {
     const el = scrollerRef.current;
