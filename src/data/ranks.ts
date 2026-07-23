@@ -60,8 +60,8 @@ export const RANKS: RankMeta[] = [
     label: "PIT CREW",
     short: "PIT",
     plaqueBg: "pit-diamond",
-    accent: "#b8a48a",
-    accentSoft: "rgba(184, 164, 138, 0.35)",
+    accent: "#B6FF3C",
+    accentSoft: "rgba(182, 255, 60, 0.35)",
     onAccent: "#0a0a0a",
   },
   {
@@ -69,8 +69,8 @@ export const RANKS: RankMeta[] = [
     label: "ROAD CAPTAIN",
     short: "CAPTAIN",
     plaqueBg: "captain-speedlines",
-    accent: "#d4d0c4",
-    accentSoft: "rgba(212, 208, 196, 0.4)",
+    accent: "#3DDBD9",
+    accentSoft: "rgba(61, 219, 217, 0.4)",
     onAccent: "#0a0a0a",
   },
   {
@@ -78,8 +78,8 @@ export const RANKS: RankMeta[] = [
     label: "ALPHA HOUND",
     short: "ALPHA",
     plaqueBg: "alpha-aurora",
-    accent: "#b48dff",
-    accentSoft: "rgba(180, 141, 255, 0.4)",
+    accent: "#FF7A3D",
+    accentSoft: "rgba(255, 122, 61, 0.4)",
     onAccent: "#0a0a0a",
   },
   {
@@ -87,8 +87,8 @@ export const RANKS: RankMeta[] = [
     label: "HELL LEGEND",
     short: "LEGEND",
     plaqueBg: "legend-molten-gold",
-    accent: "#ffb648",
-    accentSoft: "rgba(255, 182, 72, 0.45)",
+    accent: "#FFD93D",
+    accentSoft: "rgba(255, 217, 61, 0.45)",
     onAccent: "#1a1000",
   },
 ];
