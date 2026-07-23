@@ -1,15 +1,29 @@
+import { useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { PlumpArrowLeft as ArrowLeft, Bike, Calendar, PlumpMap as MapPin, Trophy } from "@/components/ui/icons";
+import {
+  PlumpArrowLeft as ArrowLeft,
+  Bike,
+  Calendar,
+  PlumpMap as MapPin,
+  Trophy,
+  Award,
+} from "@/components/ui/icons";
 import { RANKS, getRankSpan, type RankId } from "@/data/ranks";
 import { getUser, type PublicUser } from "@/data/users";
 import { PlaqueBackground } from "./club";
 import { usePublicProfile, type PublicProfile } from "@/lib/garage-api";
+import { PlumpNum } from "@/components/brand/PlumpNum";
 
+type BikeCard = {
+  brand: string;
+  model: string;
+  year: number | null;
+  nickname: string | null;
+  photo: string | null;
+};
 
 type ProfileView = PublicUser & {
-  bikeYear?: number | null;
-  bikeNickname?: string | null;
-  bikePhoto?: string | null;
+  bikes: BikeCard[];
 };
 
 export const Route = createFileRoute("/club/u/$nick")({
@@ -41,8 +55,6 @@ const RANK_BY_ID = Object.fromEntries(RANKS.map((r) => [r.id, r])) as Record<
   RankId,
   (typeof RANKS)[number]
 >;
-
-// Бэк отдаёт реальный rank/xpPct в `p.rank`. Маппим id 1:1.
 const DEFAULT_RANK: RankId = "rookie";
 
 function fromServer(p: PublicProfile): ProfileView {
@@ -52,10 +64,11 @@ function fromServer(p: PublicProfile): ProfileView {
     .toUpperCase();
   const joinedDate = new Date(p.joinedAt);
   const joined = joinedDate.toLocaleDateString("ru-RU", { month: "long", year: "numeric" });
+  const rankId = (RANKS.find((r) => r.id === p.rank.rankId)?.id ?? DEFAULT_RANK) as RankId;
+  const bikes: BikeCard[] = p.primaryBike ? [p.primaryBike] : [];
   const bikeStr = p.primaryBike
     ? `${p.primaryBike.brand} ${p.primaryBike.model}`.trim()
     : undefined;
-  const rankId = (RANKS.find((r) => r.id === p.rank.rankId)?.id ?? DEFAULT_RANK) as RankId;
   return {
     slug: p.nick.toLowerCase(),
     nick: p.nick,
@@ -70,9 +83,7 @@ function fromServer(p: PublicProfile): ProfileView {
     badgeIds: [],
     wins: [],
     avatarUrl: p.avatarUrl ?? undefined,
-    bikeYear: p.primaryBike?.year ?? null,
-    bikeNickname: p.primaryBike?.nickname ?? null,
-    bikePhoto: p.primaryBike?.photo ?? null,
+    bikes,
   };
 }
 
@@ -96,7 +107,6 @@ function UserProfilePage() {
   }
   return <UserView user={fromServer(q.data)} />;
 }
-
 
 function NotFoundUser({ nick }: { nick: string }) {
   return (
@@ -125,9 +135,6 @@ function UserView({ user }: { user: ProfileView }) {
   const xp = Math.round((user.xpPct / 100) * xpMax);
   const next = RANKS[rankIdx + 1] ?? null;
 
-
-
-
   return (
     <main className="mx-auto w-full max-w-3xl px-4 py-6 md:px-8 md:py-10">
       <Link
@@ -138,28 +145,29 @@ function UserView({ user }: { user: ProfileView }) {
         Лента
       </Link>
 
-      {/* Hero / шапка профиля */}
-      <section className="relative mb-8 overflow-hidden border border-white/[0.06] bg-card/40 p-6 md:p-8">
+      {/* Hero — по центру, круглый аватар в Plump-обводке */}
+      <section className="relative mb-6 overflow-hidden border border-white/[0.06] bg-card/40 px-6 py-8 md:py-10">
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 opacity-[0.18]"
+          className="pointer-events-none absolute inset-0 opacity-[0.22]"
           style={{
-            background: `radial-gradient(60% 100% at 0% 0%, ${rank.accentSoft}, transparent 70%)`,
+            background: `radial-gradient(70% 90% at 50% 0%, ${rank.accentSoft}, transparent 70%)`,
           }}
         />
 
-        <div className="relative flex flex-col gap-6 md:flex-row md:items-center">
-          {/* avatar в плашке ранга */}
+        <div className="relative flex flex-col items-center text-center">
+          {/* круглый аватар */}
           <div
-            className="relative flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden md:h-32 md:w-32"
-            style={{ boxShadow: `0 0 0 2px ${rank.accentSoft}` }}
+            className="relative flex h-32 w-32 items-center justify-center overflow-hidden rounded-full md:h-36 md:w-36"
+            style={{
+              border: `3px solid ${rank.accent}`,
+              boxShadow: `4px 4px 0 0 #000, 0 0 24px ${rank.accentSoft}`,
+              background: "#000",
+            }}
           >
-            <PlaqueBackground bg={rank.plaqueBg} />
-            <div
-              aria-hidden
-              className="absolute inset-0 z-[1]"
-              style={{ border: `2px solid ${rank.accent}`, opacity: 0.9 }}
-            />
+            <div className="absolute inset-0 rounded-full overflow-hidden">
+              <PlaqueBackground bg={rank.plaqueBg} />
+            </div>
             {user.avatarUrl ? (
               <img
                 src={user.avatarUrl}
@@ -168,7 +176,7 @@ function UserView({ user }: { user: ProfileView }) {
               />
             ) : (
               <span
-                className="relative z-[2] font-display text-3xl font-black uppercase italic md:text-4xl"
+                className="relative z-[2] font-display text-4xl font-black uppercase italic md:text-5xl"
                 style={{
                   color: rank.accent,
                   textShadow: "0 2px 8px rgba(0,0,0,0.7)",
@@ -179,148 +187,255 @@ function UserView({ user }: { user: ProfileView }) {
             )}
           </div>
 
-          <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <h1 className="truncate font-display text-2xl font-black uppercase italic tracking-tight text-foreground md:text-3xl">
-                {user.nick}
-              </h1>
+          <h1 className="mt-4 font-display text-2xl font-black uppercase italic tracking-tight text-foreground md:text-3xl">
+            {user.nick}
+          </h1>
+
+          <span
+            className="mt-2 inline-flex items-center border-2 border-black bg-black/40 px-2.5 py-1 font-mono text-[10px] font-black uppercase tracking-wider"
+            style={{
+              color: rank.accent,
+              borderColor: rank.accent,
+              boxShadow: `3px 3px 0 0 #000`,
+            }}
+          >
+            {rank.label}
+          </span>
+
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
+            {user.city && (
+              <span className="flex items-center gap-1.5">
+                <MapPin className="h-3 w-3" /> {user.city}
+              </span>
+            )}
+            {user.bike && (
+              <span className="flex items-center gap-1.5">
+                <Bike className="h-3 w-3" /> {user.bike}
+              </span>
+            )}
+            <span className="flex items-center gap-1.5">
+              <Calendar className="h-3 w-3" /> в клубе с {user.joined}
+            </span>
+          </div>
+
+          {/* Значки — плашка на всю ширину под аватаркой */}
+          <div className="mt-6 w-full">
+            <div className="mb-2 flex items-baseline justify-between">
+              <span className="font-display text-[11px] font-black uppercase italic tracking-[0.2em] text-muted-foreground">
+                Значки
+              </span>
+              <span className="font-mono text-[11px] tabular-nums text-muted-foreground">
+                <PlumpNum value={user.badgeIds.length} size={12} />
+              </span>
+            </div>
+            {user.badgeIds.length === 0 ? (
+              <div className="flex items-center justify-center gap-2 border-2 border-dashed border-white/[0.1] bg-black/30 px-4 py-5 font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
+                <Award className="h-4 w-4 opacity-60" />
+                Пока без значков
+              </div>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {user.badgeIds.map((b) => (
+                  <span
+                    key={b}
+                    className="border-2 border-black bg-primary px-2.5 py-1 font-mono text-[10px] font-black uppercase tracking-wider text-black"
+                    style={{ boxShadow: "3px 3px 0 0 #000" }}
+                  >
+                    {b}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* XP / прогресс — Plump-цифры */}
+          <div className="mt-6 w-full text-left">
+            <div className="mb-1.5 flex items-baseline justify-between font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+              <span>Прогресс</span>
+              {!next ? (
+                <span className="font-extrabold" style={{ color: rank.accent }}>
+                  MAX
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1">
+                  до{" "}
+                  <span className="font-bold" style={{ color: rank.accent }}>
+                    {next.label}
+                  </span>
+                  <span className="opacity-40">·</span>
+                  <PlumpNum value={xpMax - xp} size={11} format />
+                  <span className="text-[10px]">XP</span>
+                </span>
+              )}
+            </div>
+            <div className="relative h-3 overflow-hidden border-2 border-black bg-black/60">
+              <div
+                className="absolute inset-y-0 left-0"
+                style={{
+                  width: `${user.xpPct}%`,
+                  backgroundColor: rank.accent,
+                  boxShadow: `0 0 10px ${rank.accentSoft}`,
+                }}
+              />
+            </div>
+            <div className="mt-1.5 flex items-baseline justify-between font-mono text-[11px]">
               <span
-                className="border px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wider"
-                style={{ color: rank.accent, borderColor: rank.accentSoft }}
+                className="font-bold uppercase tracking-[0.2em]"
+                style={{ color: rank.accent }}
               >
                 {rank.label}
               </span>
-            </div>
-
-            <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-              {user.city && (
-                <span className="flex items-center gap-1.5">
-                  <MapPin className="h-3 w-3" /> {user.city}
-                </span>
-              )}
-              {user.bike && (
-                <span className="flex items-center gap-1.5">
-                  <Bike className="h-3 w-3" /> {user.bike}
-                </span>
-              )}
-              <span className="flex items-center gap-1.5">
-                <Calendar className="h-3 w-3" /> в клубе с {user.joined}
+              <span className="inline-flex items-center gap-1 text-muted-foreground">
+                <PlumpNum value={xp} size={12} format />
+                <span className="opacity-40">/</span>
+                <PlumpNum value={xpMax} size={12} format />
+                <span className="text-[10px]">XP</span>
               </span>
-            </div>
-
-            {/* XP / прогресс */}
-            <div className="mt-5">
-              <div className="mb-1.5 flex items-baseline justify-between font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                <span>Прогресс</span>
-                {!next ? (
-                  <span className="font-extrabold" style={{ color: rank.accent }}>
-                    MAX
-                  </span>
-                ) : (
-                  <span>
-                    до{" "}
-                    <span className="font-bold" style={{ color: rank.accent }}>
-                      {next.label}
-                    </span>{" "}
-                    ·{" "}
-                    <span className="font-bold tabular-nums text-foreground">
-                      {xpMax - xp}
-                    </span>{" "}
-                    XP
-                  </span>
-                )}
-              </div>
-              <div className="relative h-2.5 overflow-hidden bg-black/55 ring-1 ring-inset ring-white/10">
-                <div
-                  className="absolute inset-y-0 left-0"
-                  style={{
-                    width: `${user.xpPct}%`,
-                    backgroundColor: rank.accent,
-                    boxShadow: `0 0 10px ${rank.accentSoft}`,
-                  }}
-                />
-              </div>
-              <div className="mt-1.5 flex items-baseline justify-between font-mono text-[11px] tabular-nums text-muted-foreground">
-                <span className="font-bold uppercase tracking-[0.2em]" style={{ color: rank.accent }}>
-                  {rank.label}
-                </span>
-                <span>
-                  <span className="font-bold text-foreground">
-                    {xp.toLocaleString("ru-RU")}
-                  </span>{" "}
-                  <span className="opacity-40">/</span>{" "}
-                  {xpMax.toLocaleString("ru-RU")} XP
-                </span>
-              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Мотоцикл */}
-      {user.bike && (
+      {/* Мотоциклы — карусель */}
+      {user.bikes.length > 0 && (
         <section className="mb-8">
-          <SectionTitle title="Мотоцикл" />
-          <div className="overflow-hidden border border-white/[0.06] bg-card/40">
-            {user.bikePhoto ? (
-              <img
-                src={user.bikePhoto}
-                alt={user.bike}
-                className="aspect-[16/10] w-full object-cover"
-                loading="lazy"
-              />
-            ) : (
-              <div className="flex aspect-[16/10] w-full items-center justify-center bg-black/40">
-                <Bike className="h-10 w-10 text-muted-foreground/40" />
-              </div>
-            )}
-            <div className="flex flex-wrap items-baseline justify-between gap-2 border-t border-white/[0.06] px-4 py-3">
-              <div className="min-w-0">
-                <div className="truncate font-display text-base font-black uppercase italic text-foreground">
-                  {user.bike}
-                </div>
-                {user.bikeNickname && (
-                  <div className="truncate font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-                    «{user.bikeNickname}»
-                  </div>
-                )}
-              </div>
-              {user.bikeYear && (
-                <span className="font-mono text-[11px] tabular-nums uppercase tracking-[0.2em] text-muted-foreground">
-                  {user.bikeYear}
-                </span>
-              )}
-            </div>
-          </div>
+          <SectionTitle
+            title={user.bikes.length > 1 ? "Мотоциклы" : "Мотоцикл"}
+            right={user.bikes.length > 1 ? String(user.bikes.length) : undefined}
+          />
+          <BikeCarousel bikes={user.bikes} />
         </section>
       )}
-
-
-
 
       {/* Победы */}
       <section className="mb-8">
         <SectionTitle title="Победы в розыгрышах" right={`${user.wins.length}`} />
         {user.wins.length === 0 ? (
-          <EmptyHint>Пока без побед — впереди.</EmptyHint>
+          <div className="flex items-center justify-center gap-2 border-2 border-dashed border-white/[0.1] bg-black/30 px-4 py-6 font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
+            <Trophy className="h-4 w-4 opacity-60" />
+            Пока без побед — впереди
+          </div>
         ) : (
-          <ul className="space-y-2">
+          <ul className="space-y-2.5">
             {user.wins.map((w) => (
               <li
                 key={w.id}
-                className="flex items-center gap-3 border border-white/[0.06] bg-card/40 px-4 py-3"
+                className="flex items-center gap-3 border-2 border-black bg-card px-4 py-3"
+                style={{ boxShadow: "4px 4px 0 0 #000" }}
               >
-                <Trophy className="h-4 w-4 shrink-0 text-primary" />
-                <span className="flex-1 truncate text-[14px] text-foreground">{w.title}</span>
-                <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                  {w.date}
-                </span>
+                <div
+                  className="flex h-10 w-10 shrink-0 items-center justify-center border-2 border-black"
+                  style={{ background: "#FFD93D", boxShadow: "2px 2px 0 0 #000" }}
+                >
+                  <Trophy className="h-5 w-5 text-black" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="truncate font-display text-[14px] font-black uppercase italic text-foreground">
+                    {w.title}
+                  </div>
+                  <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+                    {w.date}
+                  </div>
+                </div>
               </li>
             ))}
           </ul>
         )}
       </section>
     </main>
+  );
+}
+
+function BikeCarousel({ bikes }: { bikes: BikeCard[] }) {
+  const [idx, setIdx] = useState(0);
+  const scrollerRef = useRef<HTMLDivElement>(null);
+
+  const onScroll = () => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    const i = Math.round(el.scrollLeft / el.clientWidth);
+    if (i !== idx) setIdx(i);
+  };
+
+  const goTo = (i: number) => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    el.scrollTo({ left: i * el.clientWidth, behavior: "smooth" });
+  };
+
+  return (
+    <div>
+      <div
+        ref={scrollerRef}
+        onScroll={onScroll}
+        className="flex snap-x snap-mandatory overflow-x-auto scrollbar-none"
+        style={{ scrollbarWidth: "none" }}
+      >
+        {bikes.map((b, i) => (
+          <div key={i} className="w-full flex-shrink-0 snap-center pr-3 last:pr-0">
+            <BikePlate bike={b} />
+          </div>
+        ))}
+      </div>
+
+      {bikes.length > 1 && (
+        <div className="mt-3 flex items-center justify-center gap-1.5">
+          {bikes.map((_, i) => (
+            <button
+              key={i}
+              type="button"
+              aria-label={`Мотоцикл ${i + 1}`}
+              onClick={() => goTo(i)}
+              className="h-2 border-2 border-black transition-all"
+              style={{
+                width: i === idx ? 24 : 8,
+                background: i === idx ? "#F000C0" : "#333",
+              }}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function BikePlate({ bike }: { bike: BikeCard }) {
+  const name = `${bike.brand} ${bike.model}`.trim();
+  return (
+    <div
+      className="overflow-hidden border-2 border-black bg-card"
+      style={{ boxShadow: "5px 5px 0 0 #000" }}
+    >
+      {bike.photo ? (
+        <img
+          src={bike.photo}
+          alt={name}
+          className="aspect-[16/10] w-full object-cover"
+          loading="lazy"
+        />
+      ) : (
+        <div className="flex aspect-[16/10] w-full items-center justify-center bg-black/40">
+          <Bike className="h-10 w-10 text-muted-foreground/40" />
+        </div>
+      )}
+      <div className="flex flex-wrap items-baseline justify-between gap-2 border-t-2 border-black px-4 py-3">
+        <div className="min-w-0">
+          <div className="truncate font-display text-base font-black uppercase italic text-foreground">
+            {name}
+          </div>
+          {bike.nickname && (
+            <div className="truncate font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
+              «{bike.nickname}»
+            </div>
+          )}
+        </div>
+        {bike.year && (
+          <span className="inline-flex items-center font-mono text-[11px] tabular-nums uppercase tracking-[0.2em] text-muted-foreground">
+            <PlumpNum value={bike.year} size={12} />
+          </span>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -336,22 +451,5 @@ function SectionTitle({ title, right }: { title: string; right?: string }) {
         </span>
       )}
     </div>
-  );
-}
-
-function EmptyHint({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="border border-dashed border-white/[0.08] bg-card/20 px-4 py-6 text-center font-mono text-[12px] uppercase tracking-wider text-muted-foreground">
-      {children}
-    </div>
-  );
-}
-
-function Tag({ tone, children }: { tone: "primary"; children: React.ReactNode }) {
-  void tone;
-  return (
-    <span className="border border-primary/40 bg-primary/10 px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wider text-primary">
-      {children}
-    </span>
   );
 }
