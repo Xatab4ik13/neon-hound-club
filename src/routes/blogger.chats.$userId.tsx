@@ -163,15 +163,8 @@ function BloggerChatPage() {
   const send = () => {
     if (!canSend || overLimit) return;
     haptic("light");
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: `me_${Date.now()}`,
-        role: "me",
-        text: trimmed || undefined,
-        at: Date.now(),
-      },
-    ]);
+    // TODO: аплоад pending.file на S3 → передавать imageUrl.
+    sendMsg.mutate({ text: trimmed || undefined });
     setText("");
     setPending(null);
   };
@@ -189,15 +182,7 @@ function BloggerChatPage() {
     pushRecent(s);
     setPanelOpen(false);
     haptic("light");
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: `me_${Date.now()}`,
-        role: "me",
-        sticker: stickerId,
-        at: Date.now(),
-      },
-    ]);
+    sendMsg.mutate({ sticker: stickerId });
   };
 
   const onKeyDown = (e: ReactKeyboardEvent<HTMLTextAreaElement>) => {
