@@ -90,6 +90,8 @@ function VipChatPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const keyboardOffset = useKeyboardOffset();
+  const viewer = useViewer();
+  const viewerNick = viewer.nick;
 
   // Автоскролл вниз при появлении сообщений/аттача.
   useEffect(() => {
