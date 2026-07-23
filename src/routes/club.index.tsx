@@ -217,7 +217,7 @@ export const PostCard = memo(function PostCard({ post, moderate = false }: { pos
       onClick={onCardClick}
       className={`post-card relative cursor-pointer overflow-visible rounded-[24px] border shadow-[0_8px_40px_rgba(0,0,0,0.4)] transition-colors ${
         post.pinned
-          ? "border-[#B6FF3C]/40 hover:border-[#B6FF3C]/60"
+          ? "border-primary/40 hover:border-primary/60"
           : "border-white/[0.06] hover:border-white/[0.10]"
       }`}
       style={
