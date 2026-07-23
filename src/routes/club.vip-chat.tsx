@@ -186,51 +186,49 @@ function VipChatPage() {
                 </span>
               </div>
 
-              {g.items.map((m, mi) => {
+              {g.items.map((m) => {
                 const isMine = m.role === "me";
-                const prev = mi > 0 ? g.items[mi - 1] : null;
-                const showAvatar = !isMine && (!prev || prev.role !== "hell");
+                const nick = isMine ? (viewerNick ?? "Я") : "HELL";
+                const nickColor = isMine ? "#B6FF3C" : "#F000C0";
+                const initials = isMine
+                  ? (viewerNick ? viewerNick.slice(0, 2).toUpperCase() : "Я")
+                  : "H";
                 return (
                   <motion.div
                     key={m.id}
-                    initial={{ opacity: 0, y: 8, scale: 0.98 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
                     transition={{ type: "spring", stiffness: 480, damping: 28 }}
-                    className={cn("flex items-end gap-2", isMine ? "justify-end" : "justify-start")}
+                    className="flex gap-3"
                   >
-                    {!isMine && (
-                      <div
-                        className={cn(
-                          "h-10 w-10 shrink-0 overflow-hidden rounded-full bg-zinc-800",
-                          showAvatar ? "opacity-100" : "invisible",
-                        )}
-                      >
-                        <img
-                          src={vanyaAvatar.url}
-                          alt=""
-                          className="h-full w-full object-cover"
-                          loading="lazy"
-                          decoding="async"
-                        />
+                    {isMine ? (
+                      <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#B6FF3C] font-display text-[13px] font-black uppercase text-black">
+                        {initials}
                       </div>
+                    ) : (
+                      <HellhoundAvatar size={36} initials="H" />
                     )}
-
-                    <div className={cn("relative max-w-[75%]", isMine ? "items-end" : "items-start")}>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className="truncate font-display text-[13px] font-bold uppercase tracking-tight"
+                          style={{ color: nickColor }}
+                        >
+                          {nick}
+                        </span>
+                        <span className="ml-auto shrink-0 font-mono text-[10px] uppercase tracking-wider text-muted-foreground/70">
+                          {formatTime(m.at)}
+                        </span>
+                      </div>
                       <div
                         className={cn(
-                          m.image && !m.text ? "rounded-2xl p-1" : "rounded-2xl px-3 py-2",
-                          isMine
-                            ? "rounded-br-md bg-[#B6FF3C] text-black"
-                            : "rounded-bl-md bg-white text-black",
+                          "relative mt-1 inline-block max-w-full select-text rounded-2xl rounded-tl-sm",
+                          m.image && !m.text ? "p-1" : "px-3 py-2",
                         )}
+                        style={{ backgroundColor: isMine ? "#B6FF3C" : "#ffffff" }}
                       >
                         {m.image && (
-                          <div
-                            className={cn(
-                              "overflow-hidden rounded-xl",
-                              m.text ? "mb-2" : "",
-                            )}
-                          >
+                          <div className={cn("overflow-hidden rounded-xl", m.text ? "mb-2" : "")}>
                             <img
                               src={m.image}
                               alt=""
@@ -239,24 +237,9 @@ function VipChatPage() {
                           </div>
                         )}
                         {m.text && (
-                          <p className="whitespace-pre-wrap break-words font-display text-[14px] font-bold uppercase leading-snug tracking-tight text-black">
+                          <p className="whitespace-pre-wrap break-words font-display text-[13.5px] font-bold leading-snug tracking-tight text-black">
                             {m.text}
                           </p>
-                        )}
-                      </div>
-                      <div
-                        className={cn(
-                          "mt-1 flex items-center gap-1 px-1",
-                          isMine ? "justify-end" : "justify-start",
-                        )}
-                      >
-                        <span className="font-mono text-[10px] text-white/40">
-                          {formatTime(m.at)}
-                        </span>
-                        {isMine && (
-                          <span className="font-mono text-[10px] text-[#F000C0]">
-                            ✓✓
-                          </span>
                         )}
                       </div>
                     </div>
@@ -267,6 +250,7 @@ function VipChatPage() {
           ))}
         </div>
       </div>
+
 
       {/* Композер — идентичен стилю комментариев в ленте */}
       <div className="shrink-0 border-t border-white/[0.06] bg-black/40">
