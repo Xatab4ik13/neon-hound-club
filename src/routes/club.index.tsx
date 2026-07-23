@@ -19,6 +19,7 @@ import {
   saveRecent,
   STICKER_PACKS,
   parseSticker,
+  findPackByStickerUrl,
   type StickerTab,
 } from "@/components/club/StickerPanel";
 import { FeedHeroCarousel } from "@/components/club/FeedHeroCarousel";
