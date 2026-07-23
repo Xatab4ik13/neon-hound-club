@@ -46,11 +46,12 @@ export function NewsRow({ post }: { post: NewsPost }) {
   );
 }
 
-function NewsPostCard({ post }: { post: NewsPost }) {
+export function NewsPostCard({ post, standalone = false }: { post: NewsPost; standalone?: boolean }) {
   const [viewerOpen, setViewerOpen] = useState(false);
   const [viewerEverOpened, setViewerEverOpened] = useState(false);
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [commentsEverOpened, setCommentsEverOpened] = useState(false);
+  const navigate = useNavigate();
 
   const openComments = useCallback(() => {
     haptic("light");
@@ -58,16 +59,23 @@ function NewsPostCard({ post }: { post: NewsPost }) {
     setCommentsOpen(true);
   }, []);
 
-  // Тап по «свободному» месту карточки → открыть комментарии.
+  const openPost = useCallback(() => {
+    navigate({ to: "/club/n/$newsId", params: { newsId: post.id } });
+  }, [navigate, post.id]);
+
+  // Тап по «свободному» месту карточки → открыть отдельную страницу поста
+  // (как в Hellhound-ленте). На самой странице поста (standalone) — ничего.
   // Игнорируем клики по интерактивным детям (кнопки, ссылки, инпуты, формы, картинка).
   const onCardClick = useCallback(
     (e: React.MouseEvent<HTMLElement>) => {
+      if (standalone) return;
       const target = e.target as HTMLElement;
       if (target.closest("button,a,input,form,textarea,select,[role='button']")) return;
-      openComments();
+      openPost();
     },
-    [openComments],
+    [openPost, standalone],
   );
+
 
   const shareUrl =
     typeof window !== "undefined" ? `${window.location.origin}/club#news-${post.id}` : `/club`;
