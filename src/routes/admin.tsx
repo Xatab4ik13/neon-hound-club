@@ -23,6 +23,7 @@ import {
   LogOut,
   Loader2,
   LifeBuoy,
+  Newspaper,
 } from "@/components/ui/icons";
 
 import { cn } from "@/lib/utils";
