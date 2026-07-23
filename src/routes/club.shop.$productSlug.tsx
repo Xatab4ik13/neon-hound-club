@@ -24,7 +24,9 @@ function ticketsWord(n: number) {
   return "билетов";
 }
 import { SPECIAL_PACK_COVER } from "@/assets/stickers/special";
-import { PlumpPrice } from "@/components/brand/PlumpNum";
+import { PlumpNum, PlumpPrice } from "@/components/brand/PlumpNum";
+
+const SIZE_COLORS = ["#B6FF3C", "#FFD93D", "#3DDBD9", "#FF7A3D"] as const;
 
 export const Route = createFileRoute("/club/shop/$productSlug")({
   head: ({ params }) => ({
@@ -217,8 +219,10 @@ function ProductView({ product }: { product: ShopProduct }) {
       {/* Stock indicator (back-стрелка живёт в MobileTopBar) */}
       {product.stock !== null && (
         <div className="flex items-center justify-end px-4 pt-3 md:hidden">
-          <span className="text-[13px] text-muted-foreground">
-            {product.stock > 0 ? `В наличии: ${product.stock}` : "Нет в наличии"}
+          <span className="inline-flex items-center gap-1 text-[13px] text-muted-foreground">
+            {product.stock > 0 ? (
+              <>В наличии: <PlumpNum value={product.stock} size={13} /></>
+            ) : "Нет в наличии"}
           </span>
         </div>
       )}
@@ -231,8 +235,10 @@ function ProductView({ product }: { product: ShopProduct }) {
           <ChevronLeft className="h-5 w-5" /> Магазин
         </Link>
         {product.stock !== null && (
-          <span className="text-[13px] text-muted-foreground">
-            {product.stock > 0 ? `В наличии: ${product.stock}` : "Нет в наличии"}
+          <span className="inline-flex items-center gap-1 text-[13px] text-muted-foreground">
+            {product.stock > 0 ? (
+              <>В наличии: <PlumpNum value={product.stock} size={13} /></>
+            ) : "Нет в наличии"}
           </span>
         )}
       </div>
@@ -312,10 +318,11 @@ function ProductView({ product }: { product: ShopProduct }) {
         </div>
 
         {product.bonusTickets > 0 && (
-          <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5">
-            <PlumpTicket className="h-3.5 w-3.5 text-primary" />
-            <span className="text-[13px] font-medium text-primary">
-              +{product.bonusTickets} {ticketsWord(product.bonusTickets)} после оплаты
+          <div className="mt-4 inline-flex -rotate-2 items-center gap-1.5 rounded-lg border-[2px] border-foreground bg-[#B6FF3C] px-2.5 py-1.5 font-display uppercase italic tracking-tight text-black shadow-[3px_3px_0_0_hsl(var(--foreground))]">
+            <PlumpTicket className="h-3.5 w-3.5" />
+            <span className="text-[13px] font-black leading-none inline-flex items-center gap-1">
+              <PlumpNum value={product.bonusTickets} size={13} prefix="+" />
+              <span>{ticketsWord(product.bonusTickets)} после оплаты</span>
             </span>
           </div>
         )}
@@ -325,23 +332,28 @@ function ProductView({ product }: { product: ShopProduct }) {
           <div className="mt-6">
             <div className="mb-2 flex items-center justify-between">
               <span className="text-[13px] font-medium text-muted-foreground">Размер</span>
-              {size && <span className="text-[13px] font-semibold text-foreground">{size}</span>}
             </div>
             <div className="flex flex-wrap gap-2">
-              {sizes.map((s) => {
+              {sizes.map((s, idx) => {
                 const isActive = s.label === size;
                 const isOut = s.stock !== null && s.stock <= 0;
+                const color = SIZE_COLORS[idx % SIZE_COLORS.length];
                 return (
                   <button
                     key={s.label}
                     type="button"
                     disabled={isOut}
                     onClick={() => setSize(s.label)}
+                    style={
+                      isActive && !isOut
+                        ? { backgroundColor: color, borderColor: "hsl(var(--foreground))", color: "#000", boxShadow: "3px 3px 0 0 hsl(var(--foreground))" }
+                        : undefined
+                    }
                     className={`min-w-[48px] rounded-xl border px-4 py-2.5 text-[15px] font-semibold transition-all active:scale-95 ${
                       isOut
                         ? "border-white/[0.04] bg-white/[0.02] text-muted-foreground/40 line-through"
                         : isActive
-                          ? "border-primary bg-primary text-primary-foreground shadow-[0_0_0_3px_hsl(var(--primary)/0.25)]"
+                          ? "border-[2px]"
                           : "border-white/[0.08] bg-white/[0.03] text-foreground"
                     }`}
                   >
@@ -367,7 +379,7 @@ function ProductView({ product }: { product: ShopProduct }) {
               >
                 <Minus className="h-4 w-4" />
               </button>
-              <span className="w-10 text-center text-[15px] font-semibold tabular-nums">{qty}</span>
+              <span className="grid w-10 place-items-center"><PlumpNum value={qty} size={15} /></span>
               <button
                 type="button"
                 onClick={() => setQty((q) => Math.min(maxQty, q + 1))}
