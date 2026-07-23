@@ -135,10 +135,10 @@ function NewsPage() {
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-1.5">
                     {p.category && <Badge>{p.category}</Badge>}
-                    <Badge tone={p.published ? "success" : "muted"}>
+                    <Badge tone={p.published ? "emerald" : "zinc"}>
                       {p.published ? "Опубликован" : "Черновик"}
                     </Badge>
-                    {p.pinned && <Badge tone="warning">Закреп</Badge>}
+                    {p.pinned && <Badge tone="amber">Закреп</Badge>}
                   </div>
                   <div className="mt-1 line-clamp-1 text-sm font-medium">{p.title}</div>
                   <div className="mt-0.5 line-clamp-1 text-xs text-zinc-500">
