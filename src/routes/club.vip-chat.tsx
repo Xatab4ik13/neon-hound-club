@@ -262,9 +262,13 @@ function VipChatPage() {
                         className={cn(
                           "relative select-text rounded-2xl",
                           isMine ? "rounded-br-md" : "rounded-bl-md",
-                          (m.image || m.sticker) && !m.text ? "p-1" : "px-3 py-2",
+                          m.sticker && !m.text ? "" : (m.image && !m.text ? "p-1" : "px-3 py-2"),
                         )}
-                        style={{ backgroundColor: isMine ? "#B6FF3C" : "#ffffff" }}
+                        style={
+                          m.sticker && !m.text
+                            ? undefined
+                            : { backgroundColor: isMine ? "#B6FF3C" : "#ffffff" }
+                        }
                       >
                         {m.image && (
                           <div className={cn("overflow-hidden rounded-xl", m.text ? "mb-2" : "")}>
@@ -276,7 +280,7 @@ function VipChatPage() {
                           </div>
                         )}
                         {m.sticker && (
-                          <div className={cn("overflow-hidden rounded-xl", m.text ? "mb-2" : "")}>
+                          <div className={cn(m.text ? "mb-2 overflow-hidden rounded-xl" : "")}>
                             <StickerView
                               url={m.sticker}
                               alt="стикер"
