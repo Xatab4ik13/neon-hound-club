@@ -230,14 +230,6 @@ function BloggerChatPage() {
         className="flex shrink-0 items-center gap-3 border-b border-white/[0.06] bg-black/70 px-3"
         style={{ height: headerH }}
       >
-        <button
-          type="button"
-          onClick={() => navigate({ to: "/blogger/chats" })}
-          className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:text-foreground active:scale-95"
-          aria-label="Назад к чатам"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </button>
         <PeerAvatar nick={peer.nick} size={32} />
         <div className="min-w-0 flex-1">
           <div className="truncate font-display text-[14px] font-black uppercase tracking-tight text-foreground">
