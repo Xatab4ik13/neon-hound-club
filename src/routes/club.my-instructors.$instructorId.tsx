@@ -7,6 +7,7 @@ import { useViewer } from "@/hooks/use-viewer";
 import { getInstructorBySlug } from "@/data/instructors";
 import {
   ensureThread,
+  payInstructorInvoice,
   sendInstructorChatMessage,
   useInstructorThread,
 } from "@/data/instructor-chats-mock";
