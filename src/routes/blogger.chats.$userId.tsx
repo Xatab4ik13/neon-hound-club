@@ -108,9 +108,15 @@ function PeerAvatar({ nick, size = 44 }: { nick: string; size?: number }) {
 function BloggerChatPage() {
   const { userId } = Route.useParams();
   const navigate = useNavigate();
-  const peer = getUser(userId);
 
-  const [messages, setMessages] = useState<ChatMsg[]>(() => CHAT_HISTORY[userId] ?? []);
+  const threadQ = useBloggerChatThread(userId);
+  const peer = threadQ.data?.peer;
+  const messages: ChatMsg[] = useMemo(
+    () => (threadQ.data?.messages ?? []).map(adapt),
+    [threadQ.data?.messages],
+  );
+  const sendMsg = useSendBloggerMessage(userId);
+
   const [text, setText] = useState("");
   const [pending, setPending] = useState<Attachment | null>(null);
   const [attachOpen, setAttachOpen] = useState(false);
@@ -129,9 +135,11 @@ function BloggerChatPage() {
   const ownedPacksQ = useMyStickerPacks(!!myProfile);
   const ownedPacks = ownedPacksQ.data ?? [];
 
-  // Сообщения из истории не анимируем. Анимация — только для новых
-  // в текущей сессии, как в user-side VIP-чате.
-  const initialIdsRef = useRef<Set<string>>(new Set((CHAT_HISTORY[userId] ?? []).map((m) => m.id)));
+  // Анимация — только для сообщений, добавленных в текущей сессии.
+  const initialIdsRef = useRef<Set<string> | null>(null);
+  if (initialIdsRef.current === null && threadQ.data) {
+    initialIdsRef.current = new Set(messages.map((m) => m.id));
+  }
 
   useEffect(() => {
     const el = scrollerRef.current;
