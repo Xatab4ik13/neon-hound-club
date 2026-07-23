@@ -44,6 +44,7 @@ export function IOSSheet({
   children,
   headerLeft,
   contentClassName,
+  doneAccent,
 }: Props) {
   const close = () => onOpenChange(false);
   useThemeColor(open ? "#0d0d0d" : null);
