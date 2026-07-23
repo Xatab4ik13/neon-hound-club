@@ -48,6 +48,12 @@ function buildGroups(
         { label: "Розыгрыши", href: "/club/raffles", icon: PlumpGift },
         { label: "Hell AI", href: "/club/hell-ai", icon: PlumpAI, subtitle: "AI-механик по твоему мото" },
         { label: "Школа", href: "/club/school", icon: PlumpSchool },
+        {
+          label: "Мои инструкторы",
+          href: "/club/my-instructors",
+          icon: PlumpChat,
+          subtitle: "Чаты с инструкторами Школы",
+        },
       ],
     },
     {
