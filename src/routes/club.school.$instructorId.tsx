@@ -82,9 +82,9 @@ function ClubInstructorPage() {
           <ApproachSection instructor={instructor} />
         )}
         <LocationSection instructor={instructor} />
-        <ScheduleSection instructor={instructor} scheduleRef={scheduleRef} />
+        <ContactCta onContact={openChat} />
         <GallerySection instructor={instructor} />
-        <BottomActions onSchedule={openChat} />
+        <BottomActions onContact={openChat} />
       </div>
 
       <BookInstructorChatSheet
