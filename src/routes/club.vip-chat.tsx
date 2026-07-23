@@ -188,43 +188,28 @@ function VipChatPage() {
                 </span>
               </div>
 
-              {g.items.map((m) => {
+              {g.items.map((m, mi) => {
                 const isMine = m.role === "me";
-                const nick = isMine ? (viewerNick ?? "Я") : "HELL";
-                const nickColor = isMine ? "#B6FF3C" : "#F000C0";
-                const initials = isMine
-                  ? (viewerNick ? viewerNick.slice(0, 2).toUpperCase() : "Я")
-                  : "H";
+                const prev = mi > 0 ? g.items[mi - 1] : null;
+                const showAvatar = !isMine && (!prev || prev.role !== "hell");
                 return (
                   <motion.div
                     key={m.id}
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ type: "spring", stiffness: 480, damping: 28 }}
-                    className="flex gap-3"
+                    className={cn("flex items-end gap-2", isMine ? "justify-end" : "justify-start")}
                   >
-                    {isMine ? (
-                      <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#B6FF3C] font-display text-[13px] font-black uppercase text-black">
-                        {initials}
+                    {!isMine && (
+                      <div className={cn("shrink-0", showAvatar ? "opacity-100" : "invisible")}>
+                        <HellhoundAvatar size={44} initials="H" />
                       </div>
-                    ) : (
-                      <HellhoundAvatar size={36} initials="H" />
                     )}
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <span
-                          className="truncate font-display text-[13px] font-bold uppercase tracking-tight"
-                          style={{ color: nickColor }}
-                        >
-                          {nick}
-                        </span>
-                        <span className="ml-auto shrink-0 font-mono text-[10px] uppercase tracking-wider text-muted-foreground/70">
-                          {formatTime(m.at)}
-                        </span>
-                      </div>
+                    <div className={cn("flex max-w-[78%] flex-col", isMine ? "items-end" : "items-start")}>
                       <div
                         className={cn(
-                          "relative mt-1 inline-block max-w-full select-text rounded-2xl rounded-tl-sm",
+                          "relative select-text rounded-2xl",
+                          isMine ? "rounded-br-md" : "rounded-bl-md",
                           m.image && !m.text ? "p-1" : "px-3 py-2",
                         )}
                         style={{ backgroundColor: isMine ? "#B6FF3C" : "#ffffff" }}
@@ -239,11 +224,14 @@ function VipChatPage() {
                           </div>
                         )}
                         {m.text && (
-                          <p className="whitespace-pre-wrap break-words font-display text-[13.5px] font-bold leading-snug tracking-tight text-black">
+                          <p className="whitespace-pre-wrap break-words font-display text-[14px] font-bold leading-snug tracking-tight text-black">
                             {m.text}
                           </p>
                         )}
                       </div>
+                      <span className="mt-1 px-1 font-mono text-[10px] uppercase tracking-wider text-white/40">
+                        {formatTime(m.at)}
+                      </span>
                     </div>
                   </motion.div>
                 );
