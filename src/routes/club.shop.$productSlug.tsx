@@ -379,7 +379,7 @@ function ProductView({ product }: { product: ShopProduct }) {
               >
                 <Minus className="h-4 w-4" />
               </button>
-              <span className="w-10 text-center text-[15px] font-semibold tabular-nums">{qty}</span>
+              <span className="grid w-10 place-items-center"><PlumpNum value={qty} size={15} /></span>
               <button
                 type="button"
                 onClick={() => setQty((q) => Math.min(maxQty, q + 1))}
