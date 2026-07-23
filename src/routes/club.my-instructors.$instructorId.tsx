@@ -105,6 +105,9 @@ function MyInstructorChatRoom() {
             "student",
           )
         }
+        onPayInvoice={(invoiceId, payer) =>
+          payInstructorInvoice(instructor.slug, student.userId, student.nick, invoiceId, payer)
+        }
       />
     </div>
   );
