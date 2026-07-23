@@ -49,7 +49,7 @@ const AUTO_MS = 5000;
 // Фирменные акценты без розового — по очереди на баннеры.
 const CTA_COLORS = ["#B6FF3C", "#FFD93D", "#3DDBD9", "#FF7A3D"];
 
-export function FeedHeroCarousel() {
+export function FeedHeroCarousel({ accent }: { accent?: string } = {}) {
   const { data, isLoading } = useQuery({
     queryKey: ["home-banners"],
     queryFn: fetchHomeBanners,
