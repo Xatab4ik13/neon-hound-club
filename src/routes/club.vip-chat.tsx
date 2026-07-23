@@ -110,6 +110,11 @@ function VipChatPage() {
   const ownedPacksQ = useMyStickerPacks(!!myProfile);
   const ownedPacks = ownedPacksQ.data ?? [];
 
+  // Сообщения, уже присутствовавшие при открытии чата — не анимируем.
+  // Анимация вылета применяется только к новым сообщениям, пришедшим/отправленным
+  // в текущей сессии, пока пользователь сидит в чате.
+  const initialIdsRef = useRef<Set<string>>(new Set(INITIAL_MESSAGES.map((m) => m.id)));
+
   // Автоскролл вниз при появлении сообщений/аттача.
   useEffect(() => {
     const el = scrollerRef.current;
@@ -233,12 +238,13 @@ function VipChatPage() {
                 const isMine = m.role === "me";
                 const prev = mi > 0 ? g.items[mi - 1] : null;
                 const showAvatar = !isMine && (!prev || prev.role !== "hell");
+                const isNew = !initialIdsRef.current.has(m.id);
                 return (
                   <motion.div
                     key={m.id}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ type: "spring", stiffness: 480, damping: 28 }}
+                    initial={isNew ? { opacity: 0, x: isMine ? 24 : -24, scale: 0.96 } : false}
+                    animate={{ opacity: 1, x: 0, scale: 1 }}
+                    transition={{ type: "spring", stiffness: 420, damping: 30, mass: 0.6 }}
                     className={cn("flex items-end gap-2", isMine ? "justify-end" : "justify-start")}
                   >
                     {!isMine && (
