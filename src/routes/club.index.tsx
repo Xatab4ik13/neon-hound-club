@@ -1733,7 +1733,7 @@ function CommentComposer({
 }) {
   const [value, setValue] = useState("");
   const [panel, setPanel] = useState<null | "emoji" | "stickers">(null);
-  const [tab, setTab] = useState<"recent" | "emoji" | "stickers">("stickers");
+  const [tab, setTab] = useState<StickerTab>("stickers");
   const [activePack, setActivePack] = useState<string>(STICKER_PACKS[0].id);
   const [recent, setRecent] = useState<string[]>(() => loadRecent());
   const [submitting, setSubmitting] = useState(false);
