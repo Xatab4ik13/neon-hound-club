@@ -66,9 +66,27 @@ export type MockChatRoomProps = {
   /** Высота чата — рассчитывается снаружи (варьируется от контейнера). */
   height: string;
   onSend: (text: string) => void;
+  /** Инструктор → отправка счёта. Если не передан, кнопка счёта скрыта. */
+  onSendInvoice?: (draft: InvoiceDraft) => void;
+  /** Ученик → оплата счёта. */
+  onPayInvoice?: (invoiceId: string, payer: { name: string; email: string }) => void;
   /** Дополнительный контент над лентой (например, локальный заголовок). */
   header?: React.ReactNode;
 };
+
+export function MockChatRoom({
+  messages,
+  myRole,
+  peerLabel,
+  height,
+  onSend,
+  onSendInvoice,
+  onPayInvoice,
+  header,
+}: MockChatRoomProps) {
+  const [text, setText] = useState("");
+  const [invoiceOpen, setInvoiceOpen] = useState(false);
+  const [payInvoice, setPayInvoice] = useState<InvoicePayload | null>(null);
 
 export function MockChatRoom({
   messages,
