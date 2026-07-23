@@ -657,22 +657,32 @@ function GallerySection({ instructor }: { instructor: Instructor }) {
 
 /* ---------- Bottom actions (replaces FinalCta + StickyCta) ---------- */
 
-function BottomActions({ onSchedule }: { onSchedule: () => void }) {
+function ContactCta({ onContact }: { onContact: () => void }) {
   return (
-    <div className="flex flex-col items-stretch gap-3 pt-4 sm:flex-row sm:justify-center">
+    <section className="scroll-mt-4">
       <button
         type="button"
-        onClick={onSchedule}
-        className="inline-flex items-center justify-center gap-2 rounded-full border-[3px] border-foreground bg-card px-6 py-3 font-display text-sm font-black uppercase tracking-widest text-foreground shadow-[6px_6px_0_0_hsl(var(--foreground))]"
+        onClick={onContact}
+        className="group flex w-full items-center justify-center gap-3 rounded-3xl border-[3px] border-foreground bg-primary px-6 py-6 font-display text-2xl font-black uppercase tracking-tight text-primary-foreground shadow-[8px_8px_0_0_hsl(var(--foreground))] transition-transform duration-150 active:translate-x-[2px] active:translate-y-[2px] active:shadow-[4px_4px_0_0_hsl(var(--foreground))] md:text-3xl"
       >
-        К расписанию <PlumpArrowRight className="h-4 w-4" />
+        Связаться <PlumpArrowRight className="h-6 w-6" />
       </button>
+      <p className="mt-3 text-center font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+        Напиши инструктору — договоритесь по времени в чате
+      </p>
+    </section>
+  );
+}
+
+function BottomActions({ onContact }: { onContact: () => void }) {
+  return (
+    <div className="flex justify-center pt-2">
       <button
         type="button"
-        onClick={onSchedule}
-        className="inline-flex items-center justify-center gap-2 rounded-full border-[3px] border-foreground bg-primary px-6 py-3 font-display text-sm font-black uppercase tracking-widest text-primary-foreground shadow-[6px_6px_0_0_hsl(var(--foreground))]"
+        onClick={onContact}
+        className="inline-flex items-center justify-center gap-2 rounded-full border-[3px] border-foreground bg-primary px-8 py-3 font-display text-sm font-black uppercase tracking-widest text-primary-foreground shadow-[6px_6px_0_0_hsl(var(--foreground))]"
       >
-        Записаться <PlumpArrowRight className="h-4 w-4" />
+        Связаться <PlumpArrowRight className="h-4 w-4" />
       </button>
     </div>
   );
