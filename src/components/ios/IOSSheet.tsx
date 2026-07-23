@@ -126,6 +126,7 @@ export function IOSSheet({
               type="button"
               onClick={onDone ?? close}
               disabled={doneDisabled}
+              style={doneAccent ? { color: doneAccent } : undefined}
               className="shrink-0 font-mono text-[12px] font-bold uppercase tracking-wider text-primary active:opacity-60 disabled:cursor-not-allowed disabled:text-muted-foreground/40 disabled:active:opacity-100"
             >
               {doneLabel}
