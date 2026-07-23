@@ -12,12 +12,23 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { PlumpAttach, Send, X, ImageIcon } from "@/components/ui/icons";
+import { PlumpAttach, Send, X, ImageIcon, PlumpSticker as Sticker } from "@/components/ui/icons";
 import { AdaptiveActionSheet } from "@/components/club/AdaptiveActionSheet";
 import { HellhoundAvatar } from "@/components/club/HellhoundPlaque";
+import { StickerView } from "@/components/club/StickerView";
+import {
+  StickerPanel,
+  loadRecent,
+  saveRecent,
+  STICKER_PACKS,
+  parseSticker,
+  type StickerTab,
+} from "@/components/club/StickerPanel";
 import { cn } from "@/lib/utils";
 import { haptic } from "@/hooks/use-haptic";
 import { useKeyboardOffset } from "@/hooks/use-keyboard-offset";
+import { useMyProfile } from "@/lib/garage-api";
+import { useMyStickerPacks } from "@/lib/stickers-api";
 
 export const Route = createFileRoute("/club/vip-chat")({
   head: () => ({
@@ -37,6 +48,7 @@ type Msg = {
   role: "hell" | "me";
   text?: string;
   image?: string;
+  sticker?: string;
   at: number;
 };
 
@@ -83,12 +95,20 @@ function VipChatPage() {
   const [text, setText] = useState("");
   const [pending, setPending] = useState<Attachment | null>(null);
   const [attachOpen, setAttachOpen] = useState(false);
+  const [panelOpen, setPanelOpen] = useState(false);
+  const [tab, setTab] = useState<StickerTab>("stickers");
+  const [activePack, setActivePack] = useState<string>(STICKER_PACKS[0].id);
+  const [recent, setRecent] = useState<string[]>(() => loadRecent());
 
   const scrollerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const keyboardOffset = useKeyboardOffset();
+  const myProfileQ = useMyProfile();
+  const myProfile = myProfileQ.data;
+  const ownedPacksQ = useMyStickerPacks(!!myProfile);
+  const ownedPacks = ownedPacksQ.data ?? [];
 
   // Автоскролл вниз при появлении сообщений/аттача.
   useEffect(() => {
@@ -126,6 +146,30 @@ function VipChatPage() {
     ]);
     setText("");
     setPending(null);
+  };
+
+  const pushRecent = (s: string) => {
+    setRecent((prev) => {
+      const next = [s, ...prev.filter((x) => x !== s)].slice(0, 24);
+      saveRecent(next);
+      return next;
+    });
+  };
+
+  const sendSticker = (s: string) => {
+    const stickerId = parseSticker(s) ?? s;
+    pushRecent(s);
+    setPanelOpen(false);
+    haptic("light");
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: `me_${Date.now()}`,
+        role: "me",
+        sticker: stickerId,
+        at: Date.now(),
+      },
+    ]);
   };
 
   const onKeyDown = (e: ReactKeyboardEvent<HTMLTextAreaElement>) => {
@@ -207,7 +251,7 @@ function VipChatPage() {
                         className={cn(
                           "relative select-text rounded-2xl",
                           isMine ? "rounded-br-md" : "rounded-bl-md",
-                          m.image && !m.text ? "p-1" : "px-3 py-2",
+                          (m.image || m.sticker) && !m.text ? "p-1" : "px-3 py-2",
                         )}
                         style={{ backgroundColor: isMine ? "#B6FF3C" : "#ffffff" }}
                       >
@@ -217,6 +261,16 @@ function VipChatPage() {
                               src={m.image}
                               alt=""
                               className="block max-h-[220px] w-full max-w-[240px] object-cover"
+                            />
+                          </div>
+                        )}
+                        {m.sticker && (
+                          <div className={cn("overflow-hidden rounded-xl", m.text ? "mb-2" : "")}>
+                            <StickerView
+                              url={m.sticker}
+                              alt="стикер"
+                              size={160}
+                              className="block h-32 w-32 max-w-[240px] object-contain"
                             />
                           </div>
                         )}
@@ -319,7 +373,11 @@ function VipChatPage() {
             <textarea
               ref={textareaRef}
               value={text}
-              onChange={(e) => setText(e.target.value.slice(0, MAX_LEN))}
+              onChange={(e) => {
+                setText(e.target.value.slice(0, MAX_LEN));
+                if (panelOpen) setPanelOpen(false);
+              }}
+              onFocus={() => setPanelOpen(false)}
               onKeyDown={onKeyDown}
               rows={1}
               placeholder="Написать Hell…"
@@ -339,14 +397,28 @@ function VipChatPage() {
             )}
           </div>
 
-          <button
-            type="submit"
-            disabled={!canSend || overLimit}
-            aria-label="Отправить"
-            className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#B6FF3C] text-black transition-transform active:scale-95 disabled:opacity-40"
-          >
-            <Send size={18} strokeWidth={2} className="-translate-x-[1px]" />
-          </button>
+          {trimmed.length === 0 && !pending ? (
+            <button
+              type="button"
+              onClick={() => {
+                haptic("light");
+                setPanelOpen((p) => !p);
+              }}
+              aria-label="Стикеры"
+              className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:text-foreground active:scale-95"
+            >
+              <Sticker size={22} />
+            </button>
+          ) : (
+            <button
+              type="submit"
+              disabled={!canSend || overLimit}
+              aria-label="Отправить"
+              className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#B6FF3C] text-black transition-transform active:scale-95 disabled:opacity-40"
+            >
+              <Send size={18} strokeWidth={2} className="-translate-x-[1px]" />
+            </button>
+          )}
         </form>
       </div>
 
@@ -376,6 +448,32 @@ function VipChatPage() {
           },
         ]}
       />
+
+      {/* Sticker panel */}
+      <AnimatePresence>
+        {panelOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="shrink-0 overflow-hidden"
+          >
+            <StickerPanel
+              tab={tab}
+              setTab={setTab}
+              activePack={activePack}
+              setActivePack={setActivePack}
+              recent={recent}
+              ownedPacks={ownedPacks}
+              onPickEmoji={(e) => {
+                setText((v) => (v + e).slice(0, MAX_LEN));
+                textareaRef.current?.focus();
+              }}
+              onPickSticker={sendSticker}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
