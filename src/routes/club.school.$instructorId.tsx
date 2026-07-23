@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import {
   PlumpArrowLeft,
@@ -15,7 +15,8 @@ import {
 } from "@/data/instructors";
 import { loadYandexMaps } from "@/lib/yandex-maps";
 import { ImageViewer } from "@/components/club/ImageViewer";
-import { BookInstructorChatSheet } from "@/components/school/BookInstructorChatSheet";
+import { useViewer } from "@/hooks/use-viewer";
+import { ensureThread } from "@/data/instructor-chats-mock";
 
 export const Route = createFileRoute("/club/school/$instructorId")({
   head: ({ params }) => {
@@ -42,7 +43,8 @@ const SKILL_TONES = ["primary", "yellow", "cyan", "lime", "violet", "primary"] a
 function ClubInstructorPage() {
   const { instructorId } = Route.useParams();
   const instructor = getInstructorBySlug(instructorId);
-  const [chatOpen, setChatOpen] = useState(false);
+  const navigate = useNavigate();
+  const viewer = useViewer();
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "auto" });
@@ -64,7 +66,17 @@ function ClubInstructorPage() {
     );
   }
 
-  const openChat = () => setChatOpen(true);
+  const openChat = () => {
+    if (!viewer.user) {
+      navigate({ to: "/login" });
+      return;
+    }
+    ensureThread(instructor.slug, viewer.user.id, viewer.user.nick);
+    navigate({
+      to: "/club/my-instructors/$instructorId",
+      params: { instructorId: instructor.slug },
+    });
+  };
 
   return (
     <main className="mx-auto w-full max-w-5xl pb-24">
@@ -85,15 +97,6 @@ function ClubInstructorPage() {
         <GallerySection instructor={instructor} />
         <BottomActions onContact={openChat} />
       </div>
-
-      <BookInstructorChatSheet
-        open={chatOpen}
-        onOpenChange={setChatOpen}
-        instructorSlug={instructor.slug}
-        instructorName={instructor.name}
-        instructorPhoto={instructor.photo}
-        instructorCity={instructor.city}
-      />
     </main>
   );
 }

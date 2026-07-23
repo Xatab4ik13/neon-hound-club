@@ -73,6 +73,7 @@ import { Route as ClubSchoolIndexRouteImport } from './routes/club.school.index'
 import { Route as ClubSchoolChatsIndexRouteImport } from './routes/club.school-chats.index'
 import { Route as ClubRafflesIndexRouteImport } from './routes/club.raffles.index'
 import { Route as ClubOrdersIndexRouteImport } from './routes/club.orders.index'
+import { Route as ClubMyInstructorsIndexRouteImport } from './routes/club.my-instructors.index'
 import { Route as ClubHelpIndexRouteImport } from './routes/club.help.index'
 import { Route as ClubHellPassIndexRouteImport } from './routes/club.hell-pass.index'
 import { Route as BloggerRafflesIndexRouteImport } from './routes/blogger.raffles.index'
@@ -414,6 +415,11 @@ const ClubOrdersIndexRoute = ClubOrdersIndexRouteImport.update({
   path: '/orders/',
   getParentRoute: () => ClubRoute,
 } as any)
+const ClubMyInstructorsIndexRoute = ClubMyInstructorsIndexRouteImport.update({
+  id: '/my-instructors/',
+  path: '/my-instructors/',
+  getParentRoute: () => ClubRoute,
+} as any)
 const ClubHelpIndexRoute = ClubHelpIndexRouteImport.update({
   id: '/help/',
   path: '/help/',
@@ -596,6 +602,7 @@ export interface FileRoutesByFullPath {
   '/blogger/raffles/': typeof BloggerRafflesIndexRoute
   '/club/hell-pass/': typeof ClubHellPassIndexRoute
   '/club/help/': typeof ClubHelpIndexRoute
+  '/club/my-instructors/': typeof ClubMyInstructorsIndexRoute
   '/club/orders/': typeof ClubOrdersIndexRoute
   '/club/raffles/': typeof ClubRafflesIndexRoute
   '/club/school-chats/': typeof ClubSchoolChatsIndexRoute
@@ -679,6 +686,7 @@ export interface FileRoutesByTo {
   '/blogger/raffles': typeof BloggerRafflesIndexRoute
   '/club/hell-pass': typeof ClubHellPassIndexRoute
   '/club/help': typeof ClubHelpIndexRoute
+  '/club/my-instructors': typeof ClubMyInstructorsIndexRoute
   '/club/orders': typeof ClubOrdersIndexRoute
   '/club/raffles': typeof ClubRafflesIndexRoute
   '/club/school-chats': typeof ClubSchoolChatsIndexRoute
@@ -766,6 +774,7 @@ export interface FileRoutesById {
   '/blogger/raffles/': typeof BloggerRafflesIndexRoute
   '/club/hell-pass/': typeof ClubHellPassIndexRoute
   '/club/help/': typeof ClubHelpIndexRoute
+  '/club/my-instructors/': typeof ClubMyInstructorsIndexRoute
   '/club/orders/': typeof ClubOrdersIndexRoute
   '/club/raffles/': typeof ClubRafflesIndexRoute
   '/club/school-chats/': typeof ClubSchoolChatsIndexRoute
@@ -854,6 +863,7 @@ export interface FileRouteTypes {
     | '/blogger/raffles/'
     | '/club/hell-pass/'
     | '/club/help/'
+    | '/club/my-instructors/'
     | '/club/orders/'
     | '/club/raffles/'
     | '/club/school-chats/'
@@ -937,6 +947,7 @@ export interface FileRouteTypes {
     | '/blogger/raffles'
     | '/club/hell-pass'
     | '/club/help'
+    | '/club/my-instructors'
     | '/club/orders'
     | '/club/raffles'
     | '/club/school-chats'
@@ -1023,6 +1034,7 @@ export interface FileRouteTypes {
     | '/blogger/raffles/'
     | '/club/hell-pass/'
     | '/club/help/'
+    | '/club/my-instructors/'
     | '/club/orders/'
     | '/club/raffles/'
     | '/club/school-chats/'
@@ -1511,6 +1523,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ClubOrdersIndexRouteImport
       parentRoute: typeof ClubRoute
     }
+    '/club/my-instructors/': {
+      id: '/club/my-instructors/'
+      path: '/my-instructors'
+      fullPath: '/club/my-instructors/'
+      preLoaderRoute: typeof ClubMyInstructorsIndexRouteImport
+      parentRoute: typeof ClubRoute
+    }
     '/club/help/': {
       id: '/club/help/'
       path: '/help'
@@ -1746,6 +1765,7 @@ interface ClubRouteChildren {
   ClubUNickRoute: typeof ClubUNickRoute
   ClubHellPassIndexRoute: typeof ClubHellPassIndexRoute
   ClubHelpIndexRoute: typeof ClubHelpIndexRoute
+  ClubMyInstructorsIndexRoute: typeof ClubMyInstructorsIndexRoute
   ClubOrdersIndexRoute: typeof ClubOrdersIndexRoute
   ClubRafflesIndexRoute: typeof ClubRafflesIndexRoute
   ClubSchoolChatsIndexRoute: typeof ClubSchoolChatsIndexRoute
@@ -1782,6 +1802,7 @@ const ClubRouteChildren: ClubRouteChildren = {
   ClubUNickRoute: ClubUNickRoute,
   ClubHellPassIndexRoute: ClubHellPassIndexRoute,
   ClubHelpIndexRoute: ClubHelpIndexRoute,
+  ClubMyInstructorsIndexRoute: ClubMyInstructorsIndexRoute,
   ClubOrdersIndexRoute: ClubOrdersIndexRoute,
   ClubRafflesIndexRoute: ClubRafflesIndexRoute,
   ClubSchoolChatsIndexRoute: ClubSchoolChatsIndexRoute,
