@@ -90,7 +90,7 @@ export async function newsRoutes(app: FastifyInstance) {
       return reply.code(400).send({ error: "invalid_input", message: zodMessage(parsed.error) });
     }
     const { limit, cursor } = parsed.data;
-    const viewerId = (req.user as SessionPayload | undefined)?.uid ?? null;
+    const viewerId = (req.user as SessionPayload | undefined)?.sub ?? null;
 
     const key = orderKey();
     const rows = await db
@@ -119,7 +119,7 @@ export async function newsRoutes(app: FastifyInstance) {
   app.get<{ Params: { id: string } }>("/:id", async (req, reply) => {
     const id = z.string().uuid().safeParse(req.params.id);
     if (!id.success) return reply.code(400).send({ error: "invalid_id" });
-    const viewerId = (req.user as SessionPayload | undefined)?.uid ?? null;
+    const viewerId = (req.user as SessionPayload | undefined)?.sub ?? null;
 
     const [row] = await db
       .select()
@@ -142,7 +142,7 @@ export async function newsRoutes(app: FastifyInstance) {
   app.post<{ Params: { id: string } }>("/:id/like", { preHandler: requireAuth }, async (req, reply) => {
     const id = z.string().uuid().safeParse(req.params.id);
     if (!id.success) return reply.code(400).send({ error: "invalid_id" });
-    const viewerId = (req.user as SessionPayload).uid;
+    const viewerId = (req.user as SessionPayload).sub;
 
     const [row] = await db
       .select({ id: newsPosts.id })
@@ -170,7 +170,7 @@ export async function newsRoutes(app: FastifyInstance) {
   app.delete<{ Params: { id: string } }>("/:id/like", { preHandler: requireAuth }, async (req, reply) => {
     const id = z.string().uuid().safeParse(req.params.id);
     if (!id.success) return reply.code(400).send({ error: "invalid_id" });
-    const viewerId = (req.user as SessionPayload).uid;
+    const viewerId = (req.user as SessionPayload).sub;
 
     const deleted = await db
       .delete(newsPostLikes)
