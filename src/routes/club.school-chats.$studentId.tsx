@@ -76,7 +76,7 @@ function SchoolChatRoom() {
             {student.nick}
           </div>
           <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-            ученик
+            райдер
           </div>
         </div>
       </div>
