@@ -8,6 +8,7 @@
 // вкладок не «прыгал» скелет.
 
 import { useCallback, useRef, useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { flushSync } from "react-dom";
 import { Heart, PlumpComment, PlumpShare } from "@/components/ui/icons";
 import { LikeButton } from "@/components/club/LikeButton";
