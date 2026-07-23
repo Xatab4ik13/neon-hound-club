@@ -172,8 +172,8 @@ export function LikeButton({ liked, count, onToggle, onReact }: Props) {
         aria-pressed={liked}
         className={`relative inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 font-mono text-[12px] font-bold tabular-nums select-none transition-colors active:scale-95 ${
           liked
-            ? "bg-primary text-primary-foreground shadow-[0_4px_14px_rgba(240,0,192,0.35)]"
-            : "border border-white/[0.08] bg-white/[0.04] text-foreground hover:border-primary/40 hover:text-primary"
+            ? "bg-[#B6FF3C] text-black shadow-[0_4px_14px_rgba(182,255,60,0.35)]"
+            : "border border-white/[0.08] bg-white/[0.04] text-foreground hover:border-[#B6FF3C]/40 hover:text-[#B6FF3C]"
         }`}
         style={{
           transition:
