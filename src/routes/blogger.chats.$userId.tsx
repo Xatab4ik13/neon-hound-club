@@ -508,13 +508,16 @@ function BloggerChatPage() {
             >
               <StickerPanel
                 tab={tab}
-                onTabChange={setTab}
+                setTab={setTab}
                 activePack={activePack}
-                onActivePackChange={setActivePack}
+                setActivePack={setActivePack}
                 recent={recent}
                 ownedPacks={ownedPacks}
-                onPick={sendSticker}
-                onClose={() => setPanelOpen(false)}
+                onPickEmoji={(e) => {
+                  setText((v) => (v + e).slice(0, MAX_LEN));
+                  textareaRef.current?.focus();
+                }}
+                onPickSticker={sendSticker}
               />
             </motion.div>
           )}
