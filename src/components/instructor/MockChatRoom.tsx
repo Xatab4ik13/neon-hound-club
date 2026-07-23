@@ -170,11 +170,28 @@ export function MockChatRoom({
               </div>
 
               {g.items.map((m, mi) => {
+                const isNew = !initialIdsRef.current?.has(m.id);
+
+                if (m.senderRole === "system") {
+                  return (
+                    <div
+                      key={m.id}
+                      className={cn(
+                        "flex justify-center",
+                        isNew && "vip-message-live",
+                      )}
+                    >
+                      <span className="rounded-full bg-white/[0.06] px-3 py-1 text-center font-mono text-[10px] font-bold uppercase tracking-widest text-white/70">
+                        {m.text}
+                      </span>
+                    </div>
+                  );
+                }
+
                 const isMine = m.senderRole === myRole;
                 const prev = mi > 0 ? g.items[mi - 1] : null;
                 const showAvatar =
-                  !isMine && (!prev || prev.senderRole === myRole);
-                const isNew = !initialIdsRef.current?.has(m.id);
+                  !isMine && (!prev || prev.senderRole === myRole || prev.senderRole === "system");
                 return (
                   <div
                     key={m.id}
@@ -201,19 +218,31 @@ export function MockChatRoom({
                         isNew && (isMine ? "vip-message-live--right" : "vip-message-live--left"),
                       )}
                     >
-                      <div
-                        className={cn(
-                          "relative select-text rounded-2xl px-3 py-2",
-                          isMine ? "rounded-br-md" : "rounded-bl-md",
-                        )}
-                        style={{ backgroundColor: isMine ? "#B6FF3C" : "#ffffff" }}
-                      >
-                        {m.text && (
-                          <p className="whitespace-pre-wrap break-words font-display text-[14px] font-bold leading-snug tracking-tight text-black">
-                            {m.text}
-                          </p>
-                        )}
-                      </div>
+                      {m.invoice ? (
+                        <InvoiceCard
+                          invoice={m.invoice}
+                          viewer={myRole}
+                          onPay={
+                            myRole === "student" && onPayInvoice
+                              ? () => setPayInvoice(m.invoice!)
+                              : undefined
+                          }
+                        />
+                      ) : (
+                        <div
+                          className={cn(
+                            "relative select-text rounded-2xl px-3 py-2",
+                            isMine ? "rounded-br-md" : "rounded-bl-md",
+                          )}
+                          style={{ backgroundColor: isMine ? "#B6FF3C" : "#ffffff" }}
+                        >
+                          {m.text && (
+                            <p className="whitespace-pre-wrap break-words font-display text-[14px] font-bold leading-snug tracking-tight text-black">
+                              {m.text}
+                            </p>
+                          )}
+                        </div>
+                      )}
                       <span className="mt-1 px-1 font-mono text-[10px] uppercase tracking-wider text-white/40">
                         {formatTime(m.createdAt)}
                       </span>
