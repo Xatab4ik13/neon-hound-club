@@ -12,6 +12,7 @@ import {
   PlumpSettings,
   PlumpLogout,
   PlumpChat,
+  PlumpInstructorChat,
   PlumpGarage,
 } from "@/components/ui/icons";
 import type { SVGProps, ComponentType } from "react";
@@ -51,7 +52,7 @@ function buildGroups(
         {
           label: "Мои инструкторы",
           href: "/club/my-instructors",
-          icon: PlumpChat,
+          icon: PlumpInstructorChat,
           subtitle: "Чаты с инструкторами Школы",
         },
       ],
