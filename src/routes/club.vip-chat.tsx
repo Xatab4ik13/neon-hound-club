@@ -1,7 +1,7 @@
-// VIP Чат клуба HELLHOUND — персональный чат подписчика с Hell.
-// Композер сделан по образцу комментов в /club (лента): круглая
-// «скрепка» слева, textarea в pill'е по центру, круглая «отправка» справа.
-// Заголовок — только текст "VIP Чат", без аватарки/иконок.
+// VIP ЧАТ клуба HELLHOUND — персональный чат подписчика с блогером Hell.
+// Дизайн — «Plump Racing Chat»: жирные plump-бабблы с 3px чёрной обводкой
+// и hard-shadow, magenta (Hell) + салатовый (мой), закреплённый композер
+// над таб-баром без скролла.
 
 import { createFileRoute } from "@tanstack/react-router";
 import {
@@ -16,11 +16,13 @@ import { PlumpAttach, Send, X, ImageIcon } from "@/components/ui/icons";
 import { AdaptiveActionSheet } from "@/components/club/AdaptiveActionSheet";
 import { cn } from "@/lib/utils";
 import { haptic } from "@/hooks/use-haptic";
+import { useKeyboardOffset } from "@/hooks/use-keyboard-offset";
+import vanyaAvatar from "@/assets/vanya-presenter.webp.asset.json";
 
 export const Route = createFileRoute("/club/vip-chat")({
   head: () => ({
     meta: [
-      { title: "VIP Чат — HELLHOUND Racing Club" },
+      { title: "VIP ЧАТ — HELLHOUND Racing Club" },
       { name: "description", content: "Персональный чат с Hell для участников клуба." },
       { name: "robots", content: "noindex" },
     ],
@@ -46,8 +48,14 @@ const INITIAL_MESSAGES: Msg[] = [
   {
     id: "m1",
     role: "hell",
-    text: "Йо. Это персональный чат — тут только ты и я. Пиши по делу.",
+    text: "Йо. Это персональный VIP-канал — тут только ты и я. Пиши по делу.",
     at: NOW - 42 * MINUTE,
+  },
+  {
+    id: "m2",
+    role: "me",
+    text: "Го! Что нового по гаражу?",
+    at: NOW - 40 * MINUTE,
   },
 ];
 
@@ -61,13 +69,13 @@ function formatDay(ts: number) {
   const today = new Date();
   const yst = new Date();
   yst.setDate(today.getDate() - 1);
-  const sameDay = (a: Date, b: Date) =>
+  const same = (a: Date, b: Date) =>
     a.getFullYear() === b.getFullYear() &&
     a.getMonth() === b.getMonth() &&
     a.getDate() === b.getDate();
-  if (sameDay(d, today)) return "Сегодня";
-  if (sameDay(d, yst)) return "Вчера";
-  return d.toLocaleDateString("ru-RU", { day: "2-digit", month: "long" });
+  if (same(d, today)) return "СЕГОДНЯ";
+  if (same(d, yst)) return "ВЧЕРА";
+  return d.toLocaleDateString("ru-RU", { day: "2-digit", month: "long" }).toUpperCase();
 }
 
 function VipChatPage() {
@@ -80,8 +88,9 @@ function VipChatPage() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+  const keyboardOffset = useKeyboardOffset();
 
-  // Автоскролл к последнему сообщению.
+  // Автоскролл вниз при появлении сообщений/аттача.
   useEffect(() => {
     const el = scrollerRef.current;
     if (!el) return;
@@ -90,7 +99,7 @@ function VipChatPage() {
     });
   }, [messages, pending]);
 
-  // Автоподбор высоты textarea.
+  // Автовысота textarea.
   useEffect(() => {
     const el = textareaRef.current;
     if (!el) return;
@@ -105,14 +114,16 @@ function VipChatPage() {
   const send = () => {
     if (!canSend || overLimit) return;
     haptic("light");
-    const mine: Msg = {
-      id: `me_${Date.now()}`,
-      role: "me",
-      text: trimmed || undefined,
-      image: pending?.url,
-      at: Date.now(),
-    };
-    setMessages((prev) => [...prev, mine]);
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: `me_${Date.now()}`,
+        role: "me",
+        text: trimmed || undefined,
+        image: pending?.url,
+        at: Date.now(),
+      },
+    ]);
     setText("");
     setPending(null);
   };
@@ -131,7 +142,6 @@ function VipChatPage() {
     setPending({ url: URL.createObjectURL(f), file: f });
   };
 
-  // Собираем сообщения в группы: по дню + подряд одним автором.
   const groups = useMemo(() => {
     const out: { day: string; items: Msg[] }[] = [];
     for (const m of messages) {
@@ -143,86 +153,157 @@ function VipChatPage() {
     return out;
   }, [messages]);
 
-  return (
-    <div className="relative">
-      {/* Заголовок: только текст, без иконок */}
-      <div className="sticky top-0 z-10 border-b border-white/[0.06] bg-background/85 px-4 py-2.5 backdrop-blur-md">
-        <div className="flex items-center justify-center gap-2">
-          <span className="grid h-5 place-items-center rounded-md bg-primary px-1.5 font-mono text-[10px] font-black uppercase tracking-[0.14em] text-primary-foreground">
-            VIP
-          </span>
-          <span className="font-display text-[18px] font-black uppercase tracking-tight text-foreground">
-            Чат
-          </span>
-        </div>
-      </div>
+  // Высота = viewport - MobileTopBar (3.25rem + safe-area-top) - TabBar (64px + safe + 8px).
+  // Клавиатура — сжимаем на её высоту. Композер и заголовок в обычном flow — иначе
+  // MobileTransition (transform) ломает position:fixed.
+  const pageHeight =
+    keyboardOffset > 0
+      ? `calc(100dvh - 3.25rem - env(safe-area-inset-top) - ${keyboardOffset}px)`
+      : "calc(100dvh - 3.25rem - env(safe-area-inset-top) - 64px - 8px - env(safe-area-inset-bottom))";
 
-      {/* Лента */}
+  return (
+    <div
+      className="relative flex w-full flex-col overflow-hidden bg-[#0a0a0a]"
+      style={{ height: pageHeight }}
+    >
+      {/* Локальная шапка чата: HELL (VANYA) + VIP + online */}
+      <header className="relative z-30 shrink-0 border-b-4 border-white bg-[#111] px-4 py-2 shadow-[0_4px_0_0_#F000C0]">
+        <div className="flex items-center gap-3">
+          <div className="relative shrink-0">
+            <div className="h-9 w-9 overflow-hidden rounded-full border-2 border-[#F000C0]">
+              <img
+                src={vanyaAvatar.url}
+                alt=""
+                className="h-full w-full object-cover"
+                loading="lazy"
+                decoding="async"
+              />
+            </div>
+            <motion.span
+              aria-hidden
+              animate={{ scale: [1, 1.25, 1], opacity: [1, 0.75, 1] }}
+              transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
+              className="absolute -bottom-1 -right-1 h-3 w-3 rounded-full border-2 border-black bg-[#B6FF3C]"
+            />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="truncate font-display text-[14px] font-black italic uppercase leading-tight tracking-tight text-white">
+              HELL (VANYA)
+            </div>
+            <div className="mt-0.5 flex items-center gap-1.5">
+              <span className="rounded border border-white bg-[#F000C0] px-1.5 py-[1px] font-mono text-[10px] font-black italic uppercase text-black">
+                VIP ЧАТ
+              </span>
+              <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-[#B6FF3C]">
+                В сети
+              </span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Лента сообщений */}
       <div
         ref={scrollerRef}
-        className="px-3 pt-4"
+        className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pt-4"
         style={{
-          // высота: экран минус top-bar (~52px) минус наш заголовок (~44px)
-          // минус табБар (~64px+safe) минус композер (~72px+safe)
-          minHeight:
-            "calc(100dvh - 52px - 44px - 64px - env(safe-area-inset-bottom) - 88px)",
-          paddingBottom: "16px",
+          backgroundImage: "radial-gradient(#1a1a1a 1px, transparent 1px)",
+          backgroundSize: "20px 20px",
+          paddingBottom: 16,
         }}
       >
-        <div className="mx-auto flex max-w-[720px] flex-col gap-2">
+        <div className="mx-auto flex max-w-[640px] flex-col gap-6">
           {groups.map((g, gi) => (
-            <div key={gi} className="flex flex-col gap-1.5">
-              <div className="my-2 self-center rounded-full bg-white/[0.05] px-3 py-1 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                {g.day}
+            <div key={gi} className="flex flex-col gap-4">
+              <div className="flex items-center gap-2">
+                <span className="h-[2px] flex-1 bg-white/10" />
+                <span className="rounded border-2 border-white bg-black px-2 py-0.5 font-display text-[10px] font-black italic uppercase tracking-widest text-white shadow-[2px_2px_0_0_#F000C0]">
+                  {g.day}
+                </span>
+                <span className="h-[2px] flex-1 bg-white/10" />
               </div>
-              {g.items.map((m) => {
+
+              {g.items.map((m, mi) => {
                 const isMine = m.role === "me";
+                const prev = mi > 0 ? g.items[mi - 1] : null;
+                const showAvatar = !isMine && (!prev || prev.role !== "hell");
                 return (
                   <motion.div
                     key={m.id}
-                    initial={{ opacity: 0, y: 6, scale: 0.98 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    transition={{ type: "spring", stiffness: 520, damping: 32 }}
-                    className={cn("flex", isMine ? "justify-end" : "justify-start")}
+                    initial={{ opacity: 0, y: 8, scale: 0.96, rotate: isMine ? 1 : -1 }}
+                    animate={{ opacity: 1, y: 0, scale: 1, rotate: 0 }}
+                    transition={{ type: "spring", stiffness: 480, damping: 28 }}
+                    className={cn("flex items-start gap-3", isMine ? "justify-end" : "justify-start")}
                   >
-                    <div
-                      className={cn(
-                        "max-w-[86%] overflow-hidden text-[15.5px] leading-[1.35] shadow-sm",
-                        m.image && !m.text ? "p-0" : "px-3.5 py-2",
-                        isMine
-                          ? "rounded-[22px] rounded-br-[6px] bg-primary text-primary-foreground"
-                          : "rounded-[22px] rounded-bl-[6px] border border-white/[0.06] bg-white/[0.05] text-foreground",
-                      )}
-                    >
-                      {m.image && (
+                    {!isMine && (
+                      <div
+                        className={cn(
+                          "mt-1 h-8 w-8 shrink-0 overflow-hidden rounded-full border-2 border-[#F000C0] bg-zinc-800 shadow-[2px_2px_0_0_#F000C0]",
+                          showAvatar ? "opacity-100" : "invisible",
+                        )}
+                      >
                         <img
-                          src={m.image}
+                          src={vanyaAvatar.url}
                           alt=""
-                          className={cn(
-                            "block w-full max-w-[280px] object-cover",
-                            m.text ? "mb-1.5 rounded-xl" : "",
-                          )}
+                          className="h-full w-full object-cover"
+                          loading="lazy"
+                          decoding="async"
                         />
-                      )}
-                      {(m.text || !m.image) && (
-                        <div className={cn(m.image && !m.text ? "px-3.5 py-2" : "")}>
-                          {m.text && (
-                            <span className="whitespace-pre-wrap break-words">
-                              {m.text}
-                            </span>
-                          )}
-                          <span
+                      </div>
+                    )}
+
+                    <div className={cn("relative max-w-[75%]", isMine ? "items-end" : "items-start")}>
+                      <div
+                        className={cn(
+                          "border-[3px] border-black",
+                          m.image && !m.text
+                            ? "rounded-2xl p-1.5"
+                            : "rounded-2xl px-3 py-2.5",
+                          isMine
+                            ? "rounded-tr-none bg-[#B6FF3C] shadow-[-4px_4px_0_0_#000]"
+                            : "rounded-tl-none bg-white shadow-[4px_4px_0_0_#F000C0]",
+                        )}
+                      >
+                        {m.image && (
+                          <div
                             className={cn(
-                              "mt-1 block text-right font-mono text-[10px] uppercase tracking-wider",
-                              isMine
-                                ? "text-primary-foreground/70"
-                                : "text-muted-foreground",
+                              "overflow-hidden rounded-xl border-2 border-black",
+                              m.text ? "mb-2" : "",
                             )}
                           >
-                            {formatTime(m.at)}
+                            <img
+                              src={m.image}
+                              alt=""
+                              className="block max-h-[220px] w-full max-w-[240px] object-cover"
+                            />
+                          </div>
+                        )}
+                        {m.text && (
+                          <p
+                            className={cn(
+                              "whitespace-pre-wrap break-words text-[14px] font-black italic uppercase leading-snug text-black",
+                              m.image ? "px-1.5" : "",
+                            )}
+                          >
+                            {m.text}
+                          </p>
+                        )}
+                      </div>
+                      <div
+                        className={cn(
+                          "mt-1 flex items-center gap-1 px-0.5",
+                          isMine ? "justify-end" : "justify-start",
+                        )}
+                      >
+                        <span className="font-mono text-[10px] font-bold text-zinc-500">
+                          {formatTime(m.at)}
+                        </span>
+                        {isMine && (
+                          <span className="font-mono text-[10px] font-black text-[#F000C0]">
+                            ✓✓
                           </span>
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </div>
                   </motion.div>
                 );
@@ -232,13 +313,8 @@ function VipChatPage() {
         </div>
       </div>
 
-      {/* Композер — фиксирован над таб-баром */}
-      <div
-        className="fixed inset-x-0 z-20 border-t border-white/[0.06] bg-background/95 backdrop-blur-md"
-        style={{
-          bottom: "calc(64px + env(safe-area-inset-bottom))",
-        }}
-      >
+      {/* Композер — plump-стиль, всегда виден над таб-баром */}
+      <div className="shrink-0 border-t-4 border-white bg-[#111] shadow-[0_-4px_0_0_#B6FF3C]">
         <AnimatePresence>
           {pending && (
             <motion.div
@@ -247,16 +323,12 @@ function VipChatPage() {
               exit={{ height: 0, opacity: 0 }}
               className="overflow-hidden"
             >
-              <div className="flex items-center gap-2 border-b border-white/[0.05] bg-white/[0.02] px-3 py-2">
-                <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border border-white/[0.08] bg-black/40">
-                  <img
-                    src={pending.url}
-                    alt=""
-                    className="h-full w-full object-cover"
-                  />
+              <div className="flex items-center gap-2 border-b-2 border-white/10 bg-black/50 px-3 py-2">
+                <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl border-2 border-black bg-black/40 shadow-[3px_3px_0_0_#F000C0]">
+                  <img src={pending.url} alt="" className="h-full w-full object-cover" />
                 </div>
-                <div className="min-w-0 flex-1 text-[12px] text-muted-foreground">
-                  Фото готово. Добавь подпись (опционально) и отправь.
+                <div className="min-w-0 flex-1 font-mono text-[11px] uppercase tracking-wider text-zinc-400">
+                  Фото готово. Добавь подпись — и отправляй.
                 </div>
                 <button
                   type="button"
@@ -265,9 +337,9 @@ function VipChatPage() {
                     setPending(null);
                   }}
                   aria-label="Убрать фото"
-                  className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-muted-foreground hover:text-foreground"
+                  className="grid h-7 w-7 shrink-0 place-items-center rounded-full border-2 border-white bg-black text-white"
                 >
-                  <X size={14} />
+                  <X size={12} />
                 </button>
               </div>
             </motion.div>
@@ -303,7 +375,7 @@ function VipChatPage() {
             e.preventDefault();
             send();
           }}
-          className="flex items-end gap-2 px-3 py-2.5"
+          className="flex items-end gap-3 px-3 py-3"
         >
           <button
             type="button"
@@ -311,28 +383,28 @@ function VipChatPage() {
               haptic("light");
               setAttachOpen(true);
             }}
-            className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:text-foreground active:scale-95"
             aria-label="Прикрепить"
+            className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border-[3px] border-black bg-white text-[#F000C0] shadow-[3px_3px_0_0_#000] transition-transform active:translate-x-[1px] active:translate-y-[1px] active:shadow-none"
           >
             <PlumpAttach className="h-5 w-5" />
           </button>
 
-          <div className="flex min-w-0 flex-1 items-end gap-1 rounded-3xl border border-white/[0.08] bg-black/60 pl-3 pr-1 py-1 focus-within:border-primary/40">
+          <div className="flex min-w-0 flex-1 items-end rounded-xl border-[3px] border-black bg-zinc-800 pl-3 pr-2 py-1 focus-within:border-[#F000C0]">
             <textarea
               ref={textareaRef}
               value={text}
               onChange={(e) => setText(e.target.value.slice(0, MAX_LEN))}
               onKeyDown={onKeyDown}
               rows={1}
-              placeholder="Написать Hell…"
-              className="min-w-0 flex-1 resize-none bg-transparent px-1 py-1.5 text-[15px] leading-[22px] text-foreground placeholder:text-muted-foreground/60 outline-none"
+              placeholder="НАПИСАТЬ HELL…"
+              className="min-w-0 flex-1 resize-none bg-transparent py-1.5 pr-1 font-black italic uppercase text-[14px] leading-[22px] tracking-tight text-white placeholder:text-zinc-500 outline-none"
               style={{ maxHeight: 5 * 22 + 12 }}
             />
             {text.length >= 1600 && (
               <span
                 className={cn(
                   "mb-1.5 shrink-0 self-end font-mono text-[10px] tabular-nums",
-                  overLimit ? "text-destructive" : "text-muted-foreground/60",
+                  overLimit ? "text-destructive" : "text-zinc-500",
                 )}
                 aria-live="polite"
               >
@@ -341,14 +413,20 @@ function VipChatPage() {
             )}
           </div>
 
-          <button
+          <motion.button
             type="submit"
             disabled={!canSend || overLimit}
-            className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground transition-transform active:scale-95 disabled:opacity-40"
+            whileTap={{ scale: 0.9 }}
             aria-label="Отправить"
+            className={cn(
+              "grid h-11 w-11 shrink-0 place-items-center rounded-xl border-[3px] border-black transition-all",
+              canSend && !overLimit
+                ? "bg-[#F000C0] text-white shadow-[3px_3px_0_0_#B6FF3C] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none"
+                : "bg-zinc-700 text-white/40 shadow-[3px_3px_0_0_#000]",
+            )}
           >
-            <Send size={18} strokeWidth={2} className="-translate-x-[1px]" />
-          </button>
+            <Send size={18} strokeWidth={2.5} className="-translate-x-[1px]" />
+          </motion.button>
         </form>
       </div>
 
