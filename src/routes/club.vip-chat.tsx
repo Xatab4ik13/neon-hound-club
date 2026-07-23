@@ -242,9 +242,9 @@ function VipChatPage() {
                 return (
                   <motion.div
                     key={m.id}
-                    initial={isNew ? { opacity: 0, x: isMine ? 24 : -24, scale: 0.96 } : false}
+                    initial={isNew ? { opacity: 0, x: isMine ? 60 : -60, scale: 0.9 } : false}
                     animate={{ opacity: 1, x: 0, scale: 1 }}
-                    transition={{ type: "spring", stiffness: 420, damping: 30, mass: 0.6 }}
+                    transition={{ type: "spring", stiffness: 520, damping: 12, mass: 0.9 }}
                     className={cn("flex items-end gap-2", isMine ? "justify-end" : "justify-start")}
                   >
                     {!isMine && (
