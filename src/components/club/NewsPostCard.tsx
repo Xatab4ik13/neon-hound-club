@@ -48,6 +48,25 @@ export function NewsRow({ post }: { post: NewsPost }) {
 function NewsPostCard({ post }: { post: NewsPost }) {
   const [viewerOpen, setViewerOpen] = useState(false);
   const [viewerEverOpened, setViewerEverOpened] = useState(false);
+  const [commentsOpen, setCommentsOpen] = useState(false);
+  const [commentsEverOpened, setCommentsEverOpened] = useState(false);
+
+  const openComments = useCallback(() => {
+    haptic("light");
+    setCommentsEverOpened(true);
+    setCommentsOpen(true);
+  }, []);
+
+  // Тап по «свободному» месту карточки → открыть комментарии.
+  // Игнорируем клики по интерактивным детям (кнопки, ссылки, инпуты, формы, картинка).
+  const onCardClick = useCallback(
+    (e: React.MouseEvent<HTMLElement>) => {
+      const target = e.target as HTMLElement;
+      if (target.closest("button,a,input,form,textarea,select,[role='button']")) return;
+      openComments();
+    },
+    [openComments],
+  );
 
   const shareUrl =
     typeof window !== "undefined" ? `${window.location.origin}/club#news-${post.id}` : `/club`;
