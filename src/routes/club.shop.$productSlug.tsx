@@ -332,23 +332,28 @@ function ProductView({ product }: { product: ShopProduct }) {
           <div className="mt-6">
             <div className="mb-2 flex items-center justify-between">
               <span className="text-[13px] font-medium text-muted-foreground">Размер</span>
-              {size && <span className="text-[13px] font-semibold text-foreground">{size}</span>}
             </div>
             <div className="flex flex-wrap gap-2">
-              {sizes.map((s) => {
+              {sizes.map((s, idx) => {
                 const isActive = s.label === size;
                 const isOut = s.stock !== null && s.stock <= 0;
+                const color = SIZE_COLORS[idx % SIZE_COLORS.length];
                 return (
                   <button
                     key={s.label}
                     type="button"
                     disabled={isOut}
                     onClick={() => setSize(s.label)}
+                    style={
+                      isActive && !isOut
+                        ? { backgroundColor: color, borderColor: "hsl(var(--foreground))", color: "#000", boxShadow: "3px 3px 0 0 hsl(var(--foreground))" }
+                        : undefined
+                    }
                     className={`min-w-[48px] rounded-xl border px-4 py-2.5 text-[15px] font-semibold transition-all active:scale-95 ${
                       isOut
                         ? "border-white/[0.04] bg-white/[0.02] text-muted-foreground/40 line-through"
                         : isActive
-                          ? "border-primary bg-primary text-primary-foreground shadow-[0_0_0_3px_hsl(var(--primary)/0.25)]"
+                          ? "border-[2px]"
                           : "border-white/[0.08] bg-white/[0.03] text-foreground"
                     }`}
                   >
