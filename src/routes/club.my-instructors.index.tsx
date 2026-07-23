@@ -2,7 +2,7 @@
 // Стилистически повторяет club.school-chats.index.tsx, но со стороны обычного юзера.
 
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { useViewer } from "@/hooks/use-viewer";
 import { getInstructorBySlug, INSTRUCTORS } from "@/data/instructors";
@@ -59,16 +59,6 @@ function MyInstructorsList() {
           </h1>
         </div>
 
-        {threads.length > 0 && (
-          <div className="px-4 pb-3">
-            <input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Поиск инструктора…"
-              className="w-full rounded-2xl border border-white/[0.08] bg-black/60 px-4 py-2.5 text-[14px] text-foreground placeholder:text-muted-foreground/60 outline-none focus:border-primary/60"
-            />
-          </div>
-        )}
 
         {rows.length === 0 ? (
           <EmptyState />
