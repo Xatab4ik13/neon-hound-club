@@ -337,6 +337,13 @@
             "when": 1782200000000,
             "tag": "0047_users_last_seen_at",
             "breakpoints": true
+        },
+        {
+            "idx": 48,
+            "version": "7",
+            "when": 1782300000000,
+            "tag": "0048_news_posts",
+            "breakpoints": true
         }
     ]
 }
