@@ -87,16 +87,6 @@ export function MockChatRoom({
   const [text, setText] = useState("");
   const [invoiceOpen, setInvoiceOpen] = useState(false);
   const [payInvoice, setPayInvoice] = useState<InvoicePayload | null>(null);
-
-export function MockChatRoom({
-  messages,
-  myRole,
-  peerLabel,
-  height,
-  onSend,
-  header,
-}: MockChatRoomProps) {
-  const [text, setText] = useState("");
   const scrollerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const keyboardOffset = useKeyboardOffset();
