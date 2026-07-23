@@ -730,3 +730,69 @@ html.hh-admin *::-webkit-scrollbar-thumb:hover {
   .course-card.-rotate-1 { transform: rotate(-1deg); }
   .course-card.rotate-1  { transform: rotate(1deg); }
 }
+
+/* VIP chat — visible live message fly-in, same springy language as School cards. */
+@keyframes vip-message-in-left {
+  0% {
+    opacity: 0;
+    transform: translate3d(-96px, 12px, 0) scale(0.9);
+  }
+  52% {
+    opacity: 1;
+    transform: translate3d(10px, 0, 0) scale(1.04);
+  }
+  72% {
+    transform: translate3d(-5px, 0, 0) scale(0.985);
+  }
+  88% {
+    transform: translate3d(2px, 0, 0) scale(1.006);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes vip-message-in-right {
+  0% {
+    opacity: 0;
+    transform: translate3d(96px, 12px, 0) scale(0.9);
+  }
+  52% {
+    opacity: 1;
+    transform: translate3d(-10px, 0, 0) scale(1.04);
+  }
+  72% {
+    transform: translate3d(5px, 0, 0) scale(0.985);
+  }
+  88% {
+    transform: translate3d(-2px, 0, 0) scale(1.006);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+.vip-message-live {
+  will-change: transform, opacity;
+  animation-duration: 860ms;
+  animation-timing-function: cubic-bezier(0.34, 1.4, 0.5, 1);
+  animation-fill-mode: both;
+}
+
+.vip-message-live--left {
+  animation-name: vip-message-in-left;
+}
+
+.vip-message-live--right {
+  animation-name: vip-message-in-right;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vip-message-live {
+    animation: none !important;
+    opacity: 1;
+    transform: none;
+  }
+}
