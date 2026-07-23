@@ -185,6 +185,107 @@ export function sendInstructorChatMessage(
   return msg;
 }
 
+/** Наценка при оплате учеником (комиссия платформы). */
+export const INVOICE_COMMISSION = 0.2;
+export function invoiceTotalForStudent(amount: number): number {
+  return Math.round(amount * (1 + INVOICE_COMMISSION));
+}
+
+function appendMessage(
+  instructorSlug: string,
+  studentUserId: string,
+  studentNick: string,
+  msg: InstructorMsg,
+) {
+  const k = threadKey(instructorSlug, studentUserId);
+  const existing =
+    state[k] ??
+    ({
+      instructorSlug,
+      studentUserId,
+      studentNick,
+      messages: [],
+    } as InstructorThread);
+  state = {
+    ...state,
+    [k]: {
+      ...existing,
+      studentNick,
+      messages: [...existing.messages, msg],
+    },
+  };
+  persist();
+  return msg;
+}
+
+export function sendInstructorInvoice(
+  instructorSlug: string,
+  studentUserId: string,
+  studentNick: string,
+  data: { hours: number; description: string; dateTime: string; amount: number },
+) {
+  const k = threadKey(instructorSlug, studentUserId);
+  const id = `${k}_inv_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+  const msg: InstructorMsg = {
+    id,
+    senderRole: "instructor",
+    createdAt: Date.now(),
+    invoice: {
+      id,
+      hours: data.hours,
+      description: data.description,
+      dateTime: data.dateTime,
+      amount: data.amount,
+      status: "pending",
+    },
+  };
+  return appendMessage(instructorSlug, studentUserId, studentNick, msg);
+}
+
+export function payInstructorInvoice(
+  instructorSlug: string,
+  studentUserId: string,
+  studentNick: string,
+  invoiceId: string,
+  payer: { name: string; email: string },
+) {
+  const k = threadKey(instructorSlug, studentUserId);
+  const t = state[k];
+  if (!t) return;
+  const now = Date.now();
+  let paidInvoice: InvoicePayload | undefined;
+  const messages = t.messages.map((m) => {
+    if (m.invoice?.id === invoiceId && m.invoice.status === "pending") {
+      const inv: InvoicePayload = {
+        ...m.invoice,
+        status: "paid",
+        payerName: payer.name,
+        payerEmail: payer.email,
+        paidAt: now,
+      };
+      paidInvoice = inv;
+      return { ...m, invoice: inv };
+    }
+    return m;
+  });
+  state = { ...state, [k]: { ...t, messages } };
+  persist();
+  if (paidInvoice) {
+    const when = new Date(paidInvoice.dateTime).toLocaleString("ru-RU", {
+      day: "2-digit",
+      month: "long",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    appendMessage(instructorSlug, studentUserId, studentNick, {
+      id: `${k}_sys_${now}_${Math.random().toString(36).slice(2, 6)}`,
+      senderRole: "system",
+      text: `Занятие забронировано на ${when}`,
+      createdAt: now + 1,
+    });
+  }
+}
+
 export function useInstructorThreadsList(instructorSlug: string): InstructorThread[] {
   const snap = useSyncExternalStore(subscribe, getSnapshot, () => ({}) as State);
   return Object.values(snap)
