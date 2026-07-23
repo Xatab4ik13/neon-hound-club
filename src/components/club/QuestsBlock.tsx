@@ -44,7 +44,7 @@ export function QuestsBlock() {
     <section aria-label="Челленджи клуба" className="mb-10">
       <div className="mb-3 flex items-baseline justify-between">
         <div className="flex items-baseline gap-3">
-          <h2 className="font-display text-sm font-black uppercase italic tracking-widest text-foreground">
+          <h2 className="font-display text-sm font-black uppercase  tracking-widest text-foreground">
             Челленджи клуба
           </h2>
           <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">

@@ -41,7 +41,7 @@ export const Route = createFileRoute("/club/raffles/$raffleId")({
 function NotFound() {
   return (
     <div className="mx-auto max-w-md p-10 text-center">
-      <h1 className="font-display text-3xl font-black uppercase italic text-foreground">
+      <h1 className="font-display text-3xl font-black uppercase  text-foreground">
         Розыгрыш не найден
       </h1>
       <Link
@@ -209,7 +209,7 @@ function RaffleDetailContent({
       {/* flash toast */}
       {flash && (
         <div
-          className="fixed left-1/2 top-16 z-[70] -translate-x-1/2 animate-fade-in rounded-2xl border-[3px] border-foreground bg-[#B6FF3C] px-4 py-2 font-display text-[13px] font-black uppercase italic tracking-widest text-black shadow-[4px_4px_0_0_hsl(var(--foreground))]"
+          className="fixed left-1/2 top-16 z-[70] -translate-x-1/2 animate-fade-in rounded-2xl border-[3px] border-foreground bg-[#B6FF3C] px-4 py-2 font-display text-[13px] font-black uppercase  tracking-widest text-black shadow-[4px_4px_0_0_hsl(var(--foreground))]"
         >
           <Check className="mr-1.5 inline h-4 w-4" strokeWidth={3} />
           {flash}
@@ -220,7 +220,7 @@ function RaffleDetailContent({
       <section className="relative mb-9">
         {/* status sticker */}
         <span
-          className={`absolute -left-1 -top-3 z-20 inline-flex items-center gap-1.5 -rotate-3 rounded-2xl border-[3px] border-foreground px-3 py-1.5 font-display text-[12px] font-black uppercase italic tracking-tighter text-black shadow-[4px_4px_0_0_hsl(var(--foreground))] ${
+          className={`absolute -left-1 -top-3 z-20 inline-flex items-center gap-1.5 -rotate-3 rounded-2xl border-[3px] border-foreground px-3 py-1.5 font-display text-[12px] font-black uppercase  tracking-tighter text-black shadow-[4px_4px_0_0_hsl(var(--foreground))] ${
             finished ? "bg-[#C6A8FF]" : "bg-[#B6FF3C]"
           }`}
         >
@@ -249,7 +249,7 @@ function RaffleDetailContent({
 
       {/* TITLE */}
       <section className="mb-6">
-        <h1 className="font-display text-[38px] font-black uppercase italic leading-[0.9] tracking-tight text-foreground md:text-5xl">
+        <h1 className="font-display text-[38px] font-black uppercase  leading-[0.9] tracking-tight text-foreground md:text-5xl">
           {raffle.title}
         </h1>
         {raffle.prize && (
@@ -297,7 +297,7 @@ function RaffleDetailContent({
             <Calendar className="h-3.5 w-3.5" strokeWidth={2.5} />
             Завершение
           </span>
-          <span className="font-display text-[13px] font-black uppercase italic tracking-tight">
+          <span className="font-display text-[13px] font-black uppercase  tracking-tight">
             {formatDeadlineShort(raffle.endsAt)}
           </span>
         </section>
@@ -313,7 +313,7 @@ function RaffleDetailContent({
             <div className="font-mono text-[10px] font-bold uppercase tracking-widest">
               Победитель
             </div>
-            <div className="truncate font-display text-xl font-black uppercase italic">
+            <div className="truncate font-display text-xl font-black uppercase">
               @{raffle.winnerNick}
             </div>
           </div>
@@ -486,7 +486,7 @@ function StakePanel({
           <BalanceChip balance={balance} />
         </div>
         <div className="mt-3 rounded-2xl border-[3px] border-foreground bg-[#FFD93D] p-4 text-black shadow-[3px_3px_0_0_hsl(var(--foreground))]">
-          <div className="font-display text-[15px] font-black uppercase italic tracking-tight">
+          <div className="font-display text-[15px] font-black uppercase  tracking-tight">
             Нужен номер телефона
           </div>
           <p className="mt-1 text-[12px] leading-relaxed">
@@ -494,7 +494,7 @@ function StakePanel({
           </p>
           <Link
             to="/club/me"
-            className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border-[3px] border-foreground bg-background py-2.5 font-display text-[13px] font-black uppercase italic tracking-widest text-foreground shadow-[3px_3px_0_0_hsl(var(--foreground))] active:translate-x-[2px] active:translate-y-[2px] active:shadow-[1px_1px_0_0_hsl(var(--foreground))]"
+            className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border-[3px] border-foreground bg-background py-2.5 font-display text-[13px] font-black uppercase  tracking-widest text-foreground shadow-[3px_3px_0_0_hsl(var(--foreground))] active:translate-x-[2px] active:translate-y-[2px] active:shadow-[1px_1px_0_0_hsl(var(--foreground))]"
           >
             Указать номер →
           </Link>
@@ -550,7 +550,7 @@ function StakePanel({
                 type="button"
                 onClick={() => onStakeChange(v)}
                 disabled={v > maxStake}
-                className={`rounded-xl border-[3px] border-foreground py-1.5 font-display text-[12px] font-black uppercase italic tracking-widest transition-all active:translate-x-[1px] active:translate-y-[1px] disabled:opacity-30 ${
+                className={`rounded-xl border-[3px] border-foreground py-1.5 font-display text-[12px] font-black uppercase  tracking-widest transition-all active:translate-x-[1px] active:translate-y-[1px] disabled:opacity-30 ${
                   active
                     ? "bg-foreground text-background shadow-[2px_2px_0_0_hsl(var(--foreground))]"
                     : isMax
@@ -570,7 +570,7 @@ function StakePanel({
         type="button"
         onClick={onStake}
         disabled={!isAuthed || stake <= 0 || stake > maxStake || isPending}
-        className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border-[3px] border-foreground bg-[#B6FF3C] py-3.5 font-display text-[17px] font-black uppercase italic tracking-tight text-black shadow-[6px_6px_0_0_hsl(var(--foreground))] transition-transform hover:-translate-y-0.5 active:translate-x-[3px] active:translate-y-[3px] active:shadow-[2px_2px_0_0_hsl(var(--foreground))] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0"
+        className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border-[3px] border-foreground bg-[#B6FF3C] py-3.5 font-display text-[17px] font-black uppercase  tracking-tight text-black shadow-[6px_6px_0_0_hsl(var(--foreground))] transition-transform hover:-translate-y-0.5 active:translate-x-[3px] active:translate-y-[3px] active:shadow-[2px_2px_0_0_hsl(var(--foreground))] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0"
       >
         <Zap className="h-5 w-5" strokeWidth={2.5} />
         {!isAuthed ? "Войти" : isPending ? "..." : `Поставить · ${totalCost}`}

@@ -471,7 +471,7 @@ function BikeHero({
             {bike.model}
           </h2>
           {bike.nickname && (
-            <div className="mt-0.5 text-[13px] italic text-muted-foreground">
+            <div className="mt-0.5 text-[13px]  text-muted-foreground">
               «{bike.nickname}»
             </div>
           )}
@@ -1453,7 +1453,7 @@ function EmptyGarage({ onAdd }: { onAdd: () => void }) {
             className="mx-auto h-40 w-40 text-foreground/80"
           />
           <PlumpGarage className="hidden" />
-          <h2 className="mt-4 font-display text-[22px] font-black italic uppercase tracking-tight text-foreground">
+          <h2 className="mt-4 font-display text-[22px] font-black  uppercase tracking-tight text-foreground">
             Здесь будет твой мотик
           </h2>
           <p className="mt-1.5 text-[14px] text-muted-foreground">

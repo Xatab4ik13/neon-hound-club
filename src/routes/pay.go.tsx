@@ -54,7 +54,7 @@ function PayGoPage() {
   if (!paymentUrl) {
     return (
       <main className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col items-center justify-center px-6 text-center">
-        <h1 className="font-display text-2xl font-black uppercase italic tracking-wider">
+        <h1 className="font-display text-2xl font-black uppercase  tracking-wider">
           Ссылка устарела
         </h1>
         <p className="mt-3 text-sm text-muted-foreground">
@@ -76,7 +76,7 @@ function PayGoPage() {
         <ShieldCheck className="h-7 w-7" />
       </span>
 
-      <h1 className="mt-6 font-display text-2xl font-black uppercase italic tracking-wider">
+      <h1 className="mt-6 font-display text-2xl font-black uppercase  tracking-wider">
         Открой оплату
       </h1>
       <p className="mt-2 max-w-xs text-[14px] leading-relaxed text-muted-foreground">
@@ -88,7 +88,7 @@ function PayGoPage() {
       <a
         href={paymentUrl}
         rel="noopener noreferrer"
-        className="mt-8 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-primary py-4 font-display text-sm font-black uppercase italic tracking-widest text-primary-foreground active:scale-[0.99]"
+        className="mt-8 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-primary py-4 font-display text-sm font-black uppercase  tracking-widest text-primary-foreground active:scale-[0.99]"
       >
         Открыть оплату
         <ArrowUpRight className="h-4 w-4" />

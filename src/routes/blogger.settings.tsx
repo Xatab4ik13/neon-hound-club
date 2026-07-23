@@ -75,7 +75,7 @@ function BloggerSettingsPage() {
           <div className="flex items-center gap-4">
             <HellhoundAvatar size={72} initials={profile.initials} avatarUrl={profile.avatarUrl} />
             <div className="min-w-0 flex-1">
-              <div className="truncate font-display text-xl font-black italic uppercase tracking-tight">
+              <div className="truncate font-display text-xl font-black  uppercase tracking-tight">
                 {profile.nick}
               </div>
 

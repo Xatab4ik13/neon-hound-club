@@ -60,7 +60,7 @@ function VerifyEmailPage() {
         style={{ background: "var(--primary)" }}
       />
       <div className="relative z-10 mx-auto flex min-h-[calc(100vh-5rem)] w-full max-w-[480px] flex-col px-6 py-10 md:py-16">
-        <h1 className="font-display text-5xl italic uppercase font-bold leading-none tracking-tight text-white md:text-6xl">
+        <h1 className="font-display text-5xl  uppercase font-bold leading-none tracking-tight text-white md:text-6xl">
           {state === "ok" ? "Готово" : state === "loading" ? "Проверяем…" : "Не вышло"}
         </h1>
         <p className="mt-4 font-mono text-[12px] uppercase tracking-[0.2em] text-muted-foreground">

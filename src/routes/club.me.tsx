@@ -195,7 +195,7 @@ function MePage() {
           </IOSListSection>
         ) : (
           <>
-            <h2 className="mb-4 font-display text-2xl font-black italic uppercase tracking-tight text-foreground md:text-3xl">
+            <h2 className="mb-4 font-display text-2xl font-black  uppercase tracking-tight text-foreground md:text-3xl">
               Подписка
             </h2>
             <div className="space-y-2">
@@ -223,7 +223,7 @@ function MePage() {
             Заказы
           </h3>
         ) : (
-          <h2 className="mb-4 font-display text-2xl font-black italic uppercase tracking-tight text-foreground md:text-3xl">
+          <h2 className="mb-4 font-display text-2xl font-black  uppercase tracking-tight text-foreground md:text-3xl">
             Заказы
           </h2>
         )}
@@ -268,7 +268,7 @@ function MePage() {
           </>
         ) : (
           <>
-            <h2 className="mb-4 font-display text-2xl font-black italic uppercase tracking-tight text-foreground md:text-3xl">
+            <h2 className="mb-4 font-display text-2xl font-black  uppercase tracking-tight text-foreground md:text-3xl">
               Настройки
             </h2>
             <div className="space-y-2">
@@ -359,7 +359,7 @@ function RankLadderCompact({ rankIndex }: { rankIndex: number }) {
             }
           >
             <div
-              className="grid h-9 w-9 shrink-0 place-items-center rounded-lg font-display text-xs font-black italic uppercase"
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-lg font-display text-xs font-black  uppercase"
               style={{
                 backgroundColor: isActive || isPast ? r.accent : "rgba(255,255,255,0.04)",
                 color: isActive || isPast ? r.onAccent : "rgba(167,167,167,0.6)",
@@ -368,7 +368,7 @@ function RankLadderCompact({ rankIndex }: { rankIndex: number }) {
               {r.short}
             </div>
             <div
-              className="min-w-0 flex-1 font-display text-base font-black italic uppercase tracking-tight"
+              className="min-w-0 flex-1 font-display text-base font-black  uppercase tracking-tight"
               style={{ color: isFuture ? "rgba(167,167,167,0.7)" : r.accent }}
             >
               {r.label}
@@ -462,7 +462,7 @@ function PassDesktopRow({ tier, daysLeft }: { tier: Tier | null; daysLeft: numbe
       </span>
       <span className="min-w-0 flex-1">
         <span className="flex items-center gap-2">
-          <span className="font-display text-base font-black italic uppercase tracking-tight text-foreground md:text-lg">
+          <span className="font-display text-base font-black  uppercase tracking-tight text-foreground md:text-lg">
             Hell Pass
           </span>
           <span
@@ -633,7 +633,7 @@ function ProfileHero({ onSettings }: { onSettings: () => void }) {
                 />
                 <div className="absolute inset-0 flex items-center justify-center">
                   <span
-                    className="font-display text-4xl font-black italic uppercase md:text-5xl"
+                    className="font-display text-4xl font-black  uppercase md:text-5xl"
                     style={{ color: rank.onAccent }}
                   >
                     {nick.slice(0, 2)}
@@ -646,7 +646,7 @@ function ProfileHero({ onSettings }: { onSettings: () => void }) {
 
         {/* Identity */}
         <div className="min-w-0 flex-1">
-          <h1 className="font-display text-3xl font-black italic uppercase tracking-tight text-foreground md:text-4xl">
+          <h1 className="font-display text-3xl font-black  uppercase tracking-tight text-foreground md:text-4xl">
             {nick}
           </h1>
           <div className="mt-2 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 font-mono text-xs uppercase tracking-wider text-muted-foreground md:justify-start">
@@ -674,7 +674,7 @@ function ProfileHero({ onSettings }: { onSettings: () => void }) {
           <div className="mt-5">
             <div className="mb-2 flex items-baseline justify-between gap-3">
               <span
-                className="font-display text-lg font-black italic uppercase tracking-tight md:text-xl"
+                className="font-display text-lg font-black  uppercase tracking-tight md:text-xl"
                 style={{ color: rank.accent }}
               >
                 {rank.label}
@@ -765,7 +765,7 @@ function ActionRow({
       </span>
       <span className="min-w-0 flex-1">
         <span
-          className={`block font-display text-base font-black italic uppercase tracking-tight md:text-lg ${
+          className={`block font-display text-base font-black  uppercase tracking-tight md:text-lg ${
             isDanger ? "text-red-400" : "text-foreground"
           }`}
         >

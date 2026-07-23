@@ -86,7 +86,7 @@ function Unit({ value, label, urgent = false }: { value: string; label: string; 
     <span className="inline-flex items-baseline">
       <span
         className={
-          "font-display text-base font-black italic " +
+          "font-display text-base font-black  " +
           (urgent ? "text-primary" : "text-foreground")
         }
       >

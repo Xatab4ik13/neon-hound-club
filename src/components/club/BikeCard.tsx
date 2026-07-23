@@ -99,11 +99,11 @@ export function BikeCard({ bike, onEdit, onDelete }: Props) {
             <div className="font-mono text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
               {bike.brand} · <span className="text-primary">{bike.year}</span>
             </div>
-            <h3 className="mt-0.5 truncate font-display text-2xl font-black uppercase italic tracking-tight text-foreground">
+            <h3 className="mt-0.5 truncate font-display text-2xl font-black uppercase  tracking-tight text-foreground">
               {bike.model}
             </h3>
             {bike.nickname && (
-              <div className="mt-1 font-mono text-[11px] italic text-muted-foreground">
+              <div className="mt-1 font-mono text-[11px]  text-muted-foreground">
                 «{bike.nickname}»
               </div>
             )}

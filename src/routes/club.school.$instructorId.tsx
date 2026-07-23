@@ -50,7 +50,7 @@ function ClubInstructorPage() {
   if (!instructor) {
     return (
       <main className="mx-auto w-full max-w-3xl px-4 py-16 text-center">
-        <h1 className="font-display text-2xl font-black uppercase italic tracking-tight">
+        <h1 className="font-display text-2xl font-black uppercase  tracking-tight">
           Инструктор не найден
         </h1>
         <Link
@@ -109,7 +109,7 @@ function Hero({ instructor }: { instructor: Instructor }) {
           <HeroChip>{instructor.city}</HeroChip>
           <HeroChip>{expLabel}</HeroChip>
         </div>
-        <h1 className="mt-3 font-display text-4xl font-black uppercase italic leading-[0.9] tracking-tight text-white md:text-7xl">
+        <h1 className="mt-3 font-display text-4xl font-black uppercase  leading-[0.9] tracking-tight text-white md:text-7xl">
           {instructor.name}
         </h1>
         <p className="mt-2 max-w-md font-mono text-[11px] uppercase tracking-widest text-white/80 md:text-xs">

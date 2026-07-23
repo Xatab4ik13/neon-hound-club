@@ -98,7 +98,7 @@ function WaitingState() {
       <div className="flex h-20 w-20 items-center justify-center rounded-full border border-border/60 bg-card">
         <Loader2 className="h-9 w-9 animate-spin text-primary" />
       </div>
-      <h1 className="mt-8 font-display text-3xl font-black uppercase italic leading-none">
+      <h1 className="mt-8 font-display text-3xl font-black uppercase  leading-none">
         Ждём банк
       </h1>
       <p className="mt-4 font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
@@ -127,7 +127,7 @@ function ConfirmedState({
       <p className="mt-6 font-mono text-[11px] uppercase tracking-[0.25em] text-primary">
         Успешно
       </p>
-      <h1 className="mt-3 font-display text-4xl font-black uppercase italic leading-none">
+      <h1 className="mt-3 font-display text-4xl font-black uppercase  leading-none">
         {isPass ? "Hell Pass активирован" : "Заказ оплачен"}
       </h1>
       <p className="mt-4 text-sm text-muted-foreground">
@@ -183,7 +183,7 @@ function RejectedState({ onBack }: { onBack: () => void }) {
       <p className="mt-6 font-mono text-[11px] uppercase tracking-[0.25em] text-destructive">
         Отклонено
       </p>
-      <h1 className="mt-3 font-display text-4xl font-black uppercase italic leading-none">
+      <h1 className="mt-3 font-display text-4xl font-black uppercase  leading-none">
         Платёж не прошёл
       </h1>
       <p className="mt-4 text-sm text-muted-foreground">
@@ -215,7 +215,7 @@ function ErrorState({ message }: { message: string }) {
       <div className="flex h-20 w-20 items-center justify-center rounded-full border border-border/60 bg-card text-muted-foreground">
         <AlertTriangle className="h-9 w-9" />
       </div>
-      <h1 className="mt-8 font-display text-3xl font-black uppercase italic leading-none">
+      <h1 className="mt-8 font-display text-3xl font-black uppercase  leading-none">
         Ошибка
       </h1>
       <p className="mt-4 font-mono text-xs text-muted-foreground">{message}</p>

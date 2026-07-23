@@ -252,7 +252,7 @@ function PayBlock({
         payExistingOrderInPwa(orderId, "card");
       }}
       disabled={busy}
-      className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-primary py-4 font-display text-sm font-black uppercase italic tracking-widest text-primary-foreground active:scale-[0.99] disabled:opacity-60"
+      className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-primary py-4 font-display text-sm font-black uppercase  tracking-widest text-primary-foreground active:scale-[0.99] disabled:opacity-60"
     >
       {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
       Оплатить <PlumpPrice value={totalRub} />

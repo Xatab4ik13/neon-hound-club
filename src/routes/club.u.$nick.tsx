@@ -111,7 +111,7 @@ function UserProfilePage() {
 function NotFoundUser({ nick }: { nick: string }) {
   return (
     <main className="mx-auto w-full max-w-2xl px-4 py-16 text-center md:px-8">
-      <h1 className="font-display text-2xl font-black uppercase italic text-foreground">
+      <h1 className="font-display text-2xl font-black uppercase  text-foreground">
         Профиль не найден
       </h1>
       <p className="mt-2 font-mono text-[12px] uppercase tracking-wider text-muted-foreground">
@@ -176,7 +176,7 @@ function UserView({ user }: { user: ProfileView }) {
               />
             ) : (
               <span
-                className="relative z-[2] font-display text-4xl font-black uppercase italic md:text-5xl"
+                className="relative z-[2] font-display text-4xl font-black uppercase  md:text-5xl"
                 style={{
                   color: rank.accent,
                   textShadow: "0 2px 8px rgba(0,0,0,0.7)",
@@ -187,7 +187,7 @@ function UserView({ user }: { user: ProfileView }) {
             )}
           </div>
 
-          <h1 className="mt-4 font-display text-2xl font-black uppercase italic tracking-tight text-foreground md:text-3xl">
+          <h1 className="mt-4 font-display text-2xl font-black uppercase  tracking-tight text-foreground md:text-3xl">
             {user.nick}
           </h1>
 
@@ -221,7 +221,7 @@ function UserView({ user }: { user: ProfileView }) {
           {/* Значки — плашка на всю ширину под аватаркой */}
           <div className="mt-6 w-full">
             <div className="mb-2 flex items-baseline justify-between">
-              <span className="font-display text-[11px] font-black uppercase italic tracking-[0.2em] text-muted-foreground">
+              <span className="font-display text-[11px] font-black uppercase  tracking-[0.2em] text-muted-foreground">
                 Значки
               </span>
               <span className="font-mono text-[11px] tabular-nums text-muted-foreground">
@@ -330,7 +330,7 @@ function UserView({ user }: { user: ProfileView }) {
                   <Trophy className="h-5 w-5 text-black" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="truncate font-display text-[14px] font-black uppercase italic text-foreground">
+                  <div className="truncate font-display text-[14px] font-black uppercase  text-foreground">
                     {w.title}
                   </div>
                   <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
@@ -420,7 +420,7 @@ function BikePlate({ bike }: { bike: BikeCard }) {
       )}
       <div className="flex flex-wrap items-baseline justify-between gap-2 border-t-2 border-black px-4 py-3">
         <div className="min-w-0">
-          <div className="truncate font-display text-base font-black uppercase italic text-foreground">
+          <div className="truncate font-display text-base font-black uppercase  text-foreground">
             {name}
           </div>
           {bike.nickname && (
@@ -442,7 +442,7 @@ function BikePlate({ bike }: { bike: BikeCard }) {
 function SectionTitle({ title, right }: { title: string; right?: string }) {
   return (
     <div className="mb-3 flex items-baseline justify-between">
-      <h2 className="font-display text-sm font-black uppercase italic tracking-widest text-foreground">
+      <h2 className="font-display text-sm font-black uppercase  tracking-widest text-foreground">
         {title}
       </h2>
       {right && (

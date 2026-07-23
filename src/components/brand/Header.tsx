@@ -271,7 +271,7 @@ function DesktopPlatesMenu({
                 }}
               >
                 <span
-                  className={`font-display text-[26px] italic font-black uppercase leading-none tracking-tight text-center transition-colors duration-150 ease-out ${
+                  className={`font-display text-[26px]  font-black uppercase leading-none tracking-tight text-center transition-colors duration-150 ease-out ${
                     isActive
                       ? "text-black"
                       : "text-foreground group-hover:text-black"
@@ -388,7 +388,7 @@ function MobileMenu({
                   className="relative z-10 flex w-full items-center px-8 transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:translate-x-4 group-active:translate-x-4"
                 >
                   <span
-                    className={`font-display text-[42px] italic uppercase font-bold leading-none tracking-tight transition-colors duration-500 group-hover:text-black group-active:text-black ${
+                    className={`font-display text-[42px]  uppercase font-bold leading-none tracking-tight transition-colors duration-500 group-hover:text-black group-active:text-black ${
                       isActive ? "text-primary" : "text-white"
                     }`}
                   >
@@ -430,7 +430,7 @@ function MobileMenu({
                 />
               )}
             </span>
-            <span className="font-display text-xl italic uppercase tracking-widest text-white transition-colors duration-500 group-hover:text-primary">
+            <span className="font-display text-xl  uppercase tracking-widest text-white transition-colors duration-500 group-hover:text-primary">
               Корзина{" "}
               <span className="ml-1 inline-flex items-center gap-0.5 align-baseline text-white opacity-70">
                 <span className="font-mono text-sm">[</span>
@@ -444,7 +444,7 @@ function MobileMenu({
           <Link
             to={isAuthed ? "/club/me" : "/login"}
             onClick={onClose}
-            className="group relative block w-full overflow-hidden bg-primary py-7 text-center font-display text-2xl italic uppercase font-bold tracking-widest text-black transition-all duration-300 active:scale-[0.97]"
+            className="group relative block w-full overflow-hidden bg-primary py-7 text-center font-display text-2xl  uppercase font-bold tracking-widest text-black transition-all duration-300 active:scale-[0.97]"
             style={{ clipPath: "polygon(0 15%, 100% 0, 100% 100%, 0 85%)" }}
           >
             <span

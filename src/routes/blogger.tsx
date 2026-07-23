@@ -167,7 +167,7 @@ function SidebarBody({
             className="block font-display text-3xl font-black tracking-tight text-foreground"
             style={{ textShadow: "0 0 8px color-mix(in oklab, var(--primary) 25%, transparent)" }}
           >
-            HELL<span className="italic text-primary">HOUND</span>
+            HELL<span className=" text-primary">HOUND</span>
           </span>
         </Link>
         <div className="mt-1 font-mono text-[10px] font-bold uppercase tracking-[0.3em] text-primary">
@@ -205,7 +205,7 @@ function SidebarBody({
                     <span
                       className={`font-display uppercase tracking-tighter transition-colors ${
                         isActive
-                          ? "text-lg font-black italic text-black"
+                          ? "text-lg font-black  text-black"
                           : "text-sm font-bold text-muted-foreground group-hover:text-foreground"
                       }`}
                     >

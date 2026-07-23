@@ -55,7 +55,7 @@ function ForgotPasswordPage() {
       >
         <div className="mb-8">
           <h1
-            className="font-display text-5xl italic uppercase font-bold leading-none tracking-tight text-white md:text-6xl"
+            className="font-display text-5xl  uppercase font-bold leading-none tracking-tight text-white md:text-6xl"
             style={{
               textShadow: "0 0 20px color-mix(in oklab, var(--primary) 25%, transparent)",
             }}
@@ -108,7 +108,7 @@ function ForgotPasswordPage() {
 
             <button
               type="submit"
-              className="group relative block w-full overflow-hidden bg-primary py-6 text-center font-display text-2xl italic uppercase font-bold tracking-widest text-black transition-all duration-300 active:scale-[0.97]"
+              className="group relative block w-full overflow-hidden bg-primary py-6 text-center font-display text-2xl  uppercase font-bold tracking-widest text-black transition-all duration-300 active:scale-[0.97]"
               style={{ clipPath: "polygon(0 15%, 100% 0, 100% 100%, 0 85%)" }}
             >
               <span

@@ -184,7 +184,7 @@ function BannerCard({
         <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/65 via-black/30 to-transparent" />
         <div className="relative flex h-full flex-col justify-between p-3 text-white">
           <div className="pt-1">
-            <h3 className="line-clamp-2 whitespace-pre-line font-display text-sm font-black uppercase italic leading-[0.95] text-white">
+            <h3 className="line-clamp-2 whitespace-pre-line font-display text-sm font-black uppercase  leading-[0.95] text-white">
               {banner.title}
             </h3>
             {banner.eyebrow && (
@@ -346,7 +346,7 @@ function BannerEditor({
 
              <div className="relative flex h-full flex-col justify-between p-4 text-white">
                <div className="pt-1">
-                 <h3 className="whitespace-pre-line font-display text-xl font-black uppercase italic leading-[0.95] drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]">
+                 <h3 className="whitespace-pre-line font-display text-xl font-black uppercase  leading-[0.95] drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]">
                    {form.title || "Заголовок баннера"}
                  </h3>
                  {form.eyebrow && (

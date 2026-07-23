@@ -118,7 +118,7 @@ export function Hero() {
           </p>
           <Link
             to={isAuthed ? "/club" : "/login"}
-            className="group relative mt-9 inline-flex w-fit items-center rounded-2xl border-[3px] border-foreground bg-primary px-12 py-5 font-display text-2xl font-black uppercase italic tracking-widest text-black shadow-[6px_6px_0_0_hsl(var(--foreground))] transition-all duration-150 ease-out hover:-translate-x-1.5 hover:-translate-y-1.5 hover:shadow-[8px_8px_0_0_hsl(var(--foreground))] active:scale-[0.98]"
+            className="group relative mt-9 inline-flex w-fit items-center rounded-2xl border-[3px] border-foreground bg-primary px-12 py-5 font-display text-2xl font-black uppercase  tracking-widest text-black shadow-[6px_6px_0_0_hsl(var(--foreground))] transition-all duration-150 ease-out hover:-translate-x-1.5 hover:-translate-y-1.5 hover:shadow-[8px_8px_0_0_hsl(var(--foreground))] active:scale-[0.98]"
           >
             <span className="relative z-10 inline-flex items-center justify-center gap-3">
               Вступить в клуб
@@ -260,7 +260,7 @@ export function Hero() {
         <div className="relative z-20 order-3 -mt-4 flex justify-center px-6 pb-4">
           <Link
             to={isAuthed ? "/club" : "/login"}
-            className="group relative inline-flex w-fit items-center rounded-2xl border-[3px] border-foreground bg-primary px-8 py-4 font-display text-lg font-black uppercase italic tracking-widest text-black shadow-[6px_6px_0_0_hsl(var(--foreground))] transition-all duration-150 ease-out hover:-translate-x-1.5 hover:-translate-y-1.5 hover:shadow-[8px_8px_0_0_hsl(var(--foreground))] active:scale-[0.98] sm:px-10 sm:py-5 sm:text-xl"
+            className="group relative inline-flex w-fit items-center rounded-2xl border-[3px] border-foreground bg-primary px-8 py-4 font-display text-lg font-black uppercase  tracking-widest text-black shadow-[6px_6px_0_0_hsl(var(--foreground))] transition-all duration-150 ease-out hover:-translate-x-1.5 hover:-translate-y-1.5 hover:shadow-[8px_8px_0_0_hsl(var(--foreground))] active:scale-[0.98] sm:px-10 sm:py-5 sm:text-xl"
           >
             <span className="relative z-10 inline-flex items-center justify-center gap-3">
               Вступить в клуб

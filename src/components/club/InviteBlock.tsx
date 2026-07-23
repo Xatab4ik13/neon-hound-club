@@ -29,7 +29,7 @@ export function InviteBlock() {
   return (
     <section aria-label="Пригласить друга" className="mb-10">
       <div className="mb-3 flex items-baseline justify-between">
-        <h2 className="font-display text-sm font-black uppercase italic tracking-widest text-foreground">
+        <h2 className="font-display text-sm font-black uppercase  tracking-widest text-foreground">
           Пригласить друга
         </h2>
         <Link

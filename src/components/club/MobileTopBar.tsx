@@ -136,7 +136,7 @@ export function MobileTopBar() {
               className="absolute inset-0 h-full w-full object-cover"
             />
           ) : nick ? (
-            <span className="grid h-full w-full place-items-center font-display text-[13px] font-black italic uppercase text-primary">
+            <span className="grid h-full w-full place-items-center font-display text-[13px] font-black  uppercase text-primary">
               {nick.slice(0, 2)}
             </span>
           ) : null}
@@ -177,7 +177,7 @@ export function MobileTopBar() {
               }}
             />
           </span>
-          <span className="relative min-w-0 flex-1 truncate font-display text-[15px] font-black italic tracking-tight text-white">
+          <span className="relative min-w-0 flex-1 truncate font-display text-[15px] font-black  tracking-tight text-white">
             {nick || "—"}
           </span>
           <span className="relative ml-2 inline-flex items-center gap-1 whitespace-nowrap">

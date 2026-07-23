@@ -133,7 +133,7 @@ function RafflesPage() {
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <h2 className="mb-3 px-1 inline-flex items-center gap-1.5 font-display text-sm font-black uppercase italic tracking-widest text-foreground">
+    <h2 className="mb-3 px-1 inline-flex items-center gap-1.5 font-display text-sm font-black uppercase  tracking-widest text-foreground">
       {children}
     </h2>
   );
@@ -310,7 +310,7 @@ function RaffleCard({
     >
       {/* status sticker — same style as detail page */}
       <span
-        className={`absolute -left-2 -top-3 z-20 inline-flex items-center gap-1.5 -rotate-3 rounded-2xl border-[3px] border-foreground px-2.5 py-1 font-display text-[11px] font-black uppercase italic tracking-tighter text-black shadow-[3px_3px_0_0_hsl(var(--foreground))] ${
+        className={`absolute -left-2 -top-3 z-20 inline-flex items-center gap-1.5 -rotate-3 rounded-2xl border-[3px] border-foreground px-2.5 py-1 font-display text-[11px] font-black uppercase  tracking-tighter text-black shadow-[3px_3px_0_0_hsl(var(--foreground))] ${
           finished ? "bg-[#C6A8FF]" : "bg-[#B6FF3C]"
         }`}
       >
@@ -331,7 +331,7 @@ function RaffleCard({
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
         <div className="absolute inset-x-3 bottom-3">
-          <h3 className="font-display text-xl font-black uppercase italic leading-tight tracking-tight text-foreground">
+          <h3 className="font-display text-xl font-black uppercase  leading-tight tracking-tight text-foreground">
             {raffle.title}
           </h3>
           {raffle.prize && (

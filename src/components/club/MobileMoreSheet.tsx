@@ -103,7 +103,7 @@ export function MobileMoreSheet({
           <div className="mx-auto mt-2.5 h-1 w-10 shrink-0 rounded-full bg-white/15" />
 
           <div className="flex items-center justify-between px-5 pb-3 pt-3">
-            <h2 className="font-display text-2xl font-black italic uppercase tracking-tight">Ещё</h2>
+            <h2 className="font-display text-2xl font-black  uppercase tracking-tight">Ещё</h2>
             <button
               type="button"
               onClick={close}

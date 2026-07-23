@@ -80,7 +80,7 @@ export function TicketCard({
           <div className="flex items-end justify-between gap-4">
             <div className="flex min-w-0 items-end gap-2">
               {isLoading ? (
-                <span className="font-display text-[64px] font-black italic leading-none text-foreground">—</span>
+                <span className="font-display text-[64px] font-black  leading-none text-foreground">—</span>
               ) : (
                 <PlumpNum value={balance} size={numberSize} format />
               )}

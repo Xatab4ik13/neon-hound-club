@@ -289,7 +289,7 @@ function SidebarBody({
                         strokeWidth={2}
                       />
                       <span
-                        className={`font-display text-sm font-black uppercase italic tracking-widest transition-colors ${
+                        className={`font-display text-sm font-black uppercase  tracking-widest transition-colors ${
                           isActive ? "text-foreground" : "text-primary group-hover:text-foreground"
                         }`}
                       >
@@ -328,7 +328,7 @@ function SidebarBody({
                     <span
                       className={`font-display uppercase tracking-tighter transition-colors ${
                         isActive
-                          ? "text-lg font-black italic text-black"
+                          ? "text-lg font-black  text-black"
                           : "text-sm font-bold text-muted-foreground group-hover:text-foreground"
                       }`}
                     >
@@ -1016,7 +1016,7 @@ export function ProfilePlaque({
             />
             <div className="absolute inset-0 flex items-center justify-center">
               <span
-                className={`font-display font-black italic uppercase ${compact ? "text-base" : "text-lg"}`}
+                className={`font-display font-black  uppercase ${compact ? "text-base" : "text-lg"}`}
                 style={{ color: rank.onAccent }}
               >
                 {nick.slice(0, 2)}
@@ -1058,7 +1058,7 @@ export function ProfilePlaque({
 
         <div className="relative flex items-center gap-2">
           <span
-            className={`min-w-0 flex-1 truncate font-display font-black italic uppercase tracking-tight text-foreground transition-colors ${
+            className={`min-w-0 flex-1 truncate font-display font-black  uppercase tracking-tight text-foreground transition-colors ${
               compact ? "text-[15px]" : "text-[17px]"
             }`}
           >

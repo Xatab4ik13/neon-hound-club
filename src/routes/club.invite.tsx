@@ -81,7 +81,7 @@ function InvitePage() {
           Бонус обоим
         </div>
         <div className="mt-2 flex items-baseline gap-2">
-          <span className="font-display text-5xl font-black italic leading-none tabular-nums text-foreground">
+          <span className="font-display text-5xl font-black  leading-none tabular-nums text-foreground">
             +{REFERRAL_REWARD_TICKETS}
           </span>
           <span className="font-mono text-[13px] uppercase tracking-wider text-muted-foreground">
@@ -111,7 +111,7 @@ function InvitePage() {
           <div className="font-mono text-[9px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
             Мой код
           </div>
-          <div className="mt-1 truncate font-display text-[18px] font-black italic uppercase tracking-tight text-primary">
+          <div className="mt-1 truncate font-display text-[18px] font-black  uppercase tracking-tight text-primary">
             {code}
           </div>
         </div>
@@ -136,7 +136,7 @@ function InvitePage() {
         <button
           type="button"
           onClick={nativeShare}
-          className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 font-display text-[14px] font-black uppercase italic tracking-wider text-primary-foreground active:scale-[0.98]"
+          className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 font-display text-[14px] font-black uppercase  tracking-wider text-primary-foreground active:scale-[0.98]"
         >
           <Share2 className="h-4 w-4" />
           Поделиться
@@ -201,7 +201,7 @@ function InvitePage() {
             <ul className="overflow-hidden rounded-2xl border border-white/[0.06] bg-card/40 divide-y divide-white/[0.05]">
               {friends.map((f) => (
                 <li key={f.id} className="flex items-center gap-3 px-4 py-3">
-                  <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/15 font-display text-[13px] font-black italic text-primary">
+                  <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/15 font-display text-[13px] font-black  text-primary">
                     {f.nick.slice(0, 2).toUpperCase()}
                   </div>
                   <div className="min-w-0 flex-1">
@@ -261,7 +261,7 @@ function StatTile({
         <span className="text-primary">{icon}</span>
         {label}
       </div>
-      <div className="mt-1 font-display text-2xl font-black italic leading-none tabular-nums text-foreground">
+      <div className="mt-1 font-display text-2xl font-black  leading-none tabular-nums text-foreground">
         {value}
       </div>
     </div>

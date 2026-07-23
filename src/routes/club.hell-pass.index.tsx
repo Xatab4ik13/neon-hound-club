@@ -80,7 +80,7 @@ function pluralDays(n: number) {
 function Hero() {
   return (
     <section className="relative">
-      <h1 className="font-display text-4xl font-black uppercase italic leading-[0.95] tracking-tighter text-foreground md:text-6xl">
+      <h1 className="font-display text-4xl font-black uppercase  leading-[0.95] tracking-tighter text-foreground md:text-6xl">
         HELL <span className="text-primary">PASS</span>
       </h1>
       <p className="mt-3 max-w-2xl text-base text-muted-foreground md:text-lg">
@@ -139,7 +139,7 @@ function TierCard({ tier, index }: { tier: Tier; index: number }) {
           <div className="h-px flex-1 bg-white/10" />
           {tier.recommended && (
             <span
-              className="animate-pulse font-mono text-[10px] font-bold italic uppercase tracking-widest"
+              className="animate-pulse font-mono text-[10px] font-bold  uppercase tracking-widest"
               style={{ color: tier.color }}
             >
               ★ Популярный
@@ -200,7 +200,7 @@ function TierCard({ tier, index }: { tier: Tier; index: number }) {
         />
 
         <div className="relative z-10 flex w-full flex-col items-center justify-between gap-6 py-2 md:py-0">
-          <h2 className="font-display text-5xl font-black uppercase italic leading-none tracking-tighter text-black md:text-6xl">
+          <h2 className="font-display text-5xl font-black uppercase  leading-none tracking-tighter text-black md:text-6xl">
             {tier.name}
           </h2>
           <div className="flex flex-col items-center">

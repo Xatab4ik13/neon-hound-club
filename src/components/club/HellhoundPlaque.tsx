@@ -44,7 +44,7 @@ export function HellhoundAvatar({
           <img loading="lazy" decoding="async" src={avatarUrl} alt="" className="h-full w-full object-cover" />
         ) : (
           <span
-            className="font-display font-black italic uppercase leading-none"
+            className="font-display font-black  uppercase leading-none"
             style={{
               fontSize: Math.round(size * 0.46),
               lineHeight: 1,
@@ -118,7 +118,7 @@ export function HellhoundPlaqueLarge({
       <HellhoundAvatar size={44} initials={initials} avatarUrl={avatarUrl} />
       <div className="min-w-0 text-left">
         <div
-          className="truncate font-display text-[16px] font-black italic uppercase tracking-tight"
+          className="truncate font-display text-[16px] font-black  uppercase tracking-tight"
           style={{
             background: HELL_GRADIENT,
             WebkitBackgroundClip: "text",
