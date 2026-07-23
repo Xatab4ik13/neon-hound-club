@@ -43,7 +43,7 @@ function buildGroups(cartCount: number, isPwa: boolean): { title: string; items:
     {
       title: "Активность",
       items: [
-        { label: "VIP-чат", href: "/club/vip-chat", icon: PlumpChat, subtitle: "Общение с Hell в закрытом чате" },
+        { label: "VIP ЧАТ", href: "/club/vip-chat", icon: PlumpChat, subtitle: "Персональный чат с Hell" },
         { label: "Пригласить друга", href: "/club/invite", icon: PlumpInvite },
         { label: "Квесты", href: "/club/quests", icon: PlumpQuests },
         {
