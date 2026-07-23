@@ -217,7 +217,7 @@ export const PostCard = memo(function PostCard({ post, moderate = false }: { pos
       onClick={onCardClick}
       className={`post-card relative cursor-pointer overflow-visible rounded-[24px] border shadow-[0_8px_40px_rgba(0,0,0,0.4)] transition-colors ${
         post.pinned
-          ? "border-primary/30 hover:border-primary/50"
+          ? "border-[#B6FF3C]/40 hover:border-[#B6FF3C]/60"
           : "border-white/[0.06] hover:border-white/[0.10]"
       }`}
       style={
@@ -226,7 +226,7 @@ export const PostCard = memo(function PostCard({ post, moderate = false }: { pos
               background:
                 "linear-gradient(155deg, oklch(0.22 0.09 357.3 / 0.55) 0%, oklch(0.16 0.05 357.3 / 0.45) 38%, oklch(0.14 0.01 280 / 0.6) 100%)",
               boxShadow:
-                "0 8px 40px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.04), 0 0 32px -8px rgba(240,0,192,0.35)",
+                "0 8px 40px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.04), 0 0 32px -8px rgba(182,255,60,0.28)",
             }
           : {
               background:
