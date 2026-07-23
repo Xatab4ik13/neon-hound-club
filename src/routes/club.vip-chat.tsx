@@ -448,6 +448,32 @@ function VipChatPage() {
           },
         ]}
       />
+
+      {/* Sticker panel */}
+      <AnimatePresence>
+        {panelOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="shrink-0 overflow-hidden"
+          >
+            <StickerPanel
+              tab={tab}
+              setTab={setTab}
+              activePack={activePack}
+              setActivePack={setActivePack}
+              recent={recent}
+              ownedPacks={ownedPacks}
+              onPickEmoji={(e) => {
+                setText((v) => (v + e).slice(0, MAX_LEN));
+                textareaRef.current?.focus();
+              }}
+              onPickSticker={sendSticker}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
