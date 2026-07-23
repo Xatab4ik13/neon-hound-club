@@ -279,7 +279,7 @@ function QuestCard({
 
   return (
     <article
-      className={`skill-card relative rounded-3xl border-[3px] border-foreground bg-card p-5 shadow-[6px_6px_0_0_hsl(var(--foreground))] ${
+      className={`skill-card relative rounded-3xl bg-card p-5 ${
         done ? "opacity-70" : ""
       } ${visible ? "skill-card--in" : "skill-card--pre"}`}
       style={{
