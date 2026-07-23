@@ -249,7 +249,7 @@ function Chip({
       className={`shrink-0 rounded-full px-4 py-2 text-[14px] font-medium transition-all active:scale-95 ${
         active
           ? "border-[2px] border-foreground text-black shadow-[2px_2px_0_0_hsl(var(--foreground))]"
-          : "border border-white/[0.08] bg-white/[0.03] text-muted-foreground"
+          : "bg-white/[0.03] text-muted-foreground"
       }`}
       style={active ? { backgroundColor: color } : undefined}
       {...rest}
