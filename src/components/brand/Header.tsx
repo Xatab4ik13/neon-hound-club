@@ -21,14 +21,6 @@ const NAV_IMAGES: Record<string, string> = {
 
 
 
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { useViewer } from "@/hooks/use-viewer";
 import { useCart } from "@/hooks/use-cart";
 import { useMyProfile } from "@/lib/garage-api";
