@@ -249,11 +249,14 @@ function VipChatPage() {
                         <HellhoundAvatar size={44} initials="H" />
                       </div>
                     )}
-                    <motion.div
-                      initial={isNew ? { opacity: 0, x: isMine ? 40 : -40, scale: 0.9 } : false}
-                      animate={{ opacity: 1, x: 0, scale: 1 }}
-                      transition={{ type: "spring", stiffness: 520, damping: 12, mass: 0.9 }}
-                      className={cn("flex max-w-[78%] flex-col", isMine ? "items-end" : "items-start")}
+                    <div
+                      data-vip-message={m.id}
+                      className={cn(
+                        "flex max-w-[78%] flex-col",
+                        isMine ? "items-end" : "items-start",
+                        isNew && "vip-message-live",
+                        isNew && (isMine ? "vip-message-live--right" : "vip-message-live--left"),
+                      )}
                     >
                       <div
                         className={cn(
@@ -291,7 +294,7 @@ function VipChatPage() {
                       <span className="mt-1 px-1 font-mono text-[10px] uppercase tracking-wider text-white/40">
                         {formatTime(m.at)}
                       </span>
-                    </motion.div>
+                    </div>
                   </div>
                 );
               })}
