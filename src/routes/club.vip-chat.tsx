@@ -148,6 +148,30 @@ function VipChatPage() {
     setPending(null);
   };
 
+  const pushRecent = (s: string) => {
+    setRecent((prev) => {
+      const next = [s, ...prev.filter((x) => x !== s)].slice(0, 24);
+      saveRecent(next);
+      return next;
+    });
+  };
+
+  const sendSticker = (s: string) => {
+    const stickerId = parseSticker(s) ?? s;
+    pushRecent(s);
+    setPanelOpen(false);
+    haptic("light");
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: `me_${Date.now()}`,
+        role: "me",
+        sticker: stickerId,
+        at: Date.now(),
+      },
+    ]);
+  };
+
   const onKeyDown = (e: ReactKeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
