@@ -220,7 +220,7 @@ function VipChatPage() {
                           m.image && !m.text ? "rounded-2xl p-1" : "rounded-2xl px-3 py-2",
                           isMine
                             ? "rounded-br-md bg-[#B6FF3C] text-black"
-                            : "rounded-bl-md bg-white/[0.08] text-white",
+                            : "rounded-bl-md bg-white text-black",
                         )}
                       >
                         {m.image && (
