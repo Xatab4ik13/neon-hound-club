@@ -240,11 +240,8 @@ function VipChatPage() {
                 const showAvatar = !isMine && (!prev || prev.role !== "hell");
                 const isNew = !initialIdsRef.current.has(m.id);
                 return (
-                  <motion.div
+                  <div
                     key={m.id}
-                    initial={isNew ? { opacity: 0, x: isMine ? 60 : -60, scale: 0.9 } : false}
-                    animate={{ opacity: 1, x: 0, scale: 1 }}
-                    transition={{ type: "spring", stiffness: 520, damping: 12, mass: 0.9 }}
                     className={cn("flex items-end gap-2", isMine ? "justify-end" : "justify-start")}
                   >
                     {!isMine && (
@@ -252,7 +249,12 @@ function VipChatPage() {
                         <HellhoundAvatar size={44} initials="H" />
                       </div>
                     )}
-                    <div className={cn("flex max-w-[78%] flex-col", isMine ? "items-end" : "items-start")}>
+                    <motion.div
+                      initial={isNew ? { opacity: 0, x: isMine ? 40 : -40, scale: 0.9 } : false}
+                      animate={{ opacity: 1, x: 0, scale: 1 }}
+                      transition={{ type: "spring", stiffness: 520, damping: 12, mass: 0.9 }}
+                      className={cn("flex max-w-[78%] flex-col", isMine ? "items-end" : "items-start")}
+                    >
                       <div
                         className={cn(
                           "relative select-text rounded-2xl",
@@ -289,8 +291,8 @@ function VipChatPage() {
                       <span className="mt-1 px-1 font-mono text-[10px] uppercase tracking-wider text-white/40">
                         {formatTime(m.at)}
                       </span>
-                    </div>
-                  </motion.div>
+                    </motion.div>
+                  </div>
                 );
               })}
             </div>
