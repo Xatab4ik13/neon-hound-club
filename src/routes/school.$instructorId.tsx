@@ -12,6 +12,7 @@ import {
   type Slot,
 } from "@/data/instructors";
 import { loadYandexMaps } from "@/lib/yandex-maps";
+import { BookInstructorChatSheet } from "@/components/school/BookInstructorChatSheet";
 
 export const Route = createFileRoute("/school/$instructorId")({
   head: ({ params }) => {
@@ -41,10 +42,8 @@ export const Route = createFileRoute("/school/$instructorId")({
 function InstructorPage() {
   const { instructorId } = Route.useParams();
   const instructor = getInstructorBySlug(instructorId);
-  const scheduleRef = useRef<HTMLDivElement | null>(null);
-  const scrollToSchedule = () => {
-    scheduleRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-  };
+  const [chatOpen, setChatOpen] = useState(false);
+  const openChat = () => setChatOpen(true);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "auto" });
@@ -75,16 +74,16 @@ function InstructorPage() {
       <Header />
       <main className="mx-auto max-w-6xl px-4 pb-24 pt-40 md:pt-48">
         <BackLink />
-        <Hero instructor={instructor} onCta={scrollToSchedule} />
+        <Hero instructor={instructor} onCta={openChat} />
         {instructor.courses && instructor.courses.length > 0 && (
-          <CoursesSection instructor={instructor} onCta={scrollToSchedule} />
+          <CoursesSection instructor={instructor} onCta={openChat} />
         )}
         <SkillsSection instructor={instructor} />
         {instructor.approach && instructor.approach.length > 0 && (
           <ApproachSection instructor={instructor} />
         )}
         <LocationSection instructor={instructor} />
-        <ScheduleSection instructor={instructor} scheduleRef={scheduleRef} />
+        <ContactCta onContact={openChat} />
         {instructor.upcomingCourses && instructor.upcomingCourses.length > 0 && (
           <UpcomingSection instructor={instructor} />
         )}
@@ -92,7 +91,33 @@ function InstructorPage() {
         <OtherInstructors currentSlug={instructor.slug} />
       </main>
       <Footer />
+
+      <BookInstructorChatSheet
+        open={chatOpen}
+        onOpenChange={setChatOpen}
+        instructorSlug={instructor.slug}
+        instructorName={instructor.name}
+        instructorPhoto={instructor.photo}
+        instructorCity={instructor.city}
+      />
     </div>
+  );
+}
+
+function ContactCta({ onContact }: { onContact: () => void }) {
+  return (
+    <section className="mt-14 md:mt-20">
+      <button
+        type="button"
+        onClick={onContact}
+        className="flex w-full items-center justify-center gap-3 rounded-3xl border-[3px] border-foreground bg-primary px-6 py-8 font-display text-3xl font-black uppercase tracking-tight text-primary-foreground shadow-[10px_10px_0_0_hsl(var(--foreground))] transition-transform duration-150 active:translate-x-[2px] active:translate-y-[2px] active:shadow-[6px_6px_0_0_hsl(var(--foreground))] md:text-5xl md:py-10"
+      >
+        Связаться <PlumpArrowRight className="h-7 w-7 md:h-9 md:w-9" />
+      </button>
+      <p className="mt-4 text-center font-mono text-xs uppercase tracking-widest text-muted-foreground md:text-sm">
+        Напиши инструктору — договоритесь по времени в чате
+      </p>
+    </section>
   );
 }
 
