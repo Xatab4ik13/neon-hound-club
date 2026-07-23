@@ -35,7 +35,11 @@ type Item = {
   badge?: number;
 };
 
-function buildGroups(cartCount: number, isPwa: boolean): { title: string; items: Item[] }[] {
+function buildGroups(
+  cartCount: number,
+  _isPwa: boolean,
+  isInstructor: boolean,
+): { title: string; items: Item[] }[] {
   const groups: { title: string; items: Item[] }[] = [
     {
       title: "Клуб",
@@ -62,6 +66,17 @@ function buildGroups(cartCount: number, isPwa: boolean): { title: string; items:
     },
   ];
 
+  if (isInstructor) {
+    // В инструкторском режиме «Гараж» заменён в таб-баре на «Школа» —
+    // возвращаем гараж в шит, чтобы к нему был доступ.
+    groups[1].items.unshift({
+      label: "Гараж",
+      href: "/club/garage",
+      icon: PlumpGarage,
+      subtitle: "Твой мото",
+    });
+  }
+
   groups.push({
     title: "Поддержка",
     items: [
@@ -85,8 +100,9 @@ export function MobileMoreSheet({
   const { signOut } = useViewer();
   const [isPwa, setIsPwa] = useState(false);
   useEffect(() => setIsPwa(isStandalonePWA()), []);
-  const GROUPS = buildGroups(cartCount, isPwa);
+  const GROUPS = buildGroups(cartCount, isPwa, Boolean(mockInstructor));
   const [confirmLogout, setConfirmLogout] = useState(false);
+  const mockInstructor = useMockInstructorRole();
 
   const doLogout = async () => {
     try {
