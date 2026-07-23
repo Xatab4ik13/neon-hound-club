@@ -88,7 +88,7 @@ function ClubShopPage() {
     <main className="mx-auto w-full max-w-6xl px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+96px)] md:max-w-6xl md:px-8 md:py-10">
       {/* iOS large title */}
       <header className="mb-4 md:mb-8">
-        <h1 className="text-[34px] font-bold leading-tight tracking-[-0.02em] text-foreground md:text-4xl">
+        <h1 className="font-display text-2xl font-black uppercase leading-none tracking-tight text-foreground">
           Магазин
         </h1>
         <p className="mt-1 text-[15px] text-muted-foreground md:text-sm">

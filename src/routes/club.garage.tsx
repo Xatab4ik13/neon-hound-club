@@ -88,7 +88,7 @@ function GaragePage() {
   if (hydrated && !isAuthed) {
     return (
       <main className="mx-auto w-full max-w-2xl px-4 py-16 text-center">
-        <h1 className="font-display text-2xl font-black uppercase italic text-foreground">
+        <h1 className="font-display text-2xl font-black uppercase leading-none tracking-tight text-foreground">
           Войди в клуб
         </h1>
         <p className="mt-2 font-mono text-[12px] uppercase tracking-wider text-muted-foreground">
