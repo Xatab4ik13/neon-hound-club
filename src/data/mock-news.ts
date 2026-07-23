@@ -120,3 +120,9 @@ export function useMockNews(): NewsPost[] {
     mockNewsStore.getSnapshot,
   );
 }
+
+export function useMockNewsById(id: string): NewsPost | undefined {
+  const all = useMockNews();
+  return all.find((n) => n.id === id);
+}
+
