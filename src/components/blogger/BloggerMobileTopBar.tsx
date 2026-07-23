@@ -83,7 +83,6 @@ export function BloggerMobileTopBar({ onPlaqueClick }: { onPlaqueClick: () => vo
             aria-label="Назад"
           >
             <ChevronLeft className="h-6 w-6" />
-            <span className="font-medium text-[15px]">Назад</span>
           </button>
         </div>
 
