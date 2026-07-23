@@ -235,8 +235,10 @@ function ProductView({ product }: { product: ShopProduct }) {
           <ChevronLeft className="h-5 w-5" /> Магазин
         </Link>
         {product.stock !== null && (
-          <span className="text-[13px] text-muted-foreground">
-            {product.stock > 0 ? `В наличии: ${product.stock}` : "Нет в наличии"}
+          <span className="inline-flex items-center gap-1 text-[13px] text-muted-foreground">
+            {product.stock > 0 ? (
+              <>В наличии: <PlumpNum value={product.stock} size={13} /></>
+            ) : "Нет в наличии"}
           </span>
         )}
       </div>
