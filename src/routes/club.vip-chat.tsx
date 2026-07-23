@@ -12,12 +12,23 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { PlumpAttach, Send, X, ImageIcon } from "@/components/ui/icons";
+import { PlumpAttach, Send, X, ImageIcon, PlumpSticker as Sticker } from "@/components/ui/icons";
 import { AdaptiveActionSheet } from "@/components/club/AdaptiveActionSheet";
 import { HellhoundAvatar } from "@/components/club/HellhoundPlaque";
+import { StickerView } from "@/components/club/StickerView";
+import {
+  StickerPanel,
+  loadRecent,
+  saveRecent,
+  STICKER_PACKS,
+  parseSticker,
+  type StickerTab,
+} from "@/components/club/StickerPanel";
 import { cn } from "@/lib/utils";
 import { haptic } from "@/hooks/use-haptic";
 import { useKeyboardOffset } from "@/hooks/use-keyboard-offset";
+import { useMyProfile } from "@/lib/garage-api";
+import { useMyStickerPacks } from "@/lib/stickers-api";
 
 export const Route = createFileRoute("/club/vip-chat")({
   head: () => ({
