@@ -12,6 +12,7 @@ import {
   PlumpSettings,
   PlumpLogout,
   PlumpChat,
+  PlumpInstructorChat,
   PlumpGarage,
 } from "@/components/ui/icons";
 import type { SVGProps, ComponentType } from "react";
