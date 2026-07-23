@@ -14,10 +14,11 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { PlumpAttach, Send, X, ImageIcon } from "@/components/ui/icons";
 import { AdaptiveActionSheet } from "@/components/club/AdaptiveActionSheet";
+import { HellhoundAvatar } from "@/components/club/HellhoundPlaque";
+import { useViewer } from "@/hooks/use-viewer";
 import { cn } from "@/lib/utils";
 import { haptic } from "@/hooks/use-haptic";
 import { useKeyboardOffset } from "@/hooks/use-keyboard-offset";
-import vanyaAvatar from "@/assets/vanya-presenter.webp.asset.json";
 
 export const Route = createFileRoute("/club/vip-chat")({
   head: () => ({
