@@ -10,7 +10,7 @@ export function PageHeader({
 }) {
   return (
     <header className="mb-5 md:mb-8">
-      <h1 className="font-display text-[32px] font-black italic uppercase leading-[1.05] tracking-tight text-foreground md:text-4xl">
+      <h1 className="font-display text-2xl font-black uppercase leading-none tracking-tight text-foreground">
         {title}
       </h1>
       {subtitle ? (

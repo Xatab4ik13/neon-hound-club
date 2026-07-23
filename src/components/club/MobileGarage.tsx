@@ -215,7 +215,7 @@ export function MobileGarage({
       <div className="pb-32">
         <header className="px-4 pb-3 pt-2">
           <div className="flex items-end justify-between gap-3">
-            <h1 className="font-display text-[34px] font-black italic uppercase leading-none tracking-tight text-foreground">
+            <h1 className="font-display text-2xl font-black uppercase leading-none tracking-tight text-foreground">
               Гараж
             </h1>
             {bikes.length > 1 && (
@@ -265,14 +265,14 @@ export function MobileGarage({
     <div className="mx-auto w-full max-w-[1200px] px-8 py-8">
       {/* Header */}
       <header className="mb-6 flex items-end justify-between gap-4">
-        <div>
-          <div className="text-[12px] font-semibold uppercase tracking-[0.2em] text-primary">
-            HELLHOUND · Garage
+          <div>
+            <div className="text-[12px] font-semibold uppercase tracking-[0.2em] text-primary">
+              HELLHOUND · Garage
+            </div>
+            <h1 className="mt-1 font-display text-4xl font-black uppercase leading-none tracking-tight text-foreground">
+              Гараж
+            </h1>
           </div>
-          <h1 className="mt-1 font-display text-[44px] font-black italic uppercase leading-none tracking-tight text-foreground">
-            Гараж
-          </h1>
-        </div>
         <div className="flex items-center gap-3">
           {bikes.length > 1 && (
             <BikeSwitch bikes={bikes} active={activeIdx} onChange={setActiveIdx} />
@@ -1443,7 +1443,7 @@ function EmptyGarage({ onAdd }: { onAdd: () => void }) {
           "calc(100dvh - 56px - 64px - env(safe-area-inset-top) - env(safe-area-inset-bottom))",
       }}
     >
-      <h1 className="mt-6 font-display text-[34px] font-black italic uppercase leading-none tracking-tight text-foreground">
+      <h1 className="mt-6 font-display text-2xl font-black uppercase leading-none tracking-tight text-foreground">
         Гараж
       </h1>
       <div className="flex flex-1 items-center justify-center py-6">
