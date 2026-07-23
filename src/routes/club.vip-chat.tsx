@@ -373,7 +373,11 @@ function VipChatPage() {
             <textarea
               ref={textareaRef}
               value={text}
-              onChange={(e) => setText(e.target.value.slice(0, MAX_LEN))}
+              onChange={(e) => {
+                setText(e.target.value.slice(0, MAX_LEN));
+                if (panelOpen) setPanelOpen(false);
+              }}
+              onFocus={() => setPanelOpen(false)}
               onKeyDown={onKeyDown}
               rows={1}
               placeholder="Написать Hell…"
@@ -393,14 +397,28 @@ function VipChatPage() {
             )}
           </div>
 
-          <button
-            type="submit"
-            disabled={!canSend || overLimit}
-            aria-label="Отправить"
-            className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#B6FF3C] text-black transition-transform active:scale-95 disabled:opacity-40"
-          >
-            <Send size={18} strokeWidth={2} className="-translate-x-[1px]" />
-          </button>
+          {trimmed.length === 0 && !pending ? (
+            <button
+              type="button"
+              onClick={() => {
+                haptic("light");
+                setPanelOpen((p) => !p);
+              }}
+              aria-label="Стикеры"
+              className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:text-foreground active:scale-95"
+            >
+              <Sticker size={22} />
+            </button>
+          ) : (
+            <button
+              type="submit"
+              disabled={!canSend || overLimit}
+              aria-label="Отправить"
+              className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#B6FF3C] text-black transition-transform active:scale-95 disabled:opacity-40"
+            >
+              <Send size={18} strokeWidth={2} className="-translate-x-[1px]" />
+            </button>
+          )}
         </form>
       </div>
 
