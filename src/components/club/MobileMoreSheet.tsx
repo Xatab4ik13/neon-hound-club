@@ -12,6 +12,7 @@ import {
   PlumpSettings,
   PlumpLogout,
   PlumpChat,
+  PlumpGarage,
 } from "@/components/ui/icons";
 import type { SVGProps, ComponentType } from "react";
 import { Drawer } from "vaul";
@@ -20,6 +21,11 @@ import { useCart } from "@/hooks/use-cart";
 import { useViewer } from "@/hooks/use-viewer";
 import { IOSConfirm } from "@/components/ios/IOSConfirm";
 import { isStandalonePWA } from "@/lib/is-pwa";
+import {
+  setMockInstructorRole,
+  useMockInstructorRole,
+} from "@/hooks/use-instructor-mock-role";
+import { INSTRUCTOR_ACCOUNTS } from "@/data/instructor-accounts";
 
 type Item = {
   label: string;
@@ -29,7 +35,11 @@ type Item = {
   badge?: number;
 };
 
-function buildGroups(cartCount: number, isPwa: boolean): { title: string; items: Item[] }[] {
+function buildGroups(
+  cartCount: number,
+  _isPwa: boolean,
+  isInstructor: boolean,
+): { title: string; items: Item[] }[] {
   const groups: { title: string; items: Item[] }[] = [
     {
       title: "Клуб",
@@ -56,6 +66,17 @@ function buildGroups(cartCount: number, isPwa: boolean): { title: string; items:
     },
   ];
 
+  if (isInstructor) {
+    // В инструкторском режиме «Гараж» заменён в таб-баре на «Школа» —
+    // возвращаем гараж в шит, чтобы к нему был доступ.
+    groups[1].items.unshift({
+      label: "Гараж",
+      href: "/club/garage",
+      icon: PlumpGarage,
+      subtitle: "Твой мото",
+    });
+  }
+
   groups.push({
     title: "Поддержка",
     items: [
@@ -79,7 +100,8 @@ export function MobileMoreSheet({
   const { signOut } = useViewer();
   const [isPwa, setIsPwa] = useState(false);
   useEffect(() => setIsPwa(isStandalonePWA()), []);
-  const GROUPS = buildGroups(cartCount, isPwa);
+  const mockInstructor = useMockInstructorRole();
+  const GROUPS = buildGroups(cartCount, isPwa, Boolean(mockInstructor));
   const [confirmLogout, setConfirmLogout] = useState(false);
 
   const doLogout = async () => {
@@ -187,6 +209,43 @@ export function MobileMoreSheet({
                 </li>
               </ul>
             </section>
+
+            {import.meta.env.DEV && (
+              <section className="mb-2">
+                <h3 className="mb-1.5 px-2 font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                  Dev · Роль инструктора (мок)
+                </h3>
+                <div className="overflow-hidden rounded-2xl border border-white/[0.06] bg-card/40">
+                  <div className="flex flex-wrap gap-2 p-3">
+                    <button
+                      type="button"
+                      onClick={() => setMockInstructorRole(null)}
+                      className={`rounded-full border px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-widest transition-colors ${
+                        !mockInstructor
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-white/[0.12] text-muted-foreground"
+                      }`}
+                    >
+                      Обычный
+                    </button>
+                    {INSTRUCTOR_ACCOUNTS.map((acc) => (
+                      <button
+                        key={acc.slug}
+                        type="button"
+                        onClick={() => setMockInstructorRole(acc.slug)}
+                        className={`rounded-full border px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-widest transition-colors ${
+                          mockInstructor === acc.slug
+                            ? "border-primary bg-primary text-primary-foreground"
+                            : "border-white/[0.12] text-muted-foreground"
+                        }`}
+                      >
+                        {acc.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </section>
+            )}
           </div>
         </Drawer.Content>
       </Drawer.Portal>

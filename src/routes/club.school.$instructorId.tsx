@@ -15,6 +15,7 @@ import {
 } from "@/data/instructors";
 import { loadYandexMaps } from "@/lib/yandex-maps";
 import { ImageViewer } from "@/components/club/ImageViewer";
+import { BookInstructorChatSheet } from "@/components/school/BookInstructorChatSheet";
 
 export const Route = createFileRoute("/club/school/$instructorId")({
   head: ({ params }) => {
@@ -42,6 +43,7 @@ function ClubInstructorPage() {
   const { instructorId } = Route.useParams();
   const instructor = getInstructorBySlug(instructorId);
   const scheduleRef = useRef<HTMLDivElement | null>(null);
+  const [chatOpen, setChatOpen] = useState(false);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "auto" });
@@ -63,8 +65,7 @@ function ClubInstructorPage() {
     );
   }
 
-  const scrollToSchedule = () =>
-    scheduleRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  const openChat = () => setChatOpen(true);
 
   return (
     <main className="mx-auto w-full max-w-5xl pb-24">
@@ -74,7 +75,7 @@ function ClubInstructorPage() {
         <BackRow />
         <BioSection instructor={instructor} />
         {instructor.courses && instructor.courses.length > 0 && (
-          <CoursesSection instructor={instructor} onCta={scrollToSchedule} />
+          <CoursesSection instructor={instructor} onCta={openChat} />
         )}
         <SkillsSection instructor={instructor} />
         {instructor.approach && instructor.approach.length > 0 && (
@@ -83,8 +84,17 @@ function ClubInstructorPage() {
         <LocationSection instructor={instructor} />
         <ScheduleSection instructor={instructor} scheduleRef={scheduleRef} />
         <GallerySection instructor={instructor} />
-        <BottomActions onSchedule={scrollToSchedule} />
+        <BottomActions onSchedule={openChat} />
       </div>
+
+      <BookInstructorChatSheet
+        open={chatOpen}
+        onOpenChange={setChatOpen}
+        instructorSlug={instructor.slug}
+        instructorName={instructor.name}
+        instructorPhoto={instructor.photo}
+        instructorCity={instructor.city}
+      />
     </main>
   );
 }

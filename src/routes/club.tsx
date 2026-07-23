@@ -24,6 +24,8 @@ import { useMyProfile } from "@/lib/garage-api";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useCart } from "@/hooks/use-cart";
 import { MobileTabBar } from "@/components/club/MobileTabBar";
+import { InstructorMobileTabBar } from "@/components/instructor/InstructorMobileTabBar";
+import { useMockInstructorRole } from "@/hooks/use-instructor-mock-role";
 import { MobileTopBar } from "@/components/club/MobileTopBar";
 import { MobileTransition } from "@/components/club/MobileTransition";
 import { PullToRefresh } from "@/components/club/PullToRefresh";
@@ -123,7 +125,7 @@ function ClubLayout() {
   const isMobile = useIsMobile();
   const viewer = useViewer();
   const navigate = useNavigate();
-  // На корне /club свайп-назад уводит из приложения — это раздражает.
+  const mockInstructor = useMockInstructorRole();
   // Включаем edge-swipe только на под-страницах.
   useEdgeSwipeBack(pathname !== "/club");
 
@@ -196,7 +198,7 @@ function ClubLayout() {
             </MobileTransition>
           )}
         </main>
-        <MobileTabBar />
+        {mockInstructor ? <InstructorMobileTabBar /> : <MobileTabBar />}
       </div>
     );
   }

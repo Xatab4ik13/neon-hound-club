@@ -70,6 +70,7 @@ import { Route as AdminCdekRouteImport } from './routes/admin.cdek'
 import { Route as AdminBannersRouteImport } from './routes/admin.banners'
 import { Route as ClubShopIndexRouteImport } from './routes/club.shop.index'
 import { Route as ClubSchoolIndexRouteImport } from './routes/club.school.index'
+import { Route as ClubSchoolChatsIndexRouteImport } from './routes/club.school-chats.index'
 import { Route as ClubRafflesIndexRouteImport } from './routes/club.raffles.index'
 import { Route as ClubOrdersIndexRouteImport } from './routes/club.orders.index'
 import { Route as ClubHelpIndexRouteImport } from './routes/club.help.index'
@@ -79,6 +80,7 @@ import { Route as BloggerChatsIndexRouteImport } from './routes/blogger.chats.in
 import { Route as ClubUNickRouteImport } from './routes/club.u.$nick'
 import { Route as ClubShopProductSlugRouteImport } from './routes/club.shop.$productSlug'
 import { Route as ClubSchoolInstructorIdRouteImport } from './routes/club.school.$instructorId'
+import { Route as ClubSchoolChatsStudentIdRouteImport } from './routes/club.school-chats.$studentId'
 import { Route as ClubRafflesRaffleIdRouteImport } from './routes/club.raffles.$raffleId'
 import { Route as ClubPPostIdRouteImport } from './routes/club.p.$postId'
 import { Route as ClubOrdersOrderIdRouteImport } from './routes/club.orders.$orderId'
@@ -397,6 +399,11 @@ const ClubSchoolIndexRoute = ClubSchoolIndexRouteImport.update({
   path: '/school/',
   getParentRoute: () => ClubRoute,
 } as any)
+const ClubSchoolChatsIndexRoute = ClubSchoolChatsIndexRouteImport.update({
+  id: '/school-chats/',
+  path: '/school-chats/',
+  getParentRoute: () => ClubRoute,
+} as any)
 const ClubRafflesIndexRoute = ClubRafflesIndexRouteImport.update({
   id: '/raffles/',
   path: '/raffles/',
@@ -442,6 +449,12 @@ const ClubSchoolInstructorIdRoute = ClubSchoolInstructorIdRouteImport.update({
   path: '/school/$instructorId',
   getParentRoute: () => ClubRoute,
 } as any)
+const ClubSchoolChatsStudentIdRoute =
+  ClubSchoolChatsStudentIdRouteImport.update({
+    id: '/school-chats/$studentId',
+    path: '/school-chats/$studentId',
+    getParentRoute: () => ClubRoute,
+  } as any)
 const ClubRafflesRaffleIdRoute = ClubRafflesRaffleIdRouteImport.update({
   id: '/raffles/$raffleId',
   path: '/raffles/$raffleId',
@@ -575,6 +588,7 @@ export interface FileRoutesByFullPath {
   '/club/orders/$orderId': typeof ClubOrdersOrderIdRoute
   '/club/p/$postId': typeof ClubPPostIdRoute
   '/club/raffles/$raffleId': typeof ClubRafflesRaffleIdRoute
+  '/club/school-chats/$studentId': typeof ClubSchoolChatsStudentIdRoute
   '/club/school/$instructorId': typeof ClubSchoolInstructorIdRoute
   '/club/shop/$productSlug': typeof ClubShopProductSlugRoute
   '/club/u/$nick': typeof ClubUNickRoute
@@ -584,6 +598,7 @@ export interface FileRoutesByFullPath {
   '/club/help/': typeof ClubHelpIndexRoute
   '/club/orders/': typeof ClubOrdersIndexRoute
   '/club/raffles/': typeof ClubRafflesIndexRoute
+  '/club/school-chats/': typeof ClubSchoolChatsIndexRoute
   '/club/school/': typeof ClubSchoolIndexRoute
   '/club/shop/': typeof ClubShopIndexRoute
 }
@@ -656,6 +671,7 @@ export interface FileRoutesByTo {
   '/club/orders/$orderId': typeof ClubOrdersOrderIdRoute
   '/club/p/$postId': typeof ClubPPostIdRoute
   '/club/raffles/$raffleId': typeof ClubRafflesRaffleIdRoute
+  '/club/school-chats/$studentId': typeof ClubSchoolChatsStudentIdRoute
   '/club/school/$instructorId': typeof ClubSchoolInstructorIdRoute
   '/club/shop/$productSlug': typeof ClubShopProductSlugRoute
   '/club/u/$nick': typeof ClubUNickRoute
@@ -665,6 +681,7 @@ export interface FileRoutesByTo {
   '/club/help': typeof ClubHelpIndexRoute
   '/club/orders': typeof ClubOrdersIndexRoute
   '/club/raffles': typeof ClubRafflesIndexRoute
+  '/club/school-chats': typeof ClubSchoolChatsIndexRoute
   '/club/school': typeof ClubSchoolIndexRoute
   '/club/shop': typeof ClubShopIndexRoute
 }
@@ -741,6 +758,7 @@ export interface FileRoutesById {
   '/club/orders/$orderId': typeof ClubOrdersOrderIdRoute
   '/club/p/$postId': typeof ClubPPostIdRoute
   '/club/raffles/$raffleId': typeof ClubRafflesRaffleIdRoute
+  '/club/school-chats/$studentId': typeof ClubSchoolChatsStudentIdRoute
   '/club/school/$instructorId': typeof ClubSchoolInstructorIdRoute
   '/club/shop/$productSlug': typeof ClubShopProductSlugRoute
   '/club/u/$nick': typeof ClubUNickRoute
@@ -750,6 +768,7 @@ export interface FileRoutesById {
   '/club/help/': typeof ClubHelpIndexRoute
   '/club/orders/': typeof ClubOrdersIndexRoute
   '/club/raffles/': typeof ClubRafflesIndexRoute
+  '/club/school-chats/': typeof ClubSchoolChatsIndexRoute
   '/club/school/': typeof ClubSchoolIndexRoute
   '/club/shop/': typeof ClubShopIndexRoute
 }
@@ -827,6 +846,7 @@ export interface FileRouteTypes {
     | '/club/orders/$orderId'
     | '/club/p/$postId'
     | '/club/raffles/$raffleId'
+    | '/club/school-chats/$studentId'
     | '/club/school/$instructorId'
     | '/club/shop/$productSlug'
     | '/club/u/$nick'
@@ -836,6 +856,7 @@ export interface FileRouteTypes {
     | '/club/help/'
     | '/club/orders/'
     | '/club/raffles/'
+    | '/club/school-chats/'
     | '/club/school/'
     | '/club/shop/'
   fileRoutesByTo: FileRoutesByTo
@@ -908,6 +929,7 @@ export interface FileRouteTypes {
     | '/club/orders/$orderId'
     | '/club/p/$postId'
     | '/club/raffles/$raffleId'
+    | '/club/school-chats/$studentId'
     | '/club/school/$instructorId'
     | '/club/shop/$productSlug'
     | '/club/u/$nick'
@@ -917,6 +939,7 @@ export interface FileRouteTypes {
     | '/club/help'
     | '/club/orders'
     | '/club/raffles'
+    | '/club/school-chats'
     | '/club/school'
     | '/club/shop'
   id:
@@ -992,6 +1015,7 @@ export interface FileRouteTypes {
     | '/club/orders/$orderId'
     | '/club/p/$postId'
     | '/club/raffles/$raffleId'
+    | '/club/school-chats/$studentId'
     | '/club/school/$instructorId'
     | '/club/shop/$productSlug'
     | '/club/u/$nick'
@@ -1001,6 +1025,7 @@ export interface FileRouteTypes {
     | '/club/help/'
     | '/club/orders/'
     | '/club/raffles/'
+    | '/club/school-chats/'
     | '/club/school/'
     | '/club/shop/'
   fileRoutesById: FileRoutesById
@@ -1465,6 +1490,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ClubSchoolIndexRouteImport
       parentRoute: typeof ClubRoute
     }
+    '/club/school-chats/': {
+      id: '/club/school-chats/'
+      path: '/school-chats'
+      fullPath: '/club/school-chats/'
+      preLoaderRoute: typeof ClubSchoolChatsIndexRouteImport
+      parentRoute: typeof ClubRoute
+    }
     '/club/raffles/': {
       id: '/club/raffles/'
       path: '/raffles'
@@ -1526,6 +1558,13 @@ declare module '@tanstack/react-router' {
       path: '/school/$instructorId'
       fullPath: '/club/school/$instructorId'
       preLoaderRoute: typeof ClubSchoolInstructorIdRouteImport
+      parentRoute: typeof ClubRoute
+    }
+    '/club/school-chats/$studentId': {
+      id: '/club/school-chats/$studentId'
+      path: '/school-chats/$studentId'
+      fullPath: '/club/school-chats/$studentId'
+      preLoaderRoute: typeof ClubSchoolChatsStudentIdRouteImport
       parentRoute: typeof ClubRoute
     }
     '/club/raffles/$raffleId': {
@@ -1701,6 +1740,7 @@ interface ClubRouteChildren {
   ClubOrdersOrderIdRoute: typeof ClubOrdersOrderIdRoute
   ClubPPostIdRoute: typeof ClubPPostIdRoute
   ClubRafflesRaffleIdRoute: typeof ClubRafflesRaffleIdRoute
+  ClubSchoolChatsStudentIdRoute: typeof ClubSchoolChatsStudentIdRoute
   ClubSchoolInstructorIdRoute: typeof ClubSchoolInstructorIdRoute
   ClubShopProductSlugRoute: typeof ClubShopProductSlugRoute
   ClubUNickRoute: typeof ClubUNickRoute
@@ -1708,6 +1748,7 @@ interface ClubRouteChildren {
   ClubHelpIndexRoute: typeof ClubHelpIndexRoute
   ClubOrdersIndexRoute: typeof ClubOrdersIndexRoute
   ClubRafflesIndexRoute: typeof ClubRafflesIndexRoute
+  ClubSchoolChatsIndexRoute: typeof ClubSchoolChatsIndexRoute
   ClubSchoolIndexRoute: typeof ClubSchoolIndexRoute
   ClubShopIndexRoute: typeof ClubShopIndexRoute
 }
@@ -1735,6 +1776,7 @@ const ClubRouteChildren: ClubRouteChildren = {
   ClubOrdersOrderIdRoute: ClubOrdersOrderIdRoute,
   ClubPPostIdRoute: ClubPPostIdRoute,
   ClubRafflesRaffleIdRoute: ClubRafflesRaffleIdRoute,
+  ClubSchoolChatsStudentIdRoute: ClubSchoolChatsStudentIdRoute,
   ClubSchoolInstructorIdRoute: ClubSchoolInstructorIdRoute,
   ClubShopProductSlugRoute: ClubShopProductSlugRoute,
   ClubUNickRoute: ClubUNickRoute,
@@ -1742,6 +1784,7 @@ const ClubRouteChildren: ClubRouteChildren = {
   ClubHelpIndexRoute: ClubHelpIndexRoute,
   ClubOrdersIndexRoute: ClubOrdersIndexRoute,
   ClubRafflesIndexRoute: ClubRafflesIndexRoute,
+  ClubSchoolChatsIndexRoute: ClubSchoolChatsIndexRoute,
   ClubSchoolIndexRoute: ClubSchoolIndexRoute,
   ClubShopIndexRoute: ClubShopIndexRoute,
 }
