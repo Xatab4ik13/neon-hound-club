@@ -111,7 +111,8 @@ const FeedRow = memo(function FeedRow({ post }: { post: Post }) {
     () => ({
       icon: <Heart className="h-4 w-4" fill="currentColor" />,
       label: post.liked ? "Лайк убран" : "Лайк",
-      bg: "linear-gradient(90deg, oklch(0.55 0.22 357.3) 0%, oklch(0.6 0.24 357.3) 100%)",
+      bg: "linear-gradient(90deg, #B6FF3C 0%, #9FE82A 100%)",
+      fg: "#000",
       onAction: () => feedStore.toggleLike(post.id, !post.liked),
     }),
     [post.id, post.liked],
@@ -245,7 +246,7 @@ export const PostCard = memo(function PostCard({ post, moderate = false }: { pos
         }
         if (post.pinned) {
           return (
-            <div className="pointer-events-none absolute top-3 right-3 z-10 inline-flex items-center gap-1 rounded-md border border-primary/50 bg-[oklch(0.18_0.08_357.3)] px-2 py-1 font-mono text-[9px] font-black uppercase leading-none tracking-[0.18em] text-primary shadow-[0_4px_12px_rgba(0,0,0,0.45)]">
+            <div className="pointer-events-none absolute top-3 right-3 z-10 inline-flex items-center gap-1 rounded-md border border-[#B6FF3C]/50 bg-[#B6FF3C]/15 px-2 py-1 font-mono text-[9px] font-black uppercase leading-none tracking-[0.18em] text-[#B6FF3C] shadow-[0_4px_12px_rgba(0,0,0,0.45)]">
               <Pin className="h-2.5 w-2.5" strokeWidth={2.8} />
               Закреп
             </div>

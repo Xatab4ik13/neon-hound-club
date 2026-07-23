@@ -46,6 +46,9 @@ function toSlide(b: HomeBanner): Slide {
 
 const AUTO_MS = 5000;
 
+// Фирменные акценты без розового — по очереди на баннеры.
+const CTA_COLORS = ["#B6FF3C", "#FFD93D", "#3DDBD9", "#FF7A3D"];
+
 export function FeedHeroCarousel() {
   const { data, isLoading } = useQuery({
     queryKey: ["home-banners"],
@@ -112,8 +115,8 @@ export function FeedHeroCarousel() {
           className="flex transition-transform duration-500 ease-out"
           style={{ transform: `translateX(-${index * 100}%)` }}
         >
-          {slides.map((s) => (
-            <HeroSlideCard key={s.id} slide={s} />
+          {slides.map((s, i) => (
+            <HeroSlideCard key={s.id} slide={s} index={i} />
           ))}
         </div>
       </div>
@@ -140,15 +143,20 @@ export function FeedHeroCarousel() {
   );
 }
 
-function HeroSlideCard({ slide }: { slide: Slide }) {
+function HeroSlideCard({ slide, index }: { slide: Slide; index: number }) {
   const bgStyle: React.CSSProperties = bannerBackgroundStyle(slide.imageUrl);
+  const accent = CTA_COLORS[index % CTA_COLORS.length];
+  const accentShadow = `${accent}80`;
 
+  const ctaClassName =
+    "inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 font-mono text-[11px] font-bold uppercase tracking-[0.18em] text-black shadow-[0_4px_16px_rgba(0,0,0,0.35)] transition-transform active:scale-95";
 
   const Cta = slide.isExternal ? (
     <a
       href={slide.to}
       rel="noopener noreferrer"
-      className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3.5 py-2 font-mono text-[11px] font-bold uppercase tracking-[0.18em] text-primary-foreground shadow-[0_4px_16px_rgba(0,0,0,0.35)] transition-transform active:scale-95"
+      className={ctaClassName}
+      style={{ backgroundColor: accent, boxShadow: `0 4px 16px ${accentShadow}` }}
     >
       {slide.cta}
       <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.5} />
@@ -156,7 +164,8 @@ function HeroSlideCard({ slide }: { slide: Slide }) {
   ) : (
     <Link
       to={slide.to}
-      className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3.5 py-2 font-mono text-[11px] font-bold uppercase tracking-[0.18em] text-primary-foreground shadow-[0_4px_16px_rgba(0,0,0,0.35)] transition-transform active:scale-95"
+      className={ctaClassName}
+      style={{ backgroundColor: accent, boxShadow: `0 4px 16px ${accentShadow}` }}
     >
       {slide.cta}
       <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.5} />

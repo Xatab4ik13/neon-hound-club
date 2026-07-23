@@ -172,8 +172,8 @@ export function LikeButton({ liked, count, onToggle, onReact }: Props) {
         aria-pressed={liked}
         className={`relative inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 font-mono text-[12px] font-bold tabular-nums select-none transition-colors active:scale-95 ${
           liked
-            ? "bg-primary text-primary-foreground shadow-[0_4px_14px_rgba(240,0,192,0.35)]"
-            : "border border-white/[0.08] bg-white/[0.04] text-foreground hover:border-primary/40 hover:text-primary"
+            ? "bg-[#B6FF3C] text-black shadow-[0_4px_14px_rgba(182,255,60,0.35)]"
+            : "border border-white/[0.08] bg-white/[0.04] text-foreground hover:border-[#B6FF3C]/40 hover:text-[#B6FF3C]"
         }`}
         style={{
           transition:
@@ -202,12 +202,12 @@ export function LikeButton({ liked, count, onToggle, onReact }: Props) {
               {FLOATERS.map((t, i) => (
                 <span
                   key={i}
-                  className="absolute left-1/2 top-1/2 font-mono text-[10px] font-bold leading-none text-primary"
+                  className="absolute left-1/2 top-1/2 font-mono text-[10px] font-bold leading-none text-[#B6FF3C]"
                   style={{
                     // @ts-expect-error custom CSS vars
                     "--dx": `${(i - 1) * 14}px`,
                     animation: `like-float 900ms ${i * 60}ms ease-out forwards`,
-                    textShadow: "0 2px 6px rgba(240,0,192,0.5)",
+                    textShadow: "0 2px 6px rgba(182,255,60,0.5)",
                   }}
                 >
                   {t}
