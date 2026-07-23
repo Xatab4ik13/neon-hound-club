@@ -35,7 +35,6 @@ function formatWhen(ts: number): string {
 function MyInstructorsList() {
   const viewer = useViewer();
   const navigate = useNavigate();
-  const [q, setQ] = useState("");
   const studentId = viewer.user?.id ?? "guest";
   const threads = useStudentThreadsList(studentId);
 
@@ -46,15 +45,10 @@ function MyInstructorsList() {
   }, [viewer.hydrated, viewer.user, navigate]);
 
   const rows = useMemo(() => {
-    const s = q.trim().toLowerCase();
-    const enriched = threads
+    return threads
       .map((t) => ({ thread: t, instructor: getInstructorBySlug(t.instructorSlug) }))
       .filter((r) => r.instructor);
-    if (!s) return enriched;
-    return enriched.filter((r) =>
-      (r.instructor?.name ?? "").toLowerCase().includes(s),
-    );
-  }, [threads, q]);
+  }, [threads]);
 
   return (
     <div className="min-h-full bg-[#0a0a0a] pb-4">
