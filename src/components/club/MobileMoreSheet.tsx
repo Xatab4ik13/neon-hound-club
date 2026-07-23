@@ -11,6 +11,7 @@ import {
   PlumpHelp,
   PlumpSettings,
   PlumpLogout,
+  PlumpChat,
 } from "@/components/ui/icons";
 import type { SVGProps, ComponentType } from "react";
 import { Drawer } from "vaul";
@@ -42,6 +43,7 @@ function buildGroups(cartCount: number, isPwa: boolean): { title: string; items:
     {
       title: "Активность",
       items: [
+        { label: "VIP-чат", href: "/club/vip-chat", icon: PlumpChat, subtitle: "Общение с Hell в закрытом чате" },
         { label: "Пригласить друга", href: "/club/invite", icon: PlumpInvite },
         { label: "Квесты", href: "/club/quests", icon: PlumpQuests },
         {

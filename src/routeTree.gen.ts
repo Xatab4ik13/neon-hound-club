@@ -39,6 +39,7 @@ import { Route as LegalPromoRulesRouteImport } from './routes/legal.promo-rules'
 import { Route as LegalPrivacyRouteImport } from './routes/legal.privacy'
 import { Route as LegalOfferRouteImport } from './routes/legal.offer'
 import { Route as HellPassTierRouteImport } from './routes/hell-pass.$tier'
+import { Route as ClubVipChatRouteImport } from './routes/club.vip-chat'
 import { Route as ClubTicketsRouteImport } from './routes/club.tickets'
 import { Route as ClubRankRouteImport } from './routes/club.rank'
 import { Route as ClubQuestsRouteImport } from './routes/club.quests'
@@ -238,6 +239,11 @@ const HellPassTierRoute = HellPassTierRouteImport.update({
   id: '/hell-pass/$tier',
   path: '/hell-pass/$tier',
   getParentRoute: () => rootRouteImport,
+} as any)
+const ClubVipChatRoute = ClubVipChatRouteImport.update({
+  id: '/vip-chat',
+  path: '/vip-chat',
+  getParentRoute: () => ClubRoute,
 } as any)
 const ClubTicketsRoute = ClubTicketsRouteImport.update({
   id: '/tickets',
@@ -526,6 +532,7 @@ export interface FileRoutesByFullPath {
   '/club/quests': typeof ClubQuestsRoute
   '/club/rank': typeof ClubRankRoute
   '/club/tickets': typeof ClubTicketsRoute
+  '/club/vip-chat': typeof ClubVipChatRoute
   '/hell-pass/$tier': typeof HellPassTierRoute
   '/legal/offer': typeof LegalOfferRoute
   '/legal/privacy': typeof LegalPrivacyRoute
@@ -604,6 +611,7 @@ export interface FileRoutesByTo {
   '/club/quests': typeof ClubQuestsRoute
   '/club/rank': typeof ClubRankRoute
   '/club/tickets': typeof ClubTicketsRoute
+  '/club/vip-chat': typeof ClubVipChatRoute
   '/hell-pass/$tier': typeof HellPassTierRoute
   '/legal/offer': typeof LegalOfferRoute
   '/legal/privacy': typeof LegalPrivacyRoute
@@ -686,6 +694,7 @@ export interface FileRoutesById {
   '/club/quests': typeof ClubQuestsRoute
   '/club/rank': typeof ClubRankRoute
   '/club/tickets': typeof ClubTicketsRoute
+  '/club/vip-chat': typeof ClubVipChatRoute
   '/hell-pass/$tier': typeof HellPassTierRoute
   '/legal/offer': typeof LegalOfferRoute
   '/legal/privacy': typeof LegalPrivacyRoute
@@ -769,6 +778,7 @@ export interface FileRouteTypes {
     | '/club/quests'
     | '/club/rank'
     | '/club/tickets'
+    | '/club/vip-chat'
     | '/hell-pass/$tier'
     | '/legal/offer'
     | '/legal/privacy'
@@ -847,6 +857,7 @@ export interface FileRouteTypes {
     | '/club/quests'
     | '/club/rank'
     | '/club/tickets'
+    | '/club/vip-chat'
     | '/hell-pass/$tier'
     | '/legal/offer'
     | '/legal/privacy'
@@ -928,6 +939,7 @@ export interface FileRouteTypes {
     | '/club/quests'
     | '/club/rank'
     | '/club/tickets'
+    | '/club/vip-chat'
     | '/hell-pass/$tier'
     | '/legal/offer'
     | '/legal/privacy'
@@ -1211,6 +1223,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/hell-pass/$tier'
       preLoaderRoute: typeof HellPassTierRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/club/vip-chat': {
+      id: '/club/vip-chat'
+      path: '/vip-chat'
+      fullPath: '/club/vip-chat'
+      preLoaderRoute: typeof ClubVipChatRouteImport
+      parentRoute: typeof ClubRoute
     }
     '/club/tickets': {
       id: '/club/tickets'
@@ -1628,6 +1647,7 @@ interface ClubRouteChildren {
   ClubQuestsRoute: typeof ClubQuestsRoute
   ClubRankRoute: typeof ClubRankRoute
   ClubTicketsRoute: typeof ClubTicketsRoute
+  ClubVipChatRoute: typeof ClubVipChatRoute
   ClubIndexRoute: typeof ClubIndexRoute
   ClubHellPassTierRoute: typeof ClubHellPassTierRoute
   ClubHelpTicketIdRoute: typeof ClubHelpTicketIdRoute
@@ -1661,6 +1681,7 @@ const ClubRouteChildren: ClubRouteChildren = {
   ClubQuestsRoute: ClubQuestsRoute,
   ClubRankRoute: ClubRankRoute,
   ClubTicketsRoute: ClubTicketsRoute,
+  ClubVipChatRoute: ClubVipChatRoute,
   ClubIndexRoute: ClubIndexRoute,
   ClubHellPassTierRoute: ClubHellPassTierRoute,
   ClubHelpTicketIdRoute: ClubHelpTicketIdRoute,
