@@ -111,7 +111,8 @@ const FeedRow = memo(function FeedRow({ post }: { post: Post }) {
     () => ({
       icon: <Heart className="h-4 w-4" fill="currentColor" />,
       label: post.liked ? "Лайк убран" : "Лайк",
-      bg: "linear-gradient(90deg, oklch(0.55 0.22 357.3) 0%, oklch(0.6 0.24 357.3) 100%)",
+      bg: "linear-gradient(90deg, #B6FF3C 0%, #9FE82A 100%)",
+      fg: "#000",
       onAction: () => feedStore.toggleLike(post.id, !post.liked),
     }),
     [post.id, post.liked],
