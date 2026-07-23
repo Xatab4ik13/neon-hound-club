@@ -16,6 +16,9 @@ import { SPECIAL_PACK, SPECIAL_PACK_STICKERS, SPECIAL_PACK_COVER, type StickerMe
 import { HELL_MINIONS_PACK, HELL_MINIONS_STICKERS, HELL_MINIONS_COVER } from "@/assets/stickers/hell-minions";
 import { StickerView, type StickerViewHandle } from "@/components/club/StickerView";
 import { FeedHeroCarousel } from "@/components/club/FeedHeroCarousel";
+import { FeedTabs, useFeedTab } from "@/components/club/FeedTabs";
+import { NewsRow } from "@/components/club/NewsPostCard";
+import { useMockNews } from "@/data/mock-news";
 import { LikeButton, REACTIONS, type Reaction } from "@/components/club/LikeButton";
 import { ImageViewer } from "@/components/club/ImageViewer";
 import { PostSkeleton } from "@/components/club/PostSkeleton";
@@ -60,6 +63,9 @@ function ClubFeedPage() {
   const { isAuthed, hydrated } = useViewer();
   const showSkeleton = !loaded && posts.length === 0;
 
+  const [tab, setTab] = useFeedTab();
+  const newsPosts = useMockNews();
+
   // Внутри уже установленной PWA НИКОГДА не уводим на другой origin —
   // iOS откроет cross-origin в встроенном Safari (видны адресная строка
   // и кнопки браузера). Поддоменная история — только до установки,
@@ -81,23 +87,33 @@ function ClubFeedPage() {
         </h1>
       </div>
 
+      <FeedTabs tab={tab} onChange={setTab} />
+
       <div className="md:hidden">
         <FeedHeroCarousel />
       </div>
 
       <div className="space-y-5">
-        {showSkeleton ? (
-          <>
-            <PostSkeleton withImage />
-            <PostSkeleton />
-            <PostSkeleton withImage />
-          </>
+        {tab === "hellhound" ? (
+          showSkeleton ? (
+            <>
+              <PostSkeleton withImage />
+              <PostSkeleton />
+              <PostSkeleton withImage />
+            </>
+          ) : (
+            <>
+              {posts.map((post) => (
+                <FeedRow key={post.id} post={post} />
+              ))}
+              {posts.length > 0 && <FeedSentinel />}
+            </>
+          )
         ) : (
           <>
-            {posts.map((post) => (
-              <FeedRow key={post.id} post={post} />
+            {newsPosts.map((n) => (
+              <NewsRow key={n.id} post={n} />
             ))}
-            {posts.length > 0 && <FeedSentinel />}
           </>
         )}
       </div>
