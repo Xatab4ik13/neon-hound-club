@@ -115,8 +115,8 @@ export function FeedHeroCarousel() {
           className="flex transition-transform duration-500 ease-out"
           style={{ transform: `translateX(-${index * 100}%)` }}
         >
-          {slides.map((s) => (
-            <HeroSlideCard key={s.id} slide={s} />
+          {slides.map((s, i) => (
+            <HeroSlideCard key={s.id} slide={s} index={i} />
           ))}
         </div>
       </div>
