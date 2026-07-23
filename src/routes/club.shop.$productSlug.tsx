@@ -219,8 +219,10 @@ function ProductView({ product }: { product: ShopProduct }) {
       {/* Stock indicator (back-стрелка живёт в MobileTopBar) */}
       {product.stock !== null && (
         <div className="flex items-center justify-end px-4 pt-3 md:hidden">
-          <span className="text-[13px] text-muted-foreground">
-            {product.stock > 0 ? `В наличии: ${product.stock}` : "Нет в наличии"}
+          <span className="inline-flex items-center gap-1 text-[13px] text-muted-foreground">
+            {product.stock > 0 ? (
+              <>В наличии: <PlumpNum value={product.stock} size={13} /></>
+            ) : "Нет в наличии"}
           </span>
         </div>
       )}
