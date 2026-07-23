@@ -135,19 +135,12 @@ function NewsPostCard({ post }: { post: NewsPost }) {
             </div>
 
             <div className="min-w-0 flex-1">
-              <div className="flex items-baseline gap-2">
-                <span
-                  className="truncate font-display text-[13px] font-black uppercase italic tracking-wider"
-                  style={{ color: NEWS_COLOR }}
-                >
-                  {post.category}
-                </span>
-              </div>
               <RelativeTime
                 iso={post.createdAt}
                 className="mt-0.5 block font-mono text-[10px] uppercase tracking-[0.18em] tabular-nums text-muted-foreground"
               />
             </div>
+
           </header>
 
           {/* Заголовок новости — жирным, крупнее чем body */}
@@ -198,7 +191,10 @@ function NewsPostCard({ post }: { post: NewsPost }) {
               type="button"
               onClick={() => hhToast.info("Комментарии подключим скоро")}
               aria-label="Комментарий"
-              className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 font-mono text-[12px] font-bold tabular-nums text-foreground transition-all hover:border-primary/40 hover:text-primary active:scale-95"
+              className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 font-mono text-[12px] font-bold tabular-nums text-foreground transition-all active:scale-95"
+              style={{ color: NEWS_COLOR }}
+              onMouseEnter={(e) => (e.currentTarget.style.borderColor = NEWS_COLOR)}
+              onMouseLeave={(e) => (e.currentTarget.style.borderColor = "")}
             >
               <PlumpComment className="h-4 w-4" />
               <span>{formatCount(post.commentsCount)}</span>
@@ -208,10 +204,14 @@ function NewsPostCard({ post }: { post: NewsPost }) {
               type="button"
               onClick={handleShare}
               aria-label="Поделиться"
-              className="ml-auto grid h-9 w-9 place-items-center rounded-full border border-white/[0.08] bg-white/[0.04] text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary active:scale-95"
+              className="ml-auto grid h-9 w-9 place-items-center rounded-full border border-white/[0.08] bg-white/[0.04] transition-colors active:scale-95"
+              style={{ color: NEWS_COLOR }}
+              onMouseEnter={(e) => (e.currentTarget.style.borderColor = NEWS_COLOR)}
+              onMouseLeave={(e) => (e.currentTarget.style.borderColor = "")}
             >
               <PlumpShare className="h-4 w-4" />
             </button>
+
           </div>
         </div>
       </article>

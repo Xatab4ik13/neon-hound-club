@@ -49,7 +49,7 @@ const AUTO_MS = 5000;
 // Фирменные акценты без розового — по очереди на баннеры.
 const CTA_COLORS = ["#B6FF3C", "#FFD93D", "#3DDBD9", "#FF7A3D"];
 
-export function FeedHeroCarousel() {
+export function FeedHeroCarousel({ accent }: { accent?: string } = {}) {
   const { data, isLoading } = useQuery({
     queryKey: ["home-banners"],
     queryFn: fetchHomeBanners,
@@ -132,11 +132,13 @@ export function FeedHeroCarousel() {
                 aria-label={`Слайд ${i + 1}`}
                 onClick={() => setIndex(i)}
                 className={`h-1.5 rounded-full transition-all duration-300 ${
-                  active ? "w-6 bg-primary" : "w-1.5 bg-white/20 hover:bg-white/40"
+                  active ? "w-6" : "w-1.5 bg-white/20 hover:bg-white/40"
                 }`}
+                style={active ? { background: accent ?? "hsl(var(--primary))" } : undefined}
               />
             );
           })}
+
         </div>
       )}
     </section>

@@ -12,9 +12,10 @@ const STORAGE_KEY = "club:feed-tab";
 
 // Цвета вкладок — pink primary для HELLHOUND, салатовый для NEWS (согласовано)
 const TABS: { id: FeedTab; label: string; color: string }[] = [
-  { id: "hellhound", label: "HELLHOUND", color: "hsl(var(--primary))" },
   { id: "news", label: "NEWS", color: "#B6FF3C" },
+  { id: "hellhound", label: "HELLHOUND", color: "#F000C0" },
 ];
+
 
 export function useFeedTab(): [FeedTab, (t: FeedTab) => void] {
   const [tab, setTab] = useState<FeedTab>("hellhound");
