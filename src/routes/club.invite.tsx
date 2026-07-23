@@ -30,6 +30,13 @@ export const Route = createFileRoute("/club/invite")({
   component: InvitePage,
 });
 
+// Фирменные Plump-цвета
+const C_PINK = "#F000C0";
+const C_SALAD = "#B6FF3C";
+const C_CYAN = "#3DDBD9";
+const C_YELLOW = "#FFD93D";
+const C_ORANGE = "#FF7A3D";
+
 function InvitePage() {
   const { data } = useInvitesMe();
   const friends = data?.items ?? [];
@@ -74,52 +81,49 @@ function InvitePage() {
     >
       <PageHeader title="Пригласить" subtitle="Реферальная программа клуба" />
 
-      {/* Reward hero card */}
-      <section className="mb-5 overflow-hidden rounded-2xl border border-primary/25 bg-gradient-to-br from-primary/15 via-card/60 to-black px-5 py-6">
-        <div className="flex items-center gap-2 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-primary">
+      {/* Reward hero — розовая Plump-плашка */}
+      <section
+        className="relative mb-6 overflow-hidden rounded-2xl border-[2px] border-foreground px-5 py-6 shadow-[4px_4px_0_0_hsl(var(--foreground))]"
+        style={{ background: C_PINK }}
+      >
+        <div className="flex items-center gap-1.5 font-display text-[11px] font-black uppercase italic tracking-wider text-black">
           <PlumpTicket className="h-3.5 w-3.5" />
           Бонус обоим
         </div>
-        <div className="mt-2 flex items-baseline gap-2">
-          <span className="font-display text-5xl font-black italic leading-none tabular-nums text-foreground">
+        <div className="mt-2 flex items-baseline gap-2 text-black">
+          <span className="font-display text-6xl font-black italic leading-none tabular-nums">
             +{REFERRAL_REWARD_TICKETS}
           </span>
-          <span className="font-mono text-[13px] uppercase tracking-wider text-muted-foreground">
+          <span className="font-display text-[14px] font-black uppercase italic tracking-wider">
             билет
           </span>
         </div>
-        <p className="mt-3 text-[14px] leading-snug text-muted-foreground">
+        <p className="mt-3 text-[13px] font-medium leading-snug text-black/85">
           Друг регистрируется по твоей ссылке — обоим прилетает по{" "}
-          <span className="font-semibold text-foreground">1 билету</span> после
-          первой активности. Без лимитов.
+          <span className="font-black">1 билету</span> после первой активности. Без лимитов.
         </p>
       </section>
 
-      {/* Stats: 3 iOS tiles */}
-      <section className="mb-5 grid grid-cols-3 gap-2">
-        <StatTile
-          icon={<Users className="h-4 w-4" />}
-          label="Приведено"
-          value={friends.length}
-        />
-        <StatTile
-          icon={<PlumpTicket className="h-4 w-4" />}
-          label="Билетов"
-          value={total}
-        />
-        <div className="rounded-2xl border border-white/[0.06] bg-card/40 px-3 py-3">
-          <div className="font-mono text-[9px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+      {/* Stats: 3 разноцветных Plump-плитки */}
+      <section className="mb-6 grid grid-cols-3 gap-2.5">
+        <PlumpTile color={C_SALAD} icon={<Users className="h-4 w-4" />} label="Приведено" value={friends.length} />
+        <PlumpTile color={C_YELLOW} icon={<PlumpTicket className="h-4 w-4" />} label="Билетов" value={total} />
+        <div
+          className="rounded-2xl border-[2px] border-foreground px-3 py-3 shadow-[3px_3px_0_0_hsl(var(--foreground))]"
+          style={{ background: C_CYAN }}
+        >
+          <div className="font-display text-[10px] font-black uppercase italic tracking-wider text-black">
             Мой код
           </div>
-          <div className="mt-1 truncate font-display text-[18px] font-black italic uppercase tracking-tight text-primary">
-            {code}
+          <div className="mt-1 truncate font-display text-[18px] font-black italic uppercase tracking-tight text-black">
+            {code || "—"}
           </div>
         </div>
       </section>
 
       {/* Link + copy + share */}
-      <section className="mb-5 rounded-2xl border border-white/[0.06] bg-card/40 p-3">
-        <div className="flex items-center gap-2 rounded-xl bg-black/40 px-3 py-2.5">
+      <section className="mb-6 rounded-2xl border-[2px] border-foreground bg-card p-3 shadow-[3px_3px_0_0_hsl(var(--foreground))]">
+        <div className="flex items-center gap-2 rounded-xl border-[2px] border-foreground bg-black/40 px-3 py-2.5">
           <code className="flex-1 truncate font-mono text-[12px] text-foreground">
             {url}
           </code>
@@ -127,7 +131,8 @@ function InvitePage() {
             type="button"
             onClick={copy}
             aria-label="Скопировать ссылку"
-            className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-primary/15 text-primary active:scale-95"
+            className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border-[2px] border-foreground text-black shadow-[2px_2px_0_0_hsl(var(--foreground))] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none"
+            style={{ background: copied ? C_SALAD : C_YELLOW }}
           >
             {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
           </button>
@@ -136,7 +141,8 @@ function InvitePage() {
         <button
           type="button"
           onClick={nativeShare}
-          className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 font-display text-[14px] font-black uppercase italic tracking-wider text-primary-foreground active:scale-[0.98]"
+          className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border-[2px] border-foreground py-3 font-display text-[14px] font-black uppercase italic tracking-wider text-black shadow-[3px_3px_0_0_hsl(var(--foreground))] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none"
+          style={{ background: C_PINK }}
         >
           <Share2 className="h-4 w-4" />
           Поделиться
@@ -144,16 +150,19 @@ function InvitePage() {
 
         <div className="mt-3 grid grid-cols-3 gap-2">
           <ShareTile
+            color={C_CYAN}
             href={`https://t.me/share/url?url=${shareUrl}&text=${shareText}`}
             label="Telegram"
             icon={<Send className="h-4 w-4" />}
           />
           <ShareTile
+            color={C_SALAD}
             href={`https://wa.me/?text=${shareText}%20${shareUrl}`}
             label="WhatsApp"
             icon={<MessageCircle className="h-4 w-4" />}
           />
           <ShareTile
+            color={C_ORANGE}
             href={`https://vk.com/share.php?url=${shareUrl}`}
             label="VK"
             icon={<Share2 className="h-4 w-4" />}
@@ -162,15 +171,16 @@ function InvitePage() {
       </section>
 
       {/* How it works */}
-      <section className="mb-5">
-        <h3 className="mb-1.5 px-3 font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+      <section className="mb-6">
+        <h3 className="mb-2 px-1 font-display text-[13px] font-black uppercase italic tracking-wider text-foreground">
           Как это работает
         </h3>
-        <ol className="overflow-hidden rounded-2xl border border-white/[0.06] bg-card/40 divide-y divide-white/[0.05]">
-          <Step n={1} text="Поделись ссылкой со своими." />
-          <Step n={2} text="Друг регистрируется в клубе и подтверждает email." />
+        <ol className="space-y-2">
+          <Step n={1} color={C_SALAD} text="Поделись ссылкой со своими." />
+          <Step n={2} color={C_CYAN} text="Друг регистрируется в клубе и подтверждает email." />
           <Step
             n={3}
+            color={C_YELLOW}
             text={`После первой активности друга оба получаете +${REFERRAL_REWARD_TICKETS} билет.`}
           />
         </ol>
@@ -178,19 +188,22 @@ function InvitePage() {
 
       {/* Friends list */}
       <section>
-        <div className="mb-1.5 flex items-end justify-between px-3">
-          <h3 className="font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+        <div className="mb-2 flex items-end justify-between px-1">
+          <h3 className="font-display text-[13px] font-black uppercase italic tracking-wider text-foreground">
             Приведено · {friends.length}
           </h3>
           {total > 0 && (
-            <span className="font-mono text-[10px] uppercase tracking-wider text-primary">
+            <span
+              className="rounded-md border-[2px] border-foreground px-2 py-0.5 font-display text-[11px] font-black uppercase italic tracking-wider text-black shadow-[2px_2px_0_0_hsl(var(--foreground))]"
+              style={{ background: C_YELLOW }}
+            >
               +{total} {total === 1 ? "билет" : total < 5 ? "билета" : "билетов"}
             </span>
           )}
         </div>
 
         {friends.length === 0 ? (
-          <div className="grid place-items-center rounded-2xl border border-dashed border-white/[0.08] bg-card/30 px-6 py-10 text-center">
+          <div className="grid place-items-center rounded-2xl border-[2px] border-dashed border-foreground/40 bg-card/40 px-6 py-10 text-center">
             <Users className="h-6 w-6 text-muted-foreground/60" />
             <p className="mt-3 max-w-[26ch] text-[13px] text-muted-foreground">
               Пока никого. Кинь ссылку в чат — приведи своих.
@@ -198,39 +211,49 @@ function InvitePage() {
           </div>
         ) : (
           <>
-            <ul className="overflow-hidden rounded-2xl border border-white/[0.06] bg-card/40 divide-y divide-white/[0.05]">
-              {friends.map((f) => (
-                <li key={f.id} className="flex items-center gap-3 px-4 py-3">
-                  <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/15 font-display text-[13px] font-black italic text-primary">
-                    {f.nick.slice(0, 2).toUpperCase()}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate text-[14px] font-semibold text-foreground">
-                      {f.nick}
-                    </div>
-                    <div className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-                      {f.joinedAt.slice(0, 10)}
-                    </div>
-                  </div>
-                  <span
-                    className={`shrink-0 rounded-full border px-2 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wider ${
-                      f.status === "active"
-                        ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-300"
-                        : "border-amber-400/30 bg-amber-400/[0.06] text-amber-300"
-                    }`}
-                    title={
-                      f.status === "active"
-                        ? "Билет начислен"
-                        : "Ждём, пока друг добавит телефон в профиль"
-                    }
+            <ul className="space-y-2">
+              {friends.map((f, i) => {
+                const avatarColor = [C_PINK, C_SALAD, C_CYAN, C_YELLOW, C_ORANGE][i % 5];
+                const active = f.status === "active";
+                return (
+                  <li
+                    key={f.id}
+                    className="flex items-center gap-3 rounded-2xl border-[2px] border-foreground bg-card px-3 py-2.5 shadow-[3px_3px_0_0_hsl(var(--foreground))]"
                   >
-                    {f.status === "active" ? "Активен" : "Без телефона"}
-                  </span>
-                  <span className="flex shrink-0 items-center gap-0.5 font-mono text-[13px] font-bold tabular-nums text-primary">
-                    <PlumpTicket className="h-3.5 w-3.5" />+{f.ticketsRewarded}
-                  </span>
-                </li>
-              ))}
+                    <div
+                      className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border-[2px] border-foreground font-display text-[13px] font-black italic text-black"
+                      style={{ background: avatarColor }}
+                    >
+                      {f.nick.slice(0, 2).toUpperCase()}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-[14px] font-semibold text-foreground">
+                        {f.nick}
+                      </div>
+                      <div className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
+                        {f.joinedAt.slice(0, 10)}
+                      </div>
+                    </div>
+                    <span
+                      className="shrink-0 rounded-md border-[2px] border-foreground px-1.5 py-0.5 font-display text-[9px] font-black uppercase italic tracking-wider text-black"
+                      style={{ background: active ? C_SALAD : C_ORANGE }}
+                      title={
+                        active
+                          ? "Билет начислен"
+                          : "Ждём, пока друг добавит телефон в профиль"
+                      }
+                    >
+                      {active ? "Активен" : "Без тел."}
+                    </span>
+                    <span
+                      className="flex shrink-0 items-center gap-0.5 font-display text-[14px] font-black italic tabular-nums"
+                      style={{ color: C_PINK }}
+                    >
+                      <PlumpTicket className="h-3.5 w-3.5" />+{f.ticketsRewarded}
+                    </span>
+                  </li>
+                );
+              })}
             </ul>
             {friends.some((f) => f.status !== "active") && (
               <p className="mt-3 px-1 text-[12px] leading-relaxed text-muted-foreground">
@@ -246,22 +269,27 @@ function InvitePage() {
   );
 }
 
-function StatTile({
+function PlumpTile({
+  color,
   icon,
   label,
   value,
 }: {
+  color: string;
   icon: React.ReactNode;
   label: string;
   value: number;
 }) {
   return (
-    <div className="rounded-2xl border border-white/[0.06] bg-card/40 px-3 py-3">
-      <div className="flex items-center gap-1.5 font-mono text-[9px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
-        <span className="text-primary">{icon}</span>
+    <div
+      className="rounded-2xl border-[2px] border-foreground px-3 py-3 shadow-[3px_3px_0_0_hsl(var(--foreground))]"
+      style={{ background: color }}
+    >
+      <div className="flex items-center gap-1.5 font-display text-[10px] font-black uppercase italic tracking-wider text-black">
+        {icon}
         {label}
       </div>
-      <div className="mt-1 font-display text-2xl font-black italic leading-none tabular-nums text-foreground">
+      <div className="mt-1 font-display text-2xl font-black italic leading-none tabular-nums text-black">
         {value}
       </div>
     </div>
@@ -269,10 +297,12 @@ function StatTile({
 }
 
 function ShareTile({
+  color,
   href,
   label,
   icon,
 }: {
+  color: string;
   href: string;
   label: string;
   icon: React.ReactNode;
@@ -282,23 +312,27 @@ function ShareTile({
       href={href}
       target="_blank"
       rel="noreferrer noopener"
-      className="flex flex-col items-center justify-center gap-1 rounded-xl border border-white/[0.06] bg-white/[0.02] py-2.5 text-foreground active:scale-95"
+      className="flex flex-col items-center justify-center gap-1 rounded-xl border-[2px] border-foreground py-2.5 text-black shadow-[2px_2px_0_0_hsl(var(--foreground))] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none"
+      style={{ background: color }}
     >
-      <span className="text-primary">{icon}</span>
-      <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+      {icon}
+      <span className="font-display text-[10px] font-black uppercase italic tracking-wider">
         {label}
       </span>
     </a>
   );
 }
 
-function Step({ n, text }: { n: number; text: string }) {
+function Step({ n, color, text }: { n: number; color: string; text: string }) {
   return (
-    <li className="flex items-start gap-3 px-4 py-3">
-      <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-primary/15 font-mono text-[11px] font-bold text-primary">
+    <li className="flex items-start gap-3 rounded-2xl border-[2px] border-foreground bg-card px-3 py-3 shadow-[3px_3px_0_0_hsl(var(--foreground))]">
+      <span
+        className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border-[2px] border-foreground font-display text-[14px] font-black italic text-black"
+        style={{ background: color }}
+      >
         {n}
       </span>
-      <span className="text-[14px] text-foreground/85">{text}</span>
+      <span className="pt-1 text-[14px] text-foreground/90">{text}</span>
     </li>
   );
 }
