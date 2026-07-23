@@ -8,13 +8,31 @@
 import { useSyncExternalStore } from "react";
 import { INSTRUCTOR_ACCOUNTS, MOCK_STUDENTS } from "./instructor-accounts";
 
-export type InstructorMsgSender = "instructor" | "student";
+export type InstructorMsgSender = "instructor" | "student" | "system";
+
+export type InvoiceStatus = "pending" | "paid";
+
+export type InvoicePayload = {
+  id: string;
+  hours: number;
+  description: string;
+  /** ISO-строка даты/времени занятия. */
+  dateTime: string;
+  /** Сумма инструктора в рублях (без наценки). */
+  amount: number;
+  status: InvoiceStatus;
+  /** ФИО плательщика после оплаты (мок). */
+  payerName?: string;
+  payerEmail?: string;
+  paidAt?: number;
+};
 
 export type InstructorMsg = {
   id: string;
   senderRole: InstructorMsgSender;
   text?: string;
   sticker?: string;
+  invoice?: InvoicePayload;
   createdAt: number;
 };
 
