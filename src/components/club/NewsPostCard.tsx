@@ -240,6 +240,16 @@ function NewsPostCard({ post }: { post: NewsPost }) {
         </div>
       </article>
 
+      {commentsEverOpened && (
+        <NewsCommentsSheet
+          open={commentsOpen}
+          onOpenChange={setCommentsOpen}
+          postId={post.id}
+          postTitle={post.title}
+        />
+      )}
+
+
       {post.image && viewerEverOpened && (
         <ImageViewer
           src={post.image}
