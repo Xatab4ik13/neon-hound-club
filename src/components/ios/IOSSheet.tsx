@@ -26,6 +26,8 @@ type Props = {
   /** Свой контент шапки слева (по умолчанию заголовок). */
   headerLeft?: ReactNode;
   contentClassName?: string;
+  /** Кастомный цвет CTA-кнопки «Готово». По умолчанию — text-primary (розовый). */
+  doneAccent?: string;
 };
 
 
