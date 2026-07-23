@@ -415,14 +415,16 @@
 }
 
 /* ── Bonus ticket sticker wiggle ───────────────────────────────────────── */
+/* Долгий цикл + короткое окно активности → в каждый момент дёргаются
+   только 1-2 стикера на экране. Рандомизация через animation-delay в JSX. */
 @keyframes sticker-wiggle {
-  0%, 18%, 100% { transform: rotate(6deg) translateY(0); }
-  5%  { transform: rotate(9deg) translateY(1px); }
-  10% { transform: rotate(3deg) translateY(2px); }
-  14% { transform: rotate(7deg) translateY(1px); }
+  0%, 88%, 100% { transform: rotate(6deg) translateY(0); }
+  91% { transform: rotate(10deg) translateY(1px); }
+  94% { transform: rotate(2deg)  translateY(2px); }
+  97% { transform: rotate(8deg)  translateY(1px); }
 }
 .sticker-wiggle {
-  animation: sticker-wiggle 4.5s ease-in-out infinite;
+  animation: sticker-wiggle 14s ease-in-out infinite;
   transform-origin: top right;
   will-change: transform;
   backface-visibility: hidden;
