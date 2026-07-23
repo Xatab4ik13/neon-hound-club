@@ -1,8 +1,10 @@
 // Модалка выставления счёта учеником (только моки).
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { haptic } from "@/hooks/use-haptic";
+import { IOSDateSheet } from "@/components/ios/IOSDateSheet";
+import { IOSTimeSheet } from "@/components/ios/IOSTimeSheet";
 
 export type InvoiceDraft = {
   hours: number;
@@ -10,6 +12,33 @@ export type InvoiceDraft = {
   dateTime: string;
   amount: number;
 };
+
+function defaultDateISO() {
+  const d = new Date(Date.now() + 24 * 3600_000);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+const MONTHS_GEN = [
+  "января",
+  "февраля",
+  "марта",
+  "апреля",
+  "мая",
+  "июня",
+  "июля",
+  "августа",
+  "сентября",
+  "октября",
+  "ноября",
+  "декабря",
+];
+
+function formatDate(iso: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return "Выбрать дату";
+  const [y, m, d] = iso.split("-").map(Number);
+  return `${d} ${MONTHS_GEN[m - 1]} ${y}`;
+}
 
 export function InvoiceComposer({
   open,
@@ -22,24 +51,38 @@ export function InvoiceComposer({
 }) {
   const [hours, setHours] = useState("1");
   const [description, setDescription] = useState("");
-  const [dateTime, setDateTime] = useState(defaultLocal());
+  const [date, setDate] = useState(defaultDateISO());
+  const [time, setTime] = useState("10:00");
   const [amount, setAmount] = useState("");
+  const [dateOpen, setDateOpen] = useState(false);
+  const [timeOpen, setTimeOpen] = useState(false);
 
-  const h = Number(hours);
+  const h = Number(hours.replace(",", "."));
   const a = Number(amount);
   const valid =
+    Number.isFinite(h) &&
     h > 0 &&
     h <= 24 &&
     description.trim().length > 0 &&
     description.trim().length <= 300 &&
-    dateTime.length > 0 &&
+    /^\d{4}-\d{2}-\d{2}$/.test(date) &&
+    /^\d{2}:\d{2}$/.test(time) &&
+    Number.isFinite(a) &&
     a > 0 &&
     a <= 1_000_000;
+
+  const combinedISO = useMemo(() => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^\d{2}:\d{2}$/.test(time)) return "";
+    const [y, mo, d] = date.split("-").map(Number);
+    const [hh, mm] = time.split(":").map(Number);
+    return new Date(y, mo - 1, d, hh, mm, 0, 0).toISOString();
+  }, [date, time]);
 
   const reset = () => {
     setHours("1");
     setDescription("");
-    setDateTime(defaultLocal());
+    setDate(defaultDateISO());
+    setTime("10:00");
     setAmount("");
   };
 
@@ -68,7 +111,7 @@ export function InvoiceComposer({
             onSubmit({
               hours: h,
               description: description.trim(),
-              dateTime: new Date(dateTime).toISOString(),
+              dateTime: combinedISO,
               amount: Math.round(a),
             });
             reset();
@@ -78,24 +121,34 @@ export function InvoiceComposer({
         >
           <Field label="Длительность (часы)">
             <input
-              type="number"
-              min={0.5}
-              max={24}
-              step={0.5}
+              type="text"
               value={hours}
-              onChange={(e) => setHours(e.target.value)}
+              onChange={(e) => setHours(e.target.value.replace(/[^\d.,]/g, "").slice(0, 5))}
               inputMode="decimal"
+              placeholder="1"
               className={inputCls}
             />
           </Field>
-          <Field label="Дата и время занятия">
-            <input
-              type="datetime-local"
-              value={dateTime}
-              onChange={(e) => setDateTime(e.target.value)}
-              className={inputCls}
-            />
-          </Field>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Дата">
+              <button
+                type="button"
+                onClick={() => setDateOpen(true)}
+                className={`${inputCls} text-left`}
+              >
+                {formatDate(date)}
+              </button>
+            </Field>
+            <Field label="Время">
+              <button
+                type="button"
+                onClick={() => setTimeOpen(true)}
+                className={`${inputCls} text-left tabular-nums`}
+              >
+                {time}
+              </button>
+            </Field>
+          </div>
           <Field label="Описание занятия">
             <textarea
               value={description}
@@ -107,12 +160,11 @@ export function InvoiceComposer({
           </Field>
           <Field label="Сумма, ₽">
             <input
-              type="number"
-              min={1}
-              step={1}
+              type="text"
               value={amount}
-              onChange={(e) => setAmount(e.target.value)}
+              onChange={(e) => setAmount(e.target.value.replace(/[^\d]/g, "").slice(0, 7))}
               inputMode="numeric"
+              placeholder="0"
               className={inputCls}
             />
           </Field>
@@ -125,6 +177,21 @@ export function InvoiceComposer({
             Отправить счёт
           </button>
         </form>
+
+        <IOSDateSheet
+          open={dateOpen}
+          onOpenChange={setDateOpen}
+          value={date}
+          onChange={setDate}
+          title="Дата занятия"
+        />
+        <IOSTimeSheet
+          open={timeOpen}
+          onOpenChange={setTimeOpen}
+          value={time}
+          onChange={setTime}
+          title="Время занятия"
+        />
       </SheetContent>
     </Sheet>
   );
