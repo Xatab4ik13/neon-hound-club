@@ -38,11 +38,16 @@ export function IOSWheelPicker({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[320] flex flex-col justify-end bg-black/60 animate-in fade-in-0"
+      className="pointer-events-auto fixed inset-0 z-[320] flex flex-col justify-end bg-black/60 animate-in fade-in-0"
+      // Останавливаем pointerdown/touchstart, чтобы Radix Sheet-родитель
+      // не считал это «кликом снаружи» и не блокировал нажатия.
+      onPointerDownCapture={(e) => e.stopPropagation()}
+      onMouseDownCapture={(e) => e.stopPropagation()}
+      onTouchStartCapture={(e) => e.stopPropagation()}
       onClick={() => onOpenChange(false)}
     >
       <div
-        className="rounded-t-[20px] border-t border-white/[0.08] bg-[#1c1c1e] pb-[env(safe-area-inset-bottom)] animate-in slide-in-from-bottom"
+        className="pointer-events-auto rounded-t-[20px] border-t border-white/[0.08] bg-[#1c1c1e] pb-[env(safe-area-inset-bottom)] animate-in slide-in-from-bottom"
         onClick={(e) => e.stopPropagation()}
         style={{ touchAction: "pan-y" }}
       >
@@ -50,7 +55,11 @@ export function IOSWheelPicker({
         <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-3">
           <button
             type="button"
-            onClick={() => onOpenChange(false)}
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenChange(false);
+            }}
             className="font-mono text-[12px] uppercase tracking-wider text-muted-foreground active:opacity-60"
           >
             Отмена
@@ -58,7 +67,11 @@ export function IOSWheelPicker({
           <h2 className="truncate text-center text-[15px] font-semibold text-white">{title}</h2>
           <button
             type="button"
-            onClick={() => onOpenChange(false)}
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenChange(false);
+            }}
             className="font-mono text-[12px] font-bold uppercase tracking-wider text-primary active:opacity-60"
           >
             {doneLabel}
