@@ -17,6 +17,7 @@ import { ImageViewer } from "@/components/club/ImageViewer";
 import { haptic } from "@/hooks/use-haptic";
 import { hhToast } from "@/lib/hh-toast";
 import { mockNewsStore, type NewsPost } from "@/data/mock-news";
+import { NewsCommentsSheet } from "@/components/club/NewsCommentsSheet";
 
 // Салатовый — фирменный цвет NEWS-ленты (согласовано с юзером)
 const NEWS_COLOR = "#B6FF3C";
@@ -47,6 +48,25 @@ export function NewsRow({ post }: { post: NewsPost }) {
 function NewsPostCard({ post }: { post: NewsPost }) {
   const [viewerOpen, setViewerOpen] = useState(false);
   const [viewerEverOpened, setViewerEverOpened] = useState(false);
+  const [commentsOpen, setCommentsOpen] = useState(false);
+  const [commentsEverOpened, setCommentsEverOpened] = useState(false);
+
+  const openComments = useCallback(() => {
+    haptic("light");
+    setCommentsEverOpened(true);
+    setCommentsOpen(true);
+  }, []);
+
+  // Тап по «свободному» месту карточки → открыть комментарии.
+  // Игнорируем клики по интерактивным детям (кнопки, ссылки, инпуты, формы, картинка).
+  const onCardClick = useCallback(
+    (e: React.MouseEvent<HTMLElement>) => {
+      const target = e.target as HTMLElement;
+      if (target.closest("button,a,input,form,textarea,select,[role='button']")) return;
+      openComments();
+    },
+    [openComments],
+  );
 
   const shareUrl =
     typeof window !== "undefined" ? `${window.location.origin}/club#news-${post.id}` : `/club`;
@@ -116,7 +136,8 @@ function NewsPostCard({ post }: { post: NewsPost }) {
   return (
     <>
       <article
-        className="post-card relative overflow-visible rounded-[24px] border border-white/[0.06] shadow-[0_8px_40px_rgba(0,0,0,0.4)] transition-colors hover:border-white/[0.10]"
+        onClick={onCardClick}
+        className="post-card relative cursor-pointer overflow-visible rounded-[24px] border border-white/[0.06] shadow-[0_8px_40px_rgba(0,0,0,0.4)] transition-colors hover:border-white/[0.10]"
         style={{
           background:
             "linear-gradient(160deg, oklch(0.18 0.015 280 / 0.85) 0%, oklch(0.14 0.01 280 / 0.85) 55%, oklch(0.12 0.008 280 / 0.9) 100%)",
@@ -192,7 +213,7 @@ function NewsPostCard({ post }: { post: NewsPost }) {
 
             <button
               type="button"
-              onClick={() => hhToast.info("Комментарии подключим скоро")}
+              onClick={openComments}
               aria-label="Комментарий"
               className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 font-mono text-[12px] font-bold tabular-nums text-foreground transition-all active:scale-95"
               style={{ color: NEWS_COLOR }}
@@ -218,6 +239,16 @@ function NewsPostCard({ post }: { post: NewsPost }) {
           </div>
         </div>
       </article>
+
+      {commentsEverOpened && (
+        <NewsCommentsSheet
+          open={commentsOpen}
+          onOpenChange={setCommentsOpen}
+          postId={post.id}
+          postTitle={post.title}
+        />
+      )}
+
 
       {post.image && viewerEverOpened && (
         <ImageViewer
