@@ -254,8 +254,9 @@ export function NewsPostCard({ post, standalone = false }: { post: NewsPost; sta
           open={commentsOpen}
           onOpenChange={setCommentsOpen}
           postId={post.id}
-          postTitle={post.title}
+          commentsCount={post.commentsCount}
         />
+
       )}
 
 
