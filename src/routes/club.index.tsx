@@ -11,10 +11,16 @@ import { AdaptiveActionSheet } from "@/components/club/AdaptiveActionSheet";
 import type { ActionSheetItem } from "@/components/club/AdaptiveActionSheet";
 import { useViewer } from "@/hooks/use-viewer";
 import { useMyProfile } from "@/lib/garage-api";
-import { useMyStickerPacks, STICKER_PACK_PRODUCT_SLUGS } from "@/lib/stickers-api";
-import { SPECIAL_PACK, SPECIAL_PACK_STICKERS, SPECIAL_PACK_COVER, type StickerMeta } from "@/assets/stickers/special";
-import { HELL_MINIONS_PACK, HELL_MINIONS_STICKERS, HELL_MINIONS_COVER } from "@/assets/stickers/hell-minions";
+import { useMyStickerPacks } from "@/lib/stickers-api";
 import { StickerView, type StickerViewHandle } from "@/components/club/StickerView";
+import {
+  StickerPanel,
+  loadRecent,
+  saveRecent,
+  STICKER_PACKS,
+  parseSticker,
+  type StickerTab,
+} from "@/components/club/StickerPanel";
 import { FeedHeroCarousel } from "@/components/club/FeedHeroCarousel";
 import { FeedTabs, useFeedTab } from "@/components/club/FeedTabs";
 import { NewsRow } from "@/components/club/NewsPostCard";
