@@ -52,7 +52,7 @@ function buildGroups(
         {
           label: "Мои инструкторы",
           href: "/club/my-instructors",
-          icon: PlumpChat,
+          icon: PlumpInstructorChat,
           subtitle: "Чаты с инструкторами Школы",
         },
       ],
