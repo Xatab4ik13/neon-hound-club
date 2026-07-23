@@ -151,50 +151,29 @@ export function Header() {
               <div aria-hidden className="h-16 w-16" />
             ) : isAuthed ? (
               <>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button
-                      type="button"
-                      aria-label="Профиль"
-                      className="relative grid h-16 w-16 place-items-center text-foreground outline-none focus:outline-none"
-                    >
-                      <span className="relative grid h-12 w-12 place-items-center rounded-full border-2 border-foreground">
-                        <span className="relative grid h-[88%] w-[88%] overflow-hidden rounded-full bg-primary/15">
-                          {avatarUrl ? (
-                            <img
-                              src={avatarUrl}
-                              alt=""
-                              loading="lazy"
-                              decoding="async"
-                              className="absolute inset-0 h-full w-full object-cover"
-                            />
-                          ) : (
-                            <span className="grid h-full w-full place-items-center font-mono text-lg font-bold uppercase text-primary">
-                              {displayNick ? displayNick.slice(0, 2) : "—"}
-                            </span>
-                          )}
+                <Link
+                  to="/club"
+                  aria-label="В клуб"
+                  className="relative grid h-16 w-16 place-items-center text-foreground outline-none transition-transform focus:outline-none active:scale-90"
+                >
+                  <span className="relative grid h-12 w-12 place-items-center rounded-full border-2 border-foreground">
+                    <span className="relative grid h-[88%] w-[88%] overflow-hidden rounded-full bg-primary/15">
+                      {avatarUrl ? (
+                        <img
+                          src={avatarUrl}
+                          alt=""
+                          loading="lazy"
+                          decoding="async"
+                          className="absolute inset-0 h-full w-full object-cover"
+                        />
+                      ) : (
+                        <span className="grid h-full w-full place-items-center font-mono text-lg font-bold uppercase text-primary">
+                          {displayNick ? displayNick.slice(0, 2) : "—"}
                         </span>
-                      </span>
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent
-                    align="end"
-                    className="w-56 border-border bg-background"
-                  >
-                    <DropdownMenuLabel className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-                      Личный кабинет
-                    </DropdownMenuLabel>
-                    <DropdownMenuItem asChild>
-                      <Link to="/club">Главная клуба</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link to="/club/me">Мой гараж</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link to="/club/hell-pass">Hell Pass</Link>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                      )}
+                    </span>
+                  </span>
+                </Link>
                 <button
                   type="button"
                   onClick={() => void signOut()}
