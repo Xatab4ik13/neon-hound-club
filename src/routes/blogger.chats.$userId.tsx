@@ -36,10 +36,30 @@ import { useKeyboardOffset } from "@/hooks/use-keyboard-offset";
 import { useMyProfile } from "@/lib/garage-api";
 import { useMyStickerPacks } from "@/lib/stickers-api";
 import {
-  CHAT_HISTORY,
-  getUser,
-  type ChatMsg,
-} from "@/data/blogger-chats-mock";
+  useBloggerChatThread,
+  useSendBloggerMessage,
+  type ChatServerMessage,
+} from "@/lib/blogger-chats-api";
+
+// Локальный формат сообщения (совместим с прежним UI): "me" — блогер (я),
+// "them" — подписчик. Сервер отдаёт senderRole: "user" | "blogger".
+type ChatMsg = {
+  id: string;
+  role: "them" | "me";
+  text?: string;
+  sticker?: string;
+  at: number;
+};
+
+function adapt(m: ChatServerMessage): ChatMsg {
+  return {
+    id: m.id,
+    role: m.senderRole === "blogger" ? "me" : "them",
+    text: m.text ?? undefined,
+    sticker: m.sticker ?? undefined,
+    at: new Date(m.createdAt).getTime(),
+  };
+}
 
 export const Route = createFileRoute("/blogger/chats/$userId")({
   head: () => ({
