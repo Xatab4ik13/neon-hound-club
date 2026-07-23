@@ -156,6 +156,7 @@ const NAV: NavItem[] = [
   { to: "/admin/quests", label: "Челленджи", icon: Target },
   { to: "/admin/users", label: "Пользователи", icon: Users },
   { to: "/admin/feed", label: "Лента", icon: PlumpFeed },
+  { to: "/admin/news", label: "Новости", icon: Newspaper },
   { to: "/admin/shop", label: "Магазин", icon: PlumpStore },
 
   { to: "/admin/orders", label: "Заказы", icon: Package },
