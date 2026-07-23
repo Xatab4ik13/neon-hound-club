@@ -42,7 +42,6 @@ const SKILL_TONES = ["primary", "yellow", "cyan", "lime", "violet", "primary"] a
 function ClubInstructorPage() {
   const { instructorId } = Route.useParams();
   const instructor = getInstructorBySlug(instructorId);
-  const scheduleRef = useRef<HTMLDivElement | null>(null);
   const [chatOpen, setChatOpen] = useState(false);
 
   useEffect(() => {
