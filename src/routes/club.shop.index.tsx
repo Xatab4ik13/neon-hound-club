@@ -285,6 +285,13 @@ function ProductCard({ product }: { product: ShopProductListItem }) {
   const sold = product.stock !== null && product.stock <= 0;
   const cover =
     product.images[0] ?? (product.slug === "stickerpack-special" ? SPECIAL_PACK_COVER : undefined);
+  // Стабильный «случайный» сдвиг фазы анимации по slug: разные стикеры
+  // дёргаются в разное время, на экране активны только 1-2 из видимых.
+  const wiggleDelay = useMemo(() => {
+    let h = 0;
+    for (let i = 0; i < product.slug.length; i++) h = (h * 31 + product.slug.charCodeAt(i)) | 0;
+    return `-${(Math.abs(h) % 1400) / 100}s`;
+  }, [product.slug]);
   return (
     <Link
       to="/club/shop/$productSlug"
@@ -292,7 +299,10 @@ function ProductCard({ product }: { product: ShopProductListItem }) {
       className="group relative block rounded-2xl bg-card transition-all active:scale-[0.98]"
     >
       {product.bonusTickets > 0 && (
-        <span className="sticker-wiggle absolute -right-1 -top-2 z-20 inline-flex items-center gap-1 rounded-lg border-[2px] border-foreground bg-[#B6FF3C] px-2 py-1 font-display text-[10px] font-black uppercase italic tracking-tight text-black shadow-[2px_2px_0_0_hsl(var(--foreground))]">
+        <span
+          className="sticker-wiggle absolute -right-1 -top-2 z-20 inline-flex items-center gap-1 rounded-lg border-[2px] border-foreground bg-[#B6FF3C] px-2 py-1 font-display text-[10px] font-black uppercase italic tracking-tight text-black shadow-[2px_2px_0_0_hsl(var(--foreground))]"
+          style={{ animationDelay: wiggleDelay }}
+        >
           <PlumpTicket className="h-3 w-3" />+{product.bonusTickets}
         </span>
       )}
