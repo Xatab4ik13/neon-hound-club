@@ -31,7 +31,7 @@ const FLOATERS = ["+1", "♥", "✦"] as const;
 
 type Floater = { id: number; emoji: string };
 
-export function LikeButton({ liked, count, onToggle, onReact }: Props) {
+export function LikeButton({ liked, count, onToggle, onReact, accent }: Props) {
   const [burstKey, setBurstKey] = useState(0);
   const [barOpen, setBarOpen] = useState(false);
   const [floaters, setFloaters] = useState<Floater[]>([]);
