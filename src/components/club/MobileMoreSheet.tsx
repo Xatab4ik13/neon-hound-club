@@ -209,6 +209,43 @@ export function MobileMoreSheet({
                 </li>
               </ul>
             </section>
+
+            {import.meta.env.DEV && (
+              <section className="mb-2">
+                <h3 className="mb-1.5 px-2 font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                  Dev · Роль инструктора (мок)
+                </h3>
+                <div className="overflow-hidden rounded-2xl border border-white/[0.06] bg-card/40">
+                  <div className="flex flex-wrap gap-2 p-3">
+                    <button
+                      type="button"
+                      onClick={() => setMockInstructorRole(null)}
+                      className={`rounded-full border px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-widest transition-colors ${
+                        !mockInstructor
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-white/[0.12] text-muted-foreground"
+                      }`}
+                    >
+                      Обычный
+                    </button>
+                    {INSTRUCTOR_ACCOUNTS.map((acc) => (
+                      <button
+                        key={acc.slug}
+                        type="button"
+                        onClick={() => setMockInstructorRole(acc.slug)}
+                        className={`rounded-full border px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-widest transition-colors ${
+                          mockInstructor === acc.slug
+                            ? "border-primary bg-primary text-primary-foreground"
+                            : "border-white/[0.12] text-muted-foreground"
+                        }`}
+                      >
+                        {acc.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </section>
+            )}
           </div>
         </Drawer.Content>
       </Drawer.Portal>
