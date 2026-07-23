@@ -1524,7 +1524,7 @@ const CommentItem = memo(function CommentItem({
             onClick={handleTap}
             onContextMenu={handleContextMenu}
           >
-            <p className={`break-words font-display font-bold leading-snug tracking-tight text-black ${large ? "text-[14.5px]" : "text-[13.5px]"}`}>
+            <p className={`break-words font-display font-bold leading-snug tracking-tight text-black first-letter:font-black first-letter:text-[18px] ${large ? "text-[14.5px]" : "text-[13.5px]"}`}>
               {renderCommentText(comment.text, knownNicks)}
             </p>
             {splash && <DoubleTapSplash />}
