@@ -125,7 +125,7 @@ function ClubLayout() {
   const isMobile = useIsMobile();
   const viewer = useViewer();
   const navigate = useNavigate();
-  // На корне /club свайп-назад уводит из приложения — это раздражает.
+  const mockInstructor = useMockInstructorRole();
   // Включаем edge-swipe только на под-страницах.
   useEdgeSwipeBack(pathname !== "/club");
 
