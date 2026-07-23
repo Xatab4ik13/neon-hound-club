@@ -246,7 +246,7 @@ export const PostCard = memo(function PostCard({ post, moderate = false }: { pos
         }
         if (post.pinned) {
           return (
-            <div className="pointer-events-none absolute top-3 right-3 z-10 inline-flex items-center gap-1 rounded-md border border-primary/50 bg-[oklch(0.18_0.08_357.3)] px-2 py-1 font-mono text-[9px] font-black uppercase leading-none tracking-[0.18em] text-primary shadow-[0_4px_12px_rgba(0,0,0,0.45)]">
+            <div className="pointer-events-none absolute top-3 right-3 z-10 inline-flex items-center gap-1 rounded-md border border-[#B6FF3C]/50 bg-[#B6FF3C]/15 px-2 py-1 font-mono text-[9px] font-black uppercase leading-none tracking-[0.18em] text-[#B6FF3C] shadow-[0_4px_12px_rgba(0,0,0,0.45)]">
               <Pin className="h-2.5 w-2.5" strokeWidth={2.8} />
               Закреп
             </div>
