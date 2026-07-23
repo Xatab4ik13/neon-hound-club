@@ -1010,6 +1010,7 @@ function CommentsSheet({
         comment={isReply ? { ...c, text: stripReplyPrefix(c.text) } : c}
         knownNicks={knownNicks}
         large
+        isMine={isMine}
         editing={editingId === c.id}
         onSaveEdit={(text) => handleSaveEdit(c.id, text)}
         onCancelEdit={() => setEditingId(null)}
@@ -1270,6 +1271,7 @@ const CommentItem = memo(function CommentItem({
   knownNicks,
   large = false,
   editing = false,
+  isMine = false,
   onReply,
   onSaveEdit,
   onCancelEdit,
@@ -1282,6 +1284,8 @@ const CommentItem = memo(function CommentItem({
   knownNicks?: Set<string>;
   large?: boolean;
   editing?: boolean;
+  /** Моё сообщение — рендерим салатовым (видит только автор). */
+  isMine?: boolean;
   onReply?: () => void;
   onSaveEdit?: (text: string) => void;
   onCancelEdit?: () => void;
@@ -1511,7 +1515,8 @@ const CommentItem = memo(function CommentItem({
           </div>
         ) : (
           <div
-            className="relative mt-1 inline-block max-w-full select-text rounded-2xl rounded-tl-sm border border-white/[0.05] bg-white/[0.03] px-3 py-2"
+            className="relative mt-1 inline-block max-w-full select-text rounded-2xl rounded-tl-sm px-3 py-2"
+            style={{ backgroundColor: isMine ? "#B6FF3C" : "#ffffff" }}
             onTouchStart={handlePressStart}
             onTouchEnd={handlePressEnd}
             onTouchMove={handlePressEnd}
@@ -1519,7 +1524,7 @@ const CommentItem = memo(function CommentItem({
             onClick={handleTap}
             onContextMenu={handleContextMenu}
           >
-            <p className={`break-words leading-relaxed text-foreground/90 ${large ? "text-[14.5px]" : "text-[13.5px]"}`}>
+            <p className={`break-words font-display font-bold uppercase leading-snug tracking-tight text-black ${large ? "text-[14.5px]" : "text-[13.5px]"}`}>
               {renderCommentText(comment.text, knownNicks)}
             </p>
             {splash && <DoubleTapSplash />}
