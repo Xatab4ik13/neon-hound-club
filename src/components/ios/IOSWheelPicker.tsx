@@ -2,7 +2,7 @@
 // Открывается как нижний sheet поверх любого другого sheet (z-[300]).
 // Работает на тач-скролле + scroll-snap.
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
 import { useThemeColor } from "@/hooks/use-theme-color";
