@@ -91,6 +91,12 @@ function SchoolChatRoom() {
         onSend={(text) =>
           sendInstructorChatMessage(slug, student.userId, student.nick, { text }, "instructor")
         }
+        onSendInvoice={(draft) =>
+          sendInstructorInvoice(slug, student.userId, student.nick, draft)
+        }
+        onPayInvoice={(invoiceId, payer) =>
+          payInstructorInvoice(slug, student.userId, student.nick, invoiceId, payer)
+        }
       />
     </div>
   );
