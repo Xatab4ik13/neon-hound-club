@@ -1665,12 +1665,6 @@ function RankAvatar({
 
 // Mock packs — позже заменим на данные из БД
 
-/** Префикс-маркер: текст комментария = стикер-картинка (legacy-формат до Этапа A). */
-const STICKER_PREFIX = "::sticker::";
-const asStickerText = (url: string) => `${STICKER_PREFIX}${url}`;
-const parseSticker = (text: string): string | null =>
-  text.startsWith(STICKER_PREFIX) ? text.slice(STICKER_PREFIX.length) : null;
-
 /** Достаёт url стикера из коммента вне зависимости от формата (новый kind/stickerId или legacy ::sticker::). */
 function getCommentStickerUrl(c: Comment): string | null {
   if (c.kind === "sticker" && c.stickerId) return c.stickerId;
