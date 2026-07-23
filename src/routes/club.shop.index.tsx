@@ -228,15 +228,19 @@ function ClubShopPage() {
   );
 }
 
+const CHIP_COLORS = ["#B6FF3C", "#FFD93D", "#3DDBD9", "#FF7A3D"] as const;
+
 function Chip({
   active,
   onClick,
   children,
+  color,
   ...rest
 }: {
   active: boolean;
   onClick: () => void;
   children: React.ReactNode;
+  color: string;
 } & React.HTMLAttributes<HTMLButtonElement>) {
   return (
     <button
@@ -244,9 +248,10 @@ function Chip({
       onClick={onClick}
       className={`shrink-0 rounded-full px-4 py-2 text-[14px] font-medium transition-all active:scale-95 ${
         active
-          ? "bg-primary text-primary-foreground"
+          ? "border-[2px] border-foreground text-black shadow-[2px_2px_0_0_hsl(var(--foreground))]"
           : "border border-white/[0.08] bg-white/[0.03] text-muted-foreground"
       }`}
+      style={active ? { backgroundColor: color } : undefined}
       {...rest}
     >
       {children}
