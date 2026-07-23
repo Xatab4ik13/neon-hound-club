@@ -75,6 +75,7 @@ import { Route as ClubOrdersIndexRouteImport } from './routes/club.orders.index'
 import { Route as ClubHelpIndexRouteImport } from './routes/club.help.index'
 import { Route as ClubHellPassIndexRouteImport } from './routes/club.hell-pass.index'
 import { Route as BloggerRafflesIndexRouteImport } from './routes/blogger.raffles.index'
+import { Route as BloggerChatsIndexRouteImport } from './routes/blogger.chats.index'
 import { Route as ClubUNickRouteImport } from './routes/club.u.$nick'
 import { Route as ClubShopProductSlugRouteImport } from './routes/club.shop.$productSlug'
 import { Route as ClubSchoolInstructorIdRouteImport } from './routes/club.school.$instructorId'
@@ -89,6 +90,7 @@ import { Route as ClubHelpNewRouteImport } from './routes/club.help.new'
 import { Route as ClubHelpTicketIdRouteImport } from './routes/club.help.$ticketId'
 import { Route as ClubHellPassTierRouteImport } from './routes/club.hell-pass.$tier'
 import { Route as BloggerRafflesRaffleIdRouteImport } from './routes/blogger.raffles.$raffleId'
+import { Route as BloggerChatsUserIdRouteImport } from './routes/blogger.chats.$userId'
 
 const VerifyEmailRoute = VerifyEmailRouteImport.update({
   id: '/verify-email',
@@ -420,6 +422,11 @@ const BloggerRafflesIndexRoute = BloggerRafflesIndexRouteImport.update({
   path: '/raffles/',
   getParentRoute: () => BloggerRoute,
 } as any)
+const BloggerChatsIndexRoute = BloggerChatsIndexRouteImport.update({
+  id: '/chats/',
+  path: '/chats/',
+  getParentRoute: () => BloggerRoute,
+} as any)
 const ClubUNickRoute = ClubUNickRouteImport.update({
   id: '/u/$nick',
   path: '/u/$nick',
@@ -490,6 +497,11 @@ const BloggerRafflesRaffleIdRoute = BloggerRafflesRaffleIdRouteImport.update({
   path: '/raffles/$raffleId',
   getParentRoute: () => BloggerRoute,
 } as any)
+const BloggerChatsUserIdRoute = BloggerChatsUserIdRouteImport.update({
+  id: '/chats/$userId',
+  path: '/chats/$userId',
+  getParentRoute: () => BloggerRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -551,6 +563,7 @@ export interface FileRoutesByFullPath {
   '/hell-pass/': typeof HellPassIndexRoute
   '/school/': typeof SchoolIndexRoute
   '/shop/': typeof ShopIndexRoute
+  '/blogger/chats/$userId': typeof BloggerChatsUserIdRoute
   '/blogger/raffles/$raffleId': typeof BloggerRafflesRaffleIdRoute
   '/club/hell-pass/$tier': typeof ClubHellPassTierRoute
   '/club/help/$ticketId': typeof ClubHelpTicketIdRoute
@@ -565,6 +578,7 @@ export interface FileRoutesByFullPath {
   '/club/school/$instructorId': typeof ClubSchoolInstructorIdRoute
   '/club/shop/$productSlug': typeof ClubShopProductSlugRoute
   '/club/u/$nick': typeof ClubUNickRoute
+  '/blogger/chats/': typeof BloggerChatsIndexRoute
   '/blogger/raffles/': typeof BloggerRafflesIndexRoute
   '/club/hell-pass/': typeof ClubHellPassIndexRoute
   '/club/help/': typeof ClubHelpIndexRoute
@@ -630,6 +644,7 @@ export interface FileRoutesByTo {
   '/hell-pass': typeof HellPassIndexRoute
   '/school': typeof SchoolIndexRoute
   '/shop': typeof ShopIndexRoute
+  '/blogger/chats/$userId': typeof BloggerChatsUserIdRoute
   '/blogger/raffles/$raffleId': typeof BloggerRafflesRaffleIdRoute
   '/club/hell-pass/$tier': typeof ClubHellPassTierRoute
   '/club/help/$ticketId': typeof ClubHelpTicketIdRoute
@@ -644,6 +659,7 @@ export interface FileRoutesByTo {
   '/club/school/$instructorId': typeof ClubSchoolInstructorIdRoute
   '/club/shop/$productSlug': typeof ClubShopProductSlugRoute
   '/club/u/$nick': typeof ClubUNickRoute
+  '/blogger/chats': typeof BloggerChatsIndexRoute
   '/blogger/raffles': typeof BloggerRafflesIndexRoute
   '/club/hell-pass': typeof ClubHellPassIndexRoute
   '/club/help': typeof ClubHelpIndexRoute
@@ -713,6 +729,7 @@ export interface FileRoutesById {
   '/hell-pass/': typeof HellPassIndexRoute
   '/school/': typeof SchoolIndexRoute
   '/shop/': typeof ShopIndexRoute
+  '/blogger/chats/$userId': typeof BloggerChatsUserIdRoute
   '/blogger/raffles/$raffleId': typeof BloggerRafflesRaffleIdRoute
   '/club/hell-pass/$tier': typeof ClubHellPassTierRoute
   '/club/help/$ticketId': typeof ClubHelpTicketIdRoute
@@ -727,6 +744,7 @@ export interface FileRoutesById {
   '/club/school/$instructorId': typeof ClubSchoolInstructorIdRoute
   '/club/shop/$productSlug': typeof ClubShopProductSlugRoute
   '/club/u/$nick': typeof ClubUNickRoute
+  '/blogger/chats/': typeof BloggerChatsIndexRoute
   '/blogger/raffles/': typeof BloggerRafflesIndexRoute
   '/club/hell-pass/': typeof ClubHellPassIndexRoute
   '/club/help/': typeof ClubHelpIndexRoute
@@ -797,6 +815,7 @@ export interface FileRouteTypes {
     | '/hell-pass/'
     | '/school/'
     | '/shop/'
+    | '/blogger/chats/$userId'
     | '/blogger/raffles/$raffleId'
     | '/club/hell-pass/$tier'
     | '/club/help/$ticketId'
@@ -811,6 +830,7 @@ export interface FileRouteTypes {
     | '/club/school/$instructorId'
     | '/club/shop/$productSlug'
     | '/club/u/$nick'
+    | '/blogger/chats/'
     | '/blogger/raffles/'
     | '/club/hell-pass/'
     | '/club/help/'
@@ -876,6 +896,7 @@ export interface FileRouteTypes {
     | '/hell-pass'
     | '/school'
     | '/shop'
+    | '/blogger/chats/$userId'
     | '/blogger/raffles/$raffleId'
     | '/club/hell-pass/$tier'
     | '/club/help/$ticketId'
@@ -890,6 +911,7 @@ export interface FileRouteTypes {
     | '/club/school/$instructorId'
     | '/club/shop/$productSlug'
     | '/club/u/$nick'
+    | '/blogger/chats'
     | '/blogger/raffles'
     | '/club/hell-pass'
     | '/club/help'
@@ -958,6 +980,7 @@ export interface FileRouteTypes {
     | '/hell-pass/'
     | '/school/'
     | '/shop/'
+    | '/blogger/chats/$userId'
     | '/blogger/raffles/$raffleId'
     | '/club/hell-pass/$tier'
     | '/club/help/$ticketId'
@@ -972,6 +995,7 @@ export interface FileRouteTypes {
     | '/club/school/$instructorId'
     | '/club/shop/$productSlug'
     | '/club/u/$nick'
+    | '/blogger/chats/'
     | '/blogger/raffles/'
     | '/club/hell-pass/'
     | '/club/help/'
@@ -1476,6 +1500,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BloggerRafflesIndexRouteImport
       parentRoute: typeof BloggerRoute
     }
+    '/blogger/chats/': {
+      id: '/blogger/chats/'
+      path: '/chats'
+      fullPath: '/blogger/chats/'
+      preLoaderRoute: typeof BloggerChatsIndexRouteImport
+      parentRoute: typeof BloggerRoute
+    }
     '/club/u/$nick': {
       id: '/club/u/$nick'
       path: '/u/$nick'
@@ -1574,6 +1605,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BloggerRafflesRaffleIdRouteImport
       parentRoute: typeof BloggerRoute
     }
+    '/blogger/chats/$userId': {
+      id: '/blogger/chats/$userId'
+      path: '/chats/$userId'
+      fullPath: '/blogger/chats/$userId'
+      preLoaderRoute: typeof BloggerChatsUserIdRouteImport
+      parentRoute: typeof BloggerRoute
+    }
   }
 }
 
@@ -1621,7 +1659,9 @@ interface BloggerRouteChildren {
   BloggerHellAiRoute: typeof BloggerHellAiRoute
   BloggerSettingsRoute: typeof BloggerSettingsRoute
   BloggerIndexRoute: typeof BloggerIndexRoute
+  BloggerChatsUserIdRoute: typeof BloggerChatsUserIdRoute
   BloggerRafflesRaffleIdRoute: typeof BloggerRafflesRaffleIdRoute
+  BloggerChatsIndexRoute: typeof BloggerChatsIndexRoute
   BloggerRafflesIndexRoute: typeof BloggerRafflesIndexRoute
 }
 
@@ -1629,7 +1669,9 @@ const BloggerRouteChildren: BloggerRouteChildren = {
   BloggerHellAiRoute: BloggerHellAiRoute,
   BloggerSettingsRoute: BloggerSettingsRoute,
   BloggerIndexRoute: BloggerIndexRoute,
+  BloggerChatsUserIdRoute: BloggerChatsUserIdRoute,
   BloggerRafflesRaffleIdRoute: BloggerRafflesRaffleIdRoute,
+  BloggerChatsIndexRoute: BloggerChatsIndexRoute,
   BloggerRafflesIndexRoute: BloggerRafflesIndexRoute,
 }
 
