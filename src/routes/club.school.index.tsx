@@ -24,7 +24,7 @@ function ClubSchoolPage() {
       <PageHeader title="Школа" subtitle="учись у тех, кто катает" />
 
       <div className="mb-8 flex justify-center">
-        <div className="inline-flex rounded-2xl border-[3px] border-foreground bg-card p-1 shadow-[6px_6px_0_0_hsl(var(--foreground))]">
+        <div className="inline-flex rounded-2xl bg-card p-1">
           <TabBtn active={tab === "instructors"} onClick={() => setTab("instructors")}>
             Инструкторы
           </TabBtn>
