@@ -63,11 +63,6 @@ function MyInstructorsList() {
           <h1 className="font-display text-2xl font-black uppercase tracking-tight text-foreground">
             Мои инструкторы
           </h1>
-          <p className="mt-1 font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
-            {threads.length > 0
-              ? `${threads.length} ${threads.length === 1 ? "чат" : "чатов"}`
-              : "Пока пусто — напиши инструктору из Школы"}
-          </p>
         </div>
 
         {threads.length > 0 && (
