@@ -95,6 +95,10 @@ function VipChatPage() {
   const [text, setText] = useState("");
   const [pending, setPending] = useState<Attachment | null>(null);
   const [attachOpen, setAttachOpen] = useState(false);
+  const [panelOpen, setPanelOpen] = useState(false);
+  const [tab, setTab] = useState<StickerTab>("stickers");
+  const [activePack, setActivePack] = useState<string>(STICKER_PACKS[0].id);
+  const [recent, setRecent] = useState<string[]>(() => loadRecent());
 
   const scrollerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
