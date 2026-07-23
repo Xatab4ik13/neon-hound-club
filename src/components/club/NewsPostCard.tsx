@@ -136,7 +136,8 @@ function NewsPostCard({ post }: { post: NewsPost }) {
   return (
     <>
       <article
-        className="post-card relative overflow-visible rounded-[24px] border border-white/[0.06] shadow-[0_8px_40px_rgba(0,0,0,0.4)] transition-colors hover:border-white/[0.10]"
+        onClick={onCardClick}
+        className="post-card relative cursor-pointer overflow-visible rounded-[24px] border border-white/[0.06] shadow-[0_8px_40px_rgba(0,0,0,0.4)] transition-colors hover:border-white/[0.10]"
         style={{
           background:
             "linear-gradient(160deg, oklch(0.18 0.015 280 / 0.85) 0%, oklch(0.14 0.01 280 / 0.85) 55%, oklch(0.12 0.008 280 / 0.9) 100%)",
