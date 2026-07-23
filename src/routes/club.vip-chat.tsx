@@ -238,12 +238,13 @@ function VipChatPage() {
                 const isMine = m.role === "me";
                 const prev = mi > 0 ? g.items[mi - 1] : null;
                 const showAvatar = !isMine && (!prev || prev.role !== "hell");
+                const isNew = !initialIdsRef.current.has(m.id);
                 return (
                   <motion.div
                     key={m.id}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ type: "spring", stiffness: 480, damping: 28 }}
+                    initial={isNew ? { opacity: 0, x: isMine ? 24 : -24, scale: 0.96 } : false}
+                    animate={{ opacity: 1, x: 0, scale: 1 }}
+                    transition={{ type: "spring", stiffness: 420, damping: 30, mass: 0.6 }}
                     className={cn("flex items-end gap-2", isMine ? "justify-end" : "justify-start")}
                   >
                     {!isMine && (
