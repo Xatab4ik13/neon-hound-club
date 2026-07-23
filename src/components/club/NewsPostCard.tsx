@@ -126,13 +126,14 @@ function NewsPostCard({ post }: { post: NewsPost }) {
           {/* Header: Plump-бейдж NEWS вместо аватарки */}
           <header className="flex items-center gap-3 px-4 pt-4 md:px-5 md:pt-5">
             <div
-              className="inline-flex h-11 shrink-0 items-center gap-2 rounded-[14px] border-[2px] border-foreground px-3 shadow-[3px_3px_0_0_hsl(var(--foreground))]"
+              className="inline-flex h-8 shrink-0 items-center rounded-[10px] px-4"
               style={{ background: NEWS_COLOR }}
             >
-              <span className="font-display text-[18px] font-black uppercase italic leading-none tracking-tight text-black">
+              <span className="font-display text-[15px] font-black uppercase leading-none tracking-[0.14em] text-black">
                 NEWS
               </span>
             </div>
+
 
             <div className="min-w-0 flex-1">
               <RelativeTime
@@ -185,7 +186,9 @@ function NewsPostCard({ post }: { post: NewsPost }) {
               liked={post.liked}
               count={post.likes}
               onToggle={(next: boolean) => mockNewsStore.toggleLike(post.id, next)}
+              accent={NEWS_COLOR}
             />
+
 
             <button
               type="button"
