@@ -100,9 +100,9 @@ export function MobileMoreSheet({
   const { signOut } = useViewer();
   const [isPwa, setIsPwa] = useState(false);
   useEffect(() => setIsPwa(isStandalonePWA()), []);
+  const mockInstructor = useMockInstructorRole();
   const GROUPS = buildGroups(cartCount, isPwa, Boolean(mockInstructor));
   const [confirmLogout, setConfirmLogout] = useState(false);
-  const mockInstructor = useMockInstructorRole();
 
   const doLogout = async () => {
     try {
