@@ -90,8 +90,9 @@ function ClubFeedPage() {
       <FeedTabs tab={tab} onChange={setTab} />
 
       <div className="md:hidden">
-        <FeedHeroCarousel />
+        <FeedHeroCarousel accent={tab === "news" ? "#B6FF3C" : "#F000C0"} />
       </div>
+
 
       <div className="space-y-5">
         {tab === "hellhound" ? (
