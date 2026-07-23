@@ -7,7 +7,6 @@ import { useMockInstructorRole } from "@/hooks/use-instructor-mock-role";
 import { getInstructorAccount, getMockStudent } from "@/data/instructor-accounts";
 import {
   ensureThread,
-  payInstructorInvoice,
   sendInstructorChatMessage,
   sendInstructorInvoice,
   useInstructorThread,
