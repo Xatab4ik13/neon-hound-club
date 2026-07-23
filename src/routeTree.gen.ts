@@ -90,6 +90,7 @@ import { Route as ClubHelpNewRouteImport } from './routes/club.help.new'
 import { Route as ClubHelpTicketIdRouteImport } from './routes/club.help.$ticketId'
 import { Route as ClubHellPassTierRouteImport } from './routes/club.hell-pass.$tier'
 import { Route as BloggerRafflesRaffleIdRouteImport } from './routes/blogger.raffles.$raffleId'
+import { Route as BloggerChatsUserIdRouteImport } from './routes/blogger.chats.$userId'
 
 const VerifyEmailRoute = VerifyEmailRouteImport.update({
   id: '/verify-email',
@@ -496,6 +497,11 @@ const BloggerRafflesRaffleIdRoute = BloggerRafflesRaffleIdRouteImport.update({
   path: '/raffles/$raffleId',
   getParentRoute: () => BloggerRoute,
 } as any)
+const BloggerChatsUserIdRoute = BloggerChatsUserIdRouteImport.update({
+  id: '/chats/$userId',
+  path: '/chats/$userId',
+  getParentRoute: () => BloggerRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -557,6 +563,7 @@ export interface FileRoutesByFullPath {
   '/hell-pass/': typeof HellPassIndexRoute
   '/school/': typeof SchoolIndexRoute
   '/shop/': typeof ShopIndexRoute
+  '/blogger/chats/$userId': typeof BloggerChatsUserIdRoute
   '/blogger/raffles/$raffleId': typeof BloggerRafflesRaffleIdRoute
   '/club/hell-pass/$tier': typeof ClubHellPassTierRoute
   '/club/help/$ticketId': typeof ClubHelpTicketIdRoute
@@ -637,6 +644,7 @@ export interface FileRoutesByTo {
   '/hell-pass': typeof HellPassIndexRoute
   '/school': typeof SchoolIndexRoute
   '/shop': typeof ShopIndexRoute
+  '/blogger/chats/$userId': typeof BloggerChatsUserIdRoute
   '/blogger/raffles/$raffleId': typeof BloggerRafflesRaffleIdRoute
   '/club/hell-pass/$tier': typeof ClubHellPassTierRoute
   '/club/help/$ticketId': typeof ClubHelpTicketIdRoute
@@ -721,6 +729,7 @@ export interface FileRoutesById {
   '/hell-pass/': typeof HellPassIndexRoute
   '/school/': typeof SchoolIndexRoute
   '/shop/': typeof ShopIndexRoute
+  '/blogger/chats/$userId': typeof BloggerChatsUserIdRoute
   '/blogger/raffles/$raffleId': typeof BloggerRafflesRaffleIdRoute
   '/club/hell-pass/$tier': typeof ClubHellPassTierRoute
   '/club/help/$ticketId': typeof ClubHelpTicketIdRoute
@@ -806,6 +815,7 @@ export interface FileRouteTypes {
     | '/hell-pass/'
     | '/school/'
     | '/shop/'
+    | '/blogger/chats/$userId'
     | '/blogger/raffles/$raffleId'
     | '/club/hell-pass/$tier'
     | '/club/help/$ticketId'
@@ -886,6 +896,7 @@ export interface FileRouteTypes {
     | '/hell-pass'
     | '/school'
     | '/shop'
+    | '/blogger/chats/$userId'
     | '/blogger/raffles/$raffleId'
     | '/club/hell-pass/$tier'
     | '/club/help/$ticketId'
@@ -969,6 +980,7 @@ export interface FileRouteTypes {
     | '/hell-pass/'
     | '/school/'
     | '/shop/'
+    | '/blogger/chats/$userId'
     | '/blogger/raffles/$raffleId'
     | '/club/hell-pass/$tier'
     | '/club/help/$ticketId'
@@ -1593,6 +1605,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BloggerRafflesRaffleIdRouteImport
       parentRoute: typeof BloggerRoute
     }
+    '/blogger/chats/$userId': {
+      id: '/blogger/chats/$userId'
+      path: '/chats/$userId'
+      fullPath: '/blogger/chats/$userId'
+      preLoaderRoute: typeof BloggerChatsUserIdRouteImport
+      parentRoute: typeof BloggerRoute
+    }
   }
 }
 
@@ -1640,6 +1659,7 @@ interface BloggerRouteChildren {
   BloggerHellAiRoute: typeof BloggerHellAiRoute
   BloggerSettingsRoute: typeof BloggerSettingsRoute
   BloggerIndexRoute: typeof BloggerIndexRoute
+  BloggerChatsUserIdRoute: typeof BloggerChatsUserIdRoute
   BloggerRafflesRaffleIdRoute: typeof BloggerRafflesRaffleIdRoute
   BloggerChatsIndexRoute: typeof BloggerChatsIndexRoute
   BloggerRafflesIndexRoute: typeof BloggerRafflesIndexRoute
@@ -1649,6 +1669,7 @@ const BloggerRouteChildren: BloggerRouteChildren = {
   BloggerHellAiRoute: BloggerHellAiRoute,
   BloggerSettingsRoute: BloggerSettingsRoute,
   BloggerIndexRoute: BloggerIndexRoute,
+  BloggerChatsUserIdRoute: BloggerChatsUserIdRoute,
   BloggerRafflesRaffleIdRoute: BloggerRafflesRaffleIdRoute,
   BloggerChatsIndexRoute: BloggerChatsIndexRoute,
   BloggerRafflesIndexRoute: BloggerRafflesIndexRoute,
