@@ -23,7 +23,9 @@ type Props = {
   count: number;
   onToggle: (next: boolean) => void;
   onReact?: (r: Reaction) => void;
+  accent?: string;
 };
+
 
 const FLOATERS = ["+1", "♥", "✦"] as const;
 
