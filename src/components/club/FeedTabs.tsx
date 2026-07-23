@@ -61,7 +61,6 @@ export function FeedTabs({ tab, onChange }: { tab: FeedTab; onChange: (t: FeedTa
             {t.label}
           </button>
 
-          </button>
         );
       })}
     </div>
