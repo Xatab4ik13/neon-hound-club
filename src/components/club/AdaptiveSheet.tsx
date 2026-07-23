@@ -16,6 +16,8 @@ type Props = {
   fullHeight?: boolean;
   children: ReactNode;
   contentClassName?: string;
+  /** Кастомный цвет CTA «Готово» на мобиле (iOS-sheet). */
+  doneAccent?: string;
 };
 
 export function AdaptiveSheet({
@@ -25,6 +27,7 @@ export function AdaptiveSheet({
   fullHeight,
   children,
   contentClassName,
+  doneAccent,
 }: Props) {
   const isMobile = useIsMobile();
 
@@ -36,6 +39,7 @@ export function AdaptiveSheet({
         title={title}
         fullHeight={fullHeight}
         contentClassName={contentClassName}
+        doneAccent={doneAccent}
       >
         {children}
       </IOSSheet>
