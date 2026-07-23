@@ -100,7 +100,7 @@ export function IOSWheelPicker({
 function WheelColumn({ options, value, onChange, width = "w-24" }: Column) {
   const ref = useRef<HTMLDivElement>(null);
   const idxRef = useRef(0);
-  const [snapTimer, setSnapTimer] = useState<number | null>(null);
+  const snapTimerRef = useRef<number | null>(null);
 
   // На открытии — скроллим к текущему значению.
   useEffect(() => {
@@ -108,8 +108,21 @@ function WheelColumn({ options, value, onChange, width = "w-24" }: Column) {
     const i = Math.max(0, options.indexOf(value));
     idxRef.current = i;
     ref.current.scrollTo({ top: i * ITEM_H });
+    return () => {
+      if (snapTimerRef.current) window.clearTimeout(snapTimerRef.current);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  function scrollToIndex(i: number, smooth = true) {
+    if (!ref.current) return;
+    const safe = Math.max(0, Math.min(options.length - 1, i));
+    ref.current.scrollTo({ top: safe * ITEM_H, behavior: smooth ? "smooth" : "auto" });
+    if (safe !== idxRef.current && options[safe] !== undefined) {
+      idxRef.current = safe;
+      onChange(options[safe]);
+    }
+  }
 
   function handleScroll() {
     if (!ref.current) return;
@@ -118,12 +131,12 @@ function WheelColumn({ options, value, onChange, width = "w-24" }: Column) {
       idxRef.current = i;
       onChange(options[i]);
     }
-    if (snapTimer) window.clearTimeout(snapTimer);
-    const t = window.setTimeout(() => {
+    if (snapTimerRef.current) window.clearTimeout(snapTimerRef.current);
+    snapTimerRef.current = window.setTimeout(() => {
       if (!ref.current) return;
-      ref.current.scrollTo({ top: i * ITEM_H, behavior: "smooth" });
-    }, 80);
-    setSnapTimer(t);
+      const cur = Math.round(ref.current.scrollTop / ITEM_H);
+      ref.current.scrollTo({ top: cur * ITEM_H, behavior: "smooth" });
+    }, 120);
   }
 
   const pad = ((VISIBLE - 1) / 2) * ITEM_H;
@@ -132,28 +145,40 @@ function WheelColumn({ options, value, onChange, width = "w-24" }: Column) {
     <div
       ref={ref}
       onScroll={handleScroll}
+      onPointerDown={(e) => e.stopPropagation()}
+      onWheel={(e) => {
+        // Мышиный wheel — шагаем по одному пункту, чтобы не проскакивать.
+        e.stopPropagation();
+      }}
       className={cn("relative overflow-y-scroll no-scrollbar", width)}
       style={{
         height: VISIBLE * ITEM_H,
         scrollSnapType: "y mandatory",
         scrollPaddingTop: pad,
         WebkitOverflowScrolling: "touch",
+        touchAction: "pan-y",
+        overscrollBehavior: "contain",
       }}
     >
       <div style={{ paddingTop: pad, paddingBottom: pad }}>
-        {options.map((opt) => {
+        {options.map((opt, i) => {
           const active = opt === value;
           return (
-            <div
+            <button
               key={opt}
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                scrollToIndex(i, true);
+              }}
               style={{ height: ITEM_H, scrollSnapAlign: "center" }}
               className={cn(
-                "flex items-center justify-center text-[17px] tabular-nums transition-colors",
+                "flex w-full items-center justify-center text-[17px] tabular-nums transition-colors",
                 active ? "text-white" : "text-white/40",
               )}
             >
               {opt}
-            </div>
+            </button>
           );
         })}
       </div>
