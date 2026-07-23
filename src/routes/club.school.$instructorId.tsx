@@ -15,6 +15,7 @@ import {
 } from "@/data/instructors";
 import { loadYandexMaps } from "@/lib/yandex-maps";
 import { ImageViewer } from "@/components/club/ImageViewer";
+import { BookInstructorChatSheet } from "@/components/school/BookInstructorChatSheet";
 
 export const Route = createFileRoute("/club/school/$instructorId")({
   head: ({ params }) => {
