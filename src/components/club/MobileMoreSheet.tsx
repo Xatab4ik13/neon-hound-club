@@ -11,6 +11,7 @@ import {
   PlumpHelp,
   PlumpSettings,
   PlumpLogout,
+  PlumpChat,
 } from "@/components/ui/icons";
 import type { SVGProps, ComponentType } from "react";
 import { Drawer } from "vaul";
