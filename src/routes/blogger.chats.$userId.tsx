@@ -36,10 +36,30 @@ import { useKeyboardOffset } from "@/hooks/use-keyboard-offset";
 import { useMyProfile } from "@/lib/garage-api";
 import { useMyStickerPacks } from "@/lib/stickers-api";
 import {
-  CHAT_HISTORY,
-  getUser,
-  type ChatMsg,
-} from "@/data/blogger-chats-mock";
+  useBloggerChatThread,
+  useSendBloggerMessage,
+  type ChatServerMessage,
+} from "@/lib/blogger-chats-api";
+
+// Локальный формат сообщения (совместим с прежним UI): "me" — блогер (я),
+// "them" — подписчик. Сервер отдаёт senderRole: "user" | "blogger".
+type ChatMsg = {
+  id: string;
+  role: "them" | "me";
+  text?: string;
+  sticker?: string;
+  at: number;
+};
+
+function adapt(m: ChatServerMessage): ChatMsg {
+  return {
+    id: m.id,
+    role: m.senderRole === "blogger" ? "me" : "them",
+    text: m.text ?? undefined,
+    sticker: m.sticker ?? undefined,
+    at: new Date(m.createdAt).getTime(),
+  };
+}
 
 export const Route = createFileRoute("/blogger/chats/$userId")({
   head: () => ({
@@ -88,9 +108,15 @@ function PeerAvatar({ nick, size = 44 }: { nick: string; size?: number }) {
 function BloggerChatPage() {
   const { userId } = Route.useParams();
   const navigate = useNavigate();
-  const peer = getUser(userId);
 
-  const [messages, setMessages] = useState<ChatMsg[]>(() => CHAT_HISTORY[userId] ?? []);
+  const threadQ = useBloggerChatThread(userId);
+  const peer = threadQ.data?.peer;
+  const messages: ChatMsg[] = useMemo(
+    () => (threadQ.data?.messages ?? []).map(adapt),
+    [threadQ.data?.messages],
+  );
+  const sendMsg = useSendBloggerMessage(userId);
+
   const [text, setText] = useState("");
   const [pending, setPending] = useState<Attachment | null>(null);
   const [attachOpen, setAttachOpen] = useState(false);
@@ -109,9 +135,11 @@ function BloggerChatPage() {
   const ownedPacksQ = useMyStickerPacks(!!myProfile);
   const ownedPacks = ownedPacksQ.data ?? [];
 
-  // Сообщения из истории не анимируем. Анимация — только для новых
-  // в текущей сессии, как в user-side VIP-чате.
-  const initialIdsRef = useRef<Set<string>>(new Set((CHAT_HISTORY[userId] ?? []).map((m) => m.id)));
+  // Анимация — только для сообщений, добавленных в текущей сессии.
+  const initialIdsRef = useRef<Set<string> | null>(null);
+  if (initialIdsRef.current === null && threadQ.data) {
+    initialIdsRef.current = new Set(messages.map((m) => m.id));
+  }
 
   useEffect(() => {
     const el = scrollerRef.current;
@@ -135,15 +163,8 @@ function BloggerChatPage() {
   const send = () => {
     if (!canSend || overLimit) return;
     haptic("light");
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: `me_${Date.now()}`,
-        role: "me",
-        text: trimmed || undefined,
-        at: Date.now(),
-      },
-    ]);
+    // TODO: аплоад pending.file на S3 → передавать imageUrl.
+    sendMsg.mutate({ text: trimmed || undefined });
     setText("");
     setPending(null);
   };
@@ -161,15 +182,7 @@ function BloggerChatPage() {
     pushRecent(s);
     setPanelOpen(false);
     haptic("light");
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: `me_${Date.now()}`,
-        role: "me",
-        sticker: stickerId,
-        at: Date.now(),
-      },
-    ]);
+    sendMsg.mutate({ sticker: stickerId });
   };
 
   const onKeyDown = (e: ReactKeyboardEvent<HTMLTextAreaElement>) => {
@@ -209,6 +222,14 @@ function BloggerChatPage() {
       ? `calc(100dvh - 3.25rem - env(safe-area-inset-top) - ${headerH}px - ${keyboardOffset}px)`
       : `calc(100dvh - 3.25rem - env(safe-area-inset-top) - ${headerH}px - 64px - 8px - env(safe-area-inset-bottom))`;
 
+  if (threadQ.isLoading) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center px-6 text-center font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+        Загружаем…
+      </div>
+    );
+  }
+
   if (!peer) {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3 px-6 text-center">
@@ -236,7 +257,7 @@ function BloggerChatPage() {
             {peer.nick}
           </div>
           <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-            {peer.online ? "в сети" : "офлайн"}
+            подписчик
           </div>
         </div>
       </div>
@@ -264,7 +285,7 @@ function BloggerChatPage() {
                   const isMine = m.role === "me";
                   const prev = mi > 0 ? g.items[mi - 1] : null;
                   const showAvatar = !isMine && (!prev || prev.role !== "them");
-                  const isNew = !initialIdsRef.current.has(m.id);
+                  const isNew = !!initialIdsRef.current && !initialIdsRef.current.has(m.id);
                   return (
                     <div
                       key={m.id}

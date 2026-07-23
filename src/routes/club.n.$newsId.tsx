@@ -1,13 +1,10 @@
-// Страница одной новости — визуально повторяет /club/p/$postId, но берёт данные
-// из mockNewsStore. Когда подключим бэкенд, поменяем источник на useQuery
-// с fetchNews(newsId), внешний UI не меняется.
-//
+// Страница одной новости. Источник — реальный /api/v1/news/:id.
 // /club/n/$newsId
 
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { PlumpArrowLeft as ArrowLeft } from "@/components/ui/icons";
 import { NewsPostCard } from "@/components/club/NewsPostCard";
-import { useMockNewsById } from "@/data/mock-news";
+import { useNewsPostById } from "@/lib/news-api";
 
 export const Route = createFileRoute("/club/n/$newsId")({
   head: () => ({
@@ -21,7 +18,7 @@ export const Route = createFileRoute("/club/n/$newsId")({
 
 function SingleNewsPage() {
   const { newsId } = Route.useParams();
-  const post = useMockNewsById(newsId);
+  const { data: post, isLoading, isError } = useNewsPostById(newsId);
 
   return (
     <main className="mx-auto w-full max-w-[640px] px-3 py-5 md:px-4 md:py-10">
@@ -33,11 +30,17 @@ function SingleNewsPage() {
         Лента
       </Link>
 
-      {post ? (
+      {isLoading ? (
+        <div className="rounded-[20px] border border-white/[0.06] bg-white/[0.02] p-6 text-center text-[13px] text-muted-foreground">
+          Загружаем…
+        </div>
+      ) : post ? (
         <NewsPostCard post={post} standalone />
       ) : (
         <div className="rounded-[20px] border border-destructive/30 bg-destructive/[0.06] p-6 text-center">
-          <p className="text-[14px] text-foreground/80">Новость не найдена или была удалена.</p>
+          <p className="text-[14px] text-foreground/80">
+            {isError ? "Не удалось загрузить новость." : "Новость не найдена или была удалена."}
+          </p>
         </div>
       )}
     </main>

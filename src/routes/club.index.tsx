@@ -25,7 +25,7 @@ import {
 import { FeedHeroCarousel } from "@/components/club/FeedHeroCarousel";
 import { FeedTabs, useFeedTab } from "@/components/club/FeedTabs";
 import { NewsRow } from "@/components/club/NewsPostCard";
-import { useMockNews } from "@/data/mock-news";
+import { useNewsPosts } from "@/lib/news-api";
 import { LikeButton, REACTIONS, type Reaction } from "@/components/club/LikeButton";
 import { ImageViewer } from "@/components/club/ImageViewer";
 import { PostSkeleton } from "@/components/club/PostSkeleton";
@@ -71,7 +71,9 @@ function ClubFeedPage() {
   const showSkeleton = !loaded && posts.length === 0;
 
   const [tab, setTab] = useFeedTab();
-  const newsPosts = useMockNews();
+  const newsQuery = useNewsPosts();
+  const newsPosts = newsQuery.data ?? [];
+  const newsLoading = newsQuery.isLoading;
 
   // Внутри уже установленной PWA НИКОГДА не уводим на другой origin —
   // iOS откроет cross-origin в встроенном Safari (видны адресная строка
@@ -119,9 +121,18 @@ function ClubFeedPage() {
           )
         ) : (
           <>
-            {newsPosts.map((n) => (
-              <NewsRow key={n.id} post={n} />
-            ))}
+            {newsLoading && newsPosts.length === 0 ? (
+              <>
+                <PostSkeleton withImage />
+                <PostSkeleton />
+              </>
+            ) : newsPosts.length === 0 ? (
+              <div className="rounded-[20px] border border-white/[0.06] bg-white/[0.02] p-8 text-center text-[13px] text-muted-foreground">
+                Пока новостей нет.
+              </div>
+            ) : (
+              newsPosts.map((n) => <NewsRow key={n.id} post={n} />)
+            )}
           </>
         )}
       </div>

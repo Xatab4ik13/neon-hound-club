@@ -1,11 +1,5 @@
 // Карточка новостного поста для вкладки NEWS в /club.
-// Визуально повторяет PostCard из club.index.tsx, но:
-//   - вместо аватарки/ника — Plump-бейдж «NEWS» + категория
-//   - лайки в локальном сторе (mockNewsStore), бэкенда пока нет
-//   - комментарии — заглушка (toast), сгружаем счётчик, поведение подключим когда придёт бэкенд
-//
-// Ширина/радиусы/паддинги специально совпадают с PostCard, чтобы при переключении
-// вкладок не «прыгал» скелет.
+// Данные — реальный /api/v1/news; лайки — через мутацию useToggleNewsLike.
 
 import { useCallback, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
@@ -17,10 +11,10 @@ import { RelativeTime } from "@/components/club/RelativeTime";
 import { ImageViewer } from "@/components/club/ImageViewer";
 import { haptic } from "@/hooks/use-haptic";
 import { hhToast } from "@/lib/hh-toast";
-import { mockNewsStore, type NewsPost } from "@/data/mock-news";
+import { useToggleNewsLike, type NewsPost } from "@/lib/news-api";
 import { NewsCommentsSheet } from "@/components/club/NewsCommentsSheet";
 
-// Салатовый — фирменный цвет NEWS-ленты (согласовано с юзером)
+// Салатовый — фирменный цвет NEWS-ленты
 const NEWS_COLOR = "#B6FF3C";
 
 function formatCount(n: number): string {
@@ -30,6 +24,7 @@ function formatCount(n: number): string {
 }
 
 export function NewsRow({ post }: { post: NewsPost }) {
+  const toggle = useToggleNewsLike();
   return (
     <Swipeable
       radius={24}
@@ -38,7 +33,7 @@ export function NewsRow({ post }: { post: NewsPost }) {
         label: post.liked ? "Лайк убран" : "Лайк",
         bg: "linear-gradient(90deg, oklch(0.62 0.24 357.3) 0%, oklch(0.55 0.22 357.3) 100%)",
         fg: "#fff",
-        onAction: () => mockNewsStore.toggleLike(post.id, !post.liked),
+        onAction: () => toggle.mutate({ id: post.id, next: !post.liked }),
       }}
     >
       <NewsPostCard post={post} />
@@ -52,6 +47,7 @@ export function NewsPostCard({ post, standalone = false }: { post: NewsPost; sta
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [commentsEverOpened, setCommentsEverOpened] = useState(false);
   const navigate = useNavigate();
+  const toggleLike = useToggleNewsLike();
 
   const openComments = useCallback(() => {
     haptic("light");
@@ -63,9 +59,6 @@ export function NewsPostCard({ post, standalone = false }: { post: NewsPost; sta
     navigate({ to: "/club/n/$newsId", params: { newsId: post.id } });
   }, [navigate, post.id]);
 
-  // Тап по «свободному» месту карточки → открыть отдельную страницу поста
-  // (как в Hellhound-ленте). На самой странице поста (standalone) — ничего.
-  // Игнорируем клики по интерактивным детям (кнопки, ссылки, инпуты, формы, картинка).
   const onCardClick = useCallback(
     (e: React.MouseEvent<HTMLElement>) => {
       if (standalone) return;
@@ -75,7 +68,6 @@ export function NewsPostCard({ post, standalone = false }: { post: NewsPost; sta
     },
     [openPost, standalone],
   );
-
 
   const shareUrl =
     typeof window !== "undefined" ? `${window.location.origin}/club#news-${post.id}` : `/club`;
@@ -131,7 +123,7 @@ export function NewsPostCard({ post, standalone = false }: { post: NewsPost; sta
     if (now - lastImgTap.current < 280) {
       if (!post.liked) {
         haptic("success");
-        mockNewsStore.toggleLike(post.id, true);
+        toggleLike.mutate({ id: post.id, next: true });
       }
       lastImgTap.current = 0;
     } else {
@@ -140,7 +132,7 @@ export function NewsPostCard({ post, standalone = false }: { post: NewsPost; sta
         if (lastImgTap.current === now) openViewer();
       }, 290);
     }
-  }, [post.liked, post.id, openViewer]);
+  }, [post.liked, post.id, openViewer, toggleLike]);
 
   return (
     <>
@@ -153,7 +145,6 @@ export function NewsPostCard({ post, standalone = false }: { post: NewsPost; sta
         }}
       >
         <div className="overflow-hidden rounded-[24px]">
-          {/* Header: Plump-бейдж NEWS вместо аватарки */}
           <header className="flex items-center gap-3 px-4 pt-4 md:px-5 md:pt-5">
             <div
               className="inline-flex h-8 shrink-0 items-center rounded-[10px] px-4"
@@ -164,29 +155,24 @@ export function NewsPostCard({ post, standalone = false }: { post: NewsPost; sta
               </span>
             </div>
 
-
             <div className="min-w-0 flex-1">
               <RelativeTime
                 iso={post.createdAt}
                 className="mt-0.5 block font-mono text-[10px] uppercase tracking-[0.18em] tabular-nums text-muted-foreground"
               />
             </div>
-
           </header>
 
-          {/* Заголовок новости — жирным, крупнее чем body */}
           <h2 className="px-4 pb-1 pt-3 font-display text-[18px] font-black leading-tight tracking-tight text-foreground md:px-5">
             {post.title}
           </h2>
 
-          {/* Текст */}
           {post.text && (
             <p className="whitespace-pre-wrap break-words px-4 pb-3 pt-2 text-[15px] leading-[1.55] text-foreground/90 md:px-5">
               {post.text}
             </p>
           )}
 
-          {/* Картинка */}
           {post.image && (
             <div className="px-3 pb-3">
               <button
@@ -210,15 +196,13 @@ export function NewsPostCard({ post, standalone = false }: { post: NewsPost; sta
             </div>
           )}
 
-          {/* Actions */}
           <div className="flex items-center gap-2 px-4 py-3 md:px-5">
             <LikeButton
               liked={post.liked}
               count={post.likes}
-              onToggle={(next: boolean) => mockNewsStore.toggleLike(post.id, next)}
+              onToggle={(next: boolean) => toggleLike.mutate({ id: post.id, next })}
               accent={NEWS_COLOR}
             />
-
 
             <button
               type="button"
@@ -244,7 +228,6 @@ export function NewsPostCard({ post, standalone = false }: { post: NewsPost; sta
             >
               <PlumpShare className="h-4 w-4" />
             </button>
-
           </div>
         </div>
       </article>
@@ -256,9 +239,7 @@ export function NewsPostCard({ post, standalone = false }: { post: NewsPost; sta
           postId={post.id}
           commentsCount={post.commentsCount}
         />
-
       )}
-
 
       {post.image && viewerEverOpened && (
         <ImageViewer
@@ -269,7 +250,7 @@ export function NewsPostCard({ post, standalone = false }: { post: NewsPost; sta
           onDoubleTap={() => {
             if (!post.liked) {
               haptic("success");
-              mockNewsStore.toggleLike(post.id, true);
+              toggleLike.mutate({ id: post.id, next: true });
             }
           }}
         />
