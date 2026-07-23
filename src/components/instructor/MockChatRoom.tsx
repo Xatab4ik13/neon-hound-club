@@ -10,11 +10,17 @@ import {
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
-import { Send } from "@/components/ui/icons";
+import { Send, Receipt } from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
 import { haptic } from "@/hooks/use-haptic";
 import { useKeyboardOffset } from "@/hooks/use-keyboard-offset";
-import type { InstructorMsg } from "@/data/instructor-chats-mock";
+import type { InstructorMsg, InvoicePayload } from "@/data/instructor-chats-mock";
+import { invoiceTotalForStudent } from "@/data/instructor-chats-mock";
+import {
+  InvoiceComposer,
+  PayInvoiceSheet,
+  type InvoiceDraft,
+} from "@/components/instructor/InvoiceComposer";
 
 const MAX_LEN = 2000;
 
