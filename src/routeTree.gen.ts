@@ -79,6 +79,7 @@ import { Route as ClubSchoolInstructorIdRouteImport } from './routes/club.school
 import { Route as ClubRafflesRaffleIdRouteImport } from './routes/club.raffles.$raffleId'
 import { Route as ClubPPostIdRouteImport } from './routes/club.p.$postId'
 import { Route as ClubOrdersOrderIdRouteImport } from './routes/club.orders.$orderId'
+import { Route as ClubNNewsIdRouteImport } from './routes/club.n.$newsId'
 import { Route as ClubLegalRequisitesRouteImport } from './routes/club.legal.requisites'
 import { Route as ClubLegalPromoRulesRouteImport } from './routes/club.legal.promo-rules'
 import { Route as ClubLegalPrivacyRouteImport } from './routes/club.legal.privacy'
@@ -437,6 +438,11 @@ const ClubOrdersOrderIdRoute = ClubOrdersOrderIdRouteImport.update({
   path: '/orders/$orderId',
   getParentRoute: () => ClubRoute,
 } as any)
+const ClubNNewsIdRoute = ClubNNewsIdRouteImport.update({
+  id: '/n/$newsId',
+  path: '/n/$newsId',
+  getParentRoute: () => ClubRoute,
+} as any)
 const ClubLegalRequisitesRoute = ClubLegalRequisitesRouteImport.update({
   id: '/legal/requisites',
   path: '/legal/requisites',
@@ -538,6 +544,7 @@ export interface FileRoutesByFullPath {
   '/club/legal/privacy': typeof ClubLegalPrivacyRoute
   '/club/legal/promo-rules': typeof ClubLegalPromoRulesRoute
   '/club/legal/requisites': typeof ClubLegalRequisitesRoute
+  '/club/n/$newsId': typeof ClubNNewsIdRoute
   '/club/orders/$orderId': typeof ClubOrdersOrderIdRoute
   '/club/p/$postId': typeof ClubPPostIdRoute
   '/club/raffles/$raffleId': typeof ClubRafflesRaffleIdRoute
@@ -614,6 +621,7 @@ export interface FileRoutesByTo {
   '/club/legal/privacy': typeof ClubLegalPrivacyRoute
   '/club/legal/promo-rules': typeof ClubLegalPromoRulesRoute
   '/club/legal/requisites': typeof ClubLegalRequisitesRoute
+  '/club/n/$newsId': typeof ClubNNewsIdRoute
   '/club/orders/$orderId': typeof ClubOrdersOrderIdRoute
   '/club/p/$postId': typeof ClubPPostIdRoute
   '/club/raffles/$raffleId': typeof ClubRafflesRaffleIdRoute
@@ -694,6 +702,7 @@ export interface FileRoutesById {
   '/club/legal/privacy': typeof ClubLegalPrivacyRoute
   '/club/legal/promo-rules': typeof ClubLegalPromoRulesRoute
   '/club/legal/requisites': typeof ClubLegalRequisitesRoute
+  '/club/n/$newsId': typeof ClubNNewsIdRoute
   '/club/orders/$orderId': typeof ClubOrdersOrderIdRoute
   '/club/p/$postId': typeof ClubPPostIdRoute
   '/club/raffles/$raffleId': typeof ClubRafflesRaffleIdRoute
@@ -775,6 +784,7 @@ export interface FileRouteTypes {
     | '/club/legal/privacy'
     | '/club/legal/promo-rules'
     | '/club/legal/requisites'
+    | '/club/n/$newsId'
     | '/club/orders/$orderId'
     | '/club/p/$postId'
     | '/club/raffles/$raffleId'
@@ -851,6 +861,7 @@ export interface FileRouteTypes {
     | '/club/legal/privacy'
     | '/club/legal/promo-rules'
     | '/club/legal/requisites'
+    | '/club/n/$newsId'
     | '/club/orders/$orderId'
     | '/club/p/$postId'
     | '/club/raffles/$raffleId'
@@ -930,6 +941,7 @@ export interface FileRouteTypes {
     | '/club/legal/privacy'
     | '/club/legal/promo-rules'
     | '/club/legal/requisites'
+    | '/club/n/$newsId'
     | '/club/orders/$orderId'
     | '/club/p/$postId'
     | '/club/raffles/$raffleId'
@@ -1468,6 +1480,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ClubOrdersOrderIdRouteImport
       parentRoute: typeof ClubRoute
     }
+    '/club/n/$newsId': {
+      id: '/club/n/$newsId'
+      path: '/n/$newsId'
+      fullPath: '/club/n/$newsId'
+      preLoaderRoute: typeof ClubNNewsIdRouteImport
+      parentRoute: typeof ClubRoute
+    }
     '/club/legal/requisites': {
       id: '/club/legal/requisites'
       path: '/legal/requisites'
@@ -1595,6 +1614,7 @@ interface ClubRouteChildren {
   ClubLegalPrivacyRoute: typeof ClubLegalPrivacyRoute
   ClubLegalPromoRulesRoute: typeof ClubLegalPromoRulesRoute
   ClubLegalRequisitesRoute: typeof ClubLegalRequisitesRoute
+  ClubNNewsIdRoute: typeof ClubNNewsIdRoute
   ClubOrdersOrderIdRoute: typeof ClubOrdersOrderIdRoute
   ClubPPostIdRoute: typeof ClubPPostIdRoute
   ClubRafflesRaffleIdRoute: typeof ClubRafflesRaffleIdRoute
@@ -1627,6 +1647,7 @@ const ClubRouteChildren: ClubRouteChildren = {
   ClubLegalPrivacyRoute: ClubLegalPrivacyRoute,
   ClubLegalPromoRulesRoute: ClubLegalPromoRulesRoute,
   ClubLegalRequisitesRoute: ClubLegalRequisitesRoute,
+  ClubNNewsIdRoute: ClubNNewsIdRoute,
   ClubOrdersOrderIdRoute: ClubOrdersOrderIdRoute,
   ClubPPostIdRoute: ClubPPostIdRoute,
   ClubRafflesRaffleIdRoute: ClubRafflesRaffleIdRoute,
