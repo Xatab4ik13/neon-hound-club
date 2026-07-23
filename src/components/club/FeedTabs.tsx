@@ -50,15 +50,17 @@ export function FeedTabs({ tab, onChange }: { tab: FeedTab; onChange: (t: FeedTa
             key={t.id}
             type="button"
             onClick={() => onChange(t.id)}
-            className={`inline-flex h-9 items-center rounded-[12px] border-[2px] px-3.5 font-display text-[13px] font-black uppercase italic leading-none tracking-tight transition-all active:scale-95 ${
+            className={`inline-flex h-9 items-center rounded-[12px] px-3.5 font-display text-[13px] font-black uppercase leading-none tracking-tight transition-all active:scale-95 ${
               active
-                ? "border-foreground text-black shadow-[3px_3px_0_0_hsl(var(--foreground))]"
-                : "border-white/15 bg-transparent text-muted-foreground hover:border-white/30 hover:text-foreground"
+                ? "text-black"
+                : "bg-transparent text-muted-foreground hover:text-foreground"
             }`}
             style={active ? { background: t.color } : undefined}
             aria-pressed={active}
           >
             {t.label}
+          </button>
+
           </button>
         );
       })}
