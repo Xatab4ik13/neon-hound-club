@@ -48,6 +48,7 @@ type Msg = {
   role: "hell" | "me";
   text?: string;
   image?: string;
+  sticker?: string;
   at: number;
 };
 
