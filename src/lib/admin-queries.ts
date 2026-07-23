@@ -872,3 +872,62 @@ export function updateAdminFeedPost(id: string, patch: AdminUpdatePostInput) {
 export function deleteAdminHomeBanner(id: string) {
   return apiFetch<{ ok: true }>(`/api/v1/admin/home/banners/${id}`, { method: "DELETE" });
 }
+
+// ============================================================================
+// NEWS (admin) — /api/v1/admin/news. UI: /admin/news (минимальный CRUD).
+// ============================================================================
+
+export const adminNewsQk = ["admin", "news"] as const;
+
+export type AdminNewsItem = {
+  id: string;
+  category: string;
+  title: string;
+  text: string;
+  image?: string;
+  createdAt: string;
+  likes: number;
+  liked: boolean;
+  commentsCount: number;
+  pinned: boolean;
+  published: boolean;
+};
+
+export type AdminNewsInput = {
+  category?: string;
+  title: string;
+  text?: string;
+  imageUrl?: string;
+  published?: boolean;
+  pinned?: boolean;
+};
+
+export function fetchAdminNews(status: "all" | "published" | "drafts" = "all") {
+  return apiFetch<{ items: AdminNewsItem[] }>(`/api/v1/admin/news/?status=${status}`);
+}
+
+export function createAdminNews(input: AdminNewsInput) {
+  return apiFetch<{ post: AdminNewsItem }>(`/api/v1/admin/news/`, {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export function patchAdminNews(id: string, patch: Partial<AdminNewsInput>) {
+  return apiFetch<{ post: AdminNewsItem }>(`/api/v1/admin/news/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(patch),
+  });
+}
+
+export function publishAdminNews(id: string) {
+  return apiFetch<{ post: AdminNewsItem }>(`/api/v1/admin/news/${id}/publish`, { method: "POST" });
+}
+
+export function unpublishAdminNews(id: string) {
+  return apiFetch<{ post: AdminNewsItem }>(`/api/v1/admin/news/${id}/unpublish`, { method: "POST" });
+}
+
+export function deleteAdminNews(id: string) {
+  return apiFetch<{ ok: true }>(`/api/v1/admin/news/${id}`, { method: "DELETE" });
+}
