@@ -315,7 +315,7 @@ function VipChatPage() {
             <PlumpAttach className="h-5 w-5" />
           </button>
 
-          <div className="flex min-w-0 flex-1 items-end gap-1 rounded-3xl border border-white/[0.08] bg-black/60 pl-3 pr-1 py-1 focus-within:border-primary/40">
+          <div className="flex min-w-0 flex-1 items-end gap-1 rounded-3xl border border-white/[0.08] bg-black/60 pl-3 pr-1 py-1 focus-within:border-[#B6FF3C]/60 focus-within:shadow-[0_0_0_3px_rgba(182,255,60,0.10)]">
             <textarea
               ref={textareaRef}
               value={text}
@@ -343,7 +343,7 @@ function VipChatPage() {
             type="submit"
             disabled={!canSend || overLimit}
             aria-label="Отправить"
-            className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground transition-transform active:scale-95 disabled:opacity-40"
+            className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#B6FF3C] text-black transition-transform active:scale-95 disabled:opacity-40"
           >
             <Send size={18} strokeWidth={2} className="-translate-x-[1px]" />
           </button>
