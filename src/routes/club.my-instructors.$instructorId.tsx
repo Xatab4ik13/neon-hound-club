@@ -7,6 +7,7 @@ import { useViewer } from "@/hooks/use-viewer";
 import { getInstructorBySlug } from "@/data/instructors";
 import {
   ensureThread,
+  payInstructorInvoice,
   sendInstructorChatMessage,
   useInstructorThread,
 } from "@/data/instructor-chats-mock";
@@ -103,6 +104,9 @@ function MyInstructorChatRoom() {
             { text },
             "student",
           )
+        }
+        onPayInvoice={(invoiceId, payer) =>
+          payInstructorInvoice(instructor.slug, student.userId, student.nick, invoiceId, payer)
         }
       />
     </div>

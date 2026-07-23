@@ -8,6 +8,7 @@ import { getInstructorAccount, getMockStudent } from "@/data/instructor-accounts
 import {
   ensureThread,
   sendInstructorChatMessage,
+  sendInstructorInvoice,
   useInstructorThread,
 } from "@/data/instructor-chats-mock";
 import { MockChatRoom } from "@/components/instructor/MockChatRoom";
@@ -88,6 +89,9 @@ function SchoolChatRoom() {
         height={pageHeight}
         onSend={(text) =>
           sendInstructorChatMessage(slug, student.userId, student.nick, { text }, "instructor")
+        }
+        onSendInvoice={(draft) =>
+          sendInstructorInvoice(slug, student.userId, student.nick, draft)
         }
       />
     </div>
