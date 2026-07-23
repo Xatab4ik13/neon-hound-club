@@ -251,7 +251,7 @@ function VipChatPage() {
                         className={cn(
                           "relative select-text rounded-2xl",
                           isMine ? "rounded-br-md" : "rounded-bl-md",
-                          m.image && !m.text ? "p-1" : "px-3 py-2",
+                          (m.image || m.sticker) && !m.text ? "p-1" : "px-3 py-2",
                         )}
                         style={{ backgroundColor: isMine ? "#B6FF3C" : "#ffffff" }}
                       >
@@ -261,6 +261,16 @@ function VipChatPage() {
                               src={m.image}
                               alt=""
                               className="block max-h-[220px] w-full max-w-[240px] object-cover"
+                            />
+                          </div>
+                        )}
+                        {m.sticker && (
+                          <div className={cn("overflow-hidden rounded-xl", m.text ? "mb-2" : "")}>
+                            <StickerView
+                              url={m.sticker}
+                              alt="стикер"
+                              size={160}
+                              className="block h-32 w-32 max-w-[240px] object-contain"
                             />
                           </div>
                         )}
