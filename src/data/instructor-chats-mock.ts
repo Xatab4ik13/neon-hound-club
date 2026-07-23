@@ -177,6 +177,18 @@ export function useInstructorThreadsList(instructorSlug: string): InstructorThre
     );
 }
 
+/** Список тредов конкретного ученика — используется на странице
+ *  «Мои инструкторы» у обычного юзера. */
+export function useStudentThreadsList(studentUserId: string): InstructorThread[] {
+  const snap = useSyncExternalStore(subscribe, getSnapshot, () => ({}) as State);
+  return Object.values(snap)
+    .filter((t) => t.studentUserId === studentUserId)
+    .sort(
+      (a, b) =>
+        (b.messages.at(-1)?.createdAt ?? 0) - (a.messages.at(-1)?.createdAt ?? 0),
+    );
+}
+
 export function useInstructorThread(
   instructorSlug: string,
   studentUserId: string,
