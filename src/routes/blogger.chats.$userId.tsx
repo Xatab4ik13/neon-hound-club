@@ -249,7 +249,7 @@ function BloggerChatPage() {
             {peer.nick}
           </div>
           <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-            {peer.online ? "в сети" : "офлайн"}
+            подписчик
           </div>
         </div>
       </div>
@@ -277,7 +277,7 @@ function BloggerChatPage() {
                   const isMine = m.role === "me";
                   const prev = mi > 0 ? g.items[mi - 1] : null;
                   const showAvatar = !isMine && (!prev || prev.role !== "them");
-                  const isNew = !initialIdsRef.current.has(m.id);
+                  const isNew = !!initialIdsRef.current && !initialIdsRef.current.has(m.id);
                   return (
                     <div
                       key={m.id}
