@@ -472,7 +472,7 @@ function LocationSection({ instructor }: { instructor: Instructor }) {
             href={externalMapUrl}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center justify-center gap-2 rounded-full border-[3px] border-foreground bg-foreground px-5 py-3 font-display text-xs font-black uppercase tracking-widest text-background shadow-[4px_4px_0_0_hsl(var(--background))]"
+            className="inline-flex items-center justify-center gap-2 rounded-full border-[3px] border-foreground bg-primary px-5 py-3 font-display text-xs font-black uppercase tracking-widest text-primary-foreground shadow-[4px_4px_0_0_hsl(var(--foreground))]"
           >
             Построить маршрут <PlumpArrowRight className="h-4 w-4" />
           </a>
@@ -662,12 +662,12 @@ function ContactCta({ onContact }: { onContact: () => void }) {
       <button
         type="button"
         onClick={onContact}
-        className="group flex w-full items-center justify-center gap-3 rounded-3xl border-[3px] border-foreground bg-primary px-6 py-6 font-display text-2xl font-black uppercase tracking-tight text-primary-foreground shadow-[8px_8px_0_0_hsl(var(--foreground))] transition-transform duration-150 active:translate-x-[2px] active:translate-y-[2px] active:shadow-[4px_4px_0_0_hsl(var(--foreground))] md:text-3xl"
+        className="group flex w-full items-center justify-center gap-3 rounded-3xl border-[3px] border-foreground bg-[#B6FF3C] px-6 py-6 font-display text-2xl font-black uppercase tracking-tight text-black shadow-[8px_8px_0_0_hsl(var(--foreground))] transition-transform duration-150 active:translate-x-[2px] active:translate-y-[2px] active:shadow-[4px_4px_0_0_hsl(var(--foreground))] md:text-3xl"
       >
         Связаться <PlumpArrowRight className="h-6 w-6" />
       </button>
       <p className="mt-3 text-center font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
-        Напиши инструктору — договоритесь по времени в чате
+        Договорись по времени в чате
       </p>
     </section>
   );
@@ -679,7 +679,7 @@ function BottomActions({ onContact }: { onContact: () => void }) {
       <button
         type="button"
         onClick={onContact}
-        className="inline-flex items-center justify-center gap-2 rounded-full border-[3px] border-foreground bg-primary px-8 py-3 font-display text-sm font-black uppercase tracking-widest text-primary-foreground shadow-[6px_6px_0_0_hsl(var(--foreground))]"
+        className="inline-flex items-center justify-center gap-2 rounded-full border-[3px] border-foreground bg-[#B6FF3C] px-8 py-3 font-display text-sm font-black uppercase tracking-widest text-black shadow-[6px_6px_0_0_hsl(var(--foreground))]"
       >
         Связаться <PlumpArrowRight className="h-4 w-4" />
       </button>
