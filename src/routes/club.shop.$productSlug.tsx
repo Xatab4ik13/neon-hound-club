@@ -24,7 +24,9 @@ function ticketsWord(n: number) {
   return "билетов";
 }
 import { SPECIAL_PACK_COVER } from "@/assets/stickers/special";
-import { PlumpPrice } from "@/components/brand/PlumpNum";
+import { PlumpNum, PlumpPrice } from "@/components/brand/PlumpNum";
+
+const SIZE_COLORS = ["#B6FF3C", "#FFD93D", "#3DDBD9", "#FF7A3D"] as const;
 
 export const Route = createFileRoute("/club/shop/$productSlug")({
   head: ({ params }) => ({
