@@ -222,6 +222,14 @@ function BloggerChatPage() {
       ? `calc(100dvh - 3.25rem - env(safe-area-inset-top) - ${headerH}px - ${keyboardOffset}px)`
       : `calc(100dvh - 3.25rem - env(safe-area-inset-top) - ${headerH}px - 64px - 8px - env(safe-area-inset-bottom))`;
 
+  if (threadQ.isLoading) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center px-6 text-center font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+        Загружаем…
+      </div>
+    );
+  }
+
   if (!peer) {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3 px-6 text-center">
