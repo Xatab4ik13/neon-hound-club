@@ -174,15 +174,24 @@ export function LikeButton({ liked, count, onToggle, onReact, accent }: Props) {
         aria-pressed={liked}
         className={`relative inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 font-mono text-[12px] font-bold tabular-nums select-none transition-colors active:scale-95 ${
           liked
-            ? "bg-primary text-primary-foreground shadow-[0_4px_14px_oklch(0.62_0.24_357.3_/_0.4)]"
-            : "border border-white/[0.08] bg-white/[0.04] text-foreground hover:border-primary/40 hover:text-primary"
+            ? accent
+              ? "text-black"
+              : "bg-primary text-primary-foreground shadow-[0_4px_14px_oklch(0.62_0.24_357.3_/_0.4)]"
+            : accent
+              ? "border border-white/[0.08] bg-white/[0.04] text-foreground"
+              : "border border-white/[0.08] bg-white/[0.04] text-foreground hover:border-primary/40 hover:text-primary"
         }`}
         style={{
           transition:
             "background-color var(--motion-base) var(--ease-in-out), color var(--motion-base) var(--ease-in-out), transform var(--motion-fast) var(--ease-out-soft)",
           touchAction: "manipulation",
           WebkitUserSelect: "none",
+          ...(accent && liked
+            ? { background: accent, boxShadow: `0 4px 14px ${accent}66` }
+            : {}),
+          ...(accent && !liked ? { color: accent } : {}),
         }}
+
       >
         <span className="relative grid h-4 w-4 place-items-center">
           <Heart
