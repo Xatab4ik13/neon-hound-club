@@ -202,12 +202,12 @@ export function LikeButton({ liked, count, onToggle, onReact }: Props) {
               {FLOATERS.map((t, i) => (
                 <span
                   key={i}
-                  className="absolute left-1/2 top-1/2 font-mono text-[10px] font-bold leading-none text-primary"
+                  className="absolute left-1/2 top-1/2 font-mono text-[10px] font-bold leading-none text-[#B6FF3C]"
                   style={{
                     // @ts-expect-error custom CSS vars
                     "--dx": `${(i - 1) * 14}px`,
                     animation: `like-float 900ms ${i * 60}ms ease-out forwards`,
-                    textShadow: "0 2px 6px rgba(240,0,192,0.5)",
+                    textShadow: "0 2px 6px rgba(182,255,60,0.5)",
                   }}
                 >
                   {t}
