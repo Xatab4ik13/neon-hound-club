@@ -69,11 +69,8 @@ function SchoolChatsList() {
       <div className="mx-auto max-w-[720px]">
         <div className="px-4 pb-3 pt-4">
           <h1 className="font-display text-2xl font-black uppercase tracking-tight text-foreground">
-            Школа · {account.name}
+            Школа
           </h1>
-          <p className="mt-1 font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
-            {threads.length} {threads.length === 1 ? "чат" : "чатов"} с учениками
-          </p>
         </div>
 
         <div className="px-4 pb-3">
