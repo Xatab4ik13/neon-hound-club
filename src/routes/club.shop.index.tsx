@@ -287,7 +287,7 @@ function ProductCard({ product }: { product: ShopProductListItem }) {
     product.images[0] ?? (product.slug === "stickerpack-special" ? SPECIAL_PACK_COVER : undefined);
   // Стабильный «случайный» сдвиг фазы анимации по slug: разные стикеры
   // дёргаются в разное время, на экране активны только 1-2 из видимых.
-  const wiggleDelay = React.useMemo(() => {
+  const wiggleDelay = useMemo(() => {
     let h = 0;
     for (let i = 0; i < product.slug.length; i++) h = (h * 31 + product.slug.charCodeAt(i)) | 0;
     return `-${(Math.abs(h) % 1400) / 100}s`;
