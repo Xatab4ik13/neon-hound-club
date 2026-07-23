@@ -17,6 +17,7 @@ import { ImageViewer } from "@/components/club/ImageViewer";
 import { haptic } from "@/hooks/use-haptic";
 import { hhToast } from "@/lib/hh-toast";
 import { mockNewsStore, type NewsPost } from "@/data/mock-news";
+import { NewsCommentsSheet } from "@/components/club/NewsCommentsSheet";
 
 // Салатовый — фирменный цвет NEWS-ленты (согласовано с юзером)
 const NEWS_COLOR = "#B6FF3C";
