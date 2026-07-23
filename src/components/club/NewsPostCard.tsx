@@ -186,7 +186,9 @@ function NewsPostCard({ post }: { post: NewsPost }) {
               liked={post.liked}
               count={post.likes}
               onToggle={(next: boolean) => mockNewsStore.toggleLike(post.id, next)}
+              accent={NEWS_COLOR}
             />
+
 
             <button
               type="button"
