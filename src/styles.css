@@ -414,6 +414,24 @@
   .badge-float, .badge-spin, .badge-glow { animation: none !important; }
 }
 
+/* ── Bonus ticket sticker wiggle ───────────────────────────────────────── */
+@keyframes sticker-wiggle {
+  0%, 18%, 100% { transform: rotate(6deg) translateY(0); }
+  5%  { transform: rotate(9deg) translateY(1px); }
+  10% { transform: rotate(3deg) translateY(2px); }
+  14% { transform: rotate(7deg) translateY(1px); }
+}
+.sticker-wiggle {
+  animation: sticker-wiggle 4.5s ease-in-out infinite;
+  transform-origin: top right;
+  will-change: transform;
+  backface-visibility: hidden;
+}
+@media (prefers-reduced-motion: reduce) {
+  .sticker-wiggle { animation: none !important; }
+}
+
+
 /* Когда открыта модалка — глушим тяжёлые анимации фона, чтобы не лагало. */
 body[data-modal-open="1"] .badge-float,
 body[data-modal-open="1"] .badge-spin,

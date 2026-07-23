@@ -292,7 +292,7 @@ function ProductCard({ product }: { product: ShopProductListItem }) {
       className="group relative block rounded-2xl bg-card transition-all active:scale-[0.98]"
     >
       {product.bonusTickets > 0 && (
-        <span className="absolute -right-1 -top-2 z-20 inline-flex rotate-6 items-center gap-1 rounded-lg border-[2px] border-foreground bg-[#B6FF3C] px-2 py-1 font-display text-[10px] font-black uppercase italic tracking-tight text-black shadow-[2px_2px_0_0_hsl(var(--foreground))]">
+        <span className="sticker-wiggle absolute -right-1 -top-2 z-20 inline-flex items-center gap-1 rounded-lg border-[2px] border-foreground bg-[#B6FF3C] px-2 py-1 font-display text-[10px] font-black uppercase italic tracking-tight text-black shadow-[2px_2px_0_0_hsl(var(--foreground))]">
           <PlumpTicket className="h-3 w-3" />+{product.bonusTickets}
         </span>
       )}

@@ -318,7 +318,7 @@ function ProductView({ product }: { product: ShopProduct }) {
         </div>
 
         {product.bonusTickets > 0 && (
-          <div className="mt-4 inline-flex -rotate-2 items-center gap-1.5 rounded-lg border-[2px] border-foreground bg-[#B6FF3C] px-2.5 py-1.5 font-display uppercase italic tracking-tight text-black shadow-[3px_3px_0_0_hsl(var(--foreground))]">
+          <div className="sticker-wiggle mt-4 inline-flex -rotate-2 items-center gap-1.5 rounded-lg border-[2px] border-foreground bg-[#B6FF3C] px-2.5 py-1.5 font-display uppercase italic tracking-tight text-black shadow-[3px_3px_0_0_hsl(var(--foreground))]">
             <PlumpTicket className="h-3.5 w-3.5" />
             <span className="text-[13px] font-black leading-none inline-flex items-center gap-1">
               <PlumpNum value={product.bonusTickets} size={13} prefix="+" />
