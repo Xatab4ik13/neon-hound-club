@@ -46,8 +46,33 @@ export const Route = createFileRoute("/school/$instructorId")({
 function InstructorPage() {
   const { instructorId } = Route.useParams();
   const instructor = getInstructorBySlug(instructorId);
-  const [chatOpen, setChatOpen] = useState(false);
-  const openChat = () => setChatOpen(true);
+  const navigate = useNavigate();
+  const viewer = useViewer();
+  const qc = useQueryClient();
+
+  const openChatMut = useMutation({
+    mutationFn: (slug: string) => openChatWith(slug),
+    onSuccess: async ({ id }) => {
+      await qc.invalidateQueries({ queryKey: schoolQk.myChats });
+      navigate({ to: "/club/my-instructors/$chatId", params: { chatId: id } });
+    },
+    onError: (err) => {
+      if (err instanceof ApiError && err.status === 401) {
+        navigate({ to: "/login" });
+        return;
+      }
+      toast.error(err instanceof Error ? err.message : "Не удалось открыть чат");
+    },
+  });
+
+  const openChat = () => {
+    if (!instructor) return;
+    if (!viewer.user) {
+      navigate({ to: "/login" });
+      return;
+    }
+    openChatMut.mutate(instructor.slug);
+  };
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "auto" });
