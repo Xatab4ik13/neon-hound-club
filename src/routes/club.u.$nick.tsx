@@ -249,14 +249,7 @@ function UserView({ user }: { user: ProfileView }) {
               </span>
             </div>
             {showHellPassPreview ? (
-              <div
-                className="flex flex-wrap items-center justify-center gap-3 rounded-2xl border-2 border-white/80 px-3 py-3"
-                style={{
-                  background:
-                    "linear-gradient(135deg, rgba(255,255,255,0.06), rgba(0,0,0,0.35))",
-                  boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.6)",
-                }}
-              >
+              <div className="flex flex-wrap items-center justify-center gap-3 rounded-2xl px-3 py-3">
                 {HELLPASS_PREVIEW.map((b) => (
                   <div
                     key={b.src}
