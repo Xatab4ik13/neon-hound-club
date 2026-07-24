@@ -47,10 +47,10 @@ const sendSchema = z
 
 // ─── Хелперы ────────────────────────────────────────────────────────
 
-/** Сейчас — все могут. Позже — только Platinum Hell Pass. */
-async function canUseVipChat(_userId: string): Promise<boolean> {
-  // TODO(pass): вернуть true только если у _userId активный pass тира 'platinum'.
-  return true;
+/** VIP-чат открыт только владельцам активного Hell Pass тира Platinum. */
+async function canUseVipChat(userId: string): Promise<boolean> {
+  const pass = await getActivePass(userId);
+  return pass?.tier === "platinum";
 }
 
 /** Резолвит «главного блогера» — того, кому пишет юзер. Пока — самый старый
