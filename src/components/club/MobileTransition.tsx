@@ -28,6 +28,11 @@ const TAB_ROOTS = new Set([
   "/club/garage",
 ]);
 
+const FIXED_HEIGHT_ROUTES = new Set([
+  "/club/vip-chat",
+  "/club/hell-ai",
+]);
+
 function depth(path: string) {
   return path.split("/").filter(Boolean).length;
 }
@@ -69,6 +74,7 @@ export function MobileTransition({ children }: { children: React.ReactNode }) {
   }
 
   const isSlide = !skipAnimation && direction !== 0;
+  const isFixedHeightRoute = FIXED_HEIGHT_ROUTES.has(pathname);
 
   // Восстанавливаем scrollY синхронно после смены key — до paint.
   useLayoutEffect(() => {
@@ -94,7 +100,11 @@ export function MobileTransition({ children }: { children: React.ReactNode }) {
             : { opacity: 1 }
         }
         transition={isSlide ? SPRING : { duration: 0 }}
-        className="relative min-h-[100dvh] will-change-transform"
+        className={
+          isFixedHeightRoute
+            ? "relative min-h-0 overflow-hidden will-change-transform"
+            : "relative min-h-[100dvh] will-change-transform"
+        }
       >
         {children}
       </motion.div>

@@ -75,7 +75,7 @@ export function IOSSheet({
         <Drawer.Overlay className="fixed inset-0 z-[80] bg-black/80" />
         <Drawer.Content
           className={cn(
-            "fixed inset-x-0 bottom-0 z-[81] flex flex-col rounded-t-[20px] border-t border-white/[0.08] bg-[#0d0d0d] outline-none",
+            "fixed inset-x-0 bottom-0 z-[81] flex max-w-full flex-col overflow-x-hidden rounded-t-[20px] border-t border-white/[0.08] bg-[#0d0d0d] outline-none",
             fullHeight
               ? "h-[calc(100dvh-env(safe-area-inset-top)-8px)]"
               : "max-h-[78dvh]",
@@ -91,6 +91,7 @@ export function IOSSheet({
             // модалку можно «таскать» вправо-влево пальцем по форме.
             touchAction: "pan-y",
             overscrollBehavior: "contain",
+            overscrollBehaviorX: "none",
             // Плавно подстраиваемся под появление/скрытие клавиатуры,
             // чтобы композер не «дёргался».
             transition: "padding-bottom 180ms ease-out",
@@ -138,11 +139,13 @@ export function IOSSheet({
             data-vaul-no-drag
             className={cn(
               "flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 pb-6 pt-4",
+              "max-w-full overflow-x-hidden",
               contentClassName,
             )}
             style={{
               WebkitOverflowScrolling: "touch",
               touchAction: "pan-y",
+              overscrollBehaviorX: "none",
             }}
           >
             {children}
