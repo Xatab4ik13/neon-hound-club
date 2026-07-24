@@ -1,6 +1,8 @@
 // Мок-стор админки «Школа»:
 //   • присвоение user-аккаунтов инструкторам (localStorage),
-//   • агрегация экономики из моковых чатов инструктор↔ученик.
+//   • агрегация экономики из моковых чатов инструктор↔ученик,
+//   • отметки выплат инструкторам (недельные батчи),
+//   • настройки школы (ставка налога).
 //
 // Никакого бэка тут нет — временный слой под UI, пока не подключим реальный API.
 
@@ -12,9 +14,20 @@ import { PUBLIC_USERS } from "./users";
 
 const ASSIGN_KEY = "hh_admin_school_assignments_v1";
 const CHATS_KEY = "hh_instructor_chats_v1";
+const PAYOUTS_KEY = "hh_admin_school_payouts_v1";
+const BATCHES_KEY = "hh_admin_school_batches_v1";
+const SETTINGS_KEY = "hh_admin_school_settings_v1";
+
+// ============= Общая шина =============
+const REFRESH_EVENT = "hh:admin-school-refresh";
+function emitRefresh() {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent(REFRESH_EVENT));
+  }
+}
 
 // ============= Assignments =============
-type Assignments = Record<string, string>; // instructorSlug -> publicUserSlug
+type Assignments = Record<string, string>;
 
 function loadAssignments(): Assignments {
   if (typeof window === "undefined") return {};
@@ -71,18 +84,174 @@ export function listCandidateUsers(): CandidateUser[] {
     .sort((a, b) => a.nick.localeCompare(b.nick, "ru"));
 }
 
+// ============= Settings (налоги) =============
+export type SchoolSettings = {
+  /** Доля налога от выручки (0..1). По умолчанию 6% — самозанятые. */
+  taxRate: number;
+};
+
+const DEFAULT_SETTINGS: SchoolSettings = { taxRate: 0.06 };
+
+function loadSettings(): SchoolSettings {
+  if (typeof window === "undefined") return DEFAULT_SETTINGS;
+  try {
+    const raw = localStorage.getItem(SETTINGS_KEY);
+    if (!raw) return DEFAULT_SETTINGS;
+    const s = JSON.parse(raw) as Partial<SchoolSettings>;
+    return { ...DEFAULT_SETTINGS, ...s };
+  } catch {
+    return DEFAULT_SETTINGS;
+  }
+}
+
+let settings: SchoolSettings = loadSettings();
+
+export function setTaxRate(rate: number) {
+  const clamped = Math.max(0, Math.min(1, rate));
+  settings = { ...settings, taxRate: clamped };
+  try {
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+  } catch {
+    /* noop */
+  }
+  emitRefresh();
+}
+
+export function useSettings(): SchoolSettings {
+  return useSyncExternalStore(
+    (fn) => {
+      window.addEventListener(REFRESH_EVENT, fn);
+      return () => window.removeEventListener(REFRESH_EVENT, fn);
+    },
+    () => settings,
+    () => DEFAULT_SETTINGS,
+  );
+}
+
+// ============= Payouts (отметки о выплатах инструкторам) =============
+// Ключ — invoice.id, значение — timestamp выплаты + id батча.
+type PayoutState = Record<string, { paidOutAt: number; batchId: string }>;
+
+function loadPayouts(): PayoutState {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = localStorage.getItem(PAYOUTS_KEY);
+    return raw ? (JSON.parse(raw) as PayoutState) : {};
+  } catch {
+    return {};
+  }
+}
+function persistPayouts(next: PayoutState) {
+  try {
+    localStorage.setItem(PAYOUTS_KEY, JSON.stringify(next));
+  } catch {
+    /* noop */
+  }
+}
+
+export type PayoutBatch = {
+  id: string;
+  instructorSlug: string;
+  createdAt: number;
+  /** ID инвойсов, попавших в этот батч. */
+  invoiceIds: string[];
+  /** Сумма к выплате инструктору (без наценки). */
+  amount: number;
+};
+
+function loadBatches(): PayoutBatch[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(BATCHES_KEY);
+    return raw ? (JSON.parse(raw) as PayoutBatch[]) : [];
+  } catch {
+    return [];
+  }
+}
+function persistBatches(next: PayoutBatch[]) {
+  try {
+    localStorage.setItem(BATCHES_KEY, JSON.stringify(next));
+  } catch {
+    /* noop */
+  }
+}
+
+/** Пометить все ожидающие выплаты по инструктору как выплаченные. Возвращает батч. */
+export function markInstructorPaidOut(instructorSlug: string): PayoutBatch | null {
+  const chats = readChats();
+  const paidOut = loadPayouts();
+  const invs = collectInvoices(chats, instructorSlug).filter(
+    (inv) => inv.status === "paid" && !paidOut[inv.id],
+  );
+  if (invs.length === 0) return null;
+  const batchId = `b_${Date.now()}`;
+  const now = Date.now();
+  const nextPayouts: PayoutState = { ...paidOut };
+  for (const inv of invs) nextPayouts[inv.id] = { paidOutAt: now, batchId };
+  persistPayouts(nextPayouts);
+
+  const batch: PayoutBatch = {
+    id: batchId,
+    instructorSlug,
+    createdAt: now,
+    invoiceIds: invs.map((i) => i.id),
+    amount: invs.reduce((s, i) => s + i.amount, 0),
+  };
+  const nextBatches = [batch, ...loadBatches()];
+  persistBatches(nextBatches);
+  emitRefresh();
+  return batch;
+}
+
+export function undoPayoutBatch(batchId: string) {
+  const batches = loadBatches();
+  const b = batches.find((x) => x.id === batchId);
+  if (!b) return;
+  const nextBatches = batches.filter((x) => x.id !== batchId);
+  persistBatches(nextBatches);
+  const payouts = loadPayouts();
+  const next: PayoutState = {};
+  for (const [k, v] of Object.entries(payouts)) {
+    if (v.batchId !== batchId) next[k] = v;
+  }
+  persistPayouts(next);
+  emitRefresh();
+}
+
+export function useBatches(): PayoutBatch[] {
+  return useSyncExternalStore(
+    (fn) => {
+      const onStorage = (e: StorageEvent) => {
+        if (e.key === BATCHES_KEY || e.key === PAYOUTS_KEY) fn();
+      };
+      window.addEventListener("storage", onStorage);
+      window.addEventListener(REFRESH_EVENT, fn);
+      return () => {
+        window.removeEventListener("storage", onStorage);
+        window.removeEventListener(REFRESH_EVENT, fn);
+      };
+    },
+    () => loadBatches(),
+    () => [] as PayoutBatch[],
+  );
+}
+
 // ============= Economy =============
 export type InstructorEconomy = {
   slug: string;
   paidCount: number;
   pendingCount: number;
-  /** Сумма инструктора без наценки (то, что он получит). */
+  /** Сумма инструктора (без наценки) по всем оплаченным ученикам инвойсам. */
   payout: number;
   /** Сумма, которую заплатили ученики (с 20% наценкой). */
   gross: number;
   /** Комиссия платформы = gross - payout. */
   commission: number;
-  /** Оплаты за последние 7 дней (по payout инструктора). */
+  /** К выплате инструктору сейчас (ещё не помечено как выплаченное). */
+  payoutDue: number;
+  /** Уже выплачено инструктору всего. */
+  payoutPaid: number;
+  /** К выплате за последние 7 дней (по paidAt инвойсов, ещё не выплачено). */
   payoutWeek: number;
 };
 
@@ -113,6 +282,7 @@ const WEEK = 7 * 24 * 3600_000;
 
 export function computeEconomy(): InstructorEconomy[] {
   const chats = readChats();
+  const paidOut = loadPayouts();
   const now = Date.now();
   return INSTRUCTOR_ACCOUNTS.map((acc) => {
     const invs = collectInvoices(chats, acc.slug);
@@ -120,14 +290,21 @@ export function computeEconomy(): InstructorEconomy[] {
     let pendingCount = 0;
     let payout = 0;
     let gross = 0;
+    let payoutPaid = 0;
+    let payoutDue = 0;
     let payoutWeek = 0;
     for (const inv of invs) {
       if (inv.status === "paid") {
         paidCount += 1;
         payout += inv.amount;
         gross += invoiceTotalForStudent(inv.amount);
-        if (inv.paidAt && now - inv.paidAt <= WEEK) {
-          payoutWeek += inv.amount;
+        if (paidOut[inv.id]) {
+          payoutPaid += inv.amount;
+        } else {
+          payoutDue += inv.amount;
+          if (inv.paidAt && now - inv.paidAt <= WEEK) {
+            payoutWeek += inv.amount;
+          }
         }
       } else {
         pendingCount += 1;
@@ -140,28 +317,31 @@ export function computeEconomy(): InstructorEconomy[] {
       payout,
       gross,
       commission: gross - payout,
+      payoutDue,
+      payoutPaid,
       payoutWeek,
     };
   });
 }
 
 export function useEconomy(): InstructorEconomy[] {
-  // Пересчёт при изменении моковых чатов (тот же ключ, что использует
-  // instructor-chats-mock — просто подпишемся на storage-события +
-  // локальную «шину» через custom event).
   return useSyncExternalStore(
     (fn) => {
       const onStorage = (e: StorageEvent) => {
-        if (e.key === CHATS_KEY || e.key === ASSIGN_KEY) fn();
+        if (
+          e.key === CHATS_KEY ||
+          e.key === ASSIGN_KEY ||
+          e.key === PAYOUTS_KEY ||
+          e.key === BATCHES_KEY ||
+          e.key === SETTINGS_KEY
+        )
+          fn();
       };
-      const onLocal = () => fn();
       window.addEventListener("storage", onStorage);
-      window.addEventListener("hh:admin-school-refresh", onLocal);
-      // и на assignments — они меняют роли/аккаунты, но не экономику,
-      // поэтому только storage для чатов реально важен.
+      window.addEventListener(REFRESH_EVENT, fn);
       return () => {
         window.removeEventListener("storage", onStorage);
-        window.removeEventListener("hh:admin-school-refresh", onLocal);
+        window.removeEventListener(REFRESH_EVENT, fn);
       };
     },
     () => computeEconomy(),
@@ -170,9 +350,7 @@ export function useEconomy(): InstructorEconomy[] {
 }
 
 export function refreshEconomy() {
-  if (typeof window !== "undefined") {
-    window.dispatchEvent(new CustomEvent("hh:admin-school-refresh"));
-  }
+  emitRefresh();
 }
 
 export { INVOICE_COMMISSION };
