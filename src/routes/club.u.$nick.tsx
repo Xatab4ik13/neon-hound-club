@@ -13,6 +13,10 @@ import { getUser, type PublicUser } from "@/data/users";
 import { PlaqueBackground } from "./club";
 import { usePublicProfile, type PublicProfile } from "@/lib/garage-api";
 import { PlumpNum } from "@/components/brand/PlumpNum";
+import silverBadge from "@/assets/hellpass/demo-silver-2.png.asset.json";
+import goldBadge from "@/assets/hellpass/demo-gold-8.png.asset.json";
+import platinumBadge from "@/assets/hellpass/demo-platinum-9.png.asset.json";
+
 
 type BikeCard = {
   brand: string;
@@ -48,8 +52,11 @@ export const Route = createFileRoute("/club/u/$nick")({
       ],
     };
   },
+
   component: UserProfilePage,
+
 });
+
 
 const RANK_BY_ID = Object.fromEntries(RANKS.map((r) => [r.id, r])) as Record<
   RankId,
@@ -134,6 +141,10 @@ function UserView({ user }: { user: ProfileView }) {
   const xpMax = getRankSpan(rankIdx);
   const xp = Math.round((user.xpPct / 100) * xpMax);
   const next = RANKS[rankIdx + 1] ?? null;
+  const showHellPassPreview =
+    typeof window !== "undefined" &&
+    new URLSearchParams(window.location.search).get("preview") === "hellpass";
+
 
   return (
     <main className="mx-auto w-full max-w-3xl px-4 py-6 md:px-8 md:py-10">
