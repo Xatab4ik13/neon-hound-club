@@ -4,6 +4,7 @@ import { and, desc, eq, ilike, or, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { passPurchases, PASS_CONFIG, PASS_DURATION_DAYS, PASS_TIERS } from "../db/schema/pass.js";
 import { users } from "../db/schema/users.js";
+import { profiles } from "../db/schema/profile.js";
 import { payments } from "../db/schema/payments.js";
 import { requireAuth, requireAdmin, type SessionPayload } from "../lib/auth.js";
 import {
@@ -129,10 +130,11 @@ export async function adminPassRoutes(app: FastifyInstance) {
         expiresAt: passPurchases.expiresAt,
         nick: users.nick,
         email: users.email,
-        avatarUrl: users.avatarUrl,
+        avatarUrl: profiles.avatarUrl,
       })
       .from(passPurchases)
       .innerJoin(users, eq(users.id, passPurchases.userId))
+      .leftJoin(profiles, eq(profiles.userId, passPurchases.userId))
       .where(conds.length ? and(...conds) : (undefined as any))
       .orderBy(desc(passPurchases.createdAt))
       .limit(q.limit);
