@@ -124,7 +124,7 @@ interface ColumnInfo {
 }
 
 async function listColumns(): Promise<ColumnInfo[]> {
-  const { rows } = await db.execute<any>(sql`
+  const rows = (await db.execute(sql`
     SELECT
       c.table_name,
       c.column_name,
@@ -144,9 +144,10 @@ async function listColumns(): Promise<ColumnInfo[]> {
     WHERE c.table_schema = 'public'
       AND c.data_type IN ('text', 'character varying', 'jsonb', 'json')
     ORDER BY c.table_name, c.column_name
-  `);
-  return rows as ColumnInfo[];
+  `)) as unknown as ColumnInfo[];
+  return rows;
 }
+
 
 async function sweepTableColumn(info: ColumnInfo) {
   if (!info.pk) return; // без первичного ключа не обновим точечно
