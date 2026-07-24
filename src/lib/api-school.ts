@@ -80,11 +80,13 @@ export const schoolQk = {
 // ---------- instructors ----------
 
 export async function fetchInstructors() {
-  return apiFetch<{ items: InstructorApi[] }>("/api/v1/school/instructors");
+  const res = await apiFetch<{ items: InstructorApi[] }>("/api/v1/school/instructors");
+  return { items: res.items.map(normalizeInstructor) };
 }
 
 export async function fetchInstructor(slug: string) {
-  return apiFetch<InstructorApi>(`/api/v1/school/instructors/${encodeURIComponent(slug)}`);
+  const res = await apiFetch<InstructorApi>(`/api/v1/school/instructors/${encodeURIComponent(slug)}`);
+  return normalizeInstructor(res);
 }
 
 // ---------- chats ----------
