@@ -88,7 +88,7 @@ function ActiveBanner({
   return (
     <section
       className="mb-2 flex items-center gap-3 rounded-3xl bg-card px-4 py-3"
-      aria-label="Активная подписка"
+      aria-label="Активный Hell Pass"
     >
       <img
         src={BADGES[tier]}
