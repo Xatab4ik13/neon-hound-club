@@ -219,7 +219,7 @@ function TierCard({
 
         <div className="mt-4 flex items-center justify-between">
           <span className="font-display text-xs font-bold uppercase tracking-widest text-foreground">
-            Подробнее и подписаться
+            Подробнее и оплатить
           </span>
           <span
             className="grid h-9 w-9 place-items-center rounded-full border-[2px] border-foreground shadow-[2px_2px_0_0_hsl(var(--foreground))] transition-transform group-hover:translate-x-0.5"
