@@ -24,6 +24,7 @@ import {
   Loader2,
   LifeBuoy,
   Newspaper,
+  Crown,
 } from "@/components/ui/icons";
 
 import { cn } from "@/lib/utils";
@@ -168,6 +169,7 @@ const NAV: NavItem[] = [
   { to: "/admin/economy", label: "Экономика", icon: Wallet },
   { to: "/admin/hell-ai", label: "Hell AI", icon: Bot },
   { to: "/admin/school", label: "Школа", icon: GraduationCap },
+  { to: "/admin/pass", label: "Hell Pass", icon: Crown },
   { to: "/admin/cdek", label: "СДЭК", icon: Package },
   { to: "/admin/settings", label: "Настройки", icon: Settings },
 ];

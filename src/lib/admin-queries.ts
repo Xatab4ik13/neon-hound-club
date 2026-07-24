@@ -30,7 +30,9 @@ export const adminQk = {
   shopShowcase: ["admin", "shop", "showcase"] as const,
   quests: ["admin", "quests"] as const,
   raffles: ["admin", "raffles"] as const,
-  passList: (status?: string) => ["admin", "pass", status ?? "all"] as const,
+  passList: (filters: { status?: string; tier?: string; q?: string }) =>
+    ["admin", "pass", filters.status ?? "all", filters.tier ?? "all", filters.q ?? ""] as const,
+  passStats: ["admin", "pass", "stats"] as const,
   feedPosts: ["admin", "feed", "posts"] as const,
   usersStats: ["admin", "users", "stats"] as const,
 
@@ -540,15 +542,50 @@ export function fetchAdminTicketsStats() {
 
 // ---------- PASS ADMIN ----------
 
-export function fetchAdminPassList(status?: PassRecord["status"]) {
-  const s = status ? `?status=${status}` : "";
-  return apiFetch<{ items: PassRecord[] }>(`/api/v1/admin/pass/list${s}`);
+export type AdminPassListItem = PassRecord & {
+  nick: string;
+  email: string;
+  avatarUrl: string | null;
+};
+
+export function fetchAdminPassList(filters: { status?: PassRecord["status"]; tier?: PassTier; q?: string } = {}) {
+  const params = new URLSearchParams();
+  if (filters.status) params.set("status", filters.status);
+  if (filters.tier) params.set("tier", filters.tier);
+  if (filters.q) params.set("q", filters.q);
+  const qs = params.toString();
+  return apiFetch<{ items: AdminPassListItem[] }>(`/api/v1/admin/pass/list${qs ? `?${qs}` : ""}`);
+}
+
+export type AdminPassStats = {
+  activeByTier: Record<"silver" | "gold" | "platinum", number>;
+  activeTotal: number;
+  pendingCount: number;
+  expiringWithin7d: number;
+  revenue30dRub: number;
+};
+
+export function fetchAdminPassStats() {
+  return apiFetch<AdminPassStats>(`/api/v1/admin/pass/stats`);
 }
 
 export function activatePass(purchaseId: string) {
   return apiFetch<{ ok: true; purchase: PassRecord }>("/api/v1/admin/pass/activate", {
     method: "POST",
     body: JSON.stringify({ purchaseId }),
+  });
+}
+
+export function revokePass(purchaseId: string) {
+  return apiFetch<{ ok: true; purchase: PassRecord }>("/api/v1/admin/pass/revoke", {
+    method: "POST",
+    body: JSON.stringify({ purchaseId }),
+  });
+}
+
+export function expireOldPasses() {
+  return apiFetch<{ ok: true; expired: number }>("/api/v1/admin/pass/expire-old", {
+    method: "POST",
   });
 }
 

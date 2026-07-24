@@ -61,6 +61,7 @@ import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as AdminSchoolRouteImport } from './routes/admin.school'
 import { Route as AdminRafflesRouteImport } from './routes/admin.raffles'
 import { Route as AdminQuestsRouteImport } from './routes/admin.quests'
+import { Route as AdminPassRouteImport } from './routes/admin.pass'
 import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
 import { Route as AdminNewsRouteImport } from './routes/admin.news'
 import { Route as AdminHellAiRouteImport } from './routes/admin.hell-ai'
@@ -356,6 +357,11 @@ const AdminQuestsRoute = AdminQuestsRouteImport.update({
   path: '/quests',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminPassRoute = AdminPassRouteImport.update({
+  id: '/pass',
+  path: '/pass',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminOrdersRoute = AdminOrdersRouteImport.update({
   id: '/orders',
   path: '/orders',
@@ -549,6 +555,7 @@ export interface FileRoutesByFullPath {
   '/admin/hell-ai': typeof AdminHellAiRoute
   '/admin/news': typeof AdminNewsRoute
   '/admin/orders': typeof AdminOrdersRoute
+  '/admin/pass': typeof AdminPassRoute
   '/admin/quests': typeof AdminQuestsRoute
   '/admin/raffles': typeof AdminRafflesRoute
   '/admin/school': typeof AdminSchoolRoute
@@ -634,6 +641,7 @@ export interface FileRoutesByTo {
   '/admin/hell-ai': typeof AdminHellAiRoute
   '/admin/news': typeof AdminNewsRoute
   '/admin/orders': typeof AdminOrdersRoute
+  '/admin/pass': typeof AdminPassRoute
   '/admin/quests': typeof AdminQuestsRoute
   '/admin/raffles': typeof AdminRafflesRoute
   '/admin/school': typeof AdminSchoolRoute
@@ -723,6 +731,7 @@ export interface FileRoutesById {
   '/admin/hell-ai': typeof AdminHellAiRoute
   '/admin/news': typeof AdminNewsRoute
   '/admin/orders': typeof AdminOrdersRoute
+  '/admin/pass': typeof AdminPassRoute
   '/admin/quests': typeof AdminQuestsRoute
   '/admin/raffles': typeof AdminRafflesRoute
   '/admin/school': typeof AdminSchoolRoute
@@ -813,6 +822,7 @@ export interface FileRouteTypes {
     | '/admin/hell-ai'
     | '/admin/news'
     | '/admin/orders'
+    | '/admin/pass'
     | '/admin/quests'
     | '/admin/raffles'
     | '/admin/school'
@@ -898,6 +908,7 @@ export interface FileRouteTypes {
     | '/admin/hell-ai'
     | '/admin/news'
     | '/admin/orders'
+    | '/admin/pass'
     | '/admin/quests'
     | '/admin/raffles'
     | '/admin/school'
@@ -986,6 +997,7 @@ export interface FileRouteTypes {
     | '/admin/hell-ai'
     | '/admin/news'
     | '/admin/orders'
+    | '/admin/pass'
     | '/admin/quests'
     | '/admin/raffles'
     | '/admin/school'
@@ -1452,6 +1464,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminQuestsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/pass': {
+      id: '/admin/pass'
+      path: '/pass'
+      fullPath: '/admin/pass'
+      preLoaderRoute: typeof AdminPassRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/orders': {
       id: '/admin/orders'
       path: '/orders'
@@ -1701,6 +1720,7 @@ interface AdminRouteChildren {
   AdminHellAiRoute: typeof AdminHellAiRoute
   AdminNewsRoute: typeof AdminNewsRoute
   AdminOrdersRoute: typeof AdminOrdersRoute
+  AdminPassRoute: typeof AdminPassRoute
   AdminQuestsRoute: typeof AdminQuestsRoute
   AdminRafflesRoute: typeof AdminRafflesRoute
   AdminSchoolRoute: typeof AdminSchoolRoute
@@ -1720,6 +1740,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminHellAiRoute: AdminHellAiRoute,
   AdminNewsRoute: AdminNewsRoute,
   AdminOrdersRoute: AdminOrdersRoute,
+  AdminPassRoute: AdminPassRoute,
   AdminQuestsRoute: AdminQuestsRoute,
   AdminRafflesRoute: AdminRafflesRoute,
   AdminSchoolRoute: AdminSchoolRoute,

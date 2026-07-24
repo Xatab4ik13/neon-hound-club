@@ -172,6 +172,27 @@ export async function expireOldPasses(): Promise<number> {
 }
 
 /**
+ * Отозвать пасс вручную (админ). Активный -> expired мгновенно, pending_payment -> cancelled.
+ * Возвращает обновлённую запись или null, если такой записи нет.
+ */
+export async function revokePass(purchaseId: string) {
+  const [row] = await db.select().from(passPurchases).where(eq(passPurchases.id, purchaseId)).limit(1);
+  if (!row) return null;
+  const nextStatus =
+    row.status === "active" ? "expired" : row.status === "pending_payment" ? "cancelled" : row.status;
+  if (nextStatus === row.status) return row;
+  const [updated] = await db
+    .update(passPurchases)
+    .set({
+      status: nextStatus,
+      expiresAt: nextStatus === "expired" ? new Date() : row.expiresAt,
+    })
+    .where(eq(passPurchases.id, purchaseId))
+    .returning();
+  return updated ?? row;
+}
+
+/**
  * Перки активного Hell Pass на момент действия.
  *  - xpMultiplier: множитель XP за челленджи/квесты (1.0 без пасса)
  *  - shopDiscountPct: % скидки на мерч (0 без пасса)
