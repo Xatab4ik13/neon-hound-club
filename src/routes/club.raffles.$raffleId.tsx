@@ -385,7 +385,7 @@ function RaffleDetailContent({
       {!finished && isMobile && typeof document !== "undefined" &&
         createPortal(
           <div
-            className="fixed inset-x-0 z-[60] px-3"
+            className="fixed inset-x-0 z-40 px-3"
             style={{
               bottom: "calc(64px + env(safe-area-inset-bottom))",
               paddingLeft: "max(12px, env(safe-area-inset-left))",
