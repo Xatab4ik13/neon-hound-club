@@ -204,7 +204,7 @@ function AdminPassPage() {
     <div>
       <PageHeader
         title="Hell Pass"
-        subtitle="Управление подписками, ручная активация и отзыв"
+        description="Управление подписками, ручная активация и отзыв"
         actions={
           <Btn variant="secondary" onClick={() => expireM.mutate()} disabled={expireM.isPending}>
             Прогнать истёкшие
@@ -224,8 +224,14 @@ function AdminPassPage() {
       </div>
 
       <Panel className="mt-4">
-        <PanelHeader title="Все подписки" subtitle={`Найдено: ${items.length}`} />
+        <PanelHeader>
+          <div>
+            <div className="text-sm font-semibold">Все подписки</div>
+            <div className="text-xs text-zinc-500 dark:text-zinc-400">Найдено: {items.length}</div>
+          </div>
+        </PanelHeader>
 
+        <div className="p-4">
         {/* Фильтры */}
         <div className="mb-3 flex flex-wrap items-end gap-2">
           <div className="w-full max-w-xs">
