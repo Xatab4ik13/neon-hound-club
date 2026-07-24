@@ -4,6 +4,19 @@ export const BACKEND_URL =
   ((import.meta.env.VITE_BACKEND_URL as string | undefined)?.replace(/\/$/, "") ||
     "https://api.hhr.pro");
 
+// База для картинок с Lovable CDN. Ассеты, загруженные в админке, лежат в БД
+// как относительные пути `/__l5e/...` — фронт крутится на hhr.pro, где такого
+// пути нет, поэтому в рантайме подставляем абсолютный CDN-хост в любой строке
+// JSON-ответа. Одна точка правды вместо ручного resolveAssetUrl по адаптерам.
+const LOVABLE_CDN_BASE = (
+  (import.meta.env.VITE_LOVABLE_ASSET_BASE as string | undefined) ||
+  "https://id-preview--684793f4-d120-461e-9357-79d82baeb567.lovable.app"
+).replace(/\/$/, "");
+function rewriteLovableAssetUrls(input: string): string {
+  if (input.indexOf('"/__l5e/') === -1) return input;
+  return input.replace(/"\/__l5e\//g, `"${LOVABLE_CDN_BASE}/__l5e/`);
+}
+
 export class ApiError extends Error {
   constructor(public status: number, public code: string, message: string) {
     super(message);
@@ -29,11 +42,12 @@ export async function apiFetch<T = unknown>(
     headers,
   });
   const text = await res.text();
+  const rewritten = rewriteLovableAssetUrls(text);
   let body: unknown = null;
   try {
-    body = text ? JSON.parse(text) : null;
+    body = rewritten ? JSON.parse(rewritten) : null;
   } catch {
-    body = text;
+    body = rewritten;
   }
   if (!res.ok) {
     const b = body as { error?: string; message?: string } | null;
