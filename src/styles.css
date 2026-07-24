@@ -221,6 +221,36 @@
   opacity: 0.85;
 }
 
+@keyframes hellpass-fly-in {
+  0% {
+    opacity: 0;
+    transform: translateX(-120%) rotate(-8deg) scale(0.9);
+  }
+  60% {
+    opacity: 1;
+    transform: translateX(6%) rotate(2deg) scale(1.02);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) rotate(var(--hp-tilt, 0deg)) scale(1);
+  }
+}
+
+@keyframes hellpass-fly-in-right {
+  0% {
+    opacity: 0;
+    transform: translateX(120%) rotate(8deg) scale(0.9);
+  }
+  60% {
+    opacity: 1;
+    transform: translateX(-6%) rotate(-2deg) scale(1.02);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) rotate(var(--hp-tilt, 0deg)) scale(1);
+  }
+}
+
 
 @keyframes shop-card-in {
   from {
