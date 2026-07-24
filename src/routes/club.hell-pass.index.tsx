@@ -48,7 +48,7 @@ function HellPassPage() {
 
   return (
     <main className="mx-auto w-full max-w-3xl px-4 py-5 pb-[calc(env(safe-area-inset-bottom)+96px)] md:py-8">
-      <PageHeader title="Hell Pass" subtitle="Ежемесячная подписка клуба" />
+      <PageHeader title="Hell Pass" subtitle="Разовый доступ на 30 дней" />
 
       {active && (
         <ActiveBanner tier={active.tier} daysLeft={daysLeft} />
@@ -61,7 +61,7 @@ function HellPassPage() {
       </div>
 
       <p className="mt-6 text-center font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-        Подписка списывается раз в месяц. Отменить можно в любой момент — в профиле.
+        Оплата разовая. Доступ действует 30 дней с момента оплаты.
       </p>
     </main>
   );
@@ -88,7 +88,7 @@ function ActiveBanner({
   return (
     <section
       className="mb-2 flex items-center gap-3 rounded-3xl bg-card px-4 py-3"
-      aria-label="Активная подписка"
+      aria-label="Активный Hell Pass"
     >
       <img
         src={BADGES[tier]}
@@ -189,7 +189,7 @@ function TierCard({
               <PlumpNum value={tier.price} size={26} format />
             </span>
             <span className="font-mono text-[10px] font-bold uppercase tracking-widest text-black/70">
-              ₽ / мес
+              ₽ / 30 дней
             </span>
           </div>
         </div>
@@ -219,7 +219,7 @@ function TierCard({
 
         <div className="mt-4 flex items-center justify-between">
           <span className="font-display text-xs font-bold uppercase tracking-widest text-foreground">
-            Подробнее и подписаться
+            Подробнее и оплатить
           </span>
           <span
             className="grid h-9 w-9 place-items-center rounded-full border-[2px] border-foreground shadow-[2px_2px_0_0_hsl(var(--foreground))] transition-transform group-hover:translate-x-0.5"
