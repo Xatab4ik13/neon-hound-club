@@ -6,13 +6,15 @@
 
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { PlumpArrowLeft as ArrowLeft, Check } from "@/components/ui/icons";
 import { PayButton } from "@/components/brand/PayButton";
+import { IOSConfirm } from "@/components/ios/IOSConfirm";
+import { hhToast } from "@/lib/hh-toast";
 import { getTier, type Perk, type Tier } from "@/data/hell-pass";
 import { fetchPassMe, qk, type PassTier } from "@/lib/queries";
 import { useViewer } from "@/hooks/use-viewer";
-import { hhToast } from "@/lib/hh-toast";
+import { usePassCancelled, setPassCancelled } from "@/data/pass-cancel-state";
 
 import { BACKEND_URL } from "@/lib/api";
 
@@ -115,16 +117,22 @@ function TierDetailPage() {
   };
 
 
+  const cancelled = usePassCancelled();
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const [resumeOpen, setResumeOpen] = useState(false);
+
   const isPlatinum = tier.ultimate;
   const baseLabel = !isAuthed
-    ? "Войти"
+    ? "Войти и подписаться"
     : isDowngrade
       ? `Уже выше — ${active!.tier.toUpperCase()}`
       : isSameTier
-        ? "Продлить"
+        ? cancelled
+          ? "Возобновить подписку"
+          : "Управлять подпиской"
         : isUpgrade
-          ? "Апгрейд"
-          : "Купить";
+          ? "Апгрейд подписки"
+          : "Подписаться";
 
   return (
     <main className="mx-auto w-full max-w-5xl px-4 py-8 md:px-8 md:py-12">
@@ -235,45 +243,102 @@ function TierDetailPage() {
                   {tier.price.toLocaleString("ru-RU")} ₽
                 </span>
                 <span className="font-mono text-xs uppercase tracking-widest text-white/40">
-                  / 30 дней
+                  / мес
                 </span>
               </div>
 
               {active && (
                 <div className="mt-4 border border-white/10 bg-white/[0.03] px-3 py-2 font-mono text-[10px] uppercase tracking-widest text-white/70">
-                  Сейчас активен <span className="text-primary">{active.tier.toUpperCase()}</span>
-                  {daysLeft != null && <> · осталось {daysLeft} дн.</>}
+                  Активна подписка <span className="text-primary">{active.tier.toUpperCase()}</span>
+                  {daysLeft != null && <> · след. списание через {daysLeft} дн.</>}
+                  {isSameTier && cancelled && (
+                    <div className="mt-1 normal-case tracking-normal text-destructive">
+                      Отменена. Доступ сохранится до конца оплаченного периода.
+                    </div>
+                  )}
                 </div>
               )}
 
               <div className="mt-4 flex flex-col gap-2">
-                <form method="POST" action={PAY_ACTION} onSubmit={guard}>
-                  <input type="hidden" name="target" value="pass" />
-                  <input type="hidden" name="tier" value={tier.slug} />
-                  <input type="hidden" name="method" value="sbp" />
-                  <PayButton
-                    type="submit"
-                    disabled={!!isDowngrade}
-                    label={baseLabel}
-                    size="lg"
-                  />
-                </form>
+                {isSameTier && !cancelled ? (
+                  // Активный тир — вместо «купить» кнопка отмены подписки.
+                  <button
+                    type="button"
+                    onClick={() => setCancelOpen(true)}
+                    className="w-full rounded-2xl border border-destructive/50 bg-destructive/10 px-4 py-3 font-display text-sm font-black uppercase tracking-widest text-destructive transition-colors hover:bg-destructive/20"
+                  >
+                    Отменить подписку
+                  </button>
+                ) : isSameTier && cancelled ? (
+                  <button
+                    type="button"
+                    onClick={() => setResumeOpen(true)}
+                    className="w-full rounded-2xl border border-primary/50 bg-primary/10 px-4 py-3 font-display text-sm font-black uppercase tracking-widest text-primary transition-colors hover:bg-primary/20"
+                  >
+                    Возобновить подписку
+                  </button>
+                ) : (
+                  <form method="POST" action={PAY_ACTION} onSubmit={guard}>
+                    <input type="hidden" name="target" value="pass" />
+                    <input type="hidden" name="tier" value={tier.slug} />
+                    <input type="hidden" name="method" value="sbp" />
+                    <PayButton
+                      type="submit"
+                      disabled={!!isDowngrade}
+                      label={baseLabel}
+                      size="lg"
+                    />
+                  </form>
+                )}
               </div>
 
 
               <div className="mt-4 font-mono text-[10px] uppercase tracking-widest text-white/40">
                 {isDowngrade
-                  ? "Тир ниже текущего недоступен. Дождись окончания активного пасса."
+                  ? "Тир ниже текущего недоступен. Дождись окончания активной подписки."
                   : isSameTier
-                    ? "+30 дней к остатку и новый пакет билетов."
+                    ? cancelled
+                      ? "Автопродление отключено. Возобнови — и списание пойдёт как раньше."
+                      : "Ежемесячное автопродление. Отменить можно в любой момент."
                     : isUpgrade
-                      ? "Полная цена нового тира. +30 дней к остатку и пакет билетов нового тира."
-                      : "Разовый доступ на 30 дней с момента активации. Без автопродления."}
+                      ? "Апгрейд подписки. Списание пойдёт по цене нового тира."
+                      : "Ежемесячная подписка. Списывается раз в месяц, отменить можно в любой момент."}
               </div>
             </div>
           </div>
         </aside>
       </div>
+
+      <IOSConfirm
+        open={cancelOpen}
+        onOpenChange={setCancelOpen}
+        title="Отменить подписку?"
+        description={`Доступ ${tier.name} сохранится до конца оплаченного периода${
+          daysLeft != null ? ` — ещё ${daysLeft} дн.` : ""
+        }. После этого автопродления не будет.`}
+        confirmLabel="Отменить подписку"
+        cancelLabel="Оставить"
+        destructive
+        onConfirm={() => {
+          setPassCancelled(true);
+          hhToast.success("Подписка отменена", {
+            meta: "Доступ сохранится до конца оплаченного периода",
+          });
+        }}
+      />
+
+      <IOSConfirm
+        open={resumeOpen}
+        onOpenChange={setResumeOpen}
+        title="Возобновить подписку?"
+        description="Автопродление включится снова. Следующее списание пойдёт в конце текущего периода."
+        confirmLabel="Возобновить"
+        cancelLabel="Отмена"
+        onConfirm={() => {
+          setPassCancelled(false);
+          hhToast.success("Подписка возобновлена");
+        }}
+      />
     </main>
   );
 }

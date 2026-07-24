@@ -48,20 +48,20 @@ function HellPassPage() {
 
   return (
     <main className="mx-auto w-full max-w-3xl px-4 py-5 pb-[calc(env(safe-area-inset-bottom)+96px)] md:py-8">
-      <PageHeader title="Hell Pass" subtitle="Подписка клуба · 30 дней" />
+      <PageHeader title="Hell Pass" subtitle="Ежемесячная подписка клуба" />
 
       {active && (
         <ActiveBanner tier={active.tier} daysLeft={daysLeft} />
       )}
 
-      <div className="mt-5 flex flex-col gap-4">
+      <div className="mt-8 flex flex-col gap-7 px-1 pb-2">
         {TIERS.map((tier, i) => (
           <TierCard key={tier.id} tier={tier} index={i} isActive={active?.tier === tier.slug} />
         ))}
       </div>
 
       <p className="mt-6 text-center font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-        Разовый доступ на 30 дней. Без автопродления.
+        Подписка списывается раз в месяц. Отменить можно в любой момент — в профиле.
       </p>
     </main>
   );
@@ -132,18 +132,25 @@ function TierCard({
   isActive: boolean;
 }) {
   const featured = tier.perks.slice(0, 4);
+  // Лёгкий постоянный «стикерный» наклон, как у карточек инструкторов Школы.
+  const tiltDeg = index % 2 === 0 ? -1.2 : 1.2;
+  const flyKf = index % 2 === 0 ? "hellpass-fly-in" : "hellpass-fly-in-right";
 
   return (
     <Link
       to="/club/hell-pass/$tier"
       params={{ tier: tier.slug }}
-      className="group relative block animate-fade-in overflow-hidden rounded-3xl border-[3px] border-foreground bg-card transition-transform duration-200 active:scale-[0.99]"
+      className="group relative block overflow-hidden rounded-3xl border-[3px] border-foreground bg-card transition-transform duration-200 ease-out will-change-transform hover:-translate-y-1"
       style={{
-        animationDelay: `${index * 60}ms`,
-        animationFillMode: "backwards",
-        boxShadow: `4px 4px 0 0 hsl(var(--foreground))`,
+        // @ts-expect-error CSS custom property для финального угла наклона
+        "--hp-tilt": `${tiltDeg}deg`,
+        transform: `rotate(${tiltDeg}deg)`,
+        animation: `${flyKf} 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) both`,
+        animationDelay: `${index * 110}ms`,
+        boxShadow: `6px 6px 0 0 hsl(var(--foreground))`,
       }}
     >
+
       {/* Цветная плашка сверху */}
       <div
         className="relative flex items-center gap-4 px-5 py-4"
@@ -182,7 +189,7 @@ function TierCard({
               <PlumpNum value={tier.price} size={26} format />
             </span>
             <span className="font-mono text-[10px] font-bold uppercase tracking-widest text-black/70">
-              ₽ / 30 дней
+              ₽ / мес
             </span>
           </div>
         </div>
@@ -212,7 +219,7 @@ function TierCard({
 
         <div className="mt-4 flex items-center justify-between">
           <span className="font-display text-xs font-bold uppercase tracking-widest text-foreground">
-            Подробнее и оформить
+            Подробнее и подписаться
           </span>
           <span
             className="grid h-9 w-9 place-items-center rounded-full border-[2px] border-foreground shadow-[2px_2px_0_0_hsl(var(--foreground))] transition-transform group-hover:translate-x-0.5"
