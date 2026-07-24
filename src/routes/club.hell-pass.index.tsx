@@ -48,20 +48,20 @@ function HellPassPage() {
 
   return (
     <main className="mx-auto w-full max-w-3xl px-4 py-5 pb-[calc(env(safe-area-inset-bottom)+96px)] md:py-8">
-      <PageHeader title="Hell Pass" subtitle="Подписка клуба · 30 дней" />
+      <PageHeader title="Hell Pass" subtitle="Ежемесячная подписка клуба" />
 
       {active && (
         <ActiveBanner tier={active.tier} daysLeft={daysLeft} />
       )}
 
-      <div className="mt-5 flex flex-col gap-4">
+      <div className="mt-8 flex flex-col gap-7 px-1 pb-2">
         {TIERS.map((tier, i) => (
           <TierCard key={tier.id} tier={tier} index={i} isActive={active?.tier === tier.slug} />
         ))}
       </div>
 
       <p className="mt-6 text-center font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-        Разовый доступ на 30 дней. Без автопродления.
+        Подписка списывается раз в месяц. Отменить можно в любой момент — в профиле.
       </p>
     </main>
   );
