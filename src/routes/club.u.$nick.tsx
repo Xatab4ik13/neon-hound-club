@@ -236,10 +236,27 @@ function UserView({ user }: { user: ProfileView }) {
                 Значки
               </span>
               <span className="font-mono text-[11px] tabular-nums text-muted-foreground">
-                <PlumpNum value={user.badgeIds.length} size={12} />
+                <PlumpNum
+                  value={showHellPassPreview ? 3 : user.badgeIds.length}
+                  size={12}
+                />
               </span>
             </div>
-            {user.badgeIds.length === 0 ? (
+            {showHellPassPreview ? (
+              <div className="flex flex-wrap items-center gap-2.5 border-2 border-dashed border-white/[0.1] bg-black/30 px-3 py-3">
+                {[silverBadge, goldBadge, platinumBadge].map((b) => (
+                  <img
+                    key={b.url}
+                    src={b.url}
+                    alt=""
+                    loading="lazy"
+                    width={144}
+                    height={144}
+                    className="h-14 w-14 drop-shadow-[2px_2px_0_rgba(0,0,0,0.55)]"
+                  />
+                ))}
+              </div>
+            ) : user.badgeIds.length === 0 ? (
               <div className="flex items-center justify-center gap-2 border-2 border-dashed border-white/[0.1] bg-black/30 px-4 py-5 font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
                 <Award className="h-4 w-4 opacity-60" />
                 Пока без значков
@@ -258,6 +275,7 @@ function UserView({ user }: { user: ProfileView }) {
               </div>
             )}
           </div>
+
 
           {/* XP / прогресс — Plump-цифры */}
           <div className="mt-6 w-full text-left">
