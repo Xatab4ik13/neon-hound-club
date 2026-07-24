@@ -155,7 +155,7 @@ function InstructorChatRoom() {
   const peerName = chatRow?.studentNick ?? "Ученик";
 
   const headerH = 56;
-  const pageHeight = `calc(100dvh - 3.25rem - env(safe-area-inset-top) - ${headerH}px - 64px - 8px - env(safe-area-inset-bottom))`;
+  const pageHeight = `calc(100svh - 3.25rem - env(safe-area-inset-top) - ${headerH}px - 64px - 8px - env(safe-area-inset-bottom))`;
 
   return (
     <div className="relative flex w-full flex-col overflow-hidden bg-[#0a0a0a]">
