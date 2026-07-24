@@ -13,6 +13,10 @@ import { getUser, type PublicUser } from "@/data/users";
 import { PlaqueBackground } from "./club";
 import { usePublicProfile, type PublicProfile } from "@/lib/garage-api";
 import { PlumpNum } from "@/components/brand/PlumpNum";
+import silverBadge from "@/assets/hellpass/demo-silver-2.png.asset.json";
+import goldBadge from "@/assets/hellpass/demo-gold-8.png.asset.json";
+import platinumBadge from "@/assets/hellpass/demo-platinum-9.png.asset.json";
+
 
 type BikeCard = {
   brand: string;
@@ -48,8 +52,11 @@ export const Route = createFileRoute("/club/u/$nick")({
       ],
     };
   },
+
   component: UserProfilePage,
+
 });
+
 
 const RANK_BY_ID = Object.fromEntries(RANKS.map((r) => [r.id, r])) as Record<
   RankId,
@@ -134,6 +141,10 @@ function UserView({ user }: { user: ProfileView }) {
   const xpMax = getRankSpan(rankIdx);
   const xp = Math.round((user.xpPct / 100) * xpMax);
   const next = RANKS[rankIdx + 1] ?? null;
+  const showHellPassPreview =
+    typeof window !== "undefined" &&
+    new URLSearchParams(window.location.search).get("preview") === "hellpass";
+
 
   return (
     <main className="mx-auto w-full max-w-3xl px-4 py-6 md:px-8 md:py-10">
@@ -295,6 +306,36 @@ function UserView({ user }: { user: ProfileView }) {
           </div>
         </div>
       </section>
+
+      {/* Dev-превью значков Hell Pass — открывается через ?preview=hellpass */}
+      {showHellPassPreview && (
+        <section className="mb-8">
+          <SectionTitle title="Hell Pass · превью" right="DEV" />
+          <div className="grid grid-cols-3 gap-3 border border-white/[0.06] bg-card/40 p-4">
+            {[
+              { url: silverBadge.url, tier: "Silver", months: 2 },
+              { url: goldBadge.url, tier: "Gold", months: 8 },
+              { url: platinumBadge.url, tier: "Platinum", months: 9 },
+            ].map((b) => (
+              <div key={b.tier} className="flex flex-col items-center gap-1.5">
+                <img
+                  src={b.url}
+                  alt={`Hell Pass ${b.tier} · ${b.months} мес`}
+                  loading="lazy"
+                  width={256}
+                  height={256}
+                  className="h-auto w-full max-w-[128px] drop-shadow-[4px_4px_0_rgba(0,0,0,0.6)]"
+                />
+                <span className="font-mono text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                  {b.months} мес
+                </span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+
 
       {/* Мотоциклы — карусель */}
       {user.bikes.length > 0 && (

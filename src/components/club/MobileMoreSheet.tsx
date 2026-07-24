@@ -253,7 +253,18 @@ export function MobileMoreSheet({
                     </button>
                   ))}
                 </div>
+                <div className="border-t border-white/[0.06] p-3">
+                  <a
+                    href="/club/u/maison?preview=hellpass"
+                    onClick={close}
+                    className="flex w-full items-center justify-center rounded-full border border-white/[0.12] px-3 py-2 font-mono text-[10px] font-bold uppercase tracking-widest text-foreground transition-colors active:bg-white/[0.04]"
+                  >
+                    Профиль · превью Hell Pass значков
+                  </a>
+
+                </div>
               </div>
+
             </section>
           </div>
         </Drawer.Content>
