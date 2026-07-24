@@ -1,8 +1,12 @@
 import { and, desc, eq, gt, ne, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { passPurchases, PASS_CONFIG, PASS_DURATION_DAYS, type PassTier } from "../db/schema/pass.js";
+import { userStickerPacks } from "../db/schema/stickers.js";
 import { ticketCredit } from "./tickets.js";
 import { awardXp } from "./xp.js";
+
+/** Стикерпаки, которые выдаются бесплатно при активации Hell Pass (любой тир). */
+const PASS_STICKER_PACKS = ["special", "hell-minions"] as const;
 
 /** Иерархия тиров. Чем выше число — тем выше тир. Используется для запрета даунгрейда. */
 export const TIER_RANK: Record<PassTier, number> = {
@@ -127,6 +131,14 @@ export async function activatePassPurchase(purchaseId: string): Promise<{ ok: bo
     refId: p.id,
     idempotent: true,
   });
+
+  // Автовыдача стикерпаков за пасс (идемпотентно через уникальный индекс user_id+pack_slug).
+  for (const slug of PASS_STICKER_PACKS) {
+    await db
+      .insert(userStickerPacks)
+      .values({ userId: p.userId, packSlug: slug, source: "pass" })
+      .onConflictDoNothing({ target: [userStickerPacks.userId, userStickerPacks.packSlug] });
+  }
 
   // first_pass больше не квест — активация пасса даёт билеты + бонусный XP выше.
 

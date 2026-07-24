@@ -25,6 +25,7 @@ import {
 import { users } from "../db/schema/users.js";
 import { requireAuth, requireBloggerOrAdmin, type SessionPayload } from "../lib/auth.js";
 import { pushToUsers } from "../lib/push.js";
+import { getActivePass } from "../lib/pass.js";
 
 const MAX_TEXT = 4000;
 const MAX_STICKER = 120;
@@ -46,10 +47,10 @@ const sendSchema = z
 
 // ─── Хелперы ────────────────────────────────────────────────────────
 
-/** Сейчас — все могут. Позже — только Platinum Hell Pass. */
-async function canUseVipChat(_userId: string): Promise<boolean> {
-  // TODO(pass): вернуть true только если у _userId активный pass тира 'platinum'.
-  return true;
+/** VIP-чат открыт только владельцам активного Hell Pass тира Platinum. */
+async function canUseVipChat(userId: string): Promise<boolean> {
+  const pass = await getActivePass(userId);
+  return pass?.tier === "platinum";
 }
 
 /** Резолвит «главного блогера» — того, кому пишет юзер. Пока — самый старый
