@@ -248,6 +248,112 @@ export async function createPaymentForOrder(
 }
 
 /**
+ * Платёж по счёту из Школы. Ученик платит student_amount_rub (с наценкой 20%).
+ * Скидка Hell Pass НЕ применяется — школа этому не подчиняется.
+ */
+export async function createPaymentForSchoolOrder(
+  schoolOrderId: string,
+  userId: string,
+  method: PaymentMethod = "card",
+): Promise<{ payment: Payment; paymentUrl: string }> {
+  if (!isRaifConfigured(method)) {
+    throw new PaymentInitError(
+      "payments_not_configured",
+      method === "sbp" ? "Оплата через СБП сейчас недоступна" : "Оплата сейчас недоступна",
+    );
+  }
+  const [so] = await db.select().from(schoolOrders).where(eq(schoolOrders.id, schoolOrderId)).limit(1);
+  if (!so) throw new PaymentInitError("order_not_found", "Счёт не найден");
+  if (so.studentId !== userId) throw new PaymentInitError("forbidden", "Чужой счёт");
+  if (so.status !== "invoiced") throw new PaymentInitError("order_not_payable", `Счёт уже ${so.status}`);
+
+  const existing = await findActivePayment("school_order" as any, so.id, method);
+  if (existing && existing.paymentUrl) return { payment: existing, paymentUrl: existing.paymentUrl };
+
+  const [created] = await db
+    .insert(payments)
+    .values({
+      provider: "raif",
+      refType: "school_order",
+      refId: so.id,
+      userId,
+      amountRub: so.studentAmountRub,
+      method,
+      status: "new",
+    })
+    .returning();
+
+  try {
+    const raifOrder = await createOrder({
+      method,
+      orderId: created!.id,
+      amountRub: so.studentAmountRub,
+      comment: `Урок HELLHOUND School: ${so.title}`,
+      successUrl: withPaymentId(SUCCESS_URL, created!.id),
+      failUrl: withPaymentId(FAIL_URL, created!.id),
+      extra: { userId, refType: "school_order", refId: so.id },
+    });
+    if (!raifOrder.payformUrl) {
+      throw new RaifApiError(502, "no_payform_url", "Райффайзен не вернул payformUrl", raifOrder);
+    }
+    const [updated] = await db
+      .update(payments)
+      .set({
+        providerPaymentId: raifOrder.id,
+        paymentUrl: raifOrder.payformUrl,
+        status: "pending",
+        rawInit: raifOrder as unknown as Record<string, unknown>,
+        updatedAt: new Date(),
+      })
+      .where(eq(payments.id, created!.id))
+      .returning();
+    return { payment: updated!, paymentUrl: raifOrder.payformUrl };
+  } catch (e) {
+    await db
+      .update(payments)
+      .set({ status: "rejected", updatedAt: new Date() })
+      .where(eq(payments.id, created!.id));
+    if (e instanceof RaifApiError) throw new PaymentInitError(e.code, `Райф: ${e.message}`);
+    throw new PaymentInitError("init_failed", "Не удалось создать платёж");
+  }
+}
+
+async function markSchoolOrderPaid(schoolOrderId: string) {
+  const [o] = await db.select().from(schoolOrders).where(eq(schoolOrders.id, schoolOrderId)).limit(1);
+  if (!o || o.status === "paid") return;
+  await db
+    .update(schoolOrders)
+    .set({ status: "paid", paidAt: new Date(), updatedAt: new Date() })
+    .where(eq(schoolOrders.id, schoolOrderId));
+  // Сервисное сообщение в чат.
+  await db.insert(schoolMessages).values({
+    chatId: o.chatId,
+    senderId: o.studentId,
+    senderRole: "system",
+    text: `✅ Урок оплачен: ${o.title}`,
+  });
+  await db
+    .update(schoolChats)
+    .set({ lastMessageAt: new Date(), lastMessagePreview: `Урок оплачен: ${o.title}`.slice(0, 200), lastMessageRole: "system", updatedAt: new Date() })
+    .where(eq(schoolChats.id, o.chatId));
+  // Пуш инструктору.
+  const [instr] = await db
+    .select({ userId: sql<string>`(SELECT user_id FROM school_instructors WHERE id = ${o.instructorId})` })
+    .from(schoolOrders)
+    .where(eq(schoolOrders.id, schoolOrderId))
+    .limit(1);
+  if (instr?.userId) {
+    void pushToUsers([instr.userId], {
+      title: "Урок оплачен",
+      body: `${o.title} — ${o.instructorAmountRub}₽`,
+      url: `/instructor`,
+      tag: `school-paid-${schoolOrderId}`,
+    });
+  }
+}
+
+
+/**
  * Обработать Notification от Райффайзена (Уведомление об оплате v3).
  *   1. Найти наш payments row по providerPaymentId (= data.order.id).
  *   2. По payment.method взять секрет нужной торговой точки.
