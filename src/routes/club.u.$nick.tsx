@@ -13,9 +13,15 @@ import { getUser, type PublicUser } from "@/data/users";
 import { PlaqueBackground } from "./club";
 import { usePublicProfile, type PublicProfile } from "@/lib/garage-api";
 import { PlumpNum } from "@/components/brand/PlumpNum";
-import silverBadge from "@/assets/hellpass/demo-silver-2.png.asset.json";
-import goldBadge from "@/assets/hellpass/demo-gold-8.png.asset.json";
-import platinumBadge from "@/assets/hellpass/demo-platinum-9.png.asset.json";
+import tplSilver from "@/assets/hellpass/tpl-silver.png";
+import tplGold from "@/assets/hellpass/tpl-gold.png";
+import tplPlatinum from "@/assets/hellpass/tpl-platinum.png";
+
+const HELLPASS_PREVIEW: Array<{ src: string; months: number; tint: string }> = [
+  { src: tplSilver, months: 2, tint: "#B6FF3C" },
+  { src: tplGold, months: 8, tint: "#FF8A1E" },
+  { src: tplPlatinum, months: 9, tint: "#F000C0" },
+];
 
 
 type BikeCard = {
