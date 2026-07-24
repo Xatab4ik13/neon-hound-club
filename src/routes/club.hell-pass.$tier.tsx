@@ -114,23 +114,16 @@ function TierDetailPage() {
     }
   };
 
-
-  const cancelled = usePassCancelled();
-  const [cancelOpen, setCancelOpen] = useState(false);
-  const [resumeOpen, setResumeOpen] = useState(false);
-
   const isPlatinum = tier.ultimate;
   const baseLabel = !isAuthed
-    ? "Войти и подписаться"
+    ? "Войти и оплатить"
     : isDowngrade
       ? `Уже выше — ${active!.tier.toUpperCase()}`
       : isSameTier
-        ? cancelled
-          ? "Возобновить подписку"
-          : "Управлять подпиской"
+        ? "Продлить на 30 дней"
         : isUpgrade
-          ? "Апгрейд подписки"
-          : "Подписаться";
+          ? "Апгрейд — оплатить"
+          : "Оплатить";
 
   return (
     <main className="mx-auto w-full max-w-5xl px-4 py-8 md:px-8 md:py-12">
