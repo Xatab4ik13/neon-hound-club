@@ -374,7 +374,7 @@ function InvoiceCard({
           {shown.toLocaleString("ru-RU")} ₽
         </div>
         <div className="flex flex-wrap gap-x-3 gap-y-1 font-mono text-[10px] font-bold uppercase tracking-widest text-black/60">
-          <span>{invoice.hours} ч</span>
+          <span>{invoice.duration}</span>
           <span>{when}</span>
         </div>
         <p className="font-display text-[13px] font-bold leading-snug tracking-tight text-black/80">
