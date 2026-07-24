@@ -1,127 +1,73 @@
+
 ## Что делаем
 
-Убираем моки Школы, VIP-чата, отмены Hell Pass и переводим всё на настоящий бэк в `server/`. Recurring через Райф (rebill). Пуши — расширяем существующий web-push (VAPID) на новые события. Никаких звонков.
+Убираем все моки последних дней и переводим фичи на реальный бэк. Разбиваем на 3 фазы, чтобы каждая фаза ставилась и проверялась отдельно, а фронт не оставался сломанным на промежуточных этапах.
+
+Все правила из подтверждённого разговора уважаем:
+- 20% наценка от инструктора скрыта: инструктор видит свой чек, ученик — с +20%. В экономике: сначала минус налог на общую выручку от урока, потом 20% — наша маржа.
+- На Школу скидка Hell Pass **не** распространяется.
+- Hell Pass — настоящая ежемесячная подписка через Райф-ребиллинг (токен-платежи). Пользователь может отменить, можно возобновить до конца оплаченного периода.
+- Пуши идут через существующий web-push (VAPID + `push_subscriptions`).
+
+## Фаза 1 — Школа (backend)
+
+Миграция `0050_school.sql` + Drizzle-схема + роуты. Фронтовые файлы `admin.school.tsx`, `club.school.*`, инструкторские экраны остаются на месте — подключаем реальные эндпойнты вместо мок-данных внутри тех же компонентов.
+
+Таблицы:
+- `school_instructors` — профиль инструктора (bio, city, moto, hourly_rate_rub, active).
+- `school_chats` — чат ученик ↔ инструктор (unique пара), unread-счётчики как в vip_chat.
+- `school_messages` — сообщения, `image_url`, `read_at`.
+- `school_orders` — счета от инструктора: `instructor_amount_rub` (что видит инструктор), `student_amount_rub = instructor_amount_rub * 1.2` (что видит ученик), статусы `draft → invoiced → paid → cancelled/refunded`, ссылка на `payments.id`. Hell Pass discount **не применяется**.
+- `school_payouts` — недельная пачка выплат инструктору: `period_start`, `period_end`, `gross_rub`, `tax_rub`, `commission_rub` (20%), `payout_rub`, `status: pending/paid`.
+
+Роуты:
+- `GET /api/v1/school/instructors` — публичный список.
+- `POST /api/v1/school/chats` — открыть/получить чат с инструктором.
+- `GET|POST /api/v1/school/chats/:id/messages` — история/отправка (+ push инструктору).
+- `POST /api/v1/school/orders` — инструктор выставляет счёт (сумма инструктора), сервер сам считает student_amount и создаёт `payments` через существующий `createPaymentForOrder`-стиль.
+- `POST /api/v1/school/orders/:id/pay` — ученик получает paymentUrl.
+- Админ: `GET /api/v1/admin/school/kpi`, `GET /api/v1/admin/school/payouts`, `POST /api/v1/admin/school/payouts/:id/mark-paid`.
+
+Push: при новом сообщении и при выставлении счёта — существующий `sendPushToUser(userId, { title, body, url })`.
+
+## Фаза 2 — Hell Pass рекуррент
+
+Миграция `0051_pass_recurring.sql`:
+- В `pass_purchases`: `is_recurring boolean`, `parent_purchase_id uuid`, `next_charge_at timestamptz`, `cancelled_at timestamptz`.
+- Новая `pass_billing_tokens` — токен от Райфа на юзера/метод (id, user_id, provider_token, method, last4, exp_month, exp_year, created_at). Один активный токен.
+
+Логика:
+- Первая оплата подписки создаёт `payments` с флагом `save_token=true`. В `handleRaifNotification` при `confirmed` сохраняем `provider_token` в `pass_billing_tokens`.
+- Cron `server/src/jobs/pass-rebill.ts` (раз в час): для всех `is_recurring=true, status=active, next_charge_at <= now()+1h, cancelled_at is null` — списывает через `raif.rebill(token, amount)`. Успех → новый `passPurchases` (`parent_purchase_id`), `activatePassPurchase` продлевает срок; провал → шлём push «Не удалось списать, обнови карту», не отменяем сразу, ретрай через сутки (3 попытки, затем `is_recurring=false`).
+- Роуты: `POST /api/v1/pass/subscription/cancel` (ставит `cancelled_at`, доступ остаётся до `expires_at`), `POST /api/v1/pass/subscription/resume` (снимает `cancelled_at`, если ещё в оплаченном периоде).
+- Фронт `src/routes/club.hell-pass.$tier.tsx` уходит с `pass-cancel-state.ts` мока на реальные эндпойнты.
+
+Прим.: у Райфа рекуррент — это Init → `Recurrent=Y` + RebillId в последующих. Обёртка добавит `saveCard/recurrent` флаг в `createOrder` и новый `rebill(rebillId, amount)`.
+
+## Фаза 3 — VIP-чат и push-события
+
+VIP-чат уже на бэке. Что доделываем:
+- Ограничить создание тредов держателями активного Platinum.
+- Пуш блогеру на новое сообщение и юзеру на ответ (используем текущий web-push).
+- Загрузка фото сообщения — через существующий `/uploads/direct`.
+- Фронт `src/routes/club.vip-chat.tsx` уходит с моков.
+
+Также в этой фазе:
+- Хук пуша при новом сообщении школы (уже описано в Фазе 1, интегрируем окончательно).
+- Пуш при выставлении инструктором счёта и при успешной оплате.
+- Пуш при неуспешном ребиллинге Pass (см. Фаза 2).
 
 ## Что удаляем из фронта
 
-- `src/data/instructor-chats-mock.ts` — переписка инструктор↔ученик
-- `src/data/admin-school.ts` — экономика/выплаты
-- `src/data/instructor-accounts.ts`, `src/data/instructors.ts` (mock-инструкторы)
-- `src/data/pass-cancel-state.ts` — состояние отмены подписки в localStorage
-- `localStorage`-стор `pass-state.ts` в местах, где он про подписку (билеты остаются на беке)
+По ходу каждой фазы:
+- `src/data/pass-cancel-state.ts` — моки отмены Pass (Фаза 2).
+- Инлайновые массивы инструкторов/чатов/сообщений/заказов/выплат в `admin.school.tsx`, `club.school.*`, инструкторских экранах — заменяем на `useQuery`/`useMutation` через новый `src/lib/school-queries.ts` (Фаза 1).
+- Мок-массив тредов/сообщений VIP-чата (Фаза 3).
 
-Всё это заменяем вызовами `apiFetch(...)` через `src/lib/api.ts`.
+## Порядок выкатки
 
-## Бэк: новые модули
+1. **Фаза 1** — 1 миграция, ~8 бэк-файлов, ~4 фронт-файла. После этого школа реальна.
+2. **Фаза 2** — 1 миграция, обёртка Райфа + cron + 2 роута + фронт-подписка.
+3. **Фаза 3** — доступ Platinum + пуш-хуки + фронт VIP-чата на бэке.
 
-### 1. Школа
-
-Схемы (`server/src/db/schema/school.ts`):
-
-- `school_instructors` — id (=userId, FK на users), bio, price_from_rub, city, is_active, gallery jsonb, created_at
-- `school_chats` — id, instructor_id, student_id, last_message_at, last_message_preview, instructor_unread, student_unread; unique (instructor_id, student_id)
-- `school_messages` — id, chat_id, sender_id, sender_role ('instructor'|'student'), text, image_url, read_at, created_at
-- `school_orders` — id, chat_id, instructor_id, student_id, **instructor_amount_rub** (то, что видит инструктор), **student_amount_rub** (= instructor_amount × 1.20, что платит ученик), **commission_rub** (= student − instructor), status ('draft'|'awaiting_payment'|'paid'|'cancelled'|'refunded'), payment_id (FK payments), title, description, created_at, paid_at
-- `school_payouts` — id, instructor_id, period_start, period_end, gross_rub (сумма instructor_amount за период), tax_rub, net_rub, status ('pending'|'paid'), paid_at, note
-
-Роуты:
-
-- `/api/v1/school/instructors` GET — список активных инструкторов
-- `/api/v1/school/instructors/:id` GET — карточка
-- `/api/v1/school/chats` GET — свои чаты (для роли инструктора — все входящие; для студента — все его)
-- `/api/v1/school/chats/:id/messages` GET/POST — история и отправка (text, image_url)
-- `/api/v1/school/chats/:id/read` POST — сброс unread
-- `/api/v1/school/orders` POST — инструктор выставляет счёт на **свою** сумму (`instructor_amount_rub`); бек считает `student_amount_rub = round(inst * 1.2)`, `commission_rub = student − inst`
-- `/api/v1/school/orders/:id/pay` POST — ученик уходит в Райф (обычная разовая оплата, платит `student_amount_rub`)
-- `/api/v1/school/orders/:id` GET — **инструктору отдаём только `instructor_amount_rub`, `status`, `paid_at`; поля student_amount и commission НЕ включаем в ответ роли instructor**. Админ и ученик видят полные суммы
-
-Админка (`/api/v1/admin/school/…`):
-
-- список инструкторов, статистика (GMV, комиссия, выплачено)
-- пересчёт выплат за неделю → создаёт `school_payouts` со статусом `pending`
-- пометка `paid` вручную после банковского перевода
-- отчёт «выручка / комиссия 20% минус налог / чистая прибыль»
-
-Отдельная таблица `admin_school_settings` (одна строка): `commission_pct` (по умолчанию 20), `tax_pct` (напр. 6 для УСН). Все расчёты — от них.
-
-### 2. VIP-чат
-
-Уже есть схема и роут (`vip_chat_threads`, `vip_chat_messages`) — не трогаем структуру. Что доделываем:
-
-- добавить upload картинки в существующее поле `image_url` (используем существующий `/uploads/direct`, тот же путь что и в комментариях)
-- отправка пуша `pushToUsers([otherPartyId], ...)` из handler'а `POST /messages`
-- фронт `club.vip-chat.tsx` перевожу с mock на реальный API (список тредов у Хелла — уже готов, у юзера — открываем «свой» тред)
-
-### 3. Hell Pass — recurring через Райф
-
-Расширяем схему `pass_purchases` миграцией:
-
-- `is_recurring` boolean default true
-- `parent_order_id` text — Райф-orderId первого платежа (нужен для rebill)
-- `next_charge_at` timestamptz — когда следующее списание
-- `cancelled_at` timestamptz null — если юзер отменил (доступ до `expires_at`, дальше не продлеваем)
-- добавляем статус `'cancelling'` (активен, но next charge не будет)
-
-Логика:
-
-- Первый платёж: `createOrder(..., saveCard=true)` в Райф → юзер платит на форме → вебхук приходит → активируем пасс, сохраняем `parent_order_id`, ставим `next_charge_at = expires_at − 1 day`
-- Cron `server/src/jobs/pass-rebill.ts` каждый час: берёт пассы где `next_charge_at <= now()` и `status='active'` и `cancelled_at IS NULL`; вызывает Райф `rebill(parent_order_id, amount)`; при успехе создаёт новый `pass_purchases` со статусом `active`, продлевает `expires_at += 30d`; при ошибке — 3 ретрая с backoff, потом переводит в `expired` и шлёт пуш «не смогли продлить»
-- Отмена: `POST /api/v1/pass/cancel` → `cancelled_at=now()`, доступ до `expires_at` сохраняется
-- Возобновление до истечения: `POST /api/v1/pass/resume` → сбрасывает `cancelled_at`
-
-В `server/src/lib/raif.ts` добавляем метод `rebill(parentOrderId, newOrderId, amount, comment)` — POST `/api/v1/orders/{parentId}/rebill`. Требует включённой у Райфа услуги «Автоплатежи» — юзер подтвердит перед мержем.
-
-**Правило «скидка не распространяется на Hell Pass и на Школу с Hell Pass»**: в расчёте цены в `POST /pass/checkout` и `POST /school/orders/:id/pay` игнорируем любые promo/скидочные модификаторы. Промокоды применимы только к магазину физмерча. Явный тест в коде + комментарий.
-
-### 4. Пуши — новые события
-
-Всё через существующий `pushToUsers`. Добавляем вызовы:
-
-
-| Событие                                              | Кому            | Заголовок                          |
-| ---------------------------------------------------- | --------------- | ---------------------------------- |
-| Новое сообщение в чате Школы                         | второй участник | `{Имя отправителя}` / текст-превью |
-| Инструктор выставил счёт                             | ученик          | `Счёт на {amount}₽`                |
-| Оплата счёта прошла                                  | инструктор      | `Ученик оплатил урок`              |
-| Новое сообщение в VIP-чате от Хелла                  | ученик          | `HELL`                             |
-| Новое сообщение в VIP-чате от подписчика             | Хелл            | `{ник}`                            |
-| Hell Pass продлён автоматически                      | владелец        | `Hell Pass продлён`                |
-| Rebill упал                                          | владелец        | `Не смогли продлить Hell Pass`     |
-| Пасс истечёт через 3 дня (не-recurring / cancelling) | владелец        | `Осталось 3 дня`                   |
-
-
-Дедуп по `tag`: `school-chat-{chatId}`, `pass-rebill-ok-{purchaseId}` и т.д. — второй пуш с тем же тегом заменит первый в трее.
-
-Cron `pass-expiry-warn.ts` раз в сутки: шлёт пуш за 3 дня.
-
-Фронт SW (`public/sw.js` / firebase-messaging — что уже есть) не трогаем, формат payload прежний (`{title, body, url, tag}`).
-
-### 5. Медиа
-
-Фото в чатах — тот же путь, что и в комментариях: `POST /uploads/direct` → MinIO → возвращает public URL → фронт кладёт в `image_url` сообщения. Лимит 5 МБ, только image/*.
-
-## Фронт
-
-Заменяем импорты моков на TanStack Query-хуки в `src/lib/school-queries.ts` (новый файл) и `src/lib/vip-chat-queries.ts` (обновить). Compos и роуты не переписываем — только источник данных.
-
-Экраны, которые ходят на новые эндпоинты:
-
-- `club.school.index.tsx` — GET `/school/instructors`
-- `club.school.$instructorId.tsx` — POST `/school/chats` (создать/получить)
-- `club.school-chats.index.tsx` + `club.school-chats.$studentId.tsx` — реальные чаты
-- `admin.school.tsx` — реальная экономика, кнопки «пересчитать выплаты» и «отметить оплаченным»
-- `club.hell-pass.$tier.tsx` — `/pass/cancel` и `/pass/resume` вместо localStorage
-- `club.vip-chat.tsx` — уже почти реальный, добавить upload картинки
-
-## Порядок мержа
-
-1. Миграции (`school_*`, расширение `pass_purchases`, +таблица `school_payouts`, `admin_school_settings`) + GRANTы — одной миграцией
-2. Бек-роуты Школы + VIP-чат upload + пуш-хуки — деплой на VPS
-3. Фронт: удаление моков, подключение real API
-4. Cron pass-rebill + pass-expiry-warn — включить последним, когда Райф-rebill проверен вручную на одной подписке
-
-## Что нужно от тебя перед мержем
-
-1. Подтверди, что услуга «Автоплатежи» у Райфа подключена в договоре (без неё rebill не поедет). Если ещё нет — оставим первый платёж как есть, а cron включим когда включат.
-2. Ставки: комиссия 20% от суммы которую вводит учетель. Прибовляем 20%
-  &nbsp;
+Начинаю с Фазы 1 сразу после апрува.
