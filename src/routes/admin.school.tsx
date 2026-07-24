@@ -1,4 +1,4 @@
-// Админка · Школа: присвоение user-аккаунтов инструкторам и экономика по занятиям.
+// Админка · Школа: присвоение user-аккаунтов инструкторам, экономика и выплаты.
 // Пока полностью на моках (localStorage), тот же слой, что и в PWA-инструкторе.
 
 import { createFileRoute } from "@tanstack/react-router";
@@ -16,11 +16,17 @@ import { INSTRUCTOR_ACCOUNTS } from "@/data/instructor-accounts";
 import {
   assignInstructorAccount,
   listCandidateUsers,
-  useAssignments,
-  useEconomy,
+  markInstructorPaidOut,
   refreshEconomy,
+  setTaxRate,
+  undoPayoutBatch,
+  useAssignments,
+  useBatches,
+  useEconomy,
+  useSettings,
   type CandidateUser,
   type InstructorEconomy,
+  type PayoutBatch,
 } from "@/data/admin-school";
 import { cn } from "@/lib/utils";
 
@@ -28,12 +34,14 @@ export const Route = createFileRoute("/admin/school")({
   component: AdminSchoolPage,
 });
 
-type Tab = "accounts" | "economy";
+type Tab = "accounts" | "economy" | "payouts";
 
 function AdminSchoolPage() {
   const [tab, setTab] = useState<Tab>("accounts");
   const assignments = useAssignments();
   const economy = useEconomy();
+  const batches = useBatches();
+  const settings = useSettings();
 
   const totals = useMemo(() => {
     return economy.reduce(
@@ -43,6 +51,8 @@ function AdminSchoolPage() {
         acc.payout += e.payout;
         acc.gross += e.gross;
         acc.commission += e.commission;
+        acc.payoutDue += e.payoutDue;
+        acc.payoutPaid += e.payoutPaid;
         acc.payoutWeek += e.payoutWeek;
         return acc;
       },
@@ -52,10 +62,15 @@ function AdminSchoolPage() {
         payout: 0,
         gross: 0,
         commission: 0,
+        payoutDue: 0,
+        payoutPaid: 0,
         payoutWeek: 0,
       },
     );
   }, [economy]);
+
+  const taxes = Math.round(totals.gross * settings.taxRate);
+  const netProfit = totals.commission - taxes;
 
   const assignedCount = Object.keys(assignments).length;
 
@@ -63,7 +78,7 @@ function AdminSchoolPage() {
     <div>
       <PageHeader
         title="Школа"
-        description="Инструкторы, привязка аккаунтов и экономика занятий."
+        description="Инструкторы, привязка аккаунтов, экономика и еженедельные выплаты."
         actions={
           <Btn variant="ghost" onClick={() => refreshEconomy()}>
             Обновить
@@ -71,22 +86,35 @@ function AdminSchoolPage() {
         }
       />
 
+      {/* Верхняя сводка — воронка прибыли */}
+      <div className="mb-3 grid grid-cols-2 gap-3 md:grid-cols-4">
+        <StatCard label="Выручка (с учеников)" value={fmtMoney(totals.gross)} />
+        <StatCard
+          label={`Налоги (${(settings.taxRate * 100).toFixed(0)}%)`}
+          value={`− ${fmtMoney(taxes)}`}
+          tone="amber"
+        />
+        <StatCard label="Комиссия 20%" value={fmtMoney(totals.commission)} />
+        <StatCard
+          label="Чистая прибыль"
+          value={fmtMoney(netProfit)}
+          tone={netProfit >= 0 ? "emerald" : "amber"}
+        />
+      </div>
+
+      {/* Операционная сводка */}
       <div className="mb-4 grid grid-cols-2 gap-3 md:grid-cols-4">
         <StatCard label="Инструкторов" value={String(INSTRUCTOR_ACCOUNTS.length)} />
         <StatCard
           label="Привязано аккаунтов"
           value={`${assignedCount} / ${INSTRUCTOR_ACCOUNTS.length}`}
         />
-        <StatCard label="Оплачено занятий" value={String(totals.paidCount)} />
         <StatCard
-          label="Ожидает оплаты"
-          value={String(totals.pendingCount)}
-          tone={totals.pendingCount > 0 ? "amber" : "zinc"}
+          label="К выплате сейчас"
+          value={fmtMoney(totals.payoutDue)}
+          tone={totals.payoutDue > 0 ? "blue" : "zinc"}
         />
-        <StatCard label="Выручка (с учеников)" value={fmtMoney(totals.gross)} />
-        <StatCard label="К выплате инструкторам" value={fmtMoney(totals.payout)} />
-        <StatCard label="Комиссия платформы" value={fmtMoney(totals.commission)} tone="emerald" />
-        <StatCard label="К выплате за 7 дней" value={fmtMoney(totals.payoutWeek)} tone="blue" />
+        <StatCard label="Выплачено всего" value={fmtMoney(totals.payoutPaid)} />
       </div>
 
       <div className="mb-4 inline-flex rounded-md border border-zinc-200 bg-white p-0.5 dark:border-zinc-800 dark:bg-zinc-900">
@@ -96,13 +124,21 @@ function AdminSchoolPage() {
         <TabBtn active={tab === "economy"} onClick={() => setTab("economy")}>
           Экономика
         </TabBtn>
+        <TabBtn active={tab === "payouts"} onClick={() => setTab("payouts")}>
+          Выплаты
+        </TabBtn>
       </div>
 
-      {tab === "accounts" ? (
+      {tab === "accounts" && (
         <AccountsPanel assignments={assignments} economy={economy} />
-      ) : (
-        <EconomyPanel economy={economy} />
       )}
+      {tab === "economy" && (
+        <EconomyPanel
+          economy={economy}
+          taxRate={settings.taxRate}
+        />
+      )}
+      {tab === "payouts" && <PayoutsPanel batches={batches} economy={economy} />}
     </div>
   );
 }
@@ -171,9 +207,9 @@ function AccountsPanel({
                       {eco.paidCount} оплачено · {fmtMoney(eco.payout)}
                     </span>
                   )}
-                  {eco && eco.pendingCount > 0 && (
-                    <span className="text-amber-600 dark:text-amber-400">
-                      {eco.pendingCount} в ожидании
+                  {eco && eco.payoutDue > 0 && (
+                    <span className="text-blue-600 dark:text-blue-400">
+                      к выплате {fmtMoney(eco.payoutDue)}
                     </span>
                   )}
                 </div>
@@ -232,7 +268,6 @@ function AssignModal({
     );
   }, [query]);
 
-  // Reverse map: userSlug -> instructorSlug (для отметки «уже занят»).
   const takenBy = useMemo(() => {
     const m = new Map<string, string>();
     for (const [instr, user] of Object.entries(assignments)) {
@@ -313,94 +348,277 @@ function AssignModal({
 
 // ============= Economy =============
 
-function EconomyPanel({ economy }: { economy: InstructorEconomy[] }) {
+function EconomyPanel({
+  economy,
+  taxRate,
+}: {
+  economy: InstructorEconomy[];
+  taxRate: number;
+}) {
   const assignments = useAssignments();
   const candidates = useMemo(() => listCandidateUsers(), []);
+  const [taxInput, setTaxInput] = useState((taxRate * 100).toFixed(0));
+
+  const applyTax = () => {
+    const n = parseFloat(taxInput.replace(",", "."));
+    if (!Number.isFinite(n)) return;
+    setTaxRate(n / 100);
+  };
 
   return (
-    <Panel>
-      <PanelHeader>
-        <div className="text-sm font-medium">Экономика по инструкторам</div>
-        <div className="text-xs text-zinc-500 dark:text-zinc-400">
-          Комиссия платформы 20%. Выплаты — раз в неделю.
+    <div className="space-y-3">
+      <Panel>
+        <PanelHeader>
+          <div className="text-sm font-medium">Настройки</div>
+          <div className="text-xs text-zinc-500 dark:text-zinc-400">
+            Налоги считаются от выручки, комиссия платформы — фикс 20% от суммы инструктора.
+          </div>
+        </PanelHeader>
+        <div className="flex flex-wrap items-end gap-3 p-4">
+          <div>
+            <div className="mb-1 text-xs text-zinc-500 dark:text-zinc-400">
+              Ставка налога, %
+            </div>
+            <TextInput
+              value={taxInput}
+              onChange={(e) => setTaxInput(e.target.value)}
+              onBlur={applyTax}
+              className="w-28"
+              inputMode="decimal"
+            />
+          </div>
+          <Btn variant="primary" onClick={applyTax}>
+            Сохранить
+          </Btn>
+          <div className="text-xs text-zinc-500 dark:text-zinc-400">
+            Порядок расчёта: выручка − налоги − выплаты инструкторам = чистая прибыль.
+          </div>
         </div>
-      </PanelHeader>
-      <div className="-mx-4 overflow-x-auto px-4 md:mx-0 md:px-0">
-        <table className="w-full min-w-max text-sm md:min-w-0">
-          <thead className="bg-zinc-50 dark:bg-zinc-900/50">
-            <tr className="text-left text-xs uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-              <th className="whitespace-nowrap px-4 py-2.5 font-medium">Инструктор</th>
-              <th className="whitespace-nowrap px-4 py-2.5 font-medium">Аккаунт</th>
-              <th className="whitespace-nowrap px-4 py-2.5 font-medium text-right">Оплачено</th>
-              <th className="whitespace-nowrap px-4 py-2.5 font-medium text-right">Ожидает</th>
-              <th className="whitespace-nowrap px-4 py-2.5 font-medium text-right">Выручка</th>
-              <th className="whitespace-nowrap px-4 py-2.5 font-medium text-right">К выплате</th>
-              <th className="whitespace-nowrap px-4 py-2.5 font-medium text-right">Комиссия</th>
-              <th className="whitespace-nowrap px-4 py-2.5 font-medium text-right">За 7 дней</th>
-            </tr>
-          </thead>
-          <tbody>
-            {economy.map((e) => {
-              const acc = INSTRUCTOR_ACCOUNTS.find((a) => a.slug === e.slug);
-              const userSlug = assignments[e.slug];
-              const user = userSlug ? candidates.find((c) => c.slug === userSlug) : null;
-              return (
-                <tr
-                  key={e.slug}
-                  className="border-t border-zinc-100 hover:bg-zinc-50/50 dark:border-zinc-800 dark:hover:bg-zinc-800/30"
-                >
-                  <td className="whitespace-nowrap px-4 py-2.5">
-                    <div className="flex items-center gap-2">
-                      {acc && (
-                        <img
-                          src={acc.photo}
-                          alt=""
-                          className="h-7 w-7 rounded-full object-cover"
-                        />
+      </Panel>
+
+      <Panel>
+        <PanelHeader>
+          <div className="text-sm font-medium">Экономика по инструкторам</div>
+          <div className="text-xs text-zinc-500 dark:text-zinc-400">
+            Комиссия платформы 20%. Выплаты — раз в неделю, помечаем во вкладке «Выплаты».
+          </div>
+        </PanelHeader>
+        <div className="-mx-4 overflow-x-auto px-4 md:mx-0 md:px-0">
+          <table className="w-full min-w-max text-sm md:min-w-0">
+            <thead className="bg-zinc-50 dark:bg-zinc-900/50">
+              <tr className="text-left text-xs uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                <th className="whitespace-nowrap px-4 py-2.5 font-medium">Инструктор</th>
+                <th className="whitespace-nowrap px-4 py-2.5 font-medium">Аккаунт</th>
+                <th className="whitespace-nowrap px-4 py-2.5 font-medium text-right">Оплачено</th>
+                <th className="whitespace-nowrap px-4 py-2.5 font-medium text-right">Выручка</th>
+                <th className="whitespace-nowrap px-4 py-2.5 font-medium text-right">Комиссия</th>
+                <th className="whitespace-nowrap px-4 py-2.5 font-medium text-right">К выплате</th>
+                <th className="whitespace-nowrap px-4 py-2.5 font-medium text-right">Выплачено</th>
+                <th className="whitespace-nowrap px-4 py-2.5 font-medium text-right">Действие</th>
+              </tr>
+            </thead>
+            <tbody>
+              {economy.map((e) => {
+                const acc = INSTRUCTOR_ACCOUNTS.find((a) => a.slug === e.slug);
+                const userSlug = assignments[e.slug];
+                const user = userSlug ? candidates.find((c) => c.slug === userSlug) : null;
+                return (
+                  <tr
+                    key={e.slug}
+                    className="border-t border-zinc-100 hover:bg-zinc-50/50 dark:border-zinc-800 dark:hover:bg-zinc-800/30"
+                  >
+                    <td className="whitespace-nowrap px-4 py-2.5">
+                      <div className="flex items-center gap-2">
+                        {acc && (
+                          <img
+                            src={acc.photo}
+                            alt=""
+                            className="h-7 w-7 rounded-full object-cover"
+                          />
+                        )}
+                        <div className="font-medium">{acc?.name ?? e.slug}</div>
+                      </div>
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-2.5">
+                      {user ? (
+                        <span className="text-xs">@{user.nick}</span>
+                      ) : (
+                        <span className="text-xs text-amber-600 dark:text-amber-400">
+                          не присвоен
+                        </span>
                       )}
-                      <div className="font-medium">{acc?.name ?? e.slug}</div>
-                    </div>
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-2.5">
-                    {user ? (
-                      <span className="text-xs">@{user.nick}</span>
-                    ) : (
-                      <span className="text-xs text-amber-600 dark:text-amber-400">
-                        не присвоен
-                      </span>
-                    )}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-2.5 text-right tabular-nums">
-                    {e.paidCount}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-2.5 text-right tabular-nums">
-                    {e.pendingCount > 0 ? (
-                      <span className="text-amber-600 dark:text-amber-400">
-                        {e.pendingCount}
-                      </span>
-                    ) : (
-                      <span className="text-zinc-400">0</span>
-                    )}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-2.5 text-right tabular-nums">
-                    {fmtMoney(e.gross)}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-2.5 text-right tabular-nums font-medium">
-                    {fmtMoney(e.payout)}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-2.5 text-right tabular-nums text-emerald-600 dark:text-emerald-400">
-                    {fmtMoney(e.commission)}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-2.5 text-right tabular-nums">
-                    {fmtMoney(e.payoutWeek)}
-                  </td>
-                </tr>
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-2.5 text-right tabular-nums">
+                      {e.paidCount}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-2.5 text-right tabular-nums">
+                      {fmtMoney(e.gross)}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-2.5 text-right tabular-nums text-emerald-600 dark:text-emerald-400">
+                      {fmtMoney(e.commission)}
+                    </td>
+                    <td
+                      className={cn(
+                        "whitespace-nowrap px-4 py-2.5 text-right tabular-nums font-medium",
+                        e.payoutDue > 0
+                          ? "text-blue-600 dark:text-blue-400"
+                          : "text-zinc-400",
+                      )}
+                    >
+                      {fmtMoney(e.payoutDue)}
+                      {e.payoutWeek > 0 && e.payoutWeek !== e.payoutDue && (
+                        <div className="text-[10px] font-normal text-zinc-500">
+                          за 7д: {fmtMoney(e.payoutWeek)}
+                        </div>
+                      )}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-2.5 text-right tabular-nums text-zinc-500">
+                      {fmtMoney(e.payoutPaid)}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-2.5 text-right">
+                      <Btn
+                        variant={e.payoutDue > 0 ? "primary" : "ghost"}
+                        onClick={() => {
+                          if (e.payoutDue <= 0) return;
+                          const ok = confirm(
+                            `Пометить ${fmtMoney(e.payoutDue)} как выплаченное «${acc?.name ?? e.slug}»?`,
+                          );
+                          if (ok) markInstructorPaidOut(e.slug);
+                        }}
+                      >
+                        {e.payoutDue > 0 ? "Выплатить" : "—"}
+                      </Btn>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </Panel>
+    </div>
+  );
+}
+
+// ============= Payouts =============
+
+function PayoutsPanel({
+  batches,
+  economy,
+}: {
+  batches: PayoutBatch[];
+  economy: InstructorEconomy[];
+}) {
+  const dueInstructors = economy.filter((e) => e.payoutDue > 0);
+  const totalDue = dueInstructors.reduce((s, e) => s + e.payoutDue, 0);
+
+  const payAll = () => {
+    if (dueInstructors.length === 0) return;
+    const ok = confirm(
+      `Пометить как выплаченное всем инструкторам сразу: ${fmtMoney(totalDue)}?`,
+    );
+    if (!ok) return;
+    for (const e of dueInstructors) markInstructorPaidOut(e.slug);
+  };
+
+  return (
+    <div className="space-y-3">
+      <Panel>
+        <PanelHeader>
+          <div className="text-sm font-medium">Еженедельная выплата</div>
+          <div className="text-xs text-zinc-500 dark:text-zinc-400">
+            Все инструкторы, у кого есть непомеченные оплаты.
+          </div>
+        </PanelHeader>
+        <div className="flex flex-wrap items-center justify-between gap-3 p-4">
+          <div>
+            <div className="text-xs text-zinc-500 dark:text-zinc-400">
+              К выплате сейчас
+            </div>
+            <div className="text-2xl font-semibold tabular-nums">
+              {fmtMoney(totalDue)}
+            </div>
+            <div className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
+              {dueInstructors.length} {plural(dueInstructors.length, "инструктор", "инструктора", "инструкторов")}
+            </div>
+          </div>
+          <Btn variant="primary" onClick={payAll}>
+            Выплатить всем
+          </Btn>
+        </div>
+        {dueInstructors.length > 0 && (
+          <div className="border-t border-zinc-100 px-4 py-2 text-xs dark:border-zinc-800">
+            {dueInstructors.map((e, i) => {
+              const acc = INSTRUCTOR_ACCOUNTS.find((a) => a.slug === e.slug);
+              return (
+                <span key={e.slug} className="text-zinc-500 dark:text-zinc-400">
+                  {i > 0 && " · "}
+                  {acc?.name ?? e.slug}:{" "}
+                  <span className="text-blue-600 dark:text-blue-400 tabular-nums">
+                    {fmtMoney(e.payoutDue)}
+                  </span>
+                </span>
               );
             })}
-          </tbody>
-        </table>
-      </div>
-    </Panel>
+          </div>
+        )}
+      </Panel>
+
+      <Panel>
+        <PanelHeader>
+          <div className="text-sm font-medium">История выплат</div>
+          <div className="text-xs text-zinc-500 dark:text-zinc-400">
+            Батчи, помеченные как выплаченные. Можно откатить, если ошибся.
+          </div>
+        </PanelHeader>
+        {batches.length === 0 ? (
+          <div className="px-4 py-8 text-center text-sm text-zinc-500 dark:text-zinc-400">
+            Пока ни одной выплаты.
+          </div>
+        ) : (
+          <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
+            {batches.map((b) => {
+              const acc = INSTRUCTOR_ACCOUNTS.find((a) => a.slug === b.instructorSlug);
+              return (
+                <div key={b.id} className="flex items-center gap-3 px-4 py-3">
+                  {acc && (
+                    <img
+                      src={acc.photo}
+                      alt=""
+                      className="h-9 w-9 flex-shrink-0 rounded-full object-cover"
+                    />
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-medium">
+                      {acc?.name ?? b.instructorSlug}
+                    </div>
+                    <div className="text-xs text-zinc-500 dark:text-zinc-400">
+                      {fmtDate(b.createdAt)} ·{" "}
+                      {b.invoiceIds.length}{" "}
+                      {plural(b.invoiceIds.length, "занятие", "занятия", "занятий")}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm font-semibold tabular-nums">
+                      {fmtMoney(b.amount)}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (confirm("Откатить эту выплату?")) undoPayoutBatch(b.id);
+                      }}
+                      className="text-xs text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+                    >
+                      Откатить
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </Panel>
+    </div>
   );
 }
 
@@ -408,6 +626,24 @@ function EconomyPanel({ economy }: { economy: InstructorEconomy[] }) {
 
 function fmtMoney(n: number) {
   return `${n.toLocaleString("ru-RU")} ₽`;
+}
+
+function fmtDate(ts: number) {
+  return new Date(ts).toLocaleString("ru-RU", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function plural(n: number, one: string, few: string, many: string) {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return one;
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return few;
+  return many;
 }
 
 function TabBtn({
