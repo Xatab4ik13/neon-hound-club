@@ -58,6 +58,9 @@ export const schoolQk = {
   instructor: (slug: string) => ["school", "instructor", slug] as const,
   myChats: ["school", "my-chats"] as const,
   chatMessages: (chatId: string) => ["school", "chat", chatId, "messages"] as const,
+  instructorMe: ["school", "instructor-me"] as const,
+  instructorChats: ["school", "instructor-chats"] as const,
+  instructorOrders: ["school", "instructor-orders"] as const,
 };
 
 // ---------- instructors ----------
