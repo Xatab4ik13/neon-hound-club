@@ -30,7 +30,9 @@ export const adminQk = {
   shopShowcase: ["admin", "shop", "showcase"] as const,
   quests: ["admin", "quests"] as const,
   raffles: ["admin", "raffles"] as const,
-  passList: (status?: string) => ["admin", "pass", status ?? "all"] as const,
+  passList: (filters: { status?: string; tier?: string; q?: string }) =>
+    ["admin", "pass", filters.status ?? "all", filters.tier ?? "all", filters.q ?? ""] as const,
+  passStats: ["admin", "pass", "stats"] as const,
   feedPosts: ["admin", "feed", "posts"] as const,
   usersStats: ["admin", "users", "stats"] as const,
 
