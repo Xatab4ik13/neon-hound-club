@@ -80,6 +80,7 @@ export function ensureThread(slug: string, studentId: string, studentNick: strin
   if (all[key]) return;
   all[key] = {
     slug,
+    instructorSlug: slug,
     studentId,
     studentNick,
     messages: [],
