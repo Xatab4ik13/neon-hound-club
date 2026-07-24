@@ -1,8 +1,12 @@
 import { and, desc, eq, gt, ne, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { passPurchases, PASS_CONFIG, PASS_DURATION_DAYS, type PassTier } from "../db/schema/pass.js";
+import { userStickerPacks } from "../db/schema/stickers.js";
 import { ticketCredit } from "./tickets.js";
 import { awardXp } from "./xp.js";
+
+/** Стикерпаки, которые выдаются бесплатно при активации Hell Pass (любой тир). */
+const PASS_STICKER_PACKS = ["special", "hell-minions"] as const;
 
 /** Иерархия тиров. Чем выше число — тем выше тир. Используется для запрета даунгрейда. */
 export const TIER_RANK: Record<PassTier, number> = {
