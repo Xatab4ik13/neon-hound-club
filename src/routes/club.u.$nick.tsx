@@ -270,11 +270,7 @@ function UserView({ user }: { user: ProfileView }) {
                       <PlumpNum
                         value={b.months}
                         size={22}
-                        className="text-white"
-                        style={{
-                          textShadow:
-                            "-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 0 2px 4px rgba(0,0,0,0.6)",
-                        }}
+                        className="text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.85)]"
                       />
                     </div>
                   </div>
