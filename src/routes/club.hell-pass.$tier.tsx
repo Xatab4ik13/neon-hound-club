@@ -234,66 +234,40 @@ function TierDetailPage() {
                   {tier.price.toLocaleString("ru-RU")} ₽
                 </span>
                 <span className="font-mono text-xs uppercase tracking-widest text-white/40">
-                  / мес
+                  / 30 дней
                 </span>
               </div>
 
               {active && (
                 <div className="mt-4 border border-white/10 bg-white/[0.03] px-3 py-2 font-mono text-[10px] uppercase tracking-widest text-white/70">
-                  Активна подписка <span className="text-primary">{active.tier.toUpperCase()}</span>
-                  {daysLeft != null && <> · след. списание через {daysLeft} дн.</>}
-                  {isSameTier && cancelled && (
-                    <div className="mt-1 normal-case tracking-normal text-destructive">
-                      Отменена. Доступ сохранится до конца оплаченного периода.
-                    </div>
-                  )}
+                  Активен <span className="text-primary">{active.tier.toUpperCase()}</span>
+                  {daysLeft != null && <> · осталось {daysLeft} дн.</>}
                 </div>
               )}
 
               <div className="mt-4 flex flex-col gap-2">
-                {isSameTier && !cancelled ? (
-                  // Активный тир — вместо «купить» кнопка отмены подписки.
-                  <button
-                    type="button"
-                    onClick={() => setCancelOpen(true)}
-                    className="w-full rounded-2xl border border-destructive/50 bg-destructive/10 px-4 py-3 font-display text-sm font-black uppercase tracking-widest text-destructive transition-colors hover:bg-destructive/20"
-                  >
-                    Отменить подписку
-                  </button>
-                ) : isSameTier && cancelled ? (
-                  <button
-                    type="button"
-                    onClick={() => setResumeOpen(true)}
-                    className="w-full rounded-2xl border border-primary/50 bg-primary/10 px-4 py-3 font-display text-sm font-black uppercase tracking-widest text-primary transition-colors hover:bg-primary/20"
-                  >
-                    Возобновить подписку
-                  </button>
-                ) : (
-                  <form method="POST" action={PAY_ACTION} onSubmit={guard}>
-                    <input type="hidden" name="target" value="pass" />
-                    <input type="hidden" name="tier" value={tier.slug} />
-                    <input type="hidden" name="method" value="sbp" />
-                    <PayButton
-                      type="submit"
-                      disabled={!!isDowngrade}
-                      label={baseLabel}
-                      size="lg"
-                    />
-                  </form>
-                )}
+                <form method="POST" action={PAY_ACTION} onSubmit={guard}>
+                  <input type="hidden" name="target" value="pass" />
+                  <input type="hidden" name="tier" value={tier.slug} />
+                  <input type="hidden" name="method" value="sbp" />
+                  <PayButton
+                    type="submit"
+                    disabled={!!isDowngrade}
+                    label={baseLabel}
+                    size="lg"
+                  />
+                </form>
               </div>
 
 
               <div className="mt-4 font-mono text-[10px] uppercase tracking-widest text-white/40">
                 {isDowngrade
-                  ? "Тир ниже текущего недоступен. Дождись окончания активной подписки."
+                  ? "Тир ниже текущего недоступен. Дождись окончания активного пасса."
                   : isSameTier
-                    ? cancelled
-                      ? "Автопродление отключено. Возобнови — и списание пойдёт как раньше."
-                      : "Ежемесячное автопродление. Отменить можно в любой момент."
+                    ? "Разовая оплата. Продлит доступ ещё на 30 дней."
                     : isUpgrade
-                      ? "Апгрейд подписки. Списание пойдёт по цене нового тира."
-                      : "Ежемесячная подписка. Списывается раз в месяц, отменить можно в любой момент."}
+                      ? "Апгрейд. Оплата по цене нового тира, срок — 30 дней."
+                      : "Разовая оплата. Доступ 30 дней с момента оплаты."}
               </div>
             </div>
           </div>
