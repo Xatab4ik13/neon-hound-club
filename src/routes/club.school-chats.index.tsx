@@ -7,6 +7,12 @@ import { cn } from "@/lib/utils";
 import { useMockInstructorRole } from "@/hooks/use-instructor-mock-role";
 import { getInstructorAccount } from "@/data/instructor-accounts";
 import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import {
   useInstructorThreadsList,
   type InstructorThread,
   type InvoicePayload,
@@ -88,6 +94,7 @@ function SchoolChatsList() {
   const slug = useMockInstructorRole();
   const navigate = useNavigate();
   const [tab, setTab] = useState<"chats" | "orders">("chats");
+  const [details, setDetails] = useState<PaidOrder | null>(null);
   const threads = useInstructorThreadsList(slug ?? "");
   const account = slug ? getInstructorAccount(slug) : undefined;
 
@@ -96,6 +103,7 @@ function SchoolChatsList() {
   }, [slug, navigate]);
 
   const orders = useMemo(() => collectOrders(threads), [threads]);
+
 
   if (!slug || !account) return null;
 
@@ -195,50 +203,152 @@ function SchoolChatsList() {
             {orders.map((o) => {
               const paid = o.invoice.status === "paid";
               const who = o.invoice.payerName?.trim() || o.studentNick;
+              const commonInner = (
+                <>
+                  <Avatar nick={who} />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="truncate font-display text-[15px] font-black uppercase tracking-tight text-foreground">
+                        {who}
+                      </span>
+                      <span
+                        className={cn(
+                          "ml-auto shrink-0 font-display text-[15px] font-black tracking-tight",
+                          paid ? "text-[#B6FF3C]" : "text-muted-foreground",
+                        )}
+                      >
+                        {formatRub(o.invoice.amount)}
+                      </span>
+                    </div>
+                    <div className="mt-1 flex items-center gap-2">
+                      <span
+                        className={cn(
+                          "shrink-0 rounded-full px-2 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wider",
+                          paid
+                            ? "bg-[#B6FF3C]/15 text-[#B6FF3C]"
+                            : "bg-white/[0.06] text-muted-foreground",
+                        )}
+                      >
+                        {paid ? "Оплачено" : "Ожидает оплаты"}
+                      </span>
+                      <span className="ml-auto shrink-0 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                        {formatLessonDate(o.invoice.dateTime)}
+                      </span>
+                    </div>
+                  </div>
+                </>
+              );
               return (
                 <li key={o.invoice.id}>
-                  <Link
-                    to="/club/school-chats/$studentId"
-                    params={{ studentId: o.studentUserId }}
-                    className="flex items-center gap-3 px-4 py-3 transition-colors active:bg-white/[0.04]"
-                  >
-                    <Avatar nick={who} />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="truncate font-display text-[15px] font-black uppercase tracking-tight text-foreground">
-                          {who}
-                        </span>
-                        <span
-                          className={cn(
-                            "ml-auto shrink-0 font-display text-[15px] font-black tracking-tight",
-                            paid ? "text-[#B6FF3C]" : "text-muted-foreground",
-                          )}
-                        >
-                          {formatRub(o.invoice.amount)}
-                        </span>
-                      </div>
-                      <div className="mt-1 flex items-center gap-2">
-                        <span
-                          className={cn(
-                            "shrink-0 rounded-full px-2 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wider",
-                            paid
-                              ? "bg-[#B6FF3C]/15 text-[#B6FF3C]"
-                              : "bg-white/[0.06] text-muted-foreground",
-                          )}
-                        >
-                          {paid ? "Оплачено" : "Ожидает оплаты"}
-                        </span>
-                        <span className="ml-auto shrink-0 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-                          {formatLessonDate(o.invoice.dateTime)}
-                        </span>
-                      </div>
-                    </div>
-                  </Link>
+                  {paid ? (
+                    <button
+                      type="button"
+                      onClick={() => setDetails(o)}
+                      className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors active:bg-white/[0.04]"
+                    >
+                      {commonInner}
+                    </button>
+                  ) : (
+                    <Link
+                      to="/club/school-chats/$studentId"
+                      params={{ studentId: o.studentUserId }}
+                      className="flex items-center gap-3 px-4 py-3 transition-colors active:bg-white/[0.04]"
+                    >
+                      {commonInner}
+                    </Link>
+                  )}
                 </li>
               );
             })}
           </ul>
         )}
+      </div>
+
+      <OrderDetailsSheet
+        order={details}
+        onOpenChange={(v) => {
+          if (!v) setDetails(null);
+        }}
+      />
+    </div>
+  );
+}
+
+function OrderDetailsSheet({
+  order,
+  onOpenChange,
+}: {
+  order: PaidOrder | null;
+  onOpenChange: (v: boolean) => void;
+}) {
+  const inv = order?.invoice;
+  return (
+    <Sheet open={!!order} onOpenChange={onOpenChange}>
+      <SheetContent
+        side="bottom"
+        className="rounded-t-3xl border-white/10 bg-[#0a0a0a] px-5 pb-6 pt-4"
+      >
+        <SheetHeader className="mb-4 text-left">
+          <SheetTitle className="font-display text-lg font-black uppercase tracking-tight text-foreground">
+            Заказ · {inv ? formatRub(inv.amount) : ""}
+          </SheetTitle>
+        </SheetHeader>
+        {inv && (
+          <div className="flex flex-col gap-3">
+            <div className="rounded-2xl border border-[#B6FF3C]/30 bg-[#B6FF3C]/10 p-4">
+              <div className="font-mono text-[10px] font-bold uppercase tracking-widest text-[#B6FF3C]">
+                Оплачено
+              </div>
+              <div className="mt-1 font-display text-[28px] font-black leading-none tracking-tight text-foreground">
+                {formatRub(inv.amount)}
+              </div>
+              <div className="mt-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                Сумма без комиссии платформы
+              </div>
+            </div>
+
+            <DetailRow label="Ученик" value={inv.payerName?.trim() || order.studentNick} />
+            {inv.payerPhone && <DetailRow label="Телефон" value={inv.payerPhone} />}
+            {inv.payerEmail && <DetailRow label="Email" value={inv.payerEmail} />}
+            <DetailRow label="Занятие" value={formatLessonDate(inv.dateTime)} />
+            <DetailRow label="Длительность" value={`${inv.hours} ч`} />
+            {inv.description && <DetailRow label="Описание" value={inv.description} />}
+            {inv.paidAt && (
+              <DetailRow
+                label="Оплачено"
+                value={new Date(inv.paidAt).toLocaleString("ru-RU", {
+                  day: "2-digit",
+                  month: "2-digit",
+                  year: "2-digit",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              />
+            )}
+
+            <Link
+              to="/club/school-chats/$studentId"
+              params={{ studentId: order.studentUserId }}
+              onClick={() => onOpenChange(false)}
+              className="mt-2 rounded-2xl border border-white/10 bg-black/50 px-5 py-3 text-center font-display text-[13px] font-black uppercase tracking-tight text-foreground/80 transition-transform active:scale-95"
+            >
+              Открыть чат
+            </Link>
+          </div>
+        )}
+      </SheetContent>
+    </Sheet>
+  );
+}
+
+function DetailRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-black/40 px-4 py-3">
+      <div className="font-mono text-[10px] font-bold uppercase tracking-widest text-white/50">
+        {label}
+      </div>
+      <div className="mt-1 font-display text-[14px] font-bold leading-snug tracking-tight text-foreground">
+        {value}
       </div>
     </div>
   );

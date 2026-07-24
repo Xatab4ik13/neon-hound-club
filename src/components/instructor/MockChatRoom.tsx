@@ -69,7 +69,7 @@ export type MockChatRoomProps = {
   /** Инструктор → отправка счёта. Если не передан, кнопка счёта скрыта. */
   onSendInvoice?: (draft: InvoiceDraft) => void;
   /** Ученик → оплата счёта. */
-  onPayInvoice?: (invoiceId: string, payer: { name: string; email: string }) => void;
+  onPayInvoice?: (invoiceId: string, payer: { name: string; email: string; phone: string }) => void;
   /** Дополнительный контент над лентой (например, локальный заголовок). */
   header?: React.ReactNode;
 };

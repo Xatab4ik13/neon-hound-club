@@ -24,6 +24,7 @@ export type InvoicePayload = {
   /** ФИО плательщика после оплаты (мок). */
   payerName?: string;
   payerEmail?: string;
+  payerPhone?: string;
   paidAt?: number;
 };
 
@@ -247,7 +248,7 @@ export function payInstructorInvoice(
   studentUserId: string,
   studentNick: string,
   invoiceId: string,
-  payer: { name: string; email: string },
+  payer: { name: string; email: string; phone: string },
 ) {
   const k = threadKey(instructorSlug, studentUserId);
   const t = state[k];
@@ -261,6 +262,7 @@ export function payInstructorInvoice(
         status: "paid",
         payerName: payer.name,
         payerEmail: payer.email,
+        payerPhone: payer.phone,
         paidAt: now,
       };
       paidInvoice = inv;
