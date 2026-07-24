@@ -24,11 +24,13 @@ export type InvoicePayload = {
   /** Сумма инструктора в рублях (без наценки). */
   amount: number;
   status: "pending" | "paid";
+  /** Момент оплаты (ms). Проставляется при переводе в paid. */
+  paidAt?: number;
 };
 
 export type InstructorMsg = {
   id: string;
-  senderRole: "instructor" | "student";
+  senderRole: "instructor" | "student" | "system";
   text?: string;
   createdAt: number;
   invoice?: InvoicePayload;
@@ -36,6 +38,8 @@ export type InstructorMsg = {
 
 export type InstructorThread = {
   slug: string;
+  /** Алиас на `slug`, оставлен для совместимости с прежним API. */
+  instructorSlug: string;
   studentId: string;
   studentNick: string;
   messages: InstructorMsg[];
