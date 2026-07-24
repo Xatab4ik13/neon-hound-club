@@ -95,18 +95,7 @@ function SchoolChatsList() {
     if (!slug) navigate({ to: "/club", replace: true });
   }, [slug, navigate]);
 
-  const orders = useMemo(() => collectPaidOrders(threads), [threads]);
-
-  const { total, weekTotal } = useMemo(() => {
-    const weekAgo = Date.now() - 7 * 86_400_000;
-    let total = 0;
-    let weekTotal = 0;
-    for (const o of orders) {
-      total += o.invoice.amount;
-      if ((o.invoice.paidAt ?? 0) >= weekAgo) weekTotal += o.invoice.amount;
-    }
-    return { total, weekTotal };
-  }, [orders]);
+  const orders = useMemo(() => collectOrders(threads), [threads]);
 
   if (!slug || !account) return null;
 
