@@ -51,11 +51,11 @@ type PaidOrder = {
   studentUserId: string;
 };
 
-function collectPaidOrders(threads: InstructorThread[]): PaidOrder[] {
+function collectOrders(threads: InstructorThread[]): PaidOrder[] {
   const out: PaidOrder[] = [];
   for (const t of threads) {
     for (const m of t.messages) {
-      if (m.invoice && m.invoice.status === "paid") {
+      if (m.invoice) {
         out.push({
           invoice: m.invoice,
           studentNick: t.studentNick,
@@ -64,8 +64,24 @@ function collectPaidOrders(threads: InstructorThread[]): PaidOrder[] {
       }
     }
   }
-  out.sort((a, b) => (b.invoice.paidAt ?? 0) - (a.invoice.paidAt ?? 0));
+  out.sort((a, b) => {
+    const at = a.invoice.paidAt ?? a.invoice.createdAt ?? 0;
+    const bt = b.invoice.paidAt ?? b.invoice.createdAt ?? 0;
+    return bt - at;
+  });
   return out;
+}
+
+function formatLessonDate(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleString("ru-RU", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 function formatRub(n: number): string {
