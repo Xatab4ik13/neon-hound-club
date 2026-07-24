@@ -273,37 +273,6 @@ function TierDetailPage() {
           </div>
         </aside>
       </div>
-
-      <IOSConfirm
-        open={cancelOpen}
-        onOpenChange={setCancelOpen}
-        title="Отменить подписку?"
-        description={`Доступ ${tier.name} сохранится до конца оплаченного периода${
-          daysLeft != null ? ` — ещё ${daysLeft} дн.` : ""
-        }. После этого автопродления не будет.`}
-        confirmLabel="Отменить подписку"
-        cancelLabel="Оставить"
-        destructive
-        onConfirm={() => {
-          setPassCancelled(true);
-          hhToast.success("Подписка отменена", {
-            meta: "Доступ сохранится до конца оплаченного периода",
-          });
-        }}
-      />
-
-      <IOSConfirm
-        open={resumeOpen}
-        onOpenChange={setResumeOpen}
-        title="Возобновить подписку?"
-        description="Автопродление включится снова. Следующее списание пойдёт в конце текущего периода."
-        confirmLabel="Возобновить"
-        cancelLabel="Отмена"
-        onConfirm={() => {
-          setPassCancelled(false);
-          hhToast.success("Подписка возобновлена");
-        }}
-      />
     </main>
   );
 }
