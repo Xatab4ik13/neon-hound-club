@@ -129,7 +129,7 @@ function SchoolChatsList() {
               className={cn(
                 "flex-1 rounded-xl px-3 py-2 font-display text-[13px] font-black uppercase tracking-tight transition-colors",
                 tab === "orders"
-                  ? "bg-primary text-black"
+                  ? "bg-[#B6FF3C] text-black"
                   : "text-muted-foreground",
               )}
             >
