@@ -249,18 +249,40 @@ function UserView({ user }: { user: ProfileView }) {
               </span>
             </div>
             {showHellPassPreview ? (
-              <div className="flex flex-wrap items-center gap-2.5 border-2 border-dashed border-white/[0.1] bg-black/30 px-3 py-3">
-                {[silverBadge, goldBadge, platinumBadge].map((b) => (
-                  <img
-                    key={b.url}
-                    src={b.url}
-                    alt=""
-                    loading="lazy"
-                    width={144}
-                    height={144}
-                    className="h-14 w-14 drop-shadow-[2px_2px_0_rgba(0,0,0,0.55)]"
-                  />
+              <div
+                className="flex flex-wrap items-center justify-center gap-3 rounded-2xl border-2 border-white/80 px-3 py-3"
+                style={{
+                  background:
+                    "linear-gradient(135deg, rgba(255,255,255,0.06), rgba(0,0,0,0.35))",
+                  boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.6)",
+                }}
+              >
+                {HELLPASS_PREVIEW.map((b) => (
+                  <div
+                    key={b.src}
+                    className="relative h-16 w-16 drop-shadow-[2px_2px_0_rgba(0,0,0,0.55)]"
+                  >
+                    <img
+                      src={b.src}
+                      alt=""
+                      loading="lazy"
+                      width={144}
+                      height={144}
+                      className="h-full w-full object-contain"
+                    />
+                    <div
+                      className="pointer-events-none absolute inset-0 flex items-center justify-center"
+                      style={{ paddingTop: "18%" }}
+                    >
+                      <PlumpNum value={b.months} size={22} />
+                    </div>
+                  </div>
                 ))}
+              </div>
+            ) : user.badgeIds.length === 0 ? (
+              <div className="flex items-center justify-center gap-2 rounded-2xl border-2 border-white/80 bg-black/40 px-4 py-5 font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
+                <Award className="h-4 w-4 opacity-60" />
+                Пока без значков
               </div>
             ) : user.badgeIds.length === 0 ? (
               <div className="flex items-center justify-center gap-2 border-2 border-dashed border-white/[0.1] bg-black/30 px-4 py-5 font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
