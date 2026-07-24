@@ -189,7 +189,7 @@ function TierCard({
               <PlumpNum value={tier.price} size={26} format />
             </span>
             <span className="font-mono text-[10px] font-bold uppercase tracking-widest text-black/70">
-              ₽ / мес
+              ₽ / 30 дней
             </span>
           </div>
         </div>
