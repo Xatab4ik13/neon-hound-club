@@ -44,7 +44,7 @@ export class PaymentInitError extends Error {
 const ACTIVE_STATUSES = ["new", "pending", "authorized"] as const;
 
 async function findActivePayment(
-  refType: "pass" | "order",
+  refType: "pass" | "order" | "school_order",
   refId: string,
   method: PaymentMethod,
 ): Promise<Payment | null> {
@@ -267,7 +267,7 @@ export async function createPaymentForSchoolOrder(
   if (so.studentId !== userId) throw new PaymentInitError("forbidden", "Чужой счёт");
   if (so.status !== "invoiced") throw new PaymentInitError("order_not_payable", `Счёт уже ${so.status}`);
 
-  const existing = await findActivePayment("school_order" as any, so.id, method);
+  const existing = await findActivePayment("school_order", so.id, method);
   if (existing && existing.paymentUrl) return { payment: existing, paymentUrl: existing.paymentUrl };
 
   const [created] = await db
@@ -417,6 +417,8 @@ export async function handleRaifNotification(
       await activatePassPurchase(payment.refId);
     } else if (payment.refType === "order") {
       await markOrderPaid(payment.refId);
+    } else if (payment.refType === "school_order") {
+      await markSchoolOrderPaid(payment.refId);
     }
     // Авто-налог УСН — идемпотентно по (ref_type='tax', ref_id=payment.id).
     try {
