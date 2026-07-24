@@ -3,6 +3,20 @@
 // и `data/instructor-chats-mock.ts` на этапе студенческого фронта.
 
 import { apiFetch } from "@/lib/api";
+import { resolveAssetUrl } from "@/lib/asset-url";
+
+// Перезаписываем `/__l5e/...` на абсолютные CDN-URL, т.к. на проде hhr.pro
+// такой префикс не обслуживается (vite-плагин трогает только .asset.json).
+function normalizeInstructor(x: InstructorApi): InstructorApi {
+  const gallery = (x.profile?.gallery ?? [])
+    .map((u) => resolveAssetUrl(u))
+    .filter((u): u is string => !!u);
+  return {
+    ...x,
+    avatarUrl: resolveAssetUrl(x.avatarUrl),
+    profile: { ...x.profile, gallery },
+  };
+}
 
 // ---------- shared types ----------
 
