@@ -24,6 +24,7 @@ export type InvoicePayload = {
   /** ФИО плательщика после оплаты (мок). */
   payerName?: string;
   payerEmail?: string;
+  payerPhone?: string;
   paidAt?: number;
 };
 
