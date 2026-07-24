@@ -94,6 +94,7 @@ function SchoolChatsList() {
   const slug = useMockInstructorRole();
   const navigate = useNavigate();
   const [tab, setTab] = useState<"chats" | "orders">("chats");
+  const [details, setDetails] = useState<PaidOrder | null>(null);
   const threads = useInstructorThreadsList(slug ?? "");
   const account = slug ? getInstructorAccount(slug) : undefined;
 
@@ -102,6 +103,7 @@ function SchoolChatsList() {
   }, [slug, navigate]);
 
   const orders = useMemo(() => collectOrders(threads), [threads]);
+
 
   if (!slug || !account) return null;
 
