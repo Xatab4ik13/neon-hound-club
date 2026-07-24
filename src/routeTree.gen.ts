@@ -82,6 +82,7 @@ import { Route as BloggerChatsIndexRouteImport } from './routes/blogger.chats.in
 import { Route as ClubUNickRouteImport } from './routes/club.u.$nick'
 import { Route as ClubShopProductSlugRouteImport } from './routes/club.shop.$productSlug'
 import { Route as ClubSchoolInstructorIdRouteImport } from './routes/club.school.$instructorId'
+import { Route as ClubSchoolChatsChatIdRouteImport } from './routes/club.school-chats.$chatId'
 import { Route as ClubRafflesRaffleIdRouteImport } from './routes/club.raffles.$raffleId'
 import { Route as ClubPPostIdRouteImport } from './routes/club.p.$postId'
 import { Route as ClubOrdersOrderIdRouteImport } from './routes/club.orders.$orderId'
@@ -461,6 +462,11 @@ const ClubSchoolInstructorIdRoute = ClubSchoolInstructorIdRouteImport.update({
   path: '/school/$instructorId',
   getParentRoute: () => ClubRoute,
 } as any)
+const ClubSchoolChatsChatIdRoute = ClubSchoolChatsChatIdRouteImport.update({
+  id: '/school-chats/$chatId',
+  path: '/school-chats/$chatId',
+  getParentRoute: () => ClubRoute,
+} as any)
 const ClubRafflesRaffleIdRoute = ClubRafflesRaffleIdRouteImport.update({
   id: '/raffles/$raffleId',
   path: '/raffles/$raffleId',
@@ -601,6 +607,7 @@ export interface FileRoutesByFullPath {
   '/club/orders/$orderId': typeof ClubOrdersOrderIdRoute
   '/club/p/$postId': typeof ClubPPostIdRoute
   '/club/raffles/$raffleId': typeof ClubRafflesRaffleIdRoute
+  '/club/school-chats/$chatId': typeof ClubSchoolChatsChatIdRoute
   '/club/school/$instructorId': typeof ClubSchoolInstructorIdRoute
   '/club/shop/$productSlug': typeof ClubShopProductSlugRoute
   '/club/u/$nick': typeof ClubUNickRoute
@@ -686,6 +693,7 @@ export interface FileRoutesByTo {
   '/club/orders/$orderId': typeof ClubOrdersOrderIdRoute
   '/club/p/$postId': typeof ClubPPostIdRoute
   '/club/raffles/$raffleId': typeof ClubRafflesRaffleIdRoute
+  '/club/school-chats/$chatId': typeof ClubSchoolChatsChatIdRoute
   '/club/school/$instructorId': typeof ClubSchoolInstructorIdRoute
   '/club/shop/$productSlug': typeof ClubShopProductSlugRoute
   '/club/u/$nick': typeof ClubUNickRoute
@@ -775,6 +783,7 @@ export interface FileRoutesById {
   '/club/orders/$orderId': typeof ClubOrdersOrderIdRoute
   '/club/p/$postId': typeof ClubPPostIdRoute
   '/club/raffles/$raffleId': typeof ClubRafflesRaffleIdRoute
+  '/club/school-chats/$chatId': typeof ClubSchoolChatsChatIdRoute
   '/club/school/$instructorId': typeof ClubSchoolInstructorIdRoute
   '/club/shop/$productSlug': typeof ClubShopProductSlugRoute
   '/club/u/$nick': typeof ClubUNickRoute
@@ -865,6 +874,7 @@ export interface FileRouteTypes {
     | '/club/orders/$orderId'
     | '/club/p/$postId'
     | '/club/raffles/$raffleId'
+    | '/club/school-chats/$chatId'
     | '/club/school/$instructorId'
     | '/club/shop/$productSlug'
     | '/club/u/$nick'
@@ -950,6 +960,7 @@ export interface FileRouteTypes {
     | '/club/orders/$orderId'
     | '/club/p/$postId'
     | '/club/raffles/$raffleId'
+    | '/club/school-chats/$chatId'
     | '/club/school/$instructorId'
     | '/club/shop/$productSlug'
     | '/club/u/$nick'
@@ -1038,6 +1049,7 @@ export interface FileRouteTypes {
     | '/club/orders/$orderId'
     | '/club/p/$postId'
     | '/club/raffles/$raffleId'
+    | '/club/school-chats/$chatId'
     | '/club/school/$instructorId'
     | '/club/shop/$productSlug'
     | '/club/u/$nick'
@@ -1597,6 +1609,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ClubSchoolInstructorIdRouteImport
       parentRoute: typeof ClubRoute
     }
+    '/club/school-chats/$chatId': {
+      id: '/club/school-chats/$chatId'
+      path: '/school-chats/$chatId'
+      fullPath: '/club/school-chats/$chatId'
+      preLoaderRoute: typeof ClubSchoolChatsChatIdRouteImport
+      parentRoute: typeof ClubRoute
+    }
     '/club/raffles/$raffleId': {
       id: '/club/raffles/$raffleId'
       path: '/raffles/$raffleId'
@@ -1780,6 +1799,7 @@ interface ClubRouteChildren {
   ClubOrdersOrderIdRoute: typeof ClubOrdersOrderIdRoute
   ClubPPostIdRoute: typeof ClubPPostIdRoute
   ClubRafflesRaffleIdRoute: typeof ClubRafflesRaffleIdRoute
+  ClubSchoolChatsChatIdRoute: typeof ClubSchoolChatsChatIdRoute
   ClubSchoolInstructorIdRoute: typeof ClubSchoolInstructorIdRoute
   ClubShopProductSlugRoute: typeof ClubShopProductSlugRoute
   ClubUNickRoute: typeof ClubUNickRoute
@@ -1817,6 +1837,7 @@ const ClubRouteChildren: ClubRouteChildren = {
   ClubOrdersOrderIdRoute: ClubOrdersOrderIdRoute,
   ClubPPostIdRoute: ClubPPostIdRoute,
   ClubRafflesRaffleIdRoute: ClubRafflesRaffleIdRoute,
+  ClubSchoolChatsChatIdRoute: ClubSchoolChatsChatIdRoute,
   ClubSchoolInstructorIdRoute: ClubSchoolInstructorIdRoute,
   ClubShopProductSlugRoute: ClubShopProductSlugRoute,
   ClubUNickRoute: ClubUNickRoute,
