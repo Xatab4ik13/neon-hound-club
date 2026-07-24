@@ -10,7 +10,7 @@
  * платёж (status в new/pending/authorized). Карточный и СБП-платёжи на тот же
  * заказ — это разные мерчанты, поэтому хранятся параллельно.
  */
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { payments, type Payment, type PaymentMethod } from "../db/schema/payments.js";
 import { passPurchases } from "../db/schema/pass.js";
