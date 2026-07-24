@@ -1,5 +1,7 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect, useLayoutEffect, useRef } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { Header } from "@/components/brand/Header";
 import { Footer } from "@/components/brand/Footer";
 import { PlumpArrowLeft, PlumpArrowRight, PlumpMap, PlumpCamera } from "@/components/ui/icons";
@@ -12,7 +14,9 @@ import {
   type Slot,
 } from "@/data/instructors";
 import { loadYandexMaps } from "@/lib/yandex-maps";
-import { BookInstructorChatSheet } from "@/components/school/BookInstructorChatSheet";
+import { useViewer } from "@/hooks/use-viewer";
+import { openChatWith, schoolQk } from "@/lib/api-school";
+import { ApiError } from "@/lib/api";
 
 export const Route = createFileRoute("/school/$instructorId")({
   head: ({ params }) => {
