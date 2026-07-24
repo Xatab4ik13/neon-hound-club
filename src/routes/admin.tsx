@@ -24,6 +24,7 @@ import {
   Loader2,
   LifeBuoy,
   Newspaper,
+  Crown,
 } from "@/components/ui/icons";
 
 import { cn } from "@/lib/utils";
