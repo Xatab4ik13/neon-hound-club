@@ -2,10 +2,13 @@
 
 import {
   PlumpTicket,
-  Percent,
-  Sparkles,
-  Zap,
-  Infinity as InfinityIcon,
+  PlumpAI,
+  PlumpSticker,
+  PlumpStore,
+  PlumpComment,
+  PlumpGift,
+  PlumpMelt,
+  PlumpDiamond,
   type LucideIcon,
 } from "@/components/ui/icons";
 
@@ -61,14 +64,14 @@ const SILVER_GROUPS: { title: string; perks: Perk[] }[] = [
     title: "Hell AI и клуб",
     perks: [
       {
-        icon: Sparkles,
+        icon: PlumpAI,
         value: "15",
         label: "Hell AI-вопросов про твой мото в сутки",
         detail:
           "Hell AI знает твой байк из профиля. 15 вопросов в день — от «что за стук» до «какое масло». В 5 раз больше бесплатных 3/день.",
       },
       {
-        icon: Zap,
+        icon: PlumpMelt,
         value: "×1.25",
         label: "Буст XP клуба",
         detail:
@@ -77,10 +80,21 @@ const SILVER_GROUPS: { title: string; perks: Perk[] }[] = [
     ],
   },
   {
+    title: "Стикеры",
+    perks: [
+      {
+        icon: PlumpSticker,
+        label: "Все стикерпаки клуба — бесплатно",
+        detail:
+          "Полный доступ ко всем стикерпакам HELLHOUND, включая платные (Special, Hell Minions и все будущие). Действует, пока Silver активен.",
+      },
+    ],
+  },
+  {
     title: "Мерч",
     perks: [
       {
-        icon: Percent,
+        icon: PlumpStore,
         value: "5%",
         label: "Скидка на мерч HELLHOUND",
         detail:
@@ -110,7 +124,7 @@ const GOLD_GROUPS: { title: string; perks: Perk[] }[] = [
     title: "Hell AI и клуб",
     perks: [
       {
-        icon: Sparkles,
+        icon: PlumpAI,
         value: "40",
         accent: true,
         label: "Hell AI-вопросов про твой мото в сутки",
@@ -118,7 +132,7 @@ const GOLD_GROUPS: { title: string; perks: Perk[] }[] = [
           "40 запросов в день к Hell AI — этого хватает, чтобы прогнать диагностику по сезонным проблемам и держать байк в форме без визитов к дилеру.",
       },
       {
-        icon: Zap,
+        icon: PlumpMelt,
         value: "×1.5",
         accent: true,
         label: "Буст XP клуба",
@@ -131,7 +145,7 @@ const GOLD_GROUPS: { title: string; perks: Perk[] }[] = [
     title: "Мерч",
     perks: [
       {
-        icon: Percent,
+        icon: PlumpStore,
         value: "10%",
         accent: true,
         label: "Скидка на мерч HELLHOUND",
@@ -146,6 +160,18 @@ const GOLD_GROUPS: { title: string; perks: Perk[] }[] = [
 
 const PLATINUM_GROUPS: { title: string; perks: Perk[] }[] = [
   {
+    title: "VIP",
+    perks: [
+      {
+        icon: PlumpComment,
+        accent: true,
+        label: "VIP-чат с Hell",
+        detail:
+          "Прямой чат с Hell. Только для Platinum — маленький круг, никакого шума. Пиши свой вопрос — Hell отвечает лично.",
+      },
+    ],
+  },
+  {
     title: "Билеты и розыгрыши",
     perks: [
       {
@@ -157,7 +183,7 @@ const PLATINUM_GROUPS: { title: string; perks: Perk[] }[] = [
           "30 билетов каждый месяц. Самая выгодная пачка билетов в клубе.",
       },
       {
-        icon: Sparkles,
+        icon: PlumpGift,
         accent: true,
         label: "Закрытый Platinum-розыгрыш раз в месяц",
         detail:
@@ -169,7 +195,7 @@ const PLATINUM_GROUPS: { title: string; perks: Perk[] }[] = [
     title: "Hell AI и клуб",
     perks: [
       {
-        icon: InfinityIcon,
+        icon: PlumpAI,
         value: "∞",
         accent: true,
         label: "Hell AI без ограничений",
@@ -177,7 +203,7 @@ const PLATINUM_GROUPS: { title: string; perks: Perk[] }[] = [
           "Спрашивай Hell AI сколько надо — без лимита по количеству вопросов. Хоть каждый день перед выездом.",
       },
       {
-        icon: Zap,
+        icon: PlumpMelt,
         value: "×2.0",
         accent: true,
         label: "Буст XP клуба",
@@ -190,7 +216,7 @@ const PLATINUM_GROUPS: { title: string; perks: Perk[] }[] = [
     title: "Мерч",
     perks: [
       {
-        icon: Percent,
+        icon: PlumpStore,
         value: "15%",
         accent: true,
         label: "Скидка на мерч HELLHOUND",
@@ -213,8 +239,8 @@ export const TIERS: Tier[] = [
     id: "PASS-01-SILVER",
     name: "Silver",
     price: 490,
-    color: "#b8a48a",
-    tagline: "Вход в клуб. Билеты, Hell AI, скидка 5%.",
+    color: "#B6FF3C",
+    tagline: "Вход в клуб. Билеты, Hell AI, все стикерпаки бесплатно, скидка 5%.",
     forWhom:
       "Для тех, кто катает в удовольствие и хочет участвовать в розыгрышах без переплаты. Минимум обязательств — максимум выгоды против разовых покупок.",
     groups: SILVER_GROUPS,
@@ -225,9 +251,9 @@ export const TIERS: Tier[] = [
     id: "PASS-02-GOLD",
     name: "Gold",
     price: 1290,
-    color: "#ffb648",
+    color: "#FF8A3C",
     inheritsFrom: "Silver",
-    tagline: "Больше билетов и Hell AI-вопросов, скидка 10%.",
+    tagline: "Больше билетов и Hell AI-вопросов, скидка 10%. Все стикерпаки — с Silver.",
     forWhom:
       "Для активных райдеров и коллекционеров мерча. Если хоть раз пожалел, что не успел купить лимитку — Gold решает.",
     groups: GOLD_GROUPS,
@@ -238,12 +264,12 @@ export const TIERS: Tier[] = [
     slug: "platinum",
     id: "PASS-03-PLATINUM",
     name: "Platinum",
-    price: 2990,
-    color: "#e8e4d6",
+    price: 2190,
+    color: "#F000C0",
     inheritsFrom: "Gold",
-    tagline: "Hell AI без ограничений, закрытый розыгрыш раз в месяц, скидка 15%.",
+    tagline: "VIP-чат с Hell, Hell AI без лимита, закрытый розыгрыш, скидка 15%.",
     forWhom:
-      "Для тех, кто живёт мото и хочет быть в центре клуба. Самые крупные лоты и эксклюзивные розыгрыши только для Platinum.",
+      "Для тех, кто живёт мото и хочет быть в центре клуба. Прямой чат с Hell, самые крупные лоты и эксклюзивные розыгрыши только для Platinum.",
     groups: PLATINUM_GROUPS,
     perks: flat(PLATINUM_GROUPS),
     ultimate: true,
@@ -253,3 +279,10 @@ export const TIERS: Tier[] = [
 export function getTier(slug: string): Tier | undefined {
   return TIERS.find((t) => t.slug === slug);
 }
+
+// Иконка/шилд-значок тира для UI (совпадает с бейджами на профиле).
+export const TIER_BADGES: Record<Tier["slug"], string> = {
+  silver: "/__l5e/assets-v1/0fe73058-0694-4306-b3e9-a1154386a4fb/silver.png",
+  gold: "",
+  platinum: "",
+};
