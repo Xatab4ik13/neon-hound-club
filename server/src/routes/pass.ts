@@ -171,14 +171,14 @@ export async function adminPassRoutes(app: FastifyInstance) {
         ),
       );
 
-    // Выручка за 30 дней по Hell Pass — считаем по confirmed платежам с purpose='pass'.
+    // Выручка за 30 дней по Hell Pass — confirmed платежи с refType='pass'.
     const [revenue30d] = await db
       .select({ total: sql<number>`COALESCE(SUM(${payments.amountRub}), 0)::int` })
       .from(payments)
       .where(
         and(
           eq(payments.status, "confirmed"),
-          eq(payments.purpose, "pass"),
+          eq(payments.refType, "pass"),
           sql`${payments.updatedAt} >= ${d30}::timestamptz`,
         ),
       );
