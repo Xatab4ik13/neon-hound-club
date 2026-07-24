@@ -311,7 +311,7 @@ function OrderDetailsSheet({
             {inv.payerPhone && <DetailRow label="Телефон" value={inv.payerPhone} />}
             {inv.payerEmail && <DetailRow label="Email" value={inv.payerEmail} />}
             <DetailRow label="Занятие" value={formatLessonDate(inv.dateTime)} />
-            <DetailRow label="Длительность" value={`${inv.hours} ч`} />
+            <DetailRow label="Длительность" value={inv.duration} />
             {inv.description && <DetailRow label="Описание" value={inv.description} />}
             {inv.paidAt && (
               <DetailRow
