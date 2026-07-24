@@ -93,24 +93,106 @@ export async function passRoutes(app: FastifyInstance) {
 // ---------- ADMIN ----------
 
 const activateSchema = z.object({ purchaseId: z.string().uuid() });
+const revokeSchema = z.object({ purchaseId: z.string().uuid() });
 
 export async function adminPassRoutes(app: FastifyInstance) {
-  // GET /api/v1/admin/pass/list?status=...
+  // GET /api/v1/admin/pass/list?status=&tier=&q=&limit=
+  // Возвращает записи с прикреплённым nick/email юзера — для админского управления подписками.
   app.get("/list", { preHandler: requireAdmin }, async (req) => {
     const q = z
       .object({
         status: z.enum(["pending_payment", "active", "expired", "cancelled", "superseded"]).optional(),
-        limit: z.coerce.number().int().min(1).max(200).default(50),
+        tier: z.enum(PASS_TIERS).optional(),
+        q: z.string().trim().min(1).max(64).optional(),
+        limit: z.coerce.number().int().min(1).max(200).default(100),
       })
       .parse(req.query ?? {});
-    const where = q.status ? eq(passPurchases.status, q.status) : undefined;
+
+    const conds = [];
+    if (q.status) conds.push(eq(passPurchases.status, q.status));
+    if (q.tier) conds.push(eq(passPurchases.tier, q.tier));
+    if (q.q) {
+      const like = `%${q.q}%`;
+      conds.push(or(ilike(users.nick, like), ilike(users.email, like))!);
+    }
+
     const rows = await db
-      .select()
+      .select({
+        id: passPurchases.id,
+        userId: passPurchases.userId,
+        tier: passPurchases.tier,
+        priceRub: passPurchases.priceRub,
+        ticketsGranted: passPurchases.ticketsGranted,
+        status: passPurchases.status,
+        createdAt: passPurchases.createdAt,
+        paidAt: passPurchases.paidAt,
+        expiresAt: passPurchases.expiresAt,
+        nick: users.nick,
+        email: users.email,
+        avatarUrl: users.avatarUrl,
+      })
       .from(passPurchases)
-      .where(where ?? (undefined as any))
+      .innerJoin(users, eq(users.id, passPurchases.userId))
+      .where(conds.length ? and(...conds) : (undefined as any))
       .orderBy(desc(passPurchases.createdAt))
       .limit(q.limit);
     return { items: rows };
+  });
+
+  // GET /api/v1/admin/pass/stats — сводка для карточек в админке.
+  app.get("/stats", { preHandler: requireAdmin }, async () => {
+    const nowMs = Date.now();
+    const now = new Date(nowMs).toISOString();
+    const d30 = new Date(nowMs - 30 * 24 * 60 * 60 * 1000).toISOString();
+    const d7next = new Date(nowMs + 7 * 24 * 60 * 60 * 1000).toISOString();
+
+    const activeByTier = await db
+      .select({
+        tier: passPurchases.tier,
+        c: sql<number>`COUNT(*)::int`,
+      })
+      .from(passPurchases)
+      .where(and(eq(passPurchases.status, "active"), sql`${passPurchases.expiresAt} >= ${now}::timestamptz`))
+      .groupBy(passPurchases.tier);
+
+    const [pending] = await db
+      .select({ c: sql<number>`COUNT(*)::int` })
+      .from(passPurchases)
+      .where(eq(passPurchases.status, "pending_payment"));
+
+    const [expiring7] = await db
+      .select({ c: sql<number>`COUNT(*)::int` })
+      .from(passPurchases)
+      .where(
+        and(
+          eq(passPurchases.status, "active"),
+          sql`${passPurchases.expiresAt} >= ${now}::timestamptz`,
+          sql`${passPurchases.expiresAt} < ${d7next}::timestamptz`,
+        ),
+      );
+
+    // Выручка за 30 дней по Hell Pass — считаем по confirmed платежам с purpose='pass'.
+    const [revenue30d] = await db
+      .select({ total: sql<number>`COALESCE(SUM(${payments.amountRub}), 0)::int` })
+      .from(payments)
+      .where(
+        and(
+          eq(payments.status, "confirmed"),
+          eq(payments.purpose, "pass"),
+          sql`${payments.updatedAt} >= ${d30}::timestamptz`,
+        ),
+      );
+
+    const byTier: Record<string, number> = { silver: 0, gold: 0, platinum: 0 };
+    for (const r of activeByTier) byTier[r.tier as string] = r.c;
+
+    return {
+      activeByTier: byTier,
+      activeTotal: byTier.silver + byTier.gold + byTier.platinum,
+      pendingCount: pending?.c ?? 0,
+      expiringWithin7d: expiring7?.c ?? 0,
+      revenue30dRub: revenue30d?.total ?? 0,
+    };
   });
 
   // POST /api/v1/admin/pass/activate — активировать вручную (или вебхук оплаты)
@@ -122,6 +204,17 @@ export async function adminPassRoutes(app: FastifyInstance) {
     const r = await activatePassPurchase(parsed.data.purchaseId);
     if (!r.ok) return reply.code(400).send({ error: r.reason });
     const [updated] = await db.select().from(passPurchases).where(eq(passPurchases.id, parsed.data.purchaseId)).limit(1);
+    return { ok: true, purchase: updated };
+  });
+
+  // POST /api/v1/admin/pass/revoke — принудительно закрыть пасс (active -> expired, pending -> cancelled).
+  app.post("/revoke", { preHandler: requireAdmin }, async (req, reply) => {
+    const parsed = revokeSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return reply.code(400).send({ error: "invalid_input", message: parsed.error.issues[0]?.message });
+    }
+    const updated = await revokePass(parsed.data.purchaseId);
+    if (!updated) return reply.code(404).send({ error: "not_found" });
     return { ok: true, purchase: updated };
   });
 
