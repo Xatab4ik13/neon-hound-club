@@ -1,8 +1,10 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq, ilike, or, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { passPurchases, PASS_CONFIG, PASS_DURATION_DAYS, PASS_TIERS } from "../db/schema/pass.js";
+import { users } from "../db/schema/users.js";
+import { payments } from "../db/schema/payments.js";
 import { requireAuth, requireAdmin, type SessionPayload } from "../lib/auth.js";
 import {
   activatePassPurchase,
@@ -11,6 +13,7 @@ import {
   getActivePass,
   getPassHistory,
   PassPurchaseError,
+  revokePass,
 } from "../lib/pass.js";
 import { createPaymentForPass, PaymentInitError } from "../lib/payments.js";
 import { isRaifConfigured } from "../lib/raif.js";
