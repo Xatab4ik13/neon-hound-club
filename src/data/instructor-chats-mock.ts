@@ -14,7 +14,7 @@ export type InvoiceStatus = "pending" | "paid";
 
 export type InvoicePayload = {
   id: string;
-  hours: number;
+  duration: string;
   description: string;
   /** ISO-строка даты/времени занятия. */
   dateTime: string;
@@ -223,7 +223,7 @@ export function sendInstructorInvoice(
   instructorSlug: string,
   studentUserId: string,
   studentNick: string,
-  data: { hours: number; description: string; dateTime: string; amount: number },
+  data: { duration: string; description: string; dateTime: string; amount: number },
 ) {
   const k = threadKey(instructorSlug, studentUserId);
   const id = `${k}_inv_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
@@ -233,7 +233,7 @@ export function sendInstructorInvoice(
     createdAt: Date.now(),
     invoice: {
       id,
-      hours: data.hours,
+      duration: data.duration,
       description: data.description,
       dateTime: data.dateTime,
       amount: data.amount,

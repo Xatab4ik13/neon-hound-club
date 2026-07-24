@@ -57,7 +57,7 @@ function MyInstructorChatRoom() {
         day.setDate(day.getDate() + 2);
         day.setHours(11, 0, 0, 0);
         sendInstructorInvoice(instructor.slug, student.userId, student.nick, {
-          hours: 2,
+          duration: "2 часа",
           description: "Первое занятие — базовая посадка, старт, торможение.",
           dateTime: day.toISOString(),
           amount: 4000,

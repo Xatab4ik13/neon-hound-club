@@ -7,7 +7,7 @@ import { IOSDateSheet } from "@/components/ios/IOSDateSheet";
 import { IOSTimeSheet } from "@/components/ios/IOSTimeSheet";
 
 export type InvoiceDraft = {
-  hours: number;
+  duration: string;
   description: string;
   dateTime: string;
   amount: number;
@@ -49,7 +49,7 @@ export function InvoiceComposer({
   onOpenChange: (v: boolean) => void;
   onSubmit: (draft: InvoiceDraft) => void;
 }) {
-  const [hours, setHours] = useState("1");
+  const [duration, setDuration] = useState("1 час");
   const [description, setDescription] = useState("");
   const [date, setDate] = useState(defaultDateISO());
   const [time, setTime] = useState("10:00");
@@ -57,12 +57,10 @@ export function InvoiceComposer({
   const [dateOpen, setDateOpen] = useState(false);
   const [timeOpen, setTimeOpen] = useState(false);
 
-  const h = Number(hours.replace(",", "."));
   const a = Number(amount);
   const valid =
-    Number.isFinite(h) &&
-    h > 0 &&
-    h <= 24 &&
+    duration.trim().length > 0 &&
+    duration.trim().length <= 40 &&
     description.trim().length > 0 &&
     description.trim().length <= 300 &&
     /^\d{4}-\d{2}-\d{2}$/.test(date) &&
@@ -79,7 +77,7 @@ export function InvoiceComposer({
   }, [date, time]);
 
   const reset = () => {
-    setHours("1");
+    setDuration("1 час");
     setDescription("");
     setDate(defaultDateISO());
     setTime("10:00");
@@ -109,7 +107,7 @@ export function InvoiceComposer({
             if (!valid) return;
             haptic("light");
             onSubmit({
-              hours: h,
+              duration: duration.trim(),
               description: description.trim(),
               dateTime: combinedISO,
               amount: Math.round(a),
@@ -119,13 +117,12 @@ export function InvoiceComposer({
           }}
           className="flex flex-col gap-4"
         >
-          <Field label="Длительность (часы)">
+          <Field label="Длительность">
             <input
               type="text"
-              value={hours}
-              onChange={(e) => setHours(e.target.value.replace(/[^\d.,]/g, "").slice(0, 5))}
-              inputMode="decimal"
-              placeholder="1"
+              value={duration}
+              onChange={(e) => setDuration(e.target.value.slice(0, 40))}
+              placeholder="Например: 1 час, 2 часа, 1 день"
               className={inputCls}
             />
           </Field>
