@@ -325,13 +325,13 @@ function UserView({ user }: { user: ProfileView }) {
                 </span>
               )}
             </div>
-            <div className="relative h-3 overflow-hidden border-2 border-black bg-black/60">
+            <div className="relative h-2 overflow-hidden rounded-full border border-white/[0.08] bg-[oklch(0.18_0.02_357.3)]">
               <div
-                className="absolute inset-y-0 left-0"
+                className="absolute inset-y-0 left-0 rounded-full transition-[width] duration-500 ease-out"
                 style={{
                   width: `${user.xpPct}%`,
-                  backgroundColor: rank.accent,
-                  boxShadow: `0 0 10px ${rank.accentSoft}`,
+                  background: `linear-gradient(90deg, color-mix(in oklab, ${rank.accent}, #000 25%) 0%, ${rank.accent} 100%)`,
+                  boxShadow: `0 0 12px ${rank.accentSoft}`,
                 }}
               />
             </div>
