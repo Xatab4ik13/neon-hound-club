@@ -209,7 +209,7 @@ function UserView({ user }: { user: ProfileView }) {
           </h1>
 
           <span
-            className="mt-2 inline-flex items-center border-2 border-black bg-black/40 px-2.5 py-1 font-mono text-[10px] font-black uppercase tracking-wider"
+            className="mt-2 inline-flex items-center rounded-full border-2 border-black bg-black/40 px-3 py-1 font-mono text-[10px] font-black uppercase tracking-wider"
             style={{
               color: rank.accent,
               borderColor: rank.accent,
