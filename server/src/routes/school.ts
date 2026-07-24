@@ -79,12 +79,17 @@ export async function schoolRoutes(app: FastifyInstance) {
         experience: schoolInstructors.experience,
         tagline: schoolInstructors.tagline,
         profile: schoolInstructors.profile,
-        // Публично видна цена ученика — с наценкой.
-        hourlyPriceRub: sql<number>`ceil(${schoolInstructors.hourlyRateRub} * (1 + ${SCHOOL_COMMISSION_RATE}))`,
+        hourlyRateRub: schoolInstructors.hourlyRateRub,
       })
       .from(schoolInstructors)
       .where(eq(schoolInstructors.active, true));
-    return { items: rows };
+    // Наценку считаем в JS, чтобы не тянуть numeric в SQL и не ловить cast integer<->0.2.
+    return {
+      items: rows.map((r) => ({
+        ...r,
+        hourlyPriceRub: Math.ceil(r.hourlyRateRub * (1 + SCHOOL_COMMISSION_RATE)),
+      })),
+    };
   });
 
   app.get("/instructors/:slug", async (req, reply) => {

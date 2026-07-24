@@ -3,7 +3,9 @@
 // и hard-shadow, magenta (Hell) + салатовый (мой), закреплённый композер
 // над таб-баром без скролла.
 
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Navigate } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { fetchPassMe, qk } from "@/lib/queries";
 import {
   useEffect,
   useMemo,
@@ -38,8 +40,17 @@ export const Route = createFileRoute("/club/vip-chat")({
       { name: "robots", content: "noindex" },
     ],
   }),
-  component: VipChatPage,
+  component: VipChatGate,
 });
+
+function VipChatGate() {
+  // Гейт: VIP-чат — только для активного Platinum-паса.
+  const passQ = useQuery({ queryKey: qk.passMe, queryFn: fetchPassMe, staleTime: 30_000, retry: false });
+  if (passQ.isLoading) return <div className="min-h-dvh" />;
+  const tier = passQ.data?.active?.tier ?? null;
+  if (tier !== "platinum") return <Navigate to="/club/hell-pass" replace />;
+  return <VipChatPage />;
+}
 
 type Attachment = { url: string; file: File };
 
@@ -91,6 +102,8 @@ function formatDay(ts: number) {
 }
 
 function VipChatPage() {
+
+
   const [messages, setMessages] = useState<Msg[]>(INITIAL_MESSAGES);
   const [text, setText] = useState("");
   const [pending, setPending] = useState<Attachment | null>(null);
