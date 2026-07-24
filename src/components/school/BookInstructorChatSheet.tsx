@@ -95,9 +95,8 @@ export function BookInstructorChatSheet({
                 sendInstructorChatMessage(
                   instructorSlug,
                   student.userId,
-                  student.nick,
-                  { text },
                   "student",
+                  text,
                 )
               }
             />

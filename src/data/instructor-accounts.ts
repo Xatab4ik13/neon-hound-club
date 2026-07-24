@@ -1,38 +1,33 @@
-// Аккаунты инструкторов (мок). 5 персональных: Станислав, Семён, Никита, Паша, Хайкс.
-// Пока роль `instructor` не заведена в бэке — переключаемся через
-// localStorage-моковый флаг (см. `use-instructor-mock-role`).
-
-import { INSTRUCTORS } from "./instructors";
+// Мок-список аккаунтов инструкторов для админ-панели «Школа».
+// Реальные данные придут в Phase 3, когда админка переедет на API.
 
 export type InstructorAccount = {
   slug: string;
   name: string;
-  photo: string;
   city: string;
+  photo: string;
 };
 
-export const INSTRUCTOR_ACCOUNTS: InstructorAccount[] = INSTRUCTORS.map((i) => ({
-  slug: i.slug,
-  name: i.name,
-  photo: i.photo,
-  city: i.city,
-}));
-
-export function getInstructorAccount(slug: string): InstructorAccount | undefined {
-  return INSTRUCTOR_ACCOUNTS.find((a) => a.slug === slug);
-}
-
-export type MockStudent = { userId: string; nick: string };
-
-// Мок-подписчики, которые пишут инструкторам.
-export const MOCK_STUDENTS: MockStudent[] = [
-  { userId: "u_max", nick: "MAX_RIDER" },
-  { userId: "u_arty", nick: "ARTY_MOTO" },
-  { userId: "u_dima", nick: "DIMA_KRD" },
-  { userId: "u_lena", nick: "LENA_STREETS" },
-  { userId: "u_slon", nick: "SLON_666" },
+export const INSTRUCTOR_ACCOUNTS: InstructorAccount[] = [
+  {
+    slug: "maison",
+    name: "Мэйсон",
+    city: "Москва",
+    photo:
+      "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200&h=200&fit=crop&crop=faces",
+  },
+  {
+    slug: "gonza",
+    name: "Гонза",
+    city: "Санкт-Петербург",
+    photo:
+      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&h=200&fit=crop&crop=faces",
+  },
+  {
+    slug: "vovan",
+    name: "Вован",
+    city: "Казань",
+    photo:
+      "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=200&h=200&fit=crop&crop=faces",
+  },
 ];
-
-export function getMockStudent(userId: string): MockStudent | undefined {
-  return MOCK_STUDENTS.find((s) => s.userId === userId);
-}

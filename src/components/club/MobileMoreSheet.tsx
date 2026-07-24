@@ -22,11 +22,7 @@ import { useCart } from "@/hooks/use-cart";
 import { useViewer } from "@/hooks/use-viewer";
 import { IOSConfirm } from "@/components/ios/IOSConfirm";
 import { isStandalonePWA } from "@/lib/is-pwa";
-import {
-  setMockInstructorRole,
-  useMockInstructorRole,
-} from "@/hooks/use-instructor-mock-role";
-import { INSTRUCTOR_ACCOUNTS } from "@/data/instructor-accounts";
+import { useIsInstructor } from "@/hooks/use-is-instructor";
 
 type Item = {
   label: string;
@@ -111,8 +107,8 @@ export function MobileMoreSheet({
   const { signOut } = useViewer();
   const [isPwa, setIsPwa] = useState(false);
   useEffect(() => setIsPwa(isStandalonePWA()), []);
-  const mockInstructor = useMockInstructorRole();
-  const GROUPS = buildGroups(cartCount, isPwa, Boolean(mockInstructor));
+  const { isInstructor } = useIsInstructor();
+  const GROUPS = buildGroups(cartCount, isPwa, isInstructor);
   const [confirmLogout, setConfirmLogout] = useState(false);
 
   const doLogout = async () => {
@@ -221,51 +217,6 @@ export function MobileMoreSheet({
               </ul>
             </section>
 
-            <section className="mb-2">
-              <h3 className="mb-1.5 px-2 font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
-                Dev · Роль инструктора (мок)
-              </h3>
-              <div className="overflow-hidden rounded-2xl border border-white/[0.06] bg-card/40">
-                <div className="flex flex-wrap gap-2 p-3">
-                  <button
-                    type="button"
-                    onClick={() => setMockInstructorRole(null)}
-                    className={`rounded-full border px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-widest transition-colors ${
-                      !mockInstructor
-                        ? "border-primary bg-primary text-primary-foreground"
-                        : "border-white/[0.12] text-muted-foreground"
-                    }`}
-                  >
-                    Обычный
-                  </button>
-                  {INSTRUCTOR_ACCOUNTS.map((acc) => (
-                    <button
-                      key={acc.slug}
-                      type="button"
-                      onClick={() => setMockInstructorRole(acc.slug)}
-                      className={`rounded-full border px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-widest transition-colors ${
-                        mockInstructor === acc.slug
-                          ? "border-primary bg-primary text-primary-foreground"
-                          : "border-white/[0.12] text-muted-foreground"
-                      }`}
-                    >
-                      {acc.name}
-                    </button>
-                  ))}
-                </div>
-                <div className="border-t border-white/[0.06] p-3">
-                  <a
-                    href="/club/u/maison?preview=hellpass"
-                    onClick={close}
-                    className="flex w-full items-center justify-center rounded-full border border-white/[0.12] px-3 py-2 font-mono text-[10px] font-bold uppercase tracking-widest text-foreground transition-colors active:bg-white/[0.04]"
-                  >
-                    Профиль · превью Hell Pass значков
-                  </a>
-
-                </div>
-              </div>
-
-            </section>
           </div>
         </Drawer.Content>
       </Drawer.Portal>

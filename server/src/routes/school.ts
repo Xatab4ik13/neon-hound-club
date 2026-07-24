@@ -235,7 +235,7 @@ export async function schoolRoutes(app: FastifyInstance) {
       void pushToUsers([recipientUserId], {
         title,
         body: preview.slice(0, 120),
-        url: chat.role === "student" ? `/club/school-chats/${chat.chat.studentId}` : `/club/my-instructors/${chat.instructorId}`,
+        url: chat.role === "student" ? `/club/school-chats/${chatId}` : `/club/my-instructors/${chatId}`,
         tag: `school-chat-${chatId}`,
       });
     }
@@ -380,7 +380,7 @@ export async function schoolInstructorRoutes(app: FastifyInstance) {
     void pushToUsers([chat.studentId], {
       title: `Инструктор ${instr.displayName}`,
       body: `Счёт: ${body.data.title} — ${amounts.studentAmountRub}₽`,
-      url: `/club/school-chats/${chat.id}`,
+      url: `/club/my-instructors/${chat.id}`,
       tag: `school-order-${created!.id}`,
     });
 

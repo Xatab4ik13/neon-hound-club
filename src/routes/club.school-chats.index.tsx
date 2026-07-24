@@ -1,22 +1,26 @@
-// Список чатов инструктора + таб «Заказы» с оплаченными счетами и суммой
-// заработка. Выплаты еженедельные, поэтому считаем «за неделю» и «всего».
+// Список чатов инструктора + таб «Заказы» с выставленными счетами.
+// Реальный API `/api/v1/instructor/{me,chats,orders}`.
 
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useMemo, useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
-import { useMockInstructorRole } from "@/hooks/use-instructor-mock-role";
-import { getInstructorAccount } from "@/data/instructor-accounts";
+import { ApiError } from "@/lib/api";
+import { useViewer } from "@/hooks/use-viewer";
+import { useIsInstructor } from "@/hooks/use-is-instructor";
+import {
+  fetchInstructorChats,
+  fetchInstructorOrders,
+  schoolQk,
+  type InstructorChatRow,
+  type InstructorOrderRow,
+} from "@/lib/api-school";
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import {
-  useInstructorThreadsList,
-  type InstructorThread,
-  type InvoicePayload,
-} from "@/data/instructor-chats-mock";
 
 export const Route = createFileRoute("/club/school-chats/")({
   head: () => ({
@@ -29,8 +33,9 @@ export const Route = createFileRoute("/club/school-chats/")({
   component: SchoolChatsList,
 });
 
-function formatWhen(ts: number): string {
-  const d = new Date(ts);
+function formatWhen(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
   const now = new Date();
   const same = d.toDateString() === now.toDateString();
   if (same) return d.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
@@ -42,39 +47,8 @@ function formatWhen(ts: number): string {
   return d.toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit" });
 }
 
-function Avatar({ nick }: { nick: string }) {
-  const initial = nick.slice(0, 1).toUpperCase();
-  return (
-    <div className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-gradient-to-br from-primary/70 to-primary/30 font-display text-lg font-black uppercase tracking-tight text-black">
-      {initial}
-    </div>
-  );
-}
-
-type PaidOrder = {
-  invoice: InvoicePayload;
-  studentNick: string;
-  studentUserId: string;
-};
-
-function collectOrders(threads: InstructorThread[]): PaidOrder[] {
-  const out: PaidOrder[] = [];
-  for (const t of threads) {
-    for (const m of t.messages) {
-      if (m.invoice) {
-        out.push({
-          invoice: m.invoice,
-          studentNick: t.studentNick,
-          studentUserId: t.studentUserId,
-        });
-      }
-    }
-  }
-  out.sort((a, b) => (b.invoice.paidAt ?? 0) - (a.invoice.paidAt ?? 0));
-  return out;
-}
-
-function formatLessonDate(iso: string): string {
+function formatLessonDate(iso: string | null): string {
+  if (!iso) return "";
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "";
   return d.toLocaleString("ru-RU", {
@@ -90,22 +64,69 @@ function formatRub(n: number): string {
   return new Intl.NumberFormat("ru-RU").format(n) + " ₽";
 }
 
+function Avatar({ nick }: { nick: string }) {
+  const initial = nick.slice(0, 1).toUpperCase();
+  return (
+    <div className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-gradient-to-br from-primary/70 to-primary/30 font-display text-lg font-black uppercase tracking-tight text-black">
+      {initial}
+    </div>
+  );
+}
+
 function SchoolChatsList() {
-  const slug = useMockInstructorRole();
+  const viewer = useViewer();
+  const instr = useIsInstructor();
   const navigate = useNavigate();
   const [tab, setTab] = useState<"chats" | "orders">("chats");
-  const [details, setDetails] = useState<PaidOrder | null>(null);
-  const threads = useInstructorThreadsList(slug ?? "");
-  const account = slug ? getInstructorAccount(slug) : undefined;
+  const [details, setDetails] = useState<InstructorOrderRow | null>(null);
 
   useEffect(() => {
-    if (!slug) navigate({ to: "/club", replace: true });
-  }, [slug, navigate]);
+    if (viewer.hydrated && !viewer.user) {
+      navigate({ to: "/login", replace: true });
+      return;
+    }
+    if (instr.hydrated && viewer.user && !instr.isInstructor) {
+      navigate({ to: "/club", replace: true });
+    }
+  }, [viewer.hydrated, viewer.user, instr.hydrated, instr.isInstructor, navigate]);
 
-  const orders = useMemo(() => collectOrders(threads), [threads]);
+  const chatsQ = useQuery({
+    queryKey: schoolQk.instructorChats,
+    queryFn: fetchInstructorChats,
+    enabled: !!viewer.user && instr.isInstructor,
+    refetchInterval: 30_000,
+    retry: (count, err) => {
+      if (err instanceof ApiError && (err.status === 403 || err.status === 404)) return false;
+      return count < 2;
+    },
+  });
 
+  const ordersQ = useQuery({
+    queryKey: schoolQk.instructorOrders,
+    queryFn: fetchInstructorOrders,
+    enabled: !!viewer.user && instr.isInstructor && tab === "orders",
+    retry: (count, err) => {
+      if (err instanceof ApiError && (err.status === 403 || err.status === 404)) return false;
+      return count < 2;
+    },
+  });
 
-  if (!slug || !account) return null;
+  const chats: InstructorChatRow[] = chatsQ.data?.items ?? [];
+  const orders: InstructorOrderRow[] = useMemo(
+    () =>
+      (ordersQ.data?.items ?? [])
+        .filter((o) => o.status !== "cancelled")
+        .sort((a, b) => {
+          const at = a.paidAt ?? a.createdAt;
+          const bt = b.paidAt ?? b.createdAt;
+          return new Date(bt).getTime() - new Date(at).getTime();
+        }),
+    [ordersQ.data],
+  );
+
+  if (!instr.hydrated || (viewer.user && !instr.isInstructor && !instr.hydrated)) {
+    return null;
+  }
 
   return (
     <div className="min-h-full bg-[#0a0a0a] pb-4">
@@ -116,7 +137,6 @@ function SchoolChatsList() {
           </h1>
         </div>
 
-        {/* Tumbler */}
         <div className="px-4 pb-3">
           <div className="flex rounded-2xl border border-white/[0.08] bg-black/60 p-1">
             <button
@@ -124,9 +144,7 @@ function SchoolChatsList() {
               onClick={() => setTab("chats")}
               className={cn(
                 "flex-1 rounded-xl px-3 py-2 font-display text-[13px] font-black uppercase tracking-tight transition-colors",
-                tab === "chats"
-                  ? "bg-primary text-black"
-                  : "text-muted-foreground",
+                tab === "chats" ? "bg-primary text-black" : "text-muted-foreground",
               )}
             >
               Чаты
@@ -136,9 +154,7 @@ function SchoolChatsList() {
               onClick={() => setTab("orders")}
               className={cn(
                 "flex-1 rounded-xl px-3 py-2 font-display text-[13px] font-black uppercase tracking-tight transition-colors",
-                tab === "orders"
-                  ? "bg-[#B6FF3C] text-black"
-                  : "text-muted-foreground",
+                tab === "orders" ? "bg-[#B6FF3C] text-black" : "text-muted-foreground",
               )}
             >
               Заказы
@@ -148,42 +164,49 @@ function SchoolChatsList() {
 
         {tab === "chats" && (
           <ul className="divide-y divide-white/[0.06] border-y border-white/[0.06] bg-black/40">
-            {threads.length === 0 && (
+            {chatsQ.isLoading && (
+              <li className="px-4 py-10 text-center text-[13px] text-muted-foreground">
+                Загрузка…
+              </li>
+            )}
+            {!chatsQ.isLoading && chats.length === 0 && (
               <li className="px-4 py-10 text-center text-[13px] text-muted-foreground">
                 Пока нет чатов
               </li>
             )}
-            {threads.map((t) => {
-              const last = t.messages.at(-1);
-              const isMine = last?.senderRole === "instructor";
+            {chats.map((c) => {
+              const isMine = c.lastMessageRole === "instructor";
               return (
-                <li key={t.studentUserId}>
+                <li key={c.id}>
                   <Link
-                    to="/club/school-chats/$studentId"
-                    params={{ studentId: t.studentUserId }}
+                    to="/club/school-chats/$chatId"
+                    params={{ chatId: c.id }}
                     className="flex items-center gap-3 px-4 py-3 transition-colors active:bg-white/[0.04]"
                   >
-                    <Avatar nick={t.studentNick} />
+                    <Avatar nick={c.studentNick} />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
                         <span className="truncate font-display text-[15px] font-black uppercase tracking-tight text-foreground">
-                          {t.studentNick}
+                          {c.studentNick}
                         </span>
                         <span className="ml-auto shrink-0 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-                          {last ? formatWhen(last.createdAt) : ""}
+                          {formatWhen(c.lastMessageAt)}
                         </span>
                       </div>
-                      <div className="mt-0.5">
+                      <div className="mt-0.5 flex items-center gap-2">
                         <span
                           className={cn(
-                            "truncate text-[13px] block",
+                            "truncate text-[13px]",
                             isMine ? "text-muted-foreground" : "text-foreground/80",
                           )}
                         >
-                          {last?.invoice
-                            ? `Счёт · ${formatRub(last.invoice.amount)}`
-                            : (last?.text ?? "…")}
+                          {c.lastMessagePreview || "…"}
                         </span>
+                        {c.unread > 0 && (
+                          <span className="ml-auto grid h-5 min-w-[20px] shrink-0 place-items-center rounded-full bg-primary px-1.5 font-mono text-[10px] font-bold leading-none text-primary-foreground">
+                            {c.unread > 99 ? "99+" : c.unread}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </Link>
@@ -195,21 +218,25 @@ function SchoolChatsList() {
 
         {tab === "orders" && (
           <ul className="divide-y divide-white/[0.06] border-y border-white/[0.06] bg-black/40">
-            {orders.length === 0 && (
+            {ordersQ.isLoading && (
+              <li className="px-4 py-10 text-center text-[13px] text-muted-foreground">
+                Загрузка…
+              </li>
+            )}
+            {!ordersQ.isLoading && orders.length === 0 && (
               <li className="px-4 py-10 text-center text-[13px] text-muted-foreground">
                 Заказов пока нет
               </li>
             )}
             {orders.map((o) => {
-              const paid = o.invoice.status === "paid";
-              const who = o.invoice.payerName?.trim() || o.studentNick;
-              const commonInner = (
+              const paid = o.status === "paid";
+              const inner = (
                 <>
-                  <Avatar nick={who} />
+                  <Avatar nick={o.studentNick} />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <span className="truncate font-display text-[15px] font-black uppercase tracking-tight text-foreground">
-                        {who}
+                        {o.studentNick}
                       </span>
                       <span
                         className={cn(
@@ -217,7 +244,7 @@ function SchoolChatsList() {
                           paid ? "text-[#B6FF3C]" : "text-muted-foreground",
                         )}
                       >
-                        {formatRub(o.invoice.amount)}
+                        {formatRub(o.amountRub)}
                       </span>
                     </div>
                     <div className="mt-1 flex items-center gap-2">
@@ -232,29 +259,29 @@ function SchoolChatsList() {
                         {paid ? "Оплачено" : "Ожидает оплаты"}
                       </span>
                       <span className="ml-auto shrink-0 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-                        {formatLessonDate(o.invoice.dateTime)}
+                        {formatLessonDate(o.scheduledAt ?? o.createdAt)}
                       </span>
                     </div>
                   </div>
                 </>
               );
               return (
-                <li key={o.invoice.id}>
+                <li key={o.id}>
                   {paid ? (
                     <button
                       type="button"
                       onClick={() => setDetails(o)}
                       className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors active:bg-white/[0.04]"
                     >
-                      {commonInner}
+                      {inner}
                     </button>
                   ) : (
                     <Link
-                      to="/club/school-chats/$studentId"
-                      params={{ studentId: o.studentUserId }}
+                      to="/club/school-chats/$chatId"
+                      params={{ chatId: o.chatId }}
                       className="flex items-center gap-3 px-4 py-3 transition-colors active:bg-white/[0.04]"
                     >
-                      {commonInner}
+                      {inner}
                     </Link>
                   )}
                 </li>
@@ -278,10 +305,9 @@ function OrderDetailsSheet({
   order,
   onOpenChange,
 }: {
-  order: PaidOrder | null;
+  order: InstructorOrderRow | null;
   onOpenChange: (v: boolean) => void;
 }) {
-  const inv = order?.invoice;
   return (
     <Sheet open={!!order} onOpenChange={onOpenChange}>
       <SheetContent
@@ -290,45 +316,36 @@ function OrderDetailsSheet({
       >
         <SheetHeader className="mb-4 text-left">
           <SheetTitle className="font-display text-lg font-black uppercase tracking-tight text-foreground">
-            Заказ · {inv ? formatRub(inv.amount) : ""}
+            Заказ · {order ? formatRub(order.amountRub) : ""}
           </SheetTitle>
         </SheetHeader>
-        {inv && (
+        {order && (
           <div className="flex flex-col gap-3">
             <div className="rounded-2xl border border-[#B6FF3C]/30 bg-[#B6FF3C]/10 p-4">
               <div className="font-mono text-[10px] font-bold uppercase tracking-widest text-[#B6FF3C]">
                 Оплачено
               </div>
               <div className="mt-1 font-display text-[28px] font-black leading-none tracking-tight text-foreground">
-                {formatRub(inv.amount)}
+                {formatRub(order.amountRub)}
               </div>
               <div className="mt-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                Сумма без комиссии платформы
+                Твоя сумма без комиссии платформы
               </div>
             </div>
 
-            <DetailRow label="Ученик" value={inv.payerName?.trim() || order.studentNick} />
-            {inv.payerPhone && <DetailRow label="Телефон" value={inv.payerPhone} />}
-            {inv.payerEmail && <DetailRow label="Email" value={inv.payerEmail} />}
-            <DetailRow label="Занятие" value={formatLessonDate(inv.dateTime)} />
-            <DetailRow label="Длительность" value={inv.duration} />
-            {inv.description && <DetailRow label="Описание" value={inv.description} />}
-            {inv.paidAt && (
-              <DetailRow
-                label="Оплачено"
-                value={new Date(inv.paidAt).toLocaleString("ru-RU", {
-                  day: "2-digit",
-                  month: "2-digit",
-                  year: "2-digit",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              />
+            <DetailRow label="Ученик" value={order.studentNick} />
+            <DetailRow label="Занятие" value={order.title} />
+            {order.description && <DetailRow label="Описание" value={order.description} />}
+            {order.scheduledAt && (
+              <DetailRow label="Дата" value={formatLessonDate(order.scheduledAt)} />
+            )}
+            {order.paidAt && (
+              <DetailRow label="Оплачено" value={formatLessonDate(order.paidAt)} />
             )}
 
             <Link
-              to="/club/school-chats/$studentId"
-              params={{ studentId: order.studentUserId }}
+              to="/club/school-chats/$chatId"
+              params={{ chatId: order.chatId }}
               onClick={() => onOpenChange(false)}
               className="mt-2 rounded-2xl border border-white/10 bg-black/50 px-5 py-3 text-center font-display text-[13px] font-black uppercase tracking-tight text-foreground/80 transition-transform active:scale-95"
             >

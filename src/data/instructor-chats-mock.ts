@@ -1,319 +1,134 @@
-// Мок-стор переписок «инструктор ↔ ученик». Хранится в localStorage,
-// поэтому сообщения не пропадают при перезагрузке — можно писать инструктору
-// со стороны юзера и увидеть их же в списке чатов, переключившись в
-// режим инструктора (см. `use-instructor-mock-role`).
-//
-// Никакого бэка тут нет — временный слой, пока не подключим VIP-чат для инструкторов.
+// Мок-хранилище чатов «инструктор ↔ ученик» в localStorage.
+// Остаётся живым для:
+//   • MockChatRoom — общий UI (нужен тип InstructorMsg + InvoicePayload
+//     + helper invoiceTotalForStudent для показа наценки ученику).
+//   • BookInstructorChatSheet — вход «Записаться» до перехода в реальный чат.
+//   • admin-school (мок панель) — считает историю счетов.
+// Реальные экраны студента/инструктора уже ходят на API, а не сюда.
 
-import { useSyncExternalStore } from "react";
-import { INSTRUCTOR_ACCOUNTS, MOCK_STUDENTS } from "./instructor-accounts";
+import { useEffect, useState } from "react";
 
-export type InstructorMsgSender = "instructor" | "student" | "system";
+export const INVOICE_COMMISSION = 0.2;
 
-export type InvoiceStatus = "pending" | "paid";
+export function invoiceTotalForStudent(amount: number): number {
+  return Math.round(amount * (1 + INVOICE_COMMISSION));
+}
 
 export type InvoicePayload = {
   id: string;
+  /** Заголовок/тип занятия. */
   duration: string;
   description: string;
-  /** ISO-строка даты/времени занятия. */
+  /** ISO date. */
   dateTime: string;
   /** Сумма инструктора в рублях (без наценки). */
   amount: number;
-  status: InvoiceStatus;
-  /** ФИО плательщика после оплаты (мок). */
-  payerName?: string;
-  payerEmail?: string;
-  payerPhone?: string;
+  status: "pending" | "paid";
+  /** Момент оплаты (ms). Проставляется при переводе в paid. */
   paidAt?: number;
 };
 
 export type InstructorMsg = {
   id: string;
-  senderRole: InstructorMsgSender;
+  senderRole: "instructor" | "student" | "system";
   text?: string;
-  sticker?: string;
-  invoice?: InvoicePayload;
   createdAt: number;
+  invoice?: InvoicePayload;
 };
 
 export type InstructorThread = {
+  slug: string;
+  /** Алиас на `slug`, оставлен для совместимости с прежним API. */
   instructorSlug: string;
-  studentUserId: string;
+  studentId: string;
   studentNick: string;
   messages: InstructorMsg[];
+  updatedAt: number;
 };
 
-type State = Record<string, InstructorThread>;
+const STORAGE_KEY = "hhr.instructor-chats.v1";
+const BUS = "hhr:instructor-chats";
 
-const KEY = "hh_instructor_chats_v1";
-
-function seed(): State {
-  const out: State = {};
-  const now = Date.now();
-  const HOUR = 3_600_000;
-  INSTRUCTOR_ACCOUNTS.forEach((acc, ai) => {
-    MOCK_STUDENTS.slice(0, 3).forEach((s, si) => {
-      const k = threadKey(acc.slug, s.userId);
-      const base = now - ((ai + 1) * 3 + si) * HOUR;
-      out[k] = {
-        instructorSlug: acc.slug,
-        studentUserId: s.userId,
-        studentNick: s.nick,
-        messages: [
-          {
-            id: `${k}_seed_1`,
-            senderRole: "student",
-            text: si === 0
-              ? "Привет! Хочу записаться на занятие. Когда есть окно?"
-              : si === 1
-                ? "Здоров. Первый раз на мото. С нуля возьмёшь?"
-                : "Йо, подскажи по спорт-группе на выходных.",
-            createdAt: base,
-          },
-          {
-            id: `${k}_seed_2`,
-            senderRole: "instructor",
-            text: si === 0
-              ? "Го! Свободен в среду 15:00 и в субботу с утра."
-              : si === 1
-                ? "Возьму. Приезжай на пробное — посмотрим, что умеешь."
-                : "В субботу есть слот в 10. Пиши, если по кайфу.",
-            createdAt: base + 5 * 60_000,
-          },
-        ],
-      };
-    });
-  });
-  return out;
-}
-
-function load(): State {
+function readAll(): Record<string, InstructorThread> {
   if (typeof window === "undefined") return {};
   try {
-    const raw = localStorage.getItem(KEY);
-    if (!raw) {
-      const s = seed();
-      localStorage.setItem(KEY, JSON.stringify(s));
-      return s;
-    }
-    return JSON.parse(raw) as State;
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (!raw) return {};
+    return JSON.parse(raw) as Record<string, InstructorThread>;
   } catch {
-    return seed();
+    return {};
   }
 }
 
-let state: State = load();
-const listeners = new Set<() => void>();
-
-function persist() {
+function writeAll(state: Record<string, InstructorThread>) {
+  if (typeof window === "undefined") return;
   try {
-    localStorage.setItem(KEY, JSON.stringify(state));
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    window.dispatchEvent(new CustomEvent(BUS));
   } catch {
-    /* noop */
+    /* quota etc — ignore */
   }
-  listeners.forEach((fn) => fn());
 }
 
-function subscribe(fn: () => void) {
-  listeners.add(fn);
-  return () => {
-    listeners.delete(fn);
+function threadKey(slug: string, studentId: string) {
+  return `${slug}::${studentId}`;
+}
+
+export function ensureThread(slug: string, studentId: string, studentNick: string) {
+  const all = readAll();
+  const key = threadKey(slug, studentId);
+  if (all[key]) return;
+  all[key] = {
+    slug,
+    instructorSlug: slug,
+    studentId,
+    studentNick,
+    messages: [],
+    updatedAt: Date.now(),
   };
-}
-
-function getSnapshot() {
-  return state;
-}
-
-export function threadKey(instructorSlug: string, studentUserId: string) {
-  return `${instructorSlug}::${studentUserId}`;
-}
-
-export function ensureThread(
-  instructorSlug: string,
-  studentUserId: string,
-  studentNick: string,
-): InstructorThread {
-  const k = threadKey(instructorSlug, studentUserId);
-  if (!state[k]) {
-    state = {
-      ...state,
-      [k]: {
-        instructorSlug,
-        studentUserId,
-        studentNick,
-        messages: [],
-      },
-    };
-    persist();
-  }
-  return state[k];
+  writeAll(all);
 }
 
 export function sendInstructorChatMessage(
-  instructorSlug: string,
-  studentUserId: string,
-  studentNick: string,
-  payload: { text?: string; sticker?: string },
-  sender: InstructorMsgSender,
+  slug: string,
+  studentId: string,
+  senderRole: "instructor" | "student",
+  text: string,
 ) {
-  const k = threadKey(instructorSlug, studentUserId);
-  const existing =
-    state[k] ??
-    ({
-      instructorSlug,
-      studentUserId,
-      studentNick,
-      messages: [],
-    } as InstructorThread);
-  const msg: InstructorMsg = {
-    id: `${k}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-    senderRole: sender,
-    text: payload.text,
-    sticker: payload.sticker,
-    createdAt: Date.now(),
-  };
-  state = {
-    ...state,
-    [k]: {
-      ...existing,
-      studentNick,
-      messages: [...existing.messages, msg],
-    },
-  };
-  persist();
-  return msg;
-}
-
-/** Наценка при оплате учеником (комиссия платформы). */
-export const INVOICE_COMMISSION = 0.2;
-export function invoiceTotalForStudent(amount: number): number {
-  return Math.round(amount * (1 + INVOICE_COMMISSION));
-}
-
-function appendMessage(
-  instructorSlug: string,
-  studentUserId: string,
-  studentNick: string,
-  msg: InstructorMsg,
-) {
-  const k = threadKey(instructorSlug, studentUserId);
-  const existing =
-    state[k] ??
-    ({
-      instructorSlug,
-      studentUserId,
-      studentNick,
-      messages: [],
-    } as InstructorThread);
-  state = {
-    ...state,
-    [k]: {
-      ...existing,
-      studentNick,
-      messages: [...existing.messages, msg],
-    },
-  };
-  persist();
-  return msg;
-}
-
-export function sendInstructorInvoice(
-  instructorSlug: string,
-  studentUserId: string,
-  studentNick: string,
-  data: { duration: string; description: string; dateTime: string; amount: number },
-) {
-  const k = threadKey(instructorSlug, studentUserId);
-  const id = `${k}_inv_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
-  const msg: InstructorMsg = {
-    id,
-    senderRole: "instructor",
-    createdAt: Date.now(),
-    invoice: {
-      id,
-      duration: data.duration,
-      description: data.description,
-      dateTime: data.dateTime,
-      amount: data.amount,
-      status: "pending",
-    },
-  };
-  return appendMessage(instructorSlug, studentUserId, studentNick, msg);
-}
-
-export function payInstructorInvoice(
-  instructorSlug: string,
-  studentUserId: string,
-  studentNick: string,
-  invoiceId: string,
-  payer: { name: string; email: string; phone: string },
-) {
-  const k = threadKey(instructorSlug, studentUserId);
-  const t = state[k];
+  const all = readAll();
+  const key = threadKey(slug, studentId);
+  const t = all[key];
   if (!t) return;
-  const now = Date.now();
-  let paidInvoice: InvoicePayload | undefined;
-  const messages = t.messages.map((m) => {
-    if (m.invoice?.id === invoiceId && m.invoice.status === "pending") {
-      const inv: InvoicePayload = {
-        ...m.invoice,
-        status: "paid",
-        payerName: payer.name,
-        payerEmail: payer.email,
-        payerPhone: payer.phone,
-        paidAt: now,
-      };
-      paidInvoice = inv;
-      return { ...m, invoice: inv };
-    }
-    return m;
+  const msg: InstructorMsg = {
+    id: `m_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+    senderRole,
+    text,
+    createdAt: Date.now(),
+  };
+  t.messages.push(msg);
+  t.updatedAt = msg.createdAt;
+  writeAll(all);
+}
+
+export function useInstructorThread(slug: string, studentId: string): InstructorThread | null {
+  const [thread, setThread] = useState<InstructorThread | null>(() => {
+    const all = readAll();
+    return all[threadKey(slug, studentId)] ?? null;
   });
-  state = { ...state, [k]: { ...t, messages } };
-  persist();
-  if (paidInvoice) {
-    const when = new Date(paidInvoice.dateTime).toLocaleString("ru-RU", {
-      day: "2-digit",
-      month: "long",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-    appendMessage(instructorSlug, studentUserId, studentNick, {
-      id: `${k}_sys_${now}_${Math.random().toString(36).slice(2, 6)}`,
-      senderRole: "system",
-      text: `Занятие забронировано на ${when}`,
-      createdAt: now + 1,
-    });
-  }
-}
 
-export function useInstructorThreadsList(instructorSlug: string): InstructorThread[] {
-  const snap = useSyncExternalStore(subscribe, getSnapshot, () => ({}) as State);
-  return Object.values(snap)
-    .filter((t) => t.instructorSlug === instructorSlug)
-    .sort(
-      (a, b) =>
-        (b.messages.at(-1)?.createdAt ?? 0) - (a.messages.at(-1)?.createdAt ?? 0),
-    );
-}
+  useEffect(() => {
+    const update = () => {
+      const all = readAll();
+      setThread(all[threadKey(slug, studentId)] ?? null);
+    };
+    update();
+    window.addEventListener(BUS, update);
+    window.addEventListener("storage", update);
+    return () => {
+      window.removeEventListener(BUS, update);
+      window.removeEventListener("storage", update);
+    };
+  }, [slug, studentId]);
 
-/** Список тредов конкретного ученика — используется на странице
- *  «Мои инструкторы» у обычного юзера. */
-export function useStudentThreadsList(studentUserId: string): InstructorThread[] {
-  const snap = useSyncExternalStore(subscribe, getSnapshot, () => ({}) as State);
-  return Object.values(snap)
-    .filter((t) => t.studentUserId === studentUserId)
-    .sort(
-      (a, b) =>
-        (b.messages.at(-1)?.createdAt ?? 0) - (a.messages.at(-1)?.createdAt ?? 0),
-    );
-}
-
-export function useInstructorThread(
-  instructorSlug: string,
-  studentUserId: string,
-): InstructorThread | undefined {
-  const snap = useSyncExternalStore(subscribe, getSnapshot, () => ({}) as State);
-  return snap[threadKey(instructorSlug, studentUserId)];
+  return thread;
 }
