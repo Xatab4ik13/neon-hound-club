@@ -79,12 +79,17 @@ export async function schoolRoutes(app: FastifyInstance) {
         experience: schoolInstructors.experience,
         tagline: schoolInstructors.tagline,
         profile: schoolInstructors.profile,
-        // Публично видна цена ученика — с наценкой.
-        hourlyPriceRub: sql<number>`ceil(${schoolInstructors.hourlyRateRub} * (1 + ${SCHOOL_COMMISSION_RATE}))`,
+        hourlyRateRub: schoolInstructors.hourlyRateRub,
       })
       .from(schoolInstructors)
       .where(eq(schoolInstructors.active, true));
-    return { items: rows };
+    // Наценку считаем в JS, чтобы не тянуть numeric в SQL и не ловить cast integer<->0.2.
+    return {
+      items: rows.map((r) => ({
+        ...r,
+        hourlyPriceRub: Math.ceil(r.hourlyRateRub * (1 + SCHOOL_COMMISSION_RATE)),
+      })),
+    };
   });
 
   app.get("/instructors/:slug", async (req, reply) => {
@@ -606,6 +611,43 @@ export async function adminSchoolRoutes(app: FastifyInstance) {
       .returning();
     if (!row) return reply.code(404).send({ error: "not_found" });
     return { ok: true };
+  });
+
+  // Привязать реальный аккаунт к инструктору.
+  // Принимаем один из: userId | email | nick. Не даём привязать уже занятого юзера.
+  app.post("/instructors/:id/attach-user", { preHandler: requireAdmin }, async (req, reply) => {
+    const id = (req.params as { id: string }).id;
+    const b = z
+      .object({
+        userId: z.string().uuid().optional(),
+        email: z.string().email().optional(),
+        nick: z.string().min(1).max(64).optional(),
+      })
+      .refine((v) => !!(v.userId || v.email || v.nick), { message: "identity_required" })
+      .safeParse(req.body);
+    if (!b.success) return reply.code(400).send({ error: "invalid_input", details: b.error.flatten() });
+
+    let targetUserId = b.data.userId ?? null;
+    if (!targetUserId && b.data.email) {
+      const [u] = await db.select({ id: users.id }).from(users).where(eq(users.email, b.data.email.toLowerCase())).limit(1);
+      targetUserId = u?.id ?? null;
+    }
+    if (!targetUserId && b.data.nick) {
+      const [u] = await db.select({ id: users.id }).from(users).where(eq(users.nick, b.data.nick)).limit(1);
+      targetUserId = u?.id ?? null;
+    }
+    if (!targetUserId) return reply.code(404).send({ error: "user_not_found" });
+
+    const [busy] = await db.select({ id: schoolInstructors.id }).from(schoolInstructors).where(eq(schoolInstructors.userId, targetUserId)).limit(1);
+    if (busy && busy.id !== id) return reply.code(409).send({ error: "user_already_instructor" });
+
+    const [row] = await db
+      .update(schoolInstructors)
+      .set({ userId: targetUserId, updatedAt: new Date() })
+      .where(eq(schoolInstructors.id, id))
+      .returning({ id: schoolInstructors.id });
+    if (!row) return reply.code(404).send({ error: "instructor_not_found" });
+    return { ok: true, userId: targetUserId };
   });
 }
 
