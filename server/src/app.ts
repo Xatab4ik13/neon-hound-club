@@ -178,6 +178,11 @@ export async function buildApp() {
   await app.register(supportRoutes, { prefix: "/api/v1/support" });
   await app.register(adminSupportRoutes, { prefix: "/api/v1/admin/support" });
 
+  const { schoolRoutes, schoolInstructorRoutes, adminSchoolRoutes } = await import("./routes/school.js");
+  await app.register(schoolRoutes, { prefix: "/api/v1/school" });
+  await app.register(schoolInstructorRoutes, { prefix: "/api/v1/instructor" });
+  await app.register(adminSchoolRoutes, { prefix: "/api/v1/admin/school" });
+
   const { vipChatRoutes, bloggerVipChatRoutes } = await import("./routes/vip-chat.js");
   await app.register(vipChatRoutes, { prefix: "/api/v1/vip-chat" });
   await app.register(bloggerVipChatRoutes, { prefix: "/api/v1/blogger/chats" });

@@ -71,7 +71,7 @@ export const PAYMENT_STATUSES = [
 ] as const;
 export type PaymentStatus = (typeof PAYMENT_STATUSES)[number];
 
-export const PAYMENT_REF_TYPES = ["pass", "order"] as const;
+export const PAYMENT_REF_TYPES = ["pass", "order", "school_order"] as const;
 export type PaymentRefType = (typeof PAYMENT_REF_TYPES)[number];
 
 export const PAYMENT_METHODS = ["card", "sbp"] as const;
