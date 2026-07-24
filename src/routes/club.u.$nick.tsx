@@ -325,33 +325,7 @@ function UserView({ user }: { user: ProfileView }) {
         </div>
       </section>
 
-      {/* Dev-превью значков Hell Pass — открывается через ?preview=hellpass */}
-      {showHellPassPreview && (
-        <section className="mb-8">
-          <SectionTitle title="Hell Pass · превью" right="DEV" />
-          <div className="grid grid-cols-3 gap-3 border border-white/[0.06] bg-card/40 p-4">
-            {[
-              { url: silverBadge.url, tier: "Silver", months: 2 },
-              { url: goldBadge.url, tier: "Gold", months: 8 },
-              { url: platinumBadge.url, tier: "Platinum", months: 9 },
-            ].map((b) => (
-              <div key={b.tier} className="flex flex-col items-center gap-1.5">
-                <img
-                  src={b.url}
-                  alt={`Hell Pass ${b.tier} · ${b.months} мес`}
-                  loading="lazy"
-                  width={256}
-                  height={256}
-                  className="h-auto w-full max-w-[128px] drop-shadow-[4px_4px_0_rgba(0,0,0,0.6)]"
-                />
-                <span className="font-mono text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                  {b.months} мес
-                </span>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
+
 
 
 
