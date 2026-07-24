@@ -7,6 +7,12 @@ import { cn } from "@/lib/utils";
 import { useMockInstructorRole } from "@/hooks/use-instructor-mock-role";
 import { getInstructorAccount } from "@/data/instructor-accounts";
 import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import {
   useInstructorThreadsList,
   type InstructorThread,
   type InvoicePayload,
