@@ -267,7 +267,7 @@ function UserView({ user }: { user: ProfileView }) {
                       className="pointer-events-none absolute inset-0 flex items-center justify-center"
                       style={{ paddingTop: "18%" }}
                     >
-                      <PlumpNum value={b.months} size={22} />
+                      <PlumpNum value={b.months} size={22} className="text-black" />
                     </div>
                   </div>
                 ))}
