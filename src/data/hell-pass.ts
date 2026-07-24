@@ -279,10 +279,3 @@ export const TIERS: Tier[] = [
 export function getTier(slug: string): Tier | undefined {
   return TIERS.find((t) => t.slug === slug);
 }
-
-// Иконка/шилд-значок тира для UI (совпадает с бейджами на профиле).
-export const TIER_BADGES: Record<Tier["slug"], string> = {
-  silver: "/__l5e/assets-v1/0fe73058-0694-4306-b3e9-a1154386a4fb/silver.png",
-  gold: "",
-  platinum: "",
-};
