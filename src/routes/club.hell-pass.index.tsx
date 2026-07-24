@@ -1,11 +1,25 @@
-// Hell Pass — список тиров. Живёт внутри club-layout (с левым меню).
-// На странице: hero + бейдж активного пасса + 3 карточки тиров.
+// Hell Pass — список тиров в Plump-стиле PWA.
+// Живёт внутри club-layout. Bento-карточки с большим шилдом тира,
+// плампувские иконки и цвета из палитры тира.
 
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { PlumpArrowRight, PlumpDiamond } from "@/components/ui/icons";
+import { PageHeader } from "@/components/club/PageHeader";
+import { PlumpNum } from "@/components/brand/PlumpNum";
 import { TIERS, type Perk, type Tier } from "@/data/hell-pass";
 import { fetchPassMe, qk } from "@/lib/queries";
 import { useViewer } from "@/hooks/use-viewer";
+
+import silverBadge from "@/assets/hellpass/silver.png.asset.json";
+import goldBadge from "@/assets/hellpass/gold.png.asset.json";
+import platinumBadge from "@/assets/hellpass/platinum.png.asset.json";
+
+const BADGES: Record<Tier["slug"], string> = {
+  silver: silverBadge.url,
+  gold: goldBadge.url,
+  platinum: platinumBadge.url,
+};
 
 export const Route = createFileRoute("/club/hell-pass/")({
   head: () => ({
@@ -14,7 +28,7 @@ export const Route = createFileRoute("/club/hell-pass/")({
       {
         name: "description",
         content:
-          "Три тира Hell Pass: Silver, Gold, Platinum. Билеты, AI-механик, скидки, эксклюзивы.",
+          "Три тира Hell Pass: Silver, Gold, Platinum. Билеты, Hell AI, стикерпаки, VIP-чат.",
       },
       { name: "robots", content: "noindex" },
     ],
@@ -30,39 +44,25 @@ function HellPassPage() {
     enabled: isAuthed,
   });
   const active = passQ.data?.active ?? null;
+  const daysLeft = passQ.data?.daysLeft ?? null;
 
   return (
-    <main className="mx-auto w-full max-w-5xl px-4 py-8 md:px-8 md:py-12">
-      <Hero />
+    <main className="mx-auto w-full max-w-3xl px-4 py-5 pb-[calc(env(safe-area-inset-bottom)+96px)] md:py-8">
+      <PageHeader title="Hell Pass" subtitle="Подписка клуба · 30 дней" />
 
       {active && (
-        <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border border-primary/30 bg-primary/[0.05] px-4 py-3">
-          <div className="font-mono text-[11px] uppercase tracking-widest text-foreground">
-            Активен: <span className="text-primary">{active.tier.toUpperCase()}</span>
-            {passQ.data?.daysLeft != null && (
-              <span className="ml-2 text-muted-foreground">
-                осталось {passQ.data.daysLeft} {pluralDays(passQ.data.daysLeft)}
-              </span>
-            )}
-            {active.expiresAt && (
-              <span className="ml-2 text-muted-foreground/70">
-                · до {new Date(active.expiresAt).toLocaleDateString("ru-RU")}
-              </span>
-            )}
-          </div>
-          <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-            {active.tier === "platinum"
-              ? "Платинум — выше уже некуда. Можно продлить."
-              : "Тот же тир продлит срок, выше — апгрейд с продлением."}
-          </span>
-        </div>
+        <ActiveBanner tier={active.tier} daysLeft={daysLeft} />
       )}
 
-      <div className="mt-10 grid grid-cols-1 gap-5 md:gap-6">
+      <div className="mt-5 flex flex-col gap-4">
         {TIERS.map((tier, i) => (
-          <TierCard key={tier.id} tier={tier} index={i} />
+          <TierCard key={tier.id} tier={tier} index={i} isActive={active?.tier === tier.slug} />
         ))}
       </div>
+
+      <p className="mt-6 text-center font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+        Разовый доступ на 30 дней. Без автопродления.
+      </p>
     </main>
   );
 }
@@ -75,175 +75,173 @@ function pluralDays(n: number) {
   return "дней";
 }
 
-// ---------- Hero ----------
+// ---------- Active banner ----------
 
-function Hero() {
+function ActiveBanner({
+  tier,
+  daysLeft,
+}: {
+  tier: Tier["slug"];
+  daysLeft: number | null;
+}) {
+  const tierInfo = TIERS.find((t) => t.slug === tier)!;
   return (
-    <section className="relative">
-      <h1 className="font-display text-4xl font-black uppercase  leading-[0.95] tracking-tighter text-foreground md:text-6xl">
-        HELL <span className="text-primary">PASS</span>
-      </h1>
-      <p className="mt-3 max-w-2xl text-base text-muted-foreground md:text-lg">
-        Подписка клуба HELLHOUND. Три уровня. Билеты в розыгрыши, AI-механик,
-        скидки на мерч и школу, эксклюзивы. Без пафоса — просто больше клуба.
-      </p>
+    <section
+      className="mb-2 flex items-center gap-3 rounded-3xl bg-card px-4 py-3"
+      aria-label="Активная подписка"
+    >
+      <img
+        src={BADGES[tier]}
+        alt=""
+        className="h-12 w-12 shrink-0 drop-shadow-[0_2px_3px_rgba(0,0,0,0.35)]"
+      />
+      <div className="min-w-0 flex-1">
+        <div className="font-mono text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground">
+          Активен
+        </div>
+        <div
+          className="font-display text-lg font-black uppercase leading-tight"
+          style={{ color: tierInfo.color }}
+        >
+          {tierInfo.name}
+        </div>
+      </div>
+      {daysLeft != null && (
+        <div className="text-right">
+          <div className="text-foreground">
+            <PlumpNum value={daysLeft} size={22} />
+          </div>
+          <div className="font-mono text-[9px] font-bold uppercase tracking-[0.15em] text-muted-foreground">
+            {pluralDays(daysLeft)}
+          </div>
+        </div>
+      )}
     </section>
   );
 }
 
-// ---------- Tier Card ----------
+// ---------- Tier card ----------
 
-function TierCard({ tier, index }: { tier: Tier; index: number }) {
-  const isGold = tier.recommended;
-  const isPlatinum = tier.ultimate;
-
-  // На карточке — 4 ключевых перка, не весь список.
+function TierCard({
+  tier,
+  index,
+  isActive,
+}: {
+  tier: Tier;
+  index: number;
+  isActive: boolean;
+}) {
   const featured = tier.perks.slice(0, 4);
 
   return (
-    <article
-      className="group relative flex animate-fade-in flex-col overflow-hidden border border-white/10 bg-[#121212] transition-all duration-300 hover:scale-[1.01] md:flex-row"
+    <Link
+      to="/club/hell-pass/$tier"
+      params={{ tier: tier.slug }}
+      className="group relative block animate-fade-in overflow-hidden rounded-3xl border-[3px] border-foreground bg-card transition-transform duration-200 active:scale-[0.99]"
       style={{
-        animationDelay: `${index * 80}ms`,
+        animationDelay: `${index * 60}ms`,
         animationFillMode: "backwards",
-        borderColor: isGold || isPlatinum ? `${tier.color}33` : undefined,
-        boxShadow: isPlatinum ? `0 0 40px -10px ${tier.color}33` : undefined,
+        boxShadow: `4px 4px 0 0 hsl(var(--foreground))`,
       }}
     >
-      {/* hatch */}
+      {/* Цветная плашка сверху */}
       <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-[0.04]"
+        className="relative flex items-center gap-4 px-5 py-4"
         style={{
-          backgroundImage:
-            "repeating-linear-gradient(45deg, transparent, transparent 10px, #fff 10px, #fff 11px)",
+          background: tier.color,
         }}
-      />
-
-      {/* Gold shimmer on hover */}
-      {isGold && (
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 z-0 -translate-x-full bg-gradient-to-r from-transparent via-[#ffb648]/10 to-transparent transition-transform duration-1000 group-hover:translate-x-full"
+      >
+        <img
+          src={BADGES[tier.slug]}
+          alt=""
+          className="h-20 w-20 shrink-0 drop-shadow-[0_3px_4px_rgba(0,0,0,0.35)] transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-105"
         />
-      )}
-
-      {/* LEFT: краткое инфо */}
-      <div className="relative z-10 flex-1 p-6 md:p-8">
-        <div className="mb-4 flex items-center gap-3">
-          {tier.inheritsFrom && (
-            <span className="font-mono text-[10px] uppercase tracking-widest text-white/40">
-              Всё из {tier.inheritsFrom} +
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="font-display text-3xl font-black uppercase leading-none tracking-tight text-black">
+              {tier.name}
+            </h2>
+            {tier.recommended && (
+              <span className="rounded-full border-2 border-black bg-white px-2 py-0.5 font-mono text-[9px] font-bold uppercase tracking-widest text-black">
+                ★ Хит
+              </span>
+            )}
+            {tier.ultimate && (
+              <span className="inline-flex items-center gap-1 rounded-full border-2 border-black bg-black px-2 py-0.5 font-mono text-[9px] font-bold uppercase tracking-widest text-white">
+                <PlumpDiamond className="h-3 w-3" /> VIP
+              </span>
+            )}
+            {isActive && (
+              <span className="rounded-full border-2 border-black bg-white px-2 py-0.5 font-mono text-[9px] font-bold uppercase tracking-widest text-black">
+                активен
+              </span>
+            )}
+          </div>
+          <div className="mt-1.5 flex items-baseline gap-1.5">
+            <span className="text-black">
+              <PlumpNum value={tier.price} size={26} format />
             </span>
-          )}
-          <div className="h-px flex-1 bg-white/10" />
-          {tier.recommended && (
-            <span
-              className="animate-pulse font-mono text-[10px] font-bold  uppercase tracking-widest"
-              style={{ color: tier.color }}
-            >
-              ★ Популярный
+            <span className="font-mono text-[10px] font-bold uppercase tracking-widest text-black/70">
+              ₽ / 30 дней
             </span>
-          )}
-          {tier.ultimate && (
-            <span className="font-mono text-[10px] font-bold uppercase tracking-widest text-primary">
-              Максимум
-            </span>
-          )}
+          </div>
         </div>
+      </div>
 
-        <p className="mb-5 text-sm text-white/70 md:text-base">{tier.tagline}</p>
+      {/* Перки */}
+      <div className="px-5 py-4">
+        {tier.inheritsFrom && (
+          <div className="mb-3 font-mono text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground">
+            Всё из {tier.inheritsFrom} +
+          </div>
+        )}
 
-        <ul className="grid grid-cols-1 gap-y-2.5 gap-x-6 sm:grid-cols-2">
+        <p className="mb-4 text-sm text-foreground/85">{tier.tagline}</p>
+
+        <ul className="flex flex-col gap-2.5">
           {featured.map((perk, i) => (
             <PerkRow key={i} perk={perk} tierColor={tier.color} />
           ))}
         </ul>
 
         {tier.perks.length > featured.length && (
-          <div className="mt-4 font-mono text-[11px] uppercase tracking-widest text-white/40">
-            + ещё {tier.perks.length - featured.length} преимуществ
+          <div className="mt-3 font-mono text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground">
+            + ещё {tier.perks.length - featured.length}
           </div>
         )}
-      </div>
 
-      {/* RIGHT: identity slab */}
-      <div
-        className="relative flex w-full items-center justify-center overflow-hidden p-8 md:w-72 md:items-stretch"
-        style={{
-          background: isGold
-            ? "linear-gradient(135deg, #ffb648 0%, #925f1b 100%)"
-            : tier.color,
-          clipPath: "polygon(0 0, 100% 0, 100% 100%, 0 100%)",
-        }}
-      >
-        <div
-          aria-hidden
-          className="absolute inset-0 hidden md:block"
-          style={{
-            background: isGold
-              ? "linear-gradient(135deg, #ffb648 0%, #925f1b 100%)"
-              : tier.color,
-            clipPath: "polygon(15% 0, 100% 0, 100% 100%, 0 100%)",
-          }}
-        />
-        <div
-          aria-hidden
-          className="absolute inset-0 opacity-15"
-          style={{
-            backgroundImage: isPlatinum
-              ? "repeating-linear-gradient(90deg, transparent, transparent 2px, black 2px, black 3px)"
-              : isGold
-                ? "repeating-linear-gradient(-45deg, transparent, transparent 4px, rgba(0,0,0,0.12) 4px, rgba(0,0,0,0.12) 8px)"
-                : "repeating-linear-gradient(135deg, transparent, transparent 6px, rgba(0,0,0,0.12) 6px, rgba(0,0,0,0.12) 7px)",
-          }}
-        />
-
-        <div className="relative z-10 flex w-full flex-col items-center justify-between gap-6 py-2 md:py-0">
-          <h2 className="font-display text-5xl font-black uppercase  leading-none tracking-tighter text-black md:text-6xl">
-            {tier.name}
-          </h2>
-          <div className="flex flex-col items-center">
-            <div className="font-mono text-3xl font-bold text-black">
-              {tier.price.toLocaleString("ru-RU")} ₽
-            </div>
-            <div className="font-mono text-[10px] font-bold uppercase tracking-widest text-black/60">
-              в месяц
-            </div>
-            <Link
-              to="/club/hell-pass/$tier"
-              params={{ tier: tier.slug }}
-              className="mt-4 inline-flex items-center gap-2 px-6 py-2.5 font-display text-xs font-bold uppercase tracking-widest text-white transition-all hover:scale-[1.04]"
-              style={{
-                background: isPlatinum ? "var(--primary)" : "#000",
-                clipPath: "polygon(10% 0, 100% 0, 90% 100%, 0 100%)",
-                boxShadow: isPlatinum
-                  ? "0 0 20px color-mix(in oklab, var(--primary) 50%, transparent)"
-                  : undefined,
-              }}
-            >
-              Подробнее →
-            </Link>
-          </div>
+        <div className="mt-4 flex items-center justify-between">
+          <span className="font-display text-xs font-bold uppercase tracking-widest text-foreground">
+            Подробнее и оформить
+          </span>
+          <span
+            className="grid h-9 w-9 place-items-center rounded-full border-[2px] border-foreground shadow-[2px_2px_0_0_hsl(var(--foreground))] transition-transform group-hover:translate-x-0.5"
+            style={{ background: tier.color }}
+          >
+            <PlumpArrowRight className="h-4 w-4 text-black" />
+          </span>
         </div>
       </div>
-    </article>
+    </Link>
   );
 }
+
+// ---------- Perk row ----------
 
 function PerkRow({ perk, tierColor }: { perk: Perk; tierColor: string }) {
   const Icon = perk.icon;
   return (
-    <li className="flex items-start gap-3 text-sm text-white/80">
-      <Icon
-        className="mt-0.5 h-4 w-4 shrink-0"
-        style={{ color: tierColor }}
-        strokeWidth={2}
-      />
-      <span className="leading-snug">
+    <li className="flex items-start gap-3">
+      <span
+        className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-xl border-[2px] border-foreground shadow-[2px_2px_0_0_hsl(var(--foreground))]"
+        style={{ background: tierColor }}
+      >
+        <Icon className="h-4 w-4 text-black" />
+      </span>
+      <span className="flex-1 pt-1 text-sm leading-snug text-foreground">
         {perk.value && (
           <span
-            className="font-mono font-bold text-white"
+            className="font-mono font-bold"
             style={perk.accent ? { color: tierColor } : undefined}
           >
             {perk.value}
