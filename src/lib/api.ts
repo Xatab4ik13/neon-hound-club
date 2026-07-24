@@ -42,11 +42,12 @@ export async function apiFetch<T = unknown>(
     headers,
   });
   const text = await res.text();
+  const rewritten = rewriteLovableAssetUrls(text);
   let body: unknown = null;
   try {
-    body = text ? JSON.parse(text) : null;
+    body = rewritten ? JSON.parse(rewritten) : null;
   } catch {
-    body = text;
+    body = rewritten;
   }
   if (!res.ok) {
     const b = body as { error?: string; message?: string } | null;
