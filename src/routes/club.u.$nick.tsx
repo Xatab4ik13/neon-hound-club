@@ -13,9 +13,15 @@ import { getUser, type PublicUser } from "@/data/users";
 import { PlaqueBackground } from "./club";
 import { usePublicProfile, type PublicProfile } from "@/lib/garage-api";
 import { PlumpNum } from "@/components/brand/PlumpNum";
-import silverBadge from "@/assets/hellpass/demo-silver-2.png.asset.json";
-import goldBadge from "@/assets/hellpass/demo-gold-8.png.asset.json";
-import platinumBadge from "@/assets/hellpass/demo-platinum-9.png.asset.json";
+import tplSilver from "@/assets/hellpass/tpl-silver.png";
+import tplGold from "@/assets/hellpass/tpl-gold.png";
+import tplPlatinum from "@/assets/hellpass/tpl-platinum.png";
+
+const HELLPASS_PREVIEW: Array<{ src: string; months: number; tint: string }> = [
+  { src: tplSilver, months: 2, tint: "#B6FF3C" },
+  { src: tplGold, months: 8, tint: "#FF8A1E" },
+  { src: tplPlatinum, months: 9, tint: "#F000C0" },
+];
 
 
 type BikeCard = {
@@ -203,7 +209,7 @@ function UserView({ user }: { user: ProfileView }) {
           </h1>
 
           <span
-            className="mt-2 inline-flex items-center border-2 border-black bg-black/40 px-2.5 py-1 font-mono text-[10px] font-black uppercase tracking-wider"
+            className="mt-2 inline-flex items-center rounded-full border-2 border-black bg-black/40 px-3 py-1 font-mono text-[10px] font-black uppercase tracking-wider"
             style={{
               color: rank.accent,
               borderColor: rank.accent,
@@ -243,18 +249,40 @@ function UserView({ user }: { user: ProfileView }) {
               </span>
             </div>
             {showHellPassPreview ? (
-              <div className="flex flex-wrap items-center gap-2.5 border-2 border-dashed border-white/[0.1] bg-black/30 px-3 py-3">
-                {[silverBadge, goldBadge, platinumBadge].map((b) => (
-                  <img
-                    key={b.url}
-                    src={b.url}
-                    alt=""
-                    loading="lazy"
-                    width={144}
-                    height={144}
-                    className="h-14 w-14 drop-shadow-[2px_2px_0_rgba(0,0,0,0.55)]"
-                  />
+              <div
+                className="flex flex-wrap items-center justify-center gap-3 rounded-2xl border-2 border-white/80 px-3 py-3"
+                style={{
+                  background:
+                    "linear-gradient(135deg, rgba(255,255,255,0.06), rgba(0,0,0,0.35))",
+                  boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.6)",
+                }}
+              >
+                {HELLPASS_PREVIEW.map((b) => (
+                  <div
+                    key={b.src}
+                    className="relative h-16 w-16 drop-shadow-[2px_2px_0_rgba(0,0,0,0.55)]"
+                  >
+                    <img
+                      src={b.src}
+                      alt=""
+                      loading="lazy"
+                      width={144}
+                      height={144}
+                      className="h-full w-full object-contain"
+                    />
+                    <div
+                      className="pointer-events-none absolute inset-0 flex items-center justify-center"
+                      style={{ paddingTop: "18%" }}
+                    >
+                      <PlumpNum value={b.months} size={22} />
+                    </div>
+                  </div>
                 ))}
+              </div>
+            ) : user.badgeIds.length === 0 ? (
+              <div className="flex items-center justify-center gap-2 rounded-2xl border-2 border-white/80 bg-black/40 px-4 py-5 font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
+                <Award className="h-4 w-4 opacity-60" />
+                Пока без значков
               </div>
             ) : user.badgeIds.length === 0 ? (
               <div className="flex items-center justify-center gap-2 border-2 border-dashed border-white/[0.1] bg-black/30 px-4 py-5 font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
@@ -297,13 +325,13 @@ function UserView({ user }: { user: ProfileView }) {
                 </span>
               )}
             </div>
-            <div className="relative h-3 overflow-hidden border-2 border-black bg-black/60">
+            <div className="relative h-2 overflow-hidden rounded-full border border-white/[0.08] bg-[oklch(0.18_0.02_357.3)]">
               <div
-                className="absolute inset-y-0 left-0"
+                className="absolute inset-y-0 left-0 rounded-full transition-[width] duration-500 ease-out"
                 style={{
                   width: `${user.xpPct}%`,
-                  backgroundColor: rank.accent,
-                  boxShadow: `0 0 10px ${rank.accentSoft}`,
+                  background: `linear-gradient(90deg, color-mix(in oklab, ${rank.accent}, #000 25%) 0%, ${rank.accent} 100%)`,
+                  boxShadow: `0 0 12px ${rank.accentSoft}`,
                 }}
               />
             </div>
