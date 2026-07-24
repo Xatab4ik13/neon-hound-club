@@ -300,6 +300,7 @@ function AdminPassPage() {
             rows={rows}
           />
         )}
+        </div>
       </Panel>
 
       <ConfirmModal
