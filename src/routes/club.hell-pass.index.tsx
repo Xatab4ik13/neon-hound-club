@@ -48,7 +48,7 @@ function HellPassPage() {
 
   return (
     <main className="mx-auto w-full max-w-3xl px-4 py-5 pb-[calc(env(safe-area-inset-bottom)+96px)] md:py-8">
-      <PageHeader title="Hell Pass" subtitle="Ежемесячная подписка клуба" />
+      <PageHeader title="Hell Pass" subtitle="Разовый доступ на 30 дней" />
 
       {active && (
         <ActiveBanner tier={active.tier} daysLeft={daysLeft} />
@@ -61,7 +61,7 @@ function HellPassPage() {
       </div>
 
       <p className="mt-6 text-center font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-        Подписка списывается раз в месяц. Отменить можно в любой момент — в профиле.
+        Оплата разовая. Доступ действует 30 дней с момента оплаты.
       </p>
     </main>
   );
