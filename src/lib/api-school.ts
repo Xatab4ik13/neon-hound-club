@@ -229,3 +229,76 @@ export async function cancelInstructorOrder(id: string) {
     method: "POST",
   });
 }
+
+// =========================================================================
+// ADMIN side (`/api/v1/admin/school`)
+// =========================================================================
+
+export const adminSchoolQk = {
+  kpi: (days: number) => ["admin-school", "kpi", days] as const,
+  instructors: ["admin-school", "instructors"] as const,
+  payouts: (status?: string) => ["admin-school", "payouts", status ?? "all"] as const,
+};
+
+export type AdminKpi = {
+  days: number;
+  lessons: number;
+  gross: number;
+  instructorPayouts: number;
+  commission: number;
+};
+
+export async function fetchAdminKpi(days = 30) {
+  return apiFetch<AdminKpi>(`/api/v1/admin/school/kpi?days=${days}`);
+}
+
+export type AdminInstructorRow = {
+  id: string;
+  slug: string;
+  displayName: string;
+  city: string;
+  active: boolean;
+  hourlyRateRub: number;
+};
+
+export async function fetchAdminInstructors() {
+  return apiFetch<{ items: AdminInstructorRow[] }>("/api/v1/admin/school/instructors");
+}
+
+export type AdminPayoutRow = {
+  id: string;
+  instructorId: string;
+  instructorName: string;
+  instructorSlug: string;
+  periodStart: string;
+  periodEnd: string;
+  grossRub: number;
+  taxRub: number;
+  commissionRub: number;
+  payoutRub: number;
+  status: "pending" | "paid";
+  paidAt: string | null;
+  createdAt: string;
+};
+
+export async function fetchAdminPayouts(status?: "pending" | "paid") {
+  const qs = status ? `?status=${status}` : "";
+  return apiFetch<{ items: AdminPayoutRow[] }>(`/api/v1/admin/school/payouts${qs}`);
+}
+
+export async function generatePayouts(payload: {
+  periodStart: string;
+  periodEnd: string;
+  taxRatePercent?: number;
+}) {
+  return apiFetch<{ created: number; ids: string[] }>(
+    "/api/v1/admin/school/payouts/generate",
+    { method: "POST", body: JSON.stringify(payload) },
+  );
+}
+
+export async function markPayoutPaid(id: string) {
+  return apiFetch<{ ok: true }>(`/api/v1/admin/school/payouts/${id}/mark-paid`, {
+    method: "POST",
+  });
+}
