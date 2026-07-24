@@ -87,7 +87,7 @@ import { Route as ClubRafflesRaffleIdRouteImport } from './routes/club.raffles.$
 import { Route as ClubPPostIdRouteImport } from './routes/club.p.$postId'
 import { Route as ClubOrdersOrderIdRouteImport } from './routes/club.orders.$orderId'
 import { Route as ClubNNewsIdRouteImport } from './routes/club.n.$newsId'
-import { Route as ClubMyInstructorsInstructorIdRouteImport } from './routes/club.my-instructors.$instructorId'
+import { Route as ClubMyInstructorsChatIdRouteImport } from './routes/club.my-instructors.$chatId'
 import { Route as ClubLegalRequisitesRouteImport } from './routes/club.legal.requisites'
 import { Route as ClubLegalPromoRulesRouteImport } from './routes/club.legal.promo-rules'
 import { Route as ClubLegalPrivacyRouteImport } from './routes/club.legal.privacy'
@@ -488,12 +488,11 @@ const ClubNNewsIdRoute = ClubNNewsIdRouteImport.update({
   path: '/n/$newsId',
   getParentRoute: () => ClubRoute,
 } as any)
-const ClubMyInstructorsInstructorIdRoute =
-  ClubMyInstructorsInstructorIdRouteImport.update({
-    id: '/my-instructors/$instructorId',
-    path: '/my-instructors/$instructorId',
-    getParentRoute: () => ClubRoute,
-  } as any)
+const ClubMyInstructorsChatIdRoute = ClubMyInstructorsChatIdRouteImport.update({
+  id: '/my-instructors/$chatId',
+  path: '/my-instructors/$chatId',
+  getParentRoute: () => ClubRoute,
+} as any)
 const ClubLegalRequisitesRoute = ClubLegalRequisitesRouteImport.update({
   id: '/legal/requisites',
   path: '/legal/requisites',
@@ -604,7 +603,7 @@ export interface FileRoutesByFullPath {
   '/club/legal/privacy': typeof ClubLegalPrivacyRoute
   '/club/legal/promo-rules': typeof ClubLegalPromoRulesRoute
   '/club/legal/requisites': typeof ClubLegalRequisitesRoute
-  '/club/my-instructors/$instructorId': typeof ClubMyInstructorsInstructorIdRoute
+  '/club/my-instructors/$chatId': typeof ClubMyInstructorsChatIdRoute
   '/club/n/$newsId': typeof ClubNNewsIdRoute
   '/club/orders/$orderId': typeof ClubOrdersOrderIdRoute
   '/club/p/$postId': typeof ClubPPostIdRoute
@@ -690,7 +689,7 @@ export interface FileRoutesByTo {
   '/club/legal/privacy': typeof ClubLegalPrivacyRoute
   '/club/legal/promo-rules': typeof ClubLegalPromoRulesRoute
   '/club/legal/requisites': typeof ClubLegalRequisitesRoute
-  '/club/my-instructors/$instructorId': typeof ClubMyInstructorsInstructorIdRoute
+  '/club/my-instructors/$chatId': typeof ClubMyInstructorsChatIdRoute
   '/club/n/$newsId': typeof ClubNNewsIdRoute
   '/club/orders/$orderId': typeof ClubOrdersOrderIdRoute
   '/club/p/$postId': typeof ClubPPostIdRoute
@@ -780,7 +779,7 @@ export interface FileRoutesById {
   '/club/legal/privacy': typeof ClubLegalPrivacyRoute
   '/club/legal/promo-rules': typeof ClubLegalPromoRulesRoute
   '/club/legal/requisites': typeof ClubLegalRequisitesRoute
-  '/club/my-instructors/$instructorId': typeof ClubMyInstructorsInstructorIdRoute
+  '/club/my-instructors/$chatId': typeof ClubMyInstructorsChatIdRoute
   '/club/n/$newsId': typeof ClubNNewsIdRoute
   '/club/orders/$orderId': typeof ClubOrdersOrderIdRoute
   '/club/p/$postId': typeof ClubPPostIdRoute
@@ -871,7 +870,7 @@ export interface FileRouteTypes {
     | '/club/legal/privacy'
     | '/club/legal/promo-rules'
     | '/club/legal/requisites'
-    | '/club/my-instructors/$instructorId'
+    | '/club/my-instructors/$chatId'
     | '/club/n/$newsId'
     | '/club/orders/$orderId'
     | '/club/p/$postId'
@@ -957,7 +956,7 @@ export interface FileRouteTypes {
     | '/club/legal/privacy'
     | '/club/legal/promo-rules'
     | '/club/legal/requisites'
-    | '/club/my-instructors/$instructorId'
+    | '/club/my-instructors/$chatId'
     | '/club/n/$newsId'
     | '/club/orders/$orderId'
     | '/club/p/$postId'
@@ -1046,7 +1045,7 @@ export interface FileRouteTypes {
     | '/club/legal/privacy'
     | '/club/legal/promo-rules'
     | '/club/legal/requisites'
-    | '/club/my-instructors/$instructorId'
+    | '/club/my-instructors/$chatId'
     | '/club/n/$newsId'
     | '/club/orders/$orderId'
     | '/club/p/$postId'
@@ -1646,11 +1645,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ClubNNewsIdRouteImport
       parentRoute: typeof ClubRoute
     }
-    '/club/my-instructors/$instructorId': {
-      id: '/club/my-instructors/$instructorId'
-      path: '/my-instructors/$instructorId'
-      fullPath: '/club/my-instructors/$instructorId'
-      preLoaderRoute: typeof ClubMyInstructorsInstructorIdRouteImport
+    '/club/my-instructors/$chatId': {
+      id: '/club/my-instructors/$chatId'
+      path: '/my-instructors/$chatId'
+      fullPath: '/club/my-instructors/$chatId'
+      preLoaderRoute: typeof ClubMyInstructorsChatIdRouteImport
       parentRoute: typeof ClubRoute
     }
     '/club/legal/requisites': {
@@ -1796,7 +1795,7 @@ interface ClubRouteChildren {
   ClubLegalPrivacyRoute: typeof ClubLegalPrivacyRoute
   ClubLegalPromoRulesRoute: typeof ClubLegalPromoRulesRoute
   ClubLegalRequisitesRoute: typeof ClubLegalRequisitesRoute
-  ClubMyInstructorsInstructorIdRoute: typeof ClubMyInstructorsInstructorIdRoute
+  ClubMyInstructorsChatIdRoute: typeof ClubMyInstructorsChatIdRoute
   ClubNNewsIdRoute: typeof ClubNNewsIdRoute
   ClubOrdersOrderIdRoute: typeof ClubOrdersOrderIdRoute
   ClubPPostIdRoute: typeof ClubPPostIdRoute
@@ -1834,7 +1833,7 @@ const ClubRouteChildren: ClubRouteChildren = {
   ClubLegalPrivacyRoute: ClubLegalPrivacyRoute,
   ClubLegalPromoRulesRoute: ClubLegalPromoRulesRoute,
   ClubLegalRequisitesRoute: ClubLegalRequisitesRoute,
-  ClubMyInstructorsInstructorIdRoute: ClubMyInstructorsInstructorIdRoute,
+  ClubMyInstructorsChatIdRoute: ClubMyInstructorsChatIdRoute,
   ClubNNewsIdRoute: ClubNNewsIdRoute,
   ClubOrdersOrderIdRoute: ClubOrdersOrderIdRoute,
   ClubPPostIdRoute: ClubPPostIdRoute,

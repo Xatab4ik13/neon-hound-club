@@ -1,5 +1,12 @@
+// Страница инструктора внутри клуба.
+// Данные — реальный API `/api/v1/school/instructors/:slug`, богатый контент
+// (skills, courses, approach, location, gallery) лежит в `profile` JSONB.
+// Секция «Свободные слоты» убрана — на этапе шага 1 нет таблицы слотов.
+
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import {
   PlumpArrowLeft,
   PlumpArrowRight,
@@ -7,34 +14,26 @@ import {
   PlumpCamera,
 } from "@/components/ui/icons";
 import { PlumpNum } from "@/components/brand/PlumpNum";
-import {
-  getInstructorBySlug,
-  TONE_BG,
-  type Instructor,
-  type Slot,
-} from "@/data/instructors";
+import { TONE_BG } from "@/data/instructors";
 import { loadYandexMaps } from "@/lib/yandex-maps";
 import { ImageViewer } from "@/components/club/ImageViewer";
 import { useViewer } from "@/hooks/use-viewer";
-import { ensureThread } from "@/data/instructor-chats-mock";
+import {
+  fetchInstructor,
+  openChatWith,
+  schoolQk,
+  type InstructorApi,
+} from "@/lib/api-school";
+import { ApiError } from "@/lib/api";
 
 export const Route = createFileRoute("/club/school/$instructorId")({
-  head: ({ params }) => {
-    const it = getInstructorBySlug(params.instructorId);
-    const title = it
-      ? `${it.name} · Школа HELLHOUND`
-      : "Инструктор · Школа HELLHOUND";
-    return {
-      meta: [
-        { title },
-        {
-          name: "description",
-          content: it ? `${it.name}, ${it.city}. ${it.tagline}.` : "Инструктор Школы HELLHOUND.",
-        },
-        { name: "robots", content: "noindex" },
-      ],
-    };
-  },
+  head: () => ({
+    meta: [
+      { title: "Инструктор · Школа HELLHOUND" },
+      { name: "description", content: "Инструктор Школы HELLHOUND." },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
   component: ClubInstructorPage,
 });
 
@@ -42,14 +41,56 @@ const SKILL_TONES = ["primary", "yellow", "cyan", "lime", "violet", "primary"] a
 
 function ClubInstructorPage() {
   const { instructorId } = Route.useParams();
-  const instructor = getInstructorBySlug(instructorId);
   const navigate = useNavigate();
   const viewer = useViewer();
+  const qc = useQueryClient();
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "auto" });
   }, [instructorId]);
 
+  const q = useQuery({
+    queryKey: schoolQk.instructor(instructorId),
+    queryFn: () => fetchInstructor(instructorId),
+    retry: (count, err) => {
+      if (err instanceof ApiError && err.status === 404) return false;
+      return count < 2;
+    },
+  });
+
+  const openChat = useMutation({
+    mutationFn: async (slug: string) => openChatWith(slug),
+    onSuccess: async ({ id }) => {
+      await qc.invalidateQueries({ queryKey: schoolQk.myChats });
+      navigate({ to: "/club/my-instructors/$chatId", params: { chatId: id } });
+    },
+    onError: (err) => {
+      if (err instanceof ApiError && err.status === 401) {
+        navigate({ to: "/login" });
+        return;
+      }
+      toast.error(err instanceof Error ? err.message : "Не удалось открыть чат");
+    },
+  });
+
+  const handleContact = () => {
+    if (!viewer.user) {
+      navigate({ to: "/login" });
+      return;
+    }
+    if (!q.data) return;
+    openChat.mutate(q.data.slug);
+  };
+
+  if (q.isLoading) {
+    return (
+      <main className="mx-auto w-full max-w-3xl px-4 py-16 text-center font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+        Загружаем инструктора…
+      </main>
+    );
+  }
+
+  const instructor = q.data;
   if (!instructor) {
     return (
       <main className="mx-auto w-full max-w-3xl px-4 py-16 text-center">
@@ -66,17 +107,14 @@ function ClubInstructorPage() {
     );
   }
 
-  const openChat = () => {
-    if (!viewer.user) {
-      navigate({ to: "/login" });
-      return;
-    }
-    ensureThread(instructor.slug, viewer.user.id, viewer.user.nick);
-    navigate({
-      to: "/club/my-instructors/$instructorId",
-      params: { instructorId: instructor.slug },
-    });
-  };
+  const profile = instructor.profile ?? {};
+  const specialties = profile.specialties ?? [];
+  const bioParagraphs = profile.bioParagraphs ?? (instructor.bio ? [instructor.bio] : []);
+  const skills = profile.skills ?? [];
+  const courses = profile.courses ?? [];
+  const approach = profile.approach ?? [];
+  const gallery = profile.gallery ?? [];
+  const location = profile.location;
 
   return (
     <main className="mx-auto w-full max-w-5xl pb-24">
@@ -84,49 +122,56 @@ function ClubInstructorPage() {
 
       <div className="space-y-14 px-4 pt-6 md:space-y-20 md:px-6">
         <BackRow />
-        <BioSection instructor={instructor} />
-        {instructor.courses && instructor.courses.length > 0 && (
-          <CoursesSection instructor={instructor} onCta={openChat} />
+        {(specialties.length > 0 || bioParagraphs.length > 0) && (
+          <BioSection specialties={specialties} paragraphs={bioParagraphs} />
         )}
-        <SkillsSection instructor={instructor} />
-        {instructor.approach && instructor.approach.length > 0 && (
-          <ApproachSection instructor={instructor} />
+        {courses.length > 0 && (
+          <CoursesSection courses={courses} onCta={handleContact} />
         )}
-        <LocationSection instructor={instructor} />
-        <ContactCta onContact={openChat} />
-        <GallerySection instructor={instructor} />
-        <BottomActions onContact={openChat} />
+        {skills.length > 0 && <SkillsSection skills={skills} tone={instructor.tone} />}
+        {approach.length > 0 && <ApproachSection items={approach} />}
+        {location && <LocationSection city={instructor.city} location={location} />}
+        <ContactCta onContact={handleContact} pending={openChat.isPending} />
+        {gallery.length > 0 && (
+          <GallerySection gallery={gallery} tone={instructor.tone} name={instructor.displayName} />
+        )}
+        <BottomActions onContact={handleContact} pending={openChat.isPending} />
       </div>
     </main>
   );
 }
 
-/* ---------- Hero (kept as-is per user request) ---------- */
+/* ---------- Hero ---------- */
 
-function Hero({ instructor }: { instructor: Instructor }) {
-  const expLabel = `${instructor.experience} ${instructor.experience < 5 ? "года" : "лет"} стажа`;
+function Hero({ instructor }: { instructor: InstructorApi }) {
+  const exp = instructor.experience;
+  const expLabel = exp > 0 ? `${exp} ${exp < 5 ? "года" : "лет"} стажа` : null;
   return (
     <section className="relative">
       <div className="relative aspect-[4/5] w-full overflow-hidden bg-black md:aspect-[16/9]">
-        <img
-          src={instructor.photo}
-          alt={instructor.name}
-          className="absolute inset-0 h-full w-full object-cover"
-        />
+        {instructor.avatarUrl && (
+          <img
+            src={instructor.avatarUrl}
+            alt={instructor.displayName}
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
       </div>
 
       <div className="absolute inset-x-4 bottom-4 md:inset-x-8 md:bottom-8">
         <div className="flex flex-wrap gap-2">
-          <HeroChip>{instructor.city}</HeroChip>
-          <HeroChip>{expLabel}</HeroChip>
+          {instructor.city && <HeroChip>{instructor.city}</HeroChip>}
+          {expLabel && <HeroChip>{expLabel}</HeroChip>}
         </div>
         <h1 className="mt-3 font-display text-4xl font-black uppercase  leading-[0.9] tracking-tight text-white md:text-7xl">
-          {instructor.name}
+          {instructor.displayName}
         </h1>
-        <p className="mt-2 max-w-md font-mono text-[11px] uppercase tracking-widest text-white/80 md:text-xs">
-          {instructor.tagline}
-        </p>
+        {instructor.tagline && (
+          <p className="mt-2 max-w-md font-mono text-[11px] uppercase tracking-widest text-white/80 md:text-xs">
+            {instructor.tagline}
+          </p>
+        )}
       </div>
     </section>
   );
@@ -151,33 +196,41 @@ function BackRow() {
   );
 }
 
-/* ---------- Plump specialties + Bio ---------- */
+/* ---------- Bio ---------- */
 
-function BioSection({ instructor }: { instructor: Instructor }) {
+function BioSection({
+  specialties,
+  paragraphs,
+}: {
+  specialties: string[];
+  paragraphs: string[];
+}) {
   return (
     <section>
-      <div className="flex flex-wrap gap-2">
-        {instructor.specialties.map((s, i) => (
-          <span
-            key={s}
-            className={`inline-block rounded-full border-[3px] border-foreground px-3 py-1 font-display text-[11px] font-black uppercase tracking-widest shadow-[3px_3px_0_0_hsl(var(--foreground))] ${
-              i % 2 === 0 ? "bg-card text-foreground" : "bg-foreground text-background"
-            }`}
-          >
-            {s}
-          </span>
-        ))}
-      </div>
-      <div className="mt-5 space-y-3 text-[15px] leading-relaxed text-foreground/85 md:text-base">
-        {instructor.bio.map((p) => (
-          <p key={p}>{p}</p>
-        ))}
-      </div>
+      {specialties.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {specialties.map((s, i) => (
+            <span
+              key={s}
+              className={`inline-block rounded-full border-[3px] border-foreground px-3 py-1 font-display text-[11px] font-black uppercase tracking-widest shadow-[3px_3px_0_0_hsl(var(--foreground))] ${
+                i % 2 === 0 ? "bg-card text-foreground" : "bg-foreground text-background"
+              }`}
+            >
+              {s}
+            </span>
+          ))}
+        </div>
+      )}
+      {paragraphs.length > 0 && (
+        <div className="mt-5 space-y-3 text-[15px] leading-relaxed text-foreground/85 md:text-base">
+          {paragraphs.map((p, i) => (
+            <p key={i}>{p}</p>
+          ))}
+        </div>
+      )}
     </section>
   );
 }
-
-/* ---------- Section heading (plump landing style) ---------- */
 
 function SectionHeading({ kicker, title }: { kicker: string; title: string }) {
   return (
@@ -193,13 +246,12 @@ function SectionHeading({ kicker, title }: { kicker: string; title: string }) {
 /* ---------- Courses ---------- */
 
 function CoursesSection({
-  instructor,
+  courses,
   onCta,
 }: {
-  instructor: Instructor;
+  courses: NonNullable<InstructorApi["profile"]["courses"]>;
   onCta: () => void;
 }) {
-  const courses = instructor.courses ?? [];
   const gridRef = useRef<HTMLDivElement | null>(null);
   const [visible, setVisible] = useState(false);
 
@@ -248,21 +300,25 @@ function CoursesSection({
                 willChange: "transform, opacity",
               }}
             >
-              <div
-                className={`course-chip mb-4 inline-flex w-fit items-center rounded-full border-[3px] border-foreground px-3 py-1 font-display text-[11px] font-black uppercase tracking-widest shadow-[3px_3px_0_0_hsl(var(--foreground))] ${chipBg} ${
-                  visible ? "course-chip--in" : "course-chip--pre"
-                }`}
-                style={{
-                  animationDelay: visible ? `${i * 140 + 380}ms` : "0ms",
-                  willChange: "transform, opacity",
-                }}
-              >
-                {course.duration}
-              </div>
+              {course.duration && (
+                <div
+                  className={`course-chip mb-4 inline-flex w-fit items-center rounded-full border-[3px] border-foreground px-3 py-1 font-display text-[11px] font-black uppercase tracking-widest shadow-[3px_3px_0_0_hsl(var(--foreground))] ${chipBg} ${
+                    visible ? "course-chip--in" : "course-chip--pre"
+                  }`}
+                  style={{
+                    animationDelay: visible ? `${i * 140 + 380}ms` : "0ms",
+                    willChange: "transform, opacity",
+                  }}
+                >
+                  {course.duration}
+                </div>
+              )}
               <h3 className={`font-display text-xl font-black uppercase leading-tight tracking-tight md:text-2xl ${fg}`}>
                 {course.title}
               </h3>
-              <p className={`mt-3 text-sm leading-relaxed ${sub}`}>{course.description}</p>
+              {course.description && (
+                <p className={`mt-3 text-sm leading-relaxed ${sub}`}>{course.description}</p>
+              )}
 
               {course.includes && course.includes.length > 0 && (
                 <ul className={`mt-4 space-y-1.5 text-sm ${sub}`}>
@@ -304,16 +360,21 @@ function CoursesSection({
   );
 }
 
-/* ---------- Skills (plump grid like landing) ---------- */
+/* ---------- Skills ---------- */
 
-function SkillsSection({ instructor }: { instructor: Instructor }) {
+function SkillsSection({
+  skills,
+  tone,
+}: {
+  skills: NonNullable<InstructorApi["profile"]["skills"]>;
+  tone: InstructorApi["tone"];
+}) {
   const gridRef = useRef<HTMLDivElement | null>(null);
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
     const el = gridRef.current;
     if (!el) return;
-    // Respect reduced motion
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       setVisible(true);
       return;
@@ -338,13 +399,14 @@ function SkillsSection({ instructor }: { instructor: Instructor }) {
     <section>
       <SectionHeading kicker="Что дам" title="Чему научу" />
       <div ref={gridRef} className="grid gap-5 [perspective:1000px] sm:grid-cols-2 lg:grid-cols-3">
-        {instructor.skills.map((s, i) => {
-          const tone = SKILL_TONES[i % SKILL_TONES.length];
+        {skills.map((s, i) => {
+          const cardTone = SKILL_TONES[i % SKILL_TONES.length];
+          void tone;
           const rotate = i % 2 === 0 ? "-rotate-1" : "rotate-1";
           return (
             <article
-              key={s.title}
-              className={`skill-card ${rotate} rounded-2xl border-[3px] border-foreground ${TONE_BG[tone]} p-5 shadow-[6px_6px_0_0_hsl(var(--foreground))] ${
+              key={s.title + i}
+              className={`skill-card ${rotate} rounded-2xl border-[3px] border-foreground ${TONE_BG[cardTone]} p-5 shadow-[6px_6px_0_0_hsl(var(--foreground))] ${
                 visible ? "skill-card--in" : "skill-card--pre"
               }`}
               style={{
@@ -367,10 +429,9 @@ function SkillsSection({ instructor }: { instructor: Instructor }) {
   );
 }
 
-/* ---------- Approach (plump dark block like landing) ---------- */
+/* ---------- Approach ---------- */
 
-function ApproachSection({ instructor }: { instructor: Instructor }) {
-  const items = instructor.approach ?? [];
+function ApproachSection({ items }: { items: string[] }) {
   return (
     <section>
       <SectionHeading kicker="Подход" title="Как проходят тренировки" />
@@ -395,7 +456,13 @@ function ApproachSection({ instructor }: { instructor: Instructor }) {
 
 /* ---------- Location ---------- */
 
-function LocationSection({ instructor }: { instructor: Instructor }) {
+function LocationSection({
+  city,
+  location,
+}: {
+  city: string;
+  location: NonNullable<InstructorApi["profile"]["location"]>;
+}) {
   const mapRef = useRef<HTMLDivElement | null>(null);
   const [mapReady, setMapReady] = useState(false);
   const [mapFailed, setMapFailed] = useState(false);
@@ -407,13 +474,13 @@ function LocationSection({ instructor }: { instructor: Instructor }) {
       .then((ymaps) => {
         if (!mounted || !mapRef.current) return;
         map = new ymaps.Map(mapRef.current, {
-          center: [instructor.location.lat, instructor.location.lng],
+          center: [location.lat, location.lng],
           zoom: 14,
           controls: ["zoomControl"],
         });
         const placemark = new ymaps.Placemark(
-          [instructor.location.lat, instructor.location.lng],
-          { balloonContent: instructor.location.address },
+          [location.lat, location.lng],
+          { balloonContent: location.address },
           { preset: "islands#redDotIcon" },
         );
         map.geoObjects.add(placemark);
@@ -427,9 +494,9 @@ function LocationSection({ instructor }: { instructor: Instructor }) {
       mounted = false;
       if (map) map.destroy();
     };
-  }, [instructor.location.lat, instructor.location.lng, instructor.location.address]);
+  }, [location.lat, location.lng, location.address]);
 
-  const externalMapUrl = `https://yandex.ru/maps/?text=${encodeURIComponent(instructor.location.address)}`;
+  const externalMapUrl = `https://yandex.ru/maps/?text=${encodeURIComponent(location.address)}`;
 
   return (
     <section>
@@ -459,15 +526,17 @@ function LocationSection({ instructor }: { instructor: Instructor }) {
 
         <div className="flex flex-col justify-between gap-5 rounded-3xl border-[3px] border-foreground bg-primary p-5 shadow-[8px_8px_0_0_hsl(var(--foreground))] md:p-6">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border-[3px] border-foreground bg-card px-3 py-1 font-display text-[11px] font-black uppercase tracking-widest text-foreground shadow-[3px_3px_0_0_hsl(var(--foreground))]">
-              <PlumpMap className="h-4 w-4" /> {instructor.city}
-            </div>
+            {city && (
+              <div className="inline-flex items-center gap-2 rounded-full border-[3px] border-foreground bg-card px-3 py-1 font-display text-[11px] font-black uppercase tracking-widest text-foreground shadow-[3px_3px_0_0_hsl(var(--foreground))]">
+                <PlumpMap className="h-4 w-4" /> {city}
+              </div>
+            )}
             <p className="mt-4 font-display text-lg font-black uppercase leading-tight tracking-tight text-primary-foreground md:text-xl">
-              {instructor.location.address}
+              {location.address}
             </p>
-            {instructor.location.note && (
+            {location.note && (
               <p className="mt-3 text-sm leading-relaxed text-primary-foreground/90">
-                {instructor.location.note}
+                {location.note}
               </p>
             )}
           </div>
@@ -485,87 +554,17 @@ function LocationSection({ instructor }: { instructor: Instructor }) {
   );
 }
 
-/* ---------- Schedule (wider, plump) ---------- */
+/* ---------- Gallery ---------- */
 
-function ScheduleSection({
-  instructor,
-  scheduleRef,
+function GallerySection({
+  gallery,
+  tone,
+  name,
 }: {
-  instructor: Instructor;
-  scheduleRef: React.RefObject<HTMLDivElement | null>;
+  gallery: string[];
+  tone: InstructorApi["tone"];
+  name: string;
 }) {
-  const [picked, setPicked] = useState<string | null>(null);
-  return (
-    <section ref={scheduleRef} className="scroll-mt-4">
-      <SectionHeading kicker="Ближайшая неделя" title="Свободные слоты" />
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {instructor.schedule.map((day, i) => (
-          <div
-            key={day.date}
-            className={`rounded-2xl border-[3px] border-foreground ${i % 2 === 0 ? "bg-card" : "bg-primary/10"} p-4 shadow-[6px_6px_0_0_hsl(var(--foreground))]`}
-          >
-            <div className="mb-3 flex items-baseline justify-between">
-              <span className="font-display text-2xl font-black uppercase leading-none tracking-tight text-foreground">
-                {day.weekday}
-              </span>
-              <span className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
-                {day.date}
-              </span>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {day.slots.map((slot) => (
-                <SlotBtn
-                  key={`${day.date}-${slot.time}`}
-                  slot={slot}
-                  picked={picked === `${day.date}-${slot.time}`}
-                  onPick={() => setPicked(`${day.date}-${slot.time}`)}
-                />
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-      <div className="mt-5 rounded-2xl border-[3px] border-dashed border-foreground/40 bg-card/40 p-4 text-center font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
-        {picked
-          ? "Слот выбран. Скоро запись прямо здесь — пока пиши в помощь клуба."
-          : "Выбери слот. Настоящая запись появится скоро."}
-      </div>
-    </section>
-  );
-}
-
-function SlotBtn({
-  slot,
-  picked,
-  onPick,
-}: {
-  slot: Slot;
-  picked: boolean;
-  onPick: () => void;
-}) {
-  if (slot.status === "booked") {
-    return (
-      <span className="inline-flex items-center rounded-full border-[3px] border-foreground/30 bg-muted px-3 py-1 font-display text-xs font-black uppercase tracking-widest text-muted-foreground line-through">
-        {slot.time}
-      </span>
-    );
-  }
-  return (
-    <button
-      type="button"
-      onClick={onPick}
-      className={`inline-flex items-center rounded-full border-[3px] border-foreground px-3 py-1 font-display text-xs font-black uppercase tracking-widest shadow-[3px_3px_0_0_hsl(var(--foreground))] ${
-        picked ? "bg-primary text-primary-foreground" : "bg-card text-foreground"
-      }`}
-    >
-      {slot.time}
-    </button>
-  );
-}
-
-/* ---------- Gallery (swipeable, one-per-screen) ---------- */
-
-function GallerySection({ instructor }: { instructor: Instructor }) {
   const scrollerRef = useRef<HTMLDivElement | null>(null);
   const [openIdx, setOpenIdx] = useState<number | null>(null);
 
@@ -575,7 +574,7 @@ function GallerySection({ instructor }: { instructor: Instructor }) {
     el.scrollBy({ left: dir * el.clientWidth, behavior: "smooth" });
   };
 
-  if (instructor.gallery.length === 0) {
+  if (gallery.length === 0) {
     return (
       <section>
         <SectionHeading kicker="Кадры" title="Галерея" />
@@ -599,7 +598,7 @@ function GallerySection({ instructor }: { instructor: Instructor }) {
           ref={scrollerRef}
           className="flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-4 pt-2 md:px-6 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
-          {instructor.gallery.map((src, i) => (
+          {gallery.map((src, i) => (
             <button
               type="button"
               key={src}
@@ -608,12 +607,12 @@ function GallerySection({ instructor }: { instructor: Instructor }) {
               style={{ maxWidth: "100%" }}
             >
               <div
-                className={`overflow-hidden rounded-2xl border-[3px] border-foreground ${TONE_BG[instructor.tone]} shadow-[8px_8px_0_0_hsl(var(--foreground))]`}
+                className={`overflow-hidden rounded-2xl border-[3px] border-foreground ${TONE_BG[tone]} shadow-[8px_8px_0_0_hsl(var(--foreground))]`}
               >
                 <div className="aspect-[4/5] w-full">
                   <img
                     src={src}
-                    alt={`${instructor.name} — кадр ${i + 1}`}
+                    alt={`${name} — кадр ${i + 1}`}
                     loading="lazy"
                     className="h-full w-full object-cover"
                   />
@@ -648,7 +647,7 @@ function GallerySection({ instructor }: { instructor: Instructor }) {
       </div>
       {openIdx !== null && (
         <ImageViewer
-          src={instructor.gallery[openIdx]}
+          src={gallery[openIdx]}
           open
           onClose={() => setOpenIdx(null)}
         />
@@ -657,17 +656,18 @@ function GallerySection({ instructor }: { instructor: Instructor }) {
   );
 }
 
-/* ---------- Bottom actions (replaces FinalCta + StickyCta) ---------- */
+/* ---------- CTA ---------- */
 
-function ContactCta({ onContact }: { onContact: () => void }) {
+function ContactCta({ onContact, pending }: { onContact: () => void; pending: boolean }) {
   return (
     <section className="scroll-mt-4">
       <button
         type="button"
         onClick={onContact}
-        className="group flex w-full items-center justify-center gap-3 rounded-3xl border-[3px] border-foreground bg-[#B6FF3C] px-6 py-6 font-display text-2xl font-black uppercase tracking-tight text-black shadow-[8px_8px_0_0_hsl(var(--foreground))] transition-transform duration-150 active:translate-x-[2px] active:translate-y-[2px] active:shadow-[4px_4px_0_0_hsl(var(--foreground))] md:text-3xl"
+        disabled={pending}
+        className="group flex w-full items-center justify-center gap-3 rounded-3xl border-[3px] border-foreground bg-[#B6FF3C] px-6 py-6 font-display text-2xl font-black uppercase tracking-tight text-black shadow-[8px_8px_0_0_hsl(var(--foreground))] transition-transform duration-150 active:translate-x-[2px] active:translate-y-[2px] active:shadow-[4px_4px_0_0_hsl(var(--foreground))] disabled:opacity-60 md:text-3xl"
       >
-        Связаться <PlumpArrowRight className="h-6 w-6" />
+        {pending ? "Открываем чат…" : "Связаться"} <PlumpArrowRight className="h-6 w-6" />
       </button>
       <p className="mt-3 text-center font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
         Договорись по времени в чате
@@ -676,15 +676,16 @@ function ContactCta({ onContact }: { onContact: () => void }) {
   );
 }
 
-function BottomActions({ onContact }: { onContact: () => void }) {
+function BottomActions({ onContact, pending }: { onContact: () => void; pending: boolean }) {
   return (
     <div className="flex justify-center pt-2">
       <button
         type="button"
         onClick={onContact}
-        className="inline-flex items-center justify-center gap-2 rounded-full border-[3px] border-foreground bg-[#B6FF3C] px-8 py-3 font-display text-sm font-black uppercase tracking-widest text-black shadow-[6px_6px_0_0_hsl(var(--foreground))]"
+        disabled={pending}
+        className="inline-flex items-center justify-center gap-2 rounded-full border-[3px] border-foreground bg-[#B6FF3C] px-8 py-3 font-display text-sm font-black uppercase tracking-widest text-black shadow-[6px_6px_0_0_hsl(var(--foreground))] disabled:opacity-60"
       >
-        Связаться <PlumpArrowRight className="h-4 w-4" />
+        {pending ? "Открываем…" : "Связаться"} <PlumpArrowRight className="h-4 w-4" />
       </button>
     </div>
   );
