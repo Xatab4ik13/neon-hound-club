@@ -157,3 +157,75 @@ export async function payOrder(orderId: string, method: "card" | "sbp" = "card")
     { method: "POST", body: JSON.stringify({ method }) },
   );
 }
+
+// =========================================================================
+// INSTRUCTOR side (для аккаунтов, у которых есть строка в school_instructors)
+// =========================================================================
+
+export type InstructorMeApi = {
+  instructor: {
+    id: string;
+    slug: string;
+    displayName: string;
+    avatarUrl: string | null;
+    city: string;
+    active: boolean;
+    hourlyRateRub: number;
+  };
+};
+
+export async function fetchInstructorMe() {
+  return apiFetch<InstructorMeApi>("/api/v1/instructor/me");
+}
+
+export type InstructorChatRow = {
+  id: string;
+  studentId: string;
+  studentNick: string;
+  lastMessageAt: string;
+  lastMessagePreview: string;
+  lastMessageRole: string;
+  unread: number;
+};
+
+export async function fetchInstructorChats() {
+  return apiFetch<{ items: InstructorChatRow[] }>("/api/v1/instructor/chats");
+}
+
+export type InstructorOrderRow = {
+  id: string;
+  chatId: string;
+  studentId: string;
+  studentNick: string;
+  title: string;
+  description: string;
+  /** Сумма инструктора (без наценки платформы). */
+  amountRub: number;
+  status: "draft" | "invoiced" | "paid" | "cancelled" | "refunded";
+  scheduledAt: string | null;
+  paidAt: string | null;
+  createdAt: string;
+};
+
+export async function fetchInstructorOrders() {
+  return apiFetch<{ items: InstructorOrderRow[] }>("/api/v1/instructor/orders");
+}
+
+export async function createInstructorOrder(payload: {
+  chatId: string;
+  title: string;
+  description: string;
+  instructorAmountRub: number;
+  scheduledAt?: string;
+}) {
+  return apiFetch<{ id: string }>("/api/v1/instructor/orders", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function cancelInstructorOrder(id: string) {
+  return apiFetch<{ ok: true }>(`/api/v1/instructor/orders/${id}/cancel`, {
+    method: "POST",
+  });
+}
