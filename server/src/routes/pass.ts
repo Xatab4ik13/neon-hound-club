@@ -130,10 +130,11 @@ export async function adminPassRoutes(app: FastifyInstance) {
         expiresAt: passPurchases.expiresAt,
         nick: users.nick,
         email: users.email,
-        avatarUrl: users.avatarUrl,
+        avatarUrl: profiles.avatarUrl,
       })
       .from(passPurchases)
       .innerJoin(users, eq(users.id, passPurchases.userId))
+      .leftJoin(profiles, eq(profiles.userId, passPurchases.userId))
       .where(conds.length ? and(...conds) : (undefined as any))
       .orderBy(desc(passPurchases.createdAt))
       .limit(q.limit);
