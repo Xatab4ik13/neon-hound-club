@@ -1020,8 +1020,6 @@ function CommentsSheet({
 
   const renderItem = (c: Comment, isReply = false) => {
     const isMine = myId != null && c.author.id === myId;
-    const canDelete = isMine || moderate;
-
     const item = (
       <CommentItem
         key={c.id}
@@ -1038,23 +1036,7 @@ function CommentsSheet({
         onDoubleTap={() => commentReactionsStore.toggle(c.id, "🔥")}
       />
     );
-
-    if (!canDelete) return item;
-
-    return (
-      <Swipeable
-        key={c.id}
-        radius={12}
-        left={{
-          icon: <Trash2 className="h-4 w-4" />,
-          label: "Удалить",
-          bg: "linear-gradient(90deg, oklch(0.4 0.18 27) 0%, oklch(0.5 0.22 27) 100%)",
-          onAction: () => setPendingDelete(c.id),
-        }}
-      >
-        {item}
-      </Swipeable>
-    );
+    return item;
   };
 
   return (
@@ -1063,13 +1045,17 @@ function CommentsSheet({
       onOpenChange={onOpenChange}
       title={`Комментарии · ${post.commentsCount}`}
       fullHeight
-      contentClassName="!p-0 !overflow-hidden flex flex-col min-h-0"
+      contentClassName="!p-0 !overflow-hidden flex flex-col min-h-0 max-w-full"
     >
-      <div className="flex h-full min-h-0 flex-1 flex-col">
+      <div className="flex h-full min-h-0 max-w-full flex-1 flex-col overflow-hidden">
         <div
           ref={listRef}
-          className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 md:px-5"
-          style={{ WebkitOverflowScrolling: "touch" } as React.CSSProperties}
+          className="min-h-0 max-w-full flex-1 overflow-y-auto overflow-x-hidden overscroll-contain px-4 py-4 md:px-5"
+          style={{
+            WebkitOverflowScrolling: "touch",
+            touchAction: "pan-y",
+            overscrollBehaviorX: "none",
+          } as React.CSSProperties}
         >
           {post.commentsCount === 0 ? (
             <div className="grid h-full place-items-center text-[13px] text-muted-foreground">
@@ -1078,7 +1064,7 @@ function CommentsSheet({
           ) : !post.commentsFull && post.commentsCount > post.comments.length && !skeletonExpired ? (
             <CommentSkeletonList count={Math.min(5, post.commentsCount)} />
           ) : (
-            <ul className="space-y-5">
+            <ul className="max-w-full space-y-5">
               {topLevel.map((c) => {
                 const children = childrenByParentId.get(c.id) ?? [];
                 const isCollapsed = collapsed.has(c.id);
@@ -1101,7 +1087,7 @@ function CommentsSheet({
                     )}
                     <li
                       data-comment-id={c.id}
-                      className={`space-y-3 rounded-2xl transition-colors ${isHi ? "ring-2 ring-primary/60 bg-primary/[0.04]" : ""}`}
+                      className={`max-w-full space-y-3 overflow-hidden rounded-2xl transition-colors ${isHi ? "ring-2 ring-primary/60 bg-primary/[0.04]" : ""}`}
                       style={
                         isJustSent
                           ? { animation: "comment-flyin 480ms cubic-bezier(.22,1,.36,1)" }
@@ -1112,7 +1098,7 @@ function CommentsSheet({
                     >
                       <ul>{renderItem(c)}</ul>
                       {children.length > 0 && (
-                        <div className="pl-12">
+                        <div className="min-w-0 max-w-full overflow-hidden pl-12">
                           <button
                             type="button"
                             onClick={() => toggleCollapse(c.id)}
@@ -1124,7 +1110,7 @@ function CommentsSheet({
                               : `Скрыть ответы · ${children.length}`}
                           </button>
                           {!isCollapsed && (
-                            <ul className="space-y-4">
+                            <ul className="max-w-full space-y-4">
                               {children.map((child) => {
                                 const isChildHi = highlightId === child.id;
                                 const isChildJustSent = justSentId === child.id;
@@ -1132,7 +1118,7 @@ function CommentsSheet({
                                   <div
                                     key={child.id}
                                     data-comment-id={child.id}
-                                    className={`rounded-2xl transition-colors ${isChildHi ? "ring-2 ring-primary/60 bg-primary/[0.04]" : ""}`}
+                                     className={`max-w-full overflow-hidden rounded-2xl transition-colors ${isChildHi ? "ring-2 ring-primary/60 bg-primary/[0.04]" : ""}`}
                                     style={
                                       isChildJustSent
                                         ? { animation: "comment-flyin 480ms cubic-bezier(.22,1,.36,1)" }
@@ -1390,7 +1376,7 @@ const CommentItem = memo(function CommentItem({
   );
 
   return (
-    <li className="flex gap-3">
+    <li className="flex max-w-full min-w-0 gap-3 overflow-hidden">
       <UserLink slug={author.slug} disabled={authorIsBlogger}>
         {authorIsBlogger ? (
           <HellhoundAvatar size={large ? 40 : 36} initials={author.initials} avatarUrl={author.avatarUrl} />
@@ -1403,8 +1389,8 @@ const CommentItem = memo(function CommentItem({
           />
         )}
       </UserLink>
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
+      <div className="min-w-0 max-w-full flex-1 overflow-hidden">
+        <div className="flex min-w-0 items-center gap-2">
           <UserLink slug={author.slug} disabled={authorIsBlogger} className="min-w-0 truncate">
             <span
               className={`truncate font-display font-bold uppercase  tracking-tight transition-opacity hover:opacity-80 ${large ? "text-[14px]" : "text-[13px]"}`}
@@ -1551,7 +1537,7 @@ const CommentItem = memo(function CommentItem({
 
         <CommentReactionsBar commentId={comment.id} />
 
-        <div className="mt-1.5 flex items-center gap-4 pl-1">
+        <div className="mt-1.5 flex min-w-0 items-center gap-4 overflow-hidden pl-1">
           <button
             type="button"
             onClick={() => {

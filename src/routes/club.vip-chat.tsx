@@ -31,6 +31,11 @@ import { haptic } from "@/hooks/use-haptic";
 import { useKeyboardOffset } from "@/hooks/use-keyboard-offset";
 import { useMyProfile } from "@/lib/garage-api";
 import { useMyStickerPacks } from "@/lib/stickers-api";
+import {
+  useSendVipChatMessage,
+  useVipChatThread,
+  type VipChatServerMessage,
+} from "@/lib/vip-chat-api";
 
 export const Route = createFileRoute("/club/vip-chat")({
   head: () => ({
@@ -63,24 +68,18 @@ type Msg = {
   at: number;
 };
 
-const NOW = Date.now();
-const MINUTE = 60_000;
 const MAX_LEN = 2000;
 
-const INITIAL_MESSAGES: Msg[] = [
-  {
-    id: "m1",
-    role: "hell",
-    text: "Йо. Это персональный VIP-канал — тут только ты и я. Пиши по делу.",
-    at: NOW - 42 * MINUTE,
-  },
-  {
-    id: "m2",
-    role: "me",
-    text: "Го! Что нового по гаражу?",
-    at: NOW - 40 * MINUTE,
-  },
-];
+function adaptServerMessage(message: VipChatServerMessage): Msg {
+  return {
+    id: message.id,
+    role: message.senderRole === "user" ? "me" : "hell",
+    text: message.text ?? undefined,
+    image: message.imageUrl ?? undefined,
+    sticker: message.sticker ?? undefined,
+    at: new Date(message.createdAt).getTime(),
+  };
+}
 
 function formatTime(ts: number) {
   const d = new Date(ts);
@@ -104,7 +103,12 @@ function formatDay(ts: number) {
 function VipChatPage() {
 
 
-  const [messages, setMessages] = useState<Msg[]>(INITIAL_MESSAGES);
+  const threadQ = useVipChatThread();
+  const sendMsg = useSendVipChatMessage();
+  const messages = useMemo(
+    () => (threadQ.data?.messages ?? []).map(adaptServerMessage),
+    [threadQ.data?.messages],
+  );
   const [text, setText] = useState("");
   const [pending, setPending] = useState<Attachment | null>(null);
   const [attachOpen, setAttachOpen] = useState(false);
@@ -126,7 +130,10 @@ function VipChatPage() {
   // Сообщения, уже присутствовавшие при открытии чата — не анимируем.
   // Анимация вылета применяется только к новым сообщениям, пришедшим/отправленным
   // в текущей сессии, пока пользователь сидит в чате.
-  const initialIdsRef = useRef<Set<string>>(new Set(INITIAL_MESSAGES.map((m) => m.id)));
+  const initialIdsRef = useRef<Set<string> | null>(null);
+  if (initialIdsRef.current === null && threadQ.data) {
+    initialIdsRef.current = new Set(messages.map((m) => m.id));
+  }
 
   // Автоскролл вниз при появлении сообщений/аттача.
   useEffect(() => {
@@ -146,22 +153,14 @@ function VipChatPage() {
   }, [text]);
 
   const trimmed = text.trim();
-  const canSend = trimmed.length > 0 || !!pending;
+  const pendingHttpImage = pending?.url && /^https?:\/\//i.test(pending.url) ? pending.url : undefined;
+  const canSend = trimmed.length > 0 || !!pendingHttpImage;
   const overLimit = text.length > MAX_LEN;
 
   const send = () => {
-    if (!canSend || overLimit) return;
+    if (!canSend || overLimit || sendMsg.isPending) return;
     haptic("light");
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: `me_${Date.now()}`,
-        role: "me",
-        text: trimmed || undefined,
-        image: pending?.url,
-        at: Date.now(),
-      },
-    ]);
+    sendMsg.mutate({ text: trimmed || undefined, imageUrl: pendingHttpImage });
     setText("");
     setPending(null);
   };
@@ -179,15 +178,7 @@ function VipChatPage() {
     pushRecent(s);
     setPanelOpen(false);
     haptic("light");
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: `me_${Date.now()}`,
-        role: "me",
-        sticker: stickerId,
-        at: Date.now(),
-      },
-    ]);
+    sendMsg.mutate({ sticker: stickerId });
   };
 
   const onKeyDown = (e: ReactKeyboardEvent<HTMLTextAreaElement>) => {
@@ -223,19 +214,32 @@ function VipChatPage() {
       ? `calc(100dvh - 3.25rem - env(safe-area-inset-top) - ${keyboardOffset}px)`
       : "calc(100dvh - 3.25rem - env(safe-area-inset-top) - 64px - 8px - env(safe-area-inset-bottom))";
 
+  if (threadQ.isLoading) {
+    return <div className="min-h-0" />;
+  }
+
+  if (!threadQ.data?.blogger) {
+    return (
+      <div className="grid min-h-[60vh] place-items-center px-6 text-center font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+        VIP-чат пока недоступен
+      </div>
+    );
+  }
+
   return (
     <div
-      className="relative flex w-full flex-col overflow-hidden bg-[#0a0a0a]"
-      style={{ height: pageHeight }}
+      className="relative flex w-full max-w-full flex-col overflow-hidden bg-[#0a0a0a]"
+      style={{ height: pageHeight, touchAction: "pan-y", overscrollBehavior: "contain" }}
     >
       {/* Лента сообщений — без локальной шапки, фон уходит под MobileTopBar */}
       <div
         ref={scrollerRef}
-        className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pt-4"
+        className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain px-4 pt-4"
         style={{
           backgroundImage: "radial-gradient(#1a1a1a 1px, transparent 1px)",
           backgroundSize: "20px 20px",
           paddingBottom: 16,
+          touchAction: "pan-y",
         }}
       >
         <div className="mx-auto flex max-w-[640px] flex-col gap-6">
@@ -251,7 +255,7 @@ function VipChatPage() {
                 const isMine = m.role === "me";
                 const prev = mi > 0 ? g.items[mi - 1] : null;
                 const showAvatar = !isMine && (!prev || prev.role !== "hell");
-                const isNew = !initialIdsRef.current.has(m.id);
+                const isNew = !!initialIdsRef.current && !initialIdsRef.current.has(m.id);
                 return (
                   <div
                     key={m.id}
@@ -317,6 +321,11 @@ function VipChatPage() {
               })}
             </div>
           ))}
+            {groups.length === 0 && (
+              <div className="mt-16 text-center font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+                Начни переписку с Hell
+              </div>
+            )}
         </div>
       </div>
 
@@ -440,7 +449,7 @@ function VipChatPage() {
           ) : (
             <button
               type="submit"
-              disabled={!canSend || overLimit}
+              disabled={!canSend || overLimit || sendMsg.isPending}
               aria-label="Отправить"
               className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#B6FF3C] text-black transition-transform active:scale-95 disabled:opacity-40"
             >
