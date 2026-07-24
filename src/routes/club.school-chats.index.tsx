@@ -64,11 +64,7 @@ function collectOrders(threads: InstructorThread[]): PaidOrder[] {
       }
     }
   }
-  out.sort((a, b) => {
-    const at = a.invoice.paidAt ?? a.invoice.createdAt ?? 0;
-    const bt = b.invoice.paidAt ?? b.invoice.createdAt ?? 0;
-    return bt - at;
-  });
+  out.sort((a, b) => (b.invoice.paidAt ?? 0) - (a.invoice.paidAt ?? 0));
   return out;
 }
 
