@@ -186,70 +186,58 @@ function SchoolChatsList() {
         )}
 
         {tab === "orders" && (
-          <div>
-            {/* Summary */}
-            <div className="grid grid-cols-2 gap-3 px-4 pb-3">
-              <div className="rounded-2xl border border-white/[0.08] bg-black/60 px-4 py-3">
-                <div className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-                  За неделю
-                </div>
-                <div className="mt-1 font-display text-2xl font-black tracking-tight text-primary">
-                  {formatRub(weekTotal)}
-                </div>
-                <div className="mt-1 text-[11px] text-muted-foreground">
-                  Выплата в конце недели
-                </div>
-              </div>
-              <div className="rounded-2xl border border-white/[0.08] bg-black/60 px-4 py-3">
-                <div className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-                  Всего
-                </div>
-                <div className="mt-1 font-display text-2xl font-black tracking-tight text-foreground">
-                  {formatRub(total)}
-                </div>
-                <div className="mt-1 text-[11px] text-muted-foreground">
-                  Оплачено учениками
-                </div>
-              </div>
-            </div>
-
-            <ul className="divide-y divide-white/[0.06] border-y border-white/[0.06] bg-black/40">
-              {orders.length === 0 && (
-                <li className="px-4 py-10 text-center text-[13px] text-muted-foreground">
-                  Оплаченных заказов пока нет
-                </li>
-              )}
-              {orders.map((o) => (
+          <ul className="divide-y divide-white/[0.06] border-y border-white/[0.06] bg-black/40">
+            {orders.length === 0 && (
+              <li className="px-4 py-10 text-center text-[13px] text-muted-foreground">
+                Заказов пока нет
+              </li>
+            )}
+            {orders.map((o) => {
+              const paid = o.invoice.status === "paid";
+              const who = o.invoice.payerName?.trim() || o.studentNick;
+              return (
                 <li key={o.invoice.id}>
                   <Link
                     to="/club/school-chats/$studentId"
                     params={{ studentId: o.studentUserId }}
                     className="flex items-center gap-3 px-4 py-3 transition-colors active:bg-white/[0.04]"
                   >
-                    <Avatar nick={o.studentNick} />
+                    <Avatar nick={who} />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
                         <span className="truncate font-display text-[15px] font-black uppercase tracking-tight text-foreground">
-                          {o.studentNick}
+                          {who}
                         </span>
-                        <span className="ml-auto shrink-0 font-display text-[15px] font-black tracking-tight text-primary">
+                        <span
+                          className={cn(
+                            "ml-auto shrink-0 font-display text-[15px] font-black tracking-tight",
+                            paid ? "text-[#B6FF3C]" : "text-muted-foreground",
+                          )}
+                        >
                           {formatRub(o.invoice.amount)}
                         </span>
                       </div>
-                      <div className="mt-0.5 flex items-center gap-2">
-                        <span className="truncate text-[13px] text-foreground/80">
-                          {o.invoice.description || `${o.invoice.hours} ч занятия`}
+                      <div className="mt-1 flex items-center gap-2">
+                        <span
+                          className={cn(
+                            "shrink-0 rounded-full px-2 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wider",
+                            paid
+                              ? "bg-[#B6FF3C]/15 text-[#B6FF3C]"
+                              : "bg-white/[0.06] text-muted-foreground",
+                          )}
+                        >
+                          {paid ? "Оплачено" : "Ожидает оплаты"}
                         </span>
                         <span className="ml-auto shrink-0 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-                          {o.invoice.paidAt ? formatWhen(o.invoice.paidAt) : ""}
+                          {formatLessonDate(o.invoice.dateTime)}
                         </span>
                       </div>
                     </div>
                   </Link>
                 </li>
-              ))}
-            </ul>
-          </div>
+              );
+            })}
+          </ul>
         )}
       </div>
     </div>
