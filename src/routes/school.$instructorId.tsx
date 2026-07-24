@@ -120,15 +120,6 @@ function InstructorPage() {
         <OtherInstructors currentSlug={instructor.slug} />
       </main>
       <Footer />
-
-      <BookInstructorChatSheet
-        open={chatOpen}
-        onOpenChange={setChatOpen}
-        instructorSlug={instructor.slug}
-        instructorName={instructor.name}
-        instructorPhoto={instructor.photo}
-        instructorCity={instructor.city}
-      />
     </div>
   );
 }
