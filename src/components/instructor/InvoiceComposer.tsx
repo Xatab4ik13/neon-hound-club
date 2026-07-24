@@ -7,7 +7,7 @@ import { IOSDateSheet } from "@/components/ios/IOSDateSheet";
 import { IOSTimeSheet } from "@/components/ios/IOSTimeSheet";
 
 export type InvoiceDraft = {
-  hours: number;
+  duration: string;
   description: string;
   dateTime: string;
   amount: number;
