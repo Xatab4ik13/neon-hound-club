@@ -159,13 +159,14 @@ async function sweepTableColumn(info: ColumnInfo) {
       ? sql`(${sql.raw(`"${col}"::text`)} ILIKE '%/__l5e/assets-v1/%' OR ${sql.raw(`"${col}"::text`)} ILIKE '%lovable%')`
       : sql`(${sql.raw(`"${col}"`)} ILIKE '%/__l5e/assets-v1/%' OR ${sql.raw(`"${col}"`)} ILIKE '%lovable%')`;
 
-  const { rows } = await db.execute<any>(
+  const rows = (await db.execute(
     sql`SELECT ${sql.raw(`"${pk}"`)} AS id, ${sql.raw(`"${col}"`)}::text AS val FROM ${sql.raw(`public."${t}"`)} WHERE ${filter}`,
-  );
+  )) as unknown as Array<{ id: any; val: string | null }>;
   if (rows.length === 0) return;
   console.log(`[${t}.${col}] candidates: ${rows.length}`);
 
-  for (const r of rows as Array<{ id: any; val: string | null }>) {
+  for (const r of rows) {
+
     if (!r.val) continue;
     const { value: newVal, changed } = await rewriteString(r.val, t, col);
     if (!changed) {
