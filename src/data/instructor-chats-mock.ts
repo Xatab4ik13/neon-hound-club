@@ -14,7 +14,7 @@ export type InvoiceStatus = "pending" | "paid";
 
 export type InvoicePayload = {
   id: string;
-  hours: number;
+  duration: string;
   description: string;
   /** ISO-строка даты/времени занятия. */
   dateTime: string;
