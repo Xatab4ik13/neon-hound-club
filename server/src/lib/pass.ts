@@ -132,6 +132,14 @@ export async function activatePassPurchase(purchaseId: string): Promise<{ ok: bo
     idempotent: true,
   });
 
+  // Автовыдача стикерпаков за пасс (идемпотентно через уникальный индекс user_id+pack_slug).
+  for (const slug of PASS_STICKER_PACKS) {
+    await db
+      .insert(userStickerPacks)
+      .values({ userId: p.userId, packSlug: slug, source: "pass" })
+      .onConflictDoNothing({ target: [userStickerPacks.userId, userStickerPacks.packSlug] });
+  }
+
   // first_pass больше не квест — активация пасса даёт билеты + бонусный XP выше.
 
   return { ok: true };
