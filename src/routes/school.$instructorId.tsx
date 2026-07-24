@@ -1,5 +1,7 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { Header } from "@/components/brand/Header";
 import { Footer } from "@/components/brand/Footer";
 import { PlumpArrowLeft, PlumpArrowRight, PlumpMap, PlumpCamera } from "@/components/ui/icons";
@@ -12,7 +14,9 @@ import {
   type Slot,
 } from "@/data/instructors";
 import { loadYandexMaps } from "@/lib/yandex-maps";
-import { BookInstructorChatSheet } from "@/components/school/BookInstructorChatSheet";
+import { useViewer } from "@/hooks/use-viewer";
+import { openChatWith, schoolQk } from "@/lib/api-school";
+import { ApiError } from "@/lib/api";
 
 export const Route = createFileRoute("/school/$instructorId")({
   head: ({ params }) => {
@@ -42,8 +46,33 @@ export const Route = createFileRoute("/school/$instructorId")({
 function InstructorPage() {
   const { instructorId } = Route.useParams();
   const instructor = getInstructorBySlug(instructorId);
-  const [chatOpen, setChatOpen] = useState(false);
-  const openChat = () => setChatOpen(true);
+  const navigate = useNavigate();
+  const viewer = useViewer();
+  const qc = useQueryClient();
+
+  const openChatMut = useMutation({
+    mutationFn: (slug: string) => openChatWith(slug),
+    onSuccess: async ({ id }) => {
+      await qc.invalidateQueries({ queryKey: schoolQk.myChats });
+      navigate({ to: "/club/my-instructors/$chatId", params: { chatId: id } });
+    },
+    onError: (err) => {
+      if (err instanceof ApiError && err.status === 401) {
+        navigate({ to: "/login" });
+        return;
+      }
+      toast.error(err instanceof Error ? err.message : "Не удалось открыть чат");
+    },
+  });
+
+  const openChat = () => {
+    if (!instructor) return;
+    if (!viewer.user) {
+      navigate({ to: "/login" });
+      return;
+    }
+    openChatMut.mutate(instructor.slug);
+  };
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "auto" });
@@ -91,15 +120,6 @@ function InstructorPage() {
         <OtherInstructors currentSlug={instructor.slug} />
       </main>
       <Footer />
-
-      <BookInstructorChatSheet
-        open={chatOpen}
-        onOpenChange={setChatOpen}
-        instructorSlug={instructor.slug}
-        instructorName={instructor.name}
-        instructorPhoto={instructor.photo}
-        instructorCity={instructor.city}
-      />
     </div>
   );
 }
