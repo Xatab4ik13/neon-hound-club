@@ -132,18 +132,25 @@ function TierCard({
   isActive: boolean;
 }) {
   const featured = tier.perks.slice(0, 4);
+  // Лёгкий постоянный «стикерный» наклон, как у карточек инструкторов Школы.
+  const tiltDeg = index % 2 === 0 ? -1.2 : 1.2;
+  const flyKf = index % 2 === 0 ? "hellpass-fly-in" : "hellpass-fly-in-right";
 
   return (
     <Link
       to="/club/hell-pass/$tier"
       params={{ tier: tier.slug }}
-      className="group relative block animate-fade-in overflow-hidden rounded-3xl border-[3px] border-foreground bg-card transition-transform duration-200 active:scale-[0.99]"
+      className="group relative block overflow-hidden rounded-3xl border-[3px] border-foreground bg-card transition-transform duration-200 ease-out will-change-transform hover:-translate-y-1"
       style={{
-        animationDelay: `${index * 60}ms`,
-        animationFillMode: "backwards",
-        boxShadow: `4px 4px 0 0 hsl(var(--foreground))`,
+        // @ts-expect-error CSS custom property для финального угла наклона
+        "--hp-tilt": `${tiltDeg}deg`,
+        transform: `rotate(${tiltDeg}deg)`,
+        animation: `${flyKf} 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) both`,
+        animationDelay: `${index * 110}ms`,
+        boxShadow: `6px 6px 0 0 hsl(var(--foreground))`,
       }}
     >
+
       {/* Цветная плашка сверху */}
       <div
         className="relative flex items-center gap-4 px-5 py-4"
