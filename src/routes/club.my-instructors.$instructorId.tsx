@@ -9,6 +9,7 @@ import {
   ensureThread,
   payInstructorInvoice,
   sendInstructorChatMessage,
+  sendInstructorInvoice,
   useInstructorThread,
 } from "@/data/instructor-chats-mock";
 import { MockChatRoom } from "@/components/instructor/MockChatRoom";
