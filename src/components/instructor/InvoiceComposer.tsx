@@ -206,26 +206,48 @@ export function PayInvoiceSheet({
   open: boolean;
   onOpenChange: (v: boolean) => void;
   amountTotal: number;
-  onSubmit: (payer: { name: string; email: string }) => void;
+  onSubmit: (payer: { name: string; email: string; phone: string }) => void;
 }) {
+  const [step, setStep] = useState<"form" | "pay">("form");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [processing, setProcessing] = useState(false);
 
+  const digits = phone.replace(/\D/g, "");
   const valid =
     name.trim().length >= 3 &&
     name.trim().length <= 120 &&
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()) &&
-    email.trim().length <= 254;
+    email.trim().length <= 254 &&
+    digits.length >= 10 &&
+    digits.length <= 15;
 
   const reset = () => {
+    setStep("form");
     setName("");
     setEmail("");
+    setPhone("");
+    setProcessing(false);
+  };
+
+  const confirmPay = () => {
+    if (processing) return;
+    setProcessing(true);
+    haptic("light");
+    // Мок оплаты — короткая задержка «процессинга», потом сабмит.
+    window.setTimeout(() => {
+      onSubmit({ name: name.trim(), email: email.trim(), phone: phone.trim() });
+      reset();
+      onOpenChange(false);
+    }, 800);
   };
 
   return (
     <Sheet
       open={open}
       onOpenChange={(v) => {
+        if (processing) return;
         onOpenChange(v);
         if (!v) reset();
       }}
@@ -236,52 +258,105 @@ export function PayInvoiceSheet({
       >
         <SheetHeader className="mb-4 text-left">
           <SheetTitle className="font-display text-lg font-black uppercase tracking-tight text-foreground">
-            Оплата · {amountTotal.toLocaleString("ru-RU")} ₽
+            {step === "form"
+              ? `Оплата · ${amountTotal.toLocaleString("ru-RU")} ₽`
+              : "Окно оплаты"}
           </SheetTitle>
         </SheetHeader>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (!valid) return;
-            haptic("light");
-            onSubmit({ name: name.trim(), email: email.trim() });
-            reset();
-            onOpenChange(false);
-          }}
-          className="flex flex-col gap-4"
-        >
-          <Field label="Фамилия Имя Отчество">
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value.slice(0, 120))}
-              placeholder="Иванов Иван Иванович"
-              className={inputCls}
-              autoComplete="name"
-            />
-          </Field>
-          <Field label="Email для чека">
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value.slice(0, 254))}
-              placeholder="you@example.com"
-              className={inputCls}
-              autoComplete="email"
-              inputMode="email"
-            />
-          </Field>
 
-          <button
-            type="submit"
-            disabled={!valid}
-            className="mt-2 rounded-2xl bg-[#B6FF3C] px-5 py-3 font-display text-[15px] font-black uppercase tracking-tight text-black transition-transform active:scale-95 disabled:opacity-40"
+        {step === "form" && (
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!valid) return;
+              haptic("light");
+              setStep("pay");
+            }}
+            className="flex flex-col gap-4"
           >
-            Оплатить {amountTotal.toLocaleString("ru-RU")} ₽
-          </button>
-          <p className="text-center font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-            Тестовый режим — оплата не проводится
-          </p>
-        </form>
+            <Field label="Фамилия Имя Отчество">
+              <input
+                value={name}
+                onChange={(e) => setName(e.target.value.slice(0, 120))}
+                placeholder="Иванов Иван Иванович"
+                className={inputCls}
+                autoComplete="name"
+              />
+            </Field>
+            <Field label="Email для чека">
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value.slice(0, 254))}
+                placeholder="you@example.com"
+                className={inputCls}
+                autoComplete="email"
+                inputMode="email"
+              />
+            </Field>
+            <Field label="Телефон">
+              <input
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value.slice(0, 20))}
+                placeholder="+7 900 000 00 00"
+                className={inputCls}
+                autoComplete="tel"
+                inputMode="tel"
+              />
+            </Field>
+
+            <button
+              type="submit"
+              disabled={!valid}
+              className="mt-2 rounded-2xl bg-[#B6FF3C] px-5 py-3 font-display text-[15px] font-black uppercase tracking-tight text-black transition-transform active:scale-95 disabled:opacity-40"
+            >
+              Оплатить {amountTotal.toLocaleString("ru-RU")} ₽
+            </button>
+          </form>
+        )}
+
+        {step === "pay" && (
+          <div className="flex flex-col gap-4">
+            <div className="rounded-2xl border border-white/10 bg-black/50 p-4">
+              <div className="font-mono text-[10px] font-bold uppercase tracking-widest text-white/60">
+                К оплате
+              </div>
+              <div className="mt-1 font-display text-[28px] font-black leading-none tracking-tight text-foreground">
+                {amountTotal.toLocaleString("ru-RU")} ₽
+              </div>
+              <div className="mt-3 flex flex-col gap-1 font-display text-[13px] font-bold text-foreground/80">
+                <span>{name}</span>
+                <span className="text-foreground/60">{email}</span>
+                <span className="text-foreground/60">{phone}</span>
+              </div>
+            </div>
+            <div className="rounded-2xl border border-dashed border-white/15 bg-black/30 p-4 text-center">
+              <div className="font-mono text-[10px] font-bold uppercase tracking-widest text-white/50">
+                Тестовый режим
+              </div>
+              <div className="mt-1 font-display text-[13px] font-bold text-white/70">
+                Здесь появится реальная страница оплаты. Сейчас просто подтверди — счёт станет оплачен.
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={confirmPay}
+              disabled={processing}
+              className="rounded-2xl bg-[#B6FF3C] px-5 py-3 font-display text-[15px] font-black uppercase tracking-tight text-black transition-transform active:scale-95 disabled:opacity-60"
+            >
+              {processing ? "Оплата…" : `Подтвердить ${amountTotal.toLocaleString("ru-RU")} ₽`}
+            </button>
+            <button
+              type="button"
+              onClick={() => setStep("form")}
+              disabled={processing}
+              className="rounded-2xl border border-white/10 bg-black/40 px-5 py-3 font-display text-[13px] font-black uppercase tracking-tight text-foreground/70 transition-transform active:scale-95 disabled:opacity-40"
+            >
+              Назад
+            </button>
+          </div>
+        )}
       </SheetContent>
     </Sheet>
   );
