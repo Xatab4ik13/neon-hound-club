@@ -25,7 +25,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useCart } from "@/hooks/use-cart";
 import { MobileTabBar } from "@/components/club/MobileTabBar";
 import { InstructorMobileTabBar } from "@/components/instructor/InstructorMobileTabBar";
-import { useMockInstructorRole } from "@/hooks/use-instructor-mock-role";
+import { useIsInstructor } from "@/hooks/use-is-instructor";
 import { MobileTopBar } from "@/components/club/MobileTopBar";
 import { MobileTransition } from "@/components/club/MobileTransition";
 import { PullToRefresh } from "@/components/club/PullToRefresh";
