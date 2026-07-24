@@ -6,11 +6,43 @@ import {
   text,
   boolean,
   timestamp,
+  jsonb,
   index,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { users } from "./users.js";
 import { payments } from "./payments.js";
+
+export type InstructorTone = "primary" | "yellow" | "cyan" | "lime" | "violet";
+
+export type InstructorSkill = { title: string; text: string };
+export type InstructorLocation = {
+  address: string;
+  lat: number;
+  lng: number;
+  note?: string;
+};
+export type InstructorCourse = {
+  title: string;
+  duration: string;
+  price: number;
+  priceFrom?: boolean;
+  description: string;
+  includes?: string[];
+};
+export type InstructorUpcomingCourse = { title: string };
+
+/** Богатый профиль инструктора, редактируется в админке одним куском. */
+export type InstructorProfile = {
+  specialties?: string[];
+  bioParagraphs?: string[];
+  skills?: InstructorSkill[];
+  courses?: InstructorCourse[];
+  upcomingCourses?: InstructorUpcomingCourse[];
+  approach?: string[];
+  location?: InstructorLocation;
+  gallery?: string[];
+};
 
 export const schoolInstructors = pgTable(
   "school_instructors",
@@ -25,6 +57,11 @@ export const schoolInstructors = pgTable(
     avatarUrl: text("avatar_url"),
     hourlyRateRub: integer("hourly_rate_rub").notNull().default(0),
     active: boolean("active").notNull().default(true),
+    // v2: расширенный профиль под клубный/лендинговый UI.
+    tone: varchar("tone", { length: 16 }).notNull().default("primary").$type<InstructorTone>(),
+    experience: integer("experience").notNull().default(0),
+    tagline: varchar("tagline", { length: 300 }).notNull().default(""),
+    profile: jsonb("profile").notNull().default({}).$type<InstructorProfile>(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },

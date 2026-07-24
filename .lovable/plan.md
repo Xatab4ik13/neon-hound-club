@@ -1,73 +1,89 @@
 
-## Что делаем
+# Шаг 1 Школы: студенческий фронт → реальные API
 
-Убираем все моки последних дней и переводим фичи на реальный бэк. Разбиваем на 3 фазы, чтобы каждая фаза ставилась и проверялась отдельно, а фронт не оставался сломанным на промежуточных этапах.
+## Проблема, из которой растёт план
 
-Все правила из подтверждённого разговора уважаем:
-- 20% наценка от инструктора скрыта: инструктор видит свой чек, ученик — с +20%. В экономике: сначала минус налог на общую выручку от урока, потом 20% — наша маржа.
-- На Школу скидка Hell Pass **не** распространяется.
-- Hell Pass — настоящая ежемесячная подписка через Райф-ребиллинг (токен-платежи). Пользователь может отменить, можно возобновить до конца оплаченного периода.
-- Пуши идут через существующий web-push (VAPID + `push_subscriptions`).
+Моки в `src/data/instructors.ts` содержат сильно больше данных, чем текущая таблица `school_instructors`:
 
-## Фаза 1 — Школа (backend)
+| Поле | В моке | В БД сейчас |
+|---|---|---|
+| `bio` абзацы, `specialties`, `tagline` | да | только 1 text-`bio` |
+| `skills[]` (10 карточек) | да | нет |
+| `courses[]` (форматы + цены) | да | нет |
+| `approach[]` | да | нет |
+| `location{addr,lat,lng,note}` | да | нет |
+| `gallery[]` (5–9 фото) | да | нет |
+| `tone`, `experience` | да | нет |
 
-Миграция `0050_school.sql` + Drizzle-схема + роуты. Фронтовые файлы `admin.school.tsx`, `club.school.*`, инструкторские экраны остаются на месте — подключаем реальные эндпойнты вместо мок-данных внутри тех же компонентов.
+Пока не переложим этот контент в БД, «переход на реальные API» превратится в снос половины страницы инструктора. `schedule` (свободные слоты) — вообще нет ни в бэкенд-плане, ни в таблицах.
 
-Таблицы:
-- `school_instructors` — профиль инструктора (bio, city, moto, hourly_rate_rub, active).
-- `school_chats` — чат ученик ↔ инструктор (unique пара), unread-счётчики как в vip_chat.
-- `school_messages` — сообщения, `image_url`, `read_at`.
-- `school_orders` — счета от инструктора: `instructor_amount_rub` (что видит инструктор), `student_amount_rub = instructor_amount_rub * 1.2` (что видит ученик), статусы `draft → invoiced → paid → cancelled/refunded`, ссылка на `payments.id`. Hell Pass discount **не применяется**.
-- `school_payouts` — недельная пачка выплат инструктору: `period_start`, `period_end`, `gross_rub`, `tax_rub`, `commission_rub` (20%), `payout_rub`, `status: pending/paid`.
+## Решение — коротко
 
-Роуты:
-- `GET /api/v1/school/instructors` — публичный список.
-- `POST /api/v1/school/chats` — открыть/получить чат с инструктором.
-- `GET|POST /api/v1/school/chats/:id/messages` — история/отправка (+ push инструктору).
-- `POST /api/v1/school/orders` — инструктор выставляет счёт (сумма инструктора), сервер сам считает student_amount и создаёт `payments` через существующий `createPaymentForOrder`-стиль.
-- `POST /api/v1/school/orders/:id/pay` — ученик получает paymentUrl.
-- Админ: `GET /api/v1/admin/school/kpi`, `GET /api/v1/admin/school/payouts`, `POST /api/v1/admin/school/payouts/:id/mark-paid`.
+1. Расширить `school_instructors` одним JSONB-полем `profile` + добавить `tone`, `experience`, `tagline`. Всё, что не «расписание слотов», влезает сюда без новых таблиц.
+2. Засидить 5 инструкторов из текущего `data/instructors.ts` в БД, ассеты (фото/галерея) грузим на MinIO разово.
+3. GET `/api/v1/school/instructors[/:slug]` начинает отдавать `profile`.
+4. Фронт списка (`club.school.index.tsx`), карточки (`club.school.$instructorId.tsx`) и студенческого чата (`club.my-instructors.index.tsx`, `club.my-instructors.$instructorId.tsx`) — переписаны на API.
+5. Секция «Свободные слоты» на карточке инструктора убирается (её нет в бэкенд-плане).
+6. `data/instructors.ts` и `data/instructor-chats-mock.ts` в этом шаге остаются на диске — их доедают шаги 2 (инструкторские экраны) и 3 (админка). Ссылки из клубных роутов на них исчезают.
 
-Push: при новом сообщении и при выставлении счёта — существующий `sendPushToUser(userId, { title, body, url })`.
+## Что делаем на бэкенде
 
-## Фаза 2 — Hell Pass рекуррент
+- Миграция `0051_school_profile.sql`:
+  - `ALTER TABLE school_instructors ADD COLUMN profile jsonb NOT NULL DEFAULT '{}'::jsonb`.
+  - `ADD COLUMN tone varchar(16) NOT NULL DEFAULT 'primary'`.
+  - `ADD COLUMN experience integer NOT NULL DEFAULT 0`.
+  - `ADD COLUMN tagline varchar(300) NOT NULL DEFAULT ''`.
+- Обновление `server/src/db/schema/school.ts`: типизировать `profile` (specialties, bioParagraphs, skills[], courses[], upcomingCourses[], approach[], location{}, gallery[]).
+- Обновление роутов `schoolRoutes` (`GET /instructors`, `GET /instructors/:slug`): начать возвращать `profile`, `tone`, `experience`, `tagline`.
+- Сид-скрипт `server/src/db/seed/school-instructors.ts`, идемпотентно вставляющий/апдейтящий 5 инструкторов из текущего мока (stanislav, semen, nikita, pavel, haix). Запускается разово руками админом — не в миграции. Фото/галерея заливаются на MinIO отдельно (скрипт печатает список URL-ов, которые нужно загрузить, — этот кусок админ дожмёт сам).
+- В `adminSchoolRoutes` — расширить `POST/PATCH /instructors` возможностью писать `profile/tone/experience/tagline` (пригодится для админки в шаге 3).
 
-Миграция `0051_pass_recurring.sql`:
-- В `pass_purchases`: `is_recurring boolean`, `parent_purchase_id uuid`, `next_charge_at timestamptz`, `cancelled_at timestamptz`.
-- Новая `pass_billing_tokens` — токен от Райфа на юзера/метод (id, user_id, provider_token, method, last4, exp_month, exp_year, created_at). Один активный токен.
+## Что делаем на фронте
 
-Логика:
-- Первая оплата подписки создаёт `payments` с флагом `save_token=true`. В `handleRaifNotification` при `confirmed` сохраняем `provider_token` в `pass_billing_tokens`.
-- Cron `server/src/jobs/pass-rebill.ts` (раз в час): для всех `is_recurring=true, status=active, next_charge_at <= now()+1h, cancelled_at is null` — списывает через `raif.rebill(token, amount)`. Успех → новый `passPurchases` (`parent_purchase_id`), `activatePassPurchase` продлевает срок; провал → шлём push «Не удалось списать, обнови карту», не отменяем сразу, ретрай через сутки (3 попытки, затем `is_recurring=false`).
-- Роуты: `POST /api/v1/pass/subscription/cancel` (ставит `cancelled_at`, доступ остаётся до `expires_at`), `POST /api/v1/pass/subscription/resume` (снимает `cancelled_at`, если ещё в оплаченном периоде).
-- Фронт `src/routes/club.hell-pass.$tier.tsx` уходит с `pass-cancel-state.ts` мока на реальные эндпойнты.
+- `src/lib/api-school.ts` — тонкие обёртки над `apiFetch`: `fetchInstructors`, `fetchInstructor(slug)`, `openChatWith(slug)`, `fetchMyChats`, `fetchChatMessages(chatId)`, `sendChatMessage(chatId, ...)`, `payOrder(orderId, method)`.
+- `src/lib/queries.ts` — ключи `qk.schoolInstructors`, `qk.schoolInstructor(slug)`, `qk.myChats`, `qk.chatMessages(chatId)`.
+- `club.school.index.tsx` — переезжает на `useQuery(qk.schoolInstructors)`. Тип `Instructor` берём из ответа API (не из `data/instructors.ts`).
+- `club.school.$instructorId.tsx`:
+  - `useQuery(qk.schoolInstructor(slug))`.
+  - Секция «Свободные слоты» удаляется.
+  - Кнопка «Связаться» → `openChatWith(slug)` (POST `/school/chats`) → `navigate({ to: "/club/my-instructors/$chatId", params: { chatId } })`. Роут переименовывается с `instructorId` на `chatId`.
+- `club.my-instructors.index.tsx` — `useQuery` над `GET /api/v1/school/chats`. Ссылки на `chatId`.
+- `club.my-instructors.$chatId.tsx` (переименование `$instructorId` → `$chatId`):
+  - `useQuery` messages+orders через `GET /chats/:id/messages`.
+  - `POST /chats/:id/messages` для отправки.
+  - Кнопка «Оплатить» на счёте (order.status === "invoiced") → `POST /school/orders/:id/pay` → редирект в райф.
+  - Компонент `MockChatRoom` заменяем на честный `SchoolChatRoom` (тот же вид, но реальные данные). Мок-сидинг счёта у Станислава удаляется.
+- Публичные `school.index.tsx` / `school.$instructorId.tsx` — тоже переводим на API (это те же данные, глупо иметь два источника). Секция расписания убирается там же.
+- `club.quests.tsx` — там `INSTRUCTORS` используется только для аватарок/имён. Прогоняем через тот же `qk.schoolInstructors`.
 
-Прим.: у Райфа рекуррент — это Init → `Recurrent=Y` + RebillId в последующих. Обёртка добавит `saveCard/recurrent` флаг в `createOrder` и новый `rebill(rebillId, amount)`.
+## Что НЕ делаем в шаге 1
 
-## Фаза 3 — VIP-чат и push-события
+- Инструкторские экраны (`club.school-chats.*`) — шаг 2.
+- Админку школы (`admin.school.tsx`, `data/admin-school.ts`) — шаг 3.
+- Удаление файлов `data/instructors.ts` и `data/instructor-chats-mock.ts` — они ещё нужны шагам 2–3 (админка сейчас читает `INVOICE_COMMISSION` из мока). Уйдут в шаге 3.
+- Секцию «Свободные слоты»: если она нужна в проде, это отдельная задача — таблица `school_slots` + UI бронирования.
 
-VIP-чат уже на бэке. Что доделываем:
-- Ограничить создание тредов держателями активного Platinum.
-- Пуш блогеру на новое сообщение и юзеру на ответ (используем текущий web-push).
-- Загрузка фото сообщения — через существующий `/uploads/direct`.
-- Фронт `src/routes/club.vip-chat.tsx` уходит с моков.
+## Технические заметки
 
-Также в этой фазе:
-- Хук пуша при новом сообщении школы (уже описано в Фазе 1, интегрируем окончательно).
-- Пуш при выставлении инструктором счёта и при успешной оплате.
-- Пуш при неуспешном ребиллинге Pass (см. Фаза 2).
+- `profile` JSONB храним под контрактом `InstructorProfile` в `server/src/db/schema/school.ts` — тот же тип экспортится в клиент через `src/lib/api-school.ts` вручную (проще, чем гонять zod). Валидация на write-путях админки — zod.
+- URL-ы фото и галереи после загрузки на MinIO подставляются в сид-скрипт вручную (в моке они `@/assets/... .webp.asset.json`). До первой заливки фото инструкторов может «не быть» на проде — это ожидаемо, лечится одним прогоном сид-скрипта.
+- Роут студенческого чата меняет параметр (`$instructorId` → `$chatId`). Все `navigate/Link` пересобираются, `routeTree.gen.ts` обновится авто.
+- Никаких изменений в оплату/райф — уже отработано в `createPaymentForSchoolOrder`.
 
-## Что удаляем из фронта
+## Порядок реализации в одном заходе
 
-По ходу каждой фазы:
-- `src/data/pass-cancel-state.ts` — моки отмены Pass (Фаза 2).
-- Инлайновые массивы инструкторов/чатов/сообщений/заказов/выплат в `admin.school.tsx`, `club.school.*`, инструкторских экранах — заменяем на `useQuery`/`useMutation` через новый `src/lib/school-queries.ts` (Фаза 1).
-- Мок-массив тредов/сообщений VIP-чата (Фаза 3).
+1. Миграция + обновление schema.ts.
+2. Роуты бэкенда: GET instructors, GET instructors/:slug, admin write — расширение полей.
+3. Сид-скрипт под 5 инструкторов.
+4. Фронт: `api-school.ts`, `queries.ts`.
+5. `club.school.index.tsx`, `club.school.$instructorId.tsx` (без слотов).
+6. Переименование `club.my-instructors.$instructorId.tsx` → `$chatId.tsx`, переписывание на API.
+7. `club.my-instructors.index.tsx` → API.
+8. `school.index.tsx`, `school.$instructorId.tsx`, `club.quests.tsx` — на тот же `qk.schoolInstructors`.
+9. Тайпчек, сборка.
 
-## Порядок выкатки
+## Точки, где могу пойти не туда — подтверди
 
-1. **Фаза 1** — 1 миграция, ~8 бэк-файлов, ~4 фронт-файла. После этого школа реальна.
-2. **Фаза 2** — 1 миграция, обёртка Райфа + cron + 2 роута + фронт-подписка.
-3. **Фаза 3** — доступ Platinum + пуш-хуки + фронт VIP-чата на бэке.
-
-Начинаю с Фазы 1 сразу после апрува.
+- Расширяем схему JSONB-полем `profile`, или ты хочешь дробную реляционную модель (skills/courses/gallery отдельными таблицами)? По ощущениям JSONB тут ок — контент редактируется цельно, отдельно ничего не искать.
+- Секция «Свободные слоты» — точно убираем? Или оставить статичный UI с «скоро» до отдельной задачи?
+- Публичные `/school` и `/school/:id` переводить в тот же заход, или их не трогать в шаге 1?

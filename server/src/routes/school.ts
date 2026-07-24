@@ -64,7 +64,7 @@ async function bumpChatOnMessage(
 // STUDENT / PUBLIC ROUTES
 // =================================================================
 export async function schoolRoutes(app: FastifyInstance) {
-  // Публичный список инструкторов
+  // Публичный список инструкторов (клуб + лендинг).
   app.get("/instructors", async () => {
     const rows = await db
       .select({
@@ -75,6 +75,10 @@ export async function schoolRoutes(app: FastifyInstance) {
         city: schoolInstructors.city,
         moto: schoolInstructors.moto,
         avatarUrl: schoolInstructors.avatarUrl,
+        tone: schoolInstructors.tone,
+        experience: schoolInstructors.experience,
+        tagline: schoolInstructors.tagline,
+        profile: schoolInstructors.profile,
         // Публично видна цена ученика — с наценкой.
         hourlyPriceRub: sql<number>`ceil(${schoolInstructors.hourlyRateRub} * (1 + ${SCHOOL_COMMISSION_RATE}))`,
       })
@@ -95,6 +99,10 @@ export async function schoolRoutes(app: FastifyInstance) {
       city: row.city,
       moto: row.moto,
       avatarUrl: row.avatarUrl,
+      tone: row.tone,
+      experience: row.experience,
+      tagline: row.tagline,
+      profile: row.profile ?? {},
       hourlyPriceRub: Math.ceil(row.hourlyRateRub * (1 + SCHOOL_COMMISSION_RATE)),
     };
   });
@@ -515,6 +523,38 @@ export async function adminSchoolRoutes(app: FastifyInstance) {
     return { ok: true };
   });
 
+  // ---------- shared zod для профиля инструктора ----------
+  const toneEnum = z.enum(["primary", "yellow", "cyan", "lime", "violet"]);
+  const skillSchema = z.object({
+    title: z.string().min(1).max(120),
+    text: z.string().min(1).max(600),
+  });
+  const courseSchema = z.object({
+    title: z.string().min(1).max(200),
+    duration: z.string().max(200).default(""),
+    price: z.number().int().min(0).max(10_000_000),
+    priceFrom: z.boolean().optional(),
+    description: z.string().max(2000).default(""),
+    includes: z.array(z.string().max(300)).max(20).optional(),
+  });
+  const profileSchema = z.object({
+    specialties: z.array(z.string().max(60)).max(10).optional(),
+    bioParagraphs: z.array(z.string().max(2000)).max(10).optional(),
+    skills: z.array(skillSchema).max(20).optional(),
+    courses: z.array(courseSchema).max(10).optional(),
+    upcomingCourses: z.array(z.object({ title: z.string().max(200) })).max(10).optional(),
+    approach: z.array(z.string().max(1000)).max(10).optional(),
+    location: z
+      .object({
+        address: z.string().max(300),
+        lat: z.number(),
+        lng: z.number(),
+        note: z.string().max(600).optional(),
+      })
+      .optional(),
+    gallery: z.array(z.string().max(1000)).max(30).optional(),
+  });
+
   // Создать/апдейт инструктора.
   app.post("/instructors", { preHandler: requireAdmin }, async (req, reply) => {
     const b = z
@@ -527,6 +567,10 @@ export async function adminSchoolRoutes(app: FastifyInstance) {
         moto: z.string().max(200).default(""),
         avatarUrl: z.string().max(1000).optional(),
         hourlyRateRub: z.number().int().min(0).max(1_000_000).default(0),
+        tone: toneEnum.optional(),
+        experience: z.number().int().min(0).max(80).optional(),
+        tagline: z.string().max(300).optional(),
+        profile: profileSchema.optional(),
       })
       .safeParse(req.body);
     if (!b.success) return reply.code(400).send({ error: "invalid_input", details: b.error.flatten() });
@@ -548,9 +592,13 @@ export async function adminSchoolRoutes(app: FastifyInstance) {
         avatarUrl: z.string().max(1000).optional(),
         hourlyRateRub: z.number().int().min(0).max(1_000_000).optional(),
         active: z.boolean().optional(),
+        tone: toneEnum.optional(),
+        experience: z.number().int().min(0).max(80).optional(),
+        tagline: z.string().max(300).optional(),
+        profile: profileSchema.optional(),
       })
       .safeParse(req.body);
-    if (!b.success) return reply.code(400).send({ error: "invalid_input" });
+    if (!b.success) return reply.code(400).send({ error: "invalid_input", details: b.error.flatten() });
     const [row] = await db
       .update(schoolInstructors)
       .set({ ...b.data, updatedAt: new Date() })
