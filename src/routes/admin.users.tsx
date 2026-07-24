@@ -675,9 +675,9 @@ function GiftPassModal({ userId, onClose }: { userId: string; onClose: () => voi
   });
 
   const tiers: Array<{ key: "silver" | "gold" | "platinum"; label: string; hint: string }> = [
-    { key: "silver", label: "Silver", hint: "30 билетов · 20 вопросов AI" },
-    { key: "gold", label: "Gold", hint: "100 билетов · 100 вопросов AI" },
-    { key: "platinum", label: "Platinum", hint: "300 билетов · безлимит AI" },
+    { key: "silver", label: "Silver", hint: "3 билета · 15 вопросов AI / день" },
+    { key: "gold", label: "Gold", hint: "10 билетов · 40 вопросов AI / день" },
+    { key: "platinum", label: "Platinum", hint: "30 билетов · безлимит AI" },
   ];
 
   return (
