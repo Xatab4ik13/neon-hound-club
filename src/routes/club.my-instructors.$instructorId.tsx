@@ -9,6 +9,7 @@ import {
   ensureThread,
   payInstructorInvoice,
   sendInstructorChatMessage,
+  sendInstructorInvoice,
   useInstructorThread,
 } from "@/data/instructor-chats-mock";
 import { MockChatRoom } from "@/components/instructor/MockChatRoom";
@@ -46,7 +47,24 @@ function MyInstructorChatRoom() {
   }, [viewer.hydrated, viewer.user, navigate]);
 
   useEffect(() => {
-    if (instructor) ensureThread(instructor.slug, student.userId, student.nick);
+    if (!instructor) return;
+    ensureThread(instructor.slug, student.userId, student.nick);
+    // Мок: Станислав присылает счёт один раз, чтобы можно было потыкать флоу оплаты.
+    if (instructor.slug === "stanislav" && typeof window !== "undefined") {
+      const flagKey = `hh_mock_invoice_seeded_${instructor.slug}_${student.userId}`;
+      if (!localStorage.getItem(flagKey)) {
+        const day = new Date();
+        day.setDate(day.getDate() + 2);
+        day.setHours(11, 0, 0, 0);
+        sendInstructorInvoice(instructor.slug, student.userId, student.nick, {
+          hours: 2,
+          description: "Первое занятие — базовая посадка, старт, торможение.",
+          dateTime: day.toISOString(),
+          amount: 4000,
+        });
+        localStorage.setItem(flagKey, "1");
+      }
+    }
   }, [instructor, student]);
 
   if (!instructor) {
