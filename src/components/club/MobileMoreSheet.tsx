@@ -22,11 +22,7 @@ import { useCart } from "@/hooks/use-cart";
 import { useViewer } from "@/hooks/use-viewer";
 import { IOSConfirm } from "@/components/ios/IOSConfirm";
 import { isStandalonePWA } from "@/lib/is-pwa";
-import {
-  setMockInstructorRole,
-  useMockInstructorRole,
-} from "@/hooks/use-instructor-mock-role";
-import { INSTRUCTOR_ACCOUNTS } from "@/data/instructor-accounts";
+import { useIsInstructor } from "@/hooks/use-is-instructor";
 
 type Item = {
   label: string;
@@ -111,8 +107,8 @@ export function MobileMoreSheet({
   const { signOut } = useViewer();
   const [isPwa, setIsPwa] = useState(false);
   useEffect(() => setIsPwa(isStandalonePWA()), []);
-  const mockInstructor = useMockInstructorRole();
-  const GROUPS = buildGroups(cartCount, isPwa, Boolean(mockInstructor));
+  const { isInstructor } = useIsInstructor();
+  const GROUPS = buildGroups(cartCount, isPwa, isInstructor);
   const [confirmLogout, setConfirmLogout] = useState(false);
 
   const doLogout = async () => {

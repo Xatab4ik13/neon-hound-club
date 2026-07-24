@@ -125,7 +125,7 @@ function ClubLayout() {
   const isMobile = useIsMobile();
   const viewer = useViewer();
   const navigate = useNavigate();
-  const mockInstructor = useMockInstructorRole();
+  const { isInstructor: mockInstructor } = useIsInstructor();
   // Включаем edge-swipe только на под-страницах.
   useEdgeSwipeBack(pathname !== "/club");
 
