@@ -25,6 +25,7 @@ import {
 import { users } from "../db/schema/users.js";
 import { requireAuth, requireBloggerOrAdmin, type SessionPayload } from "../lib/auth.js";
 import { pushToUsers } from "../lib/push.js";
+import { getActivePass } from "../lib/pass.js";
 
 const MAX_TEXT = 4000;
 const MAX_STICKER = 120;
