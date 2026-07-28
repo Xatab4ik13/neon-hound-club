@@ -3,7 +3,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { CheckCircle2, Loader2, PlumpTicket, XCircle, AlertTriangle, PlumpPackage as Package, PlumpMessageCircle as MessageCircle } from "@/components/ui/icons";
+import { CheckCircle2, Loader2, PlumpTicket, XCircle, AlertTriangle, PlumpPackage as Package, MessageCircle } from "@/components/ui/icons";
 import { z } from "zod";
 import { fetchPaymentStatus, qk, type PaymentStatus, type SchoolOrderInfo } from "@/lib/queries";
 import { ApiError } from "@/lib/api";
