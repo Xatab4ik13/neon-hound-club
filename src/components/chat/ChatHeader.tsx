@@ -1,6 +1,5 @@
 // Единая шапка для всех чатов клуба/кабинета блогера/школы.
-// Слева — «назад», по центру — круглая аватарка собеседника, его ник и звание
-// (как в комментариях ленты), справа — колокольчик уведомлений.
+// Одна строка: [назад] [аватарка] [ник + звание] [колокольчик].
 // Собственный MobileTopBar на роутах чата скрыт — эта шапка занимает его место.
 
 import { Link } from "@tanstack/react-router";
@@ -8,7 +7,6 @@ import { useState } from "react";
 import { PlumpArrowLeft as ArrowLeft, PlumpBell as Bell } from "@/components/ui/icons";
 import { NotificationsSheet } from "@/components/club/NotificationsSheet";
 import { haptic } from "@/hooks/use-haptic";
-import { cn } from "@/lib/utils";
 
 type Props = {
   backTo: string;
@@ -30,10 +28,10 @@ export function ChatHeader({ backTo, nick, role, avatarUrl, showBell = true, ava
       <img
         src={avatarUrl}
         alt={nick}
-        className="h-11 w-11 shrink-0 rounded-full object-cover"
+        className="h-9 w-9 shrink-0 rounded-full object-cover"
       />
     ) : (
-      <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-primary/30 font-display font-black uppercase text-black">
+      <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/30 font-display text-sm font-black uppercase text-black">
         {initial}
       </div>
     ));
@@ -41,28 +39,27 @@ export function ChatHeader({ backTo, nick, role, avatarUrl, showBell = true, ava
   return (
     <>
       <div
-        className={cn(
-          "relative flex shrink-0 items-start justify-between border-b border-white/[0.06] bg-black/70 px-2 pb-2",
-        )}
+        className="relative flex shrink-0 items-center gap-2 border-b border-white/[0.06] bg-black/70 px-2 pb-2"
         style={{ paddingTop: "calc(env(safe-area-inset-top) + 6px)" }}
       >
         <Link
           to={backTo}
           onClick={() => haptic("light")}
           aria-label="Назад"
-          className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-foreground/90 hover:bg-white/[0.06]"
+          className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-foreground/90 hover:bg-white/[0.06]"
         >
-          <ArrowLeft className="h-6 w-6" />
+          <ArrowLeft className="h-5 w-5" />
         </Link>
 
-        <div className="flex min-w-0 flex-1 flex-col items-center px-2">
-          {avatar}
-          <div className="mt-1 max-w-full truncate font-display text-[14px] font-black uppercase tracking-tight text-foreground">
+        {avatar}
+
+        <div className="flex min-w-0 flex-1 items-center gap-2">
+          <span className="truncate font-display text-[15px] font-black uppercase tracking-tight text-foreground">
             {nick}
-          </div>
-          <div className="font-mono text-[9px] uppercase tracking-widest text-muted-foreground">
+          </span>
+          <span className="shrink-0 rounded-md bg-primary px-1.5 py-[2px] font-mono text-[9px] font-bold uppercase tracking-widest text-primary-foreground">
             {role}
-          </div>
+          </span>
         </div>
 
         {showBell ? (
@@ -73,13 +70,11 @@ export function ChatHeader({ backTo, nick, role, avatarUrl, showBell = true, ava
               setNotifOpen(true);
             }}
             aria-label="Уведомления"
-            className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-foreground/90 hover:bg-white/[0.06]"
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-foreground/90 hover:bg-white/[0.06]"
           >
             <Bell className="h-5 w-5" />
           </button>
-        ) : (
-          <div className="h-10 w-10 shrink-0" />
-        )}
+        ) : null}
       </div>
       {showBell && <NotificationsSheet open={notifOpen} onOpenChange={setNotifOpen} />}
     </>
