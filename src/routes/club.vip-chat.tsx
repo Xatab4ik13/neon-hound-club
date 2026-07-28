@@ -28,6 +28,7 @@ import {
   type StickerTab,
 } from "@/components/club/StickerPanel";
 import { cn } from "@/lib/utils";
+import { resolveAssetUrl } from "@/lib/asset-url";
 import { haptic } from "@/hooks/use-haptic";
 import { useKeyboardOffset } from "@/hooks/use-keyboard-offset";
 import { useMyProfile } from "@/lib/garage-api";
@@ -227,6 +228,7 @@ function VipChatPage() {
   }
 
   const hellNick = threadQ.data.blogger.nick || "HELL";
+  const hellAvatar = resolveAssetUrl(threadQ.data.blogger.avatarUrl);
 
   return (
     <div
@@ -237,7 +239,7 @@ function VipChatPage() {
         backTo="/club"
         nick={hellNick}
         role=""
-        avatarNode={<HellhoundAvatar size={44} initials="H" />}
+        avatarNode={<HellhoundAvatar size={44} initials={hellNick.slice(0, 1).toUpperCase()} avatarUrl={hellAvatar ?? undefined} />}
       />
       {/* Лента сообщений */}
       <div
@@ -271,7 +273,7 @@ function VipChatPage() {
                   >
                     {!isMine && (
                       <div className={cn("shrink-0", showAvatar ? "opacity-100" : "invisible")}>
-                        <HellhoundAvatar size={44} initials="H" />
+                        <HellhoundAvatar size={44} initials={hellNick.slice(0, 1).toUpperCase()} avatarUrl={hellAvatar ?? undefined} />
                       </div>
                     )}
                     <div

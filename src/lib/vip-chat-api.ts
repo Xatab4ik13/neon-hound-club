@@ -14,7 +14,7 @@ export type VipChatServerMessage = {
 
 export type VipChatThreadResponse = {
   thread: { id: string; unread: number; lastMessageAt: string };
-  blogger: { id: string; nick: string };
+  blogger: { id: string; nick: string; avatarUrl: string | null };
   messages: VipChatServerMessage[];
 };
 

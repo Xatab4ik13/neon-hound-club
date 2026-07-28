@@ -56,10 +56,11 @@ async function canUseVipChat(userId: string): Promise<boolean> {
 
 /** Резолвит «главного блогера» — того, кому пишет юзер. Пока — самый старый
  *  пользователь с role='blogger'. Позже можно вынести в runtime-config. */
-async function resolvePrimaryBlogger(): Promise<{ id: string; nick: string } | null> {
+async function resolvePrimaryBlogger(): Promise<{ id: string; nick: string; avatarUrl: string | null } | null> {
   const [row] = await db
-    .select({ id: users.id, nick: users.nick })
+    .select({ id: users.id, nick: users.nick, avatarUrl: profiles.avatarUrl })
     .from(users)
+    .leftJoin(profiles, eq(profiles.userId, users.id))
     .where(and(eq(users.role, "blogger"), eq(users.blocked, false)))
     .orderBy(asc(users.createdAt))
     .limit(1);
