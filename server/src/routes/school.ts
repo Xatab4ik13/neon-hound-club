@@ -297,6 +297,7 @@ export async function schoolInstructorRoutes(app: FastifyInstance) {
         id: schoolChats.id,
         studentId: schoolChats.studentId,
         studentNick: users.nick,
+        studentAvatar: profiles.avatarUrl,
         lastMessageAt: schoolChats.lastMessageAt,
         lastMessagePreview: schoolChats.lastMessagePreview,
         lastMessageRole: schoolChats.lastMessageRole,
@@ -304,6 +305,7 @@ export async function schoolInstructorRoutes(app: FastifyInstance) {
       })
       .from(schoolChats)
       .innerJoin(users, eq(users.id, schoolChats.studentId))
+      .leftJoin(profiles, eq(profiles.userId, schoolChats.studentId))
       .where(eq(schoolChats.instructorId, instr.id))
       .orderBy(desc(schoolChats.lastMessageAt));
     return { items: rows };
