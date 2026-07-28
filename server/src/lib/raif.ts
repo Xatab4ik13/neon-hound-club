@@ -74,11 +74,13 @@ export async function createOrder(p: RaifCreateOrderParams): Promise<RaifOrderRe
     throw new RaifApiError(500, "not_configured", "Райф не сконфигурирован в env");
   }
 
+  const paymentMethods =
+    p.method === "sbp" ? ["SBP"] : p.method === "any" ? ["ACQUIRING", "SBP"] : ["ACQUIRING"];
   const body: Record<string, unknown> = {
     id: p.orderId,
     amount: p.amountRub,
     comment: p.comment.slice(0, 140),
-    paymentMethods: [p.method === "sbp" ? "SBP" : "ACQUIRING"],
+    paymentMethods,
     returnUrls: {
       successUrl: p.successUrl,
       failUrl: p.failUrl,
