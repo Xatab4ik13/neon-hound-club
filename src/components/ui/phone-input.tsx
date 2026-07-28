@@ -40,24 +40,25 @@ export const PhoneInput = forwardRef<HTMLInputElement, Props>(function PhoneInpu
   { value, defaultValue, onChange, placeholder, className, required, autoComplete = "tel", verified },
   ref,
 ) {
-  // Определяем стартовую страну: если в value уже есть номер — берём из него, иначе RU.
-  const initialCountry = useMemo<Country>(() => {
+  // Определяем стартовую страну ОДИН РАЗ на маунте: если в value уже есть
+  // номер — берём из него, иначе RU. useState-инициализатор гарантирует, что
+  // при последующих сменах value страна не пересчитывается (иначе на iOS
+  // библиотека может «дёргать» value и сбрасывать ввод).
+  const [country, setCountry] = useState<Country>(() => {
     const v = value ?? defaultValue ?? "";
     const parsed = v ? parsePhoneNumberFromString(v) : undefined;
     return (parsed?.country as Country) ?? "RU";
-  }, [value, defaultValue]);
-
-  const [country, setCountry] = useState<Country>(initialCountry);
+  });
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const wrapRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
-  const normalizedValue = useMemo(() => {
-    const raw = value ?? defaultValue ?? "";
-    if (!raw) return "";
-    return parsePhoneNumberFromString(raw)?.number ?? raw;
-  }, [value, defaultValue]);
+  // Передаём value библиотеке как есть (без парсинга/переформатирования): она
+  // сама поддерживает E.164 и умеет форматировать отображение. Любое
+  // «нормализующее» преобразование каждого рендера ломало controlled-цикл
+  // и вызывало моргание/сброс ввода на iOS.
+  const controlledValue = value ?? defaultValue ?? "";
 
   // Закрытие по клику снаружи + Esc.
   useEffect(() => {
@@ -127,10 +128,10 @@ export const PhoneInput = forwardRef<HTMLInputElement, Props>(function PhoneInpu
       <div className="relative flex-1 min-w-0">
         <PhoneInputBase
           ref={ref as never}
-          country={country}
+          defaultCountry={country}
           international
           withCountryCallingCode
-          value={normalizedValue}
+          value={controlledValue}
           onChange={(v) => onChange?.((v as string) ?? "")}
           placeholder={placeholder ?? example}
           autoComplete={autoComplete}
@@ -140,6 +141,7 @@ export const PhoneInput = forwardRef<HTMLInputElement, Props>(function PhoneInpu
             verified && "pr-11",
           )}
         />
+
         {verified && (
           <span
             className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-green-500"
