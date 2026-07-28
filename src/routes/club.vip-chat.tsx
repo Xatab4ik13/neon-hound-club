@@ -17,6 +17,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { PlumpAttach, Send, X, ImageIcon, PlumpSticker as Sticker } from "@/components/ui/icons";
 import { AdaptiveActionSheet } from "@/components/club/AdaptiveActionSheet";
 import { HellhoundAvatar } from "@/components/club/HellhoundPlaque";
+import { ChatHeader } from "@/components/chat/ChatHeader";
 import { StickerView } from "@/components/club/StickerView";
 import {
   StickerPanel,
