@@ -30,9 +30,8 @@ export function useVipChatThread() {
   });
 }
 
-export { threadKey as vipChatThreadKey };
-  });
-}
+
+
 
 export function useSendVipChatMessage() {
   const queryClient = useQueryClient();
