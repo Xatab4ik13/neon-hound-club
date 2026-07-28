@@ -236,7 +236,7 @@ function VipChatPage() {
       <ChatHeader
         backTo="/club"
         nick={hellNick}
-        role="блогер"
+        role=""
         avatarNode={<HellhoundAvatar size={44} initials="H" />}
       />
       {/* Лента сообщений */}
