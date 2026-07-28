@@ -176,6 +176,14 @@ function ClubLayout() {
 
   const allowPull = PULL_REFRESH_ROUTES.has(pathname);
 
+  // Иммерсивные экраны чатов — прячем нижний таб-бар и убираем нижний
+  // отступ, чтобы окно чата было закреплено во всю доступную высоту
+  // (как в iOS-мессенджерах). Верхний бар оставляем — там кнопка "назад".
+  const isChatRoute =
+    pathname === "/club/vip-chat" ||
+    /^\/club\/my-instructors\/[^/]+$/.test(pathname) ||
+    /^\/club\/school-chats\/[^/]+$/.test(pathname);
+
   // Mobile shell — iOS-app feel: top bar + push/pop transition + bottom tab bar.
   if (isMobile) {
     return (
@@ -184,7 +192,11 @@ function ClubLayout() {
         <MobileTopBar />
         <main
           className="relative"
-          style={{ paddingBottom: "calc(64px + env(safe-area-inset-bottom) + 8px)" }}
+          style={{
+            paddingBottom: isChatRoute
+              ? 0
+              : "calc(64px + env(safe-area-inset-bottom) + 8px)",
+          }}
         >
           {allowPull ? (
             <PullToRefresh onRefresh={onPullRefresh}>
@@ -198,7 +210,7 @@ function ClubLayout() {
             </MobileTransition>
           )}
         </main>
-        {mockInstructor ? <InstructorMobileTabBar /> : <MobileTabBar />}
+        {!isChatRoute && (mockInstructor ? <InstructorMobileTabBar /> : <MobileTabBar />)}
       </div>
     );
   }
