@@ -192,7 +192,7 @@ function SchoolChatsList() {
                     params={{ chatId: c.id }}
                     className="flex items-center gap-3 px-4 py-3 transition-colors active:bg-white/[0.04]"
                   >
-                    <Avatar nick={c.studentNick} />
+                    <Avatar nick={c.studentNick} url={c.studentAvatar} />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
                         <span className="truncate font-display text-[15px] font-black uppercase tracking-tight text-foreground">
