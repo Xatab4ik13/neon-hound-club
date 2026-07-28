@@ -15,7 +15,7 @@ import { db } from "../db/client.js";
 import { payments, type Payment, type PaymentMethod } from "../db/schema/payments.js";
 import { passPurchases } from "../db/schema/pass.js";
 import { orders } from "../db/schema/shop.js";
-import { schoolOrders, schoolChats, schoolMessages } from "../db/schema/school.js";
+import { schoolOrders, schoolChats, schoolMessages, schoolInstructors } from "../db/schema/school.js";
 import { activatePassPurchase } from "./pass.js";
 import { markOrderPaid } from "./shop.js";
 import { pushToUsers } from "./push.js";
