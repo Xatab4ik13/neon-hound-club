@@ -170,6 +170,7 @@ function InstructorChatRoom() {
         backTo="/club/school-chats"
         nick={peerName}
         role="райдер"
+        rankId={chatRow?.studentRankId}
         avatarUrl={peerAvatar}
       />
 
