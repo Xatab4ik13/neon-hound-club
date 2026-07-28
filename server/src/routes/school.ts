@@ -26,6 +26,8 @@ import { requireAuth, requireAdmin, type SessionPayload } from "../lib/auth.js";
 import { pushToUsers } from "../lib/push.js";
 import { createPaymentForSchoolOrder, PaymentInitError } from "../lib/payments.js";
 import { isRaifConfigured } from "../lib/raif.js";
+import { computeRank } from "../lib/xp.js";
+import { xpEvents } from "../db/schema/xp.js";
 
 const MAX_TEXT = 4000;
 
