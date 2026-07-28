@@ -88,7 +88,7 @@ function PaySuccessPage() {
           refType === "school_order" ? (
             <SchoolConfirmedState info={schoolOrder} chatId={schoolOrder?.chatId ?? null} />
           ) : (
-            <ConfirmedState refType={refType === "school_order" ? "order" : refType} refId={refId} />
+            <ConfirmedState refType={refType as "pass" | "order" | null} refId={refId} />
           )
         ) : status === "rejected" ? (
           <RejectedState onBack={() => navigate({ to: "/club" })} />
