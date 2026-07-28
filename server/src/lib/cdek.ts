@@ -278,13 +278,17 @@ async function createCdekOrder(input: CdekOrderInput): Promise<CdekCreateOrderRe
   const senderPhone = process.env.CDEK_SENDER_PHONE || "+79000000000";
   const shipmentPoint = process.env.CDEK_SHIPMENT_POINT || undefined;
 
-  // Один пакет на позицию заказа. Внутри пакета — соответствующий item с amount=qty.
-  // Каждый пакет ДОЛЖЕН иметь items, иначе СДЭК отвечает packages[i].items is empty.
-  if (input.packages.length !== input.items.length) {
-    throw new Error(
-      `[cdek] createOrder: packages count (${input.packages.length}) must equal items count (${input.items.length})`,
-    );
+  // Одна коробка на весь заказ: суммируем вес, берём максимум по каждой стороне,
+  // все позиции складываем внутрь одного package.items. Так СДЭК не ругается на
+  // «лишние» места, когда в заказе несколько разных товаров.
+  if (input.packages.length === 0) {
+    throw new Error("[cdek] createOrder: no packages");
   }
+  const totalWeight = input.packages.reduce((s, p) => s + Math.max(1, Math.round(p.weightG)), 0);
+  const maxLen = Math.max(...input.packages.map((p) => Math.max(1, Math.round(p.lengthCm))));
+  const maxWid = Math.max(...input.packages.map((p) => Math.max(1, Math.round(p.widthCm))));
+  const maxHei = Math.max(...input.packages.map((p) => Math.max(1, Math.round(p.heightCm))));
+
   const body: Record<string, unknown> = {
     type: 1, // 1 — интернет-магазин
     tariff_code: input.tariffCode,
@@ -293,26 +297,23 @@ async function createCdekOrder(input: CdekOrderInput): Promise<CdekCreateOrderRe
     sender: { name: senderName, phones: [{ number: senderPhone }] },
     recipient: { name: input.recipient.name, phones: [{ number: input.recipient.phone }] },
     from_location: { code: fromCity },
-    packages: input.packages.map((p, i) => {
-      const it = input.items[i]!;
-      return {
-        number: p.number,
-        weight: Math.max(1, Math.round(p.weightG)),
-        length: Math.max(1, Math.round(p.lengthCm)),
-        width: Math.max(1, Math.round(p.widthCm)),
-        height: Math.max(1, Math.round(p.heightCm)),
-        items: [
-          {
-            name: it.name.slice(0, 255),
-            ware_key: it.wareKey.slice(0, 50),
-            cost: it.cost,
-            weight: Math.max(1, it.weight),
-            amount: it.amount,
-            payment: { value: 0 },
-          },
-        ],
-      };
-    }),
+    packages: [
+      {
+        number: input.packages[0]!.number || input.externalNumber,
+        weight: totalWeight,
+        length: maxLen,
+        width: maxWid,
+        height: maxHei,
+        items: input.items.map((it) => ({
+          name: it.name.slice(0, 255),
+          ware_key: it.wareKey.slice(0, 50),
+          cost: it.cost,
+          weight: Math.max(1, it.weight),
+          amount: it.amount,
+          payment: { value: 0 },
+        })),
+      },
+    ],
   };
 
   if (input.toPvzCode) {
