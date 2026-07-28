@@ -21,6 +21,7 @@ import {
   PlumpArrowLeft as ArrowLeft,
 } from "@/components/ui/icons";
 import { AdaptiveActionSheet } from "@/components/club/AdaptiveActionSheet";
+import { ChatHeader } from "@/components/chat/ChatHeader";
 import { StickerView } from "@/components/club/StickerView";
 import {
   StickerPanel,
