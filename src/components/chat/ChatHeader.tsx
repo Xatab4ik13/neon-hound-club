@@ -7,20 +7,24 @@ import { useState } from "react";
 import { PlumpArrowLeft as ArrowLeft, PlumpBell as Bell } from "@/components/ui/icons";
 import { NotificationsSheet } from "@/components/club/NotificationsSheet";
 import { haptic } from "@/hooks/use-haptic";
+import { RANKS, type RankId } from "@/data/ranks";
 
 type Props = {
   backTo: string;
   nick: string;
   role: string;
+  /** Если задан — вместо `role` рендерится чип реального ранга (как в комментариях). */
+  rankId?: string | null;
   avatarUrl?: string | null;
   showBell?: boolean;
   /** Кастомный узел вместо аватарки (например, HellhoundAvatar). */
   avatarNode?: React.ReactNode;
 };
 
-export function ChatHeader({ backTo, nick, role, avatarUrl, showBell = true, avatarNode }: Props) {
+export function ChatHeader({ backTo, nick, role, rankId, avatarUrl, showBell = true, avatarNode }: Props) {
   const [notifOpen, setNotifOpen] = useState(false);
   const initial = nick.slice(0, 1).toUpperCase();
+  const rank = rankId ? RANKS.find((r) => r.id === (rankId as RankId)) : undefined;
 
   const avatar =
     avatarNode ??
@@ -54,12 +58,24 @@ export function ChatHeader({ backTo, nick, role, avatarUrl, showBell = true, ava
         {avatar}
 
         <div className="flex min-w-0 flex-1 items-center gap-2">
-          <span className="truncate font-display text-[15px] font-black uppercase tracking-tight text-foreground">
+          <span
+            className="truncate font-display text-[15px] font-black uppercase tracking-tight"
+            style={{ color: rank ? rank.accent : undefined }}
+          >
             {nick}
           </span>
-          <span className="shrink-0 rounded-md bg-primary px-1.5 py-[2px] font-mono text-[9px] font-bold uppercase tracking-widest text-primary-foreground">
-            {role}
-          </span>
+          {rank ? (
+            <span
+              className="shrink-0 rounded-md border px-1.5 py-px font-mono text-[9px] font-bold uppercase tracking-wider"
+              style={{ color: rank.accent, borderColor: rank.accentSoft, background: `${rank.accent}10` }}
+            >
+              {rank.short}
+            </span>
+          ) : (
+            <span className="shrink-0 rounded-md bg-primary px-1.5 py-[2px] font-mono text-[9px] font-bold uppercase tracking-widest text-primary-foreground">
+              {role}
+            </span>
+          )}
         </div>
 
         {showBell ? (

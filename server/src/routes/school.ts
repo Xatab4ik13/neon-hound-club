@@ -7,7 +7,7 @@
 //   - Роль "instructor" в users.role: доступ ко "своим" чатам и заказам.
 
 import type { FastifyInstance } from "fastify";
-import { and, asc, desc, eq, gte, lt, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, lt, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../db/client.js";
 import {
@@ -26,6 +26,8 @@ import { requireAuth, requireAdmin, type SessionPayload } from "../lib/auth.js";
 import { pushToUsers } from "../lib/push.js";
 import { createPaymentForSchoolOrder, PaymentInitError } from "../lib/payments.js";
 import { isRaifConfigured } from "../lib/raif.js";
+import { computeRank } from "../lib/xp.js";
+import { xpEvents } from "../db/schema/xp.js";
 
 const MAX_TEXT = 4000;
 
@@ -308,7 +310,23 @@ export async function schoolInstructorRoutes(app: FastifyInstance) {
       .leftJoin(profiles, eq(profiles.userId, schoolChats.studentId))
       .where(eq(schoolChats.instructorId, instr.id))
       .orderBy(desc(schoolChats.lastMessageAt));
-    return { items: rows };
+
+    // Ранг ученика — батчем.
+    const ids = rows.map((r) => r.studentId);
+    const rankMap = new Map<string, string>();
+    if (ids.length > 0) {
+      const xpRows = await db
+        .select({
+          userId: xpEvents.userId,
+          total: sql<number>`coalesce(sum(${xpEvents.amount}), 0)::int`,
+        })
+        .from(xpEvents)
+        .where(inArray(xpEvents.userId, ids))
+        .groupBy(xpEvents.userId);
+      for (const r of xpRows) rankMap.set(r.userId, computeRank(r.total ?? 0).rankId);
+    }
+    const items = rows.map((r) => ({ ...r, studentRankId: rankMap.get(r.studentId) ?? "rookie" }));
+    return { items };
   });
 
   // Мои заказы (инструктор видит СВОЮ сумму, без наценки).
