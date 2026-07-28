@@ -401,7 +401,7 @@ function VipChatPage() {
             send();
           }}
           className="flex items-end gap-2 px-3 pt-2.5"
-          style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 10px)" }}
+          style={{ paddingBottom: "max(env(safe-area-inset-bottom), 8px)" }}
         >
           <button
             type="button"
