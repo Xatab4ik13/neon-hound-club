@@ -160,35 +160,17 @@ function InstructorChatRoom() {
   const peerName = chatRow?.studentNick ?? "Ученик";
   const peerAvatar = chatRow?.studentAvatar ?? null;
 
-  const headerH = 56;
-  const pageHeight = `calc(100svh - 3.25rem - env(safe-area-inset-top) - ${headerH}px - env(safe-area-inset-bottom))`;
+  const headerH = 84;
+  const pageHeight = `calc(100svh - env(safe-area-inset-top) - ${headerH}px)`;
 
   return (
     <div className="relative flex w-full flex-col overflow-hidden bg-[#0a0a0a]">
-      <div
-        className="flex shrink-0 items-center gap-3 border-b border-white/[0.06] bg-black/70 px-3"
-        style={{ height: headerH }}
-      >
-        {peerAvatar ? (
-          <img
-            src={peerAvatar}
-            alt={peerName}
-            className="h-10 w-10 shrink-0 rounded-full object-cover"
-          />
-        ) : (
-          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-gradient-to-br from-primary/70 to-primary/30 font-display text-sm font-black uppercase text-black">
-            {peerName.slice(0, 1)}
-          </div>
-        )}
-        <div className="min-w-0 flex-1">
-          <div className="truncate font-display text-[15px] font-black uppercase tracking-tight text-foreground">
-            {peerName}
-          </div>
-          <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-            райдер
-          </div>
-        </div>
-      </div>
+      <ChatHeader
+        backTo="/club/school-chats"
+        nick={peerName}
+        role="райдер"
+        avatarUrl={peerAvatar}
+      />
 
       <MockChatRoom
         messages={feed}
