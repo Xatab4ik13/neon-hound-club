@@ -280,7 +280,8 @@ export function MockChatRoom({
             e.preventDefault();
             send();
           }}
-          className="flex items-end gap-2 px-3 py-2.5"
+          className="flex items-end gap-2 px-3 pt-2.5"
+          style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 10px)" }}
         >
           {onSendInvoice && (
             <button
