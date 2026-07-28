@@ -58,12 +58,24 @@ export function ChatHeader({ backTo, nick, role, rankId, avatarUrl, showBell = t
         {avatar}
 
         <div className="flex min-w-0 flex-1 items-center gap-2">
-          <span className="truncate font-display text-[15px] font-black uppercase tracking-tight text-foreground">
+          <span
+            className="truncate font-display text-[15px] font-black uppercase tracking-tight"
+            style={{ color: rank ? rank.accent : undefined }}
+          >
             {nick}
           </span>
-          <span className="shrink-0 rounded-md bg-primary px-1.5 py-[2px] font-mono text-[9px] font-bold uppercase tracking-widest text-primary-foreground">
-            {role}
-          </span>
+          {rank ? (
+            <span
+              className="shrink-0 rounded-md border px-1.5 py-px font-mono text-[9px] font-bold uppercase tracking-wider"
+              style={{ color: rank.accent, borderColor: rank.accentSoft, background: `${rank.accent}10` }}
+            >
+              {rank.short}
+            </span>
+          ) : (
+            <span className="shrink-0 rounded-md bg-primary px-1.5 py-[2px] font-mono text-[9px] font-bold uppercase tracking-widest text-primary-foreground">
+              {role}
+            </span>
+          )}
         </div>
 
         {showBell ? (
