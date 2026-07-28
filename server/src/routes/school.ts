@@ -7,7 +7,7 @@
 //   - Роль "instructor" в users.role: доступ ко "своим" чатам и заказам.
 
 import type { FastifyInstance } from "fastify";
-import { and, asc, desc, eq, gte, lt, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, lt, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../db/client.js";
 import {
