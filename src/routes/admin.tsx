@@ -25,6 +25,7 @@ import {
   LifeBuoy,
   Newspaper,
   Crown,
+  PlumpChat,
 } from "@/components/ui/icons";
 
 import { cn } from "@/lib/utils";
