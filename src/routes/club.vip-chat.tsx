@@ -273,7 +273,7 @@ function VipChatPage() {
                   >
                     {!isMine && (
                       <div className={cn("shrink-0", showAvatar ? "opacity-100" : "invisible")}>
-                        <HellhoundAvatar size={44} initials="H" />
+                        <HellhoundAvatar size={44} initials={hellNick.slice(0, 1).toUpperCase()} avatarUrl={hellAvatar ?? undefined} />
                       </div>
                     )}
                     <div
