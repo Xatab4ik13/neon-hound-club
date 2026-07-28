@@ -7,6 +7,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useViewer } from "@/hooks/use-viewer";
 import { MockChatRoom } from "@/components/instructor/MockChatRoom";
+import { ChatHeader } from "@/components/chat/ChatHeader";
 import type { InstructorMsg } from "@/data/instructor-chats-mock";
 import {
   fetchChatMessages,
