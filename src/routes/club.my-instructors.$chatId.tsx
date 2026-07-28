@@ -19,6 +19,7 @@ import {
   type ChatMessageApi,
 } from "@/lib/api-school";
 import { ApiError } from "@/lib/api";
+import { openPaymentUrl } from "@/lib/pwa-pay";
 
 export const Route = createFileRoute("/club/my-instructors/$chatId")({
   head: () => ({
