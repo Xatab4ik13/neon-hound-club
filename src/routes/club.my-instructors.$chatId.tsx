@@ -126,7 +126,7 @@ function MyInstructorChatRoom() {
     mutationFn: (orderId: string) => payOrder(orderId, "card"),
     onSuccess: (res) => {
       if (res.paymentUrl) {
-        window.location.href = res.paymentUrl;
+        openPaymentUrl(res.paymentUrl, res.paymentId);
       } else {
         toast.error("Оплата временно недоступна");
       }
