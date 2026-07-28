@@ -23,6 +23,7 @@ import {
   type VipChatSenderRole,
 } from "../db/schema/vip-chat.js";
 import { users } from "../db/schema/users.js";
+import { profiles } from "../db/schema/profile.js";
 import { requireAuth, requireBloggerOrAdmin, type SessionPayload } from "../lib/auth.js";
 import { pushToUsers } from "../lib/push.js";
 import { getActivePass } from "../lib/pass.js";
