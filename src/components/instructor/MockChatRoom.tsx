@@ -73,6 +73,8 @@ export type MockChatRoomProps = {
   myRole: "instructor" | "student";
   /** Ник собеседника для placeholder и аватарки. */
   peerLabel: string;
+  /** Аватарка собеседника (URL). Опционально — если нет, используются инициалы. */
+  peerAvatarUrl?: string | null;
   /** Высота чата — рассчитывается снаружи (варьируется от контейнера). */
   height: string;
   onSend: (text: string) => void;
@@ -88,6 +90,7 @@ export function MockChatRoom({
   messages,
   myRole,
   peerLabel,
+  peerAvatarUrl,
   height,
   onSend,
   onSendInvoice,
