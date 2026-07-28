@@ -26,7 +26,7 @@ export function RequisitesContent() {
       <p>
         Оперативная поддержка по заказам, возвратам и обработке персональных
         данных — Telegram:{" "}
-        <a href={LEGAL.contactTelegram} target="_blank" rel="noreferrer">@hell666hound</a>.
+        <a href={LEGAL.contactTelegram} target="_blank" rel="noreferrer">@HellGuarding</a>.
       </p>
     </>
   );
