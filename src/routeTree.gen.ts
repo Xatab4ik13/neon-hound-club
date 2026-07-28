@@ -53,6 +53,7 @@ import { Route as ClubCartRouteImport } from './routes/club.cart'
 import { Route as CheckoutSuccessRouteImport } from './routes/checkout.success'
 import { Route as BloggerSettingsRouteImport } from './routes/blogger.settings'
 import { Route as BloggerHellAiRouteImport } from './routes/blogger.hell-ai'
+import { Route as AdminVipChatRouteImport } from './routes/admin.vip-chat'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminTicketsRouteImport } from './routes/admin.tickets'
 import { Route as AdminSupportRouteImport } from './routes/admin.support'
@@ -317,6 +318,11 @@ const BloggerHellAiRoute = BloggerHellAiRouteImport.update({
   path: '/hell-ai',
   getParentRoute: () => BloggerRoute,
 } as any)
+const AdminVipChatRoute = AdminVipChatRouteImport.update({
+  id: '/vip-chat',
+  path: '/vip-chat',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminUsersRoute = AdminUsersRouteImport.update({
   id: '/users',
   path: '/users',
@@ -562,6 +568,7 @@ export interface FileRoutesByFullPath {
   '/admin/support': typeof AdminSupportRoute
   '/admin/tickets': typeof AdminTicketsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/admin/vip-chat': typeof AdminVipChatRoute
   '/blogger/hell-ai': typeof BloggerHellAiRoute
   '/blogger/settings': typeof BloggerSettingsRoute
   '/checkout/success': typeof CheckoutSuccessRoute
@@ -648,6 +655,7 @@ export interface FileRoutesByTo {
   '/admin/support': typeof AdminSupportRoute
   '/admin/tickets': typeof AdminTicketsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/admin/vip-chat': typeof AdminVipChatRoute
   '/blogger/hell-ai': typeof BloggerHellAiRoute
   '/blogger/settings': typeof BloggerSettingsRoute
   '/checkout/success': typeof CheckoutSuccessRoute
@@ -738,6 +746,7 @@ export interface FileRoutesById {
   '/admin/support': typeof AdminSupportRoute
   '/admin/tickets': typeof AdminTicketsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/admin/vip-chat': typeof AdminVipChatRoute
   '/blogger/hell-ai': typeof BloggerHellAiRoute
   '/blogger/settings': typeof BloggerSettingsRoute
   '/checkout/success': typeof CheckoutSuccessRoute
@@ -829,6 +838,7 @@ export interface FileRouteTypes {
     | '/admin/support'
     | '/admin/tickets'
     | '/admin/users'
+    | '/admin/vip-chat'
     | '/blogger/hell-ai'
     | '/blogger/settings'
     | '/checkout/success'
@@ -915,6 +925,7 @@ export interface FileRouteTypes {
     | '/admin/support'
     | '/admin/tickets'
     | '/admin/users'
+    | '/admin/vip-chat'
     | '/blogger/hell-ai'
     | '/blogger/settings'
     | '/checkout/success'
@@ -1004,6 +1015,7 @@ export interface FileRouteTypes {
     | '/admin/support'
     | '/admin/tickets'
     | '/admin/users'
+    | '/admin/vip-chat'
     | '/blogger/hell-ai'
     | '/blogger/settings'
     | '/checkout/success'
@@ -1406,6 +1418,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BloggerHellAiRouteImport
       parentRoute: typeof BloggerRoute
     }
+    '/admin/vip-chat': {
+      id: '/admin/vip-chat'
+      path: '/vip-chat'
+      fullPath: '/admin/vip-chat'
+      preLoaderRoute: typeof AdminVipChatRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/users': {
       id: '/admin/users'
       path: '/users'
@@ -1727,6 +1746,7 @@ interface AdminRouteChildren {
   AdminSupportRoute: typeof AdminSupportRoute
   AdminTicketsRoute: typeof AdminTicketsRoute
   AdminUsersRoute: typeof AdminUsersRoute
+  AdminVipChatRoute: typeof AdminVipChatRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
 
@@ -1747,6 +1767,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminSupportRoute: AdminSupportRoute,
   AdminTicketsRoute: AdminTicketsRoute,
   AdminUsersRoute: AdminUsersRoute,
+  AdminVipChatRoute: AdminVipChatRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
 
