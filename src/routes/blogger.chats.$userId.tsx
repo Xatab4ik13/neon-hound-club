@@ -269,7 +269,7 @@ function BloggerChatPage() {
         className="flex shrink-0 items-center gap-3 border-b border-white/[0.06] bg-black/70 px-3"
         style={{ height: headerH }}
       >
-        <PeerAvatar nick={peer.nick} size={32} />
+        <PeerAvatar nick={peer.nick} url={peer.avatarUrl} size={32} />
         <div className="min-w-0 flex-1">
           <div className="truncate font-display text-[14px] font-black uppercase tracking-tight text-foreground">
             {peer.nick}
@@ -311,7 +311,7 @@ function BloggerChatPage() {
                     >
                       {!isMine && (
                         <div className={cn("shrink-0", showAvatar ? "opacity-100" : "invisible")}>
-                          <PeerAvatar nick={peer.nick} size={44} />
+                          <PeerAvatar nick={peer.nick} url={peer.avatarUrl} size={44} />
                         </div>
                       )}
                       <div
