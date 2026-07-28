@@ -33,6 +33,15 @@ const FIXED_HEIGHT_ROUTES = new Set([
   "/club/hell-ai",
 ]);
 
+function isFixedHeightPath(path: string) {
+  return (
+    FIXED_HEIGHT_ROUTES.has(path) ||
+    /^\/club\/my-instructors\/[^/]+$/.test(path) ||
+    /^\/club\/school-chats\/[^/]+$/.test(path) ||
+    /^\/blogger\/chats\/[^/]+$/.test(path)
+  );
+}
+
 function depth(path: string) {
   return path.split("/").filter(Boolean).length;
 }
@@ -74,7 +83,7 @@ export function MobileTransition({ children }: { children: React.ReactNode }) {
   }
 
   const isSlide = !skipAnimation && direction !== 0;
-  const isFixedHeightRoute = FIXED_HEIGHT_ROUTES.has(pathname);
+  const isFixedHeightRoute = isFixedHeightPath(pathname);
 
   // Восстанавливаем scrollY синхронно после смены key — до paint.
   useLayoutEffect(() => {

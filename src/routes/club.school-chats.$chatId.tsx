@@ -162,10 +162,10 @@ function InstructorChatRoom() {
   const peerAvatar = chatRow?.studentAvatar ?? null;
 
   const headerH = 52;
-  const pageHeight = `calc(100svh - env(safe-area-inset-top) - ${headerH}px)`;
+  const pageHeight = `calc(100dvh - env(safe-area-inset-top) - ${headerH}px)`;
 
   return (
-    <div className="relative flex w-full flex-col overflow-hidden bg-[#0a0a0a]">
+    <div className="relative flex w-full flex-col overflow-hidden bg-[#0a0a0a]" style={{ height: "100dvh" }}>
       <ChatHeader
         backTo="/club/school-chats"
         nick={peerName}

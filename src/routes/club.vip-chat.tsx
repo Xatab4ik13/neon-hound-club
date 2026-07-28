@@ -211,8 +211,8 @@ function VipChatPage() {
   // скрыт (см. ClubLayout), собственная шапка и safe-area обрабатываются внутри.
   const pageHeight =
     keyboardOffset > 0
-      ? `calc(100svh - ${keyboardOffset}px)`
-      : "100svh";
+      ? `calc(100dvh - ${keyboardOffset}px)`
+      : "100dvh";
 
   if (threadQ.isLoading) {
     return <div className="min-h-0" />;
@@ -401,7 +401,7 @@ function VipChatPage() {
             send();
           }}
           className="flex items-end gap-2 px-3 pt-2.5"
-          style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 10px)" }}
+          style={{ paddingBottom: "max(env(safe-area-inset-bottom), 8px)" }}
         >
           <button
             type="button"

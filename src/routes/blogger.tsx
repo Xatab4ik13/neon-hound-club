@@ -114,11 +114,17 @@ function BloggerLayout() {
               : "calc(64px + env(safe-area-inset-bottom) + 8px)",
           }}
         >
-          <PullToRefresh>
+          {isChatRoute ? (
             <MobileTransition>
               <Outlet />
             </MobileTransition>
-          </PullToRefresh>
+          ) : (
+            <PullToRefresh>
+              <MobileTransition>
+                <Outlet />
+              </MobileTransition>
+            </PullToRefresh>
+          )}
         </main>
         {!isChatRoute && <BloggerMobileTabBar />}
       </div>
