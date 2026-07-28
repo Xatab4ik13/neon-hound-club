@@ -226,10 +226,11 @@ export async function bloggerVipChatRoutes(app: FastifyInstance) {
         lastMessageRole: vipChatThreads.lastMessageRole,
         bloggerUnread: vipChatThreads.bloggerUnread,
         peerNick: users.nick,
-        peerAvatar: sql<string | null>`null`, // TODO: подтянуть из profiles.avatar_url
+        peerAvatar: profiles.avatarUrl,
       })
       .from(vipChatThreads)
       .innerJoin(users, eq(users.id, vipChatThreads.userId))
+      .leftJoin(profiles, eq(profiles.userId, vipChatThreads.userId))
       .where(eq(vipChatThreads.bloggerId, session.sub))
       .orderBy(desc(vipChatThreads.lastMessageAt))
       .limit(200);
