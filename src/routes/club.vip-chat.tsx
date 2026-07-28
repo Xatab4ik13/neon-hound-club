@@ -207,13 +207,12 @@ function VipChatPage() {
     return out;
   }, [messages]);
 
-  // Высота = viewport - MobileTopBar (3.25rem + safe-area-top). Нижний таб-бар
-  // на чат-роутах скрыт (см. ClubLayout), поэтому доступна вся оставшаяся
-  // высота. Клавиатура — вычитаем её оффсет.
+  // Высота = полный viewport минус клавиатура. MobileTopBar на роутах чата
+  // скрыт (см. ClubLayout), собственная шапка и safe-area обрабатываются внутри.
   const pageHeight =
     keyboardOffset > 0
-      ? `calc(100svh - 3.25rem - env(safe-area-inset-top) - ${keyboardOffset}px)`
-      : "calc(100svh - 3.25rem - env(safe-area-inset-top) - env(safe-area-inset-bottom))";
+      ? `calc(100svh - ${keyboardOffset}px)`
+      : "100svh";
 
   if (threadQ.isLoading) {
     return <div className="min-h-0" />;
@@ -227,12 +226,16 @@ function VipChatPage() {
     );
   }
 
+  const hellNick = threadQ.data.blogger.nick || "HELL";
+  const hellAvatar = threadQ.data.blogger.avatarUrl ?? null;
+
   return (
     <div
       className="relative flex w-full max-w-full flex-col overflow-hidden bg-[#0a0a0a]"
       style={{ height: pageHeight, touchAction: "pan-y", overscrollBehavior: "contain" }}
     >
-      {/* Лента сообщений — без локальной шапки, фон уходит под MobileTopBar */}
+      <ChatHeader backTo="/club" nick={hellNick} role="блогер" avatarUrl={hellAvatar} />
+      {/* Лента сообщений */}
       <div
         ref={scrollerRef}
         className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain px-4 pt-4"
