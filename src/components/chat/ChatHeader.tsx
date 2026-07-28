@@ -21,9 +21,10 @@ type Props = {
   avatarNode?: React.ReactNode;
 };
 
-export function ChatHeader({ backTo, nick, role, avatarUrl, showBell = true, avatarNode }: Props) {
+export function ChatHeader({ backTo, nick, role, rankId, avatarUrl, showBell = true, avatarNode }: Props) {
   const [notifOpen, setNotifOpen] = useState(false);
   const initial = nick.slice(0, 1).toUpperCase();
+  const rank = rankId ? RANKS.find((r) => r.id === (rankId as RankId)) : undefined;
 
   const avatar =
     avatarNode ??
