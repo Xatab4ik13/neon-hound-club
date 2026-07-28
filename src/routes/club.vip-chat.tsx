@@ -17,6 +17,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { PlumpAttach, Send, X, ImageIcon, PlumpSticker as Sticker } from "@/components/ui/icons";
 import { AdaptiveActionSheet } from "@/components/club/AdaptiveActionSheet";
 import { HellhoundAvatar } from "@/components/club/HellhoundPlaque";
+import { ChatHeader } from "@/components/chat/ChatHeader";
 import { StickerView } from "@/components/club/StickerView";
 import {
   StickerPanel,
@@ -206,13 +207,12 @@ function VipChatPage() {
     return out;
   }, [messages]);
 
-  // Высота = viewport - MobileTopBar (3.25rem + safe-area-top). Нижний таб-бар
-  // на чат-роутах скрыт (см. ClubLayout), поэтому доступна вся оставшаяся
-  // высота. Клавиатура — вычитаем её оффсет.
+  // Высота = полный viewport минус клавиатура. MobileTopBar на роутах чата
+  // скрыт (см. ClubLayout), собственная шапка и safe-area обрабатываются внутри.
   const pageHeight =
     keyboardOffset > 0
-      ? `calc(100svh - 3.25rem - env(safe-area-inset-top) - ${keyboardOffset}px)`
-      : "calc(100svh - 3.25rem - env(safe-area-inset-top) - env(safe-area-inset-bottom))";
+      ? `calc(100svh - ${keyboardOffset}px)`
+      : "100svh";
 
   if (threadQ.isLoading) {
     return <div className="min-h-0" />;
@@ -226,12 +226,20 @@ function VipChatPage() {
     );
   }
 
+  const hellNick = threadQ.data.blogger.nick || "HELL";
+
   return (
     <div
       className="relative flex w-full max-w-full flex-col overflow-hidden bg-[#0a0a0a]"
       style={{ height: pageHeight, touchAction: "pan-y", overscrollBehavior: "contain" }}
     >
-      {/* Лента сообщений — без локальной шапки, фон уходит под MobileTopBar */}
+      <ChatHeader
+        backTo="/club"
+        nick={hellNick}
+        role="блогер"
+        avatarNode={<HellhoundAvatar size={44} initials="H" />}
+      />
+      {/* Лента сообщений */}
       <div
         ref={scrollerRef}
         className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain px-4 pt-4"
@@ -392,7 +400,8 @@ function VipChatPage() {
             e.preventDefault();
             send();
           }}
-          className="flex items-end gap-2 px-3 py-2.5"
+          className="flex items-end gap-2 px-3 pt-2.5"
+          style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 10px)" }}
         >
           <button
             type="button"

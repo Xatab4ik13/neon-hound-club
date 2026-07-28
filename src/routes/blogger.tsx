@@ -96,15 +96,23 @@ function BloggerLayout() {
     return <div className="min-h-screen bg-background" />;
   }
 
+  // Иммерсивный чат — прячем верхний бар и таб-бар, чтобы окно чата
+  // занимало весь экран без свободного места снизу.
+  const isChatRoute = /^\/blogger\/chats\/[^/]+$/.test(pathname);
+
   // Mobile shell — iOS-app feel: top bar + push/pop transition + bottom tab bar.
   if (isMobile) {
     return (
       <div className="min-h-screen bg-background text-foreground">
         <OfflineBanner />
-        <BloggerMobileTopBar onPlaqueClick={goToSettings} />
+        {!isChatRoute && <BloggerMobileTopBar onPlaqueClick={goToSettings} />}
         <main
           className="relative"
-          style={{ paddingBottom: "calc(64px + env(safe-area-inset-bottom) + 8px)" }}
+          style={{
+            paddingBottom: isChatRoute
+              ? 0
+              : "calc(64px + env(safe-area-inset-bottom) + 8px)",
+          }}
         >
           <PullToRefresh>
             <MobileTransition>
@@ -112,7 +120,7 @@ function BloggerLayout() {
             </MobileTransition>
           </PullToRefresh>
         </main>
-        <BloggerMobileTabBar />
+        {!isChatRoute && <BloggerMobileTabBar />}
       </div>
     );
   }

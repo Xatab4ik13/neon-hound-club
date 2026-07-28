@@ -189,7 +189,7 @@ function ClubLayout() {
     return (
       <div data-club className="min-h-screen bg-background text-foreground">
         <OfflineBanner />
-        <MobileTopBar />
+        {!isChatRoute && <MobileTopBar />}
         <main
           className="relative"
           style={{
