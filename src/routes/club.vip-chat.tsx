@@ -206,13 +206,13 @@ function VipChatPage() {
     return out;
   }, [messages]);
 
-  // Высота = viewport - MobileTopBar (3.25rem + safe-area-top) - TabBar (64px + safe + 8px).
-  // Клавиатура — сжимаем на её высоту. Композер и заголовок в обычном flow — иначе
-  // MobileTransition (transform) ломает position:fixed.
+  // Высота = viewport - MobileTopBar (3.25rem + safe-area-top). Нижний таб-бар
+  // на чат-роутах скрыт (см. ClubLayout), поэтому доступна вся оставшаяся
+  // высота. Клавиатура — вычитаем её оффсет.
   const pageHeight =
     keyboardOffset > 0
-      ? `calc(100dvh - 3.25rem - env(safe-area-inset-top) - ${keyboardOffset}px)`
-      : "calc(100dvh - 3.25rem - env(safe-area-inset-top) - 64px - 8px - env(safe-area-inset-bottom))";
+      ? `calc(100svh - 3.25rem - env(safe-area-inset-top) - ${keyboardOffset}px)`
+      : "calc(100svh - 3.25rem - env(safe-area-inset-top) - env(safe-area-inset-bottom))";
 
   if (threadQ.isLoading) {
     return <div className="min-h-0" />;

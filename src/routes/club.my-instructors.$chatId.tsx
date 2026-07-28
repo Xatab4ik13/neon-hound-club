@@ -90,7 +90,9 @@ function MyInstructorChatRoom() {
     queryKey: schoolQk.chatMessages(chatId),
     queryFn: () => fetchChatMessages(chatId),
     enabled: !!viewer.user,
-    refetchInterval: 15_000,
+    refetchInterval: 3_000,
+    refetchIntervalInBackground: false,
+    staleTime: 1_000,
     retry: (count, err) => {
       if (err instanceof ApiError && (err.status === 404 || err.status === 403)) return false;
       return count < 2;
@@ -107,7 +109,11 @@ function MyInstructorChatRoom() {
 
   const sendMut = useMutation({
     mutationFn: (text: string) => sendChatMessage(chatId, { text }),
-    onSuccess: () => {
+    onSuccess: (res) => {
+      // Оптимистично добавляем своё сообщение в ленту — не ждём polling.
+      qc.setQueryData(schoolQk.chatMessages(chatId), (prev: typeof q.data) =>
+        prev ? { ...prev, messages: [...prev.messages, res.message] } : prev,
+      );
       qc.invalidateQueries({ queryKey: schoolQk.chatMessages(chatId) });
       qc.invalidateQueries({ queryKey: schoolQk.myChats });
     },
@@ -156,7 +162,7 @@ function MyInstructorChatRoom() {
   const peerCity = ""; // не приходит в ответе — можно расширить API позже, пока не критично
 
   const headerH = 56;
-  const pageHeight = `calc(100svh - 3.25rem - env(safe-area-inset-top) - ${headerH}px - 64px - 8px - env(safe-area-inset-bottom))`;
+  const pageHeight = `calc(100svh - 3.25rem - env(safe-area-inset-top) - ${headerH}px - env(safe-area-inset-bottom))`;
 
   return (
     <div className="relative flex w-full flex-col overflow-hidden bg-[#0a0a0a]">
