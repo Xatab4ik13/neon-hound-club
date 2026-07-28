@@ -438,6 +438,43 @@ export async function handleRaifNotification(
 export async function getPaymentStatusForUser(paymentId: string, userId: string) {
   const [row] = await db.select().from(payments).where(eq(payments.id, paymentId)).limit(1);
   if (!row || row.userId !== userId) return null;
+
+  let schoolOrder: {
+    title: string;
+    description: string;
+    scheduledAt: string | null;
+    instructorName: string;
+    chatId: string;
+  } | null = null;
+
+  if (row.refType === "school_order" && row.refId) {
+    const [so] = await db
+      .select({
+        title: schoolOrders.title,
+        description: schoolOrders.description,
+        scheduledAt: schoolOrders.scheduledAt,
+        chatId: schoolOrders.chatId,
+      })
+      .from(schoolOrders)
+      .where(eq(schoolOrders.id, row.refId))
+      .limit(1);
+    if (so) {
+      const [chat] = await db
+        .select({ instructorName: sql<string>`si.display_name` })
+        .from(sql`school_chats sc`)
+        .innerJoin(sql`school_instructors si`, sql`si.id = sc.instructor_id`)
+        .where(sql`sc.id = ${so.chatId}`)
+        .limit(1);
+      schoolOrder = {
+        title: so.title,
+        description: so.description,
+        scheduledAt: so.scheduledAt ? so.scheduledAt.toISOString() : null,
+        instructorName: chat?.instructorName ?? "Инструктор",
+        chatId: so.chatId,
+      };
+    }
+  }
+
   return {
     id: row.id,
     status: row.status,
@@ -445,5 +482,6 @@ export async function getPaymentStatusForUser(paymentId: string, userId: string)
     refId: row.refId,
     amountRub: row.amountRub,
     method: row.method,
+    schoolOrder,
   };
 }
