@@ -183,9 +183,10 @@ export async function buildApp() {
   await app.register(schoolInstructorRoutes, { prefix: "/api/v1/instructor" });
   await app.register(adminSchoolRoutes, { prefix: "/api/v1/admin/school" });
 
-  const { vipChatRoutes, bloggerVipChatRoutes } = await import("./routes/vip-chat.js");
+  const { vipChatRoutes, bloggerVipChatRoutes, adminVipChatRoutes } = await import("./routes/vip-chat.js");
   await app.register(vipChatRoutes, { prefix: "/api/v1/vip-chat" });
   await app.register(bloggerVipChatRoutes, { prefix: "/api/v1/blogger/chats" });
+  await app.register(adminVipChatRoutes, { prefix: "/api/v1/admin/vip-chat" });
 
   // Создаём S3-бакет, если его ещё нет.
   try {

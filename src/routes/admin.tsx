@@ -25,6 +25,7 @@ import {
   LifeBuoy,
   Newspaper,
   Crown,
+  PlumpChat,
 } from "@/components/ui/icons";
 
 import { cn } from "@/lib/utils";
@@ -169,6 +170,7 @@ const NAV: NavItem[] = [
   { to: "/admin/economy", label: "Экономика", icon: Wallet },
   { to: "/admin/hell-ai", label: "Hell AI", icon: Bot },
   { to: "/admin/school", label: "Школа", icon: GraduationCap },
+  { to: "/admin/vip-chat", label: "VIP-чат", icon: PlumpChat },
   { to: "/admin/pass", label: "Hell Pass", icon: Crown },
   { to: "/admin/cdek", label: "СДЭК", icon: Package },
   { to: "/admin/settings", label: "Настройки", icon: Settings },
