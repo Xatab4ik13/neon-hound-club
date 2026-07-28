@@ -28,6 +28,7 @@ import {
   type StickerTab,
 } from "@/components/club/StickerPanel";
 import { cn } from "@/lib/utils";
+import { resolveAssetUrl } from "@/lib/asset-url";
 import { haptic } from "@/hooks/use-haptic";
 import { useKeyboardOffset } from "@/hooks/use-keyboard-offset";
 import { useMyProfile } from "@/lib/garage-api";
