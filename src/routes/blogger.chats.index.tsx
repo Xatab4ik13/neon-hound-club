@@ -30,13 +30,21 @@ function formatWhen(iso: string): string {
   return d.toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit" });
 }
 
-function Avatar({ nick }: { nick: string }) {
+function Avatar({ nick, url }: { nick: string; url?: string | null }) {
   const initial = nick.slice(0, 1).toUpperCase();
   return (
     <div className="relative shrink-0">
-      <div className="grid h-12 w-12 place-items-center rounded-full bg-gradient-to-br from-primary/70 to-primary/30 font-display text-lg font-black uppercase tracking-tight text-black">
-        {initial}
-      </div>
+      {url ? (
+        <img
+          src={url}
+          alt={nick}
+          className="h-12 w-12 rounded-full object-cover"
+        />
+      ) : (
+        <div className="grid h-12 w-12 place-items-center rounded-full bg-gradient-to-br from-primary/70 to-primary/30 font-display text-lg font-black uppercase tracking-tight text-black">
+          {initial}
+        </div>
+      )}
     </div>
   );
 }
