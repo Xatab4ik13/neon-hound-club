@@ -7,11 +7,14 @@ import { useState } from "react";
 import { PlumpArrowLeft as ArrowLeft, PlumpBell as Bell } from "@/components/ui/icons";
 import { NotificationsSheet } from "@/components/club/NotificationsSheet";
 import { haptic } from "@/hooks/use-haptic";
+import { RANKS, type RankId } from "@/data/ranks";
 
 type Props = {
   backTo: string;
   nick: string;
   role: string;
+  /** Если задан — вместо `role` рендерится чип реального ранга (как в комментариях). */
+  rankId?: string | null;
   avatarUrl?: string | null;
   showBell?: boolean;
   /** Кастомный узел вместо аватарки (например, HellhoundAvatar). */
