@@ -239,7 +239,7 @@ function VipChatPage() {
         backTo="/club"
         nick={hellNick}
         role=""
-        avatarNode={<HellhoundAvatar size={44} initials="H" />}
+        avatarNode={<HellhoundAvatar size={44} initials={hellNick.slice(0, 1).toUpperCase()} avatarUrl={hellAvatar ?? undefined} />}
       />
       {/* Лента сообщений */}
       <div
