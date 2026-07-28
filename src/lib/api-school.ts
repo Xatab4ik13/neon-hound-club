@@ -275,10 +275,23 @@ export type AdminInstructorRow = {
   city: string;
   active: boolean;
   hourlyRateRub: number;
+  userId: string | null;
+  userNick: string | null;
+  userEmail: string | null;
 };
 
 export async function fetchAdminInstructors() {
   return apiFetch<{ items: AdminInstructorRow[] }>("/api/v1/admin/school/instructors");
+}
+
+export async function attachInstructorUser(
+  instructorId: string,
+  payload: { userId?: string; email?: string; nick?: string },
+) {
+  return apiFetch<{ ok: true; userId: string }>(
+    `/api/v1/admin/school/instructors/${instructorId}/attach-user`,
+    { method: "POST", body: JSON.stringify(payload) },
+  );
 }
 
 export type AdminPayoutRow = {
