@@ -220,7 +220,7 @@ export function MockChatRoom({
                           showAvatar ? "opacity-100" : "invisible",
                         )}
                       >
-                        <Avatar label={peerLabel} size={44} />
+                        <Avatar label={peerLabel} url={peerAvatarUrl} size={44} />
                       </div>
                     )}
                     <div
