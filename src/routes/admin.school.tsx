@@ -17,11 +17,13 @@ import {
 import { cn } from "@/lib/utils";
 import {
   adminSchoolQk,
+  attachInstructorUser,
   fetchAdminInstructors,
   fetchAdminKpi,
   fetchAdminPayouts,
   generatePayouts,
   markPayoutPaid,
+  type AdminInstructorRow,
   type AdminPayoutRow,
 } from "@/lib/api-school";
 import { ApiError } from "@/lib/api";
