@@ -232,13 +232,12 @@ function BloggerChatPage() {
     return out;
   }, [messages]);
 
-  // Высота с учётом локальной шапки (48px). Оставляем такой же расчёт,
-  // как в user-side VIP-чате, минус собственный header.
-  const headerH = 48;
+  // Полный viewport минус клавиатура — шапка/composer со своими safe-area
+  // отступами, тап-бар на роутах чата скрыт (см. BloggerLayout).
   const pageHeight =
     keyboardOffset > 0
-      ? `calc(100dvh - 3.25rem - env(safe-area-inset-top) - ${headerH}px - ${keyboardOffset}px)`
-      : `calc(100dvh - 3.25rem - env(safe-area-inset-top) - ${headerH}px - 64px - 8px - env(safe-area-inset-bottom))`;
+      ? `calc(100dvh - ${keyboardOffset}px)`
+      : "100dvh";
 
   if (threadQ.isLoading) {
     return (
@@ -263,24 +262,15 @@ function BloggerChatPage() {
   }
 
   return (
-    <div className="relative flex w-full flex-col overflow-hidden bg-[#0a0a0a]">
-      {/* Локальная шапка чата */}
-      <div
-        className="flex shrink-0 items-center gap-3 border-b border-white/[0.06] bg-black/70 px-3"
-        style={{ height: headerH }}
-      >
-        <PeerAvatar nick={peer.nick} url={peer.avatarUrl} size={32} />
-        <div className="min-w-0 flex-1">
-          <div className="truncate font-display text-[14px] font-black uppercase tracking-tight text-foreground">
-            {peer.nick}
-          </div>
-          <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-            подписчик
-          </div>
-        </div>
-      </div>
+    <div className="relative flex w-full flex-col overflow-hidden bg-[#0a0a0a]" style={{ height: pageHeight }}>
+      <ChatHeader
+        backTo="/blogger/chats"
+        nick={peer.nick}
+        role="райдер"
+        avatarUrl={peer.avatarUrl ?? null}
+      />
 
-      <div className="relative flex w-full flex-col overflow-hidden" style={{ height: pageHeight }}>
+      <div className="relative flex min-h-0 flex-1 w-full flex-col overflow-hidden">
         <div
           ref={scrollerRef}
           className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pt-4"
