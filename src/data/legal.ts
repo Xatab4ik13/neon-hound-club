@@ -16,7 +16,7 @@ export const LEGAL = {
   /** Короткая форма адреса для футера. */
   addressShort: "аул Козет, ул. им. Шоры Ногмова, 9",
   /** Канал связи для обращений по сервису и ПДн. */
-  contactTelegram: "https://t.me/hell666hound",
+  contactTelegram: "https://t.me/HellGuarding",
   /** Email для официальных обращений (требование банка-эквайера). */
   contactEmail: "no-reply@hhr.pro",
   /** Бренд / коммерческое обозначение сервиса. */
