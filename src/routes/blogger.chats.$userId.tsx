@@ -93,8 +93,26 @@ function formatDay(ts: number) {
   return d.toLocaleDateString("ru-RU", { day: "2-digit", month: "long" }).toUpperCase();
 }
 
-function PeerAvatar({ nick, size = 44 }: { nick: string; size?: number }) {
+function PeerAvatar({
+  nick,
+  url,
+  size = 44,
+}: {
+  nick: string;
+  url?: string | null;
+  size?: number;
+}) {
   const initial = nick.slice(0, 1).toUpperCase();
+  if (url) {
+    return (
+      <img
+        src={url}
+        alt={nick}
+        className="shrink-0 rounded-full object-cover"
+        style={{ height: size, width: size }}
+      />
+    );
+  }
   return (
     <div
       className="grid shrink-0 place-items-center rounded-full bg-gradient-to-br from-primary/70 to-primary/30 font-display font-black uppercase tracking-tight text-black"
@@ -251,7 +269,7 @@ function BloggerChatPage() {
         className="flex shrink-0 items-center gap-3 border-b border-white/[0.06] bg-black/70 px-3"
         style={{ height: headerH }}
       >
-        <PeerAvatar nick={peer.nick} size={32} />
+        <PeerAvatar nick={peer.nick} url={peer.avatarUrl} size={32} />
         <div className="min-w-0 flex-1">
           <div className="truncate font-display text-[14px] font-black uppercase tracking-tight text-foreground">
             {peer.nick}
@@ -293,7 +311,7 @@ function BloggerChatPage() {
                     >
                       {!isMine && (
                         <div className={cn("shrink-0", showAvatar ? "opacity-100" : "invisible")}>
-                          <PeerAvatar nick={peer.nick} size={44} />
+                          <PeerAvatar nick={peer.nick} url={peer.avatarUrl} size={44} />
                         </div>
                       )}
                       <div

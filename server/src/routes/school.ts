@@ -20,6 +20,7 @@ import {
   SCHOOL_COMMISSION_RATE,
 } from "../db/schema/school.js";
 import { users } from "../db/schema/users.js";
+import { profiles } from "../db/schema/profile.js";
 import { payments } from "../db/schema/payments.js";
 import { requireAuth, requireAdmin, type SessionPayload } from "../lib/auth.js";
 import { pushToUsers } from "../lib/push.js";
@@ -296,6 +297,7 @@ export async function schoolInstructorRoutes(app: FastifyInstance) {
         id: schoolChats.id,
         studentId: schoolChats.studentId,
         studentNick: users.nick,
+        studentAvatar: profiles.avatarUrl,
         lastMessageAt: schoolChats.lastMessageAt,
         lastMessagePreview: schoolChats.lastMessagePreview,
         lastMessageRole: schoolChats.lastMessageRole,
@@ -303,6 +305,7 @@ export async function schoolInstructorRoutes(app: FastifyInstance) {
       })
       .from(schoolChats)
       .innerJoin(users, eq(users.id, schoolChats.studentId))
+      .leftJoin(profiles, eq(profiles.userId, schoolChats.studentId))
       .where(eq(schoolChats.instructorId, instr.id))
       .orderBy(desc(schoolChats.lastMessageAt));
     return { items: rows };

@@ -33,7 +33,7 @@ export type ChatServerMessage = {
 
 type ThreadResponse = {
   thread: { id: string; unread: number; lastMessageAt: string };
-  peer: { id: string; nick: string };
+  peer: { id: string; nick: string; avatarUrl: string | null };
   messages: ChatServerMessage[];
 };
 

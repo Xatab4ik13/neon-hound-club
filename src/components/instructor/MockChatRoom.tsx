@@ -45,8 +45,18 @@ function formatDay(ts: number) {
   return d.toLocaleDateString("ru-RU", { day: "2-digit", month: "long" }).toUpperCase();
 }
 
-function Avatar({ label, size = 44 }: { label: string; size?: number }) {
+function Avatar({ label, url, size = 44 }: { label: string; url?: string | null; size?: number }) {
   const initial = label.slice(0, 1).toUpperCase();
+  if (url) {
+    return (
+      <img
+        src={url}
+        alt={label}
+        className="shrink-0 rounded-full object-cover"
+        style={{ height: size, width: size }}
+      />
+    );
+  }
   return (
     <div
       className="grid shrink-0 place-items-center rounded-full bg-gradient-to-br from-primary/70 to-primary/30 font-display font-black uppercase tracking-tight text-black"
@@ -63,6 +73,8 @@ export type MockChatRoomProps = {
   myRole: "instructor" | "student";
   /** Ник собеседника для placeholder и аватарки. */
   peerLabel: string;
+  /** Аватарка собеседника (URL). Опционально — если нет, используются инициалы. */
+  peerAvatarUrl?: string | null;
   /** Высота чата — рассчитывается снаружи (варьируется от контейнера). */
   height: string;
   onSend: (text: string) => void;
@@ -78,6 +90,7 @@ export function MockChatRoom({
   messages,
   myRole,
   peerLabel,
+  peerAvatarUrl,
   height,
   onSend,
   onSendInvoice,
@@ -207,7 +220,7 @@ export function MockChatRoom({
                           showAvatar ? "opacity-100" : "invisible",
                         )}
                       >
-                        <Avatar label={peerLabel} size={44} />
+                        <Avatar label={peerLabel} url={peerAvatarUrl} size={44} />
                       </div>
                     )}
                     <div

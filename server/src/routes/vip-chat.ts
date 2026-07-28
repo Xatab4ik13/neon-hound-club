@@ -23,6 +23,7 @@ import {
   type VipChatSenderRole,
 } from "../db/schema/vip-chat.js";
 import { users } from "../db/schema/users.js";
+import { profiles } from "../db/schema/profile.js";
 import { requireAuth, requireBloggerOrAdmin, type SessionPayload } from "../lib/auth.js";
 import { pushToUsers } from "../lib/push.js";
 import { getActivePass } from "../lib/pass.js";
@@ -225,10 +226,11 @@ export async function bloggerVipChatRoutes(app: FastifyInstance) {
         lastMessageRole: vipChatThreads.lastMessageRole,
         bloggerUnread: vipChatThreads.bloggerUnread,
         peerNick: users.nick,
-        peerAvatar: sql<string | null>`null`, // TODO: подтянуть из profiles.avatar_url
+        peerAvatar: profiles.avatarUrl,
       })
       .from(vipChatThreads)
       .innerJoin(users, eq(users.id, vipChatThreads.userId))
+      .leftJoin(profiles, eq(profiles.userId, vipChatThreads.userId))
       .where(eq(vipChatThreads.bloggerId, session.sub))
       .orderBy(desc(vipChatThreads.lastMessageAt))
       .limit(200);
@@ -245,8 +247,9 @@ export async function bloggerVipChatRoutes(app: FastifyInstance) {
       if (!params.success) return reply.code(400).send({ error: "invalid_id" });
 
       const [peer] = await db
-        .select({ id: users.id, nick: users.nick })
+        .select({ id: users.id, nick: users.nick, avatarUrl: profiles.avatarUrl })
         .from(users)
+        .leftJoin(profiles, eq(profiles.userId, users.id))
         .where(eq(users.id, params.data.userId))
         .limit(1);
       if (!peer) return reply.code(404).send({ error: "user_not_found" });

@@ -64,8 +64,17 @@ function formatRub(n: number): string {
   return new Intl.NumberFormat("ru-RU").format(n) + " ₽";
 }
 
-function Avatar({ nick }: { nick: string }) {
+function Avatar({ nick, url }: { nick: string; url?: string | null }) {
   const initial = nick.slice(0, 1).toUpperCase();
+  if (url) {
+    return (
+      <img
+        src={url}
+        alt={nick}
+        className="h-12 w-12 shrink-0 rounded-full object-cover"
+      />
+    );
+  }
   return (
     <div className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-gradient-to-br from-primary/70 to-primary/30 font-display text-lg font-black uppercase tracking-tight text-black">
       {initial}
@@ -183,7 +192,7 @@ function SchoolChatsList() {
                     params={{ chatId: c.id }}
                     className="flex items-center gap-3 px-4 py-3 transition-colors active:bg-white/[0.04]"
                   >
-                    <Avatar nick={c.studentNick} />
+                    <Avatar nick={c.studentNick} url={c.studentAvatar} />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
                         <span className="truncate font-display text-[15px] font-black uppercase tracking-tight text-foreground">

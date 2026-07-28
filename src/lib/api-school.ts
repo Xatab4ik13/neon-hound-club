@@ -198,6 +198,7 @@ export type InstructorChatRow = {
   id: string;
   studentId: string;
   studentNick: string;
+  studentAvatar: string | null;
   lastMessageAt: string;
   lastMessagePreview: string;
   lastMessageRole: string;
