@@ -285,7 +285,9 @@ export async function createPaymentForSchoolOrder(
 
   try {
     const raifOrder = await createOrder({
-      method,
+      // Для оплаты урока школы предлагаем оба способа (карта + СБП) —
+      // пусть райдер выбирает на форме Райфа, как в магазине.
+      method: "any",
       orderId: created!.id,
       amountRub: so.studentAmountRub,
       comment: `Урок HELLHOUND School: ${so.title}`,
