@@ -143,14 +143,7 @@ function InstructorsPanel({
   rows,
   loading,
 }: {
-  rows: {
-    id: string;
-    slug: string;
-    displayName: string;
-    city: string;
-    active: boolean;
-    hourlyRateRub: number;
-  }[];
+  rows: AdminInstructorRow[];
   loading: boolean;
 }) {
   return (
@@ -171,6 +164,7 @@ function InstructorsPanel({
               <th className="whitespace-nowrap px-4 py-2.5 font-medium text-right">
                 Ставка/час
               </th>
+              <th className="whitespace-nowrap px-4 py-2.5 font-medium">Аккаунт</th>
               <th className="whitespace-nowrap px-4 py-2.5 font-medium text-right">
                 Статус
               </th>
@@ -179,14 +173,14 @@ function InstructorsPanel({
           <tbody>
             {loading && (
               <tr>
-                <td colSpan={5} className="px-4 py-6 text-center text-zinc-500">
+                <td colSpan={6} className="px-4 py-6 text-center text-zinc-500">
                   Загрузка…
                 </td>
               </tr>
             )}
             {!loading && rows.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-4 py-6 text-center text-zinc-500">
+                <td colSpan={6} className="px-4 py-6 text-center text-zinc-500">
                   Пока нет инструкторов
                 </td>
               </tr>
@@ -194,7 +188,7 @@ function InstructorsPanel({
             {rows.map((r) => (
               <tr
                 key={r.id}
-                className="border-t border-zinc-100 hover:bg-zinc-50/50 dark:border-zinc-800 dark:hover:bg-zinc-800/30"
+                className="border-t border-zinc-100 align-top hover:bg-zinc-50/50 dark:border-zinc-800 dark:hover:bg-zinc-800/30"
               >
                 <td className="whitespace-nowrap px-4 py-2.5 font-medium">{r.displayName}</td>
                 <td className="whitespace-nowrap px-4 py-2.5 text-xs text-zinc-500">
@@ -203,6 +197,9 @@ function InstructorsPanel({
                 <td className="whitespace-nowrap px-4 py-2.5">{r.city || "—"}</td>
                 <td className="whitespace-nowrap px-4 py-2.5 text-right tabular-nums">
                   {fmtMoney(r.hourlyRateRub)}
+                </td>
+                <td className="px-4 py-2.5">
+                  <AttachUserCell row={r} />
                 </td>
                 <td className="whitespace-nowrap px-4 py-2.5 text-right">
                   {r.active ? (
@@ -217,6 +214,91 @@ function InstructorsPanel({
         </table>
       </div>
     </Panel>
+  );
+}
+
+function AttachUserCell({ row }: { row: AdminInstructorRow }) {
+  const qc = useQueryClient();
+  const [value, setValue] = useState("");
+  const [editing, setEditing] = useState(false);
+
+  const mut = useMutation({
+    mutationFn: (identity: string) => {
+      const v = identity.trim();
+      if (!v) throw new Error("Введи email или ник");
+      const payload = v.includes("@") ? { email: v } : { nick: v };
+      return attachInstructorUser(row.id, payload);
+    },
+    onSuccess: () => {
+      toast.success("Пользователь привязан");
+      setValue("");
+      setEditing(false);
+      qc.invalidateQueries({ queryKey: adminSchoolQk.instructors });
+    },
+    onError: (e) => {
+      const msg =
+        e instanceof ApiError && e.status === 404
+          ? "Пользователь не найден"
+          : e instanceof ApiError && e.status === 409
+            ? "Этот юзер уже назначен другим инструктором"
+            : e instanceof Error
+              ? e.message
+              : "Ошибка";
+      toast.error(msg);
+    },
+  });
+
+  if (!editing) {
+    return (
+      <div className="flex items-center gap-2">
+        {row.userNick ? (
+          <div className="min-w-0">
+            <div className="truncate text-sm">@{row.userNick}</div>
+            <div className="truncate text-xs text-zinc-500">{row.userEmail}</div>
+          </div>
+        ) : (
+          <span className="text-xs text-zinc-500">не привязан</span>
+        )}
+        <Btn variant="ghost" onClick={() => setEditing(true)}>
+          {row.userNick ? "Переназначить" : "Назначить"}
+        </Btn>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      <TextInput
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        placeholder="email или @nick"
+        className="w-56"
+        onKeyDown={(e) => {
+          if (e.key === "Enter") mut.mutate(value);
+          if (e.key === "Escape") {
+            setEditing(false);
+            setValue("");
+          }
+        }}
+        autoFocus
+      />
+      <Btn
+        variant="primary"
+        onClick={() => mut.mutate(value)}
+        disabled={mut.isPending || !value.trim()}
+      >
+        {mut.isPending ? "…" : "OK"}
+      </Btn>
+      <Btn
+        variant="ghost"
+        onClick={() => {
+          setEditing(false);
+          setValue("");
+        }}
+      >
+        Отмена
+      </Btn>
+    </div>
   );
 }
 
