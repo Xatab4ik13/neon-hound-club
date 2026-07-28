@@ -902,7 +902,7 @@ function HellAiMobile() {
   // <MobileTransition> оборачивает страницу в motion.div с transform → fixed ломается.
   const pageHeight =
     keyboardOffset > 0
-      ? `calc(100dvh - 3.25rem - env(safe-area-inset-top) - ${keyboardOffset}px)`
+      ? `${Math.max(0, visualHeight - 52)}px`
       : "calc(100dvh - 3.25rem - env(safe-area-inset-top) - 64px - 8px - env(safe-area-inset-bottom))";
 
   return (
