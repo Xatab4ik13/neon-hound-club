@@ -460,10 +460,10 @@ export async function getPaymentStatusForUser(paymentId: string, userId: string)
       .limit(1);
     if (so) {
       const [chat] = await db
-        .select({ instructorName: sql<string>`si.display_name` })
-        .from(sql`school_chats sc`)
-        .innerJoin(sql`school_instructors si`, sql`si.id = sc.instructor_id`)
-        .where(sql`sc.id = ${so.chatId}`)
+        .select({ instructorName: schoolInstructors.displayName })
+        .from(schoolChats)
+        .innerJoin(schoolInstructors, eq(schoolInstructors.id, schoolChats.instructorId))
+        .where(eq(schoolChats.id, so.chatId))
         .limit(1);
       schoolOrder = {
         title: so.title,
