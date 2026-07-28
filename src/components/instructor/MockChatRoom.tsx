@@ -45,8 +45,18 @@ function formatDay(ts: number) {
   return d.toLocaleDateString("ru-RU", { day: "2-digit", month: "long" }).toUpperCase();
 }
 
-function Avatar({ label, size = 44 }: { label: string; size?: number }) {
+function Avatar({ label, url, size = 44 }: { label: string; url?: string | null; size?: number }) {
   const initial = label.slice(0, 1).toUpperCase();
+  if (url) {
+    return (
+      <img
+        src={url}
+        alt={label}
+        className="shrink-0 rounded-full object-cover"
+        style={{ height: size, width: size }}
+      />
+    );
+  }
   return (
     <div
       className="grid shrink-0 place-items-center rounded-full bg-gradient-to-br from-primary/70 to-primary/30 font-display font-black uppercase tracking-tight text-black"
