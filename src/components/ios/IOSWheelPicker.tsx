@@ -191,6 +191,7 @@ function WheelColumn({ options, value, onChange, width = "w-24" }: Column) {
       }}
       onTouchMove={(e) => {
         e.stopPropagation();
+        if (e.cancelable) e.preventDefault();
         const touch = e.touches[0];
         const start = touchRef.current;
         if (!touch || !start || !ref.current) return;
