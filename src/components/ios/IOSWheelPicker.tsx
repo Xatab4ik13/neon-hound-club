@@ -6,6 +6,7 @@ import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
 import { useThemeColor } from "@/hooks/use-theme-color";
+import { haptic } from "@/hooks/use-haptic";
 
 type Column = {
   options: string[];
@@ -24,6 +25,37 @@ type Props = {
 
 const ITEM_H = 36; // px — высота одной строки барабана
 const VISIBLE = 5; // нечётное
+
+let feedbackCtx: AudioContext | null = null;
+
+function playPickerTick() {
+  if (typeof window === "undefined") return;
+  try {
+    const Ctor =
+      (window as unknown as { AudioContext?: typeof AudioContext; webkitAudioContext?: typeof AudioContext })
+        .AudioContext ??
+      (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!Ctor) return;
+    if (!feedbackCtx) feedbackCtx = new Ctor();
+    const c = feedbackCtx;
+    if (c.state === "suspended") c.resume().catch(() => {});
+
+    const now = c.currentTime;
+    const osc = c.createOscillator();
+    const gain = c.createGain();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(880, now);
+    osc.frequency.exponentialRampToValueAtTime(1320, now + 0.035);
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(0.035, now + 0.006);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.055);
+    osc.connect(gain).connect(c.destination);
+    osc.start(now);
+    osc.stop(now + 0.065);
+  } catch {
+    // no-op: звук не должен ломать выбор даты
+  }
+}
 
 export function IOSWheelPicker({
   open,
@@ -101,6 +133,7 @@ function WheelColumn({ options, value, onChange, width = "w-24" }: Column) {
   const ref = useRef<HTMLDivElement>(null);
   const idxRef = useRef(0);
   const snapTimerRef = useRef<number | null>(null);
+  const touchRef = useRef<{ y: number; top: number; moved: boolean } | null>(null);
 
   // На открытии — скроллим к текущему значению.
   useEffect(() => {
@@ -114,23 +147,26 @@ function WheelColumn({ options, value, onChange, width = "w-24" }: Column) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  function emitChange(i: number) {
+    if (i !== idxRef.current && options[i] !== undefined) {
+      idxRef.current = i;
+      haptic("selection");
+      playPickerTick();
+      onChange(options[i]);
+    }
+  }
+
   function scrollToIndex(i: number, smooth = true) {
     if (!ref.current) return;
     const safe = Math.max(0, Math.min(options.length - 1, i));
     ref.current.scrollTo({ top: safe * ITEM_H, behavior: smooth ? "smooth" : "auto" });
-    if (safe !== idxRef.current && options[safe] !== undefined) {
-      idxRef.current = safe;
-      onChange(options[safe]);
-    }
+    emitChange(safe);
   }
 
   function handleScroll() {
     if (!ref.current) return;
     const i = Math.round(ref.current.scrollTop / ITEM_H);
-    if (i !== idxRef.current && options[i] !== undefined) {
-      idxRef.current = i;
-      onChange(options[i]);
-    }
+    emitChange(i);
     if (snapTimerRef.current) window.clearTimeout(snapTimerRef.current);
     snapTimerRef.current = window.setTimeout(() => {
       if (!ref.current) return;
@@ -146,11 +182,37 @@ function WheelColumn({ options, value, onChange, width = "w-24" }: Column) {
       ref={ref}
       onScroll={handleScroll}
       onPointerDown={(e) => e.stopPropagation()}
+      onTouchStart={(e) => {
+        e.stopPropagation();
+        const touch = e.touches[0];
+        if (!touch || !ref.current) return;
+        touchRef.current = { y: touch.clientY, top: ref.current.scrollTop, moved: false };
+        if (snapTimerRef.current) window.clearTimeout(snapTimerRef.current);
+      }}
+      onTouchMove={(e) => {
+        e.stopPropagation();
+        if (e.cancelable) e.preventDefault();
+        const touch = e.touches[0];
+        const start = touchRef.current;
+        if (!touch || !start || !ref.current) return;
+        const delta = start.y - touch.clientY;
+        if (Math.abs(delta) > 2) start.moved = true;
+        ref.current.scrollTop = Math.max(0, Math.min((options.length - 1) * ITEM_H, start.top + delta));
+        handleScroll();
+      }}
+      onTouchEnd={(e) => {
+        e.stopPropagation();
+        if (!ref.current) return;
+        const cur = Math.round(ref.current.scrollTop / ITEM_H);
+        scrollToIndex(cur, true);
+        window.setTimeout(() => {
+          touchRef.current = null;
+        }, 0);
+      }}
       onWheel={(e) => {
-        // Мышиный wheel — шагаем по одному пункту, чтобы не проскакивать.
         e.stopPropagation();
       }}
-      className={cn("relative overflow-y-scroll no-scrollbar", width)}
+      className={cn("relative overflow-y-scroll no-scrollbar select-none", width)}
       style={{
         height: VISIBLE * ITEM_H,
         scrollSnapType: "y mandatory",
@@ -167,8 +229,15 @@ function WheelColumn({ options, value, onChange, width = "w-24" }: Column) {
             <button
               key={opt}
               type="button"
+              onTouchEnd={(e) => {
+                if (touchRef.current?.moved) {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }
+              }}
               onClick={(e) => {
                 e.stopPropagation();
+                if (touchRef.current?.moved) return;
                 scrollToIndex(i, true);
               }}
               style={{ height: ITEM_H, scrollSnapAlign: "center" }}
