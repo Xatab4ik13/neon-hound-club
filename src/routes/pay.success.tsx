@@ -3,9 +3,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { CheckCircle2, Loader2, PlumpTicket, XCircle, AlertTriangle, PlumpPackage as Package } from "@/components/ui/icons";
+import { CheckCircle2, Loader2, PlumpTicket, XCircle, AlertTriangle, PlumpPackage as Package, MessageCircle } from "@/components/ui/icons";
 import { z } from "zod";
-import { fetchPaymentStatus, qk, type PaymentStatus } from "@/lib/queries";
+import { fetchPaymentStatus, qk, type PaymentStatus, type SchoolOrderInfo } from "@/lib/queries";
 import { ApiError } from "@/lib/api";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCart } from "@/hooks/use-cart";
@@ -25,14 +25,17 @@ export const Route = createFileRoute("/pay/success")({
   component: PaySuccessPage,
 });
 
+type RefType = "pass" | "order" | "school_order" | null;
+
 function PaySuccessPage() {
   const { p: paymentId } = Route.useSearch();
   const navigate = useNavigate();
   const qc = useQueryClient();
   const { clear: clearCart } = useCart();
   const [status, setStatus] = useState<PaymentStatus | "unknown">("unknown");
-  const [refType, setRefType] = useState<"pass" | "order" | null>(null);
+  const [refType, setRefType] = useState<RefType>(null);
   const [refId, setRefId] = useState<string | null>(null);
+  const [schoolOrder, setSchoolOrder] = useState<SchoolOrderInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
   const cartClearedRef = useRef(false);
 
@@ -52,6 +55,7 @@ function PaySuccessPage() {
         setStatus(r.status);
         setRefType(r.refType);
         setRefId(r.refId);
+        setSchoolOrder(r.schoolOrder);
         if (r.status === "confirmed") {
           qc.invalidateQueries({ queryKey: qk.ticketsBalance });
           qc.invalidateQueries({ queryKey: qk.passMe });
@@ -81,7 +85,11 @@ function PaySuccessPage() {
         {error ? (
           <ErrorState message={error} />
         ) : status === "confirmed" ? (
-          <ConfirmedState refType={refType} refId={refId} />
+          refType === "school_order" ? (
+            <SchoolConfirmedState info={schoolOrder} chatId={schoolOrder?.chatId ?? null} />
+          ) : (
+            <ConfirmedState refType={refType as "pass" | "order" | null} refId={refId} />
+          )
         ) : status === "rejected" ? (
           <RejectedState onBack={() => navigate({ to: "/club" })} />
         ) : (
@@ -172,6 +180,113 @@ function ConfirmedState({
       </div>
     </>
   );
+}
+
+function SchoolConfirmedState({
+  info,
+  chatId,
+}: {
+  info: SchoolOrderInfo | null;
+  chatId: string | null;
+}) {
+  const scheduledText = info?.scheduledAt
+    ? formatScheduled(info.scheduledAt)
+    : null;
+
+  return (
+    <>
+      <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary text-primary-foreground">
+        <CheckCircle2 className="h-10 w-10" />
+      </div>
+      <p className="mt-6 font-mono text-[11px] uppercase tracking-[0.25em] text-primary">
+        Оплата прошла
+      </p>
+      <h1 className="mt-3 font-display text-4xl font-black uppercase leading-none">
+        Занятие забронировано
+      </h1>
+
+      {info ? (
+        <div className="mt-6 w-full rounded-2xl border border-border/60 bg-card px-5 py-4 text-left">
+          <div className="font-mono text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
+            Инструктор
+          </div>
+          <div className="mt-1 font-display text-lg font-black uppercase leading-tight">
+            {info.instructorName}
+          </div>
+
+          <div className="mt-4 font-mono text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
+            Занятие
+          </div>
+          <div className="mt-1 text-sm font-semibold text-foreground">
+            {info.title}
+          </div>
+          {info.description ? (
+            <div className="mt-1 text-sm text-muted-foreground">{info.description}</div>
+          ) : null}
+
+          {scheduledText ? (
+            <>
+              <div className="mt-4 font-mono text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
+                Когда
+              </div>
+              <div className="mt-1 text-sm font-semibold text-primary">
+                {scheduledText}
+              </div>
+            </>
+          ) : null}
+        </div>
+      ) : null}
+
+      <p className="mt-5 text-sm text-muted-foreground">
+        Инструктор свяжется с тобой в чате. Не опаздывай.
+      </p>
+
+      <div className="mt-8 flex w-full flex-col gap-3">
+        {chatId ? (
+          <Link
+            to="/club/my-instructors/$chatId"
+            params={{ chatId }}
+            className="inline-flex items-center justify-center gap-2 bg-primary px-5 py-4 font-display text-xs font-black uppercase tracking-widest text-primary-foreground transition hover:opacity-90"
+          >
+            <MessageCircle className="h-4 w-4" />
+            В чат с инструктором
+          </Link>
+        ) : (
+          <Link
+            to="/club/school"
+            className="inline-flex items-center justify-center gap-2 bg-primary px-5 py-4 font-display text-xs font-black uppercase tracking-widest text-primary-foreground transition hover:opacity-90"
+          >
+            <MessageCircle className="h-4 w-4" />
+            К школе
+          </Link>
+        )}
+        <Link
+          to="/club"
+          className="inline-flex items-center justify-center px-5 py-3 font-mono text-[11px] uppercase tracking-[0.25em] text-muted-foreground transition hover:text-foreground"
+        >
+          ← в клуб
+        </Link>
+      </div>
+    </>
+  );
+}
+
+function formatScheduled(iso: string): string {
+  try {
+    const d = new Date(iso);
+    const date = d.toLocaleDateString("ru-RU", {
+      day: "numeric",
+      month: "long",
+      weekday: "short",
+    });
+    const time = d.toLocaleTimeString("ru-RU", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    return `${date}, ${time}`;
+  } catch {
+    return iso;
+  }
 }
 
 function RejectedState({ onBack }: { onBack: () => void }) {

@@ -71,11 +71,11 @@ export function ChatHeader({ backTo, nick, role, rankId, avatarUrl, showBell = t
             >
               {rank.short}
             </span>
-          ) : (
+          ) : role ? (
             <span className="shrink-0 rounded-md bg-primary px-1.5 py-[2px] font-mono text-[9px] font-bold uppercase tracking-widest text-primary-foreground">
               {role}
             </span>
-          )}
+          ) : null}
         </div>
 
         {showBell ? (

@@ -540,14 +540,23 @@ export async function initPassPayment(purchaseId: string, method: PaymentMethod 
   );
 }
 
+export type SchoolOrderInfo = {
+  title: string;
+  description: string;
+  scheduledAt: string | null;
+  instructorName: string;
+  chatId: string;
+};
+
 export async function fetchPaymentStatus(paymentId: string) {
   return apiFetch<{
     id: string;
     status: PaymentStatus;
-    refType: "pass" | "order";
+    refType: "pass" | "order" | "school_order";
     refId: string;
     amountRub: number;
     method: PaymentMethod;
+    schoolOrder: SchoolOrderInfo | null;
   }>(`/api/v1/payments/${paymentId}/status`);
 }
 

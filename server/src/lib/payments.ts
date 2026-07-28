@@ -15,7 +15,7 @@ import { db } from "../db/client.js";
 import { payments, type Payment, type PaymentMethod } from "../db/schema/payments.js";
 import { passPurchases } from "../db/schema/pass.js";
 import { orders } from "../db/schema/shop.js";
-import { schoolOrders, schoolChats, schoolMessages } from "../db/schema/school.js";
+import { schoolOrders, schoolChats, schoolMessages, schoolInstructors } from "../db/schema/school.js";
 import { activatePassPurchase } from "./pass.js";
 import { markOrderPaid } from "./shop.js";
 import { pushToUsers } from "./push.js";
@@ -438,6 +438,43 @@ export async function handleRaifNotification(
 export async function getPaymentStatusForUser(paymentId: string, userId: string) {
   const [row] = await db.select().from(payments).where(eq(payments.id, paymentId)).limit(1);
   if (!row || row.userId !== userId) return null;
+
+  let schoolOrder: {
+    title: string;
+    description: string;
+    scheduledAt: string | null;
+    instructorName: string;
+    chatId: string;
+  } | null = null;
+
+  if (row.refType === "school_order" && row.refId) {
+    const [so] = await db
+      .select({
+        title: schoolOrders.title,
+        description: schoolOrders.description,
+        scheduledAt: schoolOrders.scheduledAt,
+        chatId: schoolOrders.chatId,
+      })
+      .from(schoolOrders)
+      .where(eq(schoolOrders.id, row.refId))
+      .limit(1);
+    if (so) {
+      const [chat] = await db
+        .select({ instructorName: schoolInstructors.displayName })
+        .from(schoolChats)
+        .innerJoin(schoolInstructors, eq(schoolInstructors.id, schoolChats.instructorId))
+        .where(eq(schoolChats.id, so.chatId))
+        .limit(1);
+      schoolOrder = {
+        title: so.title,
+        description: so.description,
+        scheduledAt: so.scheduledAt ? so.scheduledAt.toISOString() : null,
+        instructorName: chat?.instructorName ?? "Инструктор",
+        chatId: so.chatId,
+      };
+    }
+  }
+
   return {
     id: row.id,
     status: row.status,
@@ -445,5 +482,6 @@ export async function getPaymentStatusForUser(paymentId: string, userId: string)
     refId: row.refId,
     amountRub: row.amountRub,
     method: row.method,
+    schoolOrder,
   };
 }

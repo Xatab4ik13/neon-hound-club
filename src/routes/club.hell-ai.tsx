@@ -45,7 +45,7 @@ import { useBikes, type ServerBike } from "@/lib/garage-api";
 import { haptic } from "@/hooks/use-haptic";
 import { Swipeable } from "@/components/club/Swipeable";
 import { HellAiBubble } from "@/components/club/HellAiBubble";
-import { useKeyboardOffset } from "@/hooks/use-keyboard-offset";
+import { useVisualViewport } from "@/hooks/use-keyboard-offset";
 
 export const Route = createFileRoute("/club/hell-ai")({
   head: () => ({
@@ -635,7 +635,7 @@ function HellAiMobile() {
   const { ref: taRef, adjust } = useAutoResize(40, 140);
   const scrollRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
-  const keyboardOffset = useKeyboardOffset();
+  const { offset: keyboardOffset, height: visualHeight } = useVisualViewport();
 
   const used = serverUsed + usedDelta;
   const left = isUnlimited ? Infinity : Math.max(0, (quota as number) - used);
@@ -902,7 +902,7 @@ function HellAiMobile() {
   // <MobileTransition> оборачивает страницу в motion.div с transform → fixed ломается.
   const pageHeight =
     keyboardOffset > 0
-      ? `calc(100dvh - 3.25rem - env(safe-area-inset-top) - ${keyboardOffset}px)`
+      ? `${Math.max(0, visualHeight - 52)}px`
       : "calc(100dvh - 3.25rem - env(safe-area-inset-top) - 64px - 8px - env(safe-area-inset-bottom))";
 
   return (

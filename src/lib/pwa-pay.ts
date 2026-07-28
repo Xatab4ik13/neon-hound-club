@@ -82,3 +82,23 @@ export function payExistingOrderInPwa(
 ): Promise<PayResult> {
   return startPayment({ target: "order_existing", order_id: orderId, method });
 }
+
+/**
+ * Открыть уже созданный paymentUrl (например, для школы, где API школы сам
+ * возвращает ссылку). В PWA — через /pay/go, чтобы форма банка открылась
+ * в системном браузере. В обычном браузере — синхронный GET-сабмит.
+ */
+export function openPaymentUrl(paymentUrl: string, paymentId?: string) {
+  if (isStandalonePWA()) {
+    const u = encodeURIComponent(paymentUrl);
+    const p = paymentId ? `&p=${encodeURIComponent(paymentId)}` : "";
+    window.location.assign(`/pay/go?u=${u}${p}`);
+    return;
+  }
+  const form = document.createElement("form");
+  form.method = "GET";
+  form.action = paymentUrl;
+  form.style.display = "none";
+  document.body.appendChild(form);
+  form.submit();
+}

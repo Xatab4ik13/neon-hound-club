@@ -19,6 +19,7 @@ import {
   type ChatMessageApi,
 } from "@/lib/api-school";
 import { ApiError } from "@/lib/api";
+import { openPaymentUrl } from "@/lib/pwa-pay";
 
 export const Route = createFileRoute("/club/my-instructors/$chatId")({
   head: () => ({
@@ -125,7 +126,7 @@ function MyInstructorChatRoom() {
     mutationFn: (orderId: string) => payOrder(orderId, "card"),
     onSuccess: (res) => {
       if (res.paymentUrl) {
-        window.location.href = res.paymentUrl;
+        openPaymentUrl(res.paymentUrl, res.paymentId);
       } else {
         toast.error("Оплата временно недоступна");
       }
