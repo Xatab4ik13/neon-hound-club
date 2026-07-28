@@ -635,7 +635,7 @@ function HellAiMobile() {
   const { ref: taRef, adjust } = useAutoResize(40, 140);
   const scrollRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
-  const keyboardOffset = useKeyboardOffset();
+  const { offset: keyboardOffset, height: visualHeight } = useVisualViewport();
 
   const used = serverUsed + usedDelta;
   const left = isUnlimited ? Infinity : Math.max(0, (quota as number) - used);
