@@ -310,7 +310,23 @@ export async function schoolInstructorRoutes(app: FastifyInstance) {
       .leftJoin(profiles, eq(profiles.userId, schoolChats.studentId))
       .where(eq(schoolChats.instructorId, instr.id))
       .orderBy(desc(schoolChats.lastMessageAt));
-    return { items: rows };
+
+    // Ранг ученика — батчем.
+    const ids = rows.map((r) => r.studentId);
+    const rankMap = new Map<string, string>();
+    if (ids.length > 0) {
+      const xpRows = await db
+        .select({
+          userId: xpEvents.userId,
+          total: sql<number>`coalesce(sum(${xpEvents.amount}), 0)::int`,
+        })
+        .from(xpEvents)
+        .where(inArray(xpEvents.userId, ids))
+        .groupBy(xpEvents.userId);
+      for (const r of xpRows) rankMap.set(r.userId, computeRank(r.total ?? 0).rankId);
+    }
+    const items = rows.map((r) => ({ ...r, studentRankId: rankMap.get(r.studentId) ?? "rookie" }));
+    return { items };
   });
 
   // Мои заказы (инструктор видит СВОЮ сумму, без наценки).
