@@ -117,7 +117,11 @@ export async function cdekRoutes(app: FastifyInstance) {
       .where(inArray(products.id, items.map((i) => i.productId)));
 
     const byId = new Map(rows.map((r) => [r.id, r]));
-    const packages = [];
+    // Одна коробка на весь заказ: суммируем вес, берём максимум габаритов.
+    // Так расчёт совпадает с реальной накладной (см. server/src/lib/cdek-orders.ts).
+    let totalWeight = 0;
+    let maxL = 0, maxW = 0, maxH = 0;
+    let hasPhysical = false;
     for (const it of items) {
       const p = byId.get(it.productId);
       if (!p) return reply.code(400).send({ error: "product_not_found", productId: it.productId });
@@ -130,20 +134,18 @@ export async function cdekRoutes(app: FastifyInstance) {
           message: "У товара не заданы вес и габариты — обратитесь в поддержку",
         });
       }
-      // Одно место СДЭК на позицию заказа: вес = вес единицы × qty, габариты единицы.
-      // Так считаем доставку так же, как потом создаём накладную в cdek-orders.ts.
-      packages.push({
-        weightG: p.weightG * it.qty,
-        lengthCm: p.lengthCm,
-        widthCm: p.widthCm,
-        heightCm: p.heightCm,
-      });
+      hasPhysical = true;
+      totalWeight += p.weightG * it.qty;
+      if (p.lengthCm > maxL) maxL = p.lengthCm;
+      if (p.widthCm > maxW) maxW = p.widthCm;
+      if (p.heightCm > maxH) maxH = p.heightCm;
     }
 
-    if (packages.length === 0) {
+    if (!hasPhysical) {
       // вся корзина — virtual/digital
       return { totalSum: 0, periodMin: 0, periodMax: 0, tariffCode: 0, mode };
     }
+    const packages = [{ weightG: totalWeight, lengthCm: maxL, widthCm: maxW, heightCm: maxH }];
 
     try {
       const res = await cdek.calculate({ toCityCode: cityCode, mode: mode as CdekDeliveryMode, packages });
