@@ -439,8 +439,12 @@ export async function adminSchoolRoutes(app: FastifyInstance) {
         city: schoolInstructors.city,
         active: schoolInstructors.active,
         hourlyRateRub: schoolInstructors.hourlyRateRub,
+        userId: schoolInstructors.userId,
+        userNick: users.nick,
+        userEmail: users.email,
       })
       .from(schoolInstructors)
+      .leftJoin(users, eq(users.id, schoolInstructors.userId))
       .orderBy(asc(schoolInstructors.displayName));
     return { items: rows };
   });
