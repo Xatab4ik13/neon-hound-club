@@ -99,7 +99,7 @@ function BloggerChatsList() {
                   params={{ userId: r.userId }}
                   className="flex items-center gap-3 px-4 py-3 transition-colors active:bg-white/[0.04]"
                 >
-                  <Avatar nick={r.peerNick} />
+                  <Avatar nick={r.peerNick} url={r.peerAvatar} />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <span className="truncate font-display text-[15px] font-black uppercase tracking-tight text-foreground">
