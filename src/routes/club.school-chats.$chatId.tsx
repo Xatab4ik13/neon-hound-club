@@ -86,7 +86,9 @@ function InstructorChatRoom() {
     queryKey: schoolQk.chatMessages(chatId),
     queryFn: () => fetchChatMessages(chatId),
     enabled: !!viewer.user && instr.isInstructor,
-    refetchInterval: 15_000,
+    refetchInterval: 3_000,
+    refetchIntervalInBackground: false,
+    staleTime: 1_000,
     retry: (count, err) => {
       if (err instanceof ApiError && (err.status === 404 || err.status === 403)) return false;
       return count < 2;
@@ -102,7 +104,10 @@ function InstructorChatRoom() {
 
   const sendMut = useMutation({
     mutationFn: (text: string) => sendChatMessage(chatId, { text }),
-    onSuccess: () => {
+    onSuccess: (res) => {
+      qc.setQueryData(schoolQk.chatMessages(chatId), (prev: typeof q.data) =>
+        prev ? { ...prev, messages: [...prev.messages, res.message] } : prev,
+      );
       qc.invalidateQueries({ queryKey: schoolQk.chatMessages(chatId) });
       qc.invalidateQueries({ queryKey: schoolQk.instructorChats });
     },
