@@ -247,8 +247,9 @@ export async function bloggerVipChatRoutes(app: FastifyInstance) {
       if (!params.success) return reply.code(400).send({ error: "invalid_id" });
 
       const [peer] = await db
-        .select({ id: users.id, nick: users.nick })
+        .select({ id: users.id, nick: users.nick, avatarUrl: profiles.avatarUrl })
         .from(users)
+        .leftJoin(profiles, eq(profiles.userId, users.id))
         .where(eq(users.id, params.data.userId))
         .limit(1);
       if (!peer) return reply.code(404).send({ error: "user_not_found" });
