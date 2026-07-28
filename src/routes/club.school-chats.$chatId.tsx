@@ -161,7 +161,7 @@ function InstructorChatRoom() {
   const peerName = chatRow?.studentNick ?? "Ученик";
   const peerAvatar = chatRow?.studentAvatar ?? null;
 
-  const headerH = 84;
+  const headerH = 52;
   const pageHeight = `calc(100svh - env(safe-area-inset-top) - ${headerH}px)`;
 
   return (
