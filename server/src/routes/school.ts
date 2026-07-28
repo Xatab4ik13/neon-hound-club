@@ -20,6 +20,7 @@ import {
   SCHOOL_COMMISSION_RATE,
 } from "../db/schema/school.js";
 import { users } from "../db/schema/users.js";
+import { profiles } from "../db/schema/profile.js";
 import { payments } from "../db/schema/payments.js";
 import { requireAuth, requireAdmin, type SessionPayload } from "../lib/auth.js";
 import { pushToUsers } from "../lib/push.js";
