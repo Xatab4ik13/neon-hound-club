@@ -24,8 +24,13 @@ export function useVipChatThread() {
   return useQuery({
     queryKey: threadKey,
     queryFn: () => apiFetch<VipChatThreadResponse>("/api/v1/vip-chat/thread"),
-    staleTime: 3_000,
-    refetchInterval: 5_000,
+    staleTime: 1_000,
+    refetchInterval: 3_000,
+    refetchIntervalInBackground: false,
+  });
+}
+
+export { threadKey as vipChatThreadKey };
   });
 }
 
