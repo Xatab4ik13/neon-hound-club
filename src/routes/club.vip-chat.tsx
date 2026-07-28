@@ -227,7 +227,7 @@ function VipChatPage() {
   }
 
   const hellNick = threadQ.data.blogger.nick || "HELL";
-  const hellAvatar = (await import("@/lib/asset-url")).resolveAssetUrl?.(threadQ.data.blogger.avatarUrl) ?? null;
+  const hellAvatar = resolveAssetUrl(threadQ.data.blogger.avatarUrl);
 
   return (
     <div
