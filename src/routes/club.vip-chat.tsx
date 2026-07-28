@@ -227,14 +227,18 @@ function VipChatPage() {
   }
 
   const hellNick = threadQ.data.blogger.nick || "HELL";
-  const hellAvatar = threadQ.data.blogger.avatarUrl ?? null;
 
   return (
     <div
       className="relative flex w-full max-w-full flex-col overflow-hidden bg-[#0a0a0a]"
       style={{ height: pageHeight, touchAction: "pan-y", overscrollBehavior: "contain" }}
     >
-      <ChatHeader backTo="/club" nick={hellNick} role="блогер" avatarUrl={hellAvatar} />
+      <ChatHeader
+        backTo="/club"
+        nick={hellNick}
+        role="блогер"
+        avatarNode={<HellhoundAvatar size={44} initials="H" />}
+      />
       {/* Лента сообщений */}
       <div
         ref={scrollerRef}
