@@ -16,7 +16,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 
 const API_URL = (process.env.RAIF_API_URL || "https://pay.raif.ru").replace(/\/$/, "");
 
-export type RaifMethod = "card" | "sbp";
+export type RaifMethod = "card" | "sbp" | "any";
 
 type Account = { publicId: string; secretKey: string };
 
