@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { useViewer } from "@/hooks/use-viewer";
 import { useIsInstructor } from "@/hooks/use-is-instructor";
 import { MockChatRoom } from "@/components/instructor/MockChatRoom";
+import { ChatHeader } from "@/components/chat/ChatHeader";
 import type { InstructorMsg } from "@/data/instructor-chats-mock";
 import {
   createInstructorOrder,
