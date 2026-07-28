@@ -371,6 +371,171 @@ export async function bloggerVipChatRoutes(app: FastifyInstance) {
   );
 }
 
+// ─── ADMIN SIDE: /api/v1/admin/vip-chat ──────────────────────────────
+//
+// Админ видит ВСЕ VIP-чаты и может отвечать «от лица блогера». Сообщение
+// записывается в БД с senderId = thread.bloggerId и senderRole='blogger',
+// чтобы у пользователя оно неотличимо приходило как от самого Hell.
+
+export async function adminVipChatRoutes(app: FastifyInstance) {
+  // Список всех тредов по всем блогерам.
+  app.get("/threads", { preHandler: requireAdmin }, async () => {
+    const rows = await db
+      .select({
+        threadId: vipChatThreads.id,
+        userId: vipChatThreads.userId,
+        bloggerId: vipChatThreads.bloggerId,
+        lastMessageAt: vipChatThreads.lastMessageAt,
+        lastMessagePreview: vipChatThreads.lastMessagePreview,
+        lastMessageRole: vipChatThreads.lastMessageRole,
+        bloggerUnread: vipChatThreads.bloggerUnread,
+        userUnread: vipChatThreads.userUnread,
+        peerNick: users.nick,
+        peerAvatar: profiles.avatarUrl,
+        bloggerNick: sql<string>`(select nick from ${users} bu where bu.id = ${vipChatThreads.bloggerId})`,
+      })
+      .from(vipChatThreads)
+      .innerJoin(users, eq(users.id, vipChatThreads.userId))
+      .leftJoin(profiles, eq(profiles.userId, vipChatThreads.userId))
+      .orderBy(desc(vipChatThreads.lastMessageAt))
+      .limit(500);
+    return { items: rows };
+  });
+
+  // История диалога.
+  app.get<{ Params: { threadId: string } }>(
+    "/threads/:threadId",
+    { preHandler: requireAdmin },
+    async (req, reply) => {
+      const params = z.object({ threadId: z.string().uuid() }).safeParse(req.params);
+      if (!params.success) return reply.code(400).send({ error: "invalid_id" });
+      const [thread] = await db
+        .select()
+        .from(vipChatThreads)
+        .where(eq(vipChatThreads.id, params.data.threadId))
+        .limit(1);
+      if (!thread) return reply.code(404).send({ error: "thread_not_found" });
+      const [peer] = await db
+        .select({ id: users.id, nick: users.nick, avatarUrl: profiles.avatarUrl })
+        .from(users)
+        .leftJoin(profiles, eq(profiles.userId, users.id))
+        .where(eq(users.id, thread.userId))
+        .limit(1);
+      const [blogger] = await db
+        .select({ id: users.id, nick: users.nick })
+        .from(users)
+        .where(eq(users.id, thread.bloggerId))
+        .limit(1);
+      const messages = await loadThreadMessages(thread.id, 500);
+      return {
+        thread: {
+          id: thread.id,
+          bloggerUnread: thread.bloggerUnread,
+          userUnread: thread.userUnread,
+          lastMessageAt: thread.lastMessageAt,
+        },
+        peer,
+        blogger,
+        messages,
+      };
+    },
+  );
+
+  // Отправить сообщение «от лица блогера».
+  app.post<{ Params: { threadId: string } }>(
+    "/threads/:threadId/messages",
+    { preHandler: requireAdmin },
+    async (req, reply) => {
+      const params = z.object({ threadId: z.string().uuid() }).safeParse(req.params);
+      if (!params.success) return reply.code(400).send({ error: "invalid_id" });
+      const parsed = sendSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return reply.code(400).send({ error: "invalid_input", message: parsed.error.issues[0]?.message });
+      }
+      const [thread] = await db
+        .select()
+        .from(vipChatThreads)
+        .where(eq(vipChatThreads.id, params.data.threadId))
+        .limit(1);
+      if (!thread) return reply.code(404).send({ error: "thread_not_found" });
+
+      const preview = previewOf(parsed.data.text, parsed.data.sticker, parsed.data.imageUrl);
+      const [msg] = await db
+        .insert(vipChatMessages)
+        .values({
+          threadId: thread.id,
+          senderId: thread.bloggerId,
+          senderRole: "blogger",
+          text: parsed.data.text ?? null,
+          sticker: parsed.data.sticker ?? null,
+          imageUrl: parsed.data.imageUrl ?? null,
+        })
+        .returning();
+
+      await db
+        .update(vipChatThreads)
+        .set({
+          lastMessageAt: msg.createdAt,
+          lastMessagePreview: preview,
+          lastMessageRole: "blogger",
+          userUnread: sql`${vipChatThreads.userUnread} + 1`,
+          updatedAt: new Date(),
+        })
+        .where(eq(vipChatThreads.id, thread.id));
+
+      // Пуш юзеру.
+      const [blogger] = await db
+        .select({ nick: users.nick })
+        .from(users)
+        .where(eq(users.id, thread.bloggerId))
+        .limit(1);
+      try {
+        await pushToUsers([thread.userId], {
+          title: `${blogger?.nick ?? "Hell"} · VIP-чат`,
+          body: preview || "Новое сообщение",
+          url: "/club/vip-chat",
+          tag: `vip-chat:${thread.id}`,
+        });
+      } catch {
+        /* noop */
+      }
+
+      return { ok: true, message: msg };
+    },
+  );
+
+  // Отметить входящие от юзера прочитанными (со стороны блогера).
+  app.post<{ Params: { threadId: string } }>(
+    "/threads/:threadId/read",
+    { preHandler: requireAdmin },
+    async (req, reply) => {
+      const params = z.object({ threadId: z.string().uuid() }).safeParse(req.params);
+      if (!params.success) return reply.code(400).send({ error: "invalid_id" });
+      const [thread] = await db
+        .select()
+        .from(vipChatThreads)
+        .where(eq(vipChatThreads.id, params.data.threadId))
+        .limit(1);
+      if (!thread) return { ok: true };
+      await db
+        .update(vipChatMessages)
+        .set({ readAt: new Date() })
+        .where(
+          and(
+            eq(vipChatMessages.threadId, thread.id),
+            eq(vipChatMessages.senderRole, "user"),
+            sql`${vipChatMessages.readAt} is null`,
+          ),
+        );
+      await db
+        .update(vipChatThreads)
+        .set({ bloggerUnread: 0, updatedAt: new Date() })
+        .where(eq(vipChatThreads.id, thread.id));
+      return { ok: true };
+    },
+  );
+}
+
 // В некоторых кодовых базах предупреждают о неиспользованных импортах — держим здесь.
 void gt;
 void ne;
