@@ -126,14 +126,17 @@ async function resolveAskContext(session: SessionPayload): Promise<Resolved> {
   const limits = await loadLimits();
   const tier = pass.tier as TierKey;
   const limit = limits[tier];
-  const used = await countUsed24h(session.sub, pass.id);
-  if (used >= limit) {
-    return {
-      ok: false,
-      status: 429,
-      error: "limit_reached",
-      message: `Лимит ${limit} вопросов в сутки исчерпан. Слоты освобождаются по скользящему окну 24 часа.`,
-    };
+  // -1 (или любое отрицательное) = безлимит, так задаётся в админке.
+  if (limit >= 0) {
+    const used = await countUsed24h(session.sub, pass.id);
+    if (used >= limit) {
+      return {
+        ok: false,
+        status: 429,
+        error: "limit_reached",
+        message: `Лимит ${limit} вопросов в сутки исчерпан. Слоты освобождаются по скользящему окну 24 часа.`,
+      };
+    }
   }
   return { ok: true, isStaff: false, passIdForInsert: pass.id, model: TIER_PRIMARY_MODEL[tier] };
 }
@@ -171,8 +174,8 @@ export async function hellAiRoutes(app: FastifyInstance) {
     const limit = limits[tier];
     const used = await countUsed24h(session.sub, pass.id);
     const resetAt = used > 0 ? await nextResetAt(session.sub, pass.id) : null;
-    // Platinum: для UI показываем как «безлимит», пока не упёрся в hard-cap.
-    const showUnlimited = tier === "platinum" && used < limit;
+    // limit < 0 = безлимит из админки; platinum показываем безлимитом до hard-cap.
+    const showUnlimited = limit < 0 || (tier === "platinum" && used < limit);
     return {
       tier,
       limit: showUnlimited ? -1 : limit,
