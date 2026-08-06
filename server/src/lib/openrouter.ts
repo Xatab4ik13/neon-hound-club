@@ -25,7 +25,7 @@ function aiDispatcher(): Dispatcher | undefined {
 async function aiFetch(url: string, init: RequestInit): Promise<Response> {
   const dispatcher = aiDispatcher();
   if (!dispatcher) return fetch(url, init);
-  return undiciFetch(url, { ...(init as never), dispatcher }) as unknown as Response;
+  return undiciFetch(url, { ...(init as Record<string, unknown>), dispatcher } as never) as unknown as Response;
 }
 
 
