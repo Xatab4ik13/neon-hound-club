@@ -126,14 +126,17 @@ async function resolveAskContext(session: SessionPayload): Promise<Resolved> {
   const limits = await loadLimits();
   const tier = pass.tier as TierKey;
   const limit = limits[tier];
-  const used = await countUsed24h(session.sub, pass.id);
-  if (used >= limit) {
-    return {
-      ok: false,
-      status: 429,
-      error: "limit_reached",
-      message: `Лимит ${limit} вопросов в сутки исчерпан. Слоты освобождаются по скользящему окну 24 часа.`,
-    };
+  // -1 (или любое отрицательное) = безлимит, так задаётся в админке.
+  if (limit >= 0) {
+    const used = await countUsed24h(session.sub, pass.id);
+    if (used >= limit) {
+      return {
+        ok: false,
+        status: 429,
+        error: "limit_reached",
+        message: `Лимит ${limit} вопросов в сутки исчерпан. Слоты освобождаются по скользящему окну 24 часа.`,
+      };
+    }
   }
   return { ok: true, isStaff: false, passIdForInsert: pass.id, model: TIER_PRIMARY_MODEL[tier] };
 }
