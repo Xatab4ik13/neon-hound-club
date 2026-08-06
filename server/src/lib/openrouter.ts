@@ -1,7 +1,32 @@
 // Тонкий клиент OpenRouter. OpenAI-совместимый API.
 // Ключ читаем из process.env.OPENROUTER_API_KEY (выставляется в .env на VPS).
+//
+// С RU-IP OpenRouter/OpenAI отдают 403 на сетевом уровне. Поэтому:
+//   OPENROUTER_BASE_URL — можно указать любой OpenAI-совместимый шлюз
+//                         (например ProxyAPI/VseGPT) вместо openrouter.ai;
+//   AI_PROXY_URL        — http(s)/socks-прокси только для AI-трафика
+//                         (остальной бэкенд ходит напрямую).
+import { fetch as undiciFetch, ProxyAgent, type Dispatcher } from "undici";
 
-const ENDPOINT = "https://openrouter.ai/api/v1/chat/completions";
+const BASE_URL = (process.env.OPENROUTER_BASE_URL || "https://openrouter.ai/api/v1").replace(/\/+$/, "");
+const ENDPOINT = `${BASE_URL}/chat/completions`;
+
+let proxyAgent: Dispatcher | null | undefined;
+function aiDispatcher(): Dispatcher | undefined {
+  if (proxyAgent === undefined) {
+    const url = process.env.AI_PROXY_URL?.trim();
+    proxyAgent = url ? new ProxyAgent(url) : null;
+  }
+  return proxyAgent ?? undefined;
+}
+
+/** fetch для AI-запросов: тот же API, но через прокси, если он задан. */
+async function aiFetch(url: string, init: RequestInit): Promise<Response> {
+  const dispatcher = aiDispatcher();
+  if (!dispatcher) return fetch(url, init);
+  return undiciFetch(url, { ...(init as never), dispatcher }) as unknown as Response;
+}
+
 
 export type ChatMessage = {
   role: "system" | "user" | "assistant";
