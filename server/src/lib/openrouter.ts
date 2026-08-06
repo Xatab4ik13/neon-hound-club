@@ -81,7 +81,7 @@ export async function chatCompletion(opts: {
     body.reasoning = { effort: "low" };
   }
 
-  const res = await fetch(ENDPOINT, {
+  const res = await aiFetch(ENDPOINT, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -161,7 +161,7 @@ export async function* streamChatCompletion(opts: {
     body.reasoning = { effort: "low" };
   }
 
-  const res = await fetch(ENDPOINT, {
+  const res = await aiFetch(ENDPOINT, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
