@@ -14,7 +14,8 @@ const ENDPOINT = `${BASE_URL}/chat/completions`;
 let proxyAgent: Dispatcher | null | undefined;
 function aiDispatcher(): Dispatcher | undefined {
   if (proxyAgent === undefined) {
-    const url = process.env.AI_PROXY_URL?.trim();
+    // По умолчанию переиспользуем тот же прокси, что и Telegram Gateway.
+    const url = (process.env.AI_PROXY_URL || process.env.TELEGRAM_PROXY_URL)?.trim();
     proxyAgent = url ? new ProxyAgent(url) : null;
   }
   return proxyAgent ?? undefined;
