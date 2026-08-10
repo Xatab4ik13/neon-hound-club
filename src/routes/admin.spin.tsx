@@ -241,29 +241,6 @@ function SpinAdminPage() {
                 ))}
               </div>
             </div>
-            <p className="text-xs text-zinc-400">
-              Настройки зашиты в код. Изменения — через разработку.
-            </p>
-          </div>
-        </Panel>
-
-        {/* Майлстоуны */}
-        <Panel>
-          <PanelHeader>
-            <span className="text-sm font-semibold">Награды за стрик</span>
-          </PanelHeader>
-          <div className="space-y-3 p-4">
-            {SEASON_INFO.milestones.map((m) => (
-              <div key={m.day} className="flex items-center gap-3 rounded-md bg-zinc-50 px-3 py-2.5 dark:bg-zinc-800/50">
-                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#B6FF3C] font-display text-sm font-black text-black">
-                  {m.day}
-                </span>
-                <span className="text-sm font-medium">{m.reward}</span>
-              </div>
-            ))}
-            <p className="text-xs text-zinc-400">
-              Дни подряд — без пропусков. Пропустил день — стрик обнулился.
-            </p>
           </div>
         </Panel>
       </div>
