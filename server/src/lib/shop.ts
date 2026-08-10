@@ -328,14 +328,19 @@ export async function markOrderPaid(orderId: string): Promise<{ ok: boolean; rea
   }
 
   // Если в заказе есть хотя бы одна позиция-предзаказ — идём в awaiting_stock,
-  // иначе сразу paid (собираем и отправляем).
+  // если весь заказ электронный (virtual/digital) — сразу delivered («Получен»),
+  // т.к. доставки СДЭК для таких товаров нет.
+  // Иначе paid (собираем и отправляем).
   const itemKinds = await db
     .select({ kind: products.kind })
     .from(orderItems)
     .leftJoin(products, eq(orderItems.productId, products.id))
     .where(eq(orderItems.orderId, orderId));
   const hasPreorder = itemKinds.some((r) => r.kind === "preorder");
-  const nextStatus = hasPreorder ? "awaiting_stock" : "paid";
+  const allElectronic =
+    itemKinds.length > 0 &&
+    itemKinds.every((r) => r.kind === "virtual" || r.kind === "digital");
+  const nextStatus = hasPreorder ? "awaiting_stock" : allElectronic ? "delivered" : "paid";
 
   await db
     .update(orders)
