@@ -6,6 +6,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import {
   LayoutDashboard,
   Trophy,
+  PlumpSpin,
   Target,
   PlumpUsers as Users,
   PlumpStore,
