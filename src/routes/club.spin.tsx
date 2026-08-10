@@ -121,11 +121,11 @@ const CALENDAR = [
   { day: 30, title: "Gold + носки + ремувка + 20 билетов", sub: "30 дней подряд" },
 ];
 
-const TIER_LABEL: Record<SpinTier, { name: string; bg: string }> = {
-  none: { name: "Без Pass", bg: "rgba(255,255,255,0.14)" },
-  silver: { name: "Silver", bg: "#C7CCD6" },
-  gold: { name: "Gold", bg: "#C6A8FF" },
-  platinum: { name: "Platinum", bg: "#F000C0" },
+const TIER_LABEL: Record<SpinTier, { name: string; bg: string; fg: string }> = {
+  none: { name: "Без Pass", bg: "rgba(255,255,255,0.12)", fg: "hsl(var(--foreground))" },
+  silver: { name: "Silver", bg: "#C7CCD6", fg: "#000" },
+  gold: { name: "Gold", bg: "#C6A8FF", fg: "#000" },
+  platinum: { name: "Platinum", bg: "#F000C0", fg: "#fff" },
 };
 
 const ITEM_W = 104; // ширина карточки
