@@ -719,7 +719,7 @@ function HowItWorks() {
         className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors active:bg-white/[0.03]"
       >
         <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#C6A8FF]">
-          <PlumpHelp className="h-5 w-5 text-black" />
+          <PlumpBook className="h-5 w-5 text-black" />
         </span>
         <span className="min-w-0 flex-1">
           <span className="block font-display text-[15px] font-black uppercase tracking-tight text-foreground">
