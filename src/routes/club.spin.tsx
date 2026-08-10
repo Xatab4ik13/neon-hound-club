@@ -899,8 +899,14 @@ function WinModal({
 
 /* ---------------- Как это работает ---------------- */
 
-function HowItWorks() {
+function HowItWorks({ season }: { season?: SpinState["season"] }) {
   const [open, setOpen] = useState(false);
+
+  // Сезон приходит с бэка: конец периода + число дней. Ничего не хардкодим.
+  const endsLabel = season
+    ? new Date(season.endsAt).toLocaleDateString("ru-RU", { day: "numeric", month: "long" })
+    : null;
+  const days = season?.daysTotal ?? 30;
 
   const tiers: { name: string; spins: number; badge: string | null; vip?: boolean }[] = [
     { name: "Без Pass", spins: 1, badge: null },
