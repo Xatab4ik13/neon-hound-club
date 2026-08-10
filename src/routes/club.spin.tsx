@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { ChevronDown } from "lucide-react";
 import { PageHeader } from "@/components/club/PageHeader";
-import { PlumpSpin, PlumpHelp, PlumpArrowRight as ChevronRight } from "@/components/ui/icons";
+import { PlumpSpin, PlumpBook, PlumpArrowRight as ChevronRight } from "@/components/ui/icons";
 import { PlumpNum } from "@/components/brand/PlumpNum";
 import { haptic } from "@/hooks/use-haptic";
 import { playWin, playClick, playTick } from "@/lib/roller-sfx";
