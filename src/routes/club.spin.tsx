@@ -34,7 +34,7 @@ export const Route = createFileRoute("/club/spin")({
   component: SpinPage,
 });
 
-/* ---------------- Моки ---------------- */
+/* ---------------- Данные призов (картинки — локальные ассеты, тексты совпадают с бэком) ---------------- */
 
 type Rarity = "common" | "rare" | "epic" | "legend";
 
@@ -46,6 +46,8 @@ type Prize = {
   img?: string;
   /** Фото товара кропаем по кругу, 3D-рендеры вписываем целиком. */
   fit?: "cover" | "contain";
+  /** Не показываем в списке «что можно выиграть» и в ленте. */
+  hidden?: boolean;
 };
 
 
@@ -57,10 +59,8 @@ const RARITY: Record<Rarity, { ring: string; glow: string; label: string; chip: 
   legend: { ring: "rgba(255,217,61,0.48)", glow: "rgba(255,217,61,0.26)", label: "Легенда", chip: "#FFD93D" },
 };
 
-// Ремувку берём из магазина — как носки, единый источник правды.
-const REMOVKA_IMG =
-  "https://api.hhr.pro/media/shop/da0bcbf8-594f-43b3-a412-39a5905c1800/c4c6b81b-b769-475e-939a-7ce658d917f8.jpg";
-
+// Все картинки призов — локальные ассеты в бандле. Никаких ссылок на медиа-сервер:
+// иначе после деплоя картинка может не отдаться (как было с фото инструкторов).
 const POOL: Prize[] = [
   { id: "xp100", title: "100 XP", rarity: "common", img: imgXp },
   { id: "t1", title: "1 билет", rarity: "common", img: imgTicket },
@@ -70,23 +70,35 @@ const POOL: Prize[] = [
   { id: "xp500", title: "500 XP", rarity: "rare", img: imgXp },
   { id: "promo", title: "Промокод 20%", sub: "на товары", rarity: "epic", img: imgPromo },
   { id: "t10", title: "10 билетов", rarity: "epic", img: imgTicket },
-  { id: "sticker", title: "Ремувка", sub: "подарок · доставка за нами", rarity: "epic", img: REMOVKA_IMG },
+  { id: "sticker", title: "Ремувка", sub: "подарок · доставка за нами", rarity: "epic", img: imgRemovka },
   { id: "silver", title: "Hell Pass Silver", sub: "30 дней", rarity: "legend", img: silverBadge },
   { id: "airpods", title: "AirPods 4", rarity: "legend", img: imgAirpods },
   { id: "watch", title: "Apple Watch SE", rarity: "legend", img: imgWatch },
   { id: "ps5", title: "PlayStation 5 Slim", rarity: "legend", img: imgPs5 },
+  // Скрытые сектора: бэкенд подменяет ими приз, когда пул закончился.
+  { id: "t50", title: "50 билетов", rarity: "epic", img: imgTicket, hidden: true },
+  { id: "socks", title: "Носки", rarity: "rare", img: imgSocks, fit: "cover", hidden: true },
 ];
 
+const PRIZE_BY_ID = new Map(POOL.map((p) => [p.id, p]));
 
-const LEGENDS = POOL.filter((p) => p.rarity === "legend");
-const NON_LEGENDS = POOL.filter((p) => p.rarity !== "legend");
+/** Приз по коду с бэка. Незнакомый код не должен ломать анимацию. */
+function prizeByCode(code: string, title?: string, rarity?: string): Prize {
+  const known = PRIZE_BY_ID.get(code);
+  if (known) return known;
+  return {
+    id: code,
+    title: title ?? code,
+    rarity: (rarity as Rarity) ?? "common",
+  };
+}
 
-// Картинки майлстоунов: носки — из каталога магазина, Silver/Gold — бейджи Hell Pass.
-const SOCKS_IMG =
-  "https://api.hhr.pro/media/shop/da0bcbf8-594f-43b3-a412-39a5905c1800/6bd9b090-727f-43ef-bac8-a0220dd583c4.png";
+const VISIBLE = POOL.filter((p) => !p.hidden);
+const LEGENDS = VISIBLE.filter((p) => p.rarity === "legend");
+const NON_LEGENDS = VISIBLE.filter((p) => p.rarity !== "legend");
 
 const MILESTONE_IMG: Record<number, string> = {
-  10: SOCKS_IMG,
+  10: imgSocks,
   20: silverBadge,
   30: goldBadge,
 };
@@ -104,8 +116,12 @@ const CALENDAR = [
   { day: 30, title: "Gold + носки + ремувка + 20 билетов", sub: "30 дней подряд" },
 ];
 
-const LAST_PRIZE_KEY = "hh_spin_last_prize";
-
+const TIER_LABEL: Record<SpinTier, { name: string; bg: string }> = {
+  none: { name: "Без Pass", bg: "rgba(255,255,255,0.14)" },
+  silver: { name: "Silver", bg: "#C7CCD6" },
+  gold: { name: "Gold", bg: "#C6A8FF" },
+  platinum: { name: "Platinum", bg: "#F000C0" },
+};
 
 const ITEM_W = 104; // ширина карточки
 const GAP = 8;
@@ -118,15 +134,16 @@ function pick<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
-/** Лента: случайные призы, но с гарантированной «дразнилкой» — легендой перед финалом. */
-function buildStrip(teaseIndex: number, targetIndex: number) {
+/** Лента: случайные призы, «дразнилка» легендой перед финалом, финал — реальный приз с бэка. */
+function buildStrip(teaseIndex: number, targetIndex: number, target: Prize) {
   const out: Prize[] = [];
-  for (let i = 0; i < STRIP_LEN; i++) out.push(pick(POOL));
-  out[teaseIndex] = pick(LEGENDS);
-  // Настоящий приз: в 92% случаев не легенда — отсюда и эффект «чуть не выпало».
-  out[targetIndex] = Math.random() < 0.08 ? pick(LEGENDS) : pick(NON_LEGENDS);
+  for (let i = 0; i < STRIP_LEN; i++) out.push(pick(VISIBLE));
+  // Если реальный приз — легенда, дразнить легендой не нужно: пусть будет обычный сектор.
+  out[teaseIndex] = target.rarity === "legend" ? pick(NON_LEGENDS) : pick(LEGENDS);
+  out[targetIndex] = target;
   return out;
 }
+
 
 /** Кубический Эрмит: позиция + касательные, чтобы скорость стыковалась без рывка. */
 function hermite(u: number, p0: number, p1: number, m0: number, m1: number) {
