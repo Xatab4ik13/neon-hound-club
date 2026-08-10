@@ -19,6 +19,8 @@ import { checkQuest, confirmPwaInstall, fetchQuests, qk, type QuestItem } from "
 import { useViewer } from "@/hooks/use-viewer";
 import { ApiError } from "@/lib/api";
 import { PageHeader } from "@/components/club/PageHeader";
+import { useSpinAccess } from "@/hooks/use-spin-access";
+import { PlumpBell, PlumpSpin } from "@/components/ui/icons";
 import { PlumpNum } from "@/components/brand/PlumpNum";
 import { TONE_BG, type InstructorTone } from "@/data/instructors";
 
@@ -55,6 +57,8 @@ function QuestsPage() {
   return (
     <main className="mx-auto w-full max-w-3xl px-4 py-5 pb-[calc(env(safe-area-inset-bottom)+96px)] md:py-8">
       <PageHeader title="Квесты" subtitle="выполняй — получай билеты" />
+
+      <SpinAccessQuest />
 
       {/* Stats — три plump-плашки */}
       <section className="mb-6 grid grid-cols-3 gap-3">
@@ -145,6 +149,119 @@ function StatTile({
         )}
       </div>
     </div>
+  );
+}
+
+/** Главный квест: приложение + пуши = доступ к HellSpin. Всегда сверху. */
+function SpinAccessQuest() {
+  const access = useSpinAccess();
+  const [busy, setBusy] = useState(false);
+  const bothDone = access.granted;
+
+  async function enable() {
+    setBusy(true);
+    try {
+      const res = await access.enablePush();
+      if (res.ok) toast.success("Уведомления включены");
+      else toast.error(res.reason ?? "Не удалось включить уведомления");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section
+      aria-label="Доступ к HellSpin"
+      className={`mb-6 rotate-1 rounded-3xl border-[3px] border-foreground p-4 text-black shadow-[8px_8px_0_0_hsl(var(--foreground))] md:p-5 ${
+        bothDone ? "bg-[#B6FF3C]" : "bg-[#F000C0]"
+      }`}
+    >
+      <div className="flex items-center gap-3">
+        <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl border-[3px] border-foreground bg-card shadow-[3px_3px_0_0_hsl(var(--foreground))]">
+          <PlumpSpin className="h-6 w-6 text-foreground" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className={`font-mono text-[10px] font-bold uppercase tracking-[0.15em] ${bothDone ? "text-black/70" : "text-white/80"}`}>
+            {bothDone ? "Доступ открыт" : "Открой HellSpin"}
+          </p>
+          <h2 className={`font-display text-lg font-black uppercase leading-tight tracking-tight md:text-xl ${bothDone ? "text-black" : "text-white"}`}>
+            Приложение + уведомления
+          </h2>
+        </div>
+      </div>
+
+      <p className={`mt-3 text-[13px] font-semibold leading-snug ${bothDone ? "text-black/80" : "text-white/85"}`}>
+        {bothDone
+          ? "Всё готово — крути спины каждый день и забирай призы."
+          : "Установи приложение и включи push — получи доступ к ежедневным спинам HellSpin."}
+      </p>
+
+      <div className="mt-4 space-y-2.5">
+        <div
+          className={`flex items-center gap-3 rounded-2xl border-[3px] border-foreground px-3 py-2.5 shadow-[3px_3px_0_0_hsl(var(--foreground))] ${
+            access.installed ? "bg-[#B6FF3C]" : "bg-white"
+          }`}
+        >
+          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl border-[2px] border-foreground bg-black/5 text-black">
+            {access.installed ? <Check className="h-4 w-4" strokeWidth={3} /> : <PlumpDownload className="h-4 w-4" />}
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block font-display text-[13px] font-black uppercase leading-tight tracking-tight text-black">
+              1. Установи приложение
+            </span>
+            <span className="block truncate font-mono text-[10px] uppercase tracking-widest text-black/60">
+              {access.installed ? "Готово" : "Добавь клуб на главный экран"}
+            </span>
+          </span>
+          {!access.installed && (
+            <Link
+              to="/club/install"
+              className="shrink-0 rounded-xl border-[3px] border-foreground bg-[#FFD93D] px-3 py-1.5 font-display text-[11px] font-black uppercase tracking-tight text-black shadow-[3px_3px_0_0_hsl(var(--foreground))] active:translate-x-[1px] active:translate-y-[1px]"
+            >
+              Как
+            </Link>
+          )}
+        </div>
+
+        <div
+          className={`flex items-center gap-3 rounded-2xl border-[3px] border-foreground px-3 py-2.5 shadow-[3px_3px_0_0_hsl(var(--foreground))] ${
+            access.pushEnabled ? "bg-[#B6FF3C]" : "bg-white"
+          }`}
+        >
+          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl border-[2px] border-foreground bg-black/5 text-black">
+            {access.pushEnabled ? <Check className="h-4 w-4" strokeWidth={3} /> : <PlumpBell className="h-4 w-4" />}
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block font-display text-[13px] font-black uppercase leading-tight tracking-tight text-black">
+              2. Включи уведомления
+            </span>
+            <span className="block truncate font-mono text-[10px] uppercase tracking-widest text-black/60">
+              {access.pushEnabled ? "Готово" : "Иначе не узнаешь о выигрыше"}
+            </span>
+          </span>
+          {!access.pushEnabled && (
+            <button
+              type="button"
+              onClick={enable}
+              disabled={busy}
+              className="shrink-0 rounded-xl border-[3px] border-foreground bg-[#FFD93D] px-3 py-1.5 font-display text-[11px] font-black uppercase tracking-tight text-black shadow-[3px_3px_0_0_hsl(var(--foreground))] active:translate-x-[1px] active:translate-y-[1px] disabled:opacity-50"
+            >
+              {busy ? "…" : "Включить"}
+            </button>
+          )}
+        </div>
+      </div>
+
+      {bothDone && (
+        <Link
+          to="/club/spin"
+          className="mt-4 flex items-center justify-center gap-2 rounded-2xl border-[3px] border-foreground bg-card px-4 py-3 font-display text-[13px] font-black uppercase tracking-tight text-foreground shadow-[4px_4px_0_0_hsl(var(--foreground))] active:translate-x-[1px] active:translate-y-[1px]"
+        >
+          Крутить HellSpin
+          <PlumpArrowRight className="h-4 w-4" />
+        </Link>
+      )}
+    </section>
   );
 }
 

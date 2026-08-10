@@ -6,6 +6,8 @@ import { PageHeader } from "@/components/club/PageHeader";
 import { PlumpSpin, PlumpBook, PlumpArrowRight as ChevronRight } from "@/components/ui/icons";
 import { PlumpNum } from "@/components/brand/PlumpNum";
 import { haptic } from "@/hooks/use-haptic";
+import { useSpinAccess } from "@/hooks/use-spin-access";
+import { SpinAccessGate } from "@/components/club/SpinAccessGate";
 import { playWin, playClick, playTick } from "@/lib/roller-sfx";
 import silverBadge from "@/assets/hellpass/tpl-silver.png";
 import goldBadge from "@/assets/hellpass/tpl-gold.png";
@@ -150,7 +152,11 @@ function SpinPage() {
   });
   const [spinsLeft, setSpinsLeft] = useState(3); // мок: Gold-тир
 
-  const [streak] = useState(7); // мок
+  const [streak] = useState(12); // мок
+  // Мок: майлстоуны, награду по которым уже забрали — их перечёркиваем.
+  const [claimed] = useState<number[]>([10]);
+  const access = useSpinAccess();
+  const locked = !access.granted;
   const viewportRef = useRef<HTMLDivElement>(null);
   const timers = useRef<number[]>([]);
   const rafRef = useRef<number | null>(null);
@@ -175,7 +181,7 @@ function SpinPage() {
   }
 
   function spin() {
-    if (spinning || spinsLeft <= 0) return;
+    if (spinning || spinsLeft <= 0 || locked) return;
     haptic("selection");
     playClick();
     setWon(null);
@@ -257,6 +263,8 @@ function SpinPage() {
     <main className="mx-auto w-full max-w-3xl px-4 py-5 md:py-8">
       <PageHeader title="HellSpin" subtitle="Крути каждый день" />
 
+      {locked && !access.checking && <SpinAccessGate access={access} />}
+
       {/* Баланс спинов */}
       <div className="mb-4 flex items-center gap-3 rounded-3xl bg-card px-4 py-4">
         <div className="min-w-0 flex-1">
@@ -277,7 +285,10 @@ function SpinPage() {
 
 
       {/* Роллер */}
-      <section aria-label="Рулетка" className="mb-4 overflow-hidden rounded-3xl bg-card p-3 pb-4">
+      <section
+        aria-label="Рулетка"
+        className={`mb-4 overflow-hidden rounded-3xl bg-card p-3 pb-4 ${locked ? "opacity-60 saturate-[0.35]" : ""}`}
+      >
         <div
           ref={viewportRef}
           className="relative overflow-hidden rounded-[22px] py-5"
@@ -347,7 +358,7 @@ function SpinPage() {
         <button
           type="button"
           onClick={spin}
-          disabled={spinning || spinsLeft <= 0}
+          disabled={spinning || spinsLeft <= 0 || locked}
           className="relative mt-3 flex h-14 w-full items-center justify-center overflow-hidden rounded-2xl bg-[#B6FF3C] font-display text-[17px] font-black uppercase tracking-tight text-black shadow-[0_10px_30px_-12px_#B6FF3C] transition-transform active:scale-[0.97] disabled:opacity-40 disabled:shadow-none"
         >
           {!spinning && spinsLeft > 0 && (
@@ -359,7 +370,13 @@ function SpinPage() {
             />
           )}
           <span className="relative">
-            {spinning ? "Крутим…" : spinsLeft > 0 ? "Крутить" : "Спины закончились"}
+            {locked
+              ? "Доступно в приложении"
+              : spinning
+                ? "Крутим…"
+                : spinsLeft > 0
+                  ? "Крутить"
+                  : "Спины закончились"}
           </span>
         </button>
 
@@ -397,6 +414,7 @@ function SpinPage() {
             const img = MILESTONE_IMG[d];
             if (img) {
               const fit = MILESTONE_FIT[d] ?? "contain";
+              const isClaimed = claimed.includes(d);
               return (
                 <span
                   key={d}
@@ -412,8 +430,9 @@ function SpinPage() {
                     loading="lazy"
                     className={`h-full w-full ${
                       fit === "cover" ? "scale-[1.15] object-cover" : "object-contain p-[2px]"
-                    } ${done ? "" : "opacity-70"}`}
+                    } ${done ? "" : "opacity-70"} ${isClaimed ? "opacity-60" : ""}`}
                   />
+                  {isClaimed && <ClaimedStrike />}
                 </span>
               );
             }
@@ -433,36 +452,54 @@ function SpinPage() {
         </div>
 
         <ul className="space-y-2">
-          {CALENDAR.map((c) => (
-            <li key={c.day} className="flex items-center gap-3 rounded-2xl bg-black/30 px-3 py-2.5">
-              <span className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full bg-white/[0.06]">
-                <img
-                  src={MILESTONE_IMG[c.day]}
-                  alt={c.title}
-                  loading="lazy"
-                  className={`h-full w-full ${
-                    (MILESTONE_FIT[c.day] ?? "contain") === "cover"
-                      ? "scale-[1.15] object-cover"
-                      : "object-contain p-1"
-                  }`}
-                />
-              </span>
+          {CALENDAR.map((c) => {
+            const isClaimed = claimed.includes(c.day);
+            return (
+              <li
+                key={c.day}
+                className="relative flex items-center gap-3 overflow-hidden rounded-2xl bg-black/30 px-3 py-2.5"
+              >
+                <span className="relative grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full bg-white/[0.06]">
+                  <img
+                    src={MILESTONE_IMG[c.day]}
+                    alt={c.title}
+                    loading="lazy"
+                    className={`h-full w-full ${
+                      (MILESTONE_FIT[c.day] ?? "contain") === "cover"
+                        ? "scale-[1.15] object-cover"
+                        : "object-contain p-1"
+                    } ${isClaimed ? "opacity-60" : ""}`}
+                  />
+                  {isClaimed && <ClaimedStrike />}
+                </span>
 
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-[14px] font-semibold text-foreground">
-                  {c.title}
+                <span className="min-w-0 flex-1">
+                  <span
+                    className={`block truncate text-[14px] font-semibold ${
+                      isClaimed
+                        ? "text-muted-foreground line-through decoration-[#B6FF3C] decoration-[3px]"
+                        : "text-foreground"
+                    }`}
+                  >
+                    {c.title}
+                  </span>
+                  <span className="block font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                    {isClaimed ? "Забрано" : c.sub}
+                  </span>
                 </span>
-                <span className="block font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                  {c.sub}
-                </span>
-              </span>
-              {streak >= c.day ? (
-                <span className="shrink-0 rounded-lg bg-primary px-2 py-0.5 font-display text-[10px] font-black uppercase text-primary-foreground">
-                  Забрать
-                </span>
-              ) : null}
-            </li>
-          ))}
+
+                {isClaimed ? (
+                  <span className="sticker-wiggle shrink-0 rounded-lg border-[2px] border-foreground bg-[#B6FF3C] px-2 py-1 font-display text-[10px] font-black uppercase tracking-tight text-black shadow-[2px_2px_0_0_hsl(var(--foreground))]">
+                    Твоё
+                  </span>
+                ) : streak >= c.day ? (
+                  <span className="shrink-0 rounded-lg bg-primary px-2 py-0.5 font-display text-[10px] font-black uppercase text-primary-foreground">
+                    Забрать
+                  </span>
+                ) : null}
+              </li>
+            );
+          })}
         </ul>
       </section>
 
@@ -505,6 +542,21 @@ function SpinPage() {
         </ul>
       </section>
     </main>
+  );
+}
+
+/** Перечёркивание забранной награды: плампная лаймовая полоса, слегка дёргается. */
+function ClaimedStrike() {
+  return (
+    <span className="pointer-events-none absolute inset-0 grid place-items-center">
+      <span className="absolute inset-0 rounded-full bg-black/20" />
+      <span
+        className="absolute left-[-12%] top-1/2 h-[3px] w-[124%]"
+        style={{ transform: "translateY(-50%) rotate(-24deg)" }}
+      >
+        <span className="sticker-wiggle block h-full w-full origin-center rounded-full bg-[#B6FF3C] shadow-[0_0_10px_rgba(182,255,60,0.7)]" />
+      </span>
+    </span>
   );
 }
 
