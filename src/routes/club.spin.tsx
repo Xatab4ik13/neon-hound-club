@@ -140,7 +140,6 @@ function SpinPage() {
   const [strip, setStrip] = useState<Prize[]>(() => buildStrip(STRIP_LEN - 12, STRIP_LEN - 10));
   const [offset, setOffset] = useState(0);
   const [spinning, setSpinning] = useState(false);
-  const [teasing, setTeasing] = useState(false);
   const [won, setWon] = useState<Prize | null>(null);
   const [lastPrize, setLastPrize] = useState<Prize | null>(() => {
     if (typeof window === "undefined") return null;
@@ -209,7 +208,6 @@ function SpinPage() {
 
     const t0 = performance.now();
     let lastCell = -1;
-    let teased = false;
 
     const frame = (now: number) => {
       const t = Math.min(1, (now - t0) / TOTAL_MS);
@@ -231,7 +229,6 @@ function SpinPage() {
       }
 
       rafRef.current = null;
-      setTeasing(false);
       setSpinning(false);
       const prize = fresh[targetIndex];
       // Бонус-спин возвращает прокрут — счётчик остаётся на месте.
