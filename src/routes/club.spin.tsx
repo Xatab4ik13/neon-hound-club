@@ -319,12 +319,11 @@ function SpinPage() {
             }}
           >
             <div
+              ref={stripRef}
               className="flex will-change-transform"
-              style={{
-                gap: `${GAP}px`,
-                transform: `translate3d(${-offset}px,0,0)`,
-              }}
+              style={{ gap: `${GAP}px`, transform: "translate3d(0,0,0)" }}
             >
+
               {strip.map((p, i) => (
                 <PrizeCell key={`${p.id}-${i}`} prize={p} />
               ))}
