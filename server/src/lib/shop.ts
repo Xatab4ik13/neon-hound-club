@@ -10,6 +10,13 @@ import { getActivePassPerks } from "./pass.js";
 import { sendMail } from "./mailer.js";
 import { orderConfirmedTemplate, type DigitalItem } from "./email-templates/order-confirmed.js";
 import { cdek, CDEK_TARIFFS, type CdekDeliveryMode } from "./cdek.js";
+import {
+  PromoError,
+  consumePromoCode,
+  releasePromoCodeForOrder,
+  validatePromoForUser,
+} from "./promo.js";
+
 
 const FRONTEND_ORIGIN = (process.env.FRONTEND_ORIGIN || "https://hhr.pro").replace(/\/$/, "");
 
@@ -43,7 +50,10 @@ export type CreateOrderInput = {
     mode?: "pvz" | "courier" | "none";
   };
   comment?: string;
+  /** Промокод (необязательно). Скидка только на товары, не на доставку. */
+  promoCode?: string | null;
 };
+
 
 export async function createOrderFromCartForUser(
   userId: string,
@@ -181,12 +191,25 @@ export async function createOrderForUser(
     }
   }
 
-  // ---------- Скидка Pass и итог ----------
+  // ---------- Скидка (Pass vs промокод) и итог ----------
+  // Скидки НЕ суммируются: берём большую из двух. Доставка не скидывается.
   const perks = await getActivePassPerks(userId);
-  const discountPct = perks.shopDiscountPct;
+  const passPct = perks.shopDiscountPct;
+  let promo: Awaited<ReturnType<typeof validatePromoForUser>> | null = null;
+  if (input.promoCode && input.promoCode.trim()) {
+    try {
+      promo = await validatePromoForUser(userId, input.promoCode);
+    } catch (e) {
+      if (e instanceof PromoError) throw new OrderCreateError(e.code, e.message, 400);
+      throw e;
+    }
+  }
+  const promoPct = promo?.discountPct ?? 0;
+  const discountPct = Math.max(passPct, promoPct);
   const discountRub = Math.floor((subtotalRub * discountPct) / 100);
   const goodsAfterDiscount = Math.max(0, subtotalRub - discountRub);
   const totalRub = goodsAfterDiscount + shippingPriceRub;
+
 
   // ---------- Резерв остатков ----------
   for (const i of items) {
@@ -241,7 +264,12 @@ export async function createOrderForUser(
       discountRub,
       totalRub,
       bonusTicketsTotal: bonusTotal,
+      promoCodeId: promo?.id ?? null,
+      promoCode: promo?.code ?? null,
       shipping: shippingSnapshot as any,
+
+
+
       comment: comment ?? null,
       shippingPriceRub,
       shippingMode,
@@ -346,6 +374,12 @@ export async function markOrderPaid(orderId: string): Promise<{ ok: boolean; rea
     .update(orders)
     .set({ status: nextStatus, paidAt: new Date(), updatedAt: new Date() })
     .where(eq(orders.id, orderId));
+
+  // Промокод одноразовый — гасим его при оплате.
+  if (order.promoCodeId) {
+    await consumePromoCode(order.promoCodeId, order.id);
+  }
+
 
   if (order.bonusTicketsTotal > 0) {
     await ticketCredit({
@@ -472,6 +506,10 @@ export async function refundOrder(orderId: string): Promise<{ ok: boolean; reaso
     .update(orders)
     .set({ status: "refunded", updatedAt: new Date() })
     .where(eq(orders.id, orderId));
+
+  // Возврат — освобождаем промокод, юзер сможет применить его снова.
+  await releasePromoCodeForOrder(orderId);
+
 
   if (order.bonusTicketsTotal > 0) {
     await ticketCredit({

@@ -12,6 +12,8 @@ import {
   Settings,
   PlumpTicket as TicketIcon,
   PlumpGarage as BikeIcon,
+  PlumpGift as PromoIcon,
+
   PlumpDiamond as GemIcon,
   Trophy,
   Check,
@@ -22,6 +24,8 @@ import { PlumpNum } from "@/components/brand/PlumpNum";
 import { SettingsModal } from "@/components/club/SettingsModal";
 import { OrdersList } from "@/components/club/OrdersList";
 import { useMyProfile, useBikes } from "@/lib/garage-api";
+import { fetchMyPromoCodes, promoQk } from "@/lib/promo-api";
+
 import { useViewer } from "@/hooks/use-viewer";
 import {
   useRankState,
@@ -148,7 +152,14 @@ function MePage() {
     staleTime: 30_000,
   });
   const bikesQ = useBikes(isAuthed);
+  const promoQ = useQuery({
+    queryKey: promoQk.mine,
+    queryFn: fetchMyPromoCodes,
+    enabled: isAuthed,
+    staleTime: 60_000,
+  });
   const totalOrders = ordersQ.data?.items.length ?? 0;
+
 
   const [confirmLogout, setConfirmLogout] = useState(false);
   const doLogout = async () => {
@@ -176,6 +187,13 @@ function MePage() {
             },
             { label: "Заказы", value: totalOrders, icon: Package },
             { label: "Байки", value: bikesQ.data?.length ?? 0, icon: BikeIcon },
+            {
+              label: "Промокоды",
+              value: promoQ.data?.items.filter((p) => !p.usedAt && !p.expired).length ?? 0,
+              icon: PromoIcon,
+              to: "/club/promo",
+            },
+
           ]}
         />
       </section>
@@ -316,30 +334,49 @@ function MePage() {
 function StatGrid({
   items,
 }: {
-  items: { label: string; value: number; icon: React.ComponentType<{ className?: string; strokeWidth?: number }> }[];
+  items: {
+    label: string;
+    value: number;
+    icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
+    /** Если задано — плашка кликабельна и ведёт на страницу. */
+    to?: string;
+  }[];
 }) {
   return (
     <ul className="grid grid-cols-2 gap-2.5 md:grid-cols-4 md:gap-3">
-      {items.map(({ label, value, icon: Icon }) => (
-        <li
-          key={label}
-          className="flex items-center gap-3 rounded-2xl border border-white/[0.06] bg-card/40 px-4 py-3.5"
-        >
-          <Icon className="h-5 w-5 shrink-0 text-primary" strokeWidth={1.8} />
-          <div className="flex min-w-0 flex-col">
-            <span className="text-foreground md:scale-110 md:origin-left">
-              <PlumpNum value={value} size={26} format />
-            </span>
+      {items.map(({ label, value, icon: Icon, to }) => {
+        const inner = (
+          <>
+            <Icon className="h-5 w-5 shrink-0 text-primary" strokeWidth={1.8} />
+            <div className="flex min-w-0 flex-col">
+              <span className="text-foreground md:scale-110 md:origin-left">
+                <PlumpNum value={value} size={26} format />
+              </span>
 
-            <span className="mt-1 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-              {label}
-            </span>
-          </div>
-        </li>
-      ))}
+              <span className="mt-1 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+                {label}
+              </span>
+            </div>
+          </>
+        );
+        const cls =
+          "flex items-center gap-3 rounded-2xl border border-white/[0.06] bg-card/40 px-4 py-3.5";
+        return (
+          <li key={label}>
+            {to ? (
+              <Link to={to} className={`${cls} transition-colors hover:border-primary/40`}>
+                {inner}
+              </Link>
+            ) : (
+              <div className={cls}>{inner}</div>
+            )}
+          </li>
+        );
+      })}
     </ul>
   );
 }
+
 
 function RankLadderCompact({ rankIndex }: { rankIndex: number }) {
   return (

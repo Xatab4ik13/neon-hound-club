@@ -154,6 +154,10 @@ export const orders = pgTable(
     discountRub: integer("discount_rub").notNull().default(0),
     totalRub: integer("total_rub").notNull(),
     bonusTicketsTotal: integer("bonus_tickets_total").notNull().default(0),
+    /** Применённый промокод (если был). Снимок кода — для истории заказа. */
+    promoCodeId: uuid("promo_code_id"),
+    promoCode: varchar("promo_code", { length: 32 }),
+
     shipping: jsonb("shipping")
       .$type<{
         fio: string;
