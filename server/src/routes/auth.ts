@@ -19,6 +19,7 @@ import {
 } from "../lib/auth.js";
 import { sendMail } from "../lib/mailer.js";
 import { verifyEmailTemplate } from "../lib/email-templates/verify.js";
+import { resetPasswordTemplate } from "../lib/email-templates/reset-password.js";
 import { tryCompleteQuest } from "../lib/quests.js";
 import { attachReferral, activateReferral, getOrCreateReferralCode } from "../lib/referrals.js";
 import { awardXp } from "../lib/xp.js";
