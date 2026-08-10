@@ -2,7 +2,9 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useRef, useState } from "react";
 import { PageHeader } from "@/components/club/PageHeader";
 import { PlumpSpin, PlumpTicket, PlumpGift, PlumpDiamond, PlumpQuests } from "@/components/ui/icons";
+import { PlumpNum } from "@/components/brand/PlumpNum";
 import { haptic } from "@/hooks/use-haptic";
+import { playSpin, playWin, playClick } from "@/lib/roller-sfx";
 
 export const Route = createFileRoute("/club/spin")({
   head: () => ({
@@ -28,10 +30,10 @@ type Prize = {
 
 // Цвета редкости — из палитры проекта (магента / лайм / лаванда).
 const RARITY: Record<Rarity, { ring: string; glow: string; label: string; chip: string }> = {
-  common: { ring: "#3A3A3A", glow: "rgba(255,255,255,0.06)", label: "Обычный", chip: "#8A8A8A" },
-  rare: { ring: "#B6FF3C", glow: "rgba(182,255,60,0.22)", label: "Редкий", chip: "#B6FF3C" },
-  epic: { ring: "#C6A8FF", glow: "rgba(198,168,255,0.24)", label: "Эпик", chip: "#C6A8FF" },
-  legend: { ring: "#F000C0", glow: "rgba(240,0,192,0.3)", label: "Легенда", chip: "#F000C0" },
+  common: { ring: "rgba(255,255,255,0.10)", glow: "rgba(255,255,255,0.07)", label: "Обычный", chip: "#8A8A8A" },
+  rare: { ring: "rgba(182,255,60,0.35)", glow: "rgba(182,255,60,0.20)", label: "Редкий", chip: "#B6FF3C" },
+  epic: { ring: "rgba(198,168,255,0.38)", glow: "rgba(198,168,255,0.22)", label: "Эпик", chip: "#C6A8FF" },
+  legend: { ring: "rgba(240,0,192,0.45)", glow: "rgba(240,0,192,0.26)", label: "Легенда", chip: "#F000C0" },
 };
 
 const POOL: Prize[] = [
@@ -56,10 +58,11 @@ const CALENDAR = [
   { day: 30, title: "Gold + носки + ремувка + 20 билетов", sub: "30 дней подряд" },
 ];
 
-const ITEM_W = 116; // ширина карточки
-const GAP = 10;
+const ITEM_W = 104; // ширина карточки
+const GAP = 8;
 const STEP = ITEM_W + GAP;
-const STRIP_LEN = 64;
+const STRIP_LEN = 72;
+const SPIN_MS = 5400;
 
 function buildStrip(): Prize[] {
   const out: Prize[] = [];
@@ -83,6 +86,7 @@ function SpinPage() {
   function spin() {
     if (spinning || spinsLeft <= 0) return;
     haptic("selection");
+    playClick();
     setWon(null);
     setSpinning(true);
 
@@ -99,12 +103,15 @@ function SpinPage() {
       setOffset(targetIndex * STEP + ITEM_W / 2 - w / 2 + jitter);
     });
 
+    playSpin(targetIndex, SPIN_MS);
+
     window.setTimeout(() => {
       setSpinning(false);
       setSpinsLeft((n) => Math.max(0, n - 1));
       setWon(fresh[targetIndex]);
       haptic("success");
-    }, 5400);
+      playWin();
+    }, SPIN_MS);
   }
 
   return (
@@ -112,17 +119,20 @@ function SpinPage() {
       <PageHeader title="HellSpin" subtitle="Крути каждый день" />
 
       {/* Баланс спинов */}
-      <div className="mb-4 flex items-center gap-3 rounded-2xl bg-card p-4">
-        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground">
-          <PlumpSpin className="h-6 w-6" />
+      <div className="mb-4 flex items-center gap-3 rounded-3xl bg-card p-4">
+        <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-primary text-primary-foreground">
+          <PlumpSpin className={`h-7 w-7 ${spinning ? "animate-spin" : ""}`} />
         </span>
         <div className="min-w-0 flex-1">
           <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
             Спинов сегодня
           </p>
-          <p className="font-display text-2xl font-black uppercase leading-none tracking-tight text-foreground">
-            {spinsLeft} <span className="text-muted-foreground">/ 4</span>
-          </p>
+          <span className="mt-0.5 flex items-center gap-1 text-foreground">
+            <PlumpNum value={spinsLeft} size={22} />
+            <span className="text-muted-foreground">
+              <PlumpNum value="/4" size={16} />
+            </span>
+          </span>
         </div>
         <span className="shrink-0 rounded-xl bg-[#C6A8FF] px-2.5 py-1 font-display text-[11px] font-black uppercase tracking-tight text-black">
           Gold
@@ -130,31 +140,60 @@ function SpinPage() {
       </div>
 
       {/* Роллер */}
-      <section aria-label="Рулетка" className="mb-4 overflow-hidden rounded-3xl bg-card p-4">
+      <section aria-label="Рулетка" className="mb-4 overflow-hidden rounded-3xl bg-card p-3 pb-4">
         <div
           ref={viewportRef}
-          className="relative overflow-hidden rounded-2xl bg-black/40 py-4"
+          className="relative overflow-hidden rounded-[22px] py-5"
           style={{
-            maskImage: "linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent)",
-            WebkitMaskImage: "linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent)",
+            background:
+              "radial-gradient(120% 140% at 50% 0%, hsl(var(--primary) / 0.10), transparent 60%), #0B0B0D",
+            boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.06)",
           }}
         >
-          {/* Указатель */}
-          <div className="pointer-events-none absolute inset-y-0 left-1/2 z-20 -translate-x-1/2">
-            <div className="mx-auto h-full w-[3px] rounded-full bg-primary shadow-[0_0_18px_hsl(var(--primary))]" />
-          </div>
+          {/* Рельсы сверху/снизу */}
+          <span className="pointer-events-none absolute inset-x-0 top-0 h-[3px] bg-white/[0.07]" />
+          <span className="pointer-events-none absolute inset-x-0 bottom-0 h-[3px] bg-white/[0.07]" />
 
+          {/* Лента */}
           <div
-            className="flex will-change-transform"
+            className="relative"
             style={{
-              gap: `${GAP}px`,
-              transform: `translate3d(${-offset}px,0,0)`,
-              transition: spinning ? "transform 5.4s cubic-bezier(0.08,0.82,0.12,1)" : "none",
+              maskImage: "linear-gradient(90deg,transparent,#000 14%,#000 86%,transparent)",
+              WebkitMaskImage: "linear-gradient(90deg,transparent,#000 14%,#000 86%,transparent)",
             }}
           >
-            {strip.map((p, i) => (
-              <PrizeCell key={`${p.id}-${i}`} prize={p} />
-            ))}
+            <div
+              className="flex will-change-transform"
+              style={{
+                gap: `${GAP}px`,
+                transform: `translate3d(${-offset}px,0,0)`,
+                transition: spinning ? `transform ${SPIN_MS}ms cubic-bezier(0.08,0.82,0.12,1)` : "none",
+              }}
+            >
+              {strip.map((p, i) => (
+                <PrizeCell key={`${p.id}-${i}`} prize={p} />
+              ))}
+            </div>
+          </div>
+
+          {/* Указатель: плампные «клыки» + луч */}
+          <div className="pointer-events-none absolute inset-y-0 left-1/2 z-20 -translate-x-1/2">
+            <span
+              className="absolute left-1/2 top-0 h-full w-14 -translate-x-1/2"
+              style={{
+                background:
+                  "linear-gradient(180deg, hsl(var(--primary) / 0.22), transparent 45%, hsl(var(--primary) / 0.22))",
+              }}
+            />
+            <span className="absolute left-1/2 top-0 h-full w-[4px] -translate-x-1/2 rounded-full bg-primary shadow-[0_0_22px_hsl(var(--primary))]" />
+            <span
+              className="absolute left-1/2 top-[-1px] h-3 w-3 -translate-x-1/2 rounded-[3px] bg-primary"
+              style={{ clipPath: "polygon(50% 100%, 0 0, 100% 0)" }}
+            />
+            <span
+              className="absolute bottom-[-1px] left-1/2 h-3 w-3 -translate-x-1/2 rounded-[3px] bg-primary"
+              style={{ clipPath: "polygon(50% 0, 0 100%, 100% 100%)" }}
+            />
           </div>
         </div>
 
@@ -162,7 +201,7 @@ function SpinPage() {
           type="button"
           onClick={spin}
           disabled={spinning || spinsLeft <= 0}
-          className="mt-4 flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-primary font-display text-[17px] font-black uppercase tracking-tight text-primary-foreground transition-transform active:scale-[0.97] disabled:opacity-40"
+          className="mt-3 flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-primary font-display text-[17px] font-black uppercase tracking-tight text-primary-foreground shadow-[0_10px_30px_-12px_hsl(var(--primary))] transition-transform active:scale-[0.97] disabled:opacity-40 disabled:shadow-none"
         >
           <PlumpSpin className={`h-5 w-5 ${spinning ? "animate-spin" : ""}`} />
           {spinning ? "Крутим…" : spinsLeft > 0 ? "Крутить" : "Спины закончились"}
@@ -170,17 +209,17 @@ function SpinPage() {
 
         {won && !spinning && (
           <div
-            className="mt-4 flex items-center gap-3 rounded-2xl px-4 py-3"
+            className="mt-3 flex animate-scale-in items-center gap-3 rounded-2xl px-4 py-3"
             style={{
               background: RARITY[won.rarity].glow,
               boxShadow: `inset 0 0 0 1px ${RARITY[won.rarity].ring}`,
             }}
           >
             <span
-              className="grid h-10 w-10 shrink-0 place-items-center rounded-xl"
+              className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl"
               style={{ background: RARITY[won.rarity].chip }}
             >
-              <PlumpGift className="h-5 w-5 text-black" />
+              <PrizeIcon rarity={won.rarity} />
             </span>
             <span className="min-w-0 flex-1">
               <span className="block font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
@@ -200,8 +239,9 @@ function SpinPage() {
           <h2 className="font-display text-[15px] font-black uppercase tracking-tight text-foreground">
             Календарь активности
           </h2>
-          <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-            {streak} / 30 дней
+          <span className="flex items-center gap-1 text-muted-foreground">
+            <PlumpNum value={`${streak}/30`} size={13} />
+            <span className="font-mono text-[10px] uppercase tracking-widest">дней</span>
           </span>
         </div>
 
@@ -212,9 +252,9 @@ function SpinPage() {
             return (
               <span
                 key={d}
-                className={`grid aspect-square place-items-center rounded-[10px] font-mono text-[10px] font-bold ${
+                className={`grid aspect-square place-items-center rounded-xl font-mono text-[10px] font-bold ${
                   done
-                    ? "bg-primary text-primary-foreground"
+                    ? "bg-primary text-primary-foreground shadow-[0_4px_14px_-6px_hsl(var(--primary))]"
                     : milestone
                       ? "bg-[#B6FF3C]/15 text-[#B6FF3C]"
                       : "bg-white/[0.05] text-muted-foreground"
@@ -229,8 +269,8 @@ function SpinPage() {
         <ul className="space-y-2">
           {CALENDAR.map((c) => (
             <li key={c.day} className="flex items-center gap-3 rounded-2xl bg-black/30 px-3 py-2.5">
-              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#B6FF3C] font-display text-[12px] font-black text-black">
-                {c.day}
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[#B6FF3C] text-black">
+                <PlumpNum value={c.day} size={14} />
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-[14px] font-semibold text-foreground">
@@ -253,14 +293,14 @@ function SpinPage() {
       {/* Пул призов */}
       <section aria-label="Что можно выиграть" className="mb-2">
         <h2 className="mb-3 px-1 text-[17px] font-semibold text-foreground">Что можно выиграть</h2>
-        <ul className="overflow-hidden rounded-2xl bg-card">
+        <ul className="overflow-hidden rounded-3xl bg-card">
           {POOL.map((p, i) => (
             <li
               key={p.id}
               className={`flex items-center gap-3 px-4 py-3 ${i > 0 ? "border-t border-white/[0.05]" : ""}`}
             >
               <span
-                className="grid h-9 w-9 shrink-0 place-items-center rounded-xl"
+                className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl"
                 style={{ background: RARITY[p.rarity].chip }}
               >
                 <PrizeIcon rarity={p.rarity} />
@@ -290,7 +330,7 @@ function SpinPage() {
 }
 
 function PrizeIcon({ rarity }: { rarity: Rarity }) {
-  const cls = "h-4 w-4 text-black";
+  const cls = "h-5 w-5 text-black";
   if (rarity === "legend") return <PlumpDiamond className={cls} />;
   if (rarity === "epic") return <PlumpGift className={cls} />;
   if (rarity === "rare") return <PlumpTicket className={cls} />;
@@ -301,26 +341,29 @@ function PrizeCell({ prize }: { prize: Prize }) {
   const r = RARITY[prize.rarity];
   return (
     <div
-      className="relative flex shrink-0 flex-col items-center justify-center overflow-hidden rounded-2xl px-2 py-4 text-center"
+      className="relative flex shrink-0 flex-col items-center justify-end overflow-hidden rounded-[20px] px-2 pb-3 pt-4 text-center"
       style={{
         width: ITEM_W,
-        background: `linear-gradient(180deg, ${r.glow}, rgba(0,0,0,0.35))`,
-        boxShadow: `inset 0 0 0 1px ${r.ring}`,
+        height: 132,
+        background: `linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(0,0,0,0.25) 45%, ${r.glow} 100%)`,
+        boxShadow: `inset 0 0 0 1.5px ${r.ring}`,
       }}
     >
+      {/* Луч редкости снизу */}
       <span
-        className="mb-2 grid h-9 w-9 place-items-center rounded-xl"
-        style={{ background: r.chip }}
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-2/3"
+        style={{ background: `linear-gradient(180deg, transparent, ${r.glow})` }}
+      />
+      <span
+        className="relative mb-2 grid h-11 w-11 place-items-center rounded-2xl"
+        style={{ background: r.chip, boxShadow: `0 8px 22px -10px ${r.chip}` }}
       >
         <PrizeIcon rarity={prize.rarity} />
       </span>
-      <span className="line-clamp-2 font-display text-[12px] font-black uppercase leading-tight tracking-tight text-foreground">
+      <span className="relative line-clamp-2 font-display text-[12px] font-black uppercase leading-tight tracking-tight text-foreground">
         {prize.title}
       </span>
-      <span
-        className="absolute inset-x-0 bottom-0 h-[3px]"
-        style={{ background: r.chip }}
-      />
+      <span className="absolute inset-x-3 bottom-0 h-[4px] rounded-t-full" style={{ background: r.chip }} />
     </div>
   );
 }
