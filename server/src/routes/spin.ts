@@ -8,6 +8,7 @@ import { users } from "../db/schema/users.js";
 import { requireAuth, requireAdmin, type SessionPayload } from "../lib/auth.js";
 import {
   SpinError,
+  SPINS_PER_DAY,
   claimStreakMilestone,
   ensureCurrentSeason,
   getSpinState,
