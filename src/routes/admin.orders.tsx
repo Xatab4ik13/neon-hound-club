@@ -293,6 +293,15 @@ function OrderDrawer({ orderId, onClose }: { orderId: string; onClose: () => voi
       ) : order.isError || !order.data ? (
         <div className="p-5 text-sm text-rose-500">Не удалось загрузить</div>
       ) : (
+        (() => {
+        const electronic = isElectronicOrder(order.data);
+        // Для электронных заказов доставки нет: только «Получен» и возврат/отмена.
+        const nextStatuses: ShopOrderStatus[] = electronic
+          ? (NEXT_STATUSES[order.data.status].filter(
+              (s) => s === "delivered" || s === "cancelled" || s === "refunded",
+            ) as ShopOrderStatus[])
+          : NEXT_STATUSES[order.data.status];
+        return (
         <div className="flex-1 space-y-5 overflow-y-auto p-5 text-sm">
           <div>
             <div className="font-mono text-[10px] uppercase tracking-wider text-zinc-500">ID</div>
