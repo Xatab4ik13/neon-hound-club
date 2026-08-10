@@ -159,6 +159,9 @@ function MePage() {
     staleTime: 60_000,
   });
   const totalOrders = ordersQ.data?.items.length ?? 0;
+  const promoActiveCount =
+    promoQ.data?.items.filter((p) => !p.usedAt && !p.expired && p.active).length ?? 0;
+
 
 
   const [confirmLogout, setConfirmLogout] = useState(false);
