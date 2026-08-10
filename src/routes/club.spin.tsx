@@ -863,6 +863,12 @@ function WinModal({
         <p className="relative mt-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
           Приз зачислен в твой аккаунт
         </p>
+        {promoCode && (
+          <p className="relative mx-auto mt-3 w-fit rounded-xl bg-black/40 px-3 py-2 font-mono text-[14px] font-bold tracking-widest text-foreground">
+            {promoCode}
+          </p>
+        )}
+
 
         <button
           type="button"
