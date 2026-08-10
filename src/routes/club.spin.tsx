@@ -406,16 +406,20 @@ function SpinPage() {
             Спинов сегодня
           </p>
           <span className="mt-0.5 flex items-center gap-1 text-foreground">
-            <PlumpNum value={spinsLeft} size={22} />
+            <PlumpNum value={loading ? "—" : spinsLeft} size={22} />
             <span className="text-muted-foreground">
-              <PlumpNum value="/4" size={16} />
+              <PlumpNum value={`/${loading ? "—" : spinsAllowed}`} size={16} />
             </span>
           </span>
         </div>
-        <span className="shrink-0 rounded-xl bg-[#C6A8FF] px-2.5 py-1 font-display text-[11px] font-black uppercase tracking-tight text-black">
-          Gold
+        <span
+          className="shrink-0 rounded-xl px-2.5 py-1 font-display text-[11px] font-black uppercase tracking-tight text-black"
+          style={{ background: TIER_LABEL[tier].bg }}
+        >
+          {TIER_LABEL[tier].name}
         </span>
       </div>
+
 
 
       {/* Роллер */}
