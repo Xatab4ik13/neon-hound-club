@@ -311,8 +311,24 @@ export async function rollSpin(userId: string, pwa: boolean): Promise<SpinResult
   const tier = await getTier(userId);
   const day = mskDate();
   const daily = await ensureDaily(userId, tier, day);
-  const capacity = daily.allowed + daily.bonus;
-  if (daily.used >= capacity) {
+
+  // Атомарный инкремент: проверка лимита и списание в одном UPDATE — гонка невозможна.
+  // Два одновременных запроса от одного юзера не смогут оба пройти проверку.
+  const [dailyAfter] = await db
+    .update(spinDaily)
+    .set({
+      used: sql`${spinDaily.used} + 1`,
+      updatedAt: new Date(),
+    })
+    .where(
+      and(
+        eq(spinDaily.id, daily.id),
+        sql`${spinDaily.used} < ${spinDaily.allowed} + ${spinDaily.bonus}`,
+      ),
+    )
+    .returning();
+
+  if (!dailyAfter) {
     throw new SpinError("no_spins", "Спины на сегодня закончились. Возвращайся завтра.");
   }
 
