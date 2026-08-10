@@ -779,10 +779,12 @@ const PrizeCell = memo(function PrizeCell({ prize }: { prize: Prize }) {
 
 function WinModal({
   prize,
+  promoCode,
   open,
   onClose,
 }: {
   prize: Prize | null;
+  promoCode?: string | null;
   open: boolean;
   onClose: () => void;
 }) {
