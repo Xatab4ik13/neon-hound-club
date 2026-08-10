@@ -9,6 +9,8 @@ import {
   Target,
   PlumpUsers as Users,
   PlumpStore,
+  PlumpGift,
+
   PlumpTicket,
   PlumpImage as ImageIcon,
   PlumpFeed,
