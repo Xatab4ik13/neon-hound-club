@@ -548,10 +548,13 @@ export type AdminPassListItem = PassRecord & {
   avatarUrl: string | null;
 };
 
-export function fetchAdminPassList(filters: { status?: PassRecord["status"]; tier?: PassTier; q?: string } = {}) {
+export function fetchAdminPassList(
+  filters: { status?: PassRecord["status"]; tier?: PassTier; source?: PassSource; q?: string } = {},
+) {
   const params = new URLSearchParams();
   if (filters.status) params.set("status", filters.status);
   if (filters.tier) params.set("tier", filters.tier);
+  if (filters.source) params.set("source", filters.source);
   if (filters.q) params.set("q", filters.q);
   const qs = params.toString();
   return apiFetch<{ items: AdminPassListItem[] }>(`/api/v1/admin/pass/list${qs ? `?${qs}` : ""}`);
@@ -560,6 +563,7 @@ export function fetchAdminPassList(filters: { status?: PassRecord["status"]; tie
 export type AdminPassStats = {
   activeByTier: Record<"silver" | "gold" | "platinum", number>;
   activeTotal: number;
+  activeBySource: Record<PassSource, number>;
   pendingCount: number;
   expiringWithin7d: number;
   revenue30dRub: number;
@@ -583,13 +587,19 @@ export function revokePass(purchaseId: string) {
   });
 }
 
+export function cleanupPendingPasses() {
+  return apiFetch<{ ok: true; removed: number }>("/api/v1/admin/pass/cleanup-pending", {
+    method: "POST",
+  });
+}
+
 export function expireOldPasses() {
   return apiFetch<{ ok: true; expired: number }>("/api/v1/admin/pass/expire-old", {
     method: "POST",
   });
 }
 
-export type { PassTier };
+export type { PassTier, PassSource };
 
 
 // ============================================================================
