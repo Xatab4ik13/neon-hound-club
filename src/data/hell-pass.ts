@@ -300,9 +300,9 @@ export const TIERS: Tier[] = [
     price: 2190,
     color: "#F000C0",
     inheritsFrom: "Gold",
-    tagline: "VIP-чат с Hell, Hell AI без лимита, закрытый розыгрыш, скидка 15%.",
+    tagline: "VIP-чат с Hell, Hell AI без лимита, 30 билетов, скидка 15%.",
     forWhom:
-      "Для тех, кто живёт мото и хочет быть в центре клуба. Прямой чат с Hell, самые крупные лоты и эксклюзивные розыгрыши только для Platinum.",
+      "Для тех, кто живёт мото и хочет быть в центре клуба. Прямой чат с Hell, максимум спинов и билетов, самые крупные лоты.",
     groups: PLATINUM_GROUPS,
     perks: flat(PLATINUM_GROUPS),
     ultimate: true,
