@@ -273,7 +273,10 @@ function SpinPage() {
           style={{
             background:
               "radial-gradient(120% 140% at 50% 0%, hsl(var(--primary) / 0.10), transparent 60%), #0B0B0D",
-            boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.06)",
+            boxShadow: teasing
+              ? "inset 0 0 0 1px rgba(255,217,61,0.45), 0 0 46px -10px rgba(255,217,61,0.45)"
+              : "inset 0 0 0 1px rgba(255,255,255,0.06)",
+            transition: "box-shadow 300ms ease",
           }}
         >
           {/* Рельсы сверху/снизу */}
@@ -294,19 +297,28 @@ function SpinPage() {
                 gap: `${GAP}px`,
                 transform: `translate3d(${-offset}px,0,0)`,
               }}
-
             >
               {strip.map((p, i) => (
                 <PrizeCell key={`${p.id}-${i}`} prize={p} hot={teasing && p.rarity === "legend"} />
               ))}
             </div>
-
           </div>
+
+          {/* Бегущий свет по стеклу во время прокрута */}
+          {spinning && (
+            <span
+              className="pointer-events-none absolute inset-y-0 left-0 z-10 w-1/3 animate-[hs-sweep_1100ms_linear_infinite]"
+              style={{
+                background:
+                  "linear-gradient(100deg, transparent, rgba(255,255,255,0.10) 45%, transparent)",
+              }}
+            />
+          )}
 
           {/* Указатель: плампные «клыки» + луч */}
           <div className="pointer-events-none absolute inset-y-0 left-1/2 z-20 -translate-x-1/2">
             <span
-              className="absolute left-1/2 top-0 h-full w-14 -translate-x-1/2"
+              className={`absolute left-1/2 top-0 h-full w-14 -translate-x-1/2 ${spinning ? "animate-[hs-marker-pulse_620ms_ease-in-out_infinite]" : ""}`}
               style={{
                 background:
                   "linear-gradient(180deg, hsl(var(--primary) / 0.22), transparent 45%, hsl(var(--primary) / 0.22))",
@@ -328,36 +340,56 @@ function SpinPage() {
           type="button"
           onClick={spin}
           disabled={spinning || spinsLeft <= 0}
-          className="mt-3 flex h-14 w-full items-center justify-center rounded-2xl bg-[#B6FF3C] font-display text-[17px] font-black uppercase tracking-tight text-black shadow-[0_10px_30px_-12px_#B6FF3C] transition-transform active:scale-[0.97] disabled:opacity-40 disabled:shadow-none"
+          className="relative mt-3 flex h-14 w-full items-center justify-center overflow-hidden rounded-2xl bg-[#B6FF3C] font-display text-[17px] font-black uppercase tracking-tight text-black shadow-[0_10px_30px_-12px_#B6FF3C] transition-transform active:scale-[0.97] disabled:opacity-40 disabled:shadow-none"
         >
-          {spinning ? "Крутим…" : spinsLeft > 0 ? "Крутить" : "Спины закончились"}
+          {!spinning && spinsLeft > 0 && (
+            <span
+              className="pointer-events-none absolute inset-y-0 left-0 w-1/3 animate-[hs-sweep_2600ms_linear_infinite]"
+              style={{
+                background: "linear-gradient(100deg, transparent, rgba(255,255,255,0.55), transparent)",
+              }}
+            />
+          )}
+          <span className="relative">
+            {spinning ? "Крутим…" : spinsLeft > 0 ? "Крутить" : "Спины закончились"}
+          </span>
         </button>
 
 
         {won && !spinning && (
           <div
-            className="mt-3 flex animate-scale-in items-center gap-3 rounded-2xl px-4 py-3"
+            className="relative mt-3 flex animate-[hs-win-pop_420ms_cubic-bezier(0.2,1.4,0.3,1)_both] items-center gap-3 overflow-hidden rounded-2xl px-4 py-3"
             style={{
               background: RARITY[won.rarity].glow,
-              boxShadow: `inset 0 0 0 1px ${RARITY[won.rarity].ring}`,
+              boxShadow: `inset 0 0 0 1px ${RARITY[won.rarity].ring}, 0 14px 34px -18px ${RARITY[won.rarity].chip}`,
             }}
           >
             <span
-              className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-black/40"
-            >
+              className="pointer-events-none absolute inset-y-0 left-0 w-1/3 animate-[hs-sweep_1600ms_ease-in-out_2]"
+              style={{
+                background: `linear-gradient(100deg, transparent, ${RARITY[won.rarity].chip}44, transparent)`,
+              }}
+            />
+            <span className="relative grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-black/40">
               <PrizeMedia prize={won} size={40} />
             </span>
 
-            <span className="min-w-0 flex-1">
+            <span className="relative min-w-0 flex-1">
               <span className="block font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
                 Твой приз · {RARITY[won.rarity].label}
               </span>
               <span className="block truncate font-display text-[15px] font-black uppercase tracking-tight text-foreground">
                 {won.title}
               </span>
+              {won.sub && (
+                <span className="block truncate font-mono text-[10px] uppercase tracking-widest" style={{ color: RARITY[won.rarity].chip }}>
+                  {won.sub}
+                </span>
+              )}
             </span>
           </div>
         )}
+
       </section>
 
       {/* Календарь активности */}
