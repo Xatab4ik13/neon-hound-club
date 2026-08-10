@@ -164,7 +164,7 @@ export async function adminUsersRoutes(app: FastifyInstance) {
         coalesce(round(sum(active_seconds) / 60.0), 0)::float as total_minutes
       from d
     `);
-    const eng = (engagement.rows ?? engagement)[0] as
+    const eng = engagement[0] as
       | {
           avg_minutes_per_day: number;
           avg_sessions_per_day: number;
@@ -185,7 +185,7 @@ export async function adminUsersRoutes(app: FastifyInstance) {
       group by a.day
       order by a.day asc
     `);
-    const daily = (dailyRes.rows ?? dailyRes) as Array<{
+    const daily = dailyRes as unknown as Array<{
       day: string;
       users: number;
       avg_minutes: number;
