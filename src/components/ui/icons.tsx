@@ -578,15 +578,26 @@ export function PlumpInstructorChat(props: IconProps) {
 export function PlumpSpin(props: IconProps) {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 48 48" {...plumpProps(props)}>
+      {/* Толстое «плампное» кольцо */}
       <path
         fill="currentColor"
         fillRule="evenodd"
-        d="M3 24A21 21 0 1 0 45 24A21 21 0 1 0 3 24ZM12 24A12 12 0 1 0 36 24A12 12 0 1 0 12 24ZM20.5 1.5H27.5V12.6H20.5ZM20.5 35.4H27.5V46.5H20.5ZM1.5 20.5H12.6V27.5H1.5ZM35.4 20.5H46.5V27.5H35.4ZM18.5 24A5.5 5.5 0 1 0 29.5 24A5.5 5.5 0 1 0 18.5 24Z"
+        d="M24 2.5C12.1259 2.5 2.5 12.1259 2.5 24S12.1259 45.5 24 45.5 45.5 35.8741 45.5 24 35.8741 2.5 24 2.5Zm0 6.5c-8.2843 0 -15 6.7157 -15 15 0 8.2843 6.7157 15 15 15 8.2843 0 15 -6.7157 15 -15 0 -8.2843 -6.7157 -15 -15 -15Z"
         clipRule="evenodd"
       />
+      {/* Спицы — плампные скруглённые «капсулы» */}
+      <g fill="currentColor">
+        <rect x="21" y="8.5" width="6" height="31" rx="3" />
+        <rect x="21" y="8.5" width="6" height="31" rx="3" transform="rotate(45 24 24)" />
+        <rect x="21" y="8.5" width="6" height="31" rx="3" transform="rotate(90 24 24)" />
+        <rect x="21" y="8.5" width="6" height="31" rx="3" transform="rotate(135 24 24)" />
+      </g>
+      {/* Ступица */}
+      <circle cx="24" cy="24" r="6.5" fill="currentColor" />
     </svg>
   );
 }
+
 
 
 
