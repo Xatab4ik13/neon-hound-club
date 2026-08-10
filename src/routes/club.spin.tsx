@@ -231,8 +231,11 @@ function SpinPage() {
       rafRef.current = null;
       setTeasing(false);
       setSpinning(false);
-      setSpinsLeft((n) => Math.max(0, n - 1));
-      setWon(fresh[targetIndex]);
+      const prize = fresh[targetIndex];
+      // Бонус-спин возвращает прокрут — счётчик остаётся на месте.
+      if (prize.id !== "spin") setSpinsLeft((n) => Math.max(0, n - 1));
+      setWon(prize);
+
       haptic("success");
       playWin();
     };
