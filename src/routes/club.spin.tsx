@@ -413,8 +413,8 @@ function SpinPage() {
           </span>
         </div>
         <span
-          className="shrink-0 rounded-xl px-2.5 py-1 font-display text-[11px] font-black uppercase tracking-tight text-black"
-          style={{ background: TIER_LABEL[tier].bg }}
+          className="shrink-0 rounded-xl px-2.5 py-1 font-display text-[11px] font-black uppercase tracking-tight"
+          style={{ background: TIER_LABEL[tier].bg, color: TIER_LABEL[tier].fg }}
         >
           {TIER_LABEL[tier].name}
         </span>
