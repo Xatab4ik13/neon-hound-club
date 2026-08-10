@@ -243,6 +243,13 @@ function SpinPage() {
       // Бонус-спин возвращает прокрут — счётчик остаётся на месте.
       if (prize.id !== "spin") setSpinsLeft((n) => Math.max(0, n - 1));
       setWon(prize);
+      setLastPrize(prize);
+      try {
+        window.localStorage.setItem(LAST_PRIZE_KEY, prize.id);
+      } catch {
+        /* приватный режим — просто не запоминаем */
+      }
+
 
       haptic("success");
       playWin();
