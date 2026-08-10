@@ -76,7 +76,7 @@ async function hydrateFreshSession(
   sub: string,
 ): Promise<SessionPayload | null> {
   const [row] = await db
-    .select({ id: users.id, role: users.role, nick: users.nick })
+    .select({ id: users.id, role: users.role, nick: users.nick, lastSeenAt: users.lastSeenAt })
     .from(users)
     .where(eq(users.id, sub))
     .limit(1);
@@ -93,22 +93,45 @@ async function hydrateFreshSession(
 
   // Throttled "last seen" — обновляем не чаще раза в 30 сек, чтобы не нагружать БД.
   // Ошибки глотаем — это не должно ломать запрос.
-  void db
-    .update(users)
-    .set({ lastSeenAt: new Date() })
-    .where(
-      and(
-        eq(users.id, row.id),
-        or(
-          isNull(users.lastSeenAt),
-          lt(users.lastSeenAt, sql`now() - interval '30 seconds'`),
+  const prev = row.lastSeenAt ? new Date(row.lastSeenAt).getTime() : 0;
+  const gapSec = prev ? Math.round((Date.now() - prev) / 1000) : Infinity;
+
+  if (gapSec >= 30) {
+    void db
+      .update(users)
+      .set({ lastSeenAt: new Date() })
+      .where(
+        and(
+          eq(users.id, row.id),
+          or(
+            isNull(users.lastSeenAt),
+            lt(users.lastSeenAt, sql`now() - interval '30 seconds'`),
+          ),
         ),
-      ),
-    )
-    .catch(() => {});
+      )
+      .catch(() => {});
+
+    // Копим посуточную активность: если разрыв <= 5 мин — это та же сессия,
+    // добавляем реально прошедшие секунды. Иначе — новая сессия (+30 сек).
+    const sameSession = gapSec <= 300;
+    const addSeconds = sameSession ? gapSec : 30;
+    const addSessions = sameSession ? 0 : 1;
+
+    void db
+      .execute(
+        sql`insert into user_activity_days (user_id, day, active_seconds, sessions, first_seen_at, last_seen_at)
+            values (${row.id}, (now() at time zone 'Europe/Moscow')::date, ${addSeconds}, ${addSessions === 0 ? 1 : addSessions}, now(), now())
+            on conflict (user_id, day) do update set
+              active_seconds = user_activity_days.active_seconds + ${addSeconds},
+              sessions = user_activity_days.sessions + ${addSessions},
+              last_seen_at = now()`,
+      )
+      .catch(() => {});
+  }
 
   return fresh;
 }
+
 
 /** preHandler: подгружает КЛУБНУЮ сессию из cookie. Не падает, если её нет. */
 export async function loadSession(req: FastifyRequest): Promise<void> {
