@@ -682,6 +682,13 @@ function ProfileTab({ mobile }: { mobile?: boolean }) {
           </Field>
           <Field label="Телефон">
             <PhoneInput value={phone} onChange={(v) => setPhone(v ?? "")} verified={me.phoneVerified && phone === (me.phone ?? "")} />
+            {(() => {
+              const trimmed = (phone || "").trim();
+              const isValid = trimmed ? isValidPhoneNumber(trimmed) : false;
+              const sameAsSaved = trimmed === (me.phone ?? "");
+              if (!trimmed || (sameAsSaved && me.phoneVerified)) return null;
+              return <PhoneVerifyPanel phone={trimmed} canSend={isValid} />;
+            })()}
           </Field>
           <Field label="О себе">
             <Input value={bio} onChange={(e) => setBio(e.target.value)} maxLength={300} />
