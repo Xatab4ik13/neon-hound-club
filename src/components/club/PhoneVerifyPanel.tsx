@@ -139,31 +139,34 @@ export function PhoneVerifyPanel({ phone, canSend, onVerified }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [code, requestId, stage]);
 
-  const setDigit = (i: number, v: string) => {
-    const onlyDigits = v.replace(/\D/g, "");
-    if (onlyDigits.length > 1) {
-      // Paste / автозаполнение из СМС-уведомления — разложим по ячейкам.
-      const next = [...digits];
-      for (let k = 0; k < CODE_LEN; k++) {
-        next[k] = onlyDigits[k] ?? "";
-      }
-      setDigits(next);
-      const filled = next.join("");
-      if (filled.length === CODE_LEN) {
-        inputsRef.current[CODE_LEN - 1]?.blur();
-      } else {
-        inputsRef.current[Math.min(onlyDigits.length, CODE_LEN - 1)]?.focus();
-      }
-      return;
-    }
+  /** Разложить строку цифр по ячейкам, начиная с позиции `from`. */
+  const fillFrom = (from: number, raw: string) => {
+    const onlyDigits = raw.replace(/\D/g, "");
+    if (!onlyDigits) return;
     const next = [...digits];
-    next[i] = onlyDigits;
-    setDigits(next);
-    if (onlyDigits && i < CODE_LEN - 1) inputsRef.current[i + 1]?.focus();
-    const filled = next.join("");
-    if (filled.length === CODE_LEN) {
-      inputsRef.current[i]?.blur();
+    // Полный код (6 цифр) всегда кладём с начала — вставка/автозаполнение.
+    const start = onlyDigits.length >= CODE_LEN ? 0 : from;
+    for (let k = 0; k < onlyDigits.length && start + k < CODE_LEN; k++) {
+      next[start + k] = onlyDigits[k];
     }
+    setDigits(next);
+    const lastIdx = Math.min(start + onlyDigits.length, CODE_LEN) - 1;
+    if (next.join("").length === CODE_LEN) {
+      inputsRef.current[lastIdx]?.blur();
+    } else {
+      inputsRef.current[Math.min(lastIdx + 1, CODE_LEN - 1)]?.focus();
+    }
+  };
+
+  const setDigit = (i: number, v: string) => {
+    fillFrom(i, v);
+  };
+
+  const onPaste = (i: number, e: React.ClipboardEvent<HTMLInputElement>) => {
+    const text = e.clipboardData.getData("text");
+    if (!text) return;
+    e.preventDefault();
+    fillFrom(i, text);
   };
 
   const onKeyDown = (i: number, e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -238,12 +241,14 @@ export function PhoneVerifyPanel({ phone, canSend, onVerified }: Props) {
             value={d}
             onChange={(e) => setDigit(i, e.target.value)}
             onKeyDown={(e) => onKeyDown(i, e)}
+            onPaste={(e) => onPaste(i, e)}
             onFocus={(e) => e.currentTarget.select()}
             inputMode="numeric"
             // iOS: автозаполнение из приходящего SMS-уведомления (для не-SMS работает как обычное цифровое поле).
             autoComplete={i === 0 ? "one-time-code" : "off"}
             autoCapitalize="off"
-            maxLength={i === 0 ? CODE_LEN : 1}
+            // На десктопе код часто вставляют целиком в любую ячейку — не режем до 1 символа.
+            maxLength={CODE_LEN}
             disabled={!requestId || verifyMut.isPending}
             aria-label={`Цифра ${i + 1} из ${CODE_LEN}`}
             className={cn(
