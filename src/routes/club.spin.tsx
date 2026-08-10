@@ -707,7 +707,7 @@ function WinModal({
         <button
           type="button"
           onClick={onClose}
-          className="relative mt-6 h-13 w-full rounded-2xl bg-[#B6FF3C] py-4 font-display text-[16px] font-black uppercase tracking-tight text-black transition-transform active:scale-[0.97]"
+          className="relative mt-6 w-full rounded-2xl bg-[#B6FF3C] py-4 font-display text-[16px] font-black uppercase tracking-tight text-black transition-transform active:scale-[0.97]"
         >
           Забрать
         </button>
