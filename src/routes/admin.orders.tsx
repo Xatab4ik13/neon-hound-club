@@ -429,10 +429,12 @@ function OrderDrawer({ orderId, onClose }: { orderId: string; onClose: () => voi
           {order.data.paidAt && (
             <div className="text-xs text-zinc-500">Оплачен: {fmtDate(order.data.paidAt)}</div>
           )}
-          {order.data.shippedAt && (
+          {order.data.shippedAt && !electronic && (
             <div className="text-xs text-zinc-500">Отправлен: {fmtDate(order.data.shippedAt)}</div>
           )}
         </div>
+        );
+        })()
       )}
     </aside>
   );
