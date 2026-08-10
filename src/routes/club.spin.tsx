@@ -294,11 +294,11 @@ function SpinPage() {
             }}
           >
             <span
-              className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl"
-              style={{ background: RARITY[won.rarity].chip }}
+              className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-black/40"
             >
-              <PrizeIcon rarity={won.rarity} />
+              <PrizeMedia prize={won} size={40} />
             </span>
+
             <span className="min-w-0 flex-1">
               <span className="block font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
                 Твой приз · {RARITY[won.rarity].label}
@@ -408,11 +408,12 @@ function SpinPage() {
               className={`flex items-center gap-3 px-4 py-3 ${i > 0 ? "border-t border-white/[0.05]" : ""}`}
             >
               <span
-                className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl"
-                style={{ background: RARITY[p.rarity].chip }}
+                className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-black/40"
+                style={{ boxShadow: `inset 0 0 0 1px ${RARITY[p.rarity].ring}` }}
               >
-                <PrizeIcon rarity={p.rarity} />
+                <PrizeMedia prize={p} size={34} />
               </span>
+
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-[14px] font-semibold text-foreground">
                   {p.title}
