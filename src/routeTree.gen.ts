@@ -60,6 +60,7 @@ import { Route as AdminVipChatRouteImport } from './routes/admin.vip-chat'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminTicketsRouteImport } from './routes/admin.tickets'
 import { Route as AdminSupportRouteImport } from './routes/admin.support'
+import { Route as AdminSpinRouteImport } from './routes/admin.spin'
 import { Route as AdminShopRouteImport } from './routes/admin.shop'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as AdminSchoolRouteImport } from './routes/admin.school'
@@ -357,6 +358,11 @@ const AdminSupportRoute = AdminSupportRouteImport.update({
   path: '/support',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminSpinRoute = AdminSpinRouteImport.update({
+  id: '/spin',
+  path: '/spin',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminShopRoute = AdminShopRouteImport.update({
   id: '/shop',
   path: '/shop',
@@ -591,6 +597,7 @@ export interface FileRoutesByFullPath {
   '/admin/school': typeof AdminSchoolRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/shop': typeof AdminShopRoute
+  '/admin/spin': typeof AdminSpinRoute
   '/admin/support': typeof AdminSupportRoute
   '/admin/tickets': typeof AdminTicketsRoute
   '/admin/users': typeof AdminUsersRoute
@@ -682,6 +689,7 @@ export interface FileRoutesByTo {
   '/admin/school': typeof AdminSchoolRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/shop': typeof AdminShopRoute
+  '/admin/spin': typeof AdminSpinRoute
   '/admin/support': typeof AdminSupportRoute
   '/admin/tickets': typeof AdminTicketsRoute
   '/admin/users': typeof AdminUsersRoute
@@ -777,6 +785,7 @@ export interface FileRoutesById {
   '/admin/school': typeof AdminSchoolRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/shop': typeof AdminShopRoute
+  '/admin/spin': typeof AdminSpinRoute
   '/admin/support': typeof AdminSupportRoute
   '/admin/tickets': typeof AdminTicketsRoute
   '/admin/users': typeof AdminUsersRoute
@@ -873,6 +882,7 @@ export interface FileRouteTypes {
     | '/admin/school'
     | '/admin/settings'
     | '/admin/shop'
+    | '/admin/spin'
     | '/admin/support'
     | '/admin/tickets'
     | '/admin/users'
@@ -964,6 +974,7 @@ export interface FileRouteTypes {
     | '/admin/school'
     | '/admin/settings'
     | '/admin/shop'
+    | '/admin/spin'
     | '/admin/support'
     | '/admin/tickets'
     | '/admin/users'
@@ -1058,6 +1069,7 @@ export interface FileRouteTypes {
     | '/admin/school'
     | '/admin/settings'
     | '/admin/shop'
+    | '/admin/spin'
     | '/admin/support'
     | '/admin/tickets'
     | '/admin/users'
@@ -1516,6 +1528,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminSupportRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/spin': {
+      id: '/admin/spin'
+      path: '/spin'
+      fullPath: '/admin/spin'
+      preLoaderRoute: typeof AdminSpinRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/shop': {
       id: '/admin/shop'
       path: '/shop'
@@ -1821,6 +1840,7 @@ interface AdminRouteChildren {
   AdminSchoolRoute: typeof AdminSchoolRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
   AdminShopRoute: typeof AdminShopRoute
+  AdminSpinRoute: typeof AdminSpinRoute
   AdminSupportRoute: typeof AdminSupportRoute
   AdminTicketsRoute: typeof AdminTicketsRoute
   AdminUsersRoute: typeof AdminUsersRoute
@@ -1843,6 +1863,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminSchoolRoute: AdminSchoolRoute,
   AdminSettingsRoute: AdminSettingsRoute,
   AdminShopRoute: AdminShopRoute,
+  AdminSpinRoute: AdminSpinRoute,
   AdminSupportRoute: AdminSupportRoute,
   AdminTicketsRoute: AdminTicketsRoute,
   AdminUsersRoute: AdminUsersRoute,
