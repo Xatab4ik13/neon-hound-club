@@ -1,9 +1,10 @@
-// Админка HellSpin. Пул призов и логика зашиты в код/бэкенд — здесь только
-// статистика по прокрутам + список победителей (особенно физических призов,
-// которые надо доставить) + справка по сезону. Данные — моки до бэкенда.
+// Админка HellSpin. Пул призов и логика — на бэкенде, здесь только реальная
+// статистика по прокрутам, лента последних спинов, победители (физика на
+// доставку) и календарь активности.
 
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, useMemo } from "react";
+import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   PageHeader,
   Panel,
@@ -21,9 +22,17 @@ import {
   Trophy,
   CalendarCheck,
   RefreshCw,
-
 } from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
+import {
+  adminSpinQk,
+  fetchAdminSpinOverview,
+  fetchAdminSpinStreaks,
+  fetchAdminSpinWinners,
+  updateAdminSpinWinner,
+  type SpinRarity,
+  type SpinShipStatus,
+} from "@/lib/admin-spin-api";
 
 export const Route = createFileRoute("/admin/spin")({
   head: () => ({
@@ -35,107 +44,42 @@ export const Route = createFileRoute("/admin/spin")({
   component: SpinAdminPage,
 });
 
-/* ----------------- Моки (до бэкенда) ----------------- */
-
-type Rarity = "common" | "rare" | "epic" | "legend";
-type PrizeKind = "digital" | "physical";
-
-type Winner = {
-  id: string;
-  nick: string;
-  phone: string;
-  prize: string;
-  rarity: Rarity;
-  kind: PrizeKind;
-  date: string; // ISO
-};
-
-const RARITY_LABEL: Record<Rarity, string> = {
+const RARITY_LABEL: Record<SpinRarity, string> = {
   common: "Обычный",
   rare: "Редкий",
   epic: "Эпик",
   legend: "Легенда",
 };
 
-const RARITY_TONE: Record<Rarity, "zinc" | "emerald" | "amber" | "rose" | "blue" | "violet"> = {
+const RARITY_TONE: Record<SpinRarity, "zinc" | "emerald" | "amber" | "rose" | "blue" | "violet"> = {
   common: "zinc",
   rare: "emerald",
   epic: "violet",
   legend: "amber",
 };
 
-const MOCK_WINNERS: Winner[] = [
-  { id: "w1", nick: "Semёn_R", phone: "+7 921 334-11-09", prize: "AirPods 4", rarity: "legend", kind: "physical", date: "2026-08-10T18:42:00Z" },
-  { id: "w2", nick: "katya_mx", phone: "+7 916 772-04-51", prize: "Носки (майлстоун 10)", rarity: "rare", kind: "physical", date: "2026-08-10T16:10:00Z" },
-  { id: "w3", nick: "darkrider", phone: "+7 905 112-88-43", prize: "100 XP", rarity: "common", kind: "digital", date: "2026-08-10T15:33:00Z" },
-  { id: "w4", nick: "nikitaZ", phone: "+7 999 224-67-90", prize: "Ремувка", rarity: "epic", kind: "physical", date: "2026-08-10T14:21:00Z" },
-  { id: "w5", nick: "olga_v", phone: "+7 931 558-03-22", prize: "10 билетов", rarity: "epic", kind: "digital", date: "2026-08-10T13:05:00Z" },
-  { id: "w6", nick: "maxpayne", phone: "+7 912 880-44-17", prize: "Apple Watch SE", rarity: "legend", kind: "physical", date: "2026-08-09T20:11:00Z" },
-  { id: "w7", nick: "yulya_t", phone: "+7 926 331-90-88", prize: "Промокод 20%", rarity: "epic", kind: "digital", date: "2026-08-09T18:50:00Z" },
-  { id: "w8", nick: "grisha_77", phone: "+7 903 119-55-02", prize: "1 билет", rarity: "common", kind: "digital", date: "2026-08-09T17:22:00Z" },
-  { id: "w9", nick: "andrey_k", phone: "+7 958 220-13-66", prize: "Hell Pass Silver", rarity: "legend", kind: "digital", date: "2026-08-09T16:00:00Z" },
-  { id: "w10", nick: "marina_s", phone: "+7 977 442-08-31", prize: "250 XP", rarity: "common", kind: "digital", date: "2026-08-09T14:44:00Z" },
-  { id: "w11", nick: "kostya_drift", phone: "+7 910 667-23-89", prize: "PlayStation 5 Slim", rarity: "legend", kind: "physical", date: "2026-08-08T19:30:00Z" },
-  { id: "w12", nick: "dashka_v", phone: "+7 914 228-76-15", prize: "Носки (майлстоун 10)", rarity: "rare", kind: "physical", date: "2026-08-08T17:12:00Z" },
-];
-
-const MOCK_STATS = {
-  spinsToday: 342,
-  spinsSeason: 4_810,
-  uniquePlayers: 312,
-  physicalPending: 6,
-};
-
-/* Награды за активность (календарь 10/20/30) — их надо доставлять руками */
-type ShipStatus = "pending" | "contacted" | "shipped" | "delivered";
-
-type MilestoneClaim = {
-  id: string;
-  nick: string;
-  phone: string;
-  city: string;
-  day: 10 | 20 | 30;
-  reward: string;
-  claimedAt: string;
-  status: ShipStatus;
-};
-
-const SHIP_LABEL: Record<ShipStatus, string> = {
+const SHIP_LABEL: Record<SpinShipStatus, string> = {
   pending: "Не связались",
   contacted: "Связались",
   shipped: "Отправлено",
   delivered: "Получено",
 };
 
-const SHIP_TONE: Record<ShipStatus, "zinc" | "emerald" | "amber" | "rose" | "blue" | "violet"> = {
+const SHIP_TONE: Record<SpinShipStatus, "zinc" | "emerald" | "amber" | "rose" | "blue" | "violet"> = {
   pending: "rose",
   contacted: "amber",
   shipped: "blue",
   delivered: "emerald",
 };
 
-const MOCK_MILESTONES: MilestoneClaim[] = [
-  { id: "m1", nick: "katya_mx", phone: "+7 916 772-04-51", city: "Москва", day: 10, reward: "Носки", claimedAt: "2026-08-10T16:10:00Z", status: "pending" },
-  { id: "m2", nick: "dashka_v", phone: "+7 914 228-76-15", city: "Казань", day: 10, reward: "Носки", claimedAt: "2026-08-08T17:12:00Z", status: "contacted" },
-  { id: "m3", nick: "nikitaZ", phone: "+7 999 224-67-90", city: "СПб", day: 20, reward: "Silver + носки + 5 билетов", claimedAt: "2026-08-07T12:44:00Z", status: "shipped" },
-  { id: "m4", nick: "kostya_drift", phone: "+7 910 667-23-89", city: "Екатеринбург", day: 30, reward: "Gold + носки + ремувка + 20 билетов", claimedAt: "2026-08-05T09:20:00Z", status: "delivered" },
-];
+const SHIP_FLOW: SpinShipStatus[] = ["pending", "contacted", "shipped", "delivered"];
 
-const SEASON_INFO = {
-  label: "Сезон 1",
-
-  startsAt: "11 авг 2026",
-  endsAt: "10 сен 2026",
-  days: 30,
-  tiers: [
-    { name: "Без Pass", spins: 1 },
-    { name: "Silver", spins: 2 },
-    { name: "Gold", spins: 4 },
-    { name: "Platinum", spins: 7 },
-  ],
+const TIER_LABEL: Record<string, string> = {
+  none: "Без Pass",
+  silver: "Silver",
+  gold: "Gold",
+  platinum: "Platinum",
 };
-
-/* ----------------- Хелперы ----------------- */
 
 function fmtDate(iso: string): string {
   return new Date(iso).toLocaleString("ru-RU", {
@@ -146,38 +90,53 @@ function fmtDate(iso: string): string {
   });
 }
 
-function fmt(n: number): React.ReactNode {
+function fmtDay(iso: string): string {
+  return new Date(iso).toLocaleDateString("ru-RU", { day: "numeric", month: "short", year: "numeric" });
+}
+
+function fmt(n: number): string {
   return n.toLocaleString("ru-RU");
 }
 
-/* ----------------- Страница ----------------- */
-
 function SpinAdminPage() {
-  const [filter, setFilter] = useState<"all" | "physical" | "digital">("all");
-  const [claims, setClaims] = useState<MilestoneClaim[]>(MOCK_MILESTONES);
+  const qc = useQueryClient();
+  const [source, setSource] = useState<"all" | "spin" | "streak">("all");
 
-  const setClaimStatus = (id: string, status: ShipStatus) =>
-    setClaims((prev) => prev.map((c) => (c.id === id ? { ...c, status } : c)));
+  const overview = useQuery({ queryKey: adminSpinQk.overview, queryFn: fetchAdminSpinOverview });
+  const winners = useQuery({
+    queryKey: adminSpinQk.winners(source),
+    queryFn: () => fetchAdminSpinWinners(source),
+  });
+  const streaks = useQuery({ queryKey: adminSpinQk.streaks, queryFn: fetchAdminSpinStreaks });
 
+  const patchWinner = useMutation({
+    mutationFn: ({ id, status }: { id: string; status: SpinShipStatus }) =>
+      updateAdminSpinWinner(id, { status }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin", "spin"] });
+    },
+  });
 
-  const winners = useMemo(() => {
-    const list = filter === "all" ? MOCK_WINNERS : MOCK_WINNERS.filter((w) => w.kind === filter);
-    return [...list].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  }, [filter]);
+  const stats = overview.data?.stats;
+  const season = overview.data?.season;
+  const spinsPerDay = overview.data?.spinsPerDay ?? {};
+  const winnerRows = winners.data ?? [];
 
-  const filters: { key: typeof filter; label: string; count: number }[] = [
-    { key: "all", label: "Все", count: MOCK_WINNERS.length },
-    { key: "physical", label: "Физические", count: MOCK_WINNERS.filter((w) => w.kind === "physical").length },
-    { key: "digital", label: "Цифровые", count: MOCK_WINNERS.filter((w) => w.kind === "digital").length },
+  const refreshAll = () => qc.invalidateQueries({ queryKey: ["admin", "spin"] });
+
+  const filters: { key: typeof source; label: string }[] = [
+    { key: "all", label: "Все" },
+    { key: "spin", label: "Из рулетки" },
+    { key: "streak", label: "Календарь" },
   ];
 
   return (
     <div>
       <PageHeader
         title="HellSpin"
-        description="Статистика прокрутов и победители. Пул призов и логика — в коде."
+        description="Статистика прокрутов и победители. Пул призов и логика — в коде бэкенда."
         actions={
-          <Btn variant="secondary" onClick={() => { /* мок — бэкенд ещё нет */ }}>
+          <Btn variant="secondary" onClick={refreshAll}>
             <RefreshCw className="h-3.5 w-3.5" /> Обновить
           </Btn>
         }
@@ -185,159 +144,202 @@ function SpinAdminPage() {
 
       {/* KPI */}
       <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <KpiCard label="Спинов сегодня" value={fmt(MOCK_STATS.spinsToday)} icon={PlumpSpin} />
-        <KpiCard label="За сезон" value={fmt(MOCK_STATS.spinsSeason)} icon={TrendingUp} />
-        <KpiCard label="Крутят" value={fmt(MOCK_STATS.uniquePlayers)} icon={Users} hint="уник. игроков" />
+        <KpiCard label="Спинов сегодня" value={stats ? fmt(stats.spinsToday) : "—"} icon={PlumpSpin} />
+        <KpiCard label="За сезон" value={stats ? fmt(stats.spins) : "—"} icon={TrendingUp} />
+        <KpiCard label="Крутят" value={stats ? fmt(stats.players) : "—"} icon={Users} hint="уник. игроков" />
         <KpiCard
           label="Ждут доставки"
-          value={fmt(MOCK_STATS.physicalPending)}
+          value={stats ? fmt(stats.pendingShipments) : "—"}
           icon={Package}
           tone="amber"
         />
       </div>
 
-      {/* Победители */}
+      {/* Победители (физика + календарь) */}
       <Panel className="mb-6">
         <PanelHeader>
           <div className="flex items-center gap-2">
             <Trophy className="h-4 w-4 text-zinc-500 dark:text-zinc-400" />
-            <span className="text-sm font-semibold">Победители</span>
+            <span className="text-sm font-semibold">Призы на доставку</span>
           </div>
           <div className="flex gap-1.5">
             {filters.map((f) => (
               <button
                 key={f.key}
                 type="button"
-                onClick={() => setFilter(f.key)}
+                onClick={() => setSource(f.key)}
                 className={cn(
                   "rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
-                  filter === f.key
+                  source === f.key
                     ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
                     : "text-zinc-500 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800",
                 )}
               >
-                {f.label} <span className="opacity-60">{f.count}</span>
+                {f.label}
               </button>
             ))}
           </div>
         </PanelHeader>
 
         <DataTable
-          headers={["Игрок", "Приз", "Редкость", "Тип", "Телефон", "Дата"]}
-          rows={winners.map((w) => [
-            <span className="font-medium">{w.nick}</span>,
-            <span>{w.prize}</span>,
-            <Badge tone={RARITY_TONE[w.rarity]}>{RARITY_LABEL[w.rarity]}</Badge>,
-            w.kind === "physical" ? (
-              <Badge tone="amber">📦 Физический</Badge>
+          headers={["Игрок", "Приз", "Источник", "Город", "Телефон", "Статус", "Дата", ""]}
+          rows={winnerRows.map((w) => [
+            <span className="font-medium">{w.nick ?? "—"}</span>,
+            <span>{w.prizeTitle}</span>,
+            w.source === "streak" ? (
+              <Badge tone="blue">Календарь</Badge>
             ) : (
-              <Badge tone="blue">⚡ Цифровой</Badge>
+              <Badge tone="violet">Рулетка</Badge>
             ),
+            <span className="text-xs">{w.city ?? "—"}</span>,
             <span className="inline-flex items-center gap-1 font-mono text-xs">
               <Phone className="h-3 w-3 text-zinc-400" />
-              {w.phone}
+              {w.phone ?? "—"}
             </span>,
-            <span className="text-xs text-zinc-500 dark:text-zinc-400">{fmtDate(w.date)}</span>,
+            <Badge tone={SHIP_TONE[w.status]}>{SHIP_LABEL[w.status]}</Badge>,
+            <span className="text-xs text-zinc-500 dark:text-zinc-400">{fmtDate(w.createdAt)}</span>,
+            <select
+              value={w.status}
+              disabled={patchWinner.isPending}
+              onChange={(e) =>
+                patchWinner.mutate({ id: w.id, status: e.target.value as SpinShipStatus })
+              }
+              className="rounded-md border border-zinc-200 bg-white px-2 py-1 text-xs dark:border-zinc-700 dark:bg-zinc-900"
+            >
+              {SHIP_FLOW.map((s) => (
+                <option key={s} value={s}>
+                  {SHIP_LABEL[s]}
+                </option>
+              ))}
+            </select>,
           ])}
         />
 
-        {winners.length === 0 && (
+        {winners.isLoading && (
+          <div className="px-4 py-8 text-center text-sm text-zinc-500 dark:text-zinc-400">Загрузка…</div>
+        )}
+        {!winners.isLoading && winnerRows.length === 0 && (
           <div className="px-4 py-8 text-center text-sm text-zinc-500 dark:text-zinc-400">
-            Нет победителей в этом фильтре
+            Нет призов в этом фильтре
           </div>
         )}
       </Panel>
 
-      {/* Награды за активность (календарь) */}
+      {/* Последние прокруты */}
+      <Panel className="mb-6">
+        <PanelHeader>
+          <div className="flex items-center gap-2">
+            <PlumpSpin className="h-4 w-4 text-zinc-500 dark:text-zinc-400" />
+            <span className="text-sm font-semibold">Последние прокруты</span>
+          </div>
+        </PanelHeader>
+        <DataTable
+          headers={["Игрок", "Приз", "Редкость", "Тир", "Дата"]}
+          rows={(overview.data?.recent ?? []).map((r) => [
+            <span className="font-medium">{r.nick ?? "—"}</span>,
+            <span>
+              {r.prizeTitle}
+              {r.bonus && <span className="ml-1 text-xs text-zinc-400">бонус-спин</span>}
+            </span>,
+            <Badge tone={RARITY_TONE[r.rarity]}>{RARITY_LABEL[r.rarity]}</Badge>,
+            <span className="text-xs">{TIER_LABEL[r.tier] ?? r.tier}</span>,
+            <span className="text-xs text-zinc-500 dark:text-zinc-400">{fmtDate(r.createdAt)}</span>,
+          ])}
+        />
+        {!overview.isLoading && (overview.data?.recent ?? []).length === 0 && (
+          <div className="px-4 py-8 text-center text-sm text-zinc-500 dark:text-zinc-400">
+            Прокрутов пока нет
+          </div>
+        )}
+      </Panel>
+
+      {/* Пул призов */}
+      <Panel className="mb-6">
+        <PanelHeader>
+          <span className="text-sm font-semibold">Пул призов сезона</span>
+        </PanelHeader>
+        <DataTable
+          headers={["Приз", "Редкость", "Шанс", "Выдано", "Лимит"]}
+          rows={(overview.data?.prizes ?? []).map((p) => [
+            <span className="font-medium">{p.title}</span>,
+            <Badge tone={RARITY_TONE[p.rarity]}>{RARITY_LABEL[p.rarity]}</Badge>,
+            <span className="font-mono text-xs">{(p.chancePpm / 10000).toFixed(3)}%</span>,
+            <span className="font-mono text-xs">{fmt(p.issued)}</span>,
+            <span className="font-mono text-xs">{p.limitTotal == null ? "∞" : fmt(p.limitTotal)}</span>,
+          ])}
+        />
+      </Panel>
+
+      {/* Календарь активности */}
       <Panel className="mb-6">
         <PanelHeader>
           <div className="flex items-center gap-2">
             <CalendarCheck className="h-4 w-4 text-zinc-500 dark:text-zinc-400" />
-            <span className="text-sm font-semibold">Награды за активность</span>
+            <span className="text-sm font-semibold">Календарь активности</span>
           </div>
-          <Badge tone="amber">
-            {claims.filter((c) => c.status === "pending").length} ждут связи
-          </Badge>
         </PanelHeader>
-
         <DataTable
-          headers={["Игрок", "День", "Награда", "Город", "Телефон", "Забрал", "Статус", ""]}
-          rows={claims
-            .slice()
-            .sort((a, b) => new Date(b.claimedAt).getTime() - new Date(a.claimedAt).getTime())
-            .map((c) => [
-              <span className="font-medium">{c.nick}</span>,
-              <Badge tone="violet">{c.day}/30</Badge>,
-              <span className="text-sm">{c.reward}</span>,
-              <span className="text-xs text-zinc-500 dark:text-zinc-400">{c.city}</span>,
-              <a
-                href={`tel:${c.phone.replace(/[^+\d]/g, "")}`}
-                className="inline-flex items-center gap-1 font-mono text-xs hover:underline"
-              >
-                <Phone className="h-3 w-3 text-zinc-400" />
-                {c.phone}
-              </a>,
-              <span className="text-xs text-zinc-500 dark:text-zinc-400">{fmtDate(c.claimedAt)}</span>,
-              <Badge tone={SHIP_TONE[c.status]}>{SHIP_LABEL[c.status]}</Badge>,
-              <select
-                value={c.status}
-                onChange={(e) => setClaimStatus(c.id, e.target.value as ShipStatus)}
-                className="rounded-md border border-zinc-200 bg-white px-2 py-1 text-xs dark:border-zinc-700 dark:bg-zinc-900"
-              >
-                {(Object.keys(SHIP_LABEL) as ShipStatus[]).map((s) => (
-                  <option key={s} value={s}>
-                    {SHIP_LABEL[s]}
-                  </option>
-                ))}
-              </select>,
-            ])}
+          headers={["Игрок", "Город", "Телефон", "Дней", "10", "20", "30"]}
+          rows={(streaks.data ?? []).map((s) => [
+            <span className="font-medium">{s.nick ?? "—"}</span>,
+            <span className="text-xs">{s.city ?? "—"}</span>,
+            <span className="font-mono text-xs">{s.phone ?? "—"}</span>,
+            <span className="font-mono text-sm font-semibold">{s.daysCount}</span>,
+            <ClaimCell at={s.claimed10At} />,
+            <ClaimCell at={s.claimed20At} />,
+            <ClaimCell at={s.claimed30At} />,
+          ])}
         />
-
-        {claims.length === 0 && (
+        {!streaks.isLoading && (streaks.data ?? []).length === 0 && (
           <div className="px-4 py-8 text-center text-sm text-zinc-500 dark:text-zinc-400">
-            Пока никто не дошёл до вех календаря
+            Пока никто не крутил в этом сезоне
           </div>
         )}
       </Panel>
 
-
       {/* Сезон */}
       <Panel>
-          <PanelHeader>
-            <span className="text-sm font-semibold">Текущий сезон</span>
-            <Badge tone="emerald">Активен</Badge>
-          </PanelHeader>
-          <div className="space-y-4 p-4">
-            <div className="flex items-baseline justify-between">
-              <span className="text-sm text-zinc-500 dark:text-zinc-400">Период</span>
-              <span className="text-sm font-medium">
-                {SEASON_INFO.startsAt} → {SEASON_INFO.endsAt}
-              </span>
-            </div>
-            <div className="flex items-baseline justify-between">
-              <span className="text-sm text-zinc-500 dark:text-zinc-400">Длительность</span>
-              <span className="text-sm font-medium">{SEASON_INFO.days} дней</span>
-            </div>
-            <div className="border-t border-zinc-200 pt-3 dark:border-zinc-800">
-              <p className="mb-2 text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                Спинов в день по тирам
-              </p>
-              <div className="space-y-1.5">
-                {SEASON_INFO.tiers.map((t) => (
-                  <div key={t.name} className="flex items-center justify-between rounded-md bg-zinc-50 px-3 py-2 dark:bg-zinc-800/50">
-                    <span className="text-sm">{t.name}</span>
-                    <span className="font-mono text-sm font-semibold">{t.spins}</span>
-                  </div>
-                ))}
-              </div>
+        <PanelHeader>
+          <span className="text-sm font-semibold">Текущий сезон</span>
+          <Badge tone="emerald">{season?.periodKey ?? "—"}</Badge>
+        </PanelHeader>
+        <div className="space-y-4 p-4">
+          <div className="flex items-baseline justify-between">
+            <span className="text-sm text-zinc-500 dark:text-zinc-400">Период</span>
+            <span className="text-sm font-medium">
+              {season ? `${fmtDay(season.startsAt)} → ${fmtDay(season.endsAt)}` : "—"}
+            </span>
+          </div>
+          <div className="flex items-baseline justify-between">
+            <span className="text-sm text-zinc-500 dark:text-zinc-400">Длительность</span>
+            <span className="text-sm font-medium">{season ? `${season.daysTotal} дней` : "—"}</span>
+          </div>
+          <div className="border-t border-zinc-200 pt-3 dark:border-zinc-800">
+            <p className="mb-2 text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+              Спинов в день по тирам
+            </p>
+            <div className="space-y-1.5">
+              {Object.entries(spinsPerDay).map(([tier, spins]) => (
+                <div
+                  key={tier}
+                  className="flex items-center justify-between rounded-md bg-zinc-50 px-3 py-2 dark:bg-zinc-800/50"
+                >
+                  <span className="text-sm">{TIER_LABEL[tier] ?? tier}</span>
+                  <span className="font-mono text-sm font-semibold">{spins}</span>
+                </div>
+              ))}
             </div>
           </div>
-        </Panel>
+        </div>
+      </Panel>
     </div>
   );
 }
 
-/* ----------------- KPI карточка ----------------- */
+function ClaimCell({ at }: { at: string | null }) {
+  if (!at) return <span className="text-xs text-zinc-400">—</span>;
+  return <Badge tone="emerald">{fmtDate(at)}</Badge>;
+}
 
 function KpiCard({
   label,

@@ -8,6 +8,7 @@ import { users } from "../db/schema/users.js";
 import { requireAuth, requireAdmin, type SessionPayload } from "../lib/auth.js";
 import {
   SpinError,
+  SPINS_PER_DAY,
   claimStreakMilestone,
   ensureCurrentSeason,
   getSpinState,
@@ -70,9 +71,15 @@ export async function adminSpinRoutes(app: FastifyInstance) {
       .select({
         spins: sql<number>`count(*)::int`,
         players: sql<number>`count(distinct ${spinSpins.userId})::int`,
+        spinsToday: sql<number>`count(*) filter (where ${spinSpins.spinDate} = (now() at time zone 'Europe/Moscow')::date)::int`,
       })
       .from(spinSpins)
       .where(eq(spinSpins.seasonId, season.id));
+
+    const [pending] = await db
+      .select({ c: sql<number>`count(*)::int` })
+      .from(spinWinners)
+      .where(and(eq(spinWinners.seasonId, season.id), eq(spinWinners.status, "pending")));
 
     const byPrize = await db
       .select({
@@ -83,6 +90,25 @@ export async function adminSpinRoutes(app: FastifyInstance) {
       .where(eq(spinSpins.seasonId, season.id))
       .groupBy(spinSpins.prizeCode);
 
+    // Последние прокруты (включая цифровые призы) — для ленты в админке.
+    const recent = await db
+      .select({
+        id: spinSpins.id,
+        nick: users.nick,
+        prizeCode: spinSpins.prizeCode,
+        rarity: spinSpins.rarity,
+        tier: spinSpins.tier,
+        bonus: spinSpins.bonus,
+        createdAt: spinSpins.createdAt,
+      })
+      .from(spinSpins)
+      .leftJoin(users, eq(users.id, spinSpins.userId))
+      .where(eq(spinSpins.seasonId, season.id))
+      .orderBy(desc(spinSpins.createdAt))
+      .limit(50);
+
+    const prizeTitle = new Map(prizes.map((p) => [p.code, p.title]));
+
     return {
       season: {
         periodKey: season.periodKey,
@@ -90,7 +116,13 @@ export async function adminSpinRoutes(app: FastifyInstance) {
         endsAt: season.endsAt.toISOString(),
         daysTotal: season.daysTotal,
       },
-      stats: { spins: stats?.spins ?? 0, players: stats?.players ?? 0 },
+      stats: {
+        spins: stats?.spins ?? 0,
+        players: stats?.players ?? 0,
+        spinsToday: stats?.spinsToday ?? 0,
+        pendingShipments: pending?.c ?? 0,
+      },
+      spinsPerDay: SPINS_PER_DAY,
       prizes: prizes.map((p) => ({
         code: p.code,
         title: p.title,
@@ -102,6 +134,11 @@ export async function adminSpinRoutes(app: FastifyInstance) {
         active: p.active,
       })),
       byPrize,
+      recent: recent.map((r) => ({
+        ...r,
+        prizeTitle: prizeTitle.get(r.prizeCode) ?? r.prizeCode,
+        createdAt: r.createdAt.toISOString(),
+      })),
     };
   });
 
