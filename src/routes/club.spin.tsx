@@ -37,7 +37,10 @@ type Prize = {
   sub?: string;
   rarity: Rarity;
   img?: string;
+  /** Фото товара кропаем по кругу, 3D-рендеры вписываем целиком. */
+  fit?: "cover" | "contain";
 };
+
 
 // Цвета редкости — плашки из школы: 03 циан → 04 лайм → 06 магента → 08 золото.
 const RARITY: Record<Rarity, { ring: string; glow: string; label: string; chip: string }> = {
