@@ -528,6 +528,7 @@ function SpinPage() {
 
       <WinModal
         prize={won}
+        promoCode={wonPromo}
         open={!!won && !spinning}
         onClose={() => setWon(null)}
       />
