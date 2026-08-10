@@ -1,13 +1,15 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { ChevronDown } from "lucide-react";
 import { PageHeader } from "@/components/club/PageHeader";
-import { PlumpSpin } from "@/components/ui/icons";
+import { PlumpSpin, PlumpHelp, PlumpArrowRight as ChevronRight } from "@/components/ui/icons";
 import { PlumpNum } from "@/components/brand/PlumpNum";
 import { haptic } from "@/hooks/use-haptic";
 import { playWin, playClick, playTick } from "@/lib/roller-sfx";
 import silverBadge from "@/assets/hellpass/tpl-silver.png";
 import goldBadge from "@/assets/hellpass/tpl-gold.png";
+import platinumBadge from "@/assets/hellpass/tpl-platinum.png";
 import imgAirpods from "@/assets/spin/airpods.png";
 import imgWatch from "@/assets/spin/watch.png";
 import imgPs5 from "@/assets/spin/ps5.png";
@@ -689,5 +691,174 @@ function WinModal({
       </div>
     </div>,
     document.body,
+  );
+}
+
+/* ---------------- Как это работает ---------------- */
+
+function HowItWorks() {
+  const [open, setOpen] = useState(false);
+
+  const tiers: { name: string; spins: number; badge: string | null; vip?: boolean }[] = [
+    { name: "Без Pass", spins: 1, badge: null },
+    { name: "Silver", spins: 2, badge: silverBadge },
+    { name: "Gold", spins: 4, badge: goldBadge },
+    { name: "Platinum", spins: 7, badge: platinumBadge, vip: true },
+  ];
+
+  return (
+    <section aria-label="Как это работает" className="mb-5 overflow-hidden rounded-3xl bg-card">
+      <button
+        type="button"
+        onClick={() => {
+          haptic("selection");
+          setOpen((v) => !v);
+        }}
+        className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors active:bg-white/[0.03]"
+      >
+        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#C6A8FF]">
+          <PlumpHelp className="h-5 w-5 text-black" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block font-display text-[15px] font-black uppercase tracking-tight text-foreground">
+            Как это работает
+          </span>
+          <span className="block font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+            Сезон 11 авг — 10 сен · 30 дней
+          </span>
+        </span>
+        <ChevronDown
+          className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-300 ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+
+      <div
+        className="grid transition-all duration-300 ease-out"
+        style={{ gridTemplateRows: open ? "1fr" : "0fr" }}
+      >
+        <div className="overflow-hidden">
+          <div className="space-y-5 px-4 pb-5">
+            {/* Сезон */}
+            <div>
+              <h3 className="mb-1.5 font-display text-[13px] font-black uppercase tracking-tight text-foreground">
+                Сезон HellSpin
+              </h3>
+              <p className="text-[13px] leading-relaxed text-muted-foreground">
+                <span className="text-foreground">11 августа → 10 сентября.</span>{" "}
+                30 дней, каждый день — новая пачка спинов. Не крутанул сегодня — завтра обнулилось.
+              </p>
+            </div>
+
+            {/* Призы гарантированы */}
+            <div>
+              <h3 className="mb-2 font-display text-[13px] font-black uppercase tracking-tight text-foreground">
+                Призы гарантированы
+              </h3>
+              <p className="mb-3 text-[13px] leading-relaxed text-muted-foreground">
+                Призы не «могут выпасть» — они{" "}
+                <span className="text-foreground">найдут владельцев</span> за 30 дней:
+              </p>
+              <div className="grid grid-cols-3 gap-2">
+                <GuaranteedCard img={imgAirpods} value="3" label="джекпота" />
+                <GuaranteedCard img={REMOVKA_IMG} value="240" label="ремовок" fit="cover" />
+                <GuaranteedCard img={silverBadge} value="60" label="Silver" />
+              </div>
+              <p className="mt-2.5 text-[12px] leading-relaxed text-muted-foreground">
+                AirPods 4 · Apple Watch SE · PlayStation 5 Slim — разыгрываются по очереди.
+              </p>
+            </div>
+
+            {/* Больше спинов */}
+            <div>
+              <h3 className="mb-1.5 font-display text-[13px] font-black uppercase tracking-tight text-foreground">
+                Больше спинов — больше шанс
+              </h3>
+              <p className="mb-3 text-[13px] leading-relaxed text-muted-foreground">
+                Каждый спин — шанс забрать приз. Чем выше тир Hell Pass — тем больше выстрелов в день.
+              </p>
+              <div className="space-y-1.5">
+                {tiers.map((t) => (
+                  <div
+                    key={t.name}
+                    className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 ${
+                      t.vip
+                        ? "bg-[#F000C0]/10 ring-1 ring-inset ring-[#F000C0]/30"
+                        : "bg-black/30"
+                    }`}
+                  >
+                    <span className="grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-full bg-white/[0.06]">
+                      {t.badge ? (
+                        <img
+                          src={t.badge}
+                          alt=""
+                          loading="lazy"
+                          className="h-full w-full object-contain p-0.5"
+                        />
+                      ) : (
+                        <span className="h-2.5 w-2.5 rounded-full bg-white/30" />
+                      )}
+                    </span>
+                    <span className="min-w-0 flex-1 text-[14px] font-semibold text-foreground">
+                      {t.name}
+                    </span>
+                    <span className="flex items-baseline gap-1">
+                      <PlumpNum value={t.spins} size={18} />
+                      <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                        /день
+                      </span>
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <p className="mt-2.5 text-[12px] leading-relaxed text-muted-foreground">
+                Platinum даёт{" "}
+                <span className="text-[#F000C0]">×1.5 к шансу на джекпот</span> — кумулятивно ~50×
+                преимущества против бесплатного тира.
+              </p>
+            </div>
+
+            {/* CTA */}
+            <Link
+              to="/club/hell-pass"
+              className="flex items-center justify-center gap-2 rounded-2xl bg-[#B6FF3C] py-3.5 font-display text-[15px] font-black uppercase tracking-tight text-black shadow-[0_10px_30px_-12px_#B6FF3C] transition-transform active:scale-[0.97]"
+            >
+              Получить больше спинов
+              <ChevronRight className="h-4 w-4" />
+            </Link>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function GuaranteedCard({
+  img,
+  value,
+  label,
+  fit = "contain",
+}: {
+  img: string;
+  value: string;
+  label: string;
+  fit?: "cover" | "contain";
+}) {
+  return (
+    <div className="flex flex-col items-center rounded-2xl bg-black/30 px-2 py-3 text-center">
+      <span className="grid h-10 w-10 place-items-center overflow-hidden rounded-full bg-white/[0.06]">
+        <img
+          src={img}
+          alt=""
+          loading="lazy"
+          className={`h-full w-full ${fit === "cover" ? "object-cover" : "object-contain p-1"}`}
+        />
+      </span>
+      <span className="mt-1.5 font-display text-[18px] font-black leading-none text-foreground">
+        {value}
+      </span>
+      <span className="mt-0.5 font-mono text-[9px] uppercase tracking-widest text-muted-foreground">
+        {label}
+      </span>
+    </div>
   );
 }
