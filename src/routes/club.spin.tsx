@@ -207,8 +207,9 @@ function SpinPage() {
   const [claiming, setClaiming] = useState<number | null>(null);
 
   const access = useSpinAccess();
-  // Замок ставим по локальным признакам (PWA + push) — сервер проверяет то же самое.
-  const locked = !access.granted;
+  // Локально видим PWA + push, телефон проверяет сервер — блокируем по обоим сигналам.
+  const phoneMissing = state ? !state.access.phoneVerified : false;
+  const locked = !access.granted || phoneMissing;
   const spinsLeft = state?.spins.left ?? 0;
   const spinsAllowed = state?.spins.allowed ?? 0;
   const tier: SpinTier = state?.tier ?? "none";
