@@ -523,18 +523,18 @@ function StakePanel({
       </div>
 
       {/* Stepper */}
-      <div className="mt-3 flex items-center justify-between gap-3 rounded-2xl border-[3px] border-foreground bg-background/60 p-2">
+      <div className="mt-2 flex items-center justify-between gap-3 rounded-2xl border-[3px] border-foreground bg-background/60 p-1.5">
         <StepBtn onClick={() => onStakeChange(stake - 1)} disabled={stake <= 0}>
-          <Minus className="h-5 w-5" strokeWidth={3} />
+          <Minus className="h-4 w-4" strokeWidth={3} />
         </StepBtn>
         <div
           key={`bump-${stakeBump}`}
           className="flex flex-1 justify-center text-foreground animate-scale-in"
         >
-          <PlumpNum value={stake} size={40} />
+          <PlumpNum value={stake} size={32} />
         </div>
         <StepBtn onClick={() => onStakeChange(stake + 1)} disabled={stake >= maxStake}>
-          <Plus className="h-5 w-5" strokeWidth={3} />
+          <Plus className="h-4 w-4" strokeWidth={3} />
         </StepBtn>
       </div>
 
