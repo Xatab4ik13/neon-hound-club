@@ -42,6 +42,7 @@ function buildGroups(
       title: "Клуб",
       items: [
         { label: "Hell Pass", href: "/club/hell-pass", icon: PlumpDiamond, subtitle: "Подписка клуба" },
+        { label: "Гараж", href: "/club/garage", icon: PlumpGarage, subtitle: "Твой мото" },
         { label: "Розыгрыши", href: "/club/raffles", icon: PlumpGift },
         { label: "Hell AI", href: "/club/hell-ai", icon: PlumpAI, subtitle: "AI-механик по твоему мото" },
         ...(isInstructor
@@ -72,17 +73,6 @@ function buildGroups(
       ],
     },
   ];
-
-  if (isInstructor) {
-    // В инструкторском режиме «Гараж» заменён в таб-баре на «Школа» —
-    // возвращаем гараж в шит, чтобы к нему был доступ.
-    groups[1].items.unshift({
-      label: "Гараж",
-      href: "/club/garage",
-      icon: PlumpGarage,
-      subtitle: "Твой мото",
-    });
-  }
 
   groups.push({
     title: "Поддержка",
