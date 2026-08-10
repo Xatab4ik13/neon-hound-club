@@ -308,12 +308,16 @@ function SpinPage() {
         <ul className="space-y-2">
           {CALENDAR.map((c) => (
             <li key={c.day} className="flex items-center gap-3 rounded-2xl bg-black/30 px-3 py-2.5">
-              <span className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-2xl bg-white/[0.06]">
+              <span className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full bg-white/[0.06]">
                 <img
                   src={MILESTONE_IMG[c.day]}
                   alt={c.title}
                   loading="lazy"
-                  className="h-full w-full object-contain p-1"
+                  className={`h-full w-full ${
+                    (MILESTONE_FIT[c.day] ?? "contain") === "cover"
+                      ? "scale-[1.15] object-cover"
+                      : "object-contain p-1"
+                  }`}
                 />
               </span>
 
