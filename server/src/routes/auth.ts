@@ -19,6 +19,7 @@ import {
 } from "../lib/auth.js";
 import { sendMail } from "../lib/mailer.js";
 import { verifyEmailTemplate } from "../lib/email-templates/verify.js";
+import { resetPasswordTemplate } from "../lib/email-templates/reset-password.js";
 import { tryCompleteQuest } from "../lib/quests.js";
 import { attachReferral, activateReferral, getOrCreateReferralCode } from "../lib/referrals.js";
 import { awardXp } from "../lib/xp.js";
@@ -293,6 +294,41 @@ export async function authRoutes(app: FastifyInstance) {
     }
     return reply.send({ ok: true, mailDelivered });
   });
+
+  // Сброс пароля по email: шлём ссылку с коротким jwt (scope=password_reset).
+  // Дальше фронт вызывает /recovery/reset-password с этим же токеном.
+  app.post("/recovery/email/send-link", async (req, reply) => {
+    const parsed = resendSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return reply.code(400).send({ error: "invalid_input", message: "Неверный email" });
+    }
+    const { email } = parsed.data;
+
+    // anti-enumeration: всегда ok, независимо от наличия юзера.
+    const [u] = await db
+      .select({ id: users.id, email: users.email, nick: users.nick })
+      .from(users)
+      .where(eq(users.email, email))
+      .limit(1);
+
+    let mailDelivered = true;
+    if (u) {
+      try {
+        const token = await reply.jwtSign(
+          { sub: u.id, scope: "password_reset" },
+          { expiresIn: "30m" },
+        );
+        const resetUrl = `${frontendBase()}/reset-password?token=${encodeURIComponent(token)}`;
+        const { subject, html, text } = resetPasswordTemplate({ nick: u.nick, resetUrl });
+        await sendMail({ to: u.email, subject, html, text });
+      } catch (err) {
+        req.log.error({ err }, "reset password mail failed");
+        mailDelivered = false;
+      }
+    }
+    return reply.send({ ok: true, mailDelivered });
+  });
+
 
   app.post("/logout", async (_req, reply) => {
     clearSessionCookie(reply);
