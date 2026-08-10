@@ -766,10 +766,10 @@ function HowItWorks() {
             {/* Больше спинов */}
             <div>
               <h3 className="mb-1.5 font-display text-[13px] font-black uppercase tracking-tight text-foreground">
-                Больше спинов — больше шанс
+                Больше спинов — больше шансов
               </h3>
               <p className="mb-3 text-[13px] leading-relaxed text-muted-foreground">
-                Каждый спин — шанс забрать приз. Чем выше тир Hell Pass — тем больше выстрелов в день.
+                Каждый спин — шанс забрать приз. Чем выше тир, тем больше выстрелов в день.
               </p>
               <div className="space-y-1.5">
                 {tiers.map((t) => (
