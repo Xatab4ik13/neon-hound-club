@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Check, PlumpBell, PlumpDownload, PlumpSpin } from "@/components/ui/icons";
 import { hhToast as toast } from "@/lib/hh-toast";
 import { haptic } from "@/hooks/use-haptic";
+import { useInstallPrompt } from "@/hooks/use-install-prompt";
 import type { SpinAccess } from "@/hooks/use-spin-access";
 
 /**
@@ -11,6 +12,7 @@ import type { SpinAccess } from "@/hooks/use-spin-access";
  */
 export function SpinAccessGate({ access }: { access: SpinAccess }) {
   const [busy, setBusy] = useState(false);
+  const install = useInstallPrompt();
 
   async function enable() {
     haptic("selection");
@@ -23,6 +25,13 @@ export function SpinAccessGate({ access }: { access: SpinAccess }) {
       setBusy(false);
     }
   }
+
+  async function doInstall() {
+    haptic("selection");
+    const outcome = await install.promptInstall();
+    if (outcome === "dismissed") toast.error("Установка отменена");
+  }
+
 
   return (
     <section
