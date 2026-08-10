@@ -211,8 +211,7 @@ function SpinAdminPage() {
       </Panel>
 
       {/* Сезон */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Panel>
+      <Panel>
           <PanelHeader>
             <span className="text-sm font-semibold">Текущий сезон</span>
             <Badge tone="emerald">Активен</Badge>
