@@ -5,6 +5,8 @@ import { PlumpTicket, PlumpGift, PlumpDiamond, PlumpQuests } from "@/components/
 import { PlumpNum } from "@/components/brand/PlumpNum";
 import { haptic } from "@/hooks/use-haptic";
 import { playSpin, playWin, playClick } from "@/lib/roller-sfx";
+import silverBadge from "@/assets/hellpass/silver.png.asset.json";
+import goldBadge from "@/assets/hellpass/gold.png.asset.json";
 
 export const Route = createFileRoute("/club/spin")({
   head: () => ({
