@@ -53,11 +53,22 @@ const POOL: Prize[] = [
   { id: "ps5", title: "PlayStation 5 Slim", rarity: "legend" },
 ];
 
+// Картинки майлстоунов: носки — из каталога магазина, Silver/Gold — бейджи Hell Pass.
+const SOCKS_IMG =
+  "https://api.hhr.pro/media/shop/da0bcbf8-594f-43b3-a412-39a5905c1800/6bd9b090-727f-43ef-bac8-a0220dd583c4.png";
+
+const MILESTONE_IMG: Record<number, string> = {
+  10: SOCKS_IMG,
+  20: silverBadge.url,
+  30: goldBadge.url,
+};
+
 const CALENDAR = [
   { day: 10, title: "Носки", sub: "10 дней подряд" },
   { day: 20, title: "Silver + носки + 5 билетов", sub: "20 дней подряд" },
   { day: 30, title: "Gold + носки + ремувка + 20 билетов", sub: "30 дней подряд" },
 ];
+
 
 const ITEM_W = 104; // ширина карточки
 const GAP = 8;
