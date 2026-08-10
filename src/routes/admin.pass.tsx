@@ -196,6 +196,7 @@ function AdminPassPage() {
   const items = listQ.data?.items ?? [];
   const stats = statsQ.data;
   const bySource = stats?.activeBySource;
+  const rep = stats?.repeat;
 
   const rows = items.map((p) => {
     const dl = daysLeft(p.expiresAt);
@@ -524,6 +525,20 @@ function toneCls(tone?: "emerald" | "amber" | "violet" | "rose" | "blue") {
         blue: "text-blue-600 dark:text-blue-400",
       }[tone]
     : "text-zinc-900 dark:text-zinc-100";
+}
+
+function DistCell({ label, value, total }: { label: string; value: number; total: number }) {
+  const pct = total > 0 ? Math.round((value / total) * 100) : 0;
+  return (
+    <div className="rounded-xl bg-zinc-50 p-3 dark:bg-zinc-800/50">
+      <div className="text-[11px] text-zinc-500 dark:text-zinc-400">{label}</div>
+      <div className="font-display text-lg font-bold tabular-nums">{value}</div>
+      <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-700">
+        <div className="h-full rounded-full bg-emerald-500" style={{ width: `${pct}%` }} />
+      </div>
+      <div className="mt-1 text-[10px] text-zinc-400">{pct}%</div>
+    </div>
+  );
 }
 
 function KpiCard({
