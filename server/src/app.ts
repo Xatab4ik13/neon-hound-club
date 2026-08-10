@@ -188,6 +188,12 @@ export async function buildApp() {
   await app.register(bloggerVipChatRoutes, { prefix: "/api/v1/blogger/chats" });
   await app.register(adminVipChatRoutes, { prefix: "/api/v1/admin/vip-chat" });
 
+  // Промокоды магазина.
+  const { promoRoutes, adminPromoRoutes } = await import("./routes/promo.js");
+  await app.register(promoRoutes, { prefix: "/api/v1/promo" });
+  await app.register(adminPromoRoutes, { prefix: "/api/v1/admin/promo" });
+
+
   // Создаём S3-бакет, если его ещё нет.
   try {
     const { ensureBucket } = await import("./lib/s3.js");

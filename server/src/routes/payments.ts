@@ -121,7 +121,9 @@ const orderRedirectSchema = z.object({
   cdek_pvz_address: z.string().trim().max(500).optional(),
   shipping_mode: z.enum(["pvz", "courier", "none"]).optional(),
   comment: z.string().trim().max(1000).optional(),
+  promo_code: z.string().trim().max(32).optional(),
   method: z.enum(PAYMENT_METHODS).optional(),
+
 });
 
 // Оплата уже существующего заказа (со страницы /club/orders/$id).
@@ -279,13 +281,16 @@ export async function paymentsRoutes(app: FastifyInstance) {
             items,
             shipping: shippingInput,
             comment: parsed.data.comment,
+            promoCode: parsed.data.promo_code ?? null,
           }));
         } else {
           ({ orderId } = await createOrderFromCartForUser(session.sub, {
             shipping: shippingInput,
             comment: parsed.data.comment,
+            promoCode: parsed.data.promo_code ?? null,
           }));
         }
+
         const r = await createPaymentForOrder(orderId, session.sub, method);
         return replyOk(r.paymentUrl);
       } catch (e) {

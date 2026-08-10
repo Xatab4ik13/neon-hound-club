@@ -36,6 +36,13 @@ import {
 
 
 import { ApiError } from "@/lib/api";
+import {
+  adminCreatePromoCode,
+  adminDeletePromoCode,
+  adminListPromoCodes,
+  promoQk,
+} from "@/lib/promo-api";
+
 import { hhToast as toast } from "@/lib/hh-toast";
 
 export const Route = createFileRoute("/admin/users")({
@@ -371,6 +378,9 @@ function UserDrawer({
               <InfoRow label="—" value="нет активного" />
             )}
           </Section>
+
+          <UserPromoSection userId={userId} nick={u.nick} />
+
 
           <div className="flex flex-wrap gap-2">
             <Btn onClick={onGift}>
@@ -786,3 +796,130 @@ function StatPill({ label, value, total }: { label: string; value: number; total
   );
 }
 
+
+/**
+ * Промокоды пользователя: список + выдача персонального кода со своей скидкой и сроком.
+ * Скидка действует только на товары (не на доставку) и не суммируется с Hell Pass.
+ */
+function UserPromoSection({ userId, nick }: { userId: string; nick: string }) {
+  const qc = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const listQ = useQuery({
+    queryKey: promoQk.admin(userId),
+    queryFn: () => adminListPromoCodes(userId),
+  });
+
+  const [code, setCode] = useState("");
+  const [pct, setPct] = useState("10");
+  const [expires, setExpires] = useState("");
+
+  const createMut = useMutation({
+    mutationFn: () =>
+      adminCreatePromoCode({
+        code: code.trim() ? code.trim().toUpperCase() : undefined,
+        discountPct: Number(pct),
+        userId,
+        expiresAt: expires ? new Date(`${expires}T23:59:59`).toISOString() : null,
+      }),
+    onSuccess: (res) => {
+      toast.success(`Промокод ${res.promo.code} выдан @${nick}`);
+      setOpen(false);
+      setCode("");
+      void qc.invalidateQueries({ queryKey: ["admin", "promo"] });
+    },
+    onError: (e) => toast.error(e instanceof ApiError ? e.message : "Не удалось выдать промокод"),
+  });
+
+  const deleteMut = useMutation({
+    mutationFn: (id: string) => adminDeletePromoCode(id),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["admin", "promo"] });
+    },
+    onError: (e) => toast.error(e instanceof ApiError ? e.message : "Не удалось удалить"),
+  });
+
+  const items = listQ.data?.items ?? [];
+  const pctNum = Number(pct);
+  const valid = Number.isFinite(pctNum) && pctNum >= 1 && pctNum <= 100;
+
+  return (
+    <>
+      <Section title="Промокоды">
+        <div className="col-span-2 space-y-1.5">
+          {listQ.isLoading ? (
+            <div className="text-sm text-zinc-500">Загрузка…</div>
+          ) : items.length === 0 ? (
+            <div className="text-sm text-zinc-500">Персональных промокодов нет</div>
+          ) : (
+            items.map((p) => (
+              <div
+                key={p.id}
+                className="flex items-center justify-between gap-2 border-b border-zinc-100 py-1.5 text-sm dark:border-zinc-800/60"
+              >
+                <span className="font-mono font-semibold uppercase">{p.code}</span>
+                <span className="text-zinc-500">
+                  −{p.discountPct}% ·{" "}
+                  {p.usedAt
+                    ? "использован"
+                    : p.expired
+                      ? "истёк"
+                      : p.expiresAt
+                        ? `до ${new Date(p.expiresAt).toLocaleDateString("ru-RU")}`
+                        : "без срока"}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => deleteMut.mutate(p.id)}
+                  className="text-zinc-400 transition-colors hover:text-rose-500"
+                  aria-label="Удалить промокод"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+            ))
+          )}
+          <Btn onClick={() => setOpen(true)}>
+            <Gift className="h-4 w-4" /> Выдать промокод
+          </Btn>
+        </div>
+      </Section>
+
+      {open && (
+        <Modal open onClose={() => setOpen(false)} title={`Промокод для @${nick}`}>
+          <div className="space-y-3">
+            <Field label="Код" hint="Пусто — сгенерируем случайный">
+              <TextInput
+                value={code}
+                onChange={(e) => setCode(e.target.value.toUpperCase())}
+                placeholder="HELL10"
+                className="font-mono uppercase"
+              />
+            </Field>
+            <Field label="Скидка, %" hint="Только на товары, доставка без скидки">
+              <TextInput
+                type="number"
+                min={1}
+                max={100}
+                value={pct}
+                onChange={(e) => setPct(e.target.value)}
+              />
+            </Field>
+            <Field label="Действует до" hint="Пусто — без срока">
+              <TextInput type="date" value={expires} onChange={(e) => setExpires(e.target.value)} />
+            </Field>
+            <div className="flex justify-end gap-2 pt-1">
+              <Btn onClick={() => setOpen(false)}>Отмена</Btn>
+              <Btn
+                variant="primary"
+                disabled={!valid || createMut.isPending}
+                onClick={() => createMut.mutate()}
+              >
+                {createMut.isPending ? "…" : "Выдать"}
+              </Btn>
+            </div>
+          </div>
+        </Modal>
+      )}
+    </>
+  );
+}

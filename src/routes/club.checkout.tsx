@@ -16,6 +16,8 @@ import { hhToast } from "@/lib/hh-toast";
 import { apiFetch, BACKEND_URL } from "@/lib/api";
 import { startPayment } from "@/lib/pwa-pay";
 import { PlumpPrice } from "@/components/brand/PlumpNum";
+import { validatePromoCode } from "@/lib/promo-api";
+
 
 const PAY_ACTION = `${BACKEND_URL}/api/v1/payments/redirect`;
 
@@ -258,7 +260,50 @@ function ClubCheckoutPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canCalculate, cdek.cityCode, cdek.mode, cdek.pvzCode, cdek.street, orderableItems.length, needsShipping]);
 
-  const grandTotal = total + (shipPrice ?? 0);
+  // ---- Промокод ----
+  // Скидка только на товары, доставка не скидывается. С Hell Pass не суммируется —
+  // сервер возьмёт большую из двух, здесь показываем скидку по промокоду.
+  const [promoInput, setPromoInput] = useState("");
+  const [promoChecking, setPromoChecking] = useState(false);
+  const [promoApplied, setPromoApplied] = useState<{ code: string; discountPct: number } | null>(
+    null,
+  );
+  const [promoError, setPromoError] = useState<string | null>(null);
+
+  const applyPromo = async () => {
+    const code = promoInput.trim();
+    if (!code) {
+      setPromoError("Введи промокод");
+      return;
+    }
+    setPromoChecking(true);
+    setPromoError(null);
+    try {
+      const r = await validatePromoCode(code);
+      setPromoApplied({ code: r.code, discountPct: r.discountPct });
+      setPromoInput(r.code);
+      hhToast.success(`Промокод применён: −${r.discountPct}%`);
+    } catch (e) {
+      setPromoApplied(null);
+      const msg = e instanceof Error ? e.message : "Промокод не подошёл";
+      setPromoError(msg);
+    } finally {
+      setPromoChecking(false);
+    }
+  };
+
+  const resetPromo = () => {
+    setPromoApplied(null);
+    setPromoError(null);
+    setPromoInput("");
+  };
+
+  const promoDiscountRub = promoApplied
+    ? Math.floor((total * promoApplied.discountPct) / 100)
+    : 0;
+
+  const grandTotal = Math.max(0, total - promoDiscountRub) + (shipPrice ?? 0);
+
 
   const courierAddress = useMemo(() => {
     const parts = [cdek.cityName, cdek.street.trim()].filter(Boolean);
@@ -348,8 +393,11 @@ function ClubCheckoutPage() {
       shipping_mode: needsShipping ? cdek.mode : "none",
       method: "sbp",
     };
+    if (promoApplied) payload.promo_code = promoApplied.code;
+
     if (needsShipping && cdek.cityCode) {
       payload.cdek_city_code = String(cdek.cityCode);
+
       if (cdek.mode === "pvz" && cdek.pvzCode) {
         payload.cdek_pvz_code = cdek.pvzCode;
         if (cdek.pvzAddress) payload.cdek_pvz_address = cdek.pvzAddress;
@@ -388,6 +436,10 @@ function ClubCheckoutPage() {
         <input type="hidden" name="shipping_city" value={cityForSubmit} />
         <input type="hidden" name="shipping_address" value={shippingAddressForSubmit || "—"} />
         <input type="hidden" name="shipping_mode" value={needsShipping ? cdek.mode : "none"} />
+        {promoApplied ? (
+          <input type="hidden" name="promo_code" value={promoApplied.code} />
+        ) : null}
+
         {needsShipping && cdek.cityCode ? (
           <input type="hidden" name="cdek_city_code" value={String(cdek.cityCode)} />
         ) : null}
@@ -577,6 +629,17 @@ function ClubCheckoutPage() {
                   <PlumpPrice value={total} />
                 </span>
               </div>
+              {promoApplied && promoDiscountRub > 0 && (
+                <div className="flex items-center justify-between text-[13px]">
+                  <span className="text-muted-foreground">
+                    Промокод {promoApplied.code} · −{promoApplied.discountPct}%
+                  </span>
+                  <span className="font-mono tabular-nums text-primary">
+                    −<PlumpPrice value={promoDiscountRub} />
+                  </span>
+                </div>
+              )}
+
               {needsShipping && (
                 <div className="flex items-center justify-between text-[13px]">
                   <span className="text-muted-foreground">Доставка СДЭК</span>
@@ -593,6 +656,69 @@ function ClubCheckoutPage() {
                 </div>
               )}
             </div>
+            {/* Промокод: скидка только на товары, доставка не скидывается. */}
+            <div className="border-t border-white/[0.05] px-4 py-3">
+              {promoApplied ? (
+                <div className="flex items-center gap-2">
+                  <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-primary/15 text-primary">
+                    <CheckCircle2 className="h-4 w-4" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate font-mono text-[12px] font-bold uppercase tracking-wider text-foreground">
+                      {promoApplied.code}
+                    </div>
+                    <div className="text-[11px] text-muted-foreground">
+                      Скидка −{promoApplied.discountPct}% на товары
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={resetPromo}
+                    className="shrink-0 font-mono text-[11px] uppercase tracking-wider text-muted-foreground transition-colors hover:text-foreground"
+                  >
+                    Убрать
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center gap-2">
+                    <input
+                      value={promoInput}
+                      onChange={(e) => {
+                        setPromoInput(e.target.value.toUpperCase());
+                        setPromoError(null);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          void applyPromo();
+                        }
+                      }}
+                      placeholder="Промокод"
+                      autoComplete="off"
+                      spellCheck={false}
+                      className="min-w-0 flex-1 rounded-xl border border-white/[0.08] bg-background/60 px-3 py-2 font-mono text-[13px] uppercase tracking-wider text-foreground outline-none placeholder:normal-case placeholder:tracking-normal placeholder:text-muted-foreground focus:border-primary/50"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => void applyPromo()}
+                      disabled={promoChecking || promoInput.trim().length === 0}
+                      className="shrink-0 rounded-xl bg-primary px-3.5 py-2 font-mono text-[11px] font-bold uppercase tracking-wider text-primary-foreground transition-opacity disabled:opacity-40"
+                    >
+                      {promoChecking ? <Loader2 className="h-4 w-4 animate-spin" /> : "Применить"}
+                    </button>
+                  </div>
+                  {promoError ? (
+                    <div className="mt-1.5 text-[11px] text-destructive">{promoError}</div>
+                  ) : (
+                    <div className="mt-1.5 text-[11px] text-muted-foreground">
+                      Скидка действует на товары, доставка считается без скидки.
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+
             <div className="flex items-center justify-between border-t border-white/[0.05] px-4 py-3.5">
               <span className="text-[15px] font-semibold">Итого</span>
               <span className="font-display text-2xl font-black tabular-nums">

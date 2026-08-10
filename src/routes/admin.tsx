@@ -9,6 +9,8 @@ import {
   Target,
   PlumpUsers as Users,
   PlumpStore,
+  PlumpGift,
+
   PlumpTicket,
   PlumpImage as ImageIcon,
   PlumpFeed,
@@ -163,6 +165,8 @@ const NAV: NavItem[] = [
 
   { to: "/admin/orders", label: "Заказы", icon: Package },
   { to: "/admin/tickets", label: "Билеты", icon: PlumpTicket },
+  { to: "/admin/promo", label: "Промокоды", icon: PlumpGift },
+
   { to: "/admin/support", label: "Помощь", icon: LifeBuoy },
   { to: "/admin/banners", label: "Баннеры", icon: ImageIcon },
 
