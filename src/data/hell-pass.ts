@@ -9,6 +9,7 @@ import {
   PlumpGift,
   PlumpMelt,
   PlumpDiamond,
+  PlumpSpin,
   type LucideIcon,
 } from "@/components/ui/icons";
 
@@ -80,6 +81,19 @@ const SILVER_GROUPS: { title: string; perks: Perk[] }[] = [
     ],
   },
   {
+    title: "HellSpin",
+    perks: [
+      {
+        icon: PlumpSpin,
+        value: "2",
+        accent: true,
+        label: "спина в рулетке HellSpin в день",
+        detail:
+          "Два прокрута рулетки HellSpin каждый день — вместо одного у бесплатных юзеров. Больше спинов — выше шанс на ремувку, Silver Pass и джекпот.",
+      },
+    ],
+  },
+  {
     title: "Стикеры",
     perks: [
       {
@@ -142,6 +156,19 @@ const GOLD_GROUPS: { title: string; perks: Perk[] }[] = [
     ],
   },
   {
+    title: "HellSpin",
+    perks: [
+      {
+        icon: PlumpSpin,
+        value: "4",
+        accent: true,
+        label: "спина в рулетке HellSpin в день",
+        detail:
+          "Четыре прокрута HellSpin ежедневно — в два раза больше, чем у Silver. Коэффициент ×1.2 на шанс дорогих призов: ремувка, Silver Pass и джекпот падают чаще.",
+      },
+    ],
+  },
+  {
     title: "Мерч",
     perks: [
       {
@@ -168,6 +195,19 @@ const PLATINUM_GROUPS: { title: string; perks: Perk[] }[] = [
         label: "VIP-чат с Hell",
         detail:
           "Прямой чат с Hell. Только для Platinum — маленький круг, никакого шума. Пиши свой вопрос — Hell отвечает лично.",
+      },
+    ],
+  },
+  {
+    title: "HellSpin",
+    perks: [
+      {
+        icon: PlumpSpin,
+        value: "7",
+        accent: true,
+        label: "спинов в рулетке HellSpin в день",
+        detail:
+          "Семь прокрутов HellSpin ежедневно — максимум в клубе. Коэффициент ×1.5 на шанс дорогих призов: ремувка, Silver Pass и джекпот падают в полтора раза чаще, чем у бесплатных юзеров.",
       },
     ],
   },
