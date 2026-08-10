@@ -389,10 +389,9 @@ function OrderDrawer({ orderId, onClose }: { orderId: string; onClose: () => voi
           <Section title="Сменить статус">
             <div className="flex flex-wrap gap-1.5">
               {nextStatuses.length === 0 ? (
-
                 <span className="text-xs text-zinc-500">Финальный статус</span>
               ) : (
-                NEXT_STATUSES[order.data.status].map((s) => (
+                nextStatuses.map((s) => (
                   <button
                     key={s}
                     type="button"
