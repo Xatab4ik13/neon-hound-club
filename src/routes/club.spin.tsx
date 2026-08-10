@@ -646,7 +646,7 @@ function SpinPage() {
       <section aria-label="Что можно выиграть" className="mb-2">
         <h2 className="mb-3 px-1 text-[17px] font-semibold text-foreground">Что можно выиграть</h2>
         <ul className="overflow-hidden rounded-3xl bg-card">
-          {POOL.map((p, i) => (
+          {VISIBLE.map((p, i) => (
             <li
               key={p.id}
               className={`flex items-center gap-3 px-4 py-3 ${i > 0 ? "border-t border-white/[0.05]" : ""}`}
