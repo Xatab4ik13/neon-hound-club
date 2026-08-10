@@ -269,10 +269,11 @@ function SpinPage() {
             const done = d <= streak;
             const img = MILESTONE_IMG[d];
             if (img) {
+              const fit = MILESTONE_FIT[d] ?? "contain";
               return (
                 <span
                   key={d}
-                  className={`relative grid aspect-square place-items-center overflow-hidden rounded-xl ${
+                  className={`relative grid aspect-square place-items-center overflow-hidden rounded-full ${
                     done
                       ? "bg-[#B6FF3C] shadow-[0_4px_14px_-6px_#B6FF3C]"
                       : "bg-[#B6FF3C]/15 ring-1 ring-inset ring-[#B6FF3C]/40"
@@ -282,7 +283,9 @@ function SpinPage() {
                     src={img}
                     alt=""
                     loading="lazy"
-                    className={`h-full w-full object-contain p-[2px] ${done ? "" : "opacity-70"}`}
+                    className={`h-full w-full ${
+                      fit === "cover" ? "scale-[1.15] object-cover" : "object-contain p-[2px]"
+                    } ${done ? "" : "opacity-70"}`}
                   />
                 </span>
               );
