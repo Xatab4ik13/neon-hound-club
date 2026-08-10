@@ -349,36 +349,47 @@ function OrderDrawer({ orderId, onClose }: { orderId: string; onClose: () => voi
             )}
           </Section>
 
-          <Section title="Накладная СДЭК">
-            <CdekBlock order={order.data} onChanged={() => {
-              qc.invalidateQueries({ queryKey: qk.adminOrder(orderId) });
-              qc.invalidateQueries({ queryKey: ["admin", "orders"] });
-            }} />
-          </Section>
+          {isElectronicOrder(order.data) ? (
+            <Section title="Доставка">
+              <div className="text-xs text-zinc-500">
+                Электронный заказ — доставка СДЭК не требуется.
+              </div>
+            </Section>
+          ) : (
+            <>
+              <Section title="Накладная СДЭК">
+                <CdekBlock order={order.data} onChanged={() => {
+                  qc.invalidateQueries({ queryKey: qk.adminOrder(orderId) });
+                  qc.invalidateQueries({ queryKey: ["admin", "orders"] });
+                }} />
+              </Section>
 
-          <Section title="Трек СДЭК (ручной ввод)">
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={trackInput || order.data.cdekTrack || ""}
-                onChange={(e) => setTrackInput(e.target.value)}
-                placeholder="10000000000"
-                className="w-full rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm dark:border-zinc-700 dark:bg-zinc-800"
-              />
-              <button
-                type="button"
-                disabled={patch.isPending}
-                onClick={() => patch.mutate({ cdekTrack: (trackInput || order.data!.cdekTrack || "").trim() || null })}
-                className="rounded-md bg-zinc-900 px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50 dark:bg-white dark:text-zinc-900"
-              >
-                Сохранить
-              </button>
-            </div>
-          </Section>
+              <Section title="Трек СДЭК (ручной ввод)">
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={trackInput || order.data.cdekTrack || ""}
+                    onChange={(e) => setTrackInput(e.target.value)}
+                    placeholder="10000000000"
+                    className="w-full rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+                  />
+                  <button
+                    type="button"
+                    disabled={patch.isPending}
+                    onClick={() => patch.mutate({ cdekTrack: (trackInput || order.data!.cdekTrack || "").trim() || null })}
+                    className="rounded-md bg-zinc-900 px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50 dark:bg-white dark:text-zinc-900"
+                  >
+                    Сохранить
+                  </button>
+                </div>
+              </Section>
+            </>
+          )}
 
           <Section title="Сменить статус">
             <div className="flex flex-wrap gap-1.5">
-              {NEXT_STATUSES[order.data.status].length === 0 ? (
+              {nextStatuses.length === 0 ? (
+
                 <span className="text-xs text-zinc-500">Финальный статус</span>
               ) : (
                 NEXT_STATUSES[order.data.status].map((s) => (
