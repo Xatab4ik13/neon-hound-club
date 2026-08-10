@@ -552,20 +552,8 @@ function SpinPage() {
   );
 }
 
-/** Перечёркивание забранной награды: плампная лаймовая полоса, слегка дёргается. */
-function ClaimedStrike() {
-  return (
-    <span className="pointer-events-none absolute inset-0 grid place-items-center">
-      <span className="absolute inset-0 rounded-full bg-black/20" />
-      <span
-        className="absolute left-[-12%] top-1/2 h-[3px] w-[124%]"
-        style={{ transform: "translateY(-50%) rotate(-24deg)" }}
-      >
-        <span className="sticker-wiggle block h-full w-full origin-center rounded-full bg-[#B6FF3C] shadow-[0_0_10px_rgba(182,255,60,0.7)]" />
-      </span>
-    </span>
-  );
-}
+
+
 
 /** Медиа приза: 3D-рендер вписываем целиком, фото товара — кропаем в кругляш. */
 function PrizeMedia({ prize, size }: { prize: Prize; size: number }) {
