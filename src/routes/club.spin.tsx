@@ -466,6 +466,8 @@ function SpinPage() {
         </ul>
       </section>
 
+      <HowItWorks />
+
       {/* Пул призов */}
       <section aria-label="Что можно выиграть" className="mb-2">
         <h2 className="mb-3 px-1 text-[17px] font-semibold text-foreground">Что можно выиграть</h2>
