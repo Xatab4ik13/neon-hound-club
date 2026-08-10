@@ -1,89 +1,81 @@
+# Бэкенд HellSpin (рулетка)
 
-# Шаг 1 Школы: студенческий фронт → реальные API
+Всё по нашей согласованной механике из памяти проекта. Фронт уже готов — бэкенд подгоняем под него.
 
-## Проблема, из которой растёт план
+## 1. Таблицы (Postgres, Drizzle, `server/src/db/schema/spin.ts`)
 
-Моки в `src/data/instructors.ts` содержат сильно больше данных, чем текущая таблица `school_instructors`:
+- **spin_seasons** — сезон = календарный месяц. Поля: период (начало/конец), статус, остатки абсолютных пулов (ремувки, Silver Pass, jackpot), текущий приз jackpot-очереди.
+- **spin_prizes** — справочник призов сезона: код, название, редкость (обычный/редкий/эпик/легенда), тип награды (xp / билеты / промокод / доп. спин / мерч / pass / jackpot), базовый шанс, лимит на сезон, выдано.
+- **spin_spins** — каждый прокрут: юзер, сезон, дата, выигранный приз, был ли это бонусный спин, серверный seed для честности.
+- **spin_daily** — счётчик спинов юзера за сутки (сколько доступно по тиру, сколько использовано, сколько бонусных получено). Use-or-lose: не переносится.
+- **spin_streaks** — календарь активности: сколько дней из 30 юзер крутил, какие вехи (10/20/30) уже забраны.
+- **spin_winners** — все выигрыши, требующие ручной обработки (ремувка, носки, AirPods, Watch, PS5): юзер, приз, город, телефон, статус доставки (ожидает → связались → отправлено → получено), трек, комментарий админа. Сюда же падают призы календаря активности.
 
-| Поле | В моке | В БД сейчас |
-|---|---|---|
-| `bio` абзацы, `specialties`, `tagline` | да | только 1 text-`bio` |
-| `skills[]` (10 карточек) | да | нет |
-| `courses[]` (форматы + цены) | да | нет |
-| `approach[]` | да | нет |
-| `location{addr,lat,lng,note}` | да | нет |
-| `gallery[]` (5–9 фото) | да | нет |
-| `tone`, `experience` | да | нет |
+Все таблицы: RLS не нужен (свой Fastify + JWT), доступ только через API.
 
-Пока не переложим этот контент в БД, «переход на реальные API» превратится в снос половины страницы инструктора. `schedule` (свободные слоты) — вообще нет ни в бэкенд-плане, ни в таблицах.
+## 2. Правила доступа (проверяются на сервере, а не только на фронте)
 
-## Решение — коротко
+Крутить можно, только если одновременно:
+- телефон подтверждён,
+- есть активная push-подписка,
+- запрос идёт из PWA (флаг standalone передаём с клиента + наличие push-подписки как жёсткое подтверждение).
 
-1. Расширить `school_instructors` одним JSONB-полем `profile` + добавить `tone`, `experience`, `tagline`. Всё, что не «расписание слотов», влезает сюда без новых таблиц.
-2. Засидить 5 инструкторов из текущего `data/instructors.ts` в БД, ассеты (фото/галерея) грузим на MinIO разово.
-3. GET `/api/v1/school/instructors[/:slug]` начинает отдавать `profile`.
-4. Фронт списка (`club.school.index.tsx`), карточки (`club.school.$instructorId.tsx`) и студенческого чата (`club.my-instructors.index.tsx`, `club.my-instructors.$instructorId.tsx`) — переписаны на API.
-5. Секция «Свободные слоты» на карточке инструктора убирается (её нет в бэкенд-плане).
-6. `data/instructors.ts` и `data/instructor-chats-mock.ts` в этом шаге остаются на диске — их доедают шаги 2 (инструкторские экраны) и 3 (админка). Ссылки из клубных роутов на них исчезают.
+Иначе `403` с кодом причины — фронт показывает свой гейт.
 
-## Что делаем на бэкенде
+## 3. Спины в сутки по тиру
 
-- Миграция `0051_school_profile.sql`:
-  - `ALTER TABLE school_instructors ADD COLUMN profile jsonb NOT NULL DEFAULT '{}'::jsonb`.
-  - `ADD COLUMN tone varchar(16) NOT NULL DEFAULT 'primary'`.
-  - `ADD COLUMN experience integer NOT NULL DEFAULT 0`.
-  - `ADD COLUMN tagline varchar(300) NOT NULL DEFAULT ''`.
-- Обновление `server/src/db/schema/school.ts`: типизировать `profile` (specialties, bioParagraphs, skills[], courses[], upcomingCourses[], approach[], location{}, gallery[]).
-- Обновление роутов `schoolRoutes` (`GET /instructors`, `GET /instructors/:slug`): начать возвращать `profile`, `tone`, `experience`, `tagline`.
-- Сид-скрипт `server/src/db/seed/school-instructors.ts`, идемпотентно вставляющий/апдейтящий 5 инструкторов из текущего мока (stanislav, semen, nikita, pavel, haix). Запускается разово руками админом — не в миграции. Фото/галерея заливаются на MinIO отдельно (скрипт печатает список URL-ов, которые нужно загрузить, — этот кусок админ дожмёт сам).
-- В `adminSchoolRoutes` — расширить `POST/PATCH /instructors` возможностью писать `profile/tone/experience/tagline` (пригодится для админки в шаге 3).
+Без Pass — 1, Silver — 2, Gold — 4, Platinum — 7. Сброс в 00:00 по Москве. Приз «+1 спин сегодня» добавляет спин только на текущие сутки.
 
-## Что делаем на фронте
+## 4. Вероятности
 
-- `src/lib/api-school.ts` — тонкие обёртки над `apiFetch`: `fetchInstructors`, `fetchInstructor(slug)`, `openChatWith(slug)`, `fetchMyChats`, `fetchChatMessages(chatId)`, `sendChatMessage(chatId, ...)`, `payOrder(orderId, method)`.
-- `src/lib/queries.ts` — ключи `qk.schoolInstructors`, `qk.schoolInstructor(slug)`, `qk.myChats`, `qk.chatMessages(chatId)`.
-- `club.school.index.tsx` — переезжает на `useQuery(qk.schoolInstructors)`. Тип `Instructor` берём из ответа API (не из `data/instructors.ts`).
-- `club.school.$instructorId.tsx`:
-  - `useQuery(qk.schoolInstructor(slug))`.
-  - Секция «Свободные слоты» удаляется.
-  - Кнопка «Связаться» → `openChatWith(slug)` (POST `/school/chats`) → `navigate({ to: "/club/my-instructors/$chatId", params: { chatId } })`. Роут переименовывается с `instructorId` на `chatId`.
-- `club.my-instructors.index.tsx` — `useQuery` над `GET /api/v1/school/chats`. Ссылки на `chatId`.
-- `club.my-instructors.$chatId.tsx` (переименование `$instructorId` → `$chatId`):
-  - `useQuery` messages+orders через `GET /chats/:id/messages`.
-  - `POST /chats/:id/messages` для отправки.
-  - Кнопка «Оплатить» на счёте (order.status === "invoiced") → `POST /school/orders/:id/pay` → редирект в райф.
-  - Компонент `MockChatRoom` заменяем на честный `SchoolChatRoom` (тот же вид, но реальные данные). Мок-сидинг счёта у Станислава удаляется.
-- Публичные `school.index.tsx` / `school.$instructorId.tsx` — тоже переводим на API (это те же данные, глупо иметь два источника). Секция расписания убирается там же.
-- `club.quests.tsx` — там `INSTRUCTORS` используется только для аватарок/имён. Прогоняем через тот же `qk.schoolInstructors`.
+Базовые шансы за спин:
 
-## Что НЕ делаем в шаге 1
+| Приз | Редкость | Базовый % | Лимит/сезон |
+|---|---|---|---|
+| 100 XP | обычный | 24% | — |
+| 1 билет | обычный | 18% | — |
+| 250 XP | обычный | 14% | — |
+| 3 билета | редкий | 10% | — |
+| +1 спин сегодня | редкий | 8% | — |
+| 500 XP | редкий | 5% | — |
+| 10 билетов | эпик | 3% | — |
+| Промокод 20% на магазин | эпик | 3% | — |
+| Ремувка | эпик | 2% | 240 |
+| Hell Pass Silver | легенда | 0.3% | 60 |
+| Jackpot (AirPods → Watch → PS5) | легенда | динамический | 3 |
 
-- Инструкторские экраны (`club.school-chats.*`) — шаг 2.
-- Админку школы (`admin.school.tsx`, `data/admin-school.ts`) — шаг 3.
-- Удаление файлов `data/instructors.ts` и `data/instructor-chats-mock.ts` — они ещё нужны шагам 2–3 (админка сейчас читает `INVOICE_COMMISSION` из мока). Уйдут в шаге 3.
-- Секцию «Свободные слоты»: если она нужна в проде, это отдельная задача — таблица `school_slots` + UI бронирования.
+Множители тиров применяются **только** к эпику и легенде: без Pass ×1.0, Silver ×1.0, Gold ×1.2, Platinum ×1.5. Обычные и редкие сектора одинаковые для всех.
 
-## Технические заметки
+Остаток вероятности (~2.3%) уходит в jackpot-сектор динамически.
 
-- `profile` JSONB храним под контрактом `InstructorProfile` в `server/src/db/schema/school.ts` — тот же тип экспортится в клиент через `src/lib/api-school.ts` вручную (проще, чем гонять zod). Валидация на write-путях админки — zod.
-- URL-ы фото и галереи после загрузки на MinIO подставляются в сид-скрипт вручную (в моке они `@/assets/... .webp.asset.json`). До первой заливки фото инструкторов может «не быть» на проде — это ожидаемо, лечится одним прогоном сид-скрипта.
-- Роут студенческого чата меняет параметр (`$instructorId` → `$chatId`). Все `navigate/Link` пересобираются, `routeTree.gen.ts` обновится авто.
-- Никаких изменений в оплату/райф — уже отработано в `createPaymentForSchoolOrder`.
+## 5. Jackpot
 
-## Порядок реализации в одном заходе
+- Очередь строго: AirPods 4 → Apple Watch SE → PS5 Slim. Выиграть можно только текущий.
+- Шанс растёт по фазам месяца: 1–15 ≈ 0.004%, 16–25 ≈ 0.015%, 26–30 ≈ 0.035%; сверху множитель тира.
+- Гарантия: если к концу сезона приз не выпал — он принудительно выдаётся на последних спинах сезона.
+- После 3 дропов jackpot-сектор молча заменяется дешёвым призом.
 
-1. Миграция + обновление schema.ts.
-2. Роуты бэкенда: GET instructors, GET instructors/:slug, admin write — расширение полей.
-3. Сид-скрипт под 5 инструкторов.
-4. Фронт: `api-school.ts`, `queries.ts`.
-5. `club.school.index.tsx`, `club.school.$instructorId.tsx` (без слотов).
-6. Переименование `club.my-instructors.$instructorId.tsx` → `$chatId.tsx`, переписывание на API.
-7. `club.my-instructors.index.tsx` → API.
-8. `school.index.tsx`, `school.$instructorId.tsx`, `club.quests.tsx` — на тот же `qk.schoolInstructors`.
-9. Тайпчек, сборка.
+## 6. Абсолютные пулы
 
-## Точки, где могу пойти не туда — подтверди
+Для ремувки, Silver Pass и jackpot реальный шанс пересчитывается от остатка пула и ожидаемого числа спинов до конца сезона. Пул на нуле → сектор тихо подменяется на 10 билетов / 100 XP. Юзер подмены не видит. Silver Pass не выдаётся тем, у кого уже есть активный Pass (подмена на 10 билетов).
 
-- Расширяем схему JSONB-полем `profile`, или ты хочешь дробную реляционную модель (skills/courses/gallery отдельными таблицами)? По ощущениям JSONB тут ок — контент редактируется цельно, отдельно ничего не искать.
-- Секция «Свободные слоты» — точно убираем? Или оставить статичный UI с «скоро» до отдельной задачи?
-- Публичные `/school` и `/school/:id` переводить в тот же заход, или их не трогать в шаге 1?
+## 7. Календарь активности (30 дней)
+
+- 10 дней — Носки
+- 20 дней — Hell Pass Silver + Носки + 5 билетов
+- 30 дней — Hell Pass Gold + Носки + Ремувка + 20 билетов
+
+Без капа. Забирается вручную кнопкой, физические призы падают в `spin_winners`.
+
+## 8. API (`server/src/routes/spin.ts`)
+
+- `GET /api/v1/spin/state` — сезон, доступные спины, календарь, история, статус гейта.
+- `POST /api/v1/spin/roll` — прокрут: проверки доступа и лимита, розыгрыш на сервере, начисление, запись.
+- `POST /api/v1/spin/claim-streak` — забрать веху календаря.
+- `GET /api/v1/admin/spin/*` — статистика, победители, смена статуса доставки, остатки пулов.
+
+Начисления идут через существующие сервисы XP, билетов, промокодов и Pass — никаких дублей логики.
+
+## 9. Что не делаем
+
+Не покупаем спины за деньги, не даём крутить вне PWA, не показываем юзеру остатки пулов и внутренние проценты.
