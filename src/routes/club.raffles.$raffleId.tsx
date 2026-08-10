@@ -363,7 +363,7 @@ function RaffleDetailContent({
       </section>
 
       {/* spacer for sticky panel */}
-      {!finished && isMobile && <div aria-hidden className="h-60" />}
+      {!finished && isMobile && <div aria-hidden className="h-44" />}
 
       {/* desktop / non-mobile stake panel inline */}
       {!finished && !isMobile && (
