@@ -19,8 +19,13 @@ import imgBonusSpin from "@/assets/spin/bonus-spin.webp";
 import imgTicket from "@/assets/spin/ticket.webp";
 import imgXp from "@/assets/spin/xp.webp";
 import imgPromo from "@/assets/spin/promo.webp";
+import imgRemovka from "@/assets/spin/removka.webp";
+import imgSocks from "@/assets/spin/socks.webp";
+import { apiFetch, ApiError } from "@/lib/api";
+import { isStandalone } from "@/hooks/use-install-prompt";
 
 import { hhToast as toast } from "@/lib/hh-toast";
+
 
 
 export const Route = createFileRoute("/club/spin")({
