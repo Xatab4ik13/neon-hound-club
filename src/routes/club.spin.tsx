@@ -487,15 +487,30 @@ function SpinPage() {
   );
 }
 
-/** Медиа приза: фото/3D-рендер, для бонус-спина — плампная иконка. */
+/** Медиа приза: 3D-рендер вписываем целиком, фото товара — кропаем в кругляш. */
 function PrizeMedia({ prize, size }: { prize: Prize; size: number }) {
+  const r = RARITY[prize.rarity];
   if (!prize.img) {
     return (
       <span
         className="grid place-items-center rounded-full"
-        style={{ width: size, height: size, background: RARITY[prize.rarity].chip }}
+        style={{ width: size, height: size, background: r.chip }}
       >
         <PlumpSpin className="text-black" style={{ width: size * 0.55, height: size * 0.55 }} />
+      </span>
+    );
+  }
+  if (prize.fit === "cover") {
+    return (
+      <span
+        className="block overflow-hidden rounded-full"
+        style={{
+          width: size,
+          height: size,
+          boxShadow: `inset 0 0 0 2px ${r.ring}, 0 6px 16px -4px ${r.glow}`,
+        }}
+      >
+        <img src={prize.img} alt="" loading="lazy" className="h-full w-full object-cover" />
       </span>
     );
   }
@@ -508,7 +523,7 @@ function PrizeMedia({ prize, size }: { prize: Prize; size: number }) {
       style={{
         width: size,
         height: size,
-        filter: `drop-shadow(0 6px 14px ${RARITY[prize.rarity].glow})`,
+        filter: `drop-shadow(0 6px 14px ${r.glow})`,
       }}
     />
   );
@@ -519,14 +534,15 @@ function PrizeCell({ prize, hot }: { prize: Prize; hot?: boolean }) {
   const legend = prize.rarity === "legend";
   return (
     <div
-      className="relative flex shrink-0 flex-col items-center justify-end overflow-hidden rounded-[20px] px-2 pb-3 pt-3 text-center transition-transform duration-300"
+      className="relative flex shrink-0 flex-col items-center justify-end overflow-hidden rounded-[20px] px-2 pb-3 pt-3 text-center"
       style={{
         width: ITEM_W,
         height: 148,
-        transform: hot ? "scale(1.04)" : "none",
-        background: `linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(0,0,0,0.25) 45%, ${r.glow} 100%)`,
+        transform: hot ? "scale(1.05)" : "none",
+        transition: "transform 320ms cubic-bezier(0.2,1.4,0.3,1), box-shadow 320ms ease",
+        background: `linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(0,0,0,0.28) 45%, ${r.glow} 100%)`,
         boxShadow: hot
-          ? `inset 0 0 0 2px ${r.chip}, 0 0 34px -6px ${r.chip}`
+          ? `inset 0 0 0 2px ${r.chip}, 0 0 40px -4px ${r.chip}`
           : `inset 0 0 0 1.5px ${r.ring}`,
       }}
     >
@@ -543,6 +559,21 @@ function PrizeCell({ prize, hot }: { prize: Prize; hot?: boolean }) {
           }}
         />
       )}
+      {/* Глянцевый блик сверху — стекло поверх карточки */}
+      <span
+        className="pointer-events-none absolute inset-x-0 top-0 h-1/2"
+        style={{
+          background: "linear-gradient(180deg, rgba(255,255,255,0.10), transparent)",
+        }}
+      />
+      {hot && (
+        <span
+          className="pointer-events-none absolute inset-0 animate-[hs-shine_900ms_ease-in-out_infinite]"
+          style={{
+            background: `linear-gradient(105deg, transparent 35%, ${r.chip}55 50%, transparent 65%)`,
+          }}
+        />
+      )}
       <span className="relative mb-1.5 grid flex-1 place-items-center">
         <PrizeMedia prize={prize} size={legend ? 62 : 52} />
       </span>
@@ -553,4 +584,5 @@ function PrizeCell({ prize, hot }: { prize: Prize; hot?: boolean }) {
     </div>
   );
 }
+
 
