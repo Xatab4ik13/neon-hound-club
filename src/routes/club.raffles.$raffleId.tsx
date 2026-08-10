@@ -611,7 +611,7 @@ function StepBtn({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border-[3px] border-foreground bg-card text-foreground shadow-[3px_3px_0_0_hsl(var(--foreground))] transition-transform active:translate-x-[2px] active:translate-y-[2px] active:shadow-[1px_1px_0_0_hsl(var(--foreground))] disabled:opacity-30"
+      className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border-[3px] border-foreground bg-card text-foreground shadow-[3px_3px_0_0_hsl(var(--foreground))] transition-transform active:translate-x-[2px] active:translate-y-[2px] active:shadow-[1px_1px_0_0_hsl(var(--foreground))] disabled:opacity-30"
     >
       {children}
     </button>
