@@ -162,30 +162,91 @@ function hermite(u: number, p0: number, p1: number, m0: number, m1: number) {
   );
 }
 
+/* ---------------- API ---------------- */
+
+type SpinTier = "none" | "silver" | "gold" | "platinum";
+
+type SpinState = {
+  access: { granted: boolean; installed: boolean; phoneVerified: boolean; pushEnabled: boolean };
+  tier: SpinTier;
+  season: { periodKey: string; daysTotal: number; endsAt: string };
+  spins: { allowed: number; used: number; left: number };
+  streak: { days: number; claimed: number[] };
+  history: { prizeCode: string; title: string; at: string }[];
+};
+
+type RollResult = {
+  prizeCode: string;
+  prizeTitle: string;
+  rarity: Rarity;
+  rewardKind: string;
+  rewardValue: number;
+  promoCode?: string;
+  bonusSpin: boolean;
+  spinsAllowed: number;
+  spinsLeft: number;
+  streakDays: number;
+};
+
+/** Бэк отдаёт спины только из установленной PWA — прокидываем признак заголовком. */
+function pwaHeaders(): Record<string, string> {
+  return { "x-pwa": isStandalone() ? "1" : "0" };
+}
+
 /* ---------------- Страница ---------------- */
 
 function SpinPage() {
-  const [strip, setStrip] = useState<Prize[]>(() => buildStrip(STRIP_LEN - 12, STRIP_LEN - 10));
+  const [strip, setStrip] = useState<Prize[]>(() =>
+    buildStrip(STRIP_LEN - 12, STRIP_LEN - 10, pick(NON_LEGENDS)),
+  );
   const [spinning, setSpinning] = useState(false);
   const [won, setWon] = useState<Prize | null>(null);
-  const [lastPrize, setLastPrize] = useState<Prize | null>(() => {
-    if (typeof window === "undefined") return null;
-    const id = window.localStorage.getItem(LAST_PRIZE_KEY);
-    return POOL.find((p) => p.id === id) ?? null;
-  });
-  const [spinsLeft, setSpinsLeft] = useState(3); // мок: Gold-тир
+  const [wonPromo, setWonPromo] = useState<string | null>(null);
+  const [state, setState] = useState<SpinState | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [claiming, setClaiming] = useState<number | null>(null);
 
-  const [streak] = useState(12); // мок
-  // Мок: майлстоуны, награду по которым уже забрали — их перечёркиваем.
-  const [claimed, setClaimed] = useState<number[]>([10]);
   const access = useSpinAccess();
+  // Замок ставим по локальным признакам (PWA + push) — сервер проверяет то же самое.
   const locked = !access.granted;
+  const spinsLeft = state?.spins.left ?? 0;
+  const spinsAllowed = state?.spins.allowed ?? 0;
+  const tier: SpinTier = state?.tier ?? "none";
+  const streak = state?.streak.days ?? 0;
+  const claimed = state?.streak.claimed ?? [];
+  const lastPrize = state?.history[0]
+    ? prizeByCode(state.history[0].prizeCode, state.history[0].title)
+    : null;
+
   const viewportRef = useRef<HTMLDivElement>(null);
   // Лента двигается напрямую через ref: никакого state на 60 fps → нет ре-рендера 72 карточек.
   const stripRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number | null>(null);
 
-  const dayTicks = useMemo(() => Array.from({ length: 30 }, (_, i) => i + 1), []);
+  const dayTicks = useMemo(
+    () => Array.from({ length: state?.season.daysTotal ?? 30 }, (_, i) => i + 1),
+    [state?.season.daysTotal],
+  );
+
+  const loadState = useMemo(
+    () => async () => {
+      try {
+        const s = await apiFetch<SpinState>("/api/v1/spin/state", { headers: pwaHeaders() });
+        setState(s);
+      } catch (err) {
+        if (!(err instanceof ApiError) || err.status !== 401) {
+          toast.error("Не удалось загрузить рулетку");
+        }
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
+
+  useEffect(() => {
+    void loadState();
+  }, [loadState]);
 
   useEffect(
     () => () => {
@@ -204,26 +265,32 @@ function SpinPage() {
     return index * STEP + ITEM_W / 2 - w / 2 + extra;
   }
 
-  function claimMilestone(day: number) {
-    haptic("success");
-    setClaimed((prev) => (prev.includes(day) ? prev : [...prev, day]));
-    toast.success("Награда забрана — заберём с тебя адрес доставки");
+  async function claimMilestone(day: number) {
+    if (claiming) return;
+    setClaiming(day);
+    try {
+      await apiFetch("/api/v1/spin/streak/claim", {
+        method: "POST",
+        body: JSON.stringify({ milestone: day }),
+      });
+      haptic("success");
+      toast.success("Награда забрана — заберём с тебя адрес доставки");
+      await loadState();
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : "Не удалось забрать награду");
+    } finally {
+      setClaiming(null);
+    }
   }
 
-
-  function spin() {
-    if (spinning || spinsLeft <= 0 || locked) return;
-    haptic("selection");
-    playClick();
-    setWon(null);
-    setSpinning(true);
-
+  /** Крутим ленту к уже известному призу с бэка. */
+  function runRoller(target: Prize, result: RollResult) {
     // Финал стоит сразу за «дразнилкой»: легенда почти встаёт под маркер,
     // а лента продолжает еле-еле ползти и мягко доводит настоящий приз.
     const targetIndex = STRIP_LEN - 8 - Math.floor(Math.random() * 3);
     const teaseIndex = targetIndex - 1;
 
-    const fresh = buildStrip(teaseIndex, targetIndex);
+    const fresh = buildStrip(teaseIndex, targetIndex, target);
     setStrip(fresh);
     moveStrip(0);
 
@@ -272,17 +339,26 @@ function SpinPage() {
 
       rafRef.current = null;
       setSpinning(false);
-      const prize = fresh[targetIndex];
-      // Бонус-спин возвращает прокрут — счётчик остаётся на месте.
-      if (prize.id !== "spin") setSpinsLeft((n) => Math.max(0, n - 1));
-      setWon(prize);
-      setLastPrize(prize);
-      try {
-        window.localStorage.setItem(LAST_PRIZE_KEY, prize.id);
-      } catch {
-        /* приватный режим — просто не запоминаем */
-      }
-
+      setWon(target);
+      setWonPromo(result.promoCode ?? null);
+      // Счётчики берём из ответа сервера — он единственный источник правды.
+      setState((prev) =>
+        prev
+          ? {
+              ...prev,
+              spins: {
+                allowed: result.spinsAllowed,
+                used: Math.max(0, result.spinsAllowed - result.spinsLeft),
+                left: result.spinsLeft,
+              },
+              streak: { ...prev.streak, days: result.streakDays },
+              history: [
+                { prizeCode: result.prizeCode, title: result.prizeTitle, at: new Date().toISOString() },
+                ...prev.history,
+              ].slice(0, 10),
+            }
+          : prev,
+      );
 
       haptic("success");
       playWin();
@@ -290,6 +366,30 @@ function SpinPage() {
 
     rafRef.current = requestAnimationFrame(frame);
   }
+
+  async function spin() {
+    if (spinning || spinsLeft <= 0 || locked) return;
+    haptic("selection");
+    playClick();
+    setWon(null);
+    setWonPromo(null);
+    setSpinning(true);
+
+    try {
+      const result = await apiFetch<RollResult>("/api/v1/spin/roll", {
+        method: "POST",
+        headers: pwaHeaders(),
+        body: JSON.stringify({ pwa: isStandalone() }),
+      });
+      const target = prizeByCode(result.prizeCode, result.prizeTitle, result.rarity);
+      runRoller(target, result);
+    } catch (err) {
+      setSpinning(false);
+      toast.error(err instanceof ApiError ? err.message : "Не удалось прокрутить");
+      void loadState();
+    }
+  }
+
 
 
 
