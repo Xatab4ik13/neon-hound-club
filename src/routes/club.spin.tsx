@@ -628,10 +628,11 @@ function SpinPage() {
                 ) : streak >= c.day ? (
                   <button
                     type="button"
-                    onClick={() => claimMilestone(c.day)}
-                    className="shrink-0 rounded-lg bg-primary px-2.5 py-1 font-display text-[10px] font-black uppercase text-primary-foreground transition-transform active:scale-[0.94]"
+                    onClick={() => void claimMilestone(c.day)}
+                    disabled={claiming !== null}
+                    className="shrink-0 rounded-lg bg-primary px-2.5 py-1 font-display text-[10px] font-black uppercase text-primary-foreground transition-transform active:scale-[0.94] disabled:opacity-50"
                   >
-                    Забрать
+                    {claiming === c.day ? "…" : "Забрать"}
                   </button>
                 ) : null}
               </li>
