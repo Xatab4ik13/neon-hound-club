@@ -124,7 +124,6 @@ const MOCK_MILESTONES: MilestoneClaim[] = [
 const SEASON_INFO = {
   label: "Сезон 1",
 
-  label: "Сезон 1",
   startsAt: "11 авг 2026",
   endsAt: "10 сен 2026",
   days: 30,
