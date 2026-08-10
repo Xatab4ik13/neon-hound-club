@@ -134,7 +134,7 @@ function SpinAdminPage() {
     <div>
       <PageHeader
         title="HellSpin"
-        description="Статистика прокрутов и победители. Пул призов и логика — в коде бэкенда."
+        description="Статистика прокрутов и победители."
         actions={
           <Btn variant="secondary" onClick={refreshAll}>
             <RefreshCw className="h-3.5 w-3.5" /> Обновить
