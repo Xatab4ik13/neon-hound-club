@@ -32,6 +32,7 @@ import {
   patchAdminUser,
   type AdminUserListItem,
   type AdminUsersSort,
+  type AdminUsersStats,
 } from "@/lib/admin-queries";
 
 
@@ -329,18 +330,18 @@ function UserDrawer({
 
 
           <Section title="Билеты">
-            <Metric label="Баланс" value={(u.ticketsBalance).toLocaleString("ru-RU")} />
-            <Metric label="Всего заработано" value={(u.ticketsEarned).toLocaleString("ru-RU")} />
+            <AudienceMetric label="Баланс" value={(u.ticketsBalance).toLocaleString("ru-RU")} />
+            <AudienceMetric label="Всего заработано" value={(u.ticketsEarned).toLocaleString("ru-RU")} />
           </Section>
 
           <Section title="Магазин">
-            <Metric label="Потрачено" value={`${(u.totalSpentRub).toLocaleString("ru-RU")} ₽`} />
-            <Metric label="Заказов" value={(u.ordersCount)} />
+            <AudienceMetric label="Потрачено" value={`${(u.totalSpentRub).toLocaleString("ru-RU")} ₽`} />
+            <AudienceMetric label="Заказов" value={(u.ordersCount)} />
           </Section>
 
           <Section title="Ранг / XP">
-            <Metric label="XP" value={(u.xpTotal).toLocaleString("ru-RU")} />
-            <Metric label="Ранг" value={u.rank?.rankLabel ?? "—"} />
+            <AudienceMetric label="XP" value={(u.xpTotal).toLocaleString("ru-RU")} />
+            <AudienceMetric label="Ранг" value={u.rank?.rankLabel ?? "—"} />
             <div className="col-span-2 flex gap-2">
               <Btn onClick={() => setXpOpen(true)}>
                 <Sparkles className="h-4 w-4" /> Начислить XP
@@ -794,35 +795,35 @@ function AudienceStats({ stats }: { stats: AdminUsersStats }) {
     <div className="mb-4 grid gap-3 lg:grid-cols-3">
       <Panel className="lg:col-span-2">
         <div className="grid grid-cols-2 gap-4 p-4 sm:grid-cols-4">
-          <Metric
+          <AudienceMetric
             label="Сейчас онлайн"
             value={fmt(stats.onlineNow)}
             hint="активность за 5 минут"
           />
-          <Metric label="DAU (24 ч)" value={fmt(stats.dau)} hint={`из ${fmt(stats.total)} всего`} />
-          <Metric label="WAU (7 дн)" value={fmt(stats.wau)} />
-          <Metric label="MAU (30 дн)" value={fmt(stats.mau)} hint={`липкость ${stats.stickiness}%`} />
-          <Metric
+          <AudienceMetric label="DAU (24 ч)" value={fmt(stats.dau)} hint={`из ${fmt(stats.total)} всего`} />
+          <AudienceMetric label="WAU (7 дн)" value={fmt(stats.wau)} />
+          <AudienceMetric label="MAU (30 дн)" value={fmt(stats.mau)} hint={`липкость ${stats.stickiness}%`} />
+          <AudienceMetric
             label="Среднее время"
             value={`${stats.avgMinutesPerDay} мин`}
             hint="за активный день"
           />
-          <Metric label="Сессий в день" value={`${stats.avgSessionsPerDay}`} hint="в среднем" />
-          <Metric
+          <AudienceMetric label="Сессий в день" value={`${stats.avgSessionsPerDay}`} hint="в среднем" />
+          <AudienceMetric
             label="Активных дней"
             value={`${stats.avgActiveDays30d}`}
             hint="на юзера за 30 дн"
           />
-          <Metric
+          <AudienceMetric
             label="Всего времени"
             value={`${fmt(Math.round(stats.totalMinutes30d / 60))} ч`}
             hint="аудитория за 30 дн"
           />
         </div>
         <div className="grid grid-cols-3 gap-4 border-t border-zinc-200 p-4 dark:border-zinc-800">
-          <Metric label="Новых за сутки" value={`+${fmt(stats.newToday)}`} />
-          <Metric label="Новых за 7 дней" value={`+${fmt(stats.new7d)}`} />
-          <Metric label="Новых за 30 дней" value={`+${fmt(stats.new30d)}`} />
+          <AudienceMetric label="Новых за сутки" value={`+${fmt(stats.newToday)}`} />
+          <AudienceMetric label="Новых за 7 дней" value={`+${fmt(stats.new7d)}`} />
+          <AudienceMetric label="Новых за 30 дней" value={`+${fmt(stats.new30d)}`} />
         </div>
       </Panel>
 
@@ -859,7 +860,7 @@ function AudienceStats({ stats }: { stats: AdminUsersStats }) {
   );
 }
 
-function Metric({ label, value, hint }: { label: string; value: string; hint?: string }) {
+function AudienceMetric({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
     <div>
       <div className="text-xs text-zinc-500 dark:text-zinc-400">{label}</div>
