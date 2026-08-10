@@ -16,6 +16,7 @@ export const XP_SOURCES = [
   "daily_login",
   "referral_joined",
   "referral_purchase",
+  "spin",
 ] as const;
 export type XpSource = (typeof XP_SOURCES)[number];
 

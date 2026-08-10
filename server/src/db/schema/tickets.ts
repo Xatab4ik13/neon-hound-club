@@ -54,5 +54,6 @@ export const TICKET_SOURCES = [
   "pass_monthly",
   "raffle_entry",
   "refund",
+  "spin",
 ] as const;
 export type TicketSource = (typeof TICKET_SOURCES)[number];
