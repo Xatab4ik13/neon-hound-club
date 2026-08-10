@@ -97,6 +97,8 @@ const CALENDAR = [
   { day: 30, title: "Gold + носки + ремувка + 20 билетов", sub: "30 дней подряд" },
 ];
 
+const LAST_PRIZE_KEY = "hh_spin_last_prize";
+
 
 const ITEM_W = 104; // ширина карточки
 const GAP = 8;
