@@ -224,13 +224,6 @@ function SpinPage() {
         playTick(0.05 + speed * 0.14, 0.25 + speed * 0.75);
       }
 
-      // Подсветка легенды, пока она стоит под маркером.
-      if (!teased && t > CRAWL_FROM - 0.06) {
-        teased = true;
-        setTeasing(true);
-        haptic("selection");
-        later(() => setTeasing(false), TOTAL_MS * (1 - CRAWL_FROM) * 0.55);
-      }
 
       if (t < 1) {
         rafRef.current = requestAnimationFrame(frame);
@@ -292,10 +285,7 @@ function SpinPage() {
           style={{
             background:
               "radial-gradient(120% 140% at 50% 0%, hsl(var(--primary) / 0.10), transparent 60%), #0B0B0D",
-            boxShadow: teasing
-              ? "inset 0 0 0 1px rgba(255,217,61,0.45), 0 0 46px -10px rgba(255,217,61,0.45)"
-              : "inset 0 0 0 1px rgba(255,255,255,0.06)",
-            transition: "box-shadow 300ms ease",
+            boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.06)",
           }}
         >
           {/* Рельсы сверху/снизу */}
@@ -318,7 +308,7 @@ function SpinPage() {
               }}
             >
               {strip.map((p, i) => (
-                <PrizeCell key={`${p.id}-${i}`} prize={p} hot={teasing && p.rarity === "legend"} />
+                <PrizeCell key={`${p.id}-${i}`} prize={p} />
               ))}
             </div>
           </div>
