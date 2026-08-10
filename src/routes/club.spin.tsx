@@ -236,6 +236,9 @@ function SpinPage() {
         lastCell = cell;
         const speed = Math.min(1, Math.abs(pos(Math.min(1, t + 0.004)) - px) / (STEP * 0.9));
         playTick(0.05 + speed * 0.14, 0.25 + speed * 0.75);
+        // Вибрация синхронно с тиком: на скорости сливается в «тр-т-т-т»,
+        // к концу — отчётливые тапы, как звук. Vibration API (Android).
+        try { navigator.vibrate?.(3); } catch { /* iOS — no-op */ }
       }
 
 
