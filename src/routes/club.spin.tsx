@@ -474,9 +474,8 @@ function SpinPage() {
                       (MILESTONE_FIT[c.day] ?? "contain") === "cover"
                         ? "scale-[1.15] object-cover"
                         : "object-contain p-1"
-                    } ${isClaimed ? "opacity-60" : ""}`}
+                    }`}
                   />
-                  {isClaimed && <ClaimedStrike />}
                 </span>
 
                 <span className="min-w-0 flex-1">
