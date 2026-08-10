@@ -481,9 +481,7 @@ function SpinPage() {
                 <span className="min-w-0 flex-1">
                   <span
                     className={`block truncate text-[14px] font-semibold ${
-                      isClaimed
-                        ? "text-muted-foreground line-through decoration-[#B6FF3C] decoration-[3px]"
-                        : "text-foreground"
+                      isClaimed ? "text-muted-foreground" : "text-foreground"
                     }`}
                   >
                     {c.title}
