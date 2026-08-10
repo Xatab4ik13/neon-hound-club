@@ -36,6 +36,13 @@ import {
 
 
 import { ApiError } from "@/lib/api";
+import {
+  adminCreatePromoCode,
+  adminDeletePromoCode,
+  adminListPromoCodes,
+  promoQk,
+} from "@/lib/promo-api";
+
 import { hhToast as toast } from "@/lib/hh-toast";
 
 export const Route = createFileRoute("/admin/users")({
