@@ -10,10 +10,11 @@ import goldBadge from "@/assets/hellpass/tpl-gold.png";
 import imgAirpods from "@/assets/spin/airpods.png";
 import imgWatch from "@/assets/spin/watch.png";
 import imgPs5 from "@/assets/spin/ps5.png";
-import imgRemovka from "@/assets/spin/removka.png";
+import imgBonusSpin from "@/assets/spin/bonus-spin.png";
 import imgTicket from "@/assets/spin/ticket.png";
 import imgXp from "@/assets/spin/xp.png";
 import imgPromo from "@/assets/spin/promo.png";
+
 
 export const Route = createFileRoute("/club/spin")({
   head: () => ({
@@ -36,7 +37,10 @@ type Prize = {
   sub?: string;
   rarity: Rarity;
   img?: string;
+  /** Фото товара кропаем по кругу, 3D-рендеры вписываем целиком. */
+  fit?: "cover" | "contain";
 };
+
 
 // Цвета редкости — плашки из школы: 03 циан → 04 лайм → 06 магента → 08 золото.
 const RARITY: Record<Rarity, { ring: string; glow: string; label: string; chip: string }> = {
@@ -46,22 +50,26 @@ const RARITY: Record<Rarity, { ring: string; glow: string; label: string; chip: 
   legend: { ring: "rgba(255,217,61,0.48)", glow: "rgba(255,217,61,0.26)", label: "Легенда", chip: "#FFD93D" },
 };
 
+// Фото товаров берём прямо из каталога магазина — призы совпадают с реальным мерчем.
+const REMOVKA_IMG =
+  "https://api.hhr.pro/media/shop/da0bcbf8-594f-43b3-a412-39a5905c1800/c4c6b81b-b769-475e-939a-7ce658d917f8.jpg";
 
 const POOL: Prize[] = [
   { id: "xp100", title: "100 XP", rarity: "common", img: imgXp },
   { id: "t1", title: "1 билет", rarity: "common", img: imgTicket },
   { id: "xp250", title: "250 XP", rarity: "common", img: imgXp },
   { id: "t3", title: "3 билета", rarity: "rare", img: imgTicket },
-  { id: "spin", title: "Бонус-спин", sub: "+1 прокрут", rarity: "rare" },
+  { id: "spin", title: "Бонус-спин", sub: "+1 прокрут", rarity: "rare", img: imgBonusSpin },
   { id: "xp500", title: "500 XP", rarity: "rare", img: imgXp },
   { id: "promo", title: "Промокод 20%", sub: "на товары", rarity: "epic", img: imgPromo },
   { id: "t10", title: "10 билетов", rarity: "epic", img: imgTicket },
-  { id: "sticker", title: "Ремувка", sub: "с ближайшим заказом", rarity: "epic", img: imgRemovka },
+  { id: "sticker", title: "Ремувка", sub: "подарок · доставка за нами", rarity: "epic", img: REMOVKA_IMG, fit: "cover" },
   { id: "silver", title: "Hell Pass Silver", sub: "30 дней", rarity: "legend", img: silverBadge },
   { id: "airpods", title: "AirPods 4", rarity: "legend", img: imgAirpods },
   { id: "watch", title: "Apple Watch SE", rarity: "legend", img: imgWatch },
   { id: "ps5", title: "PlayStation 5 Slim", rarity: "legend", img: imgPs5 },
 ];
+
 
 const LEGENDS = POOL.filter((p) => p.rarity === "legend");
 const NON_LEGENDS = POOL.filter((p) => p.rarity !== "legend");
@@ -223,8 +231,11 @@ function SpinPage() {
       rafRef.current = null;
       setTeasing(false);
       setSpinning(false);
-      setSpinsLeft((n) => Math.max(0, n - 1));
-      setWon(fresh[targetIndex]);
+      const prize = fresh[targetIndex];
+      // Бонус-спин возвращает прокрут — счётчик остаётся на месте.
+      if (prize.id !== "spin") setSpinsLeft((n) => Math.max(0, n - 1));
+      setWon(prize);
+
       haptic("success");
       playWin();
     };
@@ -265,7 +276,10 @@ function SpinPage() {
           style={{
             background:
               "radial-gradient(120% 140% at 50% 0%, hsl(var(--primary) / 0.10), transparent 60%), #0B0B0D",
-            boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.06)",
+            boxShadow: teasing
+              ? "inset 0 0 0 1px rgba(255,217,61,0.45), 0 0 46px -10px rgba(255,217,61,0.45)"
+              : "inset 0 0 0 1px rgba(255,255,255,0.06)",
+            transition: "box-shadow 300ms ease",
           }}
         >
           {/* Рельсы сверху/снизу */}
@@ -286,19 +300,28 @@ function SpinPage() {
                 gap: `${GAP}px`,
                 transform: `translate3d(${-offset}px,0,0)`,
               }}
-
             >
               {strip.map((p, i) => (
                 <PrizeCell key={`${p.id}-${i}`} prize={p} hot={teasing && p.rarity === "legend"} />
               ))}
             </div>
-
           </div>
+
+          {/* Бегущий свет по стеклу во время прокрута */}
+          {spinning && (
+            <span
+              className="pointer-events-none absolute inset-y-0 left-0 z-10 w-1/3 animate-[hs-sweep_1100ms_linear_infinite]"
+              style={{
+                background:
+                  "linear-gradient(100deg, transparent, rgba(255,255,255,0.10) 45%, transparent)",
+              }}
+            />
+          )}
 
           {/* Указатель: плампные «клыки» + луч */}
           <div className="pointer-events-none absolute inset-y-0 left-1/2 z-20 -translate-x-1/2">
             <span
-              className="absolute left-1/2 top-0 h-full w-14 -translate-x-1/2"
+              className={`absolute left-1/2 top-0 h-full w-14 -translate-x-1/2 ${spinning ? "animate-[hs-marker-pulse_620ms_ease-in-out_infinite]" : ""}`}
               style={{
                 background:
                   "linear-gradient(180deg, hsl(var(--primary) / 0.22), transparent 45%, hsl(var(--primary) / 0.22))",
@@ -320,36 +343,56 @@ function SpinPage() {
           type="button"
           onClick={spin}
           disabled={spinning || spinsLeft <= 0}
-          className="mt-3 flex h-14 w-full items-center justify-center rounded-2xl bg-[#B6FF3C] font-display text-[17px] font-black uppercase tracking-tight text-black shadow-[0_10px_30px_-12px_#B6FF3C] transition-transform active:scale-[0.97] disabled:opacity-40 disabled:shadow-none"
+          className="relative mt-3 flex h-14 w-full items-center justify-center overflow-hidden rounded-2xl bg-[#B6FF3C] font-display text-[17px] font-black uppercase tracking-tight text-black shadow-[0_10px_30px_-12px_#B6FF3C] transition-transform active:scale-[0.97] disabled:opacity-40 disabled:shadow-none"
         >
-          {spinning ? "Крутим…" : spinsLeft > 0 ? "Крутить" : "Спины закончились"}
+          {!spinning && spinsLeft > 0 && (
+            <span
+              className="pointer-events-none absolute inset-y-0 left-0 w-1/3 animate-[hs-sweep_2600ms_linear_infinite]"
+              style={{
+                background: "linear-gradient(100deg, transparent, rgba(255,255,255,0.55), transparent)",
+              }}
+            />
+          )}
+          <span className="relative">
+            {spinning ? "Крутим…" : spinsLeft > 0 ? "Крутить" : "Спины закончились"}
+          </span>
         </button>
 
 
         {won && !spinning && (
           <div
-            className="mt-3 flex animate-scale-in items-center gap-3 rounded-2xl px-4 py-3"
+            className="relative mt-3 flex animate-[hs-win-pop_420ms_cubic-bezier(0.2,1.4,0.3,1)_both] items-center gap-3 overflow-hidden rounded-2xl px-4 py-3"
             style={{
               background: RARITY[won.rarity].glow,
-              boxShadow: `inset 0 0 0 1px ${RARITY[won.rarity].ring}`,
+              boxShadow: `inset 0 0 0 1px ${RARITY[won.rarity].ring}, 0 14px 34px -18px ${RARITY[won.rarity].chip}`,
             }}
           >
             <span
-              className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-black/40"
-            >
+              className="pointer-events-none absolute inset-y-0 left-0 w-1/3 animate-[hs-sweep_1600ms_ease-in-out_2]"
+              style={{
+                background: `linear-gradient(100deg, transparent, ${RARITY[won.rarity].chip}44, transparent)`,
+              }}
+            />
+            <span className="relative grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-black/40">
               <PrizeMedia prize={won} size={40} />
             </span>
 
-            <span className="min-w-0 flex-1">
+            <span className="relative min-w-0 flex-1">
               <span className="block font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
                 Твой приз · {RARITY[won.rarity].label}
               </span>
               <span className="block truncate font-display text-[15px] font-black uppercase tracking-tight text-foreground">
                 {won.title}
               </span>
+              {won.sub && (
+                <span className="block truncate font-mono text-[10px] uppercase tracking-widest" style={{ color: RARITY[won.rarity].chip }}>
+                  {won.sub}
+                </span>
+              )}
             </span>
           </div>
         )}
+
       </section>
 
       {/* Календарь активности */}
@@ -479,15 +522,30 @@ function SpinPage() {
   );
 }
 
-/** Медиа приза: фото/3D-рендер, для бонус-спина — плампная иконка. */
+/** Медиа приза: 3D-рендер вписываем целиком, фото товара — кропаем в кругляш. */
 function PrizeMedia({ prize, size }: { prize: Prize; size: number }) {
+  const r = RARITY[prize.rarity];
   if (!prize.img) {
     return (
       <span
         className="grid place-items-center rounded-full"
-        style={{ width: size, height: size, background: RARITY[prize.rarity].chip }}
+        style={{ width: size, height: size, background: r.chip }}
       >
         <PlumpSpin className="text-black" style={{ width: size * 0.55, height: size * 0.55 }} />
+      </span>
+    );
+  }
+  if (prize.fit === "cover") {
+    return (
+      <span
+        className="block overflow-hidden rounded-full"
+        style={{
+          width: size,
+          height: size,
+          boxShadow: `inset 0 0 0 2px ${r.ring}, 0 6px 16px -4px ${r.glow}`,
+        }}
+      >
+        <img src={prize.img} alt="" loading="lazy" className="h-full w-full object-cover" />
       </span>
     );
   }
@@ -500,7 +558,7 @@ function PrizeMedia({ prize, size }: { prize: Prize; size: number }) {
       style={{
         width: size,
         height: size,
-        filter: `drop-shadow(0 6px 14px ${RARITY[prize.rarity].glow})`,
+        filter: `drop-shadow(0 6px 14px ${r.glow})`,
       }}
     />
   );
@@ -511,14 +569,15 @@ function PrizeCell({ prize, hot }: { prize: Prize; hot?: boolean }) {
   const legend = prize.rarity === "legend";
   return (
     <div
-      className="relative flex shrink-0 flex-col items-center justify-end overflow-hidden rounded-[20px] px-2 pb-3 pt-3 text-center transition-transform duration-300"
+      className="relative flex shrink-0 flex-col items-center justify-end overflow-hidden rounded-[20px] px-2 pb-3 pt-3 text-center"
       style={{
         width: ITEM_W,
         height: 148,
-        transform: hot ? "scale(1.04)" : "none",
-        background: `linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(0,0,0,0.25) 45%, ${r.glow} 100%)`,
+        transform: hot ? "scale(1.05)" : "none",
+        transition: "transform 320ms cubic-bezier(0.2,1.4,0.3,1), box-shadow 320ms ease",
+        background: `linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(0,0,0,0.28) 45%, ${r.glow} 100%)`,
         boxShadow: hot
-          ? `inset 0 0 0 2px ${r.chip}, 0 0 34px -6px ${r.chip}`
+          ? `inset 0 0 0 2px ${r.chip}, 0 0 40px -4px ${r.chip}`
           : `inset 0 0 0 1.5px ${r.ring}`,
       }}
     >
@@ -535,6 +594,21 @@ function PrizeCell({ prize, hot }: { prize: Prize; hot?: boolean }) {
           }}
         />
       )}
+      {/* Глянцевый блик сверху — стекло поверх карточки */}
+      <span
+        className="pointer-events-none absolute inset-x-0 top-0 h-1/2"
+        style={{
+          background: "linear-gradient(180deg, rgba(255,255,255,0.10), transparent)",
+        }}
+      />
+      {hot && (
+        <span
+          className="pointer-events-none absolute inset-0 animate-[hs-shine_900ms_ease-in-out_infinite]"
+          style={{
+            background: `linear-gradient(105deg, transparent 35%, ${r.chip}55 50%, transparent 65%)`,
+          }}
+        />
+      )}
       <span className="relative mb-1.5 grid flex-1 place-items-center">
         <PrizeMedia prize={prize} size={legend ? 62 : 52} />
       </span>
@@ -545,4 +619,5 @@ function PrizeCell({ prize, hot }: { prize: Prize; hot?: boolean }) {
     </div>
   );
 }
+
 
