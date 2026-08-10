@@ -116,15 +116,30 @@ function buildStrip(teaseIndex: number, targetIndex: number) {
 /* ---------------- Страница ---------------- */
 
 function SpinPage() {
-  const [strip, setStrip] = useState<Prize[]>(() => buildStrip());
+  const [strip, setStrip] = useState<Prize[]>(() => buildStrip(STRIP_LEN - 12, STRIP_LEN - 10));
   const [offset, setOffset] = useState(0);
+  const [dur, setDur] = useState(0);
+  const [ease, setEase] = useState("cubic-bezier(0.08,0.82,0.12,1)");
   const [spinning, setSpinning] = useState(false);
+  const [teasing, setTeasing] = useState(false);
   const [won, setWon] = useState<Prize | null>(null);
   const [spinsLeft, setSpinsLeft] = useState(3); // мок: Gold-тир
   const [streak] = useState(7); // мок
   const viewportRef = useRef<HTMLDivElement>(null);
+  const timers = useRef<number[]>([]);
 
   const dayTicks = useMemo(() => Array.from({ length: 30 }, (_, i) => i + 1), []);
+
+  useEffect(() => () => timers.current.forEach((t) => window.clearTimeout(t)), []);
+
+  function later(fn: () => void, ms: number) {
+    timers.current.push(window.setTimeout(fn, ms));
+  }
+
+  function centerFor(index: number, extra = 0) {
+    const w = viewportRef.current?.clientWidth ?? 360;
+    return index * STEP + ITEM_W / 2 - w / 2 + extra;
+  }
 
   function spin() {
     if (spinning || spinsLeft <= 0) return;
@@ -133,29 +148,51 @@ function SpinPage() {
     setWon(null);
     setSpinning(true);
 
-    const fresh = buildStrip();
+    // Финал стоит сразу за «дразнилкой»: легенда почти встаёт под маркер,
+    // потом лента медленно проскальзывает дальше — и уезжает.
+    const targetIndex = STRIP_LEN - 8 - Math.floor(Math.random() * 3);
+    const teaseIndex = targetIndex - 1;
+
+    const fresh = buildStrip(teaseIndex, targetIndex);
     setStrip(fresh);
+    setDur(0);
     setOffset(0);
 
-    // Цель — ближе к концу ленты, чтобы прокрут был длинным.
-    const targetIndex = STRIP_LEN - 8 - Math.floor(Math.random() * 4);
-    const jitter = (Math.random() - 0.5) * (ITEM_W * 0.5);
-
     requestAnimationFrame(() => {
-      const w = viewportRef.current?.clientWidth ?? 360;
-      setOffset(targetIndex * STEP + ITEM_W / 2 - w / 2 + jitter);
+      // Фаза 1: длинный разгон и торможение почти ровно на легенде (чуть недоезд).
+      setEase("cubic-bezier(0.08,0.82,0.12,1)");
+      setDur(SPIN_MS);
+      setOffset(centerFor(teaseIndex, -6 - Math.random() * 8));
     });
 
-    playSpin(targetIndex, SPIN_MS);
+    playSpin(teaseIndex, SPIN_MS);
 
-    window.setTimeout(() => {
+    later(() => {
+      // Замерли на легенде — подсветка и вибро, будто вот-вот заберём топ.
+      setTeasing(true);
+      haptic("selection");
+    }, SPIN_MS);
+
+    later(() => {
+      // Фаза 2: медленный проскок на настоящий приз.
+      setTeasing(false);
+      setEase("cubic-bezier(0.25,0.55,0.15,1)");
+      setDur(SLIP_MS);
+      setOffset(centerFor(targetIndex, (Math.random() - 0.5) * 10));
+      playClick();
+      later(() => playClick(), SLIP_MS * 0.45);
+      later(() => playClick(), SLIP_MS * 0.78);
+    }, SPIN_MS + HOLD_MS);
+
+    later(() => {
       setSpinning(false);
       setSpinsLeft((n) => Math.max(0, n - 1));
       setWon(fresh[targetIndex]);
       haptic("success");
       playWin();
-    }, SPIN_MS);
+    }, SPIN_MS + HOLD_MS + SLIP_MS);
   }
+
 
   return (
     <main className="mx-auto w-full max-w-3xl px-4 py-5 md:py-8">
