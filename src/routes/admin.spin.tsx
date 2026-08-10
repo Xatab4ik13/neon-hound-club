@@ -154,6 +154,11 @@ function fmt(n: number): React.ReactNode {
 
 function SpinAdminPage() {
   const [filter, setFilter] = useState<"all" | "physical" | "digital">("all");
+  const [claims, setClaims] = useState<MilestoneClaim[]>(MOCK_MILESTONES);
+
+  const setClaimStatus = (id: string, status: ShipStatus) =>
+    setClaims((prev) => prev.map((c) => (c.id === id ? { ...c, status } : c)));
+
 
   const winners = useMemo(() => {
     const list = filter === "all" ? MOCK_WINNERS : MOCK_WINNERS.filter((w) => w.kind === filter);
