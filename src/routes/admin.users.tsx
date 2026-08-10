@@ -113,6 +113,10 @@ function UsersPage() {
         )}
       </div>
 
+      {stats && <AudienceStats stats={stats} />}
+
+
+
 
       <Panel>
         <DataTable
