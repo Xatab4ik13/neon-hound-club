@@ -248,6 +248,59 @@ function SpinAdminPage() {
         )}
       </Panel>
 
+      {/* Награды за активность (календарь) */}
+      <Panel className="mb-6">
+        <PanelHeader>
+          <div className="flex items-center gap-2">
+            <CalendarCheck className="h-4 w-4 text-zinc-500 dark:text-zinc-400" />
+            <span className="text-sm font-semibold">Награды за активность</span>
+          </div>
+          <Badge tone="amber">
+            {claims.filter((c) => c.status === "pending").length} ждут связи
+          </Badge>
+        </PanelHeader>
+
+        <DataTable
+          headers={["Игрок", "День", "Награда", "Город", "Телефон", "Забрал", "Статус", ""]}
+          rows={claims
+            .slice()
+            .sort((a, b) => new Date(b.claimedAt).getTime() - new Date(a.claimedAt).getTime())
+            .map((c) => [
+              <span className="font-medium">{c.nick}</span>,
+              <Badge tone="violet">{c.day}/30</Badge>,
+              <span className="text-sm">{c.reward}</span>,
+              <span className="text-xs text-zinc-500 dark:text-zinc-400">{c.city}</span>,
+              <a
+                href={`tel:${c.phone.replace(/[^+\d]/g, "")}`}
+                className="inline-flex items-center gap-1 font-mono text-xs hover:underline"
+              >
+                <Phone className="h-3 w-3 text-zinc-400" />
+                {c.phone}
+              </a>,
+              <span className="text-xs text-zinc-500 dark:text-zinc-400">{fmtDate(c.claimedAt)}</span>,
+              <Badge tone={SHIP_TONE[c.status]}>{SHIP_LABEL[c.status]}</Badge>,
+              <select
+                value={c.status}
+                onChange={(e) => setClaimStatus(c.id, e.target.value as ShipStatus)}
+                className="rounded-md border border-zinc-200 bg-white px-2 py-1 text-xs dark:border-zinc-700 dark:bg-zinc-900"
+              >
+                {(Object.keys(SHIP_LABEL) as ShipStatus[]).map((s) => (
+                  <option key={s} value={s}>
+                    {SHIP_LABEL[s]}
+                  </option>
+                ))}
+              </select>,
+            ])}
+        />
+
+        {claims.length === 0 && (
+          <div className="px-4 py-8 text-center text-sm text-zinc-500 dark:text-zinc-400">
+            Пока никто не дошёл до вех календаря
+          </div>
+        )}
+      </Panel>
+
+
       {/* Сезон */}
       <Panel>
           <PanelHeader>
