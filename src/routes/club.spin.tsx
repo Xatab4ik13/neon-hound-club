@@ -1,12 +1,19 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { PageHeader } from "@/components/club/PageHeader";
-import { PlumpTicket, PlumpGift, PlumpDiamond, PlumpQuests } from "@/components/ui/icons";
+import { PlumpSpin } from "@/components/ui/icons";
 import { PlumpNum } from "@/components/brand/PlumpNum";
 import { haptic } from "@/hooks/use-haptic";
 import { playSpin, playWin, playClick } from "@/lib/roller-sfx";
 import silverBadge from "@/assets/hellpass/tpl-silver.png";
 import goldBadge from "@/assets/hellpass/tpl-gold.png";
+import imgAirpods from "@/assets/spin/airpods.png";
+import imgWatch from "@/assets/spin/watch.png";
+import imgPs5 from "@/assets/spin/ps5.png";
+import imgRemovka from "@/assets/spin/removka.png";
+import imgTicket from "@/assets/spin/ticket.png";
+import imgXp from "@/assets/spin/xp.png";
+import imgPromo from "@/assets/spin/promo.png";
 
 export const Route = createFileRoute("/club/spin")({
   head: () => ({
@@ -28,6 +35,7 @@ type Prize = {
   title: string;
   sub?: string;
   rarity: Rarity;
+  img?: string;
 };
 
 // Цвета редкости — плашки из школы: 03 циан → 04 лайм → 06 магента → 08 золото.
@@ -40,20 +48,23 @@ const RARITY: Record<Rarity, { ring: string; glow: string; label: string; chip: 
 
 
 const POOL: Prize[] = [
-  { id: "xp100", title: "100 XP", rarity: "common" },
-  { id: "t1", title: "1 билет", rarity: "common" },
-  { id: "xp250", title: "250 XP", rarity: "common" },
-  { id: "t3", title: "3 билета", rarity: "rare" },
+  { id: "xp100", title: "100 XP", rarity: "common", img: imgXp },
+  { id: "t1", title: "1 билет", rarity: "common", img: imgTicket },
+  { id: "xp250", title: "250 XP", rarity: "common", img: imgXp },
+  { id: "t3", title: "3 билета", rarity: "rare", img: imgTicket },
   { id: "spin", title: "Бонус-спин", sub: "+1 прокрут", rarity: "rare" },
-  { id: "xp500", title: "500 XP", rarity: "rare" },
-  { id: "promo", title: "Промокод 20%", sub: "на товары", rarity: "epic" },
-  { id: "t10", title: "10 билетов", rarity: "epic" },
-  { id: "sticker", title: "Ремувка", sub: "с ближайшим заказом", rarity: "epic" },
-  { id: "silver", title: "Hell Pass Silver", sub: "30 дней", rarity: "legend" },
-  { id: "airpods", title: "AirPods 4", rarity: "legend" },
-  { id: "watch", title: "Apple Watch SE", rarity: "legend" },
-  { id: "ps5", title: "PlayStation 5 Slim", rarity: "legend" },
+  { id: "xp500", title: "500 XP", rarity: "rare", img: imgXp },
+  { id: "promo", title: "Промокод 20%", sub: "на товары", rarity: "epic", img: imgPromo },
+  { id: "t10", title: "10 билетов", rarity: "epic", img: imgTicket },
+  { id: "sticker", title: "Ремувка", sub: "с ближайшим заказом", rarity: "epic", img: imgRemovka },
+  { id: "silver", title: "Hell Pass Silver", sub: "30 дней", rarity: "legend", img: silverBadge },
+  { id: "airpods", title: "AirPods 4", rarity: "legend", img: imgAirpods },
+  { id: "watch", title: "Apple Watch SE", rarity: "legend", img: imgWatch },
+  { id: "ps5", title: "PlayStation 5 Slim", rarity: "legend", img: imgPs5 },
 ];
+
+const LEGENDS = POOL.filter((p) => p.rarity === "legend");
+const NON_LEGENDS = POOL.filter((p) => p.rarity !== "legend");
 
 // Картинки майлстоунов: носки — из каталога магазина, Silver/Gold — бейджи Hell Pass.
 const SOCKS_IMG =
@@ -83,26 +94,52 @@ const ITEM_W = 104; // ширина карточки
 const GAP = 8;
 const STEP = ITEM_W + GAP;
 const STRIP_LEN = 72;
-const SPIN_MS = 5400;
+const SPIN_MS = 4600; // основной разгон/торможение
+const HOLD_MS = 460; // «замирание» на легенде
+const SLIP_MS = 1250; // медленный проскок к настоящему призу
 
-function buildStrip(): Prize[] {
+function pick<T>(arr: T[]): T {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+/** Лента: случайные призы, но с гарантированной «дразнилкой» — легендой перед финалом. */
+function buildStrip(teaseIndex: number, targetIndex: number) {
   const out: Prize[] = [];
-  for (let i = 0; i < STRIP_LEN; i++) out.push(POOL[Math.floor(Math.random() * POOL.length)]);
+  for (let i = 0; i < STRIP_LEN; i++) out.push(pick(POOL));
+  out[teaseIndex] = pick(LEGENDS);
+  // Настоящий приз: в 92% случаев не легенда — отсюда и эффект «чуть не выпало».
+  out[targetIndex] = Math.random() < 0.08 ? pick(LEGENDS) : pick(NON_LEGENDS);
   return out;
 }
+
 
 /* ---------------- Страница ---------------- */
 
 function SpinPage() {
-  const [strip, setStrip] = useState<Prize[]>(() => buildStrip());
+  const [strip, setStrip] = useState<Prize[]>(() => buildStrip(STRIP_LEN - 12, STRIP_LEN - 10));
   const [offset, setOffset] = useState(0);
+  const [dur, setDur] = useState(0);
+  const [ease, setEase] = useState("cubic-bezier(0.08,0.82,0.12,1)");
   const [spinning, setSpinning] = useState(false);
+  const [teasing, setTeasing] = useState(false);
   const [won, setWon] = useState<Prize | null>(null);
   const [spinsLeft, setSpinsLeft] = useState(3); // мок: Gold-тир
   const [streak] = useState(7); // мок
   const viewportRef = useRef<HTMLDivElement>(null);
+  const timers = useRef<number[]>([]);
 
   const dayTicks = useMemo(() => Array.from({ length: 30 }, (_, i) => i + 1), []);
+
+  useEffect(() => () => timers.current.forEach((t) => window.clearTimeout(t)), []);
+
+  function later(fn: () => void, ms: number) {
+    timers.current.push(window.setTimeout(fn, ms));
+  }
+
+  function centerFor(index: number, extra = 0) {
+    const w = viewportRef.current?.clientWidth ?? 360;
+    return index * STEP + ITEM_W / 2 - w / 2 + extra;
+  }
 
   function spin() {
     if (spinning || spinsLeft <= 0) return;
@@ -111,29 +148,51 @@ function SpinPage() {
     setWon(null);
     setSpinning(true);
 
-    const fresh = buildStrip();
+    // Финал стоит сразу за «дразнилкой»: легенда почти встаёт под маркер,
+    // потом лента медленно проскальзывает дальше — и уезжает.
+    const targetIndex = STRIP_LEN - 8 - Math.floor(Math.random() * 3);
+    const teaseIndex = targetIndex - 1;
+
+    const fresh = buildStrip(teaseIndex, targetIndex);
     setStrip(fresh);
+    setDur(0);
     setOffset(0);
 
-    // Цель — ближе к концу ленты, чтобы прокрут был длинным.
-    const targetIndex = STRIP_LEN - 8 - Math.floor(Math.random() * 4);
-    const jitter = (Math.random() - 0.5) * (ITEM_W * 0.5);
-
     requestAnimationFrame(() => {
-      const w = viewportRef.current?.clientWidth ?? 360;
-      setOffset(targetIndex * STEP + ITEM_W / 2 - w / 2 + jitter);
+      // Фаза 1: длинный разгон и торможение почти ровно на легенде (чуть недоезд).
+      setEase("cubic-bezier(0.08,0.82,0.12,1)");
+      setDur(SPIN_MS);
+      setOffset(centerFor(teaseIndex, -6 - Math.random() * 8));
     });
 
-    playSpin(targetIndex, SPIN_MS);
+    playSpin(teaseIndex, SPIN_MS);
 
-    window.setTimeout(() => {
+    later(() => {
+      // Замерли на легенде — подсветка и вибро, будто вот-вот заберём топ.
+      setTeasing(true);
+      haptic("selection");
+    }, SPIN_MS);
+
+    later(() => {
+      // Фаза 2: медленный проскок на настоящий приз.
+      setTeasing(false);
+      setEase("cubic-bezier(0.25,0.55,0.15,1)");
+      setDur(SLIP_MS);
+      setOffset(centerFor(targetIndex, (Math.random() - 0.5) * 10));
+      playClick();
+      later(() => playClick(), SLIP_MS * 0.45);
+      later(() => playClick(), SLIP_MS * 0.78);
+    }, SPIN_MS + HOLD_MS);
+
+    later(() => {
       setSpinning(false);
       setSpinsLeft((n) => Math.max(0, n - 1));
       setWon(fresh[targetIndex]);
       haptic("success");
       playWin();
-    }, SPIN_MS);
+    }, SPIN_MS + HOLD_MS + SLIP_MS);
   }
+
 
   return (
     <main className="mx-auto w-full max-w-3xl px-4 py-5 md:py-8">
@@ -186,13 +245,14 @@ function SpinPage() {
               style={{
                 gap: `${GAP}px`,
                 transform: `translate3d(${-offset}px,0,0)`,
-                transition: spinning ? `transform ${SPIN_MS}ms cubic-bezier(0.08,0.82,0.12,1)` : "none",
+                transition: dur ? `transform ${dur}ms ${ease}` : "none",
               }}
             >
               {strip.map((p, i) => (
-                <PrizeCell key={`${p.id}-${i}`} prize={p} />
+                <PrizeCell key={`${p.id}-${i}`} prize={p} hot={teasing && p.rarity === "legend"} />
               ))}
             </div>
+
           </div>
 
           {/* Указатель: плампные «клыки» + луч */}
@@ -235,11 +295,11 @@ function SpinPage() {
             }}
           >
             <span
-              className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl"
-              style={{ background: RARITY[won.rarity].chip }}
+              className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-black/40"
             >
-              <PrizeIcon rarity={won.rarity} />
+              <PrizeMedia prize={won} size={40} />
             </span>
+
             <span className="min-w-0 flex-1">
               <span className="block font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
                 Твой приз · {RARITY[won.rarity].label}
@@ -349,11 +409,12 @@ function SpinPage() {
               className={`flex items-center gap-3 px-4 py-3 ${i > 0 ? "border-t border-white/[0.05]" : ""}`}
             >
               <span
-                className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl"
-                style={{ background: RARITY[p.rarity].chip }}
+                className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-black/40"
+                style={{ boxShadow: `inset 0 0 0 1px ${RARITY[p.rarity].ring}` }}
               >
-                <PrizeIcon rarity={p.rarity} />
+                <PrizeMedia prize={p} size={34} />
               </span>
+
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-[14px] font-semibold text-foreground">
                   {p.title}
@@ -378,24 +439,47 @@ function SpinPage() {
   );
 }
 
-function PrizeIcon({ rarity }: { rarity: Rarity }) {
-  const cls = "h-5 w-5 text-black";
-  if (rarity === "legend") return <PlumpDiamond className={cls} />;
-  if (rarity === "epic") return <PlumpGift className={cls} />;
-  if (rarity === "rare") return <PlumpTicket className={cls} />;
-  return <PlumpQuests className={cls} />;
+/** Медиа приза: фото/3D-рендер, для бонус-спина — плампная иконка. */
+function PrizeMedia({ prize, size }: { prize: Prize; size: number }) {
+  if (!prize.img) {
+    return (
+      <span
+        className="grid place-items-center rounded-full"
+        style={{ width: size, height: size, background: RARITY[prize.rarity].chip }}
+      >
+        <PlumpSpin className="text-black" style={{ width: size * 0.55, height: size * 0.55 }} />
+      </span>
+    );
+  }
+  return (
+    <img
+      src={prize.img}
+      alt=""
+      loading="lazy"
+      className="object-contain"
+      style={{
+        width: size,
+        height: size,
+        filter: `drop-shadow(0 6px 14px ${RARITY[prize.rarity].glow})`,
+      }}
+    />
+  );
 }
 
-function PrizeCell({ prize }: { prize: Prize }) {
+function PrizeCell({ prize, hot }: { prize: Prize; hot?: boolean }) {
   const r = RARITY[prize.rarity];
+  const legend = prize.rarity === "legend";
   return (
     <div
-      className="relative flex shrink-0 flex-col items-center justify-end overflow-hidden rounded-[20px] px-2 pb-3 pt-4 text-center"
+      className="relative flex shrink-0 flex-col items-center justify-end overflow-hidden rounded-[20px] px-2 pb-3 pt-3 text-center transition-transform duration-300"
       style={{
         width: ITEM_W,
-        height: 132,
+        height: 148,
+        transform: hot ? "scale(1.04)" : "none",
         background: `linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(0,0,0,0.25) 45%, ${r.glow} 100%)`,
-        boxShadow: `inset 0 0 0 1.5px ${r.ring}`,
+        boxShadow: hot
+          ? `inset 0 0 0 2px ${r.chip}, 0 0 34px -6px ${r.chip}`
+          : `inset 0 0 0 1.5px ${r.ring}`,
       }}
     >
       {/* Луч редкости снизу */}
@@ -403,16 +487,22 @@ function PrizeCell({ prize }: { prize: Prize }) {
         className="pointer-events-none absolute inset-x-0 bottom-0 h-2/3"
         style={{ background: `linear-gradient(180deg, transparent, ${r.glow})` }}
       />
-      <span
-        className="relative mb-2 grid h-11 w-11 place-items-center rounded-2xl"
-        style={{ background: r.chip, boxShadow: `0 8px 22px -10px ${r.chip}` }}
-      >
-        <PrizeIcon rarity={prize.rarity} />
+      {legend && (
+        <span
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background: `radial-gradient(70% 50% at 50% 35%, ${r.glow}, transparent 70%)`,
+          }}
+        />
+      )}
+      <span className="relative mb-1.5 grid flex-1 place-items-center">
+        <PrizeMedia prize={prize} size={legend ? 62 : 52} />
       </span>
-      <span className="relative line-clamp-2 font-display text-[12px] font-black uppercase leading-tight tracking-tight text-foreground">
+      <span className="relative line-clamp-2 font-display text-[11px] font-black uppercase leading-tight tracking-tight text-foreground">
         {prize.title}
       </span>
       <span className="absolute inset-x-3 bottom-0 h-[4px] rounded-t-full" style={{ background: r.chip }} />
     </div>
   );
 }
+
