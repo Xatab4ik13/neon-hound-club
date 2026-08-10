@@ -344,7 +344,7 @@ function IosGuide() {
       <Steps
         title="Установка"
         steps={[
-          "Открой клуб в Safari (Chrome на iOS не умеет ставить PWA).",
+          "Открой клуб в Chrome (там лучше работает вибрация в HellSpin). Можно и в Safari.",
           <>
             Нажми кнопку{" "}
             <span className="inline-flex translate-y-[1px] items-center gap-1 align-middle text-primary">
@@ -357,7 +357,7 @@ function IosGuide() {
           "Подтверди — иконка клуба появится на рабочем столе.",
           "Открой клуб с иконки и разреши уведомления, когда спросит.",
         ]}
-        footer="Только Safari. На iOS 16.4 и новее уведомления работают, на старых — нет."
+        footer="Chrome или Safari, iOS 16.4+. На старых iOS пуш-уведомления не работают."
       />
     </>
   );
