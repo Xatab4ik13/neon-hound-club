@@ -242,7 +242,6 @@ function SpinAdminPage() {
             </div>
           </div>
         </Panel>
-      </div>
     </div>
   );
 }
