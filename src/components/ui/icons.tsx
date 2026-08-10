@@ -575,6 +575,20 @@ export function PlumpInstructorChat(props: IconProps) {
   );
 }
 
+export function PlumpSpin(props: IconProps) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 48 48" {...plumpProps(props)}>
+      <path
+        fill="currentColor"
+        fillRule="evenodd"
+        d="M32.875 4.968A21 21 0 1 1 15.125 4.968L25.425 4.578L18.506 12.218A13 13 0 1 0 29.494 12.218Z"
+        clipRule="evenodd"
+      />
+    </svg>
+  );
+}
+
+
 
 
 
