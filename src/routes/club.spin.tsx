@@ -524,7 +524,7 @@ function SpinPage() {
 
         {phoneMissing && (
           <Link
-            to="/club/profile"
+            to="/club/me"
             className="mt-3 block text-center font-mono text-[11px] uppercase tracking-widest text-primary"
           >
             Подтвердить номер в профиле
