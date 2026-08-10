@@ -156,6 +156,19 @@ const GOLD_GROUPS: { title: string; perks: Perk[] }[] = [
     ],
   },
   {
+    title: "HellSpin",
+    perks: [
+      {
+        icon: PlumpSpin,
+        value: "4",
+        accent: true,
+        label: "спина в рулетке HellSpin в день",
+        detail:
+          "Четыре прокрута HellSpin ежедневно — в два раза больше, чем у Silver. Коэффициент ×1.2 на шанс дорогих призов: ремувка, Silver Pass и джекпот падают чаще.",
+      },
+    ],
+  },
+  {
     title: "Мерч",
     perks: [
       {
