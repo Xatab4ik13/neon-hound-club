@@ -474,7 +474,7 @@ async function grantPrize(
     }
 
     case "pass":
-      await grantPass(userId, "silver", "HellSpin");
+      await grantPass(userId, "silver", "HellSpin", "spin");
       return undefined;
 
     case "merch":
@@ -496,7 +496,12 @@ async function grantPrize(
 }
 
 /** Выдать Hell Pass как приз: запись покупки на 0₽ + активация на 30 дней. */
-export async function grantPass(userId: string, tier: PassTier, reason: string) {
+export async function grantPass(
+  userId: string,
+  tier: PassTier,
+  reason: string,
+  source: "spin" | "streak" | "grant" = "grant",
+) {
   const cfg = PASS_CONFIG[tier];
   const now = new Date();
   const active = await getActivePass(userId);
@@ -509,6 +514,7 @@ export async function grantPass(userId: string, tier: PassTier, reason: string) 
       priceRub: 0,
       ticketsGranted: cfg.tickets,
       status: "active",
+      source,
       paidAt: now,
       expiresAt: new Date(base.getTime() + PASS_DURATION_DAYS * 86_400_000),
     })
@@ -590,7 +596,7 @@ export async function claimStreakMilestone(userId: string, milestone: StreakMile
 
   const winners: Array<{ code: string; title: string }> = [{ code: "socks", title: "Носки" }];
   if (milestone === 20) {
-    await grantPass(userId, "silver", "Календарь активности 20/30");
+    await grantPass(userId, "silver", "Календарь активности 20/30", "streak");
     await ticketCredit({
       userId,
       amount: 5,
@@ -602,7 +608,7 @@ export async function claimStreakMilestone(userId: string, milestone: StreakMile
     });
   }
   if (milestone === 30) {
-    await grantPass(userId, "gold", "Календарь активности 30/30");
+    await grantPass(userId, "gold", "Календарь активности 30/30", "streak");
     await ticketCredit({
       userId,
       amount: 20,

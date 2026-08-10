@@ -32,6 +32,8 @@ export type PassTierInfo = {
   aiQuestions: number | null;
 };
 
+export type PassSource = "purchase" | "spin" | "streak" | "grant";
+
 export type PassRecord = {
   id: string;
   userId: string;
@@ -39,6 +41,8 @@ export type PassRecord = {
   priceRub: number;
   ticketsGranted: number;
   status: "pending_payment" | "active" | "expired" | "cancelled" | "superseded";
+  /** Откуда пасс: покупка / рулетка / календарь активности / выдал админ. */
+  source: PassSource;
   paidAt: string | null;
   expiresAt: string | null;
   createdAt: string;

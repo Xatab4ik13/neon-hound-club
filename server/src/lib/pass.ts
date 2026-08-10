@@ -1,6 +1,12 @@
 import { and, desc, eq, gt, ne, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
-import { passPurchases, PASS_CONFIG, PASS_DURATION_DAYS, type PassTier } from "../db/schema/pass.js";
+import {
+  passPurchases,
+  PASS_CONFIG,
+  PASS_DURATION_DAYS,
+  PASS_PENDING_TTL_MINUTES,
+  type PassTier,
+} from "../db/schema/pass.js";
 import { userStickerPacks } from "../db/schema/stickers.js";
 import { ticketCredit } from "./tickets.js";
 import { awardXp } from "./xp.js";
@@ -52,6 +58,7 @@ export async function createPassPurchase(userId: string, tier: PassTier) {
       priceRub: cfg.priceRub,
       ticketsGranted: cfg.tickets,
       status: "pending_payment",
+      source: "purchase",
     })
     .returning();
   return row!;
@@ -225,4 +232,22 @@ export async function getActivePassPerks(userId: string): Promise<{
   const tier = pass.tier as PassTier;
   const perks = PASS_PERKS[tier];
   return { tier, ...perks };
+}
+
+/**
+ * Удаляет «мёртвые» заявки на пасс: status='pending_payment' старше PASS_PENDING_TTL_MINUTES.
+ * Человек нажал «оплатить» и не заплатил — через час запись пропадает, чтобы админка
+ * не забивалась мусором. Возвращает количество удалённых.
+ */
+export async function cleanupStalePendingPasses(): Promise<number> {
+  const res = await db
+    .delete(passPurchases)
+    .where(
+      and(
+        eq(passPurchases.status, "pending_payment"),
+        sql`${passPurchases.createdAt} < now() - interval '${sql.raw(String(PASS_PENDING_TTL_MINUTES))} minutes'`,
+      ),
+    )
+    .returning({ id: passPurchases.id });
+  return res.length;
 }
