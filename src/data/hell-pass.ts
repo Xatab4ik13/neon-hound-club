@@ -6,7 +6,6 @@ import {
   PlumpSticker,
   PlumpStore,
   PlumpComment,
-  PlumpGift,
   PlumpMelt,
   PlumpDiamond,
   PlumpSpin,
@@ -89,7 +88,7 @@ const SILVER_GROUPS: { title: string; perks: Perk[] }[] = [
         accent: true,
         label: "спина в рулетке HellSpin в день",
         detail:
-          "Два прокрута рулетки HellSpin каждый день — вместо одного у бесплатных юзеров. Больше спинов — выше шанс на ремувку, Silver Pass и джекпот.",
+          "Два прокрута рулетки HellSpin каждый день — вместо одного у бесплатных юзеров. Больше спинов — выше шанс на огромный приз.",
       },
     ],
   },
@@ -164,7 +163,7 @@ const GOLD_GROUPS: { title: string; perks: Perk[] }[] = [
         accent: true,
         label: "спина в рулетке HellSpin в день",
         detail:
-          "Четыре прокрута HellSpin ежедневно — в два раза больше, чем у Silver. Коэффициент ×1.2 на шанс дорогих призов: ремувка, Silver Pass и джекпот падают чаще.",
+          "Четыре прокрута HellSpin ежедневно — в два раза больше, чем у Silver. Больше спинов — выше шанс выиграть огромный приз.",
       },
     ],
   },
@@ -207,7 +206,7 @@ const PLATINUM_GROUPS: { title: string; perks: Perk[] }[] = [
         accent: true,
         label: "спинов в рулетке HellSpin в день",
         detail:
-          "Семь прокрутов HellSpin ежедневно — максимум в клубе. Коэффициент ×1.5 на шанс дорогих призов: ремувка, Silver Pass и джекпот падают в полтора раза чаще, чем у бесплатных юзеров.",
+          "Семь прокрутов HellSpin ежедневно — максимум в клубе. Самый высокий шанс выиграть огромный приз.",
       },
     ],
   },
@@ -221,13 +220,6 @@ const PLATINUM_GROUPS: { title: string; perks: Perk[] }[] = [
         label: "билетов в месяц (вместо 10)",
         detail:
           "30 билетов каждый месяц. Самая выгодная пачка билетов в клубе.",
-      },
-      {
-        icon: PlumpGift,
-        accent: true,
-        label: "Закрытый Platinum-розыгрыш раз в месяц",
-        detail:
-          "Раз в месяц — отдельный розыгрыш только для Platinum. Маленький пул участников, крупные лоты.",
       },
     ],
   },
@@ -307,9 +299,9 @@ export const TIERS: Tier[] = [
     price: 2190,
     color: "#F000C0",
     inheritsFrom: "Gold",
-    tagline: "VIP-чат с Hell, Hell AI без лимита, закрытый розыгрыш, скидка 15%.",
+    tagline: "VIP-чат с Hell, Hell AI без лимита, 30 билетов, скидка 15%.",
     forWhom:
-      "Для тех, кто живёт мото и хочет быть в центре клуба. Прямой чат с Hell, самые крупные лоты и эксклюзивные розыгрыши только для Platinum.",
+      "Для тех, кто живёт мото и хочет быть в центре клуба. Прямой чат с Hell, максимум спинов и билетов, самые крупные лоты.",
     groups: PLATINUM_GROUPS,
     perks: flat(PLATINUM_GROUPS),
     ultimate: true,
