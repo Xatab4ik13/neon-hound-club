@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { ChevronDown } from "lucide-react";
 import { PageHeader } from "@/components/club/PageHeader";
-import { PlumpSpin, PlumpHelp, PlumpArrowRight as ChevronRight } from "@/components/ui/icons";
+import { PlumpSpin, PlumpBook, PlumpArrowRight as ChevronRight } from "@/components/ui/icons";
 import { PlumpNum } from "@/components/brand/PlumpNum";
 import { haptic } from "@/hooks/use-haptic";
 import { playWin, playClick, playTick } from "@/lib/roller-sfx";
@@ -719,7 +719,7 @@ function HowItWorks() {
         className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors active:bg-white/[0.03]"
       >
         <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#C6A8FF]">
-          <PlumpHelp className="h-5 w-5 text-black" />
+          <PlumpBook className="h-5 w-5 text-black" />
         </span>
         <span className="min-w-0 flex-1">
           <span className="block font-display text-[15px] font-black uppercase tracking-tight text-foreground">
@@ -766,10 +766,10 @@ function HowItWorks() {
             {/* Больше спинов */}
             <div>
               <h3 className="mb-1.5 font-display text-[13px] font-black uppercase tracking-tight text-foreground">
-                Больше спинов — больше шанс
+                Больше спинов — больше шансов
               </h3>
               <p className="mb-3 text-[13px] leading-relaxed text-muted-foreground">
-                Каждый спин — шанс забрать приз. Чем выше тир Hell Pass — тем больше выстрелов в день.
+                Каждый спин — шанс забрать приз. Чем выше тир, тем больше выстрелов в день.
               </p>
               <div className="space-y-1.5">
                 {tiers.map((t) => (
@@ -799,7 +799,7 @@ function HowItWorks() {
                     <span className="flex items-baseline gap-1">
                       <PlumpNum value={t.spins} size={18} />
                       <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                        /день
+                        в день
                       </span>
                     </span>
                   </div>
