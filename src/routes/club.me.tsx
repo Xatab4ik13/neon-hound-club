@@ -224,6 +224,42 @@ function MePage() {
         )}
       </section>
 
+      {/* Промокоды — отдельная широкая плашка */}
+      <section aria-label="Промокоды" className="mt-6 md:mt-10">
+        {isMobile ? (
+          <IOSListSection title="Промокоды">
+            <IOSListRow
+              icon={<PromoIcon className="h-5 w-5" />}
+              label="Мои промокоды"
+              description={
+                promoActiveCount > 0
+                  ? `Доступно: ${promoActiveCount}`
+                  : "Пока нет активных промокодов"
+              }
+              chevron
+              onClick={() => navigate({ to: "/club/promo" })}
+            />
+          </IOSListSection>
+        ) : (
+          <>
+            <h2 className="mb-4 font-display text-2xl font-black uppercase tracking-tight text-foreground md:text-3xl">
+              Промокоды
+            </h2>
+            <ActionRow
+              icon={<PromoIcon className="h-5 w-5" />}
+              label="Мои промокоды"
+              description={
+                promoActiveCount > 0
+                  ? `Доступно: ${promoActiveCount}`
+                  : "Пока нет активных промокодов"
+              }
+              onClick={() => navigate({ to: "/club/promo" })}
+            />
+          </>
+        )}
+      </section>
+
+
       {/* «Ранги и XP» убрано: отдельной страницы пока нет, ранг и XP видны в шапке профиля. */}
 
 
