@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { ChevronDown } from "lucide-react";
 import { PageHeader } from "@/components/club/PageHeader";
@@ -9,16 +9,18 @@ import { haptic } from "@/hooks/use-haptic";
 import { useSpinAccess } from "@/hooks/use-spin-access";
 import { SpinAccessGate } from "@/components/club/SpinAccessGate";
 import { playWin, playClick, playTick } from "@/lib/roller-sfx";
-import silverBadge from "@/assets/hellpass/tpl-silver.png";
-import goldBadge from "@/assets/hellpass/tpl-gold.png";
-import platinumBadge from "@/assets/hellpass/tpl-platinum.png";
-import imgAirpods from "@/assets/spin/airpods.png";
-import imgWatch from "@/assets/spin/watch.png";
-import imgPs5 from "@/assets/spin/ps5.png";
-import imgBonusSpin from "@/assets/spin/bonus-spin.png";
-import imgTicket from "@/assets/spin/ticket.png";
-import imgXp from "@/assets/spin/xp.png";
-import imgPromo from "@/assets/spin/promo.png";
+import silverBadge from "@/assets/hellpass/tpl-silver.webp";
+import goldBadge from "@/assets/hellpass/tpl-gold.webp";
+import platinumBadge from "@/assets/hellpass/tpl-platinum.webp";
+import imgAirpods from "@/assets/spin/airpods.webp";
+import imgWatch from "@/assets/spin/watch.webp";
+import imgPs5 from "@/assets/spin/ps5.webp";
+import imgBonusSpin from "@/assets/spin/bonus-spin.webp";
+import imgTicket from "@/assets/spin/ticket.webp";
+import imgXp from "@/assets/spin/xp.webp";
+import imgPromo from "@/assets/spin/promo.webp";
+import imgRemovka from "@/assets/spin/removka.webp";
+import { hhToast as toast } from "@/lib/hh-toast";
 
 
 export const Route = createFileRoute("/club/spin")({
@@ -55,9 +57,8 @@ const RARITY: Record<Rarity, { ring: string; glow: string; label: string; chip: 
   legend: { ring: "rgba(255,217,61,0.48)", glow: "rgba(255,217,61,0.26)", label: "Легенда", chip: "#FFD93D" },
 };
 
-// Фото товаров берём прямо из каталога магазина — призы совпадают с реальным мерчем.
-const REMOVKA_IMG =
-  "https://api.hhr.pro/media/shop/da0bcbf8-594f-43b3-a412-39a5905c1800/c4c6b81b-b769-475e-939a-7ce658d917f8.jpg";
+// Ремувку показываем локальным 3D-рендером — грузится мгновенно, без внешних запросов.
+const REMOVKA_IMG = imgRemovka;
 
 const POOL: Prize[] = [
   { id: "xp100", title: "100 XP", rarity: "common", img: imgXp },
@@ -68,7 +69,7 @@ const POOL: Prize[] = [
   { id: "xp500", title: "500 XP", rarity: "rare", img: imgXp },
   { id: "promo", title: "Промокод 20%", sub: "на товары", rarity: "epic", img: imgPromo },
   { id: "t10", title: "10 билетов", rarity: "epic", img: imgTicket },
-  { id: "sticker", title: "Ремувка", sub: "подарок · доставка за нами", rarity: "epic", img: REMOVKA_IMG, fit: "cover" },
+  { id: "sticker", title: "Ремувка", sub: "подарок · доставка за нами", rarity: "epic", img: REMOVKA_IMG },
   { id: "silver", title: "Hell Pass Silver", sub: "30 дней", rarity: "legend", img: silverBadge },
   { id: "airpods", title: "AirPods 4", rarity: "legend", img: imgAirpods },
   { id: "watch", title: "Apple Watch SE", rarity: "legend", img: imgWatch },
@@ -142,7 +143,6 @@ function hermite(u: number, p0: number, p1: number, m0: number, m1: number) {
 
 function SpinPage() {
   const [strip, setStrip] = useState<Prize[]>(() => buildStrip(STRIP_LEN - 12, STRIP_LEN - 10));
-  const [offset, setOffset] = useState(0);
   const [spinning, setSpinning] = useState(false);
   const [won, setWon] = useState<Prize | null>(null);
   const [lastPrize, setLastPrize] = useState<Prize | null>(() => {
@@ -154,31 +154,39 @@ function SpinPage() {
 
   const [streak] = useState(12); // мок
   // Мок: майлстоуны, награду по которым уже забрали — их перечёркиваем.
-  const [claimed] = useState<number[]>([10]);
+  const [claimed, setClaimed] = useState<number[]>([10]);
   const access = useSpinAccess();
   const locked = !access.granted;
   const viewportRef = useRef<HTMLDivElement>(null);
-  const timers = useRef<number[]>([]);
+  // Лента двигается напрямую через ref: никакого state на 60 fps → нет ре-рендера 72 карточек.
+  const stripRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number | null>(null);
 
   const dayTicks = useMemo(() => Array.from({ length: 30 }, (_, i) => i + 1), []);
 
   useEffect(
     () => () => {
-      timers.current.forEach((t) => window.clearTimeout(t));
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     },
     [],
   );
 
-  function later(fn: () => void, ms: number) {
-    timers.current.push(window.setTimeout(fn, ms));
+  function moveStrip(px: number) {
+    const el = stripRef.current;
+    if (el) el.style.transform = `translate3d(${-px}px,0,0)`;
   }
 
   function centerFor(index: number, extra = 0) {
     const w = viewportRef.current?.clientWidth ?? 360;
     return index * STEP + ITEM_W / 2 - w / 2 + extra;
   }
+
+  function claimMilestone(day: number) {
+    haptic("success");
+    setClaimed((prev) => (prev.includes(day) ? prev : [...prev, day]));
+    toast.success("Награда забрана — заберём с тебя адрес доставки");
+  }
+
 
   function spin() {
     if (spinning || spinsLeft <= 0 || locked) return;
@@ -194,7 +202,7 @@ function SpinPage() {
 
     const fresh = buildStrip(teaseIndex, targetIndex);
     setStrip(fresh);
-    setOffset(0);
+    moveStrip(0);
 
     const end = centerFor(targetIndex, (Math.random() - 0.5) * 8);
     // Точка, где легенда почти встала под маркер (чуть недоезд).
@@ -220,7 +228,7 @@ function SpinPage() {
     const frame = (now: number) => {
       const t = Math.min(1, (now - t0) / TOTAL_MS);
       const px = pos(t);
-      setOffset(px);
+      moveStrip(px);
 
       // Тики по реально проехавшим карточкам — ритм всегда совпадает с картинкой.
       const cell = Math.floor(px / STEP);
@@ -311,12 +319,11 @@ function SpinPage() {
             }}
           >
             <div
+              ref={stripRef}
               className="flex will-change-transform"
-              style={{
-                gap: `${GAP}px`,
-                transform: `translate3d(${-offset}px,0,0)`,
-              }}
+              style={{ gap: `${GAP}px`, transform: "translate3d(0,0,0)" }}
             >
+
               {strip.map((p, i) => (
                 <PrizeCell key={`${p.id}-${i}`} prize={p} />
               ))}
@@ -493,9 +500,13 @@ function SpinPage() {
                     Твоё
                   </span>
                 ) : streak >= c.day ? (
-                  <span className="shrink-0 rounded-lg bg-primary px-2 py-0.5 font-display text-[10px] font-black uppercase text-primary-foreground">
+                  <button
+                    type="button"
+                    onClick={() => claimMilestone(c.day)}
+                    className="shrink-0 rounded-lg bg-primary px-2.5 py-1 font-display text-[10px] font-black uppercase text-primary-foreground transition-transform active:scale-[0.94]"
+                  >
                     Забрать
-                  </span>
+                  </button>
                 ) : null}
               </li>
             );
@@ -602,7 +613,7 @@ function PrizeMedia({ prize, size }: { prize: Prize; size: number }) {
   );
 }
 
-function PrizeCell({ prize }: { prize: Prize }) {
+const PrizeCell = memo(function PrizeCell({ prize }: { prize: Prize }) {
   const r = RARITY[prize.rarity];
   const legend = prize.rarity === "legend";
   return (
@@ -644,7 +655,7 @@ function PrizeCell({ prize }: { prize: Prize }) {
       <span className="absolute inset-x-3 bottom-0 h-[4px] rounded-t-full" style={{ background: r.chip }} />
     </div>
   );
-}
+});
 
 
 

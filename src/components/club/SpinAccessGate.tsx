@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Check, PlumpBell, PlumpDownload, PlumpSpin } from "@/components/ui/icons";
 import { hhToast as toast } from "@/lib/hh-toast";
 import { haptic } from "@/hooks/use-haptic";
+import { useInstallPrompt } from "@/hooks/use-install-prompt";
 import type { SpinAccess } from "@/hooks/use-spin-access";
 
 /**
@@ -11,6 +12,7 @@ import type { SpinAccess } from "@/hooks/use-spin-access";
  */
 export function SpinAccessGate({ access }: { access: SpinAccess }) {
   const [busy, setBusy] = useState(false);
+  const install = useInstallPrompt();
 
   async function enable() {
     haptic("selection");
@@ -23,6 +25,13 @@ export function SpinAccessGate({ access }: { access: SpinAccess }) {
       setBusy(false);
     }
   }
+
+  async function doInstall() {
+    haptic("selection");
+    const outcome = await install.promptInstall();
+    if (outcome === "dismissed") toast.error("Установка отменена");
+  }
+
 
   return (
     <section
@@ -56,7 +65,15 @@ export function SpinAccessGate({ access }: { access: SpinAccess }) {
           title="Установи приложение"
           hint="Добавь клуб на главный экран"
           action={
-            access.installed ? null : (
+            access.installed ? null : install.canPrompt ? (
+              <button
+                type="button"
+                onClick={doInstall}
+                className="shrink-0 rounded-xl border-[3px] border-foreground bg-[#B6FF3C] px-3 py-1.5 font-display text-[11px] font-black uppercase tracking-tight text-black shadow-[3px_3px_0_0_hsl(var(--foreground))] active:translate-x-[1px] active:translate-y-[1px] active:shadow-[2px_2px_0_0_hsl(var(--foreground))]"
+              >
+                Установить
+              </button>
+            ) : (
               <Link
                 to="/club/install"
                 className="shrink-0 rounded-xl border-[3px] border-foreground bg-[#B6FF3C] px-3 py-1.5 font-display text-[11px] font-black uppercase tracking-tight text-black shadow-[3px_3px_0_0_hsl(var(--foreground))] active:translate-x-[1px] active:translate-y-[1px] active:shadow-[2px_2px_0_0_hsl(var(--foreground))]"
@@ -65,6 +82,7 @@ export function SpinAccessGate({ access }: { access: SpinAccess }) {
               </Link>
             )
           }
+
         />
         <Step
           done={access.pushEnabled}

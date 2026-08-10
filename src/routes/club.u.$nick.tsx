@@ -13,9 +13,9 @@ import { getUser, type PublicUser } from "@/data/users";
 import { PlaqueBackground } from "./club";
 import { usePublicProfile, type PublicProfile } from "@/lib/garage-api";
 import { PlumpNum } from "@/components/brand/PlumpNum";
-import tplSilver from "@/assets/hellpass/tpl-silver.png";
-import tplGold from "@/assets/hellpass/tpl-gold.png";
-import tplPlatinum from "@/assets/hellpass/tpl-platinum.png";
+import tplSilver from "@/assets/hellpass/tpl-silver.webp";
+import tplGold from "@/assets/hellpass/tpl-gold.webp";
+import tplPlatinum from "@/assets/hellpass/tpl-platinum.webp";
 
 const HELLPASS_PREVIEW: Array<{ src: string; months: number; tint: string }> = [
   { src: tplSilver, months: 2, tint: "#B6FF3C" },
