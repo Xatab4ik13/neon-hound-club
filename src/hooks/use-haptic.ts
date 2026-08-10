@@ -7,11 +7,13 @@
 
 export type HapticPattern = "light" | "selection" | "success" | "warning";
 
+// Важно: Android Chrome игнорирует импульсы короче ~10-15ms — они физически
+// не успевают раскрутить моторчик. Поэтому минимум 15ms.
 const PATTERNS: Record<HapticPattern, number | number[]> = {
-  light: 8,
-  selection: 6,
-  success: [8, 24, 10],
-  warning: [10, 30, 10, 30, 10],
+  light: 18,
+  selection: 15,
+  success: [22, 40, 30],
+  warning: [20, 50, 20, 50, 20],
 };
 
 export function haptic(pattern: HapticPattern = "light") {
