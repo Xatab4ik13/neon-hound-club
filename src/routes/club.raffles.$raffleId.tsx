@@ -505,7 +505,7 @@ function StakePanel({
 
   return (
     <div
-      className={`relative rounded-[2rem] p-4 ${
+      className={`relative rounded-[2rem] p-3 ${
         sticky
           ? "bg-card shadow-[0_-8px_24px_-6px_rgba(0,0,0,0.7)]"
           : "border-[3px] border-foreground bg-card shadow-[6px_6px_0_0_hsl(var(--foreground))]"
