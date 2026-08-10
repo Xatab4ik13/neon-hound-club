@@ -656,7 +656,7 @@ function SpinPage() {
         </ul>
       </section>
 
-      <HowItWorks />
+      <HowItWorks season={state?.season} />
 
       {/* Пул призов */}
       <section aria-label="Что можно выиграть" className="mb-2">
@@ -933,7 +933,7 @@ function HowItWorks({ season }: { season?: SpinState["season"] }) {
             Как это работает
           </span>
           <span className="block font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-            Сезон 11 авг — 10 сен · 30 дней
+            {endsLabel ? `Сезон до ${endsLabel} · ${days} дней` : `Сезон · ${days} дней`}
           </span>
         </span>
         <ChevronDown
@@ -953,8 +953,12 @@ function HowItWorks({ season }: { season?: SpinState["season"] }) {
                 Сезон HellSpin
               </h3>
               <p className="text-[13px] leading-relaxed text-muted-foreground">
-                <span className="text-foreground">11 августа → 10 сентября.</span>{" "}
-                30 дней, каждый день — новая пачка спинов. Не крутанул сегодня — завтра обнулилось.
+                {endsLabel && (
+                  <>
+                    <span className="text-foreground">Сезон идёт до {endsLabel}.</span>{" "}
+                  </>
+                )}
+                {days} дней, каждый день — новая пачка спинов. Не крутанул сегодня — завтра обнулилось.
               </p>
             </div>
 
@@ -965,7 +969,7 @@ function HowItWorks({ season }: { season?: SpinState["season"] }) {
               </h3>
               <p className="text-[13px] leading-relaxed text-muted-foreground">
                 Призы гарантированно{" "}
-                <span className="text-foreground">найдут своих владельцев</span> за 30 дней.
+                <span className="text-foreground">найдут своих владельцев</span> за {days} дней.
                 Больше спинов — больше шансов забрать приз.
               </p>
             </div>
