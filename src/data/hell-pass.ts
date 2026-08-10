@@ -6,7 +6,6 @@ import {
   PlumpSticker,
   PlumpStore,
   PlumpComment,
-  PlumpGift,
   PlumpMelt,
   PlumpDiamond,
   PlumpSpin,
