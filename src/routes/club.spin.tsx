@@ -4,7 +4,7 @@ import { PageHeader } from "@/components/club/PageHeader";
 import { PlumpSpin } from "@/components/ui/icons";
 import { PlumpNum } from "@/components/brand/PlumpNum";
 import { haptic } from "@/hooks/use-haptic";
-import { playSpin, playWin, playClick } from "@/lib/roller-sfx";
+import { playWin, playClick, playTick } from "@/lib/roller-sfx";
 import silverBadge from "@/assets/hellpass/tpl-silver.png";
 import goldBadge from "@/assets/hellpass/tpl-gold.png";
 import imgAirpods from "@/assets/spin/airpods.png";
@@ -94,9 +94,8 @@ const ITEM_W = 104; // ширина карточки
 const GAP = 8;
 const STEP = ITEM_W + GAP;
 const STRIP_LEN = 72;
-const SPIN_MS = 4600; // основной разгон/торможение
-const HOLD_MS = 460; // «замирание» на легенде
-const SLIP_MS = 1250; // медленный проскок к настоящему призу
+const TOTAL_MS = 6200; // вся прокрутка — одна непрерывная анимация
+const CRAWL_FROM = 0.66; // с этого момента лента уже еле ползёт
 
 function pick<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
@@ -112,14 +111,23 @@ function buildStrip(teaseIndex: number, targetIndex: number) {
   return out;
 }
 
+/** Кубический Эрмит: позиция + касательные, чтобы скорость стыковалась без рывка. */
+function hermite(u: number, p0: number, p1: number, m0: number, m1: number) {
+  const u2 = u * u;
+  const u3 = u2 * u;
+  return (
+    (2 * u3 - 3 * u2 + 1) * p0 +
+    (u3 - 2 * u2 + u) * m0 +
+    (-2 * u3 + 3 * u2) * p1 +
+    (u3 - u2) * m1
+  );
+}
 
 /* ---------------- Страница ---------------- */
 
 function SpinPage() {
   const [strip, setStrip] = useState<Prize[]>(() => buildStrip(STRIP_LEN - 12, STRIP_LEN - 10));
   const [offset, setOffset] = useState(0);
-  const [dur, setDur] = useState(0);
-  const [ease, setEase] = useState("cubic-bezier(0.08,0.82,0.12,1)");
   const [spinning, setSpinning] = useState(false);
   const [teasing, setTeasing] = useState(false);
   const [won, setWon] = useState<Prize | null>(null);
@@ -127,10 +135,17 @@ function SpinPage() {
   const [streak] = useState(7); // мок
   const viewportRef = useRef<HTMLDivElement>(null);
   const timers = useRef<number[]>([]);
+  const rafRef = useRef<number | null>(null);
 
   const dayTicks = useMemo(() => Array.from({ length: 30 }, (_, i) => i + 1), []);
 
-  useEffect(() => () => timers.current.forEach((t) => window.clearTimeout(t)), []);
+  useEffect(
+    () => () => {
+      timers.current.forEach((t) => window.clearTimeout(t));
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    },
+    [],
+  );
 
   function later(fn: () => void, ms: number) {
     timers.current.push(window.setTimeout(fn, ms));
@@ -149,49 +164,74 @@ function SpinPage() {
     setSpinning(true);
 
     // Финал стоит сразу за «дразнилкой»: легенда почти встаёт под маркер,
-    // потом лента медленно проскальзывает дальше — и уезжает.
+    // а лента продолжает еле-еле ползти и мягко доводит настоящий приз.
     const targetIndex = STRIP_LEN - 8 - Math.floor(Math.random() * 3);
     const teaseIndex = targetIndex - 1;
 
     const fresh = buildStrip(teaseIndex, targetIndex);
     setStrip(fresh);
-    setDur(0);
     setOffset(0);
 
-    requestAnimationFrame(() => {
-      // Фаза 1: длинный разгон и торможение почти ровно на легенде (чуть недоезд).
-      setEase("cubic-bezier(0.08,0.82,0.12,1)");
-      setDur(SPIN_MS);
-      setOffset(centerFor(teaseIndex, -6 - Math.random() * 8));
-    });
+    const end = centerFor(targetIndex, (Math.random() - 0.5) * 8);
+    // Точка, где легенда почти встала под маркер (чуть недоезд).
+    const teaseStop = centerFor(teaseIndex, 4 + Math.random() * 6);
+    const f = teaseStop / end;
 
-    playSpin(teaseIndex, SPIN_MS);
+    // Скорость на стыке: одинаковая с обеих сторон → никаких перескоков.
+    const m1a = 0.075 * f; // медленное прибытие к легенде
+    const d1 = CRAWL_FROM;
+    const d2 = 1 - CRAWL_FROM;
+    const m0b = (m1a * d2) / d1;
 
-    later(() => {
-      // Замерли на легенде — подсветка и вибро, будто вот-вот заберём топ.
-      setTeasing(true);
-      haptic("selection");
-    }, SPIN_MS);
+    const pos = (t: number) => {
+      if (t <= CRAWL_FROM) {
+        return end * hermite(t / d1, 0, f, 2.55 * f, m1a);
+      }
+      return end * hermite((t - CRAWL_FROM) / d2, f, 1, m0b, 0);
+    };
 
-    later(() => {
-      // Фаза 2: медленный проскок на настоящий приз.
+    const t0 = performance.now();
+    let lastCell = -1;
+    let teased = false;
+
+    const frame = (now: number) => {
+      const t = Math.min(1, (now - t0) / TOTAL_MS);
+      const px = pos(t);
+      setOffset(px);
+
+      // Тики по реально проехавшим карточкам — ритм всегда совпадает с картинкой.
+      const cell = Math.floor(px / STEP);
+      if (cell !== lastCell) {
+        lastCell = cell;
+        const speed = Math.min(1, Math.abs(pos(Math.min(1, t + 0.004)) - px) / (STEP * 0.9));
+        playTick(0.05 + speed * 0.14, 0.25 + speed * 0.75);
+      }
+
+      // Подсветка легенды, пока она стоит под маркером.
+      if (!teased && t > CRAWL_FROM - 0.06) {
+        teased = true;
+        setTeasing(true);
+        haptic("selection");
+        later(() => setTeasing(false), TOTAL_MS * (1 - CRAWL_FROM) * 0.55);
+      }
+
+      if (t < 1) {
+        rafRef.current = requestAnimationFrame(frame);
+        return;
+      }
+
+      rafRef.current = null;
       setTeasing(false);
-      setEase("cubic-bezier(0.25,0.55,0.15,1)");
-      setDur(SLIP_MS);
-      setOffset(centerFor(targetIndex, (Math.random() - 0.5) * 10));
-      playClick();
-      later(() => playClick(), SLIP_MS * 0.45);
-      later(() => playClick(), SLIP_MS * 0.78);
-    }, SPIN_MS + HOLD_MS);
-
-    later(() => {
       setSpinning(false);
       setSpinsLeft((n) => Math.max(0, n - 1));
       setWon(fresh[targetIndex]);
       haptic("success");
       playWin();
-    }, SPIN_MS + HOLD_MS + SLIP_MS);
+    };
+
+    rafRef.current = requestAnimationFrame(frame);
   }
+
 
 
   return (
@@ -245,8 +285,8 @@ function SpinPage() {
               style={{
                 gap: `${GAP}px`,
                 transform: `translate3d(${-offset}px,0,0)`,
-                transition: dur ? `transform ${dur}ms ${ease}` : "none",
               }}
+
             >
               {strip.map((p, i) => (
                 <PrizeCell key={`${p.id}-${i}`} prize={p} hot={teasing && p.rarity === "legend"} />
