@@ -86,7 +86,44 @@ const MOCK_STATS = {
   physicalPending: 6,
 };
 
+/* Награды за активность (календарь 10/20/30) — их надо доставлять руками */
+type ShipStatus = "pending" | "contacted" | "shipped" | "delivered";
+
+type MilestoneClaim = {
+  id: string;
+  nick: string;
+  phone: string;
+  city: string;
+  day: 10 | 20 | 30;
+  reward: string;
+  claimedAt: string;
+  status: ShipStatus;
+};
+
+const SHIP_LABEL: Record<ShipStatus, string> = {
+  pending: "Не связались",
+  contacted: "Связались",
+  shipped: "Отправлено",
+  delivered: "Получено",
+};
+
+const SHIP_TONE: Record<ShipStatus, "zinc" | "emerald" | "amber" | "rose" | "blue" | "violet"> = {
+  pending: "rose",
+  contacted: "amber",
+  shipped: "blue",
+  delivered: "emerald",
+};
+
+const MOCK_MILESTONES: MilestoneClaim[] = [
+  { id: "m1", nick: "katya_mx", phone: "+7 916 772-04-51", city: "Москва", day: 10, reward: "Носки", claimedAt: "2026-08-10T16:10:00Z", status: "pending" },
+  { id: "m2", nick: "dashka_v", phone: "+7 914 228-76-15", city: "Казань", day: 10, reward: "Носки", claimedAt: "2026-08-08T17:12:00Z", status: "contacted" },
+  { id: "m3", nick: "nikitaZ", phone: "+7 999 224-67-90", city: "СПб", day: 20, reward: "Silver + носки + 5 билетов", claimedAt: "2026-08-07T12:44:00Z", status: "shipped" },
+  { id: "m4", nick: "kostya_drift", phone: "+7 910 667-23-89", city: "Екатеринбург", day: 30, reward: "Gold + носки + ремувка + 20 билетов", claimedAt: "2026-08-05T09:20:00Z", status: "delivered" },
+];
+
 const SEASON_INFO = {
+  label: "Сезон 1",
+
   label: "Сезон 1",
   startsAt: "11 авг 2026",
   endsAt: "10 сен 2026",
