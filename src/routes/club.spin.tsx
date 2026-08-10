@@ -437,24 +437,47 @@ function SpinPage() {
   );
 }
 
-function PrizeIcon({ rarity }: { rarity: Rarity }) {
-  const cls = "h-5 w-5 text-black";
-  if (rarity === "legend") return <PlumpDiamond className={cls} />;
-  if (rarity === "epic") return <PlumpGift className={cls} />;
-  if (rarity === "rare") return <PlumpTicket className={cls} />;
-  return <PlumpQuests className={cls} />;
+/** Медиа приза: фото/3D-рендер, для бонус-спина — плампная иконка. */
+function PrizeMedia({ prize, size }: { prize: Prize; size: number }) {
+  if (!prize.img) {
+    return (
+      <span
+        className="grid place-items-center rounded-full"
+        style={{ width: size, height: size, background: RARITY[prize.rarity].chip }}
+      >
+        <PlumpSpin className="text-black" style={{ width: size * 0.55, height: size * 0.55 }} />
+      </span>
+    );
+  }
+  return (
+    <img
+      src={prize.img}
+      alt=""
+      loading="lazy"
+      className="object-contain"
+      style={{
+        width: size,
+        height: size,
+        filter: `drop-shadow(0 6px 14px ${RARITY[prize.rarity].glow})`,
+      }}
+    />
+  );
 }
 
-function PrizeCell({ prize }: { prize: Prize }) {
+function PrizeCell({ prize, hot }: { prize: Prize; hot?: boolean }) {
   const r = RARITY[prize.rarity];
+  const legend = prize.rarity === "legend";
   return (
     <div
-      className="relative flex shrink-0 flex-col items-center justify-end overflow-hidden rounded-[20px] px-2 pb-3 pt-4 text-center"
+      className="relative flex shrink-0 flex-col items-center justify-end overflow-hidden rounded-[20px] px-2 pb-3 pt-3 text-center transition-transform duration-300"
       style={{
         width: ITEM_W,
-        height: 132,
+        height: 148,
+        transform: hot ? "scale(1.04)" : "none",
         background: `linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(0,0,0,0.25) 45%, ${r.glow} 100%)`,
-        boxShadow: `inset 0 0 0 1.5px ${r.ring}`,
+        boxShadow: hot
+          ? `inset 0 0 0 2px ${r.chip}, 0 0 34px -6px ${r.chip}`
+          : `inset 0 0 0 1.5px ${r.ring}`,
       }}
     >
       {/* Луч редкости снизу */}
@@ -462,16 +485,22 @@ function PrizeCell({ prize }: { prize: Prize }) {
         className="pointer-events-none absolute inset-x-0 bottom-0 h-2/3"
         style={{ background: `linear-gradient(180deg, transparent, ${r.glow})` }}
       />
-      <span
-        className="relative mb-2 grid h-11 w-11 place-items-center rounded-2xl"
-        style={{ background: r.chip, boxShadow: `0 8px 22px -10px ${r.chip}` }}
-      >
-        <PrizeIcon rarity={prize.rarity} />
+      {legend && (
+        <span
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background: `radial-gradient(70% 50% at 50% 35%, ${r.glow}, transparent 70%)`,
+          }}
+        />
+      )}
+      <span className="relative mb-1.5 grid flex-1 place-items-center">
+        <PrizeMedia prize={prize} size={legend ? 62 : 52} />
       </span>
-      <span className="relative line-clamp-2 font-display text-[12px] font-black uppercase leading-tight tracking-tight text-foreground">
+      <span className="relative line-clamp-2 font-display text-[11px] font-black uppercase leading-tight tracking-tight text-foreground">
         {prize.title}
       </span>
       <span className="absolute inset-x-3 bottom-0 h-[4px] rounded-t-full" style={{ background: r.chip }} />
     </div>
   );
 }
+
