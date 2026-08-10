@@ -613,7 +613,7 @@ function PrizeMedia({ prize, size }: { prize: Prize; size: number }) {
   );
 }
 
-function PrizeCell({ prize }: { prize: Prize }) {
+const PrizeCell = memo(function PrizeCell({ prize }: { prize: Prize }) {
   const r = RARITY[prize.rarity];
   const legend = prize.rarity === "legend";
   return (
