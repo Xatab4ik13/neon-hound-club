@@ -550,7 +550,7 @@ function StakePanel({
                 type="button"
                 onClick={() => onStakeChange(v)}
                 disabled={v > maxStake}
-                className={`rounded-xl border-[3px] border-foreground py-1.5 font-display text-[12px] font-black uppercase  tracking-widest transition-all active:translate-x-[1px] active:translate-y-[1px] disabled:opacity-30 ${
+                className={`rounded-xl border-[3px] border-foreground py-1 font-display text-[12px] font-black uppercase  tracking-widest transition-all active:translate-x-[1px] active:translate-y-[1px] disabled:opacity-30 ${
                   active
                     ? "bg-foreground text-background shadow-[2px_2px_0_0_hsl(var(--foreground))]"
                     : isMax
