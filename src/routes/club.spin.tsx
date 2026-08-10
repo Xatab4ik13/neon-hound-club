@@ -285,8 +285,8 @@ function SpinPage() {
               style={{
                 gap: `${GAP}px`,
                 transform: `translate3d(${-offset}px,0,0)`,
-                transition: dur ? `transform ${dur}ms ${ease}` : "none",
               }}
+
             >
               {strip.map((p, i) => (
                 <PrizeCell key={`${p.id}-${i}`} prize={p} hot={teasing && p.rarity === "legend"} />
