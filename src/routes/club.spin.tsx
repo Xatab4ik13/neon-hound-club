@@ -655,7 +655,7 @@ const PrizeCell = memo(function PrizeCell({ prize }: { prize: Prize }) {
       <span className="absolute inset-x-3 bottom-0 h-[4px] rounded-t-full" style={{ background: r.chip }} />
     </div>
   );
-}
+});
 
 
 
