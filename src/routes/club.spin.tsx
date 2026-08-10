@@ -495,11 +495,11 @@ function SpinPage() {
 
         <button
           type="button"
-          onClick={spin}
-          disabled={spinning || spinsLeft <= 0 || locked}
+          onClick={() => void spin()}
+          disabled={spinning || loading || spinsLeft <= 0 || locked}
           className="relative mt-3 flex h-14 w-full items-center justify-center overflow-hidden rounded-2xl bg-[#B6FF3C] font-display text-[17px] font-black uppercase tracking-tight text-black shadow-[0_10px_30px_-12px_#B6FF3C] transition-transform active:scale-[0.97] disabled:opacity-40 disabled:shadow-none"
         >
-          {!spinning && spinsLeft > 0 && (
+          {!spinning && spinsLeft > 0 && !locked && (
             <span
               className="pointer-events-none absolute inset-y-0 left-0 w-1/3 animate-[hs-sweep_2600ms_linear_infinite]"
               style={{
@@ -508,15 +508,28 @@ function SpinPage() {
             />
           )}
           <span className="relative">
-            {locked
-              ? "Доступно в приложении"
-              : spinning
-                ? "Крутим…"
-                : spinsLeft > 0
-                  ? "Крутить"
-                  : "Спины закончились"}
+            {phoneMissing
+              ? "Подтверди телефон"
+              : locked
+                ? "Доступно в приложении"
+                : loading
+                  ? "Загружаем…"
+                  : spinning
+                    ? "Крутим…"
+                    : spinsLeft > 0
+                      ? "Крутить"
+                      : "Спины закончились"}
           </span>
         </button>
+
+        {phoneMissing && (
+          <Link
+            to="/club/profile"
+            className="mt-3 block text-center font-mono text-[11px] uppercase tracking-widest text-primary"
+          >
+            Подтвердить номер в профиле
+          </Link>
+        )}
 
         {lastPrize && !spinning && (
           <p className="mt-3 text-center font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
