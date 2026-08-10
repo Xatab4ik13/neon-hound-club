@@ -10,6 +10,7 @@ import { requireAuth, requireAdmin, type SessionPayload } from "../lib/auth.js";
 import {
   activatePassPurchase,
   createPassPurchase,
+  cleanupStalePendingPasses,
   expireOldPasses,
   getActivePass,
   getPassHistory,
@@ -104,6 +105,7 @@ export async function adminPassRoutes(app: FastifyInstance) {
       .object({
         status: z.enum(["pending_payment", "active", "expired", "cancelled", "superseded"]).optional(),
         tier: z.enum(PASS_TIERS).optional(),
+        source: z.enum(["purchase", "spin", "streak", "grant"]).optional(),
         q: z.string().trim().min(1).max(64).optional(),
         limit: z.coerce.number().int().min(1).max(200).default(100),
       })
@@ -112,6 +114,7 @@ export async function adminPassRoutes(app: FastifyInstance) {
     const conds = [];
     if (q.status) conds.push(eq(passPurchases.status, q.status));
     if (q.tier) conds.push(eq(passPurchases.tier, q.tier));
+    if (q.source) conds.push(eq(passPurchases.source, q.source));
     if (q.q) {
       const like = `%${q.q}%`;
       conds.push(or(ilike(users.nick, like), ilike(users.email, like))!);
@@ -125,6 +128,7 @@ export async function adminPassRoutes(app: FastifyInstance) {
         priceRub: passPurchases.priceRub,
         ticketsGranted: passPurchases.ticketsGranted,
         status: passPurchases.status,
+        source: passPurchases.source,
         createdAt: passPurchases.createdAt,
         paidAt: passPurchases.paidAt,
         expiresAt: passPurchases.expiresAt,
@@ -143,6 +147,8 @@ export async function adminPassRoutes(app: FastifyInstance) {
 
   // GET /api/v1/admin/pass/stats — сводка для карточек в админке.
   app.get("/stats", { preHandler: requireAdmin }, async () => {
+    // Перед подсчётом чистим просроченные заявки — так «Ждут оплаты» всегда честное.
+    await cleanupStalePendingPasses();
     const nowMs = Date.now();
     const now = new Date(nowMs).toISOString();
     const d30 = new Date(nowMs - 30 * 24 * 60 * 60 * 1000).toISOString();
@@ -185,12 +191,23 @@ export async function adminPassRoutes(app: FastifyInstance) {
         ),
       );
 
+    // Активные пассы по источнику: купленные vs выданные рулеткой/календарём.
+    const activeBySource = await db
+      .select({ source: passPurchases.source, c: sql<number>`COUNT(*)::int` })
+      .from(passPurchases)
+      .where(and(eq(passPurchases.status, "active"), sql`${passPurchases.expiresAt} >= ${now}::timestamptz`))
+      .groupBy(passPurchases.source);
+
+    const bySource: Record<string, number> = { purchase: 0, spin: 0, streak: 0, grant: 0 };
+    for (const r of activeBySource) bySource[r.source as string] = r.c;
+
     const byTier: Record<string, number> = { silver: 0, gold: 0, platinum: 0 };
     for (const r of activeByTier) byTier[r.tier as string] = r.c;
 
     return {
       activeByTier: byTier,
       activeTotal: byTier.silver + byTier.gold + byTier.platinum,
+      activeBySource: bySource,
       pendingCount: pending?.c ?? 0,
       expiringWithin7d: expiring7?.c ?? 0,
       revenue30dRub: revenue30d?.total ?? 0,
@@ -218,6 +235,12 @@ export async function adminPassRoutes(app: FastifyInstance) {
     const updated = await revokePass(parsed.data.purchaseId);
     if (!updated) return reply.code(404).send({ error: "not_found" });
     return { ok: true, purchase: updated };
+  });
+
+  // POST /api/v1/admin/pass/cleanup-pending — удалить неоплаченные заявки старше часа.
+  app.post("/cleanup-pending", { preHandler: requireAdmin }, async () => {
+    const removed = await cleanupStalePendingPasses();
+    return { ok: true, removed };
   });
 
   // POST /api/v1/admin/pass/expire-old — прогнать истёкшие. Дёргать кроном раз в день.

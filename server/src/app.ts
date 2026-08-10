@@ -207,6 +207,26 @@ export async function buildApp() {
     app.log.error({ err: e }, "ensureBucket failed");
   }
 
+  // Фоновая уборка Hell Pass: раз в 10 минут удаляем неоплаченные заявки (>1 часа)
+  // и помечаем истёкшие пассы как expired.
+  try {
+    const { cleanupStalePendingPasses, expireOldPasses } = await import("./lib/pass.js");
+    const tick = async () => {
+      try {
+        const removed = await cleanupStalePendingPasses();
+        const expired = await expireOldPasses();
+        if (removed || expired) app.log.info({ removed, expired }, "pass housekeeping");
+      } catch (e) {
+        app.log.error({ err: e }, "pass housekeeping failed");
+      }
+    };
+    const timer = setInterval(tick, 10 * 60 * 1000);
+    timer.unref?.();
+    void tick();
+  } catch (e) {
+    app.log.error({ err: e }, "pass housekeeping init failed");
+  }
+
   // Сидим стартовые квесты (идемпотентно по code).
   try {
     const { seedQuests } = await import("./lib/quests.js");
