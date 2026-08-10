@@ -437,9 +437,8 @@ function SpinPage() {
                     loading="lazy"
                     className={`h-full w-full ${
                       fit === "cover" ? "scale-[1.15] object-cover" : "object-contain p-[2px]"
-                    } ${done ? "" : "opacity-70"} ${isClaimed ? "opacity-60" : ""}`}
+                    } ${done ? "" : "opacity-70"}`}
                   />
-                  {isClaimed && <ClaimedStrike />}
                 </span>
               );
             }
@@ -475,17 +474,14 @@ function SpinPage() {
                       (MILESTONE_FIT[c.day] ?? "contain") === "cover"
                         ? "scale-[1.15] object-cover"
                         : "object-contain p-1"
-                    } ${isClaimed ? "opacity-60" : ""}`}
+                    }`}
                   />
-                  {isClaimed && <ClaimedStrike />}
                 </span>
 
                 <span className="min-w-0 flex-1">
                   <span
                     className={`block truncate text-[14px] font-semibold ${
-                      isClaimed
-                        ? "text-muted-foreground line-through decoration-[#B6FF3C] decoration-[3px]"
-                        : "text-foreground"
+                      isClaimed ? "text-muted-foreground" : "text-foreground"
                     }`}
                   >
                     {c.title}
@@ -496,7 +492,7 @@ function SpinPage() {
                 </span>
 
                 {isClaimed ? (
-                  <span className="sticker-wiggle shrink-0 rounded-lg border-[2px] border-foreground bg-[#B6FF3C] px-2 py-1 font-display text-[10px] font-black uppercase tracking-tight text-black shadow-[2px_2px_0_0_hsl(var(--foreground))]">
+                  <span className="shrink-0 rounded-lg border-[2px] border-foreground bg-[#B6FF3C] px-2 py-1 font-display text-[10px] font-black uppercase tracking-tight text-black shadow-[2px_2px_0_0_hsl(var(--foreground))]">
                     Твоё
                   </span>
                 ) : streak >= c.day ? (
@@ -556,20 +552,8 @@ function SpinPage() {
   );
 }
 
-/** Перечёркивание забранной награды: плампная лаймовая полоса, слегка дёргается. */
-function ClaimedStrike() {
-  return (
-    <span className="pointer-events-none absolute inset-0 grid place-items-center">
-      <span className="absolute inset-0 rounded-full bg-black/20" />
-      <span
-        className="absolute left-[-12%] top-1/2 h-[3px] w-[124%]"
-        style={{ transform: "translateY(-50%) rotate(-24deg)" }}
-      >
-        <span className="sticker-wiggle block h-full w-full origin-center rounded-full bg-[#B6FF3C] shadow-[0_0_10px_rgba(182,255,60,0.7)]" />
-      </span>
-    </span>
-  );
-}
+
+
 
 /** Медиа приза: 3D-рендер вписываем целиком, фото товара — кропаем в кругляш. */
 function PrizeMedia({ prize, size }: { prize: Prize; size: number }) {
