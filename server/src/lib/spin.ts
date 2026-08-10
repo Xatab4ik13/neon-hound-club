@@ -389,21 +389,32 @@ export async function rollSpin(userId: string, pwa: boolean): Promise<SpinResult
     })
     .returning();
 
-  // Дневной счётчик: бонус-спин возвращает прокрут (used +1, bonus +1).
-  const [dailyAfter] = await db
-    .update(spinDaily)
-    .set({
-      used: sql`${spinDaily.used} + 1`,
-      bonus: isBonus ? sql`${spinDaily.bonus} + 1` : spinDaily.bonus,
-      updatedAt: new Date(),
-    })
-    .where(eq(spinDaily.id, daily.id))
-    .returning();
+  // Бонус-спин возвращает прокрут: +1 к bonus-лимиту дня.
+  if (isBonus) {
+    const [bonusRow] = await db
+      .update(spinDaily)
+      .set({ bonus: sql`${spinDaily.bonus} + 1`, updatedAt: new Date() })
+      .where(eq(spinDaily.id, daily.id))
+      .returning();
+    if (bonusRow) dailyAfter.bonus = bonusRow.bonus;
+  }
 
-  const promoCode = await grantPrize(userId, season.id, spinRow!.id, prize);
-  const streakDays = await bumpStreak(userId, season.id, day);
+  // Начисление приза + стрик. Если начисление падает — откатываем списание спина,
+  // чтобы юзер не потерял прокрут из-за внутренней ошибки.
+  let promoCode: string | undefined;
+  let streakDays: number;
+  try {
+    promoCode = await grantPrize(userId, season.id, spinRow!.id, prize);
+    streakDays = await bumpStreak(userId, season.id, day);
+  } catch (grantErr) {
+    await db
+      .update(spinDaily)
+      .set({ used: sql`${spinDaily.used} - 1`, updatedAt: new Date() })
+      .where(eq(spinDaily.id, daily.id));
+    throw grantErr;
+  }
 
-  const allowed = (dailyAfter?.allowed ?? daily.allowed) + (dailyAfter?.bonus ?? daily.bonus);
+  const allowed = dailyAfter.allowed + dailyAfter.bonus;
   return {
     prizeCode: prize.code,
     prizeTitle: prize.title,
@@ -413,7 +424,7 @@ export async function rollSpin(userId: string, pwa: boolean): Promise<SpinResult
     promoCode,
     bonusSpin: isBonus,
     spinsAllowed: allowed,
-    spinsLeft: Math.max(0, allowed - (dailyAfter?.used ?? daily.used + 1)),
+    spinsLeft: Math.max(0, allowed - dailyAfter.used),
     streakDays,
   };
 }
