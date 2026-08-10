@@ -384,7 +384,7 @@ export async function rollSpin(userId: string, pwa: boolean): Promise<SpinResult
       rarity: prize.rarity,
       spinDate: day,
       tier,
-      bonus: false,
+      bonus: dailyAfter.used > dailyAfter.allowed,
       rolledChancePpm: chancePpm,
     })
     .returning();
