@@ -143,7 +143,6 @@ function hermite(u: number, p0: number, p1: number, m0: number, m1: number) {
 
 function SpinPage() {
   const [strip, setStrip] = useState<Prize[]>(() => buildStrip(STRIP_LEN - 12, STRIP_LEN - 10));
-  const [offset, setOffset] = useState(0);
   const [spinning, setSpinning] = useState(false);
   const [won, setWon] = useState<Prize | null>(null);
   const [lastPrize, setLastPrize] = useState<Prize | null>(() => {
@@ -155,31 +154,39 @@ function SpinPage() {
 
   const [streak] = useState(12); // мок
   // Мок: майлстоуны, награду по которым уже забрали — их перечёркиваем.
-  const [claimed] = useState<number[]>([10]);
+  const [claimed, setClaimed] = useState<number[]>([10]);
   const access = useSpinAccess();
   const locked = !access.granted;
   const viewportRef = useRef<HTMLDivElement>(null);
-  const timers = useRef<number[]>([]);
+  // Лента двигается напрямую через ref: никакого state на 60 fps → нет ре-рендера 72 карточек.
+  const stripRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number | null>(null);
 
   const dayTicks = useMemo(() => Array.from({ length: 30 }, (_, i) => i + 1), []);
 
   useEffect(
     () => () => {
-      timers.current.forEach((t) => window.clearTimeout(t));
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     },
     [],
   );
 
-  function later(fn: () => void, ms: number) {
-    timers.current.push(window.setTimeout(fn, ms));
+  function moveStrip(px: number) {
+    const el = stripRef.current;
+    if (el) el.style.transform = `translate3d(${-px}px,0,0)`;
   }
 
   function centerFor(index: number, extra = 0) {
     const w = viewportRef.current?.clientWidth ?? 360;
     return index * STEP + ITEM_W / 2 - w / 2 + extra;
   }
+
+  function claimMilestone(day: number) {
+    haptic("success");
+    setClaimed((prev) => (prev.includes(day) ? prev : [...prev, day]));
+    toast.success("Награда забрана — заберём с тебя адрес доставки");
+  }
+
 
   function spin() {
     if (spinning || spinsLeft <= 0 || locked) return;
