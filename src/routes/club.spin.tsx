@@ -827,33 +827,3 @@ function HowItWorks() {
   );
 }
 
-function GuaranteedCard({
-  img,
-  value,
-  label,
-  fit = "contain",
-}: {
-  img: string;
-  value: string;
-  label: string;
-  fit?: "cover" | "contain";
-}) {
-  return (
-    <div className="flex flex-col items-center rounded-2xl bg-black/30 px-2 py-3 text-center">
-      <span className="grid h-10 w-10 place-items-center overflow-hidden rounded-full bg-white/[0.06]">
-        <img
-          src={img}
-          alt=""
-          loading="lazy"
-          className={`h-full w-full ${fit === "cover" ? "object-cover" : "object-contain p-1"}`}
-        />
-      </span>
-      <span className="mt-1.5 font-display text-[18px] font-black leading-none text-foreground">
-        {value}
-      </span>
-      <span className="mt-0.5 font-mono text-[9px] uppercase tracking-widest text-muted-foreground">
-        {label}
-      </span>
-    </div>
-  );
-}
