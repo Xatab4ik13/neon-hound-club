@@ -581,7 +581,7 @@ export function PlumpSpin(props: IconProps) {
       <path
         fill="currentColor"
         fillRule="evenodd"
-        d="M32.875 4.968A21 21 0 1 1 15.125 4.968L25.425 4.578L18.506 12.218A13 13 0 1 0 29.494 12.218Z"
+        d="M3 24A21 21 0 1 0 45 24A21 21 0 1 0 3 24ZM12 24A12 12 0 1 0 36 24A12 12 0 1 0 12 24ZM20.5 1.5H27.5V12.6H20.5ZM20.5 35.4H27.5V46.5H20.5ZM1.5 20.5H12.6V27.5H1.5ZM35.4 20.5H46.5V27.5H35.4ZM18.5 24A5.5 5.5 0 1 0 29.5 24A5.5 5.5 0 1 0 18.5 24Z"
         clipRule="evenodd"
       />
     </svg>

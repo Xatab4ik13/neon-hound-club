@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { PlumpFeed, PlumpStore, PlumpTicket, PlumpGarage, PlumpMore } from "@/components/ui/icons";
+import { PlumpFeed, PlumpStore, PlumpTicket, PlumpSpin, PlumpMore } from "@/components/ui/icons";
 import { useState } from "react";
 import { MobileMoreSheet } from "./MobileMoreSheet";
 import { haptic } from "@/hooks/use-haptic";
@@ -8,7 +8,7 @@ type TabIcon = React.ComponentType<React.SVGProps<SVGSVGElement>>;
 
 type Tab = {
   label: string;
-  href: "/club" | "/club/shop" | "/club/tickets" | "/club/garage";
+  href: "/club" | "/club/shop" | "/club/tickets" | "/club/spin";
   icon: TabIcon;
   exact?: boolean;
 };
@@ -17,12 +17,13 @@ const TABS: Tab[] = [
   { label: "Лента", href: "/club", icon: PlumpFeed, exact: true },
   { label: "Магазин", href: "/club/shop", icon: PlumpStore },
   { label: "Билеты", href: "/club/tickets", icon: PlumpTicket },
-  { label: "Гараж", href: "/club/garage", icon: PlumpGarage },
+  { label: "HellSpin", href: "/club/spin", icon: PlumpSpin },
 ];
 
 
 // Pathnames that should keep "More" highlighted as the active tab.
 const MORE_PATHS = [
+  "/club/garage",
   "/club/hell-ai",
   "/club/quests",
   "/club/raffles",

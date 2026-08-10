@@ -5,6 +5,7 @@ import {
   Trophy,
   PlumpStore,
   PlumpTicket,
+  PlumpSpin,
 } from "@/components/ui/icons";
 import { ShieldAlert } from "lucide-react";
 import { TicketLedger } from "@/components/club/TicketLedger";
@@ -72,6 +73,24 @@ function TicketsPage() {
         isError={balanceQ.isError}
         onRetry={() => balanceQ.refetch()}
       />
+
+      <Link
+        to="/club/spin"
+        className="group relative mb-5 flex items-center gap-3 rounded-2xl bg-card px-4 py-3 transition-transform active:scale-[0.98]"
+      >
+        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground">
+          <PlumpSpin className="h-5 w-5" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+            Рулетка клуба
+          </span>
+          <span className="mt-0.5 block truncate font-display text-[15px] font-black uppercase tracking-tight text-foreground">
+            HellSpin — крути каждый день
+          </span>
+        </span>
+        <ChevronRight className="h-4 w-4 shrink-0 text-foreground/70" />
+      </Link>
 
       {activeRaffle && (
         <Link
