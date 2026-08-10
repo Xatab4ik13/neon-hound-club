@@ -11,14 +11,14 @@ import { TIERS, type Perk, type Tier } from "@/data/hell-pass";
 import { fetchPassMe, qk } from "@/lib/queries";
 import { useViewer } from "@/hooks/use-viewer";
 
-import silverBadge from "@/assets/hellpass/silver.png.asset.json";
-import goldBadge from "@/assets/hellpass/gold.png.asset.json";
-import platinumBadge from "@/assets/hellpass/platinum.png.asset.json";
+import silverBadge from "@/assets/hellpass/silver-v2.png";
+import goldBadge from "@/assets/hellpass/gold-v2.png";
+import platinumBadge from "@/assets/hellpass/platinum-v2.png";
 
 const BADGES: Record<Tier["slug"], string> = {
-  silver: silverBadge.url,
-  gold: goldBadge.url,
-  platinum: platinumBadge.url,
+  silver: silverBadge,
+  gold: goldBadge,
+  platinum: platinumBadge,
 };
 
 export const Route = createFileRoute("/club/hell-pass/")({

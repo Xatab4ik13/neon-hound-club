@@ -5,8 +5,8 @@ import { PlumpTicket, PlumpGift, PlumpDiamond, PlumpQuests } from "@/components/
 import { PlumpNum } from "@/components/brand/PlumpNum";
 import { haptic } from "@/hooks/use-haptic";
 import { playSpin, playWin, playClick } from "@/lib/roller-sfx";
-import silverBadge from "@/assets/hellpass/silver.png.asset.json";
-import goldBadge from "@/assets/hellpass/gold.png.asset.json";
+import silverBadge from "@/assets/hellpass/silver-v2.png";
+import goldBadge from "@/assets/hellpass/gold-v2.png";
 
 export const Route = createFileRoute("/club/spin")({
   head: () => ({
@@ -61,8 +61,15 @@ const SOCKS_IMG =
 
 const MILESTONE_IMG: Record<number, string> = {
   10: SOCKS_IMG,
-  20: silverBadge.url,
-  30: goldBadge.url,
+  20: silverBadge,
+  30: goldBadge,
+};
+
+// Фото товара нужно кропать по кругу, а бейджи — вписывать целиком.
+const MILESTONE_FIT: Record<number, "cover" | "contain"> = {
+  10: "cover",
+  20: "contain",
+  30: "contain",
 };
 
 const CALENDAR = [
@@ -262,10 +269,11 @@ function SpinPage() {
             const done = d <= streak;
             const img = MILESTONE_IMG[d];
             if (img) {
+              const fit = MILESTONE_FIT[d] ?? "contain";
               return (
                 <span
                   key={d}
-                  className={`relative grid aspect-square place-items-center overflow-hidden rounded-xl ${
+                  className={`relative grid aspect-square place-items-center overflow-hidden rounded-full ${
                     done
                       ? "bg-[#B6FF3C] shadow-[0_4px_14px_-6px_#B6FF3C]"
                       : "bg-[#B6FF3C]/15 ring-1 ring-inset ring-[#B6FF3C]/40"
@@ -275,7 +283,9 @@ function SpinPage() {
                     src={img}
                     alt=""
                     loading="lazy"
-                    className={`h-full w-full object-contain p-[2px] ${done ? "" : "opacity-70"}`}
+                    className={`h-full w-full ${
+                      fit === "cover" ? "scale-[1.15] object-cover" : "object-contain p-[2px]"
+                    } ${done ? "" : "opacity-70"}`}
                   />
                 </span>
               );
@@ -298,12 +308,16 @@ function SpinPage() {
         <ul className="space-y-2">
           {CALENDAR.map((c) => (
             <li key={c.day} className="flex items-center gap-3 rounded-2xl bg-black/30 px-3 py-2.5">
-              <span className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-2xl bg-white/[0.06]">
+              <span className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full bg-white/[0.06]">
                 <img
                   src={MILESTONE_IMG[c.day]}
                   alt={c.title}
                   loading="lazy"
-                  className="h-full w-full object-contain p-1"
+                  className={`h-full w-full ${
+                    (MILESTONE_FIT[c.day] ?? "contain") === "cover"
+                      ? "scale-[1.15] object-cover"
+                      : "object-contain p-1"
+                  }`}
                 />
               </span>
 
