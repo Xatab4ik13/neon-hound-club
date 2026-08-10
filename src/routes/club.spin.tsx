@@ -28,13 +28,14 @@ type Prize = {
   rarity: Rarity;
 };
 
-// Цвета редкости — из палитры проекта (магента / лайм / лаванда).
+// Цвета редкости — плашки из школы: 03 циан → 04 лайм → 06 магента → 08 золото.
 const RARITY: Record<Rarity, { ring: string; glow: string; label: string; chip: string }> = {
-  common: { ring: "rgba(255,255,255,0.10)", glow: "rgba(255,255,255,0.07)", label: "Обычный", chip: "#8A8A8A" },
+  common: { ring: "rgba(61,219,217,0.32)", glow: "rgba(61,219,217,0.16)", label: "Обычный", chip: "#3DDBD9" },
   rare: { ring: "rgba(182,255,60,0.35)", glow: "rgba(182,255,60,0.20)", label: "Редкий", chip: "#B6FF3C" },
-  epic: { ring: "rgba(198,168,255,0.38)", glow: "rgba(198,168,255,0.22)", label: "Эпик", chip: "#C6A8FF" },
-  legend: { ring: "rgba(240,0,192,0.45)", glow: "rgba(240,0,192,0.26)", label: "Легенда", chip: "#F000C0" },
+  epic: { ring: "rgba(240,0,192,0.42)", glow: "rgba(240,0,192,0.24)", label: "Эпик", chip: "#F000C0" },
+  legend: { ring: "rgba(255,217,61,0.48)", glow: "rgba(255,217,61,0.26)", label: "Легенда", chip: "#FFD93D" },
 };
+
 
 const POOL: Prize[] = [
   { id: "xp100", title: "100 XP", rarity: "common" },
