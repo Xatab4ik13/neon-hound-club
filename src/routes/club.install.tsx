@@ -344,7 +344,7 @@ function IosGuide() {
       <Steps
         title="Установка"
         steps={[
-          "Открой клуб в Chrome (там лучше работает вибрация в HellSpin). Можно и в Safari.",
+          "Открой клуб в браузере. Рекомендуем Chrome, но подойдёт и Safari.",
           <>
             Нажми кнопку{" "}
             <span className="inline-flex translate-y-[1px] items-center gap-1 align-middle text-primary">
