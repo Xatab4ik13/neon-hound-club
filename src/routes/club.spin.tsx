@@ -4,7 +4,7 @@ import { PageHeader } from "@/components/club/PageHeader";
 import { PlumpSpin } from "@/components/ui/icons";
 import { PlumpNum } from "@/components/brand/PlumpNum";
 import { haptic } from "@/hooks/use-haptic";
-import { playSpin, playWin, playClick } from "@/lib/roller-sfx";
+import { playWin, playClick, playTick } from "@/lib/roller-sfx";
 import silverBadge from "@/assets/hellpass/tpl-silver.png";
 import goldBadge from "@/assets/hellpass/tpl-gold.png";
 import imgAirpods from "@/assets/spin/airpods.png";
