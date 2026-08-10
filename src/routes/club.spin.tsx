@@ -202,7 +202,7 @@ function SpinPage() {
 
     const fresh = buildStrip(teaseIndex, targetIndex);
     setStrip(fresh);
-    setOffset(0);
+    moveStrip(0);
 
     const end = centerFor(targetIndex, (Math.random() - 0.5) * 8);
     // Точка, где легенда почти встала под маркер (чуть недоезд).
