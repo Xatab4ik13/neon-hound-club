@@ -35,10 +35,10 @@ function fmtDate(iso: string | null) {
 }
 
 function statusBadge(p: AdminPromoCodeDto) {
-  if (p.usedAt) return <Badge tone="muted">Использован</Badge>;
-  if (!p.active) return <Badge tone="muted">Выключен</Badge>;
-  if (p.expired) return <Badge tone="danger">Истёк</Badge>;
-  return <Badge tone="success">Активен</Badge>;
+  if (p.usedAt) return <Badge tone="zinc">Использован</Badge>;
+  if (!p.active) return <Badge tone="zinc">Выключен</Badge>;
+  if (p.expired) return <Badge tone="rose">Истёк</Badge>;
+  return <Badge tone="emerald">Активен</Badge>;
 }
 
 function PromoAdminPage() {
@@ -85,7 +85,7 @@ function PromoAdminPage() {
     <div className="space-y-4">
       <PageHeader
         title="Промокоды"
-        subtitle="Скидка в процентах на товары. Доставка не скидывается."
+        description="Скидка в процентах на товары. Доставка не скидывается."
         actions={
           <Btn variant="primary" onClick={() => setCreateOpen(true)}>
             <Gift className="h-4 w-4" /> Создать промокод

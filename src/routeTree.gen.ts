@@ -63,6 +63,7 @@ import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as AdminSchoolRouteImport } from './routes/admin.school'
 import { Route as AdminRafflesRouteImport } from './routes/admin.raffles'
 import { Route as AdminQuestsRouteImport } from './routes/admin.quests'
+import { Route as AdminPromoRouteImport } from './routes/admin.promo'
 import { Route as AdminPassRouteImport } from './routes/admin.pass'
 import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
 import { Route as AdminNewsRouteImport } from './routes/admin.news'
@@ -369,6 +370,11 @@ const AdminQuestsRoute = AdminQuestsRouteImport.update({
   path: '/quests',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminPromoRoute = AdminPromoRouteImport.update({
+  id: '/promo',
+  path: '/promo',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminPassRoute = AdminPassRouteImport.update({
   id: '/pass',
   path: '/pass',
@@ -566,6 +572,7 @@ export interface FileRoutesByFullPath {
   '/admin/news': typeof AdminNewsRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/pass': typeof AdminPassRoute
+  '/admin/promo': typeof AdminPromoRoute
   '/admin/quests': typeof AdminQuestsRoute
   '/admin/raffles': typeof AdminRafflesRoute
   '/admin/school': typeof AdminSchoolRoute
@@ -654,6 +661,7 @@ export interface FileRoutesByTo {
   '/admin/news': typeof AdminNewsRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/pass': typeof AdminPassRoute
+  '/admin/promo': typeof AdminPromoRoute
   '/admin/quests': typeof AdminQuestsRoute
   '/admin/raffles': typeof AdminRafflesRoute
   '/admin/school': typeof AdminSchoolRoute
@@ -746,6 +754,7 @@ export interface FileRoutesById {
   '/admin/news': typeof AdminNewsRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/pass': typeof AdminPassRoute
+  '/admin/promo': typeof AdminPromoRoute
   '/admin/quests': typeof AdminQuestsRoute
   '/admin/raffles': typeof AdminRafflesRoute
   '/admin/school': typeof AdminSchoolRoute
@@ -839,6 +848,7 @@ export interface FileRouteTypes {
     | '/admin/news'
     | '/admin/orders'
     | '/admin/pass'
+    | '/admin/promo'
     | '/admin/quests'
     | '/admin/raffles'
     | '/admin/school'
@@ -927,6 +937,7 @@ export interface FileRouteTypes {
     | '/admin/news'
     | '/admin/orders'
     | '/admin/pass'
+    | '/admin/promo'
     | '/admin/quests'
     | '/admin/raffles'
     | '/admin/school'
@@ -1018,6 +1029,7 @@ export interface FileRouteTypes {
     | '/admin/news'
     | '/admin/orders'
     | '/admin/pass'
+    | '/admin/promo'
     | '/admin/quests'
     | '/admin/raffles'
     | '/admin/school'
@@ -1500,6 +1512,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminQuestsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/promo': {
+      id: '/admin/promo'
+      path: '/promo'
+      fullPath: '/admin/promo'
+      preLoaderRoute: typeof AdminPromoRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/pass': {
       id: '/admin/pass'
       path: '/pass'
@@ -1757,6 +1776,7 @@ interface AdminRouteChildren {
   AdminNewsRoute: typeof AdminNewsRoute
   AdminOrdersRoute: typeof AdminOrdersRoute
   AdminPassRoute: typeof AdminPassRoute
+  AdminPromoRoute: typeof AdminPromoRoute
   AdminQuestsRoute: typeof AdminQuestsRoute
   AdminRafflesRoute: typeof AdminRafflesRoute
   AdminSchoolRoute: typeof AdminSchoolRoute
@@ -1778,6 +1798,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminNewsRoute: AdminNewsRoute,
   AdminOrdersRoute: AdminOrdersRoute,
   AdminPassRoute: AdminPassRoute,
+  AdminPromoRoute: AdminPromoRoute,
   AdminQuestsRoute: AdminQuestsRoute,
   AdminRafflesRoute: AdminRafflesRoute,
   AdminSchoolRoute: AdminSchoolRoute,
