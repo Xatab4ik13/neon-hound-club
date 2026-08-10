@@ -579,7 +579,7 @@ function StakePanel({
       {noBalance && (
         <Link
           to="/club/tickets"
-          className="mt-2.5 block text-center font-mono text-[10px] font-bold uppercase tracking-widest text-[#FFD93D] underline decoration-2 underline-offset-4"
+          className="mt-1.5 block text-center font-mono text-[10px] font-bold uppercase tracking-widest text-[#FFD93D] underline decoration-2 underline-offset-4"
         >
           Билетов не хватает — как их набрать →
         </Link>
