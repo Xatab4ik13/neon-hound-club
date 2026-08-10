@@ -134,7 +134,7 @@ function SpinAdminPage() {
     <div>
       <PageHeader
         title="HellSpin"
-        description="Статистика прокрутов и победители. Пул призов и логика — в коде бэкенда."
+        description="Статистика прокрутов и победители."
         actions={
           <Btn variant="secondary" onClick={refreshAll}>
             <RefreshCw className="h-3.5 w-3.5" /> Обновить
@@ -253,22 +253,8 @@ function SpinAdminPage() {
         )}
       </Panel>
 
-      {/* Пул призов */}
-      <Panel className="mb-6">
-        <PanelHeader>
-          <span className="text-sm font-semibold">Пул призов сезона</span>
-        </PanelHeader>
-        <DataTable
-          headers={["Приз", "Редкость", "Шанс", "Выдано", "Лимит"]}
-          rows={(overview.data?.prizes ?? []).map((p) => [
-            <span className="font-medium">{p.title}</span>,
-            <Badge tone={RARITY_TONE[p.rarity]}>{RARITY_LABEL[p.rarity]}</Badge>,
-            <span className="font-mono text-xs">{(p.chancePpm / 10000).toFixed(3)}%</span>,
-            <span className="font-mono text-xs">{fmt(p.issued)}</span>,
-            <span className="font-mono text-xs">{p.limitTotal == null ? "∞" : fmt(p.limitTotal)}</span>,
-          ])}
-        />
-      </Panel>
+
+
 
       {/* Календарь активности */}
       <Panel className="mb-6">
