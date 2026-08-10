@@ -119,10 +119,7 @@ function SpinPage() {
       <PageHeader title="HellSpin" subtitle="Крути каждый день" />
 
       {/* Баланс спинов */}
-      <div className="mb-4 flex items-center gap-3 rounded-3xl bg-card p-4">
-        <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-primary text-primary-foreground">
-          <PlumpSpin className={`h-7 w-7 ${spinning ? "animate-spin" : ""}`} />
-        </span>
+      <div className="mb-4 flex items-center gap-3 rounded-3xl bg-card px-4 py-4">
         <div className="min-w-0 flex-1">
           <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
             Спинов сегодня
@@ -138,6 +135,7 @@ function SpinPage() {
           Gold
         </span>
       </div>
+
 
       {/* Роллер */}
       <section aria-label="Рулетка" className="mb-4 overflow-hidden rounded-3xl bg-card p-3 pb-4">
@@ -201,11 +199,11 @@ function SpinPage() {
           type="button"
           onClick={spin}
           disabled={spinning || spinsLeft <= 0}
-          className="mt-3 flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-primary font-display text-[17px] font-black uppercase tracking-tight text-primary-foreground shadow-[0_10px_30px_-12px_hsl(var(--primary))] transition-transform active:scale-[0.97] disabled:opacity-40 disabled:shadow-none"
+          className="mt-3 flex h-14 w-full items-center justify-center rounded-2xl bg-[#B6FF3C] font-display text-[17px] font-black uppercase tracking-tight text-black shadow-[0_10px_30px_-12px_#B6FF3C] transition-transform active:scale-[0.97] disabled:opacity-40 disabled:shadow-none"
         >
-          <PlumpSpin className={`h-5 w-5 ${spinning ? "animate-spin" : ""}`} />
           {spinning ? "Крутим…" : spinsLeft > 0 ? "Крутить" : "Спины закончились"}
         </button>
+
 
         {won && !spinning && (
           <div
