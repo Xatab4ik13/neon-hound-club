@@ -65,7 +65,15 @@ export function SpinAccessGate({ access }: { access: SpinAccess }) {
           title="Установи приложение"
           hint="Добавь клуб на главный экран"
           action={
-            access.installed ? null : (
+            access.installed ? null : install.canPrompt ? (
+              <button
+                type="button"
+                onClick={doInstall}
+                className="shrink-0 rounded-xl border-[3px] border-foreground bg-[#B6FF3C] px-3 py-1.5 font-display text-[11px] font-black uppercase tracking-tight text-black shadow-[3px_3px_0_0_hsl(var(--foreground))] active:translate-x-[1px] active:translate-y-[1px] active:shadow-[2px_2px_0_0_hsl(var(--foreground))]"
+              >
+                Установить
+              </button>
+            ) : (
               <Link
                 to="/club/install"
                 className="shrink-0 rounded-xl border-[3px] border-foreground bg-[#B6FF3C] px-3 py-1.5 font-display text-[11px] font-black uppercase tracking-tight text-black shadow-[3px_3px_0_0_hsl(var(--foreground))] active:translate-x-[1px] active:translate-y-[1px] active:shadow-[2px_2px_0_0_hsl(var(--foreground))]"
@@ -74,6 +82,7 @@ export function SpinAccessGate({ access }: { access: SpinAccess }) {
               </Link>
             )
           }
+
         />
         <Step
           done={access.pushEnabled}
