@@ -139,7 +139,13 @@ function SpinPage() {
   const [spinning, setSpinning] = useState(false);
   const [teasing, setTeasing] = useState(false);
   const [won, setWon] = useState<Prize | null>(null);
+  const [lastPrize, setLastPrize] = useState<Prize | null>(() => {
+    if (typeof window === "undefined") return null;
+    const id = window.localStorage.getItem(LAST_PRIZE_KEY);
+    return POOL.find((p) => p.id === id) ?? null;
+  });
   const [spinsLeft, setSpinsLeft] = useState(3); // мок: Gold-тир
+
   const [streak] = useState(7); // мок
   const viewportRef = useRef<HTMLDivElement>(null);
   const timers = useRef<number[]>([]);
