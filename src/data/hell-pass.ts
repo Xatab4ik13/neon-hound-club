@@ -81,6 +81,19 @@ const SILVER_GROUPS: { title: string; perks: Perk[] }[] = [
     ],
   },
   {
+    title: "HellSpin",
+    perks: [
+      {
+        icon: PlumpSpin,
+        value: "2",
+        accent: true,
+        label: "спина в рулетке HellSpin в день",
+        detail:
+          "Два прокрута рулетки HellSpin каждый день — вместо одного у бесплатных юзеров. Больше спинов — выше шанс на ремувку, Silver Pass и джекпот.",
+      },
+    ],
+  },
+  {
     title: "Стикеры",
     perks: [
       {
