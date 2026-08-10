@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VerifyEmailRouteImport } from './routes/verify-email'
 import { Route as ShopInfoRouteImport } from './routes/shop-info'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as LogosRouteImport } from './routes/logos'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LikeLabRouteImport } from './routes/like-lab'
@@ -109,6 +110,11 @@ const VerifyEmailRoute = VerifyEmailRouteImport.update({
 const ShopInfoRoute = ShopInfoRouteImport.update({
   id: '/shop-info',
   path: '/shop-info',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LogosRoute = LogosRouteImport.update({
@@ -568,6 +574,7 @@ export interface FileRoutesByFullPath {
   '/like-lab': typeof LikeLabRoute
   '/login': typeof LoginRoute
   '/logos': typeof LogosRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/shop-info': typeof ShopInfoRoute
   '/verify-email': typeof VerifyEmailRoute
   '/admin/banners': typeof AdminBannersRoute
@@ -658,6 +665,7 @@ export interface FileRoutesByTo {
   '/like-lab': typeof LikeLabRoute
   '/login': typeof LoginRoute
   '/logos': typeof LogosRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/shop-info': typeof ShopInfoRoute
   '/verify-email': typeof VerifyEmailRoute
   '/admin/banners': typeof AdminBannersRoute
@@ -752,6 +760,7 @@ export interface FileRoutesById {
   '/like-lab': typeof LikeLabRoute
   '/login': typeof LoginRoute
   '/logos': typeof LogosRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/shop-info': typeof ShopInfoRoute
   '/verify-email': typeof VerifyEmailRoute
   '/admin/banners': typeof AdminBannersRoute
@@ -847,6 +856,7 @@ export interface FileRouteTypes {
     | '/like-lab'
     | '/login'
     | '/logos'
+    | '/reset-password'
     | '/shop-info'
     | '/verify-email'
     | '/admin/banners'
@@ -937,6 +947,7 @@ export interface FileRouteTypes {
     | '/like-lab'
     | '/login'
     | '/logos'
+    | '/reset-password'
     | '/shop-info'
     | '/verify-email'
     | '/admin/banners'
@@ -1030,6 +1041,7 @@ export interface FileRouteTypes {
     | '/like-lab'
     | '/login'
     | '/logos'
+    | '/reset-password'
     | '/shop-info'
     | '/verify-email'
     | '/admin/banners'
@@ -1124,6 +1136,7 @@ export interface RootRouteChildren {
   LikeLabRoute: typeof LikeLabRoute
   LoginRoute: typeof LoginRoute
   LogosRoute: typeof LogosRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   ShopInfoRoute: typeof ShopInfoRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
   CheckoutSuccessRoute: typeof CheckoutSuccessRoute
@@ -1158,6 +1171,13 @@ declare module '@tanstack/react-router' {
       path: '/shop-info'
       fullPath: '/shop-info'
       preLoaderRoute: typeof ShopInfoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/logos': {
@@ -1948,6 +1968,7 @@ const rootRouteChildren: RootRouteChildren = {
   LikeLabRoute: LikeLabRoute,
   LoginRoute: LoginRoute,
   LogosRoute: LogosRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   ShopInfoRoute: ShopInfoRoute,
   VerifyEmailRoute: VerifyEmailRoute,
   CheckoutSuccessRoute: CheckoutSuccessRoute,
