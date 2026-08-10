@@ -82,7 +82,7 @@ function SpinPage() {
 
   function spin() {
     if (spinning || spinsLeft <= 0) return;
-    haptic("medium");
+    haptic("selection");
     setWon(null);
     setSpinning(true);
 
