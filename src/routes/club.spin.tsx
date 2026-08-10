@@ -500,9 +500,13 @@ function SpinPage() {
                     Твоё
                   </span>
                 ) : streak >= c.day ? (
-                  <span className="shrink-0 rounded-lg bg-primary px-2 py-0.5 font-display text-[10px] font-black uppercase text-primary-foreground">
+                  <button
+                    type="button"
+                    onClick={() => claimMilestone(c.day)}
+                    className="shrink-0 rounded-lg bg-primary px-2.5 py-1 font-display text-[10px] font-black uppercase text-primary-foreground transition-transform active:scale-[0.94]"
+                  >
                     Забрать
-                  </span>
+                  </button>
                 ) : null}
               </li>
             );
