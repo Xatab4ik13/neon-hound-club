@@ -373,42 +373,21 @@ function SpinPage() {
           </span>
         </button>
 
-
-        {won && !spinning && (
-          <div
-            className="relative mt-3 flex animate-[hs-win-pop_420ms_cubic-bezier(0.2,1.4,0.3,1)_both] items-center gap-3 overflow-hidden rounded-2xl px-4 py-3"
-            style={{
-              background: RARITY[won.rarity].glow,
-              boxShadow: `inset 0 0 0 1px ${RARITY[won.rarity].ring}, 0 14px 34px -18px ${RARITY[won.rarity].chip}`,
-            }}
-          >
-            <span
-              className="pointer-events-none absolute inset-y-0 left-0 w-1/3 animate-[hs-sweep_1600ms_ease-in-out_2]"
-              style={{
-                background: `linear-gradient(100deg, transparent, ${RARITY[won.rarity].chip}44, transparent)`,
-              }}
-            />
-            <span className="relative grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-black/40">
-              <PrizeMedia prize={won} size={40} />
-            </span>
-
-            <span className="relative min-w-0 flex-1">
-              <span className="block font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                Твой приз · {RARITY[won.rarity].label}
-              </span>
-              <span className="block truncate font-display text-[15px] font-black uppercase tracking-tight text-foreground">
-                {won.title}
-              </span>
-              {won.sub && (
-                <span className="block truncate font-mono text-[10px] uppercase tracking-widest" style={{ color: RARITY[won.rarity].chip }}>
-                  {won.sub}
-                </span>
-              )}
-            </span>
-          </div>
+        {lastPrize && !spinning && (
+          <p className="mt-3 text-center font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+            Твой последний приз:{" "}
+            <span className="text-foreground">{lastPrize.title}</span>
+          </p>
         )}
 
       </section>
+
+      <WinModal
+        prize={won}
+        open={!!won && !spinning}
+        onClose={() => setWon(null)}
+      />
+
 
       {/* Календарь активности */}
       <section aria-label="Календарь активности" className="mb-5 rounded-3xl bg-card p-4">
