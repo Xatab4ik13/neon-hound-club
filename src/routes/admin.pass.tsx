@@ -322,6 +322,79 @@ function AdminPassPage() {
         />
       </div>
 
+      {/* Повторные покупки */}
+      <Panel className="mt-3">
+        <PanelHeader>
+          <div>
+            <div className="text-sm font-semibold">Повторные покупки</div>
+            <div className="text-xs text-zinc-500 dark:text-zinc-400">
+              Только оплаченные покупки. Призовые пассы (рулетка, календарь) не учитываются.
+            </div>
+          </div>
+          <div className="text-right">
+            <div className="font-display text-lg font-bold tabular-nums text-emerald-600 dark:text-emerald-400">
+              {rep ? `${rep.repeatRatePct}%` : "—"}
+            </div>
+            <div className="text-[11px] text-zinc-500">покупают снова</div>
+          </div>
+        </PanelHeader>
+
+        <div className="grid grid-cols-2 divide-x divide-y divide-zinc-200 dark:divide-zinc-800 md:grid-cols-4 md:divide-y-0">
+          <Stat label="Покупателей" value={rep?.buyers ?? 0} />
+          <Stat label="Купили ≥ 2 раза" value={rep?.repeatBuyers ?? 0} tone="emerald" />
+          <Stat
+            label="Покупок на человека"
+            value={rep ? rep.avgPurchasesPerBuyer.toFixed(2) : "—"}
+            tone="violet"
+          />
+          <Stat
+            label="Средний интервал"
+            value={rep && rep.avgGapDays > 0 ? `${rep.avgGapDays} дн` : "—"}
+            tone="blue"
+          />
+        </div>
+
+        <div className="border-t border-zinc-200 p-4 dark:border-zinc-800">
+          <div className="mb-2 text-xs text-zinc-500 dark:text-zinc-400">
+            Сколько раз покупали · всего покупок: {rep?.purchases ?? 0} · повторных за 30 дней:{" "}
+            <span className="font-mono">{rep?.repeatLast30d ?? 0}</span>
+          </div>
+          <div className="grid grid-cols-4 gap-2">
+            <DistCell label="1 раз" value={rep?.distribution.one ?? 0} total={rep?.buyers ?? 0} />
+            <DistCell label="2 раза" value={rep?.distribution.two ?? 0} total={rep?.buyers ?? 0} />
+            <DistCell label="3 раза" value={rep?.distribution.three ?? 0} total={rep?.buyers ?? 0} />
+            <DistCell label="4+ раза" value={rep?.distribution.fourPlus ?? 0} total={rep?.buyers ?? 0} />
+          </div>
+        </div>
+
+        {rep && rep.top.length > 0 && (
+          <div className="border-t border-zinc-200 p-4 dark:border-zinc-800">
+            <div className="mb-2 text-xs font-semibold">Кто покупает чаще всех</div>
+            <div className="space-y-1.5">
+              {rep.top.map((u) => (
+                <div
+                  key={u.userId}
+                  className="flex items-center justify-between gap-3 rounded-xl bg-zinc-50 px-3 py-2 dark:bg-zinc-800/50"
+                >
+                  <div className="min-w-0">
+                    <div className="truncate text-sm font-medium">{u.nick}</div>
+                    <div className="truncate text-[11px] text-zinc-500 dark:text-zinc-400">
+                      последняя: {fmtDate(u.lastAt)}
+                    </div>
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <div className="font-mono text-sm">{u.purchases}×</div>
+                    <div className="text-[11px] text-zinc-500">{fmtRub(u.totalRub)}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </Panel>
+
+
+
       <Panel className="mt-4">
         <PanelHeader>
           <div>
