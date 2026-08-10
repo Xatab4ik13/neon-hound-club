@@ -756,17 +756,10 @@ function HowItWorks() {
               <h3 className="mb-2 font-display text-[13px] font-black uppercase tracking-tight text-foreground">
                 Призы гарантированы
               </h3>
-              <p className="mb-3 text-[13px] leading-relaxed text-muted-foreground">
-                Призы не «могут выпасть» — они{" "}
-                <span className="text-foreground">найдут владельцев</span> за 30 дней:
-              </p>
-              <div className="grid grid-cols-3 gap-2">
-                <GuaranteedCard img={imgAirpods} value="3" label="джекпота" />
-                <GuaranteedCard img={REMOVKA_IMG} value="240" label="ремовок" fit="cover" />
-                <GuaranteedCard img={silverBadge} value="60" label="Silver" />
-              </div>
-              <p className="mt-2.5 text-[12px] leading-relaxed text-muted-foreground">
-                AirPods 4 · Apple Watch SE · PlayStation 5 Slim — разыгрываются по очереди.
+              <p className="text-[13px] leading-relaxed text-muted-foreground">
+                Призы гарантированно{" "}
+                <span className="text-foreground">найдут своих владельцев</span> за 30 дней.
+                Больше спинов — больше шансов забрать приз.
               </p>
             </div>
 
@@ -834,33 +827,3 @@ function HowItWorks() {
   );
 }
 
-function GuaranteedCard({
-  img,
-  value,
-  label,
-  fit = "contain",
-}: {
-  img: string;
-  value: string;
-  label: string;
-  fit?: "cover" | "contain";
-}) {
-  return (
-    <div className="flex flex-col items-center rounded-2xl bg-black/30 px-2 py-3 text-center">
-      <span className="grid h-10 w-10 place-items-center overflow-hidden rounded-full bg-white/[0.06]">
-        <img
-          src={img}
-          alt=""
-          loading="lazy"
-          className={`h-full w-full ${fit === "cover" ? "object-cover" : "object-contain p-1"}`}
-        />
-      </span>
-      <span className="mt-1.5 font-display text-[18px] font-black leading-none text-foreground">
-        {value}
-      </span>
-      <span className="mt-0.5 font-mono text-[9px] uppercase tracking-widest text-muted-foreground">
-        {label}
-      </span>
-    </div>
-  );
-}
