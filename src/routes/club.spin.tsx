@@ -805,11 +805,6 @@ function HowItWorks() {
                   </div>
                 ))}
               </div>
-              <p className="mt-2.5 text-[12px] leading-relaxed text-muted-foreground">
-                Platinum даёт{" "}
-                <span className="text-[#F000C0]">×1.5 к шансу на джекпот</span> — кумулятивно ~50×
-                преимущества против бесплатного тира.
-              </p>
             </div>
 
             {/* CTA */}
