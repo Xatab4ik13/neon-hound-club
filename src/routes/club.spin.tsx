@@ -57,8 +57,9 @@ const RARITY: Record<Rarity, { ring: string; glow: string; label: string; chip: 
   legend: { ring: "rgba(255,217,61,0.48)", glow: "rgba(255,217,61,0.26)", label: "Легенда", chip: "#FFD93D" },
 };
 
-// Ремувку показываем локальным 3D-рендером — грузится мгновенно, без внешних запросов.
-const REMOVKA_IMG = imgRemovka;
+// Ремувку берём из магазина — как носки, единый источник правды.
+const REMOVKA_IMG =
+  "https://api.hhr.pro/media/shop/da0bcbf8-594f-43b3-a412-39a5905c1800/c4c6b81b-b769-475e-939a-7ce658d917f8.jpg";
 
 const POOL: Prize[] = [
   { id: "xp100", title: "100 XP", rarity: "common", img: imgXp },
