@@ -228,7 +228,7 @@ function SpinPage() {
     const frame = (now: number) => {
       const t = Math.min(1, (now - t0) / TOTAL_MS);
       const px = pos(t);
-      setOffset(px);
+      moveStrip(px);
 
       // Тики по реально проехавшим карточкам — ритм всегда совпадает с картинкой.
       const cell = Math.floor(px / STEP);
