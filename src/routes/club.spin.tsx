@@ -167,7 +167,7 @@ function hermite(u: number, p0: number, p1: number, m0: number, m1: number) {
 type SpinTier = "none" | "silver" | "gold" | "platinum";
 
 type SpinState = {
-  access: { granted: boolean; installed: boolean; phoneVerified: boolean; pushEnabled: boolean };
+  access: { granted: boolean; pwa: boolean; phoneVerified: boolean; pushEnabled: boolean };
   tier: SpinTier;
   season: { periodKey: string; daysTotal: number; endsAt: string };
   spins: { allowed: number; used: number; left: number };
