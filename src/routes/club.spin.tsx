@@ -245,13 +245,14 @@ function SpinPage() {
               style={{
                 gap: `${GAP}px`,
                 transform: `translate3d(${-offset}px,0,0)`,
-                transition: spinning ? `transform ${SPIN_MS}ms cubic-bezier(0.08,0.82,0.12,1)` : "none",
+                transition: dur ? `transform ${dur}ms ${ease}` : "none",
               }}
             >
               {strip.map((p, i) => (
-                <PrizeCell key={`${p.id}-${i}`} prize={p} />
+                <PrizeCell key={`${p.id}-${i}`} prize={p} hot={teasing && p.rarity === "legend"} />
               ))}
             </div>
+
           </div>
 
           {/* Указатель: плампные «клыки» + луч */}
