@@ -756,17 +756,10 @@ function HowItWorks() {
               <h3 className="mb-2 font-display text-[13px] font-black uppercase tracking-tight text-foreground">
                 Призы гарантированы
               </h3>
-              <p className="mb-3 text-[13px] leading-relaxed text-muted-foreground">
-                Призы не «могут выпасть» — они{" "}
-                <span className="text-foreground">найдут владельцев</span> за 30 дней:
-              </p>
-              <div className="grid grid-cols-3 gap-2">
-                <GuaranteedCard img={imgAirpods} value="3" label="джекпота" />
-                <GuaranteedCard img={REMOVKA_IMG} value="240" label="ремовок" fit="cover" />
-                <GuaranteedCard img={silverBadge} value="60" label="Silver" />
-              </div>
-              <p className="mt-2.5 text-[12px] leading-relaxed text-muted-foreground">
-                AirPods 4 · Apple Watch SE · PlayStation 5 Slim — разыгрываются по очереди.
+              <p className="text-[13px] leading-relaxed text-muted-foreground">
+                Призы гарантированно{" "}
+                <span className="text-foreground">найдут своих владельцев</span> за 30 дней.
+                Больше спинов — больше шансов забрать приз.
               </p>
             </div>
 
