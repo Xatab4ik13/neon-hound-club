@@ -9,16 +9,16 @@ import { haptic } from "@/hooks/use-haptic";
 import { useSpinAccess } from "@/hooks/use-spin-access";
 import { SpinAccessGate } from "@/components/club/SpinAccessGate";
 import { playWin, playClick, playTick } from "@/lib/roller-sfx";
-import silverBadge from "@/assets/hellpass/tpl-silver.png";
-import goldBadge from "@/assets/hellpass/tpl-gold.png";
-import platinumBadge from "@/assets/hellpass/tpl-platinum.png";
-import imgAirpods from "@/assets/spin/airpods.png";
-import imgWatch from "@/assets/spin/watch.png";
-import imgPs5 from "@/assets/spin/ps5.png";
-import imgBonusSpin from "@/assets/spin/bonus-spin.png";
-import imgTicket from "@/assets/spin/ticket.png";
-import imgXp from "@/assets/spin/xp.png";
-import imgPromo from "@/assets/spin/promo.png";
+import silverBadge from "@/assets/hellpass/tpl-silver.webp";
+import goldBadge from "@/assets/hellpass/tpl-gold.webp";
+import platinumBadge from "@/assets/hellpass/tpl-platinum.webp";
+import imgAirpods from "@/assets/spin/airpods.webp";
+import imgWatch from "@/assets/spin/watch.webp";
+import imgPs5 from "@/assets/spin/ps5.webp";
+import imgBonusSpin from "@/assets/spin/bonus-spin.webp";
+import imgTicket from "@/assets/spin/ticket.webp";
+import imgXp from "@/assets/spin/xp.webp";
+import imgPromo from "@/assets/spin/promo.webp";
 
 
 export const Route = createFileRoute("/club/spin")({
