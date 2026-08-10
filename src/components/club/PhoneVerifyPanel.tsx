@@ -241,12 +241,14 @@ export function PhoneVerifyPanel({ phone, canSend, onVerified }: Props) {
             value={d}
             onChange={(e) => setDigit(i, e.target.value)}
             onKeyDown={(e) => onKeyDown(i, e)}
+            onPaste={(e) => onPaste(i, e)}
             onFocus={(e) => e.currentTarget.select()}
             inputMode="numeric"
             // iOS: автозаполнение из приходящего SMS-уведомления (для не-SMS работает как обычное цифровое поле).
             autoComplete={i === 0 ? "one-time-code" : "off"}
             autoCapitalize="off"
-            maxLength={i === 0 ? CODE_LEN : 1}
+            // На десктопе код часто вставляют целиком в любую ячейку — не режем до 1 символа.
+            maxLength={CODE_LEN}
             disabled={!requestId || verifyMut.isPending}
             aria-label={`Цифра ${i + 1} из ${CODE_LEN}`}
             className={cn(
