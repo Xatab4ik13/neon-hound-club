@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { PageHeader } from "@/components/club/PageHeader";
 import { PlumpSpin } from "@/components/ui/icons";
 import { PlumpNum } from "@/components/brand/PlumpNum";
@@ -97,6 +98,8 @@ const CALENDAR = [
   { day: 30, title: "Gold + носки + ремувка + 20 билетов", sub: "30 дней подряд" },
 ];
 
+const LAST_PRIZE_KEY = "hh_spin_last_prize";
+
 
 const ITEM_W = 104; // ширина карточки
 const GAP = 8;
@@ -139,7 +142,13 @@ function SpinPage() {
   const [spinning, setSpinning] = useState(false);
   const [teasing, setTeasing] = useState(false);
   const [won, setWon] = useState<Prize | null>(null);
+  const [lastPrize, setLastPrize] = useState<Prize | null>(() => {
+    if (typeof window === "undefined") return null;
+    const id = window.localStorage.getItem(LAST_PRIZE_KEY);
+    return POOL.find((p) => p.id === id) ?? null;
+  });
   const [spinsLeft, setSpinsLeft] = useState(3); // мок: Gold-тир
+
   const [streak] = useState(7); // мок
   const viewportRef = useRef<HTMLDivElement>(null);
   const timers = useRef<number[]>([]);
@@ -235,6 +244,13 @@ function SpinPage() {
       // Бонус-спин возвращает прокрут — счётчик остаётся на месте.
       if (prize.id !== "spin") setSpinsLeft((n) => Math.max(0, n - 1));
       setWon(prize);
+      setLastPrize(prize);
+      try {
+        window.localStorage.setItem(LAST_PRIZE_KEY, prize.id);
+      } catch {
+        /* приватный режим — просто не запоминаем */
+      }
+
 
       haptic("success");
       playWin();
@@ -358,42 +374,21 @@ function SpinPage() {
           </span>
         </button>
 
-
-        {won && !spinning && (
-          <div
-            className="relative mt-3 flex animate-[hs-win-pop_420ms_cubic-bezier(0.2,1.4,0.3,1)_both] items-center gap-3 overflow-hidden rounded-2xl px-4 py-3"
-            style={{
-              background: RARITY[won.rarity].glow,
-              boxShadow: `inset 0 0 0 1px ${RARITY[won.rarity].ring}, 0 14px 34px -18px ${RARITY[won.rarity].chip}`,
-            }}
-          >
-            <span
-              className="pointer-events-none absolute inset-y-0 left-0 w-1/3 animate-[hs-sweep_1600ms_ease-in-out_2]"
-              style={{
-                background: `linear-gradient(100deg, transparent, ${RARITY[won.rarity].chip}44, transparent)`,
-              }}
-            />
-            <span className="relative grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-black/40">
-              <PrizeMedia prize={won} size={40} />
-            </span>
-
-            <span className="relative min-w-0 flex-1">
-              <span className="block font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                Твой приз · {RARITY[won.rarity].label}
-              </span>
-              <span className="block truncate font-display text-[15px] font-black uppercase tracking-tight text-foreground">
-                {won.title}
-              </span>
-              {won.sub && (
-                <span className="block truncate font-mono text-[10px] uppercase tracking-widest" style={{ color: RARITY[won.rarity].chip }}>
-                  {won.sub}
-                </span>
-              )}
-            </span>
-          </div>
+        {lastPrize && !spinning && (
+          <p className="mt-3 text-center font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+            Твой последний приз:{" "}
+            <span className="text-foreground">{lastPrize.title}</span>
+          </p>
         )}
 
       </section>
+
+      <WinModal
+        prize={won}
+        open={!!won && !spinning}
+        onClose={() => setWon(null)}
+      />
+
 
       {/* Календарь активности */}
       <section aria-label="Календарь активности" className="mb-5 rounded-3xl bg-card p-4">
@@ -621,3 +616,103 @@ function PrizeCell({ prize, hot }: { prize: Prize; hot?: boolean }) {
 }
 
 
+
+/* ---------------- Модалка выигрыша ---------------- */
+
+function WinModal({
+  prize,
+  open,
+  onClose,
+}: {
+  prize: Prize | null;
+  open: boolean;
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [open, onClose]);
+
+  if (!open || !prize || typeof document === "undefined") return null;
+  const r = RARITY[prize.rarity];
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[300] flex items-center justify-center px-5"
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Приз: ${prize.title}`}
+    >
+      <button
+        type="button"
+        aria-label="Закрыть"
+        onClick={onClose}
+        className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+      />
+
+      <div
+        className="relative w-full max-w-sm animate-[hs-win-pop_420ms_cubic-bezier(0.2,1.4,0.3,1)_both] overflow-hidden rounded-[28px] bg-card px-6 pb-6 pt-7 text-center"
+        style={{
+          boxShadow: `inset 0 0 0 1.5px ${r.ring}, 0 30px 70px -30px ${r.chip}`,
+        }}
+      >
+        <span
+          className="pointer-events-none absolute inset-x-0 top-0 h-40"
+          style={{
+            background: `radial-gradient(120% 100% at 50% 0%, ${r.glow}, transparent 70%)`,
+          }}
+        />
+
+        <span
+          className="relative inline-block rounded-xl px-2.5 py-1 font-display text-[11px] font-black uppercase tracking-tight text-black"
+          style={{ background: r.chip }}
+        >
+          {r.label}
+        </span>
+
+        <span
+          className="relative mx-auto mt-5 grid h-32 w-32 place-items-center rounded-full"
+          style={{
+            background: `radial-gradient(circle at 50% 40%, ${r.glow}, rgba(0,0,0,0.35) 72%)`,
+            boxShadow: `inset 0 0 0 1.5px ${r.ring}`,
+          }}
+        >
+          <PrizeMedia prize={prize} size={96} />
+        </span>
+
+        <h2 className="relative mt-5 font-display text-[22px] font-black uppercase leading-tight tracking-tight text-foreground">
+          {prize.title}
+        </h2>
+        {prize.sub && (
+          <p
+            className="relative mt-1 font-mono text-[11px] uppercase tracking-widest"
+            style={{ color: r.chip }}
+          >
+            {prize.sub}
+          </p>
+        )}
+        <p className="relative mt-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+          Приз зачислен в твой аккаунт
+        </p>
+
+        <button
+          type="button"
+          onClick={onClose}
+          className="relative mt-6 w-full rounded-2xl bg-[#B6FF3C] py-4 font-display text-[16px] font-black uppercase tracking-tight text-black transition-transform active:scale-[0.97]"
+        >
+          Забрать
+        </button>
+      </div>
+    </div>,
+    document.body,
+  );
+}
