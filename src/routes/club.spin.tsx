@@ -5,8 +5,8 @@ import { PlumpTicket, PlumpGift, PlumpDiamond, PlumpQuests } from "@/components/
 import { PlumpNum } from "@/components/brand/PlumpNum";
 import { haptic } from "@/hooks/use-haptic";
 import { playSpin, playWin, playClick } from "@/lib/roller-sfx";
-import silverBadge from "@/assets/hellpass/silver.png.asset.json";
-import goldBadge from "@/assets/hellpass/gold.png.asset.json";
+import silverBadge from "@/assets/hellpass/silver-v2.png";
+import goldBadge from "@/assets/hellpass/gold-v2.png";
 
 export const Route = createFileRoute("/club/spin")({
   head: () => ({
@@ -61,8 +61,15 @@ const SOCKS_IMG =
 
 const MILESTONE_IMG: Record<number, string> = {
   10: SOCKS_IMG,
-  20: silverBadge.url,
-  30: goldBadge.url,
+  20: silverBadge,
+  30: goldBadge,
+};
+
+// Фото товара нужно кропать по кругу, а бейджи — вписывать целиком.
+const MILESTONE_FIT: Record<number, "cover" | "contain"> = {
+  10: "cover",
+  20: "contain",
+  30: "contain",
 };
 
 const CALENDAR = [
