@@ -19,8 +19,13 @@ import imgBonusSpin from "@/assets/spin/bonus-spin.webp";
 import imgTicket from "@/assets/spin/ticket.webp";
 import imgXp from "@/assets/spin/xp.webp";
 import imgPromo from "@/assets/spin/promo.webp";
+import imgRemovka from "@/assets/spin/removka.webp";
+import imgSocks from "@/assets/spin/socks.webp";
+import { apiFetch, ApiError } from "@/lib/api";
+import { isStandalone } from "@/hooks/use-install-prompt";
 
 import { hhToast as toast } from "@/lib/hh-toast";
+
 
 
 export const Route = createFileRoute("/club/spin")({
@@ -34,7 +39,7 @@ export const Route = createFileRoute("/club/spin")({
   component: SpinPage,
 });
 
-/* ---------------- Моки ---------------- */
+/* ---------------- Данные призов (картинки — локальные ассеты, тексты совпадают с бэком) ---------------- */
 
 type Rarity = "common" | "rare" | "epic" | "legend";
 
@@ -46,6 +51,8 @@ type Prize = {
   img?: string;
   /** Фото товара кропаем по кругу, 3D-рендеры вписываем целиком. */
   fit?: "cover" | "contain";
+  /** Не показываем в списке «что можно выиграть» и в ленте. */
+  hidden?: boolean;
 };
 
 
@@ -57,10 +64,8 @@ const RARITY: Record<Rarity, { ring: string; glow: string; label: string; chip: 
   legend: { ring: "rgba(255,217,61,0.48)", glow: "rgba(255,217,61,0.26)", label: "Легенда", chip: "#FFD93D" },
 };
 
-// Ремувку берём из магазина — как носки, единый источник правды.
-const REMOVKA_IMG =
-  "https://api.hhr.pro/media/shop/da0bcbf8-594f-43b3-a412-39a5905c1800/c4c6b81b-b769-475e-939a-7ce658d917f8.jpg";
-
+// Все картинки призов — локальные ассеты в бандле. Никаких ссылок на медиа-сервер:
+// иначе после деплоя картинка может не отдаться (как было с фото инструкторов).
 const POOL: Prize[] = [
   { id: "xp100", title: "100 XP", rarity: "common", img: imgXp },
   { id: "t1", title: "1 билет", rarity: "common", img: imgTicket },
@@ -70,23 +75,35 @@ const POOL: Prize[] = [
   { id: "xp500", title: "500 XP", rarity: "rare", img: imgXp },
   { id: "promo", title: "Промокод 20%", sub: "на товары", rarity: "epic", img: imgPromo },
   { id: "t10", title: "10 билетов", rarity: "epic", img: imgTicket },
-  { id: "sticker", title: "Ремувка", sub: "подарок · доставка за нами", rarity: "epic", img: REMOVKA_IMG },
+  { id: "sticker", title: "Ремувка", sub: "подарок · доставка за нами", rarity: "epic", img: imgRemovka },
   { id: "silver", title: "Hell Pass Silver", sub: "30 дней", rarity: "legend", img: silverBadge },
   { id: "airpods", title: "AirPods 4", rarity: "legend", img: imgAirpods },
   { id: "watch", title: "Apple Watch SE", rarity: "legend", img: imgWatch },
   { id: "ps5", title: "PlayStation 5 Slim", rarity: "legend", img: imgPs5 },
+  // Скрытые сектора: бэкенд подменяет ими приз, когда пул закончился.
+  { id: "t50", title: "50 билетов", rarity: "epic", img: imgTicket, hidden: true },
+  { id: "socks", title: "Носки", rarity: "rare", img: imgSocks, fit: "cover", hidden: true },
 ];
 
+const PRIZE_BY_ID = new Map(POOL.map((p) => [p.id, p]));
 
-const LEGENDS = POOL.filter((p) => p.rarity === "legend");
-const NON_LEGENDS = POOL.filter((p) => p.rarity !== "legend");
+/** Приз по коду с бэка. Незнакомый код не должен ломать анимацию. */
+function prizeByCode(code: string, title?: string, rarity?: string): Prize {
+  const known = PRIZE_BY_ID.get(code);
+  if (known) return known;
+  return {
+    id: code,
+    title: title ?? code,
+    rarity: (rarity as Rarity) ?? "common",
+  };
+}
 
-// Картинки майлстоунов: носки — из каталога магазина, Silver/Gold — бейджи Hell Pass.
-const SOCKS_IMG =
-  "https://api.hhr.pro/media/shop/da0bcbf8-594f-43b3-a412-39a5905c1800/6bd9b090-727f-43ef-bac8-a0220dd583c4.png";
+const VISIBLE = POOL.filter((p) => !p.hidden);
+const LEGENDS = VISIBLE.filter((p) => p.rarity === "legend");
+const NON_LEGENDS = VISIBLE.filter((p) => p.rarity !== "legend");
 
 const MILESTONE_IMG: Record<number, string> = {
-  10: SOCKS_IMG,
+  10: imgSocks,
   20: silverBadge,
   30: goldBadge,
 };
@@ -104,8 +121,12 @@ const CALENDAR = [
   { day: 30, title: "Gold + носки + ремувка + 20 билетов", sub: "30 дней подряд" },
 ];
 
-const LAST_PRIZE_KEY = "hh_spin_last_prize";
-
+const TIER_LABEL: Record<SpinTier, { name: string; bg: string; fg: string }> = {
+  none: { name: "Без Pass", bg: "rgba(255,255,255,0.12)", fg: "hsl(var(--foreground))" },
+  silver: { name: "Silver", bg: "#C7CCD6", fg: "#000" },
+  gold: { name: "Gold", bg: "#C6A8FF", fg: "#000" },
+  platinum: { name: "Platinum", bg: "#F000C0", fg: "#fff" },
+};
 
 const ITEM_W = 104; // ширина карточки
 const GAP = 8;
@@ -118,15 +139,16 @@ function pick<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
-/** Лента: случайные призы, но с гарантированной «дразнилкой» — легендой перед финалом. */
-function buildStrip(teaseIndex: number, targetIndex: number) {
+/** Лента: случайные призы, «дразнилка» легендой перед финалом, финал — реальный приз с бэка. */
+function buildStrip(teaseIndex: number, targetIndex: number, target: Prize) {
   const out: Prize[] = [];
-  for (let i = 0; i < STRIP_LEN; i++) out.push(pick(POOL));
-  out[teaseIndex] = pick(LEGENDS);
-  // Настоящий приз: в 92% случаев не легенда — отсюда и эффект «чуть не выпало».
-  out[targetIndex] = Math.random() < 0.08 ? pick(LEGENDS) : pick(NON_LEGENDS);
+  for (let i = 0; i < STRIP_LEN; i++) out.push(pick(VISIBLE));
+  // Если реальный приз — легенда, дразнить легендой не нужно: пусть будет обычный сектор.
+  out[teaseIndex] = target.rarity === "legend" ? pick(NON_LEGENDS) : pick(LEGENDS);
+  out[targetIndex] = target;
   return out;
 }
+
 
 /** Кубический Эрмит: позиция + касательные, чтобы скорость стыковалась без рывка. */
 function hermite(u: number, p0: number, p1: number, m0: number, m1: number) {
@@ -140,30 +162,92 @@ function hermite(u: number, p0: number, p1: number, m0: number, m1: number) {
   );
 }
 
+/* ---------------- API ---------------- */
+
+type SpinTier = "none" | "silver" | "gold" | "platinum";
+
+type SpinState = {
+  access: { granted: boolean; pwa: boolean; phoneVerified: boolean; pushEnabled: boolean };
+  tier: SpinTier;
+  season: { periodKey: string; daysTotal: number; endsAt: string };
+  spins: { allowed: number; used: number; left: number };
+  streak: { days: number; claimed: number[] };
+  history: { prizeCode: string; title: string; at: string }[];
+};
+
+type RollResult = {
+  prizeCode: string;
+  prizeTitle: string;
+  rarity: Rarity;
+  rewardKind: string;
+  rewardValue: number;
+  promoCode?: string;
+  bonusSpin: boolean;
+  spinsAllowed: number;
+  spinsLeft: number;
+  streakDays: number;
+};
+
+/** Бэк отдаёт спины только из установленной PWA — прокидываем признак заголовком. */
+function pwaHeaders(): Record<string, string> {
+  return { "x-pwa": isStandalone() ? "1" : "0" };
+}
+
 /* ---------------- Страница ---------------- */
 
 function SpinPage() {
-  const [strip, setStrip] = useState<Prize[]>(() => buildStrip(STRIP_LEN - 12, STRIP_LEN - 10));
+  const [strip, setStrip] = useState<Prize[]>(() =>
+    buildStrip(STRIP_LEN - 12, STRIP_LEN - 10, pick(NON_LEGENDS)),
+  );
   const [spinning, setSpinning] = useState(false);
   const [won, setWon] = useState<Prize | null>(null);
-  const [lastPrize, setLastPrize] = useState<Prize | null>(() => {
-    if (typeof window === "undefined") return null;
-    const id = window.localStorage.getItem(LAST_PRIZE_KEY);
-    return POOL.find((p) => p.id === id) ?? null;
-  });
-  const [spinsLeft, setSpinsLeft] = useState(3); // мок: Gold-тир
+  const [wonPromo, setWonPromo] = useState<string | null>(null);
+  const [state, setState] = useState<SpinState | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [claiming, setClaiming] = useState<number | null>(null);
 
-  const [streak] = useState(12); // мок
-  // Мок: майлстоуны, награду по которым уже забрали — их перечёркиваем.
-  const [claimed, setClaimed] = useState<number[]>([10]);
   const access = useSpinAccess();
-  const locked = !access.granted;
+  // Локально видим PWA + push, телефон проверяет сервер — блокируем по обоим сигналам.
+  const phoneMissing = state ? !state.access.phoneVerified : false;
+  const locked = !access.granted || phoneMissing;
+  const spinsLeft = state?.spins.left ?? 0;
+  const spinsAllowed = state?.spins.allowed ?? 0;
+  const tier: SpinTier = state?.tier ?? "none";
+  const streak = state?.streak.days ?? 0;
+  const claimed = state?.streak.claimed ?? [];
+  const lastPrize = state?.history[0]
+    ? prizeByCode(state.history[0].prizeCode, state.history[0].title)
+    : null;
+
   const viewportRef = useRef<HTMLDivElement>(null);
   // Лента двигается напрямую через ref: никакого state на 60 fps → нет ре-рендера 72 карточек.
   const stripRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number | null>(null);
 
-  const dayTicks = useMemo(() => Array.from({ length: 30 }, (_, i) => i + 1), []);
+  const dayTicks = useMemo(
+    () => Array.from({ length: state?.season.daysTotal ?? 30 }, (_, i) => i + 1),
+    [state?.season.daysTotal],
+  );
+
+  const loadState = useMemo(
+    () => async () => {
+      try {
+        const s = await apiFetch<SpinState>("/api/v1/spin/state", { headers: pwaHeaders() });
+        setState(s);
+      } catch (err) {
+        if (!(err instanceof ApiError) || err.status !== 401) {
+          toast.error("Не удалось загрузить рулетку");
+        }
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
+
+  useEffect(() => {
+    void loadState();
+  }, [loadState]);
 
   useEffect(
     () => () => {
@@ -182,26 +266,32 @@ function SpinPage() {
     return index * STEP + ITEM_W / 2 - w / 2 + extra;
   }
 
-  function claimMilestone(day: number) {
-    haptic("success");
-    setClaimed((prev) => (prev.includes(day) ? prev : [...prev, day]));
-    toast.success("Награда забрана — заберём с тебя адрес доставки");
+  async function claimMilestone(day: number) {
+    if (claiming) return;
+    setClaiming(day);
+    try {
+      await apiFetch("/api/v1/spin/streak/claim", {
+        method: "POST",
+        body: JSON.stringify({ milestone: day }),
+      });
+      haptic("success");
+      toast.success("Награда забрана — заберём с тебя адрес доставки");
+      await loadState();
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : "Не удалось забрать награду");
+    } finally {
+      setClaiming(null);
+    }
   }
 
-
-  function spin() {
-    if (spinning || spinsLeft <= 0 || locked) return;
-    haptic("selection");
-    playClick();
-    setWon(null);
-    setSpinning(true);
-
+  /** Крутим ленту к уже известному призу с бэка. */
+  function runRoller(target: Prize, result: RollResult) {
     // Финал стоит сразу за «дразнилкой»: легенда почти встаёт под маркер,
     // а лента продолжает еле-еле ползти и мягко доводит настоящий приз.
     const targetIndex = STRIP_LEN - 8 - Math.floor(Math.random() * 3);
     const teaseIndex = targetIndex - 1;
 
-    const fresh = buildStrip(teaseIndex, targetIndex);
+    const fresh = buildStrip(teaseIndex, targetIndex, target);
     setStrip(fresh);
     moveStrip(0);
 
@@ -250,17 +340,26 @@ function SpinPage() {
 
       rafRef.current = null;
       setSpinning(false);
-      const prize = fresh[targetIndex];
-      // Бонус-спин возвращает прокрут — счётчик остаётся на месте.
-      if (prize.id !== "spin") setSpinsLeft((n) => Math.max(0, n - 1));
-      setWon(prize);
-      setLastPrize(prize);
-      try {
-        window.localStorage.setItem(LAST_PRIZE_KEY, prize.id);
-      } catch {
-        /* приватный режим — просто не запоминаем */
-      }
-
+      setWon(target);
+      setWonPromo(result.promoCode ?? null);
+      // Счётчики берём из ответа сервера — он единственный источник правды.
+      setState((prev) =>
+        prev
+          ? {
+              ...prev,
+              spins: {
+                allowed: result.spinsAllowed,
+                used: Math.max(0, result.spinsAllowed - result.spinsLeft),
+                left: result.spinsLeft,
+              },
+              streak: { ...prev.streak, days: result.streakDays },
+              history: [
+                { prizeCode: result.prizeCode, title: result.prizeTitle, at: new Date().toISOString() },
+                ...prev.history,
+              ].slice(0, 10),
+            }
+          : prev,
+      );
 
       haptic("success");
       playWin();
@@ -268,6 +367,30 @@ function SpinPage() {
 
     rafRef.current = requestAnimationFrame(frame);
   }
+
+  async function spin() {
+    if (spinning || spinsLeft <= 0 || locked) return;
+    haptic("selection");
+    playClick();
+    setWon(null);
+    setWonPromo(null);
+    setSpinning(true);
+
+    try {
+      const result = await apiFetch<RollResult>("/api/v1/spin/roll", {
+        method: "POST",
+        headers: pwaHeaders(),
+        body: JSON.stringify({ pwa: isStandalone() }),
+      });
+      const target = prizeByCode(result.prizeCode, result.prizeTitle, result.rarity);
+      runRoller(target, result);
+    } catch (err) {
+      setSpinning(false);
+      toast.error(err instanceof ApiError ? err.message : "Не удалось прокрутить");
+      void loadState();
+    }
+  }
+
 
 
 
@@ -284,16 +407,20 @@ function SpinPage() {
             Спинов сегодня
           </p>
           <span className="mt-0.5 flex items-center gap-1 text-foreground">
-            <PlumpNum value={spinsLeft} size={22} />
+            <PlumpNum value={loading ? "—" : spinsLeft} size={22} />
             <span className="text-muted-foreground">
-              <PlumpNum value="/4" size={16} />
+              <PlumpNum value={`/${loading ? "—" : spinsAllowed}`} size={16} />
             </span>
           </span>
         </div>
-        <span className="shrink-0 rounded-xl bg-[#C6A8FF] px-2.5 py-1 font-display text-[11px] font-black uppercase tracking-tight text-black">
-          Gold
+        <span
+          className="shrink-0 rounded-xl px-2.5 py-1 font-display text-[11px] font-black uppercase tracking-tight"
+          style={{ background: TIER_LABEL[tier].bg, color: TIER_LABEL[tier].fg }}
+        >
+          {TIER_LABEL[tier].name}
         </span>
       </div>
+
 
 
       {/* Роллер */}
@@ -368,11 +495,11 @@ function SpinPage() {
 
         <button
           type="button"
-          onClick={spin}
-          disabled={spinning || spinsLeft <= 0 || locked}
+          onClick={() => void spin()}
+          disabled={spinning || loading || spinsLeft <= 0 || locked}
           className="relative mt-3 flex h-14 w-full items-center justify-center overflow-hidden rounded-2xl bg-[#B6FF3C] font-display text-[17px] font-black uppercase tracking-tight text-black shadow-[0_10px_30px_-12px_#B6FF3C] transition-transform active:scale-[0.97] disabled:opacity-40 disabled:shadow-none"
         >
-          {!spinning && spinsLeft > 0 && (
+          {!spinning && spinsLeft > 0 && !locked && (
             <span
               className="pointer-events-none absolute inset-y-0 left-0 w-1/3 animate-[hs-sweep_2600ms_linear_infinite]"
               style={{
@@ -381,15 +508,28 @@ function SpinPage() {
             />
           )}
           <span className="relative">
-            {locked
-              ? "Доступно в приложении"
-              : spinning
-                ? "Крутим…"
-                : spinsLeft > 0
-                  ? "Крутить"
-                  : "Спины закончились"}
+            {phoneMissing
+              ? "Подтверди телефон"
+              : locked
+                ? "Доступно в приложении"
+                : loading
+                  ? "Загружаем…"
+                  : spinning
+                    ? "Крутим…"
+                    : spinsLeft > 0
+                      ? "Крутить"
+                      : "Спины закончились"}
           </span>
         </button>
+
+        {phoneMissing && (
+          <Link
+            to="/club/me"
+            className="mt-3 block text-center font-mono text-[11px] uppercase tracking-widest text-primary"
+          >
+            Подтвердить номер в профиле
+          </Link>
+        )}
 
         {lastPrize && !spinning && (
           <p className="mt-3 text-center font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
@@ -402,6 +542,7 @@ function SpinPage() {
 
       <WinModal
         prize={won}
+        promoCode={wonPromo}
         open={!!won && !spinning}
         onClose={() => setWon(null)}
       />
@@ -502,10 +643,11 @@ function SpinPage() {
                 ) : streak >= c.day ? (
                   <button
                     type="button"
-                    onClick={() => claimMilestone(c.day)}
-                    className="shrink-0 rounded-lg bg-primary px-2.5 py-1 font-display text-[10px] font-black uppercase text-primary-foreground transition-transform active:scale-[0.94]"
+                    onClick={() => void claimMilestone(c.day)}
+                    disabled={claiming !== null}
+                    className="shrink-0 rounded-lg bg-primary px-2.5 py-1 font-display text-[10px] font-black uppercase text-primary-foreground transition-transform active:scale-[0.94] disabled:opacity-50"
                   >
-                    Забрать
+                    {claiming === c.day ? "…" : "Забрать"}
                   </button>
                 ) : null}
               </li>
@@ -514,13 +656,13 @@ function SpinPage() {
         </ul>
       </section>
 
-      <HowItWorks />
+      <HowItWorks season={state?.season} />
 
       {/* Пул призов */}
       <section aria-label="Что можно выиграть" className="mb-2">
         <h2 className="mb-3 px-1 text-[17px] font-semibold text-foreground">Что можно выиграть</h2>
         <ul className="overflow-hidden rounded-3xl bg-card">
-          {POOL.map((p, i) => (
+          {VISIBLE.map((p, i) => (
             <li
               key={p.id}
               className={`flex items-center gap-3 px-4 py-3 ${i > 0 ? "border-t border-white/[0.05]" : ""}`}
@@ -651,10 +793,12 @@ const PrizeCell = memo(function PrizeCell({ prize }: { prize: Prize }) {
 
 function WinModal({
   prize,
+  promoCode,
   open,
   onClose,
 }: {
   prize: Prize | null;
+  promoCode?: string | null;
   open: boolean;
   onClose: () => void;
 }) {
@@ -733,6 +877,12 @@ function WinModal({
         <p className="relative mt-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
           Приз зачислен в твой аккаунт
         </p>
+        {promoCode && (
+          <p className="relative mx-auto mt-3 w-fit rounded-xl bg-black/40 px-3 py-2 font-mono text-[14px] font-bold tracking-widest text-foreground">
+            {promoCode}
+          </p>
+        )}
+
 
         <button
           type="button"
@@ -749,8 +899,14 @@ function WinModal({
 
 /* ---------------- Как это работает ---------------- */
 
-function HowItWorks() {
+function HowItWorks({ season }: { season?: SpinState["season"] }) {
   const [open, setOpen] = useState(false);
+
+  // Сезон приходит с бэка: конец периода + число дней. Ничего не хардкодим.
+  const endsLabel = season
+    ? new Date(season.endsAt).toLocaleDateString("ru-RU", { day: "numeric", month: "long" })
+    : null;
+  const days = season?.daysTotal ?? 30;
 
   const tiers: { name: string; spins: number; badge: string | null; vip?: boolean }[] = [
     { name: "Без Pass", spins: 1, badge: null },
@@ -777,7 +933,7 @@ function HowItWorks() {
             Как это работает
           </span>
           <span className="block font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-            Сезон 11 авг — 10 сен · 30 дней
+            {endsLabel ? `Сезон до ${endsLabel} · ${days} дней` : `Сезон · ${days} дней`}
           </span>
         </span>
         <ChevronDown
@@ -797,8 +953,12 @@ function HowItWorks() {
                 Сезон HellSpin
               </h3>
               <p className="text-[13px] leading-relaxed text-muted-foreground">
-                <span className="text-foreground">11 августа → 10 сентября.</span>{" "}
-                30 дней, каждый день — новая пачка спинов. Не крутанул сегодня — завтра обнулилось.
+                {endsLabel && (
+                  <>
+                    <span className="text-foreground">Сезон идёт до {endsLabel}.</span>{" "}
+                  </>
+                )}
+                {days} дней, каждый день — новая пачка спинов. Не крутанул сегодня — завтра обнулилось.
               </p>
             </div>
 
@@ -809,7 +969,7 @@ function HowItWorks() {
               </h3>
               <p className="text-[13px] leading-relaxed text-muted-foreground">
                 Призы гарантированно{" "}
-                <span className="text-foreground">найдут своих владельцев</span> за 30 дней.
+                <span className="text-foreground">найдут своих владельцев</span> за {days} дней.
                 Больше спинов — больше шансов забрать приз.
               </p>
             </div>
