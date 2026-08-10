@@ -66,7 +66,7 @@ export type PassTier = (typeof PASS_TIERS)[number];
 export const PASS_CONFIG: Record<PassTier, { priceRub: number; tickets: number; aiQuestions: number }> = {
   silver: { priceRub: 490, tickets: 3, aiQuestions: 15 },
   gold: { priceRub: 1290, tickets: 10, aiQuestions: 40 },
-  platinum: { priceRub: 2990, tickets: 30, aiQuestions: 150 },
+  platinum: { priceRub: 2190, tickets: 30, aiQuestions: 150 },
 };
 
 export const PASS_DURATION_DAYS = 30;
