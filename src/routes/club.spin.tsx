@@ -260,16 +260,33 @@ function SpinPage() {
         <div className="mb-4 grid grid-cols-10 gap-1.5">
           {dayTicks.map((d) => {
             const done = d <= streak;
-            const milestone = d === 10 || d === 20 || d === 30;
+            const img = MILESTONE_IMG[d];
+            if (img) {
+              return (
+                <span
+                  key={d}
+                  className={`relative grid aspect-square place-items-center overflow-hidden rounded-xl ${
+                    done
+                      ? "bg-[#B6FF3C] shadow-[0_4px_14px_-6px_#B6FF3C]"
+                      : "bg-[#B6FF3C]/15 ring-1 ring-inset ring-[#B6FF3C]/40"
+                  }`}
+                >
+                  <img
+                    src={img}
+                    alt=""
+                    loading="lazy"
+                    className={`h-full w-full object-contain p-[2px] ${done ? "" : "opacity-70"}`}
+                  />
+                </span>
+              );
+            }
             return (
               <span
                 key={d}
                 className={`grid aspect-square place-items-center rounded-xl font-mono text-[10px] font-bold ${
                   done
                     ? "bg-primary text-primary-foreground shadow-[0_4px_14px_-6px_hsl(var(--primary))]"
-                    : milestone
-                      ? "bg-[#B6FF3C]/15 text-[#B6FF3C]"
-                      : "bg-white/[0.05] text-muted-foreground"
+                    : "bg-white/[0.05] text-muted-foreground"
                 }`}
               >
                 {d}
@@ -281,9 +298,15 @@ function SpinPage() {
         <ul className="space-y-2">
           {CALENDAR.map((c) => (
             <li key={c.day} className="flex items-center gap-3 rounded-2xl bg-black/30 px-3 py-2.5">
-              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[#B6FF3C] text-black">
-                <PlumpNum value={c.day} size={14} />
+              <span className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-2xl bg-white/[0.06]">
+                <img
+                  src={MILESTONE_IMG[c.day]}
+                  alt={c.title}
+                  loading="lazy"
+                  className="h-full w-full object-contain p-1"
+                />
               </span>
+
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-[14px] font-semibold text-foreground">
                   {c.title}
