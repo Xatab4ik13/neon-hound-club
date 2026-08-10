@@ -826,3 +826,23 @@ html.hh-admin *::-webkit-scrollbar-thumb:hover {
     transform: none;
   }
 }
+
+/* ---- HellSpin: блики и пульс рулетки ---- */
+@keyframes hs-shine {
+  0% { transform: translateX(-120%); opacity: 0; }
+  35% { opacity: 1; }
+  100% { transform: translateX(120%); opacity: 0; }
+}
+@keyframes hs-sweep {
+  0% { transform: translateX(-60%); }
+  100% { transform: translateX(160%); }
+}
+@keyframes hs-marker-pulse {
+  0%, 100% { opacity: 0.75; transform: scaleY(1); }
+  50% { opacity: 1; transform: scaleY(1.06); }
+}
+@keyframes hs-win-pop {
+  0% { transform: scale(0.9) translateY(6px); opacity: 0; }
+  60% { transform: scale(1.03) translateY(0); opacity: 1; }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
+}
