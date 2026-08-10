@@ -6,6 +6,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import {
   LayoutDashboard,
   Trophy,
+  PlumpSpin,
   Target,
   PlumpUsers as Users,
   PlumpStore,
@@ -157,6 +158,7 @@ type NavItem = { to: string; label: string; icon: React.ComponentType<{ classNam
 const NAV: NavItem[] = [
   { to: "/admin", label: "Дашборд", icon: LayoutDashboard },
   { to: "/admin/raffles", label: "Розыгрыши", icon: Trophy },
+  { to: "/admin/spin", label: "HellSpin", icon: PlumpSpin },
   { to: "/admin/quests", label: "Челленджи", icon: Target },
   { to: "/admin/users", label: "Пользователи", icon: Users },
   { to: "/admin/feed", label: "Лента", icon: PlumpFeed },
