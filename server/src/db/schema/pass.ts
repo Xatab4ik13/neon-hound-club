@@ -35,6 +35,14 @@ export const passPurchases = pgTable(
     priceRub: integer("price_rub").notNull(),
     ticketsGranted: integer("tickets_granted").notNull(),
     status: varchar("status", { length: 24 }).notNull().default("pending_payment"),
+    /**
+     * Откуда взялся пасс:
+     *   'purchase' — юзер купил за деньги
+     *   'spin'     — выпал в рулетке HellSpin
+     *   'streak'   — награда за календарь активности
+     *   'grant'    — выдал админ вручную
+     */
+    source: varchar("source", { length: 24 }).notNull().default("purchase"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     paidAt: timestamp("paid_at", { withTimezone: true }),
     expiresAt: timestamp("expires_at", { withTimezone: true }),
@@ -43,6 +51,7 @@ export const passPurchases = pgTable(
     userIdx: index("pass_user_idx").on(t.userId),
     expiresIdx: index("pass_expires_idx").on(t.expiresAt),
     statusIdx: index("pass_status_idx").on(t.status),
+    sourceIdx: index("pass_source_idx").on(t.source),
   }),
 );
 
@@ -70,3 +79,9 @@ export const PASS_CONFIG: Record<PassTier, { priceRub: number; tickets: number; 
 };
 
 export const PASS_DURATION_DAYS = 30;
+
+export const PASS_SOURCES = ["purchase", "spin", "streak", "grant"] as const;
+export type PassSource = (typeof PASS_SOURCES)[number];
+
+/** Сколько живёт неоплаченная заявка на пасс, после — удаляется. */
+export const PASS_PENDING_TTL_MINUTES = 60;
