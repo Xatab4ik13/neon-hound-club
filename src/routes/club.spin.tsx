@@ -10,10 +10,11 @@ import goldBadge from "@/assets/hellpass/tpl-gold.png";
 import imgAirpods from "@/assets/spin/airpods.png";
 import imgWatch from "@/assets/spin/watch.png";
 import imgPs5 from "@/assets/spin/ps5.png";
-import imgRemovka from "@/assets/spin/removka.png";
+import imgBonusSpin from "@/assets/spin/bonus-spin.png";
 import imgTicket from "@/assets/spin/ticket.png";
 import imgXp from "@/assets/spin/xp.png";
 import imgPromo from "@/assets/spin/promo.png";
+
 
 export const Route = createFileRoute("/club/spin")({
   head: () => ({
