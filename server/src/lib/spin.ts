@@ -311,8 +311,24 @@ export async function rollSpin(userId: string, pwa: boolean): Promise<SpinResult
   const tier = await getTier(userId);
   const day = mskDate();
   const daily = await ensureDaily(userId, tier, day);
-  const capacity = daily.allowed + daily.bonus;
-  if (daily.used >= capacity) {
+
+  // Атомарный инкремент: проверка лимита и списание в одном UPDATE — гонка невозможна.
+  // Два одновременных запроса от одного юзера не смогут оба пройти проверку.
+  const [dailyAfter] = await db
+    .update(spinDaily)
+    .set({
+      used: sql`${spinDaily.used} + 1`,
+      updatedAt: new Date(),
+    })
+    .where(
+      and(
+        eq(spinDaily.id, daily.id),
+        sql`${spinDaily.used} < ${spinDaily.allowed} + ${spinDaily.bonus}`,
+      ),
+    )
+    .returning();
+
+  if (!dailyAfter) {
     throw new SpinError("no_spins", "Спины на сегодня закончились. Возвращайся завтра.");
   }
 
@@ -368,26 +384,37 @@ export async function rollSpin(userId: string, pwa: boolean): Promise<SpinResult
       rarity: prize.rarity,
       spinDate: day,
       tier,
-      bonus: false,
+      bonus: dailyAfter.used > dailyAfter.allowed,
       rolledChancePpm: chancePpm,
     })
     .returning();
 
-  // Дневной счётчик: бонус-спин возвращает прокрут (used +1, bonus +1).
-  const [dailyAfter] = await db
-    .update(spinDaily)
-    .set({
-      used: sql`${spinDaily.used} + 1`,
-      bonus: isBonus ? sql`${spinDaily.bonus} + 1` : spinDaily.bonus,
-      updatedAt: new Date(),
-    })
-    .where(eq(spinDaily.id, daily.id))
-    .returning();
+  // Бонус-спин возвращает прокрут: +1 к bonus-лимиту дня.
+  if (isBonus) {
+    const [bonusRow] = await db
+      .update(spinDaily)
+      .set({ bonus: sql`${spinDaily.bonus} + 1`, updatedAt: new Date() })
+      .where(eq(spinDaily.id, daily.id))
+      .returning();
+    if (bonusRow) dailyAfter.bonus = bonusRow.bonus;
+  }
 
-  const promoCode = await grantPrize(userId, season.id, spinRow!.id, prize);
-  const streakDays = await bumpStreak(userId, season.id, day);
+  // Начисление приза + стрик. Если начисление падает — откатываем списание спина,
+  // чтобы юзер не потерял прокрут из-за внутренней ошибки.
+  let promoCode: string | undefined;
+  let streakDays: number;
+  try {
+    promoCode = await grantPrize(userId, season.id, spinRow!.id, prize);
+    streakDays = await bumpStreak(userId, season.id, day);
+  } catch (grantErr) {
+    await db
+      .update(spinDaily)
+      .set({ used: sql`${spinDaily.used} - 1`, updatedAt: new Date() })
+      .where(eq(spinDaily.id, daily.id));
+    throw grantErr;
+  }
 
-  const allowed = (dailyAfter?.allowed ?? daily.allowed) + (dailyAfter?.bonus ?? daily.bonus);
+  const allowed = dailyAfter.allowed + dailyAfter.bonus;
   return {
     prizeCode: prize.code,
     prizeTitle: prize.title,
@@ -397,7 +424,7 @@ export async function rollSpin(userId: string, pwa: boolean): Promise<SpinResult
     promoCode,
     bonusSpin: isBonus,
     spinsAllowed: allowed,
-    spinsLeft: Math.max(0, allowed - (dailyAfter?.used ?? daily.used + 1)),
+    spinsLeft: Math.max(0, allowed - dailyAfter.used),
     streakDays,
   };
 }
