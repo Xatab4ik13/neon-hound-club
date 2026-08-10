@@ -116,3 +116,10 @@ export function playClick() {
   if (!c) return;
   scheduleTick(c, c.currentTime + 0.005, 0.25, 0.5);
 }
+
+/** Одиночный тик для rAF-анимации: громкость/высота задаём по скорости ленты. */
+export function playTick(volume = 0.14, pitch = 0.5) {
+  const c = ac();
+  if (!c) return;
+  scheduleTick(c, c.currentTime + 0.004, Math.max(0.02, Math.min(0.3, volume)), pitch);
+}
