@@ -430,7 +430,7 @@ function SpinPage() {
                     loading="lazy"
                     className={`h-full w-full ${
                       fit === "cover" ? "scale-[1.15] object-cover" : "object-contain p-[2px]"
-                    } ${done ? "" : "opacity-70"} ${isClaimed ? "opacity-45 grayscale" : ""}`}
+                    } ${done ? "" : "opacity-70"} ${isClaimed ? "opacity-60" : ""}`}
                   />
                   {isClaimed && <ClaimedStrike />}
                 </span>
@@ -468,7 +468,7 @@ function SpinPage() {
                       (MILESTONE_FIT[c.day] ?? "contain") === "cover"
                         ? "scale-[1.15] object-cover"
                         : "object-contain p-1"
-                    } ${isClaimed ? "opacity-45 grayscale" : ""}`}
+                    } ${isClaimed ? "opacity-60" : ""}`}
                   />
                   {isClaimed && <ClaimedStrike />}
                 </span>
@@ -549,7 +549,7 @@ function SpinPage() {
 function ClaimedStrike() {
   return (
     <span className="pointer-events-none absolute inset-0 grid place-items-center">
-      <span className="absolute inset-0 rounded-full bg-black/35" />
+      <span className="absolute inset-0 rounded-full bg-black/20" />
       <span
         className="absolute left-[-12%] top-1/2 h-[3px] w-[124%]"
         style={{ transform: "translateY(-50%) rotate(-24deg)" }}
