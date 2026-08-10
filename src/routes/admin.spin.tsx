@@ -95,11 +95,6 @@ const SEASON_INFO = {
     { name: "Gold", spins: 4 },
     { name: "Platinum", spins: 7 },
   ],
-  milestones: [
-    { day: 10, reward: "Носки" },
-    { day: 20, reward: "Silver + носки + 5 билетов" },
-    { day: 30, reward: "Gold + носки + ремувка + 20 билетов" },
-  ],
 };
 
 /* ----------------- Хелперы ----------------- */
