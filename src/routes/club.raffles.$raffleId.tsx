@@ -540,7 +540,7 @@ function StakePanel({
 
       {/* Presets */}
       {presets.length > 0 && (
-        <div className="mt-2.5 grid grid-cols-3 gap-2">
+        <div className="mt-2 grid grid-cols-3 gap-2">
           {presets.map((v, i) => {
             const isMax = i === presets.length - 1 && v === maxStake && v > 1;
             const active = stake === v;
