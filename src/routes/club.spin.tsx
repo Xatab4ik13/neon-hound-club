@@ -492,7 +492,7 @@ function SpinPage() {
                 </span>
 
                 {isClaimed ? (
-                  <span className="sticker-wiggle shrink-0 rounded-lg border-[2px] border-foreground bg-[#B6FF3C] px-2 py-1 font-display text-[10px] font-black uppercase tracking-tight text-black shadow-[2px_2px_0_0_hsl(var(--foreground))]">
+                  <span className="shrink-0 rounded-lg border-[2px] border-foreground bg-[#B6FF3C] px-2 py-1 font-display text-[10px] font-black uppercase tracking-tight text-black shadow-[2px_2px_0_0_hsl(var(--foreground))]">
                     Твоё
                   </span>
                 ) : streak >= c.day ? (
