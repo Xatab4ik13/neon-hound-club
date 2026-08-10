@@ -50,22 +50,26 @@ const RARITY: Record<Rarity, { ring: string; glow: string; label: string; chip: 
   legend: { ring: "rgba(255,217,61,0.48)", glow: "rgba(255,217,61,0.26)", label: "Легенда", chip: "#FFD93D" },
 };
 
+// Фото товаров берём прямо из каталога магазина — призы совпадают с реальным мерчем.
+const REMOVKA_IMG =
+  "https://api.hhr.pro/media/shop/da0bcbf8-594f-43b3-a412-39a5905c1800/c4c6b81b-b769-475e-939a-7ce658d917f8.jpg";
 
 const POOL: Prize[] = [
   { id: "xp100", title: "100 XP", rarity: "common", img: imgXp },
   { id: "t1", title: "1 билет", rarity: "common", img: imgTicket },
   { id: "xp250", title: "250 XP", rarity: "common", img: imgXp },
   { id: "t3", title: "3 билета", rarity: "rare", img: imgTicket },
-  { id: "spin", title: "Бонус-спин", sub: "+1 прокрут", rarity: "rare" },
+  { id: "spin", title: "Бонус-спин", sub: "+1 прокрут", rarity: "rare", img: imgBonusSpin },
   { id: "xp500", title: "500 XP", rarity: "rare", img: imgXp },
   { id: "promo", title: "Промокод 20%", sub: "на товары", rarity: "epic", img: imgPromo },
   { id: "t10", title: "10 билетов", rarity: "epic", img: imgTicket },
-  { id: "sticker", title: "Ремувка", sub: "с ближайшим заказом", rarity: "epic", img: imgRemovka },
+  { id: "sticker", title: "Ремувка", sub: "подарок · доставка за нами", rarity: "epic", img: REMOVKA_IMG, fit: "cover" },
   { id: "silver", title: "Hell Pass Silver", sub: "30 дней", rarity: "legend", img: silverBadge },
   { id: "airpods", title: "AirPods 4", rarity: "legend", img: imgAirpods },
   { id: "watch", title: "Apple Watch SE", rarity: "legend", img: imgWatch },
   { id: "ps5", title: "PlayStation 5 Slim", rarity: "legend", img: imgPs5 },
 ];
+
 
 const LEGENDS = POOL.filter((p) => p.rarity === "legend");
 const NON_LEGENDS = POOL.filter((p) => p.rarity !== "legend");
