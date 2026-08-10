@@ -437,9 +437,8 @@ function SpinPage() {
                     loading="lazy"
                     className={`h-full w-full ${
                       fit === "cover" ? "scale-[1.15] object-cover" : "object-contain p-[2px]"
-                    } ${done ? "" : "opacity-70"} ${isClaimed ? "opacity-60" : ""}`}
+                    } ${done ? "" : "opacity-70"}`}
                   />
-                  {isClaimed && <ClaimedStrike />}
                 </span>
               );
             }
