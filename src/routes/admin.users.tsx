@@ -372,6 +372,9 @@ function UserDrawer({
             )}
           </Section>
 
+          <UserPromoSection userId={userId} nick={u.nick} />
+
+
           <div className="flex flex-wrap gap-2">
             <Btn onClick={onGift}>
               <Gift className="h-4 w-4" /> Начислить билеты
