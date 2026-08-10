@@ -187,12 +187,7 @@ function MePage() {
             },
             { label: "Заказы", value: totalOrders, icon: Package },
             { label: "Байки", value: bikesQ.data?.length ?? 0, icon: BikeIcon },
-            {
-              label: "Промокоды",
-              value: promoQ.data?.items.filter((p) => !p.usedAt && !p.expired).length ?? 0,
-              icon: PromoIcon,
-              to: "/club/promo",
-            },
+
 
           ]}
         />
