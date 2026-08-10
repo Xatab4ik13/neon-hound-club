@@ -568,6 +568,25 @@ export type AdminPassStats = {
   pendingCount: number;
   expiringWithin7d: number;
   revenue30dRub: number;
+  /** Повторные покупки: только реальные оплаченные покупки (без призовых пассов). */
+  repeat: {
+    buyers: number;
+    repeatBuyers: number;
+    purchases: number;
+    repeatRatePct: number;
+    avgPurchasesPerBuyer: number;
+    avgGapDays: number;
+    repeatLast30d: number;
+    distribution: { one: number; two: number; three: number; fourPlus: number };
+    top: Array<{
+      userId: string;
+      nick: string;
+      email: string;
+      purchases: number;
+      totalRub: number;
+      lastAt: string | null;
+    }>;
+  };
 };
 
 export function fetchAdminPassStats() {

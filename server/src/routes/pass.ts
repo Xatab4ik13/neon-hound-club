@@ -201,6 +201,85 @@ export async function adminPassRoutes(app: FastifyInstance) {
     const bySource: Record<string, number> = { purchase: 0, spin: 0, streak: 0, grant: 0 };
     for (const r of activeBySource) bySource[r.source as string] = r.c;
 
+    // ---- Повторные покупки. Считаем только реальные покупки (source='purchase' + оплачено). ----
+    const repeatRows = await db.execute<{
+      buyers: number;
+      repeat_buyers: number;
+      purchases: number;
+      b1: number;
+      b2: number;
+      b3: number;
+      b4plus: number;
+      avg_gap_days: number;
+      repeat_30d: number;
+    }>(sql`
+      WITH paid AS (
+        SELECT user_id, paid_at
+        FROM pass_purchases
+        WHERE source = 'purchase' AND paid_at IS NOT NULL
+      ),
+      agg AS (
+        SELECT user_id,
+               COUNT(*)::int AS cnt,
+               MIN(paid_at) AS first_at,
+               MAX(paid_at) AS last_at
+        FROM paid
+        GROUP BY user_id
+      ),
+      repeat30 AS (
+        SELECT COUNT(*)::int AS c
+        FROM paid p
+        WHERE p.paid_at >= now() - interval '30 days'
+          AND EXISTS (
+            SELECT 1 FROM paid q
+            WHERE q.user_id = p.user_id AND q.paid_at < p.paid_at
+          )
+      )
+      SELECT
+        COUNT(*)::int AS buyers,
+        COUNT(*) FILTER (WHERE cnt > 1)::int AS repeat_buyers,
+        COALESCE(SUM(cnt), 0)::int AS purchases,
+        COUNT(*) FILTER (WHERE cnt = 1)::int AS b1,
+        COUNT(*) FILTER (WHERE cnt = 2)::int AS b2,
+        COUNT(*) FILTER (WHERE cnt = 3)::int AS b3,
+        COUNT(*) FILTER (WHERE cnt >= 4)::int AS b4plus,
+        COALESCE(
+          AVG(EXTRACT(EPOCH FROM (last_at - first_at)) / 86400.0 / GREATEST(cnt - 1, 1))
+            FILTER (WHERE cnt > 1),
+          0
+        )::float AS avg_gap_days,
+        (SELECT c FROM repeat30) AS repeat_30d
+      FROM agg
+    `);
+    const rr = (repeatRows as any)[0] ?? {};
+    const buyers = Number(rr.buyers ?? 0);
+    const repeatBuyers = Number(rr.repeat_buyers ?? 0);
+    const purchases = Number(rr.purchases ?? 0);
+
+    // Топ повторных покупателей — кто платит чаще всех.
+    const topRepeat = await db.execute<{
+      user_id: string;
+      nick: string;
+      email: string;
+      purchases: number;
+      total_rub: number;
+      last_at: string;
+    }>(sql`
+      SELECT p.user_id,
+             u.nick,
+             u.email,
+             COUNT(*)::int AS purchases,
+             COALESCE(SUM(p.price_rub), 0)::int AS total_rub,
+             MAX(p.paid_at) AS last_at
+      FROM pass_purchases p
+      JOIN users u ON u.id = p.user_id
+      WHERE p.source = 'purchase' AND p.paid_at IS NOT NULL
+      GROUP BY p.user_id, u.nick, u.email
+      HAVING COUNT(*) > 1
+      ORDER BY COUNT(*) DESC, MAX(p.paid_at) DESC
+      LIMIT 10
+    `);
+
     const byTier: Record<string, number> = { silver: 0, gold: 0, platinum: 0 };
     for (const r of activeByTier) byTier[r.tier as string] = r.c;
 
@@ -211,6 +290,29 @@ export async function adminPassRoutes(app: FastifyInstance) {
       pendingCount: pending?.c ?? 0,
       expiringWithin7d: expiring7?.c ?? 0,
       revenue30dRub: revenue30d?.total ?? 0,
+      repeat: {
+        buyers,
+        repeatBuyers,
+        purchases,
+        repeatRatePct: buyers > 0 ? Math.round((repeatBuyers / buyers) * 1000) / 10 : 0,
+        avgPurchasesPerBuyer: buyers > 0 ? Math.round((purchases / buyers) * 100) / 100 : 0,
+        avgGapDays: Math.round(Number(rr.avg_gap_days ?? 0) * 10) / 10,
+        repeatLast30d: Number(rr.repeat_30d ?? 0),
+        distribution: {
+          one: Number(rr.b1 ?? 0),
+          two: Number(rr.b2 ?? 0),
+          three: Number(rr.b3 ?? 0),
+          fourPlus: Number(rr.b4plus ?? 0),
+        },
+        top: ((topRepeat as any[]) ?? []).map((r) => ({
+          userId: r.user_id as string,
+          nick: r.nick as string,
+          email: r.email as string,
+          purchases: Number(r.purchases),
+          totalRub: Number(r.total_rub),
+          lastAt: r.last_at ? new Date(r.last_at).toISOString() : null,
+        })),
+      },
     };
   });
 
