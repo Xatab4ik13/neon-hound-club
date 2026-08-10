@@ -245,6 +245,12 @@ const NEXT_STATUSES: Record<ShopOrderStatus, ShopOrderStatus[]> = {
   refunded: [],
 };
 
+/** Электронный заказ (virtual/digital) — доставки СДЭК нет, статус сразу «Получен». */
+function isElectronicOrder(o: ShopOrder) {
+  return o.kindSummary === "virtual" || o.kindSummary === "digital";
+}
+
+
 function OrderDrawer({ orderId, onClose }: { orderId: string; onClose: () => void }) {
   const qc = useQueryClient();
   const order = useQuery({
