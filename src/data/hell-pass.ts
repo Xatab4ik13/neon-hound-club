@@ -9,6 +9,7 @@ import {
   PlumpGift,
   PlumpMelt,
   PlumpDiamond,
+  PlumpSpin,
   type LucideIcon,
 } from "@/components/ui/icons";
 
