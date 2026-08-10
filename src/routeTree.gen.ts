@@ -41,6 +41,7 @@ import { Route as LegalOfferRouteImport } from './routes/legal.offer'
 import { Route as HellPassTierRouteImport } from './routes/hell-pass.$tier'
 import { Route as ClubVipChatRouteImport } from './routes/club.vip-chat'
 import { Route as ClubTicketsRouteImport } from './routes/club.tickets'
+import { Route as ClubSpinRouteImport } from './routes/club.spin'
 import { Route as ClubRankRouteImport } from './routes/club.rank'
 import { Route as ClubQuestsRouteImport } from './routes/club.quests'
 import { Route as ClubPromoRouteImport } from './routes/club.promo'
@@ -258,6 +259,11 @@ const ClubVipChatRoute = ClubVipChatRouteImport.update({
 const ClubTicketsRoute = ClubTicketsRouteImport.update({
   id: '/tickets',
   path: '/tickets',
+  getParentRoute: () => ClubRoute,
+} as any)
+const ClubSpinRoute = ClubSpinRouteImport.update({
+  id: '/spin',
+  path: '/spin',
   getParentRoute: () => ClubRoute,
 } as any)
 const ClubRankRoute = ClubRankRouteImport.update({
@@ -595,6 +601,7 @@ export interface FileRoutesByFullPath {
   '/club/promo': typeof ClubPromoRoute
   '/club/quests': typeof ClubQuestsRoute
   '/club/rank': typeof ClubRankRoute
+  '/club/spin': typeof ClubSpinRoute
   '/club/tickets': typeof ClubTicketsRoute
   '/club/vip-chat': typeof ClubVipChatRoute
   '/hell-pass/$tier': typeof HellPassTierRoute
@@ -684,6 +691,7 @@ export interface FileRoutesByTo {
   '/club/promo': typeof ClubPromoRoute
   '/club/quests': typeof ClubQuestsRoute
   '/club/rank': typeof ClubRankRoute
+  '/club/spin': typeof ClubSpinRoute
   '/club/tickets': typeof ClubTicketsRoute
   '/club/vip-chat': typeof ClubVipChatRoute
   '/hell-pass/$tier': typeof HellPassTierRoute
@@ -777,6 +785,7 @@ export interface FileRoutesById {
   '/club/promo': typeof ClubPromoRoute
   '/club/quests': typeof ClubQuestsRoute
   '/club/rank': typeof ClubRankRoute
+  '/club/spin': typeof ClubSpinRoute
   '/club/tickets': typeof ClubTicketsRoute
   '/club/vip-chat': typeof ClubVipChatRoute
   '/hell-pass/$tier': typeof HellPassTierRoute
@@ -871,6 +880,7 @@ export interface FileRouteTypes {
     | '/club/promo'
     | '/club/quests'
     | '/club/rank'
+    | '/club/spin'
     | '/club/tickets'
     | '/club/vip-chat'
     | '/hell-pass/$tier'
@@ -960,6 +970,7 @@ export interface FileRouteTypes {
     | '/club/promo'
     | '/club/quests'
     | '/club/rank'
+    | '/club/spin'
     | '/club/tickets'
     | '/club/vip-chat'
     | '/hell-pass/$tier'
@@ -1052,6 +1063,7 @@ export interface FileRouteTypes {
     | '/club/promo'
     | '/club/quests'
     | '/club/rank'
+    | '/club/spin'
     | '/club/tickets'
     | '/club/vip-chat'
     | '/hell-pass/$tier'
@@ -1356,6 +1368,13 @@ declare module '@tanstack/react-router' {
       path: '/tickets'
       fullPath: '/club/tickets'
       preLoaderRoute: typeof ClubTicketsRouteImport
+      parentRoute: typeof ClubRoute
+    }
+    '/club/spin': {
+      id: '/club/spin'
+      path: '/spin'
+      fullPath: '/club/spin'
+      preLoaderRoute: typeof ClubSpinRouteImport
       parentRoute: typeof ClubRoute
     }
     '/club/rank': {
@@ -1847,6 +1866,7 @@ interface ClubRouteChildren {
   ClubPromoRoute: typeof ClubPromoRoute
   ClubQuestsRoute: typeof ClubQuestsRoute
   ClubRankRoute: typeof ClubRankRoute
+  ClubSpinRoute: typeof ClubSpinRoute
   ClubTicketsRoute: typeof ClubTicketsRoute
   ClubVipChatRoute: typeof ClubVipChatRoute
   ClubIndexRoute: typeof ClubIndexRoute
@@ -1886,6 +1906,7 @@ const ClubRouteChildren: ClubRouteChildren = {
   ClubPromoRoute: ClubPromoRoute,
   ClubQuestsRoute: ClubQuestsRoute,
   ClubRankRoute: ClubRankRoute,
+  ClubSpinRoute: ClubSpinRoute,
   ClubTicketsRoute: ClubTicketsRoute,
   ClubVipChatRoute: ClubVipChatRoute,
   ClubIndexRoute: ClubIndexRoute,
