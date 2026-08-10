@@ -86,57 +86,29 @@ export function playSpin(totalCards: number, durationMs: number) {
   }
 }
 
-// Классический MLG/Discord airhorn — реальный сэмпл, ничем не имитируется.
-import airhornUrl from "@/assets/airhorn.mp3";
-
-let airhornBuf: AudioBuffer | null = null;
-let airhornLoading: Promise<AudioBuffer | null> | null = null;
-async function loadAirhorn(c: AudioContext): Promise<AudioBuffer | null> {
-  if (airhornBuf) return airhornBuf;
-  if (airhornLoading) return airhornLoading;
-  airhornLoading = (async () => {
-    try {
-      const res = await fetch(airhornUrl);
-      const arr = await res.arrayBuffer();
-      airhornBuf = await c.decodeAudioData(arr);
-      return airhornBuf;
-    } catch {
-      return null;
-    }
-  })();
-  return airhornLoading;
-}
-
-// Предзагружаем сразу, чтобы к концу спина было готово.
-if (typeof window !== "undefined") {
-  const warm = () => {
-    const c = ac();
-    if (c) loadAirhorn(c);
-    window.removeEventListener("pointerdown", warm);
-  };
-  window.addEventListener("pointerdown", warm, { once: true });
-}
-
-/** Airhorn — три honk'а, как в Discord. */
+/** Короткий «стоп» — один глухой удар в момент остановки. Без фанфар. */
 export function playWin() {
   const c = ac();
   if (!c) return;
-  loadAirhorn(c).then((buf) => {
-    if (!buf) return;
-    const c2 = ac();
-    if (!c2) return;
-    const t0 = c2.currentTime + 0.02;
-    // короткий-короткий-длинный, как !airhorn в Discord
-    [0, 0.22, 0.5].forEach((off) => {
-      const src = c2.createBufferSource();
-      src.buffer = buf;
-      const g = c2.createGain();
-      g.gain.value = 0.7;
-      src.connect(g).connect(c2.destination);
-      src.start(t0 + off);
-    });
-  });
+  const t0 = c.currentTime + 0.01;
+
+  // низкий «тук»
+  const osc = c.createOscillator();
+  osc.type = "sine";
+  osc.frequency.setValueAtTime(180, t0);
+  osc.frequency.exponentialRampToValueAtTime(70, t0 + 0.18);
+  const g = c.createGain();
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.exponentialRampToValueAtTime(0.35, t0 + 0.008);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.26);
+  osc.connect(g).connect(c.destination);
+  osc.start(t0);
+  osc.stop(t0 + 0.3);
+
+  // сухой щелчок сверху для чёткости
+  scheduleTick(c, t0, 0.22, 0.4);
 }
+
 
 /** «Бам» при ре-спине / отмене. */
 export function playClick() {
