@@ -11,9 +11,9 @@ import { TIERS, type Perk, type Tier } from "@/data/hell-pass";
 import { fetchPassMe, qk } from "@/lib/queries";
 import { useViewer } from "@/hooks/use-viewer";
 
-import silverBadge from "@/assets/hellpass/silver-v2.png";
-import goldBadge from "@/assets/hellpass/gold-v2.png";
-import platinumBadge from "@/assets/hellpass/platinum-v2.png";
+import silverBadge from "@/assets/hellpass/tpl-silver.png";
+import goldBadge from "@/assets/hellpass/tpl-gold.png";
+import platinumBadge from "@/assets/hellpass/tpl-platinum.png";
 
 const BADGES: Record<Tier["slug"], string> = {
   silver: silverBadge,
