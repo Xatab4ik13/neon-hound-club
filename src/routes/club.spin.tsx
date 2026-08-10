@@ -19,7 +19,7 @@ import imgBonusSpin from "@/assets/spin/bonus-spin.webp";
 import imgTicket from "@/assets/spin/ticket.webp";
 import imgXp from "@/assets/spin/xp.webp";
 import imgPromo from "@/assets/spin/promo.webp";
-import { SPECIAL_PACK_COVER as imgRemovka } from "@/assets/stickers/special";
+import imgRemovka from "@/assets/spin/removka.webp";
 import imgSocks from "@/assets/spin/socks.webp";
 import { apiFetch, ApiError } from "@/lib/api";
 import { isStandalone } from "@/hooks/use-install-prompt";
