@@ -16,9 +16,9 @@ import goldBadge from "@/assets/hellpass/gold-v2.png";
 import platinumBadge from "@/assets/hellpass/platinum-v2.png";
 
 const BADGES: Record<Tier["slug"], string> = {
-  silver: silverBadge.url,
-  gold: goldBadge.url,
-  platinum: platinumBadge.url,
+  silver: silverBadge,
+  gold: goldBadge,
+  platinum: platinumBadge,
 };
 
 export const Route = createFileRoute("/club/hell-pass/")({
