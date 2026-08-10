@@ -199,6 +199,19 @@ const PLATINUM_GROUPS: { title: string; perks: Perk[] }[] = [
     ],
   },
   {
+    title: "HellSpin",
+    perks: [
+      {
+        icon: PlumpSpin,
+        value: "7",
+        accent: true,
+        label: "спинов в рулетке HellSpin в день",
+        detail:
+          "Семь прокрутов HellSpin ежедневно — максимум в клубе. Коэффициент ×1.5 на шанс дорогих призов: ремувка, Silver Pass и джекпот падают в полтора раза чаще, чем у бесплатных юзеров.",
+      },
+    ],
+  },
+  {
     title: "Билеты и розыгрыши",
     perks: [
       {
