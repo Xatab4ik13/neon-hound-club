@@ -140,7 +140,6 @@ function SpinPage() {
   const [strip, setStrip] = useState<Prize[]>(() => buildStrip(STRIP_LEN - 12, STRIP_LEN - 10));
   const [offset, setOffset] = useState(0);
   const [spinning, setSpinning] = useState(false);
-  const [teasing, setTeasing] = useState(false);
   const [won, setWon] = useState<Prize | null>(null);
   const [lastPrize, setLastPrize] = useState<Prize | null>(() => {
     if (typeof window === "undefined") return null;
@@ -209,7 +208,6 @@ function SpinPage() {
 
     const t0 = performance.now();
     let lastCell = -1;
-    let teased = false;
 
     const frame = (now: number) => {
       const t = Math.min(1, (now - t0) / TOTAL_MS);
@@ -224,13 +222,6 @@ function SpinPage() {
         playTick(0.05 + speed * 0.14, 0.25 + speed * 0.75);
       }
 
-      // Подсветка легенды, пока она стоит под маркером.
-      if (!teased && t > CRAWL_FROM - 0.06) {
-        teased = true;
-        setTeasing(true);
-        haptic("selection");
-        later(() => setTeasing(false), TOTAL_MS * (1 - CRAWL_FROM) * 0.55);
-      }
 
       if (t < 1) {
         rafRef.current = requestAnimationFrame(frame);
@@ -238,7 +229,6 @@ function SpinPage() {
       }
 
       rafRef.current = null;
-      setTeasing(false);
       setSpinning(false);
       const prize = fresh[targetIndex];
       // Бонус-спин возвращает прокрут — счётчик остаётся на месте.
@@ -292,10 +282,7 @@ function SpinPage() {
           style={{
             background:
               "radial-gradient(120% 140% at 50% 0%, hsl(var(--primary) / 0.10), transparent 60%), #0B0B0D",
-            boxShadow: teasing
-              ? "inset 0 0 0 1px rgba(255,217,61,0.45), 0 0 46px -10px rgba(255,217,61,0.45)"
-              : "inset 0 0 0 1px rgba(255,255,255,0.06)",
-            transition: "box-shadow 300ms ease",
+            boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.06)",
           }}
         >
           {/* Рельсы сверху/снизу */}
@@ -318,7 +305,7 @@ function SpinPage() {
               }}
             >
               {strip.map((p, i) => (
-                <PrizeCell key={`${p.id}-${i}`} prize={p} hot={teasing && p.rarity === "legend"} />
+                <PrizeCell key={`${p.id}-${i}`} prize={p} />
               ))}
             </div>
           </div>
@@ -559,7 +546,7 @@ function PrizeMedia({ prize, size }: { prize: Prize; size: number }) {
   );
 }
 
-function PrizeCell({ prize, hot }: { prize: Prize; hot?: boolean }) {
+function PrizeCell({ prize }: { prize: Prize }) {
   const r = RARITY[prize.rarity];
   const legend = prize.rarity === "legend";
   return (
@@ -568,12 +555,8 @@ function PrizeCell({ prize, hot }: { prize: Prize; hot?: boolean }) {
       style={{
         width: ITEM_W,
         height: 148,
-        transform: hot ? "scale(1.05)" : "none",
-        transition: "transform 320ms cubic-bezier(0.2,1.4,0.3,1), box-shadow 320ms ease",
         background: `linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(0,0,0,0.28) 45%, ${r.glow} 100%)`,
-        boxShadow: hot
-          ? `inset 0 0 0 2px ${r.chip}, 0 0 40px -4px ${r.chip}`
-          : `inset 0 0 0 1.5px ${r.ring}`,
+        boxShadow: `inset 0 0 0 1.5px ${r.ring}`,
       }}
     >
       {/* Луч редкости снизу */}
@@ -596,14 +579,6 @@ function PrizeCell({ prize, hot }: { prize: Prize; hot?: boolean }) {
           background: "linear-gradient(180deg, rgba(255,255,255,0.10), transparent)",
         }}
       />
-      {hot && (
-        <span
-          className="pointer-events-none absolute inset-0 animate-[hs-shine_900ms_ease-in-out_infinite]"
-          style={{
-            background: `linear-gradient(105deg, transparent 35%, ${r.chip}55 50%, transparent 65%)`,
-          }}
-        />
-      )}
       <span className="relative mb-1.5 grid flex-1 place-items-center">
         <PrizeMedia prize={prize} size={legend ? 62 : 52} />
       </span>
