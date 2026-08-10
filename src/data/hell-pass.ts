@@ -222,13 +222,6 @@ const PLATINUM_GROUPS: { title: string; perks: Perk[] }[] = [
         detail:
           "30 билетов каждый месяц. Самая выгодная пачка билетов в клубе.",
       },
-      {
-        icon: PlumpGift,
-        accent: true,
-        label: "Закрытый Platinum-розыгрыш раз в месяц",
-        detail:
-          "Раз в месяц — отдельный розыгрыш только для Platinum. Маленький пул участников, крупные лоты.",
-      },
     ],
   },
   {
