@@ -123,8 +123,8 @@ export async function adminUsersRoutes(app: FastifyInstance) {
   });
 
 
-  // GET /api/v1/admin/users/stats — краткая статистика для шапки списка
-  // (сколько подтвердили телефон / включили пуш из общего числа клубных юзеров).
+  // GET /api/v1/admin/users/stats — статистика по аудитории для шапки списка:
+  // верификации, онлайн, DAU/WAU/MAU, время на сайте, приросты, график по дням.
   // Админы исключены — они не клубные пользователи.
   app.get("/stats", async () => {
     const [row] = await db
@@ -132,16 +132,92 @@ export async function adminUsersRoutes(app: FastifyInstance) {
         total: sql<number>`count(*)::int`,
         phoneVerified: sql<number>`count(*) filter (where ${profiles.phoneVerifiedAt} is not null)::int`,
         hasPush: sql<number>`count(*) filter (where exists (select 1 from ${pushSubscriptions} ps where ps.user_id = ${users.id}))::int`,
+        onlineNow: sql<number>`count(*) filter (where ${users.lastSeenAt} > now() - interval '5 minutes')::int`,
+        dau: sql<number>`count(*) filter (where ${users.lastSeenAt} > now() - interval '24 hours')::int`,
+        wau: sql<number>`count(*) filter (where ${users.lastSeenAt} > now() - interval '7 days')::int`,
+        mau: sql<number>`count(*) filter (where ${users.lastSeenAt} > now() - interval '30 days')::int`,
+        newToday: sql<number>`count(*) filter (where ${users.createdAt} > now() - interval '24 hours')::int`,
+        new7d: sql<number>`count(*) filter (where ${users.createdAt} > now() - interval '7 days')::int`,
+        new30d: sql<number>`count(*) filter (where ${users.createdAt} > now() - interval '30 days')::int`,
       })
       .from(users)
       .leftJoin(profiles, eq(profiles.userId, users.id))
       .where(ne(users.role, "admin"));
+
+    // Время на сайте за последние 30 дней (по посуточной активности).
+    const engagement = await db.execute<{
+      avg_minutes_per_day: number;
+      avg_sessions_per_day: number;
+      avg_active_days: number;
+      total_minutes: number;
+    }>(sql`
+      with d as (
+        select a.user_id, a.day, a.active_seconds, a.sessions
+        from user_activity_days a
+        join users u on u.id = a.user_id and u.role <> 'admin'
+        where a.day >= (now() at time zone 'Europe/Moscow')::date - 29
+      )
+      select
+        coalesce(round(avg(active_seconds) / 60.0, 1), 0)::float as avg_minutes_per_day,
+        coalesce(round(avg(greatest(sessions, 1))::numeric, 1), 0)::float as avg_sessions_per_day,
+        coalesce(round((count(*)::numeric / nullif(count(distinct user_id), 0)), 1), 0)::float as avg_active_days,
+        coalesce(round(sum(active_seconds) / 60.0), 0)::float as total_minutes
+      from d
+    `);
+    const eng = (engagement.rows ?? engagement)[0] as
+      | {
+          avg_minutes_per_day: number;
+          avg_sessions_per_day: number;
+          avg_active_days: number;
+          total_minutes: number;
+        }
+      | undefined;
+
+    // График за 14 дней: активные юзеры + среднее время на сайте.
+    const dailyRes = await db.execute<{ day: string; users: number; avg_minutes: number }>(sql`
+      select
+        to_char(a.day, 'YYYY-MM-DD') as day,
+        count(distinct a.user_id)::int as users,
+        coalesce(round(avg(a.active_seconds) / 60.0, 1), 0)::float as avg_minutes
+      from user_activity_days a
+      join users u on u.id = a.user_id and u.role <> 'admin'
+      where a.day >= (now() at time zone 'Europe/Moscow')::date - 13
+      group by a.day
+      order by a.day asc
+    `);
+    const daily = (dailyRes.rows ?? dailyRes) as Array<{
+      day: string;
+      users: number;
+      avg_minutes: number;
+    }>;
+
+    const dau = Number(row?.dau ?? 0);
+    const mau = Number(row?.mau ?? 0);
+
     return {
       total: Number(row?.total ?? 0),
       phoneVerified: Number(row?.phoneVerified ?? 0),
       hasPush: Number(row?.hasPush ?? 0),
+      onlineNow: Number(row?.onlineNow ?? 0),
+      dau,
+      wau: Number(row?.wau ?? 0),
+      mau,
+      stickiness: mau > 0 ? Math.round((dau / mau) * 1000) / 10 : 0,
+      newToday: Number(row?.newToday ?? 0),
+      new7d: Number(row?.new7d ?? 0),
+      new30d: Number(row?.new30d ?? 0),
+      avgMinutesPerDay: Number(eng?.avg_minutes_per_day ?? 0),
+      avgSessionsPerDay: Number(eng?.avg_sessions_per_day ?? 0),
+      avgActiveDays30d: Number(eng?.avg_active_days ?? 0),
+      totalMinutes30d: Number(eng?.total_minutes ?? 0),
+      daily: daily.map((d) => ({
+        day: d.day,
+        users: Number(d.users),
+        avgMinutes: Number(d.avg_minutes),
+      })),
     };
   });
+
 
   // GET /api/v1/admin/users/:id — карточка с агрегатами
   app.get<{ Params: { id: string } }>("/:id", async (req, reply) => {
