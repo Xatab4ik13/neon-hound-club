@@ -1,12 +1,19 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { PageHeader } from "@/components/club/PageHeader";
-import { PlumpTicket, PlumpGift, PlumpDiamond, PlumpQuests } from "@/components/ui/icons";
+import { PlumpSpin } from "@/components/ui/icons";
 import { PlumpNum } from "@/components/brand/PlumpNum";
 import { haptic } from "@/hooks/use-haptic";
 import { playSpin, playWin, playClick } from "@/lib/roller-sfx";
 import silverBadge from "@/assets/hellpass/tpl-silver.png";
 import goldBadge from "@/assets/hellpass/tpl-gold.png";
+import imgAirpods from "@/assets/spin/airpods.png";
+import imgWatch from "@/assets/spin/watch.png";
+import imgPs5 from "@/assets/spin/ps5.png";
+import imgRemovka from "@/assets/spin/removka.png";
+import imgTicket from "@/assets/spin/ticket.png";
+import imgXp from "@/assets/spin/xp.png";
+import imgPromo from "@/assets/spin/promo.png";
 
 export const Route = createFileRoute("/club/spin")({
   head: () => ({
@@ -28,6 +35,7 @@ type Prize = {
   title: string;
   sub?: string;
   rarity: Rarity;
+  img?: string;
 };
 
 // Цвета редкости — плашки из школы: 03 циан → 04 лайм → 06 магента → 08 золото.
@@ -40,20 +48,23 @@ const RARITY: Record<Rarity, { ring: string; glow: string; label: string; chip: 
 
 
 const POOL: Prize[] = [
-  { id: "xp100", title: "100 XP", rarity: "common" },
-  { id: "t1", title: "1 билет", rarity: "common" },
-  { id: "xp250", title: "250 XP", rarity: "common" },
-  { id: "t3", title: "3 билета", rarity: "rare" },
+  { id: "xp100", title: "100 XP", rarity: "common", img: imgXp },
+  { id: "t1", title: "1 билет", rarity: "common", img: imgTicket },
+  { id: "xp250", title: "250 XP", rarity: "common", img: imgXp },
+  { id: "t3", title: "3 билета", rarity: "rare", img: imgTicket },
   { id: "spin", title: "Бонус-спин", sub: "+1 прокрут", rarity: "rare" },
-  { id: "xp500", title: "500 XP", rarity: "rare" },
-  { id: "promo", title: "Промокод 20%", sub: "на товары", rarity: "epic" },
-  { id: "t10", title: "10 билетов", rarity: "epic" },
-  { id: "sticker", title: "Ремувка", sub: "с ближайшим заказом", rarity: "epic" },
-  { id: "silver", title: "Hell Pass Silver", sub: "30 дней", rarity: "legend" },
-  { id: "airpods", title: "AirPods 4", rarity: "legend" },
-  { id: "watch", title: "Apple Watch SE", rarity: "legend" },
-  { id: "ps5", title: "PlayStation 5 Slim", rarity: "legend" },
+  { id: "xp500", title: "500 XP", rarity: "rare", img: imgXp },
+  { id: "promo", title: "Промокод 20%", sub: "на товары", rarity: "epic", img: imgPromo },
+  { id: "t10", title: "10 билетов", rarity: "epic", img: imgTicket },
+  { id: "sticker", title: "Ремувка", sub: "с ближайшим заказом", rarity: "epic", img: imgRemovka },
+  { id: "silver", title: "Hell Pass Silver", sub: "30 дней", rarity: "legend", img: silverBadge },
+  { id: "airpods", title: "AirPods 4", rarity: "legend", img: imgAirpods },
+  { id: "watch", title: "Apple Watch SE", rarity: "legend", img: imgWatch },
+  { id: "ps5", title: "PlayStation 5 Slim", rarity: "legend", img: imgPs5 },
 ];
+
+const LEGENDS = POOL.filter((p) => p.rarity === "legend");
+const NON_LEGENDS = POOL.filter((p) => p.rarity !== "legend");
 
 // Картинки майлстоунов: носки — из каталога магазина, Silver/Gold — бейджи Hell Pass.
 const SOCKS_IMG =
@@ -83,13 +94,24 @@ const ITEM_W = 104; // ширина карточки
 const GAP = 8;
 const STEP = ITEM_W + GAP;
 const STRIP_LEN = 72;
-const SPIN_MS = 5400;
+const SPIN_MS = 4600; // основной разгон/торможение
+const HOLD_MS = 460; // «замирание» на легенде
+const SLIP_MS = 1250; // медленный проскок к настоящему призу
 
-function buildStrip(): Prize[] {
+function pick<T>(arr: T[]): T {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+/** Лента: случайные призы, но с гарантированной «дразнилкой» — легендой перед финалом. */
+function buildStrip(teaseIndex: number, targetIndex: number) {
   const out: Prize[] = [];
-  for (let i = 0; i < STRIP_LEN; i++) out.push(POOL[Math.floor(Math.random() * POOL.length)]);
+  for (let i = 0; i < STRIP_LEN; i++) out.push(pick(POOL));
+  out[teaseIndex] = pick(LEGENDS);
+  // Настоящий приз: в 92% случаев не легенда — отсюда и эффект «чуть не выпало».
+  out[targetIndex] = Math.random() < 0.08 ? pick(LEGENDS) : pick(NON_LEGENDS);
   return out;
 }
+
 
 /* ---------------- Страница ---------------- */
 
