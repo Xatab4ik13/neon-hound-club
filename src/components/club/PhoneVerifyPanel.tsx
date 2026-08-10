@@ -159,7 +159,14 @@ export function PhoneVerifyPanel({ phone, canSend, onVerified }: Props) {
   };
 
   const setDigit = (i: number, v: string) => {
-    fillFrom(i, v);
+    const only = v.replace(/\D/g, "");
+    // Десктоп: печатают поверх уже заполненной ячейки — берём последнюю цифру как замену,
+    // а не сдвигаем её в соседнюю клетку.
+    if (only.length === 2 && digits[i] && only[0] === digits[i]) {
+      fillFrom(i, only[1]);
+      return;
+    }
+    fillFrom(i, only);
   };
 
   const onPaste = (i: number, e: React.ClipboardEvent<HTMLInputElement>) => {
