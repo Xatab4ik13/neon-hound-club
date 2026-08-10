@@ -799,7 +799,7 @@ function HowItWorks() {
                     <span className="flex items-baseline gap-1">
                       <PlumpNum value={t.spins} size={18} />
                       <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                        /день
+                        в день
                       </span>
                     </span>
                   </div>
