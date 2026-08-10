@@ -570,9 +570,9 @@ function StakePanel({
         type="button"
         onClick={onStake}
         disabled={!isAuthed || stake <= 0 || stake > maxStake || isPending}
-        className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border-[3px] border-foreground bg-[#B6FF3C] py-3.5 font-display text-[17px] font-black uppercase  tracking-tight text-black shadow-[6px_6px_0_0_hsl(var(--foreground))] transition-transform hover:-translate-y-0.5 active:translate-x-[3px] active:translate-y-[3px] active:shadow-[2px_2px_0_0_hsl(var(--foreground))] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0"
+        className="mt-2 flex w-full items-center justify-center gap-2 rounded-2xl border-[3px] border-foreground bg-[#B6FF3C] py-2.5 font-display text-[16px] font-black uppercase  tracking-tight text-black shadow-[6px_6px_0_0_hsl(var(--foreground))] transition-transform hover:-translate-y-0.5 active:translate-x-[3px] active:translate-y-[3px] active:shadow-[2px_2px_0_0_hsl(var(--foreground))] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0"
       >
-        <Zap className="h-5 w-5" strokeWidth={2.5} />
+        <Zap className="h-4 w-4" strokeWidth={2.5} />
         {!isAuthed ? "Войти" : isPending ? "..." : `Поставить · ${totalCost}`}
       </button>
 
