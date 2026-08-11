@@ -387,6 +387,7 @@ function SpinPage() {
     playClick();
     setWon(null);
     setWonPromo(null);
+    setSpinError(null);
     setSpinning(true);
 
     try {
@@ -399,10 +400,18 @@ function SpinPage() {
       runRoller(target, result);
     } catch (err) {
       setSpinning(false);
-      toast.error(err instanceof ApiError ? err.message : "Не удалось прокрутить");
+      const msg =
+        err instanceof ApiError
+          ? err.status === 401
+            ? "Сессия истекла — зайди в аккаунт заново."
+            : err.message
+          : "Нет связи с сервером. Проверь интернет и попробуй ещё раз.";
+      setSpinError(msg);
+      toast.error(msg);
       void loadState();
     }
   }
+
 
 
 
