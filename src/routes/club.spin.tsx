@@ -544,6 +544,14 @@ function SpinPage() {
           </span>
         </button>
 
+        {spinError && !spinning && (
+          <p className="mt-3 rounded-2xl border border-[#F000C0]/40 bg-[#F000C0]/10 px-4 py-3 text-center text-[13px] leading-snug text-foreground">
+            {spinError}
+          </p>
+        )}
+
+
+
         {phoneMissing && (
           <Link
             to="/club/me"
