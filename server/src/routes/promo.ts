@@ -142,7 +142,7 @@ export async function adminPromoRoutes(app: FastifyInstance) {
    * Это ключевая метрика для «бесплатная ремувка → но человек добирает товар».
    */
   app.get("/stats", async () => {
-    const [row] = (await db.execute(sql`
+    const rowsRes = (await db.execute(sql`
       WITH used AS (
         SELECT p.id,
                p.product_id,
