@@ -43,10 +43,24 @@ function statusBadge(p: AdminPromoCodeDto) {
   return <Badge tone="emerald">Активен</Badge>;
 }
 
+const FILTERS = [
+  { key: "all", label: "Все" },
+  { key: "used", label: "Активированные" },
+  { key: "active", label: "Активные" },
+  { key: "expired", label: "Истёкшие / выключенные" },
+] as const;
+type FilterKey = (typeof FILTERS)[number]["key"];
+
+function rub(n: number) {
+  return `${n.toLocaleString("ru-RU")} ₽`;
+}
+
 function PromoAdminPage() {
   const qc = useQueryClient();
   const [createOpen, setCreateOpen] = useState(false);
   const [toDelete, setToDelete] = useState<AdminPromoCodeDto | null>(null);
+  const [usageOf, setUsageOf] = useState<AdminPromoCodeDto | null>(null);
+  const [filter, setFilter] = useState<FilterKey>("all");
   const [q, setQ] = useState("");
 
   const listQ = useQuery({
@@ -54,17 +68,23 @@ function PromoAdminPage() {
     queryFn: () => adminListPromoCodes(),
   });
 
+  const statsQ = useQuery({ queryKey: promoQk.adminStats, queryFn: adminPromoStats });
+
   const items = useMemo(() => {
     const all = listQ.data?.items ?? [];
     const needle = q.trim().toLowerCase();
-    if (!needle) return all;
-    return all.filter(
-      (p) =>
+    return all.filter((p) => {
+      if (filter === "used" && !p.usedAt) return false;
+      if (filter === "active" && (p.usedAt || !p.active || p.expired)) return false;
+      if (filter === "expired" && (p.usedAt || (p.active && !p.expired))) return false;
+      if (!needle) return true;
+      return (
         p.code.toLowerCase().includes(needle) ||
         (p.userNick ?? "").toLowerCase().includes(needle) ||
-        (p.userEmail ?? "").toLowerCase().includes(needle),
-    );
-  }, [listQ.data, q]);
+        (p.userEmail ?? "").toLowerCase().includes(needle)
+      );
+    });
+  }, [listQ.data, q, filter]);
 
   const toggleMut = useMutation({
     mutationFn: (p: AdminPromoCodeDto) => adminUpdatePromoCode(p.id, { active: !p.active }),
@@ -83,11 +103,13 @@ function PromoAdminPage() {
     onError: (e) => toast.error(e instanceof ApiError ? e.message : "Не удалось удалить"),
   });
 
+  const s = statsQ.data;
+
   return (
     <div className="space-y-4">
       <PageHeader
         title="Промокоды"
-        description="Скидка в процентах. Товарный промокод работает только если в корзине ровно 1 шт. этого товара — и билеты за такой заказ не начисляются. Доставка не скидывается никогда."
+        description="Скидка в процентах. Товарный промокод даёт скидку только на 1 шт. выбранного товара — билеты за такой заказ не начисляются. Доставка не скидывается никогда."
         actions={
           <Btn variant="primary" onClick={() => setCreateOpen(true)}>
             <Gift className="h-4 w-4" /> Создать промокод
@@ -95,10 +117,46 @@ function PromoAdminPage() {
         }
       />
 
+      {/* Экономика активаций */}
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <StatCard label="Активировано" value={s ? String(s.usedTotal) : "—"} hint={s ? `не использовано: ${s.unusedTotal}` : ""} />
+        <StatCard
+          label="Докупили что-то ещё"
+          value={s ? `${s.withExtras} / ${s.withOrder}` : "—"}
+          hint={s ? `${s.extrasSharePct}% заказов с доп. товаром` : ""}
+        />
+        <StatCard
+          label="Доп. товары"
+          value={s ? rub(s.extraRub) : "—"}
+          hint={s ? `в среднем ${rub(s.avgExtraRub)} на заказ` : ""}
+        />
+        <StatCard
+          label="Выручка по промо"
+          value={s ? rub(s.revenueRub) : "—"}
+          hint={s ? `доставка ${rub(s.shippingRub)} · скидки ${rub(s.discountRub)}` : ""}
+        />
+      </div>
+
       <Panel>
         <PanelHeader>
-          <div className="flex w-full items-center justify-between gap-3">
-            <span>Все промокоды {listQ.data ? `(${listQ.data.items.length})` : ""}</span>
+          <div className="flex w-full flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-1.5">
+              {FILTERS.map((f) => (
+                <button
+                  key={f.key}
+                  type="button"
+                  onClick={() => setFilter(f.key)}
+                  className={
+                    filter === f.key
+                      ? "rounded-md bg-zinc-900 px-2.5 py-1 text-xs font-medium text-white dark:bg-zinc-100 dark:text-zinc-900"
+                      : "rounded-md px-2.5 py-1 text-xs font-medium text-zinc-500 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800"
+                  }
+                >
+                  {f.label}
+                </button>
+              ))}
+              <span className="ml-1 text-xs text-zinc-500 dark:text-zinc-400">{items.length}</span>
+            </div>
             <TextInput
               value={q}
               onChange={(e) => setQ(e.target.value)}
@@ -126,6 +184,11 @@ function PromoAdminPage() {
             statusBadge(p),
             fmtDate(p.createdAt),
             <div key="a" className="flex justify-end gap-2">
+              {p.usedAt && (
+                <Btn onClick={() => setUsageOf(p)}>
+                  <Receipt className="h-4 w-4" /> Что купил
+                </Btn>
+              )}
               <Btn onClick={() => toggleMut.mutate(p)} disabled={!!p.usedAt}>
                 {p.active ? "Выключить" : "Включить"}
               </Btn>
@@ -136,6 +199,9 @@ function PromoAdminPage() {
           ])}
         />
       </Panel>
+
+      {usageOf && <UsageModal promo={usageOf} onClose={() => setUsageOf(null)} />}
+
 
       {createOpen && <CreatePromoModal onClose={() => setCreateOpen(false)} />}
 
