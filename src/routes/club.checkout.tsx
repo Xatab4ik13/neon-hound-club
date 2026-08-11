@@ -11,7 +11,8 @@ import { useCart } from "@/hooks/use-cart";
 import { useViewer } from "@/hooks/use-viewer";
 
 import { useMyProfile, useMyAddress } from "@/lib/garage-api";
-import { formatRuPhone } from "@/lib/phone";
+import { PhoneInput } from "@/components/ui/phone-input";
+import { isValidPhoneNumber } from "libphonenumber-js";
 import { hhToast } from "@/lib/hh-toast";
 import { apiFetch, BACKEND_URL } from "@/lib/api";
 import { startPayment } from "@/lib/pwa-pay";
@@ -99,7 +100,7 @@ function ClubCheckoutPage() {
       const t = touchedRef.current;
       // Имя не префиллим из ника профиля — нужен реальный получатель.
       if (!t.has("email") && !next.email && p.email) next.email = p.email;
-      if (!t.has("phone") && !next.phone && p.phone) next.phone = formatRuPhone(p.phone);
+      if (!t.has("phone") && !next.phone && p.phone) next.phone = p.phone;
       if (!t.has("city") && !next.city && p.city) next.city = p.city;
       return next;
     });
@@ -115,7 +116,7 @@ function ClubCheckoutPage() {
       const next = { ...f };
       const t = touchedRef.current;
       // Имя не подставляем из сохранённого адреса — пусть подтвердят вручную.
-      if (!t.has("phone") && a.phone) next.phone = formatRuPhone(a.phone);
+      if (!t.has("phone") && a.phone) next.phone = a.phone;
       if (!t.has("city") && a.city) next.city = a.city;
       return next;
     });
@@ -351,9 +352,9 @@ function ClubCheckoutPage() {
       hhToast.error("Укажи имя получателя.");
       return;
     }
-    if (form.phone.trim().length < 5) {
+    if (!form.phone.trim() || !isValidPhoneNumber(form.phone)) {
       e.preventDefault();
-      hhToast.error("Укажи телефон.");
+      hhToast.error("Укажи телефон в международном формате — выбери страну и введи номер.");
       return;
     }
     if (needsShipping) {
