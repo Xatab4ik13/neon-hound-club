@@ -74,8 +74,20 @@ function StatsBlock() {
     {
       label: "На руках сейчас",
       value: s ? fmt(s.totals.balance) : "—",
-      hint: s ? <span>{fmt(s.totals.users)} держателей</span> : "",
+      hint: s ? (
+        <span>
+          {fmt(s.holders.holders)} держателей · в среднем {fmt(s.holders.avgBalance)}
+        </span>
+      ) : (
+        ""
+      ),
       icon: PlumpTicket,
+    },
+    {
+      label: "В активных розыгрышах",
+      value: s ? fmt(s.raffles.inActiveRaffles) : "—",
+      hint: s ? <span>{fmt(s.raffles.activeParticipants)} участников</span> : "",
+      icon: Trophy,
     },
     {
       label: "Выпущено всего",
@@ -84,17 +96,18 @@ function StatsBlock() {
       icon: TrendingUp,
     },
     {
-      label: "Сожжено в розыгрышах",
-      value: s ? fmt(s.totals.spentOnRaffles) : "—",
-      hint: s ? <span>всего сожжено: {fmt(s.totals.spent)}</span> : "",
-      icon: Trophy,
-    },
-    {
-      label: "Операций",
-      value: s ? fmt(s.totals.ops) : "—",
-      hint: s ? <span>−{fmt(s.last30.spent30)} расход 30д</span> : "",
+      label: "Сожжено всего",
+      value: s ? fmt(s.totals.spent) : "—",
+      hint: s ? (
+        <span>
+          из них в розыгрышах {fmt(s.totals.spentOnRaffles)} · −{fmt(s.last30.spent30)} за 30д
+        </span>
+      ) : (
+        ""
+      ),
       icon: Users,
     },
+
   ];
 
   return (
