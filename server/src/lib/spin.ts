@@ -783,6 +783,7 @@ export async function getSpinState(userId: string, pwa: boolean) {
   const season = await ensureCurrentSeason();
   const tier = await getTier(userId);
   const day = mskDate();
+  const boost = await getTicketBoost(userId);
 
   const [daily] = await db
     .select()
