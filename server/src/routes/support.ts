@@ -10,6 +10,7 @@ import {
 } from "../db/schema/support-tickets.js";
 import { users } from "../db/schema/users.js";
 import { requireAuth, requireAdmin, type SessionPayload } from "../lib/auth.js";
+import { isOurS3Url } from "../lib/s3.js";
 import { parsePagination } from "../lib/pagination.js";
 import { pushToUsers } from "../lib/push.js";
 
@@ -17,6 +18,11 @@ const createSchema = z.object({
   category: z.enum(SUPPORT_CATEGORIES),
   subject: z.string().trim().min(3).max(120),
   body: z.string().trim().min(5).max(4000),
+  attachments: z
+    .array(z.string().url().max(500))
+    .max(4)
+    .optional()
+    .default([]),
 });
 
 // ---------------- USER ROUTES ----------------
@@ -64,6 +70,7 @@ export async function supportRoutes(app: FastifyInstance) {
         category: supportTickets.category,
         subject: supportTickets.subject,
         body: supportTickets.body,
+        attachments: supportTickets.attachments,
         status: supportTickets.status,
         adminReply: supportTickets.adminReply,
         answeredAt: supportTickets.answeredAt,
@@ -110,6 +117,7 @@ export async function supportRoutes(app: FastifyInstance) {
         category: parsed.data.category,
         subject: parsed.data.subject,
         body: parsed.data.body,
+        attachments: (parsed.data.attachments ?? []).filter((u) => isOurS3Url(u)).slice(0, 4),
         status: "open",
       })
       .returning({ id: supportTickets.id });
@@ -193,6 +201,7 @@ export async function adminSupportRoutes(app: FastifyInstance) {
         category: supportTickets.category,
         subject: supportTickets.subject,
         body: supportTickets.body,
+        attachments: supportTickets.attachments,
         status: supportTickets.status,
         adminReply: supportTickets.adminReply,
         answeredAt: supportTickets.answeredAt,
