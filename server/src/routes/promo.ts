@@ -172,7 +172,8 @@ export async function adminPromoRoutes(app: FastifyInstance) {
         COALESCE((SELECT SUM(discount_rub) FROM used), 0)::int AS discount_rub,
         COALESCE((SELECT SUM(shipping_price_rub) FROM used), 0)::int AS shipping_rub
     `)) as unknown as Array<Record<string, number>>;
-    const s = row ?? {};
+    const s = Array.from(rowsRes ?? [])[0] ?? ({} as Record<string, number>);
+
     const withOrder = Number(s.with_order ?? 0);
     const withExtras = Number(s.with_extras ?? 0);
     return {
