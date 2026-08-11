@@ -260,7 +260,6 @@ function SpinAdminPage() {
             <TrendingUp className="h-4 w-4 text-zinc-500 dark:text-zinc-400" />
             <span className="text-sm font-semibold">Вероятности призов</span>
           </div>
-          <Badge tone="zinc">как в бэкенде</Badge>
         </PanelHeader>
         <OddsTable />
       </Panel>
@@ -448,14 +447,6 @@ function OddsTable() {
         </table>
       </div>
 
-      <p className="mt-3 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
-        Веса заданы в ppm (1% = 10 000) и нормализуются на сумму активных секторов, поэтому шанс
-        зависит от того, какие сектора доступны. Множитель тира (Gold ×1.2, Platinum ×1.5) действует
-        только на epic и legend. Если пул приза исчерпан — сектор выключается (ремувка и Silver
-        подменяются на 10 билетов, jackpot — на 50 билетов). Если приз расходуется быстрее графика
-        сезона, его вес временно режется ×0.25. В последние 24 часа сезона нераскрытые jackpot-призы
-        выдаются принудительно.
-      </p>
     </div>
   );
 }
