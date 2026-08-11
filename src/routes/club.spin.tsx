@@ -171,7 +171,7 @@ type SpinTier = "none" | "silver" | "gold" | "platinum";
 type SpinState = {
   access: { granted: boolean; pwa: boolean; phoneVerified: boolean; pushEnabled: boolean };
   tier: SpinTier;
-  season: { periodKey: string; daysTotal: number; endsAt: string };
+  season: { periodKey: string; daysTotal: number; startsAt?: string; endsAt: string };
   spins: { allowed: number; used: number; left: number };
   streak: { days: number; claimed: number[] };
   history: { prizeCode: string; title: string; at: string }[];
