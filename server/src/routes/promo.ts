@@ -110,9 +110,11 @@ export async function adminPromoRoutes(app: FastifyInstance) {
         promo: promoCodes,
         userNick: users.nick,
         userEmail: users.email,
+        productTitle: products.title,
       })
       .from(promoCodes)
       .leftJoin(users, eq(users.id, promoCodes.userId))
+      .leftJoin(products, eq(products.id, promoCodes.productId))
       .where(conds.length ? and(...conds) : undefined)
       .orderBy(desc(promoCodes.createdAt))
       .limit(500);
@@ -122,6 +124,7 @@ export async function adminPromoRoutes(app: FastifyInstance) {
         ...serialize(r.promo),
         userNick: r.userNick ?? null,
         userEmail: r.userEmail ?? null,
+        productTitle: r.productTitle ?? null,
         expired: !!r.promo.expiresAt && r.promo.expiresAt.getTime() < now,
       })),
     };
@@ -144,16 +147,29 @@ export async function adminPromoRoutes(app: FastifyInstance) {
       .limit(1);
     if (dup) return reply.code(409).send({ error: "code_exists", message: "Такой код уже есть" });
 
+    if (data.productId) {
+      const [p] = await db
+        .select({ id: products.id })
+        .from(products)
+        .where(eq(products.id, data.productId))
+        .limit(1);
+      if (!p) return reply.code(400).send({ error: "product_not_found", message: "Товар не найден" });
+    }
+
     const [row] = await db
       .insert(promoCodes)
       .values({
         code,
         discountPct: data.discountPct,
         userId: data.userId ?? null,
+        productId: data.productId ?? null,
         note: data.note ?? null,
         expiresAt: data.expiresAt ? new Date(data.expiresAt) : null,
       })
       .returning();
+    return reply.code(201).send({ promo: serialize(row!) });
+  });
+
     return reply.code(201).send({ promo: serialize(row!) });
   });
 
