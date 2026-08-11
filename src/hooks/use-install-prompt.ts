@@ -47,10 +47,18 @@ export function useInstallPrompt() {
 
   const promptInstall = useCallback(async (): Promise<"accepted" | "dismissed" | "unavailable"> => {
     if (!deferred) return "unavailable";
-    await deferred.prompt();
-    const { outcome } = await deferred.userChoice;
-    if (outcome === "accepted") setDeferred(null);
-    return outcome;
+    try {
+      await deferred.prompt();
+      const { outcome } = await deferred.userChoice;
+      // Событие beforeinstallprompt — одноразовое. Чистим ВСЕГДА,
+      // иначе кнопка остаётся видимой, но клики по ней делают ничего
+      // (Chrome больше не покажет промпт, пока не сработает событие снова).
+      setDeferred(null);
+      return outcome;
+    } catch {
+      setDeferred(null);
+      return "unavailable";
+    }
   }, [deferred]);
 
   return {

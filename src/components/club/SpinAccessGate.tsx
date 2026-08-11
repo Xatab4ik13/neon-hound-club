@@ -30,6 +30,8 @@ export function SpinAccessGate({ access }: { access: SpinAccess }) {
     haptic("selection");
     const outcome = await install.promptInstall();
     if (outcome === "dismissed") toast.error("Установка отменена");
+    else if (outcome === "unavailable")
+      toast.error("Установи через меню браузера — значок ⋮");
   }
 
 
@@ -104,6 +106,14 @@ export function SpinAccessGate({ access }: { access: SpinAccess }) {
           }
         />
       </div>
+
+      {!access.installed && (
+        <p className="mt-3 px-1 text-[11px] leading-snug text-black/60">
+          Кнопка не сработала? Открой меню браузера{" "}
+          <span className="font-bold">⋮</span> (правый верхний угол) →{" "}
+          «Установить приложение» или «Добавить на главный экран».
+        </p>
+      )}
     </section>
   );
 }
