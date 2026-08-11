@@ -26,6 +26,7 @@ export type SupportTicketListItem = {
 
 export type SupportTicketDetail = SupportTicketListItem & {
   body: string;
+  attachments: string[];
   adminReply: string | null;
   closedAt: string | null;
 };
@@ -49,6 +50,7 @@ export function createTicket(input: {
   category: SupportCategory;
   subject: string;
   body: string;
+  attachments?: string[];
 }) {
   return apiFetch<{ id: string }>(`/api/v1/support/tickets`, {
     method: "POST",
