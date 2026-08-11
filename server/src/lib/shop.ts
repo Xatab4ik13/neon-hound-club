@@ -4,6 +4,7 @@ import { orders, orderItems, products, cartItems, type ProductKind } from "../db
 import { users } from "../db/schema/users.js";
 import { userStickerPacks } from "../db/schema/stickers.js";
 import { ticketCredit } from "./tickets.js";
+import { getTicketBoost, consumeTicketBoost } from "./spin.js";
 import { awardXp } from "./xp.js";
 import { tryCompleteQuest } from "./quests.js";
 import { getActivePassPerks } from "./pass.js";
@@ -403,16 +404,35 @@ export async function markOrderPaid(orderId: string): Promise<{ ok: boolean; rea
   }
 
 
-  if (order.bonusTicketsTotal > 0) {
+  // Капсула ×2: удваиваем билеты за цифровые товары, если капсула активна.
+  // Применяем один раз — на первой оплате; повторный вебхук (alreadyPaid) капсулу не трогает.
+  let creditAmount = order.bonusTicketsTotal;
+  let boostApplied = false;
+  if (allElectronic && creditAmount > 0) {
+    const boost = await getTicketBoost(order.userId);
+    if (boost.active) {
+      creditAmount = creditAmount * 2;
+      boostApplied = true;
+    }
+  }
+
+  if (creditAmount > 0) {
     await ticketCredit({
       userId: order.userId,
-      amount: order.bonusTicketsTotal,
+      amount: creditAmount,
       source: "product_bonus",
-      reason: `Бонус за заказ #${order.id.slice(0, 8)}`,
+      reason: boostApplied
+        ? `Бонус за заказ #${order.id.slice(0, 8)} (×2 капсула)`
+        : `Бонус за заказ #${order.id.slice(0, 8)}`,
       refType: "order",
       refId: order.id,
       idempotent: true,
     });
+  }
+
+  // Капсула расходуется одной цифровой покупкой.
+  if (boostApplied) {
+    await consumeTicketBoost(order.userId);
   }
 
   // +XP: 1 XP за 100 ₽

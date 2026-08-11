@@ -15,6 +15,7 @@ import { profiles } from "../db/schema/profile.js";
 import { pushSubscriptions } from "../db/schema/push.js";
 import { promoCodes } from "../db/schema/promo.js";
 import { passPurchases, PASS_CONFIG, PASS_DURATION_DAYS, type PassTier } from "../db/schema/pass.js";
+import { users } from "../db/schema/users.js";
 import { getActivePass } from "./pass.js";
 import { ticketCredit } from "./tickets.js";
 import { awardXp } from "./xp.js";
@@ -103,9 +104,10 @@ export const PRIZE_CONFIG: PrizeConfig[] = [
   { code: "t3", title: "3 билета", rarity: "rare", rewardKind: "tickets", rewardValue: 3, chancePpm: 100_000 },
   { code: "spin", title: "Бонус-спин", rarity: "rare", rewardKind: "bonus_spin", rewardValue: 1, chancePpm: 80_000 },
   { code: "xp500", title: "500 XP", rarity: "rare", rewardKind: "xp", rewardValue: 500, chancePpm: 50_000 },
-  { code: "t10", title: "10 билетов", rarity: "epic", rewardKind: "tickets", rewardValue: 10, chancePpm: 30_000 },
+  { code: "t10", title: "10 билетов", rarity: "epic", rewardKind: "tickets", rewardValue: 10, chancePpm: 10_000 },
   { code: "promo", title: "Промокод 20%", rarity: "epic", rewardKind: "promo", rewardValue: 20, chancePpm: 30_000 },
   { code: "sticker", title: "Ремувка", rarity: "epic", rewardKind: "merch", rewardValue: 0, chancePpm: 20_000, limitTotal: 240 },
+  { code: "boost_x2", title: "Капсула ×2", rarity: "legend", rewardKind: "ticket_boost", rewardValue: 0, chancePpm: 50_000 },
   { code: "silver", title: "Hell Pass Silver", rarity: "legend", rewardKind: "pass", rewardValue: 0, chancePpm: 3_000, limitTotal: 60 },
   { code: "airpods", title: "AirPods 4", rarity: "legend", rewardKind: "jackpot", rewardValue: 0, chancePpm: 0, limitTotal: 1, queueOrder: 1 },
   { code: "watch", title: "Apple Watch SE", rarity: "legend", rewardKind: "jackpot", rewardValue: 0, chancePpm: 0, limitTotal: 1, queueOrder: 2 },
@@ -559,10 +561,48 @@ async function grantPrize(
       });
       return undefined;
 
+    case "ticket_boost": {
+      // Капсула ×2: 24 часа двойного начисления билетов за цифровые товары.
+      // Активная капсула заменяется новой (продлеваем до +24ч от сейчас).
+      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+      await db
+        .update(users)
+        .set({ ticketBoostUntil: expiresAt, updatedAt: new Date() })
+        .where(eq(users.id, userId));
+      return undefined;
+    }
+
     case "bonus_spin":
     default:
       return undefined;
   }
+}
+
+/**
+ * Статус капсулы ×2 для юзера.
+ * active=true, если ticket_boost_until ещё в будущем.
+ */
+export async function getTicketBoost(
+  userId: string,
+): Promise<{ active: boolean; expiresAt: string | null }> {
+  const [u] = await db
+    .select({ ticketBoostUntil: users.ticketBoostUntil })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+  const until = u?.ticketBoostUntil ?? null;
+  return {
+    active: !!until && until.getTime() > Date.now(),
+    expiresAt: until ? until.toISOString() : null,
+  };
+}
+
+/** Потребить капсулу (обнулить) — вызывается после применения x2 к цифровой покупке. */
+export async function consumeTicketBoost(userId: string): Promise<void> {
+  await db
+    .update(users)
+    .set({ ticketBoostUntil: null, updatedAt: new Date() })
+    .where(eq(users.id, userId));
 }
 
 /** Выдать Hell Pass как приз: запись покупки на 0₽ + активация на 30 дней. */
@@ -743,6 +783,7 @@ export async function getSpinState(userId: string, pwa: boolean) {
   const season = await ensureCurrentSeason();
   const tier = await getTier(userId);
   const day = mskDate();
+  const boost = await getTicketBoost(userId);
 
   const [daily] = await db
     .select()
@@ -773,6 +814,7 @@ export async function getSpinState(userId: string, pwa: boolean) {
   return {
     access,
     tier,
+    capsule: boost,
     season: {
       periodKey: season.periodKey,
       daysTotal: season.daysTotal,

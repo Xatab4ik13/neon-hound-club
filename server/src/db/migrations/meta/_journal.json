@@ -435,6 +435,13 @@
       "when": 1786200000000,
       "tag": "0061_spin_removka_promo",
       "breakpoints": true
+    },
+    {
+      "idx": 62,
+      "version": "7",
+      "when": 1786300000000,
+      "tag": "0062_ticket_boost",
+      "breakpoints": true
     }
   ]
 }
