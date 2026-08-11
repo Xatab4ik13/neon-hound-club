@@ -310,7 +310,7 @@ function InstallAppQuest() {
           </div>
         </div>
 
-        <PlumpRewardChip tickets={1} />
+        
         <PlumpArrowRight className="h-5 w-5 shrink-0 text-black" />
       </div>
     </Link>
