@@ -846,3 +846,12 @@ html.hh-admin *::-webkit-scrollbar-thumb:hover {
   60% { transform: scale(1.03) translateY(0); opacity: 1; }
   100% { transform: scale(1) translateY(0); opacity: 1; }
 }
+/* Капсула ×2: лёгкое парение + пульс свечения вокруг неё. */
+@keyframes hs-capsule-float {
+  0%, 100% { transform: translateY(0) rotate(-1.5deg); }
+  50% { transform: translateY(-4px) rotate(1.5deg); }
+}
+@keyframes hs-capsule-glow {
+  0%, 100% { opacity: 0.45; transform: scale(0.96); }
+  50% { opacity: 0.9; transform: scale(1.04); }
+}

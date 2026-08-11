@@ -23,6 +23,7 @@ import imgXp from "@/assets/spin/xp.webp";
 import imgPromo from "@/assets/spin/promo.webp";
 import imgRemovka from "@/assets/spin/removka.webp";
 import imgSocks from "@/assets/spin/socks.webp";
+import imgCapsule from "@/assets/spin/capsule-x2.png";
 import { apiFetch, ApiError } from "@/lib/api";
 import { isStandalone } from "@/hooks/use-install-prompt";
 
@@ -78,6 +79,7 @@ const POOL: Prize[] = [
   { id: "promo", title: "Промокод 20%", sub: "на товары", rarity: "epic", img: imgPromo },
   { id: "t10", title: "10 билетов", rarity: "epic", img: imgTicket },
   { id: "sticker", title: "Ремувка", rarity: "epic", img: imgRemovka },
+  { id: "boost_x2", title: "Капсула ×2", sub: "24 часа · цифра", rarity: "legend", img: imgCapsule },
   { id: "silver", title: "Hell Pass Silver", sub: "30 дней", rarity: "legend", img: silverBadge },
   { id: "airpods", title: "AirPods 4", rarity: "legend", img: imgAirpods },
   { id: "watch", title: "Apple Watch SE", rarity: "legend", img: imgWatch },
@@ -748,7 +750,82 @@ function SpinPage() {
           ))}
         </ul>
       </section>
+
+      <CapsuleAbout />
     </main>
+  );
+}
+
+/* ---------------- Описание капсулы ×2 ---------------- */
+
+const CAPSULE_CHIP = RARITY.legend.chip;
+
+function CapsuleAbout() {
+  return (
+    <section
+      aria-label="Капсула ×2"
+      className="relative mb-2 mt-5 overflow-hidden rounded-3xl bg-card p-4"
+      style={{ boxShadow: `inset 0 0 0 1.5px ${RARITY.legend.ring}` }}
+    >
+      <span
+        className="pointer-events-none absolute inset-x-0 top-0 h-32"
+        style={{ background: `radial-gradient(110% 100% at 20% 0%, ${RARITY.legend.glow}, transparent 70%)` }}
+      />
+
+      <div className="relative flex items-center gap-3">
+        <span
+          className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-black/40"
+          style={{ boxShadow: `inset 0 0 0 1px ${RARITY.legend.ring}` }}
+        >
+          <img
+            src={imgCapsule}
+            alt="Капсула ×2"
+            width={1024}
+            height={1024}
+            loading="lazy"
+            className="h-[52px] w-[52px] animate-[hs-capsule-float_3s_ease-in-out_infinite] object-contain"
+            style={{ filter: `drop-shadow(0 6px 16px ${RARITY.legend.glow})` }}
+          />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span
+            className="inline-block rounded-lg px-2 py-0.5 font-display text-[10px] font-black uppercase tracking-tight text-black"
+            style={{ background: CAPSULE_CHIP }}
+          >
+            Легенда
+          </span>
+          <span className="mt-1 block font-display text-[17px] font-black uppercase leading-tight tracking-tight text-foreground">
+            Капсула ×2
+          </span>
+          <span className="block font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+            двойные билеты · 24 часа
+          </span>
+        </span>
+      </div>
+
+      <p className="relative mt-3 text-[13px] leading-relaxed text-muted-foreground">
+        Выпала капсула — на <span className="text-foreground">24 часа</span> включается двойное
+        начисление билетов. Покупаешь в магазине цифровой товар — билетов приходит{" "}
+        <span className="text-foreground">в два раза больше</span>.
+      </p>
+
+      <ul className="relative mt-3 space-y-1.5">
+        {[
+          "Работает только на цифровые товары — открытки Hell",
+          "На физический мерч и доставку не действует",
+          "Одна капсула за раз, срок продлевается, а не суммируется",
+          "Пока капсула активна, цифровые товары в магазине горят",
+        ].map((t) => (
+          <li key={t} className="flex gap-2 text-[12.5px] leading-snug text-muted-foreground">
+            <span
+              className="mt-[6px] h-1.5 w-1.5 shrink-0 rounded-full"
+              style={{ background: CAPSULE_CHIP }}
+            />
+            <span>{t}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 
@@ -872,6 +949,7 @@ function WinModal({
 
   if (!open || !prize || typeof document === "undefined") return null;
   const r = RARITY[prize.rarity];
+  const capsule = prize.id === "boost_x2";
 
   return createPortal(
     <div
@@ -914,8 +992,17 @@ function WinModal({
             boxShadow: `inset 0 0 0 1.5px ${r.ring}`,
           }}
         >
-          <PrizeMedia prize={prize} size={96} />
+          {capsule && (
+            <span
+              className="pointer-events-none absolute inset-[-10px] animate-[hs-capsule-glow_2.2s_ease-in-out_infinite] rounded-full"
+              style={{ boxShadow: `0 0 40px 6px ${r.glow}, inset 0 0 0 1px ${r.ring}` }}
+            />
+          )}
+          <span className={capsule ? "animate-[hs-capsule-float_3s_ease-in-out_infinite]" : undefined}>
+            <PrizeMedia prize={prize} size={96} />
+          </span>
         </span>
+
 
         <h2 className="relative mt-5 font-display text-[22px] font-black uppercase leading-tight tracking-tight text-foreground">
           {prize.title}
@@ -928,9 +1015,30 @@ function WinModal({
             {prize.sub}
           </p>
         )}
-        <p className="relative mt-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-          Приз зачислен в твой аккаунт
-        </p>
+        {capsule ? (
+          <>
+            <p
+              className="relative mx-auto mt-3 flex w-fit items-center gap-2 rounded-xl bg-black/40 px-3 py-2 font-mono text-[11px] uppercase tracking-widest"
+              style={{ color: r.chip }}
+            >
+              <span
+                className="h-1.5 w-1.5 rounded-full"
+                style={{ background: r.chip, boxShadow: `0 0 8px 2px ${r.glow}` }}
+              />
+              Капсула действует · 24 часа
+            </p>
+            <p className="relative mt-3 text-[13px] leading-relaxed text-muted-foreground">
+              У тебя <span className="text-foreground">24 часа</span>: купи в магазине цифровой
+              товар — открытку Hell — и получишь{" "}
+              <span className="text-foreground">×2 билета</span> на покупку. На физический мерч
+              капсула не действует.
+            </p>
+          </>
+        ) : (
+          <p className="relative mt-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+            Приз зачислен в твой аккаунт
+          </p>
+        )}
         {promoCode && (
           <>
             <p className="relative mx-auto mt-3 w-fit rounded-xl bg-black/40 px-3 py-2 font-mono text-[14px] font-bold tracking-widest text-foreground">
@@ -945,13 +1053,33 @@ function WinModal({
         )}
 
 
-        <button
-          type="button"
-          onClick={onClose}
-          className="relative mt-6 w-full rounded-2xl bg-[#B6FF3C] py-4 font-display text-[16px] font-black uppercase tracking-tight text-black transition-transform active:scale-[0.97]"
-        >
-          Забрать
-        </button>
+        {capsule ? (
+          <>
+            <Link
+              to="/club/shop"
+              onClick={onClose}
+              className="relative mt-5 block w-full rounded-2xl py-4 font-display text-[16px] font-black uppercase tracking-tight text-black transition-transform active:scale-[0.97]"
+              style={{ background: r.chip }}
+            >
+              В магазин за билетами
+            </Link>
+            <button
+              type="button"
+              onClick={onClose}
+              className="relative mt-2 w-full py-2 font-mono text-[11px] uppercase tracking-widest text-muted-foreground"
+            >
+              Позже
+            </button>
+          </>
+        ) : (
+          <button
+            type="button"
+            onClick={onClose}
+            className="relative mt-6 w-full rounded-2xl bg-[#B6FF3C] py-4 font-display text-[16px] font-black uppercase tracking-tight text-black transition-transform active:scale-[0.97]"
+          >
+            Забрать
+          </button>
+        )}
       </div>
     </div>,
     document.body,
