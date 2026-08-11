@@ -1,8 +1,8 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
-import { spinPrizes, spinSpins, spinStreaks, spinWinners } from "../db/schema/spin.js";
+import { spinPrizes, spinSpins, spinStreaks } from "../db/schema/spin.js";
 import { profiles } from "../db/schema/profile.js";
 import { users } from "../db/schema/users.js";
 import { requireAuth, requireAdmin, type SessionPayload } from "../lib/auth.js";
@@ -76,11 +76,6 @@ export async function adminSpinRoutes(app: FastifyInstance) {
       .from(spinSpins)
       .where(eq(spinSpins.seasonId, season.id));
 
-    const [pending] = await db
-      .select({ c: sql<number>`count(*)::int` })
-      .from(spinWinners)
-      .where(and(eq(spinWinners.seasonId, season.id), eq(spinWinners.status, "pending")));
-
     const byPrize = await db
       .select({
         prizeCode: spinSpins.prizeCode,
@@ -120,7 +115,6 @@ export async function adminSpinRoutes(app: FastifyInstance) {
         spins: stats?.spins ?? 0,
         players: stats?.players ?? 0,
         spinsToday: stats?.spinsToday ?? 0,
-        pendingShipments: pending?.c ?? 0,
       },
       spinsPerDay: SPINS_PER_DAY,
       prizes: prizes.map((p) => ({
@@ -142,60 +136,99 @@ export async function adminSpinRoutes(app: FastifyInstance) {
     };
   });
 
-  // Победители: физика со спинов + награды календаря активности.
-  app.get("/winners", { preHandler: requireAdmin }, async (req) => {
-    const query = z
-      .object({ source: z.enum(["all", "spin", "streak"]).default("all") })
+  // История прокрутов с пагинацией. rarity: top = epic+legend, low = common+rare, all = все.
+  app.get("/history", { preHandler: requireAdmin }, async (req) => {
+    const q = z
+      .object({
+        rarity: z.enum(["all", "top", "low"]).default("all"),
+        page: z.coerce.number().int().min(1).max(100000).default(1),
+        pageSize: z.coerce.number().int().min(10).max(200).default(100),
+      })
       .parse(req.query ?? {});
+
     const season = await ensureCurrentSeason();
-    const where =
-      query.source === "all"
-        ? eq(spinWinners.seasonId, season.id)
-        : and(eq(spinWinners.seasonId, season.id), eq(spinWinners.source, query.source));
+    const rarities =
+      q.rarity === "top" ? ["epic", "legend"] : q.rarity === "low" ? ["common", "rare"] : null;
+    const where = rarities
+      ? and(eq(spinSpins.seasonId, season.id), inArray(spinSpins.rarity, rarities))
+      : eq(spinSpins.seasonId, season.id);
+
+    const [totalRow] = await db
+      .select({ c: sql<number>`count(*)::int` })
+      .from(spinSpins)
+      .where(where);
+
+    const prizes = await db
+      .select({ code: spinPrizes.code, title: spinPrizes.title })
+      .from(spinPrizes)
+      .where(eq(spinPrizes.seasonId, season.id));
+    const prizeTitle = new Map(prizes.map((p) => [p.code, p.title]));
 
     const rows = await db
       .select({
-        id: spinWinners.id,
-        source: spinWinners.source,
-        prizeCode: spinWinners.prizeCode,
-        prizeTitle: spinWinners.prizeTitle,
-        status: spinWinners.status,
-        trackNumber: spinWinners.trackNumber,
-        adminNote: spinWinners.adminNote,
-        createdAt: spinWinners.createdAt,
-        userId: spinWinners.userId,
+        id: spinSpins.id,
+        userId: spinSpins.userId,
         nick: users.nick,
+        prizeCode: spinSpins.prizeCode,
+        rarity: spinSpins.rarity,
+        tier: spinSpins.tier,
+        bonus: spinSpins.bonus,
+        createdAt: spinSpins.createdAt,
+      })
+      .from(spinSpins)
+      .leftJoin(users, eq(users.id, spinSpins.userId))
+      .where(where)
+      .orderBy(desc(spinSpins.createdAt))
+      .limit(q.pageSize)
+      .offset((q.page - 1) * q.pageSize);
+
+    return {
+      items: rows.map((r) => ({
+        ...r,
+        prizeTitle: prizeTitle.get(r.prizeCode) ?? r.prizeCode,
+        createdAt: r.createdAt.toISOString(),
+      })),
+      total: totalRow?.c ?? 0,
+      page: q.page,
+      pageSize: q.pageSize,
+    };
+  });
+
+  // Легендарные призы: крупные выигрыши (jackpot-техника, Hell Pass) с анкетой победителя.
+  app.get("/legends", { preHandler: requireAdmin }, async () => {
+    const season = await ensureCurrentSeason();
+    const rows = await db
+      .select({
+        id: spinSpins.id,
+        userId: spinSpins.userId,
+        nick: users.nick,
+        email: users.email,
         city: profiles.city,
         phone: profiles.phone,
-        email: users.email,
+        prizeCode: spinSpins.prizeCode,
+        tier: spinSpins.tier,
+        createdAt: spinSpins.createdAt,
       })
-      .from(spinWinners)
-      .leftJoin(profiles, eq(profiles.userId, spinWinners.userId))
-      .leftJoin(users, eq(users.id, spinWinners.userId))
-      .where(where)
-      .orderBy(desc(spinWinners.createdAt));
+      .from(spinSpins)
+      .leftJoin(users, eq(users.id, spinSpins.userId))
+      .leftJoin(profiles, eq(profiles.userId, spinSpins.userId))
+      .where(and(eq(spinSpins.seasonId, season.id), eq(spinSpins.rarity, "legend")))
+      .orderBy(desc(spinSpins.createdAt));
 
-    return rows.map((r) => ({ ...r, createdAt: r.createdAt.toISOString() }));
+    const prizes = await db
+      .select({ code: spinPrizes.code, title: spinPrizes.title, rewardKind: spinPrizes.rewardKind })
+      .from(spinPrizes)
+      .where(eq(spinPrizes.seasonId, season.id));
+    const byCode = new Map(prizes.map((p) => [p.code, p]));
+
+    return rows.map((r) => ({
+      ...r,
+      prizeTitle: byCode.get(r.prizeCode)?.title ?? r.prizeCode,
+      rewardKind: byCode.get(r.prizeCode)?.rewardKind ?? "unknown",
+      createdAt: r.createdAt.toISOString(),
+    }));
   });
 
-  app.patch("/winners/:id", { preHandler: requireAdmin }, async (req, reply) => {
-    const { id } = z.object({ id: z.string().uuid() }).parse(req.params);
-    const body = z
-      .object({
-        status: z.enum(["pending", "contacted", "shipped", "delivered"]).optional(),
-        trackNumber: z.string().max(64).nullable().optional(),
-        adminNote: z.string().max(400).nullable().optional(),
-      })
-      .parse(req.body ?? {});
-
-    const [updated] = await db
-      .update(spinWinners)
-      .set({ ...body, updatedAt: new Date() })
-      .where(eq(spinWinners.id, id))
-      .returning();
-    if (!updated) return reply.code(404).send({ error: "not_found" });
-    return { ...updated, createdAt: updated.createdAt.toISOString(), updatedAt: updated.updatedAt.toISOString() };
-  });
 
   // Календарь активности: кто сколько дней накрутил.
   app.get("/streaks", { preHandler: requireAdmin }, async () => {

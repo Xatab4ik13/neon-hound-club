@@ -1,10 +1,10 @@
 // Админка HellSpin. Пул призов и логика — на бэкенде, здесь только реальная
-// статистика по прокрутам, лента последних спинов, победители (физика на
-// доставку) и календарь активности.
+// статистика: легендарные выигрыши с анкетой победителя, топ-выигрыши,
+// полная история прокрутов со страницами и календарь активности.
 
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   PageHeader,
   Panel,
@@ -13,12 +13,12 @@ import {
   Badge,
   Btn,
 } from "@/components/admin/ui";
+import { AdminPager, type AdminPageSize } from "@/components/admin/AdminPager";
 import {
   PlumpSpin,
   TrendingUp,
   PlumpUsers as Users,
   Phone,
-  Package,
   Trophy,
   CalendarCheck,
   RefreshCw,
@@ -26,12 +26,11 @@ import {
 import { cn } from "@/lib/utils";
 import {
   adminSpinQk,
+  fetchAdminSpinHistory,
+  fetchAdminSpinLegends,
   fetchAdminSpinOverview,
   fetchAdminSpinStreaks,
-  fetchAdminSpinWinners,
-  updateAdminSpinWinner,
   type SpinRarity,
-  type SpinShipStatus,
 } from "@/lib/admin-spin-api";
 
 export const Route = createFileRoute("/admin/spin")({
@@ -58,22 +57,6 @@ const RARITY_TONE: Record<SpinRarity, "zinc" | "emerald" | "amber" | "rose" | "b
   legend: "amber",
 };
 
-const SHIP_LABEL: Record<SpinShipStatus, string> = {
-  pending: "Не связались",
-  contacted: "Связались",
-  shipped: "Отправлено",
-  delivered: "Получено",
-};
-
-const SHIP_TONE: Record<SpinShipStatus, "zinc" | "emerald" | "amber" | "rose" | "blue" | "violet"> = {
-  pending: "rose",
-  contacted: "amber",
-  shipped: "blue",
-  delivered: "emerald",
-};
-
-const SHIP_FLOW: SpinShipStatus[] = ["pending", "contacted", "shipped", "delivered"];
-
 const TIER_LABEL: Record<string, string> = {
   none: "Без Pass",
   silver: "Silver",
@@ -98,43 +81,57 @@ function fmt(n: number): string {
   return n.toLocaleString("ru-RU");
 }
 
+/** Ник победителя — ссылка на его анкету в клубе. */
+function NickLink({ nick }: { nick: string | null }) {
+  if (!nick) return <span className="text-zinc-400">—</span>;
+  return (
+    <Link
+      to="/club/u/$nick"
+      params={{ nick }}
+      target="_blank"
+      className="font-medium text-violet-600 hover:underline dark:text-violet-400"
+    >
+      @{nick}
+    </Link>
+  );
+}
+
 function SpinAdminPage() {
   const qc = useQueryClient();
-  const [source, setSource] = useState<"all" | "spin" | "streak">("all");
 
   const overview = useQuery({ queryKey: adminSpinQk.overview, queryFn: fetchAdminSpinOverview });
-  const winners = useQuery({
-    queryKey: adminSpinQk.winners(source),
-    queryFn: () => fetchAdminSpinWinners(source),
-  });
+  const legends = useQuery({ queryKey: adminSpinQk.legends, queryFn: fetchAdminSpinLegends });
   const streaks = useQuery({ queryKey: adminSpinQk.streaks, queryFn: fetchAdminSpinStreaks });
 
-  const patchWinner = useMutation({
-    mutationFn: ({ id, status }: { id: string; status: SpinShipStatus }) =>
-      updateAdminSpinWinner(id, { status }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["admin", "spin"] });
-    },
+  const [topPage, setTopPage] = useState(1);
+  const [topSize, setTopSize] = useState<AdminPageSize>(50);
+  const top = useQuery({
+    queryKey: adminSpinQk.history("top", topPage, topSize),
+    queryFn: () => fetchAdminSpinHistory("top", topPage, topSize),
+    placeholderData: (prev) => prev,
+  });
+
+  const [histPage, setHistPage] = useState(1);
+  const [histSize, setHistSize] = useState<AdminPageSize>(100);
+  const [histRarity, setHistRarity] = useState<"all" | "low">("all");
+  const history = useQuery({
+    queryKey: adminSpinQk.history(histRarity, histPage, histSize),
+    queryFn: () => fetchAdminSpinHistory(histRarity, histPage, histSize),
+    placeholderData: (prev) => prev,
   });
 
   const stats = overview.data?.stats;
   const season = overview.data?.season;
   const spinsPerDay = overview.data?.spinsPerDay ?? {};
-  const winnerRows = winners.data ?? [];
+  const legendRows = legends.data ?? [];
 
   const refreshAll = () => qc.invalidateQueries({ queryKey: ["admin", "spin"] });
-
-  const filters: { key: typeof source; label: string }[] = [
-    { key: "all", label: "Все" },
-    { key: "spin", label: "Из рулетки" },
-    { key: "streak", label: "Календарь" },
-  ];
 
   return (
     <div>
       <PageHeader
         title="HellSpin"
-        description="Статистика прокрутов и победители."
+        description="Все призы выдаются автоматически. Здесь — статистика и победители."
         actions={
           <Btn variant="secondary" onClick={refreshAll}>
             <RefreshCw className="h-3.5 w-3.5" /> Обновить
@@ -148,95 +145,65 @@ function SpinAdminPage() {
         <KpiCard label="За сезон" value={stats ? fmt(stats.spins) : "—"} icon={TrendingUp} />
         <KpiCard label="Крутят" value={stats ? fmt(stats.players) : "—"} icon={Users} hint="уник. игроков" />
         <KpiCard
-          label="Ждут доставки"
-          value={stats ? fmt(stats.pendingShipments) : "—"}
-          icon={Package}
+          label="Легендарных призов"
+          value={fmt(legendRows.length)}
+          icon={Trophy}
           tone="amber"
+          hint="за сезон"
         />
       </div>
 
-      {/* Победители (физика + календарь) */}
+      {/* Легендарные призы */}
       <Panel className="mb-6">
         <PanelHeader>
           <div className="flex items-center gap-2">
-            <Trophy className="h-4 w-4 text-zinc-500 dark:text-zinc-400" />
-            <span className="text-sm font-semibold">Призы на доставку</span>
+            <Trophy className="h-4 w-4 text-amber-500" />
+            <span className="text-sm font-semibold">Легендарные призы</span>
           </div>
-          <div className="flex gap-1.5">
-            {filters.map((f) => (
-              <button
-                key={f.key}
-                type="button"
-                onClick={() => setSource(f.key)}
-                className={cn(
-                  "rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
-                  source === f.key
-                    ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
-                    : "text-zinc-500 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800",
-                )}
-              >
-                {f.label}
-              </button>
-            ))}
-          </div>
+          <span className="text-xs text-zinc-500 dark:text-zinc-400">
+            Мегавыигрыши: техника и Hell Pass
+          </span>
         </PanelHeader>
-
         <DataTable
-          headers={["Игрок", "Приз", "Источник", "Город", "Телефон", "Статус", "Дата", ""]}
-          rows={winnerRows.map((w) => [
-            <span className="font-medium">{w.nick ?? "—"}</span>,
-            <span>{w.prizeTitle}</span>,
-            w.source === "streak" ? (
-              <Badge tone="blue">Календарь</Badge>
-            ) : (
-              <Badge tone="violet">Рулетка</Badge>
-            ),
-            <span className="text-xs">{w.city ?? "—"}</span>,
+          headers={["Победитель", "Приз", "Город", "Телефон", "Email", "Тир", "Дата"]}
+          rows={legendRows.map((l) => [
+            <NickLink nick={l.nick} />,
+            <span className="font-medium">{l.prizeTitle}</span>,
+            <span className="text-xs">{l.city ?? "—"}</span>,
             <span className="inline-flex items-center gap-1 font-mono text-xs">
               <Phone className="h-3 w-3 text-zinc-400" />
-              {w.phone ?? "—"}
+              {l.phone ?? "—"}
             </span>,
-            <Badge tone={SHIP_TONE[w.status]}>{SHIP_LABEL[w.status]}</Badge>,
-            <span className="text-xs text-zinc-500 dark:text-zinc-400">{fmtDate(w.createdAt)}</span>,
-            <select
-              value={w.status}
-              disabled={patchWinner.isPending}
-              onChange={(e) =>
-                patchWinner.mutate({ id: w.id, status: e.target.value as SpinShipStatus })
-              }
-              className="rounded-md border border-zinc-200 bg-white px-2 py-1 text-xs dark:border-zinc-700 dark:bg-zinc-900"
-            >
-              {SHIP_FLOW.map((s) => (
-                <option key={s} value={s}>
-                  {SHIP_LABEL[s]}
-                </option>
-              ))}
-            </select>,
+            <span className="text-xs text-zinc-500 dark:text-zinc-400">{l.email ?? "—"}</span>,
+            <span className="text-xs">{TIER_LABEL[l.tier] ?? l.tier}</span>,
+            <span className="text-xs text-zinc-500 dark:text-zinc-400">{fmtDate(l.createdAt)}</span>,
           ])}
         />
-
-        {winners.isLoading && (
+        {legends.isLoading && (
           <div className="px-4 py-8 text-center text-sm text-zinc-500 dark:text-zinc-400">Загрузка…</div>
         )}
-        {!winners.isLoading && winnerRows.length === 0 && (
+        {!legends.isLoading && legendRows.length === 0 && (
           <div className="px-4 py-8 text-center text-sm text-zinc-500 dark:text-zinc-400">
-            Нет призов в этом фильтре
+            Легендарных выигрышей пока нет
           </div>
         )}
       </Panel>
 
-      {/* Последние прокруты */}
+      {/* Топ-выигрыши: эпик + легенда */}
       <Panel className="mb-6">
         <PanelHeader>
           <div className="flex items-center gap-2">
-            <PlumpSpin className="h-4 w-4 text-zinc-500 dark:text-zinc-400" />
-            <span className="text-sm font-semibold">Последние прокруты</span>
+            <TrendingUp className="h-4 w-4 text-violet-500" />
+            <span className="text-sm font-semibold">Победители — эпик и легенда</span>
           </div>
+          <span className="text-xs text-zinc-500 dark:text-zinc-400">
+            Всего: {fmt(top.data?.total ?? 0)}
+          </span>
         </PanelHeader>
         <DataTable
           headers={["Игрок", "Приз", "Редкость", "Тир", "Дата"]}
-          rows={(overview.data?.recent ?? []).map((r) => [
-            <span className="font-medium">{r.nick ?? "—"}</span>,
+          rows={(top.data?.items ?? []).map((r) => [
+            <NickLink nick={r.nick} />,
             <span>
               {r.prizeTitle}
               {r.bonus && <span className="ml-1 text-xs text-zinc-400">бонус-спин</span>}
@@ -246,11 +213,82 @@ function SpinAdminPage() {
             <span className="text-xs text-zinc-500 dark:text-zinc-400">{fmtDate(r.createdAt)}</span>,
           ])}
         />
-        {!overview.isLoading && (overview.data?.recent ?? []).length === 0 && (
+        {!top.isLoading && (top.data?.items ?? []).length === 0 && (
+          <div className="px-4 py-8 text-center text-sm text-zinc-500 dark:text-zinc-400">
+            Пока нет эпических и легендарных выигрышей
+          </div>
+        )}
+        <AdminPager
+          page={topPage}
+          pageSize={topSize}
+          total={top.data?.total ?? 0}
+          onPageChange={setTopPage}
+          onPageSizeChange={(s) => {
+            setTopSize(s);
+            setTopPage(1);
+          }}
+        />
+      </Panel>
+
+      {/* Полная история прокрутов */}
+      <Panel className="mb-6">
+        <PanelHeader>
+          <div className="flex items-center gap-2">
+            <PlumpSpin className="h-4 w-4 text-zinc-500 dark:text-zinc-400" />
+            <span className="text-sm font-semibold">История прокрутов</span>
+          </div>
+          <div className="flex gap-1.5">
+            {([
+              { key: "all", label: "Все" },
+              { key: "low", label: "Обычные и редкие" },
+            ] as const).map((f) => (
+              <button
+                key={f.key}
+                type="button"
+                onClick={() => {
+                  setHistRarity(f.key);
+                  setHistPage(1);
+                }}
+                className={cn(
+                  "rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
+                  histRarity === f.key
+                    ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
+                    : "text-zinc-500 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800",
+                )}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+        </PanelHeader>
+        <DataTable
+          headers={["Игрок", "Приз", "Редкость", "Тир", "Дата"]}
+          rows={(history.data?.items ?? []).map((r) => [
+            <NickLink nick={r.nick} />,
+            <span>
+              {r.prizeTitle}
+              {r.bonus && <span className="ml-1 text-xs text-zinc-400">бонус-спин</span>}
+            </span>,
+            <Badge tone={RARITY_TONE[r.rarity]}>{RARITY_LABEL[r.rarity]}</Badge>,
+            <span className="text-xs">{TIER_LABEL[r.tier] ?? r.tier}</span>,
+            <span className="text-xs text-zinc-500 dark:text-zinc-400">{fmtDate(r.createdAt)}</span>,
+          ])}
+        />
+        {!history.isLoading && (history.data?.items ?? []).length === 0 && (
           <div className="px-4 py-8 text-center text-sm text-zinc-500 dark:text-zinc-400">
             Прокрутов пока нет
           </div>
         )}
+        <AdminPager
+          page={histPage}
+          pageSize={histSize}
+          total={history.data?.total ?? 0}
+          onPageChange={setHistPage}
+          onPageSizeChange={(s) => {
+            setHistSize(s);
+            setHistPage(1);
+          }}
+        />
       </Panel>
 
       {/* Вероятности */}
@@ -264,7 +302,6 @@ function SpinAdminPage() {
         <OddsTable />
       </Panel>
 
-
       {/* Календарь активности */}
       <Panel className="mb-6">
         <PanelHeader>
@@ -276,7 +313,7 @@ function SpinAdminPage() {
         <DataTable
           headers={["Игрок", "Город", "Телефон", "Дней", "10", "20", "30"]}
           rows={(streaks.data ?? []).map((s) => [
-            <span className="font-medium">{s.nick ?? "—"}</span>,
+            <NickLink nick={s.nick} />,
             <span className="text-xs">{s.city ?? "—"}</span>,
             <span className="font-mono text-xs">{s.phone ?? "—"}</span>,
             <span className="font-mono text-sm font-semibold">{s.daysCount}</span>,

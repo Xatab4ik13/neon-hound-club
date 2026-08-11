@@ -2,11 +2,10 @@
 import { apiFetch } from "./api";
 
 export type SpinRarity = "common" | "rare" | "epic" | "legend";
-export type SpinShipStatus = "pending" | "contacted" | "shipped" | "delivered";
 
 export type AdminSpinOverview = {
   season: { periodKey: string; startsAt: string; endsAt: string; daysTotal: number };
-  stats: { spins: number; players: number; spinsToday: number; pendingShipments: number };
+  stats: { spins: number; players: number; spinsToday: number };
   spinsPerDay: Record<string, number>;
   prizes: {
     code: string;
@@ -31,20 +30,37 @@ export type AdminSpinOverview = {
   }[];
 };
 
-export type AdminSpinWinner = {
+export type AdminSpinHistoryRow = {
   id: string;
-  source: "spin" | "streak";
-  prizeCode: string;
-  prizeTitle: string;
-  status: SpinShipStatus;
-  trackNumber: string | null;
-  adminNote: string | null;
-  createdAt: string;
   userId: string;
   nick: string | null;
+  prizeCode: string;
+  prizeTitle: string;
+  rarity: SpinRarity;
+  tier: string;
+  bonus: boolean;
+  createdAt: string;
+};
+
+export type AdminSpinHistory = {
+  items: AdminSpinHistoryRow[];
+  total: number;
+  page: number;
+  pageSize: number;
+};
+
+export type AdminSpinLegend = {
+  id: string;
+  userId: string;
+  nick: string | null;
+  email: string | null;
   city: string | null;
   phone: string | null;
-  email: string | null;
+  prizeCode: string;
+  prizeTitle: string;
+  rewardKind: string;
+  tier: string;
+  createdAt: string;
 };
 
 export type AdminSpinStreak = {
@@ -60,7 +76,9 @@ export type AdminSpinStreak = {
 
 export const adminSpinQk = {
   overview: ["admin", "spin", "overview"] as const,
-  winners: (source: string) => ["admin", "spin", "winners", source] as const,
+  history: (rarity: string, page: number, pageSize: number) =>
+    ["admin", "spin", "history", rarity, page, pageSize] as const,
+  legends: ["admin", "spin", "legends"] as const,
   streaks: ["admin", "spin", "streaks"] as const,
 };
 
@@ -68,20 +86,20 @@ export function fetchAdminSpinOverview() {
   return apiFetch<AdminSpinOverview>("/api/v1/admin/spin/overview");
 }
 
-export function fetchAdminSpinWinners(source: "all" | "spin" | "streak" = "all") {
-  return apiFetch<AdminSpinWinner[]>(`/api/v1/admin/spin/winners?source=${source}`);
+export function fetchAdminSpinHistory(
+  rarity: "all" | "top" | "low",
+  page: number,
+  pageSize: number,
+) {
+  return apiFetch<AdminSpinHistory>(
+    `/api/v1/admin/spin/history?rarity=${rarity}&page=${page}&pageSize=${pageSize}`,
+  );
+}
+
+export function fetchAdminSpinLegends() {
+  return apiFetch<AdminSpinLegend[]>("/api/v1/admin/spin/legends");
 }
 
 export function fetchAdminSpinStreaks() {
   return apiFetch<AdminSpinStreak[]>("/api/v1/admin/spin/streaks");
-}
-
-export function updateAdminSpinWinner(
-  id: string,
-  patch: { status?: SpinShipStatus; trackNumber?: string | null; adminNote?: string | null },
-) {
-  return apiFetch<AdminSpinWinner>(`/api/v1/admin/spin/winners/${id}`, {
-    method: "PATCH",
-    body: JSON.stringify(patch),
-  });
 }
