@@ -260,7 +260,6 @@ function SpinAdminPage() {
             <TrendingUp className="h-4 w-4 text-zinc-500 dark:text-zinc-400" />
             <span className="text-sm font-semibold">Вероятности призов</span>
           </div>
-          <Badge tone="zinc">как в бэкенде</Badge>
         </PanelHeader>
         <OddsTable />
       </Panel>
