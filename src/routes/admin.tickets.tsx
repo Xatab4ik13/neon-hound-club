@@ -34,6 +34,13 @@ const SOURCE_LABEL: Record<string, string> = {
   refund: "Возврат",
 };
 
+const RAFFLE_STATUS_LABEL: Record<string, string> = {
+  active: "Идёт",
+  finished: "Завершён",
+  cancelled: "Отменён",
+  draft: "Черновик",
+};
+
 
 function fmt(n: number): React.ReactNode {
   return (n).toLocaleString("ru-RU");
