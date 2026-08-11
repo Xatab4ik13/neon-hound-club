@@ -419,7 +419,9 @@ function DatePick({ value, onChange }: { value: string; onChange: (v: string) =>
           selected={date}
           onSelect={(d) => {
             if (!d) return;
-            onChange(iso(new Date(d.getFullYear(), d.getMonth(), d.getDate())));
+            const mm = String(d.getMonth() + 1).padStart(2, "0");
+            const dd = String(d.getDate()).padStart(2, "0");
+            onChange(`${d.getFullYear()}-${mm}-${dd}`);
             setOpen(false);
           }}
           className="pointer-events-auto p-3"
