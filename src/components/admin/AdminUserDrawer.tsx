@@ -14,7 +14,6 @@ import {
   PlumpSmile as Smile,
 } from "@/components/ui/icons";
 import {
-  Panel,
   Badge,
   Btn,
   TextInput,
@@ -723,6 +722,3 @@ function UserPromoSection({ userId, nick }: { userId: string; nick: string }) {
     </>
   );
 }
-
-// Panel импортируется для совместимости типов темы админки (не используется напрямую).
-void Panel;
