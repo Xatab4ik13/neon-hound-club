@@ -992,8 +992,17 @@ function WinModal({
             boxShadow: `inset 0 0 0 1.5px ${r.ring}`,
           }}
         >
-          <PrizeMedia prize={prize} size={96} />
+          {capsule && (
+            <span
+              className="pointer-events-none absolute inset-[-10px] animate-[hs-capsule-glow_2.2s_ease-in-out_infinite] rounded-full"
+              style={{ boxShadow: `0 0 40px 6px ${r.glow}, inset 0 0 0 1px ${r.ring}` }}
+            />
+          )}
+          <span className={capsule ? "animate-[hs-capsule-float_3s_ease-in-out_infinite]" : undefined}>
+            <PrizeMedia prize={prize} size={96} />
+          </span>
         </span>
+
 
         <h2 className="relative mt-5 font-display text-[22px] font-black uppercase leading-tight tracking-tight text-foreground">
           {prize.title}
