@@ -5,7 +5,6 @@ import { PlumpNum } from "@/components/brand/PlumpNum";
 import { useEffect, useRef, useState } from "react";
 import { RANKS, getRankSpan, type RankId } from "@/data/ranks";
 import type { RankMeta } from "@/data/ranks";
-import { useCurrentRank } from "@/data/rank-state";
 import { useCart } from "@/hooks/use-cart";
 import { haptic } from "@/hooks/use-haptic";
 import { useViewer } from "@/hooks/use-viewer";
@@ -35,7 +34,7 @@ function parentPath(pathname: string): string | null {
 export function MobileTopBar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const router = useRouter();
-  // mockRank оставлен только ради выбора фона плашки.
+  // Ранг и XP берём только из реального профиля.
   const viewer = useViewer();
   const myProfile = useMyProfile(viewer.isAuthed);
   const realRankId = myProfile.data?.rank?.rankId as RankId | undefined;
