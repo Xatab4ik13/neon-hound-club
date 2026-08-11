@@ -428,6 +428,13 @@
       "when": 1786100000000,
       "tag": "0060_promo_product",
       "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "7",
+      "when": 1786200000000,
+      "tag": "0061_spin_removka_promo",
+      "breakpoints": true
     }
   ]
 }

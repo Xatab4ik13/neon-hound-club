@@ -928,9 +928,16 @@ function WinModal({
           Приз зачислен в твой аккаунт
         </p>
         {promoCode && (
-          <p className="relative mx-auto mt-3 w-fit rounded-xl bg-black/40 px-3 py-2 font-mono text-[14px] font-bold tracking-widest text-foreground">
-            {promoCode}
-          </p>
+          <>
+            <p className="relative mx-auto mt-3 w-fit rounded-xl bg-black/40 px-3 py-2 font-mono text-[14px] font-bold tracking-widest text-foreground">
+              {promoCode}
+            </p>
+            <p className="relative mt-2 text-[12px] leading-snug text-muted-foreground">
+              {prize.id === "sticker"
+                ? "Промокод на 100% скидку на ремувку. Оформи её в магазине — оплатишь только доставку."
+                : "Промокод сохранён в профиле, вкладка «Промокоды»."}
+            </p>
+          </>
         )}
 
 
