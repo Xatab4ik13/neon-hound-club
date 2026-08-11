@@ -3,7 +3,7 @@
 // полная история прокрутов со страницами и календарь активности.
 
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   PageHeader,
@@ -113,31 +113,61 @@ function SpinAdminPage() {
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 
   const [histPage, setHistPage] = useState(1);
-  const [histSize, setHistSize] = useState<AdminPageSize>(100);
+  const [histSize, setHistSize] = useState<AdminPageSize>(50);
   const [histRarity, setHistRarity] = useState<"all" | "top" | "low">("all");
   const [prizeFilter, setPrizeFilter] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [debounced, setDebounced] = useState("");
 
-  if (search !== debounced) {
-    setTimeout(() => {
+  // Дебаунс поиска через эффект: раньше setTimeout вызывался на каждом рендере
+  // и плодил лишние ререндеры/запросы — отсюда и лаги при переключении фильтров.
+  useEffect(() => {
+    const t = setTimeout(() => {
       setDebounced(search);
       setHistPage(1);
-    }, 250);
-  }
+    }, 300);
+    return () => clearTimeout(t);
+  }, [search]);
 
-  const histParams = {
-    rarity: histRarity,
-    q: debounced || undefined,
-    prize: prizeFilter ?? undefined,
-    page: histPage,
-    pageSize: histSize,
-  };
+  const histParams = useMemo(
+    () => ({
+      rarity: histRarity,
+      q: debounced || undefined,
+      prize: prizeFilter ?? undefined,
+      page: histPage,
+      pageSize: histSize,
+    }),
+    [histRarity, debounced, prizeFilter, histPage, histSize],
+  );
   const history = useQuery({
     queryKey: adminSpinQk.history(histParams),
     queryFn: () => fetchAdminSpinHistory(histParams),
     placeholderData: (prev) => prev,
+    staleTime: 30_000,
+    gcTime: 5 * 60_000,
   });
+
+  const historyRows = useMemo(
+    () =>
+      (history.data?.items ?? []).map((r) => [
+        <UserCell key="u" nick={r.nick} userId={r.userId} onOpen={setSelectedUserId} />,
+        <span key="p">
+          {r.prizeTitle}
+          {r.bonus && <span className="ml-1 text-xs text-zinc-400">бонус-спин</span>}
+        </span>,
+        <Badge key="r" tone={RARITY_TONE[r.rarity]}>
+          {RARITY_LABEL[r.rarity]}
+        </Badge>,
+        <span key="t" className="text-xs">
+          {TIER_LABEL[r.tier] ?? r.tier}
+        </span>,
+        <span key="d" className="text-xs text-zinc-500 dark:text-zinc-400">
+          {fmtDate(r.createdAt)}
+        </span>,
+      ]),
+    [history.data],
+  );
+
 
   const stats = overview.data?.stats;
   const season = overview.data?.season;
@@ -287,19 +317,10 @@ function SpinAdminPage() {
           )}
         </div>
 
-        <DataTable
-          headers={["Игрок", "Приз", "Редкость", "Тир", "Дата"]}
-          rows={(history.data?.items ?? []).map((r) => [
-            <UserCell nick={r.nick} userId={r.userId} onOpen={setSelectedUserId} />,
-            <span>
-              {r.prizeTitle}
-              {r.bonus && <span className="ml-1 text-xs text-zinc-400">бонус-спин</span>}
-            </span>,
-            <Badge tone={RARITY_TONE[r.rarity]}>{RARITY_LABEL[r.rarity]}</Badge>,
-            <span className="text-xs">{TIER_LABEL[r.tier] ?? r.tier}</span>,
-            <span className="text-xs text-zinc-500 dark:text-zinc-400">{fmtDate(r.createdAt)}</span>,
-          ])}
-        />
+        <div className={history.isFetching ? "opacity-60 transition-opacity" : "transition-opacity"}>
+          <DataTable headers={["Игрок", "Приз", "Редкость", "Тир", "Дата"]} rows={historyRows} />
+        </div>
+
         {!history.isLoading && (history.data?.items ?? []).length === 0 && (
           <div className="px-4 py-8 text-center text-sm text-zinc-500 dark:text-zinc-400">
             Ничего не найдено
