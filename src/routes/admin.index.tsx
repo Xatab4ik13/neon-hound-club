@@ -394,3 +394,37 @@ function Table({ headers, rows }: { headers: string[]; rows: (string | number)[]
     </div>
   );
 }
+
+function DatePick({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(value) ? new Date(`${value}T00:00:00`) : undefined;
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className="flex h-9 w-[150px] items-center justify-between gap-2 rounded-md border border-zinc-300 bg-white px-3 text-sm tabular-nums dark:border-zinc-700 dark:bg-zinc-900"
+        >
+          {date ? date.toLocaleDateString("ru-RU") : "Выбрать дату"}
+          <CalendarIcon className="h-4 w-4 shrink-0 text-zinc-400" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-auto p-0">
+        <Calendar
+          mode="single"
+          locale={ru}
+          weekStartsOn={1}
+          captionLayout="dropdown"
+          defaultMonth={date}
+          selected={date}
+          onSelect={(d) => {
+            if (!d) return;
+            onChange(iso(new Date(d.getFullYear(), d.getMonth(), d.getDate())));
+            setOpen(false);
+          }}
+          className="pointer-events-auto p-3"
+        />
+      </PopoverContent>
+    </Popover>
+  );
+}
