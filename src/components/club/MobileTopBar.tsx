@@ -35,7 +35,7 @@ function parentPath(pathname: string): string | null {
 export function MobileTopBar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const router = useRouter();
-  const mockRank = useCurrentRank();
+  // mockRank оставлен только ради выбора фона плашки.
   const viewer = useViewer();
   const myProfile = useMyProfile(viewer.isAuthed);
   const realRankId = myProfile.data?.rank?.rankId as RankId | undefined;
