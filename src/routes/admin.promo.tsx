@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Gift, Trash2 } from "@/components/ui/icons";
+import { Gift, Trash2, Receipt } from "@/components/ui/icons";
 import {
   PageHeader,
   Panel,
@@ -20,10 +20,13 @@ import {
   adminCreatePromoCode,
   adminDeletePromoCode,
   adminListPromoCodes,
+  adminPromoStats,
+  adminPromoUsage,
   adminUpdatePromoCode,
   promoQk,
   type AdminPromoCodeDto,
 } from "@/lib/promo-api";
+
 import { ApiError } from "@/lib/api";
 import { hhToast as toast } from "@/lib/hh-toast";
 
