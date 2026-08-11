@@ -105,22 +105,22 @@ const LEGENDS = VISIBLE.filter((p) => p.rarity === "legend");
 const NON_LEGENDS = VISIBLE.filter((p) => p.rarity !== "legend");
 
 const MILESTONE_IMG: Record<number, string> = {
-  10: imgSocks,
-  20: silverBadge,
+  10: silverBadge,
+  20: imgSocks,
   30: goldBadge,
 };
 
 // Фото товара нужно кропать по кругу, а бейджи — вписывать целиком.
 const MILESTONE_FIT: Record<number, "cover" | "contain"> = {
-  10: "cover",
-  20: "contain",
+  10: "contain",
+  20: "cover",
   30: "contain",
 };
 
 const CALENDAR = [
-  { day: 10, title: "Носки", sub: "10 дней подряд" },
-  { day: 20, title: "Silver + носки + 5 билетов", sub: "20 дней подряд" },
-  { day: 30, title: "Gold + носки + ремувка + 20 билетов", sub: "30 дней подряд" },
+  { day: 10, title: "Hell Pass Silver + 5 билетов", sub: "10 дней подряд" },
+  { day: 20, title: "Носки", sub: "20 дней подряд" },
+  { day: 30, title: "Hell Pass Gold + 20 билетов", sub: "30 дней подряд" },
 ];
 
 const TIER_LABEL: Record<SpinTier, { name: string; bg: string; fg: string }> = {
@@ -171,7 +171,7 @@ type SpinTier = "none" | "silver" | "gold" | "platinum";
 type SpinState = {
   access: { granted: boolean; pwa: boolean; phoneVerified: boolean; pushEnabled: boolean };
   tier: SpinTier;
-  season: { periodKey: string; daysTotal: number; endsAt: string };
+  season: { periodKey: string; daysTotal: number; startsAt?: string; endsAt: string };
   spins: { allowed: number; used: number; left: number };
   streak: { days: number; claimed: number[] };
   history: { prizeCode: string; title: string; at: string }[];
@@ -275,12 +275,16 @@ function SpinPage() {
     if (claiming) return;
     setClaiming(day);
     try {
-      await apiFetch("/api/v1/spin/streak/claim", {
+      const res = await apiFetch<{ promoCode?: string }>("/api/v1/spin/streak/claim", {
         method: "POST",
         body: JSON.stringify({ milestone: day }),
       });
       haptic("success");
-      toast.success("Награда забрана — заберём с тебя адрес доставки");
+      toast.success(
+        res?.promoCode
+          ? `Промокод ${res.promoCode} — носки за 0₽, платишь только доставку`
+          : "Награда забрана",
+      );
       await loadState();
     } catch (err) {
       toast.error(err instanceof ApiError ? err.message : "Не удалось забрать награду");
@@ -959,11 +963,18 @@ function WinModal({
 function HowItWorks({ season }: { season?: SpinState["season"] }) {
   const [open, setOpen] = useState(false);
 
-  // Сезон приходит с бэка: конец периода + число дней. Ничего не хардкодим.
-  const endsLabel = season
-    ? new Date(season.endsAt).toLocaleDateString("ru-RU", { day: "numeric", month: "long" })
-    : null;
+  // Сезон приходит с бэка: начало, конец периода + число дней. Ничего не хардкодим.
+  const fmt = (iso: string) =>
+    new Date(iso).toLocaleDateString("ru-RU", { day: "numeric", month: "long" });
+  const startsLabel = season?.startsAt ? fmt(season.startsAt) : null;
+  const endsLabel = season ? fmt(season.endsAt) : null;
   const days = season?.daysTotal ?? 30;
+  const seasonLabel =
+    startsLabel && endsLabel
+      ? `Сезон ${startsLabel} — ${endsLabel} · ${days} дней`
+      : endsLabel
+        ? `Сезон до ${endsLabel} · ${days} дней`
+        : `Сезон · ${days} дней`;
 
   const tiers: { name: string; spins: number; badge: string | null; vip?: boolean }[] = [
     { name: "Без Pass", spins: 1, badge: null },
@@ -990,7 +1001,7 @@ function HowItWorks({ season }: { season?: SpinState["season"] }) {
             Как это работает
           </span>
           <span className="block font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-            {endsLabel ? `Сезон до ${endsLabel} · ${days} дней` : `Сезон · ${days} дней`}
+            {seasonLabel}
           </span>
         </span>
         <ChevronDown
@@ -1010,12 +1021,61 @@ function HowItWorks({ season }: { season?: SpinState["season"] }) {
                 Сезон HellSpin
               </h3>
               <p className="text-[13px] leading-relaxed text-muted-foreground">
-                {endsLabel && (
+                {startsLabel && endsLabel ? (
                   <>
-                    <span className="text-foreground">Сезон идёт до {endsLabel}.</span>{" "}
+                    <span className="text-foreground">
+                      Сезон идёт с {startsLabel} по {endsLabel}.
+                    </span>{" "}
                   </>
+                ) : (
+                  endsLabel && (
+                    <>
+                      <span className="text-foreground">Сезон идёт до {endsLabel}.</span>{" "}
+                    </>
+                  )
                 )}
                 {days} дней, каждый день — новая пачка спинов. Не крутанул сегодня — завтра обнулилось.
+              </p>
+            </div>
+
+            {/* Календарь активности */}
+            <div>
+              <h3 className="mb-1.5 font-display text-[13px] font-black uppercase tracking-tight text-foreground">
+                Календарь активности
+              </h3>
+              <p className="mb-3 text-[13px] leading-relaxed text-muted-foreground">
+                Каждый день, когда ты крутанул хотя бы один спин, засчитывается в календарь. Дни{" "}
+                <span className="text-foreground">не обязательно подряд</span> — считаем сколько
+                дней из {days} ты был активен. Награды забираются вручную кнопкой «Забрать».
+              </p>
+              <div className="space-y-1.5">
+                {CALENDAR.map((c) => (
+                  <div key={c.day} className="flex items-center gap-3 rounded-2xl bg-black/30 px-3 py-2.5">
+                    <span className="grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-full bg-white/[0.06]">
+                      <img
+                        src={MILESTONE_IMG[c.day]}
+                        alt=""
+                        loading="lazy"
+                        className={`h-full w-full ${
+                          (MILESTONE_FIT[c.day] ?? "contain") === "cover"
+                            ? "scale-[1.15] object-cover"
+                            : "object-contain p-0.5"
+                        }`}
+                      />
+                    </span>
+                    <span className="min-w-0 flex-1 text-[13px] font-semibold text-foreground">
+                      {c.title}
+                    </span>
+                    <span className="shrink-0 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                      {c.day} дней
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <p className="mt-2 text-[12px] leading-relaxed text-muted-foreground">
+                Носки приходят персональным промокодом на{" "}
+                <span className="text-foreground">100% скидку</span> — одна пара любого размера,
+                платишь только доставку.
               </p>
             </div>
 

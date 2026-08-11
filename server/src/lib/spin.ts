@@ -639,10 +639,21 @@ export const STREAK_MILESTONES = [10, 20, 30] as const;
 export type StreakMilestone = (typeof STREAK_MILESTONES)[number];
 
 const MILESTONE_TITLE: Record<StreakMilestone, string> = {
-  10: "Носки",
-  20: "Hell Pass Silver + носки + 5 билетов",
-  30: "Hell Pass Gold + носки + ремувка + 20 билетов",
+  10: "Hell Pass Silver + 5 билетов",
+  20: "Носки",
+  30: "Hell Pass Gold + 20 билетов",
 };
+
+/** Ищет товар «носки» в магазине (для промокода-приза календаря). */
+async function findSocksProductId(): Promise<string | null> {
+  const [row] = await db
+    .select({ id: products.id })
+    .from(products)
+    .where(sql`${products.title} ILIKE '%носк%' AND ${products.active} = true`)
+    .orderBy(products.createdAt)
+    .limit(1);
+  return row?.id ?? null;
+}
 
 /** Забрать награду календаря активности. Физика уходит в spin_winners. */
 export async function claimStreakMilestone(userId: string, milestone: StreakMilestone) {
@@ -664,19 +675,51 @@ export async function claimStreakMilestone(userId: string, milestone: StreakMile
     .set({ [field]: new Date(), updatedAt: new Date() } as Record<string, unknown>)
     .where(eq(spinStreaks.id, streak.id));
 
-  const winners: Array<{ code: string; title: string }> = [{ code: "socks", title: "Носки" }];
-  if (milestone === 20) {
-    await grantPass(userId, "silver", "Календарь активности 20/30", "streak");
+  let promoCode: string | undefined;
+
+  // 10 дней — Hell Pass Silver + 5 билетов.
+  if (milestone === 10) {
+    await grantPass(userId, "silver", "Календарь активности 10/30", "streak");
     await ticketCredit({
       userId,
       amount: 5,
       source: "spin",
-      reason: "Календарь активности 20/30",
+      reason: "Календарь активности 10/30",
       refType: "spin_streak",
       refId: streak.id,
       idempotent: true,
     });
   }
+
+  // 20 дней — носки: персональный промокод на 100% скидку, юзер платит только доставку.
+  if (milestone === 20) {
+    const productId = await findSocksProductId();
+    if (productId) {
+      const code = generatePromoCode("SOCK");
+      await db.insert(promoCodes).values({
+        code,
+        discountPct: 100,
+        userId,
+        productId,
+        note: "Календарь активности: носки",
+        expiresAt: new Date(Date.now() + 60 * 86_400_000),
+      });
+      promoCode = code;
+    }
+    await db.insert(spinWinners).values({
+      userId,
+      seasonId: season.id,
+      source: "streak",
+      prizeCode: "socks",
+      prizeTitle: "Носки (20/30)",
+      status: promoCode ? "contacted" : "pending",
+      adminNote: promoCode
+        ? `Промокод ${promoCode} — 100% на носки, юзер оплачивает только доставку`
+        : "Товар «носки» не найден в магазине — выдать вручную",
+    });
+  }
+
+  // 30 дней — Hell Pass Gold + 20 билетов.
   if (milestone === 30) {
     await grantPass(userId, "gold", "Календарь активности 30/30", "streak");
     await ticketCredit({
@@ -688,20 +731,9 @@ export async function claimStreakMilestone(userId: string, milestone: StreakMile
       refId: streak.id,
       idempotent: true,
     });
-    winners.push({ code: "sticker", title: "Ремувка" });
   }
 
-  for (const w of winners) {
-    await db.insert(spinWinners).values({
-      userId,
-      seasonId: season.id,
-      source: "streak",
-      prizeCode: w.code,
-      prizeTitle: `${w.title} (${milestone}/30)`,
-    });
-  }
-
-  return { milestone, title: MILESTONE_TITLE[milestone] };
+  return { milestone, title: MILESTONE_TITLE[milestone], promoCode };
 }
 
 /* ---------------- Состояние для фронта ---------------- */
@@ -741,7 +773,12 @@ export async function getSpinState(userId: string, pwa: boolean) {
   return {
     access,
     tier,
-    season: { periodKey: season.periodKey, daysTotal: season.daysTotal, endsAt: season.endsAt.toISOString() },
+    season: {
+      periodKey: season.periodKey,
+      daysTotal: season.daysTotal,
+      startsAt: season.startsAt.toISOString(),
+      endsAt: season.endsAt.toISOString(),
+    },
     spins: { allowed, used, left: Math.max(0, allowed - used) },
     streak: {
       days: streak?.daysCount ?? 0,
