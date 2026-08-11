@@ -132,26 +132,8 @@ function UsersPage() {
           }}
         />
       </Panel>
-
-
       {selectedId && (
-        <UserDrawer
-          userId={selectedId}
-          onClose={() => setSelectedId(null)}
-          onGift={() => setGiftOpen(true)}
-          onGiftPass={() => setGiftPassOpen(true)}
-          onGiftStickers={() => setGiftStickersOpen(true)}
-        />
-      )}
-
-      {selectedId && giftOpen && (
-        <GiftModal userId={selectedId} onClose={() => setGiftOpen(false)} />
-      )}
-      {selectedId && giftPassOpen && (
-        <GiftPassModal userId={selectedId} onClose={() => setGiftPassOpen(false)} />
-      )}
-      {selectedId && giftStickersOpen && (
-        <GiftStickersModal userId={selectedId} onClose={() => setGiftStickersOpen(false)} />
+        <AdminUserDrawer userId={selectedId} onClose={() => setSelectedId(null)} />
       )}
     </div>
   );
