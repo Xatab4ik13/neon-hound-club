@@ -182,7 +182,10 @@ export function CdekDeliveryPicker({
     let cancelled = false;
     setPvzLoading(true);
     setPvzError(null);
-    apiFetch<{ items: PvzItem[] }>(`/api/v1/cdek/pvz?cityCode=${value.cityCode}`)
+    apiFetch<{ items: PvzItem[] }>(
+      `/api/v1/cdek/pvz?cityCode=${value.cityCode}${value.countryCode ? `&country=${encodeURIComponent(value.countryCode)}` : ""}`,
+    )
+
       .then((r) => {
         if (cancelled) return;
         setPvzList(r.items ?? []);
