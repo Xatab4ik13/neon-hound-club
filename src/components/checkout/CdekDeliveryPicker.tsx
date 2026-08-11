@@ -133,8 +133,34 @@ export function CdekDeliveryPicker({
             } satisfies CityItem;
           })
           .filter((x): x is CityItem => x != null);
-
+        if (items.length === 0) {
+          // Фолбэк: ищем напрямую в справочнике СДЭК (Россия + СНГ) — помогает
+          // по городам СНГ, которых нет в подсказках DaData.
+          try {
+            const r = await apiFetch<{
+              items: Array<{ code: number; city: string; region: string; countryCode: string }>;
+            }>(`/api/v1/cdek/cities?q=${encodeURIComponent(q)}`);
+            if (r.items?.length) {
+              setCityOpts(
+                r.items.map((c) => ({
+                  fiasId: null,
+                  kladrId: null,
+                  postalCode: null,
+                  city: c.city,
+                  region: c.region,
+                  country: "",
+                  countryIso: c.countryCode?.toUpperCase() ?? null,
+                  display: `${c.city}, ${c.region}`,
+                })),
+              );
+              return;
+            }
+          } catch {
+            /* ignore */
+          }
+        }
         setCityOpts(items);
+
       } catch {
         setCityOpts([]);
       } finally {
