@@ -41,9 +41,28 @@ export function mskDate(d = new Date()): string {
   return shifted.toISOString().slice(0, 10);
 }
 
-/** Ключ сезона YYYY-MM по МСК. */
+/** Начало первого сезона: 11 августа 2026, 00:00 МСК. */
+export const SEASON_ANCHOR_UTC = Date.UTC(2026, 7, 11, -3, 0, 0);
+/** Длина сезона в днях. */
+export const SEASON_DAYS = 30;
+
+/** Индекс текущего сезона (0 — первый). */
+function seasonIndex(d = new Date()): number {
+  const diff = d.getTime() - SEASON_ANCHOR_UTC;
+  return diff <= 0 ? 0 : Math.floor(diff / (SEASON_DAYS * 86_400_000));
+}
+
+/** Границы сезона: скользящие окна по 30 дней от якоря. */
+export function seasonBounds(d = new Date()): { startsAt: Date; endsAt: Date } {
+  const idx = seasonIndex(d);
+  const startsAt = new Date(SEASON_ANCHOR_UTC + idx * SEASON_DAYS * 86_400_000);
+  const endsAt = new Date(startsAt.getTime() + SEASON_DAYS * 86_400_000);
+  return { startsAt, endsAt };
+}
+
+/** Ключ сезона — дата его начала (YYYY-MM-DD по МСК). */
 export function mskPeriodKey(d = new Date()): string {
-  return mskDate(d).slice(0, 7);
+  return mskDate(seasonBounds(d).startsAt);
 }
 
 export const SPINS_PER_DAY: Record<"none" | PassTier, number> = {
@@ -94,16 +113,16 @@ export const PRIZE_CONFIG: PrizeConfig[] = [
   { code: "t50", title: "50 билетов", rarity: "epic", rewardKind: "tickets", rewardValue: 50, chancePpm: 0, hidden: true },
 ];
 
-/** Шанс jackpot по фазам месяца (ppm). */
-function jackpotPhasePpm(dayOfMonth: number): number {
-  if (dayOfMonth <= 15) return 40; // ~0.004%
-  if (dayOfMonth <= 25) return 150; // ~0.015%
+/** Шанс jackpot по фазам сезона (ppm), day — день сезона 1..30. */
+function jackpotPhasePpm(dayOfSeason: number): number {
+  if (dayOfSeason <= 15) return 40; // ~0.004%
+  if (dayOfSeason <= 25) return 150; // ~0.015%
   return 350; // ~0.035%
 }
 
 /* ---------------- Сезон ---------------- */
 
-/** Возвращает активный сезон текущего месяца, создавая его вместе с призами. */
+/** Возвращает активный сезон (30 дней), создавая его вместе с призами. */
 export async function ensureCurrentSeason() {
   const periodKey = mskPeriodKey();
   const [existing] = await db
@@ -113,11 +132,8 @@ export async function ensureCurrentSeason() {
     .limit(1);
   if (existing) return existing;
 
-  const [y, m] = periodKey.split("-").map(Number);
-  // Границы месяца в МСК (UTC-3).
-  const startsAt = new Date(Date.UTC(y!, m! - 1, 1, -3, 0, 0));
-  const endsAt = new Date(Date.UTC(y!, m!, 1, -3, 0, 0));
-  const daysTotal = Math.round((endsAt.getTime() - startsAt.getTime()) / 86_400_000);
+  const { startsAt, endsAt } = seasonBounds();
+  const daysTotal = SEASON_DAYS;
 
   const [created] = await db
     .insert(spinSeasons)
@@ -230,7 +246,11 @@ function seasonProgress(startsAt: Date, endsAt: Date): number {
 function buildWeights(prizes: SpinPrize[], tier: "none" | PassTier, season: { startsAt: Date; endsAt: Date }) {
   const mult = TIER_CHANCE_MULT[tier];
   const progress = seasonProgress(season.startsAt, season.endsAt);
-  const day = Number(mskDate().slice(8, 10));
+  // День сезона (1..30), а не день месяца.
+  const day = Math.min(
+    SEASON_DAYS,
+    Math.floor((Date.now() - season.startsAt.getTime()) / 86_400_000) + 1,
+  );
   const jackpotQueue = prizes
     .filter((p) => p.rewardKind === "jackpot" && p.issued < (p.limitTotal ?? 1))
     .sort((a, b) => (a.queueOrder ?? 0) - (b.queueOrder ?? 0));
