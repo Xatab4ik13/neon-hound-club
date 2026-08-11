@@ -616,12 +616,36 @@ export async function getTicketBoost(
   };
 }
 
-/** Потребить капсулу (обнулить) — вызывается после применения x2 к цифровой покупке. */
-export async function consumeTicketBoost(userId: string): Promise<void> {
+/**
+ * Потребить капсулу (обнулить) — вызывается после применения x2 к цифровой покупке.
+ * Заодно помечаем последнюю неиспользованную капсулу как активированную:
+ * заказ + сколько бонусных билетов она принесла (для админки).
+ */
+export async function consumeTicketBoost(
+  userId: string,
+  opts?: { orderId?: string; bonusTickets?: number },
+): Promise<void> {
   await db
     .update(users)
     .set({ ticketBoostUntil: null, updatedAt: new Date() })
     .where(eq(users.id, userId));
+
+  const [row] = await db
+    .select({ id: ticketBoosts.id })
+    .from(ticketBoosts)
+    .where(and(eq(ticketBoosts.userId, userId), sql`${ticketBoosts.usedAt} is null`))
+    .orderBy(sql`${ticketBoosts.grantedAt} desc`)
+    .limit(1);
+  if (row) {
+    await db
+      .update(ticketBoosts)
+      .set({
+        usedAt: new Date(),
+        usedOrderId: opts?.orderId ?? null,
+        bonusTickets: opts?.bonusTickets ?? 0,
+      })
+      .where(eq(ticketBoosts.id, row.id));
+  }
 }
 
 /** Выдать Hell Pass как приз: запись покупки на 0₽ + активация на 30 дней. */
