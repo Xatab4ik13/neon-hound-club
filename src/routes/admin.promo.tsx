@@ -23,6 +23,7 @@ import {
   adminPromoStats,
   adminPromoUsage,
   adminUpdatePromoCode,
+  adminListCapsules,
   promoQk,
   type AdminPromoCodeDto,
 } from "@/lib/promo-api";
@@ -203,6 +204,8 @@ function PromoAdminPage() {
         />
       </Panel>
 
+      <CapsulesPanel />
+
       {usageOf && <UsageModal promo={usageOf} onClose={() => setUsageOf(null)} />}
 
 
@@ -220,6 +223,117 @@ function PromoAdminPage() {
         confirmLabel="Удалить"
       />
     </div>
+  );
+}
+
+const CAPSULE_FILTERS = [
+  { key: "all", label: "Все" },
+  { key: "used", label: "Активированные" },
+  { key: "active", label: "Активные" },
+  { key: "expired", label: "Истёкшие" },
+] as const;
+
+function fmtDateTime(iso: string | null) {
+  if (!iso) return "—";
+  return new Date(iso).toLocaleString("ru-RU", {
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+/**
+ * Капсулы ×2 из HellSpin. Не промокод, но логика та же: выдали → человек
+ * либо активировал её цифровой покупкой, либо она сгорела за 24 часа.
+ */
+function CapsulesPanel() {
+  const [status, setStatus] = useState<(typeof CAPSULE_FILTERS)[number]["key"]>("all");
+  const [q, setQ] = useState("");
+
+  const capsQ = useQuery({
+    queryKey: promoQk.adminCapsules(status, q.trim()),
+    queryFn: () => adminListCapsules({ status, q: q.trim() || undefined }),
+  });
+
+  const items = capsQ.data?.items ?? [];
+  const s = capsQ.data?.stats;
+
+  return (
+    <Panel>
+      <PanelHeader>
+        <div className="flex w-full flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="mr-1 text-sm font-semibold">Капсулы ×2</span>
+            {CAPSULE_FILTERS.map((f) => (
+              <button
+                key={f.key}
+                type="button"
+                onClick={() => setStatus(f.key)}
+                className={
+                  status === f.key
+                    ? "rounded-md bg-zinc-900 px-2.5 py-1 text-xs font-medium text-white dark:bg-zinc-100 dark:text-zinc-900"
+                    : "rounded-md px-2.5 py-1 text-xs font-medium text-zinc-500 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800"
+                }
+              >
+                {f.label}
+              </button>
+            ))}
+            <span className="ml-1 text-xs text-zinc-500 dark:text-zinc-400">
+              {items.length}
+              {s ? ` · активировано ${s.used} из ${s.total} · бонус +${s.bonusTickets} билетов` : ""}
+            </span>
+          </div>
+          <TextInput
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Поиск по нику"
+            className="max-w-[240px]"
+          />
+        </div>
+      </PanelHeader>
+      <DataTable
+        headers={["Игрок", "Выбита", "Действует до", "Статус", "Активирована", "Бонус билетов", "Заказ"]}
+        rows={items.map((c) => [
+          <span key="u" className="font-medium">
+            {c.nick ? `@${c.nick}` : (c.email ?? "—")}
+          </span>,
+          <span key="g" className="text-xs">
+            {fmtDateTime(c.grantedAt)}
+          </span>,
+          <span key="e" className="text-xs">
+            {fmtDateTime(c.expiresAt)}
+          </span>,
+          c.status === "used" ? (
+            <Badge key="s" tone="emerald">
+              Активирована
+            </Badge>
+          ) : c.status === "active" ? (
+            <Badge key="s" tone="amber">
+              Действует
+            </Badge>
+          ) : (
+            <Badge key="s" tone="zinc">
+              Сгорела
+            </Badge>
+          ),
+          <span key="ua" className="text-xs">
+            {fmtDateTime(c.usedAt)}
+          </span>,
+          <span key="b" className="font-mono text-sm font-semibold">
+            {c.bonusTickets ? `+${c.bonusTickets}` : "—"}
+          </span>,
+          <span key="o" className="font-mono text-xs text-zinc-500 dark:text-zinc-400">
+            {c.usedOrderId ? `#${c.usedOrderId.slice(0, 8)}${c.orderTotalRub ? ` · ${rub(c.orderTotalRub)}` : ""}` : "—"}
+          </span>,
+        ])}
+      />
+      {!capsQ.isLoading && items.length === 0 && (
+        <div className="px-4 py-8 text-center text-sm text-zinc-500 dark:text-zinc-400">
+          Капсул пока нет
+        </div>
+      )}
+    </Panel>
   );
 }
 
