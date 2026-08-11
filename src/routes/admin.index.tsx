@@ -249,16 +249,18 @@ function Dashboard() {
         </Panel>
 
         <Panel>
-          <PanelHeader>Розыгрыши, осталось меньше 48ч</PanelHeader>
-          {data.rafflesSoon.length === 0 ? (
-            <Empty>Нет розыгрышей в ближайшие 48 часов</Empty>
-          ) : (
-            <Table
-              headers={["Приз", "До конца", "Заявок"]}
-              rows={data.rafflesSoon.map((r) => [r.prize ?? r.title, fmtRemain(r.endsAt), String(r.entries)])}
-            />
-          )}
+          <PanelHeader>Доставка: наша разница</PanelHeader>
+          <Table
+            headers={["Показатель", "Сумма"]}
+            rows={[
+              ["Собрано с клиентов", fmtRub(k.shippingRevenue)],
+              ["Себестоимость СДЭК", fmtRub(k.shippingCostRub)],
+              ["Заработали на доставке", fmtRub(k.shippingMarginRub)],
+              ["Заказов с доставкой", String(k.shippingOrders)],
+            ]}
+          />
         </Panel>
+
       </div>
     </div>
   );
