@@ -390,8 +390,8 @@ function SpinPage() {
     setSpinError(null);
     setSpinning(true);
 
-    try {
     const roll = () =>
+
       apiFetch<RollResult>("/api/v1/spin/roll", {
         method: "POST",
         headers: pwaHeaders(),
