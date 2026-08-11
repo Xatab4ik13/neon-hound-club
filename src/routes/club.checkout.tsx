@@ -481,16 +481,15 @@ function ClubCheckoutPage() {
               />
             </FieldRow>
             <FieldRow label="Телефон">
-              <input
+              <PhoneInput
                 value={form.phone}
-                onChange={(e) => set("phone", formatRuPhone(e.target.value))}
-                type="tel"
-                inputMode="tel"
-                placeholder="+7 (___) ___-__-__"
+                onChange={(v) => set("phone", v || "")}
+                placeholder="Номер телефона"
                 autoComplete="tel"
                 required
-                className="min-w-0 flex-1 bg-transparent py-1.5 text-right text-[15px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none"
+                className="min-w-0 flex-1"
               />
+
             </FieldRow>
             <FieldRow label="Email" last>
               <DadataInput
