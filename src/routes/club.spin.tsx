@@ -963,11 +963,18 @@ function WinModal({
 function HowItWorks({ season }: { season?: SpinState["season"] }) {
   const [open, setOpen] = useState(false);
 
-  // Сезон приходит с бэка: конец периода + число дней. Ничего не хардкодим.
-  const endsLabel = season
-    ? new Date(season.endsAt).toLocaleDateString("ru-RU", { day: "numeric", month: "long" })
-    : null;
+  // Сезон приходит с бэка: начало, конец периода + число дней. Ничего не хардкодим.
+  const fmt = (iso: string) =>
+    new Date(iso).toLocaleDateString("ru-RU", { day: "numeric", month: "long" });
+  const startsLabel = season?.startsAt ? fmt(season.startsAt) : null;
+  const endsLabel = season ? fmt(season.endsAt) : null;
   const days = season?.daysTotal ?? 30;
+  const seasonLabel =
+    startsLabel && endsLabel
+      ? `Сезон ${startsLabel} — ${endsLabel} · ${days} дней`
+      : endsLabel
+        ? `Сезон до ${endsLabel} · ${days} дней`
+        : `Сезон · ${days} дней`;
 
   const tiers: { name: string; spins: number; badge: string | null; vip?: boolean }[] = [
     { name: "Без Pass", spins: 1, badge: null },
