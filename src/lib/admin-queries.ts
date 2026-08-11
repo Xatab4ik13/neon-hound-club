@@ -130,7 +130,23 @@ export type AdminUsersStats = {
   total: number;
   phoneVerified: number;
   hasPush: number;
+  onlineNow: number;
+  dau: number;
+  wau: number;
+  mau: number;
+  /** DAU/MAU в процентах — «липкость» аудитории. */
+  stickiness: number;
+  newToday: number;
+  new7d: number;
+  new30d: number;
+  /** Среднее время на сайте за активный день, мин (30 дней). */
+  avgMinutesPerDay: number;
+  avgSessionsPerDay: number;
+  avgActiveDays30d: number;
+  totalMinutes30d: number;
+  daily: Array<{ day: string; users: number; avgMinutes: number }>;
 };
+
 
 export function fetchAdminUsersStats() {
   return apiFetch<AdminUsersStats>(`/api/v1/admin/users/stats`);

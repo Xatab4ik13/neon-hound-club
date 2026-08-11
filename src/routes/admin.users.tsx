@@ -32,6 +32,7 @@ import {
   patchAdminUser,
   type AdminUserListItem,
   type AdminUsersSort,
+  type AdminUsersStats,
 } from "@/lib/admin-queries";
 
 
@@ -112,6 +113,10 @@ function UsersPage() {
           </div>
         )}
       </div>
+
+      {stats && <AudienceStats stats={stats} />}
+
+
 
 
       <Panel>
@@ -780,6 +785,93 @@ function GiftStickersModal({ userId, onClose }: { userId: string; onClose: () =>
     </Modal>
   );
 }
+
+/** Статистика аудитории для рекламодателей: онлайн, DAU/WAU/MAU, время на сайте, прирост. */
+function AudienceStats({ stats }: { stats: AdminUsersStats }) {
+  const fmt = (n: number) => n.toLocaleString("ru-RU");
+  const maxUsers = Math.max(1, ...stats.daily.map((d) => d.users));
+
+  return (
+    <div className="mb-4 grid gap-3 lg:grid-cols-3">
+      <Panel className="lg:col-span-2">
+        <div className="grid grid-cols-2 gap-4 p-4 sm:grid-cols-4">
+          <AudienceMetric
+            label="Сейчас онлайн"
+            value={fmt(stats.onlineNow)}
+            hint="активность за 5 минут"
+          />
+          <AudienceMetric label="DAU (24 ч)" value={fmt(stats.dau)} hint={`из ${fmt(stats.total)} всего`} />
+          <AudienceMetric label="WAU (7 дн)" value={fmt(stats.wau)} />
+          <AudienceMetric label="MAU (30 дн)" value={fmt(stats.mau)} hint={`липкость ${stats.stickiness}%`} />
+          <AudienceMetric
+            label="Среднее время"
+            value={`${stats.avgMinutesPerDay} мин`}
+            hint="за активный день"
+          />
+          <AudienceMetric label="Сессий в день" value={`${stats.avgSessionsPerDay}`} hint="в среднем" />
+          <AudienceMetric
+            label="Активных дней"
+            value={`${stats.avgActiveDays30d}`}
+            hint="на юзера за 30 дн"
+          />
+          <AudienceMetric
+            label="Всего времени"
+            value={`${fmt(Math.round(stats.totalMinutes30d / 60))} ч`}
+            hint="аудитория за 30 дн"
+          />
+        </div>
+        <div className="grid grid-cols-3 gap-4 border-t border-zinc-200 p-4 dark:border-zinc-800">
+          <AudienceMetric label="Новых за сутки" value={`+${fmt(stats.newToday)}`} />
+          <AudienceMetric label="Новых за 7 дней" value={`+${fmt(stats.new7d)}`} />
+          <AudienceMetric label="Новых за 30 дней" value={`+${fmt(stats.new30d)}`} />
+        </div>
+      </Panel>
+
+      <Panel>
+        <div className="p-4">
+          <div className="mb-3 text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+            Активность за 14 дней
+          </div>
+          {stats.daily.length === 0 ? (
+            <div className="py-8 text-center text-sm text-zinc-500">Пока нет данных</div>
+          ) : (
+            <div className="flex h-32 items-end gap-1">
+              {stats.daily.map((d) => (
+                <div key={d.day} className="group flex flex-1 flex-col items-center gap-1">
+                  <div
+                    className="w-full rounded-t bg-zinc-900 transition-opacity group-hover:opacity-70 dark:bg-zinc-100"
+                    style={{ height: `${Math.max(4, (d.users / maxUsers) * 100)}%` }}
+                    title={`${d.day}: ${d.users} юзеров, ${d.avgMinutes} мин`}
+                  />
+                  <span className="text-[9px] tabular-nums text-zinc-400">
+                    {d.day.slice(8, 10)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="mt-3 text-xs text-zinc-500 dark:text-zinc-400">
+            Столбцы — уникальные активные пользователи за день. Наведи, чтобы увидеть среднее время
+            на сайте.
+          </div>
+        </div>
+      </Panel>
+    </div>
+  );
+}
+
+function AudienceMetric({ label, value, hint }: { label: string; value: string; hint?: string }) {
+  return (
+    <div>
+      <div className="text-xs text-zinc-500 dark:text-zinc-400">{label}</div>
+      <div className="mt-0.5 text-xl font-semibold tabular-nums text-zinc-900 dark:text-zinc-100">
+        {value}
+      </div>
+      {hint && <div className="text-[11px] text-zinc-400">{hint}</div>}
+    </div>
+  );
+}
+
 
 function StatPill({ label, value, total }: { label: string; value: number; total: number }) {
   const pct = total > 0 ? Math.round((value / total) * 100) : 0;
