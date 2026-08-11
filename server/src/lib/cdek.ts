@@ -571,7 +571,9 @@ async function printCdekBarcodes(
 export const cdek = {
   searchCities,
   resolveCity,
+  getCityByCode,
   getPickupPoints,
+
   calculate,
   createOrder: createCdekOrder,
   getOrder: getCdekOrder,
