@@ -376,6 +376,12 @@ function SpinPage() {
                 left: result.spinsLeft,
               },
               streak: { ...prev.streak, days: result.streakDays },
+              // Выбил капсулу — сразу заводим 24-часовой таймер локально,
+              // не дожидаясь перезагрузки состояния с сервера.
+              capsule:
+                result.prizeCode === "boost_x2"
+                  ? { active: true, expiresAt: new Date(Date.now() + 24 * 3600_000).toISOString() }
+                  : prev.capsule,
               history: [
                 { prizeCode: result.prizeCode, title: result.prizeTitle, at: new Date().toISOString() },
                 ...prev.history,
@@ -383,6 +389,7 @@ function SpinPage() {
             }
           : prev,
       );
+
 
       haptic("success");
       playWin();
