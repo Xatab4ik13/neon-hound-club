@@ -198,7 +198,11 @@ export async function createOrderForUser(
   let promo: Awaited<ReturnType<typeof validatePromoForUser>> | null = null;
   if (input.promoCode && input.promoCode.trim()) {
     try {
-      promo = await validatePromoForUser(userId, input.promoCode);
+      promo = await validatePromoForUser(
+        userId,
+        input.promoCode,
+        items.map((i) => ({ productId: i.productId, qty: i.qty })),
+      );
     } catch (e) {
       if (e instanceof PromoError) throw new OrderCreateError(e.code, e.message, 400);
       throw e;
@@ -209,6 +213,10 @@ export async function createOrderForUser(
   const discountRub = Math.floor((subtotalRub * discountPct) / 100);
   const goodsAfterDiscount = Math.max(0, subtotalRub - discountRub);
   const totalRub = goodsAfterDiscount + shippingPriceRub;
+
+  // Товарный промокод (скидка на конкретный товар) — билеты за заказ НЕ начисляем.
+  if (promo?.productId) bonusTotal = 0;
+
 
 
   // ---------- Резерв остатков ----------
