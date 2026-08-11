@@ -750,7 +750,82 @@ function SpinPage() {
           ))}
         </ul>
       </section>
+
+      <CapsuleAbout />
     </main>
+  );
+}
+
+/* ---------------- Описание капсулы ×2 ---------------- */
+
+const CAPSULE_CHIP = RARITY.legend.chip;
+
+function CapsuleAbout() {
+  return (
+    <section
+      aria-label="Капсула ×2"
+      className="relative mb-2 mt-5 overflow-hidden rounded-3xl bg-card p-4"
+      style={{ boxShadow: `inset 0 0 0 1.5px ${RARITY.legend.ring}` }}
+    >
+      <span
+        className="pointer-events-none absolute inset-x-0 top-0 h-32"
+        style={{ background: `radial-gradient(110% 100% at 20% 0%, ${RARITY.legend.glow}, transparent 70%)` }}
+      />
+
+      <div className="relative flex items-center gap-3">
+        <span
+          className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-black/40"
+          style={{ boxShadow: `inset 0 0 0 1px ${RARITY.legend.ring}` }}
+        >
+          <img
+            src={imgCapsule}
+            alt="Капсула ×2"
+            width={1024}
+            height={1024}
+            loading="lazy"
+            className="h-[52px] w-[52px] animate-[hs-capsule-float_3s_ease-in-out_infinite] object-contain"
+            style={{ filter: `drop-shadow(0 6px 16px ${RARITY.legend.glow})` }}
+          />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span
+            className="inline-block rounded-lg px-2 py-0.5 font-display text-[10px] font-black uppercase tracking-tight text-black"
+            style={{ background: CAPSULE_CHIP }}
+          >
+            Легенда
+          </span>
+          <span className="mt-1 block font-display text-[17px] font-black uppercase leading-tight tracking-tight text-foreground">
+            Капсула ×2
+          </span>
+          <span className="block font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+            двойные билеты · 24 часа
+          </span>
+        </span>
+      </div>
+
+      <p className="relative mt-3 text-[13px] leading-relaxed text-muted-foreground">
+        Выпала капсула — на <span className="text-foreground">24 часа</span> включается двойное
+        начисление билетов. Покупаешь в магазине цифровой товар — билетов приходит{" "}
+        <span className="text-foreground">в два раза больше</span>.
+      </p>
+
+      <ul className="relative mt-3 space-y-1.5">
+        {[
+          "Работает только на цифровые товары — открытки Hell",
+          "На физический мерч и доставку не действует",
+          "Одна капсула за раз, срок продлевается, а не суммируется",
+          "Пока капсула активна, цифровые товары в магазине горят",
+        ].map((t) => (
+          <li key={t} className="flex gap-2 text-[12.5px] leading-snug text-muted-foreground">
+            <span
+              className="mt-[6px] h-1.5 w-1.5 shrink-0 rounded-full"
+              style={{ background: CAPSULE_CHIP }}
+            />
+            <span>{t}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 
