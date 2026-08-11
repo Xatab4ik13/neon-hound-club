@@ -246,7 +246,11 @@ function seasonProgress(startsAt: Date, endsAt: Date): number {
 function buildWeights(prizes: SpinPrize[], tier: "none" | PassTier, season: { startsAt: Date; endsAt: Date }) {
   const mult = TIER_CHANCE_MULT[tier];
   const progress = seasonProgress(season.startsAt, season.endsAt);
-  const day = Number(mskDate().slice(8, 10));
+  // День сезона (1..30), а не день месяца.
+  const day = Math.min(
+    SEASON_DAYS,
+    Math.floor((Date.now() - season.startsAt.getTime()) / 86_400_000) + 1,
+  );
   const jackpotQueue = prizes
     .filter((p) => p.rewardKind === "jackpot" && p.issued < (p.limitTotal ?? 1))
     .sort((a, b) => (a.queueOrder ?? 0) - (b.queueOrder ?? 0));
