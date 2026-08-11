@@ -79,7 +79,7 @@ const POOL: Prize[] = [
   { id: "promo", title: "Промокод 20%", sub: "на товары", rarity: "epic", img: imgPromo },
   { id: "t10", title: "10 билетов", rarity: "epic", img: imgTicket },
   { id: "sticker", title: "Ремувка", rarity: "epic", img: imgRemovka },
-  { id: "boost_x2", title: "Капсула ×2", sub: "24 часа · цифра", rarity: "legend", img: imgCapsule },
+  { id: "boost_x2", title: "Капсула ×2", sub: "24 часа", rarity: "legend", img: imgCapsule },
   { id: "silver", title: "Hell Pass Silver", sub: "30 дней", rarity: "legend", img: silverBadge },
   { id: "airpods", title: "AirPods 4", rarity: "legend", img: imgAirpods },
   { id: "watch", title: "Apple Watch SE", rarity: "legend", img: imgWatch },
