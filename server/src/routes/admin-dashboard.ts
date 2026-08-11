@@ -9,6 +9,9 @@ import { raffles, raffleEntries } from "../db/schema/raffles.js";
 import { ticketsLedger } from "../db/schema/tickets.js";
 import { payments } from "../db/schema/payments.js";
 
+/** Момент включения наценки 25% на доставку: 11.08.2026 21:00 МСК. До него разницы не было. */
+const SHIPPING_MARKUP_SINCE = "2026-08-11T18:00:00Z";
+
 /** Разбор ?from=&to= (YYYY-MM-DD или ISO). По умолчанию — последние 30 дней. */
 function parseRange(q: { from?: string; to?: string }) {
   const nowMs = Date.now();
