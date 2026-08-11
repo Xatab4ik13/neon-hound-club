@@ -13,7 +13,9 @@ import {
   Modal,
   Badge,
   ConfirmModal,
+  Select,
 } from "@/components/admin/ui";
+import { fetchAdminShopProducts } from "@/lib/admin-queries";
 import {
   adminCreatePromoCode,
   adminDeletePromoCode,
@@ -85,7 +87,7 @@ function PromoAdminPage() {
     <div className="space-y-4">
       <PageHeader
         title="Промокоды"
-        description="Скидка в процентах на товары. Доставка не скидывается."
+        description="Скидка в процентах. Товарный промокод работает только если в корзине ровно 1 шт. этого товара — и билеты за такой заказ не начисляются. Доставка не скидывается никогда."
         actions={
           <Btn variant="primary" onClick={() => setCreateOpen(true)}>
             <Gift className="h-4 w-4" /> Создать промокод
@@ -106,12 +108,19 @@ function PromoAdminPage() {
           </div>
         </PanelHeader>
         <DataTable
-          headers={["Код", "Скидка", "Владелец", "Срок", "Статус", "Создан", ""]}
+          headers={["Код", "Скидка", "Товар", "Владелец", "Срок", "Статус", "Создан", ""]}
           rows={items.map((p) => [
             <span key="c" className="font-mono font-semibold uppercase">
               {p.code}
             </span>,
             `${p.discountPct}%`,
+            p.productId ? (
+              <span key="p" className="text-emerald-400">
+                {p.productTitle ?? "товар"}
+              </span>
+            ) : (
+              "вся корзина"
+            ),
             p.userNick ? `@${p.userNick}` : "любой",
             fmtDate(p.expiresAt),
             statusBadge(p),
@@ -151,12 +160,19 @@ function CreatePromoModal({ onClose }: { onClose: () => void }) {
   const [pct, setPct] = useState("10");
   const [expires, setExpires] = useState("");
   const [note, setNote] = useState("");
+  const [productId, setProductId] = useState("");
+
+  const productsQ = useQuery({
+    queryKey: ["admin", "shop", "products", "promo-picker"],
+    queryFn: fetchAdminShopProducts,
+  });
 
   const mut = useMutation({
     mutationFn: () =>
       adminCreatePromoCode({
         code: code.trim() ? code.trim().toUpperCase() : undefined,
         discountPct: Number(pct),
+        productId: productId || null,
         note: note.trim() || undefined,
         expiresAt: expires ? new Date(`${expires}T23:59:59`).toISOString() : null,
       }),
@@ -190,6 +206,19 @@ function CreatePromoModal({ onClose }: { onClose: () => void }) {
             value={pct}
             onChange={(e) => setPct(e.target.value)}
           />
+        </Field>
+        <Field
+          label="Товар"
+          hint="Пусто — скидка на всю корзину. Выбран товар — купон сработает только если в корзине ровно 1 шт. этого товара, и билеты за заказ не начислятся."
+        >
+          <Select value={productId} onChange={(e) => setProductId(e.target.value)}>
+            <option value="">Вся корзина (обычный промокод)</option>
+            {(productsQ.data?.items ?? []).map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.title} · {p.priceRub} ₽
+              </option>
+            ))}
+          </Select>
         </Field>
         <Field label="Действует до" hint="Пусто — без срока">
           <TextInput type="date" value={expires} onChange={(e) => setExpires(e.target.value)} />
