@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { ru } from "date-fns/locale";
 import {
   TrendingUp,
   PlumpUsers as Users,
@@ -9,9 +10,13 @@ import {
   PlumpStore,
   Crown,
   Loader2,
+  CalendarIcon,
 } from "@/components/ui/icons";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { fetchAdminDashboard, type AdminDashboardProduct } from "@/lib/admin-queries";
 import { Btn, Panel, PanelHeader, Select, TextInput } from "@/components/admin/ui";
+
 
 export const Route = createFileRoute("/admin/")({
   component: Dashboard,
