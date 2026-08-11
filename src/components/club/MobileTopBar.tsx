@@ -5,7 +5,6 @@ import { PlumpNum } from "@/components/brand/PlumpNum";
 import { useEffect, useRef, useState } from "react";
 import { RANKS, getRankSpan, type RankId } from "@/data/ranks";
 import type { RankMeta } from "@/data/ranks";
-import { useCurrentRank } from "@/data/rank-state";
 import { useCart } from "@/hooks/use-cart";
 import { haptic } from "@/hooks/use-haptic";
 import { useViewer } from "@/hooks/use-viewer";
@@ -35,16 +34,16 @@ function parentPath(pathname: string): string | null {
 export function MobileTopBar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const router = useRouter();
-  const mockRank = useCurrentRank();
+  // Ранг и XP берём только из реального профиля.
   const viewer = useViewer();
   const myProfile = useMyProfile(viewer.isAuthed);
   const realRankId = myProfile.data?.rank?.rankId as RankId | undefined;
   const realRankIdx = realRankId ? RANKS.findIndex((r) => r.id === realRankId) : -1;
-  const effectiveRank: RankMeta = realRankIdx >= 0 ? RANKS[realRankIdx] : mockRank.rank;
-  // Числа XP: если есть реальный профиль — берём из него, иначе dev-мок.
-  const xp = myProfile.data ? myProfile.data.rank.inRank : mockRank.xp;
-  const xpMax = realRankIdx >= 0 ? getRankSpan(realRankIdx) : mockRank.xpMax;
-  const xpPct = myProfile.data ? myProfile.data.rank.pct : mockRank.xpPct;
+  const effectiveRank: RankMeta = realRankIdx >= 0 ? RANKS[realRankIdx] : RANKS[0];
+  // Никаких dev-моков: пока реального профиля нет — показываем нули.
+  const xp = myProfile.data ? myProfile.data.rank.inRank : 0;
+  const xpMax = getRankSpan(realRankIdx >= 0 ? realRankIdx : 0);
+  const xpPct = myProfile.data ? myProfile.data.rank.pct : 0;
   const avatarUrl = myProfile.data?.avatarUrl ?? null;
   const nick = myProfile.data?.nick ?? viewer.nick ?? "";
   const { count: cartCount } = useCart();

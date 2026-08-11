@@ -66,6 +66,11 @@ export const Route = createFileRoute("/club")({
           staleTime: 60_000,
         })
       : await fetchMeSafe();
+    // Гостя в клуб не пускаем вообще: иначе он видит пустые/дефолтные экраны
+    // и думает, что это его аккаунт (частая жалоба после установки PWA).
+    if (!user) {
+      throw redirect({ to: "/login" });
+    }
     if (user?.role === "blogger") {
       throw redirect({ to: "/blogger" });
     }
@@ -977,13 +982,14 @@ export function ProfilePlaque({
   const nick = viewer.hydrated ? (viewer.nick ?? "") : "";
   const realRankId = myProfile.data?.rank.rankId as RankId | undefined;
   const realRankIdx = realRankId ? RANKS.findIndex((r) => r.id === realRankId) : -1;
-  const rank = realRankIdx >= 0 ? RANKS[realRankIdx] : mockRank.rank;
-  const xpPct = myProfile.data ? myProfile.data.rank.pct : mockRank.xpPct;
-  const xp = myProfile.data ? myProfile.data.rank.inRank : mockRank.xp;
-  const xpMax = realRankIdx >= 0 ? getRankSpan(realRankIdx) : mockRank.xpMax;
+  // Никаких мок-значений: пока реального профиля нет — нули и первый ранг.
+  const rank = realRankIdx >= 0 ? RANKS[realRankIdx] : RANKS[0];
+  const xpPct = myProfile.data ? myProfile.data.rank.pct : 0;
+  const xp = myProfile.data ? myProfile.data.rank.inRank : 0;
+  const xpMax = getRankSpan(realRankIdx >= 0 ? realRankIdx : 0);
   const plaqueBg = mockRank.plaqueBg; // выбор фона остаётся пользовательским
   const variant = PLAQUE_BG[plaqueBg];
-  const isMax = realRankIdx >= 0 ? realRankIdx === RANKS.length - 1 : mockRank.isMax;
+  const isMax = realRankIdx >= 0 && realRankIdx === RANKS.length - 1;
   const size = compact ? 44 : 56;
   const avatarUrl = myProfile.data?.avatarUrl ?? null;
 
