@@ -92,6 +92,17 @@ async function cdekFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
 
 // ---------- Города (для автокомплита) ----------
 
+/**
+ * Страны доставки: Россия + СНГ (СДЭК возит во все из списка).
+ * Переопределяется через CDEK_COUNTRY_CODES="RU,KZ,BY".
+ */
+export const CDEK_COUNTRY_CODES: string[] = (
+  process.env.CDEK_COUNTRY_CODES ?? "RU,KZ,BY,AM,KG,UZ,AZ,GE,MD,TJ,TM"
+)
+  .split(",")
+  .map((s) => s.trim().toUpperCase())
+  .filter(Boolean);
+
 export type CdekCity = {
   code: number;
   city: string;
@@ -102,28 +113,55 @@ export type CdekCity = {
 
 const citiesCache = new Map<string, { at: number; data: CdekCity[] }>();
 
-async function searchCities(query: string, limit = 10): Promise<CdekCity[]> {
+async function searchCities(query: string, limit = 10, countryCode?: string): Promise<CdekCity[]> {
   const q = query.trim().toLowerCase();
   if (q.length < 2) return [];
-  const cached = citiesCache.get(q);
+  const countries = countryCode ? [countryCode.toUpperCase()] : CDEK_COUNTRY_CODES;
+  const cacheKey = `search:${countries.join(",")}:${q}`;
+  const cached = citiesCache.get(cacheKey);
   if (cached && Date.now() - cached.at < 10 * 60_000) return cached.data;
-  const params = new URLSearchParams({ country_codes: "RU", size: String(limit), city: query });
+  const params = new URLSearchParams({
+    country_codes: countries.join(","),
+    size: String(limit),
+    city: query,
+  });
   const data = await cdekFetch<CdekCity[]>(`/location/cities?${params.toString()}`);
-  citiesCache.set(q, { at: Date.now(), data });
+  citiesCache.set(cacheKey, { at: Date.now(), data });
   return data;
 }
 
-async function resolveCity(opts: { fiasGuid?: string; postalCode?: string }): Promise<CdekCity[]> {
-  const params = new URLSearchParams({ country_codes: "RU", size: "5" });
+async function resolveCity(opts: {
+  fiasGuid?: string;
+  postalCode?: string;
+  /** Название города — используем для СНГ, где у DaData нет ФИАС. */
+  city?: string;
+  /** ISO-код страны (KZ, BY, …). Если не задан — ищем по всему списку. */
+  countryCode?: string;
+}): Promise<CdekCity[]> {
+  const countries = opts.countryCode ? [opts.countryCode.toUpperCase()] : CDEK_COUNTRY_CODES;
+  const params = new URLSearchParams({ country_codes: countries.join(","), size: "5" });
   if (opts.fiasGuid) params.set("fias_guid", opts.fiasGuid);
   if (opts.postalCode) params.set("postal_code", opts.postalCode);
-  const cacheKey = `resolve:${opts.fiasGuid ?? ""}:${opts.postalCode ?? ""}`;
+  if (opts.city) params.set("city", opts.city);
+  const cacheKey = `resolve:${countries.join(",")}:${opts.fiasGuid ?? ""}:${opts.postalCode ?? ""}:${opts.city ?? ""}`;
   const cached = citiesCache.get(cacheKey);
   if (cached && Date.now() - cached.at < 60 * 60_000) return cached.data;
   const data = await cdekFetch<CdekCity[]>(`/location/cities?${params.toString()}`);
   citiesCache.set(cacheKey, { at: Date.now(), data });
   return data;
 }
+
+/** Город по коду СДЭК — нужен, чтобы понять страну (RU или СНГ). */
+async function getCityByCode(code: number): Promise<CdekCity | null> {
+  const cacheKey = `code:${code}`;
+  const cached = citiesCache.get(cacheKey);
+  if (cached && Date.now() - cached.at < 24 * 60 * 60_000) return cached.data[0] ?? null;
+  const params = new URLSearchParams({ code: String(code), size: "1" });
+  const data = await cdekFetch<CdekCity[]>(`/location/cities?${params.toString()}`);
+  citiesCache.set(cacheKey, { at: Date.now(), data });
+  return data[0] ?? null;
+}
+
 
 
 // ---------- ПВЗ ----------
