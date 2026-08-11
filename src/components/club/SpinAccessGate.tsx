@@ -106,6 +106,14 @@ export function SpinAccessGate({ access }: { access: SpinAccess }) {
           }
         />
       </div>
+
+      {!access.installed && (
+        <p className="mt-3 px-1 text-[11px] leading-snug text-black/60">
+          Кнопка не сработала? Открой меню браузера{" "}
+          <span className="font-bold">⋮</span> (правый верхний угол) →{" "}
+          «Установить приложение» или «Добавить на главный экран».
+        </p>
+      )}
     </section>
   );
 }
