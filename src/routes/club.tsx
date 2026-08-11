@@ -66,6 +66,11 @@ export const Route = createFileRoute("/club")({
           staleTime: 60_000,
         })
       : await fetchMeSafe();
+    // Гостя в клуб не пускаем вообще: иначе он видит пустые/дефолтные экраны
+    // и думает, что это его аккаунт (частая жалоба после установки PWA).
+    if (!user) {
+      throw redirect({ to: "/login" });
+    }
     if (user?.role === "blogger") {
       throw redirect({ to: "/blogger" });
     }
