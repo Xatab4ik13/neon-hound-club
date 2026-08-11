@@ -265,9 +265,11 @@ function ClubCheckoutPage() {
   // сервер возьмёт большую из двух, здесь показываем скидку по промокоду.
   const [promoInput, setPromoInput] = useState("");
   const [promoChecking, setPromoChecking] = useState(false);
-  const [promoApplied, setPromoApplied] = useState<{ code: string; discountPct: number } | null>(
-    null,
-  );
+  const [promoApplied, setPromoApplied] = useState<{
+    code: string;
+    discountPct: number;
+    productId: string | null;
+  } | null>(null);
   const [promoError, setPromoError] = useState<string | null>(null);
 
   const applyPromo = async () => {
@@ -279,8 +281,11 @@ function ClubCheckoutPage() {
     setPromoChecking(true);
     setPromoError(null);
     try {
-      const r = await validatePromoCode(code);
-      setPromoApplied({ code: r.code, discountPct: r.discountPct });
+      const r = await validatePromoCode(
+        code,
+        orderableItems.map((i) => ({ productId: i.productId!, qty: i.qty })),
+      );
+      setPromoApplied({ code: r.code, discountPct: r.discountPct, productId: r.productId });
       setPromoInput(r.code);
       hhToast.success(`Промокод применён: −${r.discountPct}%`);
     } catch (e) {
