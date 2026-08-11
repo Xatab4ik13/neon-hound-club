@@ -125,7 +125,7 @@ export const SEED_QUESTS: Array<{
     category: "app",
     kind: "one_time",
     xpReward: 200,
-    ticketsReward: 0,
+    ticketsReward: 1,
     goal: 1,
     unit: "установка",
     actionLabel: "Как установить",

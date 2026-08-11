@@ -310,8 +310,12 @@ function InstallAppQuest() {
           </div>
         </div>
 
-        
-        <PlumpArrowRight className="h-5 w-5 shrink-0 text-black" />
+        <div className="flex flex-col items-end gap-1">
+          <span className="rounded-lg border-[3px] border-foreground bg-card px-2 py-1 font-mono text-[10px] font-black uppercase tracking-tight text-foreground shadow-[3px_3px_0_0_hsl(var(--foreground))]">
+            +1 билет
+          </span>
+          <PlumpArrowRight className="h-5 w-5 shrink-0 text-black" />
+        </div>
       </div>
     </Link>
   );
