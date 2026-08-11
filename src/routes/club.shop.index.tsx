@@ -291,7 +291,7 @@ function SubChip({
   );
 }
 
-function ProductCard({ product }: { product: ShopProductListItem }) {
+function ProductCard({ product, boostActive }: { product: ShopProductListItem; boostActive: boolean }) {
   const sold = product.stock !== null && product.stock <= 0;
   const cover =
     product.images[0] ?? (product.slug === "stickerpack-special" ? SPECIAL_PACK_COVER : undefined);
@@ -302,6 +302,9 @@ function ProductCard({ product }: { product: ShopProductListItem }) {
     for (let i = 0; i < product.slug.length; i++) h = (h * 31 + product.slug.charCodeAt(i)) | 0;
     return `-${(Math.abs(h) % 1400) / 100}s`;
   }, [product.slug]);
+  // Капсула ×2 действует только на цифровые/виртуальные товары.
+  const boosted = boostActive && (product.kind === "digital" || product.kind === "virtual") && product.bonusTickets > 0;
+  const doubled = product.bonusTickets * 2;
   return (
     <Link
       to="/club/shop/$productSlug"
@@ -309,12 +312,24 @@ function ProductCard({ product }: { product: ShopProductListItem }) {
       className="group relative block rounded-2xl bg-card transition-all active:scale-[0.98]"
     >
       {product.bonusTickets > 0 && (
-        <span
-          className="sticker-wiggle absolute -right-1 -top-2 z-20 inline-flex items-center gap-1 rounded-lg border-[2px] border-foreground bg-[#B6FF3C] px-2 py-1 font-display text-[10px] font-black uppercase  tracking-tight text-black shadow-[2px_2px_0_0_hsl(var(--foreground))]"
-          style={{ animationDelay: wiggleDelay }}
-        >
-          <PlumpTicket className="h-3 w-3" />+{product.bonusTickets}
-        </span>
+        boosted ? (
+          <span
+            className="sticker-wiggle absolute -right-1 -top-2 z-20 inline-flex items-center gap-1 rounded-lg border-[2px] border-white bg-primary px-2 py-1 font-display text-[10px] font-black uppercase tracking-tight text-primary-foreground shadow-[0_0_0_2px_hsl(var(--primary)),2px_2px_0_0_hsl(var(--foreground))]"
+            style={{ animationDelay: wiggleDelay }}
+          >
+            <PlumpTicket className="h-3 w-3" />
+            <s className="opacity-50 decoration-white/70 decoration-[1.5px]">{`+${product.bonusTickets}`}</s>
+            <span className="text-white">{`+${doubled}`}</span>
+            <span className="ml-0.5 rounded bg-white/25 px-1 text-[8px] leading-none text-white">×2</span>
+          </span>
+        ) : (
+          <span
+            className="sticker-wiggle absolute -right-1 -top-2 z-20 inline-flex items-center gap-1 rounded-lg border-[2px] border-foreground bg-[#B6FF3C] px-2 py-1 font-display text-[10px] font-black uppercase  tracking-tight text-black shadow-[2px_2px_0_0_hsl(var(--foreground))]"
+            style={{ animationDelay: wiggleDelay }}
+          >
+            <PlumpTicket className="h-3 w-3" />+{product.bonusTickets}
+          </span>
+        )
       )}
       <div className="relative aspect-square overflow-hidden rounded-t-2xl bg-surface">
         {cover ? (
