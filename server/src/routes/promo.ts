@@ -171,8 +171,7 @@ export async function adminPromoRoutes(app: FastifyInstance) {
     return reply.code(201).send({ promo: serialize(row!) });
   });
 
-    return reply.code(201).send({ promo: serialize(row!) });
-  });
+
 
   app.patch<{ Params: { id: string } }>("/:id", async (req, reply) => {
     const { id } = z.object({ id: z.string().uuid() }).parse(req.params);
