@@ -19,6 +19,7 @@ import { getActivePass } from "./pass.js";
 import { ticketCredit } from "./tickets.js";
 import { awardXp } from "./xp.js";
 import { generatePromoCode } from "./promo.js";
+import { products } from "../db/schema/shop.js";
 
 /**
  * Движок HellSpin.
@@ -449,6 +450,17 @@ export async function rollSpin(userId: string, pwa: boolean): Promise<SpinResult
   };
 }
 
+/** Ищет товар «ремувка» в магазине (для промокода-приза). */
+async function findRemovkaProductId(): Promise<string | null> {
+  const [row] = await db
+    .select({ id: products.id })
+    .from(products)
+    .where(sql`${products.title} ILIKE '%ремувк%' AND ${products.active} = true`)
+    .orderBy(products.createdAt)
+    .limit(1);
+  return row?.id ?? null;
+}
+
 /** Начисление приза. Возвращает промокод, если он был создан. */
 async function grantPrize(
   userId: string,
@@ -497,7 +509,45 @@ async function grantPrize(
       await grantPass(userId, "silver", "HellSpin", "spin");
       return undefined;
 
-    case "merch":
+    case "merch": {
+      // Ремувка выдаётся не руками, а персональным промокодом на 100% скидку
+      // на этот товар в магазине: юзер оформляет заказ и платит только доставку.
+      if (prize.code === "sticker") {
+        const productId = await findRemovkaProductId();
+        if (productId) {
+          const code = generatePromoCode("REM");
+          await db.insert(promoCodes).values({
+            code,
+            discountPct: 100,
+            userId,
+            productId,
+            note: "HellSpin: ремувка",
+            expiresAt: new Date(Date.now() + 60 * 86_400_000),
+          });
+          await db.insert(spinWinners).values({
+            userId,
+            seasonId,
+            spinId,
+            source: "spin",
+            prizeCode: prize.code,
+            prizeTitle: prize.title,
+            status: "contacted",
+            adminNote: `Промокод ${code} — 100% на ремувку, юзер оплачивает только доставку`,
+          });
+          return code;
+        }
+      }
+      await db.insert(spinWinners).values({
+        userId,
+        seasonId,
+        spinId,
+        source: "spin",
+        prizeCode: prize.code,
+        prizeTitle: prize.title,
+      });
+      return undefined;
+    }
+
     case "jackpot":
       await db.insert(spinWinners).values({
         userId,
