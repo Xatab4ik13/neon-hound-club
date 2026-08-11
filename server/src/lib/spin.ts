@@ -149,6 +149,9 @@ export async function ensureCurrentSeason() {
     created ??
     (await db.select().from(spinSeasons).where(eq(spinSeasons.periodKey, periodKey)).limit(1))[0]!;
 
+  // Синхронизируем конфиг призов с уже идущим сезоном: новые коды (например
+  // капсула ×2) добавляются, проценты/названия обновляются. `issued` не трогаем,
+  // чтобы не сбросить расход абсолютных пулов у живой рулетки.
   await db
     .insert(spinPrizes)
     .values(
@@ -165,9 +168,22 @@ export async function ensureCurrentSeason() {
         active: !p.hidden,
       })),
     )
-    .onConflictDoNothing({ target: [spinPrizes.seasonId, spinPrizes.code] });
+    .onConflictDoUpdate({
+      target: [spinPrizes.seasonId, spinPrizes.code],
+      set: {
+        title: sql`excluded.title`,
+        rarity: sql`excluded.rarity`,
+        rewardKind: sql`excluded.reward_kind`,
+        rewardValue: sql`excluded.reward_value`,
+        baseChancePpm: sql`excluded.base_chance_ppm`,
+        limitTotal: sql`excluded.limit_total`,
+        queueOrder: sql`excluded.queue_order`,
+        active: sql`excluded.active`,
+      },
+    });
 
   return season;
+
 }
 
 /* ---------------- Доступ ---------------- */
