@@ -251,6 +251,16 @@ export type CdekCalcResult = {
   currency: string;
 };
 
+/**
+ * Наценка на доставку: +20%, округление до десятков (759 → 760).
+ * Применяется и в превью расчёта, и в финальной сумме заказа.
+ */
+const SHIPPING_MARKUP = 1.2;
+export function applyShippingMarkup(price: number): number {
+  if (price <= 0) return 0;
+  return Math.round((price * SHIPPING_MARKUP) / 10) * 10;
+}
+
 function packagesPayload(packages: CdekPackageInput[]) {
   return packages.map((p, i) => ({
     number: String(i + 1),
