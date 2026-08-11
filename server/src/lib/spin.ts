@@ -561,10 +561,48 @@ async function grantPrize(
       });
       return undefined;
 
+    case "ticket_boost": {
+      // Капсула ×2: 24 часа двойного начисления билетов за цифровые товары.
+      // Активная капсула заменяется новой (продлеваем до +24ч от сейчас).
+      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+      await db
+        .update(users)
+        .set({ ticketBoostUntil: expiresAt, updatedAt: new Date() })
+        .where(eq(users.id, userId));
+      return undefined;
+    }
+
     case "bonus_spin":
     default:
       return undefined;
   }
+}
+
+/**
+ * Статус капсулы ×2 для юзера.
+ * active=true, если ticket_boost_until ещё в будущем.
+ */
+export async function getTicketBoost(
+  userId: string,
+): Promise<{ active: boolean; expiresAt: string | null }> {
+  const [u] = await db
+    .select({ ticketBoostUntil: users.ticketBoostUntil })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+  const until = u?.ticketBoostUntil ?? null;
+  return {
+    active: !!until && until.getTime() > Date.now(),
+    expiresAt: until ? until.toISOString() : null,
+  };
+}
+
+/** Потребить капсулу (обнулить) — вызывается после применения x2 к цифровой покупке. */
+export async function consumeTicketBoost(userId: string): Promise<void> {
+  await db
+    .update(users)
+    .set({ ticketBoostUntil: null, updatedAt: new Date() })
+    .where(eq(users.id, userId));
 }
 
 /** Выдать Hell Pass как приз: запись покупки на 0₽ + активация на 30 дней. */
