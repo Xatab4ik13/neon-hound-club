@@ -16,15 +16,17 @@ import { cdek, type CdekDeliveryMode } from "../lib/cdek.js";
 
 export async function cdekRoutes(app: FastifyInstance) {
   app.get("/cities", async (req, reply) => {
-    const q = (req.query as { q?: string }).q?.trim() ?? "";
+    const query = req.query as { q?: string; country?: string };
+    const q = query.q?.trim() ?? "";
     if (q.length < 2) return { items: [] };
     try {
-      const items = await cdek.searchCities(q, 10);
+      const items = await cdek.searchCities(q, 10, query.country?.trim() || undefined);
       return {
         items: items.map((c) => ({
           code: c.code,
           city: c.city,
           region: c.region,
+          countryCode: c.country_code,
           postalCodes: c.postal_codes ?? [],
         })),
       };
@@ -34,23 +36,34 @@ export async function cdekRoutes(app: FastifyInstance) {
     }
   });
 
-  // Резолв города в код СДЭК по FIAS GUID (или postal_code как fallback).
-  // Фронт сначала ищет через DaData (умеет префикс), потом мапит в СДЭК.
+  // Резолв города в код СДЭК: по FIAS GUID (Россия), по индексу или по
+  // названию + стране (СНГ — у DaData там нет ФИАС).
   app.get("/city-resolve", async (req, reply) => {
-    const q = req.query as { fias?: string; postalCode?: string };
+    const q = req.query as { fias?: string; postalCode?: string; city?: string; country?: string };
     const fias = q.fias?.trim();
     const postal = q.postalCode?.trim();
-    if (!fias && !postal) {
-      return reply.code(400).send({ error: "fias_or_postal_required" });
+    const city = q.city?.trim();
+    const country = q.country?.trim();
+    if (!fias && !postal && !city) {
+      return reply.code(400).send({ error: "fias_postal_or_city_required" });
     }
     try {
-      const items = await cdek.resolveCity({ fiasGuid: fias, postalCode: postal });
+      let items = await cdek.resolveCity({
+        fiasGuid: fias,
+        postalCode: postal,
+        countryCode: country,
+      });
+      // Фолбэк для СНГ / когда ФИАС и индекс не дали результата — по названию.
+      if (items.length === 0 && city) {
+        items = await cdek.resolveCity({ city, countryCode: country });
+      }
       const first = items[0];
       if (!first) return reply.code(404).send({ error: "not_found" });
       return {
         code: first.code,
         city: first.city,
         region: first.region,
+        countryCode: first.country_code,
         postalCodes: first.postal_codes ?? [],
       };
     } catch (e) {
@@ -61,12 +74,13 @@ export async function cdekRoutes(app: FastifyInstance) {
 
 
   app.get("/pvz", async (req, reply) => {
-    const cityCode = Number((req.query as { cityCode?: string }).cityCode);
+    const query = req.query as { cityCode?: string; country?: string };
+    const cityCode = Number(query.cityCode);
     if (!Number.isFinite(cityCode) || cityCode <= 0) {
       return reply.code(400).send({ error: "cityCode_required" });
     }
     try {
-      const items = await cdek.getPickupPoints(cityCode);
+      const items = await cdek.getPickupPoints(cityCode, query.country?.trim() || undefined);
       return {
         items: items.map((p) => ({
           code: p.code,
@@ -82,6 +96,7 @@ export async function cdekRoutes(app: FastifyInstance) {
       return reply.code(502).send({ error: "cdek_unavailable" });
     }
   });
+
 
   const calcSchema = z.object({
     cityCode: z.number().int().positive(),
