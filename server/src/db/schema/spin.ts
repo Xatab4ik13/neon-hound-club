@@ -39,7 +39,7 @@ export const spinSeasons = pgTable(
   {
     id: uuid("id").primaryKey().defaultRandom(),
     /** Ключ сезона 'YYYY-MM' по МСК. */
-    periodKey: varchar("period_key", { length: 7 }).notNull(),
+    periodKey: varchar("period_key", { length: 16 }).notNull(),
     startsAt: timestamp("starts_at", { withTimezone: true }).notNull(),
     endsAt: timestamp("ends_at", { withTimezone: true }).notNull(),
     /** Сколько дней в сезоне (для календаря активности и прогноза спинов). */
