@@ -106,7 +106,20 @@ export function CdekDeliveryPicker({
         const items: CityItem[] = suggestions
           .map((s) => {
             const d = s.data;
-            const name = d.city ?? d.settlement ?? null;
+            const iso = (d.country_iso_code ?? null)?.toUpperCase() ?? null;
+            // Для зарубежных адресов DaData часто не заполняет city/settlement —
+            // тогда берём первую значимую часть value ("Казахстан, г Алматы").
+            const fallback =
+              iso && iso !== "RU"
+                ? s.value
+                    .split(",")
+                    .map((part) => part.trim())
+                    .filter((part) => part && part !== (d.country ?? ""))[0] ?? null
+                : null;
+            const raw = d.city ?? d.settlement ?? fallback;
+            if (!raw) return null;
+            // Убираем типовые сокращения ("г Алматы" → "Алматы") — СДЭК ищет по имени.
+            const name = raw.replace(/^(г|гор|пгт|с|п|д|аул|кишлак)\.?\s+/i, "").trim();
             if (!name) return null;
             return {
               fiasId: d.fias_id ?? null,
@@ -114,10 +127,13 @@ export function CdekDeliveryPicker({
               postalCode: d.postal_code ?? null,
               city: name,
               region: d.region_with_type ?? d.region ?? "",
+              country: d.country ?? "",
+              countryIso: iso,
               display: s.value,
             } satisfies CityItem;
           })
           .filter((x): x is CityItem => x != null);
+
         setCityOpts(items);
       } catch {
         setCityOpts([]);
