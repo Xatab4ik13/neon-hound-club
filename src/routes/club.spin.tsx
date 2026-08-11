@@ -1021,10 +1021,8 @@ function WinModal({
               Капсула действует · 24 часа
             </p>
             <p className="relative mt-3 text-[13px] leading-relaxed text-muted-foreground">
-              У тебя <span className="text-foreground">24 часа</span>: купи в магазине цифровой
-              товар — открытку Hell — и получишь{" "}
-              <span className="text-foreground">×2 билета</span> на покупку. На физический мерч
-              капсула не действует.
+              На <span className="text-foreground">24 часа</span> включилось двойное начисление
+              билетов за цифровые товары. Используй прямо сейчас.
             </p>
           </>
         ) : (
