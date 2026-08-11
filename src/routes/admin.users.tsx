@@ -20,9 +20,6 @@ function UsersPage() {
   const [query, setQuery] = useState("");
   const [debounced, setDebounced] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [giftOpen, setGiftOpen] = useState(false);
-  const [giftPassOpen, setGiftPassOpen] = useState(false);
-  const [giftStickersOpen, setGiftStickersOpen] = useState(false);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState<AdminPageSize>(50);
   const [sort, setSort] = useState<{ key: AdminUsersSort; dir: "asc" | "desc" }>({
