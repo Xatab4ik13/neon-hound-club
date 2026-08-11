@@ -40,11 +40,11 @@ export function MobileTopBar() {
   const myProfile = useMyProfile(viewer.isAuthed);
   const realRankId = myProfile.data?.rank?.rankId as RankId | undefined;
   const realRankIdx = realRankId ? RANKS.findIndex((r) => r.id === realRankId) : -1;
-  const effectiveRank: RankMeta = realRankIdx >= 0 ? RANKS[realRankIdx] : mockRank.rank;
-  // Числа XP: если есть реальный профиль — берём из него, иначе dev-мок.
-  const xp = myProfile.data ? myProfile.data.rank.inRank : mockRank.xp;
-  const xpMax = realRankIdx >= 0 ? getRankSpan(realRankIdx) : mockRank.xpMax;
-  const xpPct = myProfile.data ? myProfile.data.rank.pct : mockRank.xpPct;
+  const effectiveRank: RankMeta = realRankIdx >= 0 ? RANKS[realRankIdx] : RANKS[0];
+  // Никаких dev-моков: пока реального профиля нет — показываем нули.
+  const xp = myProfile.data ? myProfile.data.rank.inRank : 0;
+  const xpMax = getRankSpan(realRankIdx >= 0 ? realRankIdx : 0);
+  const xpPct = myProfile.data ? myProfile.data.rank.pct : 0;
   const avatarUrl = myProfile.data?.avatarUrl ?? null;
   const nick = myProfile.data?.nick ?? viewer.nick ?? "";
   const { count: cartCount } = useCart();
