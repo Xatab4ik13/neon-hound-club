@@ -49,7 +49,8 @@ export type PromoCartContext = Array<{ productId: string; qty: number }>;
 
 /**
  * Проверяет промокод для юзера. Бросает PromoError с человеческим текстом.
- * Если промокод товарный (productId), требуем корзину: ровно этот товар, 1 шт.
+ * Если промокод товарный (productId), требуем наличие этого товара в корзине.
+ * Скидка применяется только к 1 шт. целевого товара, остальные товары — по полной цене.
  */
 export async function validatePromoForUser(
   userId: string,
@@ -77,17 +78,13 @@ export async function validatePromoForUser(
         "Этот промокод работает только на конкретный товар — добавь его в корзину",
       );
     }
-    const positions = cart.filter((i) => i.qty > 0);
-    if (positions.length !== 1 || positions[0]!.productId !== promo.productId) {
+    // Товарный промокод: в корзине могут быть и другие товары,
+    // но скидка применяется только к 1 шт. целевого товара.
+    const has = cart.some((i) => i.productId === promo.productId && i.qty > 0);
+    if (!has) {
       throw new PromoError(
         "promo_product_mismatch",
-        "Промокод действует только на один конкретный товар — в корзине должен быть только он",
-      );
-    }
-    if (positions[0]!.qty !== 1) {
-      throw new PromoError(
-        "promo_product_qty",
-        "Промокод действует только на 1 шт. товара",
+        "Промокод действует только на конкретный товар — добавь его в корзину",
       );
     }
   }

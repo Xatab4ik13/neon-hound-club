@@ -208,9 +208,23 @@ export async function createOrderForUser(
       throw e;
     }
   }
-  const promoPct = promo?.discountPct ?? 0;
-  const discountPct = Math.max(passPct, promoPct);
-  const discountRub = Math.floor((subtotalRub * discountPct) / 100);
+  const passDiscountRub = Math.floor((subtotalRub * passPct) / 100);
+  // Товарный промокод: скидка только на 1 шт. целевого товара.
+  // Обычный промокод: процент на всю корзину.
+  let promoDiscountRub = 0;
+  if (promo) {
+    if (promo.productId) {
+      const target = productMap.get(promo.productId);
+      promoDiscountRub = target ? Math.floor((target.priceRub * promo.discountPct) / 100) : 0;
+    } else {
+      promoDiscountRub = Math.floor((subtotalRub * promo.discountPct) / 100);
+    }
+  }
+  const usePromo = promoDiscountRub > passDiscountRub;
+  const discountRub = Math.max(passDiscountRub, promoDiscountRub);
+  const discountPct = usePromo && promo?.productId
+    ? (subtotalRub > 0 ? Math.round((discountRub * 100) / subtotalRub) : 0)
+    : Math.max(passPct, promo?.discountPct ?? 0);
   const goodsAfterDiscount = Math.max(0, subtotalRub - discountRub);
   const totalRub = goodsAfterDiscount + shippingPriceRub;
 

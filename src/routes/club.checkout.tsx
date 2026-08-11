@@ -304,9 +304,16 @@ function ClubCheckoutPage() {
     setPromoInput("");
   };
 
-  const promoDiscountRub = promoApplied
-    ? Math.floor((total * promoApplied.discountPct) / 100)
-    : 0;
+  // Товарный промокод скидывает только 1 шт. целевого товара, остальное — по полной цене.
+  const promoDiscountRub = useMemo(() => {
+    if (!promoApplied) return 0;
+    if (promoApplied.productId) {
+      const it = orderableItems.find((i) => i.productId === promoApplied.productId);
+      if (!it) return 0;
+      return Math.floor((it.price * promoApplied.discountPct) / 100);
+    }
+    return Math.floor((total * promoApplied.discountPct) / 100);
+  }, [promoApplied, orderableItems, total]);
 
   const grandTotal = Math.max(0, total - promoDiscountRub) + (shipPrice ?? 0);
 
@@ -639,6 +646,7 @@ function ClubCheckoutPage() {
                 <div className="flex items-center justify-between text-[13px]">
                   <span className="text-muted-foreground">
                     Промокод {promoApplied.code} · −{promoApplied.discountPct}%
+                    {promoApplied.productId ? " (1 шт.)" : ""}
                   </span>
                   <span className="font-mono tabular-nums text-primary">
                     −<PlumpPrice value={promoDiscountRub} />
@@ -675,7 +683,7 @@ function ClubCheckoutPage() {
                     </div>
                     <div className="text-[11px] text-muted-foreground">
                       {promoApplied.productId
-                        ? `Скидка −${promoApplied.discountPct}% на товар · билеты не начисляются`
+                        ? `Скидка −${promoApplied.discountPct}% на 1 шт. товара · билеты не начисляются`
                         : `Скидка −${promoApplied.discountPct}% на товары`}
                     </div>
                   </div>
