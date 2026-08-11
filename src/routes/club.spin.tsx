@@ -177,7 +177,9 @@ type SpinState = {
   spins: { allowed: number; used: number; left: number };
   streak: { days: number; claimed: number[] };
   history: { prizeCode: string; title: string; at: string }[];
+  capsule?: { active: boolean; expiresAt: string | null };
 };
+
 
 type RollResult = {
   prizeCode: string;
