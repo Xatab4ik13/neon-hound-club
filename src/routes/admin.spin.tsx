@@ -174,9 +174,29 @@ function SpinAdminPage() {
   const spinsPerDay = overview.data?.spinsPerDay ?? {};
 
   // Крупные призы сезона: эпик + легенда, с реальным числом выигрышей.
+  // Капсулу ×2 показываем всегда — даже если сезон стартовал до её появления
+  // и приз ещё не подтянулся в пул.
   const wonByCode = new Map((overview.data?.byPrize ?? []).map((p) => [p.prizeCode, p.count]));
-  const bigPrizes = (overview.data?.prizes ?? [])
-    .filter((p) => p.rarity === "epic" || p.rarity === "legend")
+  const rawBig = (overview.data?.prizes ?? []).filter(
+    (p) => p.rarity === "epic" || p.rarity === "legend",
+  );
+  const withCapsule =
+    overview.data && !rawBig.some((p) => p.code === "boost_x2")
+      ? [
+          ...rawBig,
+          {
+            code: "boost_x2",
+            title: "Капсула ×2",
+            rarity: "legend" as SpinRarity,
+            rewardKind: "ticket_boost",
+            chancePpm: 50_000,
+            limitTotal: null,
+            issued: 0,
+            active: true,
+          },
+        ]
+      : rawBig;
+  const bigPrizes = withCapsule
     .map((p) => ({ ...p, won: wonByCode.get(p.code) ?? 0 }))
     .sort((a, b) => b.won - a.won);
   const bigTotal = bigPrizes.reduce((s, p) => s + p.won, 0);
