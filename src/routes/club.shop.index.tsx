@@ -235,7 +235,16 @@ function ClubShopPage() {
         </div>
       )}
 
+      {/* ВРЕМЕННО: тумблер для ревью буст-плашек. Убрать после согласования. */}
+      <button
+        type="button"
+        onClick={() => setBoostPreview((v) => !v)}
+        className="mt-6 w-full rounded-xl border border-white/10 bg-white/[0.04] py-3 text-[13px] font-semibold text-muted-foreground active:scale-[0.98]"
+      >
+        {boostActive ? "Буст-режим: ВКЛ (тест)" : "Буст-режим: выкл (тест)"}
+      </button>
     </main>
+
   );
 }
 
