@@ -2,7 +2,7 @@
 // статистика: легендарные выигрыши с анкетой победителя, топ-выигрыши,
 // полная история прокрутов со страницами и календарь активности.
 
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -12,13 +12,14 @@ import {
   DataTable,
   Badge,
   Btn,
+  TextInput,
 } from "@/components/admin/ui";
 import { AdminPager, type AdminPageSize } from "@/components/admin/AdminPager";
+import { AdminUserDrawer } from "@/components/admin/AdminUserDrawer";
 import {
   PlumpSpin,
   TrendingUp,
   PlumpUsers as Users,
-  Phone,
   Trophy,
   CalendarCheck,
   RefreshCw,
@@ -27,7 +28,6 @@ import { cn } from "@/lib/utils";
 import {
   adminSpinQk,
   fetchAdminSpinHistory,
-  fetchAdminSpinLegends,
   fetchAdminSpinOverview,
   fetchAdminSpinStreaks,
   type SpinRarity,
