@@ -407,6 +407,13 @@
       "when": 1783200000000,
       "tag": "0057_support_attachments",
       "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "7",
+      "when": 1783300000000,
+      "tag": "0058_support_messages",
+      "breakpoints": true
     }
   ]
 }
