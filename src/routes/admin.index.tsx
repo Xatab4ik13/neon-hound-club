@@ -166,26 +166,23 @@ function Dashboard() {
               ))}
           </Select>
           <div className="flex items-center gap-1">
-            <TextInput
-              type="date"
-              className="w-[150px]"
+            <DatePick
               value={range.from}
-              onChange={(e) => {
+              onChange={(v) => {
                 setPreset("custom");
-                setRange((r) => ({ ...r, from: e.target.value }));
+                setRange((r) => ({ ...r, from: v }));
               }}
             />
             <span className="text-zinc-400">—</span>
-            <TextInput
-              type="date"
-              className="w-[150px]"
+            <DatePick
               value={range.to}
-              onChange={(e) => {
+              onChange={(v) => {
                 setPreset("custom");
-                setRange((r) => ({ ...r, to: e.target.value }));
+                setRange((r) => ({ ...r, to: v }));
               }}
             />
           </div>
+
         </div>
       </div>
 
