@@ -738,6 +738,9 @@ export type AdminDashboard = {
     ordersPaid: number;
     goodsRevenue: number;
     shippingRevenue: number;
+    shippingCostRub: number;
+    shippingMarginRub: number;
+    shippingOrders: number;
     discountRub: number;
     avgOrderRub: number;
     passSold: number;
