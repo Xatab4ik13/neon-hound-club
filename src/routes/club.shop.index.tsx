@@ -40,13 +40,12 @@ function ClubShopPage() {
   const [activeSub, setActiveSub] = useState<string | null>(null);
 
   const { user } = useViewer();
-  // ПРЕВЬЮ: локальный тумблер «буст-режим» для визуального ревью — убрать после согласования.
-  const [boostPreview, setBoostPreview] = useState(false);
+  // Капсула ×2 активна, если у юзера есть непросроченный ticket_boost_until.
   const boostActive = useMemo(() => {
-    if (boostPreview) return true;
     const until = user?.ticketBoostUntil;
     return !!until && new Date(until).getTime() > Date.now();
-  }, [boostPreview, user?.ticketBoostUntil]);
+  }, [user?.ticketBoostUntil]);
+
 
 
   // debounce поиска
