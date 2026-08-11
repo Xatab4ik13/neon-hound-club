@@ -275,12 +275,16 @@ function SpinPage() {
     if (claiming) return;
     setClaiming(day);
     try {
-      await apiFetch("/api/v1/spin/streak/claim", {
+      const res = await apiFetch<{ promoCode?: string }>("/api/v1/spin/streak/claim", {
         method: "POST",
         body: JSON.stringify({ milestone: day }),
       });
       haptic("success");
-      toast.success("Награда забрана — заберём с тебя адрес доставки");
+      toast.success(
+        res?.promoCode
+          ? `Промокод ${res.promoCode} — носки за 0₽, платишь только доставку`
+          : "Награда забрана",
+      );
       await loadState();
     } catch (err) {
       toast.error(err instanceof ApiError ? err.message : "Не удалось забрать награду");
