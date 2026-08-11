@@ -305,3 +305,105 @@ function CreatePromoModal({ onClose }: { onClose: () => void }) {
     </Modal>
   );
 }
+
+function StatCard({ label, value, hint }: { label: string; value: string; hint?: string }) {
+  return (
+    <div className="rounded-lg border border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-900">
+      <div className="text-[11px] font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+        {label}
+      </div>
+      <div className="mt-1 font-mono text-xl font-bold tabular-nums">{value}</div>
+      {hint && <div className="mt-0.5 text-[11px] text-zinc-500 dark:text-zinc-400">{hint}</div>}
+    </div>
+  );
+}
+
+const ORDER_STATUS_LABEL: Record<string, string> = {
+  pending_payment: "Ждёт оплаты",
+  paid: "Оплачен",
+  awaiting_stock: "Ждёт поступления",
+  ready_to_ship: "Готов к отгрузке",
+  waybill_created: "Накладная создана",
+  shipped: "Отправлен",
+  delivered: "Доставлен",
+  cancelled: "Отменён",
+  refunded: "Возврат",
+};
+
+/** Как активировали промокод: заказ, корзина, доставка, что докупили сверху. */
+function UsageModal({ promo, onClose }: { promo: AdminPromoCodeDto; onClose: () => void }) {
+  const { data, isLoading } = useQuery({
+    queryKey: promoQk.adminUsage(promo.id),
+    queryFn: () => adminPromoUsage(promo.id),
+  });
+  const o = data?.order ?? null;
+
+  return (
+    <Modal open onClose={onClose} title={`Активация ${promo.code}`}>
+      {isLoading ? (
+        <div className="py-8 text-center text-sm text-zinc-500">Загрузка…</div>
+      ) : !o ? (
+        <div className="py-8 text-center text-sm text-zinc-500">
+          Заказ не найден — промокод помечен использованным без привязки к заказу.
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <div className="flex flex-wrap items-center gap-2 text-sm">
+            <Badge tone="emerald">{ORDER_STATUS_LABEL[o.status] ?? o.status}</Badge>
+            <span className="font-medium">{o.nick ? `@${o.nick}` : "—"}</span>
+            <span className="text-zinc-500">{o.email ?? ""}</span>
+            <span className="text-zinc-500">{o.city ?? ""}</span>
+            <span className="ml-auto text-xs text-zinc-500">
+              {new Date(o.createdAt).toLocaleString("ru-RU")}
+            </span>
+          </div>
+
+          <div className="overflow-hidden rounded-lg border border-zinc-200 dark:border-zinc-800">
+            {o.items.map((i) => (
+              <div
+                key={i.id}
+                className="flex items-center gap-2 border-b border-zinc-100 px-3 py-2 text-sm last:border-0 dark:border-zinc-800"
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="truncate font-medium">{i.title}</div>
+                  <div className="text-[11px] text-zinc-500">
+                    {i.size ? `размер ${i.size} · ` : ""}
+                    {i.qty} шт. × {rub(i.priceRub)}
+                  </div>
+                </div>
+                {i.isPromoTarget ? (
+                  <Badge tone="emerald">по промокоду</Badge>
+                ) : (
+                  <Badge tone="zinc">докупил</Badge>
+                )}
+                <span className="w-24 text-right font-mono tabular-nums">
+                  {rub(i.priceRub * i.qty)}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          <div className="space-y-1.5 text-sm">
+            <Row label="Товары" value={rub(o.subtotalRub)} />
+            <Row label={`Скидка по промокоду (${o.discountPct}%)`} value={`−${rub(o.discountRub)}`} />
+            <Row label="Доставка СДЭК" value={rub(o.shippingPriceRub)} />
+            <Row label="Докупил сверх акционного товара" value={rub(o.extraRub)} strong />
+            <Row label="Итого оплачено" value={rub(o.totalRub)} strong />
+            <Row label="Билеты за заказ" value={String(o.bonusTicketsTotal)} />
+          </div>
+        </div>
+      )}
+    </Modal>
+  );
+}
+
+function Row({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
+  return (
+    <div className="flex items-baseline justify-between gap-3">
+      <span className="text-zinc-500 dark:text-zinc-400">{label}</span>
+      <span className={strong ? "font-mono font-bold tabular-nums" : "font-mono tabular-nums"}>
+        {value}
+      </span>
+    </div>
+  );
+}
