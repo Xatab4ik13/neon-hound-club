@@ -4,13 +4,15 @@ import { users } from "./users.js";
 /**
  * Тикеты в раздел «Помощь» (PWA).
  *
- * Логика: один вопрос → один ответ. Юзер не может дописывать после ответа.
- * Хочет ещё — создаёт новый тикет.
+ * Логика: полноценная переписка. Пока тикет не закрыт, юзер может дописывать
+ * в тот же тикет, админ — отвечать. Сообщения лежат в support_ticket_messages.
+ * Поля body / admin_reply оставлены для обратной совместимости:
+ *   body — первое сообщение юзера, admin_reply — последний ответ админа.
  *
  * status:
- *   'open'     — отправлен, ждёт ответа админа
- *   'answered' — админ ответил
- *   'closed'   — закрыт (юзер видит read-only в архиве)
+ *   'open'     — есть новое сообщение юзера, ждёт ответа админа
+ *   'answered' — админ ответил последним
+ *   'closed'   — закрыт (read-only)
  */
 export const supportTickets = pgTable(
   "support_tickets",
@@ -29,6 +31,7 @@ export const supportTickets = pgTable(
     answeredBy: uuid("answered_by").references(() => users.id, { onDelete: "set null" }),
     answeredAt: timestamp("answered_at", { withTimezone: true }),
     closedAt: timestamp("closed_at", { withTimezone: true }),
+    lastMessageAt: timestamp("last_message_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -39,11 +42,35 @@ export const supportTickets = pgTable(
   }),
 );
 
+/** Сообщения переписки внутри тикета. */
+export const supportTicketMessages = pgTable(
+  "support_ticket_messages",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    ticketId: uuid("ticket_id")
+      .notNull()
+      .references(() => supportTickets.id, { onDelete: "cascade" }),
+    /** 'user' | 'admin' */
+    authorRole: varchar("author_role", { length: 8 }).notNull(),
+    authorId: uuid("author_id").references(() => users.id, { onDelete: "set null" }),
+    body: text("body").notNull(),
+    attachments: jsonb("attachments").$type<string[]>().notNull().default([]),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    ticketCreatedIdx: index("stm_ticket_created_idx").on(t.ticketId, t.createdAt),
+  }),
+);
+
 export type SupportTicket = typeof supportTickets.$inferSelect;
 export type NewSupportTicket = typeof supportTickets.$inferInsert;
+export type SupportTicketMessage = typeof supportTicketMessages.$inferSelect;
 
 export const SUPPORT_CATEGORIES = ["bug", "feature", "question"] as const;
 export type SupportCategory = (typeof SUPPORT_CATEGORIES)[number];
 
 export const SUPPORT_STATUSES = ["open", "answered", "closed"] as const;
 export type SupportStatus = (typeof SUPPORT_STATUSES)[number];
+
+export const SUPPORT_AUTHOR_ROLES = ["user", "admin"] as const;
+export type SupportAuthorRole = (typeof SUPPORT_AUTHOR_ROLES)[number];

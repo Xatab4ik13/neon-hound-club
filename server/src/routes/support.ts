@@ -1,9 +1,10 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { and, desc, eq, gt, inArray, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gt, inArray, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import {
   supportTickets,
+  supportTicketMessages,
   SUPPORT_CATEGORIES,
   SUPPORT_STATUSES,
   type SupportStatus,
@@ -14,16 +15,38 @@ import { isOurS3Url } from "../lib/s3.js";
 import { parsePagination } from "../lib/pagination.js";
 import { pushToUsers } from "../lib/push.js";
 
+const attachmentsSchema = z.array(z.string().url().max(500)).max(4).optional().default([]);
+
 const createSchema = z.object({
   category: z.enum(SUPPORT_CATEGORIES),
   subject: z.string().trim().min(3).max(120),
   body: z.string().trim().min(5).max(4000),
-  attachments: z
-    .array(z.string().url().max(500))
-    .max(4)
-    .optional()
-    .default([]),
+  attachments: attachmentsSchema,
 });
+
+const messageSchema = z.object({
+  body: z.string().trim().min(1).max(4000),
+  attachments: attachmentsSchema,
+});
+
+function cleanAttachments(list: string[] | undefined) {
+  return (list ?? []).filter((u) => isOurS3Url(u)).slice(0, 4);
+}
+
+async function loadMessages(ticketId: string) {
+  return db
+    .select({
+      id: supportTicketMessages.id,
+      authorRole: supportTicketMessages.authorRole,
+      body: supportTicketMessages.body,
+      attachments: supportTicketMessages.attachments,
+      createdAt: supportTicketMessages.createdAt,
+    })
+    .from(supportTicketMessages)
+    .where(eq(supportTicketMessages.ticketId, ticketId))
+    .orderBy(asc(supportTicketMessages.createdAt))
+    .limit(300);
+}
 
 // ---------------- USER ROUTES ----------------
 
@@ -49,6 +72,7 @@ export async function supportRoutes(app: FastifyInstance) {
         status: supportTickets.status,
         createdAt: supportTickets.createdAt,
         answeredAt: supportTickets.answeredAt,
+        lastMessageAt: supportTickets.lastMessageAt,
       })
       .from(supportTickets)
       .where(and(eq(supportTickets.userId, session.sub), filter))
@@ -75,6 +99,7 @@ export async function supportRoutes(app: FastifyInstance) {
         adminReply: supportTickets.adminReply,
         answeredAt: supportTickets.answeredAt,
         closedAt: supportTickets.closedAt,
+        lastMessageAt: supportTickets.lastMessageAt,
         createdAt: supportTickets.createdAt,
       })
       .from(supportTickets)
@@ -82,7 +107,8 @@ export async function supportRoutes(app: FastifyInstance) {
       .limit(1);
 
     if (!row) return reply.code(404).send({ error: "not_found" });
-    return row;
+    const messages = await loadMessages(row.id);
+    return { ...row, messages };
   });
 
   // POST /api/v1/support/tickets
@@ -110,6 +136,9 @@ export async function supportRoutes(app: FastifyInstance) {
         .send({ error: "rate_limited", message: "Подожди минуту перед следующим тикетом" });
     }
 
+    const attachments = cleanAttachments(parsed.data.attachments);
+    const now = new Date();
+
     const [created] = await db
       .insert(supportTickets)
       .values({
@@ -117,12 +146,70 @@ export async function supportRoutes(app: FastifyInstance) {
         category: parsed.data.category,
         subject: parsed.data.subject,
         body: parsed.data.body,
-        attachments: (parsed.data.attachments ?? []).filter((u) => isOurS3Url(u)).slice(0, 4),
+        attachments,
         status: "open",
+        lastMessageAt: now,
       })
       .returning({ id: supportTickets.id });
 
+    await db.insert(supportTicketMessages).values({
+      ticketId: created!.id,
+      authorRole: "user",
+      authorId: session.sub,
+      body: parsed.data.body,
+      attachments,
+      createdAt: now,
+    });
+
     return reply.send({ id: created!.id });
+  });
+
+  // POST /api/v1/support/tickets/:id/messages — юзер дописывает в тикет
+  app.post("/tickets/:id/messages", { preHandler: requireAuth }, async (req, reply) => {
+    const session = req.user as SessionPayload;
+    const params = z.object({ id: z.string().uuid() }).safeParse(req.params);
+    if (!params.success) return reply.code(400).send({ error: "invalid_id" });
+
+    const parsed = messageSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return reply
+        .code(400)
+        .send({ error: "invalid_input", message: parsed.error.issues[0]?.message });
+    }
+
+    const [ticket] = await db
+      .select({ id: supportTickets.id, status: supportTickets.status })
+      .from(supportTickets)
+      .where(and(eq(supportTickets.id, params.data.id), eq(supportTickets.userId, session.sub)))
+      .limit(1);
+
+    if (!ticket) return reply.code(404).send({ error: "not_found" });
+    if (ticket.status === "closed") {
+      return reply
+        .code(409)
+        .send({ error: "ticket_closed", message: "Тикет закрыт — создай новый" });
+    }
+
+    const now = new Date();
+    const [msg] = await db
+      .insert(supportTicketMessages)
+      .values({
+        ticketId: ticket.id,
+        authorRole: "user",
+        authorId: session.sub,
+        body: parsed.data.body,
+        attachments: cleanAttachments(parsed.data.attachments),
+        createdAt: now,
+      })
+      .returning({ id: supportTicketMessages.id });
+
+    // Вернуть тикет в очередь админа.
+    await db
+      .update(supportTickets)
+      .set({ status: "open", lastMessageAt: now, updatedAt: now })
+      .where(eq(supportTickets.id, ticket.id));
+
+    return reply.send({ id: msg!.id });
   });
 }
 
@@ -135,7 +222,7 @@ const replySchema = z.object({
 
 export async function adminSupportRoutes(app: FastifyInstance) {
   // GET /api/v1/admin/support/tickets/unread-count
-  // Считаем только открытые без ответа (status='open').
+  // Считаем только те, где последнее слово за юзером (status='open').
   app.get("/tickets/unread-count", { preHandler: requireAdmin }, async () => {
     const [row] = await db
       .select({ c: sql<number>`count(*)::int` })
@@ -171,11 +258,16 @@ export async function adminSupportRoutes(app: FastifyInstance) {
           status: supportTickets.status,
           createdAt: supportTickets.createdAt,
           answeredAt: supportTickets.answeredAt,
+          lastMessageAt: supportTickets.lastMessageAt,
+          messagesCount: sql<number>`(
+            select count(*)::int from support_ticket_messages m
+            where m.ticket_id = ${supportTickets.id}
+          )`,
         })
         .from(supportTickets)
         .leftJoin(users, eq(users.id, supportTickets.userId))
         .where(where as never)
-        .orderBy(desc(supportTickets.createdAt))
+        .orderBy(desc(sql`coalesce(${supportTickets.lastMessageAt}, ${supportTickets.createdAt})`))
         .limit(pageSize)
         .offset(offset),
       db
@@ -206,6 +298,7 @@ export async function adminSupportRoutes(app: FastifyInstance) {
         adminReply: supportTickets.adminReply,
         answeredAt: supportTickets.answeredAt,
         closedAt: supportTickets.closedAt,
+        lastMessageAt: supportTickets.lastMessageAt,
         createdAt: supportTickets.createdAt,
       })
       .from(supportTickets)
@@ -214,7 +307,8 @@ export async function adminSupportRoutes(app: FastifyInstance) {
       .limit(1);
 
     if (!row) return reply.code(404).send({ error: "not_found" });
-    return row;
+    const messages = await loadMessages(row.id);
+    return { ...row, messages };
   });
 
   // POST /api/v1/admin/support/tickets/:id/reply
@@ -241,12 +335,22 @@ export async function adminSupportRoutes(app: FastifyInstance) {
         answeredAt: now,
         closedAt: parsed.data.close ? now : null,
         status: newStatus,
+        lastMessageAt: now,
         updatedAt: now,
       })
       .where(eq(supportTickets.id, params.data.id))
       .returning({ id: supportTickets.id, userId: supportTickets.userId });
 
     if (!updated) return reply.code(404).send({ error: "not_found" });
+
+    await db.insert(supportTicketMessages).values({
+      ticketId: updated.id,
+      authorRole: "admin",
+      authorId: admin.sub,
+      body: parsed.data.reply,
+      attachments: [],
+      createdAt: now,
+    });
 
     // Push юзеру.
     try {
@@ -279,5 +383,20 @@ export async function adminSupportRoutes(app: FastifyInstance) {
     if (!updated) return reply.code(404).send({ error: "not_found" });
     return reply.send({ ok: true });
   });
-}
 
+  // POST /api/v1/admin/support/tickets/:id/reopen — вернуть в работу
+  app.post("/tickets/:id/reopen", { preHandler: requireAdmin }, async (req, reply) => {
+    const params = z.object({ id: z.string().uuid() }).safeParse(req.params);
+    if (!params.success) return reply.code(400).send({ error: "invalid_id" });
+
+    const now = new Date();
+    const [updated] = await db
+      .update(supportTickets)
+      .set({ status: "answered", closedAt: null, updatedAt: now })
+      .where(eq(supportTickets.id, params.data.id))
+      .returning({ id: supportTickets.id });
+
+    if (!updated) return reply.code(404).send({ error: "not_found" });
+    return reply.send({ ok: true });
+  });
+}
