@@ -17,6 +17,8 @@ type SessionUser = {
   role: "user" | "admin" | "blogger";
   /** true если в profiles.phone_e164 что-то лежит. Бэк добавил позже — терпим undefined как false. */
   phoneVerified?: boolean;
+  /** ISO-метка конца действия капсулы ×2 (null — капсулы нет). */
+  ticketBoostUntil?: string | null;
 };
 
 type Viewer = {
