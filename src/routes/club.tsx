@@ -29,7 +29,6 @@ import { useIsInstructor } from "@/hooks/use-is-instructor";
 import { MobileTopBar } from "@/components/club/MobileTopBar";
 import { MobileTransition } from "@/components/club/MobileTransition";
 import { PullToRefresh } from "@/components/club/PullToRefresh";
-import { OfflineBanner } from "@/components/club/OfflineBanner";
 import { useEdgeSwipeBack } from "@/hooks/use-edge-swipe-back";
 import { apiFetch, ApiError } from "@/lib/api";
 import hhrLogo from "@/assets/hhr-logo.png.asset.json";
@@ -188,7 +187,6 @@ function ClubLayout() {
   if (isMobile) {
     return (
       <div data-club className="min-h-screen bg-background text-foreground">
-        <OfflineBanner />
         {!isChatRoute && <MobileTopBar />}
         <main
           className="relative"

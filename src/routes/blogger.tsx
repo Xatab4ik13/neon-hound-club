@@ -7,7 +7,6 @@ import { BloggerMobileTopBar } from "@/components/blogger/BloggerMobileTopBar";
 import { BloggerMobileTabBar } from "@/components/blogger/BloggerMobileTabBar";
 import { MobileTransition } from "@/components/club/MobileTransition";
 import { PullToRefresh } from "@/components/club/PullToRefresh";
-import { OfflineBanner } from "@/components/club/OfflineBanner";
 import { useEdgeSwipeBack } from "@/hooks/use-edge-swipe-back";
 import { useBloggerProfile } from "@/data/blogger-profile";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -104,7 +103,6 @@ function BloggerLayout() {
   if (isMobile) {
     return (
       <div className="min-h-screen bg-background text-foreground">
-        <OfflineBanner />
         {!isChatRoute && <BloggerMobileTopBar onPlaqueClick={goToSettings} />}
         <main
           className="relative"
