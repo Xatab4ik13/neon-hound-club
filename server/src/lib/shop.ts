@@ -4,6 +4,7 @@ import { orders, orderItems, products, cartItems, type ProductKind } from "../db
 import { users } from "../db/schema/users.js";
 import { userStickerPacks } from "../db/schema/stickers.js";
 import { ticketCredit } from "./tickets.js";
+import { getTicketBoost, consumeTicketBoost } from "./spin.js";
 import { awardXp } from "./xp.js";
 import { tryCompleteQuest } from "./quests.js";
 import { getActivePassPerks } from "./pass.js";
