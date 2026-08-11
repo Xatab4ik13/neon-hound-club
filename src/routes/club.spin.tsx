@@ -105,22 +105,22 @@ const LEGENDS = VISIBLE.filter((p) => p.rarity === "legend");
 const NON_LEGENDS = VISIBLE.filter((p) => p.rarity !== "legend");
 
 const MILESTONE_IMG: Record<number, string> = {
-  10: imgSocks,
-  20: silverBadge,
+  10: silverBadge,
+  20: imgSocks,
   30: goldBadge,
 };
 
 // Фото товара нужно кропать по кругу, а бейджи — вписывать целиком.
 const MILESTONE_FIT: Record<number, "cover" | "contain"> = {
-  10: "cover",
-  20: "contain",
+  10: "contain",
+  20: "cover",
   30: "contain",
 };
 
 const CALENDAR = [
-  { day: 10, title: "Носки", sub: "10 дней подряд" },
-  { day: 20, title: "Silver + носки + 5 билетов", sub: "20 дней подряд" },
-  { day: 30, title: "Gold + носки + ремувка + 20 билетов", sub: "30 дней подряд" },
+  { day: 10, title: "Hell Pass Silver + 5 билетов", sub: "10 дней подряд" },
+  { day: 20, title: "Носки", sub: "20 дней подряд" },
+  { day: 30, title: "Hell Pass Gold + 20 билетов", sub: "30 дней подряд" },
 ];
 
 const TIER_LABEL: Record<SpinTier, { name: string; bg: string; fg: string }> = {
