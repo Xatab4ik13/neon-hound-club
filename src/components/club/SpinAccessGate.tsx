@@ -30,6 +30,8 @@ export function SpinAccessGate({ access }: { access: SpinAccess }) {
     haptic("selection");
     const outcome = await install.promptInstall();
     if (outcome === "dismissed") toast.error("Установка отменена");
+    else if (outcome === "unavailable")
+      toast.error("Установи через меню браузера — значок ⋮");
   }
 
 
