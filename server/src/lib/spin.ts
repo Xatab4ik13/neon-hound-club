@@ -21,6 +21,7 @@ import { ticketCredit } from "./tickets.js";
 import { awardXp } from "./xp.js";
 import { generatePromoCode } from "./promo.js";
 import { products } from "../db/schema/shop.js";
+import { ticketBoosts } from "../db/schema/ticket-boosts.js";
 
 /**
  * Движок HellSpin.

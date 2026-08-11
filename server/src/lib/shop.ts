@@ -410,10 +410,12 @@ export async function markOrderPaid(orderId: string): Promise<{ ok: boolean; rea
   const CAPSULE_BONUS_CAP = 50;
   let creditAmount = order.bonusTicketsTotal;
   let boostApplied = false;
+  let boostBonus = 0;
   if (allElectronic && creditAmount > 0) {
     const boost = await getTicketBoost(order.userId);
     if (boost.active) {
-      creditAmount += Math.min(order.bonusTicketsTotal, CAPSULE_BONUS_CAP);
+      boostBonus = Math.min(order.bonusTicketsTotal, CAPSULE_BONUS_CAP);
+      creditAmount += boostBonus;
       boostApplied = true;
     }
   }
@@ -435,7 +437,7 @@ export async function markOrderPaid(orderId: string): Promise<{ ok: boolean; rea
 
   // Капсула расходуется одной цифровой покупкой.
   if (boostApplied) {
-    await consumeTicketBoost(order.userId);
+    await consumeTicketBoost(order.userId, { orderId: order.id, bonusTickets: boostBonus });
   }
 
   // +XP: 1 XP за 100 ₽
