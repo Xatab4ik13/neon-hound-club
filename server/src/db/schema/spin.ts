@@ -31,7 +31,8 @@ export type SpinRewardKind =
   | "bonus_spin"
   | "merch" // физический приз, отправляем руками (ремувка, носки)
   | "pass" // Hell Pass на 30 дней
-  | "jackpot"; // AirPods / Watch / PS5
+  | "jackpot" // AirPods / Watch / PS5
+  | "ticket_boost"; // Капсула ×2: двойные билеты за цифру на 24 часа
 
 /** Сезон рулетки = календарный месяц. */
 export const spinSeasons = pgTable(
