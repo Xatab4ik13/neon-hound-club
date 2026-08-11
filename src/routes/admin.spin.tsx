@@ -317,19 +317,10 @@ function SpinAdminPage() {
           )}
         </div>
 
-        <DataTable
-          headers={["Игрок", "Приз", "Редкость", "Тир", "Дата"]}
-          rows={(history.data?.items ?? []).map((r) => [
-            <UserCell nick={r.nick} userId={r.userId} onOpen={setSelectedUserId} />,
-            <span>
-              {r.prizeTitle}
-              {r.bonus && <span className="ml-1 text-xs text-zinc-400">бонус-спин</span>}
-            </span>,
-            <Badge tone={RARITY_TONE[r.rarity]}>{RARITY_LABEL[r.rarity]}</Badge>,
-            <span className="text-xs">{TIER_LABEL[r.tier] ?? r.tier}</span>,
-            <span className="text-xs text-zinc-500 dark:text-zinc-400">{fmtDate(r.createdAt)}</span>,
-          ])}
-        />
+        <div className={history.isFetching ? "opacity-60 transition-opacity" : "transition-opacity"}>
+          <DataTable headers={["Игрок", "Приз", "Редкость", "Тир", "Дата"]} rows={historyRows} />
+        </div>
+
         {!history.isLoading && (history.data?.items ?? []).length === 0 && (
           <div className="px-4 py-8 text-center text-sm text-zinc-500 dark:text-zinc-400">
             Ничего не найдено
