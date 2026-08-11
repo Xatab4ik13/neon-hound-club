@@ -5,7 +5,6 @@ import {
   PlumpArrowRight,
   PlumpDownload,
   Loader2,
-  Smartphone,
   Sparkles,
   PlumpTicket,
   Calendar,
