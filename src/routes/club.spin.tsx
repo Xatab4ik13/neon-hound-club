@@ -205,6 +205,9 @@ function SpinPage() {
   const [state, setState] = useState<SpinState | null>(null);
   const [loading, setLoading] = useState(true);
   const [claiming, setClaiming] = useState<number | null>(null);
+  // Тосты в проекте отключены, поэтому ошибку крутки показываем прямо на странице.
+  const [spinError, setSpinError] = useState<string | null>(null);
+
 
   const access = useSpinAccess();
   // Локально видим PWA + push, телефон проверяет сервер — блокируем по обоим сигналам.
@@ -384,6 +387,7 @@ function SpinPage() {
     playClick();
     setWon(null);
     setWonPromo(null);
+    setSpinError(null);
     setSpinning(true);
 
     try {
@@ -396,10 +400,18 @@ function SpinPage() {
       runRoller(target, result);
     } catch (err) {
       setSpinning(false);
-      toast.error(err instanceof ApiError ? err.message : "Не удалось прокрутить");
+      const msg =
+        err instanceof ApiError
+          ? err.status === 401
+            ? "Сессия истекла — зайди в аккаунт заново."
+            : err.message
+          : "Нет связи с сервером. Проверь интернет и попробуй ещё раз.";
+      setSpinError(msg);
+      toast.error(msg);
       void loadState();
     }
   }
+
 
 
 
@@ -531,6 +543,14 @@ function SpinPage() {
                       : "Спины закончились"}
           </span>
         </button>
+
+        {spinError && !spinning && (
+          <p className="mt-3 rounded-2xl border border-[#F000C0]/40 bg-[#F000C0]/10 px-4 py-3 text-center text-[13px] leading-snug text-foreground">
+            {spinError}
+          </p>
+        )}
+
+
 
         {phoneMissing && (
           <Link
