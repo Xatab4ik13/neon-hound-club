@@ -315,7 +315,7 @@ export async function adminPromoRoutes(app: FastifyInstance) {
           : ("expired" as const),
     }));
 
-    const [totals] = (await db.execute(sql`
+    const totalsRes = (await db.execute(sql`
       SELECT
         COUNT(*)::int AS total,
         COUNT(*) FILTER (WHERE used_at IS NOT NULL)::int AS used,
@@ -323,6 +323,7 @@ export async function adminPromoRoutes(app: FastifyInstance) {
         COALESCE(SUM(bonus_tickets), 0)::int AS bonus_tickets
       FROM ticket_boosts
     `)) as unknown as Array<Record<string, number>>;
+    const totals = Array.from(totalsRes ?? [])[0] ?? ({} as Record<string, number>);
 
     return {
       items,
