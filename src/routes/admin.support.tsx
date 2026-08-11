@@ -20,9 +20,11 @@ import {
   fetchAdminSupportTicket,
   replyToSupportTicket,
   closeSupportTicket,
+  reopenSupportTicket,
   SUPPORT_CATEGORY_LABEL,
   type SupportCategory,
   type SupportStatus,
+  type SupportMessage,
 } from "@/lib/support-api";
 import { ApiError } from "@/lib/api";
 import { hhToast as toast } from "@/lib/hh-toast";
@@ -100,10 +102,10 @@ function AdminSupportPage() {
         </PanelHeader>
 
         <DataTable
-          headers={["Дата", "Юзер", "Категория", "Тема", "Статус"]}
+          headers={["Обновлён", "Юзер", "Категория", "Тема", "Сообщений", "Статус"]}
           rows={items.map((row) => [
             <span className="tabular-nums text-zinc-500 dark:text-zinc-400">
-              {new Date(row.createdAt).toLocaleString("ru-RU", {
+              {new Date(row.lastMessageAt ?? row.createdAt).toLocaleString("ru-RU", {
                 day: "2-digit",
                 month: "2-digit",
                 hour: "2-digit",
@@ -119,6 +121,9 @@ function AdminSupportPage() {
             >
               {row.subject}
             </button>,
+            <span className="tabular-nums text-zinc-500 dark:text-zinc-400">
+              {row.messagesCount ?? 1}
+            </span>,
             <StatusCell status={row.status} />,
           ])}
         />
@@ -160,7 +165,7 @@ function CategoryCell({ category }: { category: SupportCategory }) {
 }
 
 function StatusCell({ status }: { status: SupportStatus }) {
-  if (status === "open") return <Badge tone="amber">Открыт</Badge>;
+  if (status === "open") return <Badge tone="amber">Ждёт ответа</Badge>;
   if (status === "answered") return <Badge tone="blue">Отвечен</Badge>;
   return <Badge tone="zinc">Закрыт</Badge>;
 }
@@ -202,8 +207,44 @@ function TicketModal({ id, onClose }: { id: string; onClose: () => void }) {
     },
   });
 
+  const reopenMut = useMutation({
+    mutationFn: () => reopenSupportTicket(id),
+    onSuccess: () => {
+      toast.success("Тикет снова в работе");
+      invalidate();
+      detailQ.refetch();
+    },
+    onError: (e) => {
+      toast.error(e instanceof ApiError ? e.message : "Не получилось");
+    },
+  });
+
   const ticket = detailQ.data;
   const canReply = !!ticket && ticket.status !== "closed";
+  const thread: SupportMessage[] = !ticket
+    ? []
+    : ticket.messages?.length
+      ? ticket.messages
+      : [
+          {
+            id: "legacy-user",
+            authorRole: "user" as const,
+            body: ticket.body,
+            attachments: ticket.attachments ?? [],
+            createdAt: ticket.createdAt,
+          },
+          ...(ticket.adminReply
+            ? [
+                {
+                  id: "legacy-admin",
+                  authorRole: "admin" as const,
+                  body: ticket.adminReply,
+                  attachments: [],
+                  createdAt: ticket.answeredAt ?? ticket.createdAt,
+                },
+              ]
+            : []),
+        ];
 
   return (
     <Modal
@@ -237,7 +278,12 @@ function TicketModal({ id, onClose }: { id: string; onClose: () => void }) {
             </Btn>
           </>
         ) : (
-          <Btn onClick={onClose}>Закрыть</Btn>
+          <>
+            <Btn onClick={() => reopenMut.mutate()} disabled={reopenMut.isPending}>
+              Вернуть в работу
+            </Btn>
+            <Btn onClick={onClose}>Закрыть окно</Btn>
+          </>
         )
       }
     >
@@ -245,49 +291,25 @@ function TicketModal({ id, onClose }: { id: string; onClose: () => void }) {
         <div className="py-6 text-center text-sm text-zinc-500">Загрузка…</div>
       ) : (
         <div className="space-y-4">
-          <Field label="Вопрос юзера">
-            <div className="whitespace-pre-wrap rounded-md border border-zinc-200 bg-zinc-50 p-3 text-sm text-zinc-800 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-200">
-              {ticket.body}
-            </div>
-          </Field>
+          <div className="max-h-[52vh] space-y-3 overflow-y-auto pr-1">
+            {thread.map((m) => (
+              <AdminMessage key={m.id} message={m} nick={ticket.nick} />
+            ))}
+          </div>
 
-          {ticket.attachments?.length ? (
-            <Field label="Вложения юзера">
-              <div className="flex flex-wrap gap-2">
-                {ticket.attachments.map((url) => (
-                  <a
-                    key={url}
-                    href={url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="h-24 w-24 overflow-hidden rounded-md border border-zinc-200 dark:border-zinc-700"
-                  >
-                    <img src={url} alt="Вложение" className="h-full w-full object-cover" />
-                  </a>
-                ))}
-              </div>
-            </Field>
-          ) : null}
-
-          {ticket.adminReply && (
-            <Field label="Уже отправленный ответ">
-              <div className="whitespace-pre-wrap rounded-md border border-blue-200 bg-blue-50 p-3 text-sm text-zinc-800 dark:border-blue-900/50 dark:bg-blue-950/30 dark:text-zinc-200">
-                {ticket.adminReply}
-              </div>
-            </Field>
-          )}
-
-          {canReply && (
-            <Field
-              label={ticket.adminReply ? "Новый ответ (перезапишет старый)" : "Ответ"}
-            >
+          {canReply ? (
+            <Field label="Ответ">
               <TextArea
-                rows={6}
+                rows={5}
                 value={reply}
                 onChange={(e) => setReply(e.target.value)}
                 placeholder="Текст ответа юзеру. Будет отправлен пушем."
               />
             </Field>
+          ) : (
+            <p className="text-sm text-zinc-500">
+              Тикет закрыт — юзер не может писать. Можно вернуть в работу.
+            </p>
           )}
         </div>
       )}
@@ -295,3 +317,53 @@ function TicketModal({ id, onClose }: { id: string; onClose: () => void }) {
   );
 }
 
+function AdminMessage({
+  message,
+  nick,
+}: {
+  message: SupportMessage;
+  nick: string | null;
+}) {
+  const isAdmin = message.authorRole === "admin";
+  return (
+    <div
+      className={
+        isAdmin
+          ? "rounded-md border border-blue-200 bg-blue-50 p-3 dark:border-blue-900/50 dark:bg-blue-950/30"
+          : "rounded-md border border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-700 dark:bg-zinc-950"
+      }
+    >
+      <div className="mb-1.5 flex items-center justify-between text-xs text-zinc-500">
+        <span className="font-medium text-zinc-700 dark:text-zinc-300">
+          {isAdmin ? "Команда" : `@${nick ?? "юзер"}`}
+        </span>
+        <span className="tabular-nums">
+          {new Date(message.createdAt).toLocaleString("ru-RU", {
+            day: "2-digit",
+            month: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+          })}
+        </span>
+      </div>
+      <div className="whitespace-pre-wrap text-sm text-zinc-800 dark:text-zinc-200">
+        {message.body}
+      </div>
+      {message.attachments?.length ? (
+        <div className="mt-2 flex flex-wrap gap-2">
+          {message.attachments.map((url) => (
+            <a
+              key={url}
+              href={url}
+              target="_blank"
+              rel="noreferrer"
+              className="h-24 w-24 overflow-hidden rounded-md border border-zinc-200 dark:border-zinc-700"
+            >
+              <img src={url} alt="Вложение" className="h-full w-full object-cover" />
+            </a>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
