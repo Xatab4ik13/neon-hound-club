@@ -40,13 +40,14 @@ function ClubShopPage() {
   const [activeSub, setActiveSub] = useState<string | null>(null);
 
   const { user } = useViewer();
-  // Капсула ×2 активна, если у юзера есть непросроченный ticket_boost_until.
-  // ПРЕВЬЮ: ?boost=1 временно включает подсветку для визуального ревью — убрать после деплоя.
+  // ПРЕВЬЮ: локальный тумблер «буст-режим» для визуального ревью — убрать после согласования.
+  const [boostPreview, setBoostPreview] = useState(false);
   const boostActive = useMemo(() => {
-    if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("boost") === "1") return true;
+    if (boostPreview) return true;
     const until = user?.ticketBoostUntil;
     return !!until && new Date(until).getTime() > Date.now();
-  }, [user?.ticketBoostUntil]);
+  }, [boostPreview, user?.ticketBoostUntil]);
+
 
   // debounce поиска
   useEffect(() => {
