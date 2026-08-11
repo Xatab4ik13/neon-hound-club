@@ -241,7 +241,7 @@ function Dashboard() {
         </Panel>
 
         <Panel>
-          <PanelHeader>Доставка: наша разница</PanelHeader>
+          <PanelHeader>Доставка: наша разница (с 11.08, 21:00 МСК)</PanelHeader>
           <Table
             headers={["Показатель", "Сумма"]}
             rows={[
