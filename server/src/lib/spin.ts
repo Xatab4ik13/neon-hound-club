@@ -586,6 +586,8 @@ async function grantPrize(
         .update(users)
         .set({ ticketBoostUntil: expiresAt, updatedAt: new Date() })
         .where(eq(users.id, userId));
+      // Лог для админки: кто выбил капсулу и до когда она живёт.
+      await db.insert(ticketBoosts).values({ userId, source: "spin", expiresAt });
       return undefined;
     }
 
