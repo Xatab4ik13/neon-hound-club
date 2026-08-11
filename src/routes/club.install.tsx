@@ -131,6 +131,7 @@ function InstallPage() {
 
         <div className="mt-4 flex flex-wrap gap-2">
           <Reward icon={<Sparkles className="h-3.5 w-3.5" />} text="+200 XP" />
+          <Reward icon={<PlumpTicket className="h-3.5 w-3.5" />} text="+1 билет" />
         </div>
       </section>
 
