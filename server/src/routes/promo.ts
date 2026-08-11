@@ -4,6 +4,7 @@ import { and, desc, eq, isNull, or, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { promoCodes } from "../db/schema/promo.js";
 import { users } from "../db/schema/users.js";
+import { products } from "../db/schema/shop.js";
 import { requireAuth, requireAdmin, type SessionPayload } from "../lib/auth.js";
 import {
   PromoError,
@@ -182,6 +183,7 @@ export async function adminPromoRoutes(app: FastifyInstance) {
         active: z.boolean().optional(),
         note: z.string().trim().max(200).nullable().optional(),
         userId: z.string().uuid().nullable().optional(),
+        productId: z.string().uuid().nullable().optional(),
       })
       .safeParse(req.body);
     if (!parsed.success) return reply.code(400).send({ error: "invalid_input" });
