@@ -40,13 +40,14 @@ function ClubShopPage() {
   const [activeSub, setActiveSub] = useState<string | null>(null);
 
   const { user } = useViewer();
-  // Капсула ×2 активна, если у юзера есть непросроченный ticket_boost_until.
-  // ПРЕВЬЮ: ?boost=1 временно включает подсветку для визуального ревью — убрать после деплоя.
+  // ПРЕВЬЮ: локальный тумблер «буст-режим» для визуального ревью — убрать после согласования.
+  const [boostPreview, setBoostPreview] = useState(false);
   const boostActive = useMemo(() => {
-    if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("boost") === "1") return true;
+    if (boostPreview) return true;
     const until = user?.ticketBoostUntil;
     return !!until && new Date(until).getTime() > Date.now();
-  }, [user?.ticketBoostUntil]);
+  }, [boostPreview, user?.ticketBoostUntil]);
+
 
   // debounce поиска
   useEffect(() => {
@@ -234,7 +235,16 @@ function ClubShopPage() {
         </div>
       )}
 
+      {/* ВРЕМЕННО: тумблер для ревью буст-плашек. Убрать после согласования. */}
+      <button
+        type="button"
+        onClick={() => setBoostPreview((v) => !v)}
+        className="mt-6 w-full rounded-xl border border-white/10 bg-white/[0.04] py-3 text-[13px] font-semibold text-muted-foreground active:scale-[0.98]"
+      >
+        {boostActive ? "Буст-режим: ВКЛ (тест)" : "Буст-режим: выкл (тест)"}
+      </button>
     </main>
+
   );
 }
 
@@ -314,14 +324,15 @@ function ProductCard({ product, boostActive }: { product: ShopProductListItem; b
       {product.bonusTickets > 0 && (
         boosted ? (
           <span
-            className="sticker-wiggle absolute -right-1 -top-2 z-20 inline-flex items-center gap-1 rounded-lg border-[2px] border-white bg-primary px-2 py-1 font-display text-[10px] font-black uppercase tracking-tight text-primary-foreground shadow-[0_0_0_2px_hsl(var(--primary)),2px_2px_0_0_hsl(var(--foreground))]"
+            className="sticker-wiggle absolute -right-1 -top-2 z-20 inline-flex items-center gap-1 rounded-lg border-[2px] border-foreground bg-[#C21A1A] px-2 py-1 font-display text-[10px] font-black uppercase tracking-tight text-black shadow-[2px_2px_0_0_hsl(var(--foreground))]"
             style={{ animationDelay: wiggleDelay }}
           >
             <PlumpTicket className="h-3 w-3" />
-            <s className="opacity-50 decoration-white/70 decoration-[1.5px]">{`+${product.bonusTickets}`}</s>
-            <span className="text-white">{`+${doubled}`}</span>
-            <span className="ml-0.5 rounded bg-white/25 px-1 text-[8px] leading-none text-white">×2</span>
+            <s className="text-black decoration-white decoration-[2px]">{`+${product.bonusTickets}`}</s>
+            <span className="text-black">{`+${doubled}`}</span>
+            <span className="ml-0.5 rounded bg-black/20 px-1 text-[8px] leading-none text-black">×2</span>
           </span>
+
         ) : (
           <span
             className="sticker-wiggle absolute -right-1 -top-2 z-20 inline-flex items-center gap-1 rounded-lg border-[2px] border-foreground bg-[#B6FF3C] px-2 py-1 font-display text-[10px] font-black uppercase  tracking-tight text-black shadow-[2px_2px_0_0_hsl(var(--foreground))]"
