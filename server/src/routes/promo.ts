@@ -18,6 +18,7 @@ function serialize(row: typeof promoCodes.$inferSelect) {
     code: row.code,
     discountPct: row.discountPct,
     userId: row.userId,
+    productId: row.productId ?? null,
     note: row.note,
     expiresAt: row.expiresAt?.toISOString() ?? null,
     usedAt: row.usedAt?.toISOString() ?? null,
@@ -25,6 +26,7 @@ function serialize(row: typeof promoCodes.$inferSelect) {
     createdAt: row.createdAt.toISOString(),
   };
 }
+
 
 /** Клиентские роуты: /api/v1/promo */
 export async function promoRoutes(app: FastifyInstance) {
