@@ -760,7 +760,7 @@ function SpinPage() {
         </ul>
       </section>
 
-      <CapsuleAbout />
+      <CapsuleAbout expiresAt={state?.capsule?.expiresAt ?? null} />
     </main>
   );
 }
@@ -769,8 +769,35 @@ function SpinPage() {
 
 const CAPSULE_CHIP = RARITY.legend.chip;
 
-function CapsuleAbout() {
+/** Живой отсчёт до конца окна капсулы. null — окна нет / уже истекло. */
+function useCapsuleCountdown(expiresAt: string | null) {
+  const [left, setLeft] = useState<number | null>(null);
+  useEffect(() => {
+    if (!expiresAt) {
+      setLeft(null);
+      return;
+    }
+    const ts = new Date(expiresAt).getTime();
+    const tick = () => setLeft(ts - Date.now());
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [expiresAt]);
+  return left !== null && left > 0 ? left : null;
+}
+
+function CapsuleAbout({ expiresAt }: { expiresAt: string | null }) {
+  const ms = useCapsuleCountdown(expiresAt);
+  const active = ms !== null;
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const timer =
+    ms === null
+      ? null
+      : `${pad(Math.floor(ms / 3_600_000))}:${pad(Math.floor((ms % 3_600_000) / 60_000))}:${pad(
+          Math.floor((ms % 60_000) / 1000),
+        )}`;
   return (
+
     <section
       aria-label="Капсула ×2"
       className="relative mb-2 mt-5 overflow-hidden rounded-3xl bg-card p-4"
