@@ -1,7 +1,17 @@
+import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { TrendingUp, PlumpUsers as Users, PlumpTicket, Trophy, PlumpStore, Crown, Loader2 } from "@/components/ui/icons";
-import { fetchAdminDashboard } from "@/lib/admin-queries";
+import {
+  TrendingUp,
+  PlumpUsers as Users,
+  PlumpTicket,
+  Trophy,
+  PlumpStore,
+  Crown,
+  Loader2,
+} from "@/components/ui/icons";
+import { fetchAdminDashboard, type AdminDashboardProduct } from "@/lib/admin-queries";
+import { Btn, Panel, PanelHeader, Select, TextInput } from "@/components/admin/ui";
 
 export const Route = createFileRoute("/admin/")({
   component: Dashboard,
@@ -10,41 +20,92 @@ export const Route = createFileRoute("/admin/")({
 const ORDER_STATUS_RU: Record<string, string> = {
   pending_payment: "Ожидает оплаты",
   paid: "Оплачен",
+  awaiting_stock: "Ждём партию",
+  ready_to_ship: "Готов к отправке",
+  waybill_created: "Накладная создана",
   shipped: "Отправлен",
   delivered: "Доставлен",
   cancelled: "Отменён",
   refunded: "Возврат",
 };
 
+const KIND_RU: Record<string, string> = {
+  physical: "Физический",
+  preorder: "Предзаказ",
+  digital: "Цифровой",
+  virtual: "Виртуальный",
+};
+
 function fmtRub(n: number): string {
   return `${n.toLocaleString("ru-RU")} ₽`;
 }
-
 function fmtDate(iso: string): string {
-  const d = new Date(iso);
-  return d.toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit" });
+  return new Date(iso).toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit" });
 }
-
 function fmtRemain(iso: string): string {
   const ms = new Date(iso).getTime() - Date.now();
   if (ms <= 0) return "истёк";
   const h = Math.floor(ms / 3_600_000);
   const m = Math.floor((ms % 3_600_000) / 60_000);
-  if (h >= 24) {
-    const d = Math.floor(h / 24);
-    return `${d}д ${h % 24}ч`;
-  }
+  if (h >= 24) return `${Math.floor(h / 24)}д ${h % 24}ч`;
   return `${h}ч ${m}м`;
+}
+function iso(d: Date): string {
+  return d.toISOString().slice(0, 10);
+}
+function monthLabel(m: string): string {
+  const [y, mo] = m.split("-");
+  return new Date(Number(y), Number(mo) - 1, 1).toLocaleDateString("ru-RU", { month: "long", year: "numeric" });
+}
+
+type Preset = "30d" | "month" | "prev" | "year" | "custom";
+
+function presetRange(p: Preset): { from: string; to: string } {
+  const now = new Date();
+  if (p === "month") return { from: iso(new Date(now.getFullYear(), now.getMonth(), 1)), to: iso(now) };
+  if (p === "prev") {
+    const from = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const to = new Date(now.getFullYear(), now.getMonth(), 0);
+    return { from: iso(from), to: iso(to) };
+  }
+  if (p === "year") return { from: iso(new Date(now.getFullYear(), 0, 1)), to: iso(now) };
+  return { from: iso(new Date(Date.now() - 30 * 86_400_000)), to: iso(now) };
 }
 
 function Dashboard() {
-  const { data, isLoading, error } = useQuery({
-    queryKey: ["admin", "dashboard"],
-    queryFn: fetchAdminDashboard,
-    refetchInterval: 60_000,
+  const [preset, setPreset] = useState<Preset>("30d");
+  const [range, setRange] = useState(() => presetRange("30d"));
+  const [search, setSearch] = useState("");
+
+  function applyPreset(p: Preset) {
+    setPreset(p);
+    if (p !== "custom") setRange(presetRange(p));
+  }
+
+  const { data, isLoading, isFetching, error } = useQuery({
+    queryKey: ["admin", "dashboard", range.from, range.to],
+    queryFn: () => fetchAdminDashboard(range),
+    placeholderData: (prev) => prev,
+    staleTime: 30_000,
   });
 
-  if (isLoading) {
+  const q = search.trim().toLowerCase();
+  const physical = useMemo(
+    () =>
+      (data?.products ?? []).filter(
+        (p) => (p.kind === "physical" || p.kind === "preorder") && (!q || p.title.toLowerCase().includes(q)),
+      ),
+    [data?.products, q],
+  );
+  const digital = useMemo(
+    () =>
+      (data?.products ?? []).filter(
+        (p) => (p.kind === "digital" || p.kind === "virtual") && (!q || p.title.toLowerCase().includes(q)),
+      ),
+    [data?.products, q],
+  );
+
+  if (isLoading && !data) {
     return (
       <div className="flex items-center justify-center p-12 text-zinc-500">
         <Loader2 className="h-5 w-5 animate-spin" />
@@ -52,54 +113,124 @@ function Dashboard() {
     );
   }
   if (error || !data) {
-    return <div className="rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950 dark:text-rose-300">Не удалось загрузить дашборд</div>;
+    return (
+      <div className="rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950 dark:text-rose-300">
+        Не удалось загрузить дашборд
+      </div>
+    );
   }
 
-  const stats: { label: string; value: React.ReactNode; delta?: React.ReactNode; icon: React.ComponentType<{ className?: string }> }[] = [
-    { label: "Выручка за 30 дней", value: `${(data.kpi.revenue30d).toLocaleString("ru-RU")} ₽`, icon: TrendingUp },
-    { label: "Активных Hell Pass", value: (data.kpi.passActive), icon: Crown },
-    { label: "Новых пользователей / 7д", value: (data.kpi.newUsers7d), icon: Users },
-    { label: "Билетов в обороте", value: (data.kpi.ticketsInCirculation).toLocaleString("ru-RU"), icon: PlumpTicket },
-    {
-      label: "Активных розыгрышей",
-      value: (data.kpi.rafflesActive),
-      delta: (
-        <span className="inline-flex items-center gap-1">
-          {(data.kpi.rafflesBankTickets).toLocaleString("ru-RU")} билетов в банке
-        </span>
-      ),
-      icon: Trophy,
-    },
-    { label: "Заказов за 7 дней", value: (data.kpi.orders7d), icon: PlumpStore },
-  ];
+  const k = data.kpi;
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Дашборд</h1>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">Сводка по реальным данным</p>
+    <div className={`space-y-6 transition-opacity ${isFetching ? "opacity-60" : ""}`}>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Дашборд</h1>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+            Период: {fmtDate(data.range.from)} — {fmtDate(data.range.to)}
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          {(
+            [
+              ["30d", "30 дней"],
+              ["month", "Этот месяц"],
+              ["prev", "Прошлый месяц"],
+              ["year", "Год"],
+            ] as [Preset, string][]
+          ).map(([p, label]) => (
+            <Btn key={p} variant={preset === p ? "primary" : "secondary"} onClick={() => applyPreset(p)}>
+              {label}
+            </Btn>
+          ))}
+          <Select
+            className="w-[190px]"
+            value={preset === "custom" ? "" : "-"}
+            onChange={(e) => {
+              const m = e.target.value;
+              if (!m || m === "-") return;
+              const [y, mo] = m.split("-").map(Number);
+              setPreset("custom");
+              setRange({ from: iso(new Date(y, mo - 1, 1)), to: iso(new Date(y, mo, 0)) });
+            }}
+          >
+            <option value="-">Выбрать месяц…</option>
+            {data.monthly
+              .slice()
+              .reverse()
+              .map((m) => (
+                <option key={m.month} value={m.month}>
+                  {monthLabel(m.month)} · {fmtRub(m.revenue)}
+                </option>
+              ))}
+          </Select>
+          <div className="flex items-center gap-1">
+            <TextInput
+              type="date"
+              className="w-[150px]"
+              value={range.from}
+              onChange={(e) => {
+                setPreset("custom");
+                setRange((r) => ({ ...r, from: e.target.value }));
+              }}
+            />
+            <span className="text-zinc-400">—</span>
+            <TextInput
+              type="date"
+              className="w-[150px]"
+              value={range.to}
+              onChange={(e) => {
+                setPreset("custom");
+                setRange((r) => ({ ...r, to: e.target.value }));
+              }}
+            />
+          </div>
+        </div>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {stats.map((s) => (
-          <div
-            key={s.label}
-            className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900"
-          >
-            <div className="flex items-start justify-between">
-              <div className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                {s.label}
-              </div>
-              <s.icon className="h-4 w-4 text-zinc-400" />
-            </div>
-            <div className="mt-2 text-2xl font-bold">{s.value}</div>
-            {s.delta && <div className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">{s.delta}</div>}
-          </div>
-        ))}
+      {/* KPI */}
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <Kpi label="Выручка за период" value={fmtRub(k.revenue)} icon={TrendingUp} accent />
+        <Kpi
+          label="Оплаченных заказов"
+          value={k.ordersPaid}
+          hint={`товары ${fmtRub(k.goodsRevenue)} · доставка ${fmtRub(k.shippingRevenue)}`}
+          icon={PlumpStore}
+        />
+        <Kpi label="Средний чек" value={fmtRub(k.avgOrderRub)} hint={`скидки ${fmtRub(k.discountRub)}`} icon={TrendingUp} />
+        <Kpi label="Hell Pass продано" value={k.passSold} hint={`${fmtRub(k.passRevenue)} · активных ${k.passActive}`} icon={Crown} />
+        <Kpi label="Новых пользователей" value={k.newUsers} icon={Users} />
+        <Kpi label="Билетов в обороте" value={k.ticketsInCirculation.toLocaleString("ru-RU")} icon={PlumpTicket} />
+        <Kpi
+          label="Активных розыгрышей"
+          value={k.rafflesActive}
+          hint={`${k.rafflesBankTickets.toLocaleString("ru-RU")} билетов в банке`}
+          icon={Trophy}
+        />
+        <Kpi label="Позиций продано" value={data.products.reduce((s, p) => s + p.qty, 0)} icon={PlumpStore} />
+      </div>
+
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="text-sm font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+          Продажи по товарам
+        </h2>
+        <TextInput
+          className="w-[240px]"
+          placeholder="Поиск по названию (напр. носки)"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-2">
+        <ProductTable title="Физические товары и предзаказы" rows={physical} />
+        <ProductTable title="Цифровые и виртуальные товары" rows={digital} />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <Card title="Последние заказы">
+        <Panel>
+          <PanelHeader>Последние заказы</PanelHeader>
           {data.lastOrders.length === 0 ? (
             <Empty>Заказов пока нет</Empty>
           ) : (
@@ -113,9 +244,10 @@ function Dashboard() {
               ])}
             />
           )}
-        </Card>
+        </Panel>
 
-        <Card title="Розыгрыши, осталось <48ч">
+        <Panel>
+          <PanelHeader>Розыгрыши, осталось меньше 48ч</PanelHeader>
           {data.rafflesSoon.length === 0 ? (
             <Empty>Нет розыгрышей в ближайшие 48 часов</Empty>
           ) : (
@@ -124,42 +256,107 @@ function Dashboard() {
               rows={data.rafflesSoon.map((r) => [r.prize ?? r.title, fmtRemain(r.endsAt), String(r.entries)])}
             />
           )}
-        </Card>
-
-        <Card title="Pass истекают за 7 дней">
-          {data.passExpiring.length === 0 ? (
-            <Empty>Ни один Pass не истекает в ближайшую неделю</Empty>
-          ) : (
-            <Table
-              headers={["Юзер", "Тир", "Истекает"]}
-              rows={data.passExpiring.map((p) => [p.nick, p.tier, fmtDate(p.expiresAt)])}
-            />
-          )}
-        </Card>
-
-        <Card title="Топ товаров за 30 дней">
-          {data.topProducts.length === 0 ? (
-            <Empty>Нет продаж за 30 дней</Empty>
-          ) : (
-            <Table
-              headers={["Товар", "Продаж", "Выручка"]}
-              rows={data.topProducts.map((p) => [p.title, String(p.qty), fmtRub(p.revenue)])}
-            />
-          )}
-        </Card>
+        </Panel>
       </div>
     </div>
   );
 }
 
-function Card({ title, children }: { title: string; children: React.ReactNode }) {
+function Kpi({
+  label,
+  value,
+  hint,
+  icon: Icon,
+  accent,
+}: {
+  label: string;
+  value: React.ReactNode;
+  hint?: string;
+  icon: React.ComponentType<{ className?: string }>;
+  accent?: boolean;
+}) {
   return (
-    <div className="rounded-lg border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
-      <div className="border-b border-zinc-200 px-4 py-3 dark:border-zinc-800">
-        <h3 className="text-sm font-semibold">{title}</h3>
+    <div
+      className={`rounded-lg border p-4 ${
+        accent
+          ? "border-emerald-200 bg-emerald-50 dark:border-emerald-900 dark:bg-emerald-950/40"
+          : "border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900"
+      }`}
+    >
+      <div className="flex items-start justify-between">
+        <div className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">{label}</div>
+        <Icon className={`h-4 w-4 ${accent ? "text-emerald-600 dark:text-emerald-400" : "text-zinc-400"}`} />
       </div>
-      <div className="p-2">{children}</div>
+      <div
+        className={`mt-2 text-2xl font-bold tabular-nums ${
+          accent ? "text-emerald-700 dark:text-emerald-300" : ""
+        }`}
+      >
+        {value}
+      </div>
+      {hint && <div className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">{hint}</div>}
     </div>
+  );
+}
+
+function ProductTable({ title, rows }: { title: string; rows: AdminDashboardProduct[] }) {
+  const qty = rows.reduce((s, p) => s + p.qty, 0);
+  const revenue = rows.reduce((s, p) => s + p.revenue, 0);
+  return (
+    <Panel>
+      <PanelHeader>
+        <div className="flex w-full flex-wrap items-center justify-between gap-2">
+          <span>{title}</span>
+          <span className="text-xs font-normal text-zinc-500 dark:text-zinc-400">
+            {qty} шт · <span className="font-semibold text-emerald-600 dark:text-emerald-400">{fmtRub(revenue)}</span>
+          </span>
+        </div>
+      </PanelHeader>
+      {rows.length === 0 ? (
+        <Empty>Продаж за период нет</Empty>
+      ) : (
+        <div className="-mx-4 overflow-x-auto px-4 md:mx-0 md:px-0">
+          <table className="w-full min-w-[560px] text-sm">
+            <thead>
+              <tr className="text-left text-xs uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                <th className="px-3 py-2 font-medium">Товар</th>
+                <th className="px-3 py-2 font-medium">Тип</th>
+                <th className="px-3 py-2 text-right font-medium">Шт</th>
+                <th className="px-3 py-2 text-right font-medium">Заказов</th>
+                <th className="px-3 py-2 text-right font-medium">Покупателей</th>
+                <th className="px-3 py-2 text-right font-medium">Выручка</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((p) => (
+                <tr key={p.productId ?? p.title} className="border-t border-zinc-100 dark:border-zinc-800">
+                  <td className="px-3 py-2 font-medium">{p.title}</td>
+                  <td className="px-3 py-2 text-zinc-500 dark:text-zinc-400">{KIND_RU[p.kind] ?? p.kind}</td>
+                  <td className="px-3 py-2 text-right tabular-nums">{p.qty}</td>
+                  <td className="px-3 py-2 text-right tabular-nums">{p.ordersCount}</td>
+                  <td className="px-3 py-2 text-right tabular-nums">{p.buyers}</td>
+                  <td className="px-3 py-2 text-right font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">
+                    {fmtRub(p.revenue)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr className="border-t border-zinc-200 bg-zinc-50 text-xs font-semibold dark:border-zinc-800 dark:bg-zinc-950/50">
+                <td className="px-3 py-2" colSpan={2}>
+                  Итого
+                </td>
+                <td className="px-3 py-2 text-right tabular-nums">{qty}</td>
+                <td className="px-3 py-2" colSpan={2} />
+                <td className="px-3 py-2 text-right tabular-nums text-emerald-600 dark:text-emerald-400">
+                  {fmtRub(revenue)}
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      )}
+    </Panel>
   );
 }
 
