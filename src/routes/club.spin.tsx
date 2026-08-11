@@ -391,11 +391,28 @@ function SpinPage() {
     setSpinning(true);
 
     try {
-      const result = await apiFetch<RollResult>("/api/v1/spin/roll", {
+    const roll = () =>
+      apiFetch<RollResult>("/api/v1/spin/roll", {
         method: "POST",
         headers: pwaHeaders(),
         body: JSON.stringify({ pwa: isStandalone() }),
       });
+
+    try {
+      let result: RollResult;
+      try {
+        result = await roll();
+      } catch (err) {
+        // Сервер мог удалить протухшую push-подписку (FCM 410), пока браузер
+        // локально всё ещё считает её живой. Пере-подписываемся и повторяем.
+        if (err instanceof ApiError && err.status === 403) {
+          const res = await subscribeToPush();
+          if (!res.ok) throw err;
+          result = await roll();
+        } else {
+          throw err;
+        }
+      }
       const target = prizeByCode(result.prizeCode, result.prizeTitle, result.rarity);
       runRoller(target, result);
     } catch (err) {
@@ -411,6 +428,7 @@ function SpinPage() {
       void loadState();
     }
   }
+
 
 
 
