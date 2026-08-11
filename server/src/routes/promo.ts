@@ -48,16 +48,25 @@ export async function promoRoutes(app: FastifyInstance) {
   });
 
   // Проверка промокода на чекауте — возвращает процент скидки.
+  // items — корзина, нужна для товарных промокодов.
   app.post("/validate", { preHandler: requireAuth }, async (req, reply) => {
-    const parsed = z.object({ code: z.string().trim().min(1).max(32) }).safeParse(req.body);
+    const parsed = z
+      .object({
+        code: z.string().trim().min(1).max(32),
+        items: z
+          .array(z.object({ productId: z.string().uuid(), qty: z.coerce.number().int().min(1) }))
+          .optional(),
+      })
+      .safeParse(req.body);
     if (!parsed.success) return reply.code(400).send({ error: "invalid_input", message: "Введи промокод" });
     const session = req.user as SessionPayload;
     try {
-      const promo = await validatePromoForUser(session.sub, parsed.data.code);
+      const promo = await validatePromoForUser(session.sub, parsed.data.code, parsed.data.items);
       return {
         ok: true as const,
         code: promo.code,
         discountPct: promo.discountPct,
+        productId: promo.productId ?? null,
         expiresAt: promo.expiresAt?.toISOString() ?? null,
       };
     } catch (e) {
@@ -73,10 +82,13 @@ const createSchema = z.object({
   code: z.string().trim().min(3).max(32).optional(),
   discountPct: z.coerce.number().int().min(1).max(100),
   userId: z.string().uuid().nullable().optional(),
+  /** Товарный промокод: скидка только на этот товар, корзина = 1 шт. этого товара. */
+  productId: z.string().uuid().nullable().optional(),
   note: z.string().trim().max(200).optional(),
   /** ISO-дата окончания действия. */
   expiresAt: z.string().datetime().nullable().optional(),
 });
+
 
 /** Админские роуты: /api/v1/admin/promo */
 export async function adminPromoRoutes(app: FastifyInstance) {
