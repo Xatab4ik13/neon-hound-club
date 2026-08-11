@@ -41,9 +41,28 @@ export function mskDate(d = new Date()): string {
   return shifted.toISOString().slice(0, 10);
 }
 
-/** Ключ сезона YYYY-MM по МСК. */
+/** Начало первого сезона: 11 августа 2026, 00:00 МСК. */
+export const SEASON_ANCHOR_UTC = Date.UTC(2026, 7, 11, -3, 0, 0);
+/** Длина сезона в днях. */
+export const SEASON_DAYS = 30;
+
+/** Индекс текущего сезона (0 — первый). */
+function seasonIndex(d = new Date()): number {
+  const diff = d.getTime() - SEASON_ANCHOR_UTC;
+  return diff <= 0 ? 0 : Math.floor(diff / (SEASON_DAYS * 86_400_000));
+}
+
+/** Границы сезона: скользящие окна по 30 дней от якоря. */
+export function seasonBounds(d = new Date()): { startsAt: Date; endsAt: Date } {
+  const idx = seasonIndex(d);
+  const startsAt = new Date(SEASON_ANCHOR_UTC + idx * SEASON_DAYS * 86_400_000);
+  const endsAt = new Date(startsAt.getTime() + SEASON_DAYS * 86_400_000);
+  return { startsAt, endsAt };
+}
+
+/** Ключ сезона — дата его начала (YYYY-MM-DD по МСК). */
 export function mskPeriodKey(d = new Date()): string {
-  return mskDate(d).slice(0, 7);
+  return mskDate(seasonBounds(d).startsAt);
 }
 
 export const SPINS_PER_DAY: Record<"none" | PassTier, number> = {
