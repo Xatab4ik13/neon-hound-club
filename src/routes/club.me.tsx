@@ -125,7 +125,8 @@ function MePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search.settings]);
   const isMobile = useIsMobile();
-  const { isAuthed, signOut } = useViewer();
+  const viewer = useViewer();
+  const { isAuthed, signOut } = viewer;
   const profileQ = useMyProfile(isAuthed);
   const passQ = useQuery({ queryKey: ["pass", "me"], queryFn: fetchPassMe, staleTime: 30_000, retry: false });
   const activeTierSlug = passQ.data?.active?.status === "active" ? passQ.data.active.tier : null;
