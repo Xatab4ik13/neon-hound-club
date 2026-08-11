@@ -134,6 +134,121 @@ export async function adminPromoRoutes(app: FastifyInstance) {
     };
   });
 
+  /**
+   * Сводка по активациям: сколько промокодов отработало, сколько денег принесли
+   * заказы по ним и как часто юзер докладывал что-то ещё в корзину.
+   * Это ключевая метрика для «бесплатная ремувка → но человек добирает товар».
+   */
+  app.get("/stats", async () => {
+    const [row] = (await db.execute(sql`
+      WITH used AS (
+        SELECT p.id,
+               p.product_id,
+               o.id AS order_id,
+               o.subtotal_rub,
+               o.discount_rub,
+               o.total_rub,
+               o.shipping_price_rub,
+               COALESCE((SELECT SUM(oi.qty) FROM order_items oi WHERE oi.order_id = o.id), 0) AS units,
+               COALESCE((
+                 SELECT SUM(oi.price_rub_snapshot * oi.qty)
+                 FROM order_items oi
+                 WHERE oi.order_id = o.id
+                   AND (p.product_id IS NULL OR oi.product_id IS DISTINCT FROM p.product_id)
+               ), 0) AS extra_rub
+        FROM promo_codes p
+        JOIN orders o ON o.id = p.used_order_id
+        WHERE p.used_at IS NOT NULL
+      )
+      SELECT
+        (SELECT COUNT(*)::int FROM promo_codes WHERE used_at IS NOT NULL) AS used_total,
+        (SELECT COUNT(*)::int FROM promo_codes WHERE used_at IS NULL AND active = true) AS unused_total,
+        (SELECT COUNT(*)::int FROM used) AS with_order,
+        (SELECT COUNT(*)::int FROM used WHERE extra_rub > 0) AS with_extras,
+        COALESCE((SELECT SUM(total_rub) FROM used), 0)::int AS revenue_rub,
+        COALESCE((SELECT SUM(extra_rub) FROM used), 0)::int AS extra_rub,
+        COALESCE((SELECT SUM(discount_rub) FROM used), 0)::int AS discount_rub,
+        COALESCE((SELECT SUM(shipping_price_rub) FROM used), 0)::int AS shipping_rub
+    `)) as unknown as Array<Record<string, number>>;
+    const s = row ?? {};
+    const withOrder = Number(s.with_order ?? 0);
+    const withExtras = Number(s.with_extras ?? 0);
+    return {
+      usedTotal: Number(s.used_total ?? 0),
+      unusedTotal: Number(s.unused_total ?? 0),
+      withOrder,
+      withExtras,
+      extrasSharePct: withOrder ? Math.round((withExtras / withOrder) * 100) : 0,
+      revenueRub: Number(s.revenue_rub ?? 0),
+      extraRub: Number(s.extra_rub ?? 0),
+      discountRub: Number(s.discount_rub ?? 0),
+      shippingRub: Number(s.shipping_rub ?? 0),
+      avgOrderRub: withOrder ? Math.round(Number(s.revenue_rub ?? 0) / withOrder) : 0,
+      avgExtraRub: withOrder ? Math.round(Number(s.extra_rub ?? 0) / withOrder) : 0,
+    };
+  });
+
+  /** Как активировали промокод: заказ, корзина, доставка, статус. */
+  app.get<{ Params: { id: string } }>("/:id/usage", async (req, reply) => {
+    const { id } = z.object({ id: z.string().uuid() }).parse(req.params);
+    const [promo] = await db.select().from(promoCodes).where(eq(promoCodes.id, id)).limit(1);
+    if (!promo) return reply.code(404).send({ error: "not_found" });
+    if (!promo.usedOrderId) return { promo: serialize(promo), order: null };
+
+    const [row] = await db
+      .select({ order: orders, nick: users.nick, email: users.email })
+      .from(orders)
+      .leftJoin(users, eq(users.id, orders.userId))
+      .where(eq(orders.id, promo.usedOrderId))
+      .limit(1);
+    if (!row) return { promo: serialize(promo), order: null };
+
+    const items = await db
+      .select()
+      .from(orderItems)
+      .where(eq(orderItems.orderId, row.order.id))
+      .orderBy(orderItems.createdAt);
+
+    const targetId = promo.productId;
+    const extraRub = items
+      .filter((i) => !targetId || i.productId !== targetId)
+      .reduce((s, i) => s + i.priceRubSnapshot * i.qty, 0);
+
+    return {
+      promo: serialize(promo),
+      order: {
+        id: row.order.id,
+        userId: row.order.userId,
+        nick: row.nick ?? null,
+        email: row.email ?? null,
+        status: row.order.status,
+        subtotalRub: row.order.subtotalRub,
+        discountRub: row.order.discountRub,
+        discountPct: row.order.discountPct,
+        totalRub: row.order.totalRub,
+        shippingPriceRub: row.order.shippingPriceRub,
+        shippingMode: row.order.shippingMode,
+        bonusTicketsTotal: row.order.bonusTicketsTotal,
+        city: row.order.shipping?.city ?? null,
+        createdAt: row.order.createdAt.toISOString(),
+        paidAt: row.order.paidAt?.toISOString() ?? null,
+        extraRub,
+        items: items.map((i) => ({
+          id: i.id,
+          productId: i.productId,
+          title: i.titleSnapshot,
+          priceRub: i.priceRubSnapshot,
+          qty: i.qty,
+          size: i.sizeSnapshot,
+          kind: i.kindSnapshot,
+          isPromoTarget: !!targetId && i.productId === targetId,
+        })),
+      },
+    };
+  });
+
+
+
   // Создать / сгенерировать промокод.
   app.post("/", async (req, reply) => {
     const parsed = createSchema.safeParse(req.body);
