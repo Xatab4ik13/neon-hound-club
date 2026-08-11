@@ -39,6 +39,15 @@ function ClubShopPage() {
   const [activeCat, setActiveCat] = useState<string>("all");
   const [activeSub, setActiveSub] = useState<string | null>(null);
 
+  const { user } = useViewer();
+  // Капсула ×2 активна, если у юзера есть непросроченный ticket_boost_until.
+  // ПРЕВЬЮ: ?boost=1 временно включает подсветку для визуального ревью — убрать после деплоя.
+  const boostActive = useMemo(() => {
+    if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("boost") === "1") return true;
+    const until = user?.ticketBoostUntil;
+    return !!until && new Date(until).getTime() > Date.now();
+  }, [user?.ticketBoostUntil]);
+
   // debounce поиска
   useEffect(() => {
     const t = setTimeout(() => setDebouncedQ(q.trim().toLowerCase()), 180);
