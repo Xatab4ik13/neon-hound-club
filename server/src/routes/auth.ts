@@ -345,6 +345,7 @@ export async function authRoutes(app: FastifyInstance) {
         role: users.role,
         emailVerified: users.emailVerified,
         createdAt: users.createdAt,
+        ticketBoostUntil: users.ticketBoostUntil,
       })
       .from(users)
       .where(eq(users.id, session.sub))
