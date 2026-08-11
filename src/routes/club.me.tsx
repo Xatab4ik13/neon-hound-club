@@ -20,6 +20,7 @@ import {
   Lock,
 } from "@/components/ui/icons";
 import { PlumpNum } from "@/components/brand/PlumpNum";
+import imgCapsule from "@/assets/spin/capsule-x2.png";
 
 import { SettingsModal } from "@/components/club/SettingsModal";
 import { OrdersList } from "@/components/club/OrdersList";
