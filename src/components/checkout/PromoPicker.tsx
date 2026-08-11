@@ -1,6 +1,7 @@
 // Выбор промокода из своих на чекауте.
 // Показываем только активные и неиспользованные; товарные помечаем «не подходит»,
-// если корзина не равна ровно 1 шт. нужного товара. Применить можно только один.
+// если нужного товара нет в корзине. Скидка идёт только на 1 шт. этого товара,
+// остальные товары в корзине — по полной цене. Применить можно только один код.
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2, PlumpTicket } from "@/components/ui/icons";
@@ -13,16 +14,15 @@ function eligibility(
   cart: CartPos[],
 ): { ok: boolean; reason?: string } {
   if (!promo.productId) return { ok: true };
-  const positions = cart.filter((i) => i.qty > 0);
-  if (positions.length !== 1 || positions[0]!.productId !== promo.productId) {
+  const has = cart.some((i) => i.productId === promo.productId && i.qty > 0);
+  if (!has) {
     return {
       ok: false,
       reason: promo.productTitle
-        ? `Только на «${promo.productTitle}» — в корзине должен быть только этот товар`
-        : "В корзине должен быть только тот товар, на который выписан код",
+        ? `Только на «${promo.productTitle}» — добавь этот товар в корзину`
+        : "Добавь в корзину товар, на который выписан код",
     };
   }
-  if (positions[0]!.qty !== 1) return { ok: false, reason: "Только на 1 шт. товара" };
   return { ok: true };
 }
 
@@ -85,7 +85,7 @@ export function PromoPicker({
                   <div className="truncate text-[11px] text-muted-foreground">
                     {el.ok
                       ? p.productId
-                        ? `−${p.discountPct}% на «${p.productTitle ?? "товар"}» · билеты не начисляются`
+                        ? `−${p.discountPct}% на 1 шт. «${p.productTitle ?? "товар"}» · билеты не начисляются`
                         : `−${p.discountPct}% на товары`
                       : el.reason}
                   </div>
