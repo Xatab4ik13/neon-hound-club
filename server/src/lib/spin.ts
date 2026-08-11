@@ -113,10 +113,10 @@ export const PRIZE_CONFIG: PrizeConfig[] = [
   { code: "t50", title: "50 билетов", rarity: "epic", rewardKind: "tickets", rewardValue: 50, chancePpm: 0, hidden: true },
 ];
 
-/** Шанс jackpot по фазам месяца (ppm). */
-function jackpotPhasePpm(dayOfMonth: number): number {
-  if (dayOfMonth <= 15) return 40; // ~0.004%
-  if (dayOfMonth <= 25) return 150; // ~0.015%
+/** Шанс jackpot по фазам сезона (ppm), day — день сезона 1..30. */
+function jackpotPhasePpm(dayOfSeason: number): number {
+  if (dayOfSeason <= 15) return 40; // ~0.004%
+  if (dayOfSeason <= 25) return 150; // ~0.015%
   return 350; // ~0.035%
 }
 
