@@ -9,6 +9,8 @@ import { haptic } from "@/hooks/use-haptic";
 import { useSpinAccess } from "@/hooks/use-spin-access";
 import { SpinAccessGate } from "@/components/club/SpinAccessGate";
 import { playWin, playClick, playTick } from "@/lib/roller-sfx";
+import { subscribeToPush } from "@/lib/push";
+
 import silverBadge from "@/assets/hellpass/tpl-silver.webp";
 import goldBadge from "@/assets/hellpass/tpl-gold.webp";
 import platinumBadge from "@/assets/hellpass/tpl-platinum.webp";
