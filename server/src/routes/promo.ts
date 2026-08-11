@@ -4,7 +4,7 @@ import { and, desc, eq, isNull, or, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { promoCodes } from "../db/schema/promo.js";
 import { users } from "../db/schema/users.js";
-import { products } from "../db/schema/shop.js";
+import { products, orders, orderItems } from "../db/schema/shop.js";
 import { requireAuth, requireAdmin, type SessionPayload } from "../lib/auth.js";
 import {
   PromoError,
@@ -12,6 +12,7 @@ import {
   normalizePromoCode,
   validatePromoForUser,
 } from "../lib/promo.js";
+
 
 function serialize(row: typeof promoCodes.$inferSelect) {
   return {
