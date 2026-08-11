@@ -10,6 +10,8 @@ export type SpinAccess = {
   checking: boolean;
   pushSupported: boolean;
   enablePush: () => Promise<{ ok: boolean; reason?: string }>;
+  /** Перепроверить статус вручную (кнопки «Проверить»). */
+  recheck: () => Promise<{ installed: boolean; pushEnabled: boolean }>;
 };
 
 export function useSpinAccess(): SpinAccess {
@@ -58,6 +60,23 @@ export function useSpinAccess(): SpinAccess {
     return res;
   }, [refreshPush]);
 
+  const recheck = useCallback(async () => {
+    const nowInstalled = isStandalone();
+    setInstalled(nowInstalled);
+    let nowPush = false;
+    if (typeof window !== "undefined" && isPushSupported()) {
+      try {
+        const sub = await getPushSubscription();
+        nowPush = Notification.permission === "granted" && !!sub;
+      } catch {
+        nowPush = false;
+      }
+    }
+    setPushEnabled(nowPush);
+    setChecking(false);
+    return { installed: nowInstalled, pushEnabled: nowPush };
+  }, []);
+
   return {
     installed,
     pushEnabled,
@@ -65,5 +84,6 @@ export function useSpinAccess(): SpinAccess {
     checking,
     pushSupported: isPushSupported(),
     enablePush,
+    recheck,
   };
 }
