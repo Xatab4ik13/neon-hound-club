@@ -1015,9 +1015,30 @@ function WinModal({
             {prize.sub}
           </p>
         )}
-        <p className="relative mt-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-          Приз зачислен в твой аккаунт
-        </p>
+        {capsule ? (
+          <>
+            <p
+              className="relative mx-auto mt-3 flex w-fit items-center gap-2 rounded-xl bg-black/40 px-3 py-2 font-mono text-[11px] uppercase tracking-widest"
+              style={{ color: r.chip }}
+            >
+              <span
+                className="h-1.5 w-1.5 rounded-full"
+                style={{ background: r.chip, boxShadow: `0 0 8px 2px ${r.glow}` }}
+              />
+              Капсула действует · 24 часа
+            </p>
+            <p className="relative mt-3 text-[13px] leading-relaxed text-muted-foreground">
+              У тебя <span className="text-foreground">24 часа</span>: купи в магазине цифровой
+              товар — открытку Hell — и получишь{" "}
+              <span className="text-foreground">×2 билета</span> на покупку. На физический мерч
+              капсула не действует.
+            </p>
+          </>
+        ) : (
+          <p className="relative mt-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+            Приз зачислен в твой аккаунт
+          </p>
+        )}
         {promoCode && (
           <>
             <p className="relative mx-auto mt-3 w-fit rounded-xl bg-black/40 px-3 py-2 font-mono text-[14px] font-bold tracking-widest text-foreground">
@@ -1032,13 +1053,33 @@ function WinModal({
         )}
 
 
-        <button
-          type="button"
-          onClick={onClose}
-          className="relative mt-6 w-full rounded-2xl bg-[#B6FF3C] py-4 font-display text-[16px] font-black uppercase tracking-tight text-black transition-transform active:scale-[0.97]"
-        >
-          Забрать
-        </button>
+        {capsule ? (
+          <>
+            <Link
+              to="/club/shop"
+              onClick={onClose}
+              className="relative mt-5 block w-full rounded-2xl py-4 font-display text-[16px] font-black uppercase tracking-tight text-black transition-transform active:scale-[0.97]"
+              style={{ background: r.chip }}
+            >
+              В магазин за билетами
+            </Link>
+            <button
+              type="button"
+              onClick={onClose}
+              className="relative mt-2 w-full py-2 font-mono text-[11px] uppercase tracking-widest text-muted-foreground"
+            >
+              Позже
+            </button>
+          </>
+        ) : (
+          <button
+            type="button"
+            onClick={onClose}
+            className="relative mt-6 w-full rounded-2xl bg-[#B6FF3C] py-4 font-display text-[16px] font-black uppercase tracking-tight text-black transition-transform active:scale-[0.97]"
+          >
+            Забрать
+          </button>
+        )}
       </div>
     </div>,
     document.body,
