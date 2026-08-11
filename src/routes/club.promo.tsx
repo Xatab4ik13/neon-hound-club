@@ -95,8 +95,9 @@ function PromoPage() {
                     </div>
                     <div className="mt-1 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
                       {p.expiresAt ? `до ${formatDate(p.expiresAt)}` : "без срока"}
-                      {p.note ? ` · ${p.note}` : ""}
+                      {p.productId ? ` · на «${p.productTitle ?? "товар"}»` : ""}
                     </div>
+
                     {st ? (
                       <div className={`mt-1 text-[11px] ${st.tone}`}>{st.label}</div>
                     ) : null}
