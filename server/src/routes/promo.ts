@@ -35,15 +35,17 @@ export async function promoRoutes(app: FastifyInstance) {
   app.get("/mine", { preHandler: requireAuth }, async (req) => {
     const session = req.user as SessionPayload;
     const rows = await db
-      .select()
+      .select({ promo: promoCodes, productTitle: products.title })
       .from(promoCodes)
+      .leftJoin(products, eq(products.id, promoCodes.productId))
       .where(and(eq(promoCodes.userId, session.sub), eq(promoCodes.active, true)))
       .orderBy(desc(promoCodes.createdAt));
     const now = Date.now();
     return {
       items: rows.map((r) => ({
-        ...serialize(r),
-        expired: !!r.expiresAt && r.expiresAt.getTime() < now,
+        ...serialize(r.promo),
+        productTitle: r.productTitle ?? null,
+        expired: !!r.promo.expiresAt && r.promo.expiresAt.getTime() < now,
       })),
     };
   });
