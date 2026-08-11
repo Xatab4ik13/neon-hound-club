@@ -9,6 +9,9 @@ import { raffles, raffleEntries } from "../db/schema/raffles.js";
 import { ticketsLedger } from "../db/schema/tickets.js";
 import { payments } from "../db/schema/payments.js";
 
+/** Момент включения наценки 25% на доставку: 11.08.2026 21:00 МСК. До него разницы не было. */
+const SHIPPING_MARKUP_SINCE = "2026-08-11T18:00:00Z";
+
 /** Разбор ?from=&to= (YYYY-MM-DD или ISO). По умолчанию — последние 30 дней. */
 function parseRange(q: { from?: string; to?: string }) {
   const nowMs = Date.now();
@@ -51,11 +54,12 @@ export async function adminDashboardRoutes(app: FastifyInstance) {
       .select({
         cnt: sql<number>`COUNT(*)::int`,
         goods: sql<number>`COALESCE(SUM(${orders.totalRub} - ${orders.shippingPriceRub}), 0)::int`,
-        shipping: sql<number>`COALESCE(SUM(${orders.shippingPriceRub}), 0)::int`,
+        shipping: sql<number>`COALESCE(SUM(${orders.shippingPriceRub}) FILTER (WHERE ${orders.paidAt} >= ${SHIPPING_MARKUP_SINCE}::timestamptz), 0)::int`,
         discount: sql<number>`COALESCE(SUM(${orders.discountRub}), 0)::int`,
-        // Себестоимость доставки: клиенту показывается цена СДЭК × 1.25 (округление до 10 ₽).
-        shippingCost: sql<number>`COALESCE(SUM(ROUND(${orders.shippingPriceRub} / 1.25)), 0)::int`,
-        shippingOrders: sql<number>`COUNT(*) FILTER (WHERE ${orders.shippingPriceRub} > 0)::int`,
+        // Себестоимость доставки: клиенту показывается цена СДЭК × 1.25.
+        // Наценка включена 11.08.2026 21:00 МСК — раньше этого времени разницы не было.
+        shippingCost: sql<number>`COALESCE(SUM(ROUND(${orders.shippingPriceRub} / 1.25)) FILTER (WHERE ${orders.paidAt} >= ${SHIPPING_MARKUP_SINCE}::timestamptz), 0)::int`,
+        shippingOrders: sql<number>`COUNT(*) FILTER (WHERE ${orders.shippingPriceRub} > 0 AND ${orders.paidAt} >= ${SHIPPING_MARKUP_SINCE}::timestamptz)::int`,
       })
       .from(orders)
       .where(
