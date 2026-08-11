@@ -1001,7 +1001,7 @@ function HowItWorks({ season }: { season?: SpinState["season"] }) {
             Как это работает
           </span>
           <span className="block font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-            {endsLabel ? `Сезон до ${endsLabel} · ${days} дней` : `Сезон · ${days} дней`}
+            {seasonLabel}
           </span>
         </span>
         <ChevronDown
@@ -1021,12 +1021,61 @@ function HowItWorks({ season }: { season?: SpinState["season"] }) {
                 Сезон HellSpin
               </h3>
               <p className="text-[13px] leading-relaxed text-muted-foreground">
-                {endsLabel && (
+                {startsLabel && endsLabel ? (
                   <>
-                    <span className="text-foreground">Сезон идёт до {endsLabel}.</span>{" "}
+                    <span className="text-foreground">
+                      Сезон идёт с {startsLabel} по {endsLabel}.
+                    </span>{" "}
                   </>
+                ) : (
+                  endsLabel && (
+                    <>
+                      <span className="text-foreground">Сезон идёт до {endsLabel}.</span>{" "}
+                    </>
+                  )
                 )}
                 {days} дней, каждый день — новая пачка спинов. Не крутанул сегодня — завтра обнулилось.
+              </p>
+            </div>
+
+            {/* Календарь активности */}
+            <div>
+              <h3 className="mb-1.5 font-display text-[13px] font-black uppercase tracking-tight text-foreground">
+                Календарь активности
+              </h3>
+              <p className="mb-3 text-[13px] leading-relaxed text-muted-foreground">
+                Каждый день, когда ты крутанул хотя бы один спин, засчитывается в календарь. Дни{" "}
+                <span className="text-foreground">не обязательно подряд</span> — считаем сколько
+                дней из {days} ты был активен. Награды забираются вручную кнопкой «Забрать».
+              </p>
+              <div className="space-y-1.5">
+                {CALENDAR.map((c) => (
+                  <div key={c.day} className="flex items-center gap-3 rounded-2xl bg-black/30 px-3 py-2.5">
+                    <span className="grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-full bg-white/[0.06]">
+                      <img
+                        src={MILESTONE_IMG[c.day]}
+                        alt=""
+                        loading="lazy"
+                        className={`h-full w-full ${
+                          (MILESTONE_FIT[c.day] ?? "contain") === "cover"
+                            ? "scale-[1.15] object-cover"
+                            : "object-contain p-0.5"
+                        }`}
+                      />
+                    </span>
+                    <span className="min-w-0 flex-1 text-[13px] font-semibold text-foreground">
+                      {c.title}
+                    </span>
+                    <span className="shrink-0 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                      {c.day} дней
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <p className="mt-2 text-[12px] leading-relaxed text-muted-foreground">
+                Носки приходят персональным промокодом на{" "}
+                <span className="text-foreground">100% скидку</span> — одна пара любого размера,
+                платишь только доставку.
               </p>
             </div>
 
