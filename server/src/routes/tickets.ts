@@ -147,12 +147,95 @@ export async function adminTicketsRoutes(app: FastifyInstance) {
       held: v.held,
     }));
 
+    // Держатели = юзеры с положительным балансом. Отдельно — сколько людей вообще
+    // когда-либо касались билетов (это НЕ держатели, раньше путалось в UI).
+    const holdersRes = (await db.execute(sql`
+      with b as (
+        select user_id, sum(amount)::int as bal
+        from tickets_ledger
+        group by user_id
+      )
+      select
+        count(*) filter (where bal > 0)::int as holders,
+        count(*)::int as ever_touched,
+        coalesce(round(avg(bal) filter (where bal > 0)), 0)::int as avg_balance,
+        coalesce(max(bal), 0)::int as max_balance
+      from b
+    `)) as unknown as {
+      holders: number;
+      ever_touched: number;
+      avg_balance: number;
+      max_balance: number;
+    }[];
+    const holders = Array.from(holdersRes)[0];
+
+    // Билеты внутри каждого розыгрыша: заявки, уникальные участники, сожжённые билеты.
+    const raffleRows = (await db.execute(sql`
+      select
+        r.id,
+        r.title,
+        r.status,
+        r.prize,
+        r.ticket_cost as "ticketCost",
+        r.starts_at as "startsAt",
+        r.ends_at as "endsAt",
+        coalesce(e.entries, 0)::int as entries,
+        coalesce(e.participants, 0)::int as participants,
+        coalesce(e.tickets, 0)::int as tickets
+      from raffles r
+      left join (
+        select raffle_id,
+               count(*)::int as entries,
+               count(distinct user_id)::int as participants,
+               sum(ticket_cost_snapshot)::int as tickets
+        from raffle_entries
+        group by raffle_id
+      ) e on e.raffle_id = r.id
+      where r.status <> 'draft'
+      order by case r.status when 'active' then 0 when 'finished' then 1 else 2 end,
+               r.ends_at desc
+      limit 50
+    `)) as unknown as {
+      id: string;
+      title: string;
+      status: string;
+      prize: string | null;
+      ticketCost: number;
+      startsAt: string;
+      endsAt: string;
+      entries: number;
+      participants: number;
+      tickets: number;
+    }[];
+
+    const raffleList = Array.from(raffleRows);
+    const inActiveRaffles = raffleList
+      .filter((r) => r.status === "active")
+      .reduce((s, r) => s + r.tickets, 0);
+    const activeParticipants = raffleList
+      .filter((r) => r.status === "active")
+      .reduce((s, r) => Math.max(s, r.participants), 0);
+
+    const h = holders ?? { holders: 0, ever_touched: 0, avg_balance: 0, max_balance: 0 };
+
     return {
       totals: totals ?? { issued: 0, spent: 0, balance: 0, spentOnRaffles: 0, ops: 0, users: 0 },
       last30: last30 ?? { issued30: 0, spent30: 0 },
       bySource,
+      holders: {
+        holders: h.holders,
+        everTouched: h.ever_touched,
+        avgBalance: h.avg_balance,
+        maxBalance: h.max_balance,
+      },
+      raffles: {
+        items: raffleList,
+        inActiveRaffles,
+        activeParticipants,
+      },
     };
   });
+
 
   // GET /api/v1/admin/tickets/journal — общий журнал последних операций
   app.get("/journal", { preHandler: requireAdmin }, async (req) => {

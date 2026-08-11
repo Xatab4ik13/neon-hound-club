@@ -34,6 +34,13 @@ const SOURCE_LABEL: Record<string, string> = {
   refund: "Возврат",
 };
 
+const RAFFLE_STATUS_LABEL: Record<string, string> = {
+  active: "Идёт",
+  finished: "Завершён",
+  cancelled: "Отменён",
+  draft: "Черновик",
+};
+
 
 function fmt(n: number): React.ReactNode {
   return (n).toLocaleString("ru-RU");
@@ -74,8 +81,20 @@ function StatsBlock() {
     {
       label: "На руках сейчас",
       value: s ? fmt(s.totals.balance) : "—",
-      hint: s ? <span>{fmt(s.totals.users)} держателей</span> : "",
+      hint: s ? (
+        <span>
+          {fmt(s.holders.holders)} держателей · в среднем {fmt(s.holders.avgBalance)}
+        </span>
+      ) : (
+        ""
+      ),
       icon: PlumpTicket,
+    },
+    {
+      label: "В активных розыгрышах",
+      value: s ? fmt(s.raffles.inActiveRaffles) : "—",
+      hint: s ? <span>{fmt(s.raffles.activeParticipants)} участников</span> : "",
+      icon: Trophy,
     },
     {
       label: "Выпущено всего",
@@ -84,17 +103,18 @@ function StatsBlock() {
       icon: TrendingUp,
     },
     {
-      label: "Сожжено в розыгрышах",
-      value: s ? fmt(s.totals.spentOnRaffles) : "—",
-      hint: s ? <span>всего сожжено: {fmt(s.totals.spent)}</span> : "",
-      icon: Trophy,
-    },
-    {
-      label: "Операций",
-      value: s ? fmt(s.totals.ops) : "—",
-      hint: s ? <span>−{fmt(s.last30.spent30)} расход 30д</span> : "",
+      label: "Сожжено всего",
+      value: s ? fmt(s.totals.spent) : "—",
+      hint: s ? (
+        <span>
+          из них в розыгрышах {fmt(s.totals.spentOnRaffles)} · −{fmt(s.last30.spent30)} за 30д
+        </span>
+      ) : (
+        ""
+      ),
       icon: Users,
     },
+
   ];
 
   return (
@@ -118,6 +138,50 @@ function StatsBlock() {
           </div>
         ))}
       </div>
+
+      {s && (
+        <Panel>
+          <PanelHeader>
+            <div className="flex items-baseline justify-between gap-2">
+              <div className="text-sm font-medium">Билеты по розыгрышам</div>
+              <div className="text-xs text-zinc-500">
+                Сколько билетов сожжено внутри каждого розыгрыша и сколько людей участвует
+              </div>
+            </div>
+          </PanelHeader>
+          {s.raffles.items.length === 0 ? (
+            <div className="px-4 py-8 text-center text-sm text-zinc-500 dark:text-zinc-400">
+              Пока нет опубликованных розыгрышей
+            </div>
+          ) : (
+            <div className="divide-y divide-zinc-200 dark:divide-zinc-800">
+              {s.raffles.items.map((r) => (
+                <div key={r.id} className="flex flex-wrap items-baseline gap-x-4 gap-y-1 px-4 py-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-medium">{r.title}</div>
+                    <div className="text-xs text-zinc-500 dark:text-zinc-400">
+                      {RAFFLE_STATUS_LABEL[r.status] ?? r.status} · {r.ticketCost} бил./заявка ·
+                      до {new Date(r.endsAt).toLocaleDateString("ru-RU")}
+                    </div>
+                  </div>
+                  <div className="flex gap-4 text-xs tabular-nums">
+                    <span className="text-zinc-700 dark:text-zinc-300">
+                      билетов <b className="font-semibold">{fmt(r.tickets)}</b>
+                    </span>
+                    <span className="text-zinc-700 dark:text-zinc-300">
+                      заявок <b className="font-semibold">{fmt(r.entries)}</b>
+                    </span>
+                    <span className="text-zinc-700 dark:text-zinc-300">
+                      участников <b className="font-semibold">{fmt(r.participants)}</b>
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Panel>
+      )}
+
 
       {s && s.bySource.length > 0 && (
         <Panel>
