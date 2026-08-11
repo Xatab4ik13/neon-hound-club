@@ -205,6 +205,9 @@ function SpinPage() {
   const [state, setState] = useState<SpinState | null>(null);
   const [loading, setLoading] = useState(true);
   const [claiming, setClaiming] = useState<number | null>(null);
+  // Тосты в проекте отключены, поэтому ошибку крутки показываем прямо на странице.
+  const [spinError, setSpinError] = useState<string | null>(null);
+
 
   const access = useSpinAccess();
   // Локально видим PWA + push, телефон проверяет сервер — блокируем по обоим сигналам.
