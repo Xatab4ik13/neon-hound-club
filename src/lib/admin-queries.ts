@@ -551,6 +551,23 @@ export type AdminTicketsStats = {
   };
   last30: { issued30: number; spent30: number };
   bySource: { source: string; issued: number; burned: number; held: number }[];
+  holders: { holders: number; everTouched: number; avgBalance: number; maxBalance: number };
+  raffles: {
+    items: {
+      id: string;
+      title: string;
+      status: string;
+      prize: string | null;
+      ticketCost: number;
+      startsAt: string;
+      endsAt: string;
+      entries: number;
+      participants: number;
+      tickets: number;
+    }[];
+    inActiveRaffles: number;
+    activeParticipants: number;
+  };
 };
 
 export function fetchAdminTicketsStats() {
