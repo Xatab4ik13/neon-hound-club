@@ -149,12 +149,7 @@ export async function adminTicketsRoutes(app: FastifyInstance) {
 
     // Держатели = юзеры с положительным балансом. Отдельно — сколько людей вообще
     // когда-либо касались билетов (это НЕ держатели, раньше путалось в UI).
-    const [holders] = await db.execute<{
-      holders: number;
-      ever_touched: number;
-      avg_balance: number;
-      max_balance: number;
-    }>(sql`
+    const holdersRes = (await db.execute(sql`
       with b as (
         select user_id, sum(amount)::int as bal
         from tickets_ledger
@@ -166,7 +161,13 @@ export async function adminTicketsRoutes(app: FastifyInstance) {
         coalesce(round(avg(bal) filter (where bal > 0)), 0)::int as avg_balance,
         coalesce(max(bal), 0)::int as max_balance
       from b
-    `) as unknown as { holders: number; ever_touched: number; avg_balance: number; max_balance: number }[];
+    `)) as unknown as {
+      holders: number;
+      ever_touched: number;
+      avg_balance: number;
+      max_balance: number;
+    }[];
+    const holders = Array.from(holdersRes)[0];
 
     // Билеты внутри каждого розыгрыша: заявки, уникальные участники, сожжённые билеты.
     const raffleRows = (await db.execute(sql`
