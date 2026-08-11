@@ -74,10 +74,18 @@ export type AdminSpinStreak = {
   claimed30At: string | null;
 };
 
+export type AdminSpinHistoryParams = {
+  rarity?: "all" | "top" | "low";
+  q?: string;
+  prize?: string;
+  page: number;
+  pageSize: number;
+};
+
 export const adminSpinQk = {
   overview: ["admin", "spin", "overview"] as const,
-  history: (rarity: string, page: number, pageSize: number) =>
-    ["admin", "spin", "history", rarity, page, pageSize] as const,
+  history: (p: AdminSpinHistoryParams) =>
+    ["admin", "spin", "history", p.rarity ?? "all", p.q ?? "", p.prize ?? "", p.page, p.pageSize] as const,
   legends: ["admin", "spin", "legends"] as const,
   streaks: ["admin", "spin", "streaks"] as const,
 };
@@ -86,14 +94,15 @@ export function fetchAdminSpinOverview() {
   return apiFetch<AdminSpinOverview>("/api/v1/admin/spin/overview");
 }
 
-export function fetchAdminSpinHistory(
-  rarity: "all" | "top" | "low",
-  page: number,
-  pageSize: number,
-) {
-  return apiFetch<AdminSpinHistory>(
-    `/api/v1/admin/spin/history?rarity=${rarity}&page=${page}&pageSize=${pageSize}`,
-  );
+export function fetchAdminSpinHistory(p: AdminSpinHistoryParams) {
+  const qs = new URLSearchParams({
+    rarity: p.rarity ?? "all",
+    page: String(p.page),
+    pageSize: String(p.pageSize),
+  });
+  if (p.q) qs.set("q", p.q);
+  if (p.prize) qs.set("prize", p.prize);
+  return apiFetch<AdminSpinHistory>(`/api/v1/admin/spin/history?${qs.toString()}`);
 }
 
 export function fetchAdminSpinLegends() {

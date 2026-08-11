@@ -136,11 +136,15 @@ export async function adminSpinRoutes(app: FastifyInstance) {
     };
   });
 
-  // История прокрутов с пагинацией. rarity: top = epic+legend, low = common+rare, all = все.
+  // История прокрутов с пагинацией.
+  // rarity: top = epic+legend, low = common+rare, all = все.
+  // q — поиск по нику, prize — фильтр по коду приза (для карточек «крупные призы»).
   app.get("/history", { preHandler: requireAdmin }, async (req) => {
     const q = z
       .object({
         rarity: z.enum(["all", "top", "low"]).default("all"),
+        q: z.string().trim().max(64).optional(),
+        prize: z.string().trim().max(32).optional(),
         page: z.coerce.number().int().min(1).max(100000).default(1),
         pageSize: z.coerce.number().int().min(10).max(200).default(100),
       })
@@ -149,13 +153,16 @@ export async function adminSpinRoutes(app: FastifyInstance) {
     const season = await ensureCurrentSeason();
     const rarities =
       q.rarity === "top" ? ["epic", "legend"] : q.rarity === "low" ? ["common", "rare"] : null;
-    const where = rarities
-      ? and(eq(spinSpins.seasonId, season.id), inArray(spinSpins.rarity, rarities))
-      : eq(spinSpins.seasonId, season.id);
+    const conds = [eq(spinSpins.seasonId, season.id)];
+    if (rarities) conds.push(inArray(spinSpins.rarity, rarities));
+    if (q.prize) conds.push(eq(spinSpins.prizeCode, q.prize));
+    if (q.q) conds.push(sql`${users.nick} ilike ${"%" + q.q + "%"}`);
+    const where = and(...conds);
 
     const [totalRow] = await db
       .select({ c: sql<number>`count(*)::int` })
       .from(spinSpins)
+      .leftJoin(users, eq(users.id, spinSpins.userId))
       .where(where);
 
     const prizes = await db

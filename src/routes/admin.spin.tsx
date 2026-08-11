@@ -2,7 +2,7 @@
 // статистика: легендарные выигрыши с анкетой победителя, топ-выигрыши,
 // полная история прокрутов со страницами и календарь активности.
 
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -12,13 +12,14 @@ import {
   DataTable,
   Badge,
   Btn,
+  TextInput,
 } from "@/components/admin/ui";
 import { AdminPager, type AdminPageSize } from "@/components/admin/AdminPager";
+import { AdminUserDrawer } from "@/components/admin/AdminUserDrawer";
 import {
   PlumpSpin,
   TrendingUp,
   PlumpUsers as Users,
-  Phone,
   Trophy,
   CalendarCheck,
   RefreshCw,
@@ -27,7 +28,6 @@ import { cn } from "@/lib/utils";
 import {
   adminSpinQk,
   fetchAdminSpinHistory,
-  fetchAdminSpinLegends,
   fetchAdminSpinOverview,
   fetchAdminSpinStreaks,
   type SpinRarity,
@@ -81,18 +81,26 @@ function fmt(n: number): string {
   return n.toLocaleString("ru-RU");
 }
 
-/** Ник победителя — ссылка на его анкету в клубе. */
-function NickLink({ nick }: { nick: string | null }) {
+/** Ник + кнопка «Открыть» — открывает полную карточку юзера как в /admin/users. */
+function UserCell({
+  nick,
+  userId,
+  onOpen,
+}: {
+  nick: string | null;
+  userId: string | null;
+  onOpen: (id: string) => void;
+}) {
   if (!nick) return <span className="text-zinc-400">—</span>;
   return (
-    <Link
-      to="/club/u/$nick"
-      params={{ nick }}
-      target="_blank"
-      className="font-medium text-violet-600 hover:underline dark:text-violet-400"
-    >
-      @{nick}
-    </Link>
+    <span className="inline-flex items-center gap-2">
+      <span className="font-medium">@{nick}</span>
+      {userId && (
+        <Btn variant="ghost" onClick={() => onOpen(userId)}>
+          Открыть
+        </Btn>
+      )}
+    </span>
   );
 }
 
@@ -100,30 +108,54 @@ function SpinAdminPage() {
   const qc = useQueryClient();
 
   const overview = useQuery({ queryKey: adminSpinQk.overview, queryFn: fetchAdminSpinOverview });
-  const legends = useQuery({ queryKey: adminSpinQk.legends, queryFn: fetchAdminSpinLegends });
   const streaks = useQuery({ queryKey: adminSpinQk.streaks, queryFn: fetchAdminSpinStreaks });
 
-  const [topPage, setTopPage] = useState(1);
-  const [topSize, setTopSize] = useState<AdminPageSize>(50);
-  const top = useQuery({
-    queryKey: adminSpinQk.history("top", topPage, topSize),
-    queryFn: () => fetchAdminSpinHistory("top", topPage, topSize),
-    placeholderData: (prev) => prev,
-  });
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 
   const [histPage, setHistPage] = useState(1);
   const [histSize, setHistSize] = useState<AdminPageSize>(100);
-  const [histRarity, setHistRarity] = useState<"all" | "low">("all");
+  const [histRarity, setHistRarity] = useState<"all" | "top" | "low">("all");
+  const [prizeFilter, setPrizeFilter] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [debounced, setDebounced] = useState("");
+
+  if (search !== debounced) {
+    setTimeout(() => {
+      setDebounced(search);
+      setHistPage(1);
+    }, 250);
+  }
+
+  const histParams = {
+    rarity: histRarity,
+    q: debounced || undefined,
+    prize: prizeFilter ?? undefined,
+    page: histPage,
+    pageSize: histSize,
+  };
   const history = useQuery({
-    queryKey: adminSpinQk.history(histRarity, histPage, histSize),
-    queryFn: () => fetchAdminSpinHistory(histRarity, histPage, histSize),
+    queryKey: adminSpinQk.history(histParams),
+    queryFn: () => fetchAdminSpinHistory(histParams),
     placeholderData: (prev) => prev,
   });
 
   const stats = overview.data?.stats;
   const season = overview.data?.season;
   const spinsPerDay = overview.data?.spinsPerDay ?? {};
-  const legendRows = legends.data ?? [];
+
+  // Крупные призы сезона: эпик + легенда, с реальным числом выигрышей.
+  const wonByCode = new Map((overview.data?.byPrize ?? []).map((p) => [p.prizeCode, p.count]));
+  const bigPrizes = (overview.data?.prizes ?? [])
+    .filter((p) => p.rarity === "epic" || p.rarity === "legend")
+    .map((p) => ({ ...p, won: wonByCode.get(p.code) ?? 0 }))
+    .sort((a, b) => b.won - a.won);
+  const bigTotal = bigPrizes.reduce((s, p) => s + p.won, 0);
+
+  const openPrize = (code: string) => {
+    setPrizeFilter(code);
+    setHistRarity("all");
+    setHistPage(1);
+  };
 
   const refreshAll = () => qc.invalidateQueries({ queryKey: ["admin", "spin"] });
 
@@ -145,101 +177,73 @@ function SpinAdminPage() {
         <KpiCard label="За сезон" value={stats ? fmt(stats.spins) : "—"} icon={TrendingUp} />
         <KpiCard label="Крутят" value={stats ? fmt(stats.players) : "—"} icon={Users} hint="уник. игроков" />
         <KpiCard
-          label="Легендарных призов"
-          value={fmt(legendRows.length)}
+          label="Крупных призов"
+          value={fmt(bigTotal)}
           icon={Trophy}
           tone="amber"
-          hint="за сезон"
+          hint="эпик + легенда за сезон"
         />
       </div>
 
-      {/* Легендарные призы */}
+      {/* Статистика крупных призов — клик открывает список победителей */}
       <Panel className="mb-6">
         <PanelHeader>
           <div className="flex items-center gap-2">
             <Trophy className="h-4 w-4 text-amber-500" />
-            <span className="text-sm font-semibold">Легендарные призы</span>
+            <span className="text-sm font-semibold">Крупные призы</span>
           </div>
           <span className="text-xs text-zinc-500 dark:text-zinc-400">
-            Мегавыигрыши: техника и Hell Pass
+            Нажми на приз, чтобы увидеть победителей
           </span>
         </PanelHeader>
-        <DataTable
-          headers={["Победитель", "Приз", "Город", "Телефон", "Email", "Тир", "Дата"]}
-          rows={legendRows.map((l) => [
-            <NickLink nick={l.nick} />,
-            <span className="font-medium">{l.prizeTitle}</span>,
-            <span className="text-xs">{l.city ?? "—"}</span>,
-            <span className="inline-flex items-center gap-1 font-mono text-xs">
-              <Phone className="h-3 w-3 text-zinc-400" />
-              {l.phone ?? "—"}
-            </span>,
-            <span className="text-xs text-zinc-500 dark:text-zinc-400">{l.email ?? "—"}</span>,
-            <span className="text-xs">{TIER_LABEL[l.tier] ?? l.tier}</span>,
-            <span className="text-xs text-zinc-500 dark:text-zinc-400">{fmtDate(l.createdAt)}</span>,
-          ])}
-        />
-        {legends.isLoading && (
-          <div className="px-4 py-8 text-center text-sm text-zinc-500 dark:text-zinc-400">Загрузка…</div>
-        )}
-        {!legends.isLoading && legendRows.length === 0 && (
-          <div className="px-4 py-8 text-center text-sm text-zinc-500 dark:text-zinc-400">
-            Легендарных выигрышей пока нет
-          </div>
-        )}
+        <div className="grid grid-cols-2 gap-3 p-4 md:grid-cols-3 lg:grid-cols-4">
+          {bigPrizes.map((p) => (
+            <button
+              key={p.code}
+              type="button"
+              onClick={() => openPrize(p.code)}
+              className={cn(
+                "rounded-lg border px-3 py-2.5 text-left transition-colors",
+                prizeFilter === p.code
+                  ? "border-amber-500 bg-amber-50 dark:bg-amber-950/30"
+                  : "border-zinc-200 hover:border-zinc-400 dark:border-zinc-800 dark:hover:border-zinc-600",
+              )}
+            >
+              <div className="mb-1 flex items-center gap-1.5">
+                <Badge tone={RARITY_TONE[p.rarity]}>{RARITY_LABEL[p.rarity]}</Badge>
+              </div>
+              <div className="text-sm font-medium">{p.title}</div>
+              <div className="mt-1 font-mono text-xl font-bold tabular-nums">{fmt(p.won)}</div>
+              <div className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                {p.limitTotal ? `из пула ${fmt(p.limitTotal)}` : "без лимита"}
+              </div>
+            </button>
+          ))}
+          {overview.isLoading && (
+            <div className="col-span-full py-6 text-center text-sm text-zinc-500">Загрузка…</div>
+          )}
+          {!overview.isLoading && bigPrizes.length === 0 && (
+            <div className="col-span-full py-6 text-center text-sm text-zinc-500">
+              Крупных призов в сезоне нет
+            </div>
+          )}
+        </div>
       </Panel>
 
-      {/* Топ-выигрыши: эпик + легенда */}
-      <Panel className="mb-6">
-        <PanelHeader>
-          <div className="flex items-center gap-2">
-            <TrendingUp className="h-4 w-4 text-violet-500" />
-            <span className="text-sm font-semibold">Победители — эпик и легенда</span>
-          </div>
-          <span className="text-xs text-zinc-500 dark:text-zinc-400">
-            Всего: {fmt(top.data?.total ?? 0)}
-          </span>
-        </PanelHeader>
-        <DataTable
-          headers={["Игрок", "Приз", "Редкость", "Тир", "Дата"]}
-          rows={(top.data?.items ?? []).map((r) => [
-            <NickLink nick={r.nick} />,
-            <span>
-              {r.prizeTitle}
-              {r.bonus && <span className="ml-1 text-xs text-zinc-400">бонус-спин</span>}
-            </span>,
-            <Badge tone={RARITY_TONE[r.rarity]}>{RARITY_LABEL[r.rarity]}</Badge>,
-            <span className="text-xs">{TIER_LABEL[r.tier] ?? r.tier}</span>,
-            <span className="text-xs text-zinc-500 dark:text-zinc-400">{fmtDate(r.createdAt)}</span>,
-          ])}
-        />
-        {!top.isLoading && (top.data?.items ?? []).length === 0 && (
-          <div className="px-4 py-8 text-center text-sm text-zinc-500 dark:text-zinc-400">
-            Пока нет эпических и легендарных выигрышей
-          </div>
-        )}
-        <AdminPager
-          page={topPage}
-          pageSize={topSize}
-          total={top.data?.total ?? 0}
-          onPageChange={setTopPage}
-          onPageSizeChange={(s) => {
-            setTopSize(s);
-            setTopPage(1);
-          }}
-        />
-      </Panel>
-
-      {/* Полная история прокрутов */}
+      {/* История прокрутов с поиском и фильтрами */}
       <Panel className="mb-6">
         <PanelHeader>
           <div className="flex items-center gap-2">
             <PlumpSpin className="h-4 w-4 text-zinc-500 dark:text-zinc-400" />
             <span className="text-sm font-semibold">История прокрутов</span>
+            <span className="text-xs text-zinc-500 dark:text-zinc-400">
+              Всего: {fmt(history.data?.total ?? 0)}
+            </span>
           </div>
-          <div className="flex gap-1.5">
+          <div className="flex flex-wrap items-center gap-1.5">
             {([
               { key: "all", label: "Все" },
+              { key: "top", label: "Эпик и легенда" },
               { key: "low", label: "Обычные и редкие" },
             ] as const).map((f) => (
               <button
@@ -261,10 +265,32 @@ function SpinAdminPage() {
             ))}
           </div>
         </PanelHeader>
+
+        <div className="flex flex-wrap items-center gap-2 border-b border-zinc-200 px-4 py-3 dark:border-zinc-800">
+          <TextInput
+            placeholder="Поиск по нику…"
+            className="max-w-xs"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          {prizeFilter && (
+            <button
+              type="button"
+              onClick={() => {
+                setPrizeFilter(null);
+                setHistPage(1);
+              }}
+              className="inline-flex items-center gap-1 rounded-full border border-amber-500 px-3 py-1 text-xs font-medium text-amber-600 dark:text-amber-400"
+            >
+              Приз: {bigPrizes.find((p) => p.code === prizeFilter)?.title ?? prizeFilter} ×
+            </button>
+          )}
+        </div>
+
         <DataTable
           headers={["Игрок", "Приз", "Редкость", "Тир", "Дата"]}
           rows={(history.data?.items ?? []).map((r) => [
-            <NickLink nick={r.nick} />,
+            <UserCell nick={r.nick} userId={r.userId} onOpen={setSelectedUserId} />,
             <span>
               {r.prizeTitle}
               {r.bonus && <span className="ml-1 text-xs text-zinc-400">бонус-спин</span>}
@@ -276,7 +302,7 @@ function SpinAdminPage() {
         />
         {!history.isLoading && (history.data?.items ?? []).length === 0 && (
           <div className="px-4 py-8 text-center text-sm text-zinc-500 dark:text-zinc-400">
-            Прокрутов пока нет
+            Ничего не найдено
           </div>
         )}
         <AdminPager
@@ -313,7 +339,7 @@ function SpinAdminPage() {
         <DataTable
           headers={["Игрок", "Город", "Телефон", "Дней", "10", "20", "30"]}
           rows={(streaks.data ?? []).map((s) => [
-            <NickLink nick={s.nick} />,
+            <UserCell nick={s.nick} userId={s.userId} onOpen={setSelectedUserId} />,
             <span className="text-xs">{s.city ?? "—"}</span>,
             <span className="font-mono text-xs">{s.phone ?? "—"}</span>,
             <span className="font-mono text-sm font-semibold">{s.daysCount}</span>,
@@ -364,6 +390,10 @@ function SpinAdminPage() {
           </div>
         </div>
       </Panel>
+
+      {selectedUserId && (
+        <AdminUserDrawer userId={selectedUserId} onClose={() => setSelectedUserId(null)} />
+      )}
     </div>
   );
 }
