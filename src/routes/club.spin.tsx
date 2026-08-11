@@ -788,12 +788,6 @@ function CapsuleAbout() {
           />
         </span>
         <span className="min-w-0 flex-1">
-          <span
-            className="inline-block rounded-lg px-2 py-0.5 font-display text-[10px] font-black uppercase tracking-tight text-black"
-            style={{ background: CAPSULE_CHIP }}
-          >
-            Легенда
-          </span>
           <span className="mt-1 block font-display text-[17px] font-black uppercase leading-tight tracking-tight text-foreground">
             Капсула ×2
           </span>
@@ -811,10 +805,9 @@ function CapsuleAbout() {
 
       <ul className="relative mt-3 space-y-1.5">
         {[
-          "Работает только на цифровые товары — открытки Hell",
-          "На физический мерч и доставку не действует",
-          "Одна капсула за раз, срок продлевается, а не суммируется",
-          "Пока капсула активна, цифровые товары в магазине горят",
+          "Работает только на цифровые товары",
+          "Капсулу можно использовать один раз — после покупки она сразу пропадает",
+          "Через 24 часа капсула тоже пропадает",
         ].map((t) => (
           <li key={t} className="flex gap-2 text-[12.5px] leading-snug text-muted-foreground">
             <span
