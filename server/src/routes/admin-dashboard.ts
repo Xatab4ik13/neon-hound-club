@@ -53,6 +53,9 @@ export async function adminDashboardRoutes(app: FastifyInstance) {
         goods: sql<number>`COALESCE(SUM(${orders.totalRub} - ${orders.shippingPriceRub}), 0)::int`,
         shipping: sql<number>`COALESCE(SUM(${orders.shippingPriceRub}), 0)::int`,
         discount: sql<number>`COALESCE(SUM(${orders.discountRub}), 0)::int`,
+        // Себестоимость доставки: клиенту показывается цена СДЭК × 1.25 (округление до 10 ₽).
+        shippingCost: sql<number>`COALESCE(SUM(ROUND(${orders.shippingPriceRub} / 1.25)), 0)::int`,
+        shippingOrders: sql<number>`COUNT(*) FILTER (WHERE ${orders.shippingPriceRub} > 0)::int`,
       })
       .from(orders)
       .where(
@@ -190,6 +193,9 @@ export async function adminDashboardRoutes(app: FastifyInstance) {
         ordersPaid: ordersCnt,
         goodsRevenue: goods,
         shippingRevenue: ordersRow?.shipping ?? 0,
+        shippingCostRub: ordersRow?.shippingCost ?? 0,
+        shippingMarginRub: (ordersRow?.shipping ?? 0) - (ordersRow?.shippingCost ?? 0),
+        shippingOrders: ordersRow?.shippingOrders ?? 0,
         discountRub: ordersRow?.discount ?? 0,
         avgOrderRub: ordersCnt > 0 ? Math.round(goods / ordersCnt) : 0,
         passSold: passSold?.cnt ?? 0,
