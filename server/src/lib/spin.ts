@@ -21,6 +21,7 @@ import { ticketCredit } from "./tickets.js";
 import { awardXp } from "./xp.js";
 import { generatePromoCode } from "./promo.js";
 import { products } from "../db/schema/shop.js";
+import { ticketBoosts } from "../db/schema/ticket-boosts.js";
 
 /**
  * Движок HellSpin.
@@ -586,6 +587,8 @@ async function grantPrize(
         .update(users)
         .set({ ticketBoostUntil: expiresAt, updatedAt: new Date() })
         .where(eq(users.id, userId));
+      // Лог для админки: кто выбил капсулу и до когда она живёт.
+      await db.insert(ticketBoosts).values({ userId, source: "spin", expiresAt });
       return undefined;
     }
 
@@ -614,12 +617,36 @@ export async function getTicketBoost(
   };
 }
 
-/** Потребить капсулу (обнулить) — вызывается после применения x2 к цифровой покупке. */
-export async function consumeTicketBoost(userId: string): Promise<void> {
+/**
+ * Потребить капсулу (обнулить) — вызывается после применения x2 к цифровой покупке.
+ * Заодно помечаем последнюю неиспользованную капсулу как активированную:
+ * заказ + сколько бонусных билетов она принесла (для админки).
+ */
+export async function consumeTicketBoost(
+  userId: string,
+  opts?: { orderId?: string; bonusTickets?: number },
+): Promise<void> {
   await db
     .update(users)
     .set({ ticketBoostUntil: null, updatedAt: new Date() })
     .where(eq(users.id, userId));
+
+  const [row] = await db
+    .select({ id: ticketBoosts.id })
+    .from(ticketBoosts)
+    .where(and(eq(ticketBoosts.userId, userId), sql`${ticketBoosts.usedAt} is null`))
+    .orderBy(sql`${ticketBoosts.grantedAt} desc`)
+    .limit(1);
+  if (row) {
+    await db
+      .update(ticketBoosts)
+      .set({
+        usedAt: new Date(),
+        usedOrderId: opts?.orderId ?? null,
+        bonusTickets: opts?.bonusTickets ?? 0,
+      })
+      .where(eq(ticketBoosts.id, row.id));
+  }
 }
 
 /** Выдать Hell Pass как приз: запись покупки на 0₽ + активация на 30 дней. */

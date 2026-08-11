@@ -5,6 +5,7 @@ import { db } from "../db/client.js";
 import { promoCodes } from "../db/schema/promo.js";
 import { users } from "../db/schema/users.js";
 import { products, orders, orderItems } from "../db/schema/shop.js";
+import { ticketBoosts } from "../db/schema/ticket-boosts.js";
 import { requireAuth, requireAdmin, type SessionPayload } from "../lib/auth.js";
 import {
   PromoError,
@@ -251,6 +252,89 @@ export async function adminPromoRoutes(app: FastifyInstance) {
   });
 
 
+
+  /**
+   * Капсулы ×2 (приз HellSpin). Показываем как «промокод-подобную» выдачу:
+   * кто выбил, до когда действует, активировал ли и на какой заказ.
+   * status: active | used | expired.
+   */
+  app.get("/capsules", async (req) => {
+    const q = z
+      .object({
+        status: z.enum(["all", "used", "active", "expired"]).default("all"),
+        q: z.string().trim().max(64).optional(),
+        userId: z.string().uuid().optional(),
+      })
+      .parse(req.query ?? {});
+
+    const conds = [];
+    if (q.userId) conds.push(eq(ticketBoosts.userId, q.userId));
+    if (q.q) conds.push(sql`${users.nick} ilike ${"%" + q.q + "%"}`);
+    if (q.status === "used") conds.push(sql`${ticketBoosts.usedAt} is not null`);
+    if (q.status === "active")
+      conds.push(sql`${ticketBoosts.usedAt} is null and ${ticketBoosts.expiresAt} > now()`);
+    if (q.status === "expired")
+      conds.push(sql`${ticketBoosts.usedAt} is null and ${ticketBoosts.expiresAt} <= now()`);
+
+    const rows = await db
+      .select({
+        id: ticketBoosts.id,
+        userId: ticketBoosts.userId,
+        nick: users.nick,
+        email: users.email,
+        grantedAt: ticketBoosts.grantedAt,
+        expiresAt: ticketBoosts.expiresAt,
+        usedAt: ticketBoosts.usedAt,
+        usedOrderId: ticketBoosts.usedOrderId,
+        bonusTickets: ticketBoosts.bonusTickets,
+        orderTotalRub: orders.totalRub,
+      })
+      .from(ticketBoosts)
+      .leftJoin(users, eq(users.id, ticketBoosts.userId))
+      .leftJoin(orders, eq(orders.id, ticketBoosts.usedOrderId))
+      .where(conds.length ? and(...conds) : undefined)
+      .orderBy(desc(ticketBoosts.grantedAt))
+      .limit(500);
+
+    const now = Date.now();
+    const items = rows.map((r) => ({
+      id: r.id,
+      userId: r.userId,
+      nick: r.nick ?? null,
+      email: r.email ?? null,
+      grantedAt: r.grantedAt.toISOString(),
+      expiresAt: r.expiresAt.toISOString(),
+      usedAt: r.usedAt?.toISOString() ?? null,
+      usedOrderId: r.usedOrderId ?? null,
+      bonusTickets: r.bonusTickets,
+      orderTotalRub: r.orderTotalRub ?? null,
+      status: r.usedAt
+        ? ("used" as const)
+        : r.expiresAt.getTime() > now
+          ? ("active" as const)
+          : ("expired" as const),
+    }));
+
+    const totalsRes = (await db.execute(sql`
+      SELECT
+        COUNT(*)::int AS total,
+        COUNT(*) FILTER (WHERE used_at IS NOT NULL)::int AS used,
+        COUNT(*) FILTER (WHERE used_at IS NULL AND expires_at > now())::int AS active,
+        COALESCE(SUM(bonus_tickets), 0)::int AS bonus_tickets
+      FROM ticket_boosts
+    `)) as unknown as Array<Record<string, number>>;
+    const totals = Array.from(totalsRes ?? [])[0] ?? ({} as Record<string, number>);
+
+    return {
+      items,
+      stats: {
+        total: Number(totals?.total ?? 0),
+        used: Number(totals?.used ?? 0),
+        active: Number(totals?.active ?? 0),
+        bonusTickets: Number(totals?.bonus_tickets ?? 0),
+      },
+    };
+  });
 
   // Создать / сгенерировать промокод.
   app.post("/", async (req, reply) => {

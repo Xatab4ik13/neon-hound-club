@@ -667,17 +667,15 @@ function SpinPage() {
           })}
         </div>
 
-        {/* Вехи компактно: три плитки в ряд вместо длинного списка */}
-        <div className="grid grid-cols-3 gap-2">
+        <ul className="space-y-2">
           {CALENDAR.map((c) => {
             const isClaimed = claimed.includes(c.day);
-            const canClaim = !isClaimed && streak >= c.day;
             return (
-              <div
+              <li
                 key={c.day}
-                className="flex flex-col items-center gap-1.5 rounded-2xl bg-black/30 px-2 py-2.5 text-center"
+                className="relative flex items-center gap-3 overflow-hidden rounded-2xl bg-black/30 px-3 py-2.5"
               >
-                <span className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-full bg-white/[0.06]">
+                <span className="relative grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full bg-white/[0.06]">
                   <img
                     src={MILESTONE_IMG[c.day]}
                     alt={c.title}
@@ -689,38 +687,38 @@ function SpinPage() {
                     }`}
                   />
                 </span>
-                <span className="font-mono text-[9px] uppercase tracking-widest text-muted-foreground">
-                  {c.day} дней
+
+                <span className="min-w-0 flex-1">
+                  <span
+                    className={`block truncate text-[14px] font-semibold ${
+                      isClaimed ? "text-muted-foreground" : "text-foreground"
+                    }`}
+                  >
+                    {c.title}
+                  </span>
+                  <span className="block font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                    {isClaimed ? "Забрано" : c.sub}
+                  </span>
                 </span>
-                <span
-                  className={`line-clamp-2 text-[11px] font-semibold leading-tight ${
-                    isClaimed ? "text-muted-foreground" : "text-foreground"
-                  }`}
-                >
-                  {c.title}
-                </span>
+
                 {isClaimed ? (
-                  <span className="rounded-md border-[2px] border-foreground bg-[#B6FF3C] px-1.5 py-0.5 font-display text-[9px] font-black uppercase text-black">
+                  <span className="shrink-0 rounded-lg border-[2px] border-foreground bg-[#B6FF3C] px-2 py-1 font-display text-[10px] font-black uppercase tracking-tight text-black shadow-[2px_2px_0_0_hsl(var(--foreground))]">
                     Твоё
                   </span>
-                ) : canClaim ? (
+                ) : streak >= c.day ? (
                   <button
                     type="button"
                     onClick={() => void claimMilestone(c.day)}
                     disabled={claiming !== null}
-                    className="rounded-md bg-primary px-2 py-0.5 font-display text-[9px] font-black uppercase text-primary-foreground transition-transform active:scale-[0.94] disabled:opacity-50"
+                    className="shrink-0 rounded-lg bg-primary px-2.5 py-1 font-display text-[10px] font-black uppercase text-primary-foreground transition-transform active:scale-[0.94] disabled:opacity-50"
                   >
                     {claiming === c.day ? "…" : "Забрать"}
                   </button>
-                ) : (
-                  <span className="font-mono text-[9px] uppercase tracking-widest text-muted-foreground/70">
-                    {Math.max(0, c.day - streak)} дн.
-                  </span>
-                )}
-              </div>
+                ) : null}
+              </li>
             );
           })}
-        </div>
+        </ul>
       </section>
 
       <HowItWorks season={state?.season} />

@@ -104,6 +104,9 @@ function UserCell({
   );
 }
 
+/** Строк на страницу в календаре активности. */
+const STREAK_PER_PAGE = 10;
+
 function SpinAdminPage() {
   const qc = useQueryClient();
 
@@ -117,6 +120,8 @@ function SpinAdminPage() {
   const [histRarity, setHistRarity] = useState<"all" | "top" | "low">("all");
   const [prizeFilter, setPrizeFilter] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [streakPage, setStreakPage] = useState(1);
+  const [streakSearch, setStreakSearch] = useState("");
   const [debounced, setDebounced] = useState("");
 
   // Дебаунс поиска через эффект: раньше setTimeout вызывался на каждом рендере
@@ -206,6 +211,20 @@ function SpinAdminPage() {
     setHistRarity("all");
     setHistPage(1);
   };
+
+  // Календарь активности: фильтр + страницы по 10 строк (данные приходят целиком).
+  const streakFiltered = (streaks.data ?? []).filter((s) => {
+    const needle = streakSearch.trim().toLowerCase();
+    if (!needle) return true;
+    return (s.nick ?? "").toLowerCase().includes(needle);
+  });
+  const streakTotal = streakFiltered.length;
+  const streakPages = Math.max(1, Math.ceil(streakTotal / STREAK_PER_PAGE));
+  const streakPageSafe = Math.min(streakPage, streakPages);
+  const streakPageRows = streakFiltered.slice(
+    (streakPageSafe - 1) * STREAK_PER_PAGE,
+    streakPageSafe * STREAK_PER_PAGE,
+  );
 
   const refreshAll = () => qc.invalidateQueries({ queryKey: ["admin", "spin"] });
 
@@ -369,17 +388,31 @@ function SpinAdminPage() {
         <OddsTable />
       </Panel>
 
-      {/* Календарь активности */}
+      {/* Календарь активности — со страницами, чтобы таблица не тянулась вниз */}
       <Panel className="mb-6">
         <PanelHeader>
           <div className="flex items-center gap-2">
             <CalendarCheck className="h-4 w-4 text-zinc-500 dark:text-zinc-400" />
             <span className="text-sm font-semibold">Календарь активности</span>
+            <span className="text-xs text-zinc-500 dark:text-zinc-400">
+              Всего: {fmt(streakTotal)}
+            </span>
+          </div>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <TextInput
+              placeholder="Поиск по нику…"
+              className="max-w-[200px]"
+              value={streakSearch}
+              onChange={(e) => {
+                setStreakSearch(e.target.value);
+                setStreakPage(1);
+              }}
+            />
           </div>
         </PanelHeader>
         <DataTable
           headers={["Игрок", "Город", "Телефон", "Дней", "10", "20", "30"]}
-          rows={(streaks.data ?? []).map((s) => [
+          rows={streakPageRows.map((s) => [
             <UserCell nick={s.nick} userId={s.userId} onOpen={setSelectedUserId} />,
             <span className="text-xs">{s.city ?? "—"}</span>,
             <span className="font-mono text-xs">{s.phone ?? "—"}</span>,
@@ -389,9 +422,36 @@ function SpinAdminPage() {
             <ClaimCell at={s.claimed30At} />,
           ])}
         />
-        {!streaks.isLoading && (streaks.data ?? []).length === 0 && (
+        {!streaks.isLoading && streakTotal === 0 && (
           <div className="px-4 py-8 text-center text-sm text-zinc-500 dark:text-zinc-400">
-            Пока никто не крутил в этом сезоне
+            {streakSearch ? "Никого не нашли" : "Пока никто не крутил в этом сезоне"}
+          </div>
+        )}
+        {streakTotal > 0 && (
+          <div className="flex items-center justify-between gap-3 border-t border-zinc-200 px-4 py-3 dark:border-zinc-800">
+            <span className="text-xs text-zinc-500 dark:text-zinc-400">
+              {(streakPageSafe - 1) * STREAK_PER_PAGE + 1}–
+              {Math.min(streakPageSafe * STREAK_PER_PAGE, streakTotal)} из {fmt(streakTotal)}
+            </span>
+            <div className="flex items-center gap-2">
+              <Btn
+                variant="secondary"
+                onClick={() => setStreakPage(Math.max(1, streakPageSafe - 1))}
+                disabled={streakPageSafe <= 1}
+              >
+                Назад
+              </Btn>
+              <span className="font-mono text-xs">
+                {streakPageSafe} / {streakPages}
+              </span>
+              <Btn
+                variant="secondary"
+                onClick={() => setStreakPage(Math.min(streakPages, streakPageSafe + 1))}
+                disabled={streakPageSafe >= streakPages}
+              >
+                Вперёд
+              </Btn>
+            </div>
           </div>
         )}
       </Panel>
