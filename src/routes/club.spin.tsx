@@ -949,6 +949,7 @@ function WinModal({
 
   if (!open || !prize || typeof document === "undefined") return null;
   const r = RARITY[prize.rarity];
+  const capsule = prize.id === "boost_x2";
 
   return createPortal(
     <div
