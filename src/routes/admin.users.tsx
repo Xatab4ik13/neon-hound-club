@@ -1,50 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Ban, Gift, ShieldCheck, Trash2, Sparkles, Award, PlumpSmile as Smile } from "@/components/ui/icons";
-import {
-  PageHeader,
-  Panel,
-  DataTable,
-  Badge,
-  Btn,
-  TextInput,
-  Drawer,
-  Field,
-  ConfirmModal,
-  Modal,
-} from "@/components/admin/ui";
+import { useQuery } from "@tanstack/react-query";
+import { PageHeader, Panel, DataTable, Btn, TextInput } from "@/components/admin/ui";
 import { AdminPager, type AdminPageSize } from "@/components/admin/AdminPager";
+import { AdminUserDrawer, formatAgo } from "@/components/admin/AdminUserDrawer";
 import {
   adminQk,
-  creditTickets,
-  deleteAdminUser,
-  fetchAdminUser,
   fetchAdminUsers,
   fetchAdminUsersStats,
-  fetchAdminUserBadges,
-  fetchAdminBadges,
-  fetchGiftableStickerPacks,
-  giftPass,
-  giftStickerPack,
-  grantXp,
-  awardBadge,
-  patchAdminUser,
-  type AdminUserListItem,
   type AdminUsersSort,
   type AdminUsersStats,
 } from "@/lib/admin-queries";
-
-
-import { ApiError } from "@/lib/api";
-import {
-  adminCreatePromoCode,
-  adminDeletePromoCode,
-  adminListPromoCodes,
-  promoQk,
-} from "@/lib/promo-api";
-
-import { hhToast as toast } from "@/lib/hh-toast";
 
 export const Route = createFileRoute("/admin/users")({
   component: UsersPage,
