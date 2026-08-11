@@ -719,25 +719,49 @@ export function revokeBadge(nick: string, badgeCode: string) {
 // DASHBOARD
 // ============================================================================
 
+export type AdminDashboardProduct = {
+  productId: string | null;
+  title: string;
+  kind: string;
+  slug: string | null;
+  qty: number;
+  revenue: number;
+  ordersCount: number;
+  buyers: number;
+  tickets: number;
+};
+
 export type AdminDashboard = {
+  range: { from: string; to: string };
   kpi: {
-    revenue30d: number;
+    revenue: number;
+    ordersPaid: number;
+    goodsRevenue: number;
+    shippingRevenue: number;
+    discountRub: number;
+    avgOrderRub: number;
+    passSold: number;
+    passRevenue: number;
+    newUsers: number;
     passActive: number;
-    newUsers7d: number;
     ticketsInCirculation: number;
     rafflesActive: number;
     rafflesBankTickets: number;
-    orders7d: number;
   };
+  products: AdminDashboardProduct[];
+  monthly: { month: string; revenue: number }[];
   lastOrders: { id: string; status: string; totalRub: number; createdAt: string; nick: string }[];
   rafflesSoon: { id: string; title: string; prize: string | null; endsAt: string; entries: number }[];
-  passExpiring: { id: string; tier: string; expiresAt: string; nick: string }[];
-  topProducts: { productId: string | null; title: string; qty: number; revenue: number }[];
 };
 
-export function fetchAdminDashboard() {
-  return apiFetch<AdminDashboard>(`/api/v1/admin/dashboard/`);
+export function fetchAdminDashboard(params?: { from?: string; to?: string }) {
+  const qs = new URLSearchParams();
+  if (params?.from) qs.set("from", params.from);
+  if (params?.to) qs.set("to", params.to);
+  const s = qs.toString();
+  return apiFetch<AdminDashboard>(`/api/v1/admin/dashboard/${s ? `?${s}` : ""}`);
 }
+
 
 
 
