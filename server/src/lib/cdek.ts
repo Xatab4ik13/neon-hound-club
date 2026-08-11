@@ -330,7 +330,7 @@ async function calculateByTariffCode(
   }
   return {
     tariffCode,
-    totalSum: Math.ceil(data.total_sum),
+    totalSum: applyShippingMarkup(Math.ceil(data.total_sum)),
     periodMin: data.period_min,
     periodMax: data.period_max,
     currency: data.currency ?? "RUB",
