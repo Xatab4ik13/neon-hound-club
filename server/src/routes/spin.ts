@@ -1,8 +1,8 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
-import { spinPrizes, spinSpins, spinStreaks, spinWinners } from "../db/schema/spin.js";
+import { spinPrizes, spinSpins, spinStreaks } from "../db/schema/spin.js";
 import { profiles } from "../db/schema/profile.js";
 import { users } from "../db/schema/users.js";
 import { requireAuth, requireAdmin, type SessionPayload } from "../lib/auth.js";
@@ -76,11 +76,6 @@ export async function adminSpinRoutes(app: FastifyInstance) {
       .from(spinSpins)
       .where(eq(spinSpins.seasonId, season.id));
 
-    const [pending] = await db
-      .select({ c: sql<number>`count(*)::int` })
-      .from(spinWinners)
-      .where(and(eq(spinWinners.seasonId, season.id), eq(spinWinners.status, "pending")));
-
     const byPrize = await db
       .select({
         prizeCode: spinSpins.prizeCode,
@@ -120,7 +115,6 @@ export async function adminSpinRoutes(app: FastifyInstance) {
         spins: stats?.spins ?? 0,
         players: stats?.players ?? 0,
         spinsToday: stats?.spinsToday ?? 0,
-        pendingShipments: pending?.c ?? 0,
       },
       spinsPerDay: SPINS_PER_DAY,
       prizes: prizes.map((p) => ({
