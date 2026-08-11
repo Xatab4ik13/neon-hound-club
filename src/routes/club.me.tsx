@@ -262,6 +262,12 @@ function MePage() {
         )}
       </section>
 
+      {/* Капсула ×2 — плашка ниже промокодов, светится пока активна */}
+      <CapsuleBoostCard boostUntil={viewer.user?.ticketBoostUntil ?? null} />
+
+
+
+
 
       {/* «Ранги и XP» убрано: отдельной страницы пока нет, ранг и XP видны в шапке профиля. */}
 
