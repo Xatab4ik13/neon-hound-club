@@ -5,7 +5,6 @@ import {
   PlumpArrowRight,
   PlumpDownload,
   Loader2,
-  Smartphone,
   Sparkles,
   PlumpTicket,
   Calendar,
@@ -67,7 +66,6 @@ function QuestsPage() {
         <StatTile label="Доступно" value={ticketsAvailable} tone="lime" />
       </section>
 
-      <InstallAppQuest />
 
       {q.isLoading ? (
         <div className="grid gap-5">
@@ -262,62 +260,6 @@ function SpinAccessQuest() {
         </Link>
       )}
     </section>
-  );
-}
-
-function InstallAppQuest() {
-  const [installed, setInstalled] = useState(false);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const check = () => {
-      const standalone =
-        window.matchMedia?.("(display-mode: standalone)").matches ||
-        (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
-      setInstalled(!!standalone);
-    };
-    check();
-    const mq = window.matchMedia?.("(display-mode: standalone)");
-    mq?.addEventListener?.("change", check);
-    return () => mq?.removeEventListener?.("change", check);
-  }, []);
-
-  return (
-    <Link
-      to="/club/install"
-      className="mb-6 block -rotate-1 rounded-3xl border-[3px] border-foreground bg-[#FFD93D] p-4 text-black shadow-[8px_8px_0_0_hsl(var(--foreground))] transition-transform duration-200 ease-out hover:-translate-x-1 hover:-translate-y-1 hover:shadow-[10px_10px_0_0_hsl(var(--foreground))] active:scale-[0.99] md:p-5"
-    >
-      <div className="flex items-center gap-4">
-        <span
-          className={`grid h-14 w-14 shrink-0 place-items-center rounded-2xl border-[3px] border-foreground shadow-[3px_3px_0_0_hsl(var(--foreground))] ${
-            installed ? "bg-[#B6FF3C]" : "bg-card"
-          }`}
-        >
-          {installed ? (
-            <Check className="h-6 w-6 text-black" strokeWidth={3} />
-          ) : (
-            <Smartphone className="h-6 w-6 text-foreground" strokeWidth={2.5} />
-          )}
-        </span>
-
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.15em] text-black/70">
-            <PlumpDownload className="h-3.5 w-3.5" />
-            Установи приложение
-          </div>
-          <div className="mt-1 font-display text-lg font-black uppercase leading-tight tracking-tight text-black md:text-xl">
-            {installed ? "Клуб уже в кармане" : "Клуб на главный экран"}
-          </div>
-        </div>
-
-        <div className="flex flex-col items-end gap-1">
-          <span className="rounded-lg border-[3px] border-foreground bg-card px-2 py-1 font-mono text-[10px] font-black uppercase tracking-tight text-foreground shadow-[3px_3px_0_0_hsl(var(--foreground))]">
-            +1 билет
-          </span>
-          <PlumpArrowRight className="h-5 w-5 shrink-0 text-black" />
-        </div>
-      </div>
-    </Link>
   );
 }
 
