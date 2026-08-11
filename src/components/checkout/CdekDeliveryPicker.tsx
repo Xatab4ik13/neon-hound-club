@@ -182,9 +182,9 @@ export function CdekDeliveryPicker({
     let cancelled = false;
     setPvzLoading(true);
     setPvzError(null);
-    apiFetch<{ items: PvzItem[] }>(
-      `/api/v1/cdek/pvz?cityCode=${value.cityCode}${value.countryCode ? `&country=${encodeURIComponent(value.countryCode)}` : ""}`,
-    )
+    // country не передаём: city_code уникален глобально, СДЭК отдаёт ПВЗ и по СНГ.
+    apiFetch<{ items: PvzItem[] }>(`/api/v1/cdek/pvz?cityCode=${value.cityCode}`)
+
 
       .then((r) => {
         if (cancelled) return;
