@@ -18,6 +18,8 @@ import { loadYandexMaps } from "@/lib/yandex-maps";
 export type CdekPickerState = {
   cityCode: number | null;
   cityName: string;
+  /** ISO-код страны выбранного города: RU, KZ, BY, … */
+  countryCode: string;
   mode: "pvz" | "courier";
   pvzCode: string | null;
   pvzAddress: string | null;
@@ -27,13 +29,15 @@ export type CdekPickerState = {
 };
 
 // Подсказка из DaData: показываем юзеру город + регион,
-// а resolve в код СДЭК делаем по fias_id (надёжнее всего).
+// а resolve в код СДЭК делаем по fias_id (Россия) или по названию + стране (СНГ).
 type CityItem = {
   fiasId: string | null;
   kladrId: string | null;
   postalCode: string | null;
   city: string;
   region: string;
+  country: string;
+  countryIso: string | null;
   display: string;
 };
 
@@ -49,6 +53,7 @@ type PvzItem = {
 export const EMPTY_CDEK_STATE: CdekPickerState = {
   cityCode: null,
   cityName: "",
+  countryCode: "RU",
   mode: "pvz",
   pvzCode: null,
   pvzAddress: null,
@@ -56,6 +61,7 @@ export const EMPTY_CDEK_STATE: CdekPickerState = {
   apartment: "",
   entrance: "",
 };
+
 
 
 export function CdekDeliveryPicker({
