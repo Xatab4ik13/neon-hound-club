@@ -425,18 +425,20 @@ function SpinAdminPage() {
  * (Gold ×1.2, Platinum ×1.5) применяется только к epic/legend.
  */
 const ODDS_ROWS: { title: string; rarity: SpinRarity; ppm: number; note?: string }[] = [
-  { title: "100 XP", rarity: "common", ppm: 240_000 },
-  { title: "1 билет", rarity: "common", ppm: 180_000 },
-  { title: "250 XP", rarity: "common", ppm: 140_000 },
-  { title: "3 билета", rarity: "rare", ppm: 100_000 },
-  { title: "Бонус-спин", rarity: "rare", ppm: 80_000 },
-  { title: "500 XP", rarity: "rare", ppm: 50_000 },
-  { title: "10 билетов", rarity: "epic", ppm: 30_000 },
+  { title: "100 XP", rarity: "common", ppm: 260_000 },
+  { title: "250 XP", rarity: "common", ppm: 170_000 },
+  { title: "Бонус-спин", rarity: "rare", ppm: 110_000 },
+  { title: "1 билет", rarity: "common", ppm: 90_000 },
+  { title: "500 XP", rarity: "rare", ppm: 80_000 },
+  { title: "Капсула ×2", rarity: "legend", ppm: 50_000, note: "×2 билета на цифру, 24 ч" },
+  { title: "3 билета", rarity: "rare", ppm: 40_000 },
   { title: "Промокод 20%", rarity: "epic", ppm: 30_000 },
   { title: "Ремувка", rarity: "epic", ppm: 20_000, note: "пул 240 на сезон" },
+  { title: "10 билетов", rarity: "epic", ppm: 10_000 },
   { title: "Hell Pass Silver", rarity: "legend", ppm: 3_000, note: "пул 60 на сезон" },
   { title: "Jackpot (AirPods → Watch → PS5)", rarity: "legend", ppm: 40, note: "1–15 дн: 40 ppm, 16–25: 150, 26+: 350" },
 ];
+
 
 const ODDS_MULT: { tier: string; mult: number }[] = [
   { tier: "Без Pass / Silver", mult: 1 },
