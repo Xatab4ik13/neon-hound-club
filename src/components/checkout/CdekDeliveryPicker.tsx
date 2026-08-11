@@ -274,6 +274,7 @@ export function CdekDeliveryPicker({
             onChange={(e) => {
               setCityQ(e.target.value);
               setCityOpen(true);
+              setCityError(null);
               if (value.cityCode) {
                 onChange({ ...value, cityCode: null, cityName: "", pvzCode: null, pvzAddress: null });
               }
@@ -289,12 +290,18 @@ export function CdekDeliveryPicker({
                 pickCity(pick);
               }
             }}
-            placeholder="Москва, Краснодар, …"
+            placeholder="Москва, Алматы, Минск, …"
             className="min-w-0 flex-1 bg-transparent text-[15px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none"
           />
           {(cityLoading || cityResolving) && <Loader2 className="h-4 w-4 shrink-0 animate-spin text-muted-foreground" />}
           {value.cityCode && !cityLoading && !cityResolving && <Check className="h-4 w-4 shrink-0 text-primary" />}
         </div>
+        <div className="mt-1 px-1 text-[11px] text-muted-foreground">
+          Россия и страны СНГ — Казахстан, Беларусь, Армения, Кыргызстан, Узбекистан и др.
+        </div>
+        {cityError && !value.cityCode && (
+          <div className="mt-1 px-1 text-[12px] text-destructive">{cityError}</div>
+        )}
         {cityOpen && cityOpts.length > 0 && (
           <ul className="absolute z-20 mt-1 max-h-72 w-full overflow-auto rounded-xl border border-white/10 bg-background/95 shadow-lg backdrop-blur">
             {cityOpts.map((c, i) => (
@@ -306,13 +313,18 @@ export function CdekDeliveryPicker({
                   className="block w-full px-3 py-2 text-left text-[14px] hover:bg-primary/10"
                 >
                   <div className="font-semibold text-foreground">{c.city}</div>
-                  <div className="text-[11px] text-muted-foreground">{c.region}</div>
+                  <div className="text-[11px] text-muted-foreground">
+                    {[c.region, c.countryIso && c.countryIso !== "RU" ? c.country || c.countryIso : null]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </div>
                 </button>
               </li>
             ))}
           </ul>
         )}
       </div>
+
 
       {/* Переключатель режима */}
       <div className="grid grid-cols-2 gap-2">
