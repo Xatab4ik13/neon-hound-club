@@ -40,13 +40,12 @@ function ClubShopPage() {
   const [activeSub, setActiveSub] = useState<string | null>(null);
 
   const { user } = useViewer();
-  // ПРЕВЬЮ: локальный тумблер «буст-режим» для визуального ревью — убрать после согласования.
-  const [boostPreview, setBoostPreview] = useState(false);
+  // Капсула ×2 активна, если у юзера есть непросроченный ticket_boost_until.
   const boostActive = useMemo(() => {
-    if (boostPreview) return true;
     const until = user?.ticketBoostUntil;
     return !!until && new Date(until).getTime() > Date.now();
-  }, [boostPreview, user?.ticketBoostUntil]);
+  }, [user?.ticketBoostUntil]);
+
 
 
   // debounce поиска
@@ -234,16 +233,8 @@ function ClubShopPage() {
           ))}
         </div>
       )}
-
-      {/* ВРЕМЕННО: тумблер для ревью буст-плашек. Убрать после согласования. */}
-      <button
-        type="button"
-        onClick={() => setBoostPreview((v) => !v)}
-        className="mt-6 w-full rounded-xl border border-white/10 bg-white/[0.04] py-3 text-[13px] font-semibold text-muted-foreground active:scale-[0.98]"
-      >
-        {boostActive ? "Буст-режим: ВКЛ (тест)" : "Буст-режим: выкл (тест)"}
-      </button>
     </main>
+
 
   );
 }

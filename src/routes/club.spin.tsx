@@ -177,7 +177,9 @@ type SpinState = {
   spins: { allowed: number; used: number; left: number };
   streak: { days: number; claimed: number[] };
   history: { prizeCode: string; title: string; at: string }[];
+  capsule?: { active: boolean; expiresAt: string | null };
 };
+
 
 type RollResult = {
   prizeCode: string;
@@ -374,6 +376,12 @@ function SpinPage() {
                 left: result.spinsLeft,
               },
               streak: { ...prev.streak, days: result.streakDays },
+              // Выбил капсулу — сразу заводим 24-часовой таймер локально,
+              // не дожидаясь перезагрузки состояния с сервера.
+              capsule:
+                result.prizeCode === "boost_x2"
+                  ? { active: true, expiresAt: new Date(Date.now() + 24 * 3600_000).toISOString() }
+                  : prev.capsule,
               history: [
                 { prizeCode: result.prizeCode, title: result.prizeTitle, at: new Date().toISOString() },
                 ...prev.history,
@@ -381,6 +389,7 @@ function SpinPage() {
             }
           : prev,
       );
+
 
       haptic("success");
       playWin();
@@ -751,7 +760,7 @@ function SpinPage() {
         </ul>
       </section>
 
-      <CapsuleAbout />
+      <CapsuleAbout expiresAt={state?.capsule?.expiresAt ?? null} />
     </main>
   );
 }
@@ -760,8 +769,35 @@ function SpinPage() {
 
 const CAPSULE_CHIP = RARITY.legend.chip;
 
-function CapsuleAbout() {
+/** Живой отсчёт до конца окна капсулы. null — окна нет / уже истекло. */
+function useCapsuleCountdown(expiresAt: string | null) {
+  const [left, setLeft] = useState<number | null>(null);
+  useEffect(() => {
+    if (!expiresAt) {
+      setLeft(null);
+      return;
+    }
+    const ts = new Date(expiresAt).getTime();
+    const tick = () => setLeft(ts - Date.now());
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [expiresAt]);
+  return left !== null && left > 0 ? left : null;
+}
+
+function CapsuleAbout({ expiresAt }: { expiresAt: string | null }) {
+  const ms = useCapsuleCountdown(expiresAt);
+  const active = ms !== null;
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const timer =
+    ms === null
+      ? null
+      : `${pad(Math.floor(ms / 3_600_000))}:${pad(Math.floor((ms % 3_600_000) / 60_000))}:${pad(
+          Math.floor((ms % 60_000) / 1000),
+        )}`;
   return (
+
     <section
       aria-label="Капсула ×2"
       className="relative mb-2 mt-5 overflow-hidden rounded-3xl bg-card p-4"
@@ -791,11 +827,32 @@ function CapsuleAbout() {
           <span className="mt-1 block font-display text-[17px] font-black uppercase leading-tight tracking-tight text-foreground">
             Капсула ×2
           </span>
-          <span className="block font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-            двойные билеты · 24 часа
-          </span>
+          {active ? (
+            <span
+              className="mt-1 inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 font-mono text-[10px] uppercase tracking-widest text-black"
+              style={{ background: CAPSULE_CHIP }}
+            >
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-black/70" />
+              Капсула действует · {timer}
+            </span>
+          ) : (
+            <span className="block font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+              двойные билеты · 24 часа
+            </span>
+          )}
         </span>
       </div>
+
+      {active && (
+        <Link
+          to="/club/shop"
+          className="relative mt-3 flex w-full items-center justify-center rounded-2xl py-3 font-display text-[13px] font-black uppercase tracking-tight text-black transition-transform active:scale-[0.98]"
+          style={{ background: CAPSULE_CHIP }}
+        >
+          В магазин за билетами
+        </Link>
+      )}
+
 
       <p className="relative mt-3 text-[13px] leading-relaxed text-muted-foreground">
         Выпала капсула — на <span className="text-foreground">24 часа</span> включается двойное
