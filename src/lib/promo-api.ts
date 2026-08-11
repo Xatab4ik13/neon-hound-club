@@ -5,6 +5,8 @@ export type PromoCodeDto = {
   code: string;
   discountPct: number;
   userId: string | null;
+  /** Товарный промокод: скидка только на этот товар (корзина = 1 шт. этого товара). */
+  productId: string | null;
   note: string | null;
   expiresAt: string | null;
   usedAt: string | null;
@@ -16,6 +18,7 @@ export type PromoCodeDto = {
 export type AdminPromoCodeDto = PromoCodeDto & {
   userNick: string | null;
   userEmail: string | null;
+  productTitle: string | null;
 };
 
 export const promoQk = {
@@ -32,14 +35,22 @@ export type PromoValidateResult = {
   ok: true;
   code: string;
   discountPct: number;
+  /** Не null — товарный промокод: скидка только на этот товар, билеты не начисляются. */
+  productId: string | null;
   expiresAt: string | null;
 };
 
-/** Проверка промокода на чекауте. Бросает Error с текстом из бэка. */
-export async function validatePromoCode(code: string) {
+/**
+ * Проверка промокода на чекауте. Бросает Error с текстом из бэка.
+ * items — корзина: нужна для товарных промокодов (ровно 1 шт. нужного товара).
+ */
+export async function validatePromoCode(
+  code: string,
+  items?: Array<{ productId: string; qty: number }>,
+) {
   return apiFetch<PromoValidateResult>("/api/v1/promo/validate", {
     method: "POST",
-    body: JSON.stringify({ code }),
+    body: JSON.stringify({ code, items }),
   });
 }
 
@@ -54,6 +65,7 @@ export async function adminCreatePromoCode(input: {
   code?: string;
   discountPct: number;
   userId?: string | null;
+  productId?: string | null;
   note?: string;
   expiresAt?: string | null;
 }) {
@@ -65,7 +77,13 @@ export async function adminCreatePromoCode(input: {
 
 export async function adminUpdatePromoCode(
   id: string,
-  patch: { discountPct?: number; expiresAt?: string | null; active?: boolean; note?: string | null },
+  patch: {
+    discountPct?: number;
+    expiresAt?: string | null;
+    active?: boolean;
+    note?: string | null;
+    productId?: string | null;
+  },
 ) {
   return apiFetch<{ promo: AdminPromoCodeDto }>(`/api/v1/admin/promo/${id}`, {
     method: "PATCH",

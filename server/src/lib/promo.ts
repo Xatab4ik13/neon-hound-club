@@ -44,10 +44,18 @@ export async function findPromoByCode(code: string): Promise<PromoCode | null> {
   return row ?? null;
 }
 
+/** Что лежит в корзине — нужно для товарных промокодов. */
+export type PromoCartContext = Array<{ productId: string; qty: number }>;
+
 /**
  * Проверяет промокод для юзера. Бросает PromoError с человеческим текстом.
+ * Если промокод товарный (productId), требуем корзину: ровно этот товар, 1 шт.
  */
-export async function validatePromoForUser(userId: string, rawCode: string): Promise<PromoCode> {
+export async function validatePromoForUser(
+  userId: string,
+  rawCode: string,
+  cart?: PromoCartContext,
+): Promise<PromoCode> {
   const code = normalizePromoCode(rawCode);
   if (!code) throw new PromoError("promo_empty", "Введи промокод");
   const promo = await findPromoByCode(code);
@@ -61,8 +69,32 @@ export async function validatePromoForUser(userId: string, rawCode: string): Pro
     throw new PromoError("promo_foreign", "Этот промокод выписан на другого райдера");
   }
   if (promo.discountPct <= 0) throw new PromoError("promo_invalid", "Промокод не даёт скидку");
+
+  if (promo.productId) {
+    if (!cart) {
+      throw new PromoError(
+        "promo_product_cart_required",
+        "Этот промокод работает только на конкретный товар — добавь его в корзину",
+      );
+    }
+    const positions = cart.filter((i) => i.qty > 0);
+    if (positions.length !== 1 || positions[0]!.productId !== promo.productId) {
+      throw new PromoError(
+        "promo_product_mismatch",
+        "Промокод действует только на один конкретный товар — в корзине должен быть только он",
+      );
+    }
+    if (positions[0]!.qty !== 1) {
+      throw new PromoError(
+        "promo_product_qty",
+        "Промокод действует только на 1 шт. товара",
+      );
+    }
+  }
+
   return promo;
 }
+
 
 /**
  * Помечает промокод использованным. Идемпотентно: если уже помечен — ничего не делает.

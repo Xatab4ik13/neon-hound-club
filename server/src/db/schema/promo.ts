@@ -28,7 +28,14 @@ export const promoCodes = pgTable(
     code: varchar("code", { length: 32 }).notNull(),
     discountPct: integer("discount_pct").notNull().default(0),
     userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" }),
+    /**
+     * Товарный промокод: скидка привязана к конкретному товару.
+     * Работает ТОЛЬКО если в корзине ровно этот товар и количество = 1.
+     * За такой заказ билеты не начисляются.
+     */
+    productId: uuid("product_id"),
     note: varchar("note", { length: 200 }),
+
     expiresAt: timestamp("expires_at", { withTimezone: true }),
     usedAt: timestamp("used_at", { withTimezone: true }),
     usedOrderId: uuid("used_order_id"),

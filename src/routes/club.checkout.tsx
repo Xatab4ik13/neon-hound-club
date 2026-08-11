@@ -265,9 +265,11 @@ function ClubCheckoutPage() {
   // сервер возьмёт большую из двух, здесь показываем скидку по промокоду.
   const [promoInput, setPromoInput] = useState("");
   const [promoChecking, setPromoChecking] = useState(false);
-  const [promoApplied, setPromoApplied] = useState<{ code: string; discountPct: number } | null>(
-    null,
-  );
+  const [promoApplied, setPromoApplied] = useState<{
+    code: string;
+    discountPct: number;
+    productId: string | null;
+  } | null>(null);
   const [promoError, setPromoError] = useState<string | null>(null);
 
   const applyPromo = async () => {
@@ -279,8 +281,11 @@ function ClubCheckoutPage() {
     setPromoChecking(true);
     setPromoError(null);
     try {
-      const r = await validatePromoCode(code);
-      setPromoApplied({ code: r.code, discountPct: r.discountPct });
+      const r = await validatePromoCode(
+        code,
+        orderableItems.map((i) => ({ productId: i.productId!, qty: i.qty })),
+      );
+      setPromoApplied({ code: r.code, discountPct: r.discountPct, productId: r.productId });
       setPromoInput(r.code);
       hhToast.success(`Промокод применён: −${r.discountPct}%`);
     } catch (e) {
@@ -668,7 +673,9 @@ function ClubCheckoutPage() {
                       {promoApplied.code}
                     </div>
                     <div className="text-[11px] text-muted-foreground">
-                      Скидка −{promoApplied.discountPct}% на товары
+                      {promoApplied.productId
+                        ? `Скидка −${promoApplied.discountPct}% на товар · билеты не начисляются`
+                        : `Скидка −${promoApplied.discountPct}% на товары`}
                     </div>
                   </div>
                   <button
@@ -728,7 +735,7 @@ function ClubCheckoutPage() {
           </section>
 
 
-          {ticketsTotal > 0 && (
+          {ticketsTotal > 0 && !promoApplied?.productId && (
             <div className="flex items-center gap-3 rounded-2xl border border-primary/25 bg-primary/[0.08] px-4 py-3">
               <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/20 text-primary">
                 <PlumpTicket className="h-4 w-4" />

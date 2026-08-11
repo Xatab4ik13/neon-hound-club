@@ -4,6 +4,7 @@ import { and, desc, eq, isNull, or, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { promoCodes } from "../db/schema/promo.js";
 import { users } from "../db/schema/users.js";
+import { products } from "../db/schema/shop.js";
 import { requireAuth, requireAdmin, type SessionPayload } from "../lib/auth.js";
 import {
   PromoError,
@@ -18,6 +19,7 @@ function serialize(row: typeof promoCodes.$inferSelect) {
     code: row.code,
     discountPct: row.discountPct,
     userId: row.userId,
+    productId: row.productId ?? null,
     note: row.note,
     expiresAt: row.expiresAt?.toISOString() ?? null,
     usedAt: row.usedAt?.toISOString() ?? null,
@@ -25,6 +27,7 @@ function serialize(row: typeof promoCodes.$inferSelect) {
     createdAt: row.createdAt.toISOString(),
   };
 }
+
 
 /** Клиентские роуты: /api/v1/promo */
 export async function promoRoutes(app: FastifyInstance) {
@@ -46,16 +49,25 @@ export async function promoRoutes(app: FastifyInstance) {
   });
 
   // Проверка промокода на чекауте — возвращает процент скидки.
+  // items — корзина, нужна для товарных промокодов.
   app.post("/validate", { preHandler: requireAuth }, async (req, reply) => {
-    const parsed = z.object({ code: z.string().trim().min(1).max(32) }).safeParse(req.body);
+    const parsed = z
+      .object({
+        code: z.string().trim().min(1).max(32),
+        items: z
+          .array(z.object({ productId: z.string().uuid(), qty: z.coerce.number().int().min(1) }))
+          .optional(),
+      })
+      .safeParse(req.body);
     if (!parsed.success) return reply.code(400).send({ error: "invalid_input", message: "Введи промокод" });
     const session = req.user as SessionPayload;
     try {
-      const promo = await validatePromoForUser(session.sub, parsed.data.code);
+      const promo = await validatePromoForUser(session.sub, parsed.data.code, parsed.data.items);
       return {
         ok: true as const,
         code: promo.code,
         discountPct: promo.discountPct,
+        productId: promo.productId ?? null,
         expiresAt: promo.expiresAt?.toISOString() ?? null,
       };
     } catch (e) {
@@ -71,10 +83,13 @@ const createSchema = z.object({
   code: z.string().trim().min(3).max(32).optional(),
   discountPct: z.coerce.number().int().min(1).max(100),
   userId: z.string().uuid().nullable().optional(),
+  /** Товарный промокод: скидка только на этот товар, корзина = 1 шт. этого товара. */
+  productId: z.string().uuid().nullable().optional(),
   note: z.string().trim().max(200).optional(),
   /** ISO-дата окончания действия. */
   expiresAt: z.string().datetime().nullable().optional(),
 });
+
 
 /** Админские роуты: /api/v1/admin/promo */
 export async function adminPromoRoutes(app: FastifyInstance) {
@@ -96,9 +111,11 @@ export async function adminPromoRoutes(app: FastifyInstance) {
         promo: promoCodes,
         userNick: users.nick,
         userEmail: users.email,
+        productTitle: products.title,
       })
       .from(promoCodes)
       .leftJoin(users, eq(users.id, promoCodes.userId))
+      .leftJoin(products, eq(products.id, promoCodes.productId))
       .where(conds.length ? and(...conds) : undefined)
       .orderBy(desc(promoCodes.createdAt))
       .limit(500);
@@ -108,6 +125,7 @@ export async function adminPromoRoutes(app: FastifyInstance) {
         ...serialize(r.promo),
         userNick: r.userNick ?? null,
         userEmail: r.userEmail ?? null,
+        productTitle: r.productTitle ?? null,
         expired: !!r.promo.expiresAt && r.promo.expiresAt.getTime() < now,
       })),
     };
@@ -130,18 +148,30 @@ export async function adminPromoRoutes(app: FastifyInstance) {
       .limit(1);
     if (dup) return reply.code(409).send({ error: "code_exists", message: "Такой код уже есть" });
 
+    if (data.productId) {
+      const [p] = await db
+        .select({ id: products.id })
+        .from(products)
+        .where(eq(products.id, data.productId))
+        .limit(1);
+      if (!p) return reply.code(400).send({ error: "product_not_found", message: "Товар не найден" });
+    }
+
     const [row] = await db
       .insert(promoCodes)
       .values({
         code,
         discountPct: data.discountPct,
         userId: data.userId ?? null,
+        productId: data.productId ?? null,
         note: data.note ?? null,
         expiresAt: data.expiresAt ? new Date(data.expiresAt) : null,
       })
       .returning();
     return reply.code(201).send({ promo: serialize(row!) });
   });
+
+
 
   app.patch<{ Params: { id: string } }>("/:id", async (req, reply) => {
     const { id } = z.object({ id: z.string().uuid() }).parse(req.params);
@@ -152,6 +182,7 @@ export async function adminPromoRoutes(app: FastifyInstance) {
         active: z.boolean().optional(),
         note: z.string().trim().max(200).nullable().optional(),
         userId: z.string().uuid().nullable().optional(),
+        productId: z.string().uuid().nullable().optional(),
       })
       .safeParse(req.body);
     if (!parsed.success) return reply.code(400).send({ error: "invalid_input" });
