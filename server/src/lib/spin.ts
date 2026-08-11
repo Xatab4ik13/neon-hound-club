@@ -814,6 +814,7 @@ export async function getSpinState(userId: string, pwa: boolean) {
   return {
     access,
     tier,
+    capsule: boost,
     season: {
       periodKey: season.periodKey,
       daysTotal: season.daysTotal,
