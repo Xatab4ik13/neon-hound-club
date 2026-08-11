@@ -332,6 +332,135 @@ function SpinAdminPage() {
   );
 }
 
+/**
+ * Таблица шансов. Цифры — копия PRIZE_CONFIG из server/src/lib/spin.ts:
+ * веса в ppm нормализуются на сумму всех активных секторов, множитель тира
+ * (Gold ×1.2, Platinum ×1.5) применяется только к epic/legend.
+ */
+const ODDS_ROWS: { title: string; rarity: SpinRarity; ppm: number; note?: string }[] = [
+  { title: "100 XP", rarity: "common", ppm: 240_000 },
+  { title: "1 билет", rarity: "common", ppm: 180_000 },
+  { title: "250 XP", rarity: "common", ppm: 140_000 },
+  { title: "3 билета", rarity: "rare", ppm: 100_000 },
+  { title: "Бонус-спин", rarity: "rare", ppm: 80_000 },
+  { title: "500 XP", rarity: "rare", ppm: 50_000 },
+  { title: "10 билетов", rarity: "epic", ppm: 30_000 },
+  { title: "Промокод 20%", rarity: "epic", ppm: 30_000 },
+  { title: "Ремувка", rarity: "epic", ppm: 20_000, note: "пул 240 на сезон" },
+  { title: "Hell Pass Silver", rarity: "legend", ppm: 3_000, note: "пул 60 на сезон" },
+  { title: "Jackpot (AirPods → Watch → PS5)", rarity: "legend", ppm: 40, note: "1–15 дн: 40 ppm, 16–25: 150, 26+: 350" },
+];
+
+const ODDS_MULT: { tier: string; mult: number }[] = [
+  { tier: "Без Pass / Silver", mult: 1 },
+  { tier: "Gold", mult: 1.2 },
+  { tier: "Platinum", mult: 1.5 },
+];
+
+function OddsTable() {
+  const [jackpotPpm, setJackpotPpm] = useState(40);
+
+  const rows = ODDS_ROWS.map((r) =>
+    r.rarity === "legend" && r.title.startsWith("Jackpot") ? { ...r, ppm: jackpotPpm } : r,
+  );
+
+  const columns = ODDS_MULT.map(({ tier, mult }) => {
+    const weights = rows.map((r) =>
+      r.rarity === "epic" || r.rarity === "legend" ? r.ppm * mult : r.ppm,
+    );
+    const total = weights.reduce((s, w) => s + w, 0);
+    return { tier, mult, weights, total };
+  });
+
+  const pct = (w: number, total: number) => {
+    const p = (w / total) * 100;
+    return p < 0.01 ? p.toFixed(4) : p < 1 ? p.toFixed(3) : p.toFixed(2);
+  };
+
+  return (
+    <div className="p-4">
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <span className="text-xs text-zinc-500 dark:text-zinc-400">Фаза месяца (шанс jackpot):</span>
+        {[
+          { label: "1–15", ppm: 40 },
+          { label: "16–25", ppm: 150 },
+          { label: "26+", ppm: 350 },
+        ].map((p) => (
+          <button
+            key={p.ppm}
+            type="button"
+            onClick={() => setJackpotPpm(p.ppm)}
+            className={cn(
+              "rounded-full border px-3 py-1 text-xs font-medium transition-colors",
+              jackpotPpm === p.ppm
+                ? "border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900"
+                : "border-zinc-200 text-zinc-600 dark:border-zinc-800 dark:text-zinc-400",
+            )}
+          >
+            {p.label} дн
+          </button>
+        ))}
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-zinc-200 text-left text-xs uppercase tracking-wider text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
+              <th className="py-2 pr-3 font-medium">Приз</th>
+              <th className="py-2 pr-3 font-medium">Вес (ppm)</th>
+              {columns.map((c) => (
+                <th key={c.tier} className="py-2 pr-3 text-right font-medium">
+                  {c.tier}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r, i) => (
+              <tr key={r.title} className="border-b border-zinc-100 last:border-0 dark:border-zinc-800/60">
+                <td className="py-2 pr-3">
+                  <div className="font-medium">{r.title}</div>
+                  <div className="text-[11px] text-zinc-400">
+                    {r.rarity}
+                    {r.note ? ` · ${r.note}` : ""}
+                  </div>
+                </td>
+                <td className="py-2 pr-3 font-mono text-xs text-zinc-500">
+                  {r.ppm.toLocaleString("ru-RU")}
+                </td>
+                {columns.map((c) => (
+                  <td key={c.tier} className="py-2 pr-3 text-right font-mono tabular-nums">
+                    {pct(c.weights[i]!, c.total)}%
+                  </td>
+                ))}
+              </tr>
+            ))}
+            <tr className="text-xs text-zinc-500 dark:text-zinc-400">
+              <td className="py-2 pr-3 font-medium">Сумма весов</td>
+              <td className="py-2 pr-3" />
+              {columns.map((c) => (
+                <td key={c.tier} className="py-2 pr-3 text-right font-mono">
+                  {Math.round(c.total).toLocaleString("ru-RU")}
+                </td>
+              ))}
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p className="mt-3 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
+        Веса заданы в ppm (1% = 10 000) и нормализуются на сумму активных секторов, поэтому шанс
+        зависит от того, какие сектора доступны. Множитель тира (Gold ×1.2, Platinum ×1.5) действует
+        только на epic и legend. Если пул приза исчерпан — сектор выключается (ремувка и Silver
+        подменяются на 10 билетов, jackpot — на 50 билетов). Если приз расходуется быстрее графика
+        сезона, его вес временно режется ×0.25. В последние 24 часа сезона нераскрытые jackpot-призы
+        выдаются принудительно.
+      </p>
+    </div>
+  );
+}
+
+
 function ClaimCell({ at }: { at: string | null }) {
   if (!at) return <span className="text-xs text-zinc-400">—</span>;
   return <Badge tone="emerald">{fmtDate(at)}</Badge>;
