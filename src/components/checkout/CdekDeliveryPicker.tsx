@@ -201,7 +201,7 @@ export function CdekDeliveryPicker({
     return () => {
       cancelled = true;
     };
-  }, [value.cityCode, value.mode]);
+  }, [value.cityCode, value.countryCode, value.mode]);
 
   const pickedPvz = useMemo(
     () => pvzList.find((p) => p.code === value.pvzCode) ?? null,
@@ -209,31 +209,39 @@ export function CdekDeliveryPicker({
   );
 
   const [cityResolving, setCityResolving] = useState(false);
+  const [cityError, setCityError] = useState<string | null>(null);
 
   const pickCity = async (c: CityItem) => {
     setCityQ(c.region ? `${c.city}, ${c.region}` : c.city);
     setCityOpen(false);
     setCityResolving(true);
+    setCityError(null);
     try {
       const params = new URLSearchParams();
+      // ФИАС есть только у российских адресов; для СНГ резолвим по названию + стране.
       if (c.fiasId) params.set("fias", c.fiasId);
       if (c.postalCode) params.set("postalCode", c.postalCode);
-      const r = await apiFetch<{ code: number; city: string; region: string }>(
+      params.set("city", c.city);
+      if (c.countryIso) params.set("country", c.countryIso);
+      const r = await apiFetch<{ code: number; city: string; region: string; countryCode: string }>(
         `/api/v1/cdek/city-resolve?${params.toString()}`,
       );
       onChange({
         ...value,
         cityCode: r.code,
         cityName: r.city,
+        countryCode: (r.countryCode || c.countryIso || "RU").toUpperCase(),
         pvzCode: null,
         pvzAddress: null,
       });
     } catch {
       // Если СДЭК не нашёл — оставим поле как есть, юзер увидит отсутствие карты.
+      setCityError("СДЭК не возит в этот город. Попробуй ближайший крупный город.");
       onChange({
         ...value,
         cityCode: null,
         cityName: c.city,
+        countryCode: (c.countryIso || "RU").toUpperCase(),
         pvzCode: null,
         pvzAddress: null,
       });
@@ -241,6 +249,7 @@ export function CdekDeliveryPicker({
       setCityResolving(false);
     }
   };
+
 
   const setMode = (mode: "pvz" | "courier") => {
     onChange({ ...value, mode, pvzCode: mode === "pvz" ? value.pvzCode : null });
