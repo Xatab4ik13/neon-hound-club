@@ -827,11 +827,32 @@ function CapsuleAbout({ expiresAt }: { expiresAt: string | null }) {
           <span className="mt-1 block font-display text-[17px] font-black uppercase leading-tight tracking-tight text-foreground">
             Капсула ×2
           </span>
-          <span className="block font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-            двойные билеты · 24 часа
-          </span>
+          {active ? (
+            <span
+              className="mt-1 inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 font-mono text-[10px] uppercase tracking-widest text-black"
+              style={{ background: CAPSULE_CHIP }}
+            >
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-black/70" />
+              Капсула действует · {timer}
+            </span>
+          ) : (
+            <span className="block font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+              двойные билеты · 24 часа
+            </span>
+          )}
         </span>
       </div>
+
+      {active && (
+        <Link
+          to="/club/shop"
+          className="relative mt-3 flex w-full items-center justify-center rounded-2xl py-3 font-display text-[13px] font-black uppercase tracking-tight text-black transition-transform active:scale-[0.98]"
+          style={{ background: CAPSULE_CHIP }}
+        >
+          В магазин за билетами
+        </Link>
+      )}
+
 
       <p className="relative mt-3 text-[13px] leading-relaxed text-muted-foreground">
         Выпала капсула — на <span className="text-foreground">24 часа</span> включается двойное
