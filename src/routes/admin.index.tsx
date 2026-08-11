@@ -47,14 +47,6 @@ function fmtRub(n: number): string {
 function fmtDate(iso: string): string {
   return new Date(iso).toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit" });
 }
-function fmtRemain(iso: string): string {
-  const ms = new Date(iso).getTime() - Date.now();
-  if (ms <= 0) return "истёк";
-  const h = Math.floor(ms / 3_600_000);
-  const m = Math.floor((ms % 3_600_000) / 60_000);
-  if (h >= 24) return `${Math.floor(h / 24)}д ${h % 24}ч`;
-  return `${h}ч ${m}м`;
-}
 function iso(d: Date): string {
   return d.toISOString().slice(0, 10);
 }
