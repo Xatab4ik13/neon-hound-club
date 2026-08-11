@@ -673,7 +673,9 @@ function ClubCheckoutPage() {
                       {promoApplied.code}
                     </div>
                     <div className="text-[11px] text-muted-foreground">
-                      Скидка −{promoApplied.discountPct}% на товары
+                      {promoApplied.productId
+                        ? `Скидка −${promoApplied.discountPct}% на товар · билеты не начисляются`
+                        : `Скидка −${promoApplied.discountPct}% на товары`}
                     </div>
                   </div>
                   <button
@@ -733,7 +735,7 @@ function ClubCheckoutPage() {
           </section>
 
 
-          {ticketsTotal > 0 && (
+          {ticketsTotal > 0 && !promoApplied?.productId && (
             <div className="flex items-center gap-3 rounded-2xl border border-primary/25 bg-primary/[0.08] px-4 py-3">
               <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/20 text-primary">
                 <PlumpTicket className="h-4 w-4" />
