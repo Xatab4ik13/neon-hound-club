@@ -167,7 +167,23 @@ export async function cdekRoutes(app: FastifyInstance) {
       return { ...res, mode };
     } catch (e) {
       req.log.error({ err: e }, "cdek calculate failed");
+      const msg = (e as Error)?.message ?? "";
+      if (msg.includes("country_not_supported")) {
+        return reply
+          .code(409)
+          .send({ error: "country_not_supported", message: "В эту страну доставки пока нет" });
+      }
+      if (msg.includes("no_tariff_for_direction")) {
+        return reply.code(409).send({
+          error: "no_tariff_for_direction",
+          message:
+            mode === "courier"
+              ? "Курьером в этот город не возят — выбери пункт выдачи"
+              : "В этот город нет доступной доставки — попробуй другой город или курьера",
+        });
+      }
       return reply.code(502).send({ error: "cdek_unavailable" });
     }
+
   });
 }
