@@ -365,7 +365,13 @@ export async function authRoutes(app: FastifyInstance) {
       .where(eq(profiles.userId, session.sub))
       .limit(1);
 
-    return reply.send({ user: { ...u, phoneVerified: !!prof?.phoneE164 } });
+    return reply.send({
+      user: {
+        ...u,
+        phoneVerified: !!prof?.phoneE164,
+        ticketBoostUntil: u.ticketBoostUntil ? u.ticketBoostUntil.toISOString() : null,
+      },
+    });
   });
 
   // POST /auth/change-password — смена пароля авторизованного юзера
