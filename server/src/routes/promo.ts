@@ -24,7 +24,9 @@ function serialize(row: typeof promoCodes.$inferSelect) {
     note: row.note,
     expiresAt: row.expiresAt?.toISOString() ?? null,
     usedAt: row.usedAt?.toISOString() ?? null,
+    usedOrderId: row.usedOrderId ?? null,
     active: row.active,
+
     createdAt: row.createdAt.toISOString(),
   };
 }
