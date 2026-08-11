@@ -12,6 +12,7 @@ export type PromoCodeDto = {
   note: string | null;
   expiresAt: string | null;
   usedAt: string | null;
+  usedOrderId?: string | null;
   active: boolean;
   createdAt: string;
   expired?: boolean;
@@ -23,10 +24,68 @@ export type AdminPromoCodeDto = PromoCodeDto & {
   productTitle: string | null;
 };
 
+/** Сводка по активированным промокодам — «докупают ли что-то ещё». */
+export type AdminPromoStats = {
+  usedTotal: number;
+  unusedTotal: number;
+  withOrder: number;
+  withExtras: number;
+  extrasSharePct: number;
+  revenueRub: number;
+  extraRub: number;
+  discountRub: number;
+  shippingRub: number;
+  avgOrderRub: number;
+  avgExtraRub: number;
+};
+
+export type AdminPromoUsage = {
+  promo: PromoCodeDto;
+  order: {
+    id: string;
+    userId: string;
+    nick: string | null;
+    email: string | null;
+    status: string;
+    subtotalRub: number;
+    discountRub: number;
+    discountPct: number;
+    totalRub: number;
+    shippingPriceRub: number;
+    shippingMode: string;
+    bonusTicketsTotal: number;
+    city: string | null;
+    createdAt: string;
+    paidAt: string | null;
+    extraRub: number;
+    items: Array<{
+      id: string;
+      productId: string | null;
+      title: string;
+      priceRub: number;
+      qty: number;
+      size: string | null;
+      kind: string;
+      isPromoTarget: boolean;
+    }>;
+  } | null;
+};
+
 export const promoQk = {
   mine: ["promo", "mine"] as const,
   admin: (userId?: string) => ["admin", "promo", userId ?? "all"] as const,
+  adminStats: ["admin", "promo", "stats"] as const,
+  adminUsage: (id: string) => ["admin", "promo", "usage", id] as const,
 };
+
+export async function adminPromoStats() {
+  return apiFetch<AdminPromoStats>("/api/v1/admin/promo/stats");
+}
+
+export async function adminPromoUsage(id: string) {
+  return apiFetch<AdminPromoUsage>(`/api/v1/admin/promo/${id}/usage`);
+}
+
 
 /** Мои промокоды — вкладка «Промокоды» в профиле. */
 export async function fetchMyPromoCodes() {
