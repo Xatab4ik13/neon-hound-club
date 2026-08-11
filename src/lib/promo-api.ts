@@ -7,6 +7,8 @@ export type PromoCodeDto = {
   userId: string | null;
   /** Товарный промокод: скидка только на этот товар (корзина = 1 шт. этого товара). */
   productId: string | null;
+  /** Название товара для товарного промокода (только в /promo/mine). */
+  productTitle?: string | null;
   note: string | null;
   expiresAt: string | null;
   usedAt: string | null;

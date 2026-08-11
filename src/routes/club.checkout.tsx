@@ -17,6 +17,7 @@ import { apiFetch, BACKEND_URL } from "@/lib/api";
 import { startPayment } from "@/lib/pwa-pay";
 import { PlumpPrice } from "@/components/brand/PlumpNum";
 import { validatePromoCode } from "@/lib/promo-api";
+import { PromoPicker } from "@/components/checkout/PromoPicker";
 
 
 const PAY_ACTION = `${BACKEND_URL}/api/v1/payments/redirect`;
@@ -272,8 +273,8 @@ function ClubCheckoutPage() {
   } | null>(null);
   const [promoError, setPromoError] = useState<string | null>(null);
 
-  const applyPromo = async () => {
-    const code = promoInput.trim();
+  const applyPromo = async (raw?: string) => {
+    const code = (raw ?? promoInput).trim();
     if (!code) {
       setPromoError("Введи промокод");
       return;
@@ -722,6 +723,14 @@ function ClubCheckoutPage() {
                       Скидка действует на товары, доставка считается без скидки.
                     </div>
                   )}
+                  <PromoPicker
+                    cart={orderableItems.map((i) => ({ productId: i.productId!, qty: i.qty }))}
+                    busy={promoChecking}
+                    onPick={(code) => {
+                      setPromoInput(code);
+                      void applyPromo(code);
+                    }}
+                  />
                 </>
               )}
             </div>
