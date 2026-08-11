@@ -414,6 +414,13 @@
       "when": 1783300000000,
       "tag": "0058_support_messages",
       "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1786000000000,
+      "tag": "0059_spin_season_30d",
+      "breakpoints": true
     }
   ]
 }
