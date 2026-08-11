@@ -122,7 +122,7 @@ function jackpotPhasePpm(dayOfMonth: number): number {
 
 /* ---------------- Сезон ---------------- */
 
-/** Возвращает активный сезон текущего месяца, создавая его вместе с призами. */
+/** Возвращает активный сезон (30 дней), создавая его вместе с призами. */
 export async function ensureCurrentSeason() {
   const periodKey = mskPeriodKey();
   const [existing] = await db
@@ -132,11 +132,8 @@ export async function ensureCurrentSeason() {
     .limit(1);
   if (existing) return existing;
 
-  const [y, m] = periodKey.split("-").map(Number);
-  // Границы месяца в МСК (UTC-3).
-  const startsAt = new Date(Date.UTC(y!, m! - 1, 1, -3, 0, 0));
-  const endsAt = new Date(Date.UTC(y!, m!, 1, -3, 0, 0));
-  const daysTotal = Math.round((endsAt.getTime() - startsAt.getTime()) / 86_400_000);
+  const { startsAt, endsAt } = seasonBounds();
+  const daysTotal = SEASON_DAYS;
 
   const [created] = await db
     .insert(spinSeasons)
