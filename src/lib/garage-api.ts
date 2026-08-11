@@ -230,7 +230,7 @@ export function useDeleteBike() {
 
 // ---------- S3 UPLOAD ----------
 
-export type UploadKind = "avatar" | "bike" | "post" | "raffle" | "shop" | "product";
+export type UploadKind = "avatar" | "bike" | "post" | "raffle" | "shop" | "product" | "support";
 
 type SignResponse = {
   key: string;

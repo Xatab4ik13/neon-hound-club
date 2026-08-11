@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, text, timestamp, index } from "drizzle-orm/pg-core";
+import { pgTable, uuid, varchar, text, timestamp, index, jsonb } from "drizzle-orm/pg-core";
 import { users } from "./users.js";
 
 /**
@@ -22,6 +22,8 @@ export const supportTickets = pgTable(
     category: varchar("category", { length: 16 }).notNull(), // bug | feature | question
     subject: varchar("subject", { length: 120 }).notNull(),
     body: text("body").notNull(),
+    /** Публичные URL прикреплённых юзером картинок (до 4 шт). */
+    attachments: jsonb("attachments").$type<string[]>().notNull().default([]),
     status: varchar("status", { length: 16 }).notNull().default("open"),
     adminReply: text("admin_reply"),
     answeredBy: uuid("answered_by").references(() => users.id, { onDelete: "set null" }),
