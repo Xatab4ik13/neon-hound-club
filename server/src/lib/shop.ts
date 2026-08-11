@@ -405,16 +405,19 @@ export async function markOrderPaid(orderId: string): Promise<{ ok: boolean; rea
 
 
   // Капсула ×2: удваиваем билеты за цифровые товары, если капсула активна.
+  // Бонус от капсулы ограничен +50 билетами за одну покупку (защита экономики).
   // Применяем один раз — на первой оплате; повторный вебхук (alreadyPaid) капсулу не трогает.
+  const CAPSULE_BONUS_CAP = 50;
   let creditAmount = order.bonusTicketsTotal;
   let boostApplied = false;
   if (allElectronic && creditAmount > 0) {
     const boost = await getTicketBoost(order.userId);
     if (boost.active) {
-      creditAmount = creditAmount * 2;
+      creditAmount += Math.min(order.bonusTicketsTotal, CAPSULE_BONUS_CAP);
       boostApplied = true;
     }
   }
+
 
   if (creditAmount > 0) {
     await ticketCredit({
