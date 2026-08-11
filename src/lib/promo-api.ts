@@ -76,7 +76,34 @@ export const promoQk = {
   admin: (userId?: string) => ["admin", "promo", userId ?? "all"] as const,
   adminStats: ["admin", "promo", "stats"] as const,
   adminUsage: (id: string) => ["admin", "promo", "usage", id] as const,
+  adminCapsules: (status: string, q: string) => ["admin", "promo", "capsules", status, q] as const,
 };
+
+/** Капсула ×2 из HellSpin: выдача и факт активации. */
+export type AdminCapsuleDto = {
+  id: string;
+  userId: string;
+  nick: string | null;
+  email: string | null;
+  grantedAt: string;
+  expiresAt: string;
+  usedAt: string | null;
+  usedOrderId: string | null;
+  bonusTickets: number;
+  orderTotalRub: number | null;
+  status: "active" | "used" | "expired";
+};
+
+export type AdminCapsulesResponse = {
+  items: AdminCapsuleDto[];
+  stats: { total: number; used: number; active: number; bonusTickets: number };
+};
+
+export async function adminListCapsules(params: { status?: string; q?: string } = {}) {
+  const qs = new URLSearchParams({ status: params.status || "all" });
+  if (params.q) qs.set("q", params.q);
+  return apiFetch<AdminCapsulesResponse>(`/api/v1/admin/promo/capsules?${qs.toString()}`);
+}
 
 export async function adminPromoStats() {
   return apiFetch<AdminPromoStats>("/api/v1/admin/promo/stats");
