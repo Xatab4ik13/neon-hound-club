@@ -364,7 +364,7 @@ async function calculate(input: CdekCalcInput): Promise<CdekCalcResult> {
   }
   return {
     tariffCode: pick.tariff_code,
-    totalSum: Math.ceil(pick.delivery_sum),
+    totalSum: applyShippingMarkup(Math.ceil(pick.delivery_sum)),
     periodMin: pick.period_min,
     periodMax: pick.period_max,
     currency: "RUB",
