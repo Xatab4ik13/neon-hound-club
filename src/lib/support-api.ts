@@ -15,6 +15,14 @@ export const SUPPORT_STATUS_LABEL: Record<SupportStatus, string> = {
   closed: "Закрыт",
 };
 
+export type SupportMessage = {
+  id: string;
+  authorRole: "user" | "admin";
+  body: string;
+  attachments: string[];
+  createdAt: string;
+};
+
 export type SupportTicketListItem = {
   id: string;
   category: SupportCategory;
@@ -22,6 +30,7 @@ export type SupportTicketListItem = {
   status: SupportStatus;
   createdAt: string;
   answeredAt: string | null;
+  lastMessageAt?: string | null;
 };
 
 export type SupportTicketDetail = SupportTicketListItem & {
@@ -29,6 +38,7 @@ export type SupportTicketDetail = SupportTicketListItem & {
   attachments: string[];
   adminReply: string | null;
   closedAt: string | null;
+  messages: SupportMessage[];
 };
 
 export const supportQk = {
@@ -58,11 +68,22 @@ export function createTicket(input: {
   });
 }
 
+export function postTicketMessage(
+  id: string,
+  input: { body: string; attachments?: string[] },
+) {
+  return apiFetch<{ id: string }>(`/api/v1/support/tickets/${id}/messages`, {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
 // ---------- ADMIN ----------
 
 export type AdminSupportTicketListItem = SupportTicketListItem & {
   userId: string;
   nick: string | null;
+  messagesCount?: number;
 };
 
 export type AdminSupportTicketDetail = SupportTicketDetail & {
@@ -104,6 +125,12 @@ export function replyToSupportTicket(id: string, reply: string, close: boolean) 
 
 export function closeSupportTicket(id: string) {
   return apiFetch<{ ok: true }>(`/api/v1/admin/support/tickets/${id}/close`, {
+    method: "POST",
+  });
+}
+
+export function reopenSupportTicket(id: string) {
+  return apiFetch<{ ok: true }>(`/api/v1/admin/support/tickets/${id}/reopen`, {
     method: "POST",
   });
 }
