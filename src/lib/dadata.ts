@@ -11,7 +11,10 @@ export type DadataSuggestion<T = Record<string, unknown>> = {
 
 export type DadataAddressData = {
   country?: string | null;
+  /** ISO-код страны: RU, KZ, BY, … Для зарубежных адресов приходит от DaData. */
+  country_iso_code?: string | null;
   region?: string | null;
+
   region_with_type?: string | null;
   city?: string | null;
   city_with_type?: string | null;

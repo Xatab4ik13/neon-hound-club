@@ -18,6 +18,8 @@ import { loadYandexMaps } from "@/lib/yandex-maps";
 export type CdekPickerState = {
   cityCode: number | null;
   cityName: string;
+  /** ISO-код страны выбранного города: RU, KZ, BY, … */
+  countryCode: string;
   mode: "pvz" | "courier";
   pvzCode: string | null;
   pvzAddress: string | null;
@@ -27,13 +29,15 @@ export type CdekPickerState = {
 };
 
 // Подсказка из DaData: показываем юзеру город + регион,
-// а resolve в код СДЭК делаем по fias_id (надёжнее всего).
+// а resolve в код СДЭК делаем по fias_id (Россия) или по названию + стране (СНГ).
 type CityItem = {
   fiasId: string | null;
   kladrId: string | null;
   postalCode: string | null;
   city: string;
   region: string;
+  country: string;
+  countryIso: string | null;
   display: string;
 };
 
@@ -49,6 +53,7 @@ type PvzItem = {
 export const EMPTY_CDEK_STATE: CdekPickerState = {
   cityCode: null,
   cityName: "",
+  countryCode: "RU",
   mode: "pvz",
   pvzCode: null,
   pvzAddress: null,
@@ -56,6 +61,7 @@ export const EMPTY_CDEK_STATE: CdekPickerState = {
   apartment: "",
   entrance: "",
 };
+
 
 
 export function CdekDeliveryPicker({
@@ -100,7 +106,20 @@ export function CdekDeliveryPicker({
         const items: CityItem[] = suggestions
           .map((s) => {
             const d = s.data;
-            const name = d.city ?? d.settlement ?? null;
+            const iso = (d.country_iso_code ?? null)?.toUpperCase() ?? null;
+            // Для зарубежных адресов DaData часто не заполняет city/settlement —
+            // тогда берём первую значимую часть value ("Казахстан, г Алматы").
+            const fallback =
+              iso && iso !== "RU"
+                ? s.value
+                    .split(",")
+                    .map((part) => part.trim())
+                    .filter((part) => part && part !== (d.country ?? ""))[0] ?? null
+                : null;
+            const raw = d.city ?? d.settlement ?? fallback;
+            if (!raw) return null;
+            // Убираем типовые сокращения ("г Алматы" → "Алматы") — СДЭК ищет по имени.
+            const name = raw.replace(/^(г|гор|пгт|с|п|д|аул|кишлак)\.?\s+/i, "").trim();
             if (!name) return null;
             return {
               fiasId: d.fias_id ?? null,
@@ -108,11 +127,40 @@ export function CdekDeliveryPicker({
               postalCode: d.postal_code ?? null,
               city: name,
               region: d.region_with_type ?? d.region ?? "",
+              country: d.country ?? "",
+              countryIso: iso,
               display: s.value,
             } satisfies CityItem;
           })
           .filter((x): x is CityItem => x != null);
+        if (items.length === 0) {
+          // Фолбэк: ищем напрямую в справочнике СДЭК (Россия + СНГ) — помогает
+          // по городам СНГ, которых нет в подсказках DaData.
+          try {
+            const r = await apiFetch<{
+              items: Array<{ code: number; city: string; region: string; countryCode: string }>;
+            }>(`/api/v1/cdek/cities?q=${encodeURIComponent(q)}`);
+            if (r.items?.length) {
+              setCityOpts(
+                r.items.map((c) => ({
+                  fiasId: null,
+                  kladrId: null,
+                  postalCode: null,
+                  city: c.city,
+                  region: c.region,
+                  country: "",
+                  countryIso: c.countryCode?.toUpperCase() ?? null,
+                  display: `${c.city}, ${c.region}`,
+                })),
+              );
+              return;
+            }
+          } catch {
+            /* ignore */
+          }
+        }
         setCityOpts(items);
+
       } catch {
         setCityOpts([]);
       } finally {
@@ -134,7 +182,10 @@ export function CdekDeliveryPicker({
     let cancelled = false;
     setPvzLoading(true);
     setPvzError(null);
+    // country не передаём: city_code уникален глобально, СДЭК отдаёт ПВЗ и по СНГ.
     apiFetch<{ items: PvzItem[] }>(`/api/v1/cdek/pvz?cityCode=${value.cityCode}`)
+
+
       .then((r) => {
         if (cancelled) return;
         setPvzList(r.items ?? []);
@@ -150,7 +201,7 @@ export function CdekDeliveryPicker({
     return () => {
       cancelled = true;
     };
-  }, [value.cityCode, value.mode]);
+  }, [value.cityCode, value.countryCode, value.mode]);
 
   const pickedPvz = useMemo(
     () => pvzList.find((p) => p.code === value.pvzCode) ?? null,
@@ -158,31 +209,39 @@ export function CdekDeliveryPicker({
   );
 
   const [cityResolving, setCityResolving] = useState(false);
+  const [cityError, setCityError] = useState<string | null>(null);
 
   const pickCity = async (c: CityItem) => {
     setCityQ(c.region ? `${c.city}, ${c.region}` : c.city);
     setCityOpen(false);
     setCityResolving(true);
+    setCityError(null);
     try {
       const params = new URLSearchParams();
+      // ФИАС есть только у российских адресов; для СНГ резолвим по названию + стране.
       if (c.fiasId) params.set("fias", c.fiasId);
       if (c.postalCode) params.set("postalCode", c.postalCode);
-      const r = await apiFetch<{ code: number; city: string; region: string }>(
+      params.set("city", c.city);
+      if (c.countryIso) params.set("country", c.countryIso);
+      const r = await apiFetch<{ code: number; city: string; region: string; countryCode: string }>(
         `/api/v1/cdek/city-resolve?${params.toString()}`,
       );
       onChange({
         ...value,
         cityCode: r.code,
         cityName: r.city,
+        countryCode: (r.countryCode || c.countryIso || "RU").toUpperCase(),
         pvzCode: null,
         pvzAddress: null,
       });
     } catch {
       // Если СДЭК не нашёл — оставим поле как есть, юзер увидит отсутствие карты.
+      setCityError("СДЭК не возит в этот город. Попробуй ближайший крупный город.");
       onChange({
         ...value,
         cityCode: null,
         cityName: c.city,
+        countryCode: (c.countryIso || "RU").toUpperCase(),
         pvzCode: null,
         pvzAddress: null,
       });
@@ -190,6 +249,7 @@ export function CdekDeliveryPicker({
       setCityResolving(false);
     }
   };
+
 
   const setMode = (mode: "pvz" | "courier") => {
     onChange({ ...value, mode, pvzCode: mode === "pvz" ? value.pvzCode : null });
@@ -214,6 +274,7 @@ export function CdekDeliveryPicker({
             onChange={(e) => {
               setCityQ(e.target.value);
               setCityOpen(true);
+              setCityError(null);
               if (value.cityCode) {
                 onChange({ ...value, cityCode: null, cityName: "", pvzCode: null, pvzAddress: null });
               }
@@ -229,12 +290,18 @@ export function CdekDeliveryPicker({
                 pickCity(pick);
               }
             }}
-            placeholder="Москва, Краснодар, …"
+            placeholder="Москва, Алматы, Минск, …"
             className="min-w-0 flex-1 bg-transparent text-[15px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none"
           />
           {(cityLoading || cityResolving) && <Loader2 className="h-4 w-4 shrink-0 animate-spin text-muted-foreground" />}
           {value.cityCode && !cityLoading && !cityResolving && <Check className="h-4 w-4 shrink-0 text-primary" />}
         </div>
+        <div className="mt-1 px-1 text-[11px] text-muted-foreground">
+          Россия и страны СНГ — Казахстан, Беларусь, Армения, Кыргызстан, Узбекистан и др.
+        </div>
+        {cityError && !value.cityCode && (
+          <div className="mt-1 px-1 text-[12px] text-destructive">{cityError}</div>
+        )}
         {cityOpen && cityOpts.length > 0 && (
           <ul className="absolute z-20 mt-1 max-h-72 w-full overflow-auto rounded-xl border border-white/10 bg-background/95 shadow-lg backdrop-blur">
             {cityOpts.map((c, i) => (
@@ -246,13 +313,18 @@ export function CdekDeliveryPicker({
                   className="block w-full px-3 py-2 text-left text-[14px] hover:bg-primary/10"
                 >
                   <div className="font-semibold text-foreground">{c.city}</div>
-                  <div className="text-[11px] text-muted-foreground">{c.region}</div>
+                  <div className="text-[11px] text-muted-foreground">
+                    {[c.region, c.countryIso && c.countryIso !== "RU" ? c.country || c.countryIso : null]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </div>
                 </button>
               </li>
             ))}
           </ul>
         )}
       </div>
+
 
       {/* Переключатель режима */}
       <div className="grid grid-cols-2 gap-2">

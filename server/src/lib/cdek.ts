@@ -92,6 +92,17 @@ async function cdekFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
 
 // ---------- Города (для автокомплита) ----------
 
+/**
+ * Страны доставки: Россия + СНГ (СДЭК возит во все из списка).
+ * Переопределяется через CDEK_COUNTRY_CODES="RU,KZ,BY".
+ */
+export const CDEK_COUNTRY_CODES: string[] = (
+  process.env.CDEK_COUNTRY_CODES ?? "RU,KZ,BY,AM,KG,UZ,AZ,GE,MD,TJ,TM"
+)
+  .split(",")
+  .map((s) => s.trim().toUpperCase())
+  .filter(Boolean);
+
 export type CdekCity = {
   code: number;
   city: string;
@@ -102,28 +113,55 @@ export type CdekCity = {
 
 const citiesCache = new Map<string, { at: number; data: CdekCity[] }>();
 
-async function searchCities(query: string, limit = 10): Promise<CdekCity[]> {
+async function searchCities(query: string, limit = 10, countryCode?: string): Promise<CdekCity[]> {
   const q = query.trim().toLowerCase();
   if (q.length < 2) return [];
-  const cached = citiesCache.get(q);
+  const countries = countryCode ? [countryCode.toUpperCase()] : CDEK_COUNTRY_CODES;
+  const cacheKey = `search:${countries.join(",")}:${q}`;
+  const cached = citiesCache.get(cacheKey);
   if (cached && Date.now() - cached.at < 10 * 60_000) return cached.data;
-  const params = new URLSearchParams({ country_codes: "RU", size: String(limit), city: query });
+  const params = new URLSearchParams({
+    country_codes: countries.join(","),
+    size: String(limit),
+    city: query,
+  });
   const data = await cdekFetch<CdekCity[]>(`/location/cities?${params.toString()}`);
-  citiesCache.set(q, { at: Date.now(), data });
+  citiesCache.set(cacheKey, { at: Date.now(), data });
   return data;
 }
 
-async function resolveCity(opts: { fiasGuid?: string; postalCode?: string }): Promise<CdekCity[]> {
-  const params = new URLSearchParams({ country_codes: "RU", size: "5" });
+async function resolveCity(opts: {
+  fiasGuid?: string;
+  postalCode?: string;
+  /** Название города — используем для СНГ, где у DaData нет ФИАС. */
+  city?: string;
+  /** ISO-код страны (KZ, BY, …). Если не задан — ищем по всему списку. */
+  countryCode?: string;
+}): Promise<CdekCity[]> {
+  const countries = opts.countryCode ? [opts.countryCode.toUpperCase()] : CDEK_COUNTRY_CODES;
+  const params = new URLSearchParams({ country_codes: countries.join(","), size: "5" });
   if (opts.fiasGuid) params.set("fias_guid", opts.fiasGuid);
   if (opts.postalCode) params.set("postal_code", opts.postalCode);
-  const cacheKey = `resolve:${opts.fiasGuid ?? ""}:${opts.postalCode ?? ""}`;
+  if (opts.city) params.set("city", opts.city);
+  const cacheKey = `resolve:${countries.join(",")}:${opts.fiasGuid ?? ""}:${opts.postalCode ?? ""}:${opts.city ?? ""}`;
   const cached = citiesCache.get(cacheKey);
   if (cached && Date.now() - cached.at < 60 * 60_000) return cached.data;
   const data = await cdekFetch<CdekCity[]>(`/location/cities?${params.toString()}`);
   citiesCache.set(cacheKey, { at: Date.now(), data });
   return data;
 }
+
+/** Город по коду СДЭК — нужен, чтобы понять страну (RU или СНГ). */
+async function getCityByCode(code: number): Promise<CdekCity | null> {
+  const cacheKey = `code:${code}`;
+  const cached = citiesCache.get(cacheKey);
+  if (cached && Date.now() - cached.at < 24 * 60 * 60_000) return cached.data[0] ?? null;
+  const params = new URLSearchParams({ code: String(code), size: "1" });
+  const data = await cdekFetch<CdekCity[]>(`/location/cities?${params.toString()}`);
+  citiesCache.set(cacheKey, { at: Date.now(), data });
+  return data[0] ?? null;
+}
+
 
 
 // ---------- ПВЗ ----------
@@ -147,31 +185,49 @@ export type CdekPvz = {
   is_reception: boolean;
 };
 
-const pvzCache = new Map<number, { at: number; data: CdekPvz[] }>();
+const pvzCache = new Map<string, { at: number; data: CdekPvz[] }>();
 
-async function getPickupPoints(cityCode: number): Promise<CdekPvz[]> {
-  const cached = pvzCache.get(cityCode);
+async function getPickupPoints(cityCode: number, countryCode?: string): Promise<CdekPvz[]> {
+  const key = `${cityCode}:${countryCode ?? ""}`;
+  const cached = pvzCache.get(key);
   if (cached && Date.now() - cached.at < 30 * 60_000) return cached.data;
+  // country_code не фиксируем: city_code уникален глобально, поэтому ПВЗ
+  // приходят и по СНГ. Передаём страну только если её явно попросили.
   const params = new URLSearchParams({
     city_code: String(cityCode),
     type: "PVZ",
-    country_code: "RU",
     is_handout: "true",
   });
+  if (countryCode) params.set("country_code", countryCode.toUpperCase());
   const data = await cdekFetch<CdekPvz[]>(`/deliverypoints?${params.toString()}`);
-  pvzCache.set(cityCode, { at: Date.now(), data });
+  pvzCache.set(key, { at: Date.now(), data });
   return data;
 }
 
 // ---------- Калькулятор ----------
 
 /**
- * Тарифы:
+ * Тарифы по России:
  *   136 — Посылка склад-склад (отправляем со склада → ПВЗ получателя). Самый дешёвый.
  *   137 — Посылка склад-дверь (со склада → курьер до двери).
+ *
+ * Для СНГ (KZ, BY, …) коды другие и зависят от направления, поэтому там
+ * тариф не хардкодим, а берём из /calculator/tarifflist — СДЭК сам отдаёт
+ * список доступных тарифов по направлению, выбираем самый дешёвый под режим.
  */
 export const CDEK_TARIFFS = { pvz: 136, courier: 137 } as const;
 export type CdekDeliveryMode = keyof typeof CDEK_TARIFFS;
+
+/**
+ * delivery_mode СДЭК:
+ *   1 дверь-дверь, 2 дверь-склад, 3 склад-дверь, 4 склад-склад,
+ *   6 дверь-постамат, 7 склад-постамат.
+ * Отправляем всегда со склада → допустимы 3 (курьер) и 4/7 (ПВЗ/постамат).
+ */
+const DELIVERY_MODES: Record<CdekDeliveryMode, number[]> = {
+  pvz: [4, 7],
+  courier: [3],
+};
 
 export type CdekPackageInput = {
   weightG: number;
@@ -195,20 +251,58 @@ export type CdekCalcResult = {
   currency: string;
 };
 
-async function calculate(input: CdekCalcInput): Promise<CdekCalcResult> {
+function packagesPayload(packages: CdekPackageInput[]) {
+  return packages.map((p, i) => ({
+    number: String(i + 1),
+    weight: Math.max(1, Math.round(p.weightG)),
+    length: Math.max(1, Math.round(p.lengthCm)),
+    width: Math.max(1, Math.round(p.widthCm)),
+    height: Math.max(1, Math.round(p.heightCm)),
+  }));
+}
+
+type CdekTariffListItem = {
+  tariff_code: number;
+  tariff_name: string;
+  delivery_mode: number;
+  delivery_sum: number;
+  period_min: number;
+  period_max: number;
+};
+
+/** Список доступных тарифов по направлению (нужен для СНГ). */
+async function tariffList(input: CdekCalcInput): Promise<CdekTariffListItem[]> {
+  const fromCity = Number(process.env.CDEK_FROM_CITY_CODE ?? 435);
+  const body = {
+    type: 1, // интернет-магазин
+    from_location: { code: fromCity },
+    to_location: { code: input.toCityCode },
+    packages: packagesPayload(input.packages),
+  };
+  type Resp = {
+    tariff_codes?: CdekTariffListItem[];
+    errors?: Array<{ code: string; message: string }>;
+  };
+  const data = await cdekFetch<Resp>("/calculator/tarifflist", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+  if (data.errors?.length) {
+    throw new Error(`[cdek] tarifflist errors: ${data.errors.map((e) => e.message).join("; ")}`);
+  }
+  return data.tariff_codes ?? [];
+}
+
+async function calculateByTariffCode(
+  input: CdekCalcInput,
+  tariffCode: number,
+): Promise<CdekCalcResult> {
   const fromCity = Number(process.env.CDEK_FROM_CITY_CODE ?? 435); // Краснодар по умолчанию
-  const tariffCode = CDEK_TARIFFS[input.mode];
   const body = {
     tariff_code: tariffCode,
     from_location: { code: fromCity },
     to_location: { code: input.toCityCode },
-    packages: input.packages.map((p, i) => ({
-      number: String(i + 1),
-      weight: Math.max(1, Math.round(p.weightG)),
-      length: Math.max(1, Math.round(p.lengthCm)),
-      width: Math.max(1, Math.round(p.widthCm)),
-      height: Math.max(1, Math.round(p.heightCm)),
-    })),
+    packages: packagesPayload(input.packages),
   };
   type Resp = {
     total_sum: number;
@@ -232,6 +326,41 @@ async function calculate(input: CdekCalcInput): Promise<CdekCalcResult> {
     currency: data.currency ?? "RUB",
   };
 }
+
+async function calculate(input: CdekCalcInput): Promise<CdekCalcResult> {
+  const city = await getCityByCode(input.toCityCode).catch(() => null);
+  const country = (city?.country_code ?? "RU").toUpperCase();
+
+  // Россия — фиксированные тарифы 136/137 (как было).
+  if (country === "RU") {
+    return calculateByTariffCode(input, CDEK_TARIFFS[input.mode]);
+  }
+
+  if (!CDEK_COUNTRY_CODES.includes(country)) {
+    throw new Error(`[cdek] country_not_supported: ${country}`);
+  }
+
+  // СНГ — спрашиваем у СДЭК доступные тарифы и берём самый дешёвый под режим.
+  const list = await tariffList(input);
+  const wanted = DELIVERY_MODES[input.mode];
+  const fits = list
+    .filter((t) => wanted.includes(t.delivery_mode))
+    .sort((a, b) => a.delivery_sum - b.delivery_sum);
+  const pick = fits[0];
+  if (!pick) {
+    throw new Error(
+      `[cdek] no_tariff_for_direction: country=${country} city=${input.toCityCode} mode=${input.mode}`,
+    );
+  }
+  return {
+    tariffCode: pick.tariff_code,
+    totalSum: Math.ceil(pick.delivery_sum),
+    periodMin: pick.period_min,
+    periodMax: pick.period_max,
+    currency: "RUB",
+  };
+}
+
 
 // ---------- Накладные (заказы СДЭК) ----------
 
@@ -442,7 +571,9 @@ async function printCdekBarcodes(
 export const cdek = {
   searchCities,
   resolveCity,
+  getCityByCode,
   getPickupPoints,
+
   calculate,
   createOrder: createCdekOrder,
   getOrder: getCdekOrder,
