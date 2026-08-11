@@ -11,6 +11,7 @@ import {
 } from "@/lib/queries";
 import { SPECIAL_PACK_COVER } from "@/assets/stickers/special";
 import { PlumpPrice } from "@/components/brand/PlumpNum";
+import { useViewer } from "@/hooks/use-viewer";
 
 export const Route = createFileRoute("/club/shop/")({
   head: () => ({
