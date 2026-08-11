@@ -310,7 +310,7 @@ function ClubCheckoutPage() {
     if (promoApplied.productId) {
       const it = orderableItems.find((i) => i.productId === promoApplied.productId);
       if (!it) return 0;
-      return Math.floor((it.priceRub * promoApplied.discountPct) / 100);
+      return Math.floor((it.price * promoApplied.discountPct) / 100);
     }
     return Math.floor((total * promoApplied.discountPct) / 100);
   }, [promoApplied, orderableItems, total]);
