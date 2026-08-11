@@ -81,6 +81,22 @@ function TicketDetailPage() {
             <p className="whitespace-pre-wrap text-[15px] leading-relaxed text-foreground">
               {q.data.body}
             </p>
+
+            {q.data.attachments?.length ? (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {q.data.attachments.map((url) => (
+                  <a
+                    key={url}
+                    href={url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="h-20 w-20 overflow-hidden rounded-xl border border-white/[0.06]"
+                  >
+                    <img src={url} alt="Вложение" className="h-full w-full object-cover" />
+                  </a>
+                ))}
+              </div>
+            ) : null}
           </section>
 
           {/* Карточка ответа */}

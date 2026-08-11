@@ -251,6 +251,24 @@ function TicketModal({ id, onClose }: { id: string; onClose: () => void }) {
             </div>
           </Field>
 
+          {ticket.attachments?.length ? (
+            <Field label="Вложения юзера">
+              <div className="flex flex-wrap gap-2">
+                {ticket.attachments.map((url) => (
+                  <a
+                    key={url}
+                    href={url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="h-24 w-24 overflow-hidden rounded-md border border-zinc-200 dark:border-zinc-700"
+                  >
+                    <img src={url} alt="Вложение" className="h-full w-full object-cover" />
+                  </a>
+                ))}
+              </div>
+            </Field>
+          ) : null}
+
           {ticket.adminReply && (
             <Field label="Уже отправленный ответ">
               <div className="whitespace-pre-wrap rounded-md border border-blue-200 bg-blue-50 p-3 text-sm text-zinc-800 dark:border-blue-900/50 dark:bg-blue-950/30 dark:text-zinc-200">

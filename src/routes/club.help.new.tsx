@@ -2,6 +2,8 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { PlumpArrowLeft as ArrowLeft, Bug, Lightbulb, HelpCircle, Loader2 } from "@/components/ui/icons";
+import { ImagePlus, X } from "lucide-react";
+import { uploadFileToS3 } from "@/lib/garage-api";
 import { PageHeader } from "@/components/club/PageHeader";
 import { createTicket, supportQk, type SupportCategory } from "@/lib/support-api";
 import { ApiError } from "@/lib/api";
@@ -34,10 +36,48 @@ function NewTicketPage() {
   const [category, setCategory] = useState<SupportCategory>("question");
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
+  const [attachments, setAttachments] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
+
+  const MAX_FILES = 4;
+
+  async function handleFiles(files: FileList | null) {
+    if (!files || files.length === 0) return;
+    const free = MAX_FILES - attachments.length;
+    if (free <= 0) {
+      toast.error(`Максимум ${MAX_FILES} фото`);
+      return;
+    }
+    setUploading(true);
+    try {
+      const picked = Array.from(files).slice(0, free);
+      for (const f of picked) {
+        if (!f.type.startsWith("image/")) {
+          toast.error("Можно только картинки");
+          continue;
+        }
+        if (f.size > 10 * 1024 * 1024) {
+          toast.error("Файл больше 10 МБ");
+          continue;
+        }
+        const url = await uploadFileToS3(f, "support");
+        setAttachments((prev) => [...prev, url]);
+      }
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : "Не получилось загрузить");
+    } finally {
+      setUploading(false);
+    }
+  }
 
   const mut = useMutation({
     mutationFn: () =>
-      createTicket({ category, subject: subject.trim(), body: body.trim() }),
+      createTicket({
+        category,
+        subject: subject.trim(),
+        body: body.trim(),
+        attachments,
+      }),
     onSuccess: (res) => {
       toast.success("Тикет отправлен");
       qc.invalidateQueries({ queryKey: ["support", "tickets"] });
@@ -52,6 +92,7 @@ function NewTicketPage() {
 
   const disabled =
     mut.isPending ||
+    uploading ||
     subject.trim().length < 3 ||
     body.trim().length < 5 ||
     subject.length > SUBJECT_MAX ||
@@ -151,6 +192,54 @@ function NewTicketPage() {
           <div className="mt-1.5 px-1 text-right text-[11px] tabular-nums text-muted-foreground">
             {body.length} / {BODY_MAX}
           </div>
+        </section>
+
+        {/* Вложения */}
+        <section>
+          <label className="mb-2 block px-1 font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+            Фото / скриншоты
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {attachments.map((url) => (
+              <div
+                key={url}
+                className="relative h-20 w-20 overflow-hidden rounded-xl border border-white/[0.06] bg-card/40"
+              >
+                <img src={url} alt="Вложение" className="h-full w-full object-cover" />
+                <button
+                  type="button"
+                  onClick={() => setAttachments((prev) => prev.filter((u) => u !== url))}
+                  aria-label="Удалить"
+                  className="absolute right-1 top-1 grid h-5 w-5 place-items-center rounded-full bg-black/70 text-white"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            ))}
+            {attachments.length < MAX_FILES && (
+              <label className="grid h-20 w-20 cursor-pointer place-items-center rounded-xl border border-dashed border-white/[0.12] bg-card/40 text-muted-foreground active:opacity-70">
+                {uploading ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <ImagePlus className="h-5 w-5" />
+                )}
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  disabled={uploading}
+                  onChange={(e) => {
+                    void handleFiles(e.target.files);
+                    e.target.value = "";
+                  }}
+                />
+              </label>
+            )}
+          </div>
+          <p className="mt-1.5 px-1 text-[11px] text-muted-foreground">
+            До {MAX_FILES} картинок, каждая до 10 МБ
+          </p>
         </section>
 
         <button
