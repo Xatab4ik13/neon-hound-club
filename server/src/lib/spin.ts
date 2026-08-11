@@ -773,7 +773,12 @@ export async function getSpinState(userId: string, pwa: boolean) {
   return {
     access,
     tier,
-    season: { periodKey: season.periodKey, daysTotal: season.daysTotal, endsAt: season.endsAt.toISOString() },
+    season: {
+      periodKey: season.periodKey,
+      daysTotal: season.daysTotal,
+      startsAt: season.startsAt.toISOString(),
+      endsAt: season.endsAt.toISOString(),
+    },
     spins: { allowed, used, left: Math.max(0, allowed - used) },
     streak: {
       days: streak?.daysCount ?? 0,
