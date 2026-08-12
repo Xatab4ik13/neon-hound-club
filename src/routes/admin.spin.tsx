@@ -519,6 +519,27 @@ const ODDS_ROWS: { title: string; rarity: SpinRarity; ppm: number; note?: string
   { title: "Jackpot (AirPods → Watch → PS5)", rarity: "legend", ppm: 40, note: "1–15 дн: 40 ppm, 16–25: 150, 26+: 350" },
 ];
 
+/**
+ * Веса, которые действовали на первые ~800 прокрутов сезона (до добавления
+ * «Капсулы ×2»). Нужны только для сравнительной таблицы.
+ */
+const OLD_PPM: Record<string, number> = {
+  "100 XP": 240_000,
+  "250 XP": 140_000,
+  "Бонус-спин": 80_000,
+  "1 билет": 180_000,
+  "500 XP": 50_000,
+  "Капсула ×2": 0,
+  "3 билета": 100_000,
+  "Промокод 20%": 30_000,
+  Ремувка: 20_000,
+  "10 билетов": 30_000,
+  "Hell Pass Silver": 3_000,
+  "Jackpot (AirPods → Watch → PS5)": 40,
+};
+
+
+
 
 const ODDS_MULT: { tier: string; mult: number }[] = [
   { tier: "Без Pass / Silver", mult: 1 },
