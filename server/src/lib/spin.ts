@@ -127,37 +127,21 @@ function jackpotPhasePpm(dayOfSeason: number): number {
 
 /* ---------------- Сезон ---------------- */
 
-/** Возвращает активный сезон (30 дней), создавая его вместе с призами. */
-export async function ensureCurrentSeason() {
-  const periodKey = mskPeriodKey();
-  const [existing] = await db
-    .select()
-    .from(spinSeasons)
-    .where(eq(spinSeasons.periodKey, periodKey))
-    .limit(1);
-  if (existing) return existing;
+/** Сезоны, для которых конфиг призов уже синхронизирован в этом процессе. */
+const syncedSeasons = new Set<string>();
 
-  const { startsAt, endsAt } = seasonBounds();
-  const daysTotal = SEASON_DAYS;
-
-  const [created] = await db
-    .insert(spinSeasons)
-    .values({ periodKey, startsAt, endsAt, daysTotal, active: true })
-    .onConflictDoNothing({ target: spinSeasons.periodKey })
-    .returning();
-
-  const season =
-    created ??
-    (await db.select().from(spinSeasons).where(eq(spinSeasons.periodKey, periodKey)).limit(1))[0]!;
-
-  // Синхронизируем конфиг призов с уже идущим сезоном: новые коды (например
-  // капсула ×2) добавляются, проценты/названия обновляются. `issued` не трогаем,
-  // чтобы не сбросить расход абсолютных пулов у живой рулетки.
+/**
+ * Синхронизирует конфиг призов с сезоном: новые коды (например капсула ×2)
+ * добавляются в уже идущий сезон, проценты/названия обновляются.
+ * `issued` не трогаем, чтобы не сбросить расход абсолютных пулов.
+ */
+async function syncSeasonPrizes(seasonId: string) {
+  if (syncedSeasons.has(seasonId)) return;
   await db
     .insert(spinPrizes)
     .values(
       PRIZE_CONFIG.map((p) => ({
-        seasonId: season.id,
+        seasonId,
         code: p.code,
         title: p.title,
         rarity: p.rarity,
@@ -175,17 +159,47 @@ export async function ensureCurrentSeason() {
         title: sql`excluded.title`,
         rarity: sql`excluded.rarity`,
         rewardKind: sql`excluded.reward_kind`,
-        rewardValue: sql`excluded.reward_value`,
+        rewardValue: sql`excluded.base_chance_ppm`,
         baseChancePpm: sql`excluded.base_chance_ppm`,
         limitTotal: sql`excluded.limit_total`,
         queueOrder: sql`excluded.queue_order`,
         active: sql`excluded.active`,
       },
     });
+  syncedSeasons.add(seasonId);
+}
+
+/** Возвращает активный сезон (30 дней), создавая его вместе с призами. */
+export async function ensureCurrentSeason() {
+  const periodKey = mskPeriodKey();
+  const [existing] = await db
+    .select()
+    .from(spinSeasons)
+    .where(eq(spinSeasons.periodKey, periodKey))
+    .limit(1);
+  if (existing) {
+    await syncSeasonPrizes(existing.id);
+    return existing;
+  }
+
+  const { startsAt, endsAt } = seasonBounds();
+  const daysTotal = SEASON_DAYS;
+
+  const [created] = await db
+    .insert(spinSeasons)
+    .values({ periodKey, startsAt, endsAt, daysTotal, active: true })
+    .onConflictDoNothing({ target: spinSeasons.periodKey })
+    .returning();
+
+  const season =
+    created ??
+    (await db.select().from(spinSeasons).where(eq(spinSeasons.periodKey, periodKey)).limit(1))[0]!;
+
+  await syncSeasonPrizes(season.id);
 
   return season;
-
 }
+
 
 /* ---------------- Доступ ---------------- */
 
