@@ -159,7 +159,7 @@ async function syncSeasonPrizes(seasonId: string) {
         title: sql`excluded.title`,
         rarity: sql`excluded.rarity`,
         rewardKind: sql`excluded.reward_kind`,
-        rewardValue: sql`excluded.base_chance_ppm`,
+        rewardValue: sql`excluded.reward_value`,
         baseChancePpm: sql`excluded.base_chance_ppm`,
         limitTotal: sql`excluded.limit_total`,
         queueOrder: sql`excluded.queue_order`,
