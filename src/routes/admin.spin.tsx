@@ -519,6 +519,27 @@ const ODDS_ROWS: { title: string; rarity: SpinRarity; ppm: number; note?: string
   { title: "Jackpot (AirPods → Watch → PS5)", rarity: "legend", ppm: 40, note: "1–15 дн: 40 ppm, 16–25: 150, 26+: 350" },
 ];
 
+/**
+ * Веса, которые действовали на первые ~800 прокрутов сезона (до добавления
+ * «Капсулы ×2»). Нужны только для сравнительной таблицы.
+ */
+const OLD_PPM: Record<string, number> = {
+  "100 XP": 240_000,
+  "250 XP": 140_000,
+  "Бонус-спин": 80_000,
+  "1 билет": 180_000,
+  "500 XP": 50_000,
+  "Капсула ×2": 0,
+  "3 билета": 100_000,
+  "Промокод 20%": 30_000,
+  Ремувка: 20_000,
+  "10 билетов": 30_000,
+  "Hell Pass Silver": 3_000,
+  "Jackpot (AirPods → Watch → PS5)": 40,
+};
+
+
+
 
 const ODDS_MULT: { tier: string; mult: number }[] = [
   { tier: "Без Pass / Silver", mult: 1 },
@@ -617,9 +638,99 @@ function OddsTable() {
         </table>
       </div>
 
+      <OddsCompare />
     </div>
   );
 }
+
+/**
+ * Сравнение: веса до добавления «Капсулы ×2» (первые ~800 прокрутов сезона)
+ * против актуальных. Проценты считаются для базового тира (без Pass / Silver).
+ */
+function OddsCompare() {
+  const oldTotal = ODDS_ROWS.reduce((s, r) => s + (OLD_PPM[r.title] ?? 0), 0);
+  const newTotal = ODDS_ROWS.reduce((s, r) => s + r.ppm, 0);
+
+  const pct = (w: number, total: number) => {
+    const p = (w / total) * 100;
+    return p < 0.01 ? p.toFixed(4) : p < 1 ? p.toFixed(3) : p.toFixed(2);
+  };
+
+  return (
+    <div className="mt-6 border-t border-zinc-200 pt-4 dark:border-zinc-800">
+      <div className="mb-1 text-sm font-semibold">Было → сейчас</div>
+      <div className="mb-3 text-xs text-zinc-500 dark:text-zinc-400">
+        Слева — веса, по которым прошли первые ~800 прокрутов сезона (капсулы в колесе не было).
+        Справа — актуальные. Проценты для базового тира.
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-zinc-200 text-left text-xs uppercase tracking-wider text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
+              <th className="py-2 pr-3 font-medium">Приз</th>
+              <th className="py-2 pr-3 text-right font-medium">Было %</th>
+              <th className="py-2 pr-3 text-right font-medium">Сейчас %</th>
+              <th className="py-2 pr-3 text-right font-medium">Δ</th>
+              <th className="py-2 pr-3 text-right font-medium">1 на N прокрутов</th>
+            </tr>
+          </thead>
+          <tbody>
+            {ODDS_ROWS.map((r) => {
+              const oldPpm = OLD_PPM[r.title] ?? 0;
+              const oldP = (oldPpm / oldTotal) * 100;
+              const newP = (r.ppm / newTotal) * 100;
+              const delta = newP - oldP;
+              const oneIn = r.ppm > 0 ? Math.round(newTotal / r.ppm) : null;
+              return (
+                <tr
+                  key={r.title}
+                  className="border-b border-zinc-100 last:border-0 dark:border-zinc-800/60"
+                >
+                  <td className="py-2 pr-3">
+                    <div className="font-medium">{r.title}</div>
+                    <div className="text-[11px] text-zinc-400">
+                      {oldPpm.toLocaleString("ru-RU")} → {r.ppm.toLocaleString("ru-RU")} ppm
+                    </div>
+                  </td>
+                  <td className="py-2 pr-3 text-right font-mono tabular-nums text-zinc-500">
+                    {oldPpm === 0 ? "—" : `${pct(oldPpm, oldTotal)}%`}
+                  </td>
+                  <td className="py-2 pr-3 text-right font-mono tabular-nums font-semibold">
+                    {pct(r.ppm, newTotal)}%
+                  </td>
+                  <td
+                    className={cn(
+                      "py-2 pr-3 text-right font-mono tabular-nums",
+                      Math.abs(delta) < 0.005
+                        ? "text-zinc-400"
+                        : delta > 0
+                          ? "text-emerald-600 dark:text-emerald-400"
+                          : "text-rose-600 dark:text-rose-400",
+                    )}
+                  >
+                    {Math.abs(delta) < 0.005
+                      ? "0"
+                      : `${delta > 0 ? "+" : "−"}${Math.abs(delta) < 1 ? Math.abs(delta).toFixed(3) : Math.abs(delta).toFixed(2)}`}
+                  </td>
+                  <td className="py-2 pr-3 text-right font-mono tabular-nums text-zinc-500">
+                    {oneIn ? `~1 / ${oneIn.toLocaleString("ru-RU")}` : "—"}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      <div className="mt-3 text-xs text-zinc-500 dark:text-zinc-400">
+        Важное: «10 билетов» раньше стоял на 30 000 ppm (~3,49%) — поэтому падал часто. Сейчас
+        10 000 ppm (~1,16%). «Hell Pass Silver» и раньше, и сейчас 3 000 ppm — это ~0,35%, то есть
+        примерно 1 на 290 прокрутов; на 800 прокрутов это ожидаемо 2–3 выдачи. Дневных лимитов на
+        призы нет — ограничены только сезонные пулы (Ремувка 240, Silver 60) и очередь jackpot.
+      </div>
+    </div>
+  );
+}
+
 
 
 function ClaimCell({ at }: { at: string | null }) {
