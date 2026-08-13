@@ -92,7 +92,8 @@ export async function subscribeToPush(): Promise<{ ok: boolean; reason?: string 
   if (perm === "default") perm = await Notification.requestPermission();
   if (perm !== "granted") return { ok: false, reason: "Уведомления запрещены." };
 
-  let sub = await reg.pushManager.getSubscription();
+  // Существующая подписка может жить на другой регистрации SW — ищем везде.
+  let sub = (await findExistingSubscription())?.sub ?? (await reg.pushManager.getSubscription());
   if (!sub) {
     const publicKey = await getVapidPublicKey();
     if (!publicKey) return { ok: false, reason: "Пуши ещё не настроены на сервере." };
@@ -114,8 +115,8 @@ export async function subscribeToPush(): Promise<{ ok: boolean; reason?: string 
 
 export async function unsubscribeFromPush(): Promise<void> {
   if (!isPushSupported()) return;
-  const reg = await navigator.serviceWorker.getRegistration("/sw.js");
-  const sub = await reg?.pushManager.getSubscription();
+  const found = await findExistingSubscription();
+  const sub = found?.sub;
   if (sub) {
     try {
       await apiFetch("/api/v1/push/unsubscribe", {
@@ -129,8 +130,43 @@ export async function unsubscribeFromPush(): Promise<void> {
   }
 }
 
-export async function getPushSubscription(): Promise<PushSubscription | null> {
+/**
+ * Ищет активную подписку по ВСЕМ регистрациям service worker'а.
+ * `getRegistration("/sw.js")` матчит по scope клиента, а не по имени скрипта,
+ * поэтому на части устройств (иной scope, ещё не активированный SW) он
+ * возвращает undefined, и приложение считает, что пуши выключены,
+ * хотя они реально включены.
+ */
+async function findExistingSubscription(): Promise<
+  { reg: ServiceWorkerRegistration; sub: PushSubscription } | null
+> {
   if (!isPushSupported() || isLovablePreview()) return null;
-  const reg = await navigator.serviceWorker.getRegistration("/sw.js");
-  return (await reg?.pushManager.getSubscription()) ?? null;
+  try {
+    // Дожидаемся активации SW — иначе pushManager может быть пустым.
+    await Promise.race([
+      navigator.serviceWorker.ready,
+      new Promise((resolve) => setTimeout(resolve, 3000)),
+    ]);
+  } catch {
+    /* ignore */
+  }
+  try {
+    const regs = await navigator.serviceWorker.getRegistrations();
+    for (const reg of regs) {
+      try {
+        const sub = await reg.pushManager.getSubscription();
+        if (sub) return { reg, sub };
+      } catch {
+        /* ignore */
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+  return null;
+}
+
+export async function getPushSubscription(): Promise<PushSubscription | null> {
+  const found = await findExistingSubscription();
+  return found?.sub ?? null;
 }
