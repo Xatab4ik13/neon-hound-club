@@ -23,6 +23,10 @@ import { PromoPicker } from "@/components/checkout/PromoPicker";
 
 const PAY_ACTION = `${BACKEND_URL}/api/v1/payments/redirect`;
 
+/** Скидка в магазине по активному Hell Pass (зеркало PASS_PERKS на сервере). */
+const PASS_DISCOUNT_PCT: Record<string, number> = { silver: 5, gold: 10, platinum: 15 };
+const PASS_LABEL: Record<string, string> = { silver: "Silver", gold: "Gold", platinum: "Platinum" };
+
 export const Route = createFileRoute("/club/checkout")({
   validateSearch: (s: Record<string, unknown>): { payment_error?: string } => {
     const v = typeof s.payment_error === "string" ? s.payment_error : undefined;
