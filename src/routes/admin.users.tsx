@@ -220,6 +220,37 @@ function AudienceStats({ stats }: { stats: AdminUsersStats }) {
           <AudienceMetric label="Новых за 7 дней" value={`+${fmt(stats.new7d)}`} />
           <AudienceMetric label="Новых за 30 дней" value={`+${fmt(stats.new30d)}`} />
         </div>
+        <div className="border-t border-zinc-200 p-4 dark:border-zinc-800">
+          <div className="mb-3 text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+            Устройства
+          </div>
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            <AudienceMetric
+              label="iOS"
+              value={fmt(stats.platforms.ios)}
+              hint={`${pct(stats.platforms.ios, stats.platforms.known)}%`}
+            />
+            <AudienceMetric
+              label="Android"
+              value={fmt(stats.platforms.android)}
+              hint={`${pct(stats.platforms.android, stats.platforms.known)}%`}
+            />
+            <AudienceMetric
+              label="Десктоп"
+              value={fmt(stats.platforms.desktop)}
+              hint={`${pct(stats.platforms.desktop, stats.platforms.known)}%`}
+            />
+            <AudienceMetric
+              label="Неизвестно"
+              value={fmt(stats.platforms.unknown)}
+              hint="нет данных об устройстве"
+            />
+          </div>
+          <div className="mt-3 text-xs text-zinc-500 dark:text-zinc-400">
+            Определяется по устройствам с включёнными пушами ({fmt(stats.platforms.known)} из{" "}
+            {fmt(stats.total)} юзеров). У кого пуши не включены — платформа неизвестна.
+          </div>
+        </div>
       </Panel>
 
       <Panel>
