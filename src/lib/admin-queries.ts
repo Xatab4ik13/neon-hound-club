@@ -145,6 +145,15 @@ export type AdminUsersStats = {
   avgActiveDays30d: number;
   totalMinutes30d: number;
   daily: Array<{ day: string; users: number; avgMinutes: number }>;
+  /** Разбивка по устройствам (по user-agent пуш-подписок). */
+  platforms: {
+    ios: number;
+    android: number;
+    desktop: number;
+    unknown: number;
+    /** Всего юзеров, по которым есть данные об устройстве. */
+    known: number;
+  };
 };
 
 
