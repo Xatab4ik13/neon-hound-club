@@ -316,7 +316,16 @@ function ClubCheckoutPage() {
     return Math.floor((total * promoApplied.discountPct) / 100);
   }, [promoApplied, orderableItems, total]);
 
-  const grandTotal = Math.max(0, total - promoDiscountRub) + (shipPrice ?? 0);
+  // ---- Скидка по активному Hell Pass ----
+  // Только на товары, доставка не скидывается. С промокодом НЕ суммируется —
+  // берётся максимальная (та же логика, что на сервере).
+  const passPct = passTier ? PASS_DISCOUNT_PCT[passTier] : 0;
+  const passDiscountRub = Math.floor((total * passPct) / 100);
+  const usePass = passDiscountRub >= promoDiscountRub;
+  const discountRub = Math.max(passDiscountRub, promoDiscountRub);
+
+  const grandTotal = Math.max(0, total - discountRub) + (shipPrice ?? 0);
+
 
 
   const courierAddress = useMemo(() => {
