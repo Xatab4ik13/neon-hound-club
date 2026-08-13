@@ -92,7 +92,8 @@ export async function subscribeToPush(): Promise<{ ok: boolean; reason?: string 
   if (perm === "default") perm = await Notification.requestPermission();
   if (perm !== "granted") return { ok: false, reason: "Уведомления запрещены." };
 
-  let sub = await reg.pushManager.getSubscription();
+  // Существующая подписка может жить на другой регистрации SW — ищем везде.
+  let sub = (await findExistingSubscription())?.sub ?? (await reg.pushManager.getSubscription());
   if (!sub) {
     const publicKey = await getVapidPublicKey();
     if (!publicKey) return { ok: false, reason: "Пуши ещё не настроены на сервере." };
