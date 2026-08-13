@@ -655,17 +655,46 @@ function ClubCheckoutPage() {
                   <PlumpPrice value={total} />
                 </span>
               </div>
+              {passPct > 0 && passDiscountRub > 0 && (
+                <div className="flex items-center justify-between text-[13px]">
+                  <span className="text-muted-foreground">
+                    Hell Pass {PASS_LABEL[passTier!] ?? ""} · −{passPct}%
+                  </span>
+                  <span
+                    className={
+                      usePass
+                        ? "font-mono tabular-nums text-primary"
+                        : "font-mono tabular-nums text-muted-foreground line-through"
+                    }
+                  >
+                    −<PlumpPrice value={passDiscountRub} />
+                  </span>
+                </div>
+              )}
               {promoApplied && promoDiscountRub > 0 && (
                 <div className="flex items-center justify-between text-[13px]">
                   <span className="text-muted-foreground">
                     Промокод {promoApplied.code} · −{promoApplied.discountPct}%
                     {promoApplied.productId ? " (1 шт.)" : ""}
                   </span>
-                  <span className="font-mono tabular-nums text-primary">
+                  <span
+                    className={
+                      usePass
+                        ? "font-mono tabular-nums text-muted-foreground line-through"
+                        : "font-mono tabular-nums text-primary"
+                    }
+                  >
                     −<PlumpPrice value={promoDiscountRub} />
                   </span>
                 </div>
               )}
+              {passPct > 0 && promoApplied && promoDiscountRub > 0 && (
+                <p className="text-[11px] leading-snug text-muted-foreground">
+                  Скидки не суммируются — применяется максимальная
+                  {usePass ? " (Hell Pass)" : " (промокод)"}. На доставку скидка не действует.
+                </p>
+              )}
+
 
               {needsShipping && (
                 <div className="flex items-center justify-between text-[13px]">
