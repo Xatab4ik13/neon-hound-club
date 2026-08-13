@@ -215,6 +215,13 @@ export async function adminUsersRoutes(app: FastifyInstance) {
         users: Number(d.users),
         avgMinutes: Number(d.avg_minutes),
       })),
+      platforms: {
+        ios: Number(plat?.ios ?? 0),
+        android: Number(plat?.android ?? 0),
+        desktop: Number(plat?.desktop ?? 0),
+        unknown: Number(plat?.unknown ?? 0),
+        known: Number(plat?.known ?? 0),
+      },
     };
   });
 
