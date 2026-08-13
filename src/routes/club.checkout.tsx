@@ -23,6 +23,10 @@ import { PromoPicker } from "@/components/checkout/PromoPicker";
 
 const PAY_ACTION = `${BACKEND_URL}/api/v1/payments/redirect`;
 
+/** Скидка в магазине по активному Hell Pass (зеркало PASS_PERKS на сервере). */
+const PASS_DISCOUNT_PCT: Record<string, number> = { silver: 5, gold: 10, platinum: 15 };
+const PASS_LABEL: Record<string, string> = { silver: "Silver", gold: "Gold", platinum: "Platinum" };
+
 export const Route = createFileRoute("/club/checkout")({
   validateSearch: (s: Record<string, unknown>): { payment_error?: string } => {
     const v = typeof s.payment_error === "string" ? s.payment_error : undefined;
@@ -59,7 +63,7 @@ function readProfile(): Partial<CheckoutProfile> {
 
 function ClubCheckoutPage() {
   const { items, total, loading: cartLoading } = useCart();
-  const { isAuthed, user, hydrated } = useViewer();
+  const { isAuthed, user, hydrated, tier: passTier } = useViewer();
   const navigate = useNavigate();
   const search = useSearch({ from: "/club/checkout" }) as { payment_error?: string };
 
@@ -316,7 +320,16 @@ function ClubCheckoutPage() {
     return Math.floor((total * promoApplied.discountPct) / 100);
   }, [promoApplied, orderableItems, total]);
 
-  const grandTotal = Math.max(0, total - promoDiscountRub) + (shipPrice ?? 0);
+  // ---- Скидка по активному Hell Pass ----
+  // Только на товары, доставка не скидывается. С промокодом НЕ суммируется —
+  // берётся максимальная (та же логика, что на сервере).
+  const passPct = passTier ? PASS_DISCOUNT_PCT[passTier] : 0;
+  const passDiscountRub = Math.floor((total * passPct) / 100);
+  const usePass = passDiscountRub >= promoDiscountRub;
+  const discountRub = Math.max(passDiscountRub, promoDiscountRub);
+
+  const grandTotal = Math.max(0, total - discountRub) + (shipPrice ?? 0);
+
 
 
   const courierAddress = useMemo(() => {
@@ -642,17 +655,46 @@ function ClubCheckoutPage() {
                   <PlumpPrice value={total} />
                 </span>
               </div>
+              {passPct > 0 && passDiscountRub > 0 && (
+                <div className="flex items-center justify-between text-[13px]">
+                  <span className="text-muted-foreground">
+                    Hell Pass {PASS_LABEL[passTier!] ?? ""} · −{passPct}%
+                  </span>
+                  <span
+                    className={
+                      usePass
+                        ? "font-mono tabular-nums text-primary"
+                        : "font-mono tabular-nums text-muted-foreground line-through"
+                    }
+                  >
+                    −<PlumpPrice value={passDiscountRub} />
+                  </span>
+                </div>
+              )}
               {promoApplied && promoDiscountRub > 0 && (
                 <div className="flex items-center justify-between text-[13px]">
                   <span className="text-muted-foreground">
                     Промокод {promoApplied.code} · −{promoApplied.discountPct}%
                     {promoApplied.productId ? " (1 шт.)" : ""}
                   </span>
-                  <span className="font-mono tabular-nums text-primary">
+                  <span
+                    className={
+                      usePass
+                        ? "font-mono tabular-nums text-muted-foreground line-through"
+                        : "font-mono tabular-nums text-primary"
+                    }
+                  >
                     −<PlumpPrice value={promoDiscountRub} />
                   </span>
                 </div>
               )}
+              {passPct > 0 && promoApplied && promoDiscountRub > 0 && (
+                <p className="text-[11px] leading-snug text-muted-foreground">
+                  Скидки не суммируются — применяется максимальная
+                  {usePass ? " (Hell Pass)" : " (промокод)"}. На доставку скидка не действует.
+                </p>
+              )}
+
 
               {needsShipping && (
                 <div className="flex items-center justify-between text-[13px]">
