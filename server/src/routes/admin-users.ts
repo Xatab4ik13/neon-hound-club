@@ -191,6 +191,41 @@ export async function adminUsersRoutes(app: FastifyInstance) {
       avg_minutes: number;
     }>;
 
+    // Платформы: определяем по user-agent пуш-подписок (единственный источник
+    // данных об устройстве). Один юзер считается один раз: iOS > Android > десктоп.
+    const platRes = await db.execute<{
+      ios: number;
+      android: number;
+      desktop: number;
+      unknown: number;
+      known: number;
+    }>(sql`
+      with p as (
+        select
+          ps.user_id,
+          bool_or(ps.user_agent ~* '(iphone|ipad|ipod)' or (ps.user_agent ~* 'macintosh' and ps.user_agent ~* 'mobile')) as is_ios,
+          bool_or(ps.user_agent ~* 'android') as is_android,
+          bool_or(ps.user_agent is not null and ps.user_agent <> '') as has_ua
+        from push_subscriptions ps
+        join users u on u.id = ps.user_id and u.role <> 'admin'
+        group by ps.user_id
+      )
+      select
+        count(*) filter (where is_ios)::int as ios,
+        count(*) filter (where is_android and not is_ios)::int as android,
+        count(*) filter (where has_ua and not is_ios and not is_android)::int as desktop,
+        count(*) filter (where not has_ua)::int as unknown,
+        count(*)::int as known
+      from p
+    `);
+    const plat = (platRes as unknown as Array<{
+      ios: number;
+      android: number;
+      desktop: number;
+      unknown: number;
+      known: number;
+    }>)[0];
+
     const dau = Number(row?.dau ?? 0);
     const mau = Number(row?.mau ?? 0);
 
