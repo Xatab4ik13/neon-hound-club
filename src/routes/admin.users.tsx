@@ -184,6 +184,7 @@ function OnlineCell({ lastSeenAt }: { lastSeenAt: string | null }) {
 /** Статистика аудитории для рекламодателей: онлайн, DAU/WAU/MAU, время на сайте, прирост. */
 function AudienceStats({ stats }: { stats: AdminUsersStats }) {
   const fmt = (n: number) => n.toLocaleString("ru-RU");
+  const pct = (n: number, total: number) => (total > 0 ? Math.round((n / total) * 100) : 0);
   const maxUsers = Math.max(1, ...stats.daily.map((d) => d.users));
 
   return (
