@@ -9,12 +9,17 @@
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "android:sync": "vite build && cap sync android",
+    "android:open": "cap open android",
+    "android:bundle": "vite build && cap sync android && cd android && ./gradlew bundleRelease",
+    "android:apk": "vite build && cap sync android && cd android && ./gradlew assembleRelease"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.0",
     "@capacitor/app": "^8.1.1",
     "@capacitor/core": "^8.5.0",
+    "@capacitor/splash-screen": "^8.0.2",
     "@capacitor/status-bar": "^8.0.3",
     "@emotion/is-prop-valid": "^1.4.0",
     "@fontsource-variable/outfit": "^5.2.8",
