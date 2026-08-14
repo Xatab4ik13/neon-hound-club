@@ -1,0 +1,1 @@
+import{j as e}from"./index-ClH2-oLS.js";import{C as r}from"./ClubLegalShell-BPhN-78K.js";import{P as t}from"./PrivacyContent-DLFRbbTy.js";function i(){return e.jsx(r,{eyebrow:"Документы · 152-ФЗ",title:"Политика обработки персональных данных",children:e.jsx(t,{basePath:"/club/legal"})})}export{i as component};

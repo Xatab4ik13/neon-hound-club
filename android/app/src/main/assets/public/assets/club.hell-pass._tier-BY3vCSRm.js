@@ -1,0 +1,1 @@
+import{j as e}from"./index-ClH2-oLS.js";function s({error:t}){return e.jsxs("main",{className:"mx-auto w-full max-w-3xl px-4 py-16 text-center",children:[e.jsx("h1",{className:"font-display text-2xl font-black uppercase",children:"Что-то сломалось"}),e.jsx("p",{className:"mt-3 font-mono text-xs text-muted-foreground",children:t.message})]})}export{s as errorComponent};

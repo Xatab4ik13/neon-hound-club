@@ -1,0 +1,1 @@
+import{j as e,aN as t}from"./index-ClH2-oLS.js";import{L as r}from"./LegalShell-47pwQD0s.js";import{R as s}from"./RequisitesContent-ctfWke8F.js";function n(){return e.jsx(r,{eyebrow:"Юридическая информация",title:"Реквизиты",updatedAt:t.registeredAt,children:e.jsx(s,{})})}export{n as component};
