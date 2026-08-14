@@ -12,6 +12,11 @@
     "format": "prettier --write ."
   },
   "dependencies": {
+    "@capacitor/android": "^8.5.0",
+    "@capacitor/app": "^8.1.1",
+    "@capacitor/core": "^8.5.0",
+    "@capacitor/splash-screen": "^8.0.2",
+    "@capacitor/status-bar": "^8.0.3",
     "@emotion/is-prop-valid": "^1.4.0",
     "@fontsource-variable/outfit": "^5.2.8",
     "@hookform/resolvers": "^5.2.2",
@@ -75,6 +80,7 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.5.0",
     "@eslint/js": "^9.32.0",
     "@types/node": "^22.16.5",
     "@types/pako": "^2.0.4",
