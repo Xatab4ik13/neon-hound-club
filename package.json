@@ -9,7 +9,11 @@
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "android:sync": "vite build && cap sync android",
+    "android:open": "cap open android",
+    "android:bundle": "vite build && cap sync android && cd android && ./gradlew bundleRelease",
+    "android:apk": "vite build && cap sync android && cd android && ./gradlew assembleRelease"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.0",
