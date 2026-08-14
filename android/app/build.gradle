@@ -1,5 +1,13 @@
 apply plugin: 'com.android.application'
 
+// Подпись релиза. Секреты НЕ лежат в репозитории: создай android/keystore.properties
+// (см. android/keystore.properties.example) и положи рядом .jks-файл.
+def keystorePropsFile = rootProject.file("keystore.properties")
+def keystoreProps = new Properties()
+if (keystorePropsFile.exists()) {
+    keystoreProps.load(new FileInputStream(keystorePropsFile))
+}
+
 android {
     namespace = "pro.hhr.club"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -16,8 +24,21 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        release {
+            if (keystoreProps.containsKey("storeFile")) {
+                storeFile file(keystoreProps["storeFile"])
+                storePassword keystoreProps["storePassword"]
+                keyAlias keystoreProps["keyAlias"]
+                keyPassword keystoreProps["keyPassword"]
+            }
+        }
+    }
     buildTypes {
         release {
+            if (keystoreProps.containsKey("storeFile")) {
+                signingConfig signingConfigs.release
+            }
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
