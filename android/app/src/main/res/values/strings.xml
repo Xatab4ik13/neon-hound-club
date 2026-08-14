@@ -1,7 +1,0 @@
-<?xml version='1.0' encoding='utf-8'?>
-<resources>
-    <string name="app_name">HELLHOUND Club</string>
-    <string name="title_activity_main">HELLHOUND Club</string>
-    <string name="package_name">pro.hhr.club</string>
-    <string name="custom_url_scheme">pro.hhr.club</string>
-</resources>
