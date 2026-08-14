@@ -1,0 +1,1 @@
+import{u as n,Q as o}from"./index-ClH2-oLS.js";function s(r){if(!r)return"H";const e=r.trim();return e?e[0]?.toUpperCase()??"H":"H"}function l(){const r=n(),e=o(r.isAuthed),i=e.data?.nick??r.user?.nick??"HELL",t=e.data?.email??r.user?.email??"",a=e.data?.avatarUrl??void 0;return{nick:i,initials:s(i),email:t,avatarUrl:a}}export{l as u};

@@ -1,0 +1,30 @@
+{
+	"appId": "pro.hhr.club",
+	"appName": "HELLHOUND Club",
+	"webDir": "dist",
+	"android": {
+		"allowMixedContent": false,
+		"backgroundColor": "#050505"
+	},
+	"server": {
+		"url": "https://club.hhr.pro",
+		"hostname": "club.hhr.pro",
+		"androidScheme": "https",
+		"cleartext": false
+	},
+	"plugins": {
+		"SplashScreen": {
+			"launchShowDuration": 600,
+			"backgroundColor": "#050505",
+			"androidSplashResourceName": "splash",
+			"showSpinner": false,
+			"splashFullScreen": true,
+			"splashImmersiveType": true
+		},
+		"StatusBar": {
+			"style": "DARK",
+			"backgroundColor": "#050505",
+			"overlaysWebView": true
+		}
+	}
+}

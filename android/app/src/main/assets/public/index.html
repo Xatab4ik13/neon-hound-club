@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#050505" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="HELLHOUND" />
+    <meta name="format-detection" content="telephone=no" />
+
+    <!-- iOS splash screens отключены: статичный PNG не совпадает с анимированным
+         #hh-boot и даёт «двойной сплеш» (сначала картинка, потом анимация).
+         Без них iOS закрашивает экран background_color из манифеста (чёрный),
+         после чего сразу стартует наш анимированный boot из <body>. -->
+
+
+    <title>HELLHOUND Racing Club — место для своих</title>
+    <meta
+      name="description"
+      content="HELLHOUND Racing Club — мото-комьюнити Hell. Мерч, Race Pass, гараж и место для своих."
+    />
+    <meta property="og:title" content="HELLHOUND Racing Club" />
+    <meta
+      property="og:description"
+      content="Место для своих. Мото-комьюнити Hell — мерч, Race Pass, гараж."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="HELLHOUND Racing Club" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="HELLHOUND Racing Club" />
+    <meta name="twitter:description" content="Место для своих. Мото-комьюнити Hell." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap"
+    />
+    <style>
+      /* Boot splash — рисуется ещё до загрузки React-бандла.
+         Анимация воспроизводит запуск приборки литрового мотоцикла:
+         поджиг → свип арки до redline → откат → дыхание холостого хода.
+         Жёсткие правила:
+           - только transform / opacity / @property углы → GPU-композитинг;
+           - НИКАКИХ filter / drop-shadow / mask-image на анимированных слоях;
+           - НИКАКОГО JS, web-шрифтов, картинок — splash должен жить до бандла;
+           - prefers-reduced-motion → статичная композиция с подсветкой H. */
+
+      /* @property нужен для плавной анимации conic-gradient (Safari 16.4+).
+         На старых браузерах деградирует до статичной арки — ОК. */
+      @property --rev {
+        syntax: "<angle>";
+        inherits: false;
+        initial-value: 0deg;
+      }
+
+      #hh-boot {
+        position: fixed; inset: 0; z-index: 2147483647;
+        background-color: #050505; color: #EDEDED;
+        font-family: ui-sans-serif, system-ui, sans-serif;
+        overflow: hidden;
+        opacity: 1;
+        transition: opacity .35s ease;
+        background-image:
+          radial-gradient(circle at 50% 38%, rgba(240,0,192,0.10), transparent 55%),
+          linear-gradient(rgba(240,0,192,0.045) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(240,0,192,0.045) 1px, transparent 1px);
+        background-size: 100% 100%, 30px 30px, 30px 30px;
+        background-position: center, 0 0, 0 0;
+      }
+      #hh-boot[data-hide="1"] { opacity: 0; pointer-events: none; }
+
+      /* Центральная сцена. flex чтобы H, RPM и подпись жили в нормальном
+         потоке и не «плавали» от safe-area. */
+      #hh-boot .stage {
+        position: absolute; inset: 0;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        gap: 28px;
+      }
+
+      /* Подпись над тахометром — мелкая, как маркировка на приборке. */
+      #hh-boot .pre {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 9px; letter-spacing: .45em; text-transform: uppercase;
+        color: rgba(237,237,237,.35);
+        opacity: 0;
+        animation: hh-fade-in .5s ease-out .05s forwards;
+      }
+
+      /* Тахометр. Микро-вибрация имитирует холостые обороты — амплитуда
+         0.5px, чтобы не дёргать соседние элементы и не ловить subpixel-blur. */
+      #hh-boot .tach {
+        position: relative; width: 56vw; max-width: 224px; aspect-ratio: 1/1;
+        border-radius: 50%; border: 1px solid #1a1a1a;
+        box-shadow:
+          0 0 80px rgba(240,0,192,0.22),
+          inset 0 0 32px rgba(240,0,192,0.06);
+        will-change: transform;
+        transform: translateZ(0);
+
+      }
+      /* Пунктирный внутренний круг и тонкие тиковые метки. */
+      #hh-boot .tach::before {
+        content: ""; position: absolute; inset: 10px;
+        border-radius: 50%; border: 1px dashed #1f1f1f;
+      }
+      #hh-boot .tach::after {
+        /* 12 коротких рисок по окружности — статично, рендерится один раз. */
+        content: ""; position: absolute; inset: 0; border-radius: 50%;
+        background:
+          conic-gradient(
+            from 0deg,
+            rgba(237,237,237,.18) 0deg 1deg, transparent 1deg 30deg,
+            rgba(237,237,237,.18) 30deg 31deg, transparent 31deg 60deg,
+            rgba(237,237,237,.18) 60deg 61deg, transparent 61deg 90deg,
+            rgba(237,237,237,.18) 90deg 91deg, transparent 91deg 120deg,
+            rgba(237,237,237,.18) 120deg 121deg, transparent 121deg 150deg,
+            rgba(237,237,237,.18) 150deg 151deg, transparent 151deg 180deg,
+            rgba(240,0,192,.35) 180deg 181deg, transparent 181deg 210deg,
+            rgba(240,0,192,.35) 210deg 211deg, transparent 211deg 240deg,
+            rgba(240,0,192,.55) 240deg 241deg, transparent 241deg 270deg,
+            rgba(240,0,192,.55) 270deg 271deg, transparent 271deg 300deg,
+            rgba(240,0,192,.85) 300deg 301deg, transparent 301deg 330deg,
+            rgba(240,0,192,.85) 330deg 331deg, transparent 331deg 360deg
+          );
+        -webkit-mask: radial-gradient(circle, transparent 84%, #000 85%, #000 96%, transparent 97%);
+                mask: radial-gradient(circle, transparent 84%, #000 85%, #000 96%, transparent 97%);
+        opacity: 0;
+        animation: hh-fade-in .35s ease-out .15s forwards;
+      }
+
+      /* Сама арка свипа. conic-gradient + @property --rev = плавный набор
+         оборотов от 0 до redline и небольшой откат на холостые. */
+      #hh-boot .arc {
+        position: absolute; inset: -2px; border-radius: 50%;
+        --rev: 0deg;
+        background: conic-gradient(
+          from -135deg,
+          #F000C0 0deg var(--rev),
+          transparent var(--rev) 360deg
+        );
+        -webkit-mask: radial-gradient(circle, transparent 62%, #000 64%, #000 84%, transparent 86%);
+                mask: radial-gradient(circle, transparent 62%, #000 64%, #000 84%, transparent 86%);
+        animation: hh-rev 1.6s cubic-bezier(.65,0,.35,1) .15s forwards,
+                   hh-arc-pulse 2.6s ease-in-out 1.8s infinite;
+        will-change: --rev, opacity;
+      }
+
+      /* Логотип — поджиг: фейд + микро-скейл, затем дыхание. */
+      #hh-boot .h {
+        position: absolute; inset: 0;
+        display: flex; align-items: center; justify-content: center;
+        transform: scale(.88);
+        opacity: 0;
+        animation: hh-ignite .55s cubic-bezier(.2,.8,.2,1) .35s forwards,
+                   hh-breath 2.8s ease-in-out 1s infinite;
+        will-change: transform, opacity;
+      }
+      #hh-boot .h img {
+        width: 62%; height: 62%; object-fit: contain;
+        filter: drop-shadow(0 0 14px rgba(240,0,192,.55))
+                drop-shadow(0 0 32px rgba(240,0,192,.25));
+      }
+
+
+      /* Цифровое RPM-табло под тахометром. */
+      #hh-boot .rpm {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 13px; letter-spacing: .35em; color: #EDEDED;
+        opacity: 0;
+        animation: hh-fade-in .4s ease-out .55s forwards;
+      }
+      #hh-boot .rpm em {
+        font-style: normal; color: rgba(237,237,237,.35); margin: 0 8px;
+      }
+
+      /* Прогрев — мерцает как реальный неон на приборке. */
+      #hh-boot .lbl {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 10px; letter-spacing: .55em; text-transform: uppercase;
+        color: rgba(237,237,237,.55);
+        opacity: 0;
+        animation: hh-fade-in .4s ease-out .7s forwards,
+                   hh-flicker 3.4s steps(1, end) 1.2s infinite;
+      }
+
+      /* Прогресс-полоса внизу — заполняется один раз, до конца. */
+      #hh-boot .bar {
+        position: absolute; bottom: calc(env(safe-area-inset-bottom, 0px) + 64px);
+        left: 50%; transform: translateX(-50%);
+        width: 156px; height: 1px;
+        background: rgba(237,237,237,.08);
+        overflow: hidden;
+      }
+      #hh-boot .bar::after {
+        content: ""; position: absolute; inset: 0;
+        background: linear-gradient(90deg, #F000C0, #FF4FD8);
+        transform: scaleX(0); transform-origin: left center;
+        animation: hh-progress 1.4s cubic-bezier(.5,.05,.2,1) .2s forwards;
+      }
+
+      /* Футер с системными метками + статусный LED. */
+      #hh-boot .foot {
+        position: absolute;
+        bottom: calc(env(safe-area-inset-bottom, 0px) + 22px);
+        left: 24px; right: 24px;
+        display: flex; align-items: center; justify-content: space-between;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 9px; letter-spacing: .3em; color: #4a4a4a;
+        opacity: 0;
+        animation: hh-fade-in .4s ease-out .9s forwards;
+      }
+      #hh-boot .foot .sys { display: inline-flex; align-items: center; gap: 8px; }
+      #hh-boot .foot .led {
+        width: 5px; height: 5px; border-radius: 50%;
+        background: #F000C0;
+        box-shadow: 0 0 6px rgba(240,0,192,.7);
+        animation: hh-led 1.6s ease-in-out 1.2s infinite;
+      }
+
+      /* === keyframes === */
+      @keyframes hh-fade-in { to { opacity: 1; } }
+      @keyframes hh-idle {
+        0%   { transform: translate3d(0, 0, 0); }
+        25%  { transform: translate3d(0.4px, -0.3px, 0); }
+        50%  { transform: translate3d(-0.4px, 0.3px, 0); }
+        75%  { transform: translate3d(0.3px, 0.4px, 0); }
+        100% { transform: translate3d(0, 0, 0); }
+      }
+      /* Свип стрелки: 0 → redline 295° → откат к 230° (холостые). */
+      @keyframes hh-rev {
+        0%   { --rev: 0deg;   opacity: 0; }
+        8%   { opacity: 1; }
+        55%  { --rev: 295deg; }
+        72%  { --rev: 220deg; }
+        100% { --rev: 230deg; opacity: 1; }
+      }
+      @keyframes hh-arc-pulse {
+        0%, 100% { opacity: 1; }
+        50%      { opacity: .82; }
+      }
+      @keyframes hh-ignite {
+        0%   { transform: scale(.88); opacity: 0; }
+        45%  { transform: scale(1.06); opacity: 1; }
+        100% { transform: scale(1);   opacity: 1; }
+      }
+      @keyframes hh-breath {
+        0%, 100% { transform: scale(1);     opacity: 1; }
+        50%      { transform: scale(1.015); opacity: .92; }
+      }
+      @keyframes hh-flicker {
+        0%, 92%, 100% { opacity: 1; }
+        93%           { opacity: .35; }
+        94%           { opacity: 1; }
+        96%           { opacity: .55; }
+        97%           { opacity: 1; }
+      }
+      @keyframes hh-progress {
+        0%   { transform: scaleX(0); }
+        100% { transform: scaleX(1); }
+      }
+      @keyframes hh-led {
+        0%, 100% { opacity: 1;  box-shadow: 0 0 6px rgba(240,0,192,.7); }
+        50%      { opacity: .25; box-shadow: 0 0 2px rgba(240,0,192,.3); }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        #hh-boot .tach,
+        #hh-boot .arc,
+        #hh-boot .h,
+        #hh-boot .lbl,
+        #hh-boot .led,
+        #hh-boot .bar::after { animation: none !important; }
+        #hh-boot .arc { --rev: 230deg; opacity: 1; }
+        #hh-boot .h   { transform: scale(1); opacity: 1; }
+        #hh-boot .lbl, #hh-boot .rpm, #hh-boot .pre, #hh-boot .foot { opacity: 1; }
+        #hh-boot .bar::after { transform: scaleX(1); }
+      }
+    </style>
+    <script type="module" crossorigin src="/assets/index-ClH2-oLS.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-BmND3VO_.css">
+  </head>
+  <body>
+    <div id="root"></div>
+    <div id="hh-boot" aria-hidden="true">
+      <div class="stage">
+        <div class="tach">
+          <div class="arc"></div>
+          <div class="h"><img src="/boot-logo.png" alt="" /></div>
+        </div>
+        <div class="lbl">прогрев двигателя</div>
+      </div>
+      <div class="bar"></div>
+      <div class="foot">
+        <span>HHR.PRO</span>
+        <span class="sys"><span class="led"></span>Запуск системы</span>
+      </div>
+    </div>
+    <script>
+      // В Lovable preview/iframe boot-сплэш может залипать из-за кеша/HMR iframe.
+      // Скрываем его сразу в редакторе, не трогая прод и PWA.
+      (function () {
+        try {
+          var h = location.hostname;
+          var inIframe = window.self !== window.top;
+          var isLovablePreview =
+            h.indexOf("id-preview--") === 0 ||
+            h.indexOf("preview--") === 0 ||
+            h === "lovableproject.com" ||
+            h.endsWith(".lovableproject.com") ||
+            h === "lovableproject-dev.com" ||
+            h.endsWith(".lovableproject-dev.com") ||
+            h === "beta.lovable.dev" ||
+            h.endsWith(".beta.lovable.dev");
+          if (inIframe || isLovablePreview) {
+            var b = document.getElementById("hh-boot");
+            if (b) b.parentNode.removeChild(b);
+          }
+        } catch (e) {}
+      })();
+    </script>
+  </body>
+</html>

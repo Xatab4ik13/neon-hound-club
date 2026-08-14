@@ -1,0 +1,1 @@
+import{j as e,aN as t}from"./index-ClH2-oLS.js";import{L as o}from"./LegalShell-47pwQD0s.js";import{P as r}from"./PromoRulesContent-BdGfQYoW.js";function l(){return e.jsx(o,{eyebrow:"Документы",title:"Правила проведения стимулирующих мероприятий",updatedAt:t.registeredAt,children:e.jsx(r,{basePath:"/legal"})})}export{l as component};

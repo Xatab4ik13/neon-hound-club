@@ -1,0 +1,1 @@
+import{j as o}from"./index-ClH2-oLS.js";import{C as e}from"./ClubLegalShell-BPhN-78K.js";import{P as r}from"./PromoRulesContent-BdGfQYoW.js";function m(){return o.jsx(e,{eyebrow:"Документы",title:"Правила проведения стимулирующих мероприятий",children:o.jsx(r,{basePath:"/club/legal"})})}export{m as component};
