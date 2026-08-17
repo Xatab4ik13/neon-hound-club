@@ -105,45 +105,33 @@ ALTER TABLE "news_posts" ADD COLUMN IF NOT EXISTS "candidate_id" uuid;
 ALTER TABLE "news_posts" ADD COLUMN IF NOT EXISTS "queued" boolean NOT NULL DEFAULT false;
 CREATE INDEX IF NOT EXISTS "news_posts_queue_idx" ON "news_posts" ("queued", "published_at");
 
--- ─── Сид источников ────────────────────────────────────────────────
+-- ─── Сид источников (все ленты проверены на живость) ───────────────
 INSERT INTO "news_sources" ("name", "url", "lang", "stream", "weight") VALUES
-  -- HOT: релизы производителей и быстрые новостники
-  ('MotoGP',                'https://www.motogp.com/en/news/rss',                          'en', 'hot', 12),
-  ('RideApart',             'https://www.rideapart.com/rss/news/all/',                     'en', 'hot', 10),
-  ('Motorcycle.com',        'https://www.motorcycle.com/feed',                             'en', 'hot', 10),
-  ('Visordown',             'https://www.visordown.com/rss.xml',                           'en', 'hot', 8),
-  ('MCN',                   'https://www.motorcyclenews.com/feed/',                        'en', 'hot', 10),
-  ('Cycle World',           'https://www.cycleworld.com/feed/',                            'en', 'hot', 8),
-  ('Asphalt & Rubber',      'https://www.asphaltandrubber.com/feed/',                      'en', 'hot', 8),
-  ('Motorsport.com Moto',   'https://www.motorsport.com/rss/motogp/news/',                 'en', 'hot', 8),
-  ('Crash.net MotoGP',      'https://www.crash.net/rss/motogp',                            'en', 'hot', 6),
-  ('WorldSBK',              'https://www.worldsbk.com/en/rss',                             'en', 'hot', 6),
-  ('Motorrad Online',       'https://www.motorradonline.de/feed/',                         'de', 'hot', 6),
-  ('Young Machine',         'https://young-machine.com/feed/',                             'ja', 'hot', 8),
-  ('Autoevolution Moto',    'https://www.autoevolution.com/moto/rss.xml',                  'en', 'hot', 4),
+  -- HOT: релизы, гонки, быстрые новостники
+  ('RideApart',            'https://www.rideapart.com/rss/news/all/',        'en', 'hot', 10),
+  ('Visordown',            'https://www.visordown.com/rss',                  'en', 'hot', 8),
+  ('Crash.net MotoGP',     'https://www.crash.net/rss/motogp',               'en', 'hot', 10),
+  ('Crash.net WorldSBK',   'https://www.crash.net/rss/wsbk',                 'en', 'hot', 8),
+  ('Motorsport.com MotoGP','https://www.motorsport.com/rss/motogp/news/',    'en', 'hot', 8),
+  ('Asphalt & Rubber',     'https://www.asphaltandrubber.com/feed/',         'en', 'hot', 8),
+  ('Young Machine',        'https://young-machine.com/rss',                  'ja', 'hot', 10),
+  ('Motorcycle Daily',     'https://www.motorcycledaily.com/feed/',          'en', 'hot', 8),
+  ('Roadracing World',     'https://www.roadracingworld.com/feed/',          'en', 'hot', 6),
+  ('1000PS',               'https://www.1000ps.de/rss',                      'de', 'hot', 6),
+  ('Moto.it',              'https://www.moto.it/rss/news.xml',               'it', 'hot', 6),
 
-  -- NORMAL: культура, кастомы, техника, регионы
-  ('BikeEXIF',              'https://www.bikeexif.com/feed',                               'en', 'normal', 10),
-  ('Return of the Cafe Racers','https://www.returnofthecaferacers.com/feed/',               'en', 'normal', 8),
-  ('Pipeburn',              'https://www.pipeburn.com/feed',                               'en', 'normal', 6),
-  ('Silodrome',             'https://silodrome.com/feed/',                                 'en', 'normal', 6),
-  ('ADV Pulse',             'https://www.advpulse.com/feed/',                              'en', 'normal', 6),
-  ('Webbikeworld',          'https://www.webbikeworld.com/feed/',                          'en', 'normal', 4),
-  ('Motorcyclist',          'https://www.motorcyclistonline.com/feed/',                    'en', 'normal', 6),
-  ('Bennetts BikeSocial',   'https://www.bennetts.co.uk/bikesocial/news-and-views/rss',     'en', 'normal', 6),
-  ('Motorcycle Sports',     'https://www.motorcyclesports.net/feed/',                      'en', 'normal', 2),
-  ('Ultimate Motorcycling', 'https://ultimatemotorcycling.com/feed/',                       'en', 'normal', 4),
-  ('Dirt Rider',            'https://www.dirtrider.com/feed/',                             'en', 'normal', 4),
-  ('Racer X',               'https://racerxonline.com/rss',                                'en', 'normal', 4),
-  ('Bikebros',              'https://news.bikebros.co.jp/rss/news.xml',                    'ja', 'normal', 6),
-  ('Webike Japan',          'https://news.webike.net/feed/',                               'ja', 'normal', 6),
-  ('Moto8 China',           'https://www.moto8.com/rss.xml',                               'zh', 'normal', 4),
-  ('Newmotor China',        'https://www.newmotor.com.cn/rss.xml',                         'zh', 'normal', 4),
-  ('Moto.it',               'https://www.moto.it/rss/news.xml',                            'it', 'normal', 6),
-  ('Motociclismo ES',       'https://www.motociclismo.es/rss',                             'es', 'normal', 4),
-  ('1000PS',                'https://www.1000ps.de/rss',                                   'de', 'normal', 4),
-  ('Motorradonline Tests',  'https://www.motorradonline.de/tests/feed/',                    'de', 'normal', 4),
-  ('Motorcycle News RU',    'https://www.motonews.ru/rss/',                                'ru', 'normal', 4),
-  ('Moto-Magazine RU',      'https://www.moto-magazine.ru/rss/',                           'ru', 'normal', 4),
-  ('Kolesa Moto',           'https://www.kolesa.ru/rss',                                   'ru', 'normal', 2)
+  -- NORMAL: кастомы, техника, культура, регионы
+  ('BikeEXIF',             'https://www.bikeexif.com/feed',                  'en', 'normal', 10),
+  ('Return of the Cafe Racers','https://www.returnofthecaferacers.com/feed/','en', 'normal', 8),
+  ('Pipeburn',             'https://www.pipeburn.com/feed',                  'en', 'normal', 6),
+  ('Silodrome',            'https://silodrome.com/feed/',                    'en', 'normal', 6),
+  ('ADV Pulse',            'https://www.advpulse.com/feed/',                 'en', 'normal', 6),
+  ('Webbikeworld',         'https://www.webbikeworld.com/feed/',             'en', 'normal', 4),
+  ('Ultimate Motorcycling','https://ultimatemotorcycling.com/feed/',         'en', 'normal', 4),
+  ('Webike Japan',         'https://news.webike.net/feed/',                  'ja', 'normal', 6),
+  ('Bikebros Japan',       'https://news.bikebros.co.jp/feed',               'ja', 'normal', 6),
+  ('MCNews Australia',     'https://www.mcnews.com.au/feed/',                'en', 'normal', 4),
+  ('Rider Magazine',       'https://ridermagazine.com/feed/',                'en', 'normal', 4),
+  ('Adventure Bike Rider', 'https://www.adventurebikerider.com/feed/',       'en', 'normal', 4),
+  ('Kolesa Moto',          'https://www.kolesa.ru/rss',                      'ru', 'normal', 2)
 ON CONFLICT ("url") DO NOTHING;
