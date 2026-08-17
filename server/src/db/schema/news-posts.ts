@@ -28,6 +28,12 @@ export const newsPosts = pgTable(
     commentsCount: integer("comments_count").notNull().default(0),
     // Опциональная дата публикации (для отложенного постинга AI-агентом).
     publishedAt: timestamp("published_at", { withTimezone: true }),
+    // Откуда взята новость (заполняет AI-агент).
+    sourceUrl: text("source_url"),
+    sourceName: varchar("source_name", { length: 120 }),
+    candidateId: uuid("candidate_id"),
+    // queued = ждёт автопубликации в момент published_at.
+    queued: boolean("queued").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),

@@ -36,6 +36,40 @@ try {
   };
   setTimeout(runCdekSync, 30_000).unref();
   setInterval(runCdekSync, 60 * 60 * 1000).unref();
+
+  // ─── AI-агент новостной ленты ─────────────────────────────────────
+  // hot-поток раз в 15 мин, normal раз в 2 часа. Каждый прогон сам проверяет
+  // enabled/paused и берёт single-flight lease, так что двойного запуска нет.
+  const { runAgent, pruneCandidates } = await import("./lib/news-agent/run.js");
+  const { flushQueue } = await import("./lib/news-agent/queue.js");
+
+  const runNews = async (stream: "hot" | "normal") => {
+    try {
+      const r = await runAgent(stream);
+      if (r.skipped) app.log.debug({ ...r }, "news agent skipped");
+      else app.log.info({ ...r }, "news agent run");
+    } catch (e) {
+      app.log.error({ err: e, stream }, "news agent failed");
+    }
+  };
+
+  setTimeout(() => void runNews("hot"), 90_000).unref();
+  setInterval(() => void runNews("hot"), 15 * 60 * 1000).unref();
+  setTimeout(() => void runNews("normal"), 5 * 60_000).unref();
+  setInterval(() => void runNews("normal"), 2 * 60 * 60 * 1000).unref();
+
+  // Очередь публикации: раз в минуту выпускаем то, чей слот наступил.
+  setInterval(async () => {
+    try {
+      const n = await flushQueue();
+      if (n > 0) app.log.info({ published: n }, "news queue flushed");
+    } catch (e) {
+      app.log.error({ err: e }, "flushQueue failed");
+    }
+  }, 60_000).unref();
+
+  // Чистка старых кандидатов раз в сутки.
+  setInterval(() => void pruneCandidates().catch(() => {}), 24 * 60 * 60 * 1000).unref();
 } catch (err) {
   app.log.error(err);
   process.exit(1);

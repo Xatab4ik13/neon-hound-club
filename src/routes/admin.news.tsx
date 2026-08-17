@@ -30,6 +30,8 @@ import {
   type AdminNewsItem,
   type AdminNewsInput,
 } from "@/lib/admin-queries";
+import { NewsAgentPanel } from "@/components/admin/NewsAgentPanel";
+import { NewsAgentSettings } from "@/components/admin/NewsAgentSettings";
 import { uploadFileToS3 } from "@/lib/garage-api";
 import { ApiError } from "@/lib/api";
 import { hhToast as toast } from "@/lib/hh-toast";
@@ -47,8 +49,49 @@ function apiErr(e: unknown, fallback = "Ошибка") {
 }
 
 type StatusFilter = "all" | "published" | "drafts";
+type Tab = "posts" | "agent" | "sources";
 
 function NewsPage() {
+  const [tab, setTab] = useState<Tab>("posts");
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title="Новости"
+        description="Лента NEWS в клубе. AI-агент сам ищет мото-новости по миру и предлагает готовые тексты на русском — публикуешь ты."
+      />
+
+      <div className="flex items-center gap-2 overflow-x-auto">
+        {(
+          [
+            ["posts", "Посты"],
+            ["agent", "Агент"],
+            ["sources", "Источники и настройки"],
+          ] as [Tab, string][]
+        ).map(([t, label]) => (
+          <button
+            key={t}
+            type="button"
+            onClick={() => setTab(t)}
+            className={`shrink-0 rounded-md px-3 py-1.5 text-sm font-medium transition ${
+              tab === t
+                ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
+                : "text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {tab === "posts" && <PostsTab />}
+      {tab === "agent" && <NewsAgentPanel />}
+      {tab === "sources" && <NewsAgentSettings />}
+    </div>
+  );
+}
+
+function PostsTab() {
   const qc = useQueryClient();
   const [status, setStatus] = useState<StatusFilter>("all");
   const [editing, setEditing] = useState<AdminNewsItem | "new" | null>(null);
@@ -88,15 +131,12 @@ function NewsPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Новости"
-        description="Лента NEWS в клубе. Позже сюда подключим AI-агента, который будет сам писать посты."
-        actions={
-          <Btn onClick={() => setEditing("new")}>
-            <Plus className="mr-1 h-4 w-4" /> Новый пост
-          </Btn>
-        }
-      />
+      <div className="flex justify-end">
+        <Btn onClick={() => setEditing("new")}>
+          <Plus className="mr-1 h-4 w-4" /> Новый пост
+        </Btn>
+      </div>
+
 
       <Panel>
         <div className="flex items-center gap-2 border-b border-zinc-200 p-3 text-sm dark:border-zinc-800">
