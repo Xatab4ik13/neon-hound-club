@@ -30,6 +30,8 @@ import {
   type AdminNewsItem,
   type AdminNewsInput,
 } from "@/lib/admin-queries";
+import { NewsAgentPanel } from "@/components/admin/NewsAgentPanel";
+import { NewsAgentSettings } from "@/components/admin/NewsAgentSettings";
 import { uploadFileToS3 } from "@/lib/garage-api";
 import { ApiError } from "@/lib/api";
 import { hhToast as toast } from "@/lib/hh-toast";
