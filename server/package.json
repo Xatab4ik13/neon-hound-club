@@ -26,6 +26,7 @@
     "@fastify/rate-limit": "^10.3.0",
     "bcryptjs": "^3.0.2",
     "drizzle-orm": "^0.39.3",
+    "fast-xml-parser": "^5.11.0",
     "fastify": "^5.2.1",
     "libphonenumber-js": "^1.13.4",
     "nodemailer": "^8.0.7",
