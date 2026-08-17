@@ -129,15 +129,12 @@ function PostsTab() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Новости"
-        description="Лента NEWS в клубе. Позже сюда подключим AI-агента, который будет сам писать посты."
-        actions={
-          <Btn onClick={() => setEditing("new")}>
-            <Plus className="mr-1 h-4 w-4" /> Новый пост
-          </Btn>
-        }
-      />
+      <div className="flex justify-end">
+        <Btn onClick={() => setEditing("new")}>
+          <Plus className="mr-1 h-4 w-4" /> Новый пост
+        </Btn>
+      </div>
+
 
       <Panel>
         <div className="flex items-center gap-2 border-b border-zinc-200 p-3 text-sm dark:border-zinc-800">
