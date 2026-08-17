@@ -1067,3 +1067,174 @@ export function unpublishAdminNews(id: string) {
 export function deleteAdminNews(id: string) {
   return apiFetch<{ ok: true }>(`/api/v1/admin/news/${id}`, { method: "DELETE" });
 }
+
+// ============================================================================
+// NEWS AGENT (admin) — /api/v1/admin/news-agent. UI: /admin/news → таб «Агент».
+// Агент только предлагает: копирайтер выбирает вариант и публикует сам.
+// ============================================================================
+
+export const adminNewsAgentQk = ["admin", "news-agent"] as const;
+
+export type NewsAgentSettings = {
+  enabled: boolean;
+  paused: boolean;
+  pausedReason: string | null;
+  running: boolean;
+  lastHotRunAt: string | null;
+  lastNormalRunAt: string | null;
+  prompt: string;
+  defaultPrompt: string;
+  filterModel: string;
+  writerModel: string;
+  minScore: number;
+  hotDraftCap: number;
+  normalDraftCap: number;
+  queueGapMin: number;
+};
+
+export type NewsAgentStats = {
+  sources: number;
+  pending: number;
+  drafted: number;
+  rejected: number;
+  used: number;
+  failed: number;
+  queued: number;
+  last24h: { drafted: number; fetched: number; errors: number };
+};
+
+export type NewsAgentRun = {
+  id: string;
+  stream: string;
+  startedAt: string;
+  finishedAt: string | null;
+  fetched: number;
+  newCandidates: number;
+  drafted: number;
+  errors: number;
+  note: string | null;
+};
+
+export type NewsAgentVariant = {
+  id: string;
+  idx: number;
+  tone: "plain" | "punchy";
+  title: string;
+  text: string;
+  category: string;
+};
+
+export type NewsCandidateItem = {
+  id: string;
+  sourceName: string;
+  url: string;
+  lang: string;
+  srcTitle: string;
+  srcText: string;
+  image: string | null;
+  publishedAt: string | null;
+  createdAt: string;
+  score: number;
+  hot: boolean;
+  topic: string;
+  status: string;
+  rejectReason: string | null;
+  variants: NewsAgentVariant[];
+};
+
+export type NewsAgentSource = {
+  id: number;
+  name: string;
+  url: string;
+  lang: string;
+  stream: "hot" | "normal";
+  weight: number;
+  active: boolean;
+  lastFetchedAt: string | null;
+  lastError: string | null;
+};
+
+export function fetchNewsAgentState() {
+  return apiFetch<{ state: NewsAgentSettings; stats: NewsAgentStats; runs: NewsAgentRun[] }>(
+    `/api/v1/admin/news-agent/state`,
+  );
+}
+
+export function patchNewsAgentState(patch: Partial<Omit<NewsAgentSettings, "defaultPrompt" | "running" | "pausedReason" | "lastHotRunAt" | "lastNormalRunAt">>) {
+  return apiFetch<{ ok: true }>(`/api/v1/admin/news-agent/state`, {
+    method: "PATCH",
+    body: JSON.stringify(patch),
+  });
+}
+
+export function runNewsAgent(stream: "hot" | "normal") {
+  return apiFetch<{ result: Record<string, unknown> }>(
+    `/api/v1/admin/news-agent/run?stream=${stream}`,
+    { method: "POST" },
+  );
+}
+
+export function fetchNewsCandidates(status: "drafted" | "new" | "rejected" | "failed" | "used" = "drafted") {
+  return apiFetch<{ items: NewsCandidateItem[] }>(
+    `/api/v1/admin/news-agent/candidates?status=${status}`,
+  );
+}
+
+export function approveNewsCandidate(
+  id: string,
+  input: {
+    variantId?: string;
+    title: string;
+    text: string;
+    category?: string;
+    image?: string;
+    mode: "draft" | "queue" | "now";
+  },
+) {
+  return apiFetch<{ postId: string; mode: string; publishAt: string | null }>(
+    `/api/v1/admin/news-agent/candidates/${id}/approve`,
+    { method: "POST", body: JSON.stringify(input) },
+  );
+}
+
+export function rejectNewsCandidate(id: string, reason = "") {
+  return apiFetch<{ ok: true }>(`/api/v1/admin/news-agent/candidates/${id}/reject`, {
+    method: "POST",
+    body: JSON.stringify({ reason }),
+  });
+}
+
+export function rewriteNewsCandidate(id: string) {
+  return apiFetch<{ ok: true }>(`/api/v1/admin/news-agent/candidates/${id}/rewrite`, {
+    method: "POST",
+  });
+}
+
+export function fetchNewsAgentSources() {
+  return apiFetch<{ items: NewsAgentSource[] }>(`/api/v1/admin/news-agent/sources`);
+}
+
+export function createNewsAgentSource(input: {
+  name: string;
+  url: string;
+  lang?: string;
+  stream?: "hot" | "normal";
+  weight?: number;
+  active?: boolean;
+}) {
+  return apiFetch<{ id: number }>(`/api/v1/admin/news-agent/sources`, {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export function patchNewsAgentSource(id: number, patch: Partial<NewsAgentSource>) {
+  return apiFetch<{ ok: true }>(`/api/v1/admin/news-agent/sources/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(patch),
+  });
+}
+
+export function deleteNewsAgentSource(id: number) {
+  return apiFetch<{ ok: true }>(`/api/v1/admin/news-agent/sources/${id}`, { method: "DELETE" });
+}
