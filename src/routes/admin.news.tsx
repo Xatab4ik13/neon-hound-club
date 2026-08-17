@@ -47,8 +47,49 @@ function apiErr(e: unknown, fallback = "Ошибка") {
 }
 
 type StatusFilter = "all" | "published" | "drafts";
+type Tab = "posts" | "agent" | "sources";
 
 function NewsPage() {
+  const [tab, setTab] = useState<Tab>("posts");
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title="Новости"
+        description="Лента NEWS в клубе. AI-агент сам ищет мото-новости по миру и предлагает готовые тексты на русском — публикуешь ты."
+      />
+
+      <div className="flex items-center gap-2 overflow-x-auto">
+        {(
+          [
+            ["posts", "Посты"],
+            ["agent", "Агент"],
+            ["sources", "Источники и настройки"],
+          ] as [Tab, string][]
+        ).map(([t, label]) => (
+          <button
+            key={t}
+            type="button"
+            onClick={() => setTab(t)}
+            className={`shrink-0 rounded-md px-3 py-1.5 text-sm font-medium transition ${
+              tab === t
+                ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
+                : "text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {tab === "posts" && <PostsTab />}
+      {tab === "agent" && <NewsAgentPanel />}
+      {tab === "sources" && <NewsAgentSettings />}
+    </div>
+  );
+}
+
+function PostsTab() {
   const qc = useQueryClient();
   const [status, setStatus] = useState<StatusFilter>("all");
   const [editing, setEditing] = useState<AdminNewsItem | "new" | null>(null);
