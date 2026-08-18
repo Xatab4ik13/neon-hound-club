@@ -401,10 +401,13 @@ export function HoundHuntPage() {
               prizeImg={prize.img}
               reel={reel}
               focusIdx={focusIdx}
+              killed={killed}
+              kicking={kicking}
               controls={strip}
               armed={phase === "arming"}
             />
           )}
+
 
           {(phase === "pull" || phase === "crack") && current && (
             <PullStage entry={current} cracking={phase === "crack"} />
