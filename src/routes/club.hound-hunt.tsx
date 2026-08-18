@@ -124,7 +124,7 @@ function HoundHuntPage() {
           // укус
           setPhase("bite");
           setCurrent(winner);
-          haptic("heavy");
+          haptic("warning");
           playTick(0.3, 0.2);
           setFlash((f) => f + 1);
           shake.start({
