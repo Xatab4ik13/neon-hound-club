@@ -19,6 +19,7 @@ import { requireAdmin } from "../lib/auth.js";
 import { DEFAULT_WRITER_PROMPT } from "../lib/news-agent/prompts.js";
 import { getAgentState, runAgent, writerPrompt } from "../lib/news-agent/run.js";
 import { nextSlot } from "../lib/news-agent/queue.js";
+import { isOurS3Url, mirrorRemoteImage } from "../lib/s3.js";
 
 const uuidSchema = z.string().uuid();
 
