@@ -41,6 +41,12 @@ const KIND_RU: Record<string, string> = {
   virtual: "Виртуальный",
 };
 
+const PASS_TIER_RU: Record<string, string> = {
+  silver: "Silver",
+  gold: "Gold",
+  platinum: "Platinum",
+};
+
 function fmtRub(n: number): string {
   return `${n.toLocaleString("ru-RU")} ₽`;
 }
