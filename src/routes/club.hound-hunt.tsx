@@ -22,6 +22,7 @@ import {
 } from "@/components/club/hound-hunt/hh-mock";
 import { playSpin, playWin, playClick, playTick } from "@/lib/roller-sfx";
 import { haptic } from "@/hooks/use-haptic";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export const Route = createFileRoute("/club/hound-hunt")({
   head: () => ({
@@ -46,11 +47,11 @@ function HoundHuntScreen() {
 
 function DesktopBlock() {
   return (
-    <div className="flex min-h-[100svh] flex-col items-center justify-center gap-5 bg-black px-8 text-center">
+    <div className="relative flex min-h-[100svh] flex-col items-center justify-center gap-5 overflow-hidden bg-black px-8 text-center">
       <EmberField className="pointer-events-none absolute inset-0 opacity-40" />
       <div className="relative z-10 flex flex-col items-center gap-4">
         <div className="w-40">
-          <HoundDog mode="idle" look={{ x: 0, y: 0 }} />
+          <HoundDog mode="idle" />
         </div>
         <h1 className="font-display text-2xl uppercase tracking-tight text-white">Hound Hunt</h1>
         <p className="max-w-xs text-sm leading-relaxed text-white/50">
