@@ -32,12 +32,12 @@ export function KickedAvatar({ entry, seed, scale = 0.62, width }: Props) {
     const c = hash(seed + "c");
     return {
       // дальность и высота полёта
-      dx: 300 + a * 190,
-      apex: -(150 + b * 90),
-      fall: 240 + c * 140,
+      dx: 420 + a * 260,
+      apex: -(200 + b * 130),
+      fall: 340 + c * 200,
       spin: (500 + a * 420) * (b > 0.85 ? -1 : 1),
       tilt: -8 - c * 10,
-      dur: 0.95 + b * 0.25,
+      dur: 1.25 + b * 0.35,
     };
   }, [seed]);
 
@@ -108,27 +108,37 @@ export function KickedAvatar({ entry, seed, scale = 0.62, width }: Props) {
         transition={{ duration: 0.3, ease: "easeOut" }}
       />
 
-      {/* сама аватарка: x почти линейно, y по параболе, squash на launch */}
-      <motion.div
-        initial={{ x: 0, y: 0 }}
-        animate={{ x: [0, r.dx * 0.28, r.dx * 0.66, r.dx], y: [0, r.apex, r.apex * 0.45, r.fall] }}
-        transition={{ duration: r.dur, ease: [0.16, 0.9, 0.4, 1], times: [0, 0.22, 0.55, 1] }}
-      >
+      {/* сама аватарка: x почти линейно, y по параболе, squash на launch,
+          плюс 3D — звено сначала летит НА камеру, потом уносится вглубь */}
+      <div style={{ perspective: "1000px", transformStyle: "preserve-3d" }}>
         <motion.div
-          initial={{ rotate: 0 }}
-          animate={{ rotate: r.spin }}
-          transition={{ duration: r.dur, ease: "linear" }}
+          style={{ transformStyle: "preserve-3d" }}
+          initial={{ x: 0, y: 0, z: 0 }}
+          animate={{
+            x: [0, r.dx * 0.28, r.dx * 0.66, r.dx],
+            y: [0, r.apex, r.apex * 0.45, r.fall],
+            z: [0, 240, 40, -700],
+          }}
+          transition={{ duration: r.dur, ease: [0.16, 0.9, 0.4, 1], times: [0, 0.22, 0.55, 1] }}
         >
           <motion.div
-            initial={{ scaleX: 1, scaleY: 1 }}
-            animate={{ scaleX: [1, 1.35, 0.92, 0.7], scaleY: [1, 0.7, 1.06, 0.7], opacity: [1, 1, 1, 0] }}
-            transition={{ duration: r.dur, times: [0, 0.08, 0.3, 1], ease: "easeOut" }}
-            style={{ rotate: r.tilt }}
+            style={{ transformStyle: "preserve-3d" }}
+            initial={{ rotate: 0, rotateY: 0, rotateX: 0 }}
+            animate={{ rotate: r.spin, rotateY: r.spin * 0.6, rotateX: r.tilt * 6 }}
+            transition={{ duration: r.dur, ease: "linear" }}
           >
-            <HuntAvatar entry={entry} focused scale={scale} />
+            <motion.div
+              initial={{ scaleX: 1, scaleY: 1 }}
+              animate={{ scaleX: [1, 1.35, 0.92, 0.7], scaleY: [1, 0.7, 1.06, 0.7], opacity: [1, 1, 1, 0] }}
+              transition={{ duration: r.dur, times: [0, 0.08, 0.3, 1], ease: "easeOut" }}
+              style={{ rotate: r.tilt }}
+            >
+              <HuntAvatar entry={entry} focused scale={scale} />
+            </motion.div>
           </motion.div>
         </motion.div>
-      </motion.div>
+      </div>
+
     </div>
   );
 }
