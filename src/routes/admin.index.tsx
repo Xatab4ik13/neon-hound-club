@@ -253,6 +253,22 @@ function Dashboard() {
           />
         </Panel>
 
+        <Panel>
+          <PanelHeader>Hell Pass: выручка за период</PanelHeader>
+          <Table
+            headers={["Тир", "Продано", "Сумма"]}
+            rows={[
+              ...(data.passByTier ?? []).map((t) => [
+                PASS_TIER_RU[t.tier] ?? t.tier,
+                String(t.cnt),
+                fmtRub(t.sum),
+              ]),
+              ["Итого", String(k.passSold), fmtRub(k.passRevenue)],
+              ["Активных сейчас", String(k.passActive), "—"],
+            ]}
+          />
+        </Panel>
+
       </div>
     </div>
   );
