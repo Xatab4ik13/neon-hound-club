@@ -12,7 +12,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useAnimationControls } from "framer-motion";
-import { X } from "lucide-react";
 import { RiderCharacter, type RiderMode } from "@/components/club/hound-hunt/RiderCharacter";
 import { EmberField } from "@/components/club/hound-hunt/EmberField";
 import { HuntCapsule, CapsuleChip } from "@/components/club/hound-hunt/HuntCapsule";
@@ -107,11 +106,9 @@ export function HoundHuntPage() {
   const [phase, setPhase] = useState<Phase>("intro");
   const [winners, setWinners] = useState<{ prizeId: string; entry: HuntEntry }[]>([]);
   const [current, setCurrent] = useState<HuntEntry | null>(null);
-  const [flash, setFlash] = useState(0);
   const [look, setLook] = useState({ x: 0, y: 0 });
 
   const prize = HUNT_PRIZES[Math.min(caseIdx, HUNT_PRIZES.length - 1)];
-  const shake = useAnimationControls();
   const strip = useAnimationControls();
   const timers = useRef<number[]>([]);
 
@@ -248,7 +245,7 @@ export function HoundHuntPage() {
       }, dur(BASE.arming));
 
     },
-    [buildReel, dur, later, pickWinner, shake, strip],
+    [buildReel, dur, later, pickWinner, strip],
   );
 
 
@@ -333,36 +330,12 @@ export function HoundHuntPage() {
       <SmokeLayers />
       <div className="pointer-events-none absolute inset-0 shadow-[inset_0_0_220px_60px_var(--background)]" />
 
-      {/* вспышка раскуса */}
-      <AnimatePresence>
-        {flash > 0 && (
-          <motion.div
-            key={flash}
-            initial={{ opacity: 0.8 }}
-            animate={{ opacity: 0 }}
-            transition={{ duration: 0.7 }}
-            className="pointer-events-none absolute inset-0 bg-destructive/70 mix-blend-screen"
-          />
-        )}
-      </AnimatePresence>
-
-      <motion.div animate={shake} className="relative flex min-h-[100svh] flex-col">
-        {/* тонкий HUD: только выход */}
-        <div className="flex items-center gap-3 px-4 pt-[max(0.75rem,env(safe-area-inset-top))]">
-          <Link
-            to="/club"
-            className="grid size-9 shrink-0 place-items-center rounded-full border border-border/50 bg-card/40 text-muted-foreground backdrop-blur"
-            aria-label="Выйти"
-          >
-            <X className="size-4" />
-          </Link>
-        </div>
-
+      <div className="relative flex min-h-[100svh] flex-col">
         {/* арена */}
         <div className="relative flex min-h-0 flex-1 flex-col items-center justify-center">
           {/* персонаж — виден целиком */}
           <motion.div
-            className="relative z-20 h-[42svh] w-full max-w-[420px]"
+            className="relative z-20 h-[46svh] w-full max-w-[460px]"
             animate={{ opacity: phase === "podium" ? 0.25 : 1, y: phase === "crack" ? 10 : 0 }}
           >
             <RiderCharacter mode={dogMode} lookAt={look} className="h-full w-full" />
@@ -432,7 +405,7 @@ export function HoundHuntPage() {
             </p>
           )}
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 }
