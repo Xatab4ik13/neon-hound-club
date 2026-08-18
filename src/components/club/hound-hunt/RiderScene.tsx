@@ -24,6 +24,56 @@ type Props = {
 
 const MODEL_URL = riderAsset.url;
 
+const BRAND = { r: 0xf0, g: 0x00, b: 0xc0 };
+
+/** Переводит розово-малиновые пиксели текстуры в фирменный #F000C0. */
+function recolorPinkTexture(tex: THREE.Texture): THREE.Texture | null {
+  const img = tex.image as HTMLImageElement | ImageBitmap | undefined;
+  if (!img || !("width" in img) || !img.width) return null;
+  const canvas = document.createElement("canvas");
+  canvas.width = img.width;
+  canvas.height = img.height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return null;
+  ctx.drawImage(img as CanvasImageSource, 0, 0);
+  let data: ImageData;
+  try {
+    data = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  } catch {
+    return null;
+  }
+  const px = data.data;
+  for (let i = 0; i < px.length; i += 4) {
+    const r = px[i], g = px[i + 1], b = px[i + 2];
+    const max = Math.max(r, g, b), min = Math.min(r, g, b);
+    if (max < 40) continue;
+    const sat = (max - min) / max;
+    if (sat < 0.25) continue;
+    // hue в градусах
+    const d = max - min;
+    let h: number;
+    if (max === r) h = ((g - b) / d) % 6;
+    else if (max === g) h = (b - r) / d + 2;
+    else h = (r - g) / d + 4;
+    h = (h * 60 + 360) % 360;
+    // розовый/малиновый/красно-розовый диапазон
+    if (!(h >= 285 || h <= 15)) continue;
+    const v = max / 255; // сохраняем светотень
+    px[i] = Math.min(255, BRAND.r * v);
+    px[i + 1] = Math.min(255, BRAND.g * v + (min / 255) * 255 * 0.35);
+    px[i + 2] = Math.min(255, BRAND.b * v);
+  }
+  ctx.putImageData(data, 0, 0);
+  const out = new THREE.CanvasTexture(canvas);
+  out.flipY = tex.flipY;
+  out.wrapS = tex.wrapS;
+  out.wrapT = tex.wrapT;
+  out.colorSpace = tex.colorSpace;
+  out.anisotropy = 8;
+  out.needsUpdate = true;
+  return out;
+}
+
 function Model({
   mode,
   lookAt,
@@ -38,6 +88,36 @@ function Model({
   const group = useRef<THREE.Group>(null);
   const { scene, animations } = useGLTF(MODEL_URL);
   const cloned = useMemo(() => scene, [scene]);
+
+  // Перекраска в фирменный розовый + подтяжка резкости/контраста материалов.
+  useEffect(() => {
+    cloned.traverse((obj) => {
+      const mesh = obj as THREE.Mesh;
+      if (!mesh.isMesh) return;
+      const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+      mats.forEach((m) => {
+        const mat = m as THREE.MeshStandardMaterial;
+        if (!mat) return;
+        if (mat.map && !(mat.map as THREE.Texture & { __hhBrand?: boolean }).__hhBrand) {
+          const next = recolorPinkTexture(mat.map);
+          if (next) {
+            (next as THREE.Texture & { __hhBrand?: boolean }).__hhBrand = true;
+            mat.map = next;
+          }
+          (mat.map as THREE.Texture & { __hhBrand?: boolean }).__hhBrand = true;
+          mat.map.anisotropy = 8;
+        } else if (!mat.map) {
+          const c = mat.color?.getHSL({ h: 0, s: 0, l: 0 });
+          if (c && c.s > 0.25 && (c.h * 360 >= 285 || c.h * 360 <= 15)) {
+            mat.color.setHex(0xf000c0);
+          }
+        }
+        if (typeof mat.roughness === "number") mat.roughness = Math.min(mat.roughness, 0.65);
+        if (typeof mat.metalness === "number") mat.metalness = Math.min(mat.metalness, 0.35);
+        mat.needsUpdate = true;
+      });
+    });
+  }, [cloned]);
   const { actions, names } = useAnimations(animations, group);
 
   // нормализуем масштаб/позицию: ставим на пол, высота ~2 юнита
@@ -103,15 +183,16 @@ export default function RiderScene({
   return (
     <div className={className}>
       <Canvas
-        dpr={[1, 1.6]}
+        dpr={[1, 2]}
         camera={{ position: [0, 1.1, 5.6], fov: 42 }}
-        gl={{ antialias: true, alpha: true }}
+        gl={{ antialias: true, alpha: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.25 }}
         style={{ background: "transparent" }}
       >
-        <ambientLight intensity={0.55} />
-        <directionalLight position={[3, 5, 4]} intensity={1.5} />
-        <spotLight position={[-3, 4, 2]} angle={0.6} intensity={2.4} color="#ff2d6f" />
-        <spotLight position={[0, 2, -4]} angle={0.8} intensity={1.6} color="#7c5cff" />
+        <ambientLight intensity={0.35} />
+        <directionalLight position={[3, 5, 4]} intensity={2.4} />
+        <directionalLight position={[-4, 2, 3]} intensity={0.9} color="#ffffff" />
+        <spotLight position={[-3, 4, 2]} angle={0.6} intensity={3.2} color="#f000c0" />
+        <spotLight position={[0, 3, -4]} angle={0.9} intensity={2.6} color="#f000c0" />
         <Suspense fallback={null}>
           <Model mode={mode} lookAt={lookAt} loopKick={loopKick} onImpact={onImpact} />
         </Suspense>
