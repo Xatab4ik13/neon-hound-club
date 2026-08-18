@@ -38,17 +38,36 @@ function Model({ mode, lookAt }: { mode: RiderMode; lookAt: { x: number; y: numb
   }, [cloned]);
 
   const clip = names[0];
+  // Пока удар не доиграл до конца — не трогаем клип: иначе анимация
+  // обрывается/ускоряется на смене mode.
+  const lungeBusy = useRef(false);
 
   useEffect(() => {
     const action = clip ? actions[clip] : null;
     if (!action) return;
-    if (mode === "lunge") {
+    const mixer = action.getMixer();
+
+    const onFinished = (e: { action: THREE.AnimationAction }) => {
+      if (e.action !== action) return;
+      lungeBusy.current = false;
       action.reset();
-      action.setLoop(THREE.LoopOnce, 1);
-      action.clampWhenFinished = true;
-      action.timeScale = 1.35;
+      action.setLoop(THREE.LoopRepeat, Infinity);
+      action.clampWhenFinished = false;
+      action.timeScale = 0.6;
       action.play();
-    } else {
+    };
+    mixer.addEventListener("finished", onFinished as never);
+
+    if (mode === "lunge") {
+      if (!lungeBusy.current) {
+        lungeBusy.current = true;
+        action.reset();
+        action.setLoop(THREE.LoopOnce, 1);
+        action.clampWhenFinished = true;
+        action.timeScale = 1;
+        action.play();
+      }
+    } else if (!lungeBusy.current) {
       // спокойная стойка: медленно «дышим» тем же клипом на малой скорости
       action.paused = false;
       action.setLoop(THREE.LoopRepeat, Infinity);
@@ -56,7 +75,10 @@ function Model({ mode, lookAt }: { mode: RiderMode; lookAt: { x: number; y: numb
       action.timeScale = mode === "watch" ? 0.85 : 0.6;
       if (!action.isRunning()) action.play();
     }
+
+    return () => mixer.removeEventListener("finished", onFinished as never);
   }, [mode, actions, clip]);
+
 
   const yaw = Math.max(-1, Math.min(1, lookAt.x)) * 0.28;
   const pitch = Math.max(-1, Math.min(1, lookAt.y)) * 0.1;
