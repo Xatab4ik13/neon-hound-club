@@ -2,7 +2,6 @@
 // Позже заменим на реальные заявки (билеты = веса) и призы из админки.
 
 import imgAirpods from "@/assets/spin/airpods.webp";
-import imgWatch from "@/assets/spin/watch.webp";
 import imgPs5 from "@/assets/spin/ps5.webp";
 
 export type HuntPrize = {
@@ -28,7 +27,6 @@ export type HuntEntry = {
 
 export const HUNT_PRIZES: HuntPrize[] = [
   { id: "p3", place: 3, title: "AirPods 4", sub: "3-е место", img: imgAirpods },
-  { id: "p2", place: 2, title: "Apple Watch SE", sub: "2-е место", img: imgWatch },
   { id: "p1", place: 1, title: "PlayStation 5 Slim", sub: "Главный приз", img: imgPs5 },
 ];
 

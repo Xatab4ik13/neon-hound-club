@@ -154,7 +154,15 @@ export function HuntCapsule({ entry, scale = 1, state = "float", className }: Pr
 }
 
 /** Мелкая капсула для ленты барабана — постоянно вращается вокруг своей оси. */
-export function CapsuleChip({ entry, focused }: { entry: HuntEntry; focused?: boolean }) {
+export function CapsuleChip({
+  entry,
+  focused,
+  scale = 0.62,
+}: {
+  entry: HuntEntry;
+  focused?: boolean;
+  scale?: number;
+}) {
   return (
     <div className="shrink-0" style={{ opacity: focused ? 1 : 0.75, perspective: 800 }}>
       <motion.div
@@ -162,7 +170,7 @@ export function CapsuleChip({ entry, focused }: { entry: HuntEntry; focused?: bo
         transition={{ duration: focused ? 2.4 : 4, repeat: Infinity, ease: "linear" }}
         style={{ transformStyle: "preserve-3d" }}
       >
-        <HuntCapsule entry={entry} scale={0.62} state={focused ? "focus" : "idle"} />
+        <HuntCapsule entry={entry} scale={scale} state={focused ? "focus" : "idle"} />
       </motion.div>
     </div>
   );
