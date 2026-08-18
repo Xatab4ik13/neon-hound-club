@@ -32,12 +32,12 @@ export function KickedAvatar({ entry, seed, scale = 0.62, width }: Props) {
     const c = hash(seed + "c");
     return {
       // дальность и высота полёта
-      dx: 300 + a * 190,
-      apex: -(150 + b * 90),
-      fall: 240 + c * 140,
+      dx: 420 + a * 260,
+      apex: -(200 + b * 130),
+      fall: 340 + c * 200,
       spin: (500 + a * 420) * (b > 0.85 ? -1 : 1),
       tilt: -8 - c * 10,
-      dur: 0.95 + b * 0.25,
+      dur: 1.25 + b * 0.35,
     };
   }, [seed]);
 

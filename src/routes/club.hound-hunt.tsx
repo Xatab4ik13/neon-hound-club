@@ -246,7 +246,7 @@ export function HoundHuntPage() {
     const entry = reelNow[k % reelNow.length];
     const key = `${k}-${entry.id}`;
     setGhosts((g) => [...g, { key, entry }]);
-    later(() => setGhosts((g) => g.filter((x) => x.key !== key)), 1300);
+    later(() => setGhosts((g) => g.filter((x) => x.key !== key)), 2000);
     haptic("light");
     if (k + 1 >= need) {
       strip.stop();
