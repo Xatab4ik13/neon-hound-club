@@ -223,9 +223,16 @@ export function HoundHuntPage() {
           transition: { duration: (kickMs * (last + 1)) / 1000, ease: "linear" },
         });
 
-        // На каждый такт: замах (за 600 мс до касания) → удар → капсула вылетает.
+        // Бьёт не по каждой капсуле: часть пролетает мимо, между ударами пауза.
         const windup = Math.min(600, kickMs * 0.35);
+        let cooldown = 0;
         for (let i = 0; i < last; i++) {
+          if (cooldown > 0) {
+            cooldown -= 1;
+            continue;
+          }
+          // после удара пропускаем 1–2 капсулы — персонаж «отдыхает»
+          cooldown = 1 + Math.floor(Math.random() * 2);
           const hitAt = kickMs * (i + 1);
           later(() => {
             setFocusIdx(i);
@@ -237,6 +244,7 @@ export function HoundHuntPage() {
             haptic("light");
           }, hitAt);
         }
+
 
         later(() => {
           setFocusIdx(last);
