@@ -356,7 +356,7 @@ export function HoundHuntPage() {
       </AnimatePresence>
 
       <motion.div animate={shake} className="relative flex min-h-[100svh] flex-col">
-        {/* тонкий HUD: только выход и прогресс призов */}
+        {/* тонкий HUD: только выход */}
         <div className="flex items-center gap-3 px-4 pt-[max(0.75rem,env(safe-area-inset-top))]">
           <Link
             to="/club"
@@ -365,31 +365,13 @@ export function HoundHuntPage() {
           >
             <X className="size-4" />
           </Link>
-          <div className="flex flex-1 items-center gap-1.5">
-            {HUNT_PRIZES.map((p, i) => {
-              const done = winners.some((w) => w.prizeId === p.id);
-              const active = phase !== "intro" && phase !== "podium" && i === caseIdx;
-              return (
-                <div
-                  key={p.id}
-                  className={`h-1 flex-1 rounded-full transition-all ${
-                    done
-                      ? "bg-primary"
-                      : active
-                        ? "bg-destructive shadow-[0_0_14px_color-mix(in_oklab,var(--destructive)_80%,transparent)]"
-                        : "bg-border/50"
-                  }`}
-                />
-              );
-            })}
-          </div>
         </div>
 
         {/* арена */}
         <div className="relative flex min-h-0 flex-1 flex-col items-center justify-center">
-          {/* гончая */}
+          {/* персонаж — виден целиком */}
           <motion.div
-            className="relative z-20 h-56 w-64"
+            className="relative z-20 h-[42svh] w-full max-w-[420px]"
             animate={{ opacity: phase === "podium" ? 0.25 : 1, y: phase === "crack" ? 10 : 0 }}
           >
             <RiderCharacter mode={dogMode} lookAt={look} className="h-full w-full" />
