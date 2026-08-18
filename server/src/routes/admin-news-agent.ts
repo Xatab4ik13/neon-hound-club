@@ -161,16 +161,30 @@ export async function adminNewsAgentRoutes(app: FastifyInstance) {
     const q = z
       .object({
         status: z.enum(["drafted", "new", "rejected", "failed", "used"]).default("drafted"),
+        category: z.string().trim().max(60).optional(),
         limit: z.coerce.number().int().min(1).max(100).default(40),
       })
       .parse(req.query ?? {});
 
+    // Категория живёт в вариантах текста (их пишет модель), поэтому фильтруем
+    // через EXISTS, а не по колонке кандидата.
+    const catFilter =
+      q.category && q.category !== "all"
+        ? sql`exists (select 1 from ${newsVariants} v where v."candidate_id" = ${newsCandidates.id} and lower(v."category") = lower(${q.category}))`
+        : undefined;
+
+    // Сверху — самое актуальное: свежие прогоны, внутри прогона по score.
     const rows = await db
       .select()
       .from(newsCandidates)
-      .where(eq(newsCandidates.status, q.status))
-      .orderBy(desc(newsCandidates.isHot), desc(newsCandidates.score), desc(newsCandidates.createdAt))
+      .where(and(eq(newsCandidates.status, q.status), ...(catFilter ? [catFilter] : [])))
+      .orderBy(
+        desc(sql`coalesce(${newsCandidates.draftedAt}, ${newsCandidates.createdAt})`),
+        desc(newsCandidates.isHot),
+        desc(newsCandidates.score),
+      )
       .limit(q.limit);
+
 
     const ids = rows.map((r) => r.id);
     const variants = ids.length
