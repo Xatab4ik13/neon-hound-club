@@ -4,7 +4,7 @@
 // "lunge" = удар ногой по капсуле (проигрывается клип один раз).
 
 import { Suspense, useEffect, useMemo, useRef } from "react";
-import { Canvas } from "@react-three/fiber";
+import { Canvas, useFrame } from "@react-three/fiber";
 import { useAnimations, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import riderAsset from "@/assets/rider.glb.asset.json";
@@ -16,11 +16,25 @@ type Props = {
   /** Куда смотрит: -1..1 по обеим осям. */
   lookAt?: { x: number; y: number };
   className?: string;
+  /** Непрерывный цикл удара: клип крутится сам, без перезапусков извне. */
+  loopKick?: boolean;
+  /** Вызывается в момент контакта ноги (≈60% клипа) на каждом цикле. */
+  onImpact?: () => void;
 };
 
 const MODEL_URL = riderAsset.url;
 
-function Model({ mode, lookAt }: { mode: RiderMode; lookAt: { x: number; y: number } }) {
+function Model({
+  mode,
+  lookAt,
+  loopKick,
+  onImpact,
+}: {
+  mode: RiderMode;
+  lookAt: { x: number; y: number };
+  loopKick?: boolean;
+  onImpact?: () => void;
+}) {
   const group = useRef<THREE.Group>(null);
   const { scene, animations } = useGLTF(MODEL_URL);
   const cloned = useMemo(() => scene, [scene]);
@@ -38,47 +52,36 @@ function Model({ mode, lookAt }: { mode: RiderMode; lookAt: { x: number; y: numb
   }, [cloned]);
 
   const clip = names[0];
-  // Пока удар не доиграл до конца — не трогаем клип: иначе анимация
-  // обрывается/ускоряется на смене mode.
-  const lungeBusy = useRef(false);
+  const action = clip ? actions[clip] : null;
+  const impactRef = useRef(onImpact);
+  impactRef.current = onImpact;
+  const prevTime = useRef(0);
 
+  // Режим loopKick: клип удара крутится бесконечно на своей скорости и
+  // НИКОГДА не перезапускается руками — поэтому нога всегда возвращается
+  // в стойку и не бывает рывков. Импакт отдаём наружу колбэком.
   useEffect(() => {
-    const action = clip ? actions[clip] : null;
     if (!action) return;
-    const mixer = action.getMixer();
-
-    const onFinished = (e: { action: THREE.AnimationAction }) => {
-      if (e.action !== action) return;
-      lungeBusy.current = false;
+    action.enabled = true;
+    action.clampWhenFinished = false;
+    action.setLoop(THREE.LoopRepeat, Infinity);
+    action.timeScale = loopKick ? 1 : mode === "watch" ? 0.5 : 0.35;
+    if (!action.isRunning()) {
       action.reset();
-      action.setLoop(THREE.LoopRepeat, Infinity);
-      action.clampWhenFinished = false;
-      action.timeScale = 0.6;
       action.play();
-    };
-    mixer.addEventListener("finished", onFinished as never);
-
-    if (mode === "lunge") {
-      if (!lungeBusy.current) {
-        lungeBusy.current = true;
-        action.reset();
-        action.setLoop(THREE.LoopOnce, 1);
-        action.clampWhenFinished = true;
-        action.timeScale = 1;
-        action.play();
-      }
-    } else if (!lungeBusy.current) {
-      // спокойная стойка: медленно «дышим» тем же клипом на малой скорости
-      action.paused = false;
-      action.setLoop(THREE.LoopRepeat, Infinity);
-      action.clampWhenFinished = false;
-      action.timeScale = mode === "watch" ? 0.85 : 0.6;
-      if (!action.isRunning()) action.play();
     }
+  }, [action, loopKick, mode]);
 
-    return () => mixer.removeEventListener("finished", onFinished as never);
-  }, [mode, actions, clip]);
-
+  useFrame(() => {
+    if (!action || !loopKick) return;
+    const dur = action.getClip().duration;
+    const impactAt = dur * 0.6;
+    const t = action.time;
+    // цикл завернулся — сбрасываем сторож
+    if (t < prevTime.current) prevTime.current = 0;
+    if (prevTime.current < impactAt && t >= impactAt) impactRef.current?.();
+    prevTime.current = t;
+  });
 
   const yaw = Math.max(-1, Math.min(1, lookAt.x)) * 0.28;
   const pitch = Math.max(-1, Math.min(1, lookAt.y)) * 0.1;
@@ -90,7 +93,13 @@ function Model({ mode, lookAt }: { mode: RiderMode; lookAt: { x: number; y: numb
   );
 }
 
-export default function RiderScene({ mode, lookAt = { x: 0, y: 0 }, className }: Props) {
+export default function RiderScene({
+  mode,
+  lookAt = { x: 0, y: 0 },
+  className,
+  loopKick,
+  onImpact,
+}: Props) {
   return (
     <div className={className}>
       <Canvas
@@ -104,7 +113,7 @@ export default function RiderScene({ mode, lookAt = { x: 0, y: 0 }, className }:
         <spotLight position={[-3, 4, 2]} angle={0.6} intensity={2.4} color="#ff2d6f" />
         <spotLight position={[0, 2, -4]} angle={0.8} intensity={1.6} color="#7c5cff" />
         <Suspense fallback={null}>
-          <Model mode={mode} lookAt={lookAt} />
+          <Model mode={mode} lookAt={lookAt} loopKick={loopKick} onImpact={onImpact} />
         </Suspense>
       </Canvas>
     </div>

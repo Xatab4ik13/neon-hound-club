@@ -11,6 +11,8 @@ type Props = {
   mode: RiderMode;
   lookAt?: { x: number; y: number };
   className?: string;
+  loopKick?: boolean;
+  onImpact?: () => void;
 };
 
 export function RiderCharacter(props: Props) {
