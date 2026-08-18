@@ -461,12 +461,17 @@ function ReelStage({
   controls: ReturnType<typeof useAnimationControls>;
   armed: boolean;
 }) {
-  const alive = Math.max(1, reel.length - kicks);
+  // Очередь = ещё не выбитые звенья. Головное (index 0) стоит по центру, под
+  // ногой персонажа. После удара его убираем — остальные ВИДИМО подтягиваются
+  // влево на освободившееся место (layout-анимация), очередь укорачивается.
+  const alive = reel.map((entry, idx) => ({ entry, idx })).filter((s) => s.idx >= kicks);
   return (
     <div className="relative z-30 -mt-[26svh] w-full">
-
-
-      <div className="relative overflow-hidden py-2">
+      {/* дорожка: 3D-перспектива, поэтому очередь уходит вглубь кадра */}
+      <div
+        className="relative py-2"
+        style={{ perspective: "900px", perspectiveOrigin: "50% 50%" }}
+      >
         {/* зона удара — нейтральная тонкая метка по центру */}
         <div className="pointer-events-none absolute left-1/2 top-0 z-20 h-full w-px -translate-x-1/2 bg-gradient-to-b from-transparent via-white/20 to-transparent" />
         <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-20 bg-gradient-to-r from-background to-transparent" />
@@ -475,37 +480,60 @@ function ReelStage({
         <motion.div
           animate={controls}
           className="flex items-center gap-4"
-          style={{ paddingLeft: `calc(50% - ${CHIP_W / 2}px)`, willChange: "transform" }}
+          style={{
+            paddingLeft: `calc(50% - ${CHIP_W / 2}px)`,
+            transformStyle: "preserve-3d",
+            transform: "rotateX(6deg) rotateY(-16deg)",
+            willChange: "transform",
+          }}
         >
-          {[...reel, ...reel].map((e, i) => (
-            <div key={`${e.id}-${i}`} className="shrink-0">
-              <HuntAvatar entry={e} focused={false} scale={CHIP_SCALE} />
-            </div>
-          ))}
+          <AnimatePresence initial={false} mode="popLayout">
+            {alive.map((s, i) => (
+              <motion.div
+                key={`slot-${s.idx}`}
+                layout
+                className="shrink-0"
+                style={{ transformStyle: "preserve-3d" }}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{
+                  opacity: i === 0 ? 1 : Math.max(0.25, 1 - i * 0.13),
+                  scale: i === 0 ? 1 : Math.max(0.7, 1 - i * 0.06),
+                  z: -i * 46,
+                }}
+                exit={{ opacity: 0, scale: 0.6 }}
+                transition={{ type: "spring", stiffness: 260, damping: 26 }}
+              >
+                <HuntAvatar entry={s.entry} focused={i === 0} scale={CHIP_SCALE} />
+              </motion.div>
+            ))}
+          </AnimatePresence>
         </motion.div>
+      </div>
 
-        {/* капсулы, выбитые ударом — баллистический полёт с искрами */}
-        <AnimatePresence>
-          {ghosts.map((g) => (
-            <motion.div key={g.key} exit={{ opacity: 0 }}>
-              <KickedAvatar entry={g.entry} seed={g.key} scale={CHIP_SCALE} width={CHIP_W} />
-            </motion.div>
-          ))}
-        </AnimatePresence>
-
-
+      {/* выбитые аватарки — летят ВНЕ дорожки, ничем не обрезаются */}
+      <div className="pointer-events-none absolute -inset-x-[60vw] -top-[70svh] bottom-[-70svh] z-40">
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+          <AnimatePresence>
+            {ghosts.map((g) => (
+              <motion.div key={g.key} exit={{ opacity: 0 }}>
+                <KickedAvatar entry={g.entry} seed={g.key} scale={CHIP_SCALE} width={CHIP_W} />
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </div>
       </div>
 
       <motion.p
         animate={{ opacity: armed ? [0.4, 1, 0.4] : 1 }}
         transition={{ duration: 1.6, repeat: Infinity }}
-        className="mt-2 text-center font-mono text-[10px] uppercase tracking-[0.28em] text-muted-foreground"
+        className="relative z-50 mt-2 text-center font-mono text-[10px] uppercase tracking-[0.28em] text-muted-foreground"
       >
-        {armed ? "выходит на удар" : `выбивает участников · осталось ${alive}`}
+        {armed ? "выходит на удар" : `выбивает участников · осталось ${Math.max(1, alive.length)}`}
       </motion.p>
     </div>
   );
 }
+
 
 
 /** Гончая вытягивает выбранную капсулу к пасти, потом раскусывает. */
