@@ -339,7 +339,7 @@ export function HoundHuntPage() {
       <SmokeLayers />
       <div className="pointer-events-none absolute inset-0 shadow-[inset_0_0_220px_60px_var(--background)]" />
 
-      <div className="relative flex min-h-[100svh] flex-col pt-[max(0.5rem,env(safe-area-inset-top))]">
+      <div className="relative flex h-full flex-col overflow-hidden pt-[max(0.5rem,env(safe-area-inset-top))]">
         {/* арена */}
         <div className="relative flex min-h-0 flex-1 flex-col items-center justify-center">
           {/* персонаж — виден целиком */}
