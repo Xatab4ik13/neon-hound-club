@@ -1,11 +1,13 @@
 // HOUND HUNT — шоу-розыгрыш для владельцев Hell Pass Platinum.
-// ВАЖНО: пока это ТОЛЬКО визуал на моках. Никакого бекенда, победители
-// определяются локально (Math.random по весам билетов) — чтобы согласовать
-// анимацию и тайминги. Серверная часть (честный жребий, seed, подпись) — позже.
+// ВАЖНО: пока это ТОЛЬКО визуал на моках. Победители определяются локально
+// (Math.random по весам билетов). Серверная часть (честный жребий, seed,
+// подпись) — позже. Звука нет намеренно: у HellSpin свой звук, здесь будет
+// отдельный саунд-дизайн.
 //
-// Механика показа: 3 кейса по призам (3-е → 2-е → главный).
-// Каждый кейс: барабан аватарок как в Dota 2 → гончая кусает кейс →
-// аватарка исчезает в пасти → ревил победителя. Победитель выбывает.
+// Механика показа: 3 приза (3-е → 2-е → главный). На каждый приз:
+// медленный дрейф капсул → гончая ведёт глазами за капсулами →
+// «вынюхивает» одну и вытягивает её к пасти → раскусывает →
+// ревил победителя. Победитель выбывает из барабана.
 
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -13,14 +15,13 @@ import { AnimatePresence, motion, useAnimationControls } from "framer-motion";
 import { X } from "lucide-react";
 import { HoundDog, type DogMode } from "@/components/club/hound-hunt/HoundDog";
 import { EmberField } from "@/components/club/hound-hunt/EmberField";
+import { HuntCapsule, CapsuleChip } from "@/components/club/hound-hunt/HuntCapsule";
 import {
   HUNT_PRIZES,
   HUNT_TICKET_STEP,
-  hueOf,
   makeEntries,
   type HuntEntry,
 } from "@/components/club/hound-hunt/hh-mock";
-import { playSpin, playWin, playClick, playTick } from "@/lib/roller-sfx";
 import { haptic } from "@/hooks/use-haptic";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -70,26 +71,31 @@ function DesktopBlock() {
 
 /* ------------------------------ тайминги ------------------------------ */
 
-type Pace = "demo" | "show";
-
-const PACE: Record<Pace, { arming: number; spin: number; bite: number; reveal: number }> = {
-  // быстрый прогон для проверки визуала
-  demo: { arming: 2600, spin: 7000, bite: 1500, reveal: 4200 },
-  // «боевой» темп: три кейса ≈ 12–15 минут
-  show: { arming: 40000, spin: 150000, bite: 2600, reveal: 45000 },
+/** Базовые длительности «боевого» темпа, мс. Кнопки скорости делят их. */
+const BASE = {
+  arming: 9000, // гончая принюхивается, капсулы качаются
+  drift: 95000, // медленный дрейф барабана
+  pull: 9000, // капсула вытягивается к пасти
+  crack: 2600, // раскус
+  reveal: 26000, // ревил победителя
 };
 
-type Phase = "intro" | "arming" | "spinning" | "bite" | "reveal" | "podium";
+const SPEEDS = [1, 2, 5, 20, 60] as const;
+type Speed = (typeof SPEEDS)[number];
 
-const CARD_W = 104;
-const CARD_GAP = 10;
-const STEP = CARD_W + CARD_GAP;
+type Phase = "intro" | "arming" | "drift" | "pull" | "crack" | "reveal" | "podium";
+
+const CHIP_W = 152 * 0.62;
+const CHIP_GAP = 16;
+const STEP = CHIP_W + CHIP_GAP;
 
 /* ------------------------------ страница ------------------------------ */
 
 export function HoundHuntPage() {
-  const [pace, setPace] = useState<Pace>("demo");
-  const t = PACE[pace];
+  const [speed, setSpeed] = useState<Speed>(5);
+  const speedRef = useRef<Speed>(speed);
+  speedRef.current = speed;
+  const dur = useCallback((base: number) => Math.max(280, base / speedRef.current), []);
 
   const [pool, setPool] = useState<HuntEntry[]>(() => makeEntries(28));
   const [caseIdx, setCaseIdx] = useState(0);
@@ -108,17 +114,23 @@ export function HoundHuntPage() {
     timers.current.push(window.setTimeout(fn, ms));
   }, []);
 
+  const clearTimers = useCallback(() => {
+    timers.current.forEach(clearTimeout);
+    timers.current = [];
+  }, []);
+
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
 
-  /* --- барабан: длинная лента слотов, победитель на фиксированном индексе --- */
+  /* --- барабан: длинная лента капсул, победитель на фиксированном индексе --- */
   const [reel, setReel] = useState<HuntEntry[]>([]);
-  const WIN_INDEX = 46;
+  const [focusIdx, setFocusIdx] = useState(0);
+  const WIN_INDEX = 38;
 
   const buildReel = useCallback((entries: HuntEntry[], winner: HuntEntry) => {
     const slots: HuntEntry[] = [];
     for (const e of entries) for (let i = 0; i < e.slots; i++) slots.push(e);
     const out: HuntEntry[] = [];
-    for (let i = 0; i < WIN_INDEX + 14; i++) {
+    for (let i = 0; i < WIN_INDEX + 10; i++) {
       out.push(slots[Math.floor(Math.random() * slots.length)]);
     }
     out[WIN_INDEX] = winner;
@@ -135,65 +147,98 @@ export function HoundHuntPage() {
     return entries[entries.length - 1];
   }, []);
 
+  /* --- глаза гончей: медленно ведут за капсулами во время дрейфа --- */
+  useEffect(() => {
+    if (phase !== "drift" && phase !== "arming") {
+      if (phase === "pull" || phase === "crack") setLook({ x: 0, y: 0.35 });
+      return;
+    }
+    let raf = 0;
+    const t0 = performance.now();
+    const tick = (now: number) => {
+      const k = (now - t0) / 1000;
+      // мягкая «восьмёрка» — взгляд скользит по ленте
+      setLook({ x: Math.sin(k * 0.55) * 0.9, y: 0.18 + Math.sin(k * 0.31) * 0.14 });
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [phase]);
+
   /* ------------------------------ сценарий ------------------------------ */
 
   const runCase = useCallback(
     (idx: number, entries: HuntEntry[]) => {
       const winner = pickWinner(entries);
       setCurrent(null);
+      setFocusIdx(0);
       setReel(buildReel(entries, winner));
       strip.set({ x: 0 });
       setPhase("arming");
       haptic("light");
 
+      const armingMs = dur(BASE.arming);
+      const driftMs = dur(BASE.drift);
+      const pullMs = dur(BASE.pull);
+      const crackMs = dur(BASE.crack);
+      const revealMs = dur(BASE.reveal);
+
       later(() => {
-        setPhase("spinning");
-        playSpin(WIN_INDEX, t.spin);
+        setPhase("drift");
+        // почти линейный медленный дрейф с плавным доводом — не «казино»,
+        // а именно медленный отбор: капсулы неспешно проплывают мимо гончей
         strip.start({
           x: -(WIN_INDEX * STEP),
-          transition: { duration: t.spin / 1000, ease: [0.12, 0.78, 0.1, 1] },
+          transition: { duration: driftMs / 1000, ease: [0.15, 0.55, 0.2, 1] },
         });
 
+        // подсветка капсулы под носом гончей
+        const stepMs = driftMs / (WIN_INDEX + 1);
+        for (let i = 1; i <= WIN_INDEX; i++) {
+          later(() => setFocusIdx(i), Math.min(driftMs, i * stepMs * 0.92));
+        }
+
         later(() => {
-          // укус
-          setPhase("bite");
+          // гончая вынюхала капсулу и вытягивает её к пасти
+          setPhase("pull");
           setCurrent(winner);
-          haptic("warning");
-          playTick(0.3, 0.2);
-          setFlash((f) => f + 1);
-          shake.start({
-            x: [0, -14, 12, -8, 5, 0],
-            y: [0, 8, -6, 4, -2, 0],
-            transition: { duration: 0.55 },
-          });
+          haptic("selection");
 
           later(() => {
-            setPhase("reveal");
-            playWin();
-            haptic("success");
-            setWinners((w) => [...w, { prizeId: HUNT_PRIZES[idx].id, entry: winner }]);
-            const rest = entries.filter((e) => e.id !== winner.id);
-            setPool(rest);
+            setPhase("crack");
+            haptic("warning");
+            setFlash((f) => f + 1);
+            shake.start({
+              x: [0, -12, 10, -6, 4, 0],
+              y: [0, 7, -5, 3, -2, 0],
+              transition: { duration: 0.55 },
+            });
 
             later(() => {
-              if (idx + 1 < HUNT_PRIZES.length) {
-                setCaseIdx(idx + 1);
-                runCase(idx + 1, rest);
-              } else {
-                setPhase("podium");
-              }
-            }, t.reveal);
-          }, t.bite);
-        }, t.spin + 250);
-      }, t.arming);
+              setPhase("reveal");
+              haptic("success");
+              setWinners((w) => [...w, { prizeId: HUNT_PRIZES[idx].id, entry: winner }]);
+              const rest = entries.filter((e) => e.id !== winner.id);
+              setPool(rest);
+
+              later(() => {
+                if (idx + 1 < HUNT_PRIZES.length) {
+                  setCaseIdx(idx + 1);
+                  runCase(idx + 1, rest);
+                } else {
+                  setPhase("podium");
+                }
+              }, revealMs);
+            }, crackMs);
+          }, pullMs);
+        }, driftMs + 200);
+      }, armingMs);
     },
-    [buildReel, later, pickWinner, shake, strip, t],
+    [buildReel, dur, later, pickWinner, shake, strip],
   );
 
   const start = () => {
-    playClick();
-    timers.current.forEach(clearTimeout);
-    timers.current = [];
+    clearTimers();
     const fresh = makeEntries(28, Math.floor(Math.random() * 99999));
     setPool(fresh);
     setWinners([]);
@@ -201,18 +246,60 @@ export function HoundHuntPage() {
     runCase(0, fresh);
   };
 
-  /* глаза следят за курсором */
-  const onMove = (e: React.MouseEvent) => {
-    const x = (e.clientX / window.innerWidth) * 2 - 1;
-    const y = (e.clientY / window.innerHeight) * 2 - 1;
-    setLook({ x, y: y * 0.6 });
+  /** Тестовая кнопка: перескочить к следующей фазе. */
+  const skip = () => {
+    if (phase === "intro" || phase === "podium") return;
+    clearTimers();
+    const entries = pool;
+    if (phase === "arming" || phase === "drift") {
+      const winner = reel[WIN_INDEX] ?? pickWinner(entries);
+      strip.set({ x: -(WIN_INDEX * STEP) });
+      setFocusIdx(WIN_INDEX);
+      setCurrent(winner);
+      setPhase("pull");
+      later(() => {
+        setPhase("crack");
+        setFlash((f) => f + 1);
+        later(() => {
+          setPhase("reveal");
+          setWinners((w) => [...w, { prizeId: HUNT_PRIZES[caseIdx].id, entry: winner }]);
+          const rest = entries.filter((e) => e.id !== winner.id);
+          setPool(rest);
+          later(() => {
+            if (caseIdx + 1 < HUNT_PRIZES.length) {
+              setCaseIdx(caseIdx + 1);
+              runCase(caseIdx + 1, rest);
+            } else {
+              setPhase("podium");
+            }
+          }, dur(BASE.reveal));
+        }, dur(BASE.crack));
+      }, dur(BASE.pull) * 0.4);
+      return;
+    }
+    if (phase === "reveal") {
+      if (caseIdx + 1 < HUNT_PRIZES.length) {
+        setCaseIdx(caseIdx + 1);
+        runCase(caseIdx + 1, pool);
+      } else {
+        setPhase("podium");
+      }
+    }
   };
 
   const dogMode: DogMode =
-    phase === "spinning" ? "watch" : phase === "bite" ? "lunge" : phase === "reveal" ? "chew" : "idle";
+    phase === "drift" || phase === "arming"
+      ? "watch"
+      : phase === "pull"
+        ? "watch"
+        : phase === "crack"
+          ? "lunge"
+          : phase === "reveal"
+            ? "chew"
+            : "idle";
 
   const intensity =
-    phase === "bite" ? 1 : phase === "reveal" ? 0.7 : phase === "spinning" ? 0.5 : 0.28;
+    phase === "crack" ? 1 : phase === "reveal" ? 0.7 : phase === "drift" ? 0.45 : 0.26;
 
   const totalTickets = useMemo(
     () => pool.reduce((s, e) => s + e.tickets, 0) + winners.reduce((s, w) => s + w.entry.tickets, 0),
@@ -220,10 +307,7 @@ export function HoundHuntPage() {
   );
 
   return (
-    <div
-      onMouseMove={onMove}
-      className="fixed inset-0 z-50 overflow-hidden bg-background text-foreground select-none"
-    >
+    <div className="relative min-h-[100svh] overflow-hidden bg-background text-foreground select-none">
       {/* фон: угли, дым, винетка */}
       <EmberField intensity={intensity} className="absolute inset-0 h-full w-full opacity-80" />
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_80%_at_50%_0%,color-mix(in_oklab,var(--destructive)_14%,transparent),transparent_60%)]" />
@@ -231,12 +315,12 @@ export function HoundHuntPage() {
       <SmokeLayers />
       <div className="pointer-events-none absolute inset-0 shadow-[inset_0_0_220px_60px_var(--background)]" />
 
-      {/* красная вспышка укуса */}
+      {/* вспышка раскуса */}
       <AnimatePresence>
         {flash > 0 && (
           <motion.div
             key={flash}
-            initial={{ opacity: 0.85 }}
+            initial={{ opacity: 0.8 }}
             animate={{ opacity: 0 }}
             transition={{ duration: 0.7 }}
             className="pointer-events-none absolute inset-0 bg-destructive/70 mix-blend-screen"
@@ -244,113 +328,107 @@ export function HoundHuntPage() {
         )}
       </AnimatePresence>
 
-      <motion.div animate={shake} className="relative flex h-full flex-col">
-        {/* шапка */}
-        <header className="flex items-start justify-between gap-3 px-4 pt-[max(1rem,env(safe-area-inset-top))]">
-          <div>
-            <h1 className="font-display text-2xl font-black uppercase leading-none tracking-tight drop-shadow-[0_0_22px_color-mix(in_oklab,var(--destructive)_60%,transparent)] md:text-4xl">
-              HOUND HUNT
-            </h1>
-            <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.28em] text-muted-foreground md:text-xs">
-              Platinum · {pool.length + winners.length} заявок · {totalTickets} билетов
-            </p>
+      <motion.div animate={shake} className="relative flex min-h-[100svh] flex-col">
+        {/* тонкий HUD: только выход и прогресс призов */}
+        <div className="flex items-center gap-3 px-4 pt-[max(0.75rem,env(safe-area-inset-top))]">
+          <Link
+            to="/club"
+            className="grid size-9 shrink-0 place-items-center rounded-full border border-border/50 bg-card/40 text-muted-foreground backdrop-blur"
+            aria-label="Выйти"
+          >
+            <X className="size-4" />
+          </Link>
+          <div className="flex flex-1 items-center gap-1.5">
+            {HUNT_PRIZES.map((p, i) => {
+              const done = winners.some((w) => w.prizeId === p.id);
+              const active = phase !== "intro" && phase !== "podium" && i === caseIdx;
+              return (
+                <div
+                  key={p.id}
+                  className={`h-1 flex-1 rounded-full transition-all ${
+                    done
+                      ? "bg-primary"
+                      : active
+                        ? "bg-destructive shadow-[0_0_14px_color-mix(in_oklab,var(--destructive)_80%,transparent)]"
+                        : "bg-border/50"
+                  }`}
+                />
+              );
+            })}
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setPace((p) => (p === "demo" ? "show" : "demo"))}
-              className="rounded-full border border-border/60 bg-card/60 px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground backdrop-blur transition hover:text-foreground"
-            >
-              темп: {pace === "demo" ? "быстрый" : "боевой"}
-            </button>
-            <Link
-              to="/club"
-              className="grid size-9 place-items-center rounded-full border border-border/60 bg-card/60 text-muted-foreground backdrop-blur transition hover:text-foreground"
-              aria-label="Выйти"
-            >
-              <X className="size-4" />
-            </Link>
-          </div>
-        </header>
-
-        {/* прогресс кейсов */}
-        <div className="mt-4 flex items-center justify-center gap-2 px-4">
-          {HUNT_PRIZES.map((p, i) => {
-            const done = winners.some((w) => w.prizeId === p.id);
-            const active = phase !== "intro" && phase !== "podium" && i === caseIdx;
-            return (
-              <div
-                key={p.id}
-                className={`h-1 w-14 rounded-full transition-all md:w-24 ${
-                  done
-                    ? "bg-primary"
-                    : active
-                      ? "bg-destructive shadow-[0_0_14px_color-mix(in_oklab,var(--destructive)_80%,transparent)]"
-                      : "bg-border/60"
-                }`}
-              />
-            );
-          })}
         </div>
 
         {/* арена */}
         <div className="relative flex min-h-0 flex-1 flex-col items-center justify-center">
-          {/* собака */}
+          {/* гончая */}
           <motion.div
-            className="relative z-20 h-36 w-52 md:h-52 md:w-72"
-            animate={{ opacity: phase === "podium" ? 0.25 : 1 }}
+            className="relative z-20 h-40 w-56"
+            animate={{ opacity: phase === "podium" ? 0.25 : 1, y: phase === "crack" ? 10 : 0 }}
           >
             <HoundDog mode={dogMode} lookAt={look} className="h-full w-full" />
           </motion.div>
 
-          {phase === "intro" && (
-            <IntroPanel onStart={start} />
-          )}
+          {phase === "intro" && <IntroPanel onStart={start} />}
 
-          {(phase === "arming" || phase === "spinning") && (
+          {(phase === "arming" || phase === "drift") && (
             <ReelStage
               prizeTitle={prize.title}
               prizeSub={prize.sub}
               prizeImg={prize.img}
               reel={reel}
+              focusIdx={focusIdx}
               controls={strip}
               armed={phase === "arming"}
             />
           )}
 
-          {phase === "bite" && current && <BiteStage entry={current} />}
+          {(phase === "pull" || phase === "crack") && current && (
+            <PullStage entry={current} cracking={phase === "crack"} />
+          )}
 
           {phase === "reveal" && current && (
-            <RevealStage entry={current} prizeTitle={prize.title} prizeSub={prize.sub} prizeImg={prize.img} />
+            <RevealStage
+              entry={current}
+              prizeTitle={prize.title}
+              prizeSub={prize.sub}
+              prizeImg={prize.img}
+            />
           )}
 
           {phase === "podium" && <Podium winners={winners} onRestart={start} />}
         </div>
 
-        {/* нижняя лента участников */}
-        {phase !== "intro" && phase !== "podium" && (
-          <div className="relative z-10 shrink-0 px-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
-            <p className="mb-2 text-center font-mono text-[10px] uppercase tracking-[0.24em] text-muted-foreground">
-              в барабане · порог {HUNT_TICKET_STEP} билетов = 1 место
-            </p>
-            <div className="flex flex-wrap justify-center gap-1.5">
-              {pool.slice(0, 22).map((e) => (
-                <span
-                  key={e.id}
-                  className="rounded-full border border-border/50 bg-card/40 px-2 py-0.5 font-mono text-[10px] text-muted-foreground backdrop-blur"
-                >
-                  {e.nick}
-                  <span className="text-primary"> ×{e.slots}</span>
-                </span>
-              ))}
-              {pool.length > 22 && (
-                <span className="rounded-full border border-border/50 bg-card/40 px-2 py-0.5 font-mono text-[10px] text-muted-foreground">
-                  +{pool.length - 22}
-                </span>
-              )}
-            </div>
+        {/* тестовый пульт скорости (уйдёт из прода) */}
+        <div className="relative z-30 shrink-0 px-4 pb-3">
+          <div className="flex items-center justify-center gap-1.5">
+            {SPEEDS.map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => setSpeed(s)}
+                className={`rounded-full border px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.14em] backdrop-blur transition ${
+                  speed === s
+                    ? "border-destructive/60 bg-destructive/20 text-foreground"
+                    : "border-border/50 bg-card/40 text-muted-foreground"
+                }`}
+              >
+                ×{s}
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={skip}
+              className="rounded-full border border-border/50 bg-card/40 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground backdrop-blur"
+            >
+              далее
+            </button>
           </div>
-        )}
+          {phase !== "intro" && phase !== "podium" && (
+            <p className="mt-2 text-center font-mono text-[9px] uppercase tracking-[0.2em] text-muted-foreground/70">
+              в барабане {pool.length} · {totalTickets} билетов · {HUNT_TICKET_STEP} билетов = 1 место
+            </p>
+          )}
+        </div>
       </motion.div>
     </div>
   );
@@ -369,13 +447,13 @@ function IntroPanel({ onStart }: { onStart: () => void }) {
         охота начинается
       </p>
       <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-        Три кейса. Гончая вскроет каждый по очереди — от третьего места к главному призу.
-        Кого она достанет, тот забирает. Выигравший из барабана выбывает.
+        Три приза. Гончая медленно ведёт по капсулам, выбирает носом одну — и раскусывает.
+        Чья аватарка внутри, тот забирает. Победитель выбывает из барабана.
       </p>
       <button
         type="button"
         onClick={onStart}
-        className="mt-6 w-full rounded-2xl border border-destructive/50 bg-destructive/15 px-6 py-4 font-display text-lg font-black uppercase tracking-wide text-foreground shadow-[0_0_40px_-6px_color-mix(in_oklab,var(--destructive)_70%,transparent)] transition hover:bg-destructive/25 active:scale-[0.98]"
+        className="mt-6 w-full rounded-2xl border border-destructive/50 bg-destructive/15 px-6 py-4 font-display text-lg font-black uppercase tracking-wide text-foreground shadow-[0_0_40px_-6px_color-mix(in_oklab,var(--destructive)_70%,transparent)] transition active:scale-[0.98]"
       >
         Спустить гончую
       </button>
@@ -388,6 +466,7 @@ function ReelStage({
   prizeSub,
   prizeImg,
   reel,
+  focusIdx,
   controls,
   armed,
 }: {
@@ -395,6 +474,7 @@ function ReelStage({
   prizeSub: string;
   prizeImg: string;
   reel: HuntEntry[];
+  focusIdx: number;
   controls: ReturnType<typeof useAnimationControls>;
   armed: boolean;
 }) {
@@ -403,93 +483,81 @@ function ReelStage({
       <div className="mb-3 flex items-center justify-center gap-3">
         <img src={prizeImg} alt="" className="size-10 rounded-lg object-contain" />
         <div className="text-left">
-          <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-destructive">{prizeSub}</p>
+          <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-destructive">
+            {prizeSub}
+          </p>
           <p className="font-display text-base font-black uppercase tracking-tight">{prizeTitle}</p>
         </div>
       </div>
 
-      <div className="relative overflow-hidden border-y border-border/50 bg-card/25 py-4 backdrop-blur-sm">
-        {/* маркер центра */}
-        <div className="pointer-events-none absolute left-1/2 top-0 z-20 h-full w-[2px] -translate-x-1/2 bg-destructive shadow-[0_0_20px_4px_color-mix(in_oklab,var(--destructive)_70%,transparent)]" />
-        <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-24 bg-gradient-to-r from-background to-transparent" />
-        <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-24 bg-gradient-to-l from-background to-transparent" />
+      <div className="relative overflow-hidden py-2">
+        {/* след носа — вертикальный луч по центру */}
+        <div className="pointer-events-none absolute left-1/2 top-0 z-20 h-full w-[2px] -translate-x-1/2 bg-gradient-to-b from-transparent via-destructive to-transparent shadow-[0_0_20px_4px_color-mix(in_oklab,var(--destructive)_60%,transparent)]" />
+        <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-20 bg-gradient-to-r from-background to-transparent" />
+        <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-20 bg-gradient-to-l from-background to-transparent" />
 
         <motion.div
           animate={controls}
-          className="flex gap-[10px] pl-[calc(50%-52px)]"
-          style={{ willChange: "transform" }}
+          className="flex items-center gap-4"
+          style={{ paddingLeft: `calc(50% - ${(152 * 0.62) / 2}px)`, willChange: "transform" }}
         >
           {reel.map((e, i) => (
-            <AvatarCard key={`${e.id}-${i}`} entry={e} />
+            <CapsuleChip key={`${e.id}-${i}`} entry={e} focused={i === focusIdx} />
           ))}
         </motion.div>
       </div>
 
       <motion.p
         animate={{ opacity: armed ? [0.4, 1, 0.4] : 1 }}
-        transition={{ duration: 1.2, repeat: Infinity }}
-        className="mt-3 text-center font-mono text-[10px] uppercase tracking-[0.28em] text-muted-foreground"
+        transition={{ duration: 1.6, repeat: Infinity }}
+        className="mt-2 text-center font-mono text-[10px] uppercase tracking-[0.28em] text-muted-foreground"
       >
-        {armed ? "гончая берёт след" : "барабан крутится"}
+        {armed ? "гончая принюхивается" : "капсулы плывут мимо носа"}
       </motion.p>
     </div>
   );
 }
 
-function AvatarCard({ entry, big }: { entry: HuntEntry; big?: boolean }) {
-  const hue = hueOf(entry.nick);
+/** Гончая вытягивает выбранную капсулу к пасти, потом раскусывает. */
+function PullStage({ entry, cracking }: { entry: HuntEntry; cracking: boolean }) {
   return (
-    <div
-      className={`shrink-0 rounded-xl border border-border/60 bg-card/70 text-center backdrop-blur ${
-        big ? "w-40 p-4" : "w-[104px] p-2"
-      }`}
-    >
-      <div
-        className={`mx-auto grid place-items-center rounded-full font-display font-black text-foreground ${
-          big ? "size-20 text-2xl" : "size-12 text-sm"
-        }`}
-        style={{
-          background: `linear-gradient(140deg, oklch(0.42 0.16 ${hue}), oklch(0.18 0.05 ${hue}))`,
-          boxShadow: "0 0 18px -6px color-mix(in oklab, var(--primary) 60%, transparent)",
-        }}
-      >
-        {entry.initials}
-      </div>
-      <p className={`mt-2 truncate font-mono uppercase ${big ? "text-sm" : "text-[10px]"}`}>
-        {entry.nick}
-      </p>
-      <p className={`truncate text-primary ${big ? "text-xs" : "text-[9px]"} font-mono`}>
-        ×{entry.slots} · {entry.tickets} б.
-      </p>
-    </div>
-  );
-}
-
-/** Кейс в пасти: аватарка исчезает, летят щепки. */
-function BiteStage({ entry }: { entry: HuntEntry }) {
-  return (
-    <div className="relative z-10 mt-2 grid place-items-center">
+    <div className="relative z-10 -mt-6 grid place-items-center">
       <motion.div
-        initial={{ scale: 1, opacity: 1, y: 0, rotate: 0 }}
-        animate={{ scale: [1, 1.1, 0.2], opacity: [1, 1, 0], y: [0, -10, -70], rotate: [0, -6, 10] }}
-        transition={{ duration: 1.1, times: [0, 0.35, 1] }}
+        initial={{ y: 120, scale: 0.7, opacity: 0 }}
+        animate={
+          cracking
+            ? { y: -26, scale: 1.12, opacity: 1 }
+            : { y: [40, -6, 2, -10], scale: [0.85, 1.05, 1, 1.02], opacity: 1 }
+        }
+        transition={cracking ? { duration: 0.5 } : { duration: 2.6, ease: "easeInOut" }}
       >
-        <AvatarCard entry={entry} big />
+        <HuntCapsule entry={entry} scale={1.05} state={cracking ? "crack" : "focus"} />
       </motion.div>
-      {/* щепки кейса */}
-      {Array.from({ length: 14 }).map((_, i) => (
-        <motion.span
-          key={i}
-          className="absolute size-1.5 rounded-sm bg-destructive"
-          initial={{ opacity: 1, x: 0, y: 0 }}
-          animate={{
-            opacity: 0,
-            x: Math.cos((i / 14) * Math.PI * 2) * (90 + Math.random() * 70),
-            y: Math.sin((i / 14) * Math.PI * 2) * (70 + Math.random() * 60),
-          }}
-          transition={{ duration: 0.9, ease: "easeOut" }}
-        />
-      ))}
+
+      {/* осколки стекла при раскусе */}
+      {cracking &&
+        Array.from({ length: 16 }).map((_, i) => (
+          <motion.span
+            key={i}
+            className="absolute size-1.5 rounded-[2px] bg-white/70"
+            initial={{ opacity: 1, x: 0, y: 0, rotate: 0 }}
+            animate={{
+              opacity: 0,
+              x: Math.cos((i / 16) * Math.PI * 2) * (90 + Math.random() * 80),
+              y: Math.sin((i / 16) * Math.PI * 2) * (70 + Math.random() * 70),
+              rotate: 180,
+            }}
+            transition={{ duration: 0.9, ease: "easeOut" }}
+          />
+        ))}
+
+      <motion.p
+        animate={{ opacity: [0.5, 1, 0.5] }}
+        transition={{ duration: 1.4, repeat: Infinity }}
+        className="mt-4 font-mono text-[10px] uppercase tracking-[0.28em] text-destructive"
+      >
+        {cracking ? "раскусила" : "гончая взяла капсулу"}
+      </motion.p>
     </div>
   );
 }
@@ -516,8 +584,14 @@ function RevealStage({
         transition={{ duration: 2.2, repeat: Infinity }}
         className="pointer-events-none absolute inset-0 -z-10 rounded-full bg-primary/25 blur-3xl"
       />
-      <img src={prizeImg} alt="" className="mx-auto h-28 object-contain drop-shadow-[0_0_30px_color-mix(in_oklab,var(--primary)_60%,transparent)]" />
-      <p className="mt-3 font-mono text-[10px] uppercase tracking-[0.28em] text-destructive">{prizeSub}</p>
+      <img
+        src={prizeImg}
+        alt=""
+        className="mx-auto h-24 object-contain drop-shadow-[0_0_30px_color-mix(in_oklab,var(--primary)_60%,transparent)]"
+      />
+      <p className="mt-3 font-mono text-[10px] uppercase tracking-[0.28em] text-destructive">
+        {prizeSub}
+      </p>
       <p className="font-display text-xl font-black uppercase tracking-tight">{prizeTitle}</p>
       <p className="mt-4 font-mono text-[10px] uppercase tracking-[0.24em] text-muted-foreground">
         забирает
@@ -545,7 +619,9 @@ function Podium({
       animate={{ opacity: 1, y: 0 }}
       className="relative z-10 w-full max-w-md px-6 text-center"
     >
-      <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-destructive">охота закрыта</p>
+      <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-destructive">
+        охота закрыта
+      </p>
       <div className="mt-4 space-y-2">
         {[...winners].reverse().map((w) => {
           const p = HUNT_PRIZES.find((x) => x.id === w.prizeId)!;
@@ -569,7 +645,7 @@ function Podium({
       <button
         type="button"
         onClick={onRestart}
-        className="mt-6 w-full rounded-2xl border border-border/60 bg-card/60 px-6 py-3.5 font-display text-base font-black uppercase tracking-wide backdrop-blur transition hover:bg-card active:scale-[0.98]"
+        className="mt-6 w-full rounded-2xl border border-border/60 bg-card/60 px-6 py-3.5 font-display text-base font-black uppercase tracking-wide backdrop-blur transition active:scale-[0.98]"
       >
         Прогнать ещё раз
       </button>
