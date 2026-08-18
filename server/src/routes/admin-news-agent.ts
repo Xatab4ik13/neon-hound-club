@@ -225,13 +225,23 @@ export async function adminNewsAgentRoutes(app: FastifyInstance) {
     const publishedAt =
       mode === "now" ? new Date() : mode === "queue" ? await nextSlot() : null;
 
+    // Картинку с чужого сайта перекладываем к себе: og:image часто отдаёт 403
+    // на хотлинк, и в ленте вместо фото пустое место.
+    const srcImageUrl = image ?? cand.srcImage ?? null;
+    const imageUrl = srcImageUrl
+      ? isOurS3Url(srcImageUrl)
+        ? srcImageUrl
+        : ((await mirrorRemoteImage(srcImageUrl, "post", "news")) ?? srcImageUrl)
+      : null;
+
     const [post] = await db
       .insert(newsPosts)
       .values({
         title,
         text,
         category,
-        imageUrl: image ?? cand.srcImage ?? null,
+        imageUrl,
+
         published: mode === "now",
         queued: mode === "queue",
         publishedAt,
