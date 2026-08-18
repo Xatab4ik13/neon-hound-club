@@ -85,8 +85,8 @@ type Speed = (typeof SPEEDS)[number];
 
 type Phase = "intro" | "arming" | "drift" | "pull" | "crack" | "reveal" | "podium";
 
-const CHIP_SCALE = 0.5;
-const CHIP_W = 152 * CHIP_SCALE;
+const CHIP_SCALE = 0.62;
+const CHIP_W = 132 * CHIP_SCALE;
 const CHIP_GAP = 16;
 const STEP = CHIP_W + CHIP_GAP;
 
@@ -509,7 +509,7 @@ function ReelStage({
         transition={{ duration: 1.6, repeat: Infinity }}
         className="mt-2 text-center font-mono text-[10px] uppercase tracking-[0.28em] text-muted-foreground"
       >
-        {armed ? "выходит на удар" : `выбивает капсулы · осталось ${alive}`}
+        {armed ? "выходит на удар" : `выбивает участников · осталось ${alive}`}
       </motion.p>
     </div>
   );
@@ -554,7 +554,7 @@ function PullStage({ entry, cracking }: { entry: HuntEntry; cracking: boolean })
         transition={{ duration: 1.4, repeat: Infinity }}
         className="mt-4 font-mono text-[10px] uppercase tracking-[0.28em] text-destructive"
       >
-        {cracking ? "раскусила" : "гончая взяла капсулу"}
+        {cracking ? "есть победитель" : "выбит последний"}
       </motion.p>
     </div>
   );
