@@ -14,6 +14,7 @@ import {
   PlumpChat,
   PlumpInstructorChat,
   PlumpGarage,
+  PlumpSpin,
 } from "@/components/ui/icons";
 import type { SVGProps, ComponentType } from "react";
 import { Drawer } from "vaul";
@@ -44,6 +45,12 @@ function buildGroups(
         { label: "Hell Pass", href: "/club/hell-pass", icon: PlumpDiamond, subtitle: "Подписка клуба" },
         { label: "Гараж", href: "/club/garage", icon: PlumpGarage, subtitle: "Твой мото" },
         { label: "Розыгрыши", href: "/club/raffles", icon: PlumpGift },
+        {
+          label: "HOUND HUNT",
+          href: "/club/hound-hunt",
+          icon: PlumpSpin,
+          subtitle: "Шоу-розыгрыш · только в приложении",
+        },
         { label: "Hell AI", href: "/club/hell-ai", icon: PlumpAI, subtitle: "AI-механик по твоему мото" },
         ...(isInstructor
           ? []
