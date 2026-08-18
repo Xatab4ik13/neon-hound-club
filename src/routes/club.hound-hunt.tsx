@@ -448,38 +448,22 @@ function IntroPanel({ onStart }: { onStart: () => void }) {
 }
 
 function ReelStage({
-  prizeTitle,
-  prizeSub,
-  prizeImg,
   reel,
   focusIdx,
   killed,
-  kicking,
   controls,
   armed,
 }: {
-  prizeTitle: string;
-  prizeSub: string;
-  prizeImg: string;
   reel: HuntEntry[];
   focusIdx: number;
   killed: number[];
-  kicking: boolean;
   controls: ReturnType<typeof useAnimationControls>;
   armed: boolean;
 }) {
   const alive = reel.length - killed.length;
   return (
     <div className="relative z-30 -mt-[26svh] w-full">
-      <div className="mb-3 flex items-center justify-center gap-3">
-        <img src={prizeImg} alt="" className="size-10 rounded-lg object-contain" />
-        <div className="text-left">
-          <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-destructive">
-            {prizeSub}
-          </p>
-          <p className="font-display text-base font-black uppercase tracking-tight">{prizeTitle}</p>
-        </div>
-      </div>
+
 
       <div className="relative overflow-hidden py-2">
         {/* зона удара — нейтральная тонкая метка по центру */}
