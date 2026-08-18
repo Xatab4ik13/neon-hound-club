@@ -29,12 +29,17 @@ async function sendOnce(userId: string, kind: string, refKey: string, payload: P
 
 /** Пуш всем о новой новости в ленте. */
 export async function pushNewsPublished(post: { id: string; title: string }): Promise<void> {
-  await pushToAll({
-    title: "Новость в ленте",
-    body: post.title,
-    url: "/club",
-    tag: `news-${post.id}`,
-  });
+  try {
+    const res = await pushToAll({
+      title: "Новость в ленте",
+      body: post.title,
+      url: "/club",
+      tag: `news-${post.id}`,
+    });
+    console.log(`[push:news] post=${post.id} sent=${res.sent}/${res.total} title=${post.title}`);
+  } catch (e) {
+    console.error(`[push:news] post=${post.id} failed`, e);
+  }
 }
 
 /**
