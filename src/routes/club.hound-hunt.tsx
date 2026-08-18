@@ -221,18 +221,15 @@ export function HoundHuntPage() {
       finishRef.current = finish;
 
       // Две НЕЗАВИСИМЫЕ анимации:
-      //  1) лента капсул — бесконечный линейный цикл (одни и те же капсулы),
+      //  1) очередь аватарок — стоит на месте, но каждый удар выбивает
+      //     головное звено, и очередь ВИДИМО подтягивается на его место,
       //  2) персонаж — клип удара крутится сам, без перезапусков.
       // Пересекаются только в момент импакта (колбэк из 3D-сцены).
       later(() => {
         setPhase("drift");
-        const loopMs = reelNow.length * BASE.capsule;
         strip.set({ x: 0 });
-        strip.start({
-          x: -(reelNow.length * STEP),
-          transition: { duration: loopMs / 1000, ease: "linear", repeat: Infinity },
-        });
       }, dur(BASE.arming));
+
     },
     [buildReel, dur, later, pickWinner, strip],
   );
