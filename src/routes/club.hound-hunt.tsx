@@ -187,20 +187,13 @@ export function HoundHuntPage() {
       haptic("light");
 
       const finish = () => {
-        // последняя капсула — победитель: тянется к персонажу и раскрывается
+        // последняя капсула — победитель: подъезжает к персонажу и раскрывается
         setPhase("pull");
         setCurrent(winner);
         haptic("selection");
 
         later(() => {
           setPhase("crack");
-          haptic("warning");
-          setFlash((f) => f + 1);
-          shake.start({
-            x: [0, -12, 10, -6, 4, 0],
-            y: [0, 7, -5, 3, -2, 0],
-            transition: { duration: 0.55 },
-          });
 
           later(() => {
             setPhase("reveal");
@@ -221,42 +214,39 @@ export function HoundHuntPage() {
         }, dur(BASE.pull));
       };
 
-      /** Цикл: капсула под центром → удар ногой → она исчезает → подъезжает следующая. */
-      const step = (i: number) => {
-        setFocusIdx(i);
-        if (i >= reelNow.length - 1) {
-          later(finish, dur(BASE.kick));
-          return;
-        }
-        const kickMs = dur(BASE.kick);
-        // замах: анимация удара стартует заранее, капсула вылетает ровно в момент касания
-        const windup = Math.min(520, kickMs * 0.3);
-        later(() => {
-          setKicking(true);
-          later(() => {
-            // касание ноги: капсула выбивается синхронно с ударом
-            haptic("warning");
-            shake.start({
-              x: [0, -6, 5, -2, 0],
-              y: [0, 3, -2, 1, 0],
-              transition: { duration: 0.34 },
-            });
-            setKilled((k) => [...k, i]);
-            setKicking(false);
-            // следующая капсула подъезжает под центр
-            strip.start({
-              x: -((i + 1) * STEP),
-              transition: { duration: dur(BASE.glide) / 1000, ease: [0.32, 0, 0.2, 1] },
-            });
-            later(() => step(i + 1), kickMs * 0.4);
-          }, windup);
-        }, kickMs * 0.5 - windup > 0 ? kickMs * 0.5 - windup : 0);
-      };
-
       later(() => {
         setPhase("drift");
-        step(0);
+
+        const kickMs = dur(BASE.kick);
+        const last = reelNow.length - 1;
+        // Капсулы летят непрерывно с постоянной скоростью: одна капсула
+        // проходит через центр ровно раз в kickMs.
+        strip.start({
+          x: -(last * STEP),
+          transition: { duration: (kickMs * last) / 1000, ease: "linear" },
+        });
+
+        // На каждый такт: замах (за 600 мс до касания) → удар → капсула вылетает.
+        const windup = Math.min(600, kickMs * 0.35);
+        for (let i = 0; i < last; i++) {
+          const hitAt = kickMs * (i + 1);
+          later(() => {
+            setFocusIdx(i);
+            setKicking(true);
+          }, hitAt - windup);
+          later(() => {
+            setKilled((k) => [...k, i]);
+            setKicking(false);
+            haptic("light");
+          }, hitAt);
+        }
+
+        later(() => {
+          setFocusIdx(last);
+          finish();
+        }, kickMs * last + kickMs * 0.5);
       }, dur(BASE.arming));
+
     },
     [buildReel, dur, later, pickWinner, shake, strip],
   );
