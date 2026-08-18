@@ -508,20 +508,17 @@ function ReelStage({
             ))}
           </AnimatePresence>
         </motion.div>
+
+        {/* выбитые аватарки — дорожка без overflow, полёт ничем не обрезается */}
+        <AnimatePresence>
+          {ghosts.map((g) => (
+            <motion.div key={g.key} exit={{ opacity: 0 }}>
+              <KickedAvatar entry={g.entry} seed={g.key} scale={CHIP_SCALE} width={CHIP_W} />
+            </motion.div>
+          ))}
+        </AnimatePresence>
       </div>
 
-      {/* выбитые аватарки — летят ВНЕ дорожки, ничем не обрезаются */}
-      <div className="pointer-events-none absolute -inset-x-[60vw] -top-[70svh] bottom-[-70svh] z-40">
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-          <AnimatePresence>
-            {ghosts.map((g) => (
-              <motion.div key={g.key} exit={{ opacity: 0 }}>
-                <KickedAvatar entry={g.entry} seed={g.key} scale={CHIP_SCALE} width={CHIP_W} />
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        </div>
-      </div>
 
       <motion.p
         animate={{ opacity: armed ? [0.4, 1, 0.4] : 1 }}
