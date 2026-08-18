@@ -40,7 +40,7 @@ try {
   // ─── AI-агент новостной ленты ─────────────────────────────────────
   // hot-поток раз в 15 мин, normal раз в 2 часа. Каждый прогон сам проверяет
   // enabled/paused и берёт single-flight lease, так что двойного запуска нет.
-  const { runAgent, pruneCandidates } = await import("./lib/news-agent/run.js");
+  const { runAgent, pruneCandidates, expireStaleDrafts } = await import("./lib/news-agent/run.js");
   const { flushQueue } = await import("./lib/news-agent/queue.js");
 
   const runNews = async (stream: "hot" | "normal") => {
@@ -83,6 +83,16 @@ try {
 
   // Чистка старых кандидатов раз в сутки.
   setInterval(() => void pruneCandidates().catch(() => {}), 24 * 60 * 60 * 1000).unref();
+
+  // Предложения агента живут 12 часов: неиспользованные удаляем.
+  setInterval(async () => {
+    try {
+      const n = await expireStaleDrafts();
+      if (n > 0) app.log.info({ expired: n }, "news drafts expired");
+    } catch (e) {
+      app.log.error({ err: e }, "expireStaleDrafts failed");
+    }
+  }, 15 * 60 * 1000).unref();
 } catch (err) {
   app.log.error(err);
   process.exit(1);
