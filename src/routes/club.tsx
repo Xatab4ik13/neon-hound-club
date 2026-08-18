@@ -183,6 +183,9 @@ function ClubLayout() {
   // Иммерсивные экраны чатов — прячем нижний таб-бар и убираем нижний
   // отступ, чтобы окно чата было закреплено во всю доступную высоту
   // (как в iOS-мессенджерах). Верхний бар оставляем — там кнопка "назад".
+  // HOUND HUNT — иммерсивное шоу: верхнего бара нет, остаётся только нижнее меню.
+  const isImmersiveShow = pathname === "/club/hound-hunt";
+
   const isChatRoute =
     pathname === "/club/vip-chat" ||
     /^\/club\/my-instructors\/[^/]+$/.test(pathname) ||
@@ -192,7 +195,7 @@ function ClubLayout() {
   if (isMobile) {
     return (
       <div data-club className="min-h-screen bg-background text-foreground">
-        {!isChatRoute && <MobileTopBar />}
+        {!isChatRoute && !isImmersiveShow && <MobileTopBar />}
         <main
           className="relative"
           style={{
