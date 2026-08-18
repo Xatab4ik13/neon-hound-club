@@ -477,25 +477,24 @@ function IntroPanel({ onStart }: { onStart: () => void }) {
 }
 
 function ReelStage({
-  reel,
+  slots,
   ghosts,
-  kicks,
-  controls,
+  x,
   armed,
 }: {
-  reel: HuntEntry[];
+  slots: { sid: number; entry: HuntEntry }[];
   ghosts: { key: string; entry: HuntEntry }[];
-  kicks: number;
-  controls: ReturnType<typeof useAnimationControls>;
+  x: MotionValue<number>;
   armed: boolean;
 }) {
-  // Очередь = ещё не выбитые звенья. Головное (index 0) стоит по центру, под
-  // ногой персонажа. После удара его убираем — остальные ВИДИМО подтягиваются
-  // влево на освободившееся место (layout-анимация), очередь укорачивается.
-  const alive = reel.map((entry, idx) => ({ entry, idx })).filter((s) => s.idx >= kicks);
+  // Барабан крутится непрерывно: лента едет влево, поэтому копий списка нужно
+  // столько, чтобы кадр никогда не оставался пустым. Выбитое звено исчезает из
+  // всех копий, и остальные подтягиваются — место ВИДИМО освобождается.
+  const copies = Math.max(3, Math.ceil(60 / Math.max(1, slots.length)));
+  const row = Array.from({ length: copies }, (_, c) => c);
   return (
     <div className="relative z-30 -mt-[26svh] w-full">
-      {/* дорожка: 3D-перспектива, поэтому очередь уходит вглубь кадра */}
+      {/* дорожка: 3D-перспектива, лента едет под углом к камере */}
       <div
         className="relative py-2"
         style={{ perspective: "900px", perspectiveOrigin: "50% 50%" }}
@@ -506,36 +505,36 @@ function ReelStage({
         <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-20 bg-gradient-to-l from-background to-transparent" />
 
         <motion.div
-          animate={controls}
           className="flex items-center gap-4"
           style={{
+            x,
             paddingLeft: `calc(50% - ${CHIP_W / 2}px)`,
             transformStyle: "preserve-3d",
-            transform: "rotateX(6deg) rotateY(-16deg)",
+            rotateX: 6,
+            rotateY: -14,
             willChange: "transform",
           }}
         >
           <AnimatePresence initial={false} mode="popLayout">
-            {alive.map((s, i) => (
-              <motion.div
-                key={`slot-${s.idx}`}
-                layout
-                className="shrink-0"
-                style={{ transformStyle: "preserve-3d" }}
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{
-                  opacity: i === 0 ? 1 : Math.max(0.25, 1 - i * 0.13),
-                  scale: i === 0 ? 1 : Math.max(0.7, 1 - i * 0.06),
-                  z: -i * 46,
-                }}
-                exit={{ opacity: 0, scale: 0.6 }}
-                transition={{ type: "spring", stiffness: 260, damping: 26 }}
-              >
-                <HuntAvatar entry={s.entry} focused={i === 0} scale={CHIP_SCALE} />
-              </motion.div>
-            ))}
+            {row.flatMap((c) =>
+              slots.map((s) => (
+                <motion.div
+                  key={`slot-${c}-${s.sid}`}
+                  layout
+                  className="shrink-0"
+                  style={{ transformStyle: "preserve-3d" }}
+                  initial={{ opacity: 0, scale: 0.85 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.6 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 28 }}
+                >
+                  <HuntAvatar entry={s.entry} scale={CHIP_SCALE} />
+                </motion.div>
+              )),
+            )}
           </AnimatePresence>
         </motion.div>
+
 
         {/* выбитые аватарки — дорожка без overflow, полёт ничем не обрезается */}
         <AnimatePresence>
