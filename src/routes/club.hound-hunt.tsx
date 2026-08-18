@@ -330,7 +330,7 @@ export function HoundHuntPage() {
       <SmokeLayers />
       <div className="pointer-events-none absolute inset-0 shadow-[inset_0_0_220px_60px_var(--background)]" />
 
-      <div className="relative flex min-h-[100svh] flex-col">
+      <div className="relative flex min-h-[100svh] flex-col pt-[max(0.5rem,env(safe-area-inset-top))]">
         {/* арена */}
         <div className="relative flex min-h-0 flex-1 flex-col items-center justify-center">
           {/* персонаж — виден целиком */}
@@ -423,8 +423,8 @@ function IntroPanel({ onStart }: { onStart: () => void }) {
         охота начинается
       </p>
       <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-        Три приза. Капсулы плывут мимо, и каждые пару секунд по одной прилетает удар — капсула
-        выбивается. Остаётся последняя: чья аватарка внутри, тот забирает приз.
+        Три приза. Капсулы летят мимо, и раз в три секунды персонаж замахивается и выбивает одну
+        из них. Остаётся последняя: чья аватарка внутри, тот забирает приз.
       </p>
 
       <button
