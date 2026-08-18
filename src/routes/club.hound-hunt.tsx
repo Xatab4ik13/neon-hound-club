@@ -311,16 +311,16 @@ export function HoundHuntPage() {
     }
   };
 
-  const dogMode: DogMode =
-    phase === "drift" || phase === "arming"
+  const dogMode: DogMode = kicking
+    ? "lunge"
+    : phase === "drift" || phase === "arming" || phase === "pull"
       ? "watch"
-      : phase === "pull"
-        ? "watch"
-        : phase === "crack"
-          ? "lunge"
-          : phase === "reveal"
-            ? "chew"
-            : "idle";
+      : phase === "crack"
+        ? "lunge"
+        : phase === "reveal"
+          ? "chew"
+          : "idle";
+
 
   const intensity =
     phase === "crack" ? 1 : phase === "reveal" ? 0.7 : phase === "drift" ? 0.45 : 0.26;
