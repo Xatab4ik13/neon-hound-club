@@ -274,6 +274,24 @@ function CandidateCard({ cand, onDone }: { cand: NewsCandidateItem; onDone: () =
   const [category, setCategory] = useState(active?.category ?? "");
   const [image, setImage] = useState(cand.image ?? "");
   const [dirty, setDirty] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const pickFile = async (file: File | null | undefined) => {
+    if (!file) return;
+    setUploading(true);
+    try {
+      const url = await uploadFileToS3(file, "post", "news");
+      setImage(url);
+      toast.success("Картинка загружена");
+    } catch (e) {
+      toast.error(apiErr(e, "Не получилось загрузить картинку"));
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  };
+
 
   const selectVariant = (i: number) => {
     setPick(i);
