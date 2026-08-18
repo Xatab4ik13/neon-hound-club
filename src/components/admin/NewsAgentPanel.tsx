@@ -23,7 +23,7 @@ import {
   patchNewsAgentState,
   runNewsAgent,
   approveNewsCandidate,
-  rejectNewsCandidate,
+  deleteNewsCandidate,
   rewriteNewsCandidate,
   type NewsCandidateItem,
   type NewsAgentVariant,
@@ -56,6 +56,7 @@ type CandStatus = "drafted" | "new" | "rejected" | "failed";
 export function NewsAgentPanel() {
   const qc = useQueryClient();
   const [status, setStatus] = useState<CandStatus>("drafted");
+  const [category, setCategory] = useState("all");
 
   const stateQ = useQuery({
     queryKey: [...adminNewsAgentQk, "state"],
@@ -63,8 +64,8 @@ export function NewsAgentPanel() {
     refetchInterval: 30_000,
   });
   const candQ = useQuery({
-    queryKey: [...adminNewsAgentQk, "candidates", status],
-    queryFn: () => fetchNewsCandidates(status),
+    queryKey: [...adminNewsAgentQk, "candidates", status, category],
+    queryFn: () => fetchNewsCandidates(status, category),
   });
 
   const refetch = () => {
@@ -196,7 +197,10 @@ export function NewsAgentPanel() {
             <button
               key={s}
               type="button"
-              onClick={() => setStatus(s)}
+              onClick={() => {
+                setStatus(s);
+                setCategory("all");
+              }}
               className={`shrink-0 rounded-md px-3 py-1.5 text-xs font-medium transition ${
                 status === s
                   ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
@@ -207,6 +211,28 @@ export function NewsAgentPanel() {
             </button>
           ))}
         </div>
+
+        {(candQ.data?.categories?.length ?? 0) > 0 && (
+          <div className="flex items-center gap-2 overflow-x-auto border-b border-zinc-200 px-3 py-2 dark:border-zinc-800">
+            <span className="shrink-0 text-[11px] uppercase tracking-wide text-zinc-400">
+              Категория
+            </span>
+            {[{ name: "all", count: 0 }, ...(candQ.data?.categories ?? [])].map((c) => (
+              <button
+                key={c.name}
+                type="button"
+                onClick={() => setCategory(c.name)}
+                className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium transition ${
+                  category === c.name
+                    ? "bg-primary text-white"
+                    : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300"
+                }`}
+              >
+                {c.name === "all" ? "Все" : `${c.name} · ${c.count}`}
+              </button>
+            ))}
+          </div>
+        )}
 
         {candQ.isLoading ? (
           <div className="flex items-center justify-center p-12 text-zinc-500">
@@ -327,12 +353,13 @@ function CandidateCard({ cand, onDone }: { cand: NewsCandidateItem; onDone: () =
   });
 
   const rejectMut = useMutation({
-    mutationFn: () => rejectNewsCandidate(cand.id, "не подходит"),
+    // «Удалить» — реальное удаление: предложение и варианты текста пропадают.
+    mutationFn: () => deleteNewsCandidate(cand.id),
     onSuccess: () => {
-      toast.success("Мимо");
+      toast.success("Удалено");
       onDone();
     },
-    onError: (e) => toast.error(apiErr(e, "Не получилось отклонить")),
+    onError: (e) => toast.error(apiErr(e, "Не получилось удалить")),
   });
 
   const rewriteMut = useMutation({
@@ -491,7 +518,7 @@ function CandidateCard({ cand, onDone }: { cand: NewsCandidateItem; onDone: () =
               disabled={busy}
               className="ml-auto rounded-md px-3 py-1.5 text-xs font-medium text-zinc-500 hover:bg-rose-50 hover:text-rose-600 disabled:opacity-50 dark:hover:bg-rose-950/40"
             >
-              Мимо
+              Удалить
             </button>
           </div>
         </div>

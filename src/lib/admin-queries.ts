@@ -1174,10 +1174,23 @@ export function runNewsAgent(stream: "hot" | "normal") {
   );
 }
 
-export function fetchNewsCandidates(status: "drafted" | "new" | "rejected" | "failed" | "used" = "drafted") {
-  return apiFetch<{ items: NewsCandidateItem[] }>(
-    `/api/v1/admin/news-agent/candidates?status=${status}`,
-  );
+export function fetchNewsCandidates(
+  status: "drafted" | "new" | "rejected" | "failed" | "used" = "drafted",
+  category = "all",
+) {
+  const q = new URLSearchParams({ status });
+  if (category && category !== "all") q.set("category", category);
+  return apiFetch<{
+    items: NewsCandidateItem[];
+    categories: { name: string; count: number }[];
+  }>(`/api/v1/admin/news-agent/candidates?${q.toString()}`);
+}
+
+/** Удаляет предложение агента вместе с вариантами текста. */
+export function deleteNewsCandidate(id: string) {
+  return apiFetch<{ ok: true }>(`/api/v1/admin/news-agent/candidates/${id}`, {
+    method: "DELETE",
+  });
 }
 
 export function approveNewsCandidate(

@@ -161,16 +161,30 @@ export async function adminNewsAgentRoutes(app: FastifyInstance) {
     const q = z
       .object({
         status: z.enum(["drafted", "new", "rejected", "failed", "used"]).default("drafted"),
+        category: z.string().trim().max(60).optional(),
         limit: z.coerce.number().int().min(1).max(100).default(40),
       })
       .parse(req.query ?? {});
 
+    // Категория живёт в вариантах текста (их пишет модель), поэтому фильтруем
+    // через EXISTS, а не по колонке кандидата.
+    const catFilter =
+      q.category && q.category !== "all"
+        ? sql`exists (select 1 from ${newsVariants} v where v."candidate_id" = ${newsCandidates.id} and lower(v."category") = lower(${q.category}))`
+        : undefined;
+
+    // Сверху — самое актуальное: свежие прогоны, внутри прогона по score.
     const rows = await db
       .select()
       .from(newsCandidates)
-      .where(eq(newsCandidates.status, q.status))
-      .orderBy(desc(newsCandidates.isHot), desc(newsCandidates.score), desc(newsCandidates.createdAt))
+      .where(and(eq(newsCandidates.status, q.status), ...(catFilter ? [catFilter] : [])))
+      .orderBy(
+        desc(sql`coalesce(${newsCandidates.draftedAt}, ${newsCandidates.createdAt})`),
+        desc(newsCandidates.isHot),
+        desc(newsCandidates.score),
+      )
       .limit(q.limit);
+
 
     const ids = rows.map((r) => r.id);
     const variants = ids.length
@@ -181,7 +195,25 @@ export async function adminNewsAgentRoutes(app: FastifyInstance) {
           .orderBy(newsVariants.idx)
       : [];
 
+    // Список категорий для кнопок-фильтров — по всему текущему статусу,
+    // а не только по выбранной категории.
+    const catRows = await db
+      .select({ category: newsVariants.category, n: count() })
+      .from(newsVariants)
+      .innerJoin(newsCandidates, eq(newsCandidates.id, newsVariants.candidateId))
+      .where(and(eq(newsCandidates.status, q.status), sql`${newsVariants.category} <> ''`))
+      .groupBy(newsVariants.category);
+    const catMap = new Map<string, number>();
+    for (const r of catRows) {
+      // На кандидата 2 варианта с одной категорией — делим, чтобы счёт был по новостям.
+      catMap.set(r.category, Math.max(1, Math.round(Number(r.n) / 2)));
+    }
+
     return {
+      categories: [...catMap.entries()]
+        .map(([name, n]) => ({ name, count: n }))
+        .sort((a, b) => b.count - a.count),
+
       items: rows.map((c) => ({
         id: c.id,
         sourceName: c.sourceName,
@@ -270,7 +302,19 @@ export async function adminNewsAgentRoutes(app: FastifyInstance) {
     });
   });
 
+  // DELETE /candidates/:id — «удалить»: предложение больше не нужно.
+  app.delete<{ Params: { id: string } }>("/candidates/:id", async (req, reply) => {
+    const id = uuidSchema.safeParse(req.params.id);
+    if (!id.success) return reply.code(400).send({ error: "invalid_id" });
+    await db.transaction(async (tx) => {
+      await tx.delete(newsVariants).where(eq(newsVariants.candidateId, id.data));
+      await tx.delete(newsCandidates).where(eq(newsCandidates.id, id.data));
+    });
+    return { ok: true };
+  });
+
   // POST /candidates/:id/reject — «мимо». Причина логируется для настройки фильтра.
+
   app.post<{ Params: { id: string } }>("/candidates/:id/reject", async (req, reply) => {
     const id = uuidSchema.safeParse(req.params.id);
     if (!id.success) return reply.code(400).send({ error: "invalid_id" });
