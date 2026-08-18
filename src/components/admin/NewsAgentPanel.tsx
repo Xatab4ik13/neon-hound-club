@@ -429,9 +429,39 @@ function CandidateCard({ cand, onDone }: { cand: NewsCandidateItem; onDone: () =
                 onChange={(e) => setCategory(e.target.value)}
               />
             </Field>
-            <Field label="Картинка (URL)" hint="Подтянута из источника — можно заменить.">
-              <TextInput value={image} onChange={(e) => setImage(e.target.value)} />
+            <Field
+              label="Картинка"
+              hint="Подтянута из источника. При публикации копируется в наше хранилище — можно заменить своей."
+            >
+              <div className="space-y-2">
+                <TextInput value={image} onChange={(e) => setImage(e.target.value)} />
+                <div className="flex items-center gap-2">
+                  <input
+                    ref={fileRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    className="hidden"
+                    onChange={(e) => void pickFile(e.target.files?.[0])}
+                  />
+                  <Btn
+                    variant="ghost"
+                    onClick={() => fileRef.current?.click()}
+                    disabled={uploading}
+                  >
+                    {uploading ? (
+                      <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                    ) : null}
+                    Загрузить свою
+                  </Btn>
+                  {image && (
+                    <Btn variant="ghost" onClick={() => setImage("")} disabled={uploading}>
+                      Убрать
+                    </Btn>
+                  )}
+                </div>
+              </div>
             </Field>
+
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
