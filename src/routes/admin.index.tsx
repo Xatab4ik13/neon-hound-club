@@ -41,6 +41,12 @@ const KIND_RU: Record<string, string> = {
   virtual: "Виртуальный",
 };
 
+const PASS_TIER_RU: Record<string, string> = {
+  silver: "Silver",
+  gold: "Gold",
+  platinum: "Platinum",
+};
+
 function fmtRub(n: number): string {
   return `${n.toLocaleString("ru-RU")} ₽`;
 }
@@ -249,6 +255,22 @@ function Dashboard() {
               ["Себестоимость СДЭК", fmtRub(k.shippingCostRub)],
               ["Заработали на доставке", fmtRub(k.shippingMarginRub)],
               ["Заказов с доставкой", String(k.shippingOrders)],
+            ]}
+          />
+        </Panel>
+
+        <Panel>
+          <PanelHeader>Hell Pass: выручка за период</PanelHeader>
+          <Table
+            headers={["Тир", "Продано", "Сумма"]}
+            rows={[
+              ...(data.passByTier ?? []).map((t) => [
+                PASS_TIER_RU[t.tier] ?? t.tier,
+                String(t.cnt),
+                fmtRub(t.sum),
+              ]),
+              ["Итого", String(k.passSold), fmtRub(k.passRevenue)],
+              ["Активных сейчас", String(k.passActive), "—"],
             ]}
           />
         </Panel>

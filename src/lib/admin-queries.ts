@@ -760,6 +760,7 @@ export type AdminDashboard = {
     rafflesActive: number;
     rafflesBankTickets: number;
   };
+  passByTier: { tier: string; cnt: number; sum: number }[];
   products: AdminDashboardProduct[];
   monthly: { month: string; revenue: number }[];
   lastOrders: { id: string; status: string; totalRub: number; createdAt: string; nick: string }[];

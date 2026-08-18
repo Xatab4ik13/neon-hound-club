@@ -89,6 +89,24 @@ export async function adminDashboardRoutes(app: FastifyInstance) {
         ),
       );
 
+    // Разбивка Hell Pass по тирам за период
+    const passByTier = await db
+      .select({
+        tier: passPurchases.tier,
+        cnt: sql<number>`COUNT(*)::int`,
+        sum: sql<number>`COALESCE(SUM(${passPurchases.priceRub}), 0)::int`,
+      })
+      .from(passPurchases)
+      .where(
+        and(
+          inArray(passPurchases.status, ["active", "expired"]),
+          sql`${passPurchases.createdAt} >= ${from}::timestamptz`,
+          sql`${passPurchases.createdAt} <= ${to}::timestamptz`,
+        ),
+      )
+      .groupBy(passPurchases.tier)
+      .orderBy(sql`SUM(${passPurchases.priceRub}) DESC`);
+
     const [passActive] = await db
       .select({ c: sql<number>`COUNT(*)::int` })
       .from(passPurchases)
@@ -210,6 +228,7 @@ export async function adminDashboardRoutes(app: FastifyInstance) {
         rafflesActive: rafflesActive?.c ?? 0,
         rafflesBankTickets: rafflesBank?.bank ?? 0,
       },
+      passByTier,
       products: productRows,
       monthly,
       lastOrders,
