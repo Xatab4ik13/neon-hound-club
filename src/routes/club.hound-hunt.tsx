@@ -224,27 +224,30 @@ export function HoundHuntPage() {
           transition: { duration: (kickMs * (last + 1)) / 1000, ease: "linear" },
         });
 
-        // Бьёт не по каждой капсуле: часть пролетает мимо, между ударами пауза.
-        const windup = Math.min(600, kickMs * 0.35);
-        let cooldown = 0;
+        // Клип удара в GLB длится 1.67 с, играем его на timeScale = 1.
+        // Момент контакта ноги — примерно на 60% клипа.
+        const CLIP = 1670;
+        const windup = CLIP * 0.6;
+        // Между ударами всегда полная пауза: следующий замах стартует только
+        // после того как клип доиграл до конца.
+        const minGap = CLIP + 260;
+        let nextAllowed = 0;
         for (let i = 0; i < last; i++) {
-          if (cooldown > 0) {
-            cooldown -= 1;
-            continue;
-          }
-          // после удара пропускаем 1–2 капсулы — персонаж «отдыхает»
-          cooldown = 1 + Math.floor(Math.random() * 2);
           const hitAt = kickMs * (i + 1);
+          const startAt = hitAt - windup;
+          if (startAt < nextAllowed) continue; // капсула пролетает мимо
+          nextAllowed = startAt + minGap;
           later(() => {
             setFocusIdx(i);
             setKicking(true);
-          }, hitAt - windup);
+          }, startAt);
           later(() => {
             setKilled((k) => [...k, i]);
-            setKicking(false);
             haptic("light");
           }, hitAt);
+          later(() => setKicking(false), startAt + CLIP);
         }
+
 
 
         later(() => {
