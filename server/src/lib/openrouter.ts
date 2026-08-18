@@ -52,6 +52,7 @@ export async function chatCompletion(opts: {
   messages: ChatMessage[];
   temperature?: number;
   maxTokens?: number;
+  jsonMode?: boolean;
   signal?: AbortSignal;
 }): Promise<ChatCompletion> {
   const key = process.env.OPENROUTER_API_KEY;
@@ -60,6 +61,8 @@ export async function chatCompletion(opts: {
   // GPT-5 — reasoning-модель: не принимает кастомный temperature и съедает
   // весь max_tokens на внутренний reasoning, если не ограничить effort.
   const isReasoning = /^openai\/(gpt-5|o[1-9])/i.test(opts.model);
+  // Gemini 2.5 (кроме flash-lite) тоже думает и тратит на это токены ответа.
+  const isThinkingGemini = /^google\/gemini-2\.5-(pro|flash)(?!-lite)/i.test(opts.model);
 
   const body: Record<string, unknown> = {
     model: opts.model,
@@ -68,6 +71,7 @@ export async function chatCompletion(opts: {
     max_tokens: opts.maxTokens ?? (isReasoning ? 2000 : 800),
     stream: false,
   };
+  if (opts.jsonMode) body.response_format = { type: "json_object" };
   if (opts.model === "openrouter/auto") {
     body.models = [
       "google/gemini-2.5-flash",
@@ -81,6 +85,12 @@ export async function chatCompletion(opts: {
     // минимальный reasoning, чтобы не ждать по 10 сек и оставить токены под ответ.
     body.reasoning = { effort: "low" };
   }
+  if (isThinkingGemini) {
+    // ограничиваем «мышление», иначе весь max_tokens уходит в reasoning и
+    // content приходит пустой.
+    body.reasoning = { effort: "low" };
+  }
+
 
   const res = await aiFetch(ENDPOINT, {
     method: "POST",
