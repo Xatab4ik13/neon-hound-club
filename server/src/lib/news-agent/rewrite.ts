@@ -36,18 +36,33 @@ ${input.text.slice(0, 5000)}`;
 
 Без markdown-обёртки, без комментариев.`;
 
-  const { answer } = await chatCompletion({
-    model: opts.model,
-    messages: [
-      { role: "system", content: opts.prompt },
-      { role: "user", content: user },
-    ],
-    temperature: 0.7,
-    maxTokens: 2400,
-  });
+  // Два варианта текста — это много токенов. Тесный лимит = обрезанный JSON
+  // или пустой content у «думающих» моделей. Плюс один повтор при сбое.
+  let answer = "";
+  let lastErr: unknown = null;
+  for (const attempt of [0, 1]) {
+    try {
+      const res = await chatCompletion({
+        model: opts.model,
+        messages: [
+          { role: "system", content: opts.prompt },
+          { role: "user", content: user },
+        ],
+        temperature: attempt === 0 ? 0.7 : 0.4,
+        maxTokens: 8000,
+        jsonMode: true,
+      });
+      answer = res.answer;
+      if (answer.trim()) break;
+    } catch (err) {
+      lastErr = err;
+    }
+  }
+  if (!answer.trim()) throw lastErr ?? new Error("Пустой ответ от модели");
 
   const parsed = parseJsonLoose(answer) as Record<string, unknown> | null;
   const rawVariants = Array.isArray(parsed?.variants) ? (parsed!.variants as unknown[]) : [];
+
 
   const variants: RewriteResult["variants"] = [];
   for (const v of rawVariants) {
