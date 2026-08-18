@@ -1,7 +1,7 @@
 // Напоминания пушами: HellSpin (23:00 МСК), истечение Hell Pass, истечение капсулы ×2.
 // Дедуп через таблицу push_reminders (user_id + kind + ref_key).
 
-import { and, eq, gt, isNull, isNotNull, lt, sql } from "drizzle-orm";
+import { and, eq, gt, isNotNull, lt, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { pushSubscriptions } from "../db/schema/push.js";
 import { pushReminders } from "../db/schema/push-reminders.js";
@@ -172,6 +172,3 @@ export async function runReminderTick(): Promise<{ spins: number; pass: number; 
   if (minute === 5) out.pass = await remindPassExpiring();
   return out;
 }
-
-// Явный импорт, чтобы линтер не считал isNull/eq неиспользованными в будущем.
-void isNull;
