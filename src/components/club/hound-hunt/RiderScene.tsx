@@ -73,7 +73,7 @@ export default function RiderScene({ mode, lookAt = { x: 0, y: 0 }, className }:
     <div className={className}>
       <Canvas
         dpr={[1, 1.6]}
-        camera={{ position: [0, 1.25, 4.2], fov: 38 }}
+        camera={{ position: [0, 1.05, 6.4], fov: 34 }}
         gl={{ antialias: true, alpha: true }}
         style={{ background: "transparent" }}
       >
