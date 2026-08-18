@@ -215,46 +215,51 @@ export function HoundHuntPage() {
       later(() => {
         setPhase("drift");
 
-        const kickMs = dur(BASE.kick);
-        const last = reelNow.length - 1;
-        // Капсулы летят непрерывно с постоянной скоростью: одна капсула
-        // проходит через центр ровно раз в kickMs.
-        strip.start({
-          x: -(last * STEP),
-          transition: { duration: (kickMs * (last + 1)) / 1000, ease: "linear" },
-        });
-
-        // Клип удара в GLB длится 1.67 с, играем его на timeScale = 1.
-        // Момент контакта ноги — примерно на 60% клипа.
+        // Клип удара в GLB — 1.67 с на timeScale = 1, контакт ноги ≈ 60% клипа.
         const CLIP = 1670;
-        const windup = CLIP * 0.6;
-        // Между ударами всегда полная пауза: следующий замах стартует только
-        // после того как клип доиграл до конца.
-        const minGap = CLIP + 260;
-        let nextAllowed = 0;
-        for (let i = 0; i < last; i++) {
-          const hitAt = kickMs * (i + 1);
-          const startAt = hitAt - windup;
-          if (startAt < nextAllowed) continue; // капсула пролетает мимо
-          nextAllowed = startAt + minGap;
+        const IMPACT = CLIP * 0.6;
+        const REST = 900; // пауза после удара, персонаж возвращается в стойку
+        // Один цикл = один удар + пауза. Цикл никогда не короче клипа,
+        // поэтому анимация всегда доигрывает до конца.
+        const cycle = Math.max(CLIP + REST, dur(BASE.kick));
+        const last = reelNow.length - 1;
+
+        /**
+         * Цикл: лента плавно едет на одну капсулу за `cycle` мс и капсула i
+         * оказывается ровно в центре в момент контакта ноги.
+         */
+        const step = (i: number) => {
+          if (i > last) return;
+
+          strip.start({
+            x: -(i * STEP),
+            transition: { duration: cycle / 1000, ease: "linear" },
+          });
+
+          if (i === last) {
+            later(() => {
+              setFocusIdx(last);
+              finish();
+            }, cycle);
+            return;
+          }
+
+          const kickAt = cycle - IMPACT;
           later(() => {
             setFocusIdx(i);
             setKicking(true);
-          }, startAt);
+          }, kickAt);
           later(() => {
             setKilled((k) => [...k, i]);
             haptic("light");
-          }, hitAt);
-          later(() => setKicking(false), startAt + CLIP);
-        }
+          }, cycle);
+          later(() => setKicking(false), kickAt + CLIP);
+          later(() => step(i + 1), cycle);
+        };
 
-
-
-        later(() => {
-          setFocusIdx(last);
-          finish();
-        }, kickMs * (last + 1));
+        step(0);
       }, dur(BASE.arming));
+
 
     },
     [buildReel, dur, later, pickWinner, strip],
