@@ -1,6 +1,6 @@
 // Таб «Агент» на /admin/news: очередь предложений от AI-агента.
 // Агент только предлагает 2 варианта русского текста — решение и публикация за человеком.
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Loader2,
