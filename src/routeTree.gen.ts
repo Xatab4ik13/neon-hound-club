@@ -49,6 +49,7 @@ import { Route as ClubPromoRouteImport } from './routes/club.promo'
 import { Route as ClubMeRouteImport } from './routes/club.me'
 import { Route as ClubInviteRouteImport } from './routes/club.invite'
 import { Route as ClubInstallRouteImport } from './routes/club.install'
+import { Route as ClubHoundHuntRouteImport } from './routes/club.hound-hunt'
 import { Route as ClubHellAiRouteImport } from './routes/club.hell-ai'
 import { Route as ClubGarageRouteImport } from './routes/club.garage'
 import { Route as ClubCheckoutRouteImport } from './routes/club.checkout'
@@ -301,6 +302,11 @@ const ClubInviteRoute = ClubInviteRouteImport.update({
 const ClubInstallRoute = ClubInstallRouteImport.update({
   id: '/install',
   path: '/install',
+  getParentRoute: () => ClubRoute,
+} as any)
+const ClubHoundHuntRoute = ClubHoundHuntRouteImport.update({
+  id: '/hound-hunt',
+  path: '/hound-hunt',
   getParentRoute: () => ClubRoute,
 } as any)
 const ClubHellAiRoute = ClubHellAiRouteImport.update({
@@ -609,6 +615,7 @@ export interface FileRoutesByFullPath {
   '/club/checkout': typeof ClubCheckoutRoute
   '/club/garage': typeof ClubGarageRoute
   '/club/hell-ai': typeof ClubHellAiRoute
+  '/club/hound-hunt': typeof ClubHoundHuntRoute
   '/club/install': typeof ClubInstallRoute
   '/club/invite': typeof ClubInviteRoute
   '/club/me': typeof ClubMeRoute
@@ -701,6 +708,7 @@ export interface FileRoutesByTo {
   '/club/checkout': typeof ClubCheckoutRoute
   '/club/garage': typeof ClubGarageRoute
   '/club/hell-ai': typeof ClubHellAiRoute
+  '/club/hound-hunt': typeof ClubHoundHuntRoute
   '/club/install': typeof ClubInstallRoute
   '/club/invite': typeof ClubInviteRoute
   '/club/me': typeof ClubMeRoute
@@ -797,6 +805,7 @@ export interface FileRoutesById {
   '/club/checkout': typeof ClubCheckoutRoute
   '/club/garage': typeof ClubGarageRoute
   '/club/hell-ai': typeof ClubHellAiRoute
+  '/club/hound-hunt': typeof ClubHoundHuntRoute
   '/club/install': typeof ClubInstallRoute
   '/club/invite': typeof ClubInviteRoute
   '/club/me': typeof ClubMeRoute
@@ -894,6 +903,7 @@ export interface FileRouteTypes {
     | '/club/checkout'
     | '/club/garage'
     | '/club/hell-ai'
+    | '/club/hound-hunt'
     | '/club/install'
     | '/club/invite'
     | '/club/me'
@@ -986,6 +996,7 @@ export interface FileRouteTypes {
     | '/club/checkout'
     | '/club/garage'
     | '/club/hell-ai'
+    | '/club/hound-hunt'
     | '/club/install'
     | '/club/invite'
     | '/club/me'
@@ -1081,6 +1092,7 @@ export interface FileRouteTypes {
     | '/club/checkout'
     | '/club/garage'
     | '/club/hell-ai'
+    | '/club/hound-hunt'
     | '/club/install'
     | '/club/invite'
     | '/club/me'
@@ -1449,6 +1461,13 @@ declare module '@tanstack/react-router' {
       path: '/install'
       fullPath: '/club/install'
       preLoaderRoute: typeof ClubInstallRouteImport
+      parentRoute: typeof ClubRoute
+    }
+    '/club/hound-hunt': {
+      id: '/club/hound-hunt'
+      path: '/hound-hunt'
+      fullPath: '/club/hound-hunt'
+      preLoaderRoute: typeof ClubHoundHuntRouteImport
       parentRoute: typeof ClubRoute
     }
     '/club/hell-ai': {
@@ -1901,6 +1920,7 @@ interface ClubRouteChildren {
   ClubCheckoutRoute: typeof ClubCheckoutRoute
   ClubGarageRoute: typeof ClubGarageRoute
   ClubHellAiRoute: typeof ClubHellAiRoute
+  ClubHoundHuntRoute: typeof ClubHoundHuntRoute
   ClubInstallRoute: typeof ClubInstallRoute
   ClubInviteRoute: typeof ClubInviteRoute
   ClubMeRoute: typeof ClubMeRoute
@@ -1941,6 +1961,7 @@ const ClubRouteChildren: ClubRouteChildren = {
   ClubCheckoutRoute: ClubCheckoutRoute,
   ClubGarageRoute: ClubGarageRoute,
   ClubHellAiRoute: ClubHellAiRoute,
+  ClubHoundHuntRoute: ClubHoundHuntRoute,
   ClubInstallRoute: ClubInstallRoute,
   ClubInviteRoute: ClubInviteRoute,
   ClubMeRoute: ClubMeRoute,
