@@ -228,25 +228,28 @@ export function HoundHuntPage() {
           return;
         }
         const kickMs = dur(BASE.kick);
+        // замах: анимация удара стартует заранее, капсула вылетает ровно в момент касания
+        const windup = Math.min(520, kickMs * 0.3);
         later(() => {
-          // удар
           setKicking(true);
-          haptic("warning");
-          setFlash((f) => f + 1);
-          shake.start({
-            x: [0, -7, 6, -3, 0],
-            y: [0, 4, -3, 1, 0],
-            transition: { duration: 0.38 },
-          });
-          setKilled((k) => [...k, i]);
-          later(() => setKicking(false), Math.min(420, kickMs * 0.35));
-          // следующая капсула подъезжает под центр
-          strip.start({
-            x: -((i + 1) * STEP),
-            transition: { duration: dur(BASE.glide) / 1000, ease: [0.32, 0, 0.2, 1] },
-          });
-          later(() => step(i + 1), kickMs * 0.45);
-        }, kickMs * 0.55);
+          later(() => {
+            // касание ноги: капсула выбивается синхронно с ударом
+            haptic("warning");
+            shake.start({
+              x: [0, -6, 5, -2, 0],
+              y: [0, 3, -2, 1, 0],
+              transition: { duration: 0.34 },
+            });
+            setKilled((k) => [...k, i]);
+            setKicking(false);
+            // следующая капсула подъезжает под центр
+            strip.start({
+              x: -((i + 1) * STEP),
+              transition: { duration: dur(BASE.glide) / 1000, ease: [0.32, 0, 0.2, 1] },
+            });
+            later(() => step(i + 1), kickMs * 0.4);
+          }, windup);
+        }, kickMs * 0.5 - windup > 0 ? kickMs * 0.5 - windup : 0);
       };
 
       later(() => {
