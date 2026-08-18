@@ -331,7 +331,7 @@ export function HoundHuntPage() {
   );
 
   return (
-    <div className="relative min-h-[100svh] overflow-hidden bg-background text-foreground select-none">
+    <div className="fixed inset-0 z-40 overflow-hidden overscroll-none touch-pan-y bg-background text-foreground select-none">
       {/* фон: угли, дым, винетка */}
       <EmberField intensity={intensity} className="absolute inset-0 h-full w-full opacity-80" />
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_80%_at_50%_0%,color-mix(in_oklab,var(--destructive)_14%,transparent),transparent_60%)]" />
@@ -339,7 +339,7 @@ export function HoundHuntPage() {
       <SmokeLayers />
       <div className="pointer-events-none absolute inset-0 shadow-[inset_0_0_220px_60px_var(--background)]" />
 
-      <div className="relative flex min-h-[100svh] flex-col pt-[max(0.5rem,env(safe-area-inset-top))]">
+      <div className="relative flex h-full flex-col overflow-hidden pt-[max(0.5rem,env(safe-area-inset-top))]">
         {/* арена */}
         <div className="relative flex min-h-0 flex-1 flex-col items-center justify-center">
           {/* персонаж — виден целиком */}
@@ -354,17 +354,14 @@ export function HoundHuntPage() {
 
           {(phase === "arming" || phase === "drift") && (
             <ReelStage
-              prizeTitle={prize.title}
-              prizeSub={prize.sub}
-              prizeImg={prize.img}
               reel={reel}
               focusIdx={focusIdx}
               killed={killed}
-              kicking={kicking}
               controls={strip}
               armed={phase === "arming"}
             />
           )}
+
 
 
           {(phase === "pull" || phase === "crack") && current && (
@@ -448,38 +445,22 @@ function IntroPanel({ onStart }: { onStart: () => void }) {
 }
 
 function ReelStage({
-  prizeTitle,
-  prizeSub,
-  prizeImg,
   reel,
   focusIdx,
   killed,
-  kicking,
   controls,
   armed,
 }: {
-  prizeTitle: string;
-  prizeSub: string;
-  prizeImg: string;
   reel: HuntEntry[];
   focusIdx: number;
   killed: number[];
-  kicking: boolean;
   controls: ReturnType<typeof useAnimationControls>;
   armed: boolean;
 }) {
   const alive = reel.length - killed.length;
   return (
     <div className="relative z-30 -mt-[26svh] w-full">
-      <div className="mb-3 flex items-center justify-center gap-3">
-        <img src={prizeImg} alt="" className="size-10 rounded-lg object-contain" />
-        <div className="text-left">
-          <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-destructive">
-            {prizeSub}
-          </p>
-          <p className="font-display text-base font-black uppercase tracking-tight">{prizeTitle}</p>
-        </div>
-      </div>
+
 
       <div className="relative overflow-hidden py-2">
         {/* зона удара — нейтральная тонкая метка по центру */}
