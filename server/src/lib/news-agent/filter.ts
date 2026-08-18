@@ -128,6 +128,7 @@ ${list}`;
     ],
     temperature: 0.1,
     maxTokens: 2200,
+    jsonMode: true,
   });
 
   const parsed = parseJsonLoose(answer) as { items?: unknown[] } | unknown[] | null;
