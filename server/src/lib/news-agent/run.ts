@@ -98,7 +98,12 @@ export async function runAgent(stream: Stream, opts?: { force?: boolean }): Prom
   const notes: string[] = [];
 
   try {
+    // ─── 0. Чистим просроченные предложения (>12 ч) ───────────────────
+    const expired = await expireStaleDrafts().catch(() => 0);
+    if (expired > 0) notes.push(`просрочено удалено: ${expired}`);
+
     // ─── 1. Забираем фиды ────────────────────────────────────────────
+
     const sources = await db
       .select()
       .from(newsSources)
