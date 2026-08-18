@@ -494,6 +494,8 @@ function ReelStage({
   prizeImg,
   reel,
   focusIdx,
+  killed,
+  kicking,
   controls,
   armed,
 }: {
@@ -502,9 +504,12 @@ function ReelStage({
   prizeImg: string;
   reel: HuntEntry[];
   focusIdx: number;
+  killed: number[];
+  kicking: boolean;
   controls: ReturnType<typeof useAnimationControls>;
   armed: boolean;
 }) {
+  const alive = reel.length - killed.length;
   return (
     <div className="relative z-10 w-full">
       <div className="mb-3 flex items-center justify-center gap-3">
@@ -518,8 +523,12 @@ function ReelStage({
       </div>
 
       <div className="relative overflow-hidden py-2">
-        {/* след носа — вертикальный луч по центру */}
-        <div className="pointer-events-none absolute left-1/2 top-0 z-20 h-full w-[2px] -translate-x-1/2 bg-gradient-to-b from-transparent via-destructive to-transparent shadow-[0_0_20px_4px_color-mix(in_oklab,var(--destructive)_60%,transparent)]" />
+        {/* зона удара — вертикальный луч по центру */}
+        <motion.div
+          animate={{ opacity: kicking ? [1, 0.3, 1] : 0.7, scaleX: kicking ? [1, 3, 1] : 1 }}
+          transition={{ duration: 0.35 }}
+          className="pointer-events-none absolute left-1/2 top-0 z-20 h-full w-[2px] -translate-x-1/2 bg-gradient-to-b from-transparent via-destructive to-transparent shadow-[0_0_20px_4px_color-mix(in_oklab,var(--destructive)_60%,transparent)]"
+        />
         <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-20 bg-gradient-to-r from-background to-transparent" />
         <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-20 bg-gradient-to-l from-background to-transparent" />
 
@@ -528,9 +537,23 @@ function ReelStage({
           className="flex items-center gap-4"
           style={{ paddingLeft: `calc(50% - ${(152 * 0.62) / 2}px)`, willChange: "transform" }}
         >
-          {reel.map((e, i) => (
-            <CapsuleChip key={`${e.id}-${i}`} entry={e} focused={i === focusIdx} />
-          ))}
+          {reel.map((e, i) => {
+            const dead = killed.includes(i);
+            return (
+              <motion.div
+                key={`${e.id}-${i}`}
+                className="shrink-0"
+                animate={
+                  dead
+                    ? { opacity: 0, scale: 0.35, y: -150, rotate: 80, filter: "blur(6px)" }
+                    : { opacity: 1, scale: 1, y: 0, rotate: 0, filter: "blur(0px)" }
+                }
+                transition={{ duration: dead ? 0.55 : 0.25, ease: "easeOut" }}
+              >
+                <CapsuleChip entry={e} focused={i === focusIdx && !dead} />
+              </motion.div>
+            );
+          })}
         </motion.div>
       </div>
 
@@ -539,11 +562,12 @@ function ReelStage({
         transition={{ duration: 1.6, repeat: Infinity }}
         className="mt-2 text-center font-mono text-[10px] uppercase tracking-[0.28em] text-muted-foreground"
       >
-        {armed ? "гончая принюхивается" : "капсулы плывут мимо носа"}
+        {armed ? "выходит на удар" : `выбивает капсулы · осталось ${alive}`}
       </motion.p>
     </div>
   );
 }
+
 
 /** Гончая вытягивает выбранную капсулу к пасти, потом раскусывает. */
 function PullStage({ entry, cracking }: { entry: HuntEntry; cracking: boolean }) {
