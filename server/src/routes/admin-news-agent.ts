@@ -195,7 +195,25 @@ export async function adminNewsAgentRoutes(app: FastifyInstance) {
           .orderBy(newsVariants.idx)
       : [];
 
+    // Список категорий для кнопок-фильтров — по всему текущему статусу,
+    // а не только по выбранной категории.
+    const catRows = await db
+      .select({ category: newsVariants.category, n: count() })
+      .from(newsVariants)
+      .innerJoin(newsCandidates, eq(newsCandidates.id, newsVariants.candidateId))
+      .where(and(eq(newsCandidates.status, q.status), sql`${newsVariants.category} <> ''`))
+      .groupBy(newsVariants.category);
+    const catMap = new Map<string, number>();
+    for (const r of catRows) {
+      // На кандидата 2 варианта с одной категорией — делим, чтобы счёт был по новостям.
+      catMap.set(r.category, Math.max(1, Math.round(Number(r.n) / 2)));
+    }
+
     return {
+      categories: [...catMap.entries()]
+        .map(([name, n]) => ({ name, count: n }))
+        .sort((a, b) => b.count - a.count),
+
       items: rows.map((c) => ({
         id: c.id,
         sourceName: c.sourceName,
