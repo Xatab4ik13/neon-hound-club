@@ -274,7 +274,7 @@ export function HoundHuntPage() {
       setPhase("pull");
       later(() => {
         setPhase("crack");
-        setFlash((f) => f + 1);
+        
         later(() => {
           setPhase("reveal");
           setWinners((w) => [...w, { prizeId: HUNT_PRIZES[caseIdx].id, entry: winner }]);
