@@ -182,7 +182,7 @@ export function HoundHuntPage() {
       setKilled([]);
       setKicking(false);
       setReel(reelNow);
-      strip.set({ x: 0 });
+      strip.set({ x: STEP });
       setPhase("arming");
       haptic("light");
 
@@ -223,7 +223,7 @@ export function HoundHuntPage() {
         // проходит через центр ровно раз в kickMs.
         strip.start({
           x: -(last * STEP),
-          transition: { duration: (kickMs * last) / 1000, ease: "linear" },
+          transition: { duration: (kickMs * (last + 1)) / 1000, ease: "linear" },
         });
 
         // На каждый такт: замах (за 600 мс до касания) → удар → капсула вылетает.
@@ -244,7 +244,7 @@ export function HoundHuntPage() {
         later(() => {
           setFocusIdx(last);
           finish();
-        }, kickMs * last + kickMs * 0.5);
+        }, kickMs * (last + 1));
       }, dur(BASE.arming));
 
     },
