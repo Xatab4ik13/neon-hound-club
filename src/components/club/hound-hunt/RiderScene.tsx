@@ -9,10 +9,10 @@ import { useAnimations, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import riderAsset from "@/assets/rider.glb.asset.json";
 
-export type SceneSceneRiderMode = "idle" | "watch" | "lunge" | "chew";
+export type RiderMode = "idle" | "watch" | "lunge" | "chew";
 
 type Props = {
-  mode: SceneSceneRiderMode;
+  mode: RiderMode;
   /** Куда смотрит: -1..1 по обеим осям. */
   lookAt?: { x: number; y: number };
   className?: string;
@@ -20,7 +20,7 @@ type Props = {
 
 const MODEL_URL = riderAsset.url;
 
-function Model({ mode, lookAt }: { mode: SceneSceneRiderMode; lookAt: { x: number; y: number } }) {
+function Model({ mode, lookAt }: { mode: RiderMode; lookAt: { x: number; y: number } }) {
   const group = useRef<THREE.Group>(null);
   const { scene, animations } = useGLTF(MODEL_URL);
   const cloned = useMemo(() => scene, [scene]);
