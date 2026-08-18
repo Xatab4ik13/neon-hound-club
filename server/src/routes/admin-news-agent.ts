@@ -257,6 +257,12 @@ export async function adminNewsAgentRoutes(app: FastifyInstance) {
       .set({ status: "used" })
       .where(eq(newsCandidates.id, cand.id));
 
+    if (post.published) {
+      void import("../lib/push-reminders.js").then(({ pushNewsPublished }) =>
+        pushNewsPublished({ id: post.id, title: post.title }),
+      );
+    }
+
     return reply.code(201).send({
       postId: post.id,
       mode,
