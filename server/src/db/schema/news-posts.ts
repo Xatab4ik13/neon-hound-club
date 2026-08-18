@@ -3,13 +3,11 @@ import { users } from "./users.js";
 
 /**
  * Новостные посты для NEWS-таба на /club.
- * Создаются админом (в перспективе — AI-агентом через админку).
+ * Создаются админом или AI-агентом через админку.
  * Отдельная сущность от `posts` (лента HELLHOUND): у новостей есть title/category,
  * нет автора-юзера, нет опросов, свои лайки/комментарии.
- *
- * Комментарии пока не реализуем на бэке (в UI заглушка) — заведём отдельной
- * миграцией, когда будет готов флоу.
  */
+
 export const newsPosts = pgTable(
   "news_posts",
   {
@@ -24,8 +22,9 @@ export const newsPosts = pgTable(
     pinned: boolean("pinned").notNull().default(false),
     // Денормализованный счётчик лайков — держим ин-синк при like/unlike.
     likesCount: integer("likes_count").notNull().default(0),
-    // Денормализованный счётчик комментариев (пока всегда 0 — комментов на бэке нет).
+    // Денормализованный счётчик комментариев — держим ин-синк при добавлении/удалении.
     commentsCount: integer("comments_count").notNull().default(0),
+
     // Опциональная дата публикации (для отложенного постинга AI-агентом).
     publishedAt: timestamp("published_at", { withTimezone: true }),
     // Откуда взята новость (заполняет AI-агент).
@@ -55,6 +54,39 @@ export const newsPostLikes = pgTable(
     userIdx: index("news_post_likes_user_idx").on(t.userId),
   }),
 );
+
+export const newsPostComments = pgTable(
+  "news_post_comments",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    postId: uuid("post_id").notNull().references(() => newsPosts.id, { onDelete: "cascade" }),
+    authorId: uuid("author_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    parentId: uuid("parent_id"),
+    text: text("text").notNull().default(""),
+    imageUrl: text("image_url"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    editedAt: timestamp("edited_at", { withTimezone: true }),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+  },
+  (t) => ({
+    postIdx: index("news_post_comments_post_idx").on(t.postId, t.createdAt),
+  }),
+);
+
+export const newsCommentLikes = pgTable(
+  "news_comment_likes",
+  {
+    commentId: uuid("comment_id").notNull().references(() => newsPostComments.id, { onDelete: "cascade" }),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.commentId, t.userId] }),
+    commentIdx: index("news_comment_likes_comment_idx").on(t.commentId),
+  }),
+);
+
+export type NewsPostComment = typeof newsPostComments.$inferSelect;
 
 export type NewsPost = typeof newsPosts.$inferSelect;
 export type NewNewsPost = typeof newsPosts.$inferInsert;

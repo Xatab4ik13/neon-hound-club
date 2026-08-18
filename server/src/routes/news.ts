@@ -8,9 +8,20 @@ import type { FastifyInstance } from "fastify";
 import { and, desc, eq, isNull, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../db/client.js";
-import { newsPosts, newsPostLikes } from "../db/schema/news-posts.js";
+import {
+  newsPosts,
+  newsPostLikes,
+  newsPostComments,
+  newsCommentLikes,
+} from "../db/schema/news-posts.js";
+import { users } from "../db/schema/users.js";
+import { profiles } from "../db/schema/profile.js";
 import { loadSession, requireAdmin, requireAuth, type SessionPayload } from "../lib/auth.js";
 import { isOurS3Url, mirrorRemoteImage } from "../lib/s3.js";
+import { getRanksMap } from "./feed.js";
+import { awardXp } from "../lib/xp.js";
+import { addQuestProgress } from "../lib/quests.js";
+
 
 /**
  * Картинку с чужого домена копируем в наше хранилище: хотлинк на чужой CDN
@@ -54,6 +65,68 @@ const adminListQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(50),
   status: z.enum(["all", "published", "drafts"]).default("all"),
 });
+
+const commentSchema = z.object({
+  text: z.string().trim().min(1).max(2000),
+  imageUrl: z
+    .string()
+    .trim()
+    .max(1000)
+    .refine((s) => s === "" || /^https?:\/\//i.test(s), { message: "imageUrl должен быть http(s):// URL" })
+    .optional()
+    .transform((v) => (v ? v : null)),
+  parentId: z.string().uuid().optional(),
+});
+
+/** Комментарии поста: автор, ранг, лайки и флаг лайка вьюера. */
+async function loadComments(postId: string, viewerId: string | null) {
+  const rows = await db
+    .select({
+      id: newsPostComments.id,
+      postId: newsPostComments.postId,
+      parentId: newsPostComments.parentId,
+      text: newsPostComments.text,
+      imageUrl: newsPostComments.imageUrl,
+      createdAt: newsPostComments.createdAt,
+      editedAt: newsPostComments.editedAt,
+      authorId: newsPostComments.authorId,
+      nick: users.nick,
+      role: users.role,
+      avatarUrl: profiles.avatarUrl,
+    })
+    .from(newsPostComments)
+    .innerJoin(users, eq(users.id, newsPostComments.authorId))
+    .leftJoin(profiles, eq(profiles.userId, users.id))
+    .where(and(eq(newsPostComments.postId, postId), isNull(newsPostComments.deletedAt)))
+    .orderBy(newsPostComments.createdAt);
+
+  if (rows.length === 0) return [];
+
+  const ids = rows.map((r) => r.id);
+  const [likeCounts, mine, ranks] = await Promise.all([
+    db
+      .select({ commentId: newsCommentLikes.commentId, c: sql<number>`count(*)::int` })
+      .from(newsCommentLikes)
+      .where(inArray(newsCommentLikes.commentId, ids))
+      .groupBy(newsCommentLikes.commentId),
+    viewerId
+      ? db
+          .select({ commentId: newsCommentLikes.commentId })
+          .from(newsCommentLikes)
+          .where(and(inArray(newsCommentLikes.commentId, ids), eq(newsCommentLikes.userId, viewerId)))
+      : Promise.resolve([] as { commentId: string }[]),
+    getRanksMap([...new Set(rows.map((r) => r.authorId))]),
+  ]);
+  const likeMap = new Map(likeCounts.map((r) => [r.commentId, r.c]));
+  const mineSet = new Set(mine.map((r) => r.commentId));
+
+  return rows.map((r) => ({
+    ...r,
+    rankId: ranks.get(r.authorId) ?? "rookie",
+    likes: likeMap.get(r.id) ?? 0,
+    liked: mineSet.has(r.id),
+  }));
+}
 
 function zodMessage(error: z.ZodError) {
   return error.issues[0]?.message ?? "Проверь поля новости";
@@ -197,7 +270,181 @@ export async function newsRoutes(app: FastifyInstance) {
     }
     return { ok: true, liked: false };
   });
+
+  // GET /api/v1/news/:id/comments — плоский список с автором и лайками.
+  app.get<{ Params: { id: string } }>("/:id/comments", async (req, reply) => {
+    const id = z.string().uuid().safeParse(req.params.id);
+    if (!id.success) return reply.code(400).send({ error: "invalid_id" });
+    const viewerId = (req.user as SessionPayload | undefined)?.sub ?? null;
+    return { items: await loadComments(id.data, viewerId) };
+  });
+
+  // POST /api/v1/news/:id/comments — текст (+ опц. картинка, опц. ответ на коммент).
+  app.post<{ Params: { id: string } }>("/:id/comments", { preHandler: requireAuth }, async (req, reply) => {
+    const id = z.string().uuid().safeParse(req.params.id);
+    if (!id.success) return reply.code(400).send({ error: "invalid_id" });
+    const parsed = commentSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return reply.code(400).send({ error: "invalid_input", message: zodMessage(parsed.error) });
+    }
+    const viewerId = (req.user as SessionPayload).sub;
+
+    const [post] = await db
+      .select({ id: newsPosts.id })
+      .from(newsPosts)
+      .where(and(eq(newsPosts.id, id.data), isNull(newsPosts.deletedAt), eq(newsPosts.published, true)))
+      .limit(1);
+    if (!post) return reply.code(404).send({ error: "not_found" });
+
+    let parentId: string | null = null;
+    if (parsed.data.parentId) {
+      const [parent] = await db
+        .select({
+          id: newsPostComments.id,
+          postId: newsPostComments.postId,
+          deletedAt: newsPostComments.deletedAt,
+        })
+        .from(newsPostComments)
+        .where(eq(newsPostComments.id, parsed.data.parentId))
+        .limit(1);
+      if (!parent || parent.postId !== id.data || parent.deletedAt) {
+        return reply.code(400).send({ error: "invalid_parent" });
+      }
+      parentId = parent.id;
+    }
+
+    const [row] = await db
+      .insert(newsPostComments)
+      .values({
+        postId: id.data,
+        authorId: viewerId,
+        parentId,
+        text: parsed.data.text.trim(),
+        imageUrl: parsed.data.imageUrl ?? null,
+      })
+      .returning();
+
+    await db
+      .update(newsPosts)
+      .set({ commentsCount: sql`${newsPosts.commentsCount} + 1` })
+      .where(eq(newsPosts.id, id.data));
+
+    await awardXp({
+      userId: viewerId,
+      amount: 1,
+      source: "admin",
+      reason: "news_comment",
+      refType: "comment",
+      refId: row.id,
+      idempotent: true,
+    }).catch(() => null);
+    await addQuestProgress(viewerId, "comments_5", 1).catch(() => null);
+
+    const [author] = await db
+      .select({ nick: users.nick, role: users.role, avatarUrl: profiles.avatarUrl })
+      .from(users)
+      .leftJoin(profiles, eq(profiles.userId, users.id))
+      .where(eq(users.id, viewerId))
+      .limit(1);
+    const ranks = await getRanksMap([viewerId]);
+
+    return reply.code(201).send({
+      comment: {
+        id: row.id,
+        postId: row.postId,
+        parentId: row.parentId,
+        text: row.text,
+        imageUrl: row.imageUrl,
+        createdAt: row.createdAt,
+        editedAt: row.editedAt,
+        authorId: viewerId,
+        nick: author?.nick ?? "",
+        role: author?.role ?? "user",
+        avatarUrl: author?.avatarUrl ?? null,
+        rankId: ranks.get(viewerId) ?? "rookie",
+        likes: 0,
+        liked: false,
+      },
+    });
+  });
+
+  // PATCH /api/v1/news/comments/:cid — правка своего текста.
+  app.patch<{ Params: { cid: string } }>("/comments/:cid", { preHandler: requireAuth }, async (req, reply) => {
+    const cid = z.string().uuid().safeParse(req.params.cid);
+    if (!cid.success) return reply.code(400).send({ error: "invalid_id" });
+    const parsed = z.object({ text: z.string().trim().min(1).max(2000) }).safeParse(req.body);
+    if (!parsed.success) return reply.code(400).send({ error: "invalid_input" });
+    const s = req.user as SessionPayload;
+
+    const [c] = await db
+      .select({ id: newsPostComments.id, authorId: newsPostComments.authorId, deletedAt: newsPostComments.deletedAt })
+      .from(newsPostComments)
+      .where(eq(newsPostComments.id, cid.data))
+      .limit(1);
+    if (!c || c.deletedAt) return reply.code(404).send({ error: "not_found" });
+    if (c.authorId !== s.sub) return reply.code(403).send({ error: "forbidden" });
+
+    const [row] = await db
+      .update(newsPostComments)
+      .set({ text: parsed.data.text, editedAt: new Date() })
+      .where(eq(newsPostComments.id, cid.data))
+      .returning();
+    return { id: row.id, text: row.text, editedAt: row.editedAt };
+  });
+
+  // DELETE /api/v1/news/comments/:cid — автор или админ.
+  app.delete<{ Params: { cid: string } }>("/comments/:cid", { preHandler: requireAuth }, async (req, reply) => {
+    const cid = z.string().uuid().safeParse(req.params.cid);
+    if (!cid.success) return reply.code(400).send({ error: "invalid_id" });
+    const s = req.user as SessionPayload;
+
+    const [c] = await db
+      .select({
+        id: newsPostComments.id,
+        postId: newsPostComments.postId,
+        authorId: newsPostComments.authorId,
+        deletedAt: newsPostComments.deletedAt,
+      })
+      .from(newsPostComments)
+      .where(eq(newsPostComments.id, cid.data))
+      .limit(1);
+    if (!c || c.deletedAt) return reply.code(404).send({ error: "not_found" });
+    if (c.authorId !== s.sub && s.role !== "admin") return reply.code(403).send({ error: "forbidden" });
+
+    await db
+      .update(newsPostComments)
+      .set({ deletedAt: new Date() })
+      .where(eq(newsPostComments.id, cid.data));
+    await db
+      .update(newsPosts)
+      .set({ commentsCount: sql`greatest(${newsPosts.commentsCount} - 1, 0)` })
+      .where(eq(newsPosts.id, c.postId));
+    return { ok: true };
+  });
+
+  // POST/DELETE /api/v1/news/comments/:cid/like
+  app.post<{ Params: { cid: string } }>("/comments/:cid/like", { preHandler: requireAuth }, async (req, reply) => {
+    const cid = z.string().uuid().safeParse(req.params.cid);
+    if (!cid.success) return reply.code(400).send({ error: "invalid_id" });
+    const s = req.user as SessionPayload;
+    await db
+      .insert(newsCommentLikes)
+      .values({ commentId: cid.data, userId: s.sub })
+      .onConflictDoNothing();
+    return { ok: true, liked: true };
+  });
+
+  app.delete<{ Params: { cid: string } }>("/comments/:cid/like", { preHandler: requireAuth }, async (req, reply) => {
+    const cid = z.string().uuid().safeParse(req.params.cid);
+    if (!cid.success) return reply.code(400).send({ error: "invalid_id" });
+    const s = req.user as SessionPayload;
+    await db
+      .delete(newsCommentLikes)
+      .where(and(eq(newsCommentLikes.commentId, cid.data), eq(newsCommentLikes.userId, s.sub)));
+    return { ok: true, liked: false };
+  });
 }
+
 
 // ─── Админские роуты ────────────────────────────────────────────────
 
