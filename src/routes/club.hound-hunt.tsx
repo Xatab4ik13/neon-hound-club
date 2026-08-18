@@ -15,6 +15,7 @@ import { AnimatePresence, motion, useAnimationControls } from "framer-motion";
 import { RiderCharacter, type RiderMode } from "@/components/club/hound-hunt/RiderCharacter";
 import { EmberField } from "@/components/club/hound-hunt/EmberField";
 import { HuntAvatar } from "@/components/club/hound-hunt/HuntAvatar";
+import { KickedAvatar } from "@/components/club/hound-hunt/KickedAvatar";
 import {
   HUNT_PRIZES,
   HUNT_TICKET_STEP,
@@ -248,7 +249,7 @@ export function HoundHuntPage() {
     const entry = reelNow[k % reelNow.length];
     const key = `${k}-${entry.id}`;
     setGhosts((g) => [...g, { key, entry }]);
-    later(() => setGhosts((g) => g.filter((x) => x.key !== key)), 800);
+    later(() => setGhosts((g) => g.filter((x) => x.key !== key)), 1300);
     haptic("light");
     if (k + 1 >= need) {
       strip.stop();
