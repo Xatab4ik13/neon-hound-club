@@ -23,7 +23,6 @@ import {
   patchNewsAgentState,
   runNewsAgent,
   approveNewsCandidate,
-  rejectNewsCandidate,
   deleteNewsCandidate,
   rewriteNewsCandidate,
   type NewsCandidateItem,
