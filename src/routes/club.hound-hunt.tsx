@@ -331,7 +331,7 @@ export function HoundHuntPage() {
   );
 
   return (
-    <div className="relative min-h-[100svh] overflow-hidden bg-background text-foreground select-none">
+    <div className="fixed inset-0 z-40 overflow-hidden overscroll-none touch-pan-y bg-background text-foreground select-none">
       {/* фон: угли, дым, винетка */}
       <EmberField intensity={intensity} className="absolute inset-0 h-full w-full opacity-80" />
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_80%_at_50%_0%,color-mix(in_oklab,var(--destructive)_14%,transparent),transparent_60%)]" />
