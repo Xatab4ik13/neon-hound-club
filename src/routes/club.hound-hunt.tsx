@@ -228,25 +228,28 @@ export function HoundHuntPage() {
           return;
         }
         const kickMs = dur(BASE.kick);
+        // замах: анимация удара стартует заранее, капсула вылетает ровно в момент касания
+        const windup = Math.min(520, kickMs * 0.3);
         later(() => {
-          // удар
           setKicking(true);
-          haptic("warning");
-          setFlash((f) => f + 1);
-          shake.start({
-            x: [0, -7, 6, -3, 0],
-            y: [0, 4, -3, 1, 0],
-            transition: { duration: 0.38 },
-          });
-          setKilled((k) => [...k, i]);
-          later(() => setKicking(false), Math.min(420, kickMs * 0.35));
-          // следующая капсула подъезжает под центр
-          strip.start({
-            x: -((i + 1) * STEP),
-            transition: { duration: dur(BASE.glide) / 1000, ease: [0.32, 0, 0.2, 1] },
-          });
-          later(() => step(i + 1), kickMs * 0.45);
-        }, kickMs * 0.55);
+          later(() => {
+            // касание ноги: капсула выбивается синхронно с ударом
+            haptic("warning");
+            shake.start({
+              x: [0, -6, 5, -2, 0],
+              y: [0, 3, -2, 1, 0],
+              transition: { duration: 0.34 },
+            });
+            setKilled((k) => [...k, i]);
+            setKicking(false);
+            // следующая капсула подъезжает под центр
+            strip.start({
+              x: -((i + 1) * STEP),
+              transition: { duration: dur(BASE.glide) / 1000, ease: [0.32, 0, 0.2, 1] },
+            });
+            later(() => step(i + 1), kickMs * 0.4);
+          }, windup);
+        }, kickMs * 0.5 - windup > 0 ? kickMs * 0.5 - windup : 0);
       };
 
       later(() => {
@@ -353,7 +356,7 @@ export function HoundHuntPage() {
       </AnimatePresence>
 
       <motion.div animate={shake} className="relative flex min-h-[100svh] flex-col">
-        {/* тонкий HUD: только выход и прогресс призов */}
+        {/* тонкий HUD: только выход */}
         <div className="flex items-center gap-3 px-4 pt-[max(0.75rem,env(safe-area-inset-top))]">
           <Link
             to="/club"
@@ -362,31 +365,13 @@ export function HoundHuntPage() {
           >
             <X className="size-4" />
           </Link>
-          <div className="flex flex-1 items-center gap-1.5">
-            {HUNT_PRIZES.map((p, i) => {
-              const done = winners.some((w) => w.prizeId === p.id);
-              const active = phase !== "intro" && phase !== "podium" && i === caseIdx;
-              return (
-                <div
-                  key={p.id}
-                  className={`h-1 flex-1 rounded-full transition-all ${
-                    done
-                      ? "bg-primary"
-                      : active
-                        ? "bg-destructive shadow-[0_0_14px_color-mix(in_oklab,var(--destructive)_80%,transparent)]"
-                        : "bg-border/50"
-                  }`}
-                />
-              );
-            })}
-          </div>
         </div>
 
         {/* арена */}
         <div className="relative flex min-h-0 flex-1 flex-col items-center justify-center">
-          {/* гончая */}
+          {/* персонаж — виден целиком */}
           <motion.div
-            className="relative z-20 h-56 w-64"
+            className="relative z-20 h-[42svh] w-full max-w-[420px]"
             animate={{ opacity: phase === "podium" ? 0.25 : 1, y: phase === "crack" ? 10 : 0 }}
           >
             <RiderCharacter mode={dogMode} lookAt={look} className="h-full w-full" />
@@ -524,12 +509,8 @@ function ReelStage({
       </div>
 
       <div className="relative overflow-hidden py-2">
-        {/* зона удара — вертикальный луч по центру */}
-        <motion.div
-          animate={{ opacity: kicking ? [1, 0.3, 1] : 0.7, scaleX: kicking ? [1, 3, 1] : 1 }}
-          transition={{ duration: 0.35 }}
-          className="pointer-events-none absolute left-1/2 top-0 z-20 h-full w-[2px] -translate-x-1/2 bg-gradient-to-b from-transparent via-destructive to-transparent shadow-[0_0_20px_4px_color-mix(in_oklab,var(--destructive)_60%,transparent)]"
-        />
+        {/* зона удара — нейтральная тонкая метка по центру */}
+        <div className="pointer-events-none absolute left-1/2 top-0 z-20 h-full w-px -translate-x-1/2 bg-gradient-to-b from-transparent via-white/20 to-transparent" />
         <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-20 bg-gradient-to-r from-background to-transparent" />
         <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-20 bg-gradient-to-l from-background to-transparent" />
 
@@ -546,10 +527,10 @@ function ReelStage({
                 className="shrink-0"
                 animate={
                   dead
-                    ? { opacity: 0, scale: 0.35, y: -150, rotate: 80, filter: "blur(6px)" }
-                    : { opacity: 1, scale: 1, y: 0, rotate: 0, filter: "blur(0px)" }
+                    ? { opacity: 0, scale: 0.4, x: 220, y: -120, rotate: 140, filter: "blur(5px)" }
+                    : { opacity: 1, scale: 1, x: 0, y: 0, rotate: 0, filter: "blur(0px)" }
                 }
-                transition={{ duration: dead ? 0.55 : 0.25, ease: "easeOut" }}
+                transition={{ duration: dead ? 0.5 : 0.25, ease: [0.2, 0.8, 0.3, 1] }}
               >
                 <CapsuleChip entry={e} focused={i === focusIdx && !dead} />
               </motion.div>
