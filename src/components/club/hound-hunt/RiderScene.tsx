@@ -46,14 +46,14 @@ function Model({ mode, lookAt }: { mode: RiderMode; lookAt: { x: number; y: numb
       action.reset();
       action.setLoop(THREE.LoopOnce, 1);
       action.clampWhenFinished = true;
-      action.timeScale = 1.15;
+      action.timeScale = 1.35;
       action.play();
     } else {
       // спокойная стойка: медленно «дышим» тем же клипом на малой скорости
       action.paused = false;
       action.setLoop(THREE.LoopRepeat, Infinity);
       action.clampWhenFinished = false;
-      action.timeScale = mode === "watch" ? 0.22 : 0.12;
+      action.timeScale = mode === "watch" ? 0.85 : 0.6;
       if (!action.isRunning()) action.play();
     }
   }, [mode, actions, clip]);
@@ -73,7 +73,7 @@ export default function RiderScene({ mode, lookAt = { x: 0, y: 0 }, className }:
     <div className={className}>
       <Canvas
         dpr={[1, 1.6]}
-        camera={{ position: [0, 1.05, 6.4], fov: 34 }}
+        camera={{ position: [0, 1.1, 5.6], fov: 42 }}
         gl={{ antialias: true, alpha: true }}
         style={{ background: "transparent" }}
       >

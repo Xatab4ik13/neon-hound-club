@@ -12,7 +12,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useAnimationControls } from "framer-motion";
-import { X } from "lucide-react";
 import { RiderCharacter, type RiderMode } from "@/components/club/hound-hunt/RiderCharacter";
 import { EmberField } from "@/components/club/hound-hunt/EmberField";
 import { HuntCapsule, CapsuleChip } from "@/components/club/hound-hunt/HuntCapsule";
@@ -73,13 +72,14 @@ function DesktopBlock() {
 
 /** Базовые длительности «боевого» темпа, мс. Кнопки скорости делят их. */
 const BASE = {
-  arming: 6000, // персонаж встаёт в стойку, капсулы качаются
-  kick: 2000, // интервал между ударами по капсуле
-  glide: 900, // подъезд следующей капсулы под центр
-  pull: 6000, // последняя капсула вытягивается к персонажу
-  crack: 2600, // раскус
+  arming: 4000, // персонаж встаёт в стойку, капсулы разгоняются
+  kick: 3000, // раз в 3 секунды — замах и удар по пролетающей капсуле
+  glide: 3000, // столько времени капсула идёт от предыдущей позиции к центру
+  pull: 5000, // последняя капсула подъезжает к персонажу
+  crack: 2200, // раскрытие капсулы
   reveal: 26000, // ревил победителя
 };
+
 
 const SPEEDS = [1, 2, 5, 20, 60] as const;
 type Speed = (typeof SPEEDS)[number];
@@ -106,11 +106,9 @@ export function HoundHuntPage() {
   const [phase, setPhase] = useState<Phase>("intro");
   const [winners, setWinners] = useState<{ prizeId: string; entry: HuntEntry }[]>([]);
   const [current, setCurrent] = useState<HuntEntry | null>(null);
-  const [flash, setFlash] = useState(0);
   const [look, setLook] = useState({ x: 0, y: 0 });
 
   const prize = HUNT_PRIZES[Math.min(caseIdx, HUNT_PRIZES.length - 1)];
-  const shake = useAnimationControls();
   const strip = useAnimationControls();
   const timers = useRef<number[]>([]);
 
@@ -181,25 +179,18 @@ export function HoundHuntPage() {
       setKilled([]);
       setKicking(false);
       setReel(reelNow);
-      strip.set({ x: 0 });
+      strip.set({ x: STEP });
       setPhase("arming");
       haptic("light");
 
       const finish = () => {
-        // последняя капсула — победитель: тянется к персонажу и раскрывается
+        // последняя капсула — победитель: подъезжает к персонажу и раскрывается
         setPhase("pull");
         setCurrent(winner);
         haptic("selection");
 
         later(() => {
           setPhase("crack");
-          haptic("warning");
-          setFlash((f) => f + 1);
-          shake.start({
-            x: [0, -12, 10, -6, 4, 0],
-            y: [0, 7, -5, 3, -2, 0],
-            transition: { duration: 0.55 },
-          });
 
           later(() => {
             setPhase("reveal");
@@ -220,44 +211,41 @@ export function HoundHuntPage() {
         }, dur(BASE.pull));
       };
 
-      /** Цикл: капсула под центром → удар ногой → она исчезает → подъезжает следующая. */
-      const step = (i: number) => {
-        setFocusIdx(i);
-        if (i >= reelNow.length - 1) {
-          later(finish, dur(BASE.kick));
-          return;
-        }
-        const kickMs = dur(BASE.kick);
-        // замах: анимация удара стартует заранее, капсула вылетает ровно в момент касания
-        const windup = Math.min(520, kickMs * 0.3);
-        later(() => {
-          setKicking(true);
-          later(() => {
-            // касание ноги: капсула выбивается синхронно с ударом
-            haptic("warning");
-            shake.start({
-              x: [0, -6, 5, -2, 0],
-              y: [0, 3, -2, 1, 0],
-              transition: { duration: 0.34 },
-            });
-            setKilled((k) => [...k, i]);
-            setKicking(false);
-            // следующая капсула подъезжает под центр
-            strip.start({
-              x: -((i + 1) * STEP),
-              transition: { duration: dur(BASE.glide) / 1000, ease: [0.32, 0, 0.2, 1] },
-            });
-            later(() => step(i + 1), kickMs * 0.4);
-          }, windup);
-        }, kickMs * 0.5 - windup > 0 ? kickMs * 0.5 - windup : 0);
-      };
-
       later(() => {
         setPhase("drift");
-        step(0);
+
+        const kickMs = dur(BASE.kick);
+        const last = reelNow.length - 1;
+        // Капсулы летят непрерывно с постоянной скоростью: одна капсула
+        // проходит через центр ровно раз в kickMs.
+        strip.start({
+          x: -(last * STEP),
+          transition: { duration: (kickMs * (last + 1)) / 1000, ease: "linear" },
+        });
+
+        // На каждый такт: замах (за 600 мс до касания) → удар → капсула вылетает.
+        const windup = Math.min(600, kickMs * 0.35);
+        for (let i = 0; i < last; i++) {
+          const hitAt = kickMs * (i + 1);
+          later(() => {
+            setFocusIdx(i);
+            setKicking(true);
+          }, hitAt - windup);
+          later(() => {
+            setKilled((k) => [...k, i]);
+            setKicking(false);
+            haptic("light");
+          }, hitAt);
+        }
+
+        later(() => {
+          setFocusIdx(last);
+          finish();
+        }, kickMs * (last + 1));
       }, dur(BASE.arming));
+
     },
-    [buildReel, dur, later, pickWinner, shake, strip],
+    [buildReel, dur, later, pickWinner, strip],
   );
 
 
@@ -286,7 +274,7 @@ export function HoundHuntPage() {
       setPhase("pull");
       later(() => {
         setPhase("crack");
-        setFlash((f) => f + 1);
+        
         later(() => {
           setPhase("reveal");
           setWinners((w) => [...w, { prizeId: HUNT_PRIZES[caseIdx].id, entry: winner }]);
@@ -342,36 +330,12 @@ export function HoundHuntPage() {
       <SmokeLayers />
       <div className="pointer-events-none absolute inset-0 shadow-[inset_0_0_220px_60px_var(--background)]" />
 
-      {/* вспышка раскуса */}
-      <AnimatePresence>
-        {flash > 0 && (
-          <motion.div
-            key={flash}
-            initial={{ opacity: 0.8 }}
-            animate={{ opacity: 0 }}
-            transition={{ duration: 0.7 }}
-            className="pointer-events-none absolute inset-0 bg-destructive/70 mix-blend-screen"
-          />
-        )}
-      </AnimatePresence>
-
-      <motion.div animate={shake} className="relative flex min-h-[100svh] flex-col">
-        {/* тонкий HUD: только выход */}
-        <div className="flex items-center gap-3 px-4 pt-[max(0.75rem,env(safe-area-inset-top))]">
-          <Link
-            to="/club"
-            className="grid size-9 shrink-0 place-items-center rounded-full border border-border/50 bg-card/40 text-muted-foreground backdrop-blur"
-            aria-label="Выйти"
-          >
-            <X className="size-4" />
-          </Link>
-        </div>
-
+      <div className="relative flex min-h-[100svh] flex-col pt-[max(0.5rem,env(safe-area-inset-top))]">
         {/* арена */}
         <div className="relative flex min-h-0 flex-1 flex-col items-center justify-center">
           {/* персонаж — виден целиком */}
           <motion.div
-            className="relative z-20 h-[42svh] w-full max-w-[420px]"
+            className="relative z-20 h-[46svh] w-full max-w-[460px]"
             animate={{ opacity: phase === "podium" ? 0.25 : 1, y: phase === "crack" ? 10 : 0 }}
           >
             <RiderCharacter mode={dogMode} lookAt={look} className="h-full w-full" />
@@ -441,7 +405,7 @@ export function HoundHuntPage() {
             </p>
           )}
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 }
@@ -459,8 +423,8 @@ function IntroPanel({ onStart }: { onStart: () => void }) {
         охота начинается
       </p>
       <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-        Три приза. Капсулы плывут мимо, и каждые пару секунд по одной прилетает удар — капсула
-        выбивается. Остаётся последняя: чья аватарка внутри, тот забирает приз.
+        Три приза. Капсулы летят мимо, и раз в три секунды персонаж замахивается и выбивает одну
+        из них. Остаётся последняя: чья аватарка внутри, тот забирает приз.
       </p>
 
       <button
