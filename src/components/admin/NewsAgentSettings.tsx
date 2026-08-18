@@ -206,9 +206,8 @@ export function NewsAgentSettings() {
         {broken.length > 0 && (
           <div className="flex items-start gap-2 border-b border-amber-200 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-200">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-            <span>
-              {broken.length} источник(ов) отдают ошибку. Если фид не оживёт — выключи его, чтобы не тратить время прогона.
-            </span>
+            <span>{broken.length} источник(ов) с ошибкой</span>
+
           </div>
         )}
 

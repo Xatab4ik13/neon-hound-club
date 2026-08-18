@@ -15,7 +15,7 @@ import { parsePagination } from "../lib/pagination.js";
 
 // Считает rankId батчем для набора пользователей. Возвращает Map<userId, rankId>.
 // Пустой набор → пустая Map. Юзеры без событий получают rookie.
-async function getRanksMap(userIds: string[]): Promise<Map<string, string>> {
+export async function getRanksMap(userIds: string[]): Promise<Map<string, string>> {
   const out = new Map<string, string>();
   if (userIds.length === 0) return out;
   const rows = await db

@@ -456,6 +456,13 @@
       "when": 1786500000000,
       "tag": "0064_news_agent",
       "breakpoints": true
+    },
+    {
+      "idx": 65,
+      "version": "7",
+      "when": 1786600000000,
+      "tag": "0065_news_comments",
+      "breakpoints": true
     }
   ]
 }

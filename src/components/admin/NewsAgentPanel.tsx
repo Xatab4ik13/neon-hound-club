@@ -429,10 +429,8 @@ function CandidateCard({ cand, onDone }: { cand: NewsCandidateItem; onDone: () =
                 onChange={(e) => setCategory(e.target.value)}
               />
             </Field>
-            <Field
-              label="Картинка"
-              hint="Подтянута из источника. При публикации копируется в наше хранилище — можно заменить своей."
-            >
+            <Field label="Картинка">
+
               <div className="space-y-2">
                 <TextInput value={image} onChange={(e) => setImage(e.target.value)} />
                 <div className="flex items-center gap-2">

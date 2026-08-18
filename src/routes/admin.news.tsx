@@ -1,5 +1,5 @@
-// /admin/news — минимальный CRUD для новостных постов (лента NEWS в /club).
-// Заглушка: комментарии на бэке пока не реализованы, счётчик commentsCount = 0.
+// /admin/news — CRUD для новостных постов (лента NEWS в /club).
+
 
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, type ChangeEvent } from "react";
@@ -414,9 +414,6 @@ function NewsEditor({
           />
         </div>
 
-        <div className="rounded-md border border-amber-300/50 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200">
-          Комментарии к новостям сейчас — заглушка (в клубе показывается пустой шит). Бэкенд комментариев подключим позже.
-        </div>
       </div>
     </Modal>
   );
