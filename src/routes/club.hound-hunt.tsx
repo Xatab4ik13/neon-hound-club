@@ -22,6 +22,7 @@ import {
 } from "@/components/club/hound-hunt/hh-mock";
 import { playSpin, playWin, playClick, playTick } from "@/lib/roller-sfx";
 import { haptic } from "@/hooks/use-haptic";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export const Route = createFileRoute("/club/hound-hunt")({
   head: () => ({
@@ -31,8 +32,41 @@ export const Route = createFileRoute("/club/hound-hunt")({
       { name: "robots", content: "noindex" },
     ],
   }),
-  component: HoundHuntPage,
+  component: HoundHuntScreen,
 });
+
+/**
+ * HOUND HUNT — только телефон/приложение. На десктопе шоу не запускаем:
+ * вся вёрстка и анимации рассчитаны на вертикальный мобильный экран.
+ */
+function HoundHuntScreen() {
+  const isMobile = useIsMobile();
+  if (!isMobile) return <DesktopBlock />;
+  return <HoundHuntPage />;
+}
+
+function DesktopBlock() {
+  return (
+    <div className="relative flex min-h-[100svh] flex-col items-center justify-center gap-5 overflow-hidden bg-black px-8 text-center">
+      <EmberField className="pointer-events-none absolute inset-0 opacity-40" />
+      <div className="relative z-10 flex flex-col items-center gap-4">
+        <div className="w-40">
+          <HoundDog mode="idle" />
+        </div>
+        <h1 className="font-display text-2xl uppercase tracking-tight text-white">Hound Hunt</h1>
+        <p className="max-w-xs text-sm leading-relaxed text-white/50">
+          Шоу идёт только в приложении на телефоне. Открой клуб с мобильного или установи PWA.
+        </p>
+        <Link
+          to="/club"
+          className="rounded-full border border-white/15 px-5 py-2 text-[11px] uppercase tracking-[0.18em] text-white/70"
+        >
+          В клуб
+        </Link>
+      </div>
+    </div>
+  );
+}
 
 /* ------------------------------ тайминги ------------------------------ */
 
