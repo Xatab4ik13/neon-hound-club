@@ -14,7 +14,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useAnimationControls } from "framer-motion";
 import { RiderCharacter, type RiderMode } from "@/components/club/hound-hunt/RiderCharacter";
 import { EmberField } from "@/components/club/hound-hunt/EmberField";
-import { HuntCapsule, CapsuleChip } from "@/components/club/hound-hunt/HuntCapsule";
+import { HuntAvatar } from "@/components/club/hound-hunt/HuntAvatar";
 import {
   HUNT_PRIZES,
   HUNT_TICKET_STEP,
@@ -481,7 +481,7 @@ function ReelStage({
         >
           {[...reel, ...reel].map((e, i) => (
             <div key={`${e.id}-${i}`} className="shrink-0">
-              <CapsuleChip entry={e} focused={false} scale={CHIP_SCALE} />
+              <HuntAvatar entry={e} focused={false} scale={CHIP_SCALE} />
             </div>
           ))}
         </motion.div>
@@ -498,7 +498,7 @@ function ReelStage({
               exit={{ opacity: 0 }}
               transition={{ duration: 0.75, ease: [0.2, 0.8, 0.3, 1] }}
             >
-              <CapsuleChip entry={g.entry} focused scale={CHIP_SCALE} />
+              <HuntAvatar entry={g.entry} focused scale={CHIP_SCALE} />
             </motion.div>
           ))}
         </AnimatePresence>
@@ -529,7 +529,7 @@ function PullStage({ entry, cracking }: { entry: HuntEntry; cracking: boolean })
         }
         transition={cracking ? { duration: 0.5 } : { duration: 2.6, ease: "easeInOut" }}
       >
-        <HuntCapsule entry={entry} scale={1.05} state={cracking ? "crack" : "focus"} />
+        <HuntAvatar entry={entry} scale={1.35} focused />
       </motion.div>
 
       {/* осколки стекла при раскусе */}

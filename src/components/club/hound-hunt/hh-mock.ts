@@ -18,6 +18,8 @@ export type HuntEntry = {
   id: string;
   nick: string;
   initials: string;
+  /** Фото профиля; пока в моках нет — рисуем инициалы. */
+  avatarUrl?: string;
   city: string;
   /** Сколько билетов вложил — вес в рулетке и множитель мест. */
   tickets: number;
