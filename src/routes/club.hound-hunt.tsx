@@ -495,9 +495,7 @@ function ReelStage({
           ))}
         </AnimatePresence>
 
-            </motion.div>
-          ))}
-        </AnimatePresence>
+
       </div>
 
       <motion.p
