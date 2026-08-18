@@ -53,7 +53,7 @@ const STEP = CARD_W + CARD_GAP;
 
 /* ------------------------------ страница ------------------------------ */
 
-function HoundHuntPage() {
+export function HoundHuntPage() {
   const [pace, setPace] = useState<Pace>("demo");
   const t = PACE[pace];
 
