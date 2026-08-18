@@ -271,9 +271,11 @@ export async function adminNewsRoutes(app: FastifyInstance) {
 
     // Если публикуем впервые и publishedAt не задан — проставим now().
     const patch: Record<string, unknown> = { ...rest, updatedAt: new Date() };
+    if (rest.imageUrl !== undefined) patch.imageUrl = await ownImageUrl(rest.imageUrl);
     if (publishedAt !== undefined) {
       patch.publishedAt = publishedAt ? new Date(publishedAt) : null;
     }
+
     if (rest.published === true && publishedAt === undefined) {
       // Пусть БД сама выставит, если ещё не было.
       patch.publishedAt = sql`coalesce(${newsPosts.publishedAt}, now())`;
