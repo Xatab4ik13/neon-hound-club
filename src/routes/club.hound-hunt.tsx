@@ -73,8 +73,7 @@ function DesktopBlock() {
 /** Базовые длительности «боевого» темпа, мс. Кнопки скорости делят их. */
 const BASE = {
   arming: 4000, // персонаж встаёт в стойку, капсулы разгоняются
-  kick: 3000, // раз в 3 секунды — замах и удар по пролетающей капсуле
-  glide: 3000, // столько времени капсула идёт от предыдущей позиции к центру
+  capsule: 360, // одна капсула проезжает мимо центра за столько мс (быстро)
   pull: 5000, // последняя капсула подъезжает к персонажу
   crack: 2200, // раскрытие капсулы
   reveal: 26000, // ревил победителя
@@ -126,9 +125,14 @@ export function HoundHuntPage() {
 
   /* --- барабан: капсулы выбиваются по одной, последняя = победитель --- */
   const [reel, setReel] = useState<HuntEntry[]>([]);
-  const [focusIdx, setFocusIdx] = useState(0);
-  const [killed, setKilled] = useState<number[]>([]);
-  const [kicking, setKicking] = useState(false);
+  const [kicks, setKicks] = useState(0);
+  const [ghosts, setGhosts] = useState<{ key: string; entry: HuntEntry }[]>([]);
+  const reelRef = useRef<HuntEntry[]>([]);
+  const kicksRef = useRef(0);
+  const phaseRef = useRef<Phase>("intro");
+  const finishRef = useRef<(() => void) | null>(null);
+  phaseRef.current = phase;
+  reelRef.current = reel;
 
   const buildReel = useCallback((entries: HuntEntry[], winner: HuntEntry) => {
     const slots: HuntEntry[] = [];
@@ -176,11 +180,12 @@ export function HoundHuntPage() {
       const winner = pickWinner(entries);
       const reelNow = buildReel(entries, winner);
       setCurrent(null);
-      setFocusIdx(0);
-      setKilled([]);
-      setKicking(false);
+      setKicks(0);
+      kicksRef.current = 0;
+      setGhosts([]);
       setReel(reelNow);
-      strip.set({ x: STEP });
+      reelRef.current = reelNow;
+      strip.set({ x: 0 });
       setPhase("arming");
       haptic("light");
 
@@ -212,58 +217,44 @@ export function HoundHuntPage() {
         }, dur(BASE.pull));
       };
 
+      finishRef.current = finish;
+
+      // Две НЕЗАВИСИМЫЕ анимации:
+      //  1) лента капсул — бесконечный линейный цикл (одни и те же капсулы),
+      //  2) персонаж — клип удара крутится сам, без перезапусков.
+      // Пересекаются только в момент импакта (колбэк из 3D-сцены).
       later(() => {
         setPhase("drift");
-
-        // Клип удара в GLB — 1.67 с на timeScale = 1, контакт ноги ≈ 60% клипа.
-        const CLIP = 1670;
-        const IMPACT = CLIP * 0.6;
-        const REST = 900; // пауза после удара, персонаж возвращается в стойку
-        // Один цикл = один удар + пауза. Цикл никогда не короче клипа,
-        // поэтому анимация всегда доигрывает до конца.
-        const cycle = Math.max(CLIP + REST, dur(BASE.kick));
-        const last = reelNow.length - 1;
-
-        /**
-         * Цикл: лента плавно едет на одну капсулу за `cycle` мс и капсула i
-         * оказывается ровно в центре в момент контакта ноги.
-         */
-        const step = (i: number) => {
-          if (i > last) return;
-
-          strip.start({
-            x: -(i * STEP),
-            transition: { duration: cycle / 1000, ease: "linear" },
-          });
-
-          if (i === last) {
-            later(() => {
-              setFocusIdx(last);
-              finish();
-            }, cycle);
-            return;
-          }
-
-          const kickAt = cycle - IMPACT;
-          later(() => {
-            setFocusIdx(i);
-            setKicking(true);
-          }, kickAt);
-          later(() => {
-            setKilled((k) => [...k, i]);
-            haptic("light");
-          }, cycle);
-          later(() => setKicking(false), kickAt + CLIP);
-          later(() => step(i + 1), cycle);
-        };
-
-        step(0);
+        const loopMs = reelNow.length * BASE.capsule;
+        strip.set({ x: 0 });
+        strip.start({
+          x: -(reelNow.length * STEP),
+          transition: { duration: loopMs / 1000, ease: "linear", repeat: Infinity },
+        });
       }, dur(BASE.arming));
-
-
     },
     [buildReel, dur, later, pickWinner, strip],
   );
+
+  /** Импакт ноги: улетает та капсула, что в этот момент в центре. */
+  const handleImpact = useCallback(() => {
+    if (phaseRef.current !== "drift") return;
+    const reelNow = reelRef.current;
+    const need = reelNow.length - 1;
+    const k = kicksRef.current;
+    if (need < 1 || k >= need) return;
+    kicksRef.current = k + 1;
+    setKicks(k + 1);
+    const entry = reelNow[k % reelNow.length];
+    const key = `${k}-${entry.id}`;
+    setGhosts((g) => [...g, { key, entry }]);
+    later(() => setGhosts((g) => g.filter((x) => x.key !== key)), 800);
+    haptic("light");
+    if (k + 1 >= need) {
+      strip.stop();
+      finishRef.current?.();
+    }
+  }, [later, strip]);
 
 
   const start = () => {
@@ -283,9 +274,10 @@ export function HoundHuntPage() {
     if (phase === "arming" || phase === "drift") {
       const last = Math.max(0, reel.length - 1);
       const winner = reel[last] ?? pickWinner(entries);
-      strip.set({ x: -(last * STEP) });
-      setKilled(Array.from({ length: last }, (_, i) => i));
-      setFocusIdx(last);
+      strip.stop();
+      kicksRef.current = last;
+      setKicks(last);
+      setGhosts([]);
       setCurrent(winner);
 
       setPhase("pull");
@@ -319,9 +311,9 @@ export function HoundHuntPage() {
     }
   };
 
-  const dogMode: RiderMode = kicking
+  const dogMode: RiderMode = phase === "drift"
     ? "lunge"
-    : phase === "drift" || phase === "arming" || phase === "pull"
+    : phase === "arming" || phase === "pull"
       ? "watch"
       : phase === "crack"
         ? "lunge"
@@ -355,7 +347,13 @@ export function HoundHuntPage() {
             className="relative z-10 mt-[6svh] h-[62svh] w-full max-w-[560px]"
             animate={{ opacity: phase === "podium" ? 0.25 : 1, y: phase === "crack" ? 10 : 0 }}
           >
-            <RiderCharacter mode={dogMode} lookAt={look} className="h-full w-full" />
+            <RiderCharacter
+              mode={dogMode}
+              lookAt={look}
+              loopKick={phase === "drift"}
+              onImpact={handleImpact}
+              className="h-full w-full"
+            />
           </motion.div>
 
           {phase === "intro" && <IntroPanel onStart={start} />}
@@ -363,8 +361,8 @@ export function HoundHuntPage() {
           {(phase === "arming" || phase === "drift") && (
             <ReelStage
               reel={reel}
-              focusIdx={focusIdx}
-              killed={killed}
+              ghosts={ghosts}
+              kicks={kicks}
               controls={strip}
               armed={phase === "arming"}
             />
@@ -454,18 +452,18 @@ function IntroPanel({ onStart }: { onStart: () => void }) {
 
 function ReelStage({
   reel,
-  focusIdx,
-  killed,
+  ghosts,
+  kicks,
   controls,
   armed,
 }: {
   reel: HuntEntry[];
-  focusIdx: number;
-  killed: number[];
+  ghosts: { key: string; entry: HuntEntry }[];
+  kicks: number;
   controls: ReturnType<typeof useAnimationControls>;
   armed: boolean;
 }) {
-  const alive = reel.length - killed.length;
+  const alive = Math.max(1, reel.length - kicks);
   return (
     <div className="relative z-30 -mt-[26svh] w-full">
 
@@ -481,24 +479,29 @@ function ReelStage({
           className="flex items-center gap-4"
           style={{ paddingLeft: `calc(50% - ${CHIP_W / 2}px)`, willChange: "transform" }}
         >
-          {reel.map((e, i) => {
-            const dead = killed.includes(i);
-            return (
-              <motion.div
-                key={`${e.id}-${i}`}
-                className="shrink-0"
-                animate={
-                  dead
-                    ? { opacity: 0, scale: 0.4, x: 220, y: -120, rotate: 140, filter: "blur(5px)" }
-                    : { opacity: 1, scale: 1, x: 0, y: 0, rotate: 0, filter: "blur(0px)" }
-                }
-                transition={{ duration: dead ? 0.5 : 0.25, ease: [0.2, 0.8, 0.3, 1] }}
-              >
-                <CapsuleChip entry={e} focused={i === focusIdx && !dead} scale={CHIP_SCALE} />
-              </motion.div>
-            );
-          })}
+          {[...reel, ...reel].map((e, i) => (
+            <div key={`${e.id}-${i}`} className="shrink-0">
+              <CapsuleChip entry={e} focused={false} scale={CHIP_SCALE} />
+            </div>
+          ))}
         </motion.div>
+
+        {/* капсулы, выбитые ударом — улетают из центра */}
+        <AnimatePresence>
+          {ghosts.map((g) => (
+            <motion.div
+              key={g.key}
+              className="pointer-events-none absolute left-1/2 top-2 z-30"
+              style={{ marginLeft: -CHIP_W / 2 }}
+              initial={{ opacity: 1, scale: 1, x: 0, y: 0, rotate: 0 }}
+              animate={{ opacity: 0, scale: 0.55, x: 260, y: -180, rotate: 160 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.75, ease: [0.2, 0.8, 0.3, 1] }}
+            >
+              <CapsuleChip entry={g.entry} focused scale={CHIP_SCALE} />
+            </motion.div>
+          ))}
+        </AnimatePresence>
       </div>
 
       <motion.p
