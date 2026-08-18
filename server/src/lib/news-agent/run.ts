@@ -370,3 +370,27 @@ export async function pruneCandidates() {
     .delete(newsCandidates)
     .where(and(lt(newsCandidates.createdAt, cutoff), sql`${newsCandidates.status} <> 'used'`));
 }
+
+/**
+ * Просроченные предложения: если черновик агента не использовали за 12 часов,
+ * он теряет актуальность — удаляем вместе с вариантами текста.
+ */
+export async function expireStaleDrafts(hours = 12): Promise<number> {
+  const cutoff = new Date(Date.now() - hours * 3_600_000);
+  const stale = await db
+    .select({ id: newsCandidates.id })
+    .from(newsCandidates)
+    .where(
+      and(
+        eq(newsCandidates.status, "drafted"),
+        lt(sql`coalesce(${newsCandidates.draftedAt}, ${newsCandidates.createdAt})`, cutoff),
+      ),
+    );
+  if (stale.length === 0) return 0;
+  const ids = stale.map((s) => s.id);
+  await db.transaction(async (tx) => {
+    await tx.delete(newsVariants).where(inArray(newsVariants.candidateId, ids));
+    await tx.delete(newsCandidates).where(inArray(newsCandidates.id, ids));
+  });
+  return ids.length;
+}
