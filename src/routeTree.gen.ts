@@ -15,6 +15,7 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as LogosRouteImport } from './routes/logos'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LikeLabRouteImport } from './routes/like-lab'
+import { Route as Hh2RouteImport } from './routes/hh2'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as ClubRouteImport } from './routes/club'
 import { Route as CartRouteImport } from './routes/cart'
@@ -132,6 +133,11 @@ const LoginRoute = LoginRouteImport.update({
 const LikeLabRoute = LikeLabRouteImport.update({
   id: '/like-lab',
   path: '/like-lab',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const Hh2Route = Hh2RouteImport.update({
+  id: '/hh2',
+  path: '/hh2',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
@@ -583,6 +589,7 @@ export interface FileRoutesByFullPath {
   '/cart': typeof CartRoute
   '/club': typeof ClubRouteWithChildren
   '/forgot-password': typeof ForgotPasswordRoute
+  '/hh2': typeof Hh2Route
   '/like-lab': typeof LikeLabRoute
   '/login': typeof LoginRoute
   '/logos': typeof LogosRoute
@@ -676,6 +683,7 @@ export interface FileRoutesByTo {
   '/about': typeof AboutRoute
   '/cart': typeof CartRoute
   '/forgot-password': typeof ForgotPasswordRoute
+  '/hh2': typeof Hh2Route
   '/like-lab': typeof LikeLabRoute
   '/login': typeof LoginRoute
   '/logos': typeof LogosRoute
@@ -773,6 +781,7 @@ export interface FileRoutesById {
   '/cart': typeof CartRoute
   '/club': typeof ClubRouteWithChildren
   '/forgot-password': typeof ForgotPasswordRoute
+  '/hh2': typeof Hh2Route
   '/like-lab': typeof LikeLabRoute
   '/login': typeof LoginRoute
   '/logos': typeof LogosRoute
@@ -871,6 +880,7 @@ export interface FileRouteTypes {
     | '/cart'
     | '/club'
     | '/forgot-password'
+    | '/hh2'
     | '/like-lab'
     | '/login'
     | '/logos'
@@ -964,6 +974,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/cart'
     | '/forgot-password'
+    | '/hh2'
     | '/like-lab'
     | '/login'
     | '/logos'
@@ -1060,6 +1071,7 @@ export interface FileRouteTypes {
     | '/cart'
     | '/club'
     | '/forgot-password'
+    | '/hh2'
     | '/like-lab'
     | '/login'
     | '/logos'
@@ -1157,6 +1169,7 @@ export interface RootRouteChildren {
   CartRoute: typeof CartRoute
   ClubRoute: typeof ClubRouteWithChildren
   ForgotPasswordRoute: typeof ForgotPasswordRoute
+  Hh2Route: typeof Hh2Route
   LikeLabRoute: typeof LikeLabRoute
   LoginRoute: typeof LoginRoute
   LogosRoute: typeof LogosRoute
@@ -1223,6 +1236,13 @@ declare module '@tanstack/react-router' {
       path: '/like-lab'
       fullPath: '/like-lab'
       preLoaderRoute: typeof LikeLabRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/hh2': {
+      id: '/hh2'
+      path: '/hh2'
+      fullPath: '/hh2'
+      preLoaderRoute: typeof Hh2RouteImport
       parentRoute: typeof rootRouteImport
     }
     '/forgot-password': {
@@ -2007,6 +2027,7 @@ const rootRouteChildren: RootRouteChildren = {
   CartRoute: CartRoute,
   ClubRoute: ClubRouteWithChildren,
   ForgotPasswordRoute: ForgotPasswordRoute,
+  Hh2Route: Hh2Route,
   LikeLabRoute: LikeLabRoute,
   LoginRoute: LoginRoute,
   LogosRoute: LogosRoute,
