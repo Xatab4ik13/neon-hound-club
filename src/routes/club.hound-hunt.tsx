@@ -509,12 +509,8 @@ function ReelStage({
       </div>
 
       <div className="relative overflow-hidden py-2">
-        {/* зона удара — вертикальный луч по центру */}
-        <motion.div
-          animate={{ opacity: kicking ? [1, 0.3, 1] : 0.7, scaleX: kicking ? [1, 3, 1] : 1 }}
-          transition={{ duration: 0.35 }}
-          className="pointer-events-none absolute left-1/2 top-0 z-20 h-full w-[2px] -translate-x-1/2 bg-gradient-to-b from-transparent via-destructive to-transparent shadow-[0_0_20px_4px_color-mix(in_oklab,var(--destructive)_60%,transparent)]"
-        />
+        {/* зона удара — нейтральная тонкая метка по центру */}
+        <div className="pointer-events-none absolute left-1/2 top-0 z-20 h-full w-px -translate-x-1/2 bg-gradient-to-b from-transparent via-white/20 to-transparent" />
         <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-20 bg-gradient-to-r from-background to-transparent" />
         <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-20 bg-gradient-to-l from-background to-transparent" />
 
