@@ -504,36 +504,39 @@ function ReelStage({
         <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-20 bg-gradient-to-r from-background to-transparent" />
         <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-20 bg-gradient-to-l from-background to-transparent" />
 
-        <motion.div
-          className="flex items-center gap-4"
-          style={{
-            x,
-            paddingLeft: `calc(50% - ${CHIP_W / 2}px)`,
-            transformStyle: "preserve-3d",
-            rotateX: 6,
-            rotateY: -14,
-            willChange: "transform",
-          }}
+        {/* наклон дорожки — на СТАТИЧНОМ слое: если крутить ленту внутри
+            rotateY, сдвиг по X уводит звенья к камере и они растут. */}
+        <div
+          style={{ transform: "rotateX(6deg) rotateY(-14deg)", transformStyle: "flat" }}
         >
-          <AnimatePresence initial={false} mode="popLayout">
-            {row.flatMap((c) =>
-              slots.map((s) => (
-                <motion.div
-                  key={`slot-${c}-${s.sid}`}
-                  layout
-                  className="shrink-0"
-                  style={{ transformStyle: "preserve-3d" }}
-                  initial={{ opacity: 0, scale: 0.85 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.6 }}
-                  transition={{ type: "spring", stiffness: 300, damping: 28 }}
-                >
-                  <HuntAvatar entry={s.entry} scale={CHIP_SCALE} />
-                </motion.div>
-              )),
-            )}
-          </AnimatePresence>
-        </motion.div>
+          <motion.div
+            className="flex items-center gap-4"
+            style={{
+              x,
+              paddingLeft: `calc(50% - ${CHIP_W / 2}px)`,
+              willChange: "transform",
+            }}
+          >
+            <AnimatePresence initial={false} mode="popLayout">
+              {row.flatMap((c) =>
+                slots.map((s) => (
+                  <motion.div
+                    key={`slot-${c}-${s.sid}`}
+                    layout
+                    className="shrink-0"
+                    initial={{ opacity: 0, scale: 0.85 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.6 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 28 }}
+                  >
+                    <HuntAvatar entry={s.entry} scale={CHIP_SCALE} />
+                  </motion.div>
+                )),
+              )}
+            </AnimatePresence>
+          </motion.div>
+        </div>
+
 
 
         {/* выбитые аватарки — дорожка без overflow, полёт ничем не обрезается */}
