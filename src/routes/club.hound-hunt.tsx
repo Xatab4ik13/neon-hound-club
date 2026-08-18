@@ -527,10 +527,10 @@ function ReelStage({
                 className="shrink-0"
                 animate={
                   dead
-                    ? { opacity: 0, scale: 0.35, y: -150, rotate: 80, filter: "blur(6px)" }
-                    : { opacity: 1, scale: 1, y: 0, rotate: 0, filter: "blur(0px)" }
+                    ? { opacity: 0, scale: 0.4, x: 220, y: -120, rotate: 140, filter: "blur(5px)" }
+                    : { opacity: 1, scale: 1, x: 0, y: 0, rotate: 0, filter: "blur(0px)" }
                 }
-                transition={{ duration: dead ? 0.55 : 0.25, ease: "easeOut" }}
+                transition={{ duration: dead ? 0.5 : 0.25, ease: [0.2, 0.8, 0.3, 1] }}
               >
                 <CapsuleChip entry={e} focused={i === focusIdx && !dead} />
               </motion.div>
