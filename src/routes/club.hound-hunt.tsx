@@ -15,6 +15,7 @@ import { AnimatePresence, motion, useAnimationControls } from "framer-motion";
 import { RiderCharacter, type RiderMode } from "@/components/club/hound-hunt/RiderCharacter";
 import { EmberField } from "@/components/club/hound-hunt/EmberField";
 import { HuntAvatar } from "@/components/club/hound-hunt/HuntAvatar";
+import { KickedAvatar } from "@/components/club/hound-hunt/KickedAvatar";
 import {
   HUNT_PRIZES,
   HUNT_TICKET_STEP,
@@ -248,7 +249,7 @@ export function HoundHuntPage() {
     const entry = reelNow[k % reelNow.length];
     const key = `${k}-${entry.id}`;
     setGhosts((g) => [...g, { key, entry }]);
-    later(() => setGhosts((g) => g.filter((x) => x.key !== key)), 800);
+    later(() => setGhosts((g) => g.filter((x) => x.key !== key)), 1300);
     haptic("light");
     if (k + 1 >= need) {
       strip.stop();
@@ -486,22 +487,16 @@ function ReelStage({
           ))}
         </motion.div>
 
-        {/* капсулы, выбитые ударом — улетают из центра */}
+        {/* капсулы, выбитые ударом — баллистический полёт с искрами */}
         <AnimatePresence>
           {ghosts.map((g) => (
-            <motion.div
-              key={g.key}
-              className="pointer-events-none absolute left-1/2 top-2 z-30"
-              style={{ marginLeft: -CHIP_W / 2 }}
-              initial={{ opacity: 1, scale: 1, x: 0, y: 0, rotate: 0 }}
-              animate={{ opacity: 0, scale: 0.55, x: 260, y: -180, rotate: 160 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.75, ease: [0.2, 0.8, 0.3, 1] }}
-            >
-              <HuntAvatar entry={g.entry} focused scale={CHIP_SCALE} />
+            <motion.div key={g.key} exit={{ opacity: 0 }}>
+              <KickedAvatar entry={g.entry} seed={g.key} scale={CHIP_SCALE} width={CHIP_W} />
             </motion.div>
           ))}
         </AnimatePresence>
+
+
       </div>
 
       <motion.p
