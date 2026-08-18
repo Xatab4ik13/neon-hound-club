@@ -47,9 +47,39 @@ export function parseJsonLoose(raw: string): unknown {
         }
       }
     }
+    // не закрылось — ответ обрезан по лимиту токенов, пробуем починить хвост
+    return repairTruncatedJson(cleaned.slice(start));
+  }
+}
+
+/** Достраивает обрезанный JSON: закрывает строку и все открытые скобки. */
+function repairTruncatedJson(src: string): unknown {
+  const stack: string[] = [];
+  let inString = false;
+  let escaped = false;
+  for (const ch of src) {
+    if (inString) {
+      if (escaped) escaped = false;
+      else if (ch === "\\") escaped = true;
+      else if (ch === '"') inString = false;
+      continue;
+    }
+    if (ch === '"') inString = true;
+    else if (ch === "{" || ch === "[") stack.push(ch === "{" ? "}" : "]");
+    else if (ch === "}" || ch === "]") stack.pop();
+  }
+  let out = src;
+  if (inString) out += '"';
+  // убираем висящую запятую / незаконченный ключ
+  out = out.replace(/,\s*("[^"]*"\s*:?\s*)?$/, "");
+  while (stack.length) out += stack.pop();
+  try {
+    return JSON.parse(out);
+  } catch {
     return null;
   }
 }
+
 
 const TOPICS = [
   "новинки",
