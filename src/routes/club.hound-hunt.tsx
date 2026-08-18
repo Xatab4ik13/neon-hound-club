@@ -552,7 +552,7 @@ function ReelStage({
         transition={{ duration: 1.6, repeat: Infinity }}
         className="relative z-50 mt-2 text-center font-mono text-[10px] uppercase tracking-[0.28em] text-muted-foreground"
       >
-        {armed ? "выходит на удар" : `выбивает участников · осталось ${Math.max(1, alive.length)}`}
+        {armed ? "выходит на удар" : `выбивает участников · осталось ${Math.max(1, slots.length)}`}
       </motion.p>
     </div>
   );
