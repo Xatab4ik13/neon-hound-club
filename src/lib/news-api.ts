@@ -178,3 +178,22 @@ export function useToggleNewsCommentLike(postId: string) {
     },
   });
 }
+
+/** Правка своего комментария. */
+export function useEditNewsComment(postId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ commentId, text }: { commentId: string; text: string }) => {
+      const res = await apiFetch<{ id: string; text: string; editedAt: string | null }>(
+        `/api/v1/news/comments/${commentId}`,
+        { method: "PATCH", body: JSON.stringify({ text }) },
+      );
+      return res;
+    },
+    onSuccess: (res) => {
+      qc.setQueryData<NewsComment[]>(commentsKey(postId), (prev) =>
+        (prev ?? []).map((c) => (c.id === res.id ? { ...c, text: res.text, editedAt: res.editedAt } : c)),
+      );
+    },
+  });
+}
