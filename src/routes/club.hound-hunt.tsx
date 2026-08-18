@@ -11,7 +11,7 @@
 
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AnimatePresence, motion, useAnimationControls } from "framer-motion";
+import { AnimatePresence, animate, motion, useMotionValue, type MotionValue } from "framer-motion";
 import { RiderCharacter, type RiderMode } from "@/components/club/hound-hunt/RiderCharacter";
 import { EmberField } from "@/components/club/hound-hunt/EmberField";
 import { HuntAvatar } from "@/components/club/hound-hunt/HuntAvatar";
@@ -110,7 +110,10 @@ export function HoundHuntPage() {
   const [look, setLook] = useState({ x: 0, y: 0 });
 
   const prize = HUNT_PRIZES[Math.min(caseIdx, HUNT_PRIZES.length - 1)];
-  const strip = useAnimationControls();
+  // Позиция ленты — своя motion-value: барабан крутится непрерывно, а в момент
+  // импакта мы читаем её и понимаем, кто именно сейчас под ногой.
+  const stripX = useMotionValue(0);
+  const stripAnim = useRef<{ stop: () => void } | null>(null);
   const timers = useRef<number[]>([]);
 
   const later = useCallback((fn: () => void, ms: number) => {
@@ -124,16 +127,18 @@ export function HoundHuntPage() {
 
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
 
-  /* --- барабан: капсулы выбиваются по одной, последняя = победитель --- */
-  const [reel, setReel] = useState<HuntEntry[]>([]);
+  /* --- барабан: звенья выбиваются по одному, последнее = победитель --- */
+  type Slot = { sid: number; entry: HuntEntry };
+  const [slots, setSlots] = useState<Slot[]>([]);
   const [kicks, setKicks] = useState(0);
   const [ghosts, setGhosts] = useState<{ key: string; entry: HuntEntry }[]>([]);
-  const reelRef = useRef<HuntEntry[]>([]);
+  const slotsRef = useRef<Slot[]>([]);
+  const winnerSidRef = useRef(-1);
   const kicksRef = useRef(0);
   const phaseRef = useRef<Phase>("intro");
   const finishRef = useRef<(() => void) | null>(null);
   phaseRef.current = phase;
-  reelRef.current = reel;
+  slotsRef.current = slots;
 
   const buildReel = useCallback((entries: HuntEntry[], winner: HuntEntry) => {
     const slots: HuntEntry[] = [];
@@ -180,13 +185,16 @@ export function HoundHuntPage() {
     (idx: number, entries: HuntEntry[]) => {
       const winner = pickWinner(entries);
       const reelNow = buildReel(entries, winner);
+      const slotsNow: Slot[] = reelNow.map((entry, i) => ({ sid: i, entry }));
       setCurrent(null);
       setKicks(0);
       kicksRef.current = 0;
       setGhosts([]);
-      setReel(reelNow);
-      reelRef.current = reelNow;
-      strip.set({ x: 0 });
+      setSlots(slotsNow);
+      slotsRef.current = slotsNow;
+      winnerSidRef.current = slotsNow[slotsNow.length - 1]?.sid ?? -1;
+      stripAnim.current?.stop();
+      stripX.set(0);
       setPhase("arming");
       haptic("light");
 
@@ -221,38 +229,56 @@ export function HoundHuntPage() {
       finishRef.current = finish;
 
       // Две НЕЗАВИСИМЫЕ анимации:
-      //  1) очередь аватарок — стоит на месте, но каждый удар выбивает
-      //     головное звено, и очередь ВИДИМО подтягивается на его место,
+      //  1) барабан — крутится непрерывно и быстро (линейно, без остановок),
       //  2) персонаж — клип удара крутится сам, без перезапусков.
-      // Пересекаются только в момент импакта (колбэк из 3D-сцены).
+      // Пересекаются только в момент импакта: кто в этот кадр по центру —
+      // того и выбивает, его звено улетает и очередь подтягивается.
       later(() => {
         setPhase("drift");
-        strip.set({ x: 0 });
+        const pxPerSec = STEP / (dur(BASE.capsule) / 1000);
+        const far = -STEP * 4000;
+        stripAnim.current?.stop();
+        stripX.set(0);
+        stripAnim.current = animate(stripX, far, {
+          duration: Math.abs(far) / pxPerSec,
+          ease: "linear",
+        });
       }, dur(BASE.arming));
 
     },
-    [buildReel, dur, later, pickWinner, strip],
+    [buildReel, dur, later, pickWinner, stripX],
   );
 
-  /** Импакт ноги: улетает та капсула, что в этот момент в центре. */
+  /** Импакт ноги: улетает то звено, что в этот кадр стоит по центру. */
   const handleImpact = useCallback(() => {
     if (phaseRef.current !== "drift") return;
-    const reelNow = reelRef.current;
-    const need = reelNow.length - 1;
-    const k = kicksRef.current;
-    if (need < 1 || k >= need) return;
-    kicksRef.current = k + 1;
-    setKicks(k + 1);
-    const entry = reelNow[k % reelNow.length];
-    const key = `${k}-${entry.id}`;
-    setGhosts((g) => [...g, { key, entry }]);
+    const list = slotsRef.current;
+    if (list.length <= 1) return;
+
+    // какое звено сейчас в центре: лента едет влево на STEP за слот
+    const n = list.length;
+    const pos = Math.round(-stripX.get() / STEP);
+    let j = ((pos % n) + n) % n;
+    if (list[j].sid === winnerSidRef.current) j = (j + 1) % n;
+    const target = list[j];
+    if (target.sid === winnerSidRef.current) return;
+
+    const rest = list.filter((s) => s.sid !== target.sid);
+    slotsRef.current = rest;
+    setSlots(rest);
+    kicksRef.current += 1;
+    setKicks(kicksRef.current);
+
+    const key = `${target.sid}-${kicksRef.current}`;
+    setGhosts((g) => [...g, { key, entry: target.entry }]);
     later(() => setGhosts((g) => g.filter((x) => x.key !== key)), 2000);
     haptic("light");
-    if (k + 1 >= need) {
-      strip.stop();
+
+    if (rest.length <= 1) {
+      stripAnim.current?.stop();
       finishRef.current?.();
     }
-  }, [later, strip]);
+  }, [later, stripX]);
 
 
   const start = () => {
@@ -270,11 +296,14 @@ export function HoundHuntPage() {
     clearTimers();
     const entries = pool;
     if (phase === "arming" || phase === "drift") {
-      const last = Math.max(0, reel.length - 1);
-      const winner = reel[last] ?? pickWinner(entries);
-      strip.stop();
-      kicksRef.current = last;
-      setKicks(last);
+      const list = slotsRef.current;
+      const winner = list[list.length - 1]?.entry ?? pickWinner(entries);
+      stripAnim.current?.stop();
+      const rest = list.slice(-1);
+      slotsRef.current = rest;
+      setSlots(rest);
+      kicksRef.current = Math.max(0, list.length - 1);
+      setKicks(kicksRef.current);
       setGhosts([]);
       setCurrent(winner);
 
@@ -358,10 +387,9 @@ export function HoundHuntPage() {
 
           {(phase === "arming" || phase === "drift") && (
             <ReelStage
-              reel={reel}
+              slots={slots}
               ghosts={ghosts}
-              kicks={kicks}
-              controls={strip}
+              x={stripX}
               armed={phase === "arming"}
             />
           )}
