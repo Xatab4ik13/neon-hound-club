@@ -510,6 +510,12 @@ export async function adminNewsRoutes(app: FastifyInstance) {
       .values({ ...rest, imageUrl, publishedAt: publishedAtDate })
       .returning();
 
+    if (created?.published) {
+      void import("../lib/push-reminders.js").then(({ pushNewsPublished }) =>
+        pushNewsPublished({ id: created.id, title: created.title }),
+      );
+    }
+
     return reply.code(201).send({ post: serialize(created, false) });
   });
 
@@ -540,12 +546,25 @@ export async function adminNewsRoutes(app: FastifyInstance) {
       patch.publishedAt = sql`coalesce(${newsPosts.publishedAt}, now())`;
     }
 
+    const [before] = await db
+      .select({ published: newsPosts.published })
+      .from(newsPosts)
+      .where(eq(newsPosts.id, id.data))
+      .limit(1);
+
     const [updated] = await db
       .update(newsPosts)
       .set(patch)
       .where(and(eq(newsPosts.id, id.data), isNull(newsPosts.deletedAt)))
       .returning();
     if (!updated) return reply.code(404).send({ error: "not_found" });
+
+    if (updated.published && !before?.published) {
+      void import("../lib/push-reminders.js").then(({ pushNewsPublished }) =>
+        pushNewsPublished({ id: updated.id, title: updated.title }),
+      );
+    }
+
     return { post: serialize(updated, false) };
   });
 
@@ -563,6 +582,11 @@ export async function adminNewsRoutes(app: FastifyInstance) {
       .where(and(eq(newsPosts.id, id.data), isNull(newsPosts.deletedAt)))
       .returning();
     if (!updated) return reply.code(404).send({ error: "not_found" });
+
+    void import("../lib/push-reminders.js").then(({ pushNewsPublished }) =>
+      pushNewsPublished({ id: updated.id, title: updated.title }),
+    );
+
     return { post: serialize(updated, false) };
   });
 
