@@ -13,7 +13,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useAnimationControls } from "framer-motion";
 import { X } from "lucide-react";
-import { HoundDog, type DogMode } from "@/components/club/hound-hunt/HoundDog";
+import { RiderCharacter, type RiderMode } from "@/components/club/hound-hunt/RiderCharacter";
 import { EmberField } from "@/components/club/hound-hunt/EmberField";
 import { HuntCapsule, CapsuleChip } from "@/components/club/hound-hunt/HuntCapsule";
 import {
@@ -52,7 +52,7 @@ function DesktopBlock() {
       <EmberField className="pointer-events-none absolute inset-0 opacity-40" />
       <div className="relative z-10 flex flex-col items-center gap-4">
         <div className="w-40">
-          <HoundDog mode="idle" />
+          <RiderCharacter mode="idle" className="h-40 w-40" />
         </div>
         <h1 className="font-display text-2xl uppercase tracking-tight text-white">Hound Hunt</h1>
         <p className="max-w-xs text-sm leading-relaxed text-white/50">
@@ -311,7 +311,7 @@ export function HoundHuntPage() {
     }
   };
 
-  const dogMode: DogMode = kicking
+  const dogMode: RiderMode = kicking
     ? "lunge"
     : phase === "drift" || phase === "arming" || phase === "pull"
       ? "watch"
@@ -386,10 +386,10 @@ export function HoundHuntPage() {
         <div className="relative flex min-h-0 flex-1 flex-col items-center justify-center">
           {/* гончая */}
           <motion.div
-            className="relative z-20 h-40 w-56"
+            className="relative z-20 h-56 w-64"
             animate={{ opacity: phase === "podium" ? 0.25 : 1, y: phase === "crack" ? 10 : 0 }}
           >
-            <HoundDog mode={dogMode} lookAt={look} className="h-full w-full" />
+            <RiderCharacter mode={dogMode} lookAt={look} className="h-full w-full" />
           </motion.div>
 
           {phase === "intro" && <IntroPanel onStart={start} />}
