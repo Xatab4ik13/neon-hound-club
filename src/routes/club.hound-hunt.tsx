@@ -273,10 +273,13 @@ export function HoundHuntPage() {
     clearTimers();
     const entries = pool;
     if (phase === "arming" || phase === "drift") {
-      const winner = reel[WIN_INDEX] ?? pickWinner(entries);
-      strip.set({ x: -(WIN_INDEX * STEP) });
-      setFocusIdx(WIN_INDEX);
+      const last = Math.max(0, reel.length - 1);
+      const winner = reel[last] ?? pickWinner(entries);
+      strip.set({ x: -(last * STEP) });
+      setKilled(Array.from({ length: last }, (_, i) => i));
+      setFocusIdx(last);
       setCurrent(winner);
+
       setPhase("pull");
       later(() => {
         setPhase("crack");
