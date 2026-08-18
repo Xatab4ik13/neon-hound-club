@@ -17,7 +17,7 @@ import {
   newsVariants,
 } from "../../db/schema/news-agent.js";
 import { OpenRouterError } from "../openrouter.js";
-import { extractArticle, fetchFeed, titleHash } from "./fetch.js";
+import { extractArticle, fetchSource, titleHash } from "./fetch.js";
 import { scoreBatch, type FilterInput } from "./filter.js";
 import { DEFAULT_WRITER_PROMPT } from "./prompts.js";
 import { rewriteCandidate } from "./rewrite.js";
@@ -122,7 +122,7 @@ export async function runAgent(stream: Stream, opts?: { force?: boolean }): Prom
 
     for (const src of sources) {
       try {
-        const items = await fetchFeed(src.url);
+        const items = await fetchSource(src.url);
         fetched += items.length;
         for (const it of items.slice(0, ITEMS_PER_FEED)) {
           if (seenUrls.has(it.url)) continue;
@@ -278,7 +278,10 @@ export async function runAgent(stream: Stream, opts?: { force?: boolean }): Prom
       for (const c of queue) {
         try {
           // Полный текст и og:image со страницы (RSS часто отдаёт огрызок).
-          const article = await extractArticle(c.url);
+          // Для Telegram-постов текст уже полный — страницу не дёргаем.
+          const article = /^https?:\/\/t\.me\//i.test(c.url)
+            ? { text: "", image: null }
+            : await extractArticle(c.url);
           const body = article.text.length > c.srcText.length ? article.text : c.srcText;
           const image = c.srcImage ?? article.image;
 

@@ -470,6 +470,13 @@
       "when": 1786700000000,
       "tag": "0066_push_reminders",
       "breakpoints": true
+    },
+    {
+      "idx": 67,
+      "version": "7",
+      "when": 1786800000000,
+      "tag": "0067_news_sources_telegram",
+      "breakpoints": true
     }
   ]
 }

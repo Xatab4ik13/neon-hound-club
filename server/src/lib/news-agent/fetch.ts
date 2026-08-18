@@ -191,3 +191,64 @@ export async function extractArticle(url: string): Promise<ArticleExtract> {
 
   return { text, image };
 }
+
+// ─── Telegram-каналы ────────────────────────────────────────────────
+// У Telegram нет RSS, но публичная веб-версия канала (t.me/s/<name>)
+// отдаёт последние посты обычным HTML. Парсим её как фид.
+
+/** Извлекает имя канала из ссылки t.me/<name> или t.me/s/<name>. */
+export function telegramChannel(url: string): string | null {
+  const m = url.match(/^https?:\/\/t\.me\/(?:s\/)?(@?[A-Za-z0-9_]{4,64})\/?$/i);
+  return m ? m[1].replace(/^@/, "") : null;
+}
+
+export function isTelegramSource(url: string): boolean {
+  return telegramChannel(url) !== null;
+}
+
+function tgText(block: string): string {
+  const m = block.match(/<div class="tgme_widget_message_text[^"]*"[^>]*>([\s\S]*?)<\/div>/i);
+  if (!m) return "";
+  return stripHtml(m[1].replace(/<br\s*\/?>/gi, "\n").replace(/<\/p>/gi, "\n"))
+    .replace(/\s*\n\s*/g, "\n")
+    .trim();
+}
+
+/** Читает публичный Telegram-канал как фид. */
+export async function fetchTelegramChannel(url: string): Promise<RawItem[]> {
+  const channel = telegramChannel(url);
+  if (!channel) throw new Error("не похоже на ссылку канала t.me");
+  const html = await httpGet(`https://t.me/s/${channel}`, 20_000);
+
+  const blocks = html.split("tgme_widget_message_wrap").slice(1);
+  const out: RawItem[] = [];
+  for (const b of blocks) {
+    const post = b.match(/data-post="([^"]+)"/)?.[1];
+    if (!post) continue;
+
+    const body = tgText(b);
+    if (body.length < 20) continue; // пустые пересылки и «реклама»
+
+    // Картинка: фото поста или превью видео.
+    const img = b.match(/background-image:url\('([^']+)'\)/)?.[1] ?? null;
+
+    const dt = b.match(/<time[^>]+datetime="([^"]+)"/)?.[1];
+    const publishedAt = dt ? new Date(dt) : null;
+
+    const firstLine = body.split("\n").find((l) => l.trim().length > 10) ?? body;
+    out.push({
+      url: `https://t.me/${post}`,
+      title: firstLine.trim().slice(0, 180),
+      summary: body.slice(0, 1200),
+      image: img && /^https?:/i.test(img) ? img : null,
+      publishedAt: publishedAt && !Number.isNaN(publishedAt.getTime()) ? publishedAt : null,
+    });
+  }
+  // В вебе посты идут от старых к новым — переворачиваем.
+  return out.reverse();
+}
+
+/** Единая точка: RSS или Telegram-канал, в зависимости от ссылки. */
+export async function fetchSource(url: string): Promise<RawItem[]> {
+  return isTelegramSource(url) ? fetchTelegramChannel(url) : fetchFeed(url);
+}
