@@ -73,9 +73,10 @@ function DesktopBlock() {
 
 /** Базовые длительности «боевого» темпа, мс. Кнопки скорости делят их. */
 const BASE = {
-  arming: 9000, // гончая принюхивается, капсулы качаются
-  drift: 95000, // медленный дрейф барабана
-  pull: 9000, // капсула вытягивается к пасти
+  arming: 6000, // персонаж встаёт в стойку, капсулы качаются
+  kick: 2000, // интервал между ударами по капсуле
+  glide: 900, // подъезд следующей капсулы под центр
+  pull: 6000, // последняя капсула вытягивается к персонажу
   crack: 2600, // раскус
   reveal: 26000, // ревил победителя
 };
@@ -89,13 +90,16 @@ const CHIP_W = 152 * 0.62;
 const CHIP_GAP = 16;
 const STEP = CHIP_W + CHIP_GAP;
 
+/** Сколько капсул в барабане на один приз (последняя — победитель). */
+const REEL_LEN = 14;
+
 /* ------------------------------ страница ------------------------------ */
 
 export function HoundHuntPage() {
   const [speed, setSpeed] = useState<Speed>(5);
   const speedRef = useRef<Speed>(speed);
   speedRef.current = speed;
-  const dur = useCallback((base: number) => Math.max(280, base / speedRef.current), []);
+  const dur = useCallback((base: number) => Math.max(220, base / speedRef.current), []);
 
   const [pool, setPool] = useState<HuntEntry[]>(() => makeEntries(28));
   const [caseIdx, setCaseIdx] = useState(0);
@@ -121,19 +125,21 @@ export function HoundHuntPage() {
 
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
 
-  /* --- барабан: длинная лента капсул, победитель на фиксированном индексе --- */
+  /* --- барабан: капсулы выбиваются по одной, последняя = победитель --- */
   const [reel, setReel] = useState<HuntEntry[]>([]);
   const [focusIdx, setFocusIdx] = useState(0);
-  const WIN_INDEX = 38;
+  const [killed, setKilled] = useState<number[]>([]);
+  const [kicking, setKicking] = useState(false);
 
   const buildReel = useCallback((entries: HuntEntry[], winner: HuntEntry) => {
     const slots: HuntEntry[] = [];
     for (const e of entries) for (let i = 0; i < e.slots; i++) slots.push(e);
+    const others = slots.filter((e) => e.id !== winner.id);
     const out: HuntEntry[] = [];
-    for (let i = 0; i < WIN_INDEX + 10; i++) {
-      out.push(slots[Math.floor(Math.random() * slots.length)]);
+    for (let i = 0; i < REEL_LEN - 1; i++) {
+      out.push(others[Math.floor(Math.random() * others.length)] ?? winner);
     }
-    out[WIN_INDEX] = winner;
+    out.push(winner);
     return out;
   }, []);
 
@@ -147,7 +153,7 @@ export function HoundHuntPage() {
     return entries[entries.length - 1];
   }, []);
 
-  /* --- глаза гончей: медленно ведут за капсулами во время дрейфа --- */
+  /* --- взгляд персонажа: следит за капсулами во время отбора --- */
   useEffect(() => {
     if (phase !== "drift" && phase !== "arming") {
       if (phase === "pull" || phase === "crack") setLook({ x: 0, y: 0.35 });
@@ -157,7 +163,6 @@ export function HoundHuntPage() {
     const t0 = performance.now();
     const tick = (now: number) => {
       const k = (now - t0) / 1000;
-      // мягкая «восьмёрка» — взгляд скользит по ленте
       setLook({ x: Math.sin(k * 0.55) * 0.9, y: 0.18 + Math.sin(k * 0.31) * 0.14 });
       raf = requestAnimationFrame(tick);
     };
@@ -170,72 +175,88 @@ export function HoundHuntPage() {
   const runCase = useCallback(
     (idx: number, entries: HuntEntry[]) => {
       const winner = pickWinner(entries);
+      const reelNow = buildReel(entries, winner);
       setCurrent(null);
       setFocusIdx(0);
-      setReel(buildReel(entries, winner));
+      setKilled([]);
+      setKicking(false);
+      setReel(reelNow);
       strip.set({ x: 0 });
       setPhase("arming");
       haptic("light");
 
-      const armingMs = dur(BASE.arming);
-      const driftMs = dur(BASE.drift);
-      const pullMs = dur(BASE.pull);
-      const crackMs = dur(BASE.crack);
-      const revealMs = dur(BASE.reveal);
+      const finish = () => {
+        // последняя капсула — победитель: тянется к персонажу и раскрывается
+        setPhase("pull");
+        setCurrent(winner);
+        haptic("selection");
+
+        later(() => {
+          setPhase("crack");
+          haptic("warning");
+          setFlash((f) => f + 1);
+          shake.start({
+            x: [0, -12, 10, -6, 4, 0],
+            y: [0, 7, -5, 3, -2, 0],
+            transition: { duration: 0.55 },
+          });
+
+          later(() => {
+            setPhase("reveal");
+            haptic("success");
+            setWinners((w) => [...w, { prizeId: HUNT_PRIZES[idx].id, entry: winner }]);
+            const rest = entries.filter((e) => e.id !== winner.id);
+            setPool(rest);
+
+            later(() => {
+              if (idx + 1 < HUNT_PRIZES.length) {
+                setCaseIdx(idx + 1);
+                runCase(idx + 1, rest);
+              } else {
+                setPhase("podium");
+              }
+            }, dur(BASE.reveal));
+          }, dur(BASE.crack));
+        }, dur(BASE.pull));
+      };
+
+      /** Цикл: капсула под центром → удар ногой → она исчезает → подъезжает следующая. */
+      const step = (i: number) => {
+        setFocusIdx(i);
+        if (i >= reelNow.length - 1) {
+          later(finish, dur(BASE.kick));
+          return;
+        }
+        const kickMs = dur(BASE.kick);
+        later(() => {
+          // удар
+          setKicking(true);
+          haptic("warning");
+          setFlash((f) => f + 1);
+          shake.start({
+            x: [0, -7, 6, -3, 0],
+            y: [0, 4, -3, 1, 0],
+            transition: { duration: 0.38 },
+          });
+          setKilled((k) => [...k, i]);
+          later(() => setKicking(false), Math.min(420, kickMs * 0.35));
+          // следующая капсула подъезжает под центр
+          strip.start({
+            x: -((i + 1) * STEP),
+            transition: { duration: dur(BASE.glide) / 1000, ease: [0.32, 0, 0.2, 1] },
+          });
+          later(() => step(i + 1), kickMs * 0.45);
+        }, kickMs * 0.55);
+      };
 
       later(() => {
         setPhase("drift");
-        // почти линейный медленный дрейф с плавным доводом — не «казино»,
-        // а именно медленный отбор: капсулы неспешно проплывают мимо гончей
-        strip.start({
-          x: -(WIN_INDEX * STEP),
-          transition: { duration: driftMs / 1000, ease: [0.15, 0.55, 0.2, 1] },
-        });
-
-        // подсветка капсулы под носом гончей
-        const stepMs = driftMs / (WIN_INDEX + 1);
-        for (let i = 1; i <= WIN_INDEX; i++) {
-          later(() => setFocusIdx(i), Math.min(driftMs, i * stepMs * 0.92));
-        }
-
-        later(() => {
-          // гончая вынюхала капсулу и вытягивает её к пасти
-          setPhase("pull");
-          setCurrent(winner);
-          haptic("selection");
-
-          later(() => {
-            setPhase("crack");
-            haptic("warning");
-            setFlash((f) => f + 1);
-            shake.start({
-              x: [0, -12, 10, -6, 4, 0],
-              y: [0, 7, -5, 3, -2, 0],
-              transition: { duration: 0.55 },
-            });
-
-            later(() => {
-              setPhase("reveal");
-              haptic("success");
-              setWinners((w) => [...w, { prizeId: HUNT_PRIZES[idx].id, entry: winner }]);
-              const rest = entries.filter((e) => e.id !== winner.id);
-              setPool(rest);
-
-              later(() => {
-                if (idx + 1 < HUNT_PRIZES.length) {
-                  setCaseIdx(idx + 1);
-                  runCase(idx + 1, rest);
-                } else {
-                  setPhase("podium");
-                }
-              }, revealMs);
-            }, crackMs);
-          }, pullMs);
-        }, driftMs + 200);
-      }, armingMs);
+        step(0);
+      }, dur(BASE.arming));
     },
     [buildReel, dur, later, pickWinner, shake, strip],
   );
+
 
   const start = () => {
     clearTimers();
@@ -252,10 +273,13 @@ export function HoundHuntPage() {
     clearTimers();
     const entries = pool;
     if (phase === "arming" || phase === "drift") {
-      const winner = reel[WIN_INDEX] ?? pickWinner(entries);
-      strip.set({ x: -(WIN_INDEX * STEP) });
-      setFocusIdx(WIN_INDEX);
+      const last = Math.max(0, reel.length - 1);
+      const winner = reel[last] ?? pickWinner(entries);
+      strip.set({ x: -(last * STEP) });
+      setKilled(Array.from({ length: last }, (_, i) => i));
+      setFocusIdx(last);
       setCurrent(winner);
+
       setPhase("pull");
       later(() => {
         setPhase("crack");
@@ -287,16 +311,16 @@ export function HoundHuntPage() {
     }
   };
 
-  const dogMode: DogMode =
-    phase === "drift" || phase === "arming"
+  const dogMode: DogMode = kicking
+    ? "lunge"
+    : phase === "drift" || phase === "arming" || phase === "pull"
       ? "watch"
-      : phase === "pull"
-        ? "watch"
-        : phase === "crack"
-          ? "lunge"
-          : phase === "reveal"
-            ? "chew"
-            : "idle";
+      : phase === "crack"
+        ? "lunge"
+        : phase === "reveal"
+          ? "chew"
+          : "idle";
+
 
   const intensity =
     phase === "crack" ? 1 : phase === "reveal" ? 0.7 : phase === "drift" ? 0.45 : 0.26;
@@ -377,10 +401,13 @@ export function HoundHuntPage() {
               prizeImg={prize.img}
               reel={reel}
               focusIdx={focusIdx}
+              killed={killed}
+              kicking={kicking}
               controls={strip}
               armed={phase === "arming"}
             />
           )}
+
 
           {(phase === "pull" || phase === "crack") && current && (
             <PullStage entry={current} cracking={phase === "crack"} />
@@ -447,9 +474,10 @@ function IntroPanel({ onStart }: { onStart: () => void }) {
         охота начинается
       </p>
       <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-        Три приза. Гончая медленно ведёт по капсулам, выбирает носом одну — и раскусывает.
-        Чья аватарка внутри, тот забирает. Победитель выбывает из барабана.
+        Три приза. Капсулы плывут мимо, и каждые пару секунд по одной прилетает удар — капсула
+        выбивается. Остаётся последняя: чья аватарка внутри, тот забирает приз.
       </p>
+
       <button
         type="button"
         onClick={onStart}
@@ -467,6 +495,8 @@ function ReelStage({
   prizeImg,
   reel,
   focusIdx,
+  killed,
+  kicking,
   controls,
   armed,
 }: {
@@ -475,9 +505,12 @@ function ReelStage({
   prizeImg: string;
   reel: HuntEntry[];
   focusIdx: number;
+  killed: number[];
+  kicking: boolean;
   controls: ReturnType<typeof useAnimationControls>;
   armed: boolean;
 }) {
+  const alive = reel.length - killed.length;
   return (
     <div className="relative z-10 w-full">
       <div className="mb-3 flex items-center justify-center gap-3">
@@ -491,8 +524,12 @@ function ReelStage({
       </div>
 
       <div className="relative overflow-hidden py-2">
-        {/* след носа — вертикальный луч по центру */}
-        <div className="pointer-events-none absolute left-1/2 top-0 z-20 h-full w-[2px] -translate-x-1/2 bg-gradient-to-b from-transparent via-destructive to-transparent shadow-[0_0_20px_4px_color-mix(in_oklab,var(--destructive)_60%,transparent)]" />
+        {/* зона удара — вертикальный луч по центру */}
+        <motion.div
+          animate={{ opacity: kicking ? [1, 0.3, 1] : 0.7, scaleX: kicking ? [1, 3, 1] : 1 }}
+          transition={{ duration: 0.35 }}
+          className="pointer-events-none absolute left-1/2 top-0 z-20 h-full w-[2px] -translate-x-1/2 bg-gradient-to-b from-transparent via-destructive to-transparent shadow-[0_0_20px_4px_color-mix(in_oklab,var(--destructive)_60%,transparent)]"
+        />
         <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-20 bg-gradient-to-r from-background to-transparent" />
         <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-20 bg-gradient-to-l from-background to-transparent" />
 
@@ -501,9 +538,23 @@ function ReelStage({
           className="flex items-center gap-4"
           style={{ paddingLeft: `calc(50% - ${(152 * 0.62) / 2}px)`, willChange: "transform" }}
         >
-          {reel.map((e, i) => (
-            <CapsuleChip key={`${e.id}-${i}`} entry={e} focused={i === focusIdx} />
-          ))}
+          {reel.map((e, i) => {
+            const dead = killed.includes(i);
+            return (
+              <motion.div
+                key={`${e.id}-${i}`}
+                className="shrink-0"
+                animate={
+                  dead
+                    ? { opacity: 0, scale: 0.35, y: -150, rotate: 80, filter: "blur(6px)" }
+                    : { opacity: 1, scale: 1, y: 0, rotate: 0, filter: "blur(0px)" }
+                }
+                transition={{ duration: dead ? 0.55 : 0.25, ease: "easeOut" }}
+              >
+                <CapsuleChip entry={e} focused={i === focusIdx && !dead} />
+              </motion.div>
+            );
+          })}
         </motion.div>
       </div>
 
@@ -512,11 +563,12 @@ function ReelStage({
         transition={{ duration: 1.6, repeat: Infinity }}
         className="mt-2 text-center font-mono text-[10px] uppercase tracking-[0.28em] text-muted-foreground"
       >
-        {armed ? "гончая принюхивается" : "капсулы плывут мимо носа"}
+        {armed ? "выходит на удар" : `выбивает капсулы · осталось ${alive}`}
       </motion.p>
     </div>
   );
 }
+
 
 /** Гончая вытягивает выбранную капсулу к пасти, потом раскусывает. */
 function PullStage({ entry, cracking }: { entry: HuntEntry; cracking: boolean }) {
