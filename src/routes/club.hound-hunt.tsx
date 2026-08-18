@@ -354,17 +354,14 @@ export function HoundHuntPage() {
 
           {(phase === "arming" || phase === "drift") && (
             <ReelStage
-              prizeTitle={prize.title}
-              prizeSub={prize.sub}
-              prizeImg={prize.img}
               reel={reel}
               focusIdx={focusIdx}
               killed={killed}
-              kicking={kicking}
               controls={strip}
               armed={phase === "arming"}
             />
           )}
+
 
 
           {(phase === "pull" || phase === "crack") && current && (
