@@ -86,7 +86,8 @@ type Speed = (typeof SPEEDS)[number];
 
 type Phase = "intro" | "arming" | "drift" | "pull" | "crack" | "reveal" | "podium";
 
-const CHIP_W = 152 * 0.62;
+const CHIP_SCALE = 0.5;
+const CHIP_W = 152 * CHIP_SCALE;
 const CHIP_GAP = 16;
 const STEP = CHIP_W + CHIP_GAP;
 
@@ -343,7 +344,7 @@ export function HoundHuntPage() {
         <div className="relative flex min-h-0 flex-1 flex-col items-center justify-center">
           {/* персонаж — виден целиком */}
           <motion.div
-            className="relative z-20 h-[46svh] w-full max-w-[460px]"
+            className="relative z-10 mt-[6svh] h-[62svh] w-full max-w-[560px]"
             animate={{ opacity: phase === "podium" ? 0.25 : 1, y: phase === "crack" ? 10 : 0 }}
           >
             <RiderCharacter mode={dogMode} lookAt={look} className="h-full w-full" />
@@ -469,7 +470,7 @@ function ReelStage({
 }) {
   const alive = reel.length - killed.length;
   return (
-    <div className="relative z-10 w-full">
+    <div className="relative z-30 -mt-[26svh] w-full">
       <div className="mb-3 flex items-center justify-center gap-3">
         <img src={prizeImg} alt="" className="size-10 rounded-lg object-contain" />
         <div className="text-left">
@@ -489,7 +490,7 @@ function ReelStage({
         <motion.div
           animate={controls}
           className="flex items-center gap-4"
-          style={{ paddingLeft: `calc(50% - ${(152 * 0.62) / 2}px)`, willChange: "transform" }}
+          style={{ paddingLeft: `calc(50% - ${CHIP_W / 2}px)`, willChange: "transform" }}
         >
           {reel.map((e, i) => {
             const dead = killed.includes(i);
@@ -504,7 +505,7 @@ function ReelStage({
                 }
                 transition={{ duration: dead ? 0.5 : 0.25, ease: [0.2, 0.8, 0.3, 1] }}
               >
-                <CapsuleChip entry={e} focused={i === focusIdx && !dead} />
+                <CapsuleChip entry={e} focused={i === focusIdx && !dead} scale={CHIP_SCALE} />
               </motion.div>
             );
           })}
