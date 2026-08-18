@@ -302,7 +302,19 @@ export async function adminNewsAgentRoutes(app: FastifyInstance) {
     });
   });
 
+  // DELETE /candidates/:id — «удалить»: предложение больше не нужно.
+  app.delete<{ Params: { id: string } }>("/candidates/:id", async (req, reply) => {
+    const id = uuidSchema.safeParse(req.params.id);
+    if (!id.success) return reply.code(400).send({ error: "invalid_id" });
+    await db.transaction(async (tx) => {
+      await tx.delete(newsVariants).where(eq(newsVariants.candidateId, id.data));
+      await tx.delete(newsCandidates).where(eq(newsCandidates.id, id.data));
+    });
+    return { ok: true };
+  });
+
   // POST /candidates/:id/reject — «мимо». Причина логируется для настройки фильтра.
+
   app.post<{ Params: { id: string } }>("/candidates/:id/reject", async (req, reply) => {
     const id = uuidSchema.safeParse(req.params.id);
     if (!id.success) return reply.code(400).send({ error: "invalid_id" });
