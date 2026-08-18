@@ -10,6 +10,18 @@ import { z } from "zod";
 import { db } from "../db/client.js";
 import { newsPosts, newsPostLikes } from "../db/schema/news-posts.js";
 import { loadSession, requireAdmin, requireAuth, type SessionPayload } from "../lib/auth.js";
+import { isOurS3Url, mirrorRemoteImage } from "../lib/s3.js";
+
+/**
+ * Картинку с чужого домена копируем в наше хранилище: хотлинк на чужой CDN
+ * часто отдаёт 403 и в ленте вместо фото пустое место.
+ */
+async function ownImageUrl(url: string | null | undefined): Promise<string | null> {
+  if (!url) return null;
+  if (isOurS3Url(url)) return url;
+  return (await mirrorRemoteImage(url, "post", "news")) ?? url;
+}
+
 
 // ─── Схемы валидации ────────────────────────────────────────────────
 
@@ -244,10 +256,13 @@ export async function adminNewsRoutes(app: FastifyInstance) {
         ? new Date()
         : null;
 
+    const imageUrl = await ownImageUrl(rest.imageUrl);
+
     const [created] = await db
       .insert(newsPosts)
-      .values({ ...rest, publishedAt: publishedAtDate })
+      .values({ ...rest, imageUrl, publishedAt: publishedAtDate })
       .returning();
+
     return reply.code(201).send({ post: serialize(created, false) });
   });
 
@@ -268,9 +283,11 @@ export async function adminNewsRoutes(app: FastifyInstance) {
 
     // Если публикуем впервые и publishedAt не задан — проставим now().
     const patch: Record<string, unknown> = { ...rest, updatedAt: new Date() };
+    if (rest.imageUrl !== undefined) patch.imageUrl = await ownImageUrl(rest.imageUrl);
     if (publishedAt !== undefined) {
       patch.publishedAt = publishedAt ? new Date(publishedAt) : null;
     }
+
     if (rest.published === true && publishedAt === undefined) {
       // Пусть БД сама выставит, если ещё не было.
       patch.publishedAt = sql`coalesce(${newsPosts.publishedAt}, now())`;

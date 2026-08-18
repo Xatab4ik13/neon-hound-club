@@ -132,3 +132,53 @@ export async function deleteByPublicUrl(url: string | null | undefined): Promise
   }
 }
 
+/**
+ * Перекладывает картинку с чужого сайта в наше хранилище.
+ * Нужно для новостей: og:image с чужих CDN часто отдаёт 403 на хотлинк,
+ * поэтому в ленте картинка не грузится. Возвращает наш публичный URL,
+ * либо null, если скачать/сохранить не удалось.
+ */
+export async function mirrorRemoteImage(
+  url: string,
+  kind: UploadKind = "post",
+  scope = "news",
+): Promise<string | null> {
+  if (!/^https?:\/\//i.test(url)) return null;
+  if (isOurS3Url(url)) return url;
+  try {
+    const res = await fetch(url, {
+      redirect: "follow",
+      headers: {
+        // Некоторые CDN отдают 403 без юзер-агента браузера.
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+        Accept: "image/avif,image/webp,image/*,*/*;q=0.8",
+      },
+    });
+    if (!res.ok) return null;
+
+    const rules = UPLOAD_RULES[kind];
+    let mime = (res.headers.get("content-type") || "").split(";")[0].trim().toLowerCase();
+    if (mime === "image/jpg") mime = "image/jpeg";
+    if (!rules.mimes.includes(mime)) return null;
+
+    const buf = Buffer.from(await res.arrayBuffer());
+    if (buf.length === 0 || buf.length > rules.maxSize) return null;
+
+    const key = buildObjectKey(kind, scope, mime);
+    await s3.send(
+      new PutObjectCommand({
+        Bucket: S3_BUCKET,
+        Key: key,
+        Body: buf,
+        ContentType: mime,
+        ContentLength: buf.length,
+      }),
+    );
+    return publicUrl(key);
+  } catch {
+    return null;
+  }
+}
+
+

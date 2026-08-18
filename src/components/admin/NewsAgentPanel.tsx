@@ -1,6 +1,6 @@
 // Таб «Агент» на /admin/news: очередь предложений от AI-агента.
 // Агент только предлагает 2 варианта русского текста — решение и публикация за человеком.
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Loader2,
@@ -29,7 +29,9 @@ import {
   type NewsAgentVariant,
 } from "@/lib/admin-queries";
 import { ApiError } from "@/lib/api";
+import { uploadFileToS3 } from "@/lib/garage-api";
 import { hhToast as toast } from "@/lib/hh-toast";
+
 
 function apiErr(e: unknown, fallback = "Ошибка") {
   if (e instanceof ApiError) {
@@ -272,6 +274,24 @@ function CandidateCard({ cand, onDone }: { cand: NewsCandidateItem; onDone: () =
   const [category, setCategory] = useState(active?.category ?? "");
   const [image, setImage] = useState(cand.image ?? "");
   const [dirty, setDirty] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const pickFile = async (file: File | null | undefined) => {
+    if (!file) return;
+    setUploading(true);
+    try {
+      const url = await uploadFileToS3(file, "post", "news");
+      setImage(url);
+      toast.success("Картинка загружена");
+    } catch (e) {
+      toast.error(apiErr(e, "Не получилось загрузить картинку"));
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  };
+
 
   const selectVariant = (i: number) => {
     setPick(i);
@@ -409,9 +429,39 @@ function CandidateCard({ cand, onDone }: { cand: NewsCandidateItem; onDone: () =
                 onChange={(e) => setCategory(e.target.value)}
               />
             </Field>
-            <Field label="Картинка (URL)" hint="Подтянута из источника — можно заменить.">
-              <TextInput value={image} onChange={(e) => setImage(e.target.value)} />
+            <Field
+              label="Картинка"
+              hint="Подтянута из источника. При публикации копируется в наше хранилище — можно заменить своей."
+            >
+              <div className="space-y-2">
+                <TextInput value={image} onChange={(e) => setImage(e.target.value)} />
+                <div className="flex items-center gap-2">
+                  <input
+                    ref={fileRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    className="hidden"
+                    onChange={(e) => void pickFile(e.target.files?.[0])}
+                  />
+                  <Btn
+                    variant="ghost"
+                    onClick={() => fileRef.current?.click()}
+                    disabled={uploading}
+                  >
+                    {uploading ? (
+                      <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                    ) : null}
+                    Загрузить свою
+                  </Btn>
+                  {image && (
+                    <Btn variant="ghost" onClick={() => setImage("")} disabled={uploading}>
+                      Убрать
+                    </Btn>
+                  )}
+                </div>
+              </div>
             </Field>
+
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
