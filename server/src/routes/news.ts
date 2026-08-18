@@ -244,10 +244,13 @@ export async function adminNewsRoutes(app: FastifyInstance) {
         ? new Date()
         : null;
 
+    const imageUrl = await ownImageUrl(rest.imageUrl);
+
     const [created] = await db
       .insert(newsPosts)
-      .values({ ...rest, publishedAt: publishedAtDate })
+      .values({ ...rest, imageUrl, publishedAt: publishedAtDate })
       .returning();
+
     return reply.code(201).send({ post: serialize(created, false) });
   });
 
