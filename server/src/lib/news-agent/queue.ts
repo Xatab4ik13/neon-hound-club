@@ -51,10 +51,16 @@ export async function flushQueue(): Promise<number> {
   if (due.length === 0) return 0;
 
   for (const p of due) {
-    await db
+    const [published] = await db
       .update(newsPosts)
       .set({ published: true, queued: false, updatedAt: new Date() })
-      .where(and(eq(newsPosts.id, p.id), eq(newsPosts.queued, true)));
+      .where(and(eq(newsPosts.id, p.id), eq(newsPosts.queued, true)))
+      .returning({ id: newsPosts.id, title: newsPosts.title });
+    if (published) {
+      void import("../push-reminders.js").then(({ pushNewsPublished }) =>
+        pushNewsPublished(published),
+      );
+    }
   }
   return due.length;
 }

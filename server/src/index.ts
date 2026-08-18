@@ -68,6 +68,19 @@ try {
     }
   }, 60_000).unref();
 
+  // ─── Напоминания пушами ───────────────────────────────────────────
+  // Тик раз в минуту: HellSpin в 23:00 МСК, Hell Pass за 24 ч до конца,
+  // капсула ×2 за 3 ч до конца.
+  const { runReminderTick } = await import("./lib/push-reminders.js");
+  setInterval(async () => {
+    try {
+      const r = await runReminderTick();
+      if (r.spins || r.pass || r.boost) app.log.info({ ...r }, "push reminders sent");
+    } catch (e) {
+      app.log.error({ err: e }, "runReminderTick failed");
+    }
+  }, 60_000).unref();
+
   // Чистка старых кандидатов раз в сутки.
   setInterval(() => void pruneCandidates().catch(() => {}), 24 * 60 * 60 * 1000).unref();
 } catch (err) {
