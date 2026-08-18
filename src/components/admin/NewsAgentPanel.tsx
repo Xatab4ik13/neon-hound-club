@@ -29,7 +29,9 @@ import {
   type NewsAgentVariant,
 } from "@/lib/admin-queries";
 import { ApiError } from "@/lib/api";
+import { uploadFileToS3 } from "@/lib/garage-api";
 import { hhToast as toast } from "@/lib/hh-toast";
+
 
 function apiErr(e: unknown, fallback = "Ошибка") {
   if (e instanceof ApiError) {
