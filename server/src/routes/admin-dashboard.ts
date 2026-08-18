@@ -228,6 +228,7 @@ export async function adminDashboardRoutes(app: FastifyInstance) {
         rafflesActive: rafflesActive?.c ?? 0,
         rafflesBankTickets: rafflesBank?.bank ?? 0,
       },
+      passByTier,
       products: productRows,
       monthly,
       lastOrders,
