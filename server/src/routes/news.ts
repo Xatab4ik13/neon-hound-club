@@ -10,6 +10,18 @@ import { z } from "zod";
 import { db } from "../db/client.js";
 import { newsPosts, newsPostLikes } from "../db/schema/news-posts.js";
 import { loadSession, requireAdmin, requireAuth, type SessionPayload } from "../lib/auth.js";
+import { isOurS3Url, mirrorRemoteImage } from "../lib/s3.js";
+
+/**
+ * Картинку с чужого домена копируем в наше хранилище: хотлинк на чужой CDN
+ * часто отдаёт 403 и в ленте вместо фото пустое место.
+ */
+async function ownImageUrl(url: string | null | undefined): Promise<string | null> {
+  if (!url) return null;
+  if (isOurS3Url(url)) return url;
+  return (await mirrorRemoteImage(url, "post", "news")) ?? url;
+}
+
 
 // ─── Схемы валидации ────────────────────────────────────────────────
 
