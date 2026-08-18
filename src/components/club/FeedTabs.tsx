@@ -1,14 +1,12 @@
 // Переключатель вкладок ленты: HELLHOUND (посты Вани) / NEWS (мотоспорт).
 // Plump-стиль: чипы с чёрной обводкой и тенью, активный — цветной фон.
-// Выбор сохраняется в localStorage, чтобы при возврате в /club юзер попадал
-// в ту же вкладку, где был.
+// NEWS — вкладка по умолчанию: при каждом заходе на ленту юзер попадает в новости.
+// Выбор вкладки живёт только в рамках текущего экрана и не сохраняется.
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { haptic } from "@/hooks/use-haptic";
 
 export type FeedTab = "hellhound" | "news";
-
-const STORAGE_KEY = "club:feed-tab";
 
 // Цвета вкладок — pink primary для HELLHOUND, салатовый для NEWS (согласовано)
 const TABS: { id: FeedTab; label: string; color: string }[] = [
@@ -18,27 +16,16 @@ const TABS: { id: FeedTab; label: string; color: string }[] = [
 
 
 export function useFeedTab(): [FeedTab, (t: FeedTab) => void] {
-  const [tab, setTab] = useState<FeedTab>("hellhound");
-
-  // Hydrate из localStorage после mount (SSR-safe)
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (raw === "hellhound" || raw === "news") setTab(raw);
-  }, []);
+  const [tab, setTab] = useState<FeedTab>("news");
 
   const set = useCallback((next: FeedTab) => {
     setTab(next);
     haptic("light");
-    try {
-      window.localStorage.setItem(STORAGE_KEY, next);
-    } catch {
-      /* privacy mode etc. */
-    }
   }, []);
 
   return [tab, set];
 }
+
 
 export function FeedTabs({ tab, onChange }: { tab: FeedTab; onChange: (t: FeedTab) => void }) {
   return (
