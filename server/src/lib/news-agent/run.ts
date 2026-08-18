@@ -17,7 +17,7 @@ import {
   newsVariants,
 } from "../../db/schema/news-agent.js";
 import { OpenRouterError } from "../openrouter.js";
-import { extractArticle, fetchSource, isTelegramSource, titleHash } from "./fetch.js";
+import { extractArticle, fetchSource, titleHash } from "./fetch.js";
 import { scoreBatch, type FilterInput } from "./filter.js";
 import { DEFAULT_WRITER_PROMPT } from "./prompts.js";
 import { rewriteCandidate } from "./rewrite.js";
@@ -279,7 +279,7 @@ export async function runAgent(stream: Stream, opts?: { force?: boolean }): Prom
         try {
           // Полный текст и og:image со страницы (RSS часто отдаёт огрызок).
           // Для Telegram-постов текст уже полный — страницу не дёргаем.
-          const article = isTelegramSource(`https://t.me/${c.sourceName}`)
+          const article = /^https?:\/\/t\.me\//i.test(c.url)
             ? { text: "", image: null }
             : await extractArticle(c.url);
           const body = article.text.length > c.srcText.length ? article.text : c.srcText;
