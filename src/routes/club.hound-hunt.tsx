@@ -490,7 +490,7 @@ export function HoundHuntPage() {
     clearTimers();
     const fresh = makeEntries(MOCK_ENTRIES, Math.floor(Math.random() * 99999));
     await Promise.all(
-      [...new Set(fresh.map((entry) => entry.avatarUrl).filter(Boolean))].map(
+      [...new Set(fresh.map((entry) => entry.avatarUrl).filter((src): src is string => Boolean(src)))].map(
         (src) =>
           new Promise<void>((resolve) => {
             const image = new Image();
