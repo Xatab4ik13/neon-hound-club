@@ -272,10 +272,14 @@ export function HoundHuntPage() {
       reelLastFrame.current = now;
       // Лента не останавливается во время ударов и замедляется к финалу.
       const step = dur(BASE.capsule) * speedRamp(aliveRef.current);
-      // Hitstop: в кадре удара лента замирает на несколько десятков мс —
-      // удар получает «вес», как в файтингах. Фаза не сбрасывается, поэтому
-      // после отпускания движение продолжается ровно с того же места.
-      if (now >= hitstopUntilRef.current) reelPhase.current += elapsed / step;
+      // Hitstop: в кадре удара лента почти замирает на несколько десятков мс —
+      // удар получает «вес», как в файтингах. Фазу не обнуляем и не стопим
+      // полностью, поэтому расчёт следующей цели не сбивается.
+      const frozen = now < hitstopUntilRef.current;
+      reelPhase.current += (elapsed / step) * (frozen ? 0.12 : 1);
+      // Хвост ленты должен существовать дальше, чем точка будущего импакта,
+      // иначе цель «ещё не создана» и взмах не запускается.
+      leadRef.current = Math.ceil(impactDelayRef.current / step) + 3;
       groomTape();
       syncStrip();
 
@@ -292,11 +296,15 @@ export function HoundHuntPage() {
         const nextLive = tapeRef.current.find(
           (slot) => slot.idx >= impactPhase && slot.entry !== null && liveIds.has(slot.entry.id),
         );
+        // Страховка от зависания: если окно идеального тайминга по какой-то
+        // причине проехало (кадр подвис, лента разряжена дырками), бьём по
+        // ближайшей живой капсуле впереди, а не стоим до конца розыгрыша.
+        const overdue = now - kickReadyAtRef.current > kickCycleMsRef.current * 1.5;
         if (nextLive) {
           const untilCenter = (nextLive.idx - reelPhase.current) * step;
           // Допуск в один кадр компенсирует React/Canvas между выбором цели
           // и фактическим стартом клипа, не меняя визуальную фазу ленты.
-          if (untilCenter <= impactDelayRef.current + 34) {
+          if (untilCenter <= impactDelayRef.current + 34 || overdue) {
             reservedTargetRef.current = nextLive.idx;
             kickInFlightRef.current = true;
             kickReadyAtRef.current = now + kickCycleMsRef.current;
