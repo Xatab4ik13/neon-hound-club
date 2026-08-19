@@ -166,7 +166,7 @@ export function HoundHuntPage() {
   const tapeRef = useRef<Slot[]>([]);
   /** Живые участники — из них добирается хвост ленты. */
   const liveRef = useRef<HuntEntry[]>([]);
-  /** Очередь на добор: опустела — тасуем живых заново. */
+  /** Очередь на добор: опустела — продолжаем тем же порядком живых. */
   const feedRef = useRef<HuntEntry[]>([]);
   /** Следующий абсолютный индекс, который добавим в хвост. */
   const nextIdxRef = useRef(0);
@@ -208,15 +208,14 @@ export function HoundHuntPage() {
     phaseMv.set(reelPhase.current);
   }, [phaseMv, stripX]);
 
-  /** Кто следующим встанет в хвост: живых гоняем по кругу, дырки не добираем. */
+  /**
+   * Кто следующим встанет в хвост. Порядок внутри круга не тасуем: так одна
+   * и та же заявка не может случайно появиться рядом сама с собой на стыке
+   * двух кругов и снова попасть под следующий удар.
+   */
   const nextFeed = useCallback(() => {
     if (!feedRef.current.length) {
-      const bag = [...liveRef.current];
-      for (let i = bag.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [bag[i], bag[j]] = [bag[j], bag[i]];
-      }
-      feedRef.current = bag;
+      feedRef.current = [...liveRef.current];
     }
     return feedRef.current.shift() ?? null;
   }, []);
@@ -407,8 +406,7 @@ export function HoundHuntPage() {
       if (!target?.entry) return;
 
       const kicked = target.entry;
-      // Дубль уже выбитого участника (мог остаться в видимой части ленты):
-      // выбиваем его как обычно, но счётчик не трогаем — он уже вычтен.
+      // Страховка: уже выбитая копия не считается новым участником.
       const stale = !liveRef.current.some((e) => e.id === kicked.id);
       // Победителя выбивать нельзя: если он под ногой — переносим защиту на
       // другого живого. Центральная капсула всё равно честно улетает.
@@ -423,16 +421,12 @@ export function HoundHuntPage() {
         feedRef.current = feedRef.current.filter((e) => e.id !== kicked.id);
       }
 
-      // Подменять содержимое слота можно ТОЛЬКО за краем экрана, иначе зритель
-      // видит «дёрганье» — как будто буквы в капсуле сменились на ходу.
-      const offscreen = offscreenFrom();
+      // Никаких подмен содержимого существующего DOM-слота. Все копии одного
+      // выбитого участника становятся дырками, а новые живые звенья появятся
+      // только в хвосте ленты за экраном. Поэтому буквы не могут смениться на
+      // ходу, а каждый засчитанный удар всегда выбивает нового человека.
       const next = list.map((s) => {
-        // На месте выбитого — дырка: она поедет влево вместе с лентой.
-        if (s.idx === center) return { ...s, entry: null };
-        // Дубликат выбитого, который ещё за кадром — подменяем живым.
-        if (s.entry?.id === kicked.id && s.idx > center + offscreen) {
-          return { ...s, entry: nextFeed() };
-        }
+        if (s.entry?.id === kicked.id) return { ...s, entry: null };
         return s;
       });
       tapeRef.current = next;
@@ -458,7 +452,7 @@ export function HoundHuntPage() {
         finishRef.current?.();
       }
     },
-    [later, nextFeed, offscreenFrom, stopReel],
+    [later, stopReel],
   );
 
   const start = () => {
@@ -715,13 +709,7 @@ function ReelStage({
     <div className="relative z-30 -mt-[30svh] w-full">
       {/* Движущаяся лента плоская: перспектива применяется только к звену,
           которое уже выбито и летит отдельно от барабана. */}
-      <motion.div
-        className="relative py-2"
-        // Тряска арены на каждый удар — импакт чувствуется физически.
-        animate={shock ? { x: [0, -6, 5, -3, 0], y: [0, 3, -2, 1, 0] } : { x: 0, y: 0 }}
-        transition={{ duration: 0.34, ease: "easeOut" }}
-        key={`shake-${shock}`}
-      >
+      <div className="relative py-2">
         {/* зона удара: дышащее пятно под ногой вместо жёсткой полоски */}
         <motion.div
           className="pointer-events-none absolute left-1/2 top-1/2 z-0 -translate-x-1/2 -translate-y-1/2 rounded-full"
@@ -786,7 +774,7 @@ function ReelStage({
             </motion.div>
           ))}
         </AnimatePresence>
-      </motion.div>
+      </div>
 
       {/* счётчик остатка: реальное число участников на ленте */}
       <div className="relative z-50 mt-3 flex items-center justify-center gap-2">
