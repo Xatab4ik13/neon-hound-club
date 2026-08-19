@@ -158,6 +158,8 @@ export function HoundHuntPage() {
   const kicksRef = useRef(0);
   const phaseRef = useRef<Phase>("intro");
   const finishRef = useRef<(() => void) | null>(null);
+  /** Выбитые слоты, ждущие схлопывания: убираем, когда дырка ушла за левый край. */
+  const holes = useRef<{ sid: number; phaseAt: number }[]>([]);
   phaseRef.current = phase;
   slotsRef.current = slots;
 
@@ -183,11 +185,40 @@ export function HoundHuntPage() {
       const alive = slotsRef.current.filter((s) => s.entry).length;
       const step = dur(BASE.capsule) * speedRamp(alive);
       reelPhase.current += (elapsed * slowmo.get()) / step;
+
+      // Схлопываем дырки только когда они полностью скрылись за левым краем:
+      // на экране влево от центра видно ~offLeft звеньев.
+      if (holes.current.length) {
+        const offLeft = Math.ceil(window.innerWidth / 2 / STEP) + 2;
+        const ready = holes.current.filter((h) => reelPhase.current - h.phaseAt >= offLeft);
+        if (ready.length) {
+          holes.current = holes.current.filter((h) => !ready.includes(h));
+          let list = slotsRef.current;
+          for (const h of ready) {
+            const idx = list.findIndex((s) => s.sid === h.sid && !s.entry);
+            if (idx < 0) continue;
+            const compact = list.filter((s) => s.sid !== h.sid);
+            if (!compact.length) continue;
+            list = compact;
+            // Слот уже позади центра — индексы сдвинулись на один назад.
+            reelPhase.current -= 1;
+            holes.current.forEach((rest) => {
+              rest.phaseAt -= 1;
+            });
+          }
+          if (list !== slotsRef.current) {
+            slotsRef.current = list;
+            setSlots(list);
+          }
+        }
+      }
+
       syncStrip();
       reelRaf.current = requestAnimationFrame(tick);
     };
     reelRaf.current = requestAnimationFrame(tick);
   }, [dur, slowmo, stopReel, syncStrip]);
+
 
   /**
    * Барабан = реальные участники: 15 человек — 15 звеньев. Никаких случайных
@@ -241,6 +272,8 @@ export function HoundHuntPage() {
       setKicks(0);
       kicksRef.current = 0;
       setGhosts([]);
+      holes.current = [];
+
       setSlots(slotsNow);
       slotsRef.current = slotsNow;
       winnerSidRef.current = slotsNow.find((s) => s.entry?.id === winner.id)?.sid ?? -1;
@@ -321,12 +354,9 @@ export function HoundHuntPage() {
     const rest = list.map((s) => (s.sid === target.sid ? { ...s, entry: null } : s));
     slotsRef.current = rest;
     setSlots(rest);
-
-    // Слоу-мо удара: лента почти замирает на миг и разгоняется обратно —
-    // видно, кого именно выбило, но вращение не прерывается.
-    slowmoAnim.current?.stop();
-    slowmo.set(0.22);
-    slowmoAnim.current = animate(slowmo, 1, { duration: 0.5, ease: "easeOut" });
+    // Дырку убираем не по таймеру, а когда она реально уедет за левый край:
+    // фиксируем фазу удара, а rAF-цикл сам схлопнет слот в нужный момент.
+    holes.current.push({ sid: target.sid, phaseAt: reelPhase.current });
 
     kicksRef.current += 1;
     setKicks(kicksRef.current);
@@ -336,32 +366,12 @@ export function HoundHuntPage() {
     setGhosts((g) => [...g, { key, entry: kicked }]);
     later(() => setGhosts((g) => g.filter((x) => x.key !== key)), 2000);
     haptic("light");
-
-    // Дырка живёт только один проход: когда она уезжает за левый край экрана,
-    // слот убирается из ряда и место затягивается — на следующем круге под
-    // ногой снова всегда аватарка, а не пустота.
-    const stepMs = dur(BASE.capsule) * speedRamp(Math.max(1, alive.length - 1));
-    later(
-      () => {
-        const cur = slotsRef.current;
-        if (!cur.some((s) => s.sid === target.sid && !s.entry)) return;
-        const idx = cur.findIndex((s) => s.sid === target.sid);
-        const compact = cur.filter((s) => s.sid !== target.sid);
-        if (!compact.length) return;
-        slotsRef.current = compact;
-        setSlots(compact);
-        // Слот уже позади текущего центра — индексы сдвинулись на один назад.
-        if (idx >= 0) reelPhase.current -= 1;
-        syncStrip();
-      },
-      stepMs * 4 + 400,
-    );
-
     if (alive.length - 1 <= 1) {
       stopReel();
       finishRef.current?.();
     }
-  }, [dur, later, slowmo, stopReel, syncStrip]);
+  }, [later, stopReel]);
+
 
   const start = () => {
     clearTimers();
@@ -391,6 +401,8 @@ export function HoundHuntPage() {
       setKicks(kicksRef.current);
 
       setGhosts([]);
+      holes.current = [];
+
       setCurrent(winner);
 
       setPhase("pull");
