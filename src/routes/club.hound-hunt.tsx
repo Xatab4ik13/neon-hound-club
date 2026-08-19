@@ -334,7 +334,10 @@ export function HoundHuntPage() {
             settledRef.current = true;
             setSettled(true);
             haptic("success");
-            later(() => finishRef.current?.(), dur(2200));
+            stopReel();
+            // Дальше ничего не происходит: лента стоит, победитель и приз
+            // остаются на экране.
+
           }
         }
       }
