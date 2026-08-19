@@ -168,10 +168,13 @@ export function HoundHuntPage() {
   slotsRef.current = slots;
 
   const syncStrip = useCallback(() => {
-    const n = Math.max(1, slotsRef.current.length);
-    const wrapped = ((reelPhase.current % n) + n) % n;
-    stripX.set(-wrapped * STEP);
-  }, [stripX]);
+    // Лента рендерится «окном» вокруг центра: наружу уходит только дробная
+    // часть фазы, поэтому копий ряда нет и подменять слоты можно за кадром.
+    const frac = reelPhase.current - Math.floor(reelPhase.current);
+    stripX.set(-frac * STEP);
+    phaseMv.set(reelPhase.current);
+  }, [phaseMv, stripX]);
+
 
   const stopReel = useCallback(() => {
     cancelAnimationFrame(reelRaf.current);
