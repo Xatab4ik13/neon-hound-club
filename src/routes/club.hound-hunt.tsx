@@ -504,7 +504,7 @@ export function HoundHuntPage() {
       setShock((s) => s + 1);
       // На ускорении пульта hitstop пропорционально короче, иначе на ×20
       // лента заикается вместо того, чтобы лететь.
-      hitstopUntilRef.current = now + Math.min(70, 140 / speedRef.current);
+      hitstopUntilRef.current = now + Math.min(55, 110 / speedRef.current);
 
       const key = `${center}-${kicksRef.current}`;
       // В кадре всегда ровно один выбитый шар: даже если 3D callback по ошибке
