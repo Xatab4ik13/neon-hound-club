@@ -743,10 +743,11 @@ export function HoundHuntPage() {
 
   return (
     <div className="fixed inset-0 z-40 overflow-hidden overscroll-none touch-pan-y bg-background text-foreground select-none">
-      {/* фон: угли поднят выше, чтобы низ экрана не горел, а фон был глубже */}
+      {/* фон: свечение идёт от нижнего меню до уровня ленты с аватарками */}
       <EmberField
         intensity={intensity}
-        className="pointer-events-none absolute inset-x-0 bottom-[24%] h-[76%] w-full opacity-70"
+        className="pointer-events-none absolute inset-x-0 w-full opacity-70"
+        style={{ bottom: "calc(5.5rem + env(safe-area-inset-bottom))", top: "34%" }}
       />
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_80%_at_50%_0%,color-mix(in_oklab,var(--destructive)_14%,transparent),transparent_60%)]" />
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(80%_60%_at_50%_110%,color-mix(in_oklab,var(--primary)_12%,transparent),transparent_70%)]" />
