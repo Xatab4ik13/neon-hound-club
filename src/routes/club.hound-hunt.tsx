@@ -562,7 +562,9 @@ export function HoundHuntPage() {
 
           {(phase === "arming" || phase === "drift") && (
             <ReelStage
-              slots={slots}
+              slots={tape}
+              remaining={alive}
+
               ghosts={ghosts}
               x={stripX}
               phase={phaseMv}
