@@ -19,7 +19,7 @@ type Props = {
   /** Непрерывный цикл удара: клип крутится сам, без перезапусков извне. */
   loopKick?: boolean;
   /** Вызывается в момент контакта ноги (≈60% клипа) на каждом цикле. */
-  onImpact?: () => void;
+  onImpact?: (cycle: number) => void;
 };
 
 const MODEL_URL = riderAsset.url;
@@ -83,7 +83,7 @@ function Model({
   mode: RiderMode;
   lookAt: { x: number; y: number };
   loopKick?: boolean;
-  onImpact?: () => void;
+  onImpact?: (cycle: number) => void;
 }) {
   const group = useRef<THREE.Group>(null);
   const { scene, animations } = useGLTF(MODEL_URL);
@@ -136,6 +136,8 @@ function Model({
   const impactRef = useRef(onImpact);
   impactRef.current = onImpact;
   const prevTime = useRef(0);
+  const kickCycle = useRef(0);
+  const firedCycle = useRef(-1);
 
   // Режим loopKick: клип удара крутится бесконечно на своей скорости и
   // НИКОГДА не перезапускается руками — поэтому нога всегда возвращается
@@ -157,9 +159,18 @@ function Model({
     const dur = action.getClip().duration;
     const impactAt = dur * 0.6;
     const t = action.time;
-    // цикл завернулся — сбрасываем сторож
-    if (t < prevTime.current) prevTime.current = 0;
-    if (prevTime.current < impactAt && t >= impactAt) impactRef.current?.();
+    // Один цикл клипа может пересечь impactAt несколькими render-frame из-за
+    // mixer/update и повторного рендера Canvas. Номер цикла гарантирует ровно
+    // один callback — значит, ровно одна капсула улетает на один удар.
+    if (t < prevTime.current) kickCycle.current += 1;
+    if (
+      prevTime.current < impactAt &&
+      t >= impactAt &&
+      firedCycle.current !== kickCycle.current
+    ) {
+      firedCycle.current = kickCycle.current;
+      impactRef.current?.(kickCycle.current);
+    }
     prevTime.current = t;
   });
 
