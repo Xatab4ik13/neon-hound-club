@@ -263,12 +263,15 @@ export function HoundHuntPage() {
       // Запускаем одиночный взмах ровно за impactDelay до прихода следующей
       // живой капсулы в центр. Дырки просто проезжают — персонаж их не бьёт.
       if (phaseRef.current === "drift" && aliveRef.current > 1 && !kickInFlightRef.current) {
+        const impactPhase = reelPhase.current + impactDelayRef.current / step;
         const nextLive = tapeRef.current.find(
-          (slot) => slot.idx >= reelPhase.current && slot.entry !== null,
+          (slot) => slot.idx >= impactPhase && slot.entry !== null,
         );
         if (nextLive) {
           const untilCenter = (nextLive.idx - reelPhase.current) * step;
-          if (untilCenter <= impactDelayRef.current) {
+          // Допуск в один кадр компенсирует React/Canvas между выбором цели
+          // и фактическим стартом клипа, не меняя визуальную фазу ленты.
+          if (untilCenter <= impactDelayRef.current + 34) {
             reservedTargetRef.current = nextLive.idx;
             kickInFlightRef.current = true;
             setKickToken((token) => token + 1);
