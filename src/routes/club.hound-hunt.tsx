@@ -195,58 +195,56 @@ export function HoundHuntPage() {
     reelLastFrame.current = 0;
   }, []);
 
+  /**
+   * Зачистка ленты. Пустые ауры НЕ убираются по одной у зрителя на глазах:
+   * когда их накопилось несколько, лента на секунду резко разгоняется (ники
+   * смазываются, читать нечего) — и ровно на пике скорости мы разом
+   * выбрасываем все пустые слоты, после чего лента плавно тормозит обратно.
+   * Так подмена состава физически не попадает в поле внимания.
+   */
+  const maybeSweep = useCallback(() => {
+    if (sweeping.current) return;
+    const list = slotsRef.current;
+    const dead = list.filter((s) => !s.entry).length;
+    const alive = list.length - dead;
+    if (alive <= 1 || dead < SWEEP_AT) return;
+
+    sweeping.current = true;
+    // На время разгона удары не считаем: нога не должна попадать в смазанную ленту.
+    impactLockedUntil.current = performance.now() + 1400;
+
+    animate(turbo, 7, { duration: 0.4, ease: "easeIn" }).then(() => {
+      const compact = slotsRef.current.filter((s) => s.entry);
+      if (compact.length) {
+        slotsRef.current = compact;
+        setSlots(compact);
+        reelPhase.current = Math.floor(reelPhase.current);
+      }
+      animate(turbo, 1, { duration: 0.62, ease: "easeOut" }).then(() => {
+        sweeping.current = false;
+      });
+    });
+  }, [turbo]);
+
   const startReel = useCallback(() => {
     stopReel();
     reelLastFrame.current = performance.now();
     const tick = (now: number) => {
       const elapsed = Math.min(50, now - reelLastFrame.current);
       reelLastFrame.current = now;
-      // Слоу-мо после удара + замедление к финалу: одна лента, два множителя.
+      // Слоу-мо после удара + замедление к финалу + разгон зачистки.
       const alive = slotsRef.current.filter((s) => s.entry).length;
       const step = dur(BASE.capsule) * speedRamp(alive);
-      reelPhase.current += (elapsed * slowmo.get()) / step;
+      reelPhase.current += (elapsed * slowmo.get() * turbo.get()) / step;
 
-      // Схлопываем дырки только когда они полностью скрылись за левым краем:
-      // на экране влево от центра видно ~offLeft звеньев.
-      if (holes.current.length) {
-        const vw = window.innerWidth;
-        // Ряд повторяется несколько раз подряд. Если один ряд короче экрана,
-        // тот же слот виден одновременно в другой копии — значит закрывать
-        // дырку нельзя ни в какой момент: подмена будет заметна.
-        const rowFillsScreen = slotsRef.current.length * STEP > vw + CHIP_W;
-        // От центра до полного ухода капсулы за левый край.
-        const offLeft = (vw / 2 + CHIP_W / 2) / STEP;
-        const ready = rowFillsScreen
-          ? holes.current.filter((h) => reelPhase.current - h.phaseAt >= offLeft)
-          : [];
-
-        if (ready.length) {
-          holes.current = holes.current.filter((h) => !ready.includes(h));
-          let list = slotsRef.current;
-          for (const h of ready) {
-            const idx = list.findIndex((s) => s.sid === h.sid && !s.entry);
-            if (idx < 0) continue;
-            const compact = list.filter((s) => s.sid !== h.sid);
-            if (!compact.length) continue;
-            list = compact;
-            // Слот уже позади центра — индексы сдвинулись на один назад.
-            reelPhase.current -= 1;
-            holes.current.forEach((rest) => {
-              rest.phaseAt -= 1;
-            });
-          }
-          if (list !== slotsRef.current) {
-            slotsRef.current = list;
-            setSlots(list);
-          }
-        }
-      }
+      maybeSweep();
 
       syncStrip();
       reelRaf.current = requestAnimationFrame(tick);
     };
     reelRaf.current = requestAnimationFrame(tick);
-  }, [dur, slowmo, stopReel, syncStrip]);
+  }, [dur, maybeSweep, slowmo, stopReel, syncStrip, turbo]);
+
 
   /**
    * Барабан = реальные участники: 15 человек — 15 звеньев. Никаких случайных
