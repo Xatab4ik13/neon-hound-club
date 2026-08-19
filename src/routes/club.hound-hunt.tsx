@@ -559,7 +559,7 @@ function ReelStage({
   armed,
   shock,
 }: {
-  slots: { sid: number; entry: HuntEntry }[];
+  slots: { sid: number; entry: HuntEntry | null }[];
   ghosts: { key: string; entry: HuntEntry }[];
   x: MotionValue<number>;
   armed: boolean;
@@ -567,11 +567,12 @@ function ReelStage({
   shock: number;
 }) {
   // Барабан крутится непрерывно: лента едет влево, поэтому копий списка нужно
-  // столько, чтобы кадр никогда не оставался пустым. Выбитое звено исчезает из
-  // всех копий, и остальные подтягиваются — место ВИДИМО освобождается.
+  // столько, чтобы кадр никогда не оставался пустым. Выбитое звено НЕ убирается
+  // из ряда — на его месте остаётся пустое место (дырка), которое едет дальше.
   const copies = Math.max(3, Math.ceil(60 / Math.max(1, slots.length)));
   const row = Array.from({ length: copies }, (_, c) => c);
-  const remaining = Math.max(1, slots.length);
+  const remaining = Math.max(1, slots.filter((s) => s.entry).length);
+
   return (
     <div className="relative z-30 -mt-[26svh] w-full">
       {/* Движущаяся лента плоская: перспектива применяется только к звену,
