@@ -457,15 +457,19 @@ export function HoundHuntPage() {
     clearTimers();
     const entries = pool;
     if (phase === "arming" || phase === "drift") {
-      const list = slotsRef.current;
-      const winnerSlot = list.find((s) => s.sid === winnerSidRef.current) ?? list[list.length - 1];
-      const winner = winnerSlot?.entry ?? pickWinner(entries);
+      const winner =
+        liveRef.current.find((e) => e.id === winnerIdRef.current) ??
+        liveRef.current[0] ??
+        pickWinner(entries);
       stopReel();
-      const rest = list.map((s) => (s.sid === winnerSlot?.sid ? s : { ...s, entry: null }));
-      slotsRef.current = rest;
-      setSlots(rest);
-      kicksRef.current = Math.max(0, list.filter((s) => s.entry).length - 1);
+      kicksRef.current = Math.max(0, aliveRef.current - 1);
       setKicks(kicksRef.current);
+      liveRef.current = [winner];
+      aliveRef.current = 1;
+      setAlive(1);
+      tapeRef.current = [];
+      setTape([]);
+
 
       setGhosts([]);
 
