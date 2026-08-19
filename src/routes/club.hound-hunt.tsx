@@ -1079,7 +1079,12 @@ function PullStage({ entry, cracking }: { entry: HuntEntry; cracking: boolean })
   );
 }
 
-function RevealStage({
+/**
+ * Модалка победителя. Слева — персонаж (пока обычный клип «idle»; когда
+ * придёт отдельная анимация радости, меняется только mode здесь),
+ * справа — круглая аватарка победителя и его приз.
+ */
+function WinnerModal({
   entry,
   prizeTitle,
   prizeSub,
@@ -1092,33 +1097,59 @@ function RevealStage({
 }) {
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.85 }}
-      animate={{ opacity: 1, scale: 1 }}
-      className="relative z-10 mt-4 w-full max-w-sm px-6 text-center"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.5, ease: "easeOut" }}
+      className="absolute inset-0 z-[60] grid place-items-center px-4 backdrop-blur-md"
+      style={{ background: "color-mix(in oklab, var(--background) 72%, transparent)" }}
     >
       <motion.div
-        animate={{ opacity: [0.35, 0.8, 0.35], scale: [1, 1.08, 1] }}
-        transition={{ duration: 2.2, repeat: Infinity }}
-        className="pointer-events-none absolute inset-0 -z-10 rounded-full bg-primary/25 blur-3xl"
-      />
-      <img
-        src={prizeImg}
-        alt=""
-        className="mx-auto h-24 object-contain drop-shadow-[0_0_30px_color-mix(in_oklab,var(--primary)_60%,transparent)]"
-      />
-      <p className="mt-3 font-mono text-[10px] uppercase tracking-[0.28em] text-destructive">
-        {prizeSub}
-      </p>
-      <p className="font-display text-xl font-black uppercase tracking-tight">{prizeTitle}</p>
-      <p className="mt-4 font-mono text-[10px] uppercase tracking-[0.24em] text-muted-foreground">
-        забирает
-      </p>
-      <p className="font-display text-3xl font-black uppercase tracking-tight text-primary drop-shadow-[0_0_24px_color-mix(in_oklab,var(--primary)_60%,transparent)]">
-        {entry.nick}
-      </p>
-      <p className="mt-1 font-mono text-[11px] text-muted-foreground">
-        {entry.city} · {entry.tickets} билетов · ×{entry.slots} мест
-      </p>
+        initial={{ opacity: 0, y: 28, scale: 0.94 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 14, scale: 0.97 }}
+        transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+        className="relative w-full max-w-[420px] overflow-hidden rounded-3xl border border-destructive/40 bg-card/70 p-4 shadow-[0_0_60px_-12px_color-mix(in_oklab,var(--destructive)_60%,transparent)]"
+      >
+        <motion.div
+          animate={{ opacity: [0.3, 0.7, 0.3], scale: [1, 1.1, 1] }}
+          transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
+          className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(70%_60%_at_50%_0%,color-mix(in_oklab,var(--primary)_28%,transparent),transparent_70%)]"
+        />
+
+        <p className="text-center font-mono text-[10px] uppercase tracking-[0.28em] text-destructive">
+          победитель
+        </p>
+
+        <div className="mt-2 grid grid-cols-[1.05fr_1fr] items-center gap-2">
+          {/* персонаж радуется */}
+          <div className="h-[190px]">
+            <RiderCharacter mode="idle" className="h-full w-full" />
+          </div>
+
+          {/* аватарка + приз */}
+          <div className="text-center">
+            <HuntAvatar entry={entry} scale={0.82} focused className="mx-auto" />
+            <div className="mt-3 rounded-2xl border border-border/50 bg-background/50 p-2">
+              <img
+                src={prizeImg}
+                alt=""
+                className="mx-auto h-14 object-contain drop-shadow-[0_0_22px_color-mix(in_oklab,var(--primary)_60%,transparent)]"
+              />
+              <p className="mt-1 font-mono text-[9px] uppercase tracking-[0.22em] text-muted-foreground">
+                {prizeSub}
+              </p>
+              <p className="font-display text-sm font-black uppercase leading-tight">
+                {prizeTitle}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <p className="mt-3 text-center font-mono text-[10px] text-muted-foreground">
+          {entry.city} · {entry.tickets} билетов
+        </p>
+      </motion.div>
     </motion.div>
   );
 }
