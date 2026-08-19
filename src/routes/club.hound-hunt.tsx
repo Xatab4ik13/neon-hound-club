@@ -1010,36 +1010,17 @@ function ReelStage({
       <AnimatePresence>
         {winner && (
           <motion.div
-            key="winner-title"
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-            className="pointer-events-none absolute inset-x-0 -top-16 z-40 text-center"
-          >
-            <p
-              className="font-display text-4xl font-black uppercase tracking-[0.26em]"
-              style={{ color: "#B6FF3C", textShadow: "0 0 30px rgba(182,255,60,0.45)" }}
-            >
-              winner
-            </p>
-          </motion.div>
-        )}
-
-        {winner && (
-          <motion.div
             key="winner-prize"
-            initial={{ opacity: 0, x: -14, scale: 0.92 }}
-            animate={{ opacity: 1, x: 0, scale: 1 }}
+            initial={{ opacity: 0, y: 10, scale: 0.92 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.6, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-            className="pointer-events-none absolute top-1/2 z-40 flex max-w-[55%] -translate-y-1/2 flex-col items-center gap-1"
-            style={{ left: WIN_LEFT + CHIP_W + 18 }}
+            className="pointer-events-none absolute left-1/2 top-1/2 z-40 flex max-w-[52%] -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-1"
           >
             <img
               src={prizeImg}
               alt=""
-              className="h-16 shrink-0 object-contain drop-shadow-[0_0_26px_color-mix(in_oklab,var(--primary)_60%,transparent)]"
+              className="h-20 shrink-0 object-contain drop-shadow-[0_0_26px_color-mix(in_oklab,var(--primary)_60%,transparent)]"
             />
             <p className="font-display text-base font-black uppercase leading-tight">
               {prizeTitle}
@@ -1047,6 +1028,7 @@ function ReelStage({
           </motion.div>
         )}
       </AnimatePresence>
+
 
 
     </div>
