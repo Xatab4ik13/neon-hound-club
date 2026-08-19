@@ -830,6 +830,18 @@ export function HoundHuntPage() {
           </div>
         )}
       </div>
+
+      {/* модалка победителя: персонаж радуется слева, приз и аватарка справа */}
+      <AnimatePresence>
+        {phase === "reveal" && current && (
+          <WinnerModal
+            entry={current}
+            prizeTitle={prize.title}
+            prizeSub={prize.sub}
+            prizeImg={prize.img}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
