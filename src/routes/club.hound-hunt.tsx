@@ -569,29 +569,66 @@ function ReelStage({
   ghosts,
   x,
   armed,
+  shock,
 }: {
   slots: { sid: number; entry: HuntEntry }[];
   ghosts: { key: string; entry: HuntEntry }[];
   x: MotionValue<number>;
   armed: boolean;
+  /** Счётчик ударов: меняется — играем вспышку и тряску арены. */
+  shock: number;
 }) {
   // Барабан крутится непрерывно: лента едет влево, поэтому копий списка нужно
   // столько, чтобы кадр никогда не оставался пустым. Выбитое звено исчезает из
   // всех копий, и остальные подтягиваются — место ВИДИМО освобождается.
   const copies = Math.max(3, Math.ceil(60 / Math.max(1, slots.length)));
   const row = Array.from({ length: copies }, (_, c) => c);
+  const remaining = Math.max(1, slots.length);
   return (
     <div className="relative z-30 -mt-[26svh] w-full">
       {/* Движущаяся лента плоская: перспектива применяется только к звену,
           которое уже выбито и летит отдельно от барабана. */}
-      <div className="relative py-2">
-        {/* зона удара — нейтральная тонкая метка по центру */}
-        <div className="pointer-events-none absolute left-1/2 top-0 z-20 h-full w-px -translate-x-1/2 bg-gradient-to-b from-transparent via-white/20 to-transparent" />
+      <motion.div
+        className="relative py-2"
+        // Тряска арены на каждый удар — импакт чувствуется физически.
+        animate={shock ? { x: [0, -6, 5, -3, 0], y: [0, 3, -2, 1, 0] } : { x: 0, y: 0 }}
+        transition={{ duration: 0.34, ease: "easeOut" }}
+        key={`shake-${shock}`}
+      >
+        {/* зона удара: дышащее пятно под ногой вместо жёсткой полоски */}
+        <motion.div
+          className="pointer-events-none absolute left-1/2 top-1/2 z-0 -translate-x-1/2 -translate-y-1/2 rounded-full"
+          style={{
+            width: CHIP_W * 2.6,
+            height: CHIP_W * 2.6,
+            background:
+              "radial-gradient(circle, color-mix(in oklab, var(--destructive) 26%, transparent), transparent 62%)",
+          }}
+          animate={{ opacity: [0.5, 0.95, 0.5], scale: [0.94, 1.06, 0.94] }}
+          transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+        />
+
+        {/* шок-волна из точки удара */}
+        {shock > 0 && (
+          <motion.div
+            key={`ring-${shock}`}
+            className="pointer-events-none absolute left-1/2 top-1/2 z-20 -translate-x-1/2 -translate-y-1/2 rounded-full border"
+            style={{
+              width: CHIP_W,
+              height: CHIP_W,
+              borderColor: "color-mix(in oklab, var(--destructive) 80%, transparent)",
+            }}
+            initial={{ opacity: 0.9, scale: 0.5 }}
+            animate={{ opacity: 0, scale: 3.4 }}
+            transition={{ duration: 0.55, ease: "easeOut" }}
+          />
+        )}
+
         <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-20 bg-gradient-to-r from-background to-transparent" />
         <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-20 bg-gradient-to-l from-background to-transparent" />
 
         <motion.div
-          className="flex items-center gap-4"
+          className="relative z-[5] flex items-center gap-4"
           style={{
             x,
             paddingLeft: `calc(50% - ${CHIP_W / 2}px)`,
@@ -615,18 +652,31 @@ function ReelStage({
             </motion.div>
           ))}
         </AnimatePresence>
-      </div>
+      </motion.div>
 
-      <motion.p
-        animate={{ opacity: armed ? [0.4, 1, 0.4] : 1 }}
-        transition={{ duration: 1.6, repeat: Infinity }}
-        className="relative z-50 mt-2 text-center font-mono text-[10px] uppercase tracking-[0.28em] text-muted-foreground"
-      >
-        {armed ? "выходит на удар" : `выбивает участников · осталось ${Math.max(1, slots.length)}`}
-      </motion.p>
+      {/* счётчик остатка: реальное число участников на ленте */}
+      <div className="relative z-50 mt-3 flex items-center justify-center gap-2">
+        <motion.span
+          key={`left-${remaining}`}
+          initial={{ scale: 1.5, color: "var(--destructive)" }}
+          animate={{ scale: 1, color: "var(--foreground)" }}
+          transition={{ duration: 0.35, ease: "easeOut" }}
+          className="font-display text-2xl font-black leading-none"
+        >
+          {remaining}
+        </motion.span>
+        <motion.p
+          animate={{ opacity: armed ? [0.4, 1, 0.4] : 1 }}
+          transition={{ duration: 1.6, repeat: Infinity }}
+          className="font-mono text-[10px] uppercase tracking-[0.24em] text-muted-foreground"
+        >
+          {armed ? "выходит на удар" : "в барабане"}
+        </motion.p>
+      </div>
     </div>
   );
 }
+
 
 /** Гончая вытягивает выбранную капсулу к пасти, потом раскусывает. */
 function PullStage({ entry, cracking }: { entry: HuntEntry; cracking: boolean }) {
