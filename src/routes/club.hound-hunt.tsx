@@ -269,7 +269,10 @@ export function HoundHuntPage() {
       reelLastFrame.current = now;
       // Лента не останавливается во время ударов и замедляется к финалу.
       const step = dur(BASE.capsule) * speedRamp(aliveRef.current);
-      reelPhase.current += elapsed / step;
+      // Hitstop: в кадре удара лента замирает на несколько десятков мс —
+      // удар получает «вес», как в файтингах. Фаза не сбрасывается, поэтому
+      // после отпускания движение продолжается ровно с того же места.
+      if (now >= hitstopUntilRef.current) reelPhase.current += elapsed / step;
       groomTape();
       syncStrip();
 
