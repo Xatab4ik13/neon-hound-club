@@ -770,6 +770,28 @@ export function HoundHuntPage() {
       <SmokeLayers />
       <div className="pointer-events-none absolute inset-0 shadow-[inset_0_0_220px_60px_var(--background)]" />
 
+      {/* WINNER — самый верх экрана, крупно и ядовито-зелёным */}
+      <AnimatePresence>
+        {settled && (
+          <motion.div
+            key="winner-top"
+            initial={{ opacity: 0, y: -14 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            className="pointer-events-none absolute inset-x-0 z-50 text-center"
+            style={{ top: "calc(0.75rem + env(safe-area-inset-top))" }}
+          >
+            <p
+              className="font-display text-6xl font-black uppercase leading-none tracking-[0.14em]"
+              style={{ color: "#B6FF3C", textShadow: "0 0 34px rgba(182,255,60,0.5)" }}
+            >
+              winner
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="relative flex h-full flex-col overflow-hidden pt-[max(0.5rem,env(safe-area-inset-top))] pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
         {/* арена */}
         <div className="relative flex min-h-0 flex-1 flex-col items-center justify-center">
