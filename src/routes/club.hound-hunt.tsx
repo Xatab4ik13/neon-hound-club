@@ -193,7 +193,6 @@ export function HoundHuntPage() {
     phaseMv.set(reelPhase.current);
   }, [phaseMv, stripX]);
 
-
   const stopReel = useCallback(() => {
     cancelAnimationFrame(reelRaf.current);
     reelRaf.current = 0;
@@ -249,7 +248,6 @@ export function HoundHuntPage() {
     };
     reelRaf.current = requestAnimationFrame(tick);
   }, [dur, maybeSweep, slowmo, stopReel, syncStrip, turbo]);
-
 
   /**
    * Барабан = реальные участники: 15 человек — 15 звеньев. Никаких случайных
@@ -672,7 +670,6 @@ function ReelStage({
   });
   const remaining = Math.max(1, slots.filter((s) => s.entry).length);
 
-
   return (
     <div className="relative z-30 -mt-[30svh] w-full">
       {/* Движущаяся лента плоская: перспектива применяется только к звену,
@@ -741,7 +738,6 @@ function ReelStage({
             </div>
           ))}
         </motion.div>
-
 
         {/* выбитые аватарки — дорожка без overflow, полёт ничем не обрезается */}
         <AnimatePresence>
