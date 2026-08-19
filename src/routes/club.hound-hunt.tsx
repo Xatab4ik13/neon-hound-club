@@ -193,13 +193,17 @@ export function HoundHuntPage() {
       // Схлопываем дырки только когда они полностью скрылись за левым краем:
       // на экране влево от центра видно ~offLeft звеньев.
       if (holes.current.length) {
-        // От центра до полного ухода капсулы за левый край. Без прежнего
-        // запаса в два слота: он держал дырку ещё целый круг при малом составе.
-        const offLeft = (window.innerWidth / 2 + CHIP_W / 2) / STEP;
-        // На коротком барабане один оборот может закончиться раньше края
-        // экрана. Тогда схлопываем прямо перед повторным приходом дырки в центр.
-        const closeAfter = Math.min(offLeft, Math.max(0.75, slotsRef.current.length - 0.25));
-        const ready = holes.current.filter((h) => reelPhase.current - h.phaseAt >= closeAfter);
+        const vw = window.innerWidth;
+        // Ряд повторяется несколько раз подряд. Если один ряд короче экрана,
+        // тот же слот виден одновременно в другой копии — значит закрывать
+        // дырку нельзя ни в какой момент: подмена будет заметна.
+        const rowFillsScreen = slotsRef.current.length * STEP > vw + CHIP_W;
+        // От центра до полного ухода капсулы за левый край.
+        const offLeft = (vw / 2 + CHIP_W / 2) / STEP;
+        const ready = rowFillsScreen
+          ? holes.current.filter((h) => reelPhase.current - h.phaseAt >= offLeft)
+          : [];
+
         if (ready.length) {
           holes.current = holes.current.filter((h) => !ready.includes(h));
           let list = slotsRef.current;
