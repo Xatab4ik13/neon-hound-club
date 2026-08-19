@@ -231,12 +231,15 @@ export function HoundHuntPage() {
     return feedRef.current.shift();
   }, []);
 
+  /** На сколько слотов вперёд генерим хвост: минимум до точки будущего удара. */
+  const leadRef = useRef(6);
+
   /** Добираем хвост, срезаем голову. reelPhase не трогаем — скачков нет. */
   const groomTape = useCallback(() => {
     const half = halfWindow();
     let list = tapeRef.current;
     let changed = false;
-    const wantTo = Math.floor(reelPhase.current) + half + 2;
+    const wantTo = Math.floor(reelPhase.current) + Math.max(half + 2, leadRef.current);
     while (nextIdxRef.current <= wantTo) {
       const entry = nextFeed();
       if (entry === undefined) break;
@@ -272,10 +275,14 @@ export function HoundHuntPage() {
       reelLastFrame.current = now;
       // Лента не останавливается во время ударов и замедляется к финалу.
       const step = dur(BASE.capsule) * speedRamp(aliveRef.current);
-      // Hitstop: в кадре удара лента замирает на несколько десятков мс —
-      // удар получает «вес», как в файтингах. Фаза не сбрасывается, поэтому
-      // после отпускания движение продолжается ровно с того же места.
-      if (now >= hitstopUntilRef.current) reelPhase.current += elapsed / step;
+      // Hitstop: в кадре удара лента почти замирает на несколько десятков мс —
+      // удар получает «вес», как в файтингах. Фазу не обнуляем и не стопим
+      // полностью, поэтому расчёт следующей цели не сбивается.
+      const frozen = now < hitstopUntilRef.current;
+      reelPhase.current += (elapsed / step) * (frozen ? 0.12 : 1);
+      // Хвост ленты должен существовать дальше, чем точка будущего импакта,
+      // иначе цель «ещё не создана» и взмах не запускается.
+      leadRef.current = Math.ceil(impactDelayRef.current / step) + 3;
       groomTape();
       syncStrip();
 
@@ -292,11 +299,15 @@ export function HoundHuntPage() {
         const nextLive = tapeRef.current.find(
           (slot) => slot.idx >= impactPhase && slot.entry !== null && liveIds.has(slot.entry.id),
         );
+        // Страховка от зависания: если окно идеального тайминга по какой-то
+        // причине проехало (кадр подвис, лента разряжена дырками), бьём по
+        // ближайшей живой капсуле впереди, а не стоим до конца розыгрыша.
+        const overdue = now - kickReadyAtRef.current > kickCycleMsRef.current * 1.5;
         if (nextLive) {
           const untilCenter = (nextLive.idx - reelPhase.current) * step;
           // Допуск в один кадр компенсирует React/Canvas между выбором цели
           // и фактическим стартом клипа, не меняя визуальную фазу ленты.
-          if (untilCenter <= impactDelayRef.current + 34) {
+          if (untilCenter <= impactDelayRef.current + 34 || overdue) {
             reservedTargetRef.current = nextLive.idx;
             kickInFlightRef.current = true;
             kickReadyAtRef.current = now + kickCycleMsRef.current;
@@ -493,7 +504,7 @@ export function HoundHuntPage() {
       setShock((s) => s + 1);
       // На ускорении пульта hitstop пропорционально короче, иначе на ×20
       // лента заикается вместо того, чтобы лететь.
-      hitstopUntilRef.current = now + Math.min(70, 140 / speedRef.current);
+      hitstopUntilRef.current = now + Math.min(55, 110 / speedRef.current);
 
       const key = `${center}-${kicksRef.current}`;
       // В кадре всегда ровно один выбитый шар: даже если 3D callback по ошибке
@@ -763,9 +774,9 @@ function ReelStage({
   useEffect(() => {
     if (!shock) return;
     void recoil.start({
-      y: [0, -3, 1.5, 0],
-      scale: [1, 1.028, 0.996, 1],
-      transition: { duration: 0.26, ease: "easeOut", times: [0, 0.18, 0.55, 1] },
+      y: [0, -1.2, 0],
+      scale: [1, 1.01, 1],
+      transition: { duration: 0.34, ease: [0.22, 1, 0.36, 1] },
     });
   }, [shock, recoil]);
 
@@ -798,9 +809,9 @@ function ReelStage({
               background:
                 "radial-gradient(circle, color-mix(in oklab, var(--foreground) 85%, transparent), color-mix(in oklab, var(--destructive) 40%, transparent) 45%, transparent 70%)",
             }}
-            initial={{ opacity: 0.85, scale: 0.55 }}
-            animate={{ opacity: 0, scale: 1.15 }}
-            transition={{ duration: 0.16, ease: "easeOut" }}
+            initial={{ opacity: 0.6, scale: 0.6 }}
+            animate={{ opacity: 0, scale: 1.2 }}
+            transition={{ duration: 0.22, ease: "easeOut" }}
           />
         )}
 
