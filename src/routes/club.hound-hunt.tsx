@@ -994,25 +994,6 @@ function ReelStage({
         </AnimatePresence>
       </motion.div>
 
-      {/* счётчик остатка: реальное число участников на ленте */}
-      <div className="relative z-50 mt-3 flex items-center justify-center gap-2">
-        <motion.span
-          key={`left-${remaining}`}
-          initial={{ scale: 1.5, color: "var(--destructive)" }}
-          animate={{ scale: 1, color: "var(--foreground)" }}
-          transition={{ duration: 0.35, ease: "easeOut" }}
-          className="font-display text-2xl font-black leading-none"
-        >
-          {remaining}
-        </motion.span>
-        <motion.p
-          animate={{ opacity: armed ? [0.4, 1, 0.4] : 1 }}
-          transition={{ duration: 1.6, repeat: Infinity }}
-          className="font-mono text-[10px] uppercase tracking-[0.24em] text-muted-foreground"
-        >
-          {armed ? "выходит на удар" : "в барабане"}
-        </motion.p>
-      </div>
     </div>
   );
 }
