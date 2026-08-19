@@ -13,18 +13,15 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   AnimatePresence,
-  animate,
   motion,
   useMotionValue,
-  useVelocity,
-  useTransform,
+  useMotionValueEvent,
   type MotionValue,
 } from "framer-motion";
 
 import { RiderCharacter, type RiderMode } from "@/components/club/hound-hunt/RiderCharacter";
 import { EmberField } from "@/components/club/hound-hunt/EmberField";
 import { HuntAvatar } from "@/components/club/hound-hunt/HuntAvatar";
-import { HuntAura } from "@/components/club/hound-hunt/HuntAura";
 import { KickedAvatar } from "@/components/club/hound-hunt/KickedAvatar";
 import {
   HUNT_PRIZES,
@@ -83,11 +80,9 @@ function DesktopBlock() {
 
 /** Базовые длительности «боевого» темпа, мс. Кнопки скорости делят их. */
 const BASE = {
-  arming: 2600, // персонаж встаёт в стойку
-  spin: 1500, // прокрут до остановки на жертве
-  collapse: 420, // схлопывание освободившегося места
-  gap: 300, // пауза между раундами
-  pull: 4200, // победитель подъезжает к персонажу
+  arming: 4000, // персонаж встаёт в стойку, капсулы разгоняются
+  capsule: 360, // одна капсула проезжает мимо центра за столько мс (быстро)
+  pull: 5000, // последняя капсула подъезжает к персонажу
   crack: 2200, // раскрытие капсулы
   reveal: 26000, // ревил победителя
 };
@@ -105,21 +100,25 @@ const STEP = CHIP_W + CHIP_GAP;
 /** Сколько участников в моковом розыгрыше — столько же звеньев в барабане. */
 const MOCK_ENTRIES = 15;
 
-/* ------------------------------ страница ------------------------------ */
+/** Сколько пустых аур накопить, прежде чем разогнать ленту и убрать их разом. */
+const SWEEP_AT = 4;
 
 /**
- * Схема шоу — «стоп-кадр удар» (как открытие кейса):
- *  1) лента разгоняется и ПЛАВНО ОСТАНАВЛИВАЕТСЯ ровно на жертве в центре;
- *  2) гончая бьёт по СТОЯЩЕЙ капсуле — полёт виден целиком;
- *  3) освободившееся место схлопывается на неподвижной ленте;
- *  4) лента снова разгоняется до следующей жертвы.
- * Никаких скрытых подмен состава, призрачных аур и маскирующего размытия.
+ * Чем меньше осталось участников, тем медленнее лента: к финалу зритель
+ * успевает прочитать каждый ник и болеть за своего.
  */
+function speedRamp(remaining: number) {
+  if (remaining >= 12) return 1;
+  return 1 + (12 - remaining) * 0.14; // 12 → 1.0 … 2 → 2.4 (медленнее)
+}
+
+/* ------------------------------ страница ------------------------------ */
+
 export function HoundHuntPage() {
-  const [speed, setSpeed] = useState<Speed>(2);
+  const [speed, setSpeed] = useState<Speed>(5);
   const speedRef = useRef<Speed>(speed);
   speedRef.current = speed;
-  const dur = useCallback((base: number) => Math.max(140, base / speedRef.current), []);
+  const dur = useCallback((base: number) => Math.max(220, base / speedRef.current), []);
 
   const [pool, setPool] = useState<HuntEntry[]>(() => makeEntries(MOCK_ENTRIES));
   const [caseIdx, setCaseIdx] = useState(0);
@@ -127,33 +126,20 @@ export function HoundHuntPage() {
   const [winners, setWinners] = useState<{ prizeId: string; entry: HuntEntry }[]>([]);
   const [current, setCurrent] = useState<HuntEntry | null>(null);
   const [look, setLook] = useState({ x: 0, y: 0 });
-  /** Счётчик ударов для вспышки/тряски арены. */
+  /** Счётчик ударов для вспышки/тряски арены — растёт на каждый импакт. */
   const [shock, setShock] = useState(0);
 
   const prize = HUNT_PRIZES[Math.min(caseIdx, HUNT_PRIZES.length - 1)];
+  // Позиция ленты — своя motion-value: барабан крутится непрерывно, а в момент
+  // импакта мы читаем её и понимаем, кто именно сейчас под ногой.
+  const stripX = useMotionValue(0);
+  /** Текущая абсолютная фаза ленты — по ней окно выбирает, какие слоты рисовать. */
+  const phaseMv = useMotionValue(0);
 
-  /** Лента: живые участники, порядок фиксирован. */
-  const [reel, setReel] = useState<HuntEntry[]>([]);
-  const reelRef = useRef<HuntEntry[]>([]);
-  reelRef.current = reel;
-
-  /** Абсолютная позиция ленты в «шагах». Целое значение = слот ровно по центру. */
-  const pos = useMotionValue(0);
-  /** Кто сейчас улетает (виден как отдельная летящая аватарка). */
-  const [ghost, setGhost] = useState<{ key: string; entry: HuntEntry } | null>(null);
-  /** id слота, чьё место схлопывается прямо сейчас. */
-  const [dyingId, setDyingId] = useState<string | null>(null);
-  /** true = гончая замахивается для удара по стоящей капсуле. */
-  const [striking, setStriking] = useState(false);
-
-  const winnerIdRef = useRef<string | null>(null);
-  const victimRef = useRef<{ id: string; index: number } | null>(null);
-  const roundBusy = useRef(false);
-  const phaseRef = useRef<Phase>("intro");
-  const finishRef = useRef<((survivor: HuntEntry) => void) | null>(null);
-  const spinAnim = useRef<{ stop: () => void } | null>(null);
+  const reelRaf = useRef(0);
+  const reelLastFrame = useRef(0);
+  const reelPhase = useRef(0);
   const timers = useRef<number[]>([]);
-  phaseRef.current = phase;
 
   const later = useCallback((fn: () => void, ms: number) => {
     timers.current.push(window.setTimeout(fn, ms));
@@ -167,10 +153,95 @@ export function HoundHuntPage() {
   useEffect(
     () => () => {
       timers.current.forEach(clearTimeout);
-      spinAnim.current?.stop();
+      cancelAnimationFrame(reelRaf.current);
     },
     [],
   );
+
+  /* --- барабан: звенья выбиваются по одному, на их месте остаётся дырка --- */
+  type Slot = { sid: number; entry: HuntEntry | null; removeAfter?: number };
+  const [slots, setSlots] = useState<Slot[]>([]);
+  const [kicks, setKicks] = useState(0);
+  const [ghosts, setGhosts] = useState<{ key: string; entry: HuntEntry }[]>([]);
+  const slotsRef = useRef<Slot[]>([]);
+  const winnerSidRef = useRef(-1);
+  const kicksRef = useRef(0);
+  const phaseRef = useRef<Phase>("intro");
+  const finishRef = useRef<(() => void) | null>(null);
+  /** Защита от двойного callback одного и того же цикла 3D-анимации. */
+  const lastImpactCycle = useRef(-1);
+  /** Дополнительный замок: один физический взмах ноги не может создать два вылета. */
+  const impactLockedUntil = useRef(0);
+  phaseRef.current = phase;
+  slotsRef.current = slots;
+
+  const syncStrip = useCallback(() => {
+    // Лента рендерится «окном» вокруг центра: наружу уходит только дробная
+    // часть фазы, поэтому копий ряда нет и подменять слоты можно за кадром.
+    const frac = reelPhase.current - Math.floor(reelPhase.current);
+    stripX.set(-frac * STEP);
+    phaseMv.set(reelPhase.current);
+  }, [phaseMv, stripX]);
+
+
+  const stopReel = useCallback(() => {
+    cancelAnimationFrame(reelRaf.current);
+    reelRaf.current = 0;
+    reelLastFrame.current = 0;
+  }, []);
+
+  const startReel = useCallback(() => {
+    stopReel();
+    reelLastFrame.current = performance.now();
+    const tick = (now: number) => {
+      const elapsed = Math.min(50, now - reelLastFrame.current);
+      reelLastFrame.current = now;
+      // Лента не останавливается во время ударов и постепенно замедляется к финалу.
+      const alive = slotsRef.current.filter((s) => s.entry).length;
+      const step = dur(BASE.capsule) * speedRamp(alive);
+      reelPhase.current += elapsed / step;
+
+      // Пустой слот живёт ровно до ухода за левый край. Затем удаляем его
+      // из состава и сохраняем центральный слот на том же пикселе — скачка нет.
+      const expired = slotsRef.current.some(
+        (slot) => !slot.entry && slot.removeAfter !== undefined && reelPhase.current >= slot.removeAfter,
+      );
+      if (expired) {
+        const before = slotsRef.current;
+        const base = Math.floor(reelPhase.current);
+        const frac = reelPhase.current - base;
+        const center = before[((base % before.length) + before.length) % before.length];
+        const compact = before.filter(
+          (slot) => slot.entry || slot.removeAfter === undefined || reelPhase.current < slot.removeAfter,
+        );
+        if (compact.length) {
+          const centerIndex = Math.max(0, compact.findIndex((slot) => slot.sid === center?.sid));
+          reelPhase.current = centerIndex + frac;
+          slotsRef.current = compact;
+          setSlots(compact);
+        }
+      }
+
+      syncStrip();
+      reelRaf.current = requestAnimationFrame(tick);
+    };
+    reelRaf.current = requestAnimationFrame(tick);
+  }, [dur, stopReel, syncStrip]);
+
+
+  /**
+   * Барабан = реальные участники: 15 человек — 15 звеньев. Никаких случайных
+   * копий: счётчик «осталось N» совпадает с тем, что видно на ленте.
+   * Порядок перемешиваем, чтобы победитель не всегда стоял в конце.
+   */
+  const buildReel = useCallback((entries: HuntEntry[]) => {
+    const list = [...entries];
+    for (let i = list.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [list[i], list[j]] = [list[j], list[i]];
+    }
+    return list;
+  }, []);
 
   const pickWinner = useCallback((entries: HuntEntry[]) => {
     const total = entries.reduce((s, e) => s + e.slots, 0);
@@ -182,97 +253,7 @@ export function HoundHuntPage() {
     return entries[entries.length - 1];
   }, []);
 
-  const buildReel = useCallback((entries: HuntEntry[]) => {
-    const list = [...entries];
-    for (let i = list.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [list[i], list[j]] = [list[j], list[i]];
-    }
-    return list;
-  }, []);
-
-  /* --------------------------- цикл одного раунда --------------------------- */
-
-  /** Разгон + плавная остановка ровно на жертве. */
-  const spinToVictim = useCallback(() => {
-    if (phaseRef.current !== "drift") return;
-    const list = reelRef.current;
-    const n = list.length;
-    if (n <= 1) {
-      finishRef.current?.(list[0]);
-      return;
-    }
-
-    // Жертва — любой живой, кроме заранее выбранного победителя.
-    const candidates = list
-      .map((e, i) => ({ e, i }))
-      .filter(({ e }) => e.id !== winnerIdRef.current);
-    const target = candidates[Math.floor(Math.random() * candidates.length)];
-    victimRef.current = { id: target.e.id, index: target.i };
-
-    // Целевая позиция: целое число шагов, дающее нужный слот по центру,
-    // минимум полтора полных оборота — тогда остановка читается как «выбор».
-    const from = pos.get();
-    const min = from + n * 1.35;
-    const T = Math.ceil((min - target.i) / n) * n + target.i;
-
-    const slow = n <= 4 ? 1.5 : n <= 8 ? 1.2 : 1;
-    roundBusy.current = true;
-    const run = animate(pos, T, {
-      duration: dur(BASE.spin * slow) / 1000,
-      ease: [0.1, 0.72, 0.06, 1],
-    });
-    spinAnim.current = run;
-    run.then(() => {
-      pos.set(T);
-      if (phaseRef.current !== "drift") return;
-      // Лента стоит — теперь бьём. Замах крутится сам, удар придёт колбэком.
-      haptic("selection");
-      setStriking(true);
-    });
-  }, [dur, pos]);
-
-  /** Импакт ноги по СТОЯЩЕЙ капсуле. */
-  const handleImpact = useCallback(() => {
-    if (phaseRef.current !== "drift") return;
-    const victim = victimRef.current;
-    if (!victim) return;
-    victimRef.current = null;
-    setStriking(false);
-
-    const list = reelRef.current;
-    const idx = list.findIndex((e) => e.id === victim.id);
-    if (idx < 0) return;
-    const kicked = list[idx];
-
-    setShock((s) => s + 1);
-    haptic("light");
-
-    const key = `${kicked.id}-${Date.now()}`;
-    setGhost({ key, entry: kicked });
-    setDyingId(kicked.id);
-    later(() => setGhost((g) => (g?.key === key ? null : g)), 1600);
-
-    const collapse = dur(BASE.collapse);
-    later(() => {
-      // Ровно в конце схлопывания меняем состав: последний кадр анимации и
-      // первый кадр нового состава совпадают пиксель в пиксель, скачка нет.
-      const rest = reelRef.current.filter((e) => e.id !== kicked.id);
-      reelRef.current = rest;
-      setReel(rest);
-      setDyingId(null);
-      pos.set(rest.length ? ((idx % rest.length) + rest.length) % rest.length : 0);
-      roundBusy.current = false;
-
-      if (rest.length <= 1) {
-        finishRef.current?.(rest[0] ?? kicked);
-        return;
-      }
-      later(spinToVictim, dur(BASE.gap));
-    }, collapse);
-  }, [dur, later, pos, spinToVictim]);
-
-  /* --- взгляд персонажа --- */
+  /* --- взгляд персонажа: следит за капсулами во время отбора --- */
   useEffect(() => {
     if (phase !== "drift" && phase !== "arming") {
       if (phase === "pull" || phase === "crack") setLook({ x: 0, y: 0.35 });
@@ -294,32 +275,36 @@ export function HoundHuntPage() {
   const runCase = useCallback(
     (idx: number, entries: HuntEntry[]) => {
       const winner = pickWinner(entries);
-      const list = buildReel(entries);
-
-      spinAnim.current?.stop();
+      const reelNow = buildReel(entries);
+      const slotsNow: Slot[] = reelNow.map((entry, i) => ({ sid: i, entry }));
       setCurrent(null);
-      setGhost(null);
-      setDyingId(null);
-      setStriking(false);
-      victimRef.current = null;
-      roundBusy.current = false;
-      winnerIdRef.current = winner.id;
-      setReel(list);
-      reelRef.current = list;
-      pos.set(0);
+      setKicks(0);
+      kicksRef.current = 0;
+      setGhosts([]);
+      lastImpactCycle.current = -1;
+      impactLockedUntil.current = 0;
+
+      setSlots(slotsNow);
+      slotsRef.current = slotsNow;
+      winnerSidRef.current = slotsNow.find((s) => s.entry?.id === winner.id)?.sid ?? -1;
+      stopReel();
+
+      reelPhase.current = 0;
+      stripX.set(0);
 
       setPhase("arming");
       haptic("light");
 
-      finishRef.current = (survivor) => {
-        spinAnim.current?.stop();
-        setStriking(false);
+      const finish = () => {
+        const survivor = slotsRef.current.find((slot) => slot.entry)?.entry ?? winner;
+        // последняя капсула — победитель: подъезжает к персонажу и раскрывается
         setPhase("pull");
         setCurrent(survivor);
         haptic("selection");
 
         later(() => {
           setPhase("crack");
+
           later(() => {
             setPhase("reveal");
             haptic("success");
@@ -339,13 +324,79 @@ export function HoundHuntPage() {
         }, dur(BASE.pull));
       };
 
+      finishRef.current = finish;
+
+      // Две НЕЗАВИСИМЫЕ анимации:
+      //  1) барабан — крутится непрерывно и быстро (линейно, без остановок),
+      //  2) персонаж — клип удара крутится сам, без перезапусков.
+      // Пересекаются только в момент импакта: кто в этот кадр по центру —
+      // того и выбивает, его звено улетает и очередь подтягивается.
       later(() => {
         setPhase("drift");
-        phaseRef.current = "drift";
-        spinToVictim();
+        startReel();
       }, dur(BASE.arming));
     },
-    [buildReel, dur, later, pickWinner, pos, spinToVictim],
+    [buildReel, dur, later, pickWinner, startReel, stopReel, stripX],
+  );
+
+  /** Импакт ноги: улетает то звено, что в этот кадр стоит по центру. */
+  const handleImpact = useCallback(
+    (cycle: number) => {
+      if (phaseRef.current !== "drift") return;
+      if (lastImpactCycle.current === cycle) return;
+      const now = performance.now();
+      if (now < impactLockedUntil.current) return;
+      lastImpactCycle.current = cycle;
+      impactLockedUntil.current = now + 650;
+      const list = slotsRef.current;
+      const alive = list.filter((s) => s.entry);
+      if (alive.length <= 1) return;
+
+      // Центральный слот вычисляем из циклической фазы, а не из бесконечной
+      // экранной координаты. Поэтому индекс остаётся точным после любого круга.
+      const n = list.length;
+      const pos = Math.round(reelPhase.current);
+      const j = ((pos % n) + n) % n;
+      const target = list[j];
+      // По центру дырка — бить некого, ждём следующий оборот.
+      if (!target.entry) return;
+      // Визуально пропускать удар нельзя. Если под ногой оказался заранее
+      // намеченный финалист, переносим защиту на другого живого участника:
+      // центральная капсула всё равно честно улетает, а выигрывает последний.
+      if (target.sid === winnerSidRef.current) {
+        const nextSurvivor = alive.find((slot) => slot.sid !== target.sid);
+        if (!nextSurvivor) return;
+        winnerSidRef.current = nextSurvivor.sid;
+      }
+
+      const kicked = target.entry;
+      // Место НЕ закрывается: на месте выбитого остаётся дырка, лента едет дальше.
+      const visibleHalf = Math.ceil(window.innerWidth / 2 / STEP) + 2;
+      const rest = list.map((s) =>
+        s.sid === target.sid
+          ? { ...s, entry: null, removeAfter: reelPhase.current + visibleHalf + 1 }
+          : s,
+      );
+      slotsRef.current = rest;
+      setSlots(rest);
+      // Пустое место едет вместе с лентой и удаляется только за левым краем.
+
+      kicksRef.current += 1;
+      setKicks(kicksRef.current);
+      setShock((s) => s + 1);
+
+      const key = `${target.sid}-${kicksRef.current}`;
+      // В кадре всегда ровно один выбитый шар: даже если 3D callback по ошибке
+      // придёт повторно, второй летящий дубль не появится.
+      setGhosts([{ key, entry: kicked }]);
+      later(() => setGhosts((g) => g.filter((x) => x.key !== key)), 2000);
+      haptic("light");
+      if (alive.length - 1 <= 1) {
+        stopReel();
+        finishRef.current?.();
+      }
+    },
+    [later, stopReel],
   );
 
   const start = () => {
@@ -361,16 +412,44 @@ export function HoundHuntPage() {
   const skip = () => {
     if (phase === "intro" || phase === "podium") return;
     clearTimers();
-    spinAnim.current?.stop();
     const entries = pool;
     if (phase === "arming" || phase === "drift") {
-      const winner = entries.find((e) => e.id === winnerIdRef.current) ?? pickWinner(entries);
-      setGhost(null);
-      setDyingId(null);
-      setStriking(false);
-      setReel([winner]);
-      reelRef.current = [winner];
-      finishRef.current?.(winner);
+      const list = slotsRef.current;
+      const winnerSlot = list.find((s) => s.sid === winnerSidRef.current) ?? list[list.length - 1];
+      const winner = winnerSlot?.entry ?? pickWinner(entries);
+      stopReel();
+      const rest = list.map((s) => (s.sid === winnerSlot?.sid ? s : { ...s, entry: null }));
+      slotsRef.current = rest;
+      setSlots(rest);
+      kicksRef.current = Math.max(0, list.filter((s) => s.entry).length - 1);
+      setKicks(kicksRef.current);
+
+      setGhosts([]);
+
+      setCurrent(winner);
+
+      setPhase("pull");
+      later(
+        () => {
+          setPhase("crack");
+
+          later(() => {
+            setPhase("reveal");
+            setWinners((w) => [...w, { prizeId: HUNT_PRIZES[caseIdx].id, entry: winner }]);
+            const rest = entries.filter((e) => e.id !== winner.id);
+            setPool(rest);
+            later(() => {
+              if (caseIdx + 1 < HUNT_PRIZES.length) {
+                setCaseIdx(caseIdx + 1);
+                runCase(caseIdx + 1, rest);
+              } else {
+                setPhase("podium");
+              }
+            }, dur(BASE.reveal));
+          }, dur(BASE.crack));
+        },
+        dur(BASE.pull) * 0.4,
+      );
       return;
     }
     if (phase === "reveal") {
@@ -385,9 +464,7 @@ export function HoundHuntPage() {
 
   const dogMode: RiderMode =
     phase === "drift"
-      ? striking
-        ? "lunge"
-        : "watch"
+      ? "lunge"
       : phase === "arming" || phase === "pull"
         ? "watch"
         : phase === "crack"
@@ -417,6 +494,8 @@ export function HoundHuntPage() {
       <div className="relative flex h-full flex-col overflow-hidden pt-[max(0.5rem,env(safe-area-inset-top))] pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
         {/* арена */}
         <div className="relative flex min-h-0 flex-1 flex-col items-center justify-center">
+          {/* Персонаж стоит за лентой и чуть ниже: аватарки проходят перед ним,
+              а в зоне удара пересекаются только с ногой. */}
           <motion.div
             className={`relative z-10 w-full max-w-[560px] ${
               phase === "intro" ? "mt-0 h-[34svh]" : "mt-[11svh] h-[62svh]"
@@ -426,7 +505,7 @@ export function HoundHuntPage() {
             <RiderCharacter
               mode={dogMode}
               lookAt={look}
-              loopKick={striking}
+              loopKick={phase === "drift"}
               onImpact={handleImpact}
               className="h-full w-full"
             />
@@ -436,13 +515,11 @@ export function HoundHuntPage() {
 
           {(phase === "arming" || phase === "drift") && (
             <ReelStage
-              reel={reel}
-              ghost={ghost}
-              dyingId={dyingId}
-              pos={pos}
-              collapseMs={dur(BASE.collapse)}
+              slots={slots}
+              ghosts={ghosts}
+              x={stripX}
+              phase={phaseMv}
               armed={phase === "arming"}
-              striking={striking}
               shock={shock}
             />
           )}
@@ -464,39 +541,37 @@ export function HoundHuntPage() {
         </div>
 
         {/* тестовый пульт скорости (уйдёт из прода) */}
-        {phase !== "intro" && (
-          <div className="relative z-30 shrink-0 px-4 pb-3">
-            <div className="flex items-center justify-center gap-1.5">
-              {SPEEDS.map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  onClick={() => setSpeed(s)}
-                  className={`rounded-full border px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.14em] backdrop-blur transition ${
-                    speed === s
-                      ? "border-destructive/60 bg-destructive/20 text-foreground"
-                      : "border-border/50 bg-card/40 text-muted-foreground"
-                  }`}
-                >
-                  ×{s}
-                </button>
-              ))}
+        <div className="relative z-30 shrink-0 px-4 pb-3">
+          <div className="flex items-center justify-center gap-1.5">
+            {SPEEDS.map((s) => (
               <button
+                key={s}
                 type="button"
-                onClick={skip}
-                className="rounded-full border border-border/50 bg-card/40 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground backdrop-blur"
+                onClick={() => setSpeed(s)}
+                className={`rounded-full border px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.14em] backdrop-blur transition ${
+                  speed === s
+                    ? "border-destructive/60 bg-destructive/20 text-foreground"
+                    : "border-border/50 bg-card/40 text-muted-foreground"
+                }`}
               >
-                далее
+                ×{s}
               </button>
-            </div>
-            {phase !== "podium" && (
-              <p className="mt-2 text-center font-mono text-[9px] uppercase tracking-[0.2em] text-muted-foreground/70">
-                в барабане {pool.length} · {totalTickets} билетов · {HUNT_TICKET_STEP} билетов = 1
-                место
-              </p>
-            )}
+            ))}
+            <button
+              type="button"
+              onClick={skip}
+              className="rounded-full border border-border/50 bg-card/40 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground backdrop-blur"
+            >
+              далее
+            </button>
           </div>
-        )}
+          {phase !== "intro" && phase !== "podium" && (
+            <p className="mt-2 text-center font-mono text-[9px] uppercase tracking-[0.2em] text-muted-foreground/70">
+              в барабане {pool.length} · {totalTickets} билетов · {HUNT_TICKET_STEP} билетов = 1
+              место
+            </p>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -515,8 +590,8 @@ function IntroPanel({ onStart }: { onStart: () => void }) {
         охота начинается
       </p>
       <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-        Лента останавливается на одном участнике — гончая выбивает именно его. 15 человек, 14
-        ударов. Последний, кто устоял, забирает приз.
+        Капсулы движутся без остановки. Гончая выбивает их на лету, а пустое место уезжает
+        вместе с лентой. Последний, кто устоял, забирает приз.
       </p>
 
       <button
@@ -530,78 +605,64 @@ function IntroPanel({ onStart }: { onStart: () => void }) {
   );
 }
 
-/**
- * Лента. Ключевая идея: рендерим три одинаковые копии живого списка и
- * оборачиваем позицию по модулю одной копии — стык копий невидим, потому что
- * содержимое идентично. Целое значение `pos` = слот ровно в центре.
- */
 function ReelStage({
-  reel,
-  ghost,
-  dyingId,
-  pos,
-  collapseMs,
+  slots,
+  ghosts,
+  x,
+  phase,
   armed,
-  striking,
   shock,
 }: {
-  reel: HuntEntry[];
-  ghost: { key: string; entry: HuntEntry } | null;
-  dyingId: string | null;
-  pos: MotionValue<number>;
-  collapseMs: number;
+  slots: { sid: number; entry: HuntEntry | null }[];
+  ghosts: { key: string; entry: HuntEntry }[];
+  x: MotionValue<number>;
+  /** Абсолютная фаза ленты: целая часть выбирает центральный слот. */
+  phase: MotionValue<number>;
   armed: boolean;
-  striking: boolean;
+  /** Счётчик ударов: меняется — играем вспышку и тряску арены. */
   shock: number;
 }) {
-  const n = Math.max(1, reel.length);
-  const x = useTransform(pos, (p) => -((((p % n) + n) % n) + n) * STEP);
-  // Размытие только от реальной скорости прокрутки: на остановке его нет.
-  const vel = useVelocity(pos);
-  const blur = useTransform(vel, (v: number) => {
-    const s = Math.min(1, Math.abs(v) / 14);
-    return s < 0.04 ? "none" : `blur(${(s * 3.2).toFixed(2)}px)`;
+  // Лента = окно вокруг центра, а не набор копий ряда. Каждая позиция окна
+  // жёстко привязана к экрану, а содержимое берётся по циклическому индексу.
+  // Поэтому изменение состава ряда не сдвигает то, что видно на экране.
+  const half = typeof window === "undefined" ? 4 : Math.ceil(window.innerWidth / 2 / STEP) + 2;
+  const [base, setBase] = useState(() => Math.floor(phase.get()));
+  useMotionValueEvent(phase, "change", (v) => {
+    const f = Math.floor(v);
+    setBase((prev) => (prev === f ? prev : f));
   });
+  const n = Math.max(1, slots.length);
+  const windowSlots = Array.from({ length: half * 2 + 1 }, (_, i) => {
+    const k = i - half;
+    const idx = (((base + k) % n) + n) % n;
+    return { k, slot: slots[idx] };
+  });
+  const remaining = Math.max(1, slots.filter((s) => s.entry).length);
 
-  const copies = [0, 1, 2];
 
   return (
-    <div className="relative z-30 -mt-[36svh] w-full">
+    <div className="relative z-30 -mt-[30svh] w-full">
+      {/* Движущаяся лента плоская: перспектива применяется только к звену,
+          которое уже выбито и летит отдельно от барабана. */}
       <motion.div
-        className="relative overflow-x-clip py-2"
+        className="relative py-2"
+        // Тряска арены на каждый удар — импакт чувствуется физически.
         animate={shock ? { x: [0, -6, 5, -3, 0], y: [0, 3, -2, 1, 0] } : { x: 0, y: 0 }}
         transition={{ duration: 0.34, ease: "easeOut" }}
         key={`shake-${shock}`}
       >
-        {/* зона удара под ногой */}
+        {/* зона удара: дышащее пятно под ногой вместо жёсткой полоски */}
         <motion.div
           className="pointer-events-none absolute left-1/2 top-1/2 z-0 -translate-x-1/2 -translate-y-1/2 rounded-full"
           style={{
-            width: CHIP_W * 2.2,
-            height: CHIP_W * 2.2,
+            width: CHIP_W * 2.6,
+            height: CHIP_W * 2.6,
             background:
-              "radial-gradient(circle, color-mix(in oklab, var(--destructive) 22%, transparent), transparent 62%)",
+              "radial-gradient(circle, color-mix(in oklab, var(--destructive) 26%, transparent), transparent 62%)",
           }}
-          animate={{
-            opacity: striking ? [0.7, 1, 0.7] : [0.35, 0.6, 0.35],
-            scale: striking ? [1, 1.1, 1] : [0.95, 1.04, 0.95],
-          }}
-          transition={{ duration: striking ? 0.7 : 2, repeat: Infinity, ease: "easeInOut" }}
+          animate={{ opacity: [0.5, 0.95, 0.5], scale: [0.94, 1.06, 0.94] }}
+          transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
         />
-
-        {/* прицел: две вертикальные метки центра — видно, на кого встала лента */}
-        <div className="pointer-events-none absolute left-1/2 top-0 z-40 h-full -translate-x-1/2">
-          <motion.div
-            className="absolute left-1/2 top-0 h-2.5 w-px -translate-x-1/2"
-            style={{ background: "color-mix(in oklab, var(--destructive) 90%, transparent)" }}
-            animate={{ opacity: striking ? 1 : 0.5 }}
-          />
-          <motion.div
-            className="absolute bottom-0 left-1/2 h-2.5 w-px -translate-x-1/2"
-            style={{ background: "color-mix(in oklab, var(--destructive) 90%, transparent)" }}
-            animate={{ opacity: striking ? 1 : 0.5 }}
-          />
-        </div>
 
         {/* шок-волна из точки удара */}
         {shock > 0 && (
@@ -626,69 +687,57 @@ function ReelStage({
           className="relative z-30 flex items-center"
           style={{
             x,
-            paddingLeft: `calc(50% - ${STEP / 2}px)`,
+            gap: CHIP_GAP,
+            paddingLeft: `calc(50% - ${CHIP_W / 2}px)`,
+            marginLeft: -half * STEP,
             willChange: "transform",
-            filter: blur,
           }}
         >
-          {copies.map((c) =>
-            reel.map((entry) => {
-              const dying = entry.id === dyingId;
-              return (
-                <motion.div
-                  key={`${c}-${entry.id}`}
-                  className="relative shrink-0 overflow-hidden"
-                  style={{ height: CHIP_W * 1.22 }}
-                  initial={false}
-                  animate={{ width: dying ? 0 : STEP }}
-                  transition={{ duration: collapseMs / 1000, ease: "easeInOut" }}
-                >
-                  <div
-                    className="grid justify-items-center"
-                    style={{ width: STEP, opacity: dying ? 0 : 1 }}
-                  >
-                    <HuntAura width={CHIP_W} seed={entry.nick.length + c} />
-                    <HuntAvatar entry={entry} scale={CHIP_SCALE} />
-                  </div>
-                </motion.div>
-              );
-            }),
-          )}
+          {windowSlots.map(({ k, slot }) => (
+            <div key={`w-${k}`} className="shrink-0" style={{ width: CHIP_W }}>
+              {slot?.entry ? (
+                <HuntAvatar entry={slot.entry} scale={CHIP_SCALE} />
+              ) : (
+                // дырка на месте выбитого: пустое место едет вместе с лентой
+                <div style={{ width: CHIP_W, height: CHIP_W }} />
+              )}
+            </div>
+          ))}
         </motion.div>
 
-        {/* выбитая аватарка — летит поверх, ничем не обрезается */}
+
+        {/* выбитые аватарки — дорожка без overflow, полёт ничем не обрезается */}
         <AnimatePresence>
-          {ghost && (
-            <motion.div key={ghost.key} exit={{ opacity: 0 }} className="absolute inset-0 z-50">
-              <KickedAvatar entry={ghost.entry} seed={ghost.key} scale={CHIP_SCALE} width={CHIP_W} />
+          {ghosts.map((g) => (
+            <motion.div key={g.key} exit={{ opacity: 0 }}>
+              <KickedAvatar entry={g.entry} seed={g.key} scale={CHIP_SCALE} width={CHIP_W} />
             </motion.div>
-          )}
+          ))}
         </AnimatePresence>
       </motion.div>
 
-      {/* счётчик остатка */}
+      {/* счётчик остатка: реальное число участников на ленте */}
       <div className="relative z-50 mt-3 flex items-center justify-center gap-2">
         <motion.span
-          key={`left-${reel.length}`}
+          key={`left-${remaining}`}
           initial={{ scale: 1.5, color: "var(--destructive)" }}
           animate={{ scale: 1, color: "var(--foreground)" }}
           transition={{ duration: 0.35, ease: "easeOut" }}
           className="font-display text-2xl font-black leading-none"
         >
-          {reel.length}
+          {remaining}
         </motion.span>
         <motion.p
           animate={{ opacity: armed ? [0.4, 1, 0.4] : 1 }}
           transition={{ duration: 1.6, repeat: Infinity }}
           className="font-mono text-[10px] uppercase tracking-[0.24em] text-muted-foreground"
         >
-          {armed ? "выходит на удар" : striking ? "цель выбрана" : "в барабане"}
+          {armed ? "выходит на удар" : "в барабане"}
         </motion.p>
       </div>
     </div>
   );
 }
-
 
 /** Гончая вытягивает выбранную капсулу к пасти, потом раскусывает. */
 function PullStage({ entry, cracking }: { entry: HuntEntry; cracking: boolean }) {
