@@ -735,10 +735,19 @@ export function HoundHuntPage() {
     [pool, winners],
   );
 
+  // Тестовый пульт скорости показываем только по ?dev=1.
+  const devPanel = useMemo(
+    () => typeof window !== "undefined" && window.location.search.includes("dev"),
+    [],
+  );
+
   return (
     <div className="fixed inset-0 z-40 overflow-hidden overscroll-none touch-pan-y bg-background text-foreground select-none">
-      {/* фон: угли, дым, винетка */}
-      <EmberField intensity={intensity} className="absolute inset-0 h-full w-full opacity-80" />
+      {/* фон: угли поднят выше, чтобы низ экрана не горел, а фон был глубже */}
+      <EmberField
+        intensity={intensity}
+        className="pointer-events-none absolute inset-x-0 bottom-[24%] h-[76%] w-full opacity-70"
+      />
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_80%_at_50%_0%,color-mix(in_oklab,var(--destructive)_14%,transparent),transparent_60%)]" />
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(80%_60%_at_50%_110%,color-mix(in_oklab,var(--primary)_12%,transparent),transparent_70%)]" />
       <SmokeLayers />
