@@ -774,9 +774,9 @@ function ReelStage({
   useEffect(() => {
     if (!shock) return;
     void recoil.start({
-      y: [0, -3, 1.5, 0],
-      scale: [1, 1.028, 0.996, 1],
-      transition: { duration: 0.26, ease: "easeOut", times: [0, 0.18, 0.55, 1] },
+      y: [0, -1.2, 0],
+      scale: [1, 1.01, 1],
+      transition: { duration: 0.34, ease: [0.22, 1, 0.36, 1] },
     });
   }, [shock, recoil]);
 
