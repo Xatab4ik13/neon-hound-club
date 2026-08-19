@@ -147,6 +147,8 @@ function Model({
   const prevTime = useRef(0);
   const kickCycle = useRef(0);
   const firedCycle = useRef(-1);
+  /** Обратный ход: возвращаемся в стойку плавно, а не рывком через reset(). */
+  const rewinding = useRef(false);
 
   // Между ударами персонаж стоит на первом кадре. Каждый новый kickToken
   // запускает один полный клип — поэтому он физически не бьёт в дырку.
@@ -159,7 +161,9 @@ function Model({
     action.reset();
     action.paused = true;
     action.play();
-    readyRef.current?.(action.getClip().duration * 0.6 * 1000);
+    const d = action.getClip().duration;
+    // Полный цикл = взмах + плавный обратный ход (×REWIND быстрее).
+    readyRef.current?.(d * 0.6 * 1000, d * 1000 * (1 + 1 / REWIND));
   }, [action]);
 
   useEffect(() => {
@@ -167,7 +171,9 @@ function Model({
     kickCycle.current = kickToken;
     firedCycle.current = -1;
     prevTime.current = 0;
+    rewinding.current = false;
     action.reset();
+    action.timeScale = 1;
     action.paused = false;
     action.play();
   }, [action, kickToken]);
@@ -177,9 +183,27 @@ function Model({
     const dur = action.getClip().duration;
     const impactAt = dur * 0.6;
     const t = action.time;
-    if (prevTime.current < impactAt && t >= impactAt && firedCycle.current !== kickCycle.current) {
+    if (
+      !rewinding.current &&
+      prevTime.current < impactAt &&
+      t >= impactAt &&
+      firedCycle.current !== kickCycle.current
+    ) {
       firedCycle.current = kickCycle.current;
       impactRef.current?.(kickCycle.current);
+    }
+    if (!rewinding.current && t >= dur - 1e-3) {
+      // Клип доигран: вместо мгновенного reset() отматываем назад — так поза
+      // возвращается в стойку без дёрганья.
+      rewinding.current = true;
+      action.timeScale = -REWIND;
+      action.paused = false;
+      action.play();
+    } else if (rewinding.current && t <= 1e-3) {
+      rewinding.current = false;
+      action.timeScale = 1;
+      action.time = 0;
+      action.paused = true;
     }
     prevTime.current = t;
   });
