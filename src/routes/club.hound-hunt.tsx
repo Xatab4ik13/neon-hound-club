@@ -173,8 +173,10 @@ export function HoundHuntPage() {
   const lastImpactCycle = useRef(-1);
   /** Дополнительный замок: один физический взмах ноги не может создать два вылета. */
   const impactLockedUntil = useRef(0);
-  /** Выбитые слоты, ждущие схлопывания: убираем, когда дырка ушла за левый край. */
-  const holes = useRef<{ sid: number; phaseAt: number }[]>([]);
+  /** Идёт «зачистка»: лента разогнана, в этот момент убираем пустые слоты. */
+  const sweeping = useRef(false);
+  /** Множитель разгона ленты на время зачистки. */
+  const turbo = useMotionValue(1);
   phaseRef.current = phase;
   slotsRef.current = slots;
 
