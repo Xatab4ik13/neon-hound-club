@@ -173,6 +173,7 @@ export function HoundHuntPage() {
   const [alive, setAlive] = useState(0);
   const aliveRef = useRef(0);
   const [kicks, setKicks] = useState(0);
+  const [kickToken, setKickToken] = useState(0);
   const [ghosts, setGhosts] = useState<{ key: string; entry: HuntEntry }[]>([]);
   const winnerIdRef = useRef<string>("");
   const kicksRef = useRef(0);
@@ -182,6 +183,10 @@ export function HoundHuntPage() {
   const lastImpactCycle = useRef(-1);
   /** Дополнительный замок: один физический взмах ноги не может создать два вылета. */
   const impactLockedUntil = useRef(0);
+  /** Один взмах заранее бронирует конкретную живую капсулу. */
+  const kickInFlightRef = useRef(false);
+  const reservedTargetRef = useRef<number | null>(null);
+  const impactDelayRef = useRef(900);
   phaseRef.current = phase;
   tapeRef.current = tape;
 
@@ -254,6 +259,22 @@ export function HoundHuntPage() {
       reelPhase.current += elapsed / step;
       groomTape();
       syncStrip();
+
+      // Запускаем одиночный взмах ровно за impactDelay до прихода следующей
+      // живой капсулы в центр. Дырки просто проезжают — персонаж их не бьёт.
+      if (phaseRef.current === "drift" && aliveRef.current > 1 && !kickInFlightRef.current) {
+        const nextLive = tapeRef.current.find(
+          (slot) => slot.idx >= reelPhase.current && slot.entry !== null,
+        );
+        if (nextLive) {
+          const untilCenter = (nextLive.idx - reelPhase.current) * step;
+          if (untilCenter <= impactDelayRef.current) {
+            reservedTargetRef.current = nextLive.idx;
+            kickInFlightRef.current = true;
+            setKickToken((token) => token + 1);
+          }
+        }
+      }
       reelRaf.current = requestAnimationFrame(tick);
     };
     reelRaf.current = requestAnimationFrame(tick);
@@ -310,10 +331,13 @@ export function HoundHuntPage() {
       const order = buildReel(entries);
       setCurrent(null);
       setKicks(0);
+      setKickToken(0);
       kicksRef.current = 0;
       setGhosts([]);
       lastImpactCycle.current = -1;
       impactLockedUntil.current = 0;
+      kickInFlightRef.current = false;
+      reservedTargetRef.current = null;
       stopReel();
 
       // Лента собирается заново: живые в тасованном порядке, дырок нет.
@@ -389,10 +413,13 @@ export function HoundHuntPage() {
       impactLockedUntil.current = now + 650;
       if (aliveRef.current <= 1) return;
 
-      const center = Math.round(reelPhase.current);
+      const center = reservedTargetRef.current;
+      kickInFlightRef.current = false;
+      reservedTargetRef.current = null;
+      if (center === null) return;
       const list = tapeRef.current;
       const target = list.find((s) => s.idx === center);
-      // Дырки по кругу не возвращаются, так что по центру всегда живая капсула.
+      // Цель была забронирована при запуске взмаха и не может быть дыркой.
       if (!target?.entry) return;
 
       const kicked = target.entry;
@@ -556,7 +583,10 @@ export function HoundHuntPage() {
             <RiderCharacter
               mode={dogMode}
               lookAt={look}
-              loopKick={phase === "drift"}
+              kickToken={kickToken}
+              onKickReady={(impactDelay) => {
+                impactDelayRef.current = impactDelay;
+              }}
               onImpact={handleImpact}
               className="h-full w-full"
             />
