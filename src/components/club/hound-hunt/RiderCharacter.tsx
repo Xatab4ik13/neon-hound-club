@@ -11,7 +11,8 @@ type Props = {
   mode: RiderMode;
   lookAt?: { x: number; y: number };
   className?: string;
-  loopKick?: boolean;
+  kickToken?: number;
+  onKickReady?: (impactDelay: number) => void;
   onImpact?: (cycle: number) => void;
 };
 

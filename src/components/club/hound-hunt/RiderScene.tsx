@@ -16,9 +16,11 @@ type Props = {
   /** Куда смотрит: -1..1 по обеим осям. */
   lookAt?: { x: number; y: number };
   className?: string;
-  /** Непрерывный цикл удара: клип крутится сам, без перезапусков извне. */
-  loopKick?: boolean;
-  /** Вызывается в момент контакта ноги (≈60% клипа) на каждом цикле. */
+  /** Изменение токена запускает один полный взмах. */
+  kickToken?: number;
+  /** Сообщает задержку от запуска взмаха до контакта ноги. */
+  onKickReady?: (impactDelay: number) => void;
+  /** Вызывается в момент контакта ноги (≈60% клипа). */
   onImpact?: (cycle: number) => void;
 };
 
@@ -80,12 +82,14 @@ function recolorPinkTexture(tex: THREE.Texture): THREE.Texture | null {
 function Model({
   mode,
   lookAt,
-  loopKick,
+  kickToken,
+  onKickReady,
   onImpact,
 }: {
   mode: RiderMode;
   lookAt: { x: number; y: number };
-  loopKick?: boolean;
+  kickToken?: number;
+  onKickReady?: (impactDelay: number) => void;
   onImpact?: (cycle: number) => void;
 }) {
   const group = useRef<THREE.Group>(null);
@@ -138,34 +142,41 @@ function Model({
   const action = clip ? actions[clip] : null;
   const impactRef = useRef(onImpact);
   impactRef.current = onImpact;
+  const readyRef = useRef(onKickReady);
+  readyRef.current = onKickReady;
   const prevTime = useRef(0);
   const kickCycle = useRef(0);
   const firedCycle = useRef(-1);
 
-  // Режим loopKick: клип удара крутится бесконечно на своей скорости и
-  // НИКОГДА не перезапускается руками — поэтому нога всегда возвращается
-  // в стойку и не бывает рывков. Импакт отдаём наружу колбэком.
+  // Между ударами персонаж стоит на первом кадре. Каждый новый kickToken
+  // запускает один полный клип — поэтому он физически не бьёт в дырку.
   useEffect(() => {
     if (!action) return;
     action.enabled = true;
-    action.clampWhenFinished = false;
-    action.setLoop(THREE.LoopRepeat, Infinity);
-    action.timeScale = loopKick ? 1 : mode === "watch" ? 0.5 : 0.35;
-    if (!action.isRunning()) {
-      action.reset();
-      action.play();
-    }
-  }, [action, loopKick, mode]);
+    action.clampWhenFinished = true;
+    action.setLoop(THREE.LoopOnce, 1);
+    action.timeScale = 1;
+    action.reset();
+    action.paused = true;
+    action.play();
+    readyRef.current?.(action.getClip().duration * 0.6 * 1000);
+  }, [action]);
+
+  useEffect(() => {
+    if (!action || !kickToken) return;
+    kickCycle.current = kickToken;
+    firedCycle.current = -1;
+    prevTime.current = 0;
+    action.reset();
+    action.paused = false;
+    action.play();
+  }, [action, kickToken]);
 
   useFrame(() => {
-    if (!action || !loopKick) return;
+    if (!action || !kickToken || action.paused) return;
     const dur = action.getClip().duration;
     const impactAt = dur * 0.6;
     const t = action.time;
-    // Один цикл клипа может пересечь impactAt несколькими render-frame из-за
-    // mixer/update и повторного рендера Canvas. Номер цикла гарантирует ровно
-    // один callback — значит, ровно одна капсула улетает на один удар.
-    if (t < prevTime.current) kickCycle.current += 1;
     if (prevTime.current < impactAt && t >= impactAt && firedCycle.current !== kickCycle.current) {
       firedCycle.current = kickCycle.current;
       impactRef.current?.(kickCycle.current);
@@ -191,7 +202,8 @@ export default function RiderScene({
   mode,
   lookAt = { x: 0, y: 0 },
   className,
-  loopKick,
+  kickToken,
+  onKickReady,
   onImpact,
 }: Props) {
   return (
@@ -213,7 +225,13 @@ export default function RiderScene({
         <spotLight position={[-3, 4, 2]} angle={0.6} intensity={3.2} color="#f000c0" />
         <spotLight position={[0, 3, -4]} angle={0.9} intensity={2.6} color="#f000c0" />
         <Suspense fallback={null}>
-          <Model mode={mode} lookAt={lookAt} loopKick={loopKick} onImpact={onImpact} />
+          <Model
+            mode={mode}
+            lookAt={lookAt}
+            kickToken={kickToken}
+            onKickReady={onKickReady}
+            onImpact={onImpact}
+          />
         </Suspense>
       </Canvas>
     </div>
