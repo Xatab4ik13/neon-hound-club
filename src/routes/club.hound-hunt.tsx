@@ -321,12 +321,9 @@ export function HoundHuntPage() {
     const rest = list.map((s) => (s.sid === target.sid ? { ...s, entry: null } : s));
     slotsRef.current = rest;
     setSlots(rest);
-
-    // Слоу-мо удара: лента почти замирает на миг и разгоняется обратно —
-    // видно, кого именно выбило, но вращение не прерывается.
-    slowmoAnim.current?.stop();
-    slowmo.set(0.22);
-    slowmoAnim.current = animate(slowmo, 1, { duration: 0.5, ease: "easeOut" });
+    // Дырку убираем не по таймеру, а когда она реально уедет за левый край:
+    // фиксируем фазу удара, а rAF-цикл сам схлопнет слот в нужный момент.
+    holes.current.push({ sid: target.sid, phaseAt: reelPhase.current });
 
     kicksRef.current += 1;
     setKicks(kicksRef.current);
@@ -337,25 +334,6 @@ export function HoundHuntPage() {
     later(() => setGhosts((g) => g.filter((x) => x.key !== key)), 2000);
     haptic("light");
 
-    // Дырка живёт только один проход: когда она уезжает за левый край экрана,
-    // слот убирается из ряда и место затягивается — на следующем круге под
-    // ногой снова всегда аватарка, а не пустота.
-    const stepMs = dur(BASE.capsule) * speedRamp(Math.max(1, alive.length - 1));
-    later(
-      () => {
-        const cur = slotsRef.current;
-        if (!cur.some((s) => s.sid === target.sid && !s.entry)) return;
-        const idx = cur.findIndex((s) => s.sid === target.sid);
-        const compact = cur.filter((s) => s.sid !== target.sid);
-        if (!compact.length) return;
-        slotsRef.current = compact;
-        setSlots(compact);
-        // Слот уже позади текущего центра — индексы сдвинулись на один назад.
-        if (idx >= 0) reelPhase.current -= 1;
-        syncStrip();
-      },
-      stepMs * 4 + 400,
-    );
 
     if (alive.length - 1 <= 1) {
       stopReel();
