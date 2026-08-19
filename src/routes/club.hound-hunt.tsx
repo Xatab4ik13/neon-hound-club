@@ -191,6 +191,8 @@ export function HoundHuntPage() {
   const kickCycleMsRef = useRef(1400);
   /** Ближайший момент, когда персонаж физически готов к новому взмаху. */
   const kickReadyAtRef = useRef(0);
+  /** До этого времени лента стоит на месте — короткий hitstop в момент удара. */
+  const hitstopUntilRef = useRef(0);
   phaseRef.current = phase;
   tapeRef.current = tape;
 
