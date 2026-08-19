@@ -272,6 +272,8 @@ export function HoundHuntPage() {
       setKicks(0);
       kicksRef.current = 0;
       setGhosts([]);
+      holes.current = [];
+
       setSlots(slotsNow);
       slotsRef.current = slotsNow;
       winnerSidRef.current = slotsNow.find((s) => s.entry?.id === winner.id)?.sid ?? -1;
