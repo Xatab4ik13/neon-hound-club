@@ -337,11 +337,31 @@ export function HoundHuntPage() {
     later(() => setGhosts((g) => g.filter((x) => x.key !== key)), 2000);
     haptic("light");
 
+    // Дырка живёт только один проход: когда она уезжает за левый край экрана,
+    // слот убирается из ряда и место затягивается — на следующем круге под
+    // ногой снова всегда аватарка, а не пустота.
+    const stepMs = dur(BASE.capsule) * speedRamp(Math.max(1, alive.length - 1));
+    later(
+      () => {
+        const cur = slotsRef.current;
+        if (!cur.some((s) => s.sid === target.sid && !s.entry)) return;
+        const idx = cur.findIndex((s) => s.sid === target.sid);
+        const compact = cur.filter((s) => s.sid !== target.sid);
+        if (!compact.length) return;
+        slotsRef.current = compact;
+        setSlots(compact);
+        // Слот уже позади текущего центра — индексы сдвинулись на один назад.
+        if (idx >= 0) reelPhase.current -= 1;
+        syncStrip();
+      },
+      stepMs * 4 + 400,
+    );
+
     if (alive.length - 1 <= 1) {
       stopReel();
       finishRef.current?.();
     }
-  }, [later, slowmo, stopReel]);
+  }, [dur, later, slowmo, stopReel, syncStrip]);
 
   const start = () => {
     clearTimers();
