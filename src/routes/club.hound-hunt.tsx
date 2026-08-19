@@ -1036,18 +1036,8 @@ function ReelStage({
           </motion.div>
         )}
 
-        {winner && (
-          <motion.div
-            key="winner-halo"
-            initial={{ opacity: 0, scale: 0.7 }}
-            animate={{ opacity: [0.35, 0.75, 0.35], scale: [1, 1.1, 1] }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
-            className="pointer-events-none absolute left-1/2 top-1/2 z-0 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/30 blur-2xl"
-            style={{ width: CHIP_W * 1.8, height: CHIP_W * 1.8 }}
-          />
-        )}
       </AnimatePresence>
+
     </div>
   );
 }
