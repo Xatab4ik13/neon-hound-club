@@ -370,6 +370,7 @@ export function HoundHuntPage() {
 
     if (alive.length - 1 <= 1) {
       stopReel();
+
       finishRef.current?.();
     }
   }, [dur, later, slowmo, stopReel, syncStrip]);
