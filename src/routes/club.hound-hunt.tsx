@@ -765,7 +765,7 @@ function ReelStage({
           }}
         >
           {windowSlots.map(({ idx, slot }) => (
-            <div key={`w-${idx}`} className="shrink-0" style={{ width: CHIP_W }}>
+            <div key={`w-${idx}`} data-slot={idx} className="shrink-0" style={{ width: CHIP_W }}>
 
               {slot?.entry ? (
                 <HuntAvatar entry={slot.entry} scale={CHIP_SCALE} />
