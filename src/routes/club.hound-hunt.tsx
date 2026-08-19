@@ -291,9 +291,10 @@ export function HoundHuntPage() {
     const n = list.length;
     const displayedPhase = reelPhase.current + closeGap.get();
     const pos = Math.round(displayedPhase);
-    let j = ((pos % n) + n) % n;
-    if (list[j].sid === winnerSidRef.current) j = (j + 1) % n;
+    const j = ((pos % n) + n) % n;
     const target = list[j];
+    // Победителя не подменяем соседним звеном: иначе из центра визуально
+    // улетает не та аватарка, по которой пришёлся удар. Ждём следующий пинок.
     if (target.sid === winnerSidRef.current) return;
 
     const rest = list.filter((s) => s.sid !== target.sid);
