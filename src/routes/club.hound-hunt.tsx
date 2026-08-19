@@ -723,7 +723,7 @@ export function HoundHuntPage() {
         : phase === "crack"
           ? "lunge"
           : phase === "reveal"
-            ? "chew"
+            ? "idle"
             : "idle";
 
   const intensity =
@@ -794,6 +794,15 @@ export function HoundHuntPage() {
             <PullStage entry={current} cracking={phase === "crack"} />
           )}
 
+          {phase === "reveal" && current && (
+            <WinnerStage
+              entry={current}
+              prizeTitle={prize.title}
+              prizeSub={prize.sub}
+              prizeImg={prize.img}
+            />
+          )}
+
           {phase === "podium" && <Podium winners={winners} onRestart={start} />}
         </div>
 
@@ -830,17 +839,6 @@ export function HoundHuntPage() {
         )}
       </div>
 
-      {/* модалка победителя: персонаж радуется слева, приз и аватарка справа */}
-      <AnimatePresence>
-        {phase === "reveal" && current && (
-          <WinnerModal
-            entry={current}
-            prizeTitle={prize.title}
-            prizeSub={prize.sub}
-            prizeImg={prize.img}
-          />
-        )}
-      </AnimatePresence>
     </div>
   );
 }
