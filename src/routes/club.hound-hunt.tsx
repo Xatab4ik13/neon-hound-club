@@ -367,15 +367,14 @@ export function HoundHuntPage() {
       const winnerSlot = list.find((s) => s.sid === winnerSidRef.current) ?? list[list.length - 1];
       const winner = winnerSlot?.entry ?? pickWinner(entries);
       stopReel();
-      closeGapAnim.current?.stop();
-      closeGap.set(0);
       slowmoAnim.current?.stop();
       slowmo.set(1);
-      const rest = winnerSlot ? [winnerSlot] : [];
+      const rest = list.map((s) => (s.sid === winnerSlot?.sid ? s : { ...s, entry: null }));
       slotsRef.current = rest;
       setSlots(rest);
-      kicksRef.current = Math.max(0, list.length - 1);
+      kicksRef.current = Math.max(0, list.filter((s) => s.entry).length - 1);
       setKicks(kicksRef.current);
+
 
       setGhosts([]);
       setCurrent(winner);
