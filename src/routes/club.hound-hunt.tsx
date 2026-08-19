@@ -113,7 +113,11 @@ export function HoundHuntPage() {
   // Позиция ленты — своя motion-value: барабан крутится непрерывно, а в момент
   // импакта мы читаем её и понимаем, кто именно сейчас под ногой.
   const stripX = useMotionValue(0);
-  const stripAnim = useRef<{ stop: () => void } | null>(null);
+  const reelRaf = useRef(0);
+  const reelLastFrame = useRef(0);
+  const reelPhase = useRef(0);
+  const closeGap = useMotionValue(0);
+  const closeGapAnim = useRef<{ stop: () => void } | null>(null);
   const timers = useRef<number[]>([]);
 
   const later = useCallback((fn: () => void, ms: number) => {
@@ -125,7 +129,14 @@ export function HoundHuntPage() {
     timers.current = [];
   }, []);
 
-  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  useEffect(
+    () => () => {
+      timers.current.forEach(clearTimeout);
+      cancelAnimationFrame(reelRaf.current);
+      closeGapAnim.current?.stop();
+    },
+    [],
+  );
 
   /* --- барабан: звенья выбиваются по одному, последнее = победитель --- */
   type Slot = { sid: number; entry: HuntEntry };
@@ -139,6 +150,32 @@ export function HoundHuntPage() {
   const finishRef = useRef<(() => void) | null>(null);
   phaseRef.current = phase;
   slotsRef.current = slots;
+
+  const syncStrip = useCallback(() => {
+    const n = Math.max(1, slotsRef.current.length);
+    const phase = reelPhase.current + closeGap.get();
+    const wrapped = ((phase % n) + n) % n;
+    stripX.set(-wrapped * STEP);
+  }, [closeGap, stripX]);
+
+  const stopReel = useCallback(() => {
+    cancelAnimationFrame(reelRaf.current);
+    reelRaf.current = 0;
+    reelLastFrame.current = 0;
+  }, []);
+
+  const startReel = useCallback(() => {
+    stopReel();
+    reelLastFrame.current = performance.now();
+    const tick = (now: number) => {
+      const elapsed = Math.min(50, now - reelLastFrame.current);
+      reelLastFrame.current = now;
+      reelPhase.current += elapsed / dur(BASE.capsule);
+      syncStrip();
+      reelRaf.current = requestAnimationFrame(tick);
+    };
+    reelRaf.current = requestAnimationFrame(tick);
+  }, [dur, stopReel, syncStrip]);
 
   const buildReel = useCallback((entries: HuntEntry[], winner: HuntEntry) => {
     const slots: HuntEntry[] = [];
@@ -193,7 +230,10 @@ export function HoundHuntPage() {
       setSlots(slotsNow);
       slotsRef.current = slotsNow;
       winnerSidRef.current = slotsNow[slotsNow.length - 1]?.sid ?? -1;
-      stripAnim.current?.stop();
+      stopReel();
+      closeGapAnim.current?.stop();
+      closeGap.set(0);
+      reelPhase.current = 0;
       stripX.set(0);
       setPhase("arming");
       haptic("light");
@@ -236,17 +276,12 @@ export function HoundHuntPage() {
       later(() => {
         setPhase("drift");
         const pxPerSec = STEP / (dur(BASE.capsule) / 1000);
-        const far = -STEP * 4000;
-        stripAnim.current?.stop();
-        stripX.set(0);
-        stripAnim.current = animate(stripX, far, {
-          duration: Math.abs(far) / pxPerSec,
-          ease: "linear",
-        });
+        void pxPerSec;
+        startReel();
       }, dur(BASE.arming));
 
     },
-    [buildReel, dur, later, pickWinner, stripX],
+    [buildReel, closeGap, dur, later, pickWinner, startReel, stopReel, stripX],
   );
 
   /** Импакт ноги: улетает то звено, что в этот кадр стоит по центру. */
@@ -255,17 +290,37 @@ export function HoundHuntPage() {
     const list = slotsRef.current;
     if (list.length <= 1) return;
 
-    // какое звено сейчас в центре: лента едет влево на STEP за слот
+    // Центральный слот вычисляем из циклической фазы, а не из бесконечной
+    // экранной координаты. Поэтому индекс остаётся точным после любого круга.
     const n = list.length;
-    const pos = Math.round(-stripX.get() / STEP);
+    const displayedPhase = reelPhase.current + closeGap.get();
+    const pos = Math.round(displayedPhase);
     let j = ((pos % n) + n) % n;
     if (list[j].sid === winnerSidRef.current) j = (j + 1) % n;
     const target = list[j];
     if (target.sid === winnerSidRef.current) return;
 
     const rest = list.filter((s) => s.sid !== target.sid);
+
+    // После удаления следующий слот должен остаться там же, где был в момент
+    // удара, а затем за короткое время закрыть освободившееся место. Базовая
+    // фаза продолжает идти — вращение при этом не останавливается.
+    closeGapAnim.current?.stop();
+    reelPhase.current = displayedPhase - 1;
+    closeGap.set(0);
     slotsRef.current = rest;
     setSlots(rest);
+    syncStrip();
+    closeGapAnim.current = animate(closeGap, 1, {
+      duration: 0.2,
+      ease: [0.2, 0.8, 0.2, 1],
+      onUpdate: syncStrip,
+      onComplete: () => {
+        reelPhase.current += closeGap.get();
+        closeGap.set(0);
+        syncStrip();
+      },
+    });
     kicksRef.current += 1;
     setKicks(kicksRef.current);
 
@@ -275,10 +330,10 @@ export function HoundHuntPage() {
     haptic("light");
 
     if (rest.length <= 1) {
-      stripAnim.current?.stop();
+      stopReel();
       finishRef.current?.();
     }
-  }, [later, stripX]);
+  }, [closeGap, later, stopReel, syncStrip]);
 
 
   const start = () => {
@@ -298,7 +353,9 @@ export function HoundHuntPage() {
     if (phase === "arming" || phase === "drift") {
       const list = slotsRef.current;
       const winner = list[list.length - 1]?.entry ?? pickWinner(entries);
-      stripAnim.current?.stop();
+      stopReel();
+      closeGapAnim.current?.stop();
+      closeGap.set(0);
       const rest = list.slice(-1);
       slotsRef.current = rest;
       setSlots(rest);
