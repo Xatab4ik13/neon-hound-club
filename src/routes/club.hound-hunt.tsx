@@ -338,18 +338,19 @@ export function HoundHuntPage() {
         const target = settleTargetRef.current;
         if (target !== null) {
           const diff = target - reelPhase.current;
-          // Экспоненциальное торможение: лента «выдыхает» и замирает, когда
-          // победитель встал в левое положение — без рывка в конце.
-          advance = Math.min(advance, Math.max(0, diff * Math.min(1, elapsed / 320)));
-          if (diff <= 0.01) {
+          // Торможение с нижней границей скорости: лента гарантированно
+          // доезжает и ВСТАЁТ, а не ползёт бесконечно к цели.
+          if (diff <= 0.04) {
             advance = diff;
+            reelPhase.current += advance;
+            syncStrip();
             settledRef.current = true;
             setSettled(true);
             haptic("success");
             stopReel();
-            // Дальше ничего не происходит: лента стоит, победитель и приз
-            // остаются на экране.
+            return;
           }
+          advance = Math.min(advance, Math.max(diff * (elapsed / 260), (elapsed / 1000) * 0.7));
         }
       }
 
