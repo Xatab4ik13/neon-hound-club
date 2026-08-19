@@ -480,7 +480,14 @@ export function HoundHuntPage() {
           {phase === "intro" && <IntroPanel onStart={start} />}
 
           {(phase === "arming" || phase === "drift") && (
-            <ReelStage slots={slots} ghosts={ghosts} x={stripX} armed={phase === "arming"} />
+            <ReelStage
+              slots={slots}
+              ghosts={ghosts}
+              x={stripX}
+              armed={phase === "arming"}
+              shock={shock}
+            />
+
           )}
 
           {(phase === "pull" || phase === "crack") && current && (
