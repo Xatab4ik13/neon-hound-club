@@ -18,6 +18,20 @@ export function EmberField({ intensity = 0.35, className }: Props) {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
+    // Один спрайт угля вместо нового CanvasGradient для каждой частицы в
+    // каждом кадре. На мобильном это убирает сотни дорогих аллокаций за кадр.
+    const emberSprite = document.createElement("canvas");
+    emberSprite.width = 64;
+    emberSprite.height = 64;
+    const spriteCtx = emberSprite.getContext("2d");
+    if (!spriteCtx) return;
+    const spriteGradient = spriteCtx.createRadialGradient(32, 32, 0, 32, 32, 32);
+    spriteGradient.addColorStop(0, "oklch(0.72 0.24 25 / 1)");
+    spriteGradient.addColorStop(0.45, "oklch(0.55 0.20 20 / 0.35)");
+    spriteGradient.addColorStop(1, "oklch(0.5 0.2 20 / 0)");
+    spriteCtx.fillStyle = spriteGradient;
+    spriteCtx.fillRect(0, 0, 64, 64);
+
     let w = 0;
     let h = 0;
     const dpr = Math.min(2, window.devicePixelRatio || 1);
@@ -69,16 +83,12 @@ export function EmberField({ intensity = 0.35, className }: Props) {
           continue;
         }
         const a = Math.sin(Math.PI * t) * (0.35 + inten.current * 0.5);
-        const grd = ctx.createRadialGradient(e.x, e.y, 0, e.x, e.y, e.r * 6);
-        grd.addColorStop(0, `oklch(0.72 0.24 25 / ${a})`);
-        grd.addColorStop(0.45, `oklch(0.55 0.20 20 / ${a * 0.35})`);
-        grd.addColorStop(1, "oklch(0.5 0.2 20 / 0)");
-        ctx.fillStyle = grd;
-        ctx.beginPath();
-        ctx.arc(e.x, e.y, e.r * 6, 0, Math.PI * 2);
-        ctx.fill();
+        const size = e.r * 12;
+        ctx.globalAlpha = a;
+        ctx.drawImage(emberSprite, e.x - size / 2, e.y - size / 2, size, size);
       }
 
+      ctx.globalAlpha = 1;
       ctx.globalCompositeOperation = "source-over";
       raf = requestAnimationFrame(tick);
     };

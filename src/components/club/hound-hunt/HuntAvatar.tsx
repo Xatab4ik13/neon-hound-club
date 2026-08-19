@@ -48,7 +48,10 @@ export function HuntAvatar({ entry, scale = 1, focused = false, className }: Pro
             <img
               src={entry.avatarUrl}
               alt={entry.nick}
-              loading="lazy"
+              loading="eager"
+              decoding="async"
+              width={Math.round(size)}
+              height={Math.round(size)}
               className="h-full w-full object-cover"
             />
           ) : (
