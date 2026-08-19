@@ -2,6 +2,12 @@
 // Позже заменим на реальные заявки (билеты = веса) и призы из админки.
 
 import imgAirpods from "@/assets/spin/airpods.webp";
+import av1 from "@/assets/hunt/av1.jpg";
+import av2 from "@/assets/hunt/av2.jpg";
+import av3 from "@/assets/hunt/av3.jpg";
+import av4 from "@/assets/hunt/av4.jpg";
+import av5 from "@/assets/hunt/av5.jpg";
+import av6 from "@/assets/hunt/av6.jpg";
 import imgPs5 from "@/assets/spin/ps5.webp";
 
 export type HuntPrize = {
@@ -42,6 +48,9 @@ const NICKS = [
   "OMEN", "RIOT", "GRIM", "PULSE", "TREAD", "WRAITH", "SCAR", "CINDER",
 ];
 
+/** Моковые фото участников: в бою тут будут реальные аватарки из профиля. */
+const MOCK_AVATARS = [av1, av2, av3, av4, av5, av6];
+
 const CITIES = [
   "Москва", "СПб", "Казань", "Сочи", "Екатеринбург", "Новосибирск",
   "Краснодар", "Минск", "Тюмень", "Самара",
@@ -69,6 +78,7 @@ export function makeEntries(count = 24, seed = 1337): HuntEntry[] {
       id: `e${i + 1}`,
       nick,
       initials: initialsOf(nick),
+      avatarUrl: MOCK_AVATARS[i % MOCK_AVATARS.length],
       city: CITIES[Math.floor(r() * CITIES.length)],
       tickets: slots * HUNT_TICKET_STEP,
       slots,

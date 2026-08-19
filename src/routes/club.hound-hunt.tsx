@@ -190,6 +190,16 @@ export function HoundHuntPage() {
     [],
   );
 
+  /**
+   * С какого смещения от центра слот гарантированно за краем экрана.
+   * Всё, что ближе, менять на ходу нельзя — это и есть то самое «дёрганье».
+   */
+  const offscreenFrom = useCallback(
+    () => (typeof window === "undefined" ? 3 : Math.ceil(window.innerWidth / 2 / STEP) + 1),
+    [],
+  );
+
+
   const syncStrip = useCallback(() => {
     // Наружу уходит только дробная часть фазы: целую часть отрабатывает окно,
     // поэтому состав ленты можно менять без скачка картинки.
@@ -397,31 +407,41 @@ export function HoundHuntPage() {
       if (!target?.entry) return;
 
       const kicked = target.entry;
+      // Дубль уже выбитого участника (мог остаться в видимой части ленты):
+      // выбиваем его как обычно, но счётчик не трогаем — он уже вычтен.
+      const stale = !liveRef.current.some((e) => e.id === kicked.id);
       // Победителя выбивать нельзя: если он под ногой — переносим защиту на
       // другого живого. Центральная капсула всё равно честно улетает.
-      if (kicked.id === winnerIdRef.current) {
+      if (!stale && kicked.id === winnerIdRef.current) {
         const other = liveRef.current.find((e) => e.id !== kicked.id);
         if (!other) return;
         winnerIdRef.current = other.id;
       }
 
-      liveRef.current = liveRef.current.filter((e) => e.id !== kicked.id);
-      feedRef.current = feedRef.current.filter((e) => e.id !== kicked.id);
+      if (!stale) {
+        liveRef.current = liveRef.current.filter((e) => e.id !== kicked.id);
+        feedRef.current = feedRef.current.filter((e) => e.id !== kicked.id);
+      }
 
-      const half = halfWindow();
+      // Подменять содержимое слота можно ТОЛЬКО за краем экрана, иначе зритель
+      // видит «дёрганье» — как будто буквы в капсуле сменились на ходу.
+      const offscreen = offscreenFrom();
       const next = list.map((s) => {
         // На месте выбитого — дырка: она поедет влево вместе с лентой.
         if (s.idx === center) return { ...s, entry: null };
         // Дубликат выбитого, который ещё за кадром — подменяем живым.
-        if (s.entry?.id === kicked.id && s.idx > center + half) {
+        if (s.entry?.id === kicked.id && s.idx > center + offscreen) {
           return { ...s, entry: nextFeed() };
         }
         return s;
       });
       tapeRef.current = next;
       setTape(next);
-      aliveRef.current -= 1;
-      setAlive(aliveRef.current);
+      if (!stale) {
+        aliveRef.current -= 1;
+        setAlive(aliveRef.current);
+      }
+
 
       kicksRef.current += 1;
       setKicks(kicksRef.current);
@@ -438,7 +458,7 @@ export function HoundHuntPage() {
         finishRef.current?.();
       }
     },
-    [halfWindow, later, nextFeed, stopReel],
+    [later, nextFeed, offscreenFrom, stopReel],
   );
 
   const start = () => {
@@ -745,7 +765,7 @@ function ReelStage({
           }}
         >
           {windowSlots.map(({ idx, slot }) => (
-            <div key={`w-${idx}`} className="shrink-0" style={{ width: CHIP_W }}>
+            <div key={`w-${idx}`} data-slot={idx} className="shrink-0" style={{ width: CHIP_W }}>
 
               {slot?.entry ? (
                 <HuntAvatar entry={slot.entry} scale={CHIP_SCALE} />
