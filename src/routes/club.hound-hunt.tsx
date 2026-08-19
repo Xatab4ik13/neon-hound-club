@@ -918,18 +918,21 @@ function ReelStage({
       {/* Движущаяся лента плоская: перспектива применяется только к звену,
           которое уже выбито и летит отдельно от барабана. */}
       <motion.div className="relative py-2" animate={recoil} style={{ willChange: "transform" }}>
-        {/* зона удара: дышащее пятно под ногой вместо жёсткой полоски */}
-        <motion.div
-          className="pointer-events-none absolute left-1/2 top-1/2 z-0 -translate-x-1/2 -translate-y-1/2 rounded-full"
-          style={{
-            width: CHIP_W * 2.6,
-            height: CHIP_W * 2.6,
-            background:
-              "radial-gradient(circle, color-mix(in oklab, var(--destructive) 26%, transparent), transparent 62%)",
-          }}
-          animate={{ opacity: [0.5, 0.95, 0.5], scale: [0.94, 1.06, 0.94] }}
-          transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
-        />
+        {/* зона удара: дышащее пятно под ногой (в финале убираем) */}
+        {!winner && (
+          <motion.div
+            className="pointer-events-none absolute left-1/2 top-1/2 z-0 -translate-x-1/2 -translate-y-1/2 rounded-full"
+            style={{
+              width: CHIP_W * 2.6,
+              height: CHIP_W * 2.6,
+              background:
+                "radial-gradient(circle, color-mix(in oklab, var(--destructive) 26%, transparent), transparent 62%)",
+            }}
+            animate={{ opacity: [0.5, 0.95, 0.5], scale: [0.94, 1.06, 0.94] }}
+            transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+          />
+        )}
+
 
         {/* импакт-фрейм: короткая световая вспышка ровно в кадре удара */}
         {shock > 0 && (
