@@ -102,7 +102,6 @@ function speedRamp(remaining: number) {
   return 1 + (12 - remaining) * 0.14; // 12 → 1.0 … 2 → 2.4 (медленнее)
 }
 
-
 /* ------------------------------ страница ------------------------------ */
 
 export function HoundHuntPage() {
@@ -133,7 +132,6 @@ export function HoundHuntPage() {
   const slowmo = useMotionValue(1);
   const slowmoAnim = useRef<{ stop: () => void } | null>(null);
   const timers = useRef<number[]>([]);
-
 
   const later = useCallback((fn: () => void, ms: number) => {
     timers.current.push(window.setTimeout(fn, ms));
@@ -207,7 +205,6 @@ export function HoundHuntPage() {
     }
     return list;
   }, []);
-
 
   const pickWinner = useCallback((entries: HuntEntry[]) => {
     const total = entries.reduce((s, e) => s + e.slots, 0);
@@ -301,7 +298,7 @@ export function HoundHuntPage() {
         startReel();
       }, dur(BASE.arming));
     },
-    [buildReel, closeGap, dur, later, pickWinner, startReel, stopReel, stripX],
+    [buildReel, closeGap, dur, later, pickWinner, slowmo, startReel, stopReel, stripX],
   );
 
   /** Импакт ноги: улетает то звено, что в этот кадр стоит по центру. */
@@ -487,7 +484,6 @@ export function HoundHuntPage() {
               armed={phase === "arming"}
               shock={shock}
             />
-
           )}
 
           {(phase === "pull" || phase === "crack") && current && (
@@ -683,7 +679,6 @@ function ReelStage({
     </div>
   );
 }
-
 
 /** Гончая вытягивает выбранную капсулу к пасти, потом раскусывает. */
 function PullStage({ entry, cracking }: { entry: HuntEntry; cracking: boolean }) {
