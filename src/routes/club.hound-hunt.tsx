@@ -480,7 +480,7 @@ export function HoundHuntPage() {
         stopReel();
         // ReelStage должен остаться в DOM, пока последняя выбитая аватарка
         // действительно улетает. Раньше переход в pull размонтировал её сразу.
-        later(() => finishRef.current?.(), 1150);
+        later(() => finishRef.current?.(), 1500);
       }
     },
     [later, stopReel],
