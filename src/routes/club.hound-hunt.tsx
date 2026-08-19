@@ -80,7 +80,6 @@ const BASE = {
   reveal: 26000, // ревил победителя
 };
 
-
 const SPEEDS = [1, 2, 5, 20, 60] as const;
 type Speed = (typeof SPEEDS)[number];
 
@@ -113,7 +112,11 @@ export function HoundHuntPage() {
   // Позиция ленты — своя motion-value: барабан крутится непрерывно, а в момент
   // импакта мы читаем её и понимаем, кто именно сейчас под ногой.
   const stripX = useMotionValue(0);
-  const stripAnim = useRef<{ stop: () => void } | null>(null);
+  const reelRaf = useRef(0);
+  const reelLastFrame = useRef(0);
+  const reelPhase = useRef(0);
+  const closeGap = useMotionValue(0);
+  const closeGapAnim = useRef<{ stop: () => void } | null>(null);
   const timers = useRef<number[]>([]);
 
   const later = useCallback((fn: () => void, ms: number) => {
@@ -125,7 +128,14 @@ export function HoundHuntPage() {
     timers.current = [];
   }, []);
 
-  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  useEffect(
+    () => () => {
+      timers.current.forEach(clearTimeout);
+      cancelAnimationFrame(reelRaf.current);
+      closeGapAnim.current?.stop();
+    },
+    [],
+  );
 
   /* --- барабан: звенья выбиваются по одному, последнее = победитель --- */
   type Slot = { sid: number; entry: HuntEntry };
@@ -139,6 +149,32 @@ export function HoundHuntPage() {
   const finishRef = useRef<(() => void) | null>(null);
   phaseRef.current = phase;
   slotsRef.current = slots;
+
+  const syncStrip = useCallback(() => {
+    const n = Math.max(1, slotsRef.current.length);
+    const phase = reelPhase.current + closeGap.get();
+    const wrapped = ((phase % n) + n) % n;
+    stripX.set(-wrapped * STEP);
+  }, [closeGap, stripX]);
+
+  const stopReel = useCallback(() => {
+    cancelAnimationFrame(reelRaf.current);
+    reelRaf.current = 0;
+    reelLastFrame.current = 0;
+  }, []);
+
+  const startReel = useCallback(() => {
+    stopReel();
+    reelLastFrame.current = performance.now();
+    const tick = (now: number) => {
+      const elapsed = Math.min(50, now - reelLastFrame.current);
+      reelLastFrame.current = now;
+      reelPhase.current += elapsed / dur(BASE.capsule);
+      syncStrip();
+      reelRaf.current = requestAnimationFrame(tick);
+    };
+    reelRaf.current = requestAnimationFrame(tick);
+  }, [dur, stopReel, syncStrip]);
 
   const buildReel = useCallback((entries: HuntEntry[], winner: HuntEntry) => {
     const slots: HuntEntry[] = [];
@@ -193,7 +229,10 @@ export function HoundHuntPage() {
       setSlots(slotsNow);
       slotsRef.current = slotsNow;
       winnerSidRef.current = slotsNow[slotsNow.length - 1]?.sid ?? -1;
-      stripAnim.current?.stop();
+      stopReel();
+      closeGapAnim.current?.stop();
+      closeGap.set(0);
+      reelPhase.current = 0;
       stripX.set(0);
       setPhase("arming");
       haptic("light");
@@ -235,18 +274,10 @@ export function HoundHuntPage() {
       // того и выбивает, его звено улетает и очередь подтягивается.
       later(() => {
         setPhase("drift");
-        const pxPerSec = STEP / (dur(BASE.capsule) / 1000);
-        const far = -STEP * 4000;
-        stripAnim.current?.stop();
-        stripX.set(0);
-        stripAnim.current = animate(stripX, far, {
-          duration: Math.abs(far) / pxPerSec,
-          ease: "linear",
-        });
+        startReel();
       }, dur(BASE.arming));
-
     },
-    [buildReel, dur, later, pickWinner, stripX],
+    [buildReel, closeGap, dur, later, pickWinner, startReel, stopReel, stripX],
   );
 
   /** Импакт ноги: улетает то звено, что в этот кадр стоит по центру. */
@@ -255,17 +286,38 @@ export function HoundHuntPage() {
     const list = slotsRef.current;
     if (list.length <= 1) return;
 
-    // какое звено сейчас в центре: лента едет влево на STEP за слот
+    // Центральный слот вычисляем из циклической фазы, а не из бесконечной
+    // экранной координаты. Поэтому индекс остаётся точным после любого круга.
     const n = list.length;
-    const pos = Math.round(-stripX.get() / STEP);
-    let j = ((pos % n) + n) % n;
-    if (list[j].sid === winnerSidRef.current) j = (j + 1) % n;
+    const displayedPhase = reelPhase.current + closeGap.get();
+    const pos = Math.round(displayedPhase);
+    const j = ((pos % n) + n) % n;
     const target = list[j];
+    // Победителя не подменяем соседним звеном: иначе из центра визуально
+    // улетает не та аватарка, по которой пришёлся удар. Ждём следующий пинок.
     if (target.sid === winnerSidRef.current) return;
 
     const rest = list.filter((s) => s.sid !== target.sid);
+
+    // После удаления следующий слот должен остаться там же, где был в момент
+    // удара, а затем за короткое время закрыть освободившееся место. Базовая
+    // фаза продолжает идти — вращение при этом не останавливается.
+    closeGapAnim.current?.stop();
+    reelPhase.current = displayedPhase - 1;
+    closeGap.set(0);
     slotsRef.current = rest;
     setSlots(rest);
+    syncStrip();
+    closeGapAnim.current = animate(closeGap, 1, {
+      duration: 0.2,
+      ease: [0.2, 0.8, 0.2, 1],
+      onUpdate: syncStrip,
+      onComplete: () => {
+        reelPhase.current += closeGap.get();
+        closeGap.set(0);
+        syncStrip();
+      },
+    });
     kicksRef.current += 1;
     setKicks(kicksRef.current);
 
@@ -275,11 +327,10 @@ export function HoundHuntPage() {
     haptic("light");
 
     if (rest.length <= 1) {
-      stripAnim.current?.stop();
+      stopReel();
       finishRef.current?.();
     }
-  }, [later, stripX]);
-
+  }, [closeGap, later, stopReel, syncStrip]);
 
   const start = () => {
     clearTimers();
@@ -298,7 +349,9 @@ export function HoundHuntPage() {
     if (phase === "arming" || phase === "drift") {
       const list = slotsRef.current;
       const winner = list[list.length - 1]?.entry ?? pickWinner(entries);
-      stripAnim.current?.stop();
+      stopReel();
+      closeGapAnim.current?.stop();
+      closeGap.set(0);
       const rest = list.slice(-1);
       slotsRef.current = rest;
       setSlots(rest);
@@ -308,24 +361,27 @@ export function HoundHuntPage() {
       setCurrent(winner);
 
       setPhase("pull");
-      later(() => {
-        setPhase("crack");
-        
-        later(() => {
-          setPhase("reveal");
-          setWinners((w) => [...w, { prizeId: HUNT_PRIZES[caseIdx].id, entry: winner }]);
-          const rest = entries.filter((e) => e.id !== winner.id);
-          setPool(rest);
+      later(
+        () => {
+          setPhase("crack");
+
           later(() => {
-            if (caseIdx + 1 < HUNT_PRIZES.length) {
-              setCaseIdx(caseIdx + 1);
-              runCase(caseIdx + 1, rest);
-            } else {
-              setPhase("podium");
-            }
-          }, dur(BASE.reveal));
-        }, dur(BASE.crack));
-      }, dur(BASE.pull) * 0.4);
+            setPhase("reveal");
+            setWinners((w) => [...w, { prizeId: HUNT_PRIZES[caseIdx].id, entry: winner }]);
+            const rest = entries.filter((e) => e.id !== winner.id);
+            setPool(rest);
+            later(() => {
+              if (caseIdx + 1 < HUNT_PRIZES.length) {
+                setCaseIdx(caseIdx + 1);
+                runCase(caseIdx + 1, rest);
+              } else {
+                setPhase("podium");
+              }
+            }, dur(BASE.reveal));
+          }, dur(BASE.crack));
+        },
+        dur(BASE.pull) * 0.4,
+      );
       return;
     }
     if (phase === "reveal") {
@@ -338,22 +394,23 @@ export function HoundHuntPage() {
     }
   };
 
-  const dogMode: RiderMode = phase === "drift"
-    ? "lunge"
-    : phase === "arming" || phase === "pull"
-      ? "watch"
-      : phase === "crack"
-        ? "lunge"
-        : phase === "reveal"
-          ? "chew"
-          : "idle";
-
+  const dogMode: RiderMode =
+    phase === "drift"
+      ? "lunge"
+      : phase === "arming" || phase === "pull"
+        ? "watch"
+        : phase === "crack"
+          ? "lunge"
+          : phase === "reveal"
+            ? "chew"
+            : "idle";
 
   const intensity =
     phase === "crack" ? 1 : phase === "reveal" ? 0.7 : phase === "drift" ? 0.45 : 0.26;
 
   const totalTickets = useMemo(
-    () => pool.reduce((s, e) => s + e.tickets, 0) + winners.reduce((s, w) => s + w.entry.tickets, 0),
+    () =>
+      pool.reduce((s, e) => s + e.tickets, 0) + winners.reduce((s, w) => s + w.entry.tickets, 0),
     [pool, winners],
   );
 
@@ -386,15 +443,8 @@ export function HoundHuntPage() {
           {phase === "intro" && <IntroPanel onStart={start} />}
 
           {(phase === "arming" || phase === "drift") && (
-            <ReelStage
-              slots={slots}
-              ghosts={ghosts}
-              x={stripX}
-              armed={phase === "arming"}
-            />
+            <ReelStage slots={slots} ghosts={ghosts} x={stripX} armed={phase === "arming"} />
           )}
-
-
 
           {(phase === "pull" || phase === "crack") && current && (
             <PullStage entry={current} cracking={phase === "crack"} />
@@ -439,7 +489,8 @@ export function HoundHuntPage() {
           </div>
           {phase !== "intro" && phase !== "podium" && (
             <p className="mt-2 text-center font-mono text-[9px] uppercase tracking-[0.2em] text-muted-foreground/70">
-              в барабане {pool.length} · {totalTickets} билетов · {HUNT_TICKET_STEP} билетов = 1 место
+              в барабане {pool.length} · {totalTickets} билетов · {HUNT_TICKET_STEP} билетов = 1
+              место
             </p>
           )}
         </div>
@@ -461,8 +512,8 @@ function IntroPanel({ onStart }: { onStart: () => void }) {
         охота начинается
       </p>
       <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-        Три приза. Капсулы летят мимо, и раз в три секунды персонаж замахивается и выбивает одну
-        из них. Остаётся последняя: чья аватарка внутри, тот забирает приз.
+        Три приза. Капсулы летят мимо, и раз в три секунды персонаж замахивается и выбивает одну из
+        них. Остаётся последняя: чья аватарка внутри, тот забирает приз.
       </p>
 
       <button
@@ -494,50 +545,30 @@ function ReelStage({
   const row = Array.from({ length: copies }, (_, c) => c);
   return (
     <div className="relative z-30 -mt-[26svh] w-full">
-      {/* дорожка: 3D-перспектива, лента едет под углом к камере */}
-      <div
-        className="relative py-2"
-        style={{ perspective: "900px", perspectiveOrigin: "50% 50%" }}
-      >
+      {/* Движущаяся лента плоская: перспектива применяется только к звену,
+          которое уже выбито и летит отдельно от барабана. */}
+      <div className="relative py-2">
         {/* зона удара — нейтральная тонкая метка по центру */}
         <div className="pointer-events-none absolute left-1/2 top-0 z-20 h-full w-px -translate-x-1/2 bg-gradient-to-b from-transparent via-white/20 to-transparent" />
         <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-20 bg-gradient-to-r from-background to-transparent" />
         <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-20 bg-gradient-to-l from-background to-transparent" />
 
-        {/* наклон дорожки — на СТАТИЧНОМ слое: если крутить ленту внутри
-            rotateY, сдвиг по X уводит звенья к камере и они растут. */}
-        <div
-          style={{ transform: "rotateX(6deg) rotateY(-14deg)", transformStyle: "flat" }}
+        <motion.div
+          className="flex items-center gap-4"
+          style={{
+            x,
+            paddingLeft: `calc(50% - ${CHIP_W / 2}px)`,
+            willChange: "transform",
+          }}
         >
-          <motion.div
-            className="flex items-center gap-4"
-            style={{
-              x,
-              paddingLeft: `calc(50% - ${CHIP_W / 2}px)`,
-              willChange: "transform",
-            }}
-          >
-            <AnimatePresence initial={false} mode="popLayout">
-              {row.flatMap((c) =>
-                slots.map((s) => (
-                  <motion.div
-                    key={`slot-${c}-${s.sid}`}
-                    layout
-                    className="shrink-0"
-                    initial={{ opacity: 0, scale: 0.85 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.6 }}
-                    transition={{ type: "spring", stiffness: 300, damping: 28 }}
-                  >
-                    <HuntAvatar entry={s.entry} scale={CHIP_SCALE} />
-                  </motion.div>
-                )),
-              )}
-            </AnimatePresence>
-          </motion.div>
-        </div>
-
-
+          {row.flatMap((c) =>
+            slots.map((s) => (
+              <div key={`slot-${c}-${s.sid}`} className="shrink-0">
+                <HuntAvatar entry={s.entry} scale={CHIP_SCALE} />
+              </div>
+            )),
+          )}
+        </motion.div>
 
         {/* выбитые аватарки — дорожка без overflow, полёт ничем не обрезается */}
         <AnimatePresence>
@@ -549,7 +580,6 @@ function ReelStage({
         </AnimatePresence>
       </div>
 
-
       <motion.p
         animate={{ opacity: armed ? [0.4, 1, 0.4] : 1 }}
         transition={{ duration: 1.6, repeat: Infinity }}
@@ -560,8 +590,6 @@ function ReelStage({
     </div>
   );
 }
-
-
 
 /** Гончая вытягивает выбранную капсулу к пасти, потом раскусывает. */
 function PullStage({ entry, cracking }: { entry: HuntEntry; cracking: boolean }) {
