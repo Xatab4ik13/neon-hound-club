@@ -19,12 +19,15 @@ type Props = {
   /** Изменение токена запускает один полный взмах. */
   kickToken?: number;
   /** Сообщает задержку от запуска взмаха до контакта ноги. */
-  onKickReady?: (impactDelay: number) => void;
+  onKickReady?: (impactDelay: number, cycleMs: number) => void;
   /** Вызывается в момент контакта ноги (≈60% клипа). */
   onImpact?: (cycle: number) => void;
 };
 
 const MODEL_URL = riderAsset.url;
+
+/** Во сколько раз обратный ход быстрее самого взмаха. */
+const REWIND = 2;
 
 const BRAND = { r: 0xf0, g: 0x00, b: 0xc0 };
 
@@ -89,7 +92,7 @@ function Model({
   mode: RiderMode;
   lookAt: { x: number; y: number };
   kickToken?: number;
-  onKickReady?: (impactDelay: number) => void;
+  onKickReady?: (impactDelay: number, cycleMs: number) => void;
   onImpact?: (cycle: number) => void;
 }) {
   const group = useRef<THREE.Group>(null);
