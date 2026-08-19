@@ -298,48 +298,33 @@ export function HoundHuntPage() {
         startReel();
       }, dur(BASE.arming));
     },
-    [buildReel, closeGap, dur, later, pickWinner, slowmo, startReel, stopReel, stripX],
+    [buildReel, dur, later, pickWinner, slowmo, startReel, stopReel, stripX],
   );
 
   /** Импакт ноги: улетает то звено, что в этот кадр стоит по центру. */
   const handleImpact = useCallback(() => {
     if (phaseRef.current !== "drift") return;
     const list = slotsRef.current;
-    if (list.length <= 1) return;
+    const alive = list.filter((s) => s.entry);
+    if (alive.length <= 1) return;
 
     // Центральный слот вычисляем из циклической фазы, а не из бесконечной
     // экранной координаты. Поэтому индекс остаётся точным после любого круга.
     const n = list.length;
-    const displayedPhase = reelPhase.current + closeGap.get();
-    const pos = Math.round(displayedPhase);
+    const pos = Math.round(reelPhase.current);
     const j = ((pos % n) + n) % n;
     const target = list[j];
+    // По центру дырка — бить некого, ждём следующий оборот.
+    if (!target.entry) return;
     // Победителя не подменяем соседним звеном: иначе из центра визуально
     // улетает не та аватарка, по которой пришёлся удар. Ждём следующий пинок.
     if (target.sid === winnerSidRef.current) return;
 
-    const rest = list.filter((s) => s.sid !== target.sid);
-
-    // После удаления следующий слот должен остаться там же, где был в момент
-    // удара, а затем за короткое время закрыть освободившееся место. Базовая
-    // фаза продолжает идти — вращение при этом не останавливается.
-    closeGapAnim.current?.stop();
-    reelPhase.current = displayedPhase - 1;
-    closeGap.set(0);
+    const kicked = target.entry;
+    // Место НЕ закрывается: на месте выбитого остаётся дырка, лента едет дальше.
+    const rest = list.map((s) => (s.sid === target.sid ? { ...s, entry: null } : s));
     slotsRef.current = rest;
     setSlots(rest);
-    syncStrip();
-    closeGapAnim.current = animate(closeGap, 1, {
-      duration: 0.34,
-      // Упругое закрытие места: соседи чуть перелетают и садятся обратно.
-      ease: [0.22, 1.4, 0.3, 1],
-      onUpdate: syncStrip,
-      onComplete: () => {
-        reelPhase.current += closeGap.get();
-        closeGap.set(0);
-        syncStrip();
-      },
-    });
 
     // Слоу-мо удара: лента почти замирает на миг и разгоняется обратно —
     // видно, кого именно выбило, но вращение не прерывается.
@@ -352,15 +337,16 @@ export function HoundHuntPage() {
     setShock((s) => s + 1);
 
     const key = `${target.sid}-${kicksRef.current}`;
-    setGhosts((g) => [...g, { key, entry: target.entry }]);
+    setGhosts((g) => [...g, { key, entry: kicked }]);
     later(() => setGhosts((g) => g.filter((x) => x.key !== key)), 2000);
     haptic("light");
 
-    if (rest.length <= 1) {
+    if (alive.length - 1 <= 1) {
       stopReel();
       finishRef.current?.();
     }
-  }, [closeGap, later, slowmo, stopReel, syncStrip]);
+  }, [later, slowmo, stopReel]);
+
 
   const start = () => {
     clearTimers();
