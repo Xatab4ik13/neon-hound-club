@@ -12,7 +12,7 @@ type Props = {
   lookAt?: { x: number; y: number };
   className?: string;
   kickToken?: number;
-  onKickReady?: (impactDelay: number) => void;
+  onKickReady?: (impactDelay: number, cycleMs: number) => void;
   onImpact?: (cycle: number) => void;
 };
 
