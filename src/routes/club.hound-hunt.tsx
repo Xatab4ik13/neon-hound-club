@@ -333,8 +333,9 @@ export function HoundHuntPage() {
     setSlots(rest);
     syncStrip();
     closeGapAnim.current = animate(closeGap, 1, {
-      duration: 0.2,
-      ease: [0.2, 0.8, 0.2, 1],
+      duration: 0.34,
+      // Упругое закрытие места: соседи чуть перелетают и садятся обратно.
+      ease: [0.22, 1.4, 0.3, 1],
       onUpdate: syncStrip,
       onComplete: () => {
         reelPhase.current += closeGap.get();
@@ -342,8 +343,16 @@ export function HoundHuntPage() {
         syncStrip();
       },
     });
+
+    // Слоу-мо удара: лента почти замирает на миг и разгоняется обратно —
+    // видно, кого именно выбило, но вращение не прерывается.
+    slowmoAnim.current?.stop();
+    slowmo.set(0.22);
+    slowmoAnim.current = animate(slowmo, 1, { duration: 0.5, ease: "easeOut" });
+
     kicksRef.current += 1;
     setKicks(kicksRef.current);
+    setShock((s) => s + 1);
 
     const key = `${target.sid}-${kicksRef.current}`;
     setGhosts((g) => [...g, { key, entry: target.entry }]);
@@ -354,11 +363,11 @@ export function HoundHuntPage() {
       stopReel();
       finishRef.current?.();
     }
-  }, [closeGap, later, stopReel, syncStrip]);
+  }, [closeGap, later, slowmo, stopReel, syncStrip]);
 
   const start = () => {
     clearTimers();
-    const fresh = makeEntries(28, Math.floor(Math.random() * 99999));
+    const fresh = makeEntries(MOCK_ENTRIES, Math.floor(Math.random() * 99999));
     setPool(fresh);
     setWinners([]);
     setCaseIdx(0);
@@ -372,15 +381,19 @@ export function HoundHuntPage() {
     const entries = pool;
     if (phase === "arming" || phase === "drift") {
       const list = slotsRef.current;
-      const winner = list[list.length - 1]?.entry ?? pickWinner(entries);
+      const winnerSlot = list.find((s) => s.sid === winnerSidRef.current) ?? list[list.length - 1];
+      const winner = winnerSlot?.entry ?? pickWinner(entries);
       stopReel();
       closeGapAnim.current?.stop();
       closeGap.set(0);
-      const rest = list.slice(-1);
+      slowmoAnim.current?.stop();
+      slowmo.set(1);
+      const rest = winnerSlot ? [winnerSlot] : [];
       slotsRef.current = rest;
       setSlots(rest);
       kicksRef.current = Math.max(0, list.length - 1);
       setKicks(kicksRef.current);
+
       setGhosts([]);
       setCurrent(winner);
 
