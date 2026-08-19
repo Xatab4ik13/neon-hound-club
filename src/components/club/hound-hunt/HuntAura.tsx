@@ -21,14 +21,14 @@ export function HuntAura({ width, empty = false, seed = 0 }: Props) {
   return (
     <div
       className="pointer-events-none absolute left-1/2 -translate-x-1/2"
-      style={{ top: width * 0.82, width: width * 1.35, height: width * 0.7 }}
+      style={{ top: width * 0.82, width: width * 1.35, height: width * 0.4 }}
     >
       {/* Вертикальное поле: широкое у основания и сходится к капсуле. */}
       <motion.div
         className="absolute left-1/2 top-0 -translate-x-1/2"
         style={{
           width: width * 0.72,
-          height: width * 0.7,
+          height: width * 0.4,
           background:
             "conic-gradient(from 164deg at 50% 0%, transparent 0deg, color-mix(in oklab, var(--primary) 42%, transparent) 14deg, color-mix(in oklab, var(--destructive) 46%, transparent) 30deg, transparent 58deg)",
           filter: "blur(4px)",
@@ -66,7 +66,7 @@ export function HuntAura({ width, empty = false, seed = 0 }: Props) {
             height: Math.max(2, width * 0.035),
             background: "color-mix(in oklab, var(--destructive) 85%, white)",
           }}
-          animate={{ y: [0, -width * 0.7], opacity: [0, 0.8 * strength, 0] }}
+          animate={{ y: [0, -width * 0.4], opacity: [0, 0.8 * strength, 0] }}
           transition={{
             duration: 2.2 + i * 0.4,
             repeat: Infinity,
