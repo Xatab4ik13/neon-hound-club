@@ -231,12 +231,15 @@ export function HoundHuntPage() {
     return feedRef.current.shift();
   }, []);
 
+  /** На сколько слотов вперёд генерим хвост: минимум до точки будущего удара. */
+  const leadRef = useRef(6);
+
   /** Добираем хвост, срезаем голову. reelPhase не трогаем — скачков нет. */
   const groomTape = useCallback(() => {
     const half = halfWindow();
     let list = tapeRef.current;
     let changed = false;
-    const wantTo = Math.floor(reelPhase.current) + half + 2;
+    const wantTo = Math.floor(reelPhase.current) + Math.max(half + 2, leadRef.current);
     while (nextIdxRef.current <= wantTo) {
       const entry = nextFeed();
       if (entry === undefined) break;
