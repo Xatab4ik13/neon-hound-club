@@ -80,7 +80,6 @@ const BASE = {
   reveal: 26000, // ревил победителя
 };
 
-
 const SPEEDS = [1, 2, 5, 20, 60] as const;
 type Speed = (typeof SPEEDS)[number];
 
@@ -277,7 +276,6 @@ export function HoundHuntPage() {
         setPhase("drift");
         startReel();
       }, dur(BASE.arming));
-
     },
     [buildReel, closeGap, dur, later, pickWinner, startReel, stopReel, stripX],
   );
@@ -333,7 +331,6 @@ export function HoundHuntPage() {
     }
   }, [closeGap, later, stopReel, syncStrip]);
 
-
   const start = () => {
     clearTimers();
     const fresh = makeEntries(28, Math.floor(Math.random() * 99999));
@@ -363,24 +360,27 @@ export function HoundHuntPage() {
       setCurrent(winner);
 
       setPhase("pull");
-      later(() => {
-        setPhase("crack");
-        
-        later(() => {
-          setPhase("reveal");
-          setWinners((w) => [...w, { prizeId: HUNT_PRIZES[caseIdx].id, entry: winner }]);
-          const rest = entries.filter((e) => e.id !== winner.id);
-          setPool(rest);
+      later(
+        () => {
+          setPhase("crack");
+
           later(() => {
-            if (caseIdx + 1 < HUNT_PRIZES.length) {
-              setCaseIdx(caseIdx + 1);
-              runCase(caseIdx + 1, rest);
-            } else {
-              setPhase("podium");
-            }
-          }, dur(BASE.reveal));
-        }, dur(BASE.crack));
-      }, dur(BASE.pull) * 0.4);
+            setPhase("reveal");
+            setWinners((w) => [...w, { prizeId: HUNT_PRIZES[caseIdx].id, entry: winner }]);
+            const rest = entries.filter((e) => e.id !== winner.id);
+            setPool(rest);
+            later(() => {
+              if (caseIdx + 1 < HUNT_PRIZES.length) {
+                setCaseIdx(caseIdx + 1);
+                runCase(caseIdx + 1, rest);
+              } else {
+                setPhase("podium");
+              }
+            }, dur(BASE.reveal));
+          }, dur(BASE.crack));
+        },
+        dur(BASE.pull) * 0.4,
+      );
       return;
     }
     if (phase === "reveal") {
@@ -393,22 +393,23 @@ export function HoundHuntPage() {
     }
   };
 
-  const dogMode: RiderMode = phase === "drift"
-    ? "lunge"
-    : phase === "arming" || phase === "pull"
-      ? "watch"
-      : phase === "crack"
-        ? "lunge"
-        : phase === "reveal"
-          ? "chew"
-          : "idle";
-
+  const dogMode: RiderMode =
+    phase === "drift"
+      ? "lunge"
+      : phase === "arming" || phase === "pull"
+        ? "watch"
+        : phase === "crack"
+          ? "lunge"
+          : phase === "reveal"
+            ? "chew"
+            : "idle";
 
   const intensity =
     phase === "crack" ? 1 : phase === "reveal" ? 0.7 : phase === "drift" ? 0.45 : 0.26;
 
   const totalTickets = useMemo(
-    () => pool.reduce((s, e) => s + e.tickets, 0) + winners.reduce((s, w) => s + w.entry.tickets, 0),
+    () =>
+      pool.reduce((s, e) => s + e.tickets, 0) + winners.reduce((s, w) => s + w.entry.tickets, 0),
     [pool, winners],
   );
 
@@ -441,15 +442,8 @@ export function HoundHuntPage() {
           {phase === "intro" && <IntroPanel onStart={start} />}
 
           {(phase === "arming" || phase === "drift") && (
-            <ReelStage
-              slots={slots}
-              ghosts={ghosts}
-              x={stripX}
-              armed={phase === "arming"}
-            />
+            <ReelStage slots={slots} ghosts={ghosts} x={stripX} armed={phase === "arming"} />
           )}
-
-
 
           {(phase === "pull" || phase === "crack") && current && (
             <PullStage entry={current} cracking={phase === "crack"} />
@@ -494,7 +488,8 @@ export function HoundHuntPage() {
           </div>
           {phase !== "intro" && phase !== "podium" && (
             <p className="mt-2 text-center font-mono text-[9px] uppercase tracking-[0.2em] text-muted-foreground/70">
-              в барабане {pool.length} · {totalTickets} билетов · {HUNT_TICKET_STEP} билетов = 1 место
+              в барабане {pool.length} · {totalTickets} билетов · {HUNT_TICKET_STEP} билетов = 1
+              место
             </p>
           )}
         </div>
@@ -516,8 +511,8 @@ function IntroPanel({ onStart }: { onStart: () => void }) {
         охота начинается
       </p>
       <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-        Три приза. Капсулы летят мимо, и раз в три секунды персонаж замахивается и выбивает одну
-        из них. Остаётся последняя: чья аватарка внутри, тот забирает приз.
+        Три приза. Капсулы летят мимо, и раз в три секунды персонаж замахивается и выбивает одну из
+        них. Остаётся последняя: чья аватарка внутри, тот забирает приз.
       </p>
 
       <button
@@ -574,8 +569,6 @@ function ReelStage({
           )}
         </motion.div>
 
-
-
         {/* выбитые аватарки — дорожка без overflow, полёт ничем не обрезается */}
         <AnimatePresence>
           {ghosts.map((g) => (
@@ -585,7 +578,6 @@ function ReelStage({
           ))}
         </AnimatePresence>
       </div>
-
 
       <motion.p
         animate={{ opacity: armed ? [0.4, 1, 0.4] : 1 }}
@@ -597,8 +589,6 @@ function ReelStage({
     </div>
   );
 }
-
-
 
 /** Гончая вытягивает выбранную капсулу к пасти, потом раскусывает. */
 function PullStage({ entry, cracking }: { entry: HuntEntry; cracking: boolean }) {
