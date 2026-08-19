@@ -19,7 +19,7 @@ type Props = {
   /** Непрерывный цикл удара: клип крутится сам, без перезапусков извне. */
   loopKick?: boolean;
   /** Вызывается в момент контакта ноги (≈60% клипа) на каждом цикле. */
-  onImpact?: () => void;
+  onImpact?: (cycle: number) => void;
 };
 
 const MODEL_URL = riderAsset.url;
@@ -44,8 +44,11 @@ function recolorPinkTexture(tex: THREE.Texture): THREE.Texture | null {
   }
   const px = data.data;
   for (let i = 0; i < px.length; i += 4) {
-    const r = px[i], g = px[i + 1], b = px[i + 2];
-    const max = Math.max(r, g, b), min = Math.min(r, g, b);
+    const r = px[i],
+      g = px[i + 1],
+      b = px[i + 2];
+    const max = Math.max(r, g, b),
+      min = Math.min(r, g, b);
     if (max < 40) continue;
     const sat = (max - min) / max;
     if (sat < 0.25) continue;
@@ -83,7 +86,7 @@ function Model({
   mode: RiderMode;
   lookAt: { x: number; y: number };
   loopKick?: boolean;
-  onImpact?: () => void;
+  onImpact?: (cycle: number) => void;
 }) {
   const group = useRef<THREE.Group>(null);
   const { scene, animations } = useGLTF(MODEL_URL);
@@ -136,6 +139,8 @@ function Model({
   const impactRef = useRef(onImpact);
   impactRef.current = onImpact;
   const prevTime = useRef(0);
+  const kickCycle = useRef(0);
+  const firedCycle = useRef(-1);
 
   // Режим loopKick: клип удара крутится бесконечно на своей скорости и
   // НИКОГДА не перезапускается руками — поэтому нога всегда возвращается
@@ -157,9 +162,14 @@ function Model({
     const dur = action.getClip().duration;
     const impactAt = dur * 0.6;
     const t = action.time;
-    // цикл завернулся — сбрасываем сторож
-    if (t < prevTime.current) prevTime.current = 0;
-    if (prevTime.current < impactAt && t >= impactAt) impactRef.current?.();
+    // Один цикл клипа может пересечь impactAt несколькими render-frame из-за
+    // mixer/update и повторного рендера Canvas. Номер цикла гарантирует ровно
+    // один callback — значит, ровно одна капсула улетает на один удар.
+    if (t < prevTime.current) kickCycle.current += 1;
+    if (prevTime.current < impactAt && t >= impactAt && firedCycle.current !== kickCycle.current) {
+      firedCycle.current = kickCycle.current;
+      impactRef.current?.(kickCycle.current);
+    }
     prevTime.current = t;
   });
 
@@ -168,7 +178,11 @@ function Model({
 
   return (
     <group ref={group} rotation={[pitch, yaw, 0]}>
-      <primitive object={cloned} scale={fit.s} position={fit.offset as unknown as [number, number, number]} />
+      <primitive
+        object={cloned}
+        scale={fit.s}
+        position={fit.offset as unknown as [number, number, number]}
+      />
     </group>
   );
 }
@@ -185,7 +199,12 @@ export default function RiderScene({
       <Canvas
         dpr={[1, 2]}
         camera={{ position: [0, 1.1, 5.6], fov: 42 }}
-        gl={{ antialias: true, alpha: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.25 }}
+        gl={{
+          antialias: true,
+          alpha: true,
+          toneMapping: THREE.ACESFilmicToneMapping,
+          toneMappingExposure: 1.25,
+        }}
         style={{ background: "transparent" }}
       >
         <ambientLight intensity={0.35} />

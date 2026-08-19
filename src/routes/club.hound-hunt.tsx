@@ -158,6 +158,8 @@ export function HoundHuntPage() {
   const kicksRef = useRef(0);
   const phaseRef = useRef<Phase>("intro");
   const finishRef = useRef<(() => void) | null>(null);
+  /** Защита от двойного callback одного и того же цикла 3D-анимации. */
+  const lastImpactCycle = useRef(-1);
   /** Выбитые слоты, ждущие схлопывания: убираем, когда дырка ушла за левый край. */
   const holes = useRef<{ sid: number; phaseAt: number }[]>([]);
   phaseRef.current = phase;
@@ -189,8 +191,13 @@ export function HoundHuntPage() {
       // Схлопываем дырки только когда они полностью скрылись за левым краем:
       // на экране влево от центра видно ~offLeft звеньев.
       if (holes.current.length) {
-        const offLeft = Math.ceil(window.innerWidth / 2 / STEP) + 2;
-        const ready = holes.current.filter((h) => reelPhase.current - h.phaseAt >= offLeft);
+        // От центра до полного ухода капсулы за левый край. Без прежнего
+        // запаса в два слота: он держал дырку ещё целый круг при малом составе.
+        const offLeft = (window.innerWidth / 2 + CHIP_W / 2) / STEP;
+        // На коротком барабане один оборот может закончиться раньше края
+        // экрана. Тогда схлопываем прямо перед повторным приходом дырки в центр.
+        const closeAfter = Math.min(offLeft, Math.max(0.75, slotsRef.current.length - 0.25));
+        const ready = holes.current.filter((h) => reelPhase.current - h.phaseAt >= closeAfter);
         if (ready.length) {
           holes.current = holes.current.filter((h) => !ready.includes(h));
           let list = slotsRef.current;
@@ -218,7 +225,6 @@ export function HoundHuntPage() {
     };
     reelRaf.current = requestAnimationFrame(tick);
   }, [dur, slowmo, stopReel, syncStrip]);
-
 
   /**
    * Барабан = реальные участники: 15 человек — 15 звеньев. Никаких случайных
@@ -273,6 +279,7 @@ export function HoundHuntPage() {
       kicksRef.current = 0;
       setGhosts([]);
       holes.current = [];
+      lastImpactCycle.current = -1;
 
       setSlots(slotsNow);
       slotsRef.current = slotsNow;
@@ -288,9 +295,10 @@ export function HoundHuntPage() {
       haptic("light");
 
       const finish = () => {
+        const survivor = slotsRef.current.find((slot) => slot.entry)?.entry ?? winner;
         // последняя капсула — победитель: подъезжает к персонажу и раскрывается
         setPhase("pull");
-        setCurrent(winner);
+        setCurrent(survivor);
         haptic("selection");
 
         later(() => {
@@ -299,8 +307,8 @@ export function HoundHuntPage() {
           later(() => {
             setPhase("reveal");
             haptic("success");
-            setWinners((w) => [...w, { prizeId: HUNT_PRIZES[idx].id, entry: winner }]);
-            const rest = entries.filter((e) => e.id !== winner.id);
+            setWinners((w) => [...w, { prizeId: HUNT_PRIZES[idx].id, entry: survivor }]);
+            const rest = entries.filter((e) => e.id !== survivor.id);
             setPool(rest);
 
             later(() => {
@@ -331,47 +339,56 @@ export function HoundHuntPage() {
   );
 
   /** Импакт ноги: улетает то звено, что в этот кадр стоит по центру. */
-  const handleImpact = useCallback(() => {
-    if (phaseRef.current !== "drift") return;
-    const list = slotsRef.current;
-    const alive = list.filter((s) => s.entry);
-    if (alive.length <= 1) return;
+  const handleImpact = useCallback(
+    (cycle: number) => {
+      if (phaseRef.current !== "drift") return;
+      if (lastImpactCycle.current === cycle) return;
+      lastImpactCycle.current = cycle;
+      const list = slotsRef.current;
+      const alive = list.filter((s) => s.entry);
+      if (alive.length <= 1) return;
 
-    // Центральный слот вычисляем из циклической фазы, а не из бесконечной
-    // экранной координаты. Поэтому индекс остаётся точным после любого круга.
-    const n = list.length;
-    const pos = Math.round(reelPhase.current);
-    const j = ((pos % n) + n) % n;
-    const target = list[j];
-    // По центру дырка — бить некого, ждём следующий оборот.
-    if (!target.entry) return;
-    // Победителя не подменяем соседним звеном: иначе из центра визуально
-    // улетает не та аватарка, по которой пришёлся удар. Ждём следующий пинок.
-    if (target.sid === winnerSidRef.current) return;
+      // Центральный слот вычисляем из циклической фазы, а не из бесконечной
+      // экранной координаты. Поэтому индекс остаётся точным после любого круга.
+      const n = list.length;
+      const pos = Math.round(reelPhase.current);
+      const j = ((pos % n) + n) % n;
+      const target = list[j];
+      // По центру дырка — бить некого, ждём следующий оборот.
+      if (!target.entry) return;
+      // Визуально пропускать удар нельзя. Если под ногой оказался заранее
+      // намеченный финалист, переносим защиту на другого живого участника:
+      // центральная капсула всё равно честно улетает, а выигрывает последний.
+      if (target.sid === winnerSidRef.current) {
+        const nextSurvivor = alive.find((slot) => slot.sid !== target.sid);
+        if (!nextSurvivor) return;
+        winnerSidRef.current = nextSurvivor.sid;
+      }
 
-    const kicked = target.entry;
-    // Место НЕ закрывается: на месте выбитого остаётся дырка, лента едет дальше.
-    const rest = list.map((s) => (s.sid === target.sid ? { ...s, entry: null } : s));
-    slotsRef.current = rest;
-    setSlots(rest);
-    // Дырку убираем не по таймеру, а когда она реально уедет за левый край:
-    // фиксируем фазу удара, а rAF-цикл сам схлопнет слот в нужный момент.
-    holes.current.push({ sid: target.sid, phaseAt: reelPhase.current });
+      const kicked = target.entry;
+      // Место НЕ закрывается: на месте выбитого остаётся дырка, лента едет дальше.
+      const rest = list.map((s) => (s.sid === target.sid ? { ...s, entry: null } : s));
+      slotsRef.current = rest;
+      setSlots(rest);
+      // Дырку убираем не по таймеру, а когда она реально уедет за левый край:
+      // фиксируем фазу удара, а rAF-цикл сам схлопнет слот в нужный момент.
+      holes.current.push({ sid: target.sid, phaseAt: reelPhase.current });
 
-    kicksRef.current += 1;
-    setKicks(kicksRef.current);
-    setShock((s) => s + 1);
+      kicksRef.current += 1;
+      setKicks(kicksRef.current);
+      setShock((s) => s + 1);
 
-    const key = `${target.sid}-${kicksRef.current}`;
-    setGhosts((g) => [...g, { key, entry: kicked }]);
-    later(() => setGhosts((g) => g.filter((x) => x.key !== key)), 2000);
-    haptic("light");
-    if (alive.length - 1 <= 1) {
-      stopReel();
-      finishRef.current?.();
-    }
-  }, [later, stopReel]);
-
+      const key = `${target.sid}-${kicksRef.current}`;
+      setGhosts((g) => [...g, { key, entry: kicked }]);
+      later(() => setGhosts((g) => g.filter((x) => x.key !== key)), 2000);
+      haptic("light");
+      if (alive.length - 1 <= 1) {
+        stopReel();
+        finishRef.current?.();
+      }
+    },
+    [later, stopReel],
+  );
 
   const start = () => {
     clearTimers();

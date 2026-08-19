@@ -12,7 +12,7 @@ type Props = {
   lookAt?: { x: number; y: number };
   className?: string;
   loopKick?: boolean;
-  onImpact?: () => void;
+  onImpact?: (cycle: number) => void;
 };
 
 export function RiderCharacter(props: Props) {
