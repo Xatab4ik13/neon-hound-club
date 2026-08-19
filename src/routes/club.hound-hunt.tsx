@@ -91,7 +91,7 @@ const BASE = {
 const SPEEDS = [1, 2, 5, 20, 60] as const;
 type Speed = (typeof SPEEDS)[number];
 
-type Phase = "intro" | "arming" | "drift" | "pull" | "crack" | "reveal" | "podium";
+type Phase = "intro" | "arming" | "drift" | "settle" | "podium";
 
 const CHIP_SCALE = 0.62;
 const CHIP_W = 132 * CHIP_SCALE;
@@ -142,6 +142,11 @@ export function HoundHuntPage() {
   const [look, setLook] = useState({ x: 0, y: 0 });
   /** Счётчик ударов для вспышки/тряски арены — растёт на каждый импакт. */
   const [shock, setShock] = useState(0);
+  /** Победитель зафиксирован: лента доехала и встала, показываем плашку. */
+  const [settled, setSettled] = useState(false);
+  const settledRef = useRef(false);
+  /** Абсолютный индекс слота, на котором лента должна остановиться. */
+  const settleTargetRef = useRef<number | null>(null);
 
   const prize = HUNT_PRIZES[Math.min(caseIdx, HUNT_PRIZES.length - 1)];
   // Позиция ленты — своя motion-value: барабан крутится непрерывно, а в момент
@@ -305,7 +310,36 @@ export function HoundHuntPage() {
       // удар получает «вес», как в файтингах. Фазу не обнуляем и не стопим
       // полностью, поэтому расчёт следующей цели не сбивается.
       const frozen = now < hitstopUntilRef.current;
-      reelPhase.current += (elapsed / step) * (frozen ? 0.12 : 1);
+      let advance = (elapsed / step) * (frozen ? 0.12 : 1);
+
+      // ФИНАЛ: композиция не меняется. Последняя живая аватарка просто
+      // доезжает до центра, лента плавно тормозит и встаёт — никаких
+      // перескоков персонажа и отдельных экранов.
+      if (phaseRef.current === "settle" && !settledRef.current) {
+        if (settleTargetRef.current === null) {
+          const liveIds = new Set(liveRef.current.map((e) => e.id));
+          const slot = tapeRef.current.find(
+            (s) => s.entry && liveIds.has(s.entry.id) && s.idx >= reelPhase.current + 1.6,
+          );
+          if (slot) settleTargetRef.current = slot.idx;
+        }
+        const target = settleTargetRef.current;
+        if (target !== null) {
+          const diff = target - reelPhase.current;
+          // Экспоненциальное торможение: лента «выдыхает» и замирает ровно
+          // по центру, без рывка в конце.
+          advance = Math.min(advance, Math.max(0, diff * Math.min(1, elapsed / 320)));
+          if (diff <= 0.01) {
+            advance = diff;
+            settledRef.current = true;
+            setSettled(true);
+            haptic("success");
+            later(() => finishRef.current?.(), dur(2200));
+          }
+        }
+      }
+
+      reelPhase.current += advance;
       // Хвост ленты должен существовать дальше, чем точка будущего импакта,
       // иначе цель «ещё не создана» и взмах не запускается.
       leadRef.current = Math.ceil(impactDelayRef.current / step) + 3;
@@ -412,7 +446,7 @@ export function HoundHuntPage() {
   /* --- взгляд персонажа: следит за капсулами во время отбора --- */
   useEffect(() => {
     if (phase !== "drift" && phase !== "arming") {
-      if (phase === "pull" || phase === "crack") setLook({ x: 0, y: 0.35 });
+      if (phase === "settle") setLook({ x: 0.25, y: 0.2 });
       return;
     }
     let raf = 0;
@@ -433,6 +467,9 @@ export function HoundHuntPage() {
       const winner = pickWinner(entries);
       const order = buildReel(entries);
       setCurrent(null);
+      setSettled(false);
+      settledRef.current = false;
+      settleTargetRef.current = null;
       setKicks(0);
       setKickToken(0);
       kicksRef.current = 0;
@@ -464,35 +501,25 @@ export function HoundHuntPage() {
       setPhase("arming");
       haptic("light");
 
+      // finish вызывается уже ПОСЛЕ того, как лента доехала и встала:
+      // композиция та же, меняется только запись результата и переход дальше.
       const finish = () => {
         const survivor = liveRef.current[0] ?? winner;
-
-        // последняя капсула — победитель: подъезжает к персонажу и раскрывается
-        setPhase("pull");
-        setCurrent(survivor);
-        haptic("selection");
+        setWinners((w) => [...w, { prizeId: HUNT_PRIZES[idx].id, entry: survivor }]);
+        const rest = entries.filter((e) => e.id !== survivor.id);
+        setPool(rest);
 
         later(() => {
-          setPhase("crack");
-
-          later(() => {
-            setPhase("reveal");
-            haptic("success");
-            setWinners((w) => [...w, { prizeId: HUNT_PRIZES[idx].id, entry: survivor }]);
-            const rest = entries.filter((e) => e.id !== survivor.id);
-            setPool(rest);
-
-            later(() => {
-              if (idx + 1 < HUNT_PRIZES.length) {
-                setCaseIdx(idx + 1);
-                runCase(idx + 1, rest);
-              } else {
-                setPhase("podium");
-              }
-            }, dur(BASE.reveal));
-          }, dur(BASE.crack));
-        }, dur(BASE.pull));
+          if (idx + 1 < HUNT_PRIZES.length) {
+            setCaseIdx(idx + 1);
+            runCase(idx + 1, rest);
+          } else {
+            stopReel();
+            setPhase("podium");
+          }
+        }, dur(BASE.reveal));
       };
+
 
       finishRef.current = finish;
 
@@ -605,13 +632,16 @@ export function HoundHuntPage() {
       later(() => setGhosts((g) => g.filter((x) => x.key !== key)), 2000);
       haptic("light");
       if (aliveRef.current <= 1) {
-        stopReel();
-        // ReelStage должен остаться в DOM, пока последняя выбитая аватарка
-        // действительно улетает. Раньше переход в pull размонтировал её сразу.
-        later(() => finishRef.current?.(), 1500);
+        // Лента НЕ останавливается рывком и ничего не размонтируется: фаза
+        // settle просто докатывает последнюю живую аватарку до центра.
+        settleTargetRef.current = null;
+        settledRef.current = false;
+        setSettled(false);
+        setCurrent(liveRef.current[0] ?? kicked);
+        setPhase("settle");
       }
     },
-    [halfWindow, later, stopReel],
+    [halfWindow, later],
   );
   eliminateRef.current = eliminateAt;
 
@@ -667,67 +697,28 @@ export function HoundHuntPage() {
         liveRef.current.find((e) => e.id === winnerIdRef.current) ??
         liveRef.current[0] ??
         pickWinner(entries);
-      stopReel();
       kicksRef.current = Math.max(0, aliveRef.current - 1);
       setKicks(kicksRef.current);
       liveRef.current = [winner];
       aliveRef.current = 1;
       setAlive(1);
-      tapeRef.current = [];
-      setTape([]);
-
-
       setGhosts([]);
-
       setCurrent(winner);
-
-      setPhase("pull");
-      later(
-        () => {
-          setPhase("crack");
-
-          later(() => {
-            setPhase("reveal");
-            setWinners((w) => [...w, { prizeId: HUNT_PRIZES[caseIdx].id, entry: winner }]);
-            const rest = entries.filter((e) => e.id !== winner.id);
-            setPool(rest);
-            later(() => {
-              if (caseIdx + 1 < HUNT_PRIZES.length) {
-                setCaseIdx(caseIdx + 1);
-                runCase(caseIdx + 1, rest);
-              } else {
-                setPhase("podium");
-              }
-            }, dur(BASE.reveal));
-          }, dur(BASE.crack));
-        },
-        dur(BASE.pull) * 0.4,
-      );
+      settleTargetRef.current = null;
+      settledRef.current = false;
+      setSettled(false);
+      setPhase("settle");
       return;
     }
-    if (phase === "reveal") {
-      if (caseIdx + 1 < HUNT_PRIZES.length) {
-        setCaseIdx(caseIdx + 1);
-        runCase(caseIdx + 1, pool);
-      } else {
-        setPhase("podium");
-      }
+    if (phase === "settle") {
+      finishRef.current?.();
     }
   };
 
   const dogMode: RiderMode =
-    phase === "drift"
-      ? "lunge"
-      : phase === "arming" || phase === "pull"
-        ? "watch"
-        : phase === "crack"
-          ? "lunge"
-          : phase === "reveal"
-            ? "idle"
-            : "idle";
+    phase === "drift" ? "lunge" : phase === "arming" ? "watch" : "idle";
 
-  const intensity =
-    phase === "crack" ? 1 : phase === "reveal" ? 0.7 : phase === "drift" ? 0.45 : 0.26;
+  const intensity = phase === "settle" ? 0.8 : phase === "drift" ? 0.45 : 0.26;
 
   const totalTickets = useMemo(
     () =>
@@ -743,11 +734,20 @@ export function HoundHuntPage() {
 
   return (
     <div className="fixed inset-0 z-40 overflow-hidden overscroll-none touch-pan-y bg-background text-foreground select-none">
-      {/* фон: свечение идёт от нижнего меню до уровня ленты с аватарками */}
+      {/* Глубина за персонажем: перспективный пол + арочные кольца. Только
+          transform/opacity, поэтому 3D-объём ничего не стоит по кадрам. */}
+      <DepthBackdrop />
+
+      {/* свечение углей: от нижнего меню и мягко гаснет к уровню аватарок */}
       <EmberField
         intensity={intensity}
         className="pointer-events-none absolute inset-x-0 w-full opacity-70"
-        style={{ bottom: "calc(5.5rem + env(safe-area-inset-bottom))", top: "34%" }}
+        style={{
+          bottom: "calc(5.5rem + env(safe-area-inset-bottom))",
+          top: "36%",
+          maskImage: "linear-gradient(to top, black 55%, transparent 100%)",
+          WebkitMaskImage: "linear-gradient(to top, black 55%, transparent 100%)",
+        }}
       />
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_80%_at_50%_0%,color-mix(in_oklab,var(--destructive)_14%,transparent),transparent_60%)]" />
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(80%_60%_at_50%_110%,color-mix(in_oklab,var(--primary)_12%,transparent),transparent_70%)]" />
@@ -763,7 +763,7 @@ export function HoundHuntPage() {
             className={`relative z-10 w-full max-w-[560px] ${
               phase === "intro" ? "mt-0 h-[34svh]" : "mt-[11svh] h-[62svh]"
             }`}
-            animate={{ opacity: phase === "podium" ? 0.25 : 1, y: phase === "crack" ? 10 : 0 }}
+            animate={{ opacity: phase === "podium" ? 0.25 : 1 }}
           >
             <RiderCharacter
               mode={dogMode}
@@ -780,28 +780,19 @@ export function HoundHuntPage() {
 
           {phase === "intro" && <IntroPanel onStart={start} />}
 
-          {(phase === "arming" || phase === "drift") && (
+          {(phase === "arming" || phase === "drift" || phase === "settle") && (
             <ReelStage
               slots={tape}
-
               ghosts={ghosts}
               phase={phaseMv}
               shock={shock}
-            />
-          )}
-
-          {(phase === "pull" || phase === "crack") && current && (
-            <PullStage entry={current} cracking={phase === "crack"} />
-          )}
-
-          {phase === "reveal" && current && (
-            <WinnerStage
-              entry={current}
+              winner={settled ? current : null}
               prizeTitle={prize.title}
               prizeSub={prize.sub}
               prizeImg={prize.img}
             />
           )}
+
 
           {phase === "podium" && <Podium winners={winners} onRestart={start} />}
         </div>
@@ -876,6 +867,10 @@ function ReelStage({
   ghosts,
   phase,
   shock,
+  winner,
+  prizeTitle,
+  prizeSub,
+  prizeImg,
 }: {
   /** Слоты ленты со своими АБСОЛЮТНЫМИ индексами (не по кругу). */
   slots: { idx: number; entry: HuntEntry | null }[];
@@ -885,6 +880,11 @@ function ReelStage({
   phase: MotionValue<number>;
   /** Счётчик ударов: меняется — играем вспышку и тряску арены. */
   shock: number;
+  /** Победитель: лента уже встала, рядом с аватаркой всплывает плашка. */
+  winner: HuntEntry | null;
+  prizeTitle: string;
+  prizeSub: string;
+  prizeImg: string;
 }) {
   // Отдача от удара: тряска и микро-зум играются только на transform, поэтому
   // не вызывают ни layout, ни перерисовку аватарок.
@@ -986,6 +986,65 @@ function ReelStage({
         </AnimatePresence>
       </motion.div>
 
+      {/* Финал: композиция та же. Лента встала, победитель остался по центру —
+          над лентой всплывает WINNER, справа от аватарки приз. */}
+      <AnimatePresence>
+        {winner && (
+          <motion.div
+            key="winner-title"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            className="pointer-events-none absolute inset-x-0 -top-9 z-40 text-center"
+          >
+            <p className="font-display text-2xl font-black uppercase tracking-[0.3em] text-foreground drop-shadow-[0_0_26px_color-mix(in_oklab,var(--destructive)_75%,transparent)]">
+              winner
+            </p>
+          </motion.div>
+        )}
+
+        {winner && (
+          <motion.div
+            key="winner-prize"
+            initial={{ opacity: 0, x: -12, scale: 0.92 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.6, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
+            className="pointer-events-none absolute top-1/2 z-40 flex max-w-[52%] -translate-y-1/2 items-center gap-2"
+            style={{ left: `calc(50% + ${CHIP_W / 2 + 14}px)` }}
+          >
+            <img
+              src={prizeImg}
+              alt=""
+              className="h-11 shrink-0 object-contain drop-shadow-[0_0_22px_color-mix(in_oklab,var(--primary)_60%,transparent)]"
+            />
+            <div className="min-w-0">
+              <p className="font-mono text-[9px] uppercase tracking-[0.24em] text-destructive">
+                выиграл
+              </p>
+              <p className="truncate font-mono text-[9px] uppercase tracking-[0.18em] text-muted-foreground">
+                {prizeSub}
+              </p>
+              <p className="font-display text-sm font-black uppercase leading-tight">
+                {prizeTitle}
+              </p>
+            </div>
+          </motion.div>
+        )}
+
+        {winner && (
+          <motion.div
+            key="winner-halo"
+            initial={{ opacity: 0, scale: 0.7 }}
+            animate={{ opacity: [0.35, 0.75, 0.35], scale: [1, 1.1, 1] }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
+            className="pointer-events-none absolute left-1/2 top-1/2 z-0 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/30 blur-2xl"
+            style={{ width: CHIP_W * 1.8, height: CHIP_W * 1.8 }}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -1009,105 +1068,55 @@ function ReelSlot({
   );
 }
 
-/** Гончая вытягивает выбранную капсулу к пасти, потом раскусывает. */
-function PullStage({ entry, cracking }: { entry: HuntEntry; cracking: boolean }) {
+/**
+ * Глубина сцены за персонажем: перспективный пол, кольца арены и задний
+ * контровой свет. Всё на CSS-трансформациях — по кадрам бесплатно.
+ */
+function DepthBackdrop() {
   return (
-    <div className="relative z-10 -mt-6 grid place-items-center">
-      <motion.div
-        initial={{ y: 120, scale: 0.7, opacity: 0 }}
-        animate={
-          cracking
-            ? { y: -26, scale: 1.12, opacity: 1 }
-            : { y: [40, -6, 2, -10], scale: [0.85, 1.05, 1, 1.02], opacity: 1 }
-        }
-        transition={cracking ? { duration: 0.5 } : { duration: 2.6, ease: "easeInOut" }}
-      >
-        <HuntAvatar entry={entry} scale={1.35} focused />
-      </motion.div>
+    <div className="pointer-events-none absolute inset-0 overflow-hidden [perspective:900px]">
+      {/* контровой свет за персонажем: объём и силуэт */}
+      <div
+        className="absolute left-1/2 top-[46%] -translate-x-1/2 rounded-full opacity-70 blur-3xl"
+        style={{
+          width: "70vw",
+          height: "38vh",
+          background:
+            "radial-gradient(closest-side, color-mix(in oklab, var(--destructive) 40%, transparent), transparent 72%)",
+        }}
+      />
 
-      {/* осколки стекла при раскусе */}
-      {cracking &&
-        Array.from({ length: 16 }).map((_, i) => (
-          <motion.span
-            key={i}
-            className="absolute size-1.5 rounded-[2px] bg-white/70"
-            initial={{ opacity: 1, x: 0, y: 0, rotate: 0 }}
-            animate={{
-              opacity: 0,
-              x: Math.cos((i / 16) * Math.PI * 2) * (90 + Math.random() * 80),
-              y: Math.sin((i / 16) * Math.PI * 2) * (70 + Math.random() * 70),
-              rotate: 180,
-            }}
-            transition={{ duration: 0.9, ease: "easeOut" }}
-          />
-        ))}
+      {/* кольца арены — уходят в глубину */}
+      {[0, 1, 2].map((i) => (
+        <div
+          key={i}
+          className="absolute left-1/2 top-[52%] -translate-x-1/2 -translate-y-1/2 rounded-full border"
+          style={{
+            width: `${46 + i * 26}vw`,
+            height: `${46 + i * 26}vw`,
+            borderColor: "color-mix(in oklab, var(--destructive) 16%, transparent)",
+            opacity: 0.5 - i * 0.13,
+            transform: "translate(-50%, -50%) rotateX(72deg)",
+          }}
+        />
+      ))}
 
-      <motion.p
-        animate={{ opacity: [0.5, 1, 0.5] }}
-        transition={{ duration: 1.4, repeat: Infinity }}
-        className="mt-4 font-mono text-[10px] uppercase tracking-[0.28em] text-destructive"
-      >
-        {cracking ? "есть победитель" : "выбит последний"}
-      </motion.p>
+      {/* перспективный пол: сетка уходит к горизонту */}
+      <div
+        className="absolute inset-x-[-40%] bottom-0 h-[58vh] origin-bottom opacity-[0.16]"
+        style={{
+          transform: "rotateX(76deg)",
+          backgroundImage:
+            "linear-gradient(to right, color-mix(in oklab, var(--foreground) 55%, transparent) 1px, transparent 1px), linear-gradient(to bottom, color-mix(in oklab, var(--foreground) 55%, transparent) 1px, transparent 1px)",
+          backgroundSize: "68px 68px",
+          maskImage: "linear-gradient(to top, black 5%, transparent 65%)",
+          WebkitMaskImage: "linear-gradient(to top, black 5%, transparent 65%)",
+        }}
+      />
     </div>
   );
 }
 
-/**
- * Финальный экран: персонаж остаётся на арене (пока обычный клип «idle»; когда
- * придёт анимация радости — меняется только mode в dogMode), а чуть ниже и
- * левее центра появляется аватарка победителя с призом.
- */
-function WinnerStage({
-  entry,
-  prizeTitle,
-  prizeSub,
-  prizeImg,
-}: {
-  entry: HuntEntry;
-  prizeTitle: string;
-  prizeSub: string;
-  prizeImg: string;
-}) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 18, scale: 0.96 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-      className="relative z-30 -mt-[26svh] flex w-full max-w-[440px] items-center gap-3 px-6"
-    >
-      <div className="relative shrink-0">
-        <motion.div
-          animate={{ opacity: [0.35, 0.8, 0.35], scale: [1, 1.12, 1] }}
-          transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
-          className="pointer-events-none absolute inset-0 -z-10 rounded-full bg-primary/30 blur-2xl"
-        />
-        <HuntAvatar entry={entry} scale={0.8} focused />
-      </div>
-
-      <div className="min-w-0">
-        <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-destructive">
-          выиграл
-        </p>
-        <div className="mt-1 flex items-center gap-2">
-          <img
-            src={prizeImg}
-            alt=""
-            className="h-12 shrink-0 object-contain drop-shadow-[0_0_22px_color-mix(in_oklab,var(--primary)_60%,transparent)]"
-          />
-          <div className="min-w-0">
-            <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-muted-foreground">
-              {prizeSub}
-            </p>
-            <p className="font-display text-base font-black uppercase leading-tight">
-              {prizeTitle}
-            </p>
-          </div>
-        </div>
-      </div>
-    </motion.div>
-  );
-}
 
 function Podium({
   winners,
