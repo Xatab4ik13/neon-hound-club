@@ -275,8 +275,6 @@ export function HoundHuntPage() {
       // того и выбивает, его звено улетает и очередь подтягивается.
       later(() => {
         setPhase("drift");
-        const pxPerSec = STEP / (dur(BASE.capsule) / 1000);
-        void pxPerSec;
         startReel();
       }, dur(BASE.arming));
 
@@ -551,48 +549,30 @@ function ReelStage({
   const row = Array.from({ length: copies }, (_, c) => c);
   return (
     <div className="relative z-30 -mt-[26svh] w-full">
-      {/* дорожка: 3D-перспектива, лента едет под углом к камере */}
-      <div
-        className="relative py-2"
-        style={{ perspective: "900px", perspectiveOrigin: "50% 50%" }}
-      >
+      {/* Движущаяся лента плоская: перспектива применяется только к звену,
+          которое уже выбито и летит отдельно от барабана. */}
+      <div className="relative py-2">
         {/* зона удара — нейтральная тонкая метка по центру */}
         <div className="pointer-events-none absolute left-1/2 top-0 z-20 h-full w-px -translate-x-1/2 bg-gradient-to-b from-transparent via-white/20 to-transparent" />
         <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-20 bg-gradient-to-r from-background to-transparent" />
         <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-20 bg-gradient-to-l from-background to-transparent" />
 
-        {/* наклон дорожки — на СТАТИЧНОМ слое: если крутить ленту внутри
-            rotateY, сдвиг по X уводит звенья к камере и они растут. */}
-        <div
-          style={{ transform: "rotateX(6deg) rotateY(-14deg)", transformStyle: "flat" }}
+        <motion.div
+          className="flex items-center gap-4"
+          style={{
+            x,
+            paddingLeft: `calc(50% - ${CHIP_W / 2}px)`,
+            willChange: "transform",
+          }}
         >
-          <motion.div
-            className="flex items-center gap-4"
-            style={{
-              x,
-              paddingLeft: `calc(50% - ${CHIP_W / 2}px)`,
-              willChange: "transform",
-            }}
-          >
-            <AnimatePresence initial={false} mode="popLayout">
-              {row.flatMap((c) =>
-                slots.map((s) => (
-                  <motion.div
-                    key={`slot-${c}-${s.sid}`}
-                    layout
-                    className="shrink-0"
-                    initial={{ opacity: 0, scale: 0.85 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.6 }}
-                    transition={{ type: "spring", stiffness: 300, damping: 28 }}
-                  >
-                    <HuntAvatar entry={s.entry} scale={CHIP_SCALE} />
-                  </motion.div>
-                )),
-              )}
-            </AnimatePresence>
-          </motion.div>
-        </div>
+          {row.flatMap((c) =>
+            slots.map((s) => (
+              <div key={`slot-${c}-${s.sid}`} className="shrink-0">
+                <HuntAvatar entry={s.entry} scale={CHIP_SCALE} />
+              </div>
+            )),
+          )}
+        </motion.div>
 
 
 
