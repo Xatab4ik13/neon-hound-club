@@ -360,7 +360,7 @@ export function HoundHuntPage() {
         startReel();
       }, dur(BASE.arming));
     },
-    [buildReel, dur, later, pickWinner, slowmo, startReel, stopReel, stripX],
+    [buildReel, dur, later, pickWinner, slowmo, startReel, stopReel, stripX, turbo],
   );
 
   /** Импакт ноги: улетает то звено, что в этот кадр стоит по центру. */
