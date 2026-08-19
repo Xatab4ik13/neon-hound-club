@@ -259,7 +259,7 @@ export function HoundHuntPage() {
       // и видно, что по кругу едут именно они, а не плотная толпа копий.
       // Персонаж по пустотам не бьёт — он их пропускает.
       const n = live.length;
-      const gaps = n > 8 ? 0 : n > 6 ? 1 : n > 4 ? 2 : n > 3 ? 3 : n === 3 ? 4 : 7;
+      const gaps = n > 8 ? 0 : n > 6 ? 1 : n > 4 ? 1 : n > 2 ? 2 : 3;
 
       const built: (HuntEntry | null)[] = [];
       for (const entry of live) {
