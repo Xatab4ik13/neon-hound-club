@@ -376,7 +376,7 @@ export function HoundHuntPage() {
         startReel();
       }, dur(BASE.arming));
     },
-    [buildReel, dur, later, pickWinner, startReel, stopReel, stripX],
+    [buildReel, dur, groomTape, halfWindow, later, pickWinner, startReel, stopReel, stripX],
   );
 
   /** Импакт ноги: улетает то звено, что в этот кадр стоит по центру. */
