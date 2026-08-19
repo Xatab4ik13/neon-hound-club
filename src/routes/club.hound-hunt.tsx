@@ -194,6 +194,13 @@ export function HoundHuntPage() {
   const kickReadyAtRef = useRef(0);
   /** До этого времени лента стоит на месте — короткий hitstop в момент удара. */
   const hitstopUntilRef = useRef(0);
+  /** Крайний срок, к которому 3D-клип обязан прислать импакт. */
+  const kickDeadlineRef = useRef(0);
+  /** Когда кто-то выбывал в последний раз — вход для watchdog'а. */
+  const lastEliminationAtRef = useRef(0);
+  /** Стабильная ссылка на eliminateAt для тика (объявлен ниже). */
+  const eliminateRef = useRef<(idx: number | null) => void>(() => {});
+
   phaseRef.current = phase;
   tapeRef.current = tape;
 
@@ -272,6 +279,9 @@ export function HoundHuntPage() {
   const startReel = useCallback(() => {
     stopReel();
     reelLastFrame.current = performance.now();
+    // Точка отсчёта для watchdog'а: если за два цикла никто не выбыл — добиваем.
+    lastEliminationAtRef.current = performance.now();
+
     const tick = (now: number) => {
       const elapsed = Math.min(50, now - reelLastFrame.current);
       reelLastFrame.current = now;
@@ -288,35 +298,68 @@ export function HoundHuntPage() {
       groomTape();
       syncStrip();
 
-      // Запускаем одиночный взмах ровно за impactDelay до прихода следующей
-      // живой капсулы в центр. Дырки просто проезжают — персонаж их не бьёт.
-      if (
-        phaseRef.current === "drift" &&
-        aliveRef.current > 1 &&
-        !kickInFlightRef.current &&
-        now >= kickReadyAtRef.current
-      ) {
-        const impactPhase = reelPhase.current + impactDelayRef.current / step;
-        const liveIds = new Set(liveRef.current.map((entry) => entry.id));
-        const nextLive = tapeRef.current.find(
-          (slot) => slot.idx >= impactPhase && slot.entry !== null && liveIds.has(slot.entry.id),
-        );
-        // Страховка от зависания: если окно идеального тайминга по какой-то
-        // причине проехало (кадр подвис, лента разряжена дырками), бьём по
-        // ближайшей живой капсуле впереди, а не стоим до конца розыгрыша.
-        const overdue = now - kickReadyAtRef.current > kickCycleMsRef.current * 1.5;
-        if (nextLive) {
-          const untilCenter = (nextLive.idx - reelPhase.current) * step;
-          // Допуск в один кадр компенсирует React/Canvas между выбором цели
-          // и фактическим стартом клипа, не меняя визуальную фазу ленты.
-          if (untilCenter <= impactDelayRef.current + 34 || overdue) {
-            reservedTargetRef.current = nextLive.idx;
-            kickInFlightRef.current = true;
+      if (phaseRef.current === "drift" && aliveRef.current > 1) {
+        // --- Watchdog №1: взмах ушёл, а импакт-callback не пришёл (3D-клип
+        // проглотил токен, дубль цикла, просадка кадров). Добиваем сами. ---
+        if (kickInFlightRef.current && now > kickDeadlineRef.current) {
+          const reserved = reservedTargetRef.current;
+          kickInFlightRef.current = false;
+          reservedTargetRef.current = null;
+          lastImpactCycle.current = -1;
+          impactLockedUntil.current = 0;
+          eliminateRef.current(reserved);
+          kickReadyAtRef.current = now + kickCycleMsRef.current;
+        }
+
+        // --- Watchdog №2: последний рубеж. Если по любой причине никто не
+        // выбывал дольше двух полных циклов — снимаем все замки и выбиваем
+        // ближайшую живую капсулу. Розыгрыш не может встать намертво. ---
+        if (
+          lastEliminationAtRef.current &&
+          now - lastEliminationAtRef.current > kickCycleMsRef.current * 2 + impactDelayRef.current
+        ) {
+          kickInFlightRef.current = false;
+          reservedTargetRef.current = null;
+          lastImpactCycle.current = -1;
+          impactLockedUntil.current = 0;
+          kickReadyAtRef.current = 0;
+          eliminateRef.current(null);
+          setKickToken((token) => token + 1);
+        }
+
+        // Запускаем одиночный взмах ровно за impactDelay до прихода следующей
+        // живой капсулы в центр. Дырки просто проезжают — персонаж их не бьёт.
+        if (!kickInFlightRef.current && now >= kickReadyAtRef.current) {
+          const impactPhase = reelPhase.current + impactDelayRef.current / step;
+          const liveIds = new Set(liveRef.current.map((entry) => entry.id));
+          const nextLive = tapeRef.current.find(
+            (slot) => slot.idx >= impactPhase && slot.entry !== null && liveIds.has(slot.entry.id),
+          );
+          // Страховка от зависания: если окно идеального тайминга по какой-то
+          // причине проехало (кадр подвис, лента разряжена дырками), бьём по
+          // ближайшей живой капсуле впереди, а не стоим до конца розыгрыша.
+          const overdue = now - kickReadyAtRef.current > kickCycleMsRef.current * 1.5;
+          if (nextLive) {
+            const untilCenter = (nextLive.idx - reelPhase.current) * step;
+            // Допуск в один кадр компенсирует React/Canvas между выбором цели
+            // и фактическим стартом клипа, не меняя визуальную фазу ленты.
+            if (untilCenter <= impactDelayRef.current + 34 || overdue) {
+              reservedTargetRef.current = nextLive.idx;
+              kickInFlightRef.current = true;
+              kickReadyAtRef.current = now + kickCycleMsRef.current;
+              kickDeadlineRef.current = now + impactDelayRef.current + kickCycleMsRef.current;
+              setKickToken((token) => token + 1);
+            }
+          } else if (overdue) {
+            // Живой цели впереди нет вообще (хвост из дырок) — бьём по
+            // ближайшей живой без брони, чтобы не зависнуть.
             kickReadyAtRef.current = now + kickCycleMsRef.current;
+            eliminateRef.current(null);
             setKickToken((token) => token + 1);
           }
         }
       }
+
       reelRaf.current = requestAnimationFrame(tick);
     };
     reelRaf.current = requestAnimationFrame(tick);
@@ -381,6 +424,9 @@ export function HoundHuntPage() {
       kickInFlightRef.current = false;
       reservedTargetRef.current = null;
       kickReadyAtRef.current = 0;
+      kickDeadlineRef.current = 0;
+      lastEliminationAtRef.current = 0;
+
       stopReel();
 
       // Лента собирается заново: живые в тасованном порядке, дырок нет.
@@ -445,32 +491,47 @@ export function HoundHuntPage() {
     [buildReel, dur, groomTape, halfWindow, later, phaseMv, pickWinner, startReel, stopReel],
   );
 
-  /** Импакт ноги: улетает та капсула, что в этот кадр стоит по центру. */
-  const handleImpact = useCallback(
-    (cycle: number) => {
+  /**
+   * Единственное место, где кто-то выбывает. Вызывается либо из 3D-callback
+   * (нормальный путь), либо watchdog'ом из тика, если callback не пришёл.
+   * Инвариант: если в барабане есть живая капсула — функция ВСЕГДА кого-то
+   * выбивает, поэтому розыгрыш физически не может застыть.
+   */
+  const eliminateAt = useCallback(
+    (preferredIdx: number | null) => {
       if (phaseRef.current !== "drift") return;
-      if (lastImpactCycle.current === cycle) return;
-      const now = performance.now();
-      if (now < impactLockedUntil.current) return;
-      lastImpactCycle.current = cycle;
-      impactLockedUntil.current = now + 650;
       if (aliveRef.current <= 1) return;
-
-      const center = reservedTargetRef.current;
-      kickInFlightRef.current = false;
-      reservedTargetRef.current = null;
-      if (center === null) return;
+      const now = performance.now();
       const list = tapeRef.current;
-      const target = list.find((s) => s.idx === center);
-      // Цель была забронирована при запуске взмаха и не может быть дыркой.
+      const liveIds = new Set(liveRef.current.map((e) => e.id));
+      const isLive = (slot: Slot) => Boolean(slot.entry && liveIds.has(slot.entry.id));
+
+      let target =
+        preferredIdx === null
+          ? undefined
+          : list.find((s) => s.idx === preferredIdx && isLive(s));
+      if (!target) {
+        // Fallback: ближайшая к центру живая капсула. Так удар никогда не
+        // «уходит в никуда», даже если бронь устарела или слот стал дыркой.
+        let bestDist = Infinity;
+        for (const s of list) {
+          if (!isLive(s)) continue;
+          const d = Math.abs(s.idx - reelPhase.current);
+          if (d < bestDist) {
+            bestDist = d;
+            target = s;
+          }
+        }
+      }
+      // Живых в ленте сейчас нет (хвост ещё догенерируется) — следующий кадр
+      // попробует снова, watchdog не сбрасывается.
       if (!target?.entry) return;
 
+      const center = target.idx;
       const kicked = target.entry;
-      // Страховка: уже выбитая копия не считается новым участником.
-      const stale = !liveRef.current.some((e) => e.id === kicked.id);
       // Победителя выбивать нельзя: если он под ногой — переносим защиту на
       // другого живого. Центральная капсула всё равно честно улетает.
-      if (!stale && kicked.id === winnerIdRef.current) {
+      if (kicked.id === winnerIdRef.current) {
         const other = liveRef.current.find((e) => e.id !== kicked.id);
         if (!other) return;
         winnerIdRef.current = other.id;
@@ -480,31 +541,27 @@ export function HoundHuntPage() {
       // один удар = один человек означал бы 5+ минут ленты, поэтому удар
       // сносит группу: центральная капсула улетает, остальные из группы
       // снимаются за правым краем кадра — незаметно, но счётчик падает пачкой.
-      const batch = !stale ? Math.max(1, Math.ceil((aliveRef.current - 1) / 20)) : 0;
-      const removedIds = new Set<string>();
-      if (!stale) {
-        removedIds.add(kicked.id);
-        if (batch > 1) {
-          for (const e of liveRef.current) {
-            if (removedIds.size >= batch) break;
-            if (e.id === kicked.id || e.id === winnerIdRef.current) continue;
-            removedIds.add(e.id);
-          }
+      const batch = Math.max(1, Math.ceil((aliveRef.current - 1) / 20));
+      const removedIds = new Set<string>([kicked.id]);
+      if (batch > 1) {
+        for (const e of liveRef.current) {
+          if (removedIds.size >= batch) break;
+          if (e.id === kicked.id || e.id === winnerIdRef.current) continue;
+          removedIds.add(e.id);
         }
-        liveRef.current = liveRef.current.filter((e) => !removedIds.has(e.id));
-        // На пороге разрядки ленты пересобираем очередь с нуля, чтобы дырки
-        // появились сразу, а не через круг.
-        feedRef.current =
-          liveRef.current.length <= 8
-            ? []
-            : feedRef.current.filter((e) => e === null || !removedIds.has(e.id));
       }
+      liveRef.current = liveRef.current.filter((e) => !removedIds.has(e.id));
+      // На пороге разрядки ленты пересобираем очередь с нуля, чтобы дырки
+      // появились сразу, а не через круг.
+      feedRef.current =
+        liveRef.current.length <= 8
+          ? []
+          : feedRef.current.filter((e) => e === null || !removedIds.has(e.id));
 
       // Дыркой сразу становится физически выбитый слот. Копии выбитых, которые
       // ещё не появились в кадре (правее видимого окна), гасим тоже — иначе
       // мёртвые аватарки продолжают ездить по кругу и это читается как баг.
-      const half = halfWindow();
-      const rightEdge = Math.floor(reelPhase.current) + half;
+      const rightEdge = Math.floor(reelPhase.current) + halfWindow();
       const next = list.map((s) => {
         if (s.idx === center) return { ...s, entry: null };
         if (s.entry && s.idx > rightEdge && removedIds.has(s.entry.id)) return { ...s, entry: null };
@@ -512,16 +569,13 @@ export function HoundHuntPage() {
       });
       tapeRef.current = next;
       setTape(next);
-      if (!stale) {
-        aliveRef.current = liveRef.current.length;
-        setAlive(aliveRef.current);
-      }
-
-
+      aliveRef.current = liveRef.current.length;
+      setAlive(aliveRef.current);
 
       kicksRef.current += 1;
       setKicks(kicksRef.current);
       setShock((s) => s + 1);
+      lastEliminationAtRef.current = now;
       // На ускорении пульта hitstop пропорционально короче, иначе на ×20
       // лента заикается вместо того, чтобы лететь.
       hitstopUntilRef.current = now + Math.min(55, 110 / speedRef.current);
@@ -541,6 +595,28 @@ export function HoundHuntPage() {
     },
     [halfWindow, later, stopReel],
   );
+  eliminateRef.current = eliminateAt;
+
+  /** Импакт ноги: улетает та капсула, что была забронирована этим взмахом. */
+  const handleImpact = useCallback(
+    (cycle: number) => {
+      if (phaseRef.current !== "drift") return;
+      const now = performance.now();
+      // Дубли одного и того же цикла 3D-клипа игнорируем, но замки ВСЕГДА
+      // снимаем: раньше повторный callback оставлял kickInFlight=true навсегда,
+      // и персонаж больше не бил до конца розыгрыша.
+      const duplicate = lastImpactCycle.current === cycle || now < impactLockedUntil.current;
+      const center = reservedTargetRef.current;
+      kickInFlightRef.current = false;
+      reservedTargetRef.current = null;
+      if (duplicate) return;
+      lastImpactCycle.current = cycle;
+      impactLockedUntil.current = now + 650;
+      eliminateAt(center);
+    },
+    [eliminateAt],
+  );
+
 
   const start = async () => {
     clearTimers();
