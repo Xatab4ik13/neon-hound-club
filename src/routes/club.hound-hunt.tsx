@@ -217,15 +217,22 @@ export function HoundHuntPage() {
     // На время разгона удары не считаем: нога не должна попадать в смазанную ленту.
     impactLockedUntil.current = performance.now() + 1400;
 
-    animate(turbo, 7, { duration: 0.4, ease: "easeIn" }).then(() => {
+    animate(turbo, 7, { duration: 0.22, ease: "easeIn" }).then(() => {
       const compact = slotsRef.current.filter((s) => s.entry);
       if (compact.length) {
         slotsRef.current = compact;
         setSlots(compact);
         reelPhase.current = Math.floor(reelPhase.current);
       }
-      animate(turbo, 1, { duration: 0.62, ease: "easeOut" }).then(() => {
-        sweeping.current = false;
+      // Лента в этот момент полностью скрыта. Два кадра дают React применить
+      // новый состав до возвращения изображения — старый и новый ряд никогда
+      // не оказываются на экране одновременно.
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          animate(turbo, 1, { duration: 0.34, ease: "easeOut" }).then(() => {
+            sweeping.current = false;
+          });
+        });
       });
     });
   }, [turbo]);
@@ -563,7 +570,9 @@ export function HoundHuntPage() {
           {phase === "podium" && <Podium winners={winners} onRestart={start} />}
         </div>
 
-        {/* тестовый пульт скорости (уйдёт из прода) */}
+        {/* тестовый пульт скорости (уйдёт из прода). На старте скрыт, чтобы не
+            перекрывать главную кнопку на коротких мобильных экранах. */}
+        {phase !== "intro" && (
         <div className="relative z-30 shrink-0 px-4 pb-3">
           <div className="flex items-center justify-center gap-1.5">
             {SPEEDS.map((s) => (
@@ -588,13 +597,14 @@ export function HoundHuntPage() {
               далее
             </button>
           </div>
-          {phase !== "intro" && phase !== "podium" && (
+          {phase !== "podium" && (
             <p className="mt-2 text-center font-mono text-[9px] uppercase tracking-[0.2em] text-muted-foreground/70">
               в барабане {pool.length} · {totalTickets} билетов · {HUNT_TICKET_STEP} билетов = 1
               место
             </p>
           )}
         </div>
+        )}
       </div>
     </div>
   );
@@ -650,9 +660,9 @@ function ReelStage({
 }) {
   // Разгон зачистки: чем быстрее лента, тем сильнее смаз — читать ники нечем,
   // поэтому подмену состава в этот момент физически не видно.
-  const blur = useTransform(turbo, [1, 2.4, 7], [0, 2, 9]);
+  const blur = useTransform(turbo, [1, 2.4, 7], [0, 1, 4]);
   const reelFilter = useTransform(blur, (b) => (b < 0.1 ? "none" : `blur(${b}px)`));
-  const reelFade = useTransform(turbo, [1, 7], [1, 0.72]);
+  const reelFade = useTransform(turbo, [1, 4.5, 5.5, 7], [1, 0.9, 0, 0]);
   // Лента = окно вокруг центра, а не набор копий ряда. Каждая позиция окна
   // жёстко привязана к экрану, а содержимое берётся по циклическому индексу.
   // Поэтому изменение состава ряда не сдвигает то, что видно на экране.
