@@ -217,10 +217,12 @@ export function HoundHuntPage() {
     if (!feedRef.current.length) {
       const live = liveRef.current;
       if (!live.length) return undefined;
-      // Финал должен читаться глазами: когда осталось 2-3 человека, лента
-      // разряжается пустотами, и видно, что по кругу едут именно они, а не
-      // плотная толпа копий. Персонаж по пустотам не бьёт — он их пропускает.
-      const gaps = live.length > 3 ? 0 : live.length === 3 ? 4 : 7;
+      // Финал должен читаться глазами: чем меньше живых, тем разряженнее лента,
+      // и видно, что по кругу едут именно они, а не плотная толпа копий.
+      // Персонаж по пустотам не бьёт — он их пропускает.
+      const n = live.length;
+      const gaps = n > 8 ? 0 : n > 6 ? 1 : n > 4 ? 2 : n > 3 ? 3 : n === 3 ? 4 : 7;
+
       const built: (HuntEntry | null)[] = [];
       for (const entry of live) {
         built.push(entry);
