@@ -226,7 +226,6 @@ export function HoundHuntPage() {
     reelRaf.current = requestAnimationFrame(tick);
   }, [dur, slowmo, stopReel, syncStrip]);
 
-
   /**
    * Барабан = реальные участники: 15 человек — 15 звеньев. Никаких случайных
    * копий: счётчик «осталось N» совпадает с тем, что видно на ленте.
@@ -340,54 +339,56 @@ export function HoundHuntPage() {
   );
 
   /** Импакт ноги: улетает то звено, что в этот кадр стоит по центру. */
-  const handleImpact = useCallback((cycle: number) => {
-    if (phaseRef.current !== "drift") return;
-    if (lastImpactCycle.current === cycle) return;
-    lastImpactCycle.current = cycle;
-    const list = slotsRef.current;
-    const alive = list.filter((s) => s.entry);
-    if (alive.length <= 1) return;
+  const handleImpact = useCallback(
+    (cycle: number) => {
+      if (phaseRef.current !== "drift") return;
+      if (lastImpactCycle.current === cycle) return;
+      lastImpactCycle.current = cycle;
+      const list = slotsRef.current;
+      const alive = list.filter((s) => s.entry);
+      if (alive.length <= 1) return;
 
-    // Центральный слот вычисляем из циклической фазы, а не из бесконечной
-    // экранной координаты. Поэтому индекс остаётся точным после любого круга.
-    const n = list.length;
-    const pos = Math.round(reelPhase.current);
-    const j = ((pos % n) + n) % n;
-    const target = list[j];
-    // По центру дырка — бить некого, ждём следующий оборот.
-    if (!target.entry) return;
-    // Визуально пропускать удар нельзя. Если под ногой оказался заранее
-    // намеченный финалист, переносим защиту на другого живого участника:
-    // центральная капсула всё равно честно улетает, а выигрывает последний.
-    if (target.sid === winnerSidRef.current) {
-      const nextSurvivor = alive.find((slot) => slot.sid !== target.sid);
-      if (!nextSurvivor) return;
-      winnerSidRef.current = nextSurvivor.sid;
-    }
+      // Центральный слот вычисляем из циклической фазы, а не из бесконечной
+      // экранной координаты. Поэтому индекс остаётся точным после любого круга.
+      const n = list.length;
+      const pos = Math.round(reelPhase.current);
+      const j = ((pos % n) + n) % n;
+      const target = list[j];
+      // По центру дырка — бить некого, ждём следующий оборот.
+      if (!target.entry) return;
+      // Визуально пропускать удар нельзя. Если под ногой оказался заранее
+      // намеченный финалист, переносим защиту на другого живого участника:
+      // центральная капсула всё равно честно улетает, а выигрывает последний.
+      if (target.sid === winnerSidRef.current) {
+        const nextSurvivor = alive.find((slot) => slot.sid !== target.sid);
+        if (!nextSurvivor) return;
+        winnerSidRef.current = nextSurvivor.sid;
+      }
 
-    const kicked = target.entry;
-    // Место НЕ закрывается: на месте выбитого остаётся дырка, лента едет дальше.
-    const rest = list.map((s) => (s.sid === target.sid ? { ...s, entry: null } : s));
-    slotsRef.current = rest;
-    setSlots(rest);
-    // Дырку убираем не по таймеру, а когда она реально уедет за левый край:
-    // фиксируем фазу удара, а rAF-цикл сам схлопнет слот в нужный момент.
-    holes.current.push({ sid: target.sid, phaseAt: reelPhase.current });
+      const kicked = target.entry;
+      // Место НЕ закрывается: на месте выбитого остаётся дырка, лента едет дальше.
+      const rest = list.map((s) => (s.sid === target.sid ? { ...s, entry: null } : s));
+      slotsRef.current = rest;
+      setSlots(rest);
+      // Дырку убираем не по таймеру, а когда она реально уедет за левый край:
+      // фиксируем фазу удара, а rAF-цикл сам схлопнет слот в нужный момент.
+      holes.current.push({ sid: target.sid, phaseAt: reelPhase.current });
 
-    kicksRef.current += 1;
-    setKicks(kicksRef.current);
-    setShock((s) => s + 1);
+      kicksRef.current += 1;
+      setKicks(kicksRef.current);
+      setShock((s) => s + 1);
 
-    const key = `${target.sid}-${kicksRef.current}`;
-    setGhosts((g) => [...g, { key, entry: kicked }]);
-    later(() => setGhosts((g) => g.filter((x) => x.key !== key)), 2000);
-    haptic("light");
-    if (alive.length - 1 <= 1) {
-      stopReel();
-      finishRef.current?.();
-    }
-  }, [later, stopReel]);
-
+      const key = `${target.sid}-${kicksRef.current}`;
+      setGhosts((g) => [...g, { key, entry: kicked }]);
+      later(() => setGhosts((g) => g.filter((x) => x.key !== key)), 2000);
+      haptic("light");
+      if (alive.length - 1 <= 1) {
+        stopReel();
+        finishRef.current?.();
+      }
+    },
+    [later, stopReel],
+  );
 
   const start = () => {
     clearTimers();
