@@ -111,6 +111,20 @@ function speedRamp(_remaining: number) {
   return 2.1;
 }
 
+/**
+ * Пауза «раздумья» перед следующим ударом. Пока участников много — бьём
+ * подряд, а в финале байкер выжидает: лента крутится, зритель не знает,
+ * по кому и когда прилетит. Интрига важнее темпа.
+ */
+function suspenseMs(remaining: number) {
+  if (remaining <= 2) return 2800;
+  if (remaining === 3) return 2400;
+  if (remaining === 4) return 1900;
+  if (remaining === 5) return 1500;
+  if (remaining <= 7) return 800;
+  return 0;
+}
+
 
 /* ------------------------------ страница ------------------------------ */
 
@@ -299,6 +313,9 @@ export function HoundHuntPage() {
       syncStrip();
 
       if (phaseRef.current === "drift" && aliveRef.current > 1) {
+        // Пауза «раздумья»: в финале байкер не бьёт каждый цикл — лента
+        // прокручивается лишний раз, и никто не знает, когда прилетит.
+        const pause = suspenseMs(aliveRef.current);
         // --- Watchdog №1: взмах ушёл, а импакт-callback не пришёл (3D-клип
         // проглотил токен, дубль цикла, просадка кадров). Добиваем сами. ---
         if (kickInFlightRef.current && now > kickDeadlineRef.current) {
@@ -308,7 +325,7 @@ export function HoundHuntPage() {
           lastImpactCycle.current = -1;
           impactLockedUntil.current = 0;
           eliminateRef.current(reserved);
-          kickReadyAtRef.current = now + kickCycleMsRef.current;
+          kickReadyAtRef.current = now + kickCycleMsRef.current + pause;
         }
 
         // --- Watchdog №2: последний рубеж. Если по любой причине никто не
@@ -316,7 +333,8 @@ export function HoundHuntPage() {
         // ближайшую живую капсулу. Розыгрыш не может встать намертво. ---
         if (
           lastEliminationAtRef.current &&
-          now - lastEliminationAtRef.current > kickCycleMsRef.current * 2 + impactDelayRef.current
+          now - lastEliminationAtRef.current >
+            kickCycleMsRef.current * 2 + impactDelayRef.current + pause * 2
         ) {
           kickInFlightRef.current = false;
           reservedTargetRef.current = null;
@@ -338,7 +356,7 @@ export function HoundHuntPage() {
           // Страховка от зависания: если окно идеального тайминга по какой-то
           // причине проехало (кадр подвис, лента разряжена дырками), бьём по
           // ближайшей живой капсуле впереди, а не стоим до конца розыгрыша.
-          const overdue = now - kickReadyAtRef.current > kickCycleMsRef.current * 1.5;
+          const overdue = now - kickReadyAtRef.current > kickCycleMsRef.current * 1.5 + pause;
           if (nextLive) {
             const untilCenter = (nextLive.idx - reelPhase.current) * step;
             // Допуск в один кадр компенсирует React/Canvas между выбором цели
@@ -346,14 +364,14 @@ export function HoundHuntPage() {
             if (untilCenter <= impactDelayRef.current + 34 || overdue) {
               reservedTargetRef.current = nextLive.idx;
               kickInFlightRef.current = true;
-              kickReadyAtRef.current = now + kickCycleMsRef.current;
+              kickReadyAtRef.current = now + kickCycleMsRef.current + pause;
               kickDeadlineRef.current = now + impactDelayRef.current + kickCycleMsRef.current;
               setKickToken((token) => token + 1);
             }
           } else if (overdue) {
             // Живой цели впереди нет вообще (хвост из дырок) — бьём по
             // ближайшей живой без брони, чтобы не зависнуть.
-            kickReadyAtRef.current = now + kickCycleMsRef.current;
+            kickReadyAtRef.current = now + kickCycleMsRef.current + pause;
             eliminateRef.current(null);
             setKickToken((token) => token + 1);
           }
