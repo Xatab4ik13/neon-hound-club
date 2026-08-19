@@ -308,28 +308,35 @@ export function HoundHuntPage() {
   const runCase = useCallback(
     (idx: number, entries: HuntEntry[]) => {
       const winner = pickWinner(entries);
-      const reelNow = buildReel(entries);
-      const slotsNow: Slot[] = reelNow.map((entry, i) => ({ sid: i, entry }));
+      const order = buildReel(entries);
       setCurrent(null);
       setKicks(0);
       kicksRef.current = 0;
       setGhosts([]);
       lastImpactCycle.current = -1;
       impactLockedUntil.current = 0;
-
-      setSlots(slotsNow);
-      slotsRef.current = slotsNow;
-      winnerSidRef.current = slotsNow.find((s) => s.entry?.id === winner.id)?.sid ?? -1;
       stopReel();
 
+      // Лента собирается заново: живые в тасованном порядке, дырок нет.
+      liveRef.current = order;
+      feedRef.current = [...order];
+      aliveRef.current = order.length;
+      setAlive(order.length);
+      tapeRef.current = [];
+      setTape([]);
+      winnerIdRef.current = winner.id;
       reelPhase.current = 0;
+      // Слева от центра тоже должны быть капсулы, иначе окно начнётся с пустот.
+      nextIdxRef.current = -(halfWindow() + 2);
       stripX.set(0);
+      groomTape();
 
       setPhase("arming");
       haptic("light");
 
       const finish = () => {
-        const survivor = slotsRef.current.find((slot) => slot.entry)?.entry ?? winner;
+        const survivor = liveRef.current[0] ?? winner;
+
         // последняя капсула — победитель: подъезжает к персонажу и раскрывается
         setPhase("pull");
         setCurrent(survivor);
