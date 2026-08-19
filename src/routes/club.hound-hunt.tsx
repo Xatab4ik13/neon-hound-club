@@ -809,9 +809,9 @@ function ReelStage({
               background:
                 "radial-gradient(circle, color-mix(in oklab, var(--foreground) 85%, transparent), color-mix(in oklab, var(--destructive) 40%, transparent) 45%, transparent 70%)",
             }}
-            initial={{ opacity: 0.85, scale: 0.55 }}
-            animate={{ opacity: 0, scale: 1.15 }}
-            transition={{ duration: 0.16, ease: "easeOut" }}
+            initial={{ opacity: 0.6, scale: 0.6 }}
+            animate={{ opacity: 0, scale: 1.2 }}
+            transition={{ duration: 0.22, ease: "easeOut" }}
           />
         )}
 
