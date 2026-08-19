@@ -279,6 +279,9 @@ export function HoundHuntPage() {
   const startReel = useCallback(() => {
     stopReel();
     reelLastFrame.current = performance.now();
+    // Точка отсчёта для watchdog'а: если за два цикла никто не выбыл — добиваем.
+    lastEliminationAtRef.current = performance.now();
+
     const tick = (now: number) => {
       const elapsed = Math.min(50, now - reelLastFrame.current);
       reelLastFrame.current = now;
