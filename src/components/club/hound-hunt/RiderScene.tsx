@@ -185,6 +185,8 @@ function Model({
   startKickRef.current = startKick;
   /** Токен, пришедший посреди обратного хода: доигрываем возврат, потом бьём. */
   const pendingKick = useRef<number | null>(null);
+  /** Момент старта обратного хода — для аварийного выхода из зависшего возврата. */
+  const rewindStart = useRef(0);
 
   useEffect(() => {
     if (!action || !kickToken) return;
@@ -197,40 +199,61 @@ function Model({
     startKickRef.current(kickToken);
   }, [action, kickToken]);
 
+  const finishRewind = () => {
+    if (!action) return;
+    rewinding.current = false;
+    action.timeScale = 1;
+    action.time = 0;
+    action.paused = true;
+    prevTime.current = 0;
+    const next = pendingKick.current;
+    if (next !== null) {
+      pendingKick.current = null;
+      startKickRef.current(next);
+    }
+  };
+
   useFrame(() => {
-    if (!action || !kickToken || action.paused) return;
+    if (!action || !kickToken) return;
     const dur = action.getClip().duration;
     const impactAt = dur * 0.6;
     const t = action.time;
-    if (
-      !rewinding.current &&
-      prevTime.current < impactAt &&
-      t >= impactAt &&
-      firedCycle.current !== kickCycle.current
-    ) {
+
+    // --- обратный ход ---
+    if (rewinding.current) {
+      // three.js при LoopOnce + clampWhenFinished сам ставит paused = true,
+      // когда клип «дошёл до конца» (в реверсе — до нуля). Раньше мы на этом
+      // выходили из useFrame раньше времени и застревали в rewinding навсегда.
+      if (t <= 1e-3 || action.paused || performance.now() - rewindStart.current > 1500) {
+        finishRewind();
+      } else {
+        prevTime.current = t;
+      }
+      return;
+    }
+
+    // --- взмах ---
+    if (prevTime.current < impactAt && t >= impactAt && firedCycle.current !== kickCycle.current) {
       firedCycle.current = kickCycle.current;
       impactRef.current?.(kickCycle.current);
     }
-    if (!rewinding.current && t >= dur - 1e-3) {
+
+    if (t >= dur - 1e-3) {
       // Клип доигран: вместо мгновенного reset() отматываем назад — так поза
       // возвращается в стойку без дёрганья.
       rewinding.current = true;
+      rewindStart.current = performance.now();
       action.timeScale = -REWIND;
+      action.time = Math.min(t, dur - 1e-4);
       action.paused = false;
       action.play();
-    } else if (rewinding.current && t <= 1e-3) {
-      rewinding.current = false;
-      action.timeScale = 1;
-      action.time = 0;
-      action.paused = true;
-      const next = pendingKick.current;
-      if (next !== null) {
-        pendingKick.current = null;
-        startKickRef.current(next);
-      }
+      prevTime.current = action.time;
+      return;
     }
+
     prevTime.current = t;
   });
+
 
   const yaw = Math.max(-1, Math.min(1, lookAt.x)) * 0.28;
   const pitch = Math.max(-1, Math.min(1, lookAt.y)) * 0.1;
