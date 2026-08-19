@@ -223,6 +223,11 @@ function Model({
       action.timeScale = 1;
       action.time = 0;
       action.paused = true;
+      const next = pendingKick.current;
+      if (next !== null) {
+        pendingKick.current = null;
+        startKickRef.current(next);
+      }
     }
     prevTime.current = t;
   });
