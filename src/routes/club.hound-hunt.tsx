@@ -241,7 +241,7 @@ export function HoundHuntPage() {
   const runCase = useCallback(
     (idx: number, entries: HuntEntry[]) => {
       const winner = pickWinner(entries);
-      const reelNow = buildReel(entries, winner);
+      const reelNow = buildReel(entries);
       const slotsNow: Slot[] = reelNow.map((entry, i) => ({ sid: i, entry }));
       setCurrent(null);
       setKicks(0);
@@ -249,12 +249,15 @@ export function HoundHuntPage() {
       setGhosts([]);
       setSlots(slotsNow);
       slotsRef.current = slotsNow;
-      winnerSidRef.current = slotsNow[slotsNow.length - 1]?.sid ?? -1;
+      winnerSidRef.current = slotsNow.find((s) => s.entry.id === winner.id)?.sid ?? -1;
       stopReel();
       closeGapAnim.current?.stop();
       closeGap.set(0);
+      slowmoAnim.current?.stop();
+      slowmo.set(1);
       reelPhase.current = 0;
       stripX.set(0);
+
       setPhase("arming");
       haptic("light");
 
