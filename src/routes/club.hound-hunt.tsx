@@ -723,7 +723,7 @@ export function HoundHuntPage() {
         : phase === "crack"
           ? "lunge"
           : phase === "reveal"
-            ? "chew"
+            ? "idle"
             : "idle";
 
   const intensity =
@@ -743,10 +743,11 @@ export function HoundHuntPage() {
 
   return (
     <div className="fixed inset-0 z-40 overflow-hidden overscroll-none touch-pan-y bg-background text-foreground select-none">
-      {/* фон: угли поднят выше, чтобы низ экрана не горел, а фон был глубже */}
+      {/* фон: свечение идёт от нижнего меню до уровня ленты с аватарками */}
       <EmberField
         intensity={intensity}
-        className="pointer-events-none absolute inset-x-0 bottom-[24%] h-[76%] w-full opacity-70"
+        className="pointer-events-none absolute inset-x-0 w-full opacity-70"
+        style={{ bottom: "calc(5.5rem + env(safe-area-inset-bottom))", top: "34%" }}
       />
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_80%_at_50%_0%,color-mix(in_oklab,var(--destructive)_14%,transparent),transparent_60%)]" />
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(80%_60%_at_50%_110%,color-mix(in_oklab,var(--primary)_12%,transparent),transparent_70%)]" />
@@ -782,17 +783,24 @@ export function HoundHuntPage() {
           {(phase === "arming" || phase === "drift") && (
             <ReelStage
               slots={tape}
-              remaining={alive}
 
               ghosts={ghosts}
               phase={phaseMv}
-              armed={phase === "arming"}
               shock={shock}
             />
           )}
 
           {(phase === "pull" || phase === "crack") && current && (
             <PullStage entry={current} cracking={phase === "crack"} />
+          )}
+
+          {phase === "reveal" && current && (
+            <WinnerStage
+              entry={current}
+              prizeTitle={prize.title}
+              prizeSub={prize.sub}
+              prizeImg={prize.img}
+            />
           )}
 
           {phase === "podium" && <Podium winners={winners} onRestart={start} />}
@@ -831,17 +839,6 @@ export function HoundHuntPage() {
         )}
       </div>
 
-      {/* модалка победителя: персонаж радуется слева, приз и аватарка справа */}
-      <AnimatePresence>
-        {phase === "reveal" && current && (
-          <WinnerModal
-            entry={current}
-            prizeTitle={prize.title}
-            prizeSub={prize.sub}
-            prizeImg={prize.img}
-          />
-        )}
-      </AnimatePresence>
     </div>
   );
 }
@@ -876,20 +873,16 @@ function IntroPanel({ onStart }: { onStart: () => void }) {
 
 function ReelStage({
   slots,
-  remaining,
   ghosts,
   phase,
-  armed,
   shock,
 }: {
   /** Слоты ленты со своими АБСОЛЮТНЫМИ индексами (не по кругу). */
   slots: { idx: number; entry: HuntEntry | null }[];
   /** Сколько живых участников осталось. */
-  remaining: number;
   ghosts: { key: string; entry: HuntEntry }[];
   /** Абсолютная фаза ленты: целая часть выбирает центральный слот. */
   phase: MotionValue<number>;
-  armed: boolean;
   /** Счётчик ударов: меняется — играем вспышку и тряску арены. */
   shock: number;
 }) {
@@ -993,25 +986,6 @@ function ReelStage({
         </AnimatePresence>
       </motion.div>
 
-      {/* счётчик остатка: реальное число участников на ленте */}
-      <div className="relative z-50 mt-3 flex items-center justify-center gap-2">
-        <motion.span
-          key={`left-${remaining}`}
-          initial={{ scale: 1.5, color: "var(--destructive)" }}
-          animate={{ scale: 1, color: "var(--foreground)" }}
-          transition={{ duration: 0.35, ease: "easeOut" }}
-          className="font-display text-2xl font-black leading-none"
-        >
-          {remaining}
-        </motion.span>
-        <motion.p
-          animate={{ opacity: armed ? [0.4, 1, 0.4] : 1 }}
-          transition={{ duration: 1.6, repeat: Infinity }}
-          className="font-mono text-[10px] uppercase tracking-[0.24em] text-muted-foreground"
-        >
-          {armed ? "выходит на удар" : "в барабане"}
-        </motion.p>
-      </div>
     </div>
   );
 }
@@ -1080,11 +1054,11 @@ function PullStage({ entry, cracking }: { entry: HuntEntry; cracking: boolean })
 }
 
 /**
- * Модалка победителя. Слева — персонаж (пока обычный клип «idle»; когда
- * придёт отдельная анимация радости, меняется только mode здесь),
- * справа — круглая аватарка победителя и его приз.
+ * Финальный экран: персонаж остаётся на арене (пока обычный клип «idle»; когда
+ * придёт анимация радости — меняется только mode в dogMode), а чуть ниже и
+ * левее центра появляется аватарка победителя с призом.
  */
-function WinnerModal({
+function WinnerStage({
   entry,
   prizeTitle,
   prizeSub,
@@ -1097,59 +1071,40 @@ function WinnerModal({
 }) {
   return (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.5, ease: "easeOut" }}
-      className="absolute inset-0 z-[60] grid place-items-center px-4 backdrop-blur-md"
-      style={{ background: "color-mix(in oklab, var(--background) 72%, transparent)" }}
+      initial={{ opacity: 0, y: 18, scale: 0.96 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+      className="relative z-30 -mt-[26svh] flex w-full max-w-[440px] items-center gap-3 px-6"
     >
-      <motion.div
-        initial={{ opacity: 0, y: 28, scale: 0.94 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, y: 14, scale: 0.97 }}
-        transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-        className="relative w-full max-w-[420px] overflow-hidden rounded-3xl border border-destructive/40 bg-card/70 p-4 shadow-[0_0_60px_-12px_color-mix(in_oklab,var(--destructive)_60%,transparent)]"
-      >
+      <div className="relative shrink-0">
         <motion.div
-          animate={{ opacity: [0.3, 0.7, 0.3], scale: [1, 1.1, 1] }}
+          animate={{ opacity: [0.35, 0.8, 0.35], scale: [1, 1.12, 1] }}
           transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
-          className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(70%_60%_at_50%_0%,color-mix(in_oklab,var(--primary)_28%,transparent),transparent_70%)]"
+          className="pointer-events-none absolute inset-0 -z-10 rounded-full bg-primary/30 blur-2xl"
         />
+        <HuntAvatar entry={entry} scale={0.8} focused />
+      </div>
 
-        <p className="text-center font-mono text-[10px] uppercase tracking-[0.28em] text-destructive">
-          победитель
+      <div className="min-w-0">
+        <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-destructive">
+          выиграл
         </p>
-
-        <div className="mt-2 grid grid-cols-[1.05fr_1fr] items-center gap-2">
-          {/* персонаж радуется */}
-          <div className="h-[190px]">
-            <RiderCharacter mode="idle" className="h-full w-full" />
-          </div>
-
-          {/* аватарка + приз */}
-          <div className="text-center">
-            <HuntAvatar entry={entry} scale={0.82} focused className="mx-auto" />
-            <div className="mt-3 rounded-2xl border border-border/50 bg-background/50 p-2">
-              <img
-                src={prizeImg}
-                alt=""
-                className="mx-auto h-14 object-contain drop-shadow-[0_0_22px_color-mix(in_oklab,var(--primary)_60%,transparent)]"
-              />
-              <p className="mt-1 font-mono text-[9px] uppercase tracking-[0.22em] text-muted-foreground">
-                {prizeSub}
-              </p>
-              <p className="font-display text-sm font-black uppercase leading-tight">
-                {prizeTitle}
-              </p>
-            </div>
+        <div className="mt-1 flex items-center gap-2">
+          <img
+            src={prizeImg}
+            alt=""
+            className="h-12 shrink-0 object-contain drop-shadow-[0_0_22px_color-mix(in_oklab,var(--primary)_60%,transparent)]"
+          />
+          <div className="min-w-0">
+            <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-muted-foreground">
+              {prizeSub}
+            </p>
+            <p className="font-display text-base font-black uppercase leading-tight">
+              {prizeTitle}
+            </p>
           </div>
         </div>
-
-        <p className="mt-3 text-center font-mono text-[10px] text-muted-foreground">
-          {entry.city} · {entry.tickets} билетов
-        </p>
-      </motion.div>
+      </div>
     </motion.div>
   );
 }
