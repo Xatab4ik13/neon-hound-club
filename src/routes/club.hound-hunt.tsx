@@ -626,11 +626,17 @@ function ReelStage({
         >
           {row.flatMap((c) =>
             slots.map((s) => (
-              <div key={`slot-${c}-${s.sid}`} className="shrink-0">
-                <HuntAvatar entry={s.entry} scale={CHIP_SCALE} />
+              <div key={`slot-${c}-${s.sid}`} className="shrink-0" style={{ width: CHIP_W }}>
+                {s.entry ? (
+                  <HuntAvatar entry={s.entry} scale={CHIP_SCALE} />
+                ) : (
+                  // дырка на месте выбитого: пустое место едет вместе с лентой
+                  <div style={{ width: CHIP_W, height: CHIP_W }} />
+                )}
               </div>
             )),
           )}
+
         </motion.div>
 
         {/* выбитые аватарки — дорожка без overflow, полёт ничем не обрезается */}
