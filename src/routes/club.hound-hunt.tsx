@@ -541,10 +541,10 @@ export function HoundHuntPage() {
               ghosts={ghosts}
               x={stripX}
               phase={phaseMv}
+              turbo={turbo}
               armed={phase === "arming"}
               shock={shock}
             />
-
           )}
 
           {(phase === "pull" || phase === "crack") && current && (
