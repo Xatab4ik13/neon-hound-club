@@ -15,7 +15,7 @@ import {
   AnimatePresence,
   motion,
   useMotionValue,
-  useMotionValueEvent,
+  useTransform,
   type MotionValue,
 } from "framer-motion";
 
@@ -131,7 +131,6 @@ export function HoundHuntPage() {
   const prize = HUNT_PRIZES[Math.min(caseIdx, HUNT_PRIZES.length - 1)];
   // Позиция ленты — своя motion-value: барабан крутится непрерывно, а в момент
   // импакта мы читаем её и понимаем, кто именно сейчас под ногой.
-  const stripX = useMotionValue(0);
   /** Текущая абсолютная фаза ленты — по ней окно выбирает, какие слоты рисовать. */
   const phaseMv = useMotionValue(0);
 
@@ -201,12 +200,10 @@ export function HoundHuntPage() {
   );
 
   const syncStrip = useCallback(() => {
-    // Наружу уходит только дробная часть фазы: целую часть отрабатывает окно,
-    // поэтому состав ленты можно менять без скачка картинки.
-    const frac = reelPhase.current - Math.floor(reelPhase.current);
-    stripX.set(-frac * STEP);
+    // Каждый слот сам вычисляет абсолютную позицию из phaseMv. Здесь нет
+    // сброса transform на границе целого шага и React не может опоздать на кадр.
     phaseMv.set(reelPhase.current);
-  }, [phaseMv, stripX]);
+  }, [phaseMv]);
 
   /**
    * Кто следующим встанет в хвост. Порядок внутри круга не тасуем: так одна
@@ -274,8 +271,9 @@ export function HoundHuntPage() {
         now >= kickReadyAtRef.current
       ) {
         const impactPhase = reelPhase.current + impactDelayRef.current / step;
+        const liveIds = new Set(liveRef.current.map((entry) => entry.id));
         const nextLive = tapeRef.current.find(
-          (slot) => slot.idx >= impactPhase && slot.entry !== null,
+          (slot) => slot.idx >= impactPhase && slot.entry !== null && liveIds.has(slot.entry.id),
         );
         if (nextLive) {
           const untilCenter = (nextLive.idx - reelPhase.current) * step;
@@ -366,7 +364,7 @@ export function HoundHuntPage() {
       reelPhase.current = 0;
       // Слева от центра тоже должны быть капсулы, иначе окно начнётся с пустот.
       nextIdxRef.current = -(halfWindow() + 2);
-      stripX.set(0);
+      phaseMv.set(0);
       groomTape();
 
       setPhase("arming");
@@ -414,7 +412,7 @@ export function HoundHuntPage() {
         startReel();
       }, dur(BASE.arming));
     },
-    [buildReel, dur, groomTape, halfWindow, later, pickWinner, startReel, stopReel, stripX],
+    [buildReel, dur, groomTape, halfWindow, later, phaseMv, pickWinner, startReel, stopReel],
   );
 
   /** Импакт ноги: улетает та капсула, что в этот кадр стоит по центру. */
@@ -453,12 +451,11 @@ export function HoundHuntPage() {
         feedRef.current = feedRef.current.filter((e) => e.id !== kicked.id);
       }
 
-      // Никаких подмен содержимого существующего DOM-слота. Все копии одного
-      // выбитого участника становятся дырками, а новые живые звенья появятся
-      // только в хвосте ленты за экраном. Поэтому буквы не могут смениться на
-      // ходу, а каждый засчитанный удар всегда выбивает нового человека.
+      // Дыркой становится только физически выбитый слот. Остальные видимые
+      // копии не исчезают одновременно (это и выглядело как короткая подмена),
+      // но больше не могут стать целью и естественно уезжают за левый край.
       const next = list.map((s) => {
-        if (s.entry?.id === kicked.id) return { ...s, entry: null };
+        if (s.idx === center) return { ...s, entry: null };
         return s;
       });
       tapeRef.current = next;
@@ -481,15 +478,28 @@ export function HoundHuntPage() {
       haptic("light");
       if (aliveRef.current <= 1) {
         stopReel();
-        finishRef.current?.();
+        // ReelStage должен остаться в DOM, пока последняя выбитая аватарка
+        // действительно улетает. Раньше переход в pull размонтировал её сразу.
+        later(() => finishRef.current?.(), 1150);
       }
     },
     [later, stopReel],
   );
 
-  const start = () => {
+  const start = async () => {
     clearTimers();
     const fresh = makeEntries(MOCK_ENTRIES, Math.floor(Math.random() * 99999));
+    await Promise.all(
+      [...new Set(fresh.map((entry) => entry.avatarUrl).filter(Boolean))].map(
+        (src) =>
+          new Promise<void>((resolve) => {
+            const image = new Image();
+            image.onload = () => void image.decode().catch(() => undefined).finally(resolve);
+            image.onerror = () => resolve();
+            image.src = src;
+          }),
+      ),
+    );
     setPool(fresh);
     setWinners([]);
     setCaseIdx(0);
@@ -616,7 +626,6 @@ export function HoundHuntPage() {
               remaining={alive}
 
               ghosts={ghosts}
-              x={stripX}
               phase={phaseMv}
               armed={phase === "arming"}
               shock={shock}
@@ -708,7 +717,6 @@ function ReelStage({
   slots,
   remaining,
   ghosts,
-  x,
   phase,
   armed,
   shock,
@@ -718,29 +726,12 @@ function ReelStage({
   /** Сколько живых участников осталось. */
   remaining: number;
   ghosts: { key: string; entry: HuntEntry }[];
-  x: MotionValue<number>;
   /** Абсолютная фаза ленты: целая часть выбирает центральный слот. */
   phase: MotionValue<number>;
   armed: boolean;
   /** Счётчик ударов: меняется — играем вспышку и тряску арены. */
   shock: number;
 }) {
-  // Окно вокруг центра по абсолютным индексам: DOM-узел живёт со своим idx,
-  // поэтому при сдвиге ленты содержимое узлов не подменяется — ники не мигают.
-  const half = typeof window === "undefined" ? 4 : Math.ceil(window.innerWidth / 2 / STEP) + 2;
-  const [base, setBase] = useState(() => Math.floor(phase.get()));
-  useMotionValueEvent(phase, "change", (v) => {
-    const f = Math.floor(v);
-    setBase((prev) => (prev === f ? prev : f));
-  });
-  const byIdx = useMemo(() => new Map(slots.map((s) => [s.idx, s])), [slots]);
-  const windowSlots = Array.from({ length: half * 2 + 1 }, (_, i) => {
-    const idx = base + i - half;
-    return { idx, slot: byIdx.get(idx) ?? null };
-  });
-
-
-
   return (
     <div className="relative z-30 -mt-[30svh] w-full">
       {/* Движущаяся лента плоская: перспектива применяется только к звену,
@@ -778,28 +769,11 @@ function ReelStage({
         <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-20 bg-gradient-to-r from-background to-transparent" />
         <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-20 bg-gradient-to-l from-background to-transparent" />
 
-        <motion.div
-          className="relative z-30 flex items-center"
-          style={{
-            x,
-            gap: CHIP_GAP,
-            paddingLeft: `calc(50% - ${CHIP_W / 2}px)`,
-            marginLeft: -half * STEP,
-            willChange: "transform",
-          }}
-        >
-          {windowSlots.map(({ idx, slot }) => (
-            <div key={`w-${idx}`} data-slot={idx} className="shrink-0" style={{ width: CHIP_W }}>
-
-              {slot?.entry ? (
-                <HuntAvatar entry={slot.entry} scale={CHIP_SCALE} />
-              ) : (
-                // дырка на месте выбитого: пустое место едет вместе с лентой
-                <div style={{ width: CHIP_W, height: CHIP_W }} />
-              )}
-            </div>
+        <div className="relative z-30" style={{ height: CHIP_W }}>
+          {slots.map((slot) => (
+            <ReelSlot key={slot.idx} slot={slot} phase={phase} />
           ))}
-        </motion.div>
+        </div>
 
 
         {/* выбитые аватарки — дорожка без overflow, полёт ничем не обрезается */}
@@ -832,6 +806,25 @@ function ReelStage({
         </motion.p>
       </div>
     </div>
+  );
+}
+
+function ReelSlot({
+  slot,
+  phase,
+}: {
+  slot: { idx: number; entry: HuntEntry | null };
+  phase: MotionValue<number>;
+}) {
+  const x = useTransform(phase, (value) => (slot.idx - value) * STEP - CHIP_W / 2);
+  return (
+    <motion.div
+      data-slot={slot.idx}
+      className="absolute left-1/2 top-0"
+      style={{ x, width: CHIP_W, height: CHIP_W, willChange: "transform" }}
+    >
+      {slot.entry ? <HuntAvatar entry={slot.entry} scale={CHIP_SCALE} /> : null}
+    </motion.div>
   );
 }
 
