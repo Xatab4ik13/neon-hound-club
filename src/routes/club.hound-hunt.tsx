@@ -247,10 +247,9 @@ export function HoundHuntPage() {
       setGhosts([]);
       setSlots(slotsNow);
       slotsRef.current = slotsNow;
-      winnerSidRef.current = slotsNow.find((s) => s.entry.id === winner.id)?.sid ?? -1;
+      winnerSidRef.current = slotsNow.find((s) => s.entry?.id === winner.id)?.sid ?? -1;
       stopReel();
-      closeGapAnim.current?.stop();
-      closeGap.set(0);
+
       slowmoAnim.current?.stop();
       slowmo.set(1);
       reelPhase.current = 0;
