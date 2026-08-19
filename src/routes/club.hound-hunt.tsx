@@ -786,50 +786,40 @@ export function HoundHuntPage() {
             <PullStage entry={current} cracking={phase === "crack"} />
           )}
 
-          {phase === "reveal" && current && (
-            <RevealStage
-              entry={current}
-              prizeTitle={prize.title}
-              prizeSub={prize.sub}
-              prizeImg={prize.img}
-            />
-          )}
-
           {phase === "podium" && <Podium winners={winners} onRestart={start} />}
         </div>
 
-        {/* тестовый пульт скорости (уйдёт из прода) */}
-        <div className="relative z-30 shrink-0 px-4 pb-3">
-          <div className="flex items-center justify-center gap-1.5">
-            {SPEEDS.map((s) => (
+        {/* тестовый пульт скорости: только по ?dev=1 */}
+        {devPanel && (
+          <div className="relative z-30 shrink-0 px-4 pb-3">
+            <div className="flex items-center justify-center gap-1.5">
+              {SPEEDS.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => setSpeed(s)}
+                  className={`rounded-full border px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.14em] backdrop-blur transition ${
+                    speed === s
+                      ? "border-destructive/60 bg-destructive/20 text-foreground"
+                      : "border-border/50 bg-card/40 text-muted-foreground"
+                  }`}
+                >
+                  ×{s}
+                </button>
+              ))}
               <button
-                key={s}
                 type="button"
-                onClick={() => setSpeed(s)}
-                className={`rounded-full border px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.14em] backdrop-blur transition ${
-                  speed === s
-                    ? "border-destructive/60 bg-destructive/20 text-foreground"
-                    : "border-border/50 bg-card/40 text-muted-foreground"
-                }`}
+                onClick={skip}
+                className="rounded-full border border-border/50 bg-card/40 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground backdrop-blur"
               >
-                ×{s}
+                далее
               </button>
-            ))}
-            <button
-              type="button"
-              onClick={skip}
-              className="rounded-full border border-border/50 bg-card/40 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground backdrop-blur"
-            >
-              далее
-            </button>
-          </div>
-          {phase !== "intro" && phase !== "podium" && (
+            </div>
             <p className="mt-2 text-center font-mono text-[9px] uppercase tracking-[0.2em] text-muted-foreground/70">
-              в барабане {pool.length} · {totalTickets} билетов · {HUNT_TICKET_STEP} билетов = 1
-              место
+              в барабане {pool.length} · {totalTickets} билетов
             </p>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
