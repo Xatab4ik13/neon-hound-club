@@ -123,6 +123,9 @@ export function HoundHuntPage() {
   // Позиция ленты — своя motion-value: барабан крутится непрерывно, а в момент
   // импакта мы читаем её и понимаем, кто именно сейчас под ногой.
   const stripX = useMotionValue(0);
+  /** Текущая абсолютная фаза ленты — по ней окно выбирает, какие слоты рисовать. */
+  const phaseMv = useMotionValue(0);
+
   const reelRaf = useRef(0);
   const reelLastFrame = useRef(0);
   const reelPhase = useRef(0);
