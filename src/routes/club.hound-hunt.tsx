@@ -656,13 +656,17 @@ function IntroPanel({ onStart }: { onStart: () => void }) {
 
 function ReelStage({
   slots,
+  remaining,
   ghosts,
   x,
   phase,
   armed,
   shock,
 }: {
-  slots: { sid: number; entry: HuntEntry | null }[];
+  /** Слоты ленты со своими АБСОЛЮТНЫМИ индексами (не по кругу). */
+  slots: { idx: number; entry: HuntEntry | null }[];
+  /** Сколько живых участников осталось. */
+  remaining: number;
   ghosts: { key: string; entry: HuntEntry }[];
   x: MotionValue<number>;
   /** Абсолютная фаза ленты: целая часть выбирает центральный слот. */
@@ -671,22 +675,20 @@ function ReelStage({
   /** Счётчик ударов: меняется — играем вспышку и тряску арены. */
   shock: number;
 }) {
-  // Лента = окно вокруг центра, а не набор копий ряда. Каждая позиция окна
-  // жёстко привязана к экрану, а содержимое берётся по циклическому индексу.
-  // Поэтому изменение состава ряда не сдвигает то, что видно на экране.
+  // Окно вокруг центра по абсолютным индексам: DOM-узел живёт со своим idx,
+  // поэтому при сдвиге ленты содержимое узлов не подменяется — ники не мигают.
   const half = typeof window === "undefined" ? 4 : Math.ceil(window.innerWidth / 2 / STEP) + 2;
   const [base, setBase] = useState(() => Math.floor(phase.get()));
   useMotionValueEvent(phase, "change", (v) => {
     const f = Math.floor(v);
     setBase((prev) => (prev === f ? prev : f));
   });
-  const n = Math.max(1, slots.length);
+  const byIdx = useMemo(() => new Map(slots.map((s) => [s.idx, s])), [slots]);
   const windowSlots = Array.from({ length: half * 2 + 1 }, (_, i) => {
-    const k = i - half;
-    const idx = (((base + k) % n) + n) % n;
-    return { k, slot: slots[idx] };
+    const idx = base + i - half;
+    return { idx, slot: byIdx.get(idx) ?? null };
   });
-  const remaining = Math.max(1, slots.filter((s) => s.entry).length);
+
 
 
   return (
