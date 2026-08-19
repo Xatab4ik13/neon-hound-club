@@ -556,7 +556,6 @@ function IntroPanel({ onStart }: { onStart: () => void }) {
         остаётся, тем медленнее крутится лента. Последний, кто устоял, забирает приз.
       </p>
 
-
       <button
         type="button"
         onClick={onStart}
