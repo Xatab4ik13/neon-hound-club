@@ -1,13 +1,13 @@
 // Фон хоррор-арены: угли/искры вверх + медленный дым. Canvas, без зависимостей.
 // intensity 0..1 — подкручивается на пиках шоу (укус, ревил).
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type CSSProperties } from "react";
 
-type Props = { intensity?: number; className?: string };
+type Props = { intensity?: number; className?: string; style?: CSSProperties };
 
 type Ember = { x: number; y: number; vx: number; vy: number; r: number; life: number; max: number };
 
-export function EmberField({ intensity = 0.35, className }: Props) {
+export function EmberField({ intensity = 0.35, className, style }: Props) {
   const ref = useRef<HTMLCanvasElement | null>(null);
   const inten = useRef(intensity);
   inten.current = intensity;
@@ -100,5 +100,5 @@ export function EmberField({ intensity = 0.35, className }: Props) {
     };
   }, []);
 
-  return <canvas ref={ref} className={className} aria-hidden />;
+  return <canvas ref={ref} className={className} style={style} aria-hidden />;
 }
