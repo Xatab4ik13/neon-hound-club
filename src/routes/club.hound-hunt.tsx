@@ -156,13 +156,25 @@ export function HoundHuntPage() {
     [],
   );
 
-  /* --- барабан: звенья выбиваются по одному, на их месте остаётся дырка --- */
-  type Slot = { sid: number; entry: HuntEntry | null; removeAfter?: number };
-  const [slots, setSlots] = useState<Slot[]>([]);
+  /* --- барабан: бесконечная очередь без modulo ---
+     Каждый слот знает свой АБСОЛЮТНЫЙ индекс. Дырка от выбитой капсулы
+     уезжает влево и удаляется с головы, по кругу она НЕ возвращается.
+     Значит по центру всегда живая капсула — удара в пустоту не бывает,
+     а reelPhase никогда не пересчитывается, поэтому ники не дёргаются. */
+  type Slot = { idx: number; entry: HuntEntry | null };
+  const [tape, setTape] = useState<Slot[]>([]);
+  const tapeRef = useRef<Slot[]>([]);
+  /** Живые участники — из них добирается хвост ленты. */
+  const liveRef = useRef<HuntEntry[]>([]);
+  /** Очередь на добор: опустела — тасуем живых заново. */
+  const feedRef = useRef<HuntEntry[]>([]);
+  /** Следующий абсолютный индекс, который добавим в хвост. */
+  const nextIdxRef = useRef(0);
+  const [alive, setAlive] = useState(0);
+  const aliveRef = useRef(0);
   const [kicks, setKicks] = useState(0);
   const [ghosts, setGhosts] = useState<{ key: string; entry: HuntEntry }[]>([]);
-  const slotsRef = useRef<Slot[]>([]);
-  const winnerSidRef = useRef(-1);
+  const winnerIdRef = useRef<string>("");
   const kicksRef = useRef(0);
   const phaseRef = useRef<Phase>("intro");
   const finishRef = useRef<(() => void) | null>(null);
@@ -171,16 +183,60 @@ export function HoundHuntPage() {
   /** Дополнительный замок: один физический взмах ноги не может создать два вылета. */
   const impactLockedUntil = useRef(0);
   phaseRef.current = phase;
-  slotsRef.current = slots;
+  tapeRef.current = tape;
+
+  const halfWindow = useCallback(
+    () => (typeof window === "undefined" ? 4 : Math.ceil(window.innerWidth / 2 / STEP) + 2),
+    [],
+  );
 
   const syncStrip = useCallback(() => {
-    // Лента рендерится «окном» вокруг центра: наружу уходит только дробная
-    // часть фазы, поэтому копий ряда нет и подменять слоты можно за кадром.
+    // Наружу уходит только дробная часть фазы: целую часть отрабатывает окно,
+    // поэтому состав ленты можно менять без скачка картинки.
     const frac = reelPhase.current - Math.floor(reelPhase.current);
     stripX.set(-frac * STEP);
     phaseMv.set(reelPhase.current);
   }, [phaseMv, stripX]);
 
+  /** Кто следующим встанет в хвост: живых гоняем по кругу, дырки не добираем. */
+  const nextFeed = useCallback(() => {
+    if (!feedRef.current.length) {
+      const bag = [...liveRef.current];
+      for (let i = bag.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [bag[i], bag[j]] = [bag[j], bag[i]];
+      }
+      feedRef.current = bag;
+    }
+    return feedRef.current.shift() ?? null;
+  }, []);
+
+  /** Добираем хвост, срезаем голову. reelPhase не трогаем — скачков нет. */
+  const groomTape = useCallback(() => {
+    const half = halfWindow();
+    let list = tapeRef.current;
+    let changed = false;
+    const wantTo = Math.floor(reelPhase.current) + half + 2;
+    while (nextIdxRef.current <= wantTo) {
+      const entry = nextFeed();
+      if (!entry) break;
+      if (!changed) {
+        list = [...list];
+        changed = true;
+      }
+      list.push({ idx: nextIdxRef.current, entry });
+      nextIdxRef.current += 1;
+    }
+    const cutAt = Math.floor(reelPhase.current) - half - 2;
+    if (list.length && list[0].idx < cutAt) {
+      list = list.filter((s) => s.idx >= cutAt);
+      changed = true;
+    }
+    if (changed) {
+      tapeRef.current = list;
+      setTape(list);
+    }
+  }, [halfWindow, nextFeed]);
 
   const stopReel = useCallback(() => {
     cancelAnimationFrame(reelRaf.current);
@@ -194,37 +250,16 @@ export function HoundHuntPage() {
     const tick = (now: number) => {
       const elapsed = Math.min(50, now - reelLastFrame.current);
       reelLastFrame.current = now;
-      // Лента не останавливается во время ударов и постепенно замедляется к финалу.
-      const alive = slotsRef.current.filter((s) => s.entry).length;
-      const step = dur(BASE.capsule) * speedRamp(alive);
+      // Лента не останавливается во время ударов и замедляется к финалу.
+      const step = dur(BASE.capsule) * speedRamp(aliveRef.current);
       reelPhase.current += elapsed / step;
-
-      // Пустой слот живёт ровно до ухода за левый край. Затем удаляем его
-      // из состава и сохраняем центральный слот на том же пикселе — скачка нет.
-      const expired = slotsRef.current.some(
-        (slot) => !slot.entry && slot.removeAfter !== undefined && reelPhase.current >= slot.removeAfter,
-      );
-      if (expired) {
-        const before = slotsRef.current;
-        const base = Math.floor(reelPhase.current);
-        const frac = reelPhase.current - base;
-        const center = before[((base % before.length) + before.length) % before.length];
-        const compact = before.filter(
-          (slot) => slot.entry || slot.removeAfter === undefined || reelPhase.current < slot.removeAfter,
-        );
-        if (compact.length) {
-          const centerIndex = Math.max(0, compact.findIndex((slot) => slot.sid === center?.sid));
-          reelPhase.current = centerIndex + frac;
-          slotsRef.current = compact;
-          setSlots(compact);
-        }
-      }
-
+      groomTape();
       syncStrip();
       reelRaf.current = requestAnimationFrame(tick);
     };
     reelRaf.current = requestAnimationFrame(tick);
-  }, [dur, stopReel, syncStrip]);
+  }, [dur, groomTape, stopReel, syncStrip]);
+
 
 
   /**
