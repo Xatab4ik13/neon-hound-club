@@ -35,8 +35,8 @@ export function HuntAvatar({ entry, scale = 1, focused = false, className }: Pro
             ? "0 0 34px -4px color-mix(in oklab, var(--destructive) 75%, transparent), inset 0 1px 2px rgba(255,255,255,0.5)"
             : "0 16px 30px -14px rgba(0,0,0,0.95), inset 0 1px 2px rgba(255,255,255,0.4)",
         }}
-        animate={focused ? { scale: [1, 1.05, 1] } : { y: [-3, 3, -3] }}
-        transition={{ duration: focused ? 1.6 : 4.5, repeat: Infinity, ease: "easeInOut" }}
+        animate={focused ? { scale: [1, 1.05, 1] } : undefined}
+        transition={focused ? { duration: 1.6, repeat: Infinity, ease: "easeInOut" } : undefined}
       >
         <div
           className="relative h-full w-full overflow-hidden rounded-full"
