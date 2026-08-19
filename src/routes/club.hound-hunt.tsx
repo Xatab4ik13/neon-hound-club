@@ -111,6 +111,20 @@ function speedRamp(_remaining: number) {
   return 2.1;
 }
 
+/**
+ * Пауза «раздумья» перед следующим ударом. Пока участников много — бьём
+ * подряд, а в финале байкер выжидает: лента крутится, зритель не знает,
+ * по кому и когда прилетит. Интрига важнее темпа.
+ */
+function suspenseMs(remaining: number) {
+  if (remaining <= 2) return 2800;
+  if (remaining === 3) return 2400;
+  if (remaining === 4) return 1900;
+  if (remaining === 5) return 1500;
+  if (remaining <= 7) return 800;
+  return 0;
+}
+
 
 /* ------------------------------ страница ------------------------------ */
 
