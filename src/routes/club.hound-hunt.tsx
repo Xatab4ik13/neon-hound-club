@@ -111,12 +111,14 @@ export function HoundHuntPage() {
   speedRef.current = speed;
   const dur = useCallback((base: number) => Math.max(220, base / speedRef.current), []);
 
-  const [pool, setPool] = useState<HuntEntry[]>(() => makeEntries(28));
+  const [pool, setPool] = useState<HuntEntry[]>(() => makeEntries(MOCK_ENTRIES));
   const [caseIdx, setCaseIdx] = useState(0);
   const [phase, setPhase] = useState<Phase>("intro");
   const [winners, setWinners] = useState<{ prizeId: string; entry: HuntEntry }[]>([]);
   const [current, setCurrent] = useState<HuntEntry | null>(null);
   const [look, setLook] = useState({ x: 0, y: 0 });
+  /** Счётчик ударов для вспышки/тряски арены — растёт на каждый импакт. */
+  const [shock, setShock] = useState(0);
 
   const prize = HUNT_PRIZES[Math.min(caseIdx, HUNT_PRIZES.length - 1)];
   // Позиция ленты — своя motion-value: барабан крутится непрерывно, а в момент
@@ -127,7 +129,11 @@ export function HoundHuntPage() {
   const reelPhase = useRef(0);
   const closeGap = useMotionValue(0);
   const closeGapAnim = useRef<{ stop: () => void } | null>(null);
+  /** 1 = обычный темп, <1 = слоу-мо сразу после удара. */
+  const slowmo = useMotionValue(1);
+  const slowmoAnim = useRef<{ stop: () => void } | null>(null);
   const timers = useRef<number[]>([]);
+
 
   const later = useCallback((fn: () => void, ms: number) => {
     timers.current.push(window.setTimeout(fn, ms));
