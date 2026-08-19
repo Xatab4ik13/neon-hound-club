@@ -11,7 +11,15 @@
 
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AnimatePresence, animate, motion, useMotionValue, type MotionValue } from "framer-motion";
+import {
+  AnimatePresence,
+  animate,
+  motion,
+  useMotionValue,
+  useMotionValueEvent,
+  type MotionValue,
+} from "framer-motion";
+
 import { RiderCharacter, type RiderMode } from "@/components/club/hound-hunt/RiderCharacter";
 import { EmberField } from "@/components/club/hound-hunt/EmberField";
 import { HuntAvatar } from "@/components/club/hound-hunt/HuntAvatar";
@@ -123,6 +131,9 @@ export function HoundHuntPage() {
   // Позиция ленты — своя motion-value: барабан крутится непрерывно, а в момент
   // импакта мы читаем её и понимаем, кто именно сейчас под ногой.
   const stripX = useMotionValue(0);
+  /** Текущая абсолютная фаза ленты — по ней окно выбирает, какие слоты рисовать. */
+  const phaseMv = useMotionValue(0);
+
   const reelRaf = useRef(0);
   const reelLastFrame = useRef(0);
   const reelPhase = useRef(0);
@@ -168,10 +179,13 @@ export function HoundHuntPage() {
   slotsRef.current = slots;
 
   const syncStrip = useCallback(() => {
-    const n = Math.max(1, slotsRef.current.length);
-    const wrapped = ((reelPhase.current % n) + n) % n;
-    stripX.set(-wrapped * STEP);
-  }, [stripX]);
+    // Лента рендерится «окном» вокруг центра: наружу уходит только дробная
+    // часть фазы, поэтому копий ряда нет и подменять слоты можно за кадром.
+    const frac = reelPhase.current - Math.floor(reelPhase.current);
+    stripX.set(-frac * STEP);
+    phaseMv.set(reelPhase.current);
+  }, [phaseMv, stripX]);
+
 
   const stopReel = useCallback(() => {
     cancelAnimationFrame(reelRaf.current);
@@ -522,9 +536,11 @@ export function HoundHuntPage() {
               slots={slots}
               ghosts={ghosts}
               x={stripX}
+              phase={phaseMv}
               armed={phase === "arming"}
               shock={shock}
             />
+
           )}
 
           {(phase === "pull" || phase === "crack") && current && (
@@ -612,22 +628,36 @@ function ReelStage({
   slots,
   ghosts,
   x,
+  phase,
   armed,
   shock,
 }: {
   slots: { sid: number; entry: HuntEntry | null }[];
   ghosts: { key: string; entry: HuntEntry }[];
   x: MotionValue<number>;
+  /** Абсолютная фаза ленты: целая часть выбирает центральный слот. */
+  phase: MotionValue<number>;
   armed: boolean;
   /** Счётчик ударов: меняется — играем вспышку и тряску арены. */
   shock: number;
 }) {
-  // Барабан крутится непрерывно: лента едет влево, поэтому копий списка нужно
-  // столько, чтобы кадр никогда не оставался пустым. Выбитое звено НЕ убирается
-  // из ряда — на его месте остаётся пустое место (дырка), которое едет дальше.
-  const copies = Math.max(3, Math.ceil(60 / Math.max(1, slots.length)));
-  const row = Array.from({ length: copies }, (_, c) => c);
+  // Лента = окно вокруг центра, а не набор копий ряда. Каждая позиция окна
+  // жёстко привязана к экрану, а содержимое берётся по циклическому индексу.
+  // Поэтому изменение состава ряда не сдвигает то, что видно на экране.
+  const half = typeof window === "undefined" ? 4 : Math.ceil(window.innerWidth / 2 / STEP) + 2;
+  const [base, setBase] = useState(() => Math.floor(phase.get()));
+  useMotionValueEvent(phase, "change", (v) => {
+    const f = Math.floor(v);
+    setBase((prev) => (prev === f ? prev : f));
+  });
+  const n = Math.max(1, slots.length);
+  const windowSlots = Array.from({ length: half * 2 + 1 }, (_, i) => {
+    const k = i - half;
+    const idx = (((base + k) % n) + n) % n;
+    return { k, slot: slots[idx] };
+  });
   const remaining = Math.max(1, slots.filter((s) => s.entry).length);
+
 
   return (
     <div className="relative z-30 -mt-[30svh] w-full">
@@ -673,26 +703,27 @@ function ReelStage({
         <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-20 bg-gradient-to-l from-background to-transparent" />
 
         <motion.div
-          className="relative z-30 flex items-center gap-4"
+          className="relative z-30 flex items-center"
           style={{
             x,
+            gap: CHIP_GAP,
             paddingLeft: `calc(50% - ${CHIP_W / 2}px)`,
+            marginLeft: -half * STEP,
             willChange: "transform",
           }}
         >
-          {row.flatMap((c) =>
-            slots.map((s) => (
-              <div key={`slot-${c}-${s.sid}`} className="shrink-0" style={{ width: CHIP_W }}>
-                {s.entry ? (
-                  <HuntAvatar entry={s.entry} scale={CHIP_SCALE} />
-                ) : (
-                  // дырка на месте выбитого: пустое место едет вместе с лентой
-                  <div style={{ width: CHIP_W, height: CHIP_W }} />
-                )}
-              </div>
-            )),
-          )}
+          {windowSlots.map(({ k, slot }) => (
+            <div key={`w-${k}`} className="shrink-0" style={{ width: CHIP_W }}>
+              {slot?.entry ? (
+                <HuntAvatar entry={slot.entry} scale={CHIP_SCALE} />
+              ) : (
+                // дырка на месте выбитого: пустое место едет вместе с лентой
+                <div style={{ width: CHIP_W, height: CHIP_W }} />
+              )}
+            </div>
+          ))}
         </motion.div>
+
 
         {/* выбитые аватарки — дорожка без overflow, полёт ничем не обрезается */}
         <AnimatePresence>
