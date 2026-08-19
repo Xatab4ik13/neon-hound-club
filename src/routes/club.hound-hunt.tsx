@@ -347,9 +347,16 @@ export function HoundHuntPage() {
             settledRef.current = true;
             setSettled(true);
             haptic("success");
+            // В финале в кадре должна остаться РОВНО одна аватарка победителя:
+            // все остальные слоты (в т.ч. его же копии по кругу) убираем.
+            const winIdx = Math.round(target - winStopOffset());
+            const only = tapeRef.current.filter((s) => s.idx === winIdx);
+            tapeRef.current = only;
+            setTape(only);
             stopReel();
             return;
           }
+
           advance = Math.min(advance, Math.max(diff * (elapsed / 260), (elapsed / 1000) * 0.7));
         }
       }
