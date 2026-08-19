@@ -170,9 +170,9 @@ function Model({
     readyRef.current?.(d * 0.6 * 1000, d * 1000 * (1 + 1 / REWIND));
   }, [action]);
 
-  useEffect(() => {
-    if (!action || !kickToken) return;
-    kickCycle.current = kickToken;
+  const startKick = (token: number) => {
+    if (!action) return;
+    kickCycle.current = token;
     firedCycle.current = -1;
     prevTime.current = 0;
     rewinding.current = false;
@@ -180,6 +180,21 @@ function Model({
     action.timeScale = 1;
     action.paused = false;
     action.play();
+  };
+  const startKickRef = useRef(startKick);
+  startKickRef.current = startKick;
+  /** Токен, пришедший посреди обратного хода: доигрываем возврат, потом бьём. */
+  const pendingKick = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (!action || !kickToken) return;
+    // Никогда не обрываем возврат в стойку через reset() — это и есть тот
+    // самый «рывок»: поза телепортируется в первый кадр клипа.
+    if (rewinding.current) {
+      pendingKick.current = kickToken;
+      return;
+    }
+    startKickRef.current(kickToken);
   }, [action, kickToken]);
 
   useFrame(() => {
