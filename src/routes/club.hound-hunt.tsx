@@ -126,8 +126,6 @@ export function HoundHuntPage() {
   const reelRaf = useRef(0);
   const reelLastFrame = useRef(0);
   const reelPhase = useRef(0);
-  const closeGap = useMotionValue(0);
-  const closeGapAnim = useRef<{ stop: () => void } | null>(null);
   /** 1 = обычный темп, <1 = слоу-мо сразу после удара. */
   const slowmo = useMotionValue(1);
   const slowmoAnim = useRef<{ stop: () => void } | null>(null);
@@ -146,13 +144,12 @@ export function HoundHuntPage() {
     () => () => {
       timers.current.forEach(clearTimeout);
       cancelAnimationFrame(reelRaf.current);
-      closeGapAnim.current?.stop();
     },
     [],
   );
 
-  /* --- барабан: звенья выбиваются по одному, последнее = победитель --- */
-  type Slot = { sid: number; entry: HuntEntry };
+  /* --- барабан: звенья выбиваются по одному, на их месте остаётся дырка --- */
+  type Slot = { sid: number; entry: HuntEntry | null };
   const [slots, setSlots] = useState<Slot[]>([]);
   const [kicks, setKicks] = useState(0);
   const [ghosts, setGhosts] = useState<{ key: string; entry: HuntEntry }[]>([]);
@@ -166,10 +163,9 @@ export function HoundHuntPage() {
 
   const syncStrip = useCallback(() => {
     const n = Math.max(1, slotsRef.current.length);
-    const phase = reelPhase.current + closeGap.get();
-    const wrapped = ((phase % n) + n) % n;
+    const wrapped = ((reelPhase.current % n) + n) % n;
     stripX.set(-wrapped * STEP);
-  }, [closeGap, stripX]);
+  }, [stripX]);
 
   const stopReel = useCallback(() => {
     cancelAnimationFrame(reelRaf.current);
@@ -184,7 +180,8 @@ export function HoundHuntPage() {
       const elapsed = Math.min(50, now - reelLastFrame.current);
       reelLastFrame.current = now;
       // Слоу-мо после удара + замедление к финалу: одна лента, два множителя.
-      const step = dur(BASE.capsule) * speedRamp(slotsRef.current.length);
+      const alive = slotsRef.current.filter((s) => s.entry).length;
+      const step = dur(BASE.capsule) * speedRamp(alive);
       reelPhase.current += (elapsed * slowmo.get()) / step;
       syncStrip();
       reelRaf.current = requestAnimationFrame(tick);
@@ -246,10 +243,9 @@ export function HoundHuntPage() {
       setGhosts([]);
       setSlots(slotsNow);
       slotsRef.current = slotsNow;
-      winnerSidRef.current = slotsNow.find((s) => s.entry.id === winner.id)?.sid ?? -1;
+      winnerSidRef.current = slotsNow.find((s) => s.entry?.id === winner.id)?.sid ?? -1;
       stopReel();
-      closeGapAnim.current?.stop();
-      closeGap.set(0);
+
       slowmoAnim.current?.stop();
       slowmo.set(1);
       reelPhase.current = 0;
@@ -298,48 +294,33 @@ export function HoundHuntPage() {
         startReel();
       }, dur(BASE.arming));
     },
-    [buildReel, closeGap, dur, later, pickWinner, slowmo, startReel, stopReel, stripX],
+    [buildReel, dur, later, pickWinner, slowmo, startReel, stopReel, stripX],
   );
 
   /** Импакт ноги: улетает то звено, что в этот кадр стоит по центру. */
   const handleImpact = useCallback(() => {
     if (phaseRef.current !== "drift") return;
     const list = slotsRef.current;
-    if (list.length <= 1) return;
+    const alive = list.filter((s) => s.entry);
+    if (alive.length <= 1) return;
 
     // Центральный слот вычисляем из циклической фазы, а не из бесконечной
     // экранной координаты. Поэтому индекс остаётся точным после любого круга.
     const n = list.length;
-    const displayedPhase = reelPhase.current + closeGap.get();
-    const pos = Math.round(displayedPhase);
+    const pos = Math.round(reelPhase.current);
     const j = ((pos % n) + n) % n;
     const target = list[j];
+    // По центру дырка — бить некого, ждём следующий оборот.
+    if (!target.entry) return;
     // Победителя не подменяем соседним звеном: иначе из центра визуально
     // улетает не та аватарка, по которой пришёлся удар. Ждём следующий пинок.
     if (target.sid === winnerSidRef.current) return;
 
-    const rest = list.filter((s) => s.sid !== target.sid);
-
-    // После удаления следующий слот должен остаться там же, где был в момент
-    // удара, а затем за короткое время закрыть освободившееся место. Базовая
-    // фаза продолжает идти — вращение при этом не останавливается.
-    closeGapAnim.current?.stop();
-    reelPhase.current = displayedPhase - 1;
-    closeGap.set(0);
+    const kicked = target.entry;
+    // Место НЕ закрывается: на месте выбитого остаётся дырка, лента едет дальше.
+    const rest = list.map((s) => (s.sid === target.sid ? { ...s, entry: null } : s));
     slotsRef.current = rest;
     setSlots(rest);
-    syncStrip();
-    closeGapAnim.current = animate(closeGap, 1, {
-      duration: 0.34,
-      // Упругое закрытие места: соседи чуть перелетают и садятся обратно.
-      ease: [0.22, 1.4, 0.3, 1],
-      onUpdate: syncStrip,
-      onComplete: () => {
-        reelPhase.current += closeGap.get();
-        closeGap.set(0);
-        syncStrip();
-      },
-    });
 
     // Слоу-мо удара: лента почти замирает на миг и разгоняется обратно —
     // видно, кого именно выбило, но вращение не прерывается.
@@ -352,15 +333,15 @@ export function HoundHuntPage() {
     setShock((s) => s + 1);
 
     const key = `${target.sid}-${kicksRef.current}`;
-    setGhosts((g) => [...g, { key, entry: target.entry }]);
+    setGhosts((g) => [...g, { key, entry: kicked }]);
     later(() => setGhosts((g) => g.filter((x) => x.key !== key)), 2000);
     haptic("light");
 
-    if (rest.length <= 1) {
+    if (alive.length - 1 <= 1) {
       stopReel();
       finishRef.current?.();
     }
-  }, [closeGap, later, slowmo, stopReel, syncStrip]);
+  }, [later, slowmo, stopReel]);
 
   const start = () => {
     clearTimers();
@@ -381,14 +362,12 @@ export function HoundHuntPage() {
       const winnerSlot = list.find((s) => s.sid === winnerSidRef.current) ?? list[list.length - 1];
       const winner = winnerSlot?.entry ?? pickWinner(entries);
       stopReel();
-      closeGapAnim.current?.stop();
-      closeGap.set(0);
       slowmoAnim.current?.stop();
       slowmo.set(1);
-      const rest = winnerSlot ? [winnerSlot] : [];
+      const rest = list.map((s) => (s.sid === winnerSlot?.sid ? s : { ...s, entry: null }));
       slotsRef.current = rest;
       setSlots(rest);
-      kicksRef.current = Math.max(0, list.length - 1);
+      kicksRef.current = Math.max(0, list.filter((s) => s.entry).length - 1);
       setKicks(kicksRef.current);
 
       setGhosts([]);
@@ -574,7 +553,7 @@ function ReelStage({
   armed,
   shock,
 }: {
-  slots: { sid: number; entry: HuntEntry }[];
+  slots: { sid: number; entry: HuntEntry | null }[];
   ghosts: { key: string; entry: HuntEntry }[];
   x: MotionValue<number>;
   armed: boolean;
@@ -582,11 +561,12 @@ function ReelStage({
   shock: number;
 }) {
   // Барабан крутится непрерывно: лента едет влево, поэтому копий списка нужно
-  // столько, чтобы кадр никогда не оставался пустым. Выбитое звено исчезает из
-  // всех копий, и остальные подтягиваются — место ВИДИМО освобождается.
+  // столько, чтобы кадр никогда не оставался пустым. Выбитое звено НЕ убирается
+  // из ряда — на его месте остаётся пустое место (дырка), которое едет дальше.
   const copies = Math.max(3, Math.ceil(60 / Math.max(1, slots.length)));
   const row = Array.from({ length: copies }, (_, c) => c);
-  const remaining = Math.max(1, slots.length);
+  const remaining = Math.max(1, slots.filter((s) => s.entry).length);
+
   return (
     <div className="relative z-30 -mt-[26svh] w-full">
       {/* Движущаяся лента плоская: перспектива применяется только к звену,
@@ -640,8 +620,13 @@ function ReelStage({
         >
           {row.flatMap((c) =>
             slots.map((s) => (
-              <div key={`slot-${c}-${s.sid}`} className="shrink-0">
-                <HuntAvatar entry={s.entry} scale={CHIP_SCALE} />
+              <div key={`slot-${c}-${s.sid}`} className="shrink-0" style={{ width: CHIP_W }}>
+                {s.entry ? (
+                  <HuntAvatar entry={s.entry} scale={CHIP_SCALE} />
+                ) : (
+                  // дырка на месте выбитого: пустое место едет вместе с лентой
+                  <div style={{ width: CHIP_W, height: CHIP_W }} />
+                )}
               </div>
             )),
           )}
