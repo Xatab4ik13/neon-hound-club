@@ -476,29 +476,47 @@ export function HoundHuntPage() {
         winnerIdRef.current = other.id;
       }
 
+      // Сколько человек уносит один удар. На больших пулах (100-200 заявок)
+      // один удар = один человек означал бы 5+ минут ленты, поэтому удар
+      // сносит группу: центральная капсула улетает, остальные из группы
+      // снимаются за правым краем кадра — незаметно, но счётчик падает пачкой.
+      const batch = !stale ? Math.max(1, Math.ceil((aliveRef.current - 1) / 20)) : 0;
+      const removedIds = new Set<string>();
       if (!stale) {
-        liveRef.current = liveRef.current.filter((e) => e.id !== kicked.id);
-        // На пороге финала пересобираем очередь с нуля, чтобы разрядка ленты
-        // включилась сразу, а не через круг.
+        removedIds.add(kicked.id);
+        if (batch > 1) {
+          for (const e of liveRef.current) {
+            if (removedIds.size >= batch) break;
+            if (e.id === kicked.id || e.id === winnerIdRef.current) continue;
+            removedIds.add(e.id);
+          }
+        }
+        liveRef.current = liveRef.current.filter((e) => !removedIds.has(e.id));
+        // На пороге разрядки ленты пересобираем очередь с нуля, чтобы дырки
+        // появились сразу, а не через круг.
         feedRef.current =
-          liveRef.current.length <= 3
+          liveRef.current.length <= 8
             ? []
-            : feedRef.current.filter((e) => e === null || e.id !== kicked.id);
+            : feedRef.current.filter((e) => e === null || !removedIds.has(e.id));
       }
 
-      // Дыркой становится только физически выбитый слот. Остальные видимые
-      // копии не исчезают одновременно (это и выглядело как короткая подмена),
-      // но больше не могут стать целью и естественно уезжают за левый край.
+      // Дыркой сразу становится физически выбитый слот. Копии выбитых, которые
+      // ещё не появились в кадре (правее видимого окна), гасим тоже — иначе
+      // мёртвые аватарки продолжают ездить по кругу и это читается как баг.
+      const half = halfWindow();
+      const rightEdge = Math.floor(reelPhase.current) + half;
       const next = list.map((s) => {
         if (s.idx === center) return { ...s, entry: null };
+        if (s.entry && s.idx > rightEdge && removedIds.has(s.entry.id)) return { ...s, entry: null };
         return s;
       });
       tapeRef.current = next;
       setTape(next);
       if (!stale) {
-        aliveRef.current -= 1;
+        aliveRef.current = liveRef.current.length;
         setAlive(aliveRef.current);
       }
+
 
 
       kicksRef.current += 1;
