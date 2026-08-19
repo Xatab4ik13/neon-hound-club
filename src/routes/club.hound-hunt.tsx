@@ -1001,19 +1001,22 @@ function ReelStage({
         </AnimatePresence>
       </motion.div>
 
-      {/* Финал: композиция та же. Лента встала, победитель остался по центру —
-          над лентой всплывает WINNER, справа от аватарки приз. */}
+      {/* Финал: лента встала, победитель стоит в крайнем левом положении —
+          над персонажем всплывает WINNER, справа от аватарки — приз. */}
       <AnimatePresence>
         {winner && (
           <motion.div
             key="winner-title"
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-            className="pointer-events-none absolute inset-x-0 -top-9 z-40 text-center"
+            className="pointer-events-none absolute inset-x-0 -top-16 z-40 text-center"
           >
-            <p className="font-display text-2xl font-black uppercase tracking-[0.3em] text-foreground drop-shadow-[0_0_26px_color-mix(in_oklab,var(--destructive)_75%,transparent)]">
+            <p
+              className="font-display text-4xl font-black uppercase tracking-[0.26em]"
+              style={{ color: "#B6FF3C", textShadow: "0 0 30px rgba(182,255,60,0.45)" }}
+            >
               winner
             </p>
           </motion.div>
@@ -1022,33 +1025,25 @@ function ReelStage({
         {winner && (
           <motion.div
             key="winner-prize"
-            initial={{ opacity: 0, x: -12, scale: 0.92 }}
+            initial={{ opacity: 0, x: -14, scale: 0.92 }}
             animate={{ opacity: 1, x: 0, scale: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.6, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
-            className="pointer-events-none absolute top-1/2 z-40 flex max-w-[52%] -translate-y-1/2 items-center gap-2"
-            style={{ left: `calc(50% + ${CHIP_W / 2 + 14}px)` }}
+            transition={{ duration: 0.6, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+            className="pointer-events-none absolute top-1/2 z-40 flex max-w-[55%] -translate-y-1/2 flex-col items-center gap-1"
+            style={{ left: WIN_LEFT + CHIP_W + 18 }}
           >
             <img
               src={prizeImg}
               alt=""
-              className="h-11 shrink-0 object-contain drop-shadow-[0_0_22px_color-mix(in_oklab,var(--primary)_60%,transparent)]"
+              className="h-16 shrink-0 object-contain drop-shadow-[0_0_26px_color-mix(in_oklab,var(--primary)_60%,transparent)]"
             />
-            <div className="min-w-0">
-              <p className="font-mono text-[9px] uppercase tracking-[0.24em] text-destructive">
-                выиграл
-              </p>
-              <p className="truncate font-mono text-[9px] uppercase tracking-[0.18em] text-muted-foreground">
-                {prizeSub}
-              </p>
-              <p className="font-display text-sm font-black uppercase leading-tight">
-                {prizeTitle}
-              </p>
-            </div>
+            <p className="font-display text-base font-black uppercase leading-tight">
+              {prizeTitle}
+            </p>
           </motion.div>
         )}
-
       </AnimatePresence>
+
 
     </div>
   );
