@@ -347,9 +347,16 @@ export function HoundHuntPage() {
             settledRef.current = true;
             setSettled(true);
             haptic("success");
+            // В финале в кадре должна остаться РОВНО одна аватарка победителя:
+            // все остальные слоты (в т.ч. его же копии по кругу) убираем.
+            const winIdx = Math.round(target - winStopOffset());
+            const only = tapeRef.current.filter((s) => s.idx === winIdx);
+            tapeRef.current = only;
+            setTape(only);
             stopReel();
             return;
           }
+
           advance = Math.min(advance, Math.max(diff * (elapsed / 260), (elapsed / 1000) * 0.7));
         }
       }
@@ -734,8 +741,6 @@ export function HoundHuntPage() {
   const dogMode: RiderMode =
     phase === "drift" ? "lunge" : phase === "arming" ? "watch" : "idle";
 
-  const intensity = phase === "settle" ? 0.8 : phase === "drift" ? 0.45 : 0.26;
-
   const totalTickets = useMemo(
     () =>
       pool.reduce((s, e) => s + e.tickets, 0) + winners.reduce((s, w) => s + w.entry.tickets, 0),
@@ -750,44 +755,19 @@ export function HoundHuntPage() {
 
   return (
     <div className="fixed inset-0 z-40 overflow-hidden overscroll-none touch-pan-y bg-background text-foreground select-none">
-      {/* Глубина за персонажем: перспективный пол + арочные кольца. Только
-          transform/opacity, поэтому 3D-объём ничего не стоит по кадрам. */}
-      <DepthBackdrop />
-
-      {/* Тёплое зарево от линии нижнего меню — «пол арены» светится и мягко
-          растворяется к уровню персонажа. Без резкого контура. */}
+      {/* Никаких слоёв фона: только мягкий градиент-«тень» за персонажем,
+          чтобы силуэт не висел в пустоте. */}
       <div
-        className="pointer-events-none absolute inset-x-0 z-0"
+        className="pointer-events-none absolute left-1/2 top-[46%] z-0 -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl"
         style={{
-          bottom: "calc(5.5rem + env(safe-area-inset-bottom))",
-          top: "22%",
+          width: "78vw",
+          height: "46vh",
           background:
-            "radial-gradient(120% 100% at 50% 100%, color-mix(in oklab, var(--destructive) 30%, transparent), color-mix(in oklab, var(--destructive) 10%, transparent) 45%, transparent 78%)",
-          maskImage:
-            "radial-gradient(115% 105% at 50% 100%, black 0%, black 42%, transparent 88%)",
-          WebkitMaskImage:
-            "radial-gradient(115% 105% at 50% 100%, black 0%, black 42%, transparent 88%)",
-          filter: "blur(2px)",
+            "radial-gradient(closest-side, color-mix(in oklab, var(--destructive) 22%, transparent), transparent 74%)",
+          opacity: 0.55,
         }}
       />
 
-      {/* искры: поднимаются от линии нижнего меню до уровня персонажа,
-          гаснут и сверху, и по краям — полоски с контуром больше нет */}
-      <EmberField
-        intensity={intensity}
-        className="pointer-events-none absolute inset-x-0 z-0 w-full opacity-80"
-        style={{
-          bottom: "calc(5.5rem + env(safe-area-inset-bottom))",
-          top: "20%",
-          maskImage:
-            "radial-gradient(120% 110% at 50% 100%, black 0%, black 38%, transparent 92%)",
-          WebkitMaskImage:
-            "radial-gradient(120% 110% at 50% 100%, black 0%, black 38%, transparent 92%)",
-        }}
-      />
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_80%_at_50%_0%,color-mix(in_oklab,var(--destructive)_12%,transparent),transparent_62%)]" />
-      <SmokeLayers />
-      <div className="pointer-events-none absolute inset-0 shadow-[inset_0_0_180px_70px_var(--background)]" />
 
 
       {/* WINNER — самый верх экрана, крупно и ядовито-зелёным */}
@@ -1096,54 +1076,8 @@ function ReelSlot({
   );
 }
 
-/**
- * Глубина сцены за персонажем: перспективный пол, кольца арены и задний
- * контровой свет. Всё на CSS-трансформациях — по кадрам бесплатно.
- */
-function DepthBackdrop() {
-  return (
-    <div className="pointer-events-none absolute inset-0 overflow-hidden [perspective:900px]">
-      {/* контровой свет за персонажем: объём и силуэт */}
-      <div
-        className="absolute left-1/2 top-[46%] -translate-x-1/2 rounded-full opacity-70 blur-3xl"
-        style={{
-          width: "70vw",
-          height: "38vh",
-          background:
-            "radial-gradient(closest-side, color-mix(in oklab, var(--destructive) 40%, transparent), transparent 72%)",
-        }}
-      />
 
-      {/* кольца арены — уходят в глубину */}
-      {[0, 1, 2].map((i) => (
-        <div
-          key={i}
-          className="absolute left-1/2 top-[52%] -translate-x-1/2 -translate-y-1/2 rounded-full border"
-          style={{
-            width: `${46 + i * 26}vw`,
-            height: `${46 + i * 26}vw`,
-            borderColor: "color-mix(in oklab, var(--destructive) 16%, transparent)",
-            opacity: 0.5 - i * 0.13,
-            transform: "translate(-50%, -50%) rotateX(72deg)",
-          }}
-        />
-      ))}
 
-      {/* перспективный пол: сетка уходит к горизонту */}
-      <div
-        className="absolute inset-x-[-40%] bottom-0 h-[58vh] origin-bottom opacity-[0.16]"
-        style={{
-          transform: "rotateX(76deg)",
-          backgroundImage:
-            "linear-gradient(to right, color-mix(in oklab, var(--foreground) 55%, transparent) 1px, transparent 1px), linear-gradient(to bottom, color-mix(in oklab, var(--foreground) 55%, transparent) 1px, transparent 1px)",
-          backgroundSize: "68px 68px",
-          maskImage: "linear-gradient(to top, black 5%, transparent 65%)",
-          WebkitMaskImage: "linear-gradient(to top, black 5%, transparent 65%)",
-        }}
-      />
-    </div>
-  );
-}
 
 
 function Podium({
@@ -1194,19 +1128,3 @@ function Podium({
 }
 
 /** Медленно плывущий дым — два больших мягких пятна. */
-function SmokeLayers() {
-  return (
-    <div className="pointer-events-none absolute inset-0 overflow-hidden">
-      <motion.div
-        animate={{ x: ["-10%", "12%", "-10%"], opacity: [0.25, 0.4, 0.25] }}
-        transition={{ duration: 26, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute -bottom-24 left-0 h-[60%] w-[140%] rounded-full bg-[radial-gradient(closest-side,color-mix(in_oklab,var(--muted)_60%,transparent),transparent)] blur-3xl"
-      />
-      <motion.div
-        animate={{ x: ["8%", "-14%", "8%"], opacity: [0.18, 0.32, 0.18] }}
-        transition={{ duration: 34, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute -top-32 right-0 h-[55%] w-[130%] rounded-full bg-[radial-gradient(closest-side,color-mix(in_oklab,var(--destructive)_35%,transparent),transparent)] blur-3xl"
-      />
-    </div>
-  );
-}
