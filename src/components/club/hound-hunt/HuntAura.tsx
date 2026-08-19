@@ -16,24 +16,24 @@ type Props = {
 
 export function HuntAura({ width, empty = false, seed = 0 }: Props) {
   const delay = (seed % 7) * 0.23;
-  const strength = empty ? 0.5 : 1;
+  const strength = empty ? 0.78 : 1;
 
   return (
     <div
       className="pointer-events-none absolute left-1/2 -translate-x-1/2"
       style={{ top: width * 0.82, width: width * 1.35, height: width * 0.7 }}
     >
-      {/* луч, уходящий вниз: как будто капсулу держит поле */}
+      {/* Вертикальное поле: широкое у основания и сходится к капсуле. */}
       <motion.div
         className="absolute left-1/2 top-0 -translate-x-1/2"
         style={{
-          width: width * 0.5,
-          height: width * 0.62,
+          width: width * 0.72,
+          height: width * 0.7,
           background:
-            "linear-gradient(to bottom, color-mix(in oklab, var(--destructive) 42%, transparent), transparent 78%)",
-          filter: "blur(6px)",
+            "conic-gradient(from 164deg at 50% 0%, transparent 0deg, color-mix(in oklab, var(--primary) 42%, transparent) 14deg, color-mix(in oklab, var(--destructive) 46%, transparent) 30deg, transparent 58deg)",
+          filter: "blur(4px)",
         }}
-        animate={{ opacity: [0.34 * strength, 0.62 * strength, 0.34 * strength] }}
+        animate={{ opacity: [0.48 * strength, 0.82 * strength, 0.48 * strength] }}
         transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut", delay }}
       />
 
@@ -41,11 +41,11 @@ export function HuntAura({ width, empty = false, seed = 0 }: Props) {
       <motion.div
         className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 rounded-[50%]"
         style={{
-          width: width * 0.92,
-          height: width * 0.26,
+          width: width * 1.02,
+          height: width * 0.28,
           background:
-            "radial-gradient(50% 50% at 50% 50%, color-mix(in oklab, var(--destructive) 70%, transparent), transparent 72%)",
-          filter: "blur(3px)",
+            "radial-gradient(ellipse, transparent 34%, color-mix(in oklab, var(--primary) 75%, transparent) 43%, color-mix(in oklab, var(--destructive) 70%, transparent) 58%, transparent 72%)",
+          filter: "blur(1.5px)",
         }}
         animate={{
           opacity: [0.55 * strength, 0.9 * strength, 0.55 * strength],
