@@ -754,21 +754,41 @@ export function HoundHuntPage() {
           transform/opacity, поэтому 3D-объём ничего не стоит по кадрам. */}
       <DepthBackdrop />
 
-      {/* свечение углей: от нижнего меню и мягко гаснет к уровню аватарок */}
-      <EmberField
-        intensity={intensity}
-        className="pointer-events-none absolute inset-x-0 w-full opacity-70"
+      {/* Тёплое зарево от линии нижнего меню — «пол арены» светится и мягко
+          растворяется к уровню персонажа. Без резкого контура. */}
+      <div
+        className="pointer-events-none absolute inset-x-0 z-0"
         style={{
           bottom: "calc(5.5rem + env(safe-area-inset-bottom))",
-          top: "36%",
-          maskImage: "linear-gradient(to top, black 55%, transparent 100%)",
-          WebkitMaskImage: "linear-gradient(to top, black 55%, transparent 100%)",
+          top: "22%",
+          background:
+            "radial-gradient(120% 100% at 50% 100%, color-mix(in oklab, var(--destructive) 30%, transparent), color-mix(in oklab, var(--destructive) 10%, transparent) 45%, transparent 78%)",
+          maskImage:
+            "radial-gradient(115% 105% at 50% 100%, black 0%, black 42%, transparent 88%)",
+          WebkitMaskImage:
+            "radial-gradient(115% 105% at 50% 100%, black 0%, black 42%, transparent 88%)",
+          filter: "blur(2px)",
         }}
       />
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_80%_at_50%_0%,color-mix(in_oklab,var(--destructive)_14%,transparent),transparent_60%)]" />
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(80%_60%_at_50%_110%,color-mix(in_oklab,var(--primary)_12%,transparent),transparent_70%)]" />
+
+      {/* искры: поднимаются от линии нижнего меню до уровня персонажа,
+          гаснут и сверху, и по краям — полоски с контуром больше нет */}
+      <EmberField
+        intensity={intensity}
+        className="pointer-events-none absolute inset-x-0 z-0 w-full opacity-80"
+        style={{
+          bottom: "calc(5.5rem + env(safe-area-inset-bottom))",
+          top: "20%",
+          maskImage:
+            "radial-gradient(120% 110% at 50% 100%, black 0%, black 38%, transparent 92%)",
+          WebkitMaskImage:
+            "radial-gradient(120% 110% at 50% 100%, black 0%, black 38%, transparent 92%)",
+        }}
+      />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_80%_at_50%_0%,color-mix(in_oklab,var(--destructive)_12%,transparent),transparent_62%)]" />
       <SmokeLayers />
-      <div className="pointer-events-none absolute inset-0 shadow-[inset_0_0_220px_60px_var(--background)]" />
+      <div className="pointer-events-none absolute inset-0 shadow-[inset_0_0_180px_70px_var(--background)]" />
+
 
       {/* WINNER — самый верх экрана, крупно и ядовито-зелёным */}
       <AnimatePresence>
