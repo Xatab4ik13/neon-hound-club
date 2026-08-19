@@ -401,6 +401,8 @@ export function HoundHuntPage() {
       setKicks(kicksRef.current);
 
       setGhosts([]);
+      holes.current = [];
+
       setCurrent(winner);
 
       setPhase("pull");
