@@ -620,22 +620,36 @@ function ReelStage({
   slots,
   ghosts,
   x,
+  phase,
   armed,
   shock,
 }: {
   slots: { sid: number; entry: HuntEntry | null }[];
   ghosts: { key: string; entry: HuntEntry }[];
   x: MotionValue<number>;
+  /** Абсолютная фаза ленты: целая часть выбирает центральный слот. */
+  phase: MotionValue<number>;
   armed: boolean;
   /** Счётчик ударов: меняется — играем вспышку и тряску арены. */
   shock: number;
 }) {
-  // Барабан крутится непрерывно: лента едет влево, поэтому копий списка нужно
-  // столько, чтобы кадр никогда не оставался пустым. Выбитое звено НЕ убирается
-  // из ряда — на его месте остаётся пустое место (дырка), которое едет дальше.
-  const copies = Math.max(3, Math.ceil(60 / Math.max(1, slots.length)));
-  const row = Array.from({ length: copies }, (_, c) => c);
+  // Лента = окно вокруг центра, а не набор копий ряда. Каждая позиция окна
+  // жёстко привязана к экрану, а содержимое берётся по циклическому индексу.
+  // Поэтому изменение состава ряда не сдвигает то, что видно на экране.
+  const half = typeof window === "undefined" ? 4 : Math.ceil(window.innerWidth / 2 / STEP) + 2;
+  const [base, setBase] = useState(() => Math.floor(phase.get()));
+  useMotionValueEvent(phase, "change", (v) => {
+    const f = Math.floor(v);
+    setBase((prev) => (prev === f ? prev : f));
+  });
+  const n = Math.max(1, slots.length);
+  const windowSlots = Array.from({ length: half * 2 + 1 }, (_, i) => {
+    const k = i - half;
+    const idx = (((base + k) % n) + n) % n;
+    return { k, slot: slots[idx] };
+  });
   const remaining = Math.max(1, slots.filter((s) => s.entry).length);
+
 
   return (
     <div className="relative z-30 -mt-[30svh] w-full">
