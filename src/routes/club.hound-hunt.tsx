@@ -179,24 +179,29 @@ export function HoundHuntPage() {
     const tick = (now: number) => {
       const elapsed = Math.min(50, now - reelLastFrame.current);
       reelLastFrame.current = now;
-      reelPhase.current += elapsed / dur(BASE.capsule);
+      // Слоу-мо после удара + замедление к финалу: одна лента, два множителя.
+      const step = dur(BASE.capsule) * speedRamp(slotsRef.current.length);
+      reelPhase.current += (elapsed * slowmo.get()) / step;
       syncStrip();
       reelRaf.current = requestAnimationFrame(tick);
     };
     reelRaf.current = requestAnimationFrame(tick);
-  }, [dur, stopReel, syncStrip]);
+  }, [dur, slowmo, stopReel, syncStrip]);
 
-  const buildReel = useCallback((entries: HuntEntry[], winner: HuntEntry) => {
-    const slots: HuntEntry[] = [];
-    for (const e of entries) for (let i = 0; i < e.slots; i++) slots.push(e);
-    const others = slots.filter((e) => e.id !== winner.id);
-    const out: HuntEntry[] = [];
-    for (let i = 0; i < REEL_LEN - 1; i++) {
-      out.push(others[Math.floor(Math.random() * others.length)] ?? winner);
+  /**
+   * Барабан = реальные участники: 15 человек — 15 звеньев. Никаких случайных
+   * копий: счётчик «осталось N» совпадает с тем, что видно на ленте.
+   * Порядок перемешиваем, чтобы победитель не всегда стоял в конце.
+   */
+  const buildReel = useCallback((entries: HuntEntry[]) => {
+    const list = [...entries];
+    for (let i = list.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [list[i], list[j]] = [list[j], list[i]];
     }
-    out.push(winner);
-    return out;
+    return list;
   }, []);
+
 
   const pickWinner = useCallback((entries: HuntEntry[]) => {
     const total = entries.reduce((s, e) => s + e.slots, 0);
