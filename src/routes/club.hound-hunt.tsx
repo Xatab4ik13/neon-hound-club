@@ -126,8 +126,6 @@ export function HoundHuntPage() {
   const reelRaf = useRef(0);
   const reelLastFrame = useRef(0);
   const reelPhase = useRef(0);
-  const closeGap = useMotionValue(0);
-  const closeGapAnim = useRef<{ stop: () => void } | null>(null);
   /** 1 = обычный темп, <1 = слоу-мо сразу после удара. */
   const slowmo = useMotionValue(1);
   const slowmoAnim = useRef<{ stop: () => void } | null>(null);
