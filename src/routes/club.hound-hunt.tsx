@@ -90,8 +90,17 @@ const CHIP_W = 132 * CHIP_SCALE;
 const CHIP_GAP = 16;
 const STEP = CHIP_W + CHIP_GAP;
 
-/** Сколько капсул в барабане на один приз (последняя — победитель). */
-const REEL_LEN = 14;
+/** Сколько участников в моковом розыгрыше — столько же звеньев в барабане. */
+const MOCK_ENTRIES = 15;
+
+/**
+ * Чем меньше осталось участников, тем медленнее лента: к финалу зритель
+ * успевает прочитать каждый ник и болеть за своего.
+ */
+function speedRamp(remaining: number) {
+  if (remaining >= 12) return 1;
+  return 1 + (12 - remaining) * 0.14; // 12 → 1.0 … 2 → 2.4 (медленнее)
+}
 
 /* ------------------------------ страница ------------------------------ */
 
@@ -101,12 +110,14 @@ export function HoundHuntPage() {
   speedRef.current = speed;
   const dur = useCallback((base: number) => Math.max(220, base / speedRef.current), []);
 
-  const [pool, setPool] = useState<HuntEntry[]>(() => makeEntries(28));
+  const [pool, setPool] = useState<HuntEntry[]>(() => makeEntries(MOCK_ENTRIES));
   const [caseIdx, setCaseIdx] = useState(0);
   const [phase, setPhase] = useState<Phase>("intro");
   const [winners, setWinners] = useState<{ prizeId: string; entry: HuntEntry }[]>([]);
   const [current, setCurrent] = useState<HuntEntry | null>(null);
   const [look, setLook] = useState({ x: 0, y: 0 });
+  /** Счётчик ударов для вспышки/тряски арены — растёт на каждый импакт. */
+  const [shock, setShock] = useState(0);
 
   const prize = HUNT_PRIZES[Math.min(caseIdx, HUNT_PRIZES.length - 1)];
   // Позиция ленты — своя motion-value: барабан крутится непрерывно, а в момент
@@ -117,6 +128,9 @@ export function HoundHuntPage() {
   const reelPhase = useRef(0);
   const closeGap = useMotionValue(0);
   const closeGapAnim = useRef<{ stop: () => void } | null>(null);
+  /** 1 = обычный темп, <1 = слоу-мо сразу после удара. */
+  const slowmo = useMotionValue(1);
+  const slowmoAnim = useRef<{ stop: () => void } | null>(null);
   const timers = useRef<number[]>([]);
 
   const later = useCallback((fn: () => void, ms: number) => {
@@ -169,23 +183,27 @@ export function HoundHuntPage() {
     const tick = (now: number) => {
       const elapsed = Math.min(50, now - reelLastFrame.current);
       reelLastFrame.current = now;
-      reelPhase.current += elapsed / dur(BASE.capsule);
+      // Слоу-мо после удара + замедление к финалу: одна лента, два множителя.
+      const step = dur(BASE.capsule) * speedRamp(slotsRef.current.length);
+      reelPhase.current += (elapsed * slowmo.get()) / step;
       syncStrip();
       reelRaf.current = requestAnimationFrame(tick);
     };
     reelRaf.current = requestAnimationFrame(tick);
-  }, [dur, stopReel, syncStrip]);
+  }, [dur, slowmo, stopReel, syncStrip]);
 
-  const buildReel = useCallback((entries: HuntEntry[], winner: HuntEntry) => {
-    const slots: HuntEntry[] = [];
-    for (const e of entries) for (let i = 0; i < e.slots; i++) slots.push(e);
-    const others = slots.filter((e) => e.id !== winner.id);
-    const out: HuntEntry[] = [];
-    for (let i = 0; i < REEL_LEN - 1; i++) {
-      out.push(others[Math.floor(Math.random() * others.length)] ?? winner);
+  /**
+   * Барабан = реальные участники: 15 человек — 15 звеньев. Никаких случайных
+   * копий: счётчик «осталось N» совпадает с тем, что видно на ленте.
+   * Порядок перемешиваем, чтобы победитель не всегда стоял в конце.
+   */
+  const buildReel = useCallback((entries: HuntEntry[]) => {
+    const list = [...entries];
+    for (let i = list.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [list[i], list[j]] = [list[j], list[i]];
     }
-    out.push(winner);
-    return out;
+    return list;
   }, []);
 
   const pickWinner = useCallback((entries: HuntEntry[]) => {
@@ -220,7 +238,7 @@ export function HoundHuntPage() {
   const runCase = useCallback(
     (idx: number, entries: HuntEntry[]) => {
       const winner = pickWinner(entries);
-      const reelNow = buildReel(entries, winner);
+      const reelNow = buildReel(entries);
       const slotsNow: Slot[] = reelNow.map((entry, i) => ({ sid: i, entry }));
       setCurrent(null);
       setKicks(0);
@@ -228,12 +246,15 @@ export function HoundHuntPage() {
       setGhosts([]);
       setSlots(slotsNow);
       slotsRef.current = slotsNow;
-      winnerSidRef.current = slotsNow[slotsNow.length - 1]?.sid ?? -1;
+      winnerSidRef.current = slotsNow.find((s) => s.entry.id === winner.id)?.sid ?? -1;
       stopReel();
       closeGapAnim.current?.stop();
       closeGap.set(0);
+      slowmoAnim.current?.stop();
+      slowmo.set(1);
       reelPhase.current = 0;
       stripX.set(0);
+
       setPhase("arming");
       haptic("light");
 
@@ -277,7 +298,7 @@ export function HoundHuntPage() {
         startReel();
       }, dur(BASE.arming));
     },
-    [buildReel, closeGap, dur, later, pickWinner, startReel, stopReel, stripX],
+    [buildReel, closeGap, dur, later, pickWinner, slowmo, startReel, stopReel, stripX],
   );
 
   /** Импакт ноги: улетает то звено, что в этот кадр стоит по центру. */
@@ -309,8 +330,9 @@ export function HoundHuntPage() {
     setSlots(rest);
     syncStrip();
     closeGapAnim.current = animate(closeGap, 1, {
-      duration: 0.2,
-      ease: [0.2, 0.8, 0.2, 1],
+      duration: 0.34,
+      // Упругое закрытие места: соседи чуть перелетают и садятся обратно.
+      ease: [0.22, 1.4, 0.3, 1],
       onUpdate: syncStrip,
       onComplete: () => {
         reelPhase.current += closeGap.get();
@@ -318,8 +340,16 @@ export function HoundHuntPage() {
         syncStrip();
       },
     });
+
+    // Слоу-мо удара: лента почти замирает на миг и разгоняется обратно —
+    // видно, кого именно выбило, но вращение не прерывается.
+    slowmoAnim.current?.stop();
+    slowmo.set(0.22);
+    slowmoAnim.current = animate(slowmo, 1, { duration: 0.5, ease: "easeOut" });
+
     kicksRef.current += 1;
     setKicks(kicksRef.current);
+    setShock((s) => s + 1);
 
     const key = `${target.sid}-${kicksRef.current}`;
     setGhosts((g) => [...g, { key, entry: target.entry }]);
@@ -330,11 +360,11 @@ export function HoundHuntPage() {
       stopReel();
       finishRef.current?.();
     }
-  }, [closeGap, later, stopReel, syncStrip]);
+  }, [closeGap, later, slowmo, stopReel, syncStrip]);
 
   const start = () => {
     clearTimers();
-    const fresh = makeEntries(28, Math.floor(Math.random() * 99999));
+    const fresh = makeEntries(MOCK_ENTRIES, Math.floor(Math.random() * 99999));
     setPool(fresh);
     setWinners([]);
     setCaseIdx(0);
@@ -348,15 +378,19 @@ export function HoundHuntPage() {
     const entries = pool;
     if (phase === "arming" || phase === "drift") {
       const list = slotsRef.current;
-      const winner = list[list.length - 1]?.entry ?? pickWinner(entries);
+      const winnerSlot = list.find((s) => s.sid === winnerSidRef.current) ?? list[list.length - 1];
+      const winner = winnerSlot?.entry ?? pickWinner(entries);
       stopReel();
       closeGapAnim.current?.stop();
       closeGap.set(0);
-      const rest = list.slice(-1);
+      slowmoAnim.current?.stop();
+      slowmo.set(1);
+      const rest = winnerSlot ? [winnerSlot] : [];
       slotsRef.current = rest;
       setSlots(rest);
       kicksRef.current = Math.max(0, list.length - 1);
       setKicks(kicksRef.current);
+
       setGhosts([]);
       setCurrent(winner);
 
@@ -443,7 +477,13 @@ export function HoundHuntPage() {
           {phase === "intro" && <IntroPanel onStart={start} />}
 
           {(phase === "arming" || phase === "drift") && (
-            <ReelStage slots={slots} ghosts={ghosts} x={stripX} armed={phase === "arming"} />
+            <ReelStage
+              slots={slots}
+              ghosts={ghosts}
+              x={stripX}
+              armed={phase === "arming"}
+              shock={shock}
+            />
           )}
 
           {(phase === "pull" || phase === "crack") && current && (
@@ -512,8 +552,8 @@ function IntroPanel({ onStart }: { onStart: () => void }) {
         охота начинается
       </p>
       <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-        Три приза. Капсулы летят мимо, и раз в три секунды персонаж замахивается и выбивает одну из
-        них. Остаётся последняя: чья аватарка внутри, тот забирает приз.
+        В барабане все участники. Гончая выбивает по одному: 15 человек — 14 ударов. Чем меньше
+        остаётся, тем медленнее крутится лента. Последний, кто устоял, забирает приз.
       </p>
 
       <button
@@ -532,29 +572,66 @@ function ReelStage({
   ghosts,
   x,
   armed,
+  shock,
 }: {
   slots: { sid: number; entry: HuntEntry }[];
   ghosts: { key: string; entry: HuntEntry }[];
   x: MotionValue<number>;
   armed: boolean;
+  /** Счётчик ударов: меняется — играем вспышку и тряску арены. */
+  shock: number;
 }) {
   // Барабан крутится непрерывно: лента едет влево, поэтому копий списка нужно
   // столько, чтобы кадр никогда не оставался пустым. Выбитое звено исчезает из
   // всех копий, и остальные подтягиваются — место ВИДИМО освобождается.
   const copies = Math.max(3, Math.ceil(60 / Math.max(1, slots.length)));
   const row = Array.from({ length: copies }, (_, c) => c);
+  const remaining = Math.max(1, slots.length);
   return (
     <div className="relative z-30 -mt-[26svh] w-full">
       {/* Движущаяся лента плоская: перспектива применяется только к звену,
           которое уже выбито и летит отдельно от барабана. */}
-      <div className="relative py-2">
-        {/* зона удара — нейтральная тонкая метка по центру */}
-        <div className="pointer-events-none absolute left-1/2 top-0 z-20 h-full w-px -translate-x-1/2 bg-gradient-to-b from-transparent via-white/20 to-transparent" />
+      <motion.div
+        className="relative py-2"
+        // Тряска арены на каждый удар — импакт чувствуется физически.
+        animate={shock ? { x: [0, -6, 5, -3, 0], y: [0, 3, -2, 1, 0] } : { x: 0, y: 0 }}
+        transition={{ duration: 0.34, ease: "easeOut" }}
+        key={`shake-${shock}`}
+      >
+        {/* зона удара: дышащее пятно под ногой вместо жёсткой полоски */}
+        <motion.div
+          className="pointer-events-none absolute left-1/2 top-1/2 z-0 -translate-x-1/2 -translate-y-1/2 rounded-full"
+          style={{
+            width: CHIP_W * 2.6,
+            height: CHIP_W * 2.6,
+            background:
+              "radial-gradient(circle, color-mix(in oklab, var(--destructive) 26%, transparent), transparent 62%)",
+          }}
+          animate={{ opacity: [0.5, 0.95, 0.5], scale: [0.94, 1.06, 0.94] }}
+          transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+        />
+
+        {/* шок-волна из точки удара */}
+        {shock > 0 && (
+          <motion.div
+            key={`ring-${shock}`}
+            className="pointer-events-none absolute left-1/2 top-1/2 z-20 -translate-x-1/2 -translate-y-1/2 rounded-full border"
+            style={{
+              width: CHIP_W,
+              height: CHIP_W,
+              borderColor: "color-mix(in oklab, var(--destructive) 80%, transparent)",
+            }}
+            initial={{ opacity: 0.9, scale: 0.5 }}
+            animate={{ opacity: 0, scale: 3.4 }}
+            transition={{ duration: 0.55, ease: "easeOut" }}
+          />
+        )}
+
         <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-20 bg-gradient-to-r from-background to-transparent" />
         <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-20 bg-gradient-to-l from-background to-transparent" />
 
         <motion.div
-          className="flex items-center gap-4"
+          className="relative z-[5] flex items-center gap-4"
           style={{
             x,
             paddingLeft: `calc(50% - ${CHIP_W / 2}px)`,
@@ -578,15 +655,27 @@ function ReelStage({
             </motion.div>
           ))}
         </AnimatePresence>
-      </div>
+      </motion.div>
 
-      <motion.p
-        animate={{ opacity: armed ? [0.4, 1, 0.4] : 1 }}
-        transition={{ duration: 1.6, repeat: Infinity }}
-        className="relative z-50 mt-2 text-center font-mono text-[10px] uppercase tracking-[0.28em] text-muted-foreground"
-      >
-        {armed ? "выходит на удар" : `выбивает участников · осталось ${Math.max(1, slots.length)}`}
-      </motion.p>
+      {/* счётчик остатка: реальное число участников на ленте */}
+      <div className="relative z-50 mt-3 flex items-center justify-center gap-2">
+        <motion.span
+          key={`left-${remaining}`}
+          initial={{ scale: 1.5, color: "var(--destructive)" }}
+          animate={{ scale: 1, color: "var(--foreground)" }}
+          transition={{ duration: 0.35, ease: "easeOut" }}
+          className="font-display text-2xl font-black leading-none"
+        >
+          {remaining}
+        </motion.span>
+        <motion.p
+          animate={{ opacity: armed ? [0.4, 1, 0.4] : 1 }}
+          transition={{ duration: 1.6, repeat: Infinity }}
+          className="font-mono text-[10px] uppercase tracking-[0.24em] text-muted-foreground"
+        >
+          {armed ? "выходит на удар" : "в барабане"}
+        </motion.p>
+      </div>
     </div>
   );
 }
