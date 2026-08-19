@@ -756,11 +756,23 @@ function ReelStage({
   /** Счётчик ударов: меняется — играем вспышку и тряску арены. */
   shock: number;
 }) {
+  // Отдача от удара: тряска и микро-зум играются только на transform, поэтому
+  // не вызывают ни layout, ни перерисовку аватарок.
+  const recoil = useAnimation();
+  useEffect(() => {
+    if (!shock) return;
+    void recoil.start({
+      y: [0, -3, 1.5, 0],
+      scale: [1, 1.028, 0.996, 1],
+      transition: { duration: 0.26, ease: "easeOut", times: [0, 0.18, 0.55, 1] },
+    });
+  }, [shock, recoil]);
+
   return (
     <div className="relative z-30 -mt-[30svh] w-full">
       {/* Движущаяся лента плоская: перспектива применяется только к звену,
           которое уже выбито и летит отдельно от барабана. */}
-      <div className="relative py-2">
+      <motion.div className="relative py-2" animate={recoil} style={{ willChange: "transform" }}>
         {/* зона удара: дышащее пятно под ногой вместо жёсткой полоски */}
         <motion.div
           className="pointer-events-none absolute left-1/2 top-1/2 z-0 -translate-x-1/2 -translate-y-1/2 rounded-full"
@@ -773,6 +785,23 @@ function ReelStage({
           animate={{ opacity: [0.5, 0.95, 0.5], scale: [0.94, 1.06, 0.94] }}
           transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
         />
+
+        {/* импакт-фрейм: короткая световая вспышка ровно в кадре удара */}
+        {shock > 0 && (
+          <motion.div
+            key={`flash-${shock}`}
+            className="pointer-events-none absolute left-1/2 top-1/2 z-20 -translate-x-1/2 -translate-y-1/2 rounded-full"
+            style={{
+              width: CHIP_W * 2.2,
+              height: CHIP_W * 2.2,
+              background:
+                "radial-gradient(circle, color-mix(in oklab, var(--foreground) 85%, transparent), color-mix(in oklab, var(--destructive) 40%, transparent) 45%, transparent 70%)",
+            }}
+            initial={{ opacity: 0.85, scale: 0.55 }}
+            animate={{ opacity: 0, scale: 1.15 }}
+            transition={{ duration: 0.16, ease: "easeOut" }}
+          />
+        )}
 
         {/* шок-волна из точки удара */}
         {shock > 0 && (
@@ -789,6 +818,23 @@ function ReelStage({
             transition={{ duration: 0.55, ease: "easeOut" }}
           />
         )}
+
+        {/* вторая, более быстрая волна: даёт «двойной» удар по глазам */}
+        {shock > 0 && (
+          <motion.div
+            key={`ring2-${shock}`}
+            className="pointer-events-none absolute left-1/2 top-1/2 z-20 -translate-x-1/2 -translate-y-1/2 rounded-full border-2"
+            style={{
+              width: CHIP_W * 0.8,
+              height: CHIP_W * 0.8,
+              borderColor: "color-mix(in oklab, var(--foreground) 55%, transparent)",
+            }}
+            initial={{ opacity: 0.7, scale: 0.4 }}
+            animate={{ opacity: 0, scale: 2 }}
+            transition={{ duration: 0.28, ease: "easeOut" }}
+          />
+        )}
+
 
         <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-20 bg-gradient-to-r from-background to-transparent" />
         <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-20 bg-gradient-to-l from-background to-transparent" />
