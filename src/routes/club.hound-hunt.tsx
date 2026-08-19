@@ -459,7 +459,12 @@ export function HoundHuntPage() {
 
       if (!stale) {
         liveRef.current = liveRef.current.filter((e) => e.id !== kicked.id);
-        feedRef.current = feedRef.current.filter((e) => e.id !== kicked.id);
+        // На пороге финала пересобираем очередь с нуля, чтобы разрядка ленты
+        // включилась сразу, а не через круг.
+        feedRef.current =
+          liveRef.current.length <= 3
+            ? []
+            : feedRef.current.filter((e) => e === null || e.id !== kicked.id);
       }
 
       // Дыркой становится только физически выбитый слот. Остальные видимые
