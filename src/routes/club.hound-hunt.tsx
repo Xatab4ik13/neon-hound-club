@@ -379,7 +379,7 @@ export function HoundHuntPage() {
     [buildReel, dur, groomTape, halfWindow, later, pickWinner, startReel, stopReel, stripX],
   );
 
-  /** Импакт ноги: улетает то звено, что в этот кадр стоит по центру. */
+  /** Импакт ноги: улетает та капсула, что в этот кадр стоит по центру. */
   const handleImpact = useCallback(
     (cycle: number) => {
       if (phaseRef.current !== "drift") return;
@@ -388,55 +388,57 @@ export function HoundHuntPage() {
       if (now < impactLockedUntil.current) return;
       lastImpactCycle.current = cycle;
       impactLockedUntil.current = now + 650;
-      const list = slotsRef.current;
-      const alive = list.filter((s) => s.entry);
-      if (alive.length <= 1) return;
+      if (aliveRef.current <= 1) return;
 
-      // Центральный слот вычисляем из циклической фазы, а не из бесконечной
-      // экранной координаты. Поэтому индекс остаётся точным после любого круга.
-      const n = list.length;
-      const pos = Math.round(reelPhase.current);
-      const j = ((pos % n) + n) % n;
-      const target = list[j];
-      // По центру дырка — бить некого, ждём следующий оборот.
-      if (!target.entry) return;
-      // Визуально пропускать удар нельзя. Если под ногой оказался заранее
-      // намеченный финалист, переносим защиту на другого живого участника:
-      // центральная капсула всё равно честно улетает, а выигрывает последний.
-      if (target.sid === winnerSidRef.current) {
-        const nextSurvivor = alive.find((slot) => slot.sid !== target.sid);
-        if (!nextSurvivor) return;
-        winnerSidRef.current = nextSurvivor.sid;
-      }
+      const center = Math.round(reelPhase.current);
+      const list = tapeRef.current;
+      const target = list.find((s) => s.idx === center);
+      // Дырки по кругу не возвращаются, так что по центру всегда живая капсула.
+      if (!target?.entry) return;
 
       const kicked = target.entry;
-      // Место НЕ закрывается: на месте выбитого остаётся дырка, лента едет дальше.
-      const visibleHalf = Math.ceil(window.innerWidth / 2 / STEP) + 2;
-      const rest = list.map((s) =>
-        s.sid === target.sid
-          ? { ...s, entry: null, removeAfter: reelPhase.current + visibleHalf + 1 }
-          : s,
-      );
-      slotsRef.current = rest;
-      setSlots(rest);
-      // Пустое место едет вместе с лентой и удаляется только за левым краем.
+      // Победителя выбивать нельзя: если он под ногой — переносим защиту на
+      // другого живого. Центральная капсула всё равно честно улетает.
+      if (kicked.id === winnerIdRef.current) {
+        const other = liveRef.current.find((e) => e.id !== kicked.id);
+        if (!other) return;
+        winnerIdRef.current = other.id;
+      }
+
+      liveRef.current = liveRef.current.filter((e) => e.id !== kicked.id);
+      feedRef.current = feedRef.current.filter((e) => e.id !== kicked.id);
+
+      const half = halfWindow();
+      const next = list.map((s) => {
+        // На месте выбитого — дырка: она поедет влево вместе с лентой.
+        if (s.idx === center) return { ...s, entry: null };
+        // Дубликат выбитого, который ещё за кадром — подменяем живым.
+        if (s.entry?.id === kicked.id && s.idx > center + half) {
+          return { ...s, entry: nextFeed() };
+        }
+        return s;
+      });
+      tapeRef.current = next;
+      setTape(next);
+      aliveRef.current -= 1;
+      setAlive(aliveRef.current);
 
       kicksRef.current += 1;
       setKicks(kicksRef.current);
       setShock((s) => s + 1);
 
-      const key = `${target.sid}-${kicksRef.current}`;
+      const key = `${center}-${kicksRef.current}`;
       // В кадре всегда ровно один выбитый шар: даже если 3D callback по ошибке
       // придёт повторно, второй летящий дубль не появится.
       setGhosts([{ key, entry: kicked }]);
       later(() => setGhosts((g) => g.filter((x) => x.key !== key)), 2000);
       haptic("light");
-      if (alive.length - 1 <= 1) {
+      if (aliveRef.current <= 1) {
         stopReel();
         finishRef.current?.();
       }
     },
-    [later, stopReel],
+    [halfWindow, later, nextFeed, stopReel],
   );
 
   const start = () => {
@@ -447,6 +449,7 @@ export function HoundHuntPage() {
     setCaseIdx(0);
     runCase(0, fresh);
   };
+
 
   /** Тестовая кнопка: перескочить к следующей фазе. */
   const skip = () => {
