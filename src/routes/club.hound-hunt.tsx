@@ -129,11 +129,11 @@ function speedRamp(_remaining: number) {
  * по кому и когда прилетит. Интрига важнее темпа.
  */
 function suspenseMs(remaining: number) {
-  if (remaining <= 2) return 2800;
-  if (remaining === 3) return 2400;
-  if (remaining === 4) return 1900;
-  if (remaining === 5) return 1500;
-  if (remaining <= 7) return 800;
+  if (remaining <= 2) return 1600;
+  if (remaining === 3) return 1300;
+  if (remaining === 4) return 1000;
+  if (remaining === 5) return 800;
+  if (remaining <= 7) return 450;
   return 0;
 }
 
