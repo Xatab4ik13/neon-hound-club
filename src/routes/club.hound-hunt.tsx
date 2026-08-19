@@ -854,7 +854,7 @@ function ReelStage({
             </motion.div>
           ))}
         </AnimatePresence>
-      </div>
+      </motion.div>
 
       {/* счётчик остатка: реальное число участников на ленте */}
       <div className="relative z-50 mt-3 flex items-center justify-center gap-2">
