@@ -167,7 +167,7 @@ export function HoundHuntPage() {
   /** Живые участники — из них добирается хвост ленты. */
   const liveRef = useRef<HuntEntry[]>([]);
   /** Очередь на добор: опустела — продолжаем тем же порядком живых. */
-  const feedRef = useRef<HuntEntry[]>([]);
+  const feedRef = useRef<(HuntEntry | null)[]>([]);
   /** Следующий абсолютный индекс, который добавим в хвост. */
   const nextIdxRef = useRef(0);
   const [alive, setAlive] = useState(0);
@@ -210,11 +210,22 @@ export function HoundHuntPage() {
    * и та же заявка не может случайно появиться рядом сама с собой на стыке
    * двух кругов и снова попасть под следующий удар.
    */
-  const nextFeed = useCallback(() => {
+  const nextFeed = useCallback((): HuntEntry | null | undefined => {
     if (!feedRef.current.length) {
-      feedRef.current = [...liveRef.current];
+      const live = liveRef.current;
+      if (!live.length) return undefined;
+      // Финал должен читаться глазами: когда осталось 2-3 человека, лента
+      // разряжается пустотами, и видно, что по кругу едут именно они, а не
+      // плотная толпа копий. Персонаж по пустотам не бьёт — он их пропускает.
+      const gaps = live.length > 3 ? 0 : live.length === 3 ? 4 : 7;
+      const built: (HuntEntry | null)[] = [];
+      for (const entry of live) {
+        built.push(entry);
+        for (let i = 0; i < gaps; i++) built.push(null);
+      }
+      feedRef.current = built;
     }
-    return feedRef.current.shift() ?? null;
+    return feedRef.current.shift();
   }, []);
 
   /** Добираем хвост, срезаем голову. reelPhase не трогаем — скачков нет. */
@@ -225,7 +236,7 @@ export function HoundHuntPage() {
     const wantTo = Math.floor(reelPhase.current) + half + 2;
     while (nextIdxRef.current <= wantTo) {
       const entry = nextFeed();
-      if (!entry) break;
+      if (entry === undefined) break;
       if (!changed) {
         list = [...list];
         changed = true;
