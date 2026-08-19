@@ -783,11 +783,9 @@ export function HoundHuntPage() {
           {(phase === "arming" || phase === "drift") && (
             <ReelStage
               slots={tape}
-              remaining={alive}
 
               ghosts={ghosts}
               phase={phaseMv}
-              armed={phase === "arming"}
               shock={shock}
             />
           )}
@@ -877,20 +875,16 @@ function IntroPanel({ onStart }: { onStart: () => void }) {
 
 function ReelStage({
   slots,
-  remaining,
   ghosts,
   phase,
-  armed,
   shock,
 }: {
   /** Слоты ленты со своими АБСОЛЮТНЫМИ индексами (не по кругу). */
   slots: { idx: number; entry: HuntEntry | null }[];
   /** Сколько живых участников осталось. */
-  remaining: number;
   ghosts: { key: string; entry: HuntEntry }[];
   /** Абсолютная фаза ленты: целая часть выбирает центральный слот. */
   phase: MotionValue<number>;
-  armed: boolean;
   /** Счётчик ударов: меняется — играем вспышку и тряску арены. */
   shock: number;
 }) {
