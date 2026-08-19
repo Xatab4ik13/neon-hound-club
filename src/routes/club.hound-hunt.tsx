@@ -144,7 +144,7 @@ export function HoundHuntPage() {
     () => () => {
       timers.current.forEach(clearTimeout);
       cancelAnimationFrame(reelRaf.current);
-      closeGapAnim.current?.stop();
+      
     },
     [],
   );
