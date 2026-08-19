@@ -158,6 +158,8 @@ export function HoundHuntPage() {
   const kicksRef = useRef(0);
   const phaseRef = useRef<Phase>("intro");
   const finishRef = useRef<(() => void) | null>(null);
+  /** Выбитые слоты, ждущие схлопывания: убираем, когда дырка ушла за левый край. */
+  const holes = useRef<{ sid: number; phaseAt: number }[]>([]);
   phaseRef.current = phase;
   slotsRef.current = slots;
 
@@ -183,11 +185,40 @@ export function HoundHuntPage() {
       const alive = slotsRef.current.filter((s) => s.entry).length;
       const step = dur(BASE.capsule) * speedRamp(alive);
       reelPhase.current += (elapsed * slowmo.get()) / step;
+
+      // Схлопываем дырки только когда они полностью скрылись за левым краем:
+      // на экране влево от центра видно ~offLeft звеньев.
+      if (holes.current.length) {
+        const offLeft = Math.ceil(window.innerWidth / 2 / STEP) + 2;
+        const ready = holes.current.filter((h) => reelPhase.current - h.phaseAt >= offLeft);
+        if (ready.length) {
+          holes.current = holes.current.filter((h) => !ready.includes(h));
+          let list = slotsRef.current;
+          for (const h of ready) {
+            const idx = list.findIndex((s) => s.sid === h.sid && !s.entry);
+            if (idx < 0) continue;
+            const compact = list.filter((s) => s.sid !== h.sid);
+            if (!compact.length) continue;
+            list = compact;
+            // Слот уже позади центра — индексы сдвинулись на один назад.
+            reelPhase.current -= 1;
+            holes.current.forEach((rest) => {
+              rest.phaseAt -= 1;
+            });
+          }
+          if (list !== slotsRef.current) {
+            slotsRef.current = list;
+            setSlots(list);
+          }
+        }
+      }
+
       syncStrip();
       reelRaf.current = requestAnimationFrame(tick);
     };
     reelRaf.current = requestAnimationFrame(tick);
   }, [dur, slowmo, stopReel, syncStrip]);
+
 
   /**
    * Барабан = реальные участники: 15 человек — 15 звеньев. Никаких случайных
