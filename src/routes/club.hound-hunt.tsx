@@ -151,8 +151,8 @@ export function HoundHuntPage() {
     [],
   );
 
-  /* --- барабан: звенья выбиваются по одному, последнее = победитель --- */
-  type Slot = { sid: number; entry: HuntEntry };
+  /* --- барабан: звенья выбиваются по одному, на их месте остаётся дырка --- */
+  type Slot = { sid: number; entry: HuntEntry | null };
   const [slots, setSlots] = useState<Slot[]>([]);
   const [kicks, setKicks] = useState(0);
   const [ghosts, setGhosts] = useState<{ key: string; entry: HuntEntry }[]>([]);
@@ -166,10 +166,9 @@ export function HoundHuntPage() {
 
   const syncStrip = useCallback(() => {
     const n = Math.max(1, slotsRef.current.length);
-    const phase = reelPhase.current + closeGap.get();
-    const wrapped = ((phase % n) + n) % n;
+    const wrapped = ((reelPhase.current % n) + n) % n;
     stripX.set(-wrapped * STEP);
-  }, [closeGap, stripX]);
+  }, [stripX]);
 
   const stopReel = useCallback(() => {
     cancelAnimationFrame(reelRaf.current);
@@ -184,13 +183,15 @@ export function HoundHuntPage() {
       const elapsed = Math.min(50, now - reelLastFrame.current);
       reelLastFrame.current = now;
       // Слоу-мо после удара + замедление к финалу: одна лента, два множителя.
-      const step = dur(BASE.capsule) * speedRamp(slotsRef.current.length);
+      const alive = slotsRef.current.filter((s) => s.entry).length;
+      const step = dur(BASE.capsule) * speedRamp(alive);
       reelPhase.current += (elapsed * slowmo.get()) / step;
       syncStrip();
       reelRaf.current = requestAnimationFrame(tick);
     };
     reelRaf.current = requestAnimationFrame(tick);
   }, [dur, slowmo, stopReel, syncStrip]);
+
 
   /**
    * Барабан = реальные участники: 15 человек — 15 звеньев. Никаких случайных
