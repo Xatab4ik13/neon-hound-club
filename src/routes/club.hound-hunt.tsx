@@ -17,12 +17,14 @@ import {
   motion,
   useMotionValue,
   useMotionValueEvent,
+  useTransform,
   type MotionValue,
 } from "framer-motion";
 
 import { RiderCharacter, type RiderMode } from "@/components/club/hound-hunt/RiderCharacter";
 import { EmberField } from "@/components/club/hound-hunt/EmberField";
 import { HuntAvatar } from "@/components/club/hound-hunt/HuntAvatar";
+import { HuntAura } from "@/components/club/hound-hunt/HuntAura";
 import { KickedAvatar } from "@/components/club/hound-hunt/KickedAvatar";
 import {
   HUNT_PRIZES,
@@ -722,16 +724,20 @@ function ReelStage({
             paddingLeft: `calc(50% - ${CHIP_W / 2}px)`,
             marginLeft: -half * STEP,
             willChange: "transform",
+            filter: reelFilter,
+            opacity: reelFade,
           }}
         >
           {windowSlots.map(({ k, slot }) => (
-            <div key={`w-${k}`} className="shrink-0" style={{ width: CHIP_W }}>
-              {slot?.entry ? (
-                <HuntAvatar entry={slot.entry} scale={CHIP_SCALE} />
-              ) : (
-                // дырка на месте выбитого: пустое место едет вместе с лентой
-                <div style={{ width: CHIP_W, height: CHIP_W }} />
-              )}
+            <div
+              key={`w-${k}`}
+              className="relative shrink-0"
+              style={{ width: CHIP_W, height: CHIP_W * 1.22 }}
+            >
+              {/* Гравитационная аура: держит капсулу на весу и остаётся на месте,
+                  когда капсулу выбили — состав ленты при ударе не меняется. */}
+              <HuntAura width={CHIP_W} empty={!slot?.entry} seed={slot?.sid ?? k} />
+              {slot?.entry ? <HuntAvatar entry={slot.entry} scale={CHIP_SCALE} /> : null}
             </div>
           ))}
         </motion.div>
