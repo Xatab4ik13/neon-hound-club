@@ -424,6 +424,9 @@ export function HoundHuntPage() {
       kickInFlightRef.current = false;
       reservedTargetRef.current = null;
       kickReadyAtRef.current = 0;
+      kickDeadlineRef.current = 0;
+      lastEliminationAtRef.current = 0;
+
       stopReel();
 
       // Лента собирается заново: живые в тасованном порядке, дырок нет.
