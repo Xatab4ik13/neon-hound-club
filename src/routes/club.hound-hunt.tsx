@@ -458,7 +458,7 @@ export function HoundHuntPage() {
         finishRef.current?.();
       }
     },
-    [halfWindow, later, nextFeed, stopReel],
+    [later, nextFeed, offscreenFrom, stopReel],
   );
 
   const start = () => {
