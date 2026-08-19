@@ -104,9 +104,10 @@ const MOCK_ENTRIES = 15;
  * Чем меньше осталось участников, тем медленнее лента: к финалу зритель
  * успевает прочитать каждый ник и болеть за своего.
  */
-function speedRamp(remaining: number) {
-  if (remaining >= 12) return 1;
-  return 1 + (12 - remaining) * 0.14; // 12 → 1.0 … 2 → 2.4 (медленнее)
+function speedRamp(_remaining: number) {
+  // Один темп от первого удара до последнего: рывков от смены скорости нет,
+  // а читать ники успеваешь всегда — как раньше только в финале.
+  return 2.1;
 }
 
 
@@ -187,6 +188,10 @@ export function HoundHuntPage() {
   const kickInFlightRef = useRef(false);
   const reservedTargetRef = useRef<number | null>(null);
   const impactDelayRef = useRef(900);
+  /** Полный цикл клипа (взмах + возврат в стойку) — раньше не бьём. */
+  const kickCycleMsRef = useRef(1400);
+  /** Ближайший момент, когда персонаж физически готов к новому взмаху. */
+  const kickReadyAtRef = useRef(0);
   phaseRef.current = phase;
   tapeRef.current = tape;
 
@@ -262,7 +267,12 @@ export function HoundHuntPage() {
 
       // Запускаем одиночный взмах ровно за impactDelay до прихода следующей
       // живой капсулы в центр. Дырки просто проезжают — персонаж их не бьёт.
-      if (phaseRef.current === "drift" && aliveRef.current > 1 && !kickInFlightRef.current) {
+      if (
+        phaseRef.current === "drift" &&
+        aliveRef.current > 1 &&
+        !kickInFlightRef.current &&
+        now >= kickReadyAtRef.current
+      ) {
         const impactPhase = reelPhase.current + impactDelayRef.current / step;
         const nextLive = tapeRef.current.find(
           (slot) => slot.idx >= impactPhase && slot.entry !== null,
@@ -274,6 +284,7 @@ export function HoundHuntPage() {
           if (untilCenter <= impactDelayRef.current + 34) {
             reservedTargetRef.current = nextLive.idx;
             kickInFlightRef.current = true;
+            kickReadyAtRef.current = now + kickCycleMsRef.current;
             setKickToken((token) => token + 1);
           }
         }
@@ -341,6 +352,7 @@ export function HoundHuntPage() {
       impactLockedUntil.current = 0;
       kickInFlightRef.current = false;
       reservedTargetRef.current = null;
+      kickReadyAtRef.current = 0;
       stopReel();
 
       // Лента собирается заново: живые в тасованном порядке, дырок нет.
@@ -587,8 +599,9 @@ export function HoundHuntPage() {
               mode={dogMode}
               lookAt={look}
               kickToken={kickToken}
-              onKickReady={(impactDelay) => {
+              onKickReady={(impactDelay, cycleMs) => {
                 impactDelayRef.current = impactDelay;
+                kickCycleMsRef.current = cycleMs;
               }}
               onImpact={handleImpact}
               className="h-full w-full"
