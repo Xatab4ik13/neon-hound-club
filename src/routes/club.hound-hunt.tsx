@@ -539,7 +539,7 @@ export function HoundHuntPage() {
         later(() => finishRef.current?.(), 1500);
       }
     },
-    [later, stopReel],
+    [halfWindow, later, stopReel],
   );
 
   const start = async () => {
