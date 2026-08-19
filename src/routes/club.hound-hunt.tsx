@@ -741,8 +741,6 @@ export function HoundHuntPage() {
   const dogMode: RiderMode =
     phase === "drift" ? "lunge" : phase === "arming" ? "watch" : "idle";
 
-  const intensity = phase === "settle" ? 0.8 : phase === "drift" ? 0.45 : 0.26;
-
   const totalTickets = useMemo(
     () =>
       pool.reduce((s, e) => s + e.tickets, 0) + winners.reduce((s, w) => s + w.entry.tickets, 0),
@@ -1082,50 +1080,6 @@ function ReelSlot({
  * Глубина сцены за персонажем: перспективный пол, кольца арены и задний
  * контровой свет. Всё на CSS-трансформациях — по кадрам бесплатно.
  */
-function DepthBackdrop() {
-  return (
-    <div className="pointer-events-none absolute inset-0 overflow-hidden [perspective:900px]">
-      {/* контровой свет за персонажем: объём и силуэт */}
-      <div
-        className="absolute left-1/2 top-[46%] -translate-x-1/2 rounded-full opacity-70 blur-3xl"
-        style={{
-          width: "70vw",
-          height: "38vh",
-          background:
-            "radial-gradient(closest-side, color-mix(in oklab, var(--destructive) 40%, transparent), transparent 72%)",
-        }}
-      />
-
-      {/* кольца арены — уходят в глубину */}
-      {[0, 1, 2].map((i) => (
-        <div
-          key={i}
-          className="absolute left-1/2 top-[52%] -translate-x-1/2 -translate-y-1/2 rounded-full border"
-          style={{
-            width: `${46 + i * 26}vw`,
-            height: `${46 + i * 26}vw`,
-            borderColor: "color-mix(in oklab, var(--destructive) 16%, transparent)",
-            opacity: 0.5 - i * 0.13,
-            transform: "translate(-50%, -50%) rotateX(72deg)",
-          }}
-        />
-      ))}
-
-      {/* перспективный пол: сетка уходит к горизонту */}
-      <div
-        className="absolute inset-x-[-40%] bottom-0 h-[58vh] origin-bottom opacity-[0.16]"
-        style={{
-          transform: "rotateX(76deg)",
-          backgroundImage:
-            "linear-gradient(to right, color-mix(in oklab, var(--foreground) 55%, transparent) 1px, transparent 1px), linear-gradient(to bottom, color-mix(in oklab, var(--foreground) 55%, transparent) 1px, transparent 1px)",
-          backgroundSize: "68px 68px",
-          maskImage: "linear-gradient(to top, black 5%, transparent 65%)",
-          WebkitMaskImage: "linear-gradient(to top, black 5%, transparent 65%)",
-        }}
-      />
-    </div>
-  );
-}
 
 
 function Podium({
@@ -1176,19 +1130,3 @@ function Podium({
 }
 
 /** Медленно плывущий дым — два больших мягких пятна. */
-function SmokeLayers() {
-  return (
-    <div className="pointer-events-none absolute inset-0 overflow-hidden">
-      <motion.div
-        animate={{ x: ["-10%", "12%", "-10%"], opacity: [0.25, 0.4, 0.25] }}
-        transition={{ duration: 26, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute -bottom-24 left-0 h-[60%] w-[140%] rounded-full bg-[radial-gradient(closest-side,color-mix(in_oklab,var(--muted)_60%,transparent),transparent)] blur-3xl"
-      />
-      <motion.div
-        animate={{ x: ["8%", "-14%", "8%"], opacity: [0.18, 0.32, 0.18] }}
-        transition={{ duration: 34, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute -top-32 right-0 h-[55%] w-[130%] rounded-full bg-[radial-gradient(closest-side,color-mix(in_oklab,var(--destructive)_35%,transparent),transparent)] blur-3xl"
-      />
-    </div>
-  );
-}
