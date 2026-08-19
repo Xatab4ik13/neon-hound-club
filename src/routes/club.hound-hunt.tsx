@@ -194,6 +194,13 @@ export function HoundHuntPage() {
   const kickReadyAtRef = useRef(0);
   /** До этого времени лента стоит на месте — короткий hitstop в момент удара. */
   const hitstopUntilRef = useRef(0);
+  /** Крайний срок, к которому 3D-клип обязан прислать импакт. */
+  const kickDeadlineRef = useRef(0);
+  /** Когда кто-то выбывал в последний раз — вход для watchdog'а. */
+  const lastEliminationAtRef = useRef(0);
+  /** Стабильная ссылка на eliminateAt для тика (объявлен ниже). */
+  const eliminateRef = useRef<(idx: number | null) => void>(() => {});
+
   phaseRef.current = phase;
   tapeRef.current = tape;
 
