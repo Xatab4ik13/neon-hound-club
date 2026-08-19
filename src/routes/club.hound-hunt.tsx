@@ -312,22 +312,22 @@ export function HoundHuntPage() {
       const frozen = now < hitstopUntilRef.current;
       let advance = (elapsed / step) * (frozen ? 0.12 : 1);
 
-      // ФИНАЛ: композиция не меняется. Последняя живая аватарка просто
-      // доезжает до центра, лента плавно тормозит и встаёт — никаких
-      // перескоков персонажа и отдельных экранов.
+      // ФИНАЛ: последняя живая аватарка доезжает до КРАЙНЕГО ЛЕВОГО
+      // положения (остаётся на экране) и лента там встаёт — рядом с ней
+      // справа появляется приз.
       if (phaseRef.current === "settle" && !settledRef.current) {
         if (settleTargetRef.current === null) {
           const liveIds = new Set(liveRef.current.map((e) => e.id));
           const slot = tapeRef.current.find(
             (s) => s.entry && liveIds.has(s.entry.id) && s.idx >= reelPhase.current + 1.6,
           );
-          if (slot) settleTargetRef.current = slot.idx;
+          if (slot) settleTargetRef.current = slot.idx + winStopOffset();
         }
         const target = settleTargetRef.current;
         if (target !== null) {
           const diff = target - reelPhase.current;
-          // Экспоненциальное торможение: лента «выдыхает» и замирает ровно
-          // по центру, без рывка в конце.
+          // Экспоненциальное торможение: лента «выдыхает» и замирает, когда
+          // победитель встал в левое положение — без рывка в конце.
           advance = Math.min(advance, Math.max(0, diff * Math.min(1, elapsed / 320)));
           if (diff <= 0.01) {
             advance = diff;
@@ -337,10 +337,10 @@ export function HoundHuntPage() {
             stopReel();
             // Дальше ничего не происходит: лента стоит, победитель и приз
             // остаются на экране.
-
           }
         }
       }
+
 
       reelPhase.current += advance;
       // Хвост ленты должен существовать дальше, чем точка будущего импакта,
