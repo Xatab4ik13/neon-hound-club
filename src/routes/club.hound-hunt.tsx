@@ -296,9 +296,10 @@ export function HoundHuntPage() {
       haptic("light");
 
       const finish = () => {
+        const survivor = slotsRef.current.find((slot) => slot.entry)?.entry ?? winner;
         // последняя капсула — победитель: подъезжает к персонажу и раскрывается
         setPhase("pull");
-        setCurrent(winner);
+        setCurrent(survivor);
         haptic("selection");
 
         later(() => {
@@ -307,8 +308,8 @@ export function HoundHuntPage() {
           later(() => {
             setPhase("reveal");
             haptic("success");
-            setWinners((w) => [...w, { prizeId: HUNT_PRIZES[idx].id, entry: winner }]);
-            const rest = entries.filter((e) => e.id !== winner.id);
+            setWinners((w) => [...w, { prizeId: HUNT_PRIZES[idx].id, entry: survivor }]);
+            const rest = entries.filter((e) => e.id !== survivor.id);
             setPool(rest);
 
             later(() => {
@@ -355,9 +356,14 @@ export function HoundHuntPage() {
     const target = list[j];
     // По центру дырка — бить некого, ждём следующий оборот.
     if (!target.entry) return;
-    // Победителя не подменяем соседним звеном: иначе из центра визуально
-    // улетает не та аватарка, по которой пришёлся удар. Ждём следующий пинок.
-    if (target.sid === winnerSidRef.current) return;
+    // Визуально пропускать удар нельзя. Если под ногой оказался заранее
+    // намеченный финалист, переносим защиту на другого живого участника:
+    // центральная капсула всё равно честно улетает, а выигрывает последний.
+    if (target.sid === winnerSidRef.current) {
+      const nextSurvivor = alive.find((slot) => slot.sid !== target.sid);
+      if (!nextSurvivor) return;
+      winnerSidRef.current = nextSurvivor.sid;
+    }
 
     const kicked = target.entry;
     // Место НЕ закрывается: на месте выбитого остаётся дырка, лента едет дальше.
