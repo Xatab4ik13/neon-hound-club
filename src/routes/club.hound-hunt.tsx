@@ -366,14 +366,12 @@ export function HoundHuntPage() {
     setGhosts((g) => [...g, { key, entry: kicked }]);
     later(() => setGhosts((g) => g.filter((x) => x.key !== key)), 2000);
     haptic("light");
-
-
     if (alive.length - 1 <= 1) {
       stopReel();
-
       finishRef.current?.();
     }
-  }, [dur, later, slowmo, stopReel, syncStrip]);
+  }, [later, stopReel]);
+
 
   const start = () => {
     clearTimers();
