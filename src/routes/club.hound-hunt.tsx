@@ -97,6 +97,18 @@ const CHIP_SCALE = 0.62;
 const CHIP_W = 132 * CHIP_SCALE;
 const CHIP_GAP = 16;
 const STEP = CHIP_W + CHIP_GAP;
+/** Отступ победителя от левого края экрана в финале. */
+const WIN_LEFT = 22;
+
+/**
+ * На сколько «шагов» лента должна проехать дальше центра, чтобы победитель
+ * встал в крайнее левое положение и целиком остался на экране.
+ */
+function winStopOffset() {
+  const w = Math.min(560, typeof window === "undefined" ? 393 : window.innerWidth);
+  return (w / 2 - WIN_LEFT - CHIP_W / 2) / STEP;
+}
+
 
 /** Сколько участников в моковом розыгрыше — столько же звеньев в барабане. */
 const MOCK_ENTRIES = 15;
@@ -312,22 +324,22 @@ export function HoundHuntPage() {
       const frozen = now < hitstopUntilRef.current;
       let advance = (elapsed / step) * (frozen ? 0.12 : 1);
 
-      // ФИНАЛ: композиция не меняется. Последняя живая аватарка просто
-      // доезжает до центра, лента плавно тормозит и встаёт — никаких
-      // перескоков персонажа и отдельных экранов.
+      // ФИНАЛ: последняя живая аватарка доезжает до КРАЙНЕГО ЛЕВОГО
+      // положения (остаётся на экране) и лента там встаёт — рядом с ней
+      // справа появляется приз.
       if (phaseRef.current === "settle" && !settledRef.current) {
         if (settleTargetRef.current === null) {
           const liveIds = new Set(liveRef.current.map((e) => e.id));
           const slot = tapeRef.current.find(
             (s) => s.entry && liveIds.has(s.entry.id) && s.idx >= reelPhase.current + 1.6,
           );
-          if (slot) settleTargetRef.current = slot.idx;
+          if (slot) settleTargetRef.current = slot.idx + winStopOffset();
         }
         const target = settleTargetRef.current;
         if (target !== null) {
           const diff = target - reelPhase.current;
-          // Экспоненциальное торможение: лента «выдыхает» и замирает ровно
-          // по центру, без рывка в конце.
+          // Экспоненциальное торможение: лента «выдыхает» и замирает, когда
+          // победитель встал в левое положение — без рывка в конце.
           advance = Math.min(advance, Math.max(0, diff * Math.min(1, elapsed / 320)));
           if (diff <= 0.01) {
             advance = diff;
@@ -337,10 +349,10 @@ export function HoundHuntPage() {
             stopReel();
             // Дальше ничего не происходит: лента стоит, победитель и приз
             // остаются на экране.
-
           }
         }
       }
+
 
       reelPhase.current += advance;
       // Хвост ленты должен существовать дальше, чем точка будущего импакта,
@@ -791,7 +803,6 @@ export function HoundHuntPage() {
               shock={shock}
               winner={settled ? current : null}
               prizeTitle={prize.title}
-              prizeSub={prize.sub}
               prizeImg={prize.img}
             />
           )}
@@ -872,7 +883,6 @@ function ReelStage({
   shock,
   winner,
   prizeTitle,
-  prizeSub,
   prizeImg,
 }: {
   /** Слоты ленты со своими АБСОЛЮТНЫМИ индексами (не по кругу). */
@@ -886,7 +896,6 @@ function ReelStage({
   /** Победитель: лента уже встала, рядом с аватаркой всплывает плашка. */
   winner: HuntEntry | null;
   prizeTitle: string;
-  prizeSub: string;
   prizeImg: string;
 }) {
   // Отдача от удара: тряска и микро-зум играются только на transform, поэтому
@@ -906,18 +915,21 @@ function ReelStage({
       {/* Движущаяся лента плоская: перспектива применяется только к звену,
           которое уже выбито и летит отдельно от барабана. */}
       <motion.div className="relative py-2" animate={recoil} style={{ willChange: "transform" }}>
-        {/* зона удара: дышащее пятно под ногой вместо жёсткой полоски */}
-        <motion.div
-          className="pointer-events-none absolute left-1/2 top-1/2 z-0 -translate-x-1/2 -translate-y-1/2 rounded-full"
-          style={{
-            width: CHIP_W * 2.6,
-            height: CHIP_W * 2.6,
-            background:
-              "radial-gradient(circle, color-mix(in oklab, var(--destructive) 26%, transparent), transparent 62%)",
-          }}
-          animate={{ opacity: [0.5, 0.95, 0.5], scale: [0.94, 1.06, 0.94] }}
-          transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
-        />
+        {/* зона удара: дышащее пятно под ногой (в финале убираем) */}
+        {!winner && (
+          <motion.div
+            className="pointer-events-none absolute left-1/2 top-1/2 z-0 -translate-x-1/2 -translate-y-1/2 rounded-full"
+            style={{
+              width: CHIP_W * 2.6,
+              height: CHIP_W * 2.6,
+              background:
+                "radial-gradient(circle, color-mix(in oklab, var(--destructive) 26%, transparent), transparent 62%)",
+            }}
+            animate={{ opacity: [0.5, 0.95, 0.5], scale: [0.94, 1.06, 0.94] }}
+            transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+          />
+        )}
+
 
         {/* импакт-фрейм: короткая световая вспышка ровно в кадре удара */}
         {shock > 0 && (
@@ -969,7 +981,10 @@ function ReelStage({
         )}
 
 
-        <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-20 bg-gradient-to-r from-background to-transparent" />
+        {!winner && (
+          <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-20 bg-gradient-to-r from-background to-transparent" />
+        )}
+
         <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-20 bg-gradient-to-l from-background to-transparent" />
 
         <div className="relative z-30" style={{ height: CHIP_W }}>
@@ -989,19 +1004,22 @@ function ReelStage({
         </AnimatePresence>
       </motion.div>
 
-      {/* Финал: композиция та же. Лента встала, победитель остался по центру —
-          над лентой всплывает WINNER, справа от аватарки приз. */}
+      {/* Финал: лента встала, победитель стоит в крайнем левом положении —
+          над персонажем всплывает WINNER, справа от аватарки — приз. */}
       <AnimatePresence>
         {winner && (
           <motion.div
             key="winner-title"
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-            className="pointer-events-none absolute inset-x-0 -top-9 z-40 text-center"
+            className="pointer-events-none absolute inset-x-0 -top-16 z-40 text-center"
           >
-            <p className="font-display text-2xl font-black uppercase tracking-[0.3em] text-foreground drop-shadow-[0_0_26px_color-mix(in_oklab,var(--destructive)_75%,transparent)]">
+            <p
+              className="font-display text-4xl font-black uppercase tracking-[0.26em]"
+              style={{ color: "#B6FF3C", textShadow: "0 0 30px rgba(182,255,60,0.45)" }}
+            >
               winner
             </p>
           </motion.div>
@@ -1010,33 +1028,25 @@ function ReelStage({
         {winner && (
           <motion.div
             key="winner-prize"
-            initial={{ opacity: 0, x: -12, scale: 0.92 }}
+            initial={{ opacity: 0, x: -14, scale: 0.92 }}
             animate={{ opacity: 1, x: 0, scale: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.6, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
-            className="pointer-events-none absolute top-1/2 z-40 flex max-w-[52%] -translate-y-1/2 items-center gap-2"
-            style={{ left: `calc(50% + ${CHIP_W / 2 + 14}px)` }}
+            transition={{ duration: 0.6, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+            className="pointer-events-none absolute top-1/2 z-40 flex max-w-[55%] -translate-y-1/2 flex-col items-center gap-1"
+            style={{ left: WIN_LEFT + CHIP_W + 18 }}
           >
             <img
               src={prizeImg}
               alt=""
-              className="h-11 shrink-0 object-contain drop-shadow-[0_0_22px_color-mix(in_oklab,var(--primary)_60%,transparent)]"
+              className="h-16 shrink-0 object-contain drop-shadow-[0_0_26px_color-mix(in_oklab,var(--primary)_60%,transparent)]"
             />
-            <div className="min-w-0">
-              <p className="font-mono text-[9px] uppercase tracking-[0.24em] text-destructive">
-                выиграл
-              </p>
-              <p className="truncate font-mono text-[9px] uppercase tracking-[0.18em] text-muted-foreground">
-                {prizeSub}
-              </p>
-              <p className="font-display text-sm font-black uppercase leading-tight">
-                {prizeTitle}
-              </p>
-            </div>
+            <p className="font-display text-base font-black uppercase leading-tight">
+              {prizeTitle}
+            </p>
           </motion.div>
         )}
-
       </AnimatePresence>
+
 
     </div>
   );
