@@ -695,26 +695,27 @@ function ReelStage({
         <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-20 bg-gradient-to-l from-background to-transparent" />
 
         <motion.div
-          className="relative z-30 flex items-center gap-4"
+          className="relative z-30 flex items-center"
           style={{
             x,
+            gap: CHIP_GAP,
             paddingLeft: `calc(50% - ${CHIP_W / 2}px)`,
+            marginLeft: -half * STEP,
             willChange: "transform",
           }}
         >
-          {row.flatMap((c) =>
-            slots.map((s) => (
-              <div key={`slot-${c}-${s.sid}`} className="shrink-0" style={{ width: CHIP_W }}>
-                {s.entry ? (
-                  <HuntAvatar entry={s.entry} scale={CHIP_SCALE} />
-                ) : (
-                  // дырка на месте выбитого: пустое место едет вместе с лентой
-                  <div style={{ width: CHIP_W, height: CHIP_W }} />
-                )}
-              </div>
-            )),
-          )}
+          {windowSlots.map(({ k, slot }) => (
+            <div key={`w-${k}`} className="shrink-0" style={{ width: CHIP_W }}>
+              {slot?.entry ? (
+                <HuntAvatar entry={slot.entry} scale={CHIP_SCALE} />
+              ) : (
+                // дырка на месте выбитого: пустое место едет вместе с лентой
+                <div style={{ width: CHIP_W, height: CHIP_W }} />
+              )}
+            </div>
+          ))}
         </motion.div>
+
 
         {/* выбитые аватарки — дорожка без overflow, полёт ничем не обрезается */}
         <AnimatePresence>
