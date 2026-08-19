@@ -160,6 +160,8 @@ export function HoundHuntPage() {
   const finishRef = useRef<(() => void) | null>(null);
   /** Защита от двойного callback одного и того же цикла 3D-анимации. */
   const lastImpactCycle = useRef(-1);
+  /** Дополнительный замок: один физический взмах ноги не может создать два вылета. */
+  const impactLockedUntil = useRef(0);
   /** Выбитые слоты, ждущие схлопывания: убираем, когда дырка ушла за левый край. */
   const holes = useRef<{ sid: number; phaseAt: number }[]>([]);
   phaseRef.current = phase;
@@ -280,6 +282,7 @@ export function HoundHuntPage() {
       setGhosts([]);
       holes.current = [];
       lastImpactCycle.current = -1;
+      impactLockedUntil.current = 0;
 
       setSlots(slotsNow);
       slotsRef.current = slotsNow;
@@ -343,7 +346,10 @@ export function HoundHuntPage() {
     (cycle: number) => {
       if (phaseRef.current !== "drift") return;
       if (lastImpactCycle.current === cycle) return;
+      const now = performance.now();
+      if (now < impactLockedUntil.current) return;
       lastImpactCycle.current = cycle;
+      impactLockedUntil.current = now + 650;
       const list = slotsRef.current;
       const alive = list.filter((s) => s.entry);
       if (alive.length <= 1) return;
@@ -379,7 +385,9 @@ export function HoundHuntPage() {
       setShock((s) => s + 1);
 
       const key = `${target.sid}-${kicksRef.current}`;
-      setGhosts((g) => [...g, { key, entry: kicked }]);
+      // В кадре всегда ровно один выбитый шар: даже если 3D callback по ошибке
+      // придёт повторно, второй летящий дубль не появится.
+      setGhosts([{ key, entry: kicked }]);
       later(() => setGhosts((g) => g.filter((x) => x.key !== key)), 2000);
       haptic("light");
       if (alive.length - 1 <= 1) {
@@ -488,9 +496,10 @@ export function HoundHuntPage() {
       <div className="relative flex h-full flex-col overflow-hidden pt-[max(0.5rem,env(safe-area-inset-top))]">
         {/* арена */}
         <div className="relative flex min-h-0 flex-1 flex-col items-center justify-center">
-          {/* персонаж — виден целиком */}
+          {/* Персонаж стоит за лентой и чуть ниже: аватарки проходят перед ним,
+              а в зоне удара пересекаются только с ногой. */}
           <motion.div
-            className="relative z-10 mt-[6svh] h-[62svh] w-full max-w-[560px]"
+            className="relative z-10 mt-[11svh] h-[62svh] w-full max-w-[560px]"
             animate={{ opacity: phase === "podium" ? 0.25 : 1, y: phase === "crack" ? 10 : 0 }}
           >
             <RiderCharacter
@@ -617,7 +626,7 @@ function ReelStage({
   const remaining = Math.max(1, slots.filter((s) => s.entry).length);
 
   return (
-    <div className="relative z-30 -mt-[26svh] w-full">
+    <div className="relative z-30 -mt-[30svh] w-full">
       {/* Движущаяся лента плоская: перспектива применяется только к звену,
           которое уже выбито и летит отдельно от барабана. */}
       <motion.div
@@ -660,7 +669,7 @@ function ReelStage({
         <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-20 bg-gradient-to-l from-background to-transparent" />
 
         <motion.div
-          className="relative z-[5] flex items-center gap-4"
+          className="relative z-30 flex items-center gap-4"
           style={{
             x,
             paddingLeft: `calc(50% - ${CHIP_W / 2}px)`,
