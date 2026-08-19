@@ -97,6 +97,18 @@ const CHIP_SCALE = 0.62;
 const CHIP_W = 132 * CHIP_SCALE;
 const CHIP_GAP = 16;
 const STEP = CHIP_W + CHIP_GAP;
+/** Отступ победителя от левого края экрана в финале. */
+const WIN_LEFT = 22;
+
+/**
+ * На сколько «шагов» лента должна проехать дальше центра, чтобы победитель
+ * встал в крайнее левое положение и целиком остался на экране.
+ */
+function winStopOffset() {
+  const w = Math.min(560, typeof window === "undefined" ? 393 : window.innerWidth);
+  return (w / 2 - WIN_LEFT - CHIP_W / 2) / STEP;
+}
+
 
 /** Сколько участников в моковом розыгрыше — столько же звеньев в барабане. */
 const MOCK_ENTRIES = 15;
