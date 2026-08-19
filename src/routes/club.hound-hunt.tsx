@@ -17,12 +17,14 @@ import {
   motion,
   useMotionValue,
   useMotionValueEvent,
+  useTransform,
   type MotionValue,
 } from "framer-motion";
 
 import { RiderCharacter, type RiderMode } from "@/components/club/hound-hunt/RiderCharacter";
 import { EmberField } from "@/components/club/hound-hunt/EmberField";
 import { HuntAvatar } from "@/components/club/hound-hunt/HuntAvatar";
+import { HuntAura } from "@/components/club/hound-hunt/HuntAura";
 import { KickedAvatar } from "@/components/club/hound-hunt/KickedAvatar";
 import {
   HUNT_PRIZES,
@@ -101,6 +103,9 @@ const STEP = CHIP_W + CHIP_GAP;
 /** Сколько участников в моковом розыгрыше — столько же звеньев в барабане. */
 const MOCK_ENTRIES = 15;
 
+/** Сколько пустых аур накопить, прежде чем разогнать ленту и убрать их разом. */
+const SWEEP_AT = 4;
+
 /**
  * Чем меньше осталось участников, тем медленнее лента: к финалу зритель
  * успевает прочитать каждый ник и болеть за своего.
@@ -173,8 +178,10 @@ export function HoundHuntPage() {
   const lastImpactCycle = useRef(-1);
   /** Дополнительный замок: один физический взмах ноги не может создать два вылета. */
   const impactLockedUntil = useRef(0);
-  /** Выбитые слоты, ждущие схлопывания: убираем, когда дырка ушла за левый край. */
-  const holes = useRef<{ sid: number; phaseAt: number }[]>([]);
+  /** Идёт «зачистка»: лента разогнана, в этот момент убираем пустые слоты. */
+  const sweeping = useRef(false);
+  /** Множитель разгона ленты на время зачистки. */
+  const turbo = useMotionValue(1);
   phaseRef.current = phase;
   slotsRef.current = slots;
 
@@ -186,12 +193,42 @@ export function HoundHuntPage() {
     phaseMv.set(reelPhase.current);
   }, [phaseMv, stripX]);
 
-
   const stopReel = useCallback(() => {
     cancelAnimationFrame(reelRaf.current);
     reelRaf.current = 0;
     reelLastFrame.current = 0;
   }, []);
+
+  /**
+   * Зачистка ленты. Пустые ауры НЕ убираются по одной у зрителя на глазах:
+   * когда их накопилось несколько, лента на секунду резко разгоняется (ники
+   * смазываются, читать нечего) — и ровно на пике скорости мы разом
+   * выбрасываем все пустые слоты, после чего лента плавно тормозит обратно.
+   * Так подмена состава физически не попадает в поле внимания.
+   */
+  const maybeSweep = useCallback(() => {
+    if (sweeping.current) return;
+    const list = slotsRef.current;
+    const dead = list.filter((s) => !s.entry).length;
+    const alive = list.length - dead;
+    if (alive <= 1 || dead < SWEEP_AT) return;
+
+    sweeping.current = true;
+    // На время разгона удары не считаем: нога не должна попадать в смазанную ленту.
+    impactLockedUntil.current = performance.now() + 1400;
+
+    animate(turbo, 7, { duration: 0.4, ease: "easeIn" }).then(() => {
+      const compact = slotsRef.current.filter((s) => s.entry);
+      if (compact.length) {
+        slotsRef.current = compact;
+        setSlots(compact);
+        reelPhase.current = Math.floor(reelPhase.current);
+      }
+      animate(turbo, 1, { duration: 0.62, ease: "easeOut" }).then(() => {
+        sweeping.current = false;
+      });
+    });
+  }, [turbo]);
 
   const startReel = useCallback(() => {
     stopReel();
@@ -199,52 +236,18 @@ export function HoundHuntPage() {
     const tick = (now: number) => {
       const elapsed = Math.min(50, now - reelLastFrame.current);
       reelLastFrame.current = now;
-      // Слоу-мо после удара + замедление к финалу: одна лента, два множителя.
+      // Слоу-мо после удара + замедление к финалу + разгон зачистки.
       const alive = slotsRef.current.filter((s) => s.entry).length;
       const step = dur(BASE.capsule) * speedRamp(alive);
-      reelPhase.current += (elapsed * slowmo.get()) / step;
+      reelPhase.current += (elapsed * slowmo.get() * turbo.get()) / step;
 
-      // Схлопываем дырки только когда они полностью скрылись за левым краем:
-      // на экране влево от центра видно ~offLeft звеньев.
-      if (holes.current.length) {
-        const vw = window.innerWidth;
-        // Ряд повторяется несколько раз подряд. Если один ряд короче экрана,
-        // тот же слот виден одновременно в другой копии — значит закрывать
-        // дырку нельзя ни в какой момент: подмена будет заметна.
-        const rowFillsScreen = slotsRef.current.length * STEP > vw + CHIP_W;
-        // От центра до полного ухода капсулы за левый край.
-        const offLeft = (vw / 2 + CHIP_W / 2) / STEP;
-        const ready = rowFillsScreen
-          ? holes.current.filter((h) => reelPhase.current - h.phaseAt >= offLeft)
-          : [];
-
-        if (ready.length) {
-          holes.current = holes.current.filter((h) => !ready.includes(h));
-          let list = slotsRef.current;
-          for (const h of ready) {
-            const idx = list.findIndex((s) => s.sid === h.sid && !s.entry);
-            if (idx < 0) continue;
-            const compact = list.filter((s) => s.sid !== h.sid);
-            if (!compact.length) continue;
-            list = compact;
-            // Слот уже позади центра — индексы сдвинулись на один назад.
-            reelPhase.current -= 1;
-            holes.current.forEach((rest) => {
-              rest.phaseAt -= 1;
-            });
-          }
-          if (list !== slotsRef.current) {
-            slotsRef.current = list;
-            setSlots(list);
-          }
-        }
-      }
+      maybeSweep();
 
       syncStrip();
       reelRaf.current = requestAnimationFrame(tick);
     };
     reelRaf.current = requestAnimationFrame(tick);
-  }, [dur, slowmo, stopReel, syncStrip]);
+  }, [dur, maybeSweep, slowmo, stopReel, syncStrip, turbo]);
 
   /**
    * Барабан = реальные участники: 15 человек — 15 звеньев. Никаких случайных
@@ -298,7 +301,8 @@ export function HoundHuntPage() {
       setKicks(0);
       kicksRef.current = 0;
       setGhosts([]);
-      holes.current = [];
+      sweeping.current = false;
+      turbo.set(1);
       lastImpactCycle.current = -1;
       impactLockedUntil.current = 0;
 
@@ -356,7 +360,7 @@ export function HoundHuntPage() {
         startReel();
       }, dur(BASE.arming));
     },
-    [buildReel, dur, later, pickWinner, slowmo, startReel, stopReel, stripX],
+    [buildReel, dur, later, pickWinner, slowmo, startReel, stopReel, stripX, turbo],
   );
 
   /** Импакт ноги: улетает то звено, что в этот кадр стоит по центру. */
@@ -394,9 +398,8 @@ export function HoundHuntPage() {
       const rest = list.map((s) => (s.sid === target.sid ? { ...s, entry: null } : s));
       slotsRef.current = rest;
       setSlots(rest);
-      // Дырку убираем не по таймеру, а когда она реально уедет за левый край:
-      // фиксируем фазу удара, а rAF-цикл сам схлопнет слот в нужный момент.
-      holes.current.push({ sid: target.sid, phaseAt: reelPhase.current });
+      // Пустое место не закрываем сразу: на нём остаётся гравитационная аура,
+      // а весь мусор лента сбросит разом во время разгона (maybeSweep).
 
       kicksRef.current += 1;
       setKicks(kicksRef.current);
@@ -444,7 +447,8 @@ export function HoundHuntPage() {
       setKicks(kicksRef.current);
 
       setGhosts([]);
-      holes.current = [];
+      sweeping.current = false;
+      turbo.set(1);
 
       setCurrent(winner);
 
@@ -537,10 +541,10 @@ export function HoundHuntPage() {
               ghosts={ghosts}
               x={stripX}
               phase={phaseMv}
+              turbo={turbo}
               armed={phase === "arming"}
               shock={shock}
             />
-
           )}
 
           {(phase === "pull" || phase === "crack") && current && (
@@ -629,6 +633,7 @@ function ReelStage({
   ghosts,
   x,
   phase,
+  turbo,
   armed,
   shock,
 }: {
@@ -637,10 +642,17 @@ function ReelStage({
   x: MotionValue<number>;
   /** Абсолютная фаза ленты: целая часть выбирает центральный слот. */
   phase: MotionValue<number>;
+  /** Множитель разгона: на пике лента смазывается, там же меняется состав. */
+  turbo: MotionValue<number>;
   armed: boolean;
   /** Счётчик ударов: меняется — играем вспышку и тряску арены. */
   shock: number;
 }) {
+  // Разгон зачистки: чем быстрее лента, тем сильнее смаз — читать ники нечем,
+  // поэтому подмену состава в этот момент физически не видно.
+  const blur = useTransform(turbo, [1, 2.4, 7], [0, 2, 9]);
+  const reelFilter = useTransform(blur, (b) => (b < 0.1 ? "none" : `blur(${b}px)`));
+  const reelFade = useTransform(turbo, [1, 7], [1, 0.72]);
   // Лента = окно вокруг центра, а не набор копий ряда. Каждая позиция окна
   // жёстко привязана к экрану, а содержимое берётся по циклическому индексу.
   // Поэтому изменение состава ряда не сдвигает то, что видно на экране.
@@ -657,7 +669,6 @@ function ReelStage({
     return { k, slot: slots[idx] };
   });
   const remaining = Math.max(1, slots.filter((s) => s.entry).length);
-
 
   return (
     <div className="relative z-30 -mt-[30svh] w-full">
@@ -710,20 +721,23 @@ function ReelStage({
             paddingLeft: `calc(50% - ${CHIP_W / 2}px)`,
             marginLeft: -half * STEP,
             willChange: "transform",
+            filter: reelFilter,
+            opacity: reelFade,
           }}
         >
           {windowSlots.map(({ k, slot }) => (
-            <div key={`w-${k}`} className="shrink-0" style={{ width: CHIP_W }}>
-              {slot?.entry ? (
-                <HuntAvatar entry={slot.entry} scale={CHIP_SCALE} />
-              ) : (
-                // дырка на месте выбитого: пустое место едет вместе с лентой
-                <div style={{ width: CHIP_W, height: CHIP_W }} />
-              )}
+            <div
+              key={`w-${k}`}
+              className="relative shrink-0"
+              style={{ width: CHIP_W, height: CHIP_W * 1.22 }}
+            >
+              {/* Гравитационная аура: держит капсулу на весу и остаётся на месте,
+                  когда капсулу выбили — состав ленты при ударе не меняется. */}
+              <HuntAura width={CHIP_W} empty={!slot?.entry} seed={slot?.sid ?? k} />
+              {slot?.entry ? <HuntAvatar entry={slot.entry} scale={CHIP_SCALE} /> : null}
             </div>
           ))}
         </motion.div>
-
 
         {/* выбитые аватарки — дорожка без overflow, полёт ничем не обрезается */}
         <AnimatePresence>
