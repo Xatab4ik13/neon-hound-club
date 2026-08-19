@@ -26,10 +26,6 @@ type Props = {
 
 const MODEL_URL = riderAsset.url;
 
-/** Во сколько раз обратный ход быстрее самого взмаха.
- *  1 = ровно та же скорость: никакого «рывка назад» глазом не видно. */
-const REWIND = 1;
-
 const BRAND = { r: 0xf0, g: 0x00, b: 0xc0 };
 
 /** Переводит розово-малиновые пиксели текстуры в фирменный #F000C0. */
@@ -151,8 +147,6 @@ function Model({
   const prevTime = useRef(0);
   const kickCycle = useRef(0);
   const firedCycle = useRef(-1);
-  /** Обратный ход: возвращаемся в стойку плавно, а не рывком через reset(). */
-  const rewinding = useRef(false);
 
   // Между ударами персонаж стоит на первом кадре. Каждый новый kickToken
   // запускает один полный клип — поэтому он физически не бьёт в дырку.
@@ -166,91 +160,29 @@ function Model({
     action.paused = true;
     action.play();
     const d = action.getClip().duration;
-    // Полный цикл = взмах + плавный обратный ход (×REWIND быстрее).
-    readyRef.current?.(d * 0.6 * 1000, d * 1000 * (1 + 1 / REWIND));
+    readyRef.current?.(d * 0.6 * 1000, d * 1000);
   }, [action]);
 
-  const startKick = (token: number) => {
-    if (!action) return;
-    kickCycle.current = token;
+  useEffect(() => {
+    if (!action || !kickToken) return;
+    kickCycle.current = kickToken;
     firedCycle.current = -1;
     prevTime.current = 0;
-    rewinding.current = false;
     action.reset();
     action.timeScale = 1;
     action.paused = false;
     action.play();
-  };
-  const startKickRef = useRef(startKick);
-  startKickRef.current = startKick;
-  /** Токен, пришедший посреди обратного хода: доигрываем возврат, потом бьём. */
-  const pendingKick = useRef<number | null>(null);
-  /** Момент старта обратного хода — для аварийного выхода из зависшего возврата. */
-  const rewindStart = useRef(0);
-
-  useEffect(() => {
-    if (!action || !kickToken) return;
-    // Никогда не обрываем возврат в стойку через reset() — это и есть тот
-    // самый «рывок»: поза телепортируется в первый кадр клипа.
-    if (rewinding.current) {
-      pendingKick.current = kickToken;
-      return;
-    }
-    startKickRef.current(kickToken);
   }, [action, kickToken]);
 
-  const finishRewind = () => {
-    if (!action) return;
-    rewinding.current = false;
-    action.timeScale = 1;
-    action.time = 0;
-    action.paused = true;
-    prevTime.current = 0;
-    const next = pendingKick.current;
-    if (next !== null) {
-      pendingKick.current = null;
-      startKickRef.current(next);
-    }
-  };
-
   useFrame(() => {
-    if (!action || !kickToken) return;
+    if (!action || !kickToken || action.paused) return;
     const dur = action.getClip().duration;
     const impactAt = dur * 0.6;
     const t = action.time;
-
-    // --- обратный ход ---
-    if (rewinding.current) {
-      // three.js при LoopOnce + clampWhenFinished сам ставит paused = true,
-      // когда клип «дошёл до конца» (в реверсе — до нуля). Раньше мы на этом
-      // выходили из useFrame раньше времени и застревали в rewinding навсегда.
-      if (t <= 1e-3 || action.paused || performance.now() - rewindStart.current > 1500) {
-        finishRewind();
-      } else {
-        prevTime.current = t;
-      }
-      return;
-    }
-
-    // --- взмах ---
     if (prevTime.current < impactAt && t >= impactAt && firedCycle.current !== kickCycle.current) {
       firedCycle.current = kickCycle.current;
       impactRef.current?.(kickCycle.current);
     }
-
-    if (t >= dur - 1e-3) {
-      // Клип доигран: вместо мгновенного reset() отматываем назад — так поза
-      // возвращается в стойку без дёрганья.
-      rewinding.current = true;
-      rewindStart.current = performance.now();
-      action.timeScale = -REWIND;
-      action.time = Math.min(t, dur - 1e-4);
-      action.paused = false;
-      action.play();
-      prevTime.current = action.time;
-      return;
-    }
-
     prevTime.current = t;
   });
 
