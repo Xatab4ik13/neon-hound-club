@@ -101,6 +101,9 @@ const STEP = CHIP_W + CHIP_GAP;
 /** Сколько участников в моковом розыгрыше — столько же звеньев в барабане. */
 const MOCK_ENTRIES = 15;
 
+/** Сколько пустых аур накопить, прежде чем разогнать ленту и убрать их разом. */
+const SWEEP_AT = 4;
+
 /**
  * Чем меньше осталось участников, тем медленнее лента: к финалу зритель
  * успевает прочитать каждый ник и болеть за своего.
@@ -298,7 +301,8 @@ export function HoundHuntPage() {
       setKicks(0);
       kicksRef.current = 0;
       setGhosts([]);
-      holes.current = [];
+      sweeping.current = false;
+      turbo.set(1);
       lastImpactCycle.current = -1;
       impactLockedUntil.current = 0;
 
@@ -394,9 +398,8 @@ export function HoundHuntPage() {
       const rest = list.map((s) => (s.sid === target.sid ? { ...s, entry: null } : s));
       slotsRef.current = rest;
       setSlots(rest);
-      // Дырку убираем не по таймеру, а когда она реально уедет за левый край:
-      // фиксируем фазу удара, а rAF-цикл сам схлопнет слот в нужный момент.
-      holes.current.push({ sid: target.sid, phaseAt: reelPhase.current });
+      // Пустое место не закрываем сразу: на нём остаётся гравитационная аура,
+      // а весь мусор лента сбросит разом во время разгона (maybeSweep).
 
       kicksRef.current += 1;
       setKicks(kicksRef.current);
@@ -444,7 +447,8 @@ export function HoundHuntPage() {
       setKicks(kicksRef.current);
 
       setGhosts([]);
-      holes.current = [];
+      sweeping.current = false;
+      turbo.set(1);
 
       setCurrent(winner);
 
