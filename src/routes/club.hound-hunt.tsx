@@ -295,35 +295,68 @@ export function HoundHuntPage() {
       groomTape();
       syncStrip();
 
-      // Запускаем одиночный взмах ровно за impactDelay до прихода следующей
-      // живой капсулы в центр. Дырки просто проезжают — персонаж их не бьёт.
-      if (
-        phaseRef.current === "drift" &&
-        aliveRef.current > 1 &&
-        !kickInFlightRef.current &&
-        now >= kickReadyAtRef.current
-      ) {
-        const impactPhase = reelPhase.current + impactDelayRef.current / step;
-        const liveIds = new Set(liveRef.current.map((entry) => entry.id));
-        const nextLive = tapeRef.current.find(
-          (slot) => slot.idx >= impactPhase && slot.entry !== null && liveIds.has(slot.entry.id),
-        );
-        // Страховка от зависания: если окно идеального тайминга по какой-то
-        // причине проехало (кадр подвис, лента разряжена дырками), бьём по
-        // ближайшей живой капсуле впереди, а не стоим до конца розыгрыша.
-        const overdue = now - kickReadyAtRef.current > kickCycleMsRef.current * 1.5;
-        if (nextLive) {
-          const untilCenter = (nextLive.idx - reelPhase.current) * step;
-          // Допуск в один кадр компенсирует React/Canvas между выбором цели
-          // и фактическим стартом клипа, не меняя визуальную фазу ленты.
-          if (untilCenter <= impactDelayRef.current + 34 || overdue) {
-            reservedTargetRef.current = nextLive.idx;
-            kickInFlightRef.current = true;
+      if (phaseRef.current === "drift" && aliveRef.current > 1) {
+        // --- Watchdog №1: взмах ушёл, а импакт-callback не пришёл (3D-клип
+        // проглотил токен, дубль цикла, просадка кадров). Добиваем сами. ---
+        if (kickInFlightRef.current && now > kickDeadlineRef.current) {
+          const reserved = reservedTargetRef.current;
+          kickInFlightRef.current = false;
+          reservedTargetRef.current = null;
+          lastImpactCycle.current = -1;
+          impactLockedUntil.current = 0;
+          eliminateRef.current(reserved);
+          kickReadyAtRef.current = now + kickCycleMsRef.current;
+        }
+
+        // --- Watchdog №2: последний рубеж. Если по любой причине никто не
+        // выбывал дольше двух полных циклов — снимаем все замки и выбиваем
+        // ближайшую живую капсулу. Розыгрыш не может встать намертво. ---
+        if (
+          lastEliminationAtRef.current &&
+          now - lastEliminationAtRef.current > kickCycleMsRef.current * 2 + impactDelayRef.current
+        ) {
+          kickInFlightRef.current = false;
+          reservedTargetRef.current = null;
+          lastImpactCycle.current = -1;
+          impactLockedUntil.current = 0;
+          kickReadyAtRef.current = 0;
+          eliminateRef.current(null);
+          setKickToken((token) => token + 1);
+        }
+
+        // Запускаем одиночный взмах ровно за impactDelay до прихода следующей
+        // живой капсулы в центр. Дырки просто проезжают — персонаж их не бьёт.
+        if (!kickInFlightRef.current && now >= kickReadyAtRef.current) {
+          const impactPhase = reelPhase.current + impactDelayRef.current / step;
+          const liveIds = new Set(liveRef.current.map((entry) => entry.id));
+          const nextLive = tapeRef.current.find(
+            (slot) => slot.idx >= impactPhase && slot.entry !== null && liveIds.has(slot.entry.id),
+          );
+          // Страховка от зависания: если окно идеального тайминга по какой-то
+          // причине проехало (кадр подвис, лента разряжена дырками), бьём по
+          // ближайшей живой капсуле впереди, а не стоим до конца розыгрыша.
+          const overdue = now - kickReadyAtRef.current > kickCycleMsRef.current * 1.5;
+          if (nextLive) {
+            const untilCenter = (nextLive.idx - reelPhase.current) * step;
+            // Допуск в один кадр компенсирует React/Canvas между выбором цели
+            // и фактическим стартом клипа, не меняя визуальную фазу ленты.
+            if (untilCenter <= impactDelayRef.current + 34 || overdue) {
+              reservedTargetRef.current = nextLive.idx;
+              kickInFlightRef.current = true;
+              kickReadyAtRef.current = now + kickCycleMsRef.current;
+              kickDeadlineRef.current = now + impactDelayRef.current + kickCycleMsRef.current;
+              setKickToken((token) => token + 1);
+            }
+          } else if (overdue) {
+            // Живой цели впереди нет вообще (хвост из дырок) — бьём по
+            // ближайшей живой без брони, чтобы не зависнуть.
             kickReadyAtRef.current = now + kickCycleMsRef.current;
+            eliminateRef.current(null);
             setKickToken((token) => token + 1);
           }
         }
       }
+
       reelRaf.current = requestAnimationFrame(tick);
     };
     reelRaf.current = requestAnimationFrame(tick);
