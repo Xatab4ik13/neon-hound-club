@@ -528,9 +528,11 @@ export function HoundHuntPage() {
               slots={slots}
               ghosts={ghosts}
               x={stripX}
+              phase={phaseMv}
               armed={phase === "arming"}
               shock={shock}
             />
+
           )}
 
           {(phase === "pull" || phase === "crack") && current && (
