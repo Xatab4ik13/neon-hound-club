@@ -32,12 +32,12 @@ export function KickedAvatar({ entry, seed, scale = 0.62, width }: Props) {
     const c = hash(seed + "c");
     return {
       // дальность и высота полёта
-      dx: 420 + a * 260,
-      apex: -(200 + b * 130),
-      fall: 340 + c * 200,
-      spin: (500 + a * 420) * (b > 0.85 ? -1 : 1),
+      dx: 460 + a * 240,
+      apex: -(210 + b * 120),
+      fall: 380 + c * 200,
+      spin: (420 + a * 320) * (b > 0.85 ? -1 : 1),
       tilt: -8 - c * 10,
-      dur: 1.25 + b * 0.35,
+      dur: 1.1 + b * 0.25,
     };
   }, [seed]);
 
@@ -115,22 +115,22 @@ export function KickedAvatar({ entry, seed, scale = 0.62, width }: Props) {
           style={{ transformStyle: "preserve-3d" }}
           initial={{ x: 0, y: 0, z: 0 }}
           animate={{
-            x: [0, r.dx * 0.28, r.dx * 0.66, r.dx],
-            y: [0, r.apex, r.apex * 0.45, r.fall],
-            z: [0, 240, 40, -700],
+            x: [0, r.dx * 0.34, r.dx * 0.68, r.dx],
+            y: [0, r.apex * 0.85, r.apex * 0.35, r.fall],
+            z: [0, 60, -180, -520],
           }}
-          transition={{ duration: r.dur, ease: [0.16, 0.9, 0.4, 1], times: [0, 0.22, 0.55, 1] }}
+          transition={{ duration: r.dur, ease: "linear", times: [0, 0.3, 0.62, 1] }}
         >
           <motion.div
             style={{ transformStyle: "preserve-3d" }}
             initial={{ rotate: 0, rotateY: 0, rotateX: 0 }}
-            animate={{ rotate: r.spin, rotateY: r.spin * 0.6, rotateX: r.tilt * 6 }}
+            animate={{ rotate: r.spin, rotateY: r.spin * 0.4, rotateX: r.tilt * 3 }}
             transition={{ duration: r.dur, ease: "linear" }}
           >
             <motion.div
               initial={{ scaleX: 1, scaleY: 1 }}
-              animate={{ scaleX: [1, 1.35, 0.92, 0.7], scaleY: [1, 0.7, 1.06, 0.7], opacity: [1, 1, 1, 0] }}
-              transition={{ duration: r.dur, times: [0, 0.08, 0.3, 1], ease: "easeOut" }}
+              animate={{ scaleX: [1, 1.12, 1, 0.86], scaleY: [1, 0.9, 1, 0.86], opacity: [1, 1, 1, 0] }}
+              transition={{ duration: r.dur, times: [0, 0.12, 0.4, 1], ease: "easeOut" }}
               style={{ rotate: r.tilt }}
             >
               <HuntAvatar entry={entry} focused scale={scale} />
