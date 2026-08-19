@@ -803,7 +803,6 @@ export function HoundHuntPage() {
               shock={shock}
               winner={settled ? current : null}
               prizeTitle={prize.title}
-              prizeSub={prize.sub}
               prizeImg={prize.img}
             />
           )}
@@ -884,7 +883,6 @@ function ReelStage({
   shock,
   winner,
   prizeTitle,
-  prizeSub,
   prizeImg,
 }: {
   /** Слоты ленты со своими АБСОЛЮТНЫМИ индексами (не по кругу). */
@@ -898,7 +896,6 @@ function ReelStage({
   /** Победитель: лента уже встала, рядом с аватаркой всплывает плашка. */
   winner: HuntEntry | null;
   prizeTitle: string;
-  prizeSub: string;
   prizeImg: string;
 }) {
   // Отдача от удара: тряска и микро-зум играются только на transform, поэтому
