@@ -144,7 +144,6 @@ export function HoundHuntPage() {
     () => () => {
       timers.current.forEach(clearTimeout);
       cancelAnimationFrame(reelRaf.current);
-      
     },
     [],
   );
@@ -189,7 +188,6 @@ export function HoundHuntPage() {
     };
     reelRaf.current = requestAnimationFrame(tick);
   }, [dur, slowmo, stopReel, syncStrip]);
-
 
   /**
    * Барабан = реальные участники: 15 человек — 15 звеньев. Никаких случайных
@@ -345,7 +343,6 @@ export function HoundHuntPage() {
     }
   }, [later, slowmo, stopReel]);
 
-
   const start = () => {
     clearTimers();
     const fresh = makeEntries(MOCK_ENTRIES, Math.floor(Math.random() * 99999));
@@ -372,7 +369,6 @@ export function HoundHuntPage() {
       setSlots(rest);
       kicksRef.current = Math.max(0, list.filter((s) => s.entry).length - 1);
       setKicks(kicksRef.current);
-
 
       setGhosts([]);
       setCurrent(winner);
@@ -634,7 +630,6 @@ function ReelStage({
               </div>
             )),
           )}
-
         </motion.div>
 
         {/* выбитые аватарки — дорожка без overflow, полёт ничем не обрезается */}
