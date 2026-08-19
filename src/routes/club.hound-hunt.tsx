@@ -129,11 +129,11 @@ function speedRamp(_remaining: number) {
  * по кому и когда прилетит. Интрига важнее темпа.
  */
 function suspenseMs(remaining: number) {
-  if (remaining <= 2) return 2800;
-  if (remaining === 3) return 2400;
-  if (remaining === 4) return 1900;
-  if (remaining === 5) return 1500;
-  if (remaining <= 7) return 800;
+  if (remaining <= 2) return 1600;
+  if (remaining === 3) return 1300;
+  if (remaining === 4) return 1000;
+  if (remaining === 5) return 800;
+  if (remaining <= 7) return 450;
   return 0;
 }
 
@@ -259,7 +259,7 @@ export function HoundHuntPage() {
       // и видно, что по кругу едут именно они, а не плотная толпа копий.
       // Персонаж по пустотам не бьёт — он их пропускает.
       const n = live.length;
-      const gaps = n > 8 ? 0 : n > 6 ? 1 : n > 4 ? 2 : n > 3 ? 3 : n === 3 ? 4 : 7;
+      const gaps = n > 8 ? 0 : n > 6 ? 1 : n > 4 ? 1 : n > 2 ? 2 : 3;
 
       const built: (HuntEntry | null)[] = [];
       for (const entry of live) {
@@ -338,18 +338,19 @@ export function HoundHuntPage() {
         const target = settleTargetRef.current;
         if (target !== null) {
           const diff = target - reelPhase.current;
-          // Экспоненциальное торможение: лента «выдыхает» и замирает, когда
-          // победитель встал в левое положение — без рывка в конце.
-          advance = Math.min(advance, Math.max(0, diff * Math.min(1, elapsed / 320)));
-          if (diff <= 0.01) {
+          // Торможение с нижней границей скорости: лента гарантированно
+          // доезжает и ВСТАЁТ, а не ползёт бесконечно к цели.
+          if (diff <= 0.04) {
             advance = diff;
+            reelPhase.current += advance;
+            syncStrip();
             settledRef.current = true;
             setSettled(true);
             haptic("success");
             stopReel();
-            // Дальше ничего не происходит: лента стоит, победитель и приз
-            // остаются на экране.
+            return;
           }
+          advance = Math.min(advance, Math.max(diff * (elapsed / 260), (elapsed / 1000) * 0.7));
         }
       }
 
@@ -769,6 +770,28 @@ export function HoundHuntPage() {
       <SmokeLayers />
       <div className="pointer-events-none absolute inset-0 shadow-[inset_0_0_220px_60px_var(--background)]" />
 
+      {/* WINNER — самый верх экрана, крупно и ядовито-зелёным */}
+      <AnimatePresence>
+        {settled && (
+          <motion.div
+            key="winner-top"
+            initial={{ opacity: 0, y: -14 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            className="pointer-events-none absolute inset-x-0 z-50 text-center"
+            style={{ top: "calc(0.75rem + env(safe-area-inset-top))" }}
+          >
+            <p
+              className="font-display text-6xl font-black uppercase leading-none tracking-[0.14em]"
+              style={{ color: "#B6FF3C", textShadow: "0 0 34px rgba(182,255,60,0.5)" }}
+            >
+              winner
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="relative flex h-full flex-col overflow-hidden pt-[max(0.5rem,env(safe-area-inset-top))] pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
         {/* арена */}
         <div className="relative flex min-h-0 flex-1 flex-col items-center justify-center">
@@ -1009,36 +1032,17 @@ function ReelStage({
       <AnimatePresence>
         {winner && (
           <motion.div
-            key="winner-title"
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-            className="pointer-events-none absolute inset-x-0 -top-16 z-40 text-center"
-          >
-            <p
-              className="font-display text-4xl font-black uppercase tracking-[0.26em]"
-              style={{ color: "#B6FF3C", textShadow: "0 0 30px rgba(182,255,60,0.45)" }}
-            >
-              winner
-            </p>
-          </motion.div>
-        )}
-
-        {winner && (
-          <motion.div
             key="winner-prize"
-            initial={{ opacity: 0, x: -14, scale: 0.92 }}
-            animate={{ opacity: 1, x: 0, scale: 1 }}
+            initial={{ opacity: 0, y: 10, scale: 0.92 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.6, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-            className="pointer-events-none absolute top-1/2 z-40 flex max-w-[55%] -translate-y-1/2 flex-col items-center gap-1"
-            style={{ left: WIN_LEFT + CHIP_W + 18 }}
+            className="pointer-events-none absolute left-1/2 top-1/2 z-40 flex max-w-[52%] -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-1"
           >
             <img
               src={prizeImg}
               alt=""
-              className="h-16 shrink-0 object-contain drop-shadow-[0_0_26px_color-mix(in_oklab,var(--primary)_60%,transparent)]"
+              className="h-20 shrink-0 object-contain drop-shadow-[0_0_26px_color-mix(in_oklab,var(--primary)_60%,transparent)]"
             />
             <p className="font-display text-base font-black uppercase leading-tight">
               {prizeTitle}
@@ -1046,6 +1050,7 @@ function ReelStage({
           </motion.div>
         )}
       </AnimatePresence>
+
 
 
     </div>
