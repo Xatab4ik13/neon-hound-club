@@ -1225,6 +1225,8 @@ function RoundCountdown({ round, onDone }: { round: number; onDone: () => void }
               {step === 0 ? "GO!" : step}
             </span>
           </motion.div>
+          )}
+
         </AnimatePresence>
       </div>
     </div>
