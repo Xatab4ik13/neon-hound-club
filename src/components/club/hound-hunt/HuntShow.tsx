@@ -48,10 +48,12 @@ import { useIsMobile } from "@/hooks/use-mobile";
  * HELL HUNT — только телефон/приложение. На десктопе шоу не запускаем:
  * вся вёрстка и анимации рассчитаны на вертикальный мобильный экран.
  */
-export function HuntShow() {
+export type HuntShowMode = "live" | "replay";
+
+export function HuntShow({ mode = "live" }: { mode?: HuntShowMode }) {
   const isMobile = useIsMobile();
   if (!isMobile) return <DesktopBlock />;
-  return <HoundHuntPage />;
+  return <HoundHuntPage mode={mode} />;
 }
 
 function DesktopBlock() {
