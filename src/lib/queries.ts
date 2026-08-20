@@ -352,8 +352,16 @@ export async function fetchPassTiers() {
 }
 
 export async function fetchPassMe() {
-  return apiFetch<{ active: PassRecord | null; history: PassRecord[]; daysLeft: number | null; durationDays: number }>("/api/v1/pass/me");
+  return apiFetch<{
+    active: PassRecord | null;
+    history: PassRecord[];
+    daysLeft: number | null;
+    durationDays: number;
+    /** Персональная цена тира: при апгрейде уже вычтено уплаченное за низкие тиры. */
+    prices?: Partial<Record<PassTier, { priceRub: number; creditRub: number }>>;
+  }>("/api/v1/pass/me");
 }
+
 
 export async function purchasePass(tier: PassTier, method: "card" | "sbp" = "card") {
   return apiFetch<{ purchase: PassRecord; paymentUrl: string | null }>(

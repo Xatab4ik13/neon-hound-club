@@ -477,6 +477,13 @@
       "when": 1786800000000,
       "tag": "0067_news_sources_telegram",
       "breakpoints": true
+    },
+    {
+      "idx": 68,
+      "version": "7",
+      "when": 1786900000000,
+      "tag": "0068_pass_downgrade_repair",
+      "breakpoints": true
     }
   ]
 }

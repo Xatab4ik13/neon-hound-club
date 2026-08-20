@@ -50,12 +50,16 @@ export async function createPassPurchase(userId: string, tier: PassTier) {
     }
   }
   const cfg = PASS_CONFIG[tier];
+  // Апгрейд: из цены нового тира вычитаем то, что юзер уже заплатил за активные
+  // пассы ниже тиром. Бесплатные (спин/грант) стоили 0 — зачёта не дают.
+  const credit = await getUpgradeCreditRub(userId, tier);
+  const priceRub = Math.max(0, cfg.priceRub - credit);
   const [row] = await db
     .insert(passPurchases)
     .values({
       userId,
       tier,
-      priceRub: cfg.priceRub,
+      priceRub,
       ticketsGranted: cfg.tickets,
       status: "pending_payment",
       source: "purchase",
@@ -104,8 +108,10 @@ export async function activatePassPurchase(purchaseId: string): Promise<{ ok: bo
       .set({ status: "active", paidAt: now, expiresAt })
       .where(eq(passPurchases.id, purchaseId));
 
-    // Старый активный пасс помечаем как замещённый.
-    if (otherActive) {
+    // Старый активный пасс помечаем как замещённый — но ТОЛЬКО если новый тир
+    // не ниже. Иначе бесплатный silver «съедал» бы купленный platinum.
+    const otherRank = otherActive ? (TIER_RANK[otherActive.tier as PassTier] ?? 0) : 0;
+    if (otherActive && (TIER_RANK[p.tier as PassTier] ?? 0) >= otherRank) {
       await db
         .update(passPurchases)
         .set({ status: "superseded" })
@@ -157,14 +163,44 @@ export async function activatePassPurchase(purchaseId: string): Promise<{ ok: bo
  * Активный = status='active' И expires_at > now().
  * Возвращаем самый поздний по expiresAt (если вдруг два — что нормально, если юзер купил впрок).
  */
-export async function getActivePass(userId: string) {
-  const [row] = await db
+export async function getActivePasses(userId: string) {
+  return db
     .select()
     .from(passPurchases)
-    .where(and(eq(passPurchases.userId, userId), eq(passPurchases.status, "active"), gt(passPurchases.expiresAt, new Date())))
-    .orderBy(desc(passPurchases.expiresAt))
-    .limit(1);
-  return row ?? null;
+    .where(
+      and(
+        eq(passPurchases.userId, userId),
+        eq(passPurchases.status, "active"),
+        gt(passPurchases.expiresAt, new Date()),
+      ),
+    )
+    .orderBy(desc(passPurchases.expiresAt));
+}
+
+export async function getActivePass(userId: string) {
+  const rows = await getActivePasses(userId);
+  if (!rows.length) return null;
+  // Тир юзера = САМЫЙ ВЫСОКИЙ из активных. Иначе бесплатный SILVER из рулетки
+  // «перекрывал» бы купленный PLATINUM (тот самый баг с даунгрейдом).
+  let best = rows[0]!;
+  for (const r of rows) {
+    const a = TIER_RANK[r.tier as PassTier] ?? 0;
+    const b = TIER_RANK[best.tier as PassTier] ?? 0;
+    if (a > b || (a === b && (r.expiresAt?.getTime() ?? 0) > (best.expiresAt?.getTime() ?? 0))) best = r;
+  }
+  return best;
+}
+
+/**
+ * Зачёт при апгрейде: сумма фактически уплаченного за активные пассы НИЖЕ тиром.
+ * Silver 490 + Gold 1290 -> Platinum 2190 стоит 410 ₽. Бесплатные пассы = 0.
+ */
+export async function getUpgradeCreditRub(userId: string, target: PassTier): Promise<number> {
+  const rows = await getActivePasses(userId);
+  const targetRank = TIER_RANK[target];
+  return rows
+    .filter((r) => (TIER_RANK[r.tier as PassTier] ?? 0) < targetRank)
+    .reduce((sum, r) => sum + (r.priceRub ?? 0), 0);
 }
 
 /** История покупок пасса. */

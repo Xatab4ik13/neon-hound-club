@@ -99,6 +99,10 @@ function TierDetailPage() {
   const targetRank = TIER_RANK[tier.slug as PassTier];
   const isSameTier = active?.tier === tier.slug;
   const isUpgrade = active && targetRank > activeRank;
+  // Персональная цена с зачётом уплаченного за активные пассы ниже тиром.
+  const personal = passQ.data?.prices?.[tier.slug as PassTier] ?? null;
+  const creditRub = isUpgrade ? (personal?.creditRub ?? 0) : 0;
+  const payRub = creditRub > 0 ? (personal?.priceRub ?? tier.price) : tier.price;
   const isDowngrade = active && targetRank < activeRank;
 
   // Перехват submit: если не залогинен — на /login; если даунгрейд — блок.
@@ -231,12 +235,23 @@ function TierDetailPage() {
                   className="font-mono text-4xl font-bold"
                   style={{ color: tier.color }}
                 >
-                  {tier.price.toLocaleString("ru-RU")} ₽
+                  {payRub.toLocaleString("ru-RU")} ₽
                 </span>
+                {creditRub > 0 && (
+                  <span className="font-mono text-lg text-white/35 line-through">
+                    {tier.price.toLocaleString("ru-RU")} ₽
+                  </span>
+                )}
                 <span className="font-mono text-xs uppercase tracking-widest text-white/40">
                   / 30 дней
                 </span>
               </div>
+
+              {creditRub > 0 && (
+                <div className="mt-3 border border-primary/30 bg-primary/10 px-3 py-2 font-mono text-[10px] uppercase tracking-widest text-primary">
+                  Апгрейд: зачли {creditRub.toLocaleString("ru-RU")} ₽ за твой текущий пасс
+                </div>
+              )}
 
               {active && (
                 <div className="mt-4 border border-white/10 bg-white/[0.03] px-3 py-2 font-mono text-[10px] uppercase tracking-widest text-white/70">
@@ -266,7 +281,9 @@ function TierDetailPage() {
                   : isSameTier
                     ? "Разовая оплата. Продлит доступ ещё на 30 дней."
                     : isUpgrade
-                      ? "Апгрейд. Оплата по цене нового тира, срок — 30 дней."
+                      ? creditRub > 0
+                        ? "Апгрейд со зачётом: платишь только разницу. Срок — 30 дней."
+                        : "Апгрейд. Оплата по цене нового тира, срок — 30 дней."
                       : "Разовая оплата. Доступ 30 дней с момента оплаты."}
               </div>
             </div>

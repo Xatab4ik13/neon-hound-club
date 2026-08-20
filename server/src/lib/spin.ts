@@ -16,7 +16,7 @@ import { pushSubscriptions } from "../db/schema/push.js";
 import { promoCodes } from "../db/schema/promo.js";
 import { passPurchases, PASS_CONFIG, PASS_DURATION_DAYS, type PassTier } from "../db/schema/pass.js";
 import { users } from "../db/schema/users.js";
-import { getActivePass } from "./pass.js";
+import { getActivePass, TIER_RANK } from "./pass.js";
 import { ticketCredit } from "./tickets.js";
 import { awardXp } from "./xp.js";
 import { generatePromoCode } from "./promo.js";
@@ -687,7 +687,9 @@ export async function grantPass(
       expiresAt: new Date(base.getTime() + PASS_DURATION_DAYS * 86_400_000),
     })
     .returning();
-  if (active) {
+  // Замещаем предыдущий пасс только если выданный тир не ниже: подарочный
+  // silver из рулетки не должен ронять gold/platinum.
+  if (active && (TIER_RANK[tier] ?? 0) >= (TIER_RANK[active.tier as PassTier] ?? 0)) {
     await db.update(passPurchases).set({ status: "superseded" }).where(eq(passPurchases.id, active.id));
   }
   if (cfg.tickets > 0) {
