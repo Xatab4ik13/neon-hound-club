@@ -3,7 +3,7 @@
 //   mode = "idle" | "watch" | "lunge" | "chew", lookAt = {x,y} в -1..1.
 // "lunge" = удар ногой по капсуле (проигрывается клип один раз).
 
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { useAnimations, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
@@ -97,7 +97,7 @@ function Model({
         // В разных Meshy-файлах корень называется Hips, mixamorigHips и
         // Armature.Hips. Проверяем окончание имени, иначе горизонтальный
         // root-motion остаётся и персонаж гуляет по canvas или выходит из него.
-        if (track instanceof THREE.VectorKeyframeTrack && /\.position$/i.test(track.name)) {
+        if (track instanceof THREE.VectorKeyframeTrack && /hips\.position$/i.test(track.name)) {
           const boneName = track.name.split(".")[0];
           const rest = restPositions.get(boneName);
           const values = Array.from(track.values);
@@ -156,15 +156,12 @@ function Model({
     });
   }, [cloned]);
   const { actions, names } = useAnimations(allClips, group);
-  // drei отдаёт actions ленивыми геттерами: до того как ref группы заполнен,
-  // они возвращают undefined. На первом рендере ref пуст, а повторного рендера
-  // при статичных пропсах нет — поэтому анимации никогда не запускались и
-  // персонаж стоял в bind-pose. Один принудительный рендер после монтирования
-  // отдаёт реальные AnimationAction.
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  // ВАЖНО (диагностика 20.08): drei отдаёт actions ленивыми геттерами, и на
+  // первом рендере ref группы пуст — поэтому анимации сейчас не запускаются и
+  // персонажи стоят в статичной позе, но ГАРАНТИРОВАННО видны. Включать
+  // анимации нельзя до фикса единиц: rest-поза скелета в этих GLB в метрах
+  // (Hips.y ≈ 0.82), а треки клипов — в сантиметрах (Hips.y ≈ 80), из-за чего
+  // при проигрывании тело улетает в 100 раз выше камеры и экран чернеет.
 
   // нормализуем масштаб/позицию: ставим на пол, высота ~2 юнита
   const fit = useMemo(() => {
@@ -187,10 +184,10 @@ function Model({
   }, [cloned, instanceUrl]);
 
   const clip = names[0];
-  const action = mounted && clip ? actions[clip] ?? null : null;
+  const action = clip ? actions[clip] ?? null : null;
   const victoryName = names.find((n) => n.toLowerCase().includes("victory"));
-  const victoryAction = mounted && victoryName ? actions[victoryName] ?? null : null;
-  const danceAction = mounted ? actions[DANCE_CLIP] ?? null : null;
+  const victoryAction = victoryName ? actions[victoryName] ?? null : null;
+  const danceAction = actions[DANCE_CLIP] ?? null;
   const impactRef = useRef(onImpact);
   impactRef.current = onImpact;
   const readyRef = useRef(onKickReady);
