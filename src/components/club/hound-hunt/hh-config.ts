@@ -118,7 +118,10 @@ export function huntConfigFromApi(state: HuntApiState): HuntConfig | null {
       place: p.place,
       title: p.title,
       sub: p.sub ?? "",
-      img: p.img || base.prizes[Math.min(i, base.prizes.length - 1)].img,
+      img:
+        p.img ||
+        HUNT_PRIZES.find((d) => d.place === p.place)?.img ||
+        base.prizes[Math.min(i, base.prizes.length - 1)].img,
       forcedWinnerId: p.forcedWinnerId ?? null,
       winnerUserId: p.winnerUserId ?? null,
       winnerNick: p.winnerNick ?? null,
