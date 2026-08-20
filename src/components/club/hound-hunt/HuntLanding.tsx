@@ -8,6 +8,7 @@ import { motion } from "framer-motion";
 import { RiderCharacter } from "./RiderCharacter";
 import { useHuntConfig, prizesInRunOrder } from "./hh-config";
 import { HuntAvatar } from "./HuntAvatar";
+import { KickedAvatar } from "./KickedAvatar";
 import { fetchHuntEntries, type HuntEntry } from "./hh-mock";
 import { getTier } from "@/data/hell-pass";
 import { haptic } from "@/hooks/use-haptic";
@@ -71,39 +72,19 @@ function Reveal({
 /** Цвета плашек в FAQ — тот же приём, что на странице инструктора школы. */
 const FAQ_TINTS = [TOXIC, "#FF8A3C", "#F000C0", "#3CC8FF"];
 
-/** Капсула с аватаркой: стоит перед персонажем, от удара бьётся о две стенки и улетает. */
-function Capsule({ entry, flying }: { entry: HuntEntry; flying: boolean }) {
+/** Капсула стоит точно по центру левой сцены до момента удара. */
+function CenteredCapsule({ entry }: { entry: HuntEntry }) {
   return (
-    <motion.div
-      className="pointer-events-none absolute bottom-[18%] left-[52%] z-30"
-      initial={false}
-      animate={
-        flying
-          ? {
-              // удар → правая стенка → левая стенка → уход из кадра
-              x: [0, 150, -60, 300],
-              y: [0, -110, 30, -240],
-              rotate: [0, 240, 460, 820],
-              scale: [1, 1.1, 1, 0.7],
-              opacity: [1, 1, 1, 0],
-            }
-          : { x: 0, y: 0, rotate: 0, scale: 1, opacity: 1 }
-      }
-      transition={
-        flying
-          ? { duration: 2, times: [0, 0.32, 0.66, 1], ease: "easeOut" }
-          : { duration: 0.25 }
-      }
-    >
+    <div className="pointer-events-none absolute left-1/2 top-1/2 z-30 -translate-x-1/2 -translate-y-1/2">
       <HuntAvatar entry={entry} focused hideNick scale={0.42} />
-    </motion.div>
+    </div>
   );
 }
 
 /** Витрина: персонаж циклично выбивает капсулу с твоей аватаркой (~7.5 с на цикл). */
 function KickStage({ me }: { me: HuntEntry | null }) {
-  const [token, setToken] = useState(0);
-  const [flying, setFlying] = useState(false);
+  const [token, setToken] = useState(1);
+  const [flight, setFlight] = useState<number | null>(null);
 
   useEffect(() => {
     const id = setInterval(() => setToken((t) => t + 1), 7500);
@@ -112,19 +93,24 @@ function KickStage({ me }: { me: HuntEntry | null }) {
 
   return (
     <div className="relative h-full w-full">
-      {/* персонаж крупнее на 30%, стоит на нижней кромке блока */}
-      <div className="h-full w-full origin-bottom scale-[1.3]">
+      <div className="h-full w-full">
         <RiderCharacter
           mode="lunge"
+          modelScale={1.3}
           kickToken={token}
           onImpact={() => {
-            setFlying(true);
-            window.setTimeout(() => setFlying(false), 2100);
+            setFlight(token);
+            window.setTimeout(() => setFlight(null), 2000);
           }}
           className="h-full w-full"
         />
       </div>
-      {me && <Capsule entry={me} flying={flying} />}
+      {me && flight === null && <CenteredCapsule entry={me} />}
+      {me && flight !== null && (
+        <div className="pointer-events-none absolute left-1/2 top-1/2 z-30 size-0">
+          <KickedAvatar entry={me} seed={`landing-${flight}`} scale={0.42} width={56} />
+        </div>
+      )}
     </div>
   );
 }
@@ -230,7 +216,7 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
           </motion.p>
 
           <div className="mx-auto -mt-4 h-[64svh] w-full max-w-md">
-            <RiderCharacter mode="idle" dance className="h-full w-full" />
+            <RiderCharacter mode="idle" className="h-full w-full" />
           </div>
         </section>
 

@@ -16,6 +16,8 @@ type Props = {
   victory?: boolean;
   /** true = финальный экран: луп танца. */
   dance?: boolean;
+  /** Масштаб модели внутри канваса, без увеличения и обрезки самого canvas. */
+  modelScale?: number;
   onKickReady?: (impactDelay: number, cycleMs: number) => void;
   onImpact?: (cycle: number) => void;
 };

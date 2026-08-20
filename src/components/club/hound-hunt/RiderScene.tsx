@@ -4,10 +4,9 @@
 // "lunge" = удар ногой по капсуле (проигрывается клип один раз).
 
 import { Suspense, useEffect, useMemo, useRef } from "react";
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { Canvas, useFrame } from "@react-three/fiber";
 import { useAnimations, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
-import { clone as skeletonClone } from "three/examples/jsm/utils/SkeletonUtils.js";
 import riderAsset from "@/assets/rider.glb.asset.json";
 import victoryAsset from "@/assets/rider-victory.glb.asset.json";
 import danceAsset from "@/assets/rider-agree.glb.asset.json";
@@ -25,6 +24,8 @@ type Props = {
   victory?: boolean;
   /** true = финальный экран «охота закрыта»: луп танца. */
   dance?: boolean;
+  /** Масштаб модели внутри канваса. */
+  modelScale?: number;
   /** Сообщает задержку от запуска взмаха до контакта ноги. */
   onKickReady?: (impactDelay: number, cycleMs: number) => void;
   /** Вызывается в момент контакта ноги (≈60% клипа). */
@@ -40,10 +41,6 @@ const DANCE_CLIP = "hh_final_dance";
 const DANCE_CLIP_B = "hh_final_dance_b";
 /** Длительность кроссфейда лупа танца, сек. */
 const DANCE_FADE = 0.5;
-// Доля высоты канваса, добавленная сверху под поднятые руки победной анимации.
-const HEADROOM_FRAC = 6 / 74;
-
-
 const BRAND = { r: 0xf0, g: 0x00, b: 0xc0 };
 
 /** Переводит розово-малиновые пиксели текстуры в фирменный #F000C0. */
@@ -103,6 +100,7 @@ function Model({
   kickToken,
   victory,
   dance,
+  modelScale = 1,
   onKickReady,
   onImpact,
 }: {
@@ -111,16 +109,17 @@ function Model({
   kickToken?: number;
   victory?: boolean;
   dance?: boolean;
+  modelScale?: number;
   onKickReady?: (impactDelay: number, cycleMs: number) => void;
   onImpact?: (cycle: number) => void;
 }) {
   const group = useRef<THREE.Group>(null);
-  const { scene, animations } = useGLTF(MODEL_URL);
+  // У каждого canvas свой разбор GLB. SkeletonUtils.clone ломает skin/bind matrices
+  // именно у этой Meshy-модели и оставляет видимый canvas без геометрии.
+  const instanceUrl = `${MODEL_URL}?instance=${mode}`;
+  const { scene: cloned, animations } = useGLTF(instanceUrl);
   const { animations: victoryAnims } = useGLTF(VICTORY_URL);
   const { animations: danceAnims } = useGLTF(DANCE_URL);
-  // Клонируем сцену на каждый экземпляр: useGLTF отдаёт один и тот же объект,
-  // и без клона второй монтируемый персонаж «забирает» модель у первого (чёрный экран).
-  const cloned = useMemo(() => skeletonClone(scene) as THREE.Object3D, [scene]);
   // Клипы делят один и тот же риг (Meshy, одинаковые имена костей),
   // поэтому победный танец играется тем же миксером — без подмены модели.
   const danceClips = useMemo(() => {
@@ -201,10 +200,18 @@ function Model({
   const kickCycle = useRef(0);
   const firedCycle = useRef(-1);
 
-  // Между ударами персонаж стоит на первом кадре. Каждый новый kickToken
-  // запускает один полный клип — поэтому он физически не бьёт в дырку.
+  // Ударный клип применяется только к lunge. В idle оставляем bind-pose модели:
+  // первый кадр ударного клипа содержит root motion и уводит модель из canvas.
   useEffect(() => {
     if (!action) return;
+    if (mode !== "lunge") {
+      action.stop();
+      cloned.traverse((node) => {
+        const mesh = node as THREE.SkinnedMesh;
+        if (mesh.isSkinnedMesh) mesh.skeleton.pose();
+      });
+      return;
+    }
     action.enabled = true;
     action.clampWhenFinished = true;
     action.setLoop(THREE.LoopOnce, 1);
@@ -214,10 +221,10 @@ function Model({
     action.play();
     const d = action.getClip().duration;
     readyRef.current?.(d * 0.6 * 1000, d * 1000);
-  }, [action]);
+  }, [action, cloned, mode]);
 
   useEffect(() => {
-    if (!action || !kickToken || victory) return;
+    if (!action || mode !== "lunge" || !kickToken || victory) return;
     kickCycle.current = kickToken;
     firedCycle.current = -1;
     prevTime.current = 0;
@@ -225,7 +232,7 @@ function Model({
     action.timeScale = 1;
     action.paused = false;
     action.play();
-  }, [action, kickToken, victory]);
+  }, [action, kickToken, mode, victory]);
 
   // Победа: кроссфейд из текущей позы удара в танец. Без резких скачков —
   // удар замораживается на своём кадре и плавно уступает вес танцу.
@@ -278,58 +285,10 @@ function Model({
     }
   }, [dance, danceAction, danceActionB, victoryAction, action]);
 
-  // Кадр канваса расширен вверх (см. HEADROOM_FRAC), поэтому модель сдвинута
-  // вниз ровно на добавленный запас — визуально персонаж стоит и выглядит так же,
-  // но поднятые руки в победном танце больше не срезаются верхней границей.
-  const viewportH = useThree((s: { viewport: { height: number } }) => s.viewport.height);
-  useEffect(() => {
-    if (!group.current) return;
-    group.current.position.y = -viewportH * HEADROOM_FRAC;
-  }, [viewportH]);
-
-  // Корневая кость: по её мировой высоте держим персонажа на одном уровне
-  // во всех фазах — удар, победный танец, финал. Эталон — поза удара.
-  const rootBone = useMemo(() => {
-    let found: THREE.Object3D | null = null;
-    cloned.traverse((o) => {
-      if (found) return;
-      const n = o.name.toLowerCase();
-      if ((o as THREE.Bone).isBone && (n.includes("hips") || n.includes("pelvis"))) found = o;
-    });
-    if (!found) {
-      cloned.traverse((o) => {
-        if (!found && (o as THREE.Bone).isBone) found = o;
-      });
-    }
-    return found as THREE.Object3D | null;
-  }, [cloned]);
-  const baseRootY = useRef<number | null>(null);
-  const tmpVec = useRef(new THREE.Vector3());
-
   useFrame(() => {
-    // 1) держим уровень ног постоянным
-    if (group.current && rootBone) {
-      rootBone.getWorldPosition(tmpVec.current);
-      const worldY = tmpVec.current.y;
-      const floorY = -viewportH * HEADROOM_FRAC;
-      if (!victory || dance) {
-        // Луп танца/жеста и обычная поза: жёстко фиксируем персонажа на полу,
-        // никакой накопительной компенсации — иначе модель может уехать из кадра.
-        baseRootY.current = worldY - (group.current.position.y - floorY);
-        group.current.position.y = floorY;
-      } else {
-        if (baseRootY.current === null) {
-          baseRootY.current = worldY - (group.current.position.y - floorY);
-          group.current.position.y = floorY;
-        } else {
-          const next = group.current.position.y + (baseRootY.current - worldY);
-          // страховка: не даём персонажу уехать за пределы кадра
-          group.current.position.y = Math.max(floorY - 1, Math.min(floorY + 1, next));
-        }
-      }
-    }
-
-    // 2) бесшовный луп танца: хвост клипа перекрываем его же началом
+    // Бесшовный луп танца: хвост клипа перекрываем его же началом.
+    // Позицию модели здесь не меняем: она уже нормализована по bounds,
+    // а компенсация через root-bone уводила оба экземпляра за камеру.
     if (dance && danceCur.current && danceAction) {
       const cur = danceCur.current;
       const d = cur.getClip().duration;
@@ -370,11 +329,13 @@ function Model({
 
   return (
     <group ref={group} rotation={[pitch, yaw, 0]}>
-      <primitive
-        object={cloned}
-        scale={fit.s}
-        position={fit.offset as unknown as [number, number, number]}
-      />
+      <group scale={modelScale}>
+        <primitive
+          object={cloned}
+          scale={fit.s}
+          position={fit.offset as unknown as [number, number, number]}
+        />
+      </group>
     </group>
   );
 }
@@ -386,6 +347,7 @@ export default function RiderScene({
   kickToken,
   victory,
   dance,
+  modelScale,
   onKickReady,
   onImpact,
 }: Props) {
@@ -414,6 +376,7 @@ export default function RiderScene({
             kickToken={kickToken}
             victory={victory}
             dance={dance}
+            modelScale={modelScale}
             onKickReady={onKickReady}
             onImpact={onImpact}
           />
