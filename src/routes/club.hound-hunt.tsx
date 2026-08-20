@@ -20,6 +20,15 @@ import {
   type MotionValue,
 } from "framer-motion";
 
+import {
+  isHuntMuted,
+  playHuntImpact,
+  playHuntWin,
+  setHuntMuted,
+  setHuntTension,
+  startHuntMusic,
+  stopHuntMusic,
+} from "@/lib/hunt-audio";
 import { RiderCharacter, type RiderMode } from "@/components/club/hound-hunt/RiderCharacter";
 import { EmberField } from "@/components/club/hound-hunt/EmberField";
 import { HuntAvatar } from "@/components/club/hound-hunt/HuntAvatar";
@@ -360,6 +369,7 @@ export function HoundHuntPage() {
             settledRef.current = true;
             setSettled(true);
             haptic("success");
+            playHuntWin();
             // В финале в кадре должна остаться РОВНО одна аватарка победителя:
             // все остальные слоты (в т.ч. его же копии по кругу) убираем.
             const winIdx = Math.round(target - winStopOffset());
@@ -665,6 +675,9 @@ export function HoundHuntPage() {
       // В кадре всегда ровно один выбитый шар: даже если 3D callback по ошибке
       // придёт повторно, второй летящий дубль не появится.
       setGhosts([{ key, entry: kicked }]);
+      playHuntImpact(aliveRef.current <= 4 ? 1 : 0.85);
+      // Чем меньше осталось — тем плотнее музыка.
+      setHuntTension(1 - Math.min(1, (aliveRef.current - 1) / 18));
       later(() => setGhosts((g) => g.filter((x) => x.key !== key)), 2000);
       haptic("light");
       if (aliveRef.current <= 1) {
@@ -704,6 +717,9 @@ export function HoundHuntPage() {
 
   const start = async () => {
     clearTimers();
+    // Музыку можно стартовать только из жеста пользователя — это он и есть.
+    setHuntTension(0);
+    startHuntMusic();
     const fresh = await fetchHuntEntries(MOCK_ENTRIES, Math.floor(Math.random() * 99999));
     await Promise.all(
       [...new Set(fresh.map((entry) => entry.avatarUrl).filter((src): src is string => Boolean(src)))].map(
