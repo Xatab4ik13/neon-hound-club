@@ -46,10 +46,10 @@ function buildGroups(
         { label: "Гараж", href: "/club/garage", icon: PlumpGarage, subtitle: "Твой мото" },
         { label: "Розыгрыши", href: "/club/raffles", icon: PlumpGift },
         {
-          label: "HOUND HUNT",
-          href: "/club/hound-hunt",
+          label: "HellSpin",
+          href: "/club/spin",
           icon: PlumpSpin,
-          subtitle: "Шоу-розыгрыш · только в приложении",
+          subtitle: "Рулетка призов · только в приложении",
         },
         { label: "Hell AI", href: "/club/hell-ai", icon: PlumpAI, subtitle: "AI-механик по твоему мото" },
         ...(isInstructor
