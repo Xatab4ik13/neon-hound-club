@@ -33,7 +33,6 @@ import { HuntAvatar } from "@/components/club/hound-hunt/HuntAvatar";
 import { RiderCharacter, type RiderMode } from "@/components/club/hound-hunt/RiderCharacter";
 import { KickedAvatar } from "@/components/club/hound-hunt/KickedAvatar";
 import {
-  makeEntries,
   fetchHuntPool,
   rankColorsOf,
   type HuntEntry,
@@ -113,8 +112,6 @@ function winStopOffset() {
 }
 
 
-/** Сколько участников в моковом розыгрыше — столько же звеньев в барабане. */
-const MOCK_ENTRIES = 20;
 
 /**
  * Чем меньше осталось участников, тем медленнее лента: к финалу зритель
@@ -155,15 +152,16 @@ export function HoundHuntPage({ mode = "live" }: { mode?: HuntShowMode }) {
   const prizesRef = useRef(prizes);
   prizesRef.current = prizes;
 
-  const [pool, setPool] = useState<HuntEntry[]>(() => makeEntries(MOCK_ENTRIES));
-  // На входе подтягиваем 20 реальных участников из базы (ник + аватарка),
-  // чтобы интро показывало живой состав, а не моки.
+  const [pool, setPool] = useState<HuntEntry[]>([]);
+  /** Ставок нет — шоу не запускаем, показываем честную заглушку. */
+  const [noEntries, setNoEntries] = useState(false);
+  // Состав барабана — только реальные ставки из бекенда.
   useEffect(() => {
     preloadHuntSamples();
   }, []);
   useEffect(() => {
     let cancelled = false;
-    void fetchHuntPool(MOCK_ENTRIES).then((entries) => {
+    void fetchHuntPool().then((entries) => {
       if (!cancelled) setPool(entries);
     });
     return () => {
@@ -772,7 +770,13 @@ export function HoundHuntPage({ mode = "live" }: { mode?: HuntShowMode }) {
   const start = async () => {
     clearTimers();
     // Реплей крутит тот же состав, live — свежий жребий.
-    const fresh = await fetchHuntPool(MOCK_ENTRIES, Math.floor(Math.random() * 99999));
+    const fresh = await fetchHuntPool();
+    if (!fresh.length) {
+      setPool([]);
+      setNoEntries(true);
+      return;
+    }
+    setNoEntries(false);
     await Promise.all(
       [...new Set(fresh.map((entry) => entry.avatarUrl).filter((src): src is string => Boolean(src)))].map(
         (src) =>
@@ -974,7 +978,18 @@ export function HoundHuntPage({ mode = "live" }: { mode?: HuntShowMode }) {
           )}
 
 
-          {phase === "intro" && <ArenaLoading />}
+          {phase === "intro" && !noEntries && <ArenaLoading />}
+
+          {noEntries && (
+            <div className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-2 px-8 text-center">
+              <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-muted-foreground">
+                ставок пока нет
+              </p>
+              <p className="text-xs text-muted-foreground/70">
+                Барабан заполнится, когда участники поставят билеты.
+              </p>
+            </div>
+          )}
 
           {/* Реплей честно помечаем: это запись прошедшей охоты. */}
           {mode === "replay" && (
