@@ -9,7 +9,7 @@ import { useAnimations, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import riderAsset from "@/assets/rider.glb.asset.json";
 import victoryAsset from "@/assets/rider-victory.glb.asset.json";
-import danceAsset from "@/assets/rider-dance.glb.asset.json";
+import danceAsset from "@/assets/rider-agree.glb.asset.json";
 
 export type RiderMode = "idle" | "watch" | "lunge" | "chew";
 
