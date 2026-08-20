@@ -59,6 +59,12 @@ function fromLocalInput(value: string): string {
   return Number.isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString();
 }
 
+/** Настоящий id приза с бека (uuid) против локального мок-id. */
+function isUuid(v: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
+}
+
+
 function HoundHuntAdminPage() {
   const [cfg, setCfg] = useState<HuntConfig>(() => readHuntConfig());
   const [entries, setEntries] = useState<HuntEntry[]>([]);
