@@ -851,7 +851,10 @@ export function HoundHuntPage() {
 
           {phase === "intro" && <IntroPanel onStart={start} />}
 
-          {(phase === "arming" || phase === "drift" || phase === "settle") && (
+          {(phase === "arming" ||
+            phase === "drift" ||
+            phase === "settle" ||
+            phase === "countdown") && (
             <ReelStage
               slots={tape}
               ghosts={ghosts}
