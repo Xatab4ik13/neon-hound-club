@@ -33,14 +33,13 @@ import { EmberField } from "@/components/club/hound-hunt/EmberField";
 import { HuntAvatar } from "@/components/club/hound-hunt/HuntAvatar";
 import { KickedAvatar } from "@/components/club/hound-hunt/KickedAvatar";
 import {
-  HUNT_PRIZES,
-  HUNT_TICKET_STEP,
   makeEntries,
   fetchHuntEntries,
   rankColorsOf,
   type HuntEntry,
 
 } from "@/components/club/hound-hunt/hh-mock";
+import { prizesInRunOrder, useHuntConfig, type HuntConfigPrize } from "@/components/club/hound-hunt/hh-config";
 import { haptic } from "@/hooks/use-haptic";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -147,6 +146,12 @@ export function HoundHuntPage() {
   speedRef.current = speed;
   const dur = useCallback((base: number) => Math.max(220, base / speedRef.current), []);
 
+  // Призы (а значит и число раундов) и порог билетов приходят из админки.
+  const { cfg } = useHuntConfig();
+  const prizes = useMemo(() => prizesInRunOrder(cfg), [cfg]);
+  const prizesRef = useRef(prizes);
+  prizesRef.current = prizes;
+
   const [pool, setPool] = useState<HuntEntry[]>(() => makeEntries(MOCK_ENTRIES));
   // На входе подтягиваем 20 реальных участников из базы (ник + аватарка),
   // чтобы интро показывало живой состав, а не моки.
@@ -178,7 +183,7 @@ export function HoundHuntPage() {
   /** Абсолютный индекс слота, на котором лента должна остановиться. */
   const settleTargetRef = useRef<number | null>(null);
 
-  const prize = HUNT_PRIZES[Math.min(caseIdx, HUNT_PRIZES.length - 1)];
+  const prize = prizes[Math.min(caseIdx, prizes.length - 1)];
   // Позиция ленты — своя motion-value: барабан крутится непрерывно, а в момент
   // импакта мы читаем её и понимаем, кто именно сейчас под ногой.
   /** Текущая абсолютная фаза ленты — по ней окно выбирает, какие слоты рисовать. */
@@ -478,7 +483,13 @@ export function HoundHuntPage() {
     return list;
   }, []);
 
-  const pickWinner = useCallback((entries: HuntEntry[]) => {
+  const pickWinner = useCallback((entries: HuntEntry[], roundIdx = 0) => {
+    // Админка может заранее назначить победителя раунда — тогда жребий не нужен.
+    const forced = prizesRef.current[roundIdx]?.forcedWinnerId;
+    if (forced) {
+      const hit = entries.find((e) => e.id === forced);
+      if (hit) return hit;
+    }
     const total = entries.reduce((s, e) => s + e.slots, 0);
     let r = Math.random() * total;
     for (const e of entries) {
@@ -509,7 +520,7 @@ export function HoundHuntPage() {
 
   const runCase = useCallback(
     (idx: number, entries: HuntEntry[]) => {
-      const winner = pickWinner(entries);
+      const winner = pickWinner(entries, idx);
       const order = buildReel(entries);
       setCurrent(null);
       setSettled(false);
@@ -553,12 +564,12 @@ export function HoundHuntPage() {
         if (finished) return;
         finished = true;
         const survivor = liveRef.current[0] ?? winner;
-        setWinners((w) => [...w, { prizeId: HUNT_PRIZES[idx].id, entry: survivor }]);
+        setWinners((w) => [...w, { prizeId: prizesRef.current[idx].id, entry: survivor }]);
         const rest = entries.filter((e) => e.id !== survivor.id);
         setPool(rest);
 
         later(() => {
-          if (idx + 1 < HUNT_PRIZES.length) {
+          if (idx + 1 < prizesRef.current.length) {
             // Между раундами: барабан стоит, музыка выключена, идёт отсчёт.
             stopReel();
             pendingRoundRef.current = { idx: idx + 1, entries: rest };
@@ -926,7 +937,7 @@ export function HoundHuntPage() {
             />
           )}
 
-          {phase === "podium" && <Podium winners={winners} onRestart={start} />}
+          {phase === "podium" && <Podium winners={winners} prizes={prizes} />}
         </div>
 
         {/* тестовый пульт скорости: только по ?dev=1 */}
@@ -1303,10 +1314,10 @@ function RoundCountdown({ round, onDone }: { round: number; onDone: () => void }
 
 function Podium({
   winners,
-  onRestart,
+  prizes,
 }: {
   winners: { prizeId: string; entry: HuntEntry }[];
-  onRestart: () => void;
+  prizes: HuntConfigPrize[];
 }) {
   return (
     <motion.div
@@ -1319,7 +1330,7 @@ function Podium({
       </p>
       <div className="mt-3 space-y-1.5">
         {[...winners].reverse().map((w) => {
-          const p = HUNT_PRIZES.find((x) => x.id === w.prizeId)!;
+          const p = prizes.find((x) => x.id === w.prizeId) ?? prizes[0];
           const rc = rankColorsOf(w.entry);
           return (
             <div
