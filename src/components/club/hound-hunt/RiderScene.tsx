@@ -41,10 +41,6 @@ const VICTORY_URL = victoryAsset.url;
 const DANCE_URL = danceAsset.url;
 /** Имя, под которым регистрируется клип танца финального экрана. */
 const DANCE_CLIP = "hh_final_dance";
-/** Второй экземпляр того же клипа — им делаем бесшовный кроссфейд конца в начало. */
-const DANCE_CLIP_B = "hh_final_dance_b";
-/** Длительность кроссфейда лупа танца, сек. */
-const DANCE_FADE = 0.5;
 const BRAND = { r: 0xf0, g: 0x00, b: 0xc0 };
 
 /** Переводит розово-малиновые пиксели текстуры в фирменный #F000C0. */
@@ -133,19 +129,11 @@ function Model({
   // Клипы делят один и тот же риг (Meshy, одинаковые имена костей),
   // поэтому победный танец играется тем же миксером — без подмены модели.
   const danceClips = useMemo(() => {
-    const base = danceAnims.map((c, i) => {
+    return danceAnims.map((c, i) => {
       const clone = c.clone();
       clone.name = i === 0 ? DANCE_CLIP : `${DANCE_CLIP}_${i}`;
       return clone;
     });
-    // Дубль первого клипа: два экземпляра позволяют перекрыть хвост клипа
-    // его же началом, поэтому луп идёт без рывка и «сжатия» на стыке.
-    if (danceAnims[0]) {
-      const twin = danceAnims[0].clone();
-      twin.name = DANCE_CLIP_B;
-      base.push(twin);
-    }
-    return base;
   }, [danceAnims]);
   const allClips = useMemo(() => {
     // Meshy записывает перемещение всего тела в Hips.position. Оно полезно
@@ -236,8 +224,6 @@ function Model({
   const victoryName = names.find((n) => n.toLowerCase().includes("victory"));
   const victoryAction = victoryName ? actions[victoryName] : null;
   const danceAction = actions[DANCE_CLIP] ?? null;
-  const danceActionB = actions[DANCE_CLIP_B] ?? null;
-  const danceCur = useRef<THREE.AnimationAction | null>(null);
   const impactRef = useRef(onImpact);
   impactRef.current = onImpact;
   const readyRef = useRef(onKickReady);
@@ -308,59 +294,27 @@ function Model({
     }
   }, [victory, victoryAction, action]);
 
-  // Финальный экран: бесконечный танец. Луп собираем сами — два экземпляра
-  // клипа перекрываются кроссфейдом (см. useFrame), поэтому на стыке нет рывка.
+  // Жест играет нативным бесконечным loop с постоянным весом. Не используем
+  // fadeOut/crossfade: после нескольких циклов они обнуляли вес action, из-за
+  // чего герой постепенно сжимался и исчезал.
   useEffect(() => {
     if (!danceAction) return;
     if (dance) {
-      victoryAction?.fadeOut(0.5);
-      action?.fadeOut(0.5);
-      danceActionB?.stop();
+      victoryAction?.stop();
+      action?.stop();
       danceAction.enabled = true;
-      danceAction.clampWhenFinished = true;
-      danceAction.setLoop(THREE.LoopOnce, 1);
+      danceAction.clampWhenFinished = false;
+      danceAction.setLoop(THREE.LoopRepeat, Infinity);
       danceAction.timeScale = 1;
       danceAction.reset();
       danceAction.setEffectiveWeight(1);
-      if (instantDance) {
-        danceAction.play();
-        danceCur.current = danceAction;
-      } else {
-        danceAction.fadeIn(0.5).play();
-        danceCur.current = danceAction;
-      }
+      danceAction.play();
     } else {
-      danceAction.fadeOut(0.35);
-      danceActionB?.fadeOut(0.35);
-      danceCur.current = null;
+      danceAction.stop();
     }
-  }, [dance, instantDance, danceAction, danceActionB, victoryAction, action]);
+  }, [dance, instantDance, danceAction, victoryAction, action]);
 
   useFrame(() => {
-    // Бесшовный луп танца: хвост клипа перекрываем его же началом.
-    // Позицию модели здесь не меняем: она уже нормализована по bounds,
-    // а компенсация через root-bone уводила оба экземпляра за камеру.
-    if (dance && danceCur.current && danceAction) {
-      const cur = danceCur.current;
-      const d = cur.getClip().duration;
-      if (d > DANCE_FADE * 2 && cur.time >= d - DANCE_FADE) {
-        const next = cur === danceAction ? danceActionB : danceAction;
-        if (next) {
-          next.enabled = true;
-          next.clampWhenFinished = true;
-          next.setLoop(THREE.LoopOnce, 1);
-          next.timeScale = 1;
-          next.reset();
-          next.setEffectiveWeight(0);
-          next.play();
-          next.fadeIn(DANCE_FADE);
-          cur.fadeOut(DANCE_FADE);
-          danceCur.current = next;
-        }
-      }
-    }
-
-
     if (!action || !kickToken || action.paused || victory) return;
     const dur = action.getClip().duration;
     const impactAt = dur * 0.6;
