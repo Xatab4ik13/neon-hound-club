@@ -1,6 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { PlumpFeed, PlumpStore, PlumpTicket, PlumpHunt, PlumpMore } from "@/components/ui/icons";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { preloadRider } from "./hound-hunt/RiderCharacter";
 import { MobileMoreSheet } from "./MobileMoreSheet";
 import { haptic } from "@/hooks/use-haptic";
 
