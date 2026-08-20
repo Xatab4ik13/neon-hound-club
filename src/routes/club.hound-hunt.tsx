@@ -44,9 +44,19 @@ function HoundHuntRoute() {
   if (!pwa && !HH_DEV_TOGGLE) return <NotInApp />;
 
   return (
-    <div className="relative">
+    <div className="relative overflow-x-hidden">
       {HH_DEV_TOGGLE && <ModeToggle mode={mode} onChange={setMode} />}
-      {mode === "landing" ? <HuntLanding onEnterShow={() => setMode("show")} /> : <HuntShow />}
+      <div className={mode === "landing" ? "visible" : "invisible pointer-events-none"}>
+        <HuntLanding onEnterShow={() => setMode("show")} />
+      </div>
+      <div
+        className={cn(
+          "absolute inset-x-0 top-0",
+          mode === "show" ? "visible" : "invisible pointer-events-none",
+        )}
+      >
+        <HuntShow />
+      </div>
     </div>
   );
 }
