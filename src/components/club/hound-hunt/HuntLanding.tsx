@@ -8,7 +8,6 @@ import { motion } from "framer-motion";
 import { RiderCharacter } from "./RiderCharacter";
 import { useHuntConfig, prizesInRunOrder } from "./hh-config";
 import { HuntAvatar } from "./HuntAvatar";
-import { KickedAvatar } from "./KickedAvatar";
 import { fetchHuntEntries, type HuntEntry } from "./hh-mock";
 import { getTier } from "@/data/hell-pass";
 import { haptic } from "@/hooks/use-haptic";
@@ -72,43 +71,8 @@ function Reveal({
 /** Цвета плашек в FAQ — тот же приём, что на странице инструктора школы. */
 const FAQ_TINTS = [TOXIC, "#FF8A3C", "#F000C0", "#3CC8FF"];
 
-/** Капсула стоит точно по центру левой сцены до момента удара. */
-function CenteredCapsule({ entry }: { entry: HuntEntry }) {
-  return (
-    <div className="pointer-events-none absolute left-1/2 top-[calc(50%+3.125rem)] z-30 -translate-x-1/2 -translate-y-1/2">
-      <HuntAvatar entry={entry} focused hideNick scale={0.32} />
-    </div>
-  );
-}
 
-/** Витрина: персонаж циклично выбивает капсулу с твоей аватаркой (~7.5 с на цикл). */
-function KickStage({ me }: { me: HuntEntry | null }) {
-  const [token, setToken] = useState(1);
-  const [flight, setFlight] = useState<number | null>(null);
 
-  useEffect(() => {
-    const id = setInterval(() => {
-      setToken((t) => {
-        const next = t + 1;
-        setFlight(next);
-        window.setTimeout(() => setFlight(null), 2000);
-        return next;
-      });
-    }, 7500);
-    return () => clearInterval(id);
-  }, []);
-
-  return (
-    <div className="relative h-full w-full overflow-visible">
-      {me && flight === null && <CenteredCapsule entry={me} />}
-      {me && flight !== null && (
-        <div className="pointer-events-none absolute left-1/2 top-[calc(50%+3.125rem)] z-30 size-0">
-          <KickedAvatar entry={me} seed={`landing-${flight}`} scale={0.32} width={42.24} />
-        </div>
-      )}
-    </div>
-  );
-}
 
 /** Преимущества Platinum + кнопка покупки, в цвете тира. */
 function PlatinumCard() {
@@ -169,12 +133,14 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
   const [tickets, setTickets] = useState(() => cfg.ticketStep * 2);
   const capsules = Math.max(0, Math.floor(tickets / cfg.ticketStep));
 
-  const startLabel = new Date(cfg.startsAt).toLocaleString("ru-RU", {
+  const startLabel = `${new Date(cfg.startsAt).toLocaleString("ru-RU", {
     day: "numeric",
     month: "long",
     hour: "2-digit",
     minute: "2-digit",
-  });
+    timeZone: "Europe/Moscow",
+  })} МСК`;
+
 
   return (
     <div className="relative min-h-[100svh] overflow-hidden bg-black pb-24">
@@ -195,7 +161,7 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
             transition={{ delay: 0.05 }}
             className="font-display text-[15vw] font-black uppercase leading-[0.85] tracking-tighter text-white"
           >
-            Hound
+            Hell
             <br />
             <span style={{ color: TOXIC }}>Hunt</span>
           </motion.h1>
@@ -206,9 +172,10 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
             transition={{ delay: 0.15 }}
             className="mx-auto mt-3 max-w-xs text-sm leading-relaxed text-muted-foreground"
           >
-            Раз в неделю гончая выходит на охоту. В барабане только владельцы Platinum —
+            Раз в неделю Хелл выходит на охоту. В барабане только владельцы Platinum —
             выбивает всех, кроме одного.
           </motion.p>
+
 
           <div className="mx-auto -mt-4 h-[64svh] w-full max-w-md">
             <RiderCharacter mode="idle" dance className="h-full w-full" />
@@ -269,7 +236,7 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
                   охота идёт
                 </motion.p>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  Гончая уже в барабане. Заходи — шоу идёт прямо сейчас.
+                  Хелл уже в барабане. Заходи — шоу идёт прямо сейчас.
                 </p>
                 <button
                   type="button"
@@ -382,28 +349,57 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
           <div className="mt-4 rounded-3xl border border-border/60 bg-card/50 p-5">
             <div className="flex items-baseline justify-between">
               <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                твои билеты
+                твоя ставка
               </span>
               <span className="font-mono text-xl font-bold tabular-nums" style={{ color: TOXIC }}>
                 {tickets}
               </span>
             </div>
-            <input
-              type="range"
-              min={0}
-              max={cfg.ticketStep * 10}
-              step={cfg.ticketStep}
-              value={tickets}
-              onChange={(e) => setTickets(Number(e.target.value))}
-              className="mt-3 w-full accent-primary"
-              aria-label="Количество билетов"
-            />
+
+            <div className="mt-3 flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  haptic("light");
+                  setTickets((t) => Math.max(0, t - cfg.ticketStep));
+                }}
+                disabled={tickets <= 0}
+                className="size-12 shrink-0 rounded-2xl border border-border/70 bg-background/50 font-display text-2xl font-black leading-none transition active:scale-95 disabled:opacity-35"
+                aria-label={`Минус ${cfg.ticketStep} билетов`}
+              >
+                −
+              </button>
+              <input
+                type="range"
+                min={0}
+                max={cfg.ticketStep * 10}
+                step={cfg.ticketStep}
+                value={tickets}
+                onChange={(e) => setTickets(Number(e.target.value))}
+                className="min-w-0 flex-1 accent-primary"
+                aria-label="Количество билетов"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  haptic("light");
+                  setTickets((t) => Math.min(cfg.ticketStep * 10, t + cfg.ticketStep));
+                }}
+                disabled={tickets >= cfg.ticketStep * 10}
+                className="size-12 shrink-0 rounded-2xl border border-border/70 bg-background/50 font-display text-2xl font-black leading-none transition active:scale-95 disabled:opacity-35"
+                aria-label={`Плюс ${cfg.ticketStep} билетов`}
+              >
+                +
+              </button>
+            </div>
+
             <p className="mt-3 text-xs text-muted-foreground">
               {capsules === 0
-                ? `Нужно минимум ${cfg.ticketStep} билетов, чтобы попасть в барабан.`
-                : "Крутятся в твоём барабане."}
+                ? `Минимальная ставка — ${cfg.ticketStep} билетов. Шаг ${cfg.ticketStep}.`
+                : `${capsules} ${capsules === 1 ? "капсула" : "капсул"} в барабане. Ставка сгорает целиком — это плата за участие.`}
             </p>
-            {me && (
+
+            {me && capsules > 0 && (
               <div className="mt-4 flex flex-wrap gap-2">
                 {Array.from({ length: Math.min(capsules, 10) }, (_, i) => (
                   <motion.div
@@ -417,20 +413,26 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
                 ))}
               </div>
             )}
+
+            <button
+              type="button"
+              onClick={() => haptic("success")}
+              disabled={capsules === 0}
+              className="mt-5 w-full rounded-2xl px-6 py-3.5 font-display text-base font-black uppercase tracking-wide text-background transition active:scale-[0.98] disabled:opacity-40"
+              style={{ background: TOXIC, boxShadow: `0 0 45px -16px ${TOXIC}` }}
+            >
+              Поставить {tickets} билетов
+            </button>
           </div>
         </Reveal>
 
-        {/* --------------- витрина: удар + Hell Pass Platinum --------------- */}
+        {/* --------------------------- Hell Pass Platinum --------------------------- */}
         <Reveal className="mt-10 px-6">
-          <div className="relative grid grid-cols-2 items-stretch gap-1 rounded-3xl border border-border/60 bg-card/40 p-2">
-            <div className="relative z-20 h-[42svh] overflow-visible">
-              <KickStage me={me} />
-            </div>
-            <div className="relative z-10">
-              <PlatinumCard />
-            </div>
+          <div className="rounded-3xl border border-border/60 bg-card/40 p-2">
+            <PlatinumCard />
           </div>
         </Reveal>
+
 
 
         {/* ------------------------------ FAQ ------------------------------ */}
@@ -442,7 +444,7 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
             {[
               {
                 q: "Что если я не зайду вовремя?",
-                a: "Капсулы крутятся независимо от того, смотришь ты или нет. Приз всё равно твой, если гончая тебя не выбила — итоги увидишь на этой странице.",
+                a: "Капсулы крутятся независимо от того, смотришь ты или нет. Приз всё равно твой, если Хелл тебя не выбил — итоги увидишь на этой странице.",
               },
               {
                 q: "Насколько это честно?",
@@ -450,7 +452,7 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
               },
               {
                 q: "Что происходит с билетами?",
-                a: "Билеты, которые дали тебе капсулы, остаются на балансе — они работают как вес в охоте, а не как плата за вход.",
+                a: "Билеты сгорают. Ставка — это плата за участие: поставил 100 билетов — все 100 списываются, независимо от результата охоты.",
               },
               {
                 q: "Как часто проходит охота?",
