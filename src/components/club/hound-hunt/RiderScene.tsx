@@ -119,11 +119,9 @@ function Model({
   onImpact?: (cycle: number) => void;
 }) {
   const group = useRef<THREE.Group>(null);
-  // У Meshy-модели ломаются bind matrices после SkeletonUtils.clone,
-  // поэтому двум одновременно видимым canvas нужны независимые сцены.
-  // URL постоянен для всего срока жизни canvas и НЕ зависит от mode:
-  // idle → lunge теперь переключает только action, без исчезновения модели.
-  const instanceUrl = instance === "hero" ? MODEL_URL : `${MODEL_URL}?instance=action`;
+  // На лендинге canvas монтируются только возле видимой области, поэтому
+  // тяжёлая модель и её текстуры могут использовать единый кеш без дубля в GPU.
+  const instanceUrl = MODEL_URL;
   const { scene: cloned, animations } = useGLTF(instanceUrl);
   const { animations: victoryAnims } = useGLTF(VICTORY_URL);
   const { animations: danceAnims } = useGLTF(DANCE_URL);
@@ -410,6 +408,5 @@ export default function RiderScene({
 }
 
 useGLTF.preload(MODEL_URL);
-useGLTF.preload(`${MODEL_URL}?instance=action`);
 useGLTF.preload(VICTORY_URL);
 useGLTF.preload(DANCE_URL);
