@@ -19,6 +19,8 @@ import {
 } from "@/lib/queries";
 import { useViewer } from "@/hooks/use-viewer";
 import { useMyProfile } from "@/lib/garage-api";
+import { useHuntConfig } from "@/components/club/hound-hunt/hh-config";
+import { useHuntPhase } from "@/components/club/hound-hunt/hh-phase";
 
 export const Route = createFileRoute("/club/tickets")({
   head: () => ({
@@ -56,7 +58,7 @@ function TicketsPage() {
 
   // Плашка «идёт сейчас» на карточке охоты — та же фаза, что и на самой странице.
   const huntCfg = useHuntConfig();
-  const huntPhase = useHuntPhase(huntCfg.config.startsAt);
+  const huntPhase = useHuntPhase(huntCfg.cfg.startsAt);
   const huntLive = huntPhase.phase === "live";
 
 
