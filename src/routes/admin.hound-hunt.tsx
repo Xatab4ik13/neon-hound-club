@@ -123,6 +123,9 @@ function HoundHuntAdminPage() {
   };
 
   const runOrder = prizesInRunOrder(cfg);
+  const totalTickets = entries.reduce((s, e) => s + e.tickets, 0);
+  const sortedEntries = [...entries].sort((a, b) => b.tickets - a.tickets);
+
 
   return (
     <div>
