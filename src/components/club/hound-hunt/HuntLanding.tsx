@@ -71,21 +71,29 @@ function Reveal({
 /** Цвета плашек в FAQ — тот же приём, что на странице инструктора школы. */
 const FAQ_TINTS = [TOXIC, "#FF8A3C", "#F000C0", "#3CC8FF"];
 
-/** Капсула с аватаркой: вылетает от удара, бьётся о две стенки и уходит из кадра. */
-function BouncingCapsule({ entry }: { entry: HuntEntry }) {
+/** Капсула с аватаркой: стоит перед персонажем, от удара бьётся о две стенки и улетает. */
+function Capsule({ entry, flying }: { entry: HuntEntry; flying: boolean }) {
   return (
     <motion.div
-      className="pointer-events-none absolute bottom-[26%] left-[22%] z-30"
-      initial={{ x: 0, y: 0, opacity: 0, scale: 0.9, rotate: 0 }}
-      animate={{
-        // 0 → правая стенка → левая стенка → уход вверх-вправо из кадра
-        x: ["0%", "180%", "20%", "260%"],
-        y: ["0%", "-120%", "40%", "-260%"],
-        rotate: [0, 220, 420, 760],
-        scale: [0.9, 1.1, 1, 0.7],
-        opacity: [0, 1, 1, 0],
-      }}
-      transition={{ duration: 2.2, times: [0, 0.34, 0.68, 1], ease: "easeOut" }}
+      className="pointer-events-none absolute bottom-[18%] left-[52%] z-30"
+      initial={false}
+      animate={
+        flying
+          ? {
+              // удар → правая стенка → левая стенка → уход из кадра
+              x: [0, 150, -60, 300],
+              y: [0, -110, 30, -240],
+              rotate: [0, 240, 460, 820],
+              scale: [1, 1.1, 1, 0.7],
+              opacity: [1, 1, 1, 0],
+            }
+          : { x: 0, y: 0, rotate: 0, scale: 1, opacity: 1 }
+      }
+      transition={
+        flying
+          ? { duration: 2, times: [0, 0.32, 0.66, 1], ease: "easeOut" }
+          : { duration: 0.25 }
+      }
     >
       <HuntAvatar entry={entry} focused hideNick scale={0.42} />
     </motion.div>
@@ -95,7 +103,7 @@ function BouncingCapsule({ entry }: { entry: HuntEntry }) {
 /** Витрина: персонаж циклично выбивает капсулу с твоей аватаркой (~7.5 с на цикл). */
 function KickStage({ me }: { me: HuntEntry | null }) {
   const [token, setToken] = useState(0);
-  const [flying, setFlying] = useState(0);
+  const [flying, setFlying] = useState(false);
 
   useEffect(() => {
     const id = setInterval(() => setToken((t) => t + 1), 7500);
@@ -103,14 +111,20 @@ function KickStage({ me }: { me: HuntEntry | null }) {
   }, []);
 
   return (
-    <div className="relative h-full w-full overflow-hidden">
-      <RiderCharacter
-        mode="lunge"
-        kickToken={token}
-        onImpact={() => setFlying((f) => f + 1)}
-        className="h-full w-full"
-      />
-      {me && flying > 0 && <BouncingCapsule key={flying} entry={me} />}
+    <div className="relative h-full w-full">
+      {/* персонаж крупнее на 30%, стоит на нижней кромке блока */}
+      <div className="h-full w-full origin-bottom scale-[1.3]">
+        <RiderCharacter
+          mode="lunge"
+          kickToken={token}
+          onImpact={() => {
+            setFlying(true);
+            window.setTimeout(() => setFlying(false), 2100);
+          }}
+          className="h-full w-full"
+        />
+      </div>
+      {me && <Capsule entry={me} flying={flying} />}
     </div>
   );
 }
@@ -427,10 +441,7 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
 
         {/* --------------- витрина: удар + Hell Pass Platinum --------------- */}
         <Reveal className="mt-10 px-6">
-          <div
-            className="relative grid grid-cols-2 items-stretch gap-1 overflow-hidden rounded-3xl border bg-card/40 p-2"
-            style={{ borderColor: `${TOXIC}55`, boxShadow: `0 0 60px -26px ${TOXIC}` }}
-          >
+          <div className="relative grid grid-cols-2 items-stretch gap-1 overflow-hidden rounded-3xl border border-border/60 bg-card/40 p-2">
             <div className="h-[42svh]">
               <KickStage me={me} />
             </div>
