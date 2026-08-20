@@ -25,7 +25,9 @@ import {
   preloadHuntSamples,
   playHuntWin,
   speakHuntCount,
+  HUNT_WIN_MS,
 } from "@/lib/hunt-audio";
+
 import { RiderCharacter, type RiderMode } from "@/components/club/hound-hunt/RiderCharacter";
 import { EmberField } from "@/components/club/hound-hunt/EmberField";
 import { HuntAvatar } from "@/components/club/hound-hunt/HuntAvatar";
@@ -92,7 +94,7 @@ const BASE = {
   capsule: 360, // одна капсула проезжает мимо центра за столько мс (быстро)
   pull: 5000, // последняя капсула подъезжает к персонажу
   crack: 2200, // раскрытие капсулы
-  reveal: 2800, // ревил победителя перед отсчётом следующего раунда
+  reveal: HUNT_WIN_MS + 200, // ревил победителя: держим, пока фанфара не доиграет
 };
 
 const SPEEDS = [1, 2, 5, 20, 60] as const;
