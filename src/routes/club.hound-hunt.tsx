@@ -874,16 +874,16 @@ export function HoundHuntPage() {
                 <img src={prize.img} alt="" className="h-9 w-9 object-contain" />
               </div>
               <div className="min-w-0 text-left">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-primary">
+                <p
+                  className="text-[10px] font-semibold uppercase tracking-[0.22em]"
+                  style={{ color: "#B6FF3C", textShadow: "0 0 10px rgba(182,255,60,0.65)" }}
+                >
                   разыгрывается
                 </p>
                 <p className="truncate font-display text-sm font-black uppercase leading-tight">
                   {prize.title}
                 </p>
               </div>
-              <span className="ml-1 shrink-0 rounded-full border border-border/60 bg-background/50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                {prize.sub}
-              </span>
             </div>
           </motion.div>
         )}
