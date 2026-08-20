@@ -1344,7 +1344,7 @@ function Podium({
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="relative z-10 w-full max-w-md px-6 text-center"
+      className="pointer-events-auto absolute inset-x-0 bottom-0 z-10 mx-auto w-full max-w-md px-6 text-center"
     >
       <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-destructive">
         охота закрыта
