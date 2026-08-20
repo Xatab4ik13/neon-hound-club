@@ -317,14 +317,14 @@ function Model({
       action?.fadeOut(0.5);
       danceActionB?.stop();
       danceAction.enabled = true;
-      danceAction.clampWhenFinished = !instantDance;
-      danceAction.setLoop(instantDance ? THREE.LoopRepeat : THREE.LoopOnce, instantDance ? Infinity : 1);
+      danceAction.clampWhenFinished = true;
+      danceAction.setLoop(THREE.LoopOnce, 1);
       danceAction.timeScale = 1;
       danceAction.reset();
       danceAction.setEffectiveWeight(1);
       if (instantDance) {
         danceAction.play();
-        danceCur.current = null;
+        danceCur.current = danceAction;
       } else {
         danceAction.fadeIn(0.5).play();
         danceCur.current = danceAction;
