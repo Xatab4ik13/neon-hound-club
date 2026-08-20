@@ -794,18 +794,7 @@ export function HoundHuntPage() {
 
   return (
     <div className="fixed inset-0 z-40 overflow-hidden overscroll-none touch-pan-y bg-background text-foreground select-none">
-      {/* Фоновое свечение: мягкая «тень» за персонажем + неоновые пятна по краям
-          в брендовой магенте, без тяжёлых слоёв. */}
-      <div
-        className="pointer-events-none absolute left-1/2 top-[46%] z-0 -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl"
-        style={{
-          width: "78vw",
-          height: "46vh",
-          background:
-            "radial-gradient(closest-side, color-mix(in oklab, var(--destructive) 22%, transparent), transparent 74%)",
-          opacity: 0.55,
-        }}
-      />
+      {/* Фоновое свечение: неоновые пятна по краям в брендовой магенте. */}
       <div
         className="pointer-events-none absolute inset-0 z-0"
         style={{
