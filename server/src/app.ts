@@ -200,6 +200,10 @@ export async function buildApp() {
   await app.register(spinRoutes, { prefix: "/api/v1/spin" });
   await app.register(adminSpinRoutes, { prefix: "/api/v1/admin/spin" });
 
+  const { huntRoutes, adminHuntRoutes } = await import("./routes/hunt.js");
+  await app.register(huntRoutes, { prefix: "/api/v1/hunt" });
+  await app.register(adminHuntRoutes, { prefix: "/api/v1/admin/hunt" });
+
 
   // Создаём S3-бакет, если его ещё нет.
   try {

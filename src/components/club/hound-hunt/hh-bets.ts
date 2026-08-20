@@ -1,10 +1,13 @@
 // Ставки и итоги охоты HELL HUNT.
 //
-// ВАЖНО: сейчас это мок на localStorage, но интерфейс уже такой, каким он
-// будет с бекендом: getMyBet / placeBet / readResults / saveResults. Когда
-// появится API, внутри этих функций встанет apiFetch — компоненты не меняются.
+// Ставки живут на бекенде: POST /api/v1/hunt/bet списывает билеты и пишет
+// заявку, GET /api/v1/hunt/current отдаёт мою ставку. localStorage остаётся
+// кешем для мгновенного рендера и оффлайна. Итоги шоу (results) — локальные,
+// они только повторяют то, что уже решил бек.
 
 import { useCallback, useEffect, useState } from "react";
+import { fetchHuntState, postHuntBet } from "@/lib/hunt-api";
+
 
 const BETS_KEY = "hh.hunt.bets.v1";
 const RESULTS_KEY = "hh.hunt.results.v1";
@@ -46,23 +49,28 @@ function writeJson(key: string, value: unknown) {
   window.dispatchEvent(new Event(EVT));
 }
 
-/** Текущая ставка юзера в этой охоте. */
+/** Текущая ставка юзера в этой охоте (кеш; истина — бек). */
 export function getMyBet(hunt: HuntKey, ticketStep: number): MyBet {
   const tickets = readJson<BetsMap>(BETS_KEY, {})[hunt] ?? 0;
   return { tickets, capsules: Math.floor(tickets / Math.max(1, ticketStep)) };
 }
 
+function cacheBet(hunt: HuntKey, tickets: number) {
+  const map = readJson<BetsMap>(BETS_KEY, {});
+  map[hunt] = tickets;
+  writeJson(BETS_KEY, map);
+}
+
 /**
- * Поставить билеты. Ставки суммируются, списание сразу, отмены нет.
- * На бекенде здесь будет POST со списанием из леджера билетов.
+ * Поставить билеты. Списание на бекенде (леджер билетов), ставки суммируются,
+ * отмены нет. Локально кешируем ответ, чтобы UI не мигал.
  */
 export async function placeBet(hunt: HuntKey, amount: number, ticketStep: number): Promise<MyBet> {
-  const map = readJson<BetsMap>(BETS_KEY, {});
-  const next = (map[hunt] ?? 0) + Math.max(0, Math.floor(amount));
-  map[hunt] = next;
-  writeJson(BETS_KEY, map);
-  return { tickets: next, capsules: Math.floor(next / Math.max(1, ticketStep)) };
+  const res = await postHuntBet(Math.max(0, Math.floor(amount)));
+  cacheBet(hunt, res.tickets);
+  return { tickets: res.tickets, capsules: res.capsules ?? Math.floor(res.tickets / Math.max(1, ticketStep)) };
 }
+
 
 /** Итоги охоты: пишутся один раз в конце шоу, реплей показывает их же. */
 export function readResults(hunt: HuntKey): HuntResult[] {
@@ -87,15 +95,30 @@ export function useMyBet(hunt: HuntKey, ticketStep: number) {
   const [bet, setBet] = useState<MyBet>(() => getMyBet(hunt, ticketStep));
 
   useEffect(() => {
+    let alive = true;
     const sync = () => setBet(getMyBet(hunt, ticketStep));
     sync();
     window.addEventListener(EVT, sync);
     window.addEventListener("storage", sync);
+
+    // Истина по ставке — бек: подтягиваем её и обновляем кеш.
+    void fetchHuntState()
+      .then((state) => {
+        if (!alive || !state.me) return;
+        cacheBet(hunt, state.me.tickets);
+        setBet({ tickets: state.me.tickets, capsules: state.me.capsules });
+      })
+      .catch(() => {
+        /* оффлайн/не авторизован — остаётся кеш */
+      });
+
     return () => {
+      alive = false;
       window.removeEventListener(EVT, sync);
       window.removeEventListener("storage", sync);
     };
   }, [hunt, ticketStep]);
+
 
   const bump = useCallback(
     async (amount: number) => {

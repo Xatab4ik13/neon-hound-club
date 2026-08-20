@@ -21,11 +21,19 @@ import {
   readHuntConfig,
   writeHuntConfig,
   prizesInRunOrder,
+  huntConfigFromApi,
   type HuntConfig,
   type HuntConfigPrize,
 } from "@/components/club/hound-hunt/hh-config";
 import { fetchHuntEntries, type HuntEntry } from "@/components/club/hound-hunt/hh-mock";
 import { resetHuntState } from "@/components/club/hound-hunt/hh-bets";
+import {
+  fetchAdminHunt,
+  saveAdminHunt,
+  drawAdminHunt,
+  resetAdminHuntResults,
+  type HuntApiEntry,
+} from "@/lib/hunt-api";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/hound-hunt")({
@@ -54,9 +62,36 @@ function fromLocalInput(value: string): string {
 function HoundHuntAdminPage() {
   const [cfg, setCfg] = useState<HuntConfig>(() => readHuntConfig());
   const [entries, setEntries] = useState<HuntEntry[]>([]);
+  const [busy, setBusy] = useState(false);
+
+  /** Тянем реальную охоту и её участников с бека. */
+  const load = async () => {
+    try {
+      const state = await fetchAdminHunt();
+      const next = huntConfigFromApi(state);
+      if (next) {
+        setCfg(next);
+        writeHuntConfig(next);
+      }
+      setEntries(
+        (state.entries ?? []).map((e: HuntApiEntry) => ({
+          id: e.id,
+          nick: e.nick,
+          initials: (e.nick || "RD").slice(0, 2).toUpperCase(),
+          avatarUrl: e.avatarUrl ?? undefined,
+          city: e.city ?? "",
+          tickets: e.tickets,
+          slots: e.capsules,
+        })) as HuntEntry[],
+      );
+    } catch {
+      // нет охоты/бек недоступен — показываем демо-состав, чтобы верстка не пустовала
+      void fetchHuntEntries(20).then(setEntries);
+    }
+  };
 
   useEffect(() => {
-    void fetchHuntEntries(20).then(setEntries);
+    void load();
   }, []);
 
   const patchPrize = (id: string, patch: Partial<HuntConfigPrize>) =>
@@ -94,13 +129,22 @@ function HoundHuntAdminPage() {
   const removePrize = (id: string) =>
     setCfg((c) => ({ ...c, prizes: c.prizes.filter((p) => p.id !== id) }));
 
-  /** Новая охота: ставки и итоги прошлой обнуляются. */
-  const newHunt = () => {
-    resetHuntState();
-    toast.success("Ставки и итоги прошлой охоты сброшены");
+  /** Сброс итогов прошлой охоты на бекенде + локальный кеш. */
+  const newHunt = async () => {
+    setBusy(true);
+    try {
+      await resetAdminHuntResults();
+      resetHuntState();
+      await load();
+      toast.success("Итоги прошлой охоты сброшены");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Не получилось сбросить итоги");
+    } finally {
+      setBusy(false);
+    }
   };
 
-  const save = () => {
+  const save = async () => {
     if (!cfg.prizes.length) {
       toast.error("Нужен хотя бы один приз — это один раунд охоты");
       return;
@@ -110,8 +154,53 @@ function HoundHuntAdminPage() {
       toast.error("Один участник назначен на два приза — так нельзя");
       return;
     }
-    writeHuntConfig(cfg);
-    toast.success("Конфиг охоты применён");
+    setBusy(true);
+    try {
+      const state = await saveAdminHunt({
+        id: cfg.id ?? null,
+        title: "HELL HUNT",
+        startsAt: cfg.startsAt,
+        ticketStep: cfg.ticketStep,
+        status: "open",
+        prizes: cfg.prizes.map((p) => ({
+          id: p.id.startsWith("p-") ? undefined : p.id,
+          place: p.place,
+          title: p.title,
+          sub: p.sub,
+          img: p.img,
+          ticketsReward: p.ticketsReward ?? 0,
+          forcedWinnerId: p.forcedWinnerId ?? null,
+        })),
+      });
+      const next = huntConfigFromApi(state);
+      if (next) {
+        setCfg(next);
+        writeHuntConfig(next);
+      }
+      toast.success("Охота сохранена на бекенде");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Не получилось сохранить охоту");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  /** Прокрутить жребий: назначенные победители фиксируются, остальные — по весам. */
+  const draw = async () => {
+    setBusy(true);
+    try {
+      const state = await drawAdminHunt(true);
+      const next = huntConfigFromApi(state);
+      if (next) {
+        setCfg(next);
+        writeHuntConfig(next);
+      }
+      toast.success("Жребий прокручен — шоу покажет этих победителей");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Не получилось прокрутить жребий");
+    } finally {
+      setBusy(false);
+    }
   };
 
 
@@ -121,6 +210,7 @@ function HoundHuntAdminPage() {
     writeHuntConfig(d);
     toast.success("Вернули дефолтный конфиг");
   };
+
 
   const runOrder = prizesInRunOrder(cfg);
   const totalTickets = entries.reduce((s, e) => s + e.tickets, 0);
@@ -134,16 +224,20 @@ function HoundHuntAdminPage() {
         description="Недельная охота для Hell Pass Platinum. Всё, что здесь настроено, видит лендинг и шоу."
         actions={
           <>
-            <Btn variant="secondary" onClick={newHunt}>
+            <Btn variant="secondary" onClick={() => void newHunt()} disabled={busy}>
               Новая охота
             </Btn>
-            <Btn variant="secondary" onClick={reset}>
+            <Btn variant="secondary" onClick={reset} disabled={busy}>
               Сбросить
             </Btn>
-            <Btn variant="primary" onClick={save}>
-              Применить к шоу
+            <Btn variant="secondary" onClick={() => void draw()} disabled={busy}>
+              Прокрутить жребий
+            </Btn>
+            <Btn variant="primary" onClick={() => void save()} disabled={busy}>
+              Сохранить охоту
             </Btn>
           </>
+
         }
       />
 

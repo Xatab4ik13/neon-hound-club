@@ -1,9 +1,10 @@
-// Конфиг охоты HELL HUNT. ТОЛЬКО ФРОНТ: живёт в localStorage, пишется из
-// админки (/admin/hound-hunt), читается лендингом и шоу. Позже переедет на
-// бекенд — тогда `useHuntConfig` просто начнёт дергать API.
+// Конфиг охоты HELL HUNT. Источник истины — бекенд (`/api/v1/hunt/current`),
+// localStorage используется как кеш для мгновенного первого рендера.
+// Пишется из админки (/admin/hound-hunt), читается лендингом и шоу.
 
 import { useCallback, useEffect, useState } from "react";
 import { HUNT_PRIZES, HUNT_TICKET_STEP } from "./hh-mock";
+import { fetchHuntState, type HuntApiState } from "@/lib/hunt-api";
 
 export type HuntConfigPrize = {
   id: string;
@@ -19,9 +20,16 @@ export type HuntConfigPrize = {
    * по весам билетов.
    */
   forcedWinnerId: string | null;
+  /** Итог с бека: кто выиграл (после прокрутки жребия). */
+  winnerUserId?: string | null;
+  winnerNick?: string | null;
+  /** Если приз — билеты, сколько начисляем победителю. */
+  ticketsReward?: number;
 };
 
 export type HuntConfig = {
+  /** id охоты на бекенде (null, пока охоты нет). */
+  id?: string | null;
   /** ISO-дата и время старта шоу. */
   startsAt: string;
   /** Сколько билетов даёт одну капсулу в барабане. */
@@ -66,6 +74,7 @@ export function readHuntConfig(): HuntConfig {
     const base = defaultHuntConfig();
     const prizes = Array.isArray(parsed.prizes) && parsed.prizes.length ? parsed.prizes : base.prizes;
     return {
+      id: parsed.id ?? null,
       startsAt: typeof parsed.startsAt === "string" ? parsed.startsAt : base.startsAt,
       ticketStep: Number(parsed.ticketStep) > 0 ? Number(parsed.ticketStep) : base.ticketStep,
       prizes: prizes.map((p, i) => ({
@@ -75,6 +84,9 @@ export function readHuntConfig(): HuntConfig {
         sub: p.sub ?? "",
         img: p.img || base.prizes[0].img,
         forcedWinnerId: p.forcedWinnerId ?? null,
+        winnerUserId: p.winnerUserId ?? null,
+        winnerNick: p.winnerNick ?? null,
+        ticketsReward: p.ticketsReward ?? 0,
       })),
     };
   } catch {
@@ -93,15 +105,56 @@ export function prizesInRunOrder(cfg: HuntConfig): HuntConfigPrize[] {
   return [...cfg.prizes].sort((a, b) => b.place - a.place);
 }
 
+/** Ответ бека → форма конфига, которую ждут компоненты. */
+export function huntConfigFromApi(state: HuntApiState): HuntConfig | null {
+  if (!state.hunt) return null;
+  const base = defaultHuntConfig();
+  return {
+    id: state.hunt.id,
+    startsAt: state.hunt.startsAt,
+    ticketStep: state.hunt.ticketStep,
+    prizes: state.prizes.map((p, i) => ({
+      id: p.id,
+      place: p.place,
+      title: p.title,
+      sub: p.sub ?? "",
+      img: p.img || base.prizes[Math.min(i, base.prizes.length - 1)].img,
+      forcedWinnerId: p.forcedWinnerId ?? null,
+      winnerUserId: p.winnerUserId ?? null,
+      winnerNick: p.winnerNick ?? null,
+      ticketsReward: p.ticketsReward ?? 0,
+    })),
+  };
+}
+
+/**
+ * Конфиг охоты. Источник истины — бекенд (`/api/v1/hunt/current`), localStorage
+ * остаётся кешем на случай оффлайна/первого рендера.
+ */
 export function useHuntConfig() {
   const [cfg, setCfg] = useState<HuntConfig>(() => readHuntConfig());
 
   useEffect(() => {
+    let alive = true;
     const sync = () => setCfg(readHuntConfig());
-    sync();
     window.addEventListener("hh-hunt-config", sync);
     window.addEventListener("storage", sync);
+
+    void fetchHuntState()
+      .then((state) => {
+        if (!alive) return;
+        const next = huntConfigFromApi(state);
+        if (next) {
+          writeHuntConfig(next);
+          setCfg(next);
+        }
+      })
+      .catch(() => {
+        /* оффлайн/не авторизован — остаётся кеш */
+      });
+
     return () => {
+      alive = false;
       window.removeEventListener("hh-hunt-config", sync);
       window.removeEventListener("storage", sync);
     };

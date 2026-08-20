@@ -143,3 +143,31 @@ export function rankColorsOf(entry: HuntEntry) {
   const meta = RANKS.find((r) => r.id === entry.rankId) ?? RANKS[0];
   return { accent: meta.accent, accentSoft: meta.accentSoft };
 }
+
+/**
+ * Реальный состав барабана из бекенда (`/api/v1/hunt/current`): ники, аватарки,
+ * билеты и капсулы участников. Если охоты/ставок ещё нет — крутим демо-состав,
+ * чтобы шоу всё равно можно было посмотреть.
+ */
+export async function fetchHuntPool(count = 20, seed = 1337): Promise<HuntEntry[]> {
+  try {
+    const { fetchHuntState } = await import("@/lib/hunt-api");
+    const state = await fetchHuntState();
+    const list = state.entries ?? [];
+    if (list.length) {
+      return list.slice(0, Math.max(count, list.length)).map((e) => ({
+        id: e.id,
+        nick: (e.nick || "RIDER").toUpperCase(),
+        initials: initialsOf((e.nick || "RIDER").toUpperCase()),
+        avatarUrl: resolveAssetUrl(e.avatarUrl) ?? undefined,
+        city: e.city || "",
+        rankId: (RANKS.find((r) => r.id === e.rankId)?.id ?? "rookie") as RankId,
+        tickets: e.tickets,
+        slots: Math.max(1, e.capsules),
+      }));
+    }
+  } catch {
+    /* нет сети/не авторизован — падаем в демо */
+  }
+  return fetchHuntEntries(count, seed);
+}

@@ -34,7 +34,7 @@ import { RiderCharacter, type RiderMode } from "@/components/club/hound-hunt/Rid
 import { KickedAvatar } from "@/components/club/hound-hunt/KickedAvatar";
 import {
   makeEntries,
-  fetchHuntEntries,
+  fetchHuntPool,
   rankColorsOf,
   type HuntEntry,
 
@@ -163,7 +163,7 @@ export function HoundHuntPage({ mode = "live" }: { mode?: HuntShowMode }) {
   }, []);
   useEffect(() => {
     let cancelled = false;
-    void fetchHuntEntries(MOCK_ENTRIES).then((entries) => {
+    void fetchHuntPool(MOCK_ENTRIES).then((entries) => {
       if (!cancelled) setPool(entries);
     });
     return () => {
@@ -491,16 +491,22 @@ export function HoundHuntPage({ mode = "live" }: { mode?: HuntShowMode }) {
   }, []);
 
   const pickWinner = useCallback((entries: HuntEntry[], roundIdx = 0) => {
-    // МИКС: часть призов может быть назначена руками в админке, остальные —
-    // честный жребий по весам билетов. Назначенный на другой приз участник в
-    // честных раундах не участвует, и уже победивший второй приз не забирает —
-    // иначе назначение одного приза «съедало» бы остальные.
+    // ПРИОРИТЕТ: итог с бекенда (жребий уже прокручен) → назначенный руками
+    // победитель → честный жребий по весам капсул. Назначенный на другой приз
+    // участник в честных раундах не участвует, и уже победивший второй приз не
+    // забирает — иначе назначение одного приза «съедало» бы остальные.
     const list = prizesRef.current;
+    const decided = list[roundIdx]?.winnerUserId;
+    if (decided) {
+      const hit = entries.find((e) => e.id === decided);
+      if (hit) return hit;
+    }
     const forced = list[roundIdx]?.forcedWinnerId;
     if (forced) {
       const hit = entries.find((e) => e.id === forced);
       if (hit) return hit;
     }
+
 
     const reserved = new Set(
       list
@@ -768,7 +774,7 @@ export function HoundHuntPage({ mode = "live" }: { mode?: HuntShowMode }) {
   const start = async () => {
     clearTimers();
     // Реплей крутит тот же состав, live — свежий жребий.
-    const fresh = await fetchHuntEntries(MOCK_ENTRIES, Math.floor(Math.random() * 99999));
+    const fresh = await fetchHuntPool(MOCK_ENTRIES, Math.floor(Math.random() * 99999));
     await Promise.all(
       [...new Set(fresh.map((entry) => entry.avatarUrl).filter((src): src is string => Boolean(src)))].map(
         (src) =>
