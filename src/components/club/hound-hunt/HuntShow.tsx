@@ -142,7 +142,7 @@ function suspenseMs(remaining: number) {
 
 /* ------------------------------ страница ------------------------------ */
 
-export function HoundHuntPage() {
+export function HoundHuntPage({ mode = "live" }: { mode?: HuntShowMode }) {
   const [speed, setSpeed] = useState<Speed>(5);
   const speedRef = useRef<Speed>(speed);
   speedRef.current = speed;
