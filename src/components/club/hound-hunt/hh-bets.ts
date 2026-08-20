@@ -1,10 +1,13 @@
 // Ставки и итоги охоты HELL HUNT.
 //
-// ВАЖНО: сейчас это мок на localStorage, но интерфейс уже такой, каким он
-// будет с бекендом: getMyBet / placeBet / readResults / saveResults. Когда
-// появится API, внутри этих функций встанет apiFetch — компоненты не меняются.
+// Ставки живут на бекенде: POST /api/v1/hunt/bet списывает билеты и пишет
+// заявку, GET /api/v1/hunt/current отдаёт мою ставку. localStorage остаётся
+// кешем для мгновенного рендера и оффлайна. Итоги шоу (results) — локальные,
+// они только повторяют то, что уже решил бек.
 
 import { useCallback, useEffect, useState } from "react";
+import { fetchHuntState, postHuntBet } from "@/lib/hunt-api";
+
 
 const BETS_KEY = "hh.hunt.bets.v1";
 const RESULTS_KEY = "hh.hunt.results.v1";
