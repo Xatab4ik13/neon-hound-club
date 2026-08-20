@@ -178,7 +178,41 @@ function HoundHuntAdminPage() {
                 Сколько призов — столько раундов. Порядок вскрытия:{" "}
                 {runOrder.map((p) => p.place).join(" → ")} (главный последним).
               </p>
+              <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
+                Микс работает так: где победитель назначен — он и берёт этот приз;
+                остальные призы уходят честным жребием и назначенным уже не достаются.
+                Назначил все — полностью ручной расклад, ни одного — полный рандом.
+              </p>
             </div>
+
+            <div className="rounded-md border border-zinc-200 dark:border-zinc-800">
+              <div className="flex items-center justify-between border-b border-zinc-200 px-3 py-2 text-sm font-medium dark:border-zinc-800">
+                <span>Участники</span>
+                <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                  {entries.length} чел. · {totalTickets} бил.
+                </span>
+              </div>
+              <div className="max-h-80 divide-y divide-zinc-100 overflow-auto dark:divide-zinc-800/60">
+                {sortedEntries.map((e) => {
+                  const share = totalTickets ? Math.round((e.tickets / totalTickets) * 100) : 0;
+                  return (
+                    <div key={e.id} className="flex items-center gap-2 px-3 py-2 text-xs">
+                      <span className="flex-1 truncate font-medium">{e.nick}</span>
+                      <span className="text-zinc-500 dark:text-zinc-400">
+                        {e.tickets} бил. · {e.slots} капс.
+                      </span>
+                      <span className="w-9 text-right text-zinc-400">{share}%</span>
+                    </div>
+                  );
+                })}
+                {!entries.length && (
+                  <p className="px-3 py-4 text-center text-xs text-zinc-500 dark:text-zinc-400">
+                    Ставок пока нет.
+                  </p>
+                )}
+              </div>
+            </div>
+
           </div>
         </Panel>
 
