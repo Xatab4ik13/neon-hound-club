@@ -39,9 +39,9 @@ type Props = {
 // в РФ без VPN не открывается, поэтому персонаж грузится только со своего сервера.
 // Заливка ключей: `docker compose exec api node dist/scripts/import-rider-models.js`.
 const MODEL_BASE = `${BACKEND_URL}/media/models`;
-const MODEL_URL = `${MODEL_BASE}/rider.glb`;
+const MODEL_URL = `${MODEL_BASE}/rider-v2.glb`;
 const VICTORY_URL = `${MODEL_BASE}/rider-victory.glb`;
-const DANCE_URL = `${MODEL_BASE}/rider-agree.glb`;
+const DANCE_URL = `${MODEL_BASE}/rider-agree-v2.glb`;
 /** Имя, под которым регистрируется клип танца финального экрана. */
 const DANCE_CLIP = "hh_final_dance";
 // Доля высоты канваса, добавленная сверху под поднятые руки победной анимации.
