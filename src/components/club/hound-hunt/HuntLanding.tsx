@@ -325,7 +325,7 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
         {/* ------------------------------ призы ------------------------------ */}
         <Reveal className="mt-10 px-6">
           <h2 className="font-display text-2xl font-black uppercase leading-none tracking-tight">
-            Что разыгрываем
+            Что разыгрываем на этой неделе
           </h2>
           <div className="mt-4 space-y-2.5">
             {[...prizes].reverse().map((p, i) => (
