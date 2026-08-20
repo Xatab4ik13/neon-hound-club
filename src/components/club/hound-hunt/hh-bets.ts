@@ -49,23 +49,28 @@ function writeJson(key: string, value: unknown) {
   window.dispatchEvent(new Event(EVT));
 }
 
-/** Текущая ставка юзера в этой охоте. */
+/** Текущая ставка юзера в этой охоте (кеш; истина — бек). */
 export function getMyBet(hunt: HuntKey, ticketStep: number): MyBet {
   const tickets = readJson<BetsMap>(BETS_KEY, {})[hunt] ?? 0;
   return { tickets, capsules: Math.floor(tickets / Math.max(1, ticketStep)) };
 }
 
+function cacheBet(hunt: HuntKey, tickets: number) {
+  const map = readJson<BetsMap>(BETS_KEY, {});
+  map[hunt] = tickets;
+  writeJson(BETS_KEY, map);
+}
+
 /**
- * Поставить билеты. Ставки суммируются, списание сразу, отмены нет.
- * На бекенде здесь будет POST со списанием из леджера билетов.
+ * Поставить билеты. Списание на бекенде (леджер билетов), ставки суммируются,
+ * отмены нет. Локально кешируем ответ, чтобы UI не мигал.
  */
 export async function placeBet(hunt: HuntKey, amount: number, ticketStep: number): Promise<MyBet> {
-  const map = readJson<BetsMap>(BETS_KEY, {});
-  const next = (map[hunt] ?? 0) + Math.max(0, Math.floor(amount));
-  map[hunt] = next;
-  writeJson(BETS_KEY, map);
-  return { tickets: next, capsules: Math.floor(next / Math.max(1, ticketStep)) };
+  const res = await postHuntBet(Math.max(0, Math.floor(amount)));
+  cacheBet(hunt, res.tickets);
+  return { tickets: res.tickets, capsules: res.capsules ?? Math.floor(res.tickets / Math.max(1, ticketStep)) };
 }
+
 
 /** Итоги охоты: пишутся один раз в конце шоу, реплей показывает их же. */
 export function readResults(hunt: HuntKey): HuntResult[] {
