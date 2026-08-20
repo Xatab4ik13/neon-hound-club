@@ -59,6 +59,12 @@ function fromLocalInput(value: string): string {
   return Number.isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString();
 }
 
+/** Настоящий id приза с бека (uuid) против локального мок-id. */
+function isUuid(v: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
+}
+
+
 function HoundHuntAdminPage() {
   const [cfg, setCfg] = useState<HuntConfig>(() => readHuntConfig());
   const [entries, setEntries] = useState<HuntEntry[]>([]);
@@ -163,7 +169,9 @@ function HoundHuntAdminPage() {
         ticketStep: cfg.ticketStep,
         status: "open",
         prizes: cfg.prizes.map((p) => ({
-          id: p.id.startsWith("p-") ? undefined : p.id,
+          // id отправляем только если это реальный uuid с бека: локальные
+          // мок-id («p1», «p-1712…») бек не примет.
+          id: isUuid(p.id) ? p.id : undefined,
           place: p.place,
           title: p.title,
           sub: p.sub,
