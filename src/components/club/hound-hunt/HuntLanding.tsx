@@ -444,18 +444,18 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
               disabled={!canBet}
               className={
                 "mt-5 w-full rounded-2xl px-6 py-3.5 font-display text-base font-black uppercase tracking-wide transition active:scale-[0.98] " +
-                (canBet ? "" : "border border-border/70 bg-background/40")
+                (canBet ? "text-black" : "border border-border/70 bg-background/40 text-muted-foreground")
               }
               style={
                 canBet
-                  ? { background: TOXIC, boxShadow: `0 0 45px -16px ${TOXIC}`, color: "hsl(var(--background))" }
+                  ? { background: TOXIC, boxShadow: `0 0 45px -16px ${TOXIC}` }
                   : undefined
               }
             >
               {canBet ? (
                 <>Поставить {tickets} билетов</>
               ) : (
-                <span className="text-muted-foreground">Поставить билеты</span>
+                <>Поставить билеты</>
               )}
             </button>
 
