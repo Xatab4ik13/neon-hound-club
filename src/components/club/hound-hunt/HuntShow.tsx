@@ -40,6 +40,7 @@ import {
 
 } from "@/components/club/hound-hunt/hh-mock";
 import { prizesInRunOrder, useHuntConfig, type HuntConfigPrize } from "@/components/club/hound-hunt/hh-config";
+import { saveResults } from "@/components/club/hound-hunt/hh-bets";
 import { haptic } from "@/hooks/use-haptic";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -943,7 +944,6 @@ export function HoundHuntPage({ mode = "live" }: { mode?: HuntShowMode }) {
           </motion.div>
           )}
 
-          {phase === "intro" && <IntroPanel onStart={start} />}
 
           {(phase === "arming" ||
             phase === "drift" ||
