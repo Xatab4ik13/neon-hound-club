@@ -12,9 +12,12 @@ type Props = {
   lookAt?: { x: number; y: number };
   className?: string;
   kickToken?: number;
+  /** true = персонаж переходит в танец победы (плавный кроссфейд). */
+  victory?: boolean;
   onKickReady?: (impactDelay: number, cycleMs: number) => void;
   onImpact?: (cycle: number) => void;
 };
+
 
 export function RiderCharacter(props: Props) {
   return (
