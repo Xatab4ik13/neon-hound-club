@@ -9,8 +9,8 @@ import { RiderCharacter } from "./RiderCharacter";
 import { useHuntConfig, prizesInRunOrder } from "./hh-config";
 import { HuntAvatar } from "./HuntAvatar";
 import { fetchHuntEntries, rankColorsOf, type HuntEntry } from "./hh-mock";
+import { getTier } from "@/data/hell-pass";
 import { haptic } from "@/hooks/use-haptic";
-import { toast } from "sonner";
 
 /** Ядовитый зелёный охоты — тот же, что в титре WINNER в шоу. */
 const TOXIC = "#B6FF3C";
@@ -80,6 +80,109 @@ function SectionTitle({ kicker, title }: { kicker: string; title: string }) {
   );
 }
 
+/** Цвета плашек в FAQ — тот же приём, что на странице инструктора школы. */
+const FAQ_TINTS = [TOXIC, "#FF8A3C", "#F000C0", "#3CC8FF"];
+
+/** Витрина: персонаж циклично выбивает аватарку участника (~7.5 с на цикл). */
+function KickShowcase({ entries }: { entries: HuntEntry[] }) {
+  const [token, setToken] = useState(0);
+  const [idx, setIdx] = useState(0);
+  const [visible, setVisible] = useState(true);
+
+  useEffect(() => {
+    if (entries.length === 0) return;
+    const id = setInterval(() => setToken((t) => t + 1), 7500);
+    return () => clearInterval(id);
+  }, [entries.length]);
+
+  const target = entries.length ? entries[idx % entries.length] : null;
+
+  return (
+    <div
+      className="relative overflow-hidden rounded-3xl border border-border/60 bg-card/40"
+      style={{ boxShadow: `0 0 50px -30px ${TOXIC}` }}
+    >
+      <div className="h-[34svh] w-full">
+        <RiderCharacter
+          mode="lunge"
+          kickToken={token}
+          onImpact={() => {
+            setVisible(false);
+            window.setTimeout(() => {
+              setIdx((i) => i + 1);
+              setVisible(true);
+            }, 2600);
+          }}
+          className="h-full w-full"
+        />
+      </div>
+
+      {target && (
+        <motion.div
+          key={`${idx}-${visible}`}
+          className="pointer-events-none absolute right-3 top-3"
+          initial={{ opacity: 0, scale: 0.7 }}
+          animate={visible ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 1.6, x: 40, y: -30 }}
+          transition={{ duration: visible ? 0.5 : 0.35 }}
+        >
+          <HuntAvatar entry={target} hideNick scale={0.4} />
+        </motion.div>
+      )}
+
+      <p className="absolute bottom-3 left-3 font-mono text-[9px] uppercase tracking-[0.24em] text-muted-foreground">
+        гончая выбивает
+      </p>
+    </div>
+  );
+}
+
+/** Преимущества Platinum + кнопка покупки, в цвете тира. */
+function PlatinumCard() {
+  const tier = getTier("platinum");
+  const color = tier?.color ?? "#F000C0";
+  const perks = (tier?.perks ?? []).slice(0, 5);
+
+  return (
+    <div
+      className="flex flex-col rounded-3xl border p-4"
+      style={{
+        borderColor: `${color}66`,
+        background: `linear-gradient(165deg, ${color}22, transparent 70%)`,
+      }}
+    >
+      <p className="font-mono text-[9px] uppercase tracking-[0.24em]" style={{ color }}>
+        вход в охоту
+      </p>
+      <h3 className="mt-1 font-display text-lg font-black uppercase leading-none">
+        Hell Pass
+        <br />
+        <span style={{ color }}>Platinum</span>
+      </h3>
+
+      <ul className="mt-3 flex-1 space-y-2">
+        {perks.map((perk) => (
+          <li key={perk.label} className="flex gap-2 text-[11px] leading-tight">
+            <span className="font-display font-black" style={{ color }}>
+              {perk.value ?? "•"}
+            </span>
+            <span className="text-muted-foreground">{perk.label}</span>
+          </li>
+        ))}
+      </ul>
+
+      <Link
+        to="/club/hell-pass/$tier"
+        params={{ tier: "platinum" }}
+        onClick={() => haptic("light")}
+        className="mt-3 block w-full rounded-2xl px-3 py-3 text-center font-display text-sm font-black uppercase tracking-wide text-background transition active:scale-[0.98]"
+        style={{ background: color, boxShadow: `0 0 40px -14px ${color}` }}
+      >
+        Купить
+      </Link>
+    </div>
+  );
+}
+
 export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
   const { cfg } = useHuntConfig();
   const prizes = useMemo(() => prizesInRunOrder(cfg), [cfg]);
@@ -97,6 +200,8 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
       dead = true;
     };
   }, []);
+
+  const me = entries[0] ?? null;
 
   const [tickets, setTickets] = useState(() => cfg.ticketStep * 2);
   const capsules = Math.max(0, Math.floor(tickets / cfg.ticketStep));
@@ -149,7 +254,7 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
 
 
         {/* ------------------------------ таймер ------------------------------ */}
-        <Reveal className="px-6">
+        <Reveal className="-mt-16 px-6">
           <div
             className="rounded-3xl border border-border/60 bg-card/60 p-5 text-center"
             style={{ boxShadow: `0 0 60px -30px ${TOXIC}` }}
@@ -180,16 +285,13 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
                   ))}
                 </div>
                 <p className="mt-3 text-xs text-muted-foreground">Старт {startLabel}</p>
-                <button
-                  type="button"
-                  onClick={() => {
-                    haptic("light");
-                    toast.success("Напомним перед стартом охоты");
-                  }}
-                  className="mt-4 w-full rounded-2xl border border-border/70 bg-background/40 px-6 py-3 font-display text-sm font-black uppercase tracking-wide transition active:scale-[0.98]"
+                <Link
+                  to="/club/hell-pass"
+                  onClick={() => haptic("light")}
+                  className="mt-4 block w-full rounded-2xl bg-primary px-6 py-3.5 text-center font-display text-base font-black uppercase tracking-wide text-primary-foreground transition active:scale-[0.98]"
                 >
-                  Напомнить
-                </button>
+                  Купить Hell Pass
+                </Link>
               </>
             )}
 
@@ -242,7 +344,9 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
 
         {/* ------------------------------ призы ------------------------------ */}
         <Reveal className="mt-10 px-6">
-          <SectionTitle kicker={`${prizes.length} приза — ${prizes.length} раунда`} title="Что разыгрываем" />
+          <h2 className="font-display text-2xl font-black uppercase leading-none tracking-tight">
+            Что разыгрываем
+          </h2>
           <div className="mt-4 space-y-2.5">
             {[...prizes].reverse().map((p, i) => (
               <div
@@ -256,9 +360,6 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
               >
                 <img src={p.img} alt={p.title} className="size-14 shrink-0 object-contain" />
                 <div className="min-w-0 flex-1">
-                  <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                    {p.place === 1 ? "главный приз" : `раунд ${prizes.length - p.place + 1}`}
-                  </p>
                   <p className="truncate font-display text-base font-black uppercase leading-tight">
                     {p.title}
                   </p>
@@ -310,7 +411,9 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
 
         {/* ------------------------- капсулы = шансы ------------------------- */}
         <Reveal className="mt-10 px-6">
-          <SectionTitle kicker="считаем шансы" title="Билеты = капсулы" />
+          <h2 className="font-display text-2xl font-black uppercase leading-none tracking-tight">
+            Билеты — капсулы
+          </h2>
           <div className="mt-4 rounded-3xl border border-border/60 bg-card/50 p-5">
             <div className="flex items-baseline justify-between">
               <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
@@ -335,56 +438,29 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
                 ? `Нужно минимум ${cfg.ticketStep} билетов, чтобы попасть в барабан.`
                 : `${capsules} ${capsules === 1 ? "капсула" : "капсулы"} с твоей аватаркой крутится в барабане.`}
             </p>
-            <div className="mt-4 flex flex-wrap gap-2">
-              {Array.from({ length: Math.min(capsules, 10) }, (_, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ scale: 0.6, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ delay: i * 0.04 }}
-                  className="size-10 rounded-full"
-                  style={{
-                    background: `linear-gradient(160deg, ${TOXIC}, color-mix(in oklab, var(--primary) 70%, transparent))`,
-                    boxShadow: `0 0 18px -6px ${TOXIC}`,
-                  }}
-                />
-              ))}
-            </div>
+            {me && (
+              <div className="mt-4 flex flex-wrap gap-2">
+                {Array.from({ length: Math.min(capsules, 10) }, (_, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ scale: 0.6, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ delay: i * 0.04 }}
+                  >
+                    <HuntAvatar entry={me} hideNick scale={0.32} />
+                  </motion.div>
+                ))}
+              </div>
+            )}
           </div>
         </Reveal>
 
-        {/* ------------------------------ лор ------------------------------ */}
+        {/* --------------------- анимация: гончая выбивает --------------------- */}
         <Reveal className="mt-10 px-6">
-          <SectionTitle kicker="почему так называется" title="Гончая спущена" />
-          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-            Hound — гончая. Hunt — охота. В барабане крутятся капсулы всех участников, и гончая
-            выбивает их одну за другой. Никаких кнопок, никакого везения на реакцию: ты просто
-            смотришь, как поле сужается, пока не останется один. Он и забирает приз.
-          </p>
-
-          {entries.length > 0 && (
-            <div className="mt-4">
-              <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                кто уже в деле
-              </p>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {entries.slice(0, 10).map((e) => {
-                  const rc = rankColorsOf(e);
-                  return (
-                    <div key={e.id} className="w-12 shrink-0">
-                      <HuntAvatar entry={e} className="size-12" />
-                      <p
-                        className="mt-1 truncate text-center font-display text-[8px] font-black uppercase"
-                        style={{ color: rc.accent }}
-                      >
-                        {e.nick}
-                      </p>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
+          <div className="grid grid-cols-[1.05fr_1fr] gap-3">
+            <KickShowcase entries={entries} />
+            <PlatinumCard />
+          </div>
         </Reveal>
 
         {/* --------------------------- продажа Pass --------------------------- */}
@@ -425,7 +501,9 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
 
         {/* ------------------------------ FAQ ------------------------------ */}
         <Reveal className="mt-10 px-6">
-          <SectionTitle kicker="вопросы" title="Коротко о правилах" />
+          <h2 className="font-display text-2xl font-black uppercase leading-none tracking-tight">
+            Коротко о правилах
+          </h2>
           <div className="mt-4 space-y-2">
             {[
               {
@@ -444,17 +522,21 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
                 q: "Как часто проходит охота?",
                 a: "Раз в неделю. Время старта объявляем заранее, таймер сверху всегда показывает точный отсчёт.",
               },
-            ].map((f) => (
-              <details
-                key={f.q}
-                className="group rounded-2xl border border-border/60 bg-card/40 p-4"
-              >
-                <summary className="cursor-pointer list-none font-display text-sm font-black uppercase">
-                  {f.q}
-                </summary>
-                <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{f.a}</p>
-              </details>
-            ))}
+            ].map((f, i) => {
+              const tint = FAQ_TINTS[i % FAQ_TINTS.length];
+              return (
+                <details
+                  key={f.q}
+                  className="group rounded-3xl border-[3px] border-foreground p-4"
+                  style={{ background: tint, boxShadow: "6px 6px 0 0 hsl(var(--foreground))" }}
+                >
+                  <summary className="cursor-pointer list-none font-display text-sm font-black uppercase leading-tight text-black">
+                    {f.q}
+                  </summary>
+                  <p className="mt-2 text-xs leading-relaxed text-black/80">{f.a}</p>
+                </details>
+              );
+            })}
           </div>
         </Reveal>
       </div>
