@@ -159,6 +159,7 @@ const NAV: NavItem[] = [
   { to: "/admin", label: "Дашборд", icon: LayoutDashboard },
   { to: "/admin/raffles", label: "Розыгрыши", icon: Trophy },
   { to: "/admin/spin", label: "HellSpin", icon: PlumpSpin },
+  { to: "/admin/hound-hunt", label: "Hound Hunt", icon: Trophy },
   { to: "/admin/quests", label: "Челленджи", icon: Target },
   { to: "/admin/users", label: "Пользователи", icon: Users },
   { to: "/admin/feed", label: "Лента", icon: PlumpFeed },
