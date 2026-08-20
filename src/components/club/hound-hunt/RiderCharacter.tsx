@@ -18,6 +18,8 @@ type Props = {
   dance?: boolean;
   /** Масштаб модели внутри канваса, без увеличения и обрезки самого canvas. */
   modelScale?: number;
+  /** Постоянный экземпляр GLB: не должен меняться вместе с режимом анимации. */
+  instance?: "hero" | "action";
   onKickReady?: (impactDelay: number, cycleMs: number) => void;
   onImpact?: (cycle: number) => void;
 };

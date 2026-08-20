@@ -96,6 +96,7 @@ function KickStage({ me }: { me: HuntEntry | null }) {
       <div className="h-full w-full">
         <RiderCharacter
           mode="lunge"
+          instance="action"
           modelScale={1.3}
           kickToken={token}
           onImpact={() => {
@@ -216,7 +217,7 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
           </motion.p>
 
           <div className="mx-auto -mt-4 h-[64svh] w-full max-w-md">
-            <RiderCharacter mode="idle" className="h-full w-full" />
+            <RiderCharacter mode="idle" instance="hero" dance className="h-full w-full" />
           </div>
         </section>
 
