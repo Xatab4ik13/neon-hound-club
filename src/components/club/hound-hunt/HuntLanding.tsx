@@ -217,7 +217,7 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
             выбивает всех, кроме одного.
           </motion.p>
 
-          <div className="mx-auto -mt-4 h-[64svh] w-full max-w-md">
+          <div className="mx-auto -mt-4 h-[64svh] w-full max-w-md scale-110 origin-bottom">
             <RiderCharacter
               mode="idle"
               instance="hero"
