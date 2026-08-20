@@ -23,6 +23,7 @@ import {
 import {
   playHuntImpact,
   playHuntWin,
+  speakHuntCount,
 } from "@/lib/hunt-audio";
 import { RiderCharacter, type RiderMode } from "@/components/club/hound-hunt/RiderCharacter";
 import { EmberField } from "@/components/club/hound-hunt/EmberField";
@@ -851,7 +852,10 @@ export function HoundHuntPage() {
 
           {phase === "intro" && <IntroPanel onStart={start} />}
 
-          {(phase === "arming" || phase === "drift" || phase === "settle") && (
+          {(phase === "arming" ||
+            phase === "drift" ||
+            phase === "settle" ||
+            phase === "countdown") && (
             <ReelStage
               slots={tape}
               ghosts={ghosts}
@@ -1141,13 +1145,16 @@ function RoundCountdown({ round, onDone }: { round: number; onDone: () => void }
         window.setTimeout(() => {
           setStep(value);
           haptic(value > 0 ? "light" : "success");
+          speakHuntCount(value);
         }, delay),
       );
     };
     haptic("light");
+    speakHuntCount(3);
     tick(2, 850);
     tick(1, 1700);
     tick(0, 2550);
+
     timers.push(
       window.setTimeout(() => {
         if (doneRef.current) return;

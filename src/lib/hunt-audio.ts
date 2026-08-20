@@ -468,9 +468,36 @@ export function playHuntWin() {
   if (!c) return;
   const t = c.currentTime + 0.02;
   setHuntTension(1);
+  // Стабы/кик/плаки идут через музыкальную шину, а музыка выключена (gain ~0),
+  // поэтому на время победного аккорда открываем шину и потом закрываем обратно.
+  if (musicBus) {
+    musicBus.gain.cancelScheduledValues(t);
+    musicBus.gain.setValueAtTime(0.9, t);
+    musicBus.gain.setValueAtTime(0.9, t + 1.6);
+    musicBus.gain.linearRampToValueAtTime(0.0001, t + 2.2);
+  }
   stab(c, t, ROOT * semi(3), [0, 4, 7, 12], 0.16);
   stab(c, t + BEAT * 0.5, ROOT * semi(3), [0, 4, 7, 12], 0.1);
   kick(c, t, 0.3);
   clap(c, t + BEAT * 0.5, 0.14);
   [0, 4, 7, 12, 16].forEach((st, i) => pluck(c, t + i * 0.07, ROOT * 4 * semi(st), 0.09));
 }
+
+/** Голосовой отсчёт «three / two / one / go» перед следующим раундом. */
+export function speakHuntCount(step: number) {
+  if (typeof window === "undefined" || muted) return;
+  const synth = window.speechSynthesis;
+  if (!synth) return;
+  const word = step === 3 ? "three" : step === 2 ? "two" : step === 1 ? "one" : "go";
+  try {
+    const u = new SpeechSynthesisUtterance(word);
+    u.lang = "en-US";
+    u.rate = step === 0 ? 1.05 : 0.95;
+    u.pitch = step === 0 ? 1.1 : 0.9;
+    u.volume = 1;
+    synth.speak(u);
+  } catch {
+    /* голос не обязателен */
+  }
+}
+
