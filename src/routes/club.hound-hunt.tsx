@@ -844,10 +844,12 @@ export function HoundHuntPage() {
             style={{ top: "calc(0.75rem + env(safe-area-inset-top))" }}
           >
             <div
-              className="flex items-center gap-3 rounded-2xl border border-primary/40 bg-card/70 px-3 py-2 backdrop-blur-md"
+              className="flex items-center gap-3 rounded-2xl border px-3 py-2 backdrop-blur-md"
               style={{
+                borderColor: "rgba(182,255,60,0.45)",
+                background: "color-mix(in oklab, var(--card) 70%, transparent)",
                 boxShadow:
-                  "0 0 0 1px color-mix(in oklab, var(--primary) 18%, transparent), 0 12px 40px -12px color-mix(in oklab, var(--primary) 55%, transparent)",
+                  "0 0 0 1px rgba(182,255,60,0.18), 0 12px 40px -12px rgba(182,255,60,0.55)",
               }}
             >
               <div className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border/60 bg-background/60">
@@ -857,12 +859,13 @@ export function HoundHuntPage() {
                 <p
                   className="text-[10px] font-semibold uppercase tracking-[0.22em]"
                   style={{
-                    color: "var(--primary)",
-                    textShadow: "0 0 10px color-mix(in oklab, var(--primary) 65%, transparent)",
+                    color: "#B6FF3C",
+                    textShadow: "0 0 10px rgba(182,255,60,0.7)",
                   }}
                 >
                   разыгрывается
                 </p>
+
                 <p className="truncate font-display text-sm font-black uppercase leading-tight">
                   {prize.title}
                 </p>
