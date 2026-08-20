@@ -1,9 +1,10 @@
-// Конфиг охоты HELL HUNT. ТОЛЬКО ФРОНТ: живёт в localStorage, пишется из
-// админки (/admin/hound-hunt), читается лендингом и шоу. Позже переедет на
-// бекенд — тогда `useHuntConfig` просто начнёт дергать API.
+// Конфиг охоты HELL HUNT. Источник истины — бекенд (`/api/v1/hunt/current`),
+// localStorage используется как кеш для мгновенного первого рендера.
+// Пишется из админки (/admin/hound-hunt), читается лендингом и шоу.
 
 import { useCallback, useEffect, useState } from "react";
 import { HUNT_PRIZES, HUNT_TICKET_STEP } from "./hh-mock";
+import { fetchHuntState, type HuntApiState } from "@/lib/hunt-api";
 
 export type HuntConfigPrize = {
   id: string;
@@ -19,9 +20,16 @@ export type HuntConfigPrize = {
    * по весам билетов.
    */
   forcedWinnerId: string | null;
+  /** Итог с бека: кто выиграл (после прокрутки жребия). */
+  winnerUserId?: string | null;
+  winnerNick?: string | null;
+  /** Если приз — билеты, сколько начисляем победителю. */
+  ticketsReward?: number;
 };
 
 export type HuntConfig = {
+  /** id охоты на бекенде (null, пока охоты нет). */
+  id?: string | null;
   /** ISO-дата и время старта шоу. */
   startsAt: string;
   /** Сколько билетов даёт одну капсулу в барабане. */
