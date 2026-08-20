@@ -54,6 +54,12 @@ function TicketsPage() {
   const balance = balanceQ.data?.balance ?? 0;
   const entries = historyQ.data?.items ?? [];
 
+  // Плашка «идёт сейчас» на карточке охоты — та же фаза, что и на самой странице.
+  const huntCfg = useHuntConfig();
+  const huntPhase = useHuntPhase(huntCfg.config.startsAt);
+  const huntLive = huntPhase.phase === "live";
+
+
   // Активный розыгрыш — первый со статусом "active" (бэк сортирует по дедлайну).
   const activeRaffle = (rafflesQ.data?.items ?? []).find((r) => r.status === "active") ?? null;
 
