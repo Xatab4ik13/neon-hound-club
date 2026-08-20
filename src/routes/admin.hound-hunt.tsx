@@ -21,11 +21,19 @@ import {
   readHuntConfig,
   writeHuntConfig,
   prizesInRunOrder,
+  huntConfigFromApi,
   type HuntConfig,
   type HuntConfigPrize,
 } from "@/components/club/hound-hunt/hh-config";
 import { fetchHuntEntries, type HuntEntry } from "@/components/club/hound-hunt/hh-mock";
 import { resetHuntState } from "@/components/club/hound-hunt/hh-bets";
+import {
+  fetchAdminHunt,
+  saveAdminHunt,
+  drawAdminHunt,
+  resetAdminHuntResults,
+  type HuntApiEntry,
+} from "@/lib/hunt-api";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/hound-hunt")({
