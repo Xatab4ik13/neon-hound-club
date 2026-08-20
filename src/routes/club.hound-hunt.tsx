@@ -794,8 +794,8 @@ export function HoundHuntPage() {
 
   return (
     <div className="fixed inset-0 z-40 overflow-hidden overscroll-none touch-pan-y bg-background text-foreground select-none">
-      {/* Никаких слоёв фона: только мягкий градиент-«тень» за персонажем,
-          чтобы силуэт не висел в пустоте. */}
+      {/* Фоновое свечение: мягкая «тень» за персонажем + неоновые пятна по краям
+          в брендовой магенте, без тяжёлых слоёв. */}
       <div
         className="pointer-events-none absolute left-1/2 top-[46%] z-0 -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl"
         style={{
@@ -806,6 +806,26 @@ export function HoundHuntPage() {
           opacity: 0.55,
         }}
       />
+      <div
+        className="pointer-events-none absolute inset-0 z-0"
+        style={{
+          background:
+            "radial-gradient(120% 60% at 50% -10%, color-mix(in oklab, var(--primary) 18%, transparent), transparent 70%)," +
+            "radial-gradient(80% 50% at -10% 40%, color-mix(in oklab, var(--primary) 12%, transparent), transparent 70%)," +
+            "radial-gradient(80% 50% at 110% 40%, color-mix(in oklab, var(--primary) 12%, transparent), transparent 70%)," +
+            "radial-gradient(120% 60% at 50% 110%, color-mix(in oklab, var(--primary) 10%, transparent), transparent 70%)",
+        }}
+      />
+      <motion.div
+        className="pointer-events-none absolute inset-0 z-0"
+        animate={{ opacity: settled ? 1 : 0 }}
+        transition={{ duration: 0.6 }}
+        style={{
+          background:
+            "radial-gradient(100% 70% at 50% 55%, rgba(182,255,60,0.16), transparent 72%)",
+        }}
+      />
+
 
 
 
@@ -830,6 +850,46 @@ export function HoundHuntPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Карточка приза текущего раунда — сверху, в брендовом стиле */}
+      <AnimatePresence>
+        {(phase === "arming" || phase === "drift") && !settled && (
+          <motion.div
+            key={`prize-card-${prize.id}`}
+            initial={{ opacity: 0, y: -12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12, transition: { duration: 0.2 } }}
+            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+            className="pointer-events-none absolute inset-x-0 z-50 flex justify-center px-4"
+            style={{ top: "calc(0.75rem + env(safe-area-inset-top))" }}
+          >
+            <div
+              className="flex items-center gap-3 rounded-2xl border border-primary/40 bg-card/70 px-3 py-2 backdrop-blur-md"
+              style={{
+                boxShadow:
+                  "0 0 0 1px color-mix(in oklab, var(--primary) 18%, transparent), 0 12px 40px -12px color-mix(in oklab, var(--primary) 55%, transparent)",
+              }}
+            >
+              <div className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border/60 bg-background/60">
+                <img src={prize.img} alt="" className="h-9 w-9 object-contain" />
+              </div>
+              <div className="min-w-0 text-left">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-primary">
+                  разыгрывается
+                </p>
+                <p className="truncate font-display text-sm font-black uppercase leading-tight">
+                  {prize.title}
+                </p>
+              </div>
+              <span className="ml-1 shrink-0 rounded-full border border-border/60 bg-background/50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                {prize.sub}
+              </span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+
 
       <div className="relative flex h-full flex-col overflow-hidden pt-[max(0.5rem,env(safe-area-inset-top))] pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
         {/* арена */}
@@ -1058,6 +1118,63 @@ function ReelStage({
             transition={{ duration: 0.28, ease: "easeOut" }}
           />
         )}
+
+        {/* Эффект победителя: вращающийся веер лучей + две расходящиеся волны */}
+        <AnimatePresence>
+          {winner && (
+            <>
+              <motion.div
+                key="win-rays"
+                className="pointer-events-none absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2 rounded-full"
+                style={{
+                  width: CHIP_W * 5,
+                  height: CHIP_W * 5,
+                  background:
+                    "repeating-conic-gradient(from 0deg, rgba(182,255,60,0.20) 0deg 6deg, transparent 6deg 18deg)",
+                  maskImage: "radial-gradient(circle, #000 12%, transparent 68%)",
+                  WebkitMaskImage: "radial-gradient(circle, #000 12%, transparent 68%)",
+                }}
+                initial={{ opacity: 0, scale: 0.7, rotate: 0 }}
+                animate={{ opacity: 1, scale: 1, rotate: 360 }}
+                exit={{ opacity: 0 }}
+                transition={{
+                  opacity: { duration: 0.5 },
+                  scale: { duration: 0.7, ease: [0.22, 1, 0.36, 1] },
+                  rotate: { duration: 26, repeat: Infinity, ease: "linear" },
+                }}
+              />
+              <motion.div
+                key="win-halo"
+                className="pointer-events-none absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2 rounded-full blur-2xl"
+                style={{
+                  width: CHIP_W * 3.2,
+                  height: CHIP_W * 3.2,
+                  background:
+                    "radial-gradient(circle, rgba(182,255,60,0.34), color-mix(in oklab, var(--primary) 26%, transparent) 55%, transparent 72%)",
+                }}
+                initial={{ opacity: 0, scale: 0.6 }}
+                animate={{ opacity: [0.75, 1, 0.75], scale: [0.98, 1.06, 0.98] }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
+              />
+              {[0, 0.35].map((d) => (
+                <motion.div
+                  key={`win-wave-${d}`}
+                  className="pointer-events-none absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2 rounded-full border-2"
+                  style={{
+                    width: CHIP_W,
+                    height: CHIP_W,
+                    borderColor: "rgba(182,255,60,0.7)",
+                  }}
+                  initial={{ opacity: 0.8, scale: 0.5 }}
+                  animate={{ opacity: 0, scale: 3.6 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 1.4, delay: d, ease: "easeOut" }}
+                />
+              ))}
+            </>
+          )}
+        </AnimatePresence>
 
 
         {!winner && (
