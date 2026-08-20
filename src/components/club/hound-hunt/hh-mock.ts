@@ -4,15 +4,15 @@
 import { apiFetch } from "@/lib/api";
 import { RANKS, type RankId } from "@/data/ranks";
 import { resolveAssetUrl } from "@/lib/asset-url";
-import imgAirpods from "@/assets/spin/airpods.webp";
+import imgTicket from "@/assets/spin/ticket.webp";
+import imgIphone from "@/assets/hunt/prize-iphone17.png";
+import imgScooter from "@/assets/hunt/prize-scooter.png";
 import av1 from "@/assets/hunt/av1.jpg";
 import av2 from "@/assets/hunt/av2.jpg";
 import av3 from "@/assets/hunt/av3.jpg";
 import av4 from "@/assets/hunt/av4.jpg";
 import av5 from "@/assets/hunt/av5.jpg";
 import av6 from "@/assets/hunt/av6.jpg";
-import imgWatch from "@/assets/spin/watch.webp";
-import imgPs5 from "@/assets/spin/ps5.webp";
 
 export type HuntPrize = {
   id: string;
@@ -40,9 +40,9 @@ export type HuntEntry = {
 };
 
 export const HUNT_PRIZES: HuntPrize[] = [
-  { id: "p3", place: 3, title: "AirPods 4", sub: "", img: imgAirpods },
-  { id: "p2", place: 2, title: "Apple Watch SE", sub: "", img: imgWatch },
-  { id: "p1", place: 1, title: "PlayStation 5 Slim", sub: "Главный приз", img: imgPs5 },
+  { id: "p3", place: 3, title: "300 билетов", sub: "", img: imgTicket },
+  { id: "p2", place: 2, title: "Электросамокат Ninebot KickScooter ZT3 Pro", sub: "", img: imgScooter },
+  { id: "p1", place: 1, title: "Apple iPhone 17 Pro Max 256 ГБ", sub: "Главный приз", img: imgIphone },
 ];
 
 /** Порог участия: от 10 билетов = 1 место, 20 = ×2, 30 = ×3 и т.д. */

@@ -30,7 +30,7 @@ export type HuntConfig = {
   prizes: HuntConfigPrize[];
 };
 
-const KEY = "hh.hunt.config.v2";
+const KEY = "hh.hunt.config.v3";
 
 /**
  * Дефолт старта: 30 августа 2026, 20:00 по Москве (UTC+3).
