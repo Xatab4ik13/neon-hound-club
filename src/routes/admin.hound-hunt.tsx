@@ -74,7 +74,7 @@ function HoundHuntAdminPage() {
         writeHuntConfig(next);
       }
       setEntries(
-        (state.entries ?? []).map((e) => ({
+        (state.entries ?? []).map((e: HuntApiEntry) => ({
           id: e.id,
           nick: e.nick,
           initials: (e.nick || "RD").slice(0, 2).toUpperCase(),
