@@ -216,7 +216,19 @@ function Model({
     }
   }, [victory, victoryAction, action]);
 
-  useFrame(() => {
+  // В победном танце руки уходят выше габаритов базовой позы, поэтому верх
+  // канваса срезал пальцы. Плавно поджимаем модель и опускаем её вниз —
+  // персонаж целиком влезает в кадр, скачка не видно.
+  const victoryFit = useRef(0);
+  useFrame((_, delta) => {
+    if (group.current) {
+      const target = victory ? 1 : 0;
+      victoryFit.current += (target - victoryFit.current) * Math.min(1, delta * 3);
+      const k = victoryFit.current;
+      const sc = 1 - 0.14 * k;
+      group.current.scale.setScalar(sc);
+      group.current.position.y = -0.34 * k;
+    }
     if (!action || !kickToken || action.paused || victory) return;
     const dur = action.getClip().duration;
     const impactAt = dur * 0.6;
