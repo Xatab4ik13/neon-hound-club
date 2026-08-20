@@ -8,7 +8,6 @@ import { Canvas, useFrame } from "@react-three/fiber";
 import { useAnimations, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import riderAsset from "@/assets/rider.glb.asset.json";
-import victoryAsset from "@/assets/rider-victory.glb.asset.json";
 import danceAsset from "@/assets/rider-agree.glb.asset.json";
 
 export type RiderMode = "idle" | "watch" | "lunge" | "chew";
@@ -37,7 +36,6 @@ type Props = {
 };
 
 const MODEL_URL = riderAsset.url;
-const VICTORY_URL = victoryAsset.url;
 const DANCE_URL = danceAsset.url;
 /** Имя, под которым регистрируется клип танца финального экрана. */
 const DANCE_CLIP = "hh_final_dance";
@@ -119,23 +117,17 @@ function Model({
   onImpact?: (cycle: number) => void;
 }) {
   const group = useRef<THREE.Group>(null);
-  // У Meshy-модели ломаются bind matrices после SkeletonUtils.clone,
-  // поэтому двум одновременно видимым canvas нужны независимые сцены.
-  // URL постоянен для всего срока жизни canvas и НЕ зависит от mode:
-  // idle → lunge теперь переключает только action, без исчезновения модели.
-  const instanceUrl = instance === "hero" ? MODEL_URL : `${MODEL_URL}?instance=action`;
+  // В файле жеста уже лежит полноценная модель. Герою не нужно параллельно
+  // держать базовый GLB, а ударному персонажу — 20 МБ файла с жестом.
+  const instanceUrl = instance === "hero" ? DANCE_URL : MODEL_URL;
   const { scene: cloned, animations } = useGLTF(instanceUrl);
-  const { animations: victoryAnims } = useGLTF(VICTORY_URL);
-  const { animations: danceAnims } = useGLTF(DANCE_URL);
-  // Клипы делят один и тот же риг (Meshy, одинаковые имена костей),
-  // поэтому победный танец играется тем же миксером — без подмены модели.
-  const danceClips = useMemo(() => {
-    return danceAnims.map((c, i) => {
+  const localClips = useMemo(() => {
+    return animations.map((c, i) => {
       const clone = c.clone();
-      clone.name = i === 0 ? DANCE_CLIP : `${DANCE_CLIP}_${i}`;
+      if (instance === "hero") clone.name = i === 0 ? DANCE_CLIP : `${DANCE_CLIP}_${i}`;
       return clone;
     });
-  }, [danceAnims]);
+  }, [animations, instance]);
   const allClips = useMemo(() => {
     // Meshy записывает перемещение всего тела в Hips.position. Оно полезно
     // внутри DCC, но в приложении уводит персонажа из камеры. Оставляем
@@ -174,8 +166,8 @@ function Model({
       });
       return clip;
     };
-    return [...animations, ...victoryAnims, ...danceClips].map(lockRootMotion);
-  }, [animations, victoryAnims, danceClips]);
+    return localClips.map(lockRootMotion);
+  }, [localClips]);
 
 
   // Перекраска в фирменный розовый + подтяжка резкости/контраста материалов.
@@ -410,6 +402,4 @@ export default function RiderScene({
 }
 
 useGLTF.preload(MODEL_URL);
-useGLTF.preload(`${MODEL_URL}?instance=action`);
-useGLTF.preload(VICTORY_URL);
 useGLTF.preload(DANCE_URL);
