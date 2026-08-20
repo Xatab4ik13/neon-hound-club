@@ -71,6 +71,7 @@ import { Route as AdminPromoRouteImport } from './routes/admin.promo'
 import { Route as AdminPassRouteImport } from './routes/admin.pass'
 import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
 import { Route as AdminNewsRouteImport } from './routes/admin.news'
+import { Route as AdminHoundHuntRouteImport } from './routes/admin.hound-hunt'
 import { Route as AdminHellAiRouteImport } from './routes/admin.hell-ai'
 import { Route as AdminFeedRouteImport } from './routes/admin.feed'
 import { Route as AdminEconomyRouteImport } from './routes/admin.economy'
@@ -414,6 +415,11 @@ const AdminNewsRoute = AdminNewsRouteImport.update({
   path: '/news',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminHoundHuntRoute = AdminHoundHuntRouteImport.update({
+  id: '/hound-hunt',
+  path: '/hound-hunt',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminHellAiRoute = AdminHellAiRouteImport.update({
   id: '/hell-ai',
   path: '/hell-ai',
@@ -594,6 +600,7 @@ export interface FileRoutesByFullPath {
   '/admin/economy': typeof AdminEconomyRoute
   '/admin/feed': typeof AdminFeedRoute
   '/admin/hell-ai': typeof AdminHellAiRoute
+  '/admin/hound-hunt': typeof AdminHoundHuntRoute
   '/admin/news': typeof AdminNewsRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/pass': typeof AdminPassRoute
@@ -687,6 +694,7 @@ export interface FileRoutesByTo {
   '/admin/economy': typeof AdminEconomyRoute
   '/admin/feed': typeof AdminFeedRoute
   '/admin/hell-ai': typeof AdminHellAiRoute
+  '/admin/hound-hunt': typeof AdminHoundHuntRoute
   '/admin/news': typeof AdminNewsRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/pass': typeof AdminPassRoute
@@ -784,6 +792,7 @@ export interface FileRoutesById {
   '/admin/economy': typeof AdminEconomyRoute
   '/admin/feed': typeof AdminFeedRoute
   '/admin/hell-ai': typeof AdminHellAiRoute
+  '/admin/hound-hunt': typeof AdminHoundHuntRoute
   '/admin/news': typeof AdminNewsRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/pass': typeof AdminPassRoute
@@ -882,6 +891,7 @@ export interface FileRouteTypes {
     | '/admin/economy'
     | '/admin/feed'
     | '/admin/hell-ai'
+    | '/admin/hound-hunt'
     | '/admin/news'
     | '/admin/orders'
     | '/admin/pass'
@@ -975,6 +985,7 @@ export interface FileRouteTypes {
     | '/admin/economy'
     | '/admin/feed'
     | '/admin/hell-ai'
+    | '/admin/hound-hunt'
     | '/admin/news'
     | '/admin/orders'
     | '/admin/pass'
@@ -1071,6 +1082,7 @@ export interface FileRouteTypes {
     | '/admin/economy'
     | '/admin/feed'
     | '/admin/hell-ai'
+    | '/admin/hound-hunt'
     | '/admin/news'
     | '/admin/orders'
     | '/admin/pass'
@@ -1617,6 +1629,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminNewsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/hound-hunt': {
+      id: '/admin/hound-hunt'
+      path: '/hound-hunt'
+      fullPath: '/admin/hound-hunt'
+      preLoaderRoute: typeof AdminHoundHuntRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/hell-ai': {
       id: '/admin/hell-ai'
       path: '/hell-ai'
@@ -1850,6 +1869,7 @@ interface AdminRouteChildren {
   AdminEconomyRoute: typeof AdminEconomyRoute
   AdminFeedRoute: typeof AdminFeedRoute
   AdminHellAiRoute: typeof AdminHellAiRoute
+  AdminHoundHuntRoute: typeof AdminHoundHuntRoute
   AdminNewsRoute: typeof AdminNewsRoute
   AdminOrdersRoute: typeof AdminOrdersRoute
   AdminPassRoute: typeof AdminPassRoute
@@ -1873,6 +1893,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminEconomyRoute: AdminEconomyRoute,
   AdminFeedRoute: AdminFeedRoute,
   AdminHellAiRoute: AdminHellAiRoute,
+  AdminHoundHuntRoute: AdminHoundHuntRoute,
   AdminNewsRoute: AdminNewsRoute,
   AdminOrdersRoute: AdminOrdersRoute,
   AdminPassRoute: AdminPassRoute,
