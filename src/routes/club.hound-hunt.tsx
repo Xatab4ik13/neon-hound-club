@@ -816,15 +816,6 @@ export function HoundHuntPage() {
             "radial-gradient(120% 60% at 50% 110%, color-mix(in oklab, var(--primary) 10%, transparent), transparent 70%)",
         }}
       />
-      <motion.div
-        className="pointer-events-none absolute inset-0 z-0"
-        animate={{ opacity: settled ? 1 : 0 }}
-        transition={{ duration: 0.6 }}
-        style={{
-          background:
-            "radial-gradient(100% 70% at 50% 55%, rgba(182,255,60,0.16), transparent 72%)",
-        }}
-      />
 
 
 
