@@ -811,7 +811,7 @@ export function HoundHuntPage() {
 
       {/* WINNER — самый верх экрана, крупно и ядовито-зелёным */}
       <AnimatePresence>
-        {settled && (
+        {settled && phase !== "countdown" && (
           <motion.div
             key="winner-top"
             initial={{ opacity: 0, y: -14 }}
