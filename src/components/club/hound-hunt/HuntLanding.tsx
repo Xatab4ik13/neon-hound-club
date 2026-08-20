@@ -75,7 +75,7 @@ const FAQ_TINTS = [TOXIC, "#FF8A3C", "#F000C0", "#3CC8FF"];
 /** Капсула стоит точно по центру левой сцены до момента удара. */
 function CenteredCapsule({ entry }: { entry: HuntEntry }) {
   return (
-    <div className="pointer-events-none absolute left-1/2 top-[calc(50%+2.5rem)] z-30 -translate-x-1/2 -translate-y-1/2">
+    <div className="pointer-events-none absolute left-1/2 top-[calc(50%+3.125rem)] z-30 -translate-x-1/2 -translate-y-1/2">
       <HuntAvatar entry={entry} focused hideNick scale={0.42} />
     </div>
   );
@@ -93,7 +93,7 @@ function KickStage({ me }: { me: HuntEntry | null }) {
 
   return (
     <div className="relative h-full w-full">
-      <div className="h-full w-full translate-y-10">
+      <div className="h-full w-[200%] -translate-x-1/4 translate-y-10">
         <RiderCharacter
           mode="lunge"
           instance="action"
@@ -108,7 +108,7 @@ function KickStage({ me }: { me: HuntEntry | null }) {
       </div>
       {me && flight === null && <CenteredCapsule entry={me} />}
       {me && flight !== null && (
-        <div className="pointer-events-none absolute left-1/2 top-[calc(50%+2.5rem)] z-30 size-0">
+        <div className="pointer-events-none absolute left-1/2 top-[calc(50%+3.125rem)] z-30 size-0">
           <KickedAvatar entry={me} seed={`landing-${flight}`} scale={0.42} width={56} />
         </div>
       )}
@@ -152,7 +152,7 @@ function PlatinumCard() {
   );
 }
 
-export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
+export function HuntLanding({ onEnterShow, active = true }: { onEnterShow: () => void; active?: boolean }) {
   const { cfg } = useHuntConfig();
   const prizes = useMemo(() => prizesInRunOrder(cfg), [cfg]);
   
@@ -217,7 +217,13 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
           </motion.p>
 
           <div className="mx-auto -mt-4 h-[64svh] w-full max-w-md">
-            <RiderCharacter mode="idle" instance="hero" className="h-full w-full" />
+            <RiderCharacter
+              mode="idle"
+              instance="hero"
+              dance
+              instantDance
+              className="h-full w-full"
+            />
           </div>
         </section>
 
@@ -430,7 +436,7 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
         <Reveal className="mt-10 px-6">
           <div className="relative grid grid-cols-2 items-stretch gap-1 overflow-hidden rounded-3xl border border-border/60 bg-card/40 p-2">
             <div className="h-[42svh]">
-              <KickStage me={me} />
+              {active && <KickStage me={me} />}
             </div>
             <PlatinumCard />
           </div>

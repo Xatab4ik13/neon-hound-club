@@ -24,6 +24,8 @@ type Props = {
   victory?: boolean;
   /** true = финальный экран «охота закрыта»: луп танца. */
   dance?: boolean;
+  /** Запускает жест сразу, без появления/исчезновения через кроссфейд. */
+  instantDance?: boolean;
   /** Масштаб модели внутри канваса. */
   modelScale?: number;
   /** Постоянный экземпляр модели для одновременных canvas. */
@@ -102,6 +104,7 @@ function Model({
   kickToken,
   victory,
   dance,
+  instantDance,
   modelScale = 1,
   instance = "action",
   onKickReady,
@@ -112,6 +115,7 @@ function Model({
   kickToken?: number;
   victory?: boolean;
   dance?: boolean;
+  instantDance?: boolean;
   modelScale?: number;
   instance?: "hero" | "action";
   onKickReady?: (impactDelay: number, cycleMs: number) => void;
@@ -304,14 +308,15 @@ function Model({
       danceAction.timeScale = 1;
       danceAction.reset();
       danceAction.setEffectiveWeight(1);
-      danceAction.fadeIn(0.5).play();
+      if (instantDance) danceAction.play();
+      else danceAction.fadeIn(0.5).play();
       danceCur.current = danceAction;
     } else {
       danceAction.fadeOut(0.35);
       danceActionB?.fadeOut(0.35);
       danceCur.current = null;
     }
-  }, [dance, danceAction, danceActionB, victoryAction, action]);
+  }, [dance, instantDance, danceAction, danceActionB, victoryAction, action]);
 
   useFrame(() => {
     // Бесшовный луп танца: хвост клипа перекрываем его же началом.
@@ -372,6 +377,7 @@ export default function RiderScene({
   kickToken,
   victory,
   dance,
+  instantDance,
   modelScale,
   instance,
   onKickReady,
@@ -402,6 +408,7 @@ export default function RiderScene({
             kickToken={kickToken}
             victory={victory}
             dance={dance}
+            instantDance={instantDance}
             modelScale={modelScale}
             instance={instance}
             onKickReady={onKickReady}

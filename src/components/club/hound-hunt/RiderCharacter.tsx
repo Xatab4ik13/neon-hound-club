@@ -15,6 +15,8 @@ type Props = {
   victory?: boolean;
   /** true = финальный экран: луп танца. */
   dance?: boolean;
+  /** Жест начинается сразу, без fade-in/fade-out. */
+  instantDance?: boolean;
   /** Масштаб модели внутри канваса, без увеличения и обрезки самого canvas. */
   modelScale?: number;
   /** Постоянный экземпляр GLB: не должен меняться вместе с режимом анимации. */
