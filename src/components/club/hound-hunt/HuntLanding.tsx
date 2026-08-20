@@ -8,6 +8,7 @@ import { motion } from "framer-motion";
 import { RiderCharacter } from "./RiderCharacter";
 import { useHuntConfig, prizesInRunOrder } from "./hh-config";
 import { HuntAvatar } from "./HuntAvatar";
+import { KickedAvatar } from "./KickedAvatar";
 import { fetchHuntEntries, rankColorsOf, type HuntEntry } from "./hh-mock";
 import { getTier } from "@/data/hell-pass";
 import { haptic } from "@/hooks/use-haptic";
@@ -67,27 +68,15 @@ function Reveal({
   );
 }
 
-function SectionTitle({ kicker, title }: { kicker: string; title: string }) {
-  return (
-    <>
-      <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-muted-foreground">
-        {kicker}
-      </p>
-      <h2 className="mt-1.5 font-display text-2xl font-black uppercase leading-none tracking-tight">
-        {title}
-      </h2>
-    </>
-  );
-}
 
 /** Цвета плашек в FAQ — тот же приём, что на странице инструктора школы. */
 const FAQ_TINTS = [TOXIC, "#FF8A3C", "#F000C0", "#3CC8FF"];
 
 /** Витрина: персонаж циклично выбивает аватарку участника (~7.5 с на цикл). */
-function KickShowcase({ entries }: { entries: HuntEntry[] }) {
+function KickStage({ entries }: { entries: HuntEntry[] }) {
   const [token, setToken] = useState(0);
   const [idx, setIdx] = useState(0);
-  const [visible, setVisible] = useState(true);
+  const [flying, setFlying] = useState(0);
 
   useEffect(() => {
     if (entries.length === 0) return;
@@ -98,40 +87,30 @@ function KickShowcase({ entries }: { entries: HuntEntry[] }) {
   const target = entries.length ? entries[idx % entries.length] : null;
 
   return (
-    <div
-      className="relative overflow-hidden rounded-3xl border border-border/60 bg-card/40"
-      style={{ boxShadow: `0 0 50px -30px ${TOXIC}` }}
-    >
-      <div className="h-[34svh] w-full">
+    <div className="relative">
+      {/* персонаж вдвое крупнее прежнего */}
+      <div className="h-[68svh] w-full">
         <RiderCharacter
           mode="lunge"
           kickToken={token}
           onImpact={() => {
-            setVisible(false);
-            window.setTimeout(() => {
-              setIdx((i) => i + 1);
-              setVisible(true);
-            }, 2600);
+            setFlying((f) => f + 1);
+            window.setTimeout(() => setIdx((i) => i + 1), 1600);
           }}
           className="h-full w-full"
         />
       </div>
 
-      {target && (
-        <motion.div
-          key={`${idx}-${visible}`}
-          className="pointer-events-none absolute right-3 top-3"
-          initial={{ opacity: 0, scale: 0.7 }}
-          animate={visible ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 1.6, x: 40, y: -30 }}
-          transition={{ duration: visible ? 0.5 : 0.35 }}
-        >
-          <HuntAvatar entry={target} hideNick scale={0.4} />
-        </motion.div>
+      {/* аватарка вылетает как в рулетке: 3D-полёт через весь экран */}
+      {target && flying > 0 && (
+        <KickedAvatar
+          key={`${flying}-${target.id}`}
+          entry={target}
+          seed={`landing-${flying}-${target.id}`}
+          scale={0.62}
+          width={132 * 0.62}
+        />
       )}
-
-      <p className="absolute bottom-3 left-3 font-mono text-[9px] uppercase tracking-[0.24em] text-muted-foreground">
-        гончая выбивает
-      </p>
     </div>
   );
 }
@@ -143,25 +122,14 @@ function PlatinumCard() {
   const perks = (tier?.perks ?? []).slice(0, 5);
 
   return (
-    <div
-      className="flex flex-col rounded-3xl border p-4"
-      style={{
-        borderColor: `${color}66`,
-        background: `linear-gradient(165deg, ${color}22, transparent 70%)`,
-      }}
-    >
-      <p className="font-mono text-[9px] uppercase tracking-[0.24em]" style={{ color }}>
-        вход в охоту
-      </p>
-      <h3 className="mt-1 font-display text-lg font-black uppercase leading-none">
-        Hell Pass
-        <br />
-        <span style={{ color }}>Platinum</span>
+    <div className="flex flex-col p-4">
+      <h3 className="font-display text-xl font-black uppercase leading-none">
+        Hell Pass <span style={{ color }}>Platinum</span>
       </h3>
 
       <ul className="mt-3 flex-1 space-y-2">
         {perks.map((perk) => (
-          <li key={perk.label} className="flex gap-2 text-[11px] leading-tight">
+          <li key={perk.label} className="flex gap-2 text-[12px] leading-tight">
             <span className="font-display font-black" style={{ color }}>
               {perk.value ?? "•"}
             </span>
@@ -174,10 +142,10 @@ function PlatinumCard() {
         to="/club/hell-pass/$tier"
         params={{ tier: "platinum" }}
         onClick={() => haptic("light")}
-        className="mt-3 block w-full rounded-2xl px-3 py-3 text-center font-display text-sm font-black uppercase tracking-wide text-background transition active:scale-[0.98]"
+        className="mt-4 block w-full rounded-2xl px-3 py-3.5 text-center font-display text-base font-black uppercase tracking-wide text-background transition active:scale-[0.98]"
         style={{ background: color, boxShadow: `0 0 40px -14px ${color}` }}
       >
-        Купить
+        Купить Hell Pass
       </Link>
     </div>
   );
@@ -186,7 +154,7 @@ function PlatinumCard() {
 export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
   const { cfg } = useHuntConfig();
   const prizes = useMemo(() => prizesInRunOrder(cfg), [cfg]);
-  const main = prizes[prizes.length - 1];
+  
   const { stage, ms } = useStage(cfg.startsAt);
   const parts = split(ms);
 
@@ -345,7 +313,7 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
         {/* ------------------------------ призы ------------------------------ */}
         <Reveal className="mt-10 px-6">
           <h2 className="font-display text-2xl font-black uppercase leading-none tracking-tight">
-            Что разыгрываем
+            Что разыгрываем на этой неделе
           </h2>
           <div className="mt-4 space-y-2.5">
             {[...prizes].reverse().map((p, i) => (
@@ -371,21 +339,23 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
 
         {/* --------------------------- как участвовать --------------------------- */}
         <Reveal className="mt-10 px-6">
-          <SectionTitle kicker="три шага" title="Как попасть в барабан" />
+          <h2 className="font-display text-2xl font-black uppercase leading-none tracking-tight">
+            Как попасть в барабан
+          </h2>
           <div className="mt-4 space-y-2.5">
             {[
               {
-                n: "01",
+                n: "1",
                 t: "Возьми Hell Pass Platinum",
                 d: "Охота открыта только для платинового доступа. Без него в барабан не пускают.",
               },
               {
-                n: "02",
+                n: "2",
                 t: `Набери минимум ${cfg.ticketStep} билетов`,
                 d: `Каждые ${cfg.ticketStep} билетов = одна твоя капсула в барабане. Больше билетов — больше шансов устоять.`,
               },
               {
-                n: "03",
+                n: "3",
                 t: "Зайди к старту",
                 d: "Открой эту страницу в назначенное время — шоу начнётся автоматически.",
               },
@@ -455,49 +425,19 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
           </div>
         </Reveal>
 
-        {/* --------------------- анимация: гончая выбивает --------------------- */}
+        {/* --------------- витрина: удар + Hell Pass Platinum --------------- */}
         <Reveal className="mt-10 px-6">
-          <div className="grid grid-cols-[1.05fr_1fr] gap-3">
-            <KickShowcase entries={entries} />
-            <PlatinumCard />
+          <div
+            className="rounded-3xl border border-border/60 bg-card/40"
+            style={{ boxShadow: `0 0 60px -30px ${TOXIC}` }}
+          >
+            <KickStage entries={entries} />
+            <div className="border-t border-border/60">
+              <PlatinumCard />
+            </div>
           </div>
         </Reveal>
 
-        {/* --------------------------- продажа Pass --------------------------- */}
-        <Reveal className="mt-10 px-6">
-          <div
-            className="rounded-3xl border p-5"
-            style={{
-              borderColor: "color-mix(in oklab, var(--primary) 45%, transparent)",
-              background:
-                "linear-gradient(160deg, color-mix(in oklab, var(--primary) 18%, transparent), transparent)",
-            }}
-          >
-            <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-primary">
-              вход в охоту
-            </p>
-            <h2 className="mt-1.5 font-display text-2xl font-black uppercase leading-none">
-              Hell Pass Platinum
-            </h2>
-            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              Билеты при активации, Hell AI без лимитов, VIP-чат и единственный вход в HOUND HUNT.
-              {main ? ` На этой неделе на кону ${main.title}.` : ""}
-            </p>
-            <Link
-              to="/club/hell-pass"
-              onClick={() => haptic("light")}
-              className="mt-4 block w-full rounded-2xl bg-primary px-6 py-4 text-center font-display text-lg font-black uppercase tracking-wide text-primary-foreground transition active:scale-[0.98]"
-            >
-              Взять Platinum
-            </Link>
-            <Link
-              to="/club/shop"
-              className="mt-2 block w-full rounded-2xl border border-border/70 bg-background/40 px-6 py-3 text-center font-display text-sm font-black uppercase tracking-wide"
-            >
-              Добрать билеты
-            </Link>
-          </div>
-        </Reveal>
 
         {/* ------------------------------ FAQ ------------------------------ */}
         <Reveal className="mt-10 px-6">
