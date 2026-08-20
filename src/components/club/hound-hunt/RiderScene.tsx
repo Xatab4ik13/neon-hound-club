@@ -97,7 +97,7 @@ function Model({
         // В разных Meshy-файлах корень называется Hips, mixamorigHips и
         // Armature.Hips. Проверяем окончание имени, иначе горизонтальный
         // root-motion остаётся и персонаж гуляет по canvas или выходит из него.
-        if (track instanceof THREE.VectorKeyframeTrack && /hips\.position$/i.test(track.name)) {
+        if (track instanceof THREE.VectorKeyframeTrack && /\.position$/i.test(track.name)) {
           const boneName = track.name.split(".")[0];
           const rest = restPositions.get(boneName);
           const values = Array.from(track.values);
