@@ -309,8 +309,9 @@ function Model({
       rootBone.getWorldPosition(tmpVec.current);
       const worldY = tmpVec.current.y;
       const floorY = -viewportH * HEADROOM_FRAC;
-      if (!victory && !dance) {
-        // Эталон берём из позы удара (без победного смещения).
+      if (!victory || dance) {
+        // Луп танца/жеста и обычная поза: жёстко фиксируем персонажа на полу,
+        // никакой накопительной компенсации — иначе модель может уехать из кадра.
         baseRootY.current = worldY - (group.current.position.y - floorY);
         group.current.position.y = floorY;
       } else {
@@ -318,7 +319,9 @@ function Model({
           baseRootY.current = worldY - (group.current.position.y - floorY);
           group.current.position.y = floorY;
         } else {
-          group.current.position.y += baseRootY.current - worldY;
+          const next = group.current.position.y + (baseRootY.current - worldY);
+          // страховка: не даём персонажу уехать за пределы кадра
+          group.current.position.y = Math.max(floorY - 1, Math.min(floorY + 1, next));
         }
       }
     }

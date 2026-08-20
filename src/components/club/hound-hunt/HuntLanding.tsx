@@ -8,8 +8,7 @@ import { motion } from "framer-motion";
 import { RiderCharacter } from "./RiderCharacter";
 import { useHuntConfig, prizesInRunOrder } from "./hh-config";
 import { HuntAvatar } from "./HuntAvatar";
-import { KickedAvatar } from "./KickedAvatar";
-import { fetchHuntEntries, rankColorsOf, type HuntEntry } from "./hh-mock";
+import { fetchHuntEntries, type HuntEntry } from "./hh-mock";
 import { getTier } from "@/data/hell-pass";
 import { haptic } from "@/hooks/use-haptic";
 
@@ -72,45 +71,46 @@ function Reveal({
 /** Цвета плашек в FAQ — тот же приём, что на странице инструктора школы. */
 const FAQ_TINTS = [TOXIC, "#FF8A3C", "#F000C0", "#3CC8FF"];
 
-/** Витрина: персонаж циклично выбивает аватарку участника (~7.5 с на цикл). */
-function KickStage({ entries }: { entries: HuntEntry[] }) {
+/** Капсула с аватаркой: вылетает от удара, бьётся о две стенки и уходит из кадра. */
+function BouncingCapsule({ entry }: { entry: HuntEntry }) {
+  return (
+    <motion.div
+      className="pointer-events-none absolute bottom-[26%] left-[22%] z-30"
+      initial={{ x: 0, y: 0, opacity: 0, scale: 0.9, rotate: 0 }}
+      animate={{
+        // 0 → правая стенка → левая стенка → уход вверх-вправо из кадра
+        x: ["0%", "180%", "20%", "260%"],
+        y: ["0%", "-120%", "40%", "-260%"],
+        rotate: [0, 220, 420, 760],
+        scale: [0.9, 1.1, 1, 0.7],
+        opacity: [0, 1, 1, 0],
+      }}
+      transition={{ duration: 2.2, times: [0, 0.34, 0.68, 1], ease: "easeOut" }}
+    >
+      <HuntAvatar entry={entry} focused hideNick scale={0.42} />
+    </motion.div>
+  );
+}
+
+/** Витрина: персонаж циклично выбивает капсулу с твоей аватаркой (~7.5 с на цикл). */
+function KickStage({ me }: { me: HuntEntry | null }) {
   const [token, setToken] = useState(0);
-  const [idx, setIdx] = useState(0);
   const [flying, setFlying] = useState(0);
 
   useEffect(() => {
-    if (entries.length === 0) return;
     const id = setInterval(() => setToken((t) => t + 1), 7500);
     return () => clearInterval(id);
-  }, [entries.length]);
-
-  const target = entries.length ? entries[idx % entries.length] : null;
+  }, []);
 
   return (
-    <div className="relative">
-      {/* персонаж вдвое крупнее прежнего */}
-      <div className="h-[68svh] w-full">
-        <RiderCharacter
-          mode="lunge"
-          kickToken={token}
-          onImpact={() => {
-            setFlying((f) => f + 1);
-            window.setTimeout(() => setIdx((i) => i + 1), 1600);
-          }}
-          className="h-full w-full"
-        />
-      </div>
-
-      {/* аватарка вылетает как в рулетке: 3D-полёт через весь экран */}
-      {target && flying > 0 && (
-        <KickedAvatar
-          key={`${flying}-${target.id}`}
-          entry={target}
-          seed={`landing-${flying}-${target.id}`}
-          scale={0.62}
-          width={132 * 0.62}
-        />
-      )}
+    <div className="relative h-full w-full overflow-hidden">
+      <RiderCharacter
+        mode="lunge"
+        kickToken={token}
+        onImpact={() => setFlying((f) => f + 1)}
+        className="h-full w-full"
+      />
+      {me && flying > 0 && <BouncingCapsule key={flying} entry={me} />}
     </div>
   );
 }
@@ -222,7 +222,7 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
 
 
         {/* ------------------------------ таймер ------------------------------ */}
-        <Reveal className="-mt-16 px-6">
+        <Reveal className="relative z-20 -mt-[24svh] px-6">
           <div
             className="rounded-3xl border border-border/60 bg-card/60 p-5 text-center"
             style={{ boxShadow: `0 0 60px -30px ${TOXIC}` }}
@@ -406,7 +406,7 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
             <p className="mt-3 text-xs text-muted-foreground">
               {capsules === 0
                 ? `Нужно минимум ${cfg.ticketStep} билетов, чтобы попасть в барабан.`
-                : `${capsules} ${capsules === 1 ? "капсула" : "капсулы"} с твоей аватаркой крутится в барабане.`}
+                : "Крутятся в твоём барабане."}
             </p>
             {me && (
               <div className="mt-4 flex flex-wrap gap-2">
@@ -428,13 +428,13 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
         {/* --------------- витрина: удар + Hell Pass Platinum --------------- */}
         <Reveal className="mt-10 px-6">
           <div
-            className="rounded-3xl border border-border/60 bg-card/40"
-            style={{ boxShadow: `0 0 60px -30px ${TOXIC}` }}
+            className="relative grid grid-cols-2 items-stretch gap-1 overflow-hidden rounded-3xl border bg-card/40 p-2"
+            style={{ borderColor: `${TOXIC}55`, boxShadow: `0 0 60px -26px ${TOXIC}` }}
           >
-            <KickStage entries={entries} />
-            <div className="border-t border-border/60">
-              <PlatinumCard />
+            <div className="h-[42svh]">
+              <KickStage me={me} />
             </div>
+            <PlatinumCard />
           </div>
         </Reveal>
 
