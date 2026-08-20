@@ -195,7 +195,7 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
             transition={{ delay: 0.05 }}
             className="font-display text-[15vw] font-black uppercase leading-[0.85] tracking-tighter text-white"
           >
-            Hound
+            Hell
             <br />
             <span style={{ color: TOXIC }}>Hunt</span>
           </motion.h1>
@@ -206,9 +206,10 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
             transition={{ delay: 0.15 }}
             className="mx-auto mt-3 max-w-xs text-sm leading-relaxed text-muted-foreground"
           >
-            Раз в неделю гончая выходит на охоту. В барабане только владельцы Platinum —
+            Раз в неделю Хелл выходит на охоту. В барабане только владельцы Platinum —
             выбивает всех, кроме одного.
           </motion.p>
+
 
           <div className="mx-auto -mt-4 h-[64svh] w-full max-w-md">
             <RiderCharacter mode="idle" dance className="h-full w-full" />
