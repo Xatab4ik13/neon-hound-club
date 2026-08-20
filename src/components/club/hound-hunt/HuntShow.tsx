@@ -741,7 +741,7 @@ export function HoundHuntPage({ mode = "live" }: { mode?: HuntShowMode }) {
 
   const start = async () => {
     clearTimers();
-    // Музыку можно стартовать только из жеста пользователя — это он и есть.
+    // Реплей крутит тот же состав, live — свежий жребий.
     const fresh = await fetchHuntEntries(MOCK_ENTRIES, Math.floor(Math.random() * 99999));
     await Promise.all(
       [...new Set(fresh.map((entry) => entry.avatarUrl).filter((src): src is string => Boolean(src)))].map(
