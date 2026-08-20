@@ -25,7 +25,7 @@ import {
   type HuntConfig,
   type HuntConfigPrize,
 } from "@/components/club/hound-hunt/hh-config";
-import { fetchHuntEntries, type HuntEntry } from "@/components/club/hound-hunt/hh-mock";
+import { type HuntEntry } from "@/components/club/hound-hunt/hh-mock";
 import { resetHuntState } from "@/components/club/hound-hunt/hh-bets";
 import {
   fetchAdminHunt,
@@ -222,8 +222,8 @@ function HoundHuntAdminPage() {
         })) as HuntEntry[],
       );
     } catch {
-      // нет охоты/бек недоступен — показываем демо-состав, чтобы верстка не пустовала
-      void fetchHuntEntries(20).then(setEntries);
+      // нет охоты/бек недоступен — список пустой, никаких демо-данных
+      setEntries([]);
     }
   };
 
