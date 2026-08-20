@@ -229,19 +229,29 @@ function HoundHuntAdminPage() {
                         >
                           <option value="">Честный розыгрыш</option>
                           {entries.map((e) => (
-                            <option key={e.id} value={e.id}>
-                              {e.nick}
+                            <option
+                              key={e.id}
+                              value={e.id}
+                              disabled={takenBy(e.id, p.id) !== null}
+                            >
+                              {e.nick} — {e.tickets} бил. / {e.slots} капс.
                               {e.city ? ` — ${e.city}` : ""}
+                              {takenBy(e.id, p.id) ? ` (уже: ${takenBy(e.id, p.id)})` : ""}
                             </option>
                           ))}
                         </Select>
                       </Field>
-                      {p.forcedWinnerId && (
+                      {p.forcedWinnerId ? (
                         <div className="mt-2">
                           <Badge tone="rose">Победитель назначен вручную</Badge>
                         </div>
+                      ) : (
+                        <div className="mt-2">
+                          <Badge tone="zinc">Жребий по весам билетов</Badge>
+                        </div>
                       )}
                     </div>
+
                   </div>
 
                   <button
