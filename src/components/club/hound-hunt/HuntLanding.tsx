@@ -133,12 +133,14 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
   const [tickets, setTickets] = useState(() => cfg.ticketStep * 2);
   const capsules = Math.max(0, Math.floor(tickets / cfg.ticketStep));
 
-  const startLabel = new Date(cfg.startsAt).toLocaleString("ru-RU", {
+  const startLabel = `${new Date(cfg.startsAt).toLocaleString("ru-RU", {
     day: "numeric",
     month: "long",
     hour: "2-digit",
     minute: "2-digit",
-  });
+    timeZone: "Europe/Moscow",
+  })} МСК`;
+
 
   return (
     <div className="relative min-h-[100svh] overflow-hidden bg-black pb-24">
