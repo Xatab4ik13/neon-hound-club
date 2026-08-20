@@ -4,7 +4,7 @@
 // "lunge" = удар ногой по капсуле (проигрывается клип один раз).
 
 import { Suspense, useEffect, useMemo, useRef } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useAnimations, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import riderAsset from "@/assets/rider.glb.asset.json";
@@ -29,6 +29,8 @@ type Props = {
 
 const MODEL_URL = riderAsset.url;
 const VICTORY_URL = victoryAsset.url;
+// Доля высоты канваса, добавленная сверху под поднятые руки победной анимации.
+const HEADROOM_FRAC = 6 / 74;
 
 
 const BRAND = { r: 0xf0, g: 0x00, b: 0xc0 };
@@ -216,19 +218,14 @@ function Model({
     }
   }, [victory, victoryAction, action]);
 
-  // В победном танце руки уходят выше габаритов базовой позы, поэтому верх
-  // канваса срезал пальцы. Плавно поджимаем модель и опускаем её вниз —
-  // персонаж целиком влезает в кадр, скачка не видно.
-  const victoryFit = useRef(0);
-  useFrame((_, delta) => {
-    if (group.current) {
-      const target = victory ? 1 : 0;
-      victoryFit.current += (target - victoryFit.current) * Math.min(1, delta * 3);
-      const k = victoryFit.current;
-      const sc = 1 - 0.14 * k;
-      group.current.scale.setScalar(sc);
-      group.current.position.y = -0.34 * k;
-    }
+  // Кадр канваса расширен вверх (см. HEADROOM_FRAC), поэтому модель сдвинута
+  // вниз ровно на добавленный запас — визуально персонаж стоит и выглядит так же,
+  // но поднятые руки в победном танце больше не срезаются верхней границей.
+  const viewportH = useThree((s: { viewport: { height: number } }) => s.viewport.height);
+  useEffect(() => {
+    if (group.current) group.current.position.y = -viewportH * HEADROOM_FRAC;
+  }, [viewportH]);
+  useFrame(() => {
     if (!action || !kickToken || action.paused || victory) return;
     const dur = action.getClip().duration;
     const impactAt = dur * 0.6;
@@ -269,7 +266,7 @@ export default function RiderScene({
     <div className={className}>
       <Canvas
         dpr={[1, 2]}
-        camera={{ position: [0, 1.1, 5.6], fov: 42 }}
+        camera={{ position: [0, 1.1, 5.6], fov: 50 }}
         gl={{
           antialias: true,
           alpha: true,

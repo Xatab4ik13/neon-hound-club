@@ -812,7 +812,7 @@ export function HoundHuntPage() {
               а в зоне удара пересекаются только с ногой. */}
           <motion.div
             className={`relative z-10 w-full max-w-[560px] ${
-              phase === "intro" ? "mt-0 h-[34svh]" : "mt-[11svh] h-[62svh]"
+              phase === "intro" ? "mt-0 h-[34svh]" : "-mt-[1svh] h-[74svh]"
             }`}
             animate={{ opacity: phase === "podium" ? 0.25 : 1 }}
           >
