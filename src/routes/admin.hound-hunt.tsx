@@ -65,6 +65,13 @@ function HoundHuntAdminPage() {
       prizes: c.prizes.map((p) => (p.id === id ? { ...p, ...patch } : p)),
     }));
 
+  /** Кем уже занят участник (назначен на другой приз) — иначе он забрал бы два. */
+  const takenBy = (entryId: string, exceptPrizeId: string): string | null => {
+    const other = cfg.prizes.find((p) => p.id !== exceptPrizeId && p.forcedWinnerId === entryId);
+    return other ? other.title : null;
+  };
+
+
   const addPrize = () =>
     setCfg((c) => {
       const place = Math.max(0, ...c.prizes.map((p) => p.place)) + 1;
