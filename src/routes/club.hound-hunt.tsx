@@ -22,6 +22,7 @@ import {
 
 import {
   playHuntImpact,
+  playHuntWin,
 } from "@/lib/hunt-audio";
 import { RiderCharacter, type RiderMode } from "@/components/club/hound-hunt/RiderCharacter";
 import { EmberField } from "@/components/club/hound-hunt/EmberField";
@@ -364,6 +365,7 @@ export function HoundHuntPage() {
             syncStrip();
             settledRef.current = true;
             setSettled(true);
+            playHuntWin();
             haptic("success");
             // В финале в кадре должна остаться РОВНО одна аватарка победителя:
             // все остальные слоты (в т.ч. его же копии по кругу) убираем.
