@@ -1327,6 +1327,7 @@ function Podium({
       <div className="mt-4 space-y-2">
         {[...winners].reverse().map((w) => {
           const p = HUNT_PRIZES.find((x) => x.id === w.prizeId)!;
+          const rc = rankColorsOf(w.entry);
           return (
             <div
               key={w.prizeId}
@@ -1341,29 +1342,35 @@ function Podium({
               </div>
               <div className="flex w-16 shrink-0 flex-col items-center gap-1">
                 <div
-                  className="flex size-11 items-center justify-center overflow-hidden rounded-full border"
+                  className="flex size-11 items-center justify-center overflow-hidden rounded-full p-[2px]"
                   style={{
-                    borderColor: "rgba(182,255,60,0.6)",
-                    boxShadow: "0 0 14px -2px rgba(182,255,60,0.5)",
+                    background: `linear-gradient(160deg, ${rc.accent}, ${rc.accentSoft})`,
+                    boxShadow: `0 0 16px -4px ${rc.accentSoft}`,
                   }}
                 >
-                  {w.entry.avatarUrl ? (
-                    <img
-                      src={w.entry.avatarUrl}
-                      alt={w.entry.nick}
-                      className="size-full object-cover"
-                    />
-                  ) : (
-                    <span className="font-display text-xs font-black uppercase">
-                      {w.entry.initials}
-                    </span>
-                  )}
+                  <div className="size-full overflow-hidden rounded-full bg-background/60">
+                    {w.entry.avatarUrl ? (
+                      <img
+                        src={w.entry.avatarUrl}
+                        alt={w.entry.nick}
+                        className="size-full object-cover"
+                      />
+                    ) : (
+                      <span className="grid size-full place-items-center font-display text-xs font-black uppercase">
+                        {w.entry.initials}
+                      </span>
+                    )}
+                  </div>
                 </div>
-                <p className="w-full truncate text-center font-mono text-[10px] uppercase text-primary">
+                <p
+                  className="w-full truncate text-center font-display text-[10px] font-black uppercase"
+                  style={{ color: rc.accent }}
+                >
                   {w.entry.nick}
                 </p>
               </div>
             </div>
+
           );
         })}
       </div>
