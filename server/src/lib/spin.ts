@@ -687,7 +687,9 @@ export async function grantPass(
       expiresAt: new Date(base.getTime() + PASS_DURATION_DAYS * 86_400_000),
     })
     .returning();
-  if (active) {
+  // Замещаем предыдущий пасс только если выданный тир не ниже: подарочный
+  // silver из рулетки не должен ронять gold/platinum.
+  if (active && (TIER_RANK[tier] ?? 0) >= (TIER_RANK[active.tier as PassTier] ?? 0)) {
     await db.update(passPurchases).set({ status: "superseded" }).where(eq(passPurchases.id, active.id));
   }
   if (cfg.tickets > 0) {
