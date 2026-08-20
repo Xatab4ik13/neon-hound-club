@@ -321,74 +321,12 @@ export function isHuntMuted() {
   return muted;
 }
 
-/** Удар: свуш → щёлкающий транзиент → короткий панч. Ярко, но негромко. */
+/** Удар: настоящий mp3-сэмпл (мощный кинематографичный импакт), без синтеза. */
 export function playHuntImpact(power = 1) {
-  const c = ac();
-  if (!c || !sfxBus) return;
-  const sfx: GainNode = sfxBus;
-  const t = c.currentTime + 0.005;
-  const p = Math.max(0.3, Math.min(1, power));
-
-  // свуш замаха
-  const wDur = 0.11;
-  const wsrc = noise(c, wDur, 0.4);
-  const wbp = c.createBiquadFilter();
-  wbp.type = "bandpass";
-  wbp.Q.value = 1.4;
-  wbp.frequency.setValueAtTime(500, t);
-  wbp.frequency.exponentialRampToValueAtTime(4200, t + wDur);
-  const wg = c.createGain();
-  wg.gain.setValueAtTime(0.0001, t);
-  wg.gain.linearRampToValueAtTime(0.09 * p, t + wDur * 0.8);
-  wg.gain.linearRampToValueAtTime(0.0001, t + wDur);
-  wsrc.connect(wbp).connect(wg).connect(sfx);
-  wsrc.start(t);
-
-  const hit = t + wDur * 0.85;
-
-  // транзиент-щёлк: очень короткий яркий шум → удар «читается» на любой громкости
-  const csrc = noise(c, 0.03, 4);
-  const chp = c.createBiquadFilter();
-  chp.type = "highpass";
-  chp.frequency.value = 2600;
-  const cg = c.createGain();
-  cg.gain.value = 0.16 * p;
-  csrc.connect(chp).connect(cg).connect(sfx);
-  csrc.start(hit);
-
-  // панч: быстрый питч-дроп, короткий хвост — без бубнежа
-  const o = c.createOscillator();
-  o.type = "sine";
-  o.frequency.setValueAtTime(210, hit);
-  o.frequency.exponentialRampToValueAtTime(58, hit + 0.1);
-  const og = c.createGain();
-  og.gain.setValueAtTime(0.0001, hit);
-  og.gain.linearRampToValueAtTime(0.24 * p, hit + 0.006);
-  og.gain.exponentialRampToValueAtTime(0.0001, hit + 0.22);
-  o.connect(og).connect(sfx);
-  o.start(hit);
-  o.stop(hit + 0.26);
-
-  // корпус: полосовой шум, добавляет «тело» без звона
-  const bsrc = noise(c, 0.08, 2.6);
-  const bbp = c.createBiquadFilter();
-  bbp.type = "bandpass";
-  bbp.frequency.value = 900;
-  bbp.Q.value = 0.8;
-  const bg = c.createGain();
-  bg.gain.value = 0.12 * p;
-  bsrc.connect(bbp).connect(bg).connect(sfx);
-  bsrc.start(hit);
-
-  // сайд-чейн: музыка проседает на миг
-  if (musicBus && running) {
-    const cur = musicBus.gain.value;
-    musicBus.gain.cancelScheduledValues(hit);
-    musicBus.gain.setValueAtTime(cur, hit);
-    musicBus.gain.linearRampToValueAtTime(cur * 0.68, hit + 0.025);
-    musicBus.gain.linearRampToValueAtTime(cur, hit + 0.35);
-  }
+  const p = Math.max(0.35, Math.min(1, power));
+  playSampleOverlap("impact", 0.55 + 0.45 * p);
 }
+
 
 /** Тик отсчёта «3 / 2 / 1»: короткий яркий бип с телом (без музыки). */
 export function playHuntCountBeep(step: number) {
