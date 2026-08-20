@@ -72,43 +72,8 @@ function Reveal({
 /** Цвета плашек в FAQ — тот же приём, что на странице инструктора школы. */
 const FAQ_TINTS = [TOXIC, "#FF8A3C", "#F000C0", "#3CC8FF"];
 
-/** Капсула стоит точно по центру левой сцены до момента удара. */
-function CenteredCapsule({ entry }: { entry: HuntEntry }) {
-  return (
-    <div className="pointer-events-none absolute left-1/2 top-[calc(50%+3.125rem)] z-30 -translate-x-1/2 -translate-y-1/2">
-      <HuntAvatar entry={entry} focused hideNick scale={0.32} />
-    </div>
-  );
-}
 
-/** Витрина: персонаж циклично выбивает капсулу с твоей аватаркой (~7.5 с на цикл). */
-function KickStage({ me }: { me: HuntEntry | null }) {
-  const [token, setToken] = useState(1);
-  const [flight, setFlight] = useState<number | null>(null);
 
-  useEffect(() => {
-    const id = setInterval(() => {
-      setToken((t) => {
-        const next = t + 1;
-        setFlight(next);
-        window.setTimeout(() => setFlight(null), 2000);
-        return next;
-      });
-    }, 7500);
-    return () => clearInterval(id);
-  }, []);
-
-  return (
-    <div className="relative h-full w-full overflow-visible">
-      {me && flight === null && <CenteredCapsule entry={me} />}
-      {me && flight !== null && (
-        <div className="pointer-events-none absolute left-1/2 top-[calc(50%+3.125rem)] z-30 size-0">
-          <KickedAvatar entry={me} seed={`landing-${flight}`} scale={0.32} width={42.24} />
-        </div>
-      )}
-    </div>
-  );
-}
 
 /** Преимущества Platinum + кнопка покупки, в цвете тира. */
 function PlatinumCard() {
