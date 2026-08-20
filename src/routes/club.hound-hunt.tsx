@@ -1201,6 +1201,8 @@ function RoundCountdown({ round, onDone }: { round: number; onDone: () => void }
       <div className="absolute inset-0">
 
         <AnimatePresence mode="popLayout">
+          {step !== null && (
+
           <motion.div
             key={step}
             initial={{ scale: 2.6, opacity: 0, filter: "blur(14px)" }}
