@@ -22,6 +22,7 @@ import {
 
 import {
   playHuntImpact,
+  preloadHuntSamples,
   playHuntWin,
   speakHuntCount,
 } from "@/lib/hunt-audio";
