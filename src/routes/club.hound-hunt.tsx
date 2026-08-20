@@ -94,7 +94,7 @@ const BASE = {
   capsule: 360, // одна капсула проезжает мимо центра за столько мс (быстро)
   pull: 5000, // последняя капсула подъезжает к персонажу
   crack: 2200, // раскрытие капсулы
-  reveal: HUNT_WIN_MS + 200, // ревил победителя: держим, пока фанфара не доиграет
+  reveal: HUNT_WIN_MS + 150, // ревил победителя: держим, пока фанфара не доиграет
 };
 
 const SPEEDS = [1, 2, 5, 20, 60] as const;
@@ -816,8 +816,8 @@ export function HoundHuntPage() {
             key="winner-top"
             initial={{ opacity: 0, y: -14 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            exit={{ opacity: 0, transition: { duration: 0.25 } }}
+            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
             className="pointer-events-none absolute inset-x-0 z-50 text-center"
             style={{ top: "calc(0.75rem + env(safe-area-inset-top))" }}
           >
@@ -1141,7 +1141,7 @@ function ReelSlot({
  * цифры влетают со звуком. Музыка на это время выключена.
  */
 function RoundCountdown({ round, onDone }: { round: number; onDone: () => void }) {
-  const [step, setStep] = useState(3);
+  const [step, setStep] = useState<number | null>(null);
   const doneRef = useRef(false);
 
   useEffect(() => {
@@ -1155,18 +1155,19 @@ function RoundCountdown({ round, onDone }: { round: number; onDone: () => void }
         }, delay),
       );
     };
-    haptic("light");
-    speakHuntCount(3);
-    tick(2, 850);
-    tick(1, 1700);
-    tick(0, 2550);
+    // Сначала гаснет WINNER и появляется «Следующий раунд», только потом 3-2-1.
+    const LEAD = 900;
+    tick(3, LEAD);
+    tick(2, LEAD + 850);
+    tick(1, LEAD + 1700);
+    tick(0, LEAD + 2550);
 
     timers.push(
       window.setTimeout(() => {
         if (doneRef.current) return;
         doneRef.current = true;
         onDone();
-      }, 3200),
+      }, LEAD + 3200),
     );
     return () => timers.forEach((t) => window.clearTimeout(t));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1200,6 +1201,8 @@ function RoundCountdown({ round, onDone }: { round: number; onDone: () => void }
       <div className="absolute inset-0">
 
         <AnimatePresence mode="popLayout">
+          {step !== null && (
+
           <motion.div
             key={step}
             initial={{ scale: 2.6, opacity: 0, filter: "blur(14px)" }}
@@ -1222,6 +1225,8 @@ function RoundCountdown({ round, onDone }: { round: number; onDone: () => void }
               {step === 0 ? "GO!" : step}
             </span>
           </motion.div>
+          )}
+
         </AnimatePresence>
       </div>
     </div>
