@@ -163,7 +163,9 @@ function HoundHuntAdminPage() {
         ticketStep: cfg.ticketStep,
         status: "open",
         prizes: cfg.prizes.map((p) => ({
-          id: p.id.startsWith("p-") ? undefined : p.id,
+          // id отправляем только если это реальный uuid с бека: локальные
+          // мок-id («p1», «p-1712…») бек не примет.
+          id: isUuid(p.id) ? p.id : undefined,
           place: p.place,
           title: p.title,
           sub: p.sub,
