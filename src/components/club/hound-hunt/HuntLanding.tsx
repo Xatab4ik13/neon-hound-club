@@ -434,49 +434,19 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
           </div>
         </Reveal>
 
-        {/* --------------------- анимация: гончая выбивает --------------------- */}
+        {/* --------------- витрина: удар + Hell Pass Platinum --------------- */}
         <Reveal className="mt-10 px-6">
-          <div className="grid grid-cols-[1.05fr_1fr] gap-3">
-            <KickShowcase entries={entries} />
-            <PlatinumCard />
+          <div
+            className="overflow-hidden rounded-3xl border border-border/60 bg-card/40"
+            style={{ boxShadow: `0 0 60px -30px ${TOXIC}` }}
+          >
+            <KickStage entries={entries} />
+            <div className="border-t border-border/60">
+              <PlatinumCard />
+            </div>
           </div>
         </Reveal>
 
-        {/* --------------------------- продажа Pass --------------------------- */}
-        <Reveal className="mt-10 px-6">
-          <div
-            className="rounded-3xl border p-5"
-            style={{
-              borderColor: "color-mix(in oklab, var(--primary) 45%, transparent)",
-              background:
-                "linear-gradient(160deg, color-mix(in oklab, var(--primary) 18%, transparent), transparent)",
-            }}
-          >
-            <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-primary">
-              вход в охоту
-            </p>
-            <h2 className="mt-1.5 font-display text-2xl font-black uppercase leading-none">
-              Hell Pass Platinum
-            </h2>
-            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              Билеты при активации, Hell AI без лимитов, VIP-чат и единственный вход в HOUND HUNT.
-              {main ? ` На этой неделе на кону ${main.title}.` : ""}
-            </p>
-            <Link
-              to="/club/hell-pass"
-              onClick={() => haptic("light")}
-              className="mt-4 block w-full rounded-2xl bg-primary px-6 py-4 text-center font-display text-lg font-black uppercase tracking-wide text-primary-foreground transition active:scale-[0.98]"
-            >
-              Взять Platinum
-            </Link>
-            <Link
-              to="/club/shop"
-              className="mt-2 block w-full rounded-2xl border border-border/70 bg-background/40 px-6 py-3 text-center font-display text-sm font-black uppercase tracking-wide"
-            >
-              Добрать билеты
-            </Link>
-          </div>
-        </Reveal>
 
         {/* ------------------------------ FAQ ------------------------------ */}
         <Reveal className="mt-10 px-6">
