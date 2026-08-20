@@ -883,29 +883,9 @@ export function HoundHuntPage() {
       <div className="relative flex h-full flex-col overflow-hidden pt-[max(0.5rem,env(safe-area-inset-top))] pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
         {/* арена */}
         <div className="relative flex min-h-0 flex-1 flex-col items-center justify-center">
-          {/* Персонаж стоит за лентой и чуть ниже: аватарки проходят перед ним,
-              а в зоне удара пересекаются только с ногой. */}
-          <motion.div
-            className={`relative z-10 w-full max-w-[560px] ${
-              phase === "intro" ? "mt-0 h-[34svh]" : "-mt-[1svh] h-[74svh]"
-            }`}
-            animate={{ opacity: 1 }}
-          >
-            <RiderCharacter
-              mode={dogMode}
-              instance="action"
-              lookAt={look}
-              kickToken={kickToken}
-              victory={settled}
-              dance={phase === "podium"}
-              onKickReady={(impactDelay, cycleMs) => {
-                impactDelayRef.current = impactDelay;
-                kickCycleMsRef.current = cycleMs;
-              }}
-              onImpact={handleImpact}
-              className="h-full w-full"
-            />
-          </motion.div>
+          {/* Персонаж в шоу временно отключён (dev): один WebGL-канвас на
+              странице живёт только на лендинге, чтобы контекст не терялся. */}
+
 
           {phase === "intro" && <IntroPanel onStart={start} />}
 
