@@ -9,7 +9,6 @@ import { useEffect, useState } from "react";
 import { HuntLanding } from "@/components/club/hound-hunt/HuntLanding";
 import { HuntShow } from "@/components/club/hound-hunt/HuntShow";
 import { EmberField } from "@/components/club/hound-hunt/EmberField";
-import { RiderCharacter } from "@/components/club/hound-hunt/RiderCharacter";
 import { isStandalonePWA } from "@/lib/is-pwa";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
@@ -79,9 +78,6 @@ function NotInApp({ desktop = false }: { desktop?: boolean }) {
     <div className="relative flex min-h-[100svh] flex-col items-center justify-center gap-5 overflow-hidden bg-black px-8 text-center">
       <EmberField className="pointer-events-none absolute inset-0 opacity-40" />
       <div className="relative z-10 flex flex-col items-center gap-4">
-        <div className="w-40">
-          <RiderCharacter mode="idle" className="h-40 w-40" />
-        </div>
         <h1 className="font-display text-2xl uppercase tracking-tight text-white">Hound Hunt</h1>
         <p className="max-w-xs text-sm leading-relaxed text-white/50">
           {desktop
