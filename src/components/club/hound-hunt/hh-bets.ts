@@ -95,15 +95,30 @@ export function useMyBet(hunt: HuntKey, ticketStep: number) {
   const [bet, setBet] = useState<MyBet>(() => getMyBet(hunt, ticketStep));
 
   useEffect(() => {
+    let alive = true;
     const sync = () => setBet(getMyBet(hunt, ticketStep));
     sync();
     window.addEventListener(EVT, sync);
     window.addEventListener("storage", sync);
+
+    // Истина по ставке — бек: подтягиваем её и обновляем кеш.
+    void fetchHuntState()
+      .then((state) => {
+        if (!alive || !state.me) return;
+        cacheBet(hunt, state.me.tickets);
+        setBet({ tickets: state.me.tickets, capsules: state.me.capsules });
+      })
+      .catch(() => {
+        /* оффлайн/не авторизован — остаётся кеш */
+      });
+
     return () => {
+      alive = false;
       window.removeEventListener(EVT, sync);
       window.removeEventListener("storage", sync);
     };
   }, [hunt, ticketStep]);
+
 
   const bump = useCallback(
     async (amount: number) => {
