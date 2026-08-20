@@ -306,7 +306,9 @@ function HoundHuntAdminPage() {
           place: p.place,
           title: p.title,
           sub: p.sub,
-          img: p.img,
+          // В БД пишем только абсолютные URL. Локальные бандл-пути не храним —
+          // фронт подставит картинку приза по месту.
+          img: /^https?:\/\//.test(p.img) ? p.img : null,
           ticketsReward: p.ticketsReward ?? 0,
           forcedWinnerId: p.forcedWinnerId ?? null,
         })),
