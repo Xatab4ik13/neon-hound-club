@@ -945,6 +945,8 @@ export function HoundHuntPage({ mode = "live" }: { mode?: HuntShowMode }) {
           )}
 
 
+          {phase === "intro" && <ArenaLoading />}
+
           {(phase === "arming" ||
             phase === "drift" ||
             phase === "settle" ||
