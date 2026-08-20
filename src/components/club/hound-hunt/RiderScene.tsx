@@ -31,6 +31,9 @@ const MODEL_URL = riderAsset.url;
 const VICTORY_URL = victoryAsset.url;
 // Доля высоты канваса, добавленная сверху под поднятые руки победной анимации.
 const HEADROOM_FRAC = 6 / 74;
+// Дополнительное смещение вниз во время победного танца, чтобы персонаж
+// не «подпрыгивал» вверх относительно позиции во время розыгрыша.
+const VICTORY_OFFSET_FRAC = 0.12;
 
 
 const BRAND = { r: 0xf0, g: 0x00, b: 0xc0 };
@@ -223,8 +226,11 @@ function Model({
   // но поднятые руки в победном танце больше не срезаются верхней границей.
   const viewportH = useThree((s: { viewport: { height: number } }) => s.viewport.height);
   useEffect(() => {
-    if (group.current) group.current.position.y = -viewportH * HEADROOM_FRAC;
-  }, [viewportH]);
+    if (!group.current) return;
+    const baseOffset = -viewportH * HEADROOM_FRAC;
+    const victoryOffset = victory ? -viewportH * VICTORY_OFFSET_FRAC : 0;
+    group.current.position.y = baseOffset + victoryOffset;
+  }, [viewportH, victory]);
   useFrame(() => {
     if (!action || !kickToken || action.paused || victory) return;
     const dur = action.getClip().duration;
