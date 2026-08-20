@@ -188,6 +188,8 @@ function Model({
   const victoryName = names.find((n) => n.toLowerCase().includes("victory"));
   const victoryAction = victoryName ? actions[victoryName] : null;
   const danceAction = actions[DANCE_CLIP] ?? null;
+  const danceActionB = actions[DANCE_CLIP_B] ?? null;
+  const danceCur = useRef<THREE.AnimationAction | null>(null);
   const impactRef = useRef(onImpact);
   impactRef.current = onImpact;
   const readyRef = useRef(onKickReady);
