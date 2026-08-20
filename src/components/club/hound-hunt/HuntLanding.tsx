@@ -6,7 +6,6 @@ import { Link } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 
 import { RiderCharacter } from "./RiderCharacter";
-import { EmberField } from "./EmberField";
 import { useHuntConfig, prizesInRunOrder } from "./hh-config";
 import { HuntAvatar } from "./HuntAvatar";
 import { fetchHuntEntries, rankColorsOf, type HuntEntry } from "./hh-mock";
@@ -110,35 +109,23 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
   });
 
   return (
-    <div className="relative min-h-[100svh] overflow-hidden bg-background pb-24">
-      {/* фоновые свечения: магента сверху, ядовитый зелёный внизу */}
+    <div className="relative min-h-[100svh] overflow-hidden bg-black pb-24">
+      {/* лёгкое статичное свечение: без канваса и тяжёлых фильтров — страница не лагает */}
       <div
-        className="pointer-events-none fixed inset-0 z-0"
+        className="pointer-events-none absolute inset-x-0 top-0 z-0 h-[70svh]"
         style={{
-          background:
-            "radial-gradient(120% 60% at 50% 0%, color-mix(in oklab, var(--primary) 22%, transparent), transparent 70%)," +
-            `radial-gradient(90% 50% at 50% 100%, ${TOXIC}14, transparent 70%)`,
+          background: `radial-gradient(90% 55% at 50% 0%, ${TOXIC}12, transparent 70%)`,
         }}
       />
-      <EmberField className="pointer-events-none fixed inset-0 z-0 opacity-30" />
 
       <div className="relative z-10">
         {/* ------------------------------ герой ------------------------------ */}
-        <section className="px-6 pt-8 text-center">
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.22em] text-primary"
-          >
-            только hell pass platinum
-          </motion.p>
-
+        <section className="px-6 pt-10 text-center">
           <motion.h1
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.05 }}
-            className="mt-4 font-display text-[15vw] font-black uppercase leading-[0.85] tracking-tighter"
-            style={{ textShadow: `0 0 40px ${TOXIC}33` }}
+            className="font-display text-[15vw] font-black uppercase leading-[0.85] tracking-tighter text-white"
           >
             Hound
             <br />
@@ -155,15 +142,16 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
             выбивает всех, кроме одного.
           </motion.p>
 
-          <div className="mx-auto -mt-2 h-[34svh] w-full max-w-sm">
+          <div className="mx-auto -mt-4 h-[64svh] w-full max-w-md">
             <RiderCharacter mode="idle" dance className="h-full w-full" />
           </div>
         </section>
 
+
         {/* ------------------------------ таймер ------------------------------ */}
         <Reveal className="px-6">
           <div
-            className="rounded-3xl border border-border/60 bg-card/60 p-5 text-center backdrop-blur"
+            className="rounded-3xl border border-border/60 bg-card/60 p-5 text-center"
             style={{ boxShadow: `0 0 60px -30px ${TOXIC}` }}
           >
             {stage === "soon" && (
@@ -259,7 +247,7 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
             {[...prizes].reverse().map((p, i) => (
               <div
                 key={p.id}
-                className="flex items-center gap-3 rounded-2xl border border-border/60 bg-card/50 p-3 backdrop-blur"
+                className="flex items-center gap-3 rounded-2xl border border-border/60 bg-card/50 p-3"
                 style={
                   i === 0
                     ? { borderColor: `${TOXIC}55`, boxShadow: `0 0 40px -24px ${TOXIC}` }
@@ -303,7 +291,7 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
             ].map((s) => (
               <div
                 key={s.n}
-                className="flex gap-3 rounded-2xl border border-border/60 bg-card/40 p-4 backdrop-blur"
+                className="flex gap-3 rounded-2xl border border-border/60 bg-card/40 p-4"
               >
                 <span
                   className="font-display text-2xl font-black leading-none"
@@ -323,7 +311,7 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
         {/* ------------------------- капсулы = шансы ------------------------- */}
         <Reveal className="mt-10 px-6">
           <SectionTitle kicker="считаем шансы" title="Билеты = капсулы" />
-          <div className="mt-4 rounded-3xl border border-border/60 bg-card/50 p-5 backdrop-blur">
+          <div className="mt-4 rounded-3xl border border-border/60 bg-card/50 p-5">
             <div className="flex items-baseline justify-between">
               <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
                 твои билеты
@@ -402,7 +390,7 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
         {/* --------------------------- продажа Pass --------------------------- */}
         <Reveal className="mt-10 px-6">
           <div
-            className="rounded-3xl border p-5 backdrop-blur"
+            className="rounded-3xl border p-5"
             style={{
               borderColor: "color-mix(in oklab, var(--primary) 45%, transparent)",
               background:
@@ -459,7 +447,7 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
             ].map((f) => (
               <details
                 key={f.q}
-                className="group rounded-2xl border border-border/60 bg-card/40 p-4 backdrop-blur"
+                className="group rounded-2xl border border-border/60 bg-card/40 p-4"
               >
                 <summary className="cursor-pointer list-none font-display text-sm font-black uppercase">
                   {f.q}
