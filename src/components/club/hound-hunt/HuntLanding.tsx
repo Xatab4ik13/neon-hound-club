@@ -407,7 +407,7 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
             <p className="mt-3 text-xs text-muted-foreground">
               {capsules === 0
                 ? `Нужно минимум ${cfg.ticketStep} билетов, чтобы попасть в барабан.`
-                : `${capsules} ${capsules === 1 ? "капсула" : "капсулы"} с твоей аватаркой крутится в барабане.`}
+                : "Крутятся в твоём барабане."}
             </p>
             {me && (
               <div className="mt-4 flex flex-wrap gap-2">
