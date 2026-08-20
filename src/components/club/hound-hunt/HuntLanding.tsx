@@ -351,21 +351,23 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
 
         {/* --------------------------- как участвовать --------------------------- */}
         <Reveal className="mt-10 px-6">
-          <SectionTitle kicker="три шага" title="Как попасть в барабан" />
+          <h2 className="font-display text-2xl font-black uppercase leading-none tracking-tight">
+            Как попасть в барабан
+          </h2>
           <div className="mt-4 space-y-2.5">
             {[
               {
-                n: "01",
+                n: "1",
                 t: "Возьми Hell Pass Platinum",
                 d: "Охота открыта только для платинового доступа. Без него в барабан не пускают.",
               },
               {
-                n: "02",
+                n: "2",
                 t: `Набери минимум ${cfg.ticketStep} билетов`,
                 d: `Каждые ${cfg.ticketStep} билетов = одна твоя капсула в барабане. Больше билетов — больше шансов устоять.`,
               },
               {
-                n: "03",
+                n: "3",
                 t: "Зайди к старту",
                 d: "Открой эту страницу в назначенное время — шоу начнётся автоматически.",
               },
