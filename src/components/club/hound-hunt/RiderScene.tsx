@@ -150,7 +150,10 @@ function Model({
     const lockRootMotion = (source: THREE.AnimationClip) => {
       const clip = source.clone();
       clip.tracks = clip.tracks.map((track) => {
-        if (!(track instanceof THREE.VectorKeyframeTrack) || !/(^|\.)hips\.position$/i.test(track.name)) {
+        // В разных Meshy-файлах корень называется Hips, mixamorigHips и
+        // Armature.Hips. Проверяем окончание имени, иначе горизонтальный
+        // root-motion остаётся и персонаж гуляет по canvas или выходит из него.
+        if (!(track instanceof THREE.VectorKeyframeTrack) || !/hips\.position$/i.test(track.name)) {
           return track;
         }
         const values = Array.from(track.values);
@@ -349,11 +352,8 @@ function Model({
 
 
 
-  const yaw = Math.max(-1, Math.min(1, lookAt.x)) * 0.28;
-  const pitch = Math.max(-1, Math.min(1, lookAt.y)) * 0.1;
-
   return (
-    <group ref={group} rotation={[pitch, yaw, 0]}>
+    <group ref={group}>
       <group scale={modelScale}>
         <primitive
           object={cloned}
