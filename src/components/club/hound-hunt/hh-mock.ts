@@ -1,6 +1,8 @@
 // Моки шоу HOUND HUNT. Только визуал: никакой связи с бекендом.
 // Позже заменим на реальные заявки (билеты = веса) и призы из админки.
 
+import { apiFetch } from "@/lib/api";
+import { resolveAssetUrl } from "@/lib/asset-url";
 import imgAirpods from "@/assets/spin/airpods.webp";
 import av1 from "@/assets/hunt/av1.jpg";
 import av2 from "@/assets/hunt/av2.jpg";
@@ -84,6 +86,36 @@ export function makeEntries(count = 24, seed = 1337): HuntEntry[] {
       slots,
     };
   });
+}
+
+/**
+ * Реальные участники из базы: 20 случайных юзеров с их ником, городом
+ * и аватаркой из профиля. Если бекенд недоступен — падаем на моки,
+ * чтобы шоу всё равно крутилось.
+ */
+export async function fetchHuntEntries(count = 20, seed = 1337): Promise<HuntEntry[]> {
+  try {
+    const res = await apiFetch<{
+      items: { id: string; nick: string; city: string | null; avatarUrl: string | null }[];
+    }>("/api/v1/raffles/hunt-demo-entries");
+    const items = (res.items ?? []).slice(0, count);
+    if (!items.length) return makeEntries(count, seed);
+    const r = rnd(seed);
+    return items.map((u, i) => {
+      const slots = 1 + Math.floor(r() * 4);
+      return {
+        id: u.id || `e${i + 1}`,
+        nick: (u.nick || "RIDER").toUpperCase(),
+        initials: initialsOf((u.nick || "RIDER").toUpperCase()),
+        avatarUrl: resolveAssetUrl(u.avatarUrl) ?? undefined,
+        city: u.city || "",
+        tickets: slots * HUNT_TICKET_STEP,
+        slots,
+      };
+    });
+  } catch {
+    return makeEntries(count, seed);
+  }
 }
 
 /** Стабильный оттенок аватарки по нику (в пределах брендового диапазона). */

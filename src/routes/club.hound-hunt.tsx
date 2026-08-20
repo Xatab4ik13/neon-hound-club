@@ -28,6 +28,7 @@ import {
   HUNT_PRIZES,
   HUNT_TICKET_STEP,
   makeEntries,
+  fetchHuntEntries,
   type HuntEntry,
 } from "@/components/club/hound-hunt/hh-mock";
 import { haptic } from "@/hooks/use-haptic";
@@ -111,7 +112,7 @@ function winStopOffset() {
 
 
 /** Сколько участников в моковом розыгрыше — столько же звеньев в барабане. */
-const MOCK_ENTRIES = 15;
+const MOCK_ENTRIES = 20;
 
 /**
  * Чем меньше осталось участников, тем медленнее лента: к финалу зритель
@@ -691,7 +692,7 @@ export function HoundHuntPage() {
 
   const start = async () => {
     clearTimers();
-    const fresh = makeEntries(MOCK_ENTRIES, Math.floor(Math.random() * 99999));
+    const fresh = await fetchHuntEntries(MOCK_ENTRIES, Math.floor(Math.random() * 99999));
     await Promise.all(
       [...new Set(fresh.map((entry) => entry.avatarUrl).filter((src): src is string => Boolean(src)))].map(
         (src) =>
