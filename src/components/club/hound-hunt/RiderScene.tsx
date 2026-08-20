@@ -8,6 +8,7 @@ import { Canvas, useFrame } from "@react-three/fiber";
 import { useAnimations, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import riderAsset from "@/assets/rider.glb.asset.json";
+import victoryAsset from "@/assets/rider-victory.glb.asset.json";
 
 export type RiderMode = "idle" | "watch" | "lunge" | "chew";
 
@@ -18,6 +19,8 @@ type Props = {
   className?: string;
   /** Изменение токена запускает один полный взмах. */
   kickToken?: number;
+  /** true = плавный переход в анимацию победы (луп). */
+  victory?: boolean;
   /** Сообщает задержку от запуска взмаха до контакта ноги. */
   onKickReady?: (impactDelay: number, cycleMs: number) => void;
   /** Вызывается в момент контакта ноги (≈60% клипа). */
@@ -25,6 +28,8 @@ type Props = {
 };
 
 const MODEL_URL = riderAsset.url;
+const VICTORY_URL = victoryAsset.url;
+
 
 const BRAND = { r: 0xf0, g: 0x00, b: 0xc0 };
 
@@ -83,18 +88,25 @@ function Model({
   mode,
   lookAt,
   kickToken,
+  victory,
   onKickReady,
   onImpact,
 }: {
   mode: RiderMode;
   lookAt: { x: number; y: number };
   kickToken?: number;
+  victory?: boolean;
   onKickReady?: (impactDelay: number, cycleMs: number) => void;
   onImpact?: (cycle: number) => void;
 }) {
   const group = useRef<THREE.Group>(null);
   const { scene, animations } = useGLTF(MODEL_URL);
+  const { animations: victoryAnims } = useGLTF(VICTORY_URL);
   const cloned = useMemo(() => scene, [scene]);
+  // Клипы делят один и тот же риг (Meshy, одинаковые имена костей),
+  // поэтому победный танец играется тем же миксером — без подмены модели.
+  const allClips = useMemo(() => [...animations, ...victoryAnims], [animations, victoryAnims]);
+
 
   // Перекраска в фирменный розовый + подтяжка резкости/контраста материалов.
   useEffect(() => {
@@ -125,7 +137,7 @@ function Model({
       });
     });
   }, [cloned]);
-  const { actions, names } = useAnimations(animations, group);
+  const { actions, names } = useAnimations(allClips, group);
 
   // нормализуем масштаб/позицию: ставим на пол, высота ~2 юнита
   const fit = useMemo(() => {
@@ -140,6 +152,8 @@ function Model({
 
   const clip = names[0];
   const action = clip ? actions[clip] : null;
+  const victoryName = names.find((n) => n.toLowerCase().includes("victory"));
+  const victoryAction = victoryName ? actions[victoryName] : null;
   const impactRef = useRef(onImpact);
   impactRef.current = onImpact;
   const readyRef = useRef(onKickReady);
@@ -164,7 +178,7 @@ function Model({
   }, [action]);
 
   useEffect(() => {
-    if (!action || !kickToken) return;
+    if (!action || !kickToken || victory) return;
     kickCycle.current = kickToken;
     firedCycle.current = -1;
     prevTime.current = 0;
@@ -172,10 +186,38 @@ function Model({
     action.timeScale = 1;
     action.paused = false;
     action.play();
-  }, [action, kickToken]);
+  }, [action, kickToken, victory]);
+
+  // Победа: кроссфейд из текущей позы удара в танец. Без резких скачков —
+  // удар замораживается на своём кадре и плавно уступает вес танцу.
+  useEffect(() => {
+    if (!victoryAction) return;
+    if (victory) {
+      if (action) {
+        action.paused = false;
+        action.timeScale = 0;
+        action.fadeOut(0.6);
+      }
+      victoryAction.enabled = true;
+      victoryAction.clampWhenFinished = false;
+      victoryAction.setLoop(THREE.LoopRepeat, Infinity);
+      victoryAction.timeScale = 1;
+      victoryAction.reset();
+      victoryAction.setEffectiveWeight(1);
+      victoryAction.fadeIn(0.6).play();
+    } else {
+      victoryAction.fadeOut(0.35);
+      if (action) {
+        action.timeScale = 1;
+        action.reset();
+        action.paused = true;
+        action.fadeIn(0.35).play();
+      }
+    }
+  }, [victory, victoryAction, action]);
 
   useFrame(() => {
-    if (!action || !kickToken || action.paused) return;
+    if (!action || !kickToken || action.paused || victory) return;
     const dur = action.getClip().duration;
     const impactAt = dur * 0.6;
     const t = action.time;
@@ -185,6 +227,7 @@ function Model({
     }
     prevTime.current = t;
   });
+
 
 
   const yaw = Math.max(-1, Math.min(1, lookAt.x)) * 0.28;
@@ -206,6 +249,7 @@ export default function RiderScene({
   lookAt = { x: 0, y: 0 },
   className,
   kickToken,
+  victory,
   onKickReady,
   onImpact,
 }: Props) {
@@ -232,6 +276,7 @@ export default function RiderScene({
             mode={mode}
             lookAt={lookAt}
             kickToken={kickToken}
+            victory={victory}
             onKickReady={onKickReady}
             onImpact={onImpact}
           />
@@ -242,3 +287,4 @@ export default function RiderScene({
 }
 
 useGLTF.preload(MODEL_URL);
+useGLTF.preload(VICTORY_URL);
