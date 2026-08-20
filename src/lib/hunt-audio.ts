@@ -390,6 +390,78 @@ export function playHuntImpact(power = 1) {
   }
 }
 
+/** Тик отсчёта «3 / 2 / 1»: короткий яркий бип с телом (без музыки). */
+export function playHuntCountBeep(step: number) {
+  const c = ac();
+  if (!c || !sfxBus) return;
+  const sfx: GainNode = sfxBus;
+  const t = c.currentTime + 0.01;
+  const freq = step >= 3 ? 660 : step === 2 ? 784 : 988;
+
+  const o = c.createOscillator();
+  o.type = "square";
+  o.frequency.setValueAtTime(freq, t);
+  const lp = c.createBiquadFilter();
+  lp.type = "lowpass";
+  lp.frequency.setValueAtTime(4200, t);
+  lp.frequency.exponentialRampToValueAtTime(1200, t + 0.22);
+  const g = c.createGain();
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.linearRampToValueAtTime(0.22, t + 0.006);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.26);
+  o.connect(lp).connect(g).connect(sfx);
+  o.start(t);
+  o.stop(t + 0.3);
+
+  // низкий «стук» под бипом — чтобы цифра ощущалась весомо
+  const s2 = c.createOscillator();
+  s2.type = "sine";
+  s2.frequency.setValueAtTime(150, t);
+  s2.frequency.exponentialRampToValueAtTime(60, t + 0.1);
+  const g2 = c.createGain();
+  g2.gain.setValueAtTime(0.0001, t);
+  g2.gain.linearRampToValueAtTime(0.18, t + 0.005);
+  g2.gain.exponentialRampToValueAtTime(0.0001, t + 0.2);
+  s2.connect(g2).connect(sfx);
+  s2.start(t);
+  s2.stop(t + 0.24);
+}
+
+/** «GO!» — старт раунда: восходящий свип + панч. */
+export function playHuntRoundGo() {
+  const c = ac();
+  if (!c || !sfxBus) return;
+  const sfx: GainNode = sfxBus;
+  const t = c.currentTime + 0.01;
+
+  const o = c.createOscillator();
+  o.type = "sawtooth";
+  o.frequency.setValueAtTime(220, t);
+  o.frequency.exponentialRampToValueAtTime(1320, t + 0.28);
+  const lp = c.createBiquadFilter();
+  lp.type = "lowpass";
+  lp.frequency.setValueAtTime(1200, t);
+  lp.frequency.exponentialRampToValueAtTime(6000, t + 0.28);
+  const g = c.createGain();
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.linearRampToValueAtTime(0.2, t + 0.05);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.42);
+  o.connect(lp).connect(g).connect(sfx);
+  o.start(t);
+  o.stop(t + 0.46);
+
+  const src = noise(c, 0.24, 1.4);
+  const hp = c.createBiquadFilter();
+  hp.type = "highpass";
+  hp.frequency.value = 3000;
+  const ng = c.createGain();
+  ng.gain.setValueAtTime(0.0001, t);
+  ng.gain.linearRampToValueAtTime(0.12, t + 0.16);
+  ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.3);
+  src.connect(hp).connect(ng).connect(sfx);
+  src.start(t);
+}
+
 /** Финал: короткий победный стаб-аккорд + панч, без длинного гудения. */
 export function playHuntWin() {
   const c = ac();
