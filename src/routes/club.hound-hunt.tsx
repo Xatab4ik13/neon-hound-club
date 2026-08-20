@@ -46,14 +46,7 @@ function HoundHuntRoute() {
   return (
     <div className="relative overflow-x-hidden">
       {HH_DEV_TOGGLE && <ModeToggle mode={mode} onChange={setMode} />}
-      <div className={mode === "landing" ? "visible" : "invisible pointer-events-none"}>
-        <HuntLanding active={mode === "landing"} onEnterShow={() => setMode("show")} />
-      </div>
-      {mode === "show" && (
-        <div className="absolute inset-x-0 top-0">
-          <HuntShow />
-        </div>
-      )}
+      {mode === "landing" ? <HuntLanding onEnterShow={() => setMode("show")} /> : <HuntShow />}
     </div>
   );
 }

@@ -157,17 +157,31 @@ function Model({
         // В разных Meshy-файлах корень называется Hips, mixamorigHips и
         // Armature.Hips. Проверяем окончание имени, иначе горизонтальный
         // root-motion остаётся и персонаж гуляет по canvas или выходит из него.
-        if (!(track instanceof THREE.VectorKeyframeTrack) || !/hips\.position$/i.test(track.name)) {
-          return track;
+        if (track instanceof THREE.VectorKeyframeTrack && /hips\.position$/i.test(track.name)) {
+          const values = Array.from(track.values);
+          const x = values[0] ?? 0;
+          const y = values[1] ?? 0;
+          const z = values[2] ?? 0;
+          for (let i = 0; i < values.length; i += 3) {
+            values[i] = x;
+            values[i + 1] = y;
+            values[i + 2] = z;
+          }
+          return new THREE.VectorKeyframeTrack(track.name, Array.from(track.times), values);
         }
-        const values = Array.from(track.values);
-        const x = values[0] ?? 0;
-        const z = values[2] ?? 0;
-        for (let i = 0; i < values.length; i += 3) {
-          values[i] = x;
-          values[i + 2] = z;
+        if (track instanceof THREE.VectorKeyframeTrack && /\.scale$/i.test(track.name)) {
+          const values = Array.from(track.values);
+          const x = values[0] ?? 1;
+          const y = values[1] ?? 1;
+          const z = values[2] ?? 1;
+          for (let i = 0; i < values.length; i += 3) {
+            values[i] = x;
+            values[i + 1] = y;
+            values[i + 2] = z;
+          }
+          return new THREE.VectorKeyframeTrack(track.name, Array.from(track.times), values);
         }
-        return new THREE.VectorKeyframeTrack(track.name, Array.from(track.times), values);
+        return track;
       });
       return clip;
     };
@@ -303,14 +317,18 @@ function Model({
       action?.fadeOut(0.5);
       danceActionB?.stop();
       danceAction.enabled = true;
-      danceAction.clampWhenFinished = true;
-      danceAction.setLoop(THREE.LoopOnce, 1);
+      danceAction.clampWhenFinished = !instantDance;
+      danceAction.setLoop(instantDance ? THREE.LoopRepeat : THREE.LoopOnce, instantDance ? Infinity : 1);
       danceAction.timeScale = 1;
       danceAction.reset();
       danceAction.setEffectiveWeight(1);
-      if (instantDance) danceAction.play();
-      else danceAction.fadeIn(0.5).play();
-      danceCur.current = danceAction;
+      if (instantDance) {
+        danceAction.play();
+        danceCur.current = null;
+      } else {
+        danceAction.fadeIn(0.5).play();
+        danceCur.current = danceAction;
+      }
     } else {
       danceAction.fadeOut(0.35);
       danceActionB?.fadeOut(0.35);

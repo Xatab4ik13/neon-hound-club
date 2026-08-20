@@ -93,11 +93,10 @@ function KickStage({ me }: { me: HuntEntry | null }) {
 
   return (
     <div className="relative h-full w-full">
-      <div className="h-full w-[200%] -translate-x-1/4 translate-y-10">
+      <div className="h-full w-full translate-y-10">
         <RiderCharacter
           mode="lunge"
           instance="action"
-          modelScale={1.3}
           kickToken={token}
           onImpact={() => {
             setFlight(token);
@@ -152,7 +151,7 @@ function PlatinumCard() {
   );
 }
 
-export function HuntLanding({ onEnterShow, active = true }: { onEnterShow: () => void; active?: boolean }) {
+export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
   const { cfg } = useHuntConfig();
   const prizes = useMemo(() => prizesInRunOrder(cfg), [cfg]);
   
@@ -436,7 +435,7 @@ export function HuntLanding({ onEnterShow, active = true }: { onEnterShow: () =>
         <Reveal className="mt-10 px-6">
           <div className="relative grid grid-cols-2 items-stretch gap-1 overflow-hidden rounded-3xl border border-border/60 bg-card/40 p-2">
             <div className="h-[42svh]">
-              {active && <KickStage me={me} />}
+              <KickStage me={me} />
             </div>
             <PlatinumCard />
           </div>
