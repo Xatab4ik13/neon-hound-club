@@ -1,12 +1,14 @@
-// Аудио шоу HOUND HUNT. Никаких ассетов — всё синтезируем через Web Audio,
-// как в roller-sfx.ts: не грузит сеть, не лагает, работает офлайн в PWA.
+// Аудио шоу HOUND HUNT. Никаких ассетов — всё синтезируем через Web Audio:
+// не грузит сеть, не лагает, работает офлайн в PWA.
 //
-// Музыка: «зиммеровский» сквозной трек в C-minor — не луп. Есть длинная
-// гармоническая арка (SECTIONS ~ 6 минут: интро → нарастание → плато →
-// финальный подъём), в каждой секции своя тональная ступень, свой рисунок
-// остинато, своя плотность перкуссии. Планируется заранее (lookahead),
-// поэтому ререндеры и анимации на неё не влияют.
-// Громкость низкая (фон), удар — заметный, но не орёт.
+// Музыка: энергичный драйвовый трек (не мрачный дрон и без «жирной» полифонии).
+// Основа — четыре чистых голоса, которые почти не наслаиваются:
+//   1) короткий синтовый бас-стаккато (снимается сразу, без гула),
+//   2) плак-арпеджио (одна нота за раз, быстрый decay),
+//   3) ритм-секция: кик / клэп / хэт,
+//   4) редкие «стабы» на стыках фраз.
+// Никаких длинных пилообразных пэдов и детюн-стеков — они и давали кашу.
+// Форма сквозная: аккордовая прогрессия + меняющиеся паттерны, без лупа.
 
 let ctx: AudioContext | null = null;
 let master: GainNode | null = null;
@@ -19,47 +21,72 @@ let running = false;
 let muted = false;
 let tension = 0; // 0..1 — накал (растёт к финалу)
 
-const BPM = 76;
+const BPM = 124; // энергично, но не рейв
 const BEAT = 60 / BPM;
 const BAR = BEAT * 4;
+const SIXTEENTH = BEAT / 4;
 
-// C-minor: тоника и «геройская» подвижка в остинато.
-const ROOT = 65.41; // C2
-// Варианты рисунка остинато (8 восьмых на такт, полутона к текущей ступени).
-const FIGURES: number[][] = [
-  [0, 0, 3, 0, 0, 0, -2, 0],
-  [0, 3, 0, 5, 0, 3, 0, -2],
-  [0, 0, 0, 7, 0, 5, 3, 0],
-  [0, -2, 0, 3, 0, 7, 5, 3],
-  [0, 7, 5, 3, 0, -2, 0, 3],
+const ROOT = 110; // A2
+function semi(n: number) {
+  return Math.pow(2, n / 12);
+}
+
+/** Аккорды (полутона к ROOT + строение) — минор с «подъёмными» аккордами. */
+type Chord = { deg: number; triad: number[] };
+const PROG: Chord[] = [
+  { deg: 0, triad: [0, 3, 7] }, // Am
+  { deg: 5, triad: [0, 4, 7] }, // D
+  { deg: 8, triad: [0, 4, 7] }, // F
+  { deg: 3, triad: [0, 4, 7] }, // C
+  { deg: 0, triad: [0, 3, 7] }, // Am
+  { deg: -2, triad: [0, 4, 7] }, // G
+  { deg: 8, triad: [0, 4, 7] }, // F
+  { deg: 5, triad: [0, 4, 7] }, // D
 ];
 
-// Сквозная форма трека: степень (полутона к C), фигура, плотность, длина в тактах.
-type Section = { deg: number; fig: number; bars: number; energy: number; pulse: number };
+// Ритмические паттерны баса (16-е, 1 = нота).
+const BASS_PATTERNS = [
+  [1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0],
+  [1, 0, 1, 0, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1, 0, 1],
+  [1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 1],
+  [1, 1, 0, 1, 0, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1, 0],
+];
+// Арпеджио: индексы ступеней аккорда (-1 = пауза).
+const ARP_PATTERNS = [
+  [0, -1, 1, 2, -1, 1, 2, 3, 0, -1, 1, 2, -1, 2, 3, 4],
+  [2, 1, 0, 1, 2, 3, 2, 1, 2, 1, 0, 1, 2, 3, 4, 3],
+  [0, 2, 4, 2, 1, 3, 2, 0, 0, 2, 4, 5, 4, 2, 1, 0],
+  [4, -1, 3, -1, 2, -1, 1, 2, 4, 3, 2, 1, 0, 1, 2, 3],
+];
+
+type Section = { bars: number; energy: number; arp: number; bass: number; hats: boolean };
 const SECTIONS: Section[] = [
-  { deg: 0, fig: 0, bars: 8, energy: 0.35, pulse: 0.4 }, // интро: дрон и редкий пульс
-  { deg: 0, fig: 1, bars: 8, energy: 0.55, pulse: 0.7 },
-  { deg: -4, fig: 2, bars: 8, energy: 0.6, pulse: 0.8 }, // уход в Ab
-  { deg: -5, fig: 1, bars: 8, energy: 0.7, pulse: 0.9 }, // G
-  { deg: 0, fig: 3, bars: 12, energy: 0.8, pulse: 1 }, // плато на тонике
-  { deg: 3, fig: 2, bars: 8, energy: 0.75, pulse: 0.9 }, // Eb — «просвет»
-  { deg: -2, fig: 4, bars: 8, energy: 0.85, pulse: 1 }, // Bb
-  { deg: -4, fig: 3, bars: 8, energy: 0.9, pulse: 1.05 },
-  { deg: 0, fig: 4, bars: 12, energy: 1, pulse: 1.1 }, // финальный подъём
-  { deg: -5, fig: 2, bars: 8, energy: 0.8, pulse: 0.85 }, // спад-перезарядка
-  { deg: 0, fig: 1, bars: 12, energy: 0.95, pulse: 1 }, // второй заход, но другой рисунок
+  { bars: 4, energy: 0.45, arp: 0, bass: 0, hats: false }, // разгон
+  { bars: 8, energy: 0.7, arp: 1, bass: 1, hats: true },
+  { bars: 8, energy: 0.85, arp: 2, bass: 2, hats: true },
+  { bars: 4, energy: 0.55, arp: 3, bass: 0, hats: false }, // «выдох»
+  { bars: 8, energy: 1, arp: 2, bass: 3, hats: true }, // дроп
+  { bars: 8, energy: 0.9, arp: 0, bass: 2, hats: true },
+  { bars: 4, energy: 0.6, arp: 3, bass: 1, hats: false },
+  { bars: 12, energy: 1.05, arp: 1, bass: 3, hats: true }, // финальный заход
 ];
 const FORM_BARS = SECTIONS.reduce((s, x) => s + x.bars, 0);
 
 function sectionAt(index: number): { sec: Section; local: number } {
-  // после конца формы не зацикливаемся жёстко: сдвигаем фигуру, чтобы не узнавалось
   const wrapped = index % FORM_BARS;
   const laps = Math.floor(index / FORM_BARS);
   let acc = 0;
   for (const sec of SECTIONS) {
     if (wrapped < acc + sec.bars) {
       return {
-        sec: laps === 0 ? sec : { ...sec, fig: (sec.fig + laps * 2) % FIGURES.length },
+        sec:
+          laps === 0
+            ? sec
+            : {
+                ...sec,
+                arp: (sec.arp + laps) % ARP_PATTERNS.length,
+                bass: (sec.bass + laps) % BASS_PATTERNS.length,
+              },
         local: wrapped - acc,
       };
     }
@@ -80,13 +107,12 @@ function ac(): AudioContext | null {
     ctx = new Ctor();
     master = ctx.createGain();
     master.gain.value = muted ? 0 : 1;
-    // мягкий лимитер, чтобы удары не клиппили микс
     const comp = ctx.createDynamicsCompressor();
-    comp.threshold.value = -14;
-    comp.knee.value = 22;
+    comp.threshold.value = -12;
+    comp.knee.value = 20;
     comp.ratio.value = 4;
     comp.attack.value = 0.004;
-    comp.release.value = 0.25;
+    comp.release.value = 0.22;
     master.connect(comp).connect(ctx.destination);
 
     musicBus = ctx.createGain();
@@ -94,145 +120,155 @@ function ac(): AudioContext | null {
     musicBus.connect(master);
 
     sfxBus = ctx.createGain();
-    sfxBus.gain.value = 0.32;
+    sfxBus.gain.value = 0.34;
     sfxBus.connect(master);
   }
   if (ctx.state === "suspended") ctx.resume().catch(() => {});
   return ctx;
 }
 
-function semi(n: number) {
-  return Math.pow(2, n / 12);
-}
-
-/** Один «брасс»-голос: пила через lowpass с быстрой атакой. */
-function brass(c: AudioContext, when: number, freq: number, dur: number, gain: number) {
-  const o1 = c.createOscillator();
-  o1.type = "sawtooth";
-  o1.frequency.value = freq;
-  const o2 = c.createOscillator();
-  o2.type = "sawtooth";
-  o2.frequency.value = freq * 1.005; // легкий детюн = «секция», а не один синт
+/** Короткий бас-стаккато: один осциллятор, быстрый спад — никакого гула. */
+function bass(c: AudioContext, when: number, freq: number, gain: number) {
+  const o = c.createOscillator();
+  o.type = "square";
+  o.frequency.value = freq;
   const lp = c.createBiquadFilter();
   lp.type = "lowpass";
-  lp.frequency.setValueAtTime(420 + tension * 900, when);
-  lp.Q.value = 0.8;
+  lp.frequency.setValueAtTime(900 + tension * 700, when);
+  lp.frequency.exponentialRampToValueAtTime(260, when + 0.14);
+  lp.Q.value = 4;
   const g = c.createGain();
   g.gain.setValueAtTime(0.0001, when);
-  g.gain.exponentialRampToValueAtTime(gain, when + 0.03);
-  g.gain.exponentialRampToValueAtTime(0.0001, when + dur);
-  o1.connect(lp);
-  o2.connect(lp);
-  lp.connect(g).connect(musicBus!);
-  o1.start(when);
-  o2.start(when);
-  o1.stop(when + dur + 0.05);
-  o2.stop(when + dur + 0.05);
+  g.gain.linearRampToValueAtTime(gain, when + 0.006);
+  g.gain.exponentialRampToValueAtTime(0.0001, when + 0.15);
+  o.connect(lp).connect(g).connect(musicBus!);
+  o.start(when);
+  o.stop(when + 0.18);
 }
 
-/** Суб-дрон: синус + октава, длинный, держит «вес» сцены. */
-function drone(c: AudioContext, when: number, freq: number, dur: number, gain: number) {
-  [1, 2].forEach((mult, i) => {
-    const o = c.createOscillator();
-    o.type = i === 0 ? "sine" : "triangle";
-    o.frequency.value = freq * mult;
-    const g = c.createGain();
-    g.gain.setValueAtTime(0.0001, when);
-    g.gain.linearRampToValueAtTime(gain / (i + 1.6), when + dur * 0.35);
-    g.gain.linearRampToValueAtTime(0.0001, when + dur);
-    o.connect(g).connect(musicBus!);
-    o.start(when);
-    o.stop(when + dur + 0.05);
-  });
+/** Плак: треугольник с очень быстрым decay — «одна нота», не пэд. */
+function pluck(c: AudioContext, when: number, freq: number, gain: number) {
+  const o = c.createOscillator();
+  o.type = "triangle";
+  o.frequency.value = freq;
+  const hp = c.createBiquadFilter();
+  hp.type = "highpass";
+  hp.frequency.value = 240;
+  const g = c.createGain();
+  g.gain.setValueAtTime(0.0001, when);
+  g.gain.linearRampToValueAtTime(gain, when + 0.004);
+  g.gain.exponentialRampToValueAtTime(0.0001, when + 0.19);
+  o.connect(hp).connect(g).connect(musicBus!);
+  o.start(when);
+  o.stop(when + 0.22);
 }
 
-/** Струнный пэд — аккорд с медленным свеллом. */
-function pad(c: AudioContext, when: number, freq: number, dur: number, gain: number) {
-  const chord = [0, 3, 7, 12];
-  chord.forEach((st) => {
+/** Стаб: короткий аккорд на сильную долю (маркер фразы). */
+function stab(c: AudioContext, when: number, base: number, triad: number[], gain: number) {
+  triad.forEach((st) => {
     const o = c.createOscillator();
     o.type = "sawtooth";
-    o.frequency.value = freq * 2 * semi(st);
+    o.frequency.value = base * 2 * semi(st);
     const lp = c.createBiquadFilter();
     lp.type = "lowpass";
-    lp.frequency.value = 1400 + tension * 1200;
+    lp.frequency.setValueAtTime(3200, when);
+    lp.frequency.exponentialRampToValueAtTime(900, when + 0.24);
     const g = c.createGain();
     g.gain.setValueAtTime(0.0001, when);
-    g.gain.linearRampToValueAtTime(gain / chord.length, when + dur * 0.45);
-    g.gain.linearRampToValueAtTime(0.0001, when + dur);
+    g.gain.linearRampToValueAtTime(gain / triad.length, when + 0.006);
+    g.gain.exponentialRampToValueAtTime(0.0001, when + 0.26);
     o.connect(lp).connect(g).connect(musicBus!);
     o.start(when);
-    o.stop(when + dur + 0.05);
+    o.stop(when + 0.3);
   });
 }
 
-/** Таико: короткий питч-дроп синуса + шумовой «шлепок». */
-function taiko(c: AudioContext, when: number, gain: number) {
+function noise(c: AudioContext, dur: number, curve: number) {
+  const b = c.createBuffer(1, Math.max(1, Math.ceil(c.sampleRate * dur)), c.sampleRate);
+  const d = b.getChannelData(0);
+  for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, curve);
+  const src = c.createBufferSource();
+  src.buffer = b;
+  return src;
+}
+
+function kick(c: AudioContext, when: number, gain: number) {
   const o = c.createOscillator();
   o.type = "sine";
-  o.frequency.setValueAtTime(120, when);
-  o.frequency.exponentialRampToValueAtTime(46, when + 0.22);
+  o.frequency.setValueAtTime(150, when);
+  o.frequency.exponentialRampToValueAtTime(48, when + 0.11);
   const g = c.createGain();
-  g.gain.setValueAtTime(gain, when);
-  g.gain.exponentialRampToValueAtTime(0.0001, when + 0.3);
+  g.gain.setValueAtTime(0.0001, when);
+  g.gain.linearRampToValueAtTime(gain, when + 0.005);
+  g.gain.exponentialRampToValueAtTime(0.0001, when + 0.2);
   o.connect(g).connect(musicBus!);
   o.start(when);
-  o.stop(when + 0.34);
+  o.stop(when + 0.24);
+}
 
-  const nb = c.createBuffer(1, Math.ceil(c.sampleRate * 0.08), c.sampleRate);
-  const d = nb.getChannelData(0);
-  for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length);
-  const src = c.createBufferSource();
-  src.buffer = nb;
+function clap(c: AudioContext, when: number, gain: number) {
+  const src = noise(c, 0.14, 2.2);
   const bp = c.createBiquadFilter();
   bp.type = "bandpass";
-  bp.frequency.value = 900;
-  const ng = c.createGain();
-  ng.gain.value = gain * 0.35;
-  src.connect(bp).connect(ng).connect(musicBus!);
+  bp.frequency.value = 1700;
+  bp.Q.value = 1.1;
+  const g = c.createGain();
+  g.gain.value = gain;
+  src.connect(bp).connect(g).connect(musicBus!);
   src.start(when);
 }
 
-/** Планирует один такт сквозной формы (не луп: гармония и рисунок меняются). */
+function hat(c: AudioContext, when: number, gain: number) {
+  const src = noise(c, 0.045, 3.4);
+  const hp = c.createBiquadFilter();
+  hp.type = "highpass";
+  hp.frequency.value = 6800;
+  const g = c.createGain();
+  g.gain.value = gain;
+  src.connect(hp).connect(g).connect(musicBus!);
+  src.start(when);
+}
+
+/** Планирует один такт сквозной формы. */
 function scheduleBar(c: AudioContext, at: number, index: number) {
-  const eighth = BEAT / 2;
   const { sec, local } = sectionAt(index);
-  const deg = semi(sec.deg);
-  const fig = FIGURES[sec.fig];
-  // energy формы + накал шоу
-  const e = Math.min(1.15, sec.energy * (0.8 + tension * 0.45));
-  const first = local === 0;
-  const last = local === sec.bars - 1;
+  const chord = PROG[index % PROG.length];
+  const base = ROOT * semi(chord.deg);
+  const e = Math.min(1.15, sec.energy * (0.85 + tension * 0.35));
+  const bp = BASS_PATTERNS[sec.bass];
+  const ap = ARP_PATTERNS[sec.arp];
+  const scale = [0, 3, 5, 7, 10, 12, 15]; // минорная пентатоника-ish вверх
 
-  fig.forEach((st, i) => {
-    const t = at + i * eighth;
-    const accent = i % 2 === 0 ? 1 : 0.6;
-    // в интро играем только сильные восьмые — трек «раскрывается» постепенно
-    if (sec.energy < 0.5 && i % 2 !== 0) return;
-    brass(c, t, ROOT * deg * semi(st), eighth * 0.9, 0.07 * accent * e);
-  });
+  for (let i = 0; i < 16; i++) {
+    const t = at + i * SIXTEENTH;
 
-  drone(c, at, (ROOT * deg) / 2, BAR, 0.09 + e * 0.05);
-  if (first || local === Math.floor(sec.bars / 2))
-    pad(c, at, ROOT * deg, BAR * 2, 0.04 + e * 0.05);
+    if (bp[i]) bass(c, t, base / 2, 0.16 * e);
 
-  const p = sec.pulse * (0.85 + tension * 0.3);
-  taiko(c, at, 0.13 * p);
-  if (p > 0.5) taiko(c, at + BEAT * 2, 0.1 * p);
-  if (p > 0.85 && local % 2 === 1) taiko(c, at + BEAT * 3 + eighth, 0.09 * p);
-  // «филл» на стыке секций — слышно, что музыка идёт вперёд, а не по кругу
-  if (last && p > 0.6) {
-    taiko(c, at + BEAT * 3, 0.1 * p);
-    taiko(c, at + BEAT * 3 + eighth, 0.12 * p);
-    taiko(c, at + BEAT * 3 + eighth * 1.5, 0.14 * p);
+    const step = ap[i];
+    if (step >= 0) {
+      const st = chord.triad[step % chord.triad.length] + 12 * Math.floor(step / chord.triad.length);
+      const accent = i % 4 === 0 ? 1 : 0.66;
+      pluck(c, t, base * 2 * semi(st + (i % 8 === 7 ? scale[1] : 0)), 0.075 * accent * e);
+    }
+
+    // ритм-секция
+    if (i === 0 || i === 6 || i === 10) kick(c, t, 0.28 * e);
+    if (i === 4 || i === 12) clap(c, t, 0.11 * e);
+    if (sec.hats && i % 2 === 1) hat(c, t, (i % 4 === 3 ? 0.05 : 0.032) * e);
+  }
+
+  // маркер фразы: стаб на первой доле каждых 4 тактов + «филл» в конце секции
+  if (local % 4 === 0) stab(c, at, base, chord.triad, 0.1 * e);
+  if (local === sec.bars - 1) {
+    clap(c, at + BEAT * 3 + SIXTEENTH * 2, 0.12 * e);
+    clap(c, at + BEAT * 3 + SIXTEENTH * 3, 0.15 * e);
   }
 }
 
 function tick() {
   const c = ac();
   if (!c || !running) return;
-  // lookahead 0.4 c: планируем такты заранее, ререндеры React ни на что не влияют
-  while (nextBarAt < c.currentTime + 0.4) {
+  while (nextBarAt < c.currentTime + 0.5) {
     scheduleBar(c, Math.max(nextBarAt, c.currentTime + 0.05), bar);
     nextBarAt += BAR;
     bar += 1;
@@ -248,12 +284,12 @@ export function startHuntMusic() {
   nextBarAt = c.currentTime + 0.12;
   musicBus!.gain.cancelScheduledValues(c.currentTime);
   musicBus!.gain.setValueAtTime(0.0001, c.currentTime);
-  musicBus!.gain.linearRampToValueAtTime(0.34, c.currentTime + 2.2); // тихий фон
+  musicBus!.gain.linearRampToValueAtTime(0.4, c.currentTime + 1.4);
   tick();
   timer = window.setInterval(tick, 120);
 }
 
-export function stopHuntMusic(fade = 1.4) {
+export function stopHuntMusic(fade = 1.2) {
   const c = ctx;
   running = false;
   if (timer) {
@@ -285,8 +321,7 @@ export function isHuntMuted() {
   return muted;
 }
 
-/** Удар ногой: короткий свуш + мягкий суб-«тамп» + лёгкий металлический
- *  хвост через фильтр. Тише прежнего, но объёмнее — за счёт свуша и хвоста. */
+/** Удар: свуш → щёлкающий транзиент → короткий панч. Ярко, но негромко. */
 export function playHuntImpact(power = 1) {
   const c = ac();
   if (!c || !sfxBus) return;
@@ -294,98 +329,76 @@ export function playHuntImpact(power = 1) {
   const t = c.currentTime + 0.005;
   const p = Math.max(0.3, Math.min(1, power));
 
-  // 1) свуш замаха: шум, у которого bandpass уезжает вверх → «воздух» перед удара
-  const wDur = 0.16;
-  const wb = c.createBuffer(1, Math.ceil(c.sampleRate * wDur), c.sampleRate);
-  const wd = wb.getChannelData(0);
-  for (let i = 0; i < wd.length; i++) wd[i] = (Math.random() * 2 - 1) * 0.7;
-  const wsrc = c.createBufferSource();
-  wsrc.buffer = wb;
+  // свуш замаха
+  const wDur = 0.11;
+  const wsrc = noise(c, wDur, 0.4);
   const wbp = c.createBiquadFilter();
   wbp.type = "bandpass";
-  wbp.Q.value = 1.1;
-  wbp.frequency.setValueAtTime(320, t);
-  wbp.frequency.exponentialRampToValueAtTime(2600, t + wDur);
+  wbp.Q.value = 1.4;
+  wbp.frequency.setValueAtTime(500, t);
+  wbp.frequency.exponentialRampToValueAtTime(4200, t + wDur);
   const wg = c.createGain();
   wg.gain.setValueAtTime(0.0001, t);
-  wg.gain.linearRampToValueAtTime(0.1 * p, t + wDur * 0.75);
+  wg.gain.linearRampToValueAtTime(0.09 * p, t + wDur * 0.8);
   wg.gain.linearRampToValueAtTime(0.0001, t + wDur);
   wsrc.connect(wbp).connect(wg).connect(sfx);
   wsrc.start(t);
 
-  // 2) суб-«тамп»: мягкая атака, без щелчка, короткий хвост
-  const hit = t + wDur * 0.78;
+  const hit = t + wDur * 0.85;
+
+  // транзиент-щёлк: очень короткий яркий шум → удар «читается» на любой громкости
+  const csrc = noise(c, 0.03, 4);
+  const chp = c.createBiquadFilter();
+  chp.type = "highpass";
+  chp.frequency.value = 2600;
+  const cg = c.createGain();
+  cg.gain.value = 0.16 * p;
+  csrc.connect(chp).connect(cg).connect(sfx);
+  csrc.start(hit);
+
+  // панч: быстрый питч-дроп, короткий хвост — без бубнежа
   const o = c.createOscillator();
   o.type = "sine";
-  o.frequency.setValueAtTime(120, hit);
-  o.frequency.exponentialRampToValueAtTime(44, hit + 0.2);
+  o.frequency.setValueAtTime(210, hit);
+  o.frequency.exponentialRampToValueAtTime(58, hit + 0.1);
   const og = c.createGain();
   og.gain.setValueAtTime(0.0001, hit);
-  og.gain.linearRampToValueAtTime(0.24 * p, hit + 0.008);
-  og.gain.exponentialRampToValueAtTime(0.0001, hit + 0.34);
+  og.gain.linearRampToValueAtTime(0.24 * p, hit + 0.006);
+  og.gain.exponentialRampToValueAtTime(0.0001, hit + 0.22);
   o.connect(og).connect(sfx);
   o.start(hit);
-  o.stop(hit + 0.38);
+  o.stop(hit + 0.26);
 
-  // 3) телесный «шлепок»: узкий шум в среднем диапазоне, очень короткий
-  const bDur = 0.09;
-  const bb = c.createBuffer(1, Math.ceil(c.sampleRate * bDur), c.sampleRate);
-  const bd = bb.getChannelData(0);
-  for (let i = 0; i < bd.length; i++)
-    bd[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bd.length, 2.4);
-  const bsrc = c.createBufferSource();
-  bsrc.buffer = bb;
+  // корпус: полосовой шум, добавляет «тело» без звона
+  const bsrc = noise(c, 0.08, 2.6);
   const bbp = c.createBiquadFilter();
   bbp.type = "bandpass";
-  bbp.frequency.value = 620;
-  bbp.Q.value = 0.9;
+  bbp.frequency.value = 900;
+  bbp.Q.value = 0.8;
   const bg = c.createGain();
-  bg.gain.value = 0.13 * p;
+  bg.gain.value = 0.12 * p;
   bsrc.connect(bbp).connect(bg).connect(sfx);
   bsrc.start(hit);
 
-  // 4) металлический хвост: тихо, приглушённо, чтобы был «характер», а не звон
-  const tail = c.createGain();
-  tail.gain.setValueAtTime(0.0001, hit);
-  tail.gain.linearRampToValueAtTime(0.055 * p, hit + 0.012);
-  tail.gain.exponentialRampToValueAtTime(0.0001, hit + 0.6);
-  const tlp = c.createBiquadFilter();
-  tlp.type = "lowpass";
-  tlp.frequency.setValueAtTime(2400, hit);
-  tlp.frequency.exponentialRampToValueAtTime(700, hit + 0.6);
-  tail.connect(tlp).connect(sfx);
-  [277, 415, 623, 934].forEach((f, i) => {
-    const m = c.createOscillator();
-    m.type = "triangle";
-    m.frequency.setValueAtTime(f * (1 + i * 0.003), hit);
-    m.frequency.exponentialRampToValueAtTime(f * 0.9, hit + 0.6);
-    const g = c.createGain();
-    g.gain.value = 1 / (i + 1.4);
-    m.connect(g).connect(tail);
-    m.start(hit);
-    m.stop(hit + 0.64);
-  });
-
-  // «сайд-чейн»: музыка на миг проседает — удар читается без прибавки громкости
+  // сайд-чейн: музыка проседает на миг
   if (musicBus && running) {
     const cur = musicBus.gain.value;
     musicBus.gain.cancelScheduledValues(hit);
     musicBus.gain.setValueAtTime(cur, hit);
-    musicBus.gain.linearRampToValueAtTime(cur * 0.62, hit + 0.03);
-    musicBus.gain.linearRampToValueAtTime(cur, hit + 0.45);
+    musicBus.gain.linearRampToValueAtTime(cur * 0.68, hit + 0.025);
+    musicBus.gain.linearRampToValueAtTime(cur, hit + 0.35);
   }
 }
 
-/** Финал: победный аккорд-«свелл» вместо остинато. */
+/** Финал: короткий победный стаб-аккорд + панч, без длинного гудения. */
 export function playHuntWin() {
   const c = ac();
   if (!c) return;
   const t = c.currentTime + 0.02;
   setHuntTension(1);
-  [0, 7, 12, 19].forEach((st, i) => {
-    brass(c, t + i * 0.06, ROOT * 2 * semi(st), 2.6, 0.09);
-  });
-  drone(c, t, ROOT, 3.4, 0.14);
-  taiko(c, t, 0.26);
-  taiko(c, t + BEAT, 0.18);
+  stab(c, t, ROOT * semi(3), [0, 4, 7, 12], 0.16);
+  stab(c, t + BEAT * 0.5, ROOT * semi(3), [0, 4, 7, 12], 0.1);
+  kick(c, t, 0.3);
+  clap(c, t + BEAT * 0.5, 0.14);
+  [0, 4, 7, 12, 16].forEach((st, i) => pluck(c, t + i * 0.07, ROOT * 4 * semi(st), 0.09));
 }
