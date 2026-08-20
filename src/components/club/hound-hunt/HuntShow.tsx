@@ -28,7 +28,6 @@ import {
   HUNT_WIN_MS,
 } from "@/lib/hunt-audio";
 
-import { RiderCharacter, type RiderMode } from "@/components/club/hound-hunt/RiderCharacter";
 import { EmberField } from "@/components/club/hound-hunt/EmberField";
 import { HuntAvatar } from "@/components/club/hound-hunt/HuntAvatar";
 import { KickedAvatar } from "@/components/club/hound-hunt/KickedAvatar";
@@ -59,9 +58,6 @@ function DesktopBlock() {
     <div className="relative flex min-h-[100svh] flex-col items-center justify-center gap-5 overflow-hidden bg-black px-8 text-center">
       <EmberField className="pointer-events-none absolute inset-0 opacity-40" />
       <div className="relative z-10 flex flex-col items-center gap-4">
-        <div className="w-40">
-          <RiderCharacter mode="idle" className="h-40 w-40" />
-        </div>
         <h1 className="font-display text-2xl uppercase tracking-tight text-white">Hound Hunt</h1>
         <p className="max-w-xs text-sm leading-relaxed text-white/50">
           Шоу идёт только в приложении на телефоне. Открой клуб с мобильного или установи PWA.
@@ -779,9 +775,6 @@ export function HoundHuntPage() {
     }
   };
 
-  const dogMode: RiderMode =
-    phase === "drift" ? "lunge" : phase === "arming" ? "watch" : "idle";
-
   const totalTickets = useMemo(
     () =>
       pool.reduce((s, e) => s + e.tickets, 0) + winners.reduce((s, w) => s + w.entry.tickets, 0),
@@ -883,29 +876,9 @@ export function HoundHuntPage() {
       <div className="relative flex h-full flex-col overflow-hidden pt-[max(0.5rem,env(safe-area-inset-top))] pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
         {/* арена */}
         <div className="relative flex min-h-0 flex-1 flex-col items-center justify-center">
-          {/* Персонаж стоит за лентой и чуть ниже: аватарки проходят перед ним,
-              а в зоне удара пересекаются только с ногой. */}
-          <motion.div
-            className={`relative z-10 w-full max-w-[560px] ${
-              phase === "intro" ? "mt-0 h-[34svh]" : "-mt-[1svh] h-[74svh]"
-            }`}
-            animate={{ opacity: 1 }}
-          >
-            <RiderCharacter
-              mode={dogMode}
-              instance="action"
-              lookAt={look}
-              kickToken={kickToken}
-              victory={settled}
-              dance={phase === "podium"}
-              onKickReady={(impactDelay, cycleMs) => {
-                impactDelayRef.current = impactDelay;
-                kickCycleMsRef.current = cycleMs;
-              }}
-              onImpact={handleImpact}
-              className="h-full w-full"
-            />
-          </motion.div>
+          {/* Персонаж в шоу временно отключён (dev): один WebGL-канвас на
+              странице живёт только на лендинге, чтобы контекст не терялся. */}
+
 
           {phase === "intro" && <IntroPanel onStart={start} />}
 
