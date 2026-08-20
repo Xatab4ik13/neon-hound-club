@@ -888,13 +888,14 @@ export function HoundHuntPage() {
             className={`relative z-10 w-full max-w-[560px] ${
               phase === "intro" ? "mt-0 h-[34svh]" : "-mt-[1svh] h-[74svh]"
             }`}
-            animate={{ opacity: phase === "podium" ? 0.25 : 1 }}
+            animate={{ opacity: 1 }}
           >
             <RiderCharacter
               mode={dogMode}
               lookAt={look}
               kickToken={kickToken}
               victory={settled}
+              dance={phase === "podium"}
               onKickReady={(impactDelay, cycleMs) => {
                 impactDelayRef.current = impactDelay;
                 kickCycleMsRef.current = cycleMs;
