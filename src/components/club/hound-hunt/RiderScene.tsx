@@ -7,6 +7,7 @@ import { Suspense, useEffect, useMemo, useRef } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { useAnimations, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
+import { clone as cloneSkeleton } from "three/examples/jsm/utils/SkeletonUtils.js";
 import riderAsset from "@/assets/rider.glb.asset.json";
 import danceAsset from "@/assets/rider-agree.glb.asset.json";
 
@@ -68,7 +69,10 @@ function Model({
   // В файле жеста уже лежит полноценная модель. Герою не нужно параллельно
   // держать базовый GLB, а ударному персонажу — 20 МБ файла с жестом.
   const instanceUrl = instance === "hero" ? DANCE_URL : MODEL_URL;
-  const { scene: cloned, animations } = useGLTF(instanceUrl);
+  const { scene, animations } = useGLTF(instanceUrl);
+  // useGLTF держит один общий scene в кеше. Каждый персонаж получает
+  // собственное дерево и skeleton, иначе primitive переносится между canvas.
+  const cloned = useMemo(() => cloneSkeleton(scene) as THREE.Group, [scene]);
   const localClips = useMemo(() => {
     return animations.map((c, i) => {
       const clone = c.clone();
@@ -286,6 +290,7 @@ function Model({
       <group scale={modelScale}>
         <primitive
           object={cloned}
+          dispose={null}
           scale={fit.s}
           position={fit.offset as unknown as [number, number, number]}
         />

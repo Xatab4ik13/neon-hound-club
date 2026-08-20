@@ -1,7 +1,7 @@
 // Ленивая обёртка над 3D-сценой персонажа: three/fiber грузится только
 // на экране HOUND HUNT, а не в основном бандле.
 
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense } from "react";
 import RiderScene from "./RiderScene";
 
 export type RiderMode = "idle" | "watch" | "lunge" | "chew";
@@ -27,28 +27,11 @@ type Props = {
 
 
 export function RiderCharacter(props: Props) {
-  const hostRef = useRef<HTMLDivElement>(null);
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    const host = hostRef.current;
-    if (!host) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => setVisible(entry.isIntersecting),
-      { rootMargin: "120px 0px" },
-    );
-    observer.observe(host);
-    return () => observer.disconnect();
-  }, []);
-
   return (
-    <div ref={hostRef} className={props.className}>
-      {visible && (
-        <Suspense fallback={null}>
-          <RiderScene {...props} className="h-full w-full" />
-        </Suspense>
-      )}
+    <div className={props.className}>
+      <Suspense fallback={null}>
+        <RiderScene {...props} className="h-full w-full" />
+      </Suspense>
     </div>
   );
 }
