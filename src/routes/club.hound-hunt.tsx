@@ -547,7 +547,10 @@ export function HoundHuntPage() {
 
       // finish вызывается уже ПОСЛЕ того, как лента доехала и встала:
       // композиция та же, меняется только запись результата и переход дальше.
+      let finished = false;
       const finish = () => {
+        if (finished) return;
+        finished = true;
         const survivor = liveRef.current[0] ?? winner;
         setWinners((w) => [...w, { prizeId: HUNT_PRIZES[idx].id, entry: survivor }]);
         const rest = entries.filter((e) => e.id !== survivor.id);
