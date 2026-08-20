@@ -794,8 +794,8 @@ export function HoundHuntPage() {
 
   return (
     <div className="fixed inset-0 z-40 overflow-hidden overscroll-none touch-pan-y bg-background text-foreground select-none">
-      {/* Никаких слоёв фона: только мягкий градиент-«тень» за персонажем,
-          чтобы силуэт не висел в пустоте. */}
+      {/* Фоновое свечение: мягкая «тень» за персонажем + неоновые пятна по краям
+          в брендовой магенте, без тяжёлых слоёв. */}
       <div
         className="pointer-events-none absolute left-1/2 top-[46%] z-0 -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl"
         style={{
@@ -806,6 +806,26 @@ export function HoundHuntPage() {
           opacity: 0.55,
         }}
       />
+      <div
+        className="pointer-events-none absolute inset-0 z-0"
+        style={{
+          background:
+            "radial-gradient(120% 60% at 50% -10%, color-mix(in oklab, var(--primary) 18%, transparent), transparent 70%)," +
+            "radial-gradient(80% 50% at -10% 40%, color-mix(in oklab, var(--primary) 12%, transparent), transparent 70%)," +
+            "radial-gradient(80% 50% at 110% 40%, color-mix(in oklab, var(--primary) 12%, transparent), transparent 70%)," +
+            "radial-gradient(120% 60% at 50% 110%, color-mix(in oklab, var(--primary) 10%, transparent), transparent 70%)",
+        }}
+      />
+      <motion.div
+        className="pointer-events-none absolute inset-0 z-0"
+        animate={{ opacity: settled ? 1 : 0 }}
+        transition={{ duration: 0.6 }}
+        style={{
+          background:
+            "radial-gradient(100% 70% at 50% 55%, rgba(182,255,60,0.16), transparent 72%)",
+        }}
+      />
+
 
 
 
