@@ -8,7 +8,7 @@ import { motion } from "framer-motion";
 import { RiderCharacter } from "./RiderCharacter";
 import { useHuntConfig, prizesInRunOrder } from "./hh-config";
 import { HuntAvatar } from "./HuntAvatar";
-import { fetchHuntEntries, type HuntEntry } from "./hh-mock";
+import { type HuntEntry } from "./hh-mock";
 import { getTier } from "@/data/hell-pass";
 import { haptic } from "@/hooks/use-haptic";
 import { useViewer } from "@/hooks/use-viewer";
@@ -108,17 +108,6 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
   const { isAuthed, tier, tickets: balance } = useViewer();
   const profileQ = useMyProfile(isAuthed);
   const isPlatinum = tier === "platinum";
-
-  const [entries, setEntries] = useState<HuntEntry[]>([]);
-  useEffect(() => {
-    let dead = false;
-    void fetchHuntEntries(12).then((list) => {
-      if (!dead) setEntries(list);
-    });
-    return () => {
-      dead = true;
-    };
-  }, []);
 
   const me: HuntEntry | null = useMemo(() => {
     const nick = profileQ.data?.nick ?? null;
