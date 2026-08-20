@@ -844,10 +844,12 @@ export function HoundHuntPage() {
             style={{ top: "calc(0.75rem + env(safe-area-inset-top))" }}
           >
             <div
-              className="flex items-center gap-3 rounded-2xl border border-primary/40 bg-card/70 px-3 py-2 backdrop-blur-md"
+              className="flex items-center gap-3 rounded-2xl border px-3 py-2 backdrop-blur-md"
               style={{
+                borderColor: "rgba(182,255,60,0.45)",
+                background: "color-mix(in oklab, var(--card) 70%, transparent)",
                 boxShadow:
-                  "0 0 0 1px color-mix(in oklab, var(--primary) 18%, transparent), 0 12px 40px -12px color-mix(in oklab, var(--primary) 55%, transparent)",
+                  "0 0 0 1px rgba(182,255,60,0.18), 0 12px 40px -12px rgba(182,255,60,0.55)",
               }}
             >
               <div className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border/60 bg-background/60">
@@ -857,12 +859,13 @@ export function HoundHuntPage() {
                 <p
                   className="text-[10px] font-semibold uppercase tracking-[0.22em]"
                   style={{
-                    color: "var(--primary)",
-                    textShadow: "0 0 10px color-mix(in oklab, var(--primary) 65%, transparent)",
+                    color: "#B6FF3C",
+                    textShadow: "0 0 10px rgba(182,255,60,0.7)",
                   }}
                 >
                   разыгрывается
                 </p>
+
                 <p className="truncate font-display text-sm font-black uppercase leading-tight">
                   {prize.title}
                 </p>
@@ -1037,20 +1040,6 @@ function ReelStage({
       {/* Движущаяся лента плоская: перспектива применяется только к звену,
           которое уже выбито и летит отдельно от барабана. */}
       <motion.div className="relative py-2" animate={recoil} style={{ willChange: "transform" }}>
-        {/* зона удара: дышащее пятно под ногой (в финале убираем) */}
-        {!winner && (
-          <motion.div
-            className="pointer-events-none absolute left-1/2 top-1/2 z-0 -translate-x-1/2 -translate-y-1/2 rounded-full"
-            style={{
-              width: CHIP_W * 2.6,
-              height: CHIP_W * 2.6,
-              background:
-                "radial-gradient(circle, color-mix(in oklab, var(--destructive) 26%, transparent), transparent 62%)",
-            }}
-            animate={{ opacity: [0.5, 0.95, 0.5], scale: [0.94, 1.06, 0.94] }}
-            transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
-          />
-        )}
 
 
         {/* импакт-фрейм: короткая световая вспышка ровно в кадре удара */}
@@ -1125,20 +1114,6 @@ function ReelStage({
                   scale: { duration: 0.7, ease: [0.22, 1, 0.36, 1] },
                   rotate: { duration: 26, repeat: Infinity, ease: "linear" },
                 }}
-              />
-              <motion.div
-                key="win-halo"
-                className="pointer-events-none absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2 rounded-full blur-2xl"
-                style={{
-                  width: CHIP_W * 3.2,
-                  height: CHIP_W * 3.2,
-                  background:
-                    "radial-gradient(circle, rgba(182,255,60,0.34), color-mix(in oklab, var(--primary) 26%, transparent) 55%, transparent 72%)",
-                }}
-                initial={{ opacity: 0, scale: 0.6 }}
-                animate={{ opacity: [0.75, 1, 0.75], scale: [0.98, 1.06, 0.98] }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
               />
               {[0, 0.35].map((d) => (
                 <motion.div
@@ -1358,24 +1333,42 @@ function Podium({
               className="flex items-center gap-3 rounded-2xl border border-border/60 bg-card/50 p-3 text-left backdrop-blur"
             >
               <img src={p.img} alt="" className="size-12 shrink-0 object-contain" />
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
                   {p.sub}
                 </p>
                 <p className="truncate font-display text-sm font-black uppercase">{p.title}</p>
-                <p className="truncate font-mono text-[11px] text-primary">{w.entry.nick}</p>
+              </div>
+              <div className="flex w-16 shrink-0 flex-col items-center gap-1">
+                <div
+                  className="flex size-11 items-center justify-center overflow-hidden rounded-full border"
+                  style={{
+                    borderColor: "rgba(182,255,60,0.6)",
+                    boxShadow: "0 0 14px -2px rgba(182,255,60,0.5)",
+                  }}
+                >
+                  {w.entry.avatarUrl ? (
+                    <img
+                      src={w.entry.avatarUrl}
+                      alt={w.entry.nick}
+                      className="size-full object-cover"
+                    />
+                  ) : (
+                    <span className="font-display text-xs font-black uppercase">
+                      {w.entry.initials}
+                    </span>
+                  )}
+                </div>
+                <p className="w-full truncate text-center font-mono text-[10px] uppercase text-primary">
+                  {w.entry.nick}
+                </p>
               </div>
             </div>
           );
         })}
       </div>
-      <button
-        type="button"
-        onClick={onRestart}
-        className="mt-6 w-full rounded-2xl border border-border/60 bg-card/60 px-6 py-3.5 font-display text-base font-black uppercase tracking-wide backdrop-blur transition active:scale-[0.98]"
-      >
-        Прогнать ещё раз
-      </button>
+
+
     </motion.div>
   );
 }
