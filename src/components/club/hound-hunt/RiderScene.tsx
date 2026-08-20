@@ -3,7 +3,7 @@
 //   mode = "idle" | "watch" | "lunge" | "chew", lookAt = {x,y} в -1..1.
 // "lunge" = удар ногой по капсуле (проигрывается клип один раз).
 
-import { Suspense, useEffect, useId, useMemo, useRef } from "react";
+import { Suspense, useEffect, useMemo, useRef } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { useAnimations, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
@@ -116,8 +116,7 @@ function Model({
   const group = useRef<THREE.Group>(null);
   // У каждого canvas свой разбор GLB. SkeletonUtils.clone ломает skin/bind matrices
   // именно у этой Meshy-модели и оставляет видимый canvas без геометрии.
-  const instanceId = useId().replace(/:/g, "");
-  const instanceUrl = `${MODEL_URL}?instance=${instanceId}`;
+  const instanceUrl = `${MODEL_URL}?instance=${mode}`;
   const { scene: cloned, animations } = useGLTF(instanceUrl);
   const { animations: victoryAnims } = useGLTF(VICTORY_URL);
   const { animations: danceAnims } = useGLTF(DANCE_URL);
