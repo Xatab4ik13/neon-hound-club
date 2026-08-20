@@ -8,6 +8,7 @@ import { Canvas, useFrame } from "@react-three/fiber";
 import { useAnimations, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import riderAsset from "@/assets/rider.glb.asset.json";
+import victoryAsset from "@/assets/rider-victory.glb.asset.json";
 
 export type RiderMode = "idle" | "watch" | "lunge" | "chew";
 
@@ -18,6 +19,8 @@ type Props = {
   className?: string;
   /** Изменение токена запускает один полный взмах. */
   kickToken?: number;
+  /** true = плавный переход в анимацию победы (луп). */
+  victory?: boolean;
   /** Сообщает задержку от запуска взмаха до контакта ноги. */
   onKickReady?: (impactDelay: number, cycleMs: number) => void;
   /** Вызывается в момент контакта ноги (≈60% клипа). */
@@ -25,6 +28,8 @@ type Props = {
 };
 
 const MODEL_URL = riderAsset.url;
+const VICTORY_URL = victoryAsset.url;
+
 
 const BRAND = { r: 0xf0, g: 0x00, b: 0xc0 };
 
