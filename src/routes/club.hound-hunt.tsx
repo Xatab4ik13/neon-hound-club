@@ -794,18 +794,7 @@ export function HoundHuntPage() {
 
   return (
     <div className="fixed inset-0 z-40 overflow-hidden overscroll-none touch-pan-y bg-background text-foreground select-none">
-      {/* Фоновое свечение: мягкая «тень» за персонажем + неоновые пятна по краям
-          в брендовой магенте, без тяжёлых слоёв. */}
-      <div
-        className="pointer-events-none absolute left-1/2 top-[46%] z-0 -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl"
-        style={{
-          width: "78vw",
-          height: "46vh",
-          background:
-            "radial-gradient(closest-side, color-mix(in oklab, var(--destructive) 22%, transparent), transparent 74%)",
-          opacity: 0.55,
-        }}
-      />
+      {/* Фоновое свечение: неоновые пятна по краям в брендовой магенте. */}
       <div
         className="pointer-events-none absolute inset-0 z-0"
         style={{
@@ -814,15 +803,6 @@ export function HoundHuntPage() {
             "radial-gradient(80% 50% at -10% 40%, color-mix(in oklab, var(--primary) 12%, transparent), transparent 70%)," +
             "radial-gradient(80% 50% at 110% 40%, color-mix(in oklab, var(--primary) 12%, transparent), transparent 70%)," +
             "radial-gradient(120% 60% at 50% 110%, color-mix(in oklab, var(--primary) 10%, transparent), transparent 70%)",
-        }}
-      />
-      <motion.div
-        className="pointer-events-none absolute inset-0 z-0"
-        animate={{ opacity: settled ? 1 : 0 }}
-        transition={{ duration: 0.6 }}
-        style={{
-          background:
-            "radial-gradient(100% 70% at 50% 55%, rgba(182,255,60,0.16), transparent 72%)",
         }}
       />
 
@@ -876,7 +856,10 @@ export function HoundHuntPage() {
               <div className="min-w-0 text-left">
                 <p
                   className="text-[10px] font-semibold uppercase tracking-[0.22em]"
-                  style={{ color: "#B6FF3C", textShadow: "0 0 10px rgba(182,255,60,0.65)" }}
+                  style={{
+                    color: "var(--primary)",
+                    textShadow: "0 0 10px color-mix(in oklab, var(--primary) 65%, transparent)",
+                  }}
                 >
                   разыгрывается
                 </p>
