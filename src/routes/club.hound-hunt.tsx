@@ -1119,6 +1119,63 @@ function ReelStage({
           />
         )}
 
+        {/* Эффект победителя: вращающийся веер лучей + две расходящиеся волны */}
+        <AnimatePresence>
+          {winner && (
+            <>
+              <motion.div
+                key="win-rays"
+                className="pointer-events-none absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2 rounded-full"
+                style={{
+                  width: CHIP_W * 5,
+                  height: CHIP_W * 5,
+                  background:
+                    "repeating-conic-gradient(from 0deg, rgba(182,255,60,0.20) 0deg 6deg, transparent 6deg 18deg)",
+                  maskImage: "radial-gradient(circle, #000 12%, transparent 68%)",
+                  WebkitMaskImage: "radial-gradient(circle, #000 12%, transparent 68%)",
+                }}
+                initial={{ opacity: 0, scale: 0.7, rotate: 0 }}
+                animate={{ opacity: 1, scale: 1, rotate: 360 }}
+                exit={{ opacity: 0 }}
+                transition={{
+                  opacity: { duration: 0.5 },
+                  scale: { duration: 0.7, ease: [0.22, 1, 0.36, 1] },
+                  rotate: { duration: 26, repeat: Infinity, ease: "linear" },
+                }}
+              />
+              <motion.div
+                key="win-halo"
+                className="pointer-events-none absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2 rounded-full blur-2xl"
+                style={{
+                  width: CHIP_W * 3.2,
+                  height: CHIP_W * 3.2,
+                  background:
+                    "radial-gradient(circle, rgba(182,255,60,0.34), color-mix(in oklab, var(--primary) 26%, transparent) 55%, transparent 72%)",
+                }}
+                initial={{ opacity: 0, scale: 0.6 }}
+                animate={{ opacity: [0.75, 1, 0.75], scale: [0.98, 1.06, 0.98] }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
+              />
+              {[0, 0.35].map((d) => (
+                <motion.div
+                  key={`win-wave-${d}`}
+                  className="pointer-events-none absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2 rounded-full border-2"
+                  style={{
+                    width: CHIP_W,
+                    height: CHIP_W,
+                    borderColor: "rgba(182,255,60,0.7)",
+                  }}
+                  initial={{ opacity: 0.8, scale: 0.5 }}
+                  animate={{ opacity: 0, scale: 3.6 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 1.4, delay: d, ease: "easeOut" }}
+                />
+              ))}
+            </>
+          )}
+        </AnimatePresence>
+
 
         {!winner && (
           <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-20 bg-gradient-to-r from-background to-transparent" />
