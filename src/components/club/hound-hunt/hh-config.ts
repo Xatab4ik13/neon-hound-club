@@ -93,15 +93,56 @@ export function prizesInRunOrder(cfg: HuntConfig): HuntConfigPrize[] {
   return [...cfg.prizes].sort((a, b) => b.place - a.place);
 }
 
+/** Ответ бека → форма конфига, которую ждут компоненты. */
+export function huntConfigFromApi(state: HuntApiState): HuntConfig | null {
+  if (!state.hunt) return null;
+  const base = defaultHuntConfig();
+  return {
+    id: state.hunt.id,
+    startsAt: state.hunt.startsAt,
+    ticketStep: state.hunt.ticketStep,
+    prizes: state.prizes.map((p, i) => ({
+      id: p.id,
+      place: p.place,
+      title: p.title,
+      sub: p.sub ?? "",
+      img: p.img || base.prizes[Math.min(i, base.prizes.length - 1)].img,
+      forcedWinnerId: p.forcedWinnerId ?? null,
+      winnerUserId: p.winnerUserId ?? null,
+      winnerNick: p.winnerNick ?? null,
+      ticketsReward: p.ticketsReward ?? 0,
+    })),
+  };
+}
+
+/**
+ * Конфиг охоты. Источник истины — бекенд (`/api/v1/hunt/current`), localStorage
+ * остаётся кешем на случай оффлайна/первого рендера.
+ */
 export function useHuntConfig() {
   const [cfg, setCfg] = useState<HuntConfig>(() => readHuntConfig());
 
   useEffect(() => {
+    let alive = true;
     const sync = () => setCfg(readHuntConfig());
-    sync();
     window.addEventListener("hh-hunt-config", sync);
     window.addEventListener("storage", sync);
+
+    void fetchHuntState()
+      .then((state) => {
+        if (!alive) return;
+        const next = huntConfigFromApi(state);
+        if (next) {
+          writeHuntConfig(next);
+          setCfg(next);
+        }
+      })
+      .catch(() => {
+        /* оффлайн/не авторизован — остаётся кеш */
+      });
+
     return () => {
+      alive = false;
       window.removeEventListener("hh-hunt-config", sync);
       window.removeEventListener("storage", sync);
     };
