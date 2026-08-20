@@ -567,7 +567,15 @@ export function HoundHuntPage({ mode = "live" }: { mode?: HuntShowMode }) {
         finished = true;
         const survivor = liveRef.current[0] ?? winner;
         setWinners((w) => [...w, { prizeId: prizesRef.current[idx].id, entry: survivor }]);
-        const rest = entries.filter((e) => e.id !== survivor.id);
+        // Победитель раунда теряет ОДНУ капсулу, а не выбывает целиком:
+        // было 6 — в следующем раунде участвует 5. Кончились капсулы — вышел.
+        const rest = entries
+          .map((e) =>
+            e.id === survivor.id
+              ? { ...e, slots: e.slots - 1, tickets: Math.max(0, e.tickets - cfg.ticketStep) }
+              : e,
+          )
+          .filter((e) => e.slots > 0);
         setPool(rest);
 
         later(() => {
