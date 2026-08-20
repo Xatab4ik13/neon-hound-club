@@ -252,23 +252,28 @@ function Model({
     }
   }, [victory, victoryAction, action]);
 
-  // Финальный экран: бесконечный танец. Плавно гасим победный клип.
+  // Финальный экран: бесконечный танец. Луп собираем сами — два экземпляра
+  // клипа перекрываются кроссфейдом (см. useFrame), поэтому на стыке нет рывка.
   useEffect(() => {
     if (!danceAction) return;
     if (dance) {
       victoryAction?.fadeOut(0.5);
       action?.fadeOut(0.5);
+      danceActionB?.stop();
       danceAction.enabled = true;
-      danceAction.clampWhenFinished = false;
-      danceAction.setLoop(THREE.LoopRepeat, Infinity);
+      danceAction.clampWhenFinished = true;
+      danceAction.setLoop(THREE.LoopOnce, 1);
       danceAction.timeScale = 1;
       danceAction.reset();
       danceAction.setEffectiveWeight(1);
       danceAction.fadeIn(0.5).play();
+      danceCur.current = danceAction;
     } else {
       danceAction.fadeOut(0.35);
+      danceActionB?.fadeOut(0.35);
+      danceCur.current = null;
     }
-  }, [dance, danceAction, victoryAction, action]);
+  }, [dance, danceAction, danceActionB, victoryAction, action]);
 
   // Кадр канваса расширен вверх (см. HEADROOM_FRAC), поэтому модель сдвинута
   // вниз ровно на добавленный запас — визуально персонаж стоит и выглядит так же,
