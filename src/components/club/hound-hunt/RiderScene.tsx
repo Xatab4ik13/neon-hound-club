@@ -7,6 +7,7 @@ import { Suspense, useEffect, useMemo, useRef } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useAnimations, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
+import { clone as skeletonClone } from "three/examples/jsm/utils/SkeletonUtils.js";
 import riderAsset from "@/assets/rider.glb.asset.json";
 import victoryAsset from "@/assets/rider-victory.glb.asset.json";
 import danceAsset from "@/assets/rider-agree.glb.asset.json";
@@ -117,7 +118,9 @@ function Model({
   const { scene, animations } = useGLTF(MODEL_URL);
   const { animations: victoryAnims } = useGLTF(VICTORY_URL);
   const { animations: danceAnims } = useGLTF(DANCE_URL);
-  const cloned = useMemo(() => scene, [scene]);
+  // Клонируем сцену на каждый экземпляр: useGLTF отдаёт один и тот же объект,
+  // и без клона второй монтируемый персонаж «забирает» модель у первого (чёрный экран).
+  const cloned = useMemo(() => skeletonClone(scene) as THREE.Object3D, [scene]);
   // Клипы делят один и тот же риг (Meshy, одинаковые имена костей),
   // поэтому победный танец играется тем же миксером — без подмены модели.
   const danceClips = useMemo(() => {
