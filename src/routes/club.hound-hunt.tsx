@@ -23,6 +23,7 @@ import {
 import {
   playHuntImpact,
   playHuntWin,
+  speakHuntCount,
 } from "@/lib/hunt-audio";
 import { RiderCharacter, type RiderMode } from "@/components/club/hound-hunt/RiderCharacter";
 import { EmberField } from "@/components/club/hound-hunt/EmberField";
