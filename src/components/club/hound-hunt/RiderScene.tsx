@@ -112,9 +112,6 @@ function Model({
           return new THREE.VectorKeyframeTrack(track.name, Array.from(track.times), values);
         }
         if (track instanceof THREE.VectorKeyframeTrack && /\.scale$/i.test(track.name)) {
-          const boneName = track.name.split(".")[0];
-          const rest = restPositions.has(boneName) ? null : null;
-          void rest;
           const values = Array.from(track.values);
           const x = values[0] ?? 1;
           const y = values[1] ?? 1;
@@ -291,21 +288,6 @@ function Model({
     };
   }, [dance, instantDance, danceAction, victoryAction, action, cloned]);
 
-  useFrame(() => {
-    const d = ((window as any).__riderDebug ??= {});
-    const box = new THREE.Box3().setFromObject(cloned);
-    const roots = cloned.children.map((ch) => `${ch.name}:${ch.position.toArray().map((v)=>+v.toFixed(2))}:${ch.scale.toArray().map((v)=>+v.toFixed(2))}`);
-    d[`${instance}_state`] = {
-      danceRunning: danceAction ? [+danceAction.time.toFixed(2), danceAction.isRunning(), danceAction.getEffectiveWeight()] : null,
-      actionRunning: action ? [+action.time.toFixed(2), action.isRunning(), action.getEffectiveWeight()] : null,
-      box: [box.min.toArray().map((v)=>+v.toFixed(2)), box.max.toArray().map((v)=>+v.toFixed(2))],
-      roots,
-      rest: (() => { let h: any = null; cloned.traverse((n) => { if (!h && /hips$/i.test(n.name)) h = n; }); if (!h) return null; const before = h.position.toArray().map((v: number)=>+v.toFixed(3)); const sm: any = (() => { let m: any = null; cloned.traverse((n: any) => { if (!m && n.isSkinnedMesh) m = n; }); return m; })(); const idx = sm ? sm.skeleton.bones.indexOf(h) : -1; const inv = idx >= 0 ? sm.skeleton.boneInverses[idx] : null; const restPos = inv ? new THREE.Vector3().setFromMatrixPosition(new THREE.Matrix4().copy(inv).invert()).toArray().map((v: number)=>+v.toFixed(3)) : null; return { live: before, restWorldFromInverse: restPos, geomBox: sm ? [sm.geometry.boundingBox?.min.toArray().map((v: number)=>+v.toFixed(3)), sm.geometry.boundingBox?.max.toArray().map((v: number)=>+v.toFixed(3))] : null, bindMatrixScale: sm ? new THREE.Vector3().setFromMatrixScale(sm.bindMatrix).toArray().map((v: number)=>+v.toFixed(3)) : null }; })(),
-      chain: (() => { let h: THREE.Object3D | null = null; cloned.traverse((n) => { if (!h && /hips$/i.test(n.name)) h = n; }); const r: string[] = []; let c: THREE.Object3D | null = h; while (c) { r.push(`${c.name || c.type} p=${c.position.toArray().map((v)=>+v.toFixed(2))} s=${c.scale.toArray().map((v)=>+v.toFixed(3))}`); c = c.parent; } return r; })(),
-      bones: (() => { const r: string[] = []; cloned.traverse((n) => { if (/hips$|head$|spine$/i.test(n.name) && r.length < 6) { const w = new THREE.Vector3(); n.getWorldPosition(w); const sc = new THREE.Vector3(); n.getWorldScale(sc); r.push(`${n.name} p=${w.toArray().map((v)=>+v.toFixed(2))} s=${sc.toArray().map((v)=>+v.toFixed(3))}`); } }); return r; })(),
-      meshes: (() => { const r: string[] = []; cloned.traverse((n) => { const m = n as THREE.SkinnedMesh; if ((m as any).isMesh) { const mat = m.material as THREE.MeshStandardMaterial; r.push(`${n.name} vis=${m.visible} op=${mat?.opacity} tr=${mat?.transparent} frust=${m.frustumCulled} bones=${(m as any).isSkinnedMesh ? m.skeleton?.bones?.length : "-"}`); } }); return r; })(),
-    };
-  });
   useFrame(() => {
     if (!action || !kickToken || action.paused || victory) return;
     const dur = action.getClip().duration;
