@@ -85,8 +85,11 @@ export async function placeHuntBet(userId: string, amount: number) {
     throw new HuntError("locked", "Приём ставок закрыт — барабан зафиксирован");
   }
 
+  // Вход в охоту — только Hell Pass Platinum.
   const pass = await getActivePass(userId);
-  if (!pass) throw new HuntError("no_pass", "Нужен активный Hell Pass");
+  if (!pass || pass.tier !== "platinum") {
+    throw new HuntError("no_pass", "Нужен активный Hell Pass Platinum");
+  }
 
   const step = Math.max(1, hunt.ticketStep);
   if (!Number.isInteger(amount) || amount < step || amount % step !== 0) {
