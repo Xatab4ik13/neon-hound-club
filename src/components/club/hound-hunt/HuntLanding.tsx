@@ -76,7 +76,7 @@ const FAQ_TINTS = [TOXIC, "#FF8A3C", "#F000C0", "#3CC8FF"];
 function CenteredCapsule({ entry }: { entry: HuntEntry }) {
   return (
     <div className="pointer-events-none absolute left-1/2 top-[calc(50%+3.125rem)] z-30 -translate-x-1/2 -translate-y-1/2">
-      <HuntAvatar entry={entry} focused hideNick scale={0.42} />
+      <HuntAvatar entry={entry} focused hideNick scale={0.32} />
     </div>
   );
 }
@@ -92,8 +92,10 @@ function KickStage({ me }: { me: HuntEntry | null }) {
   }, []);
 
   return (
-    <div className="relative h-full w-full">
-      <div className="h-full w-full translate-y-10">
+    <div className="relative h-full w-full overflow-visible">
+      {/* Canvas физически на 30% больше, поэтому персонаж крупнее без
+          внутреннего масштабирования и никогда не режется границами canvas. */}
+      <div className="absolute left-1/2 top-1/2 z-20 h-[130%] w-[130%] -translate-x-1/2 -translate-y-1/2 translate-y-10">
         <RiderCharacter
           mode="lunge"
           instance="action"
@@ -108,7 +110,7 @@ function KickStage({ me }: { me: HuntEntry | null }) {
       {me && flight === null && <CenteredCapsule entry={me} />}
       {me && flight !== null && (
         <div className="pointer-events-none absolute left-1/2 top-[calc(50%+3.125rem)] z-30 size-0">
-          <KickedAvatar entry={me} seed={`landing-${flight}`} scale={0.42} width={56} />
+          <KickedAvatar entry={me} seed={`landing-${flight}`} scale={0.32} width={42.24} />
         </div>
       )}
     </div>
@@ -433,11 +435,13 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
 
         {/* --------------- витрина: удар + Hell Pass Platinum --------------- */}
         <Reveal className="mt-10 px-6">
-          <div className="relative grid grid-cols-2 items-stretch gap-1 overflow-hidden rounded-3xl border border-border/60 bg-card/40 p-2">
-            <div className="h-[42svh]">
+          <div className="relative grid grid-cols-2 items-stretch gap-1 rounded-3xl border border-border/60 bg-card/40 p-2">
+            <div className="relative z-20 h-[42svh] overflow-visible">
               <KickStage me={me} />
             </div>
-            <PlatinumCard />
+            <div className="relative z-10">
+              <PlatinumCard />
+            </div>
           </div>
         </Reveal>
 
