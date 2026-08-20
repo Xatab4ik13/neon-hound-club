@@ -156,6 +156,9 @@ export function HoundHuntPage() {
   // На входе подтягиваем 20 реальных участников из базы (ник + аватарка),
   // чтобы интро показывало живой состав, а не моки.
   useEffect(() => {
+    preloadHuntSamples();
+  }, []);
+  useEffect(() => {
     let cancelled = false;
     void fetchHuntEntries(MOCK_ENTRIES).then((entries) => {
       if (!cancelled) setPool(entries);
