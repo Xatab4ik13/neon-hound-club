@@ -37,7 +37,9 @@ import {
   HUNT_TICKET_STEP,
   makeEntries,
   fetchHuntEntries,
+  rankColorsOf,
   type HuntEntry,
+
 } from "@/components/club/hound-hunt/hh-mock";
 import { haptic } from "@/hooks/use-haptic";
 import { useIsMobile } from "@/hooks/use-mobile";
