@@ -39,59 +39,7 @@ const MODEL_URL = riderAsset.url;
 const DANCE_URL = danceAsset.url;
 /** Имя, под которым регистрируется клип танца финального экрана. */
 const DANCE_CLIP = "hh_final_dance";
-const BRAND = { r: 0xf0, g: 0x00, b: 0xc0 };
 const FIT_BY_INSTANCE = new Map<string, { s: number; offset: readonly [number, number, number] }>();
-
-/** Переводит розово-малиновые пиксели текстуры в фирменный #F000C0. */
-function recolorPinkTexture(tex: THREE.Texture): THREE.Texture | null {
-  const img = tex.image as HTMLImageElement | ImageBitmap | undefined;
-  if (!img || !("width" in img) || !img.width) return null;
-  const canvas = document.createElement("canvas");
-  canvas.width = img.width;
-  canvas.height = img.height;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return null;
-  ctx.drawImage(img as CanvasImageSource, 0, 0);
-  let data: ImageData;
-  try {
-    data = ctx.getImageData(0, 0, canvas.width, canvas.height);
-  } catch {
-    return null;
-  }
-  const px = data.data;
-  for (let i = 0; i < px.length; i += 4) {
-    const r = px[i],
-      g = px[i + 1],
-      b = px[i + 2];
-    const max = Math.max(r, g, b),
-      min = Math.min(r, g, b);
-    if (max < 40) continue;
-    const sat = (max - min) / max;
-    if (sat < 0.25) continue;
-    // hue в градусах
-    const d = max - min;
-    let h: number;
-    if (max === r) h = ((g - b) / d) % 6;
-    else if (max === g) h = (b - r) / d + 2;
-    else h = (r - g) / d + 4;
-    h = (h * 60 + 360) % 360;
-    // розовый/малиновый/красно-розовый диапазон
-    if (!(h >= 285 || h <= 15)) continue;
-    const v = max / 255; // сохраняем светотень
-    px[i] = Math.min(255, BRAND.r * v);
-    px[i + 1] = Math.min(255, BRAND.g * v + (min / 255) * 255 * 0.35);
-    px[i + 2] = Math.min(255, BRAND.b * v);
-  }
-  ctx.putImageData(data, 0, 0);
-  const out = new THREE.CanvasTexture(canvas);
-  out.flipY = tex.flipY;
-  out.wrapS = tex.wrapS;
-  out.wrapT = tex.wrapT;
-  out.colorSpace = tex.colorSpace;
-  out.anisotropy = 8;
-  out.needsUpdate = true;
-  return out;
-}
 
 function Model({
   mode,
@@ -170,7 +118,8 @@ function Model({
   }, [localClips]);
 
 
-  // Перекраска в фирменный розовый + подтяжка резкости/контраста материалов.
+  // Не копируем пиксели текстур через Canvas: на телефонах это удваивало
+  // видеопамять модели и приводило к WebGL Context Lost.
   useEffect(() => {
     cloned.traverse((obj) => {
       const mesh = obj as THREE.Mesh;
@@ -179,15 +128,9 @@ function Model({
       mats.forEach((m) => {
         const mat = m as THREE.MeshStandardMaterial;
         if (!mat) return;
-        if (mat.map && !(mat.map as THREE.Texture & { __hhBrand?: boolean }).__hhBrand) {
-          const next = recolorPinkTexture(mat.map);
-          if (next) {
-            (next as THREE.Texture & { __hhBrand?: boolean }).__hhBrand = true;
-            mat.map = next;
-          }
-          (mat.map as THREE.Texture & { __hhBrand?: boolean }).__hhBrand = true;
-          mat.map.anisotropy = 8;
-        } else if (!mat.map) {
+        if (mat.map) {
+          mat.map.anisotropy = 1;
+        } else {
           const c = mat.color?.getHSL({ h: 0, s: 0, l: 0 });
           if (c && c.s > 0.25 && (c.h * 360 >= 285 || c.h * 360 <= 15)) {
             mat.color.setHex(0xf000c0);
@@ -367,11 +310,12 @@ export default function RiderScene({
   return (
     <div className={className}>
       <Canvas
-        dpr={[1, 2]}
+        dpr={1}
         camera={{ position: [0, 1.1, 5.6], fov: 50 }}
         gl={{
-          antialias: true,
+          antialias: false,
           alpha: true,
+          powerPreference: "low-power",
           toneMapping: THREE.ACESFilmicToneMapping,
           toneMappingExposure: 1.25,
         }}
@@ -401,5 +345,3 @@ export default function RiderScene({
   );
 }
 
-useGLTF.preload(MODEL_URL);
-useGLTF.preload(DANCE_URL);
