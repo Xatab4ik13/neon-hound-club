@@ -3,7 +3,7 @@
 //   mode = "idle" | "watch" | "lunge" | "chew", lookAt = {x,y} в -1..1.
 // "lunge" = удар ногой по капсуле (проигрывается клип один раз).
 
-import { Suspense, useEffect, useMemo, useRef } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { useAnimations, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
@@ -118,7 +118,7 @@ function Model({
       });
       return clip;
     };
-    return localClips.map(lockRootMotion);
+    return localClips.map((c) => c); // TEMP: no root lock
   }, [localClips]);
 
 
@@ -147,6 +147,15 @@ function Model({
     });
   }, [cloned]);
   const { actions, names } = useAnimations(allClips, group);
+  // drei отдаёт actions ленивыми геттерами: до того как ref группы заполнен,
+  // они возвращают undefined. На первом рендере ref пуст, а повторного рендера
+  // при статичных пропсах нет — поэтому анимации никогда не запускались и
+  // персонаж стоял в bind-pose. Один принудительный рендер после монтирования
+  // отдаёт реальные AnimationAction.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // нормализуем масштаб/позицию: ставим на пол, высота ~2 юнита
   const fit = useMemo(() => {
@@ -169,10 +178,10 @@ function Model({
   }, [cloned, instanceUrl]);
 
   const clip = names[0];
-  const action = clip ? actions[clip] : null;
+  const action = mounted && clip ? actions[clip] ?? null : null;
   const victoryName = names.find((n) => n.toLowerCase().includes("victory"));
-  const victoryAction = victoryName ? actions[victoryName] : null;
-  const danceAction = actions[DANCE_CLIP] ?? null;
+  const victoryAction = mounted && victoryName ? actions[victoryName] ?? null : null;
+  const danceAction = mounted ? actions[DANCE_CLIP] ?? null : null;
   const impactRef = useRef(onImpact);
   impactRef.current = onImpact;
   const readyRef = useRef(onKickReady);
@@ -270,6 +279,21 @@ function Model({
     };
   }, [dance, instantDance, danceAction, victoryAction, action, cloned]);
 
+  useFrame(() => {
+    const d = ((window as any).__riderDebug ??= {});
+    const box = new THREE.Box3().setFromObject(cloned);
+    const roots = cloned.children.map((ch) => `${ch.name}:${ch.position.toArray().map((v)=>+v.toFixed(2))}:${ch.scale.toArray().map((v)=>+v.toFixed(2))}`);
+    d[`${instance}_state`] = {
+      danceRunning: danceAction ? [+danceAction.time.toFixed(2), danceAction.isRunning(), danceAction.getEffectiveWeight()] : null,
+      actionRunning: action ? [+action.time.toFixed(2), action.isRunning(), action.getEffectiveWeight()] : null,
+      box: [box.min.toArray().map((v)=>+v.toFixed(2)), box.max.toArray().map((v)=>+v.toFixed(2))],
+      roots,
+      rest: (() => { let h: any = null; cloned.traverse((n) => { if (!h && /hips$/i.test(n.name)) h = n; }); if (!h) return null; const before = h.position.toArray().map((v: number)=>+v.toFixed(3)); const sm: any = (() => { let m: any = null; cloned.traverse((n: any) => { if (!m && n.isSkinnedMesh) m = n; }); return m; })(); const idx = sm ? sm.skeleton.bones.indexOf(h) : -1; const inv = idx >= 0 ? sm.skeleton.boneInverses[idx] : null; const restPos = inv ? new THREE.Vector3().setFromMatrixPosition(new THREE.Matrix4().copy(inv).invert()).toArray().map((v: number)=>+v.toFixed(3)) : null; return { live: before, restWorldFromInverse: restPos, geomBox: sm ? [sm.geometry.boundingBox?.min.toArray().map((v: number)=>+v.toFixed(3)), sm.geometry.boundingBox?.max.toArray().map((v: number)=>+v.toFixed(3))] : null, bindMatrixScale: sm ? new THREE.Vector3().setFromMatrixScale(sm.bindMatrix).toArray().map((v: number)=>+v.toFixed(3)) : null }; })(),
+      chain: (() => { let h: THREE.Object3D | null = null; cloned.traverse((n) => { if (!h && /hips$/i.test(n.name)) h = n; }); const r: string[] = []; let c: THREE.Object3D | null = h; while (c) { r.push(`${c.name || c.type} p=${c.position.toArray().map((v)=>+v.toFixed(2))} s=${c.scale.toArray().map((v)=>+v.toFixed(3))}`); c = c.parent; } return r; })(),
+      bones: (() => { const r: string[] = []; cloned.traverse((n) => { if (/hips$|head$|spine$/i.test(n.name) && r.length < 6) { const w = new THREE.Vector3(); n.getWorldPosition(w); const sc = new THREE.Vector3(); n.getWorldScale(sc); r.push(`${n.name} p=${w.toArray().map((v)=>+v.toFixed(2))} s=${sc.toArray().map((v)=>+v.toFixed(3))}`); } }); return r; })(),
+      meshes: (() => { const r: string[] = []; cloned.traverse((n) => { const m = n as THREE.SkinnedMesh; if ((m as any).isMesh) { const mat = m.material as THREE.MeshStandardMaterial; r.push(`${n.name} vis=${m.visible} op=${mat?.opacity} tr=${mat?.transparent} frust=${m.frustumCulled} bones=${(m as any).isSkinnedMesh ? m.skeleton?.bones?.length : "-"}`); } }); return r; })(),
+    };
+  });
   useFrame(() => {
     if (!action || !kickToken || action.paused || victory) return;
     const dur = action.getClip().duration;
