@@ -32,14 +32,15 @@ export type HuntConfig = {
 
 const KEY = "hh.hunt.config.v1";
 
-/** Ближайшая суббота 20:00 по местному времени — дефолт старта. */
+/**
+ * Дефолт старта: 30 августа 2026, 20:00 по Москве (UTC+3).
+ * Мок — потом придёт с бекенда. Дата задана в UTC, чтобы таймер был одинаковым
+ * в любом часовом поясе.
+ */
 function defaultStartsAt(): string {
-  const d = new Date();
-  d.setHours(20, 0, 0, 0);
-  const shift = (6 - d.getDay() + 7) % 7;
-  d.setDate(d.getDate() + (shift === 0 && d.getTime() < Date.now() ? 7 : shift));
-  return d.toISOString();
+  return new Date("2026-08-30T17:00:00.000Z").toISOString();
 }
+
 
 export function defaultHuntConfig(): HuntConfig {
   return {
