@@ -149,9 +149,16 @@ export async function drawHunt(huntId: string, force = false) {
   const order = [...prizes].sort((a, b) => b.place - a.place);
 
   for (const prize of order) {
-    let winnerId: string | null = prize.forcedWinnerId ?? null;
+    let winnerId: string | null = null;
 
-    if (!winnerId) {
+    if (prize.forcedWinnerId) {
+      // Гарантированный победитель: в раунде участвует ровно одна его капсула,
+      // все остальные исключены. Сжигаем одну реальную капсулу у него.
+      winnerId = prize.forcedWinnerId;
+      const left = capsules.get(winnerId) ?? 0;
+      if (left > 0) capsules.set(winnerId, left - 1);
+    } else {
+      // Честный жребий по оставшимся капсулам.
       const pool = [...capsules.entries()].filter(([, c]) => c > 0);
       const total = pool.reduce((s, [, c]) => s + c, 0);
       if (total > 0) {
@@ -166,11 +173,6 @@ export async function drawHunt(huntId: string, force = false) {
         }
         if (!winnerId) winnerId = pool[pool.length - 1]![0];
       }
-    }
-
-    if (winnerId) {
-      const left = capsules.get(winnerId);
-      if (left !== undefined) capsules.set(winnerId, Math.max(0, left - 1));
     }
 
     await db.update(huntPrizes).set({ winnerUserId: winnerId }).where(eq(huntPrizes.id, prize.id));
