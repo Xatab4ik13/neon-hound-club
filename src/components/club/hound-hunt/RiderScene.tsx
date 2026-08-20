@@ -26,6 +26,8 @@ type Props = {
   dance?: boolean;
   /** Масштаб модели внутри канваса. */
   modelScale?: number;
+  /** Постоянный экземпляр модели для одновременных canvas. */
+  instance?: "hero" | "action";
   /** Сообщает задержку от запуска взмаха до контакта ноги. */
   onKickReady?: (impactDelay: number, cycleMs: number) => void;
   /** Вызывается в момент контакта ноги (≈60% клипа). */
@@ -101,6 +103,7 @@ function Model({
   victory,
   dance,
   modelScale = 1,
+  instance = "action",
   onKickReady,
   onImpact,
 }: {
@@ -110,13 +113,16 @@ function Model({
   victory?: boolean;
   dance?: boolean;
   modelScale?: number;
+  instance?: "hero" | "action";
   onKickReady?: (impactDelay: number, cycleMs: number) => void;
   onImpact?: (cycle: number) => void;
 }) {
   const group = useRef<THREE.Group>(null);
-  // У каждого canvas свой разбор GLB. SkeletonUtils.clone ломает skin/bind matrices
-  // именно у этой Meshy-модели и оставляет видимый canvas без геометрии.
-  const instanceUrl = `${MODEL_URL}?instance=${mode}`;
+  // У Meshy-модели ломаются bind matrices после SkeletonUtils.clone,
+  // поэтому двум одновременно видимым canvas нужны независимые сцены.
+  // URL постоянен для всего срока жизни canvas и НЕ зависит от mode:
+  // idle → lunge теперь переключает только action, без исчезновения модели.
+  const instanceUrl = instance === "hero" ? MODEL_URL : `${MODEL_URL}?instance=action`;
   const { scene: cloned, animations } = useGLTF(instanceUrl);
   const { animations: victoryAnims } = useGLTF(VICTORY_URL);
   const { animations: danceAnims } = useGLTF(DANCE_URL);
@@ -137,10 +143,29 @@ function Model({
     }
     return base;
   }, [danceAnims]);
-  const allClips = useMemo(
-    () => [...animations, ...victoryAnims, ...danceClips],
-    [animations, victoryAnims, danceClips],
-  );
+  const allClips = useMemo(() => {
+    // Meshy записывает перемещение всего тела в Hips.position. Оно полезно
+    // внутри DCC, но в приложении уводит персонажа из камеры. Оставляем
+    // вертикальную работу корпуса, фиксируем только X/Z на первом кадре.
+    const lockRootMotion = (source: THREE.AnimationClip) => {
+      const clip = source.clone();
+      clip.tracks = clip.tracks.map((track) => {
+        if (!(track instanceof THREE.VectorKeyframeTrack) || !/(^|\.)hips\.position$/i.test(track.name)) {
+          return track;
+        }
+        const values = Array.from(track.values);
+        const x = values[0] ?? 0;
+        const z = values[2] ?? 0;
+        for (let i = 0; i < values.length; i += 3) {
+          values[i] = x;
+          values[i + 2] = z;
+        }
+        return new THREE.VectorKeyframeTrack(track.name, Array.from(track.times), values);
+      });
+      return clip;
+    };
+    return [...animations, ...victoryAnims, ...danceClips].map(lockRootMotion);
+  }, [animations, victoryAnims, danceClips]);
 
 
   // Перекраска в фирменный розовый + подтяжка резкости/контраста материалов.
@@ -348,6 +373,7 @@ export default function RiderScene({
   victory,
   dance,
   modelScale,
+  instance,
   onKickReady,
   onImpact,
 }: Props) {
@@ -377,6 +403,7 @@ export default function RiderScene({
             victory={victory}
             dance={dance}
             modelScale={modelScale}
+            instance={instance}
             onKickReady={onKickReady}
             onImpact={onImpact}
           />
@@ -387,5 +414,6 @@ export default function RiderScene({
 }
 
 useGLTF.preload(MODEL_URL);
+useGLTF.preload(`${MODEL_URL}?instance=action`);
 useGLTF.preload(VICTORY_URL);
 useGLTF.preload(DANCE_URL);

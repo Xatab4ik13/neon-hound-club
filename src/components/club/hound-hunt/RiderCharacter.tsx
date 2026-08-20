@@ -1,11 +1,10 @@
 // Ленивая обёртка над 3D-сценой персонажа: three/fiber грузится только
 // на экране HOUND HUNT, а не в основном бандле.
 
-import { Suspense, lazy } from "react";
+import { Suspense } from "react";
+import RiderScene from "./RiderScene";
 
 export type RiderMode = "idle" | "watch" | "lunge" | "chew";
-
-const RiderScene = lazy(() => import("./RiderScene"));
 
 type Props = {
   mode: RiderMode;
@@ -18,6 +17,8 @@ type Props = {
   dance?: boolean;
   /** Масштаб модели внутри канваса, без увеличения и обрезки самого canvas. */
   modelScale?: number;
+  /** Постоянный экземпляр GLB: не должен меняться вместе с режимом анимации. */
+  instance?: "hero" | "action";
   onKickReady?: (impactDelay: number, cycleMs: number) => void;
   onImpact?: (cycle: number) => void;
 };

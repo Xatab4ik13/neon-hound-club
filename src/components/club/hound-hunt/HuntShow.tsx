@@ -893,6 +893,7 @@ export function HoundHuntPage() {
           >
             <RiderCharacter
               mode={dogMode}
+              instance="action"
               lookAt={look}
               kickToken={kickToken}
               victory={settled}
