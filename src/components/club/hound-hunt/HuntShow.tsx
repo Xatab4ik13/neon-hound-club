@@ -176,6 +176,10 @@ export function HoundHuntPage({ mode = "live" }: { mode?: HuntShowMode }) {
   const pendingRoundRef = useRef<{ idx: number; entries: HuntEntry[] } | null>(null);
   const [phase, setPhase] = useState<Phase>("intro");
   const [winners, setWinners] = useState<{ prizeId: string; entry: HuntEntry }[]>([]);
+  /** Уже разыгранные призы — чтобы честный жребий не отдал два приза одному. */
+  const winnersRef = useRef<{ prizeId: string; entry: HuntEntry }[]>([]);
+  winnersRef.current = winners;
+
   const [current, setCurrent] = useState<HuntEntry | null>(null);
   const [look, setLook] = useState({ x: 0, y: 0 });
   /** Счётчик ударов для вспышки/тряски арены — растёт на каждый импакт. */
@@ -487,20 +491,38 @@ export function HoundHuntPage({ mode = "live" }: { mode?: HuntShowMode }) {
   }, []);
 
   const pickWinner = useCallback((entries: HuntEntry[], roundIdx = 0) => {
-    // Админка может заранее назначить победителя раунда — тогда жребий не нужен.
-    const forced = prizesRef.current[roundIdx]?.forcedWinnerId;
+    // МИКС: часть призов может быть назначена руками в админке, остальные —
+    // честный жребий по весам билетов. Назначенный на другой приз участник в
+    // честных раундах не участвует, и уже победивший второй приз не забирает —
+    // иначе назначение одного приза «съедало» бы остальные.
+    const list = prizesRef.current;
+    const forced = list[roundIdx]?.forcedWinnerId;
     if (forced) {
       const hit = entries.find((e) => e.id === forced);
       if (hit) return hit;
     }
-    const total = entries.reduce((s, e) => s + e.slots, 0);
+
+    const reserved = new Set(
+      list
+        .filter((_, i) => i !== roundIdx)
+        .map((p) => p.forcedWinnerId)
+        .filter((id): id is string => Boolean(id)),
+    );
+    const won = new Set(winnersRef.current.map((w) => w.entry.id));
+
+    let field = entries.filter((e) => !reserved.has(e.id) && !won.has(e.id));
+    if (!field.length) field = entries.filter((e) => !won.has(e.id));
+    if (!field.length) field = entries;
+
+    const total = field.reduce((s, e) => s + e.slots, 0);
     let r = Math.random() * total;
-    for (const e of entries) {
+    for (const e of field) {
       r -= e.slots;
       if (r <= 0) return e;
     }
-    return entries[entries.length - 1];
+    return field[field.length - 1];
   }, []);
+
 
   /* --- взгляд персонажа: следит за капсулами во время отбора --- */
   useEffect(() => {
@@ -567,7 +589,10 @@ export function HoundHuntPage({ mode = "live" }: { mode?: HuntShowMode }) {
         if (finished) return;
         finished = true;
         const survivor = liveRef.current[0] ?? winner;
-        setWinners((w) => [...w, { prizeId: prizesRef.current[idx].id, entry: survivor }]);
+        const row = { prizeId: prizesRef.current[idx].id, entry: survivor };
+        winnersRef.current = [...winnersRef.current, row];
+        setWinners((w) => [...w, row]);
+
         // Победитель раунда теряет ОДНУ капсулу, а не выбывает целиком:
         // было 6 — в следующем раунде участвует 5. Кончились капсулы — вышел.
         const rest = entries
