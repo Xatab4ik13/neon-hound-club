@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 
+import { RiderCharacter } from "./RiderCharacter";
 import { useHuntConfig, prizesInRunOrder } from "./hh-config";
 import { HuntAvatar } from "./HuntAvatar";
 import { KickedAvatar } from "./KickedAvatar";
@@ -209,11 +210,14 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
             выбивает всех, кроме одного.
           </motion.p>
 
+          <div className="mx-auto -mt-4 h-[64svh] w-full max-w-md">
+            <RiderCharacter mode="idle" dance className="h-full w-full" />
+          </div>
         </section>
 
 
         {/* ------------------------------ таймер ------------------------------ */}
-        <Reveal className="relative z-20 mt-8 px-6">
+        <Reveal className="relative z-20 -mt-[24svh] px-6">
           <div
             className="rounded-3xl border border-border/60 bg-card/60 p-5 text-center"
             style={{ boxShadow: `0 0 60px -30px ${TOXIC}` }}
