@@ -227,11 +227,43 @@ function Model({
   const viewportH = useThree((s: { viewport: { height: number } }) => s.viewport.height);
   useEffect(() => {
     if (!group.current) return;
-    const baseOffset = -viewportH * HEADROOM_FRAC;
-    const victoryOffset = victory ? -viewportH * VICTORY_OFFSET_FRAC : 0;
-    group.current.position.y = baseOffset + victoryOffset;
-  }, [viewportH, victory]);
+    group.current.position.y = -viewportH * HEADROOM_FRAC;
+  }, [viewportH]);
+
+  // Корневая кость: по её мировой высоте держим персонажа на одном уровне
+  // во всех фазах — удар, победный танец, финал. Эталон — поза удара.
+  const rootBone = useMemo(() => {
+    let found: THREE.Object3D | null = null;
+    cloned.traverse((o) => {
+      if (found) return;
+      const n = o.name.toLowerCase();
+      if ((o as THREE.Bone).isBone && (n.includes("hips") || n.includes("pelvis"))) found = o;
+    });
+    if (!found) {
+      cloned.traverse((o) => {
+        if (!found && (o as THREE.Bone).isBone) found = o;
+      });
+    }
+    return found as THREE.Object3D | null;
+  }, [cloned]);
+  const baseRootY = useRef<number | null>(null);
+  const tmpVec = useRef(new THREE.Vector3());
+
   useFrame(() => {
+    // 1) держим уровень ног постоянным
+    if (group.current && rootBone) {
+      rootBone.getWorldPosition(tmpVec.current);
+      const worldY = tmpVec.current.y;
+      const floorY = -viewportH * HEADROOM_FRAC;
+      if (!victory) {
+        // Эталон берём из позы удара (без победного смещения).
+        baseRootY.current = worldY - (group.current.position.y - floorY);
+        group.current.position.y = floorY;
+      } else if (baseRootY.current !== null) {
+        group.current.position.y += baseRootY.current - worldY;
+      }
+    }
+
     if (!action || !kickToken || action.paused || victory) return;
     const dur = action.getClip().duration;
     const impactAt = dur * 0.6;
@@ -242,6 +274,7 @@ function Model({
     }
     prevTime.current = t;
   });
+
 
 
 
