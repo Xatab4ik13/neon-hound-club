@@ -34,7 +34,7 @@ import { RiderCharacter, type RiderMode } from "@/components/club/hound-hunt/Rid
 import { KickedAvatar } from "@/components/club/hound-hunt/KickedAvatar";
 import {
   makeEntries,
-  fetchHuntEntries,
+  fetchHuntPool,
   rankColorsOf,
   type HuntEntry,
 
@@ -163,7 +163,7 @@ export function HoundHuntPage({ mode = "live" }: { mode?: HuntShowMode }) {
   }, []);
   useEffect(() => {
     let cancelled = false;
-    void fetchHuntEntries(MOCK_ENTRIES).then((entries) => {
+    void fetchHuntPool(MOCK_ENTRIES).then((entries) => {
       if (!cancelled) setPool(entries);
     });
     return () => {
@@ -768,7 +768,7 @@ export function HoundHuntPage({ mode = "live" }: { mode?: HuntShowMode }) {
   const start = async () => {
     clearTimers();
     // Реплей крутит тот же состав, live — свежий жребий.
-    const fresh = await fetchHuntEntries(MOCK_ENTRIES, Math.floor(Math.random() * 99999));
+    const fresh = await fetchHuntPool(MOCK_ENTRIES, Math.floor(Math.random() * 99999));
     await Promise.all(
       [...new Set(fresh.map((entry) => entry.avatarUrl).filter((src): src is string => Boolean(src)))].map(
         (src) =>
