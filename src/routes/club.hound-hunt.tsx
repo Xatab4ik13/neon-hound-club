@@ -1144,13 +1144,16 @@ function RoundCountdown({ round, onDone }: { round: number; onDone: () => void }
         window.setTimeout(() => {
           setStep(value);
           haptic(value > 0 ? "light" : "success");
+          speakHuntCount(value);
         }, delay),
       );
     };
     haptic("light");
+    speakHuntCount(3);
     tick(2, 850);
     tick(1, 1700);
     tick(0, 2550);
+
     timers.push(
       window.setTimeout(() => {
         if (doneRef.current) return;
