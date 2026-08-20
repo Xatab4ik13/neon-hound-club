@@ -95,7 +95,7 @@ function KickStage({ me }: { me: HuntEntry | null }) {
     <div className="relative h-full w-full overflow-visible">
       {/* Canvas физически на 30% больше, поэтому персонаж крупнее без
           внутреннего масштабирования и никогда не режется границами canvas. */}
-      <div className="absolute left-1/2 top-[calc(50%-90px)] z-20 h-[130%] w-[130%] -translate-x-1/2 -translate-y-1/2">
+      <div className="absolute left-1/2 top-[calc(50%-70px)] z-20 h-[130%] w-[130%] -translate-x-1/2 -translate-y-1/2">
         <RiderCharacter
           mode="lunge"
           instance="action"
@@ -217,7 +217,7 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
             выбивает всех, кроме одного.
           </motion.p>
 
-          <div className="mx-auto -mt-4 h-[64svh] w-full max-w-md scale-110 origin-bottom">
+          <div className="mx-auto -mt-4 h-[64svh] w-full max-w-md">
             <RiderCharacter
               mode="idle"
               instance="hero"

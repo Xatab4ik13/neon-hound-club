@@ -42,6 +42,7 @@ const DANCE_URL = danceAsset.url;
 /** Имя, под которым регистрируется клип танца финального экрана. */
 const DANCE_CLIP = "hh_final_dance";
 const BRAND = { r: 0xf0, g: 0x00, b: 0xc0 };
+const FIT_BY_INSTANCE = new Map<string, { s: number; offset: readonly [number, number, number] }>();
 
 /** Переводит розово-малиновые пиксели текстуры в фирменный #F000C0. */
 function recolorPinkTexture(tex: THREE.Texture): THREE.Texture | null {
@@ -210,14 +211,23 @@ function Model({
 
   // нормализуем масштаб/позицию: ставим на пол, высота ~2 юнита
   const fit = useMemo(() => {
+    const cached = FIT_BY_INSTANCE.get(instanceUrl);
+    if (cached) return cached;
+    cloned.traverse((node) => {
+      const mesh = node as THREE.SkinnedMesh;
+      if (mesh.isSkinnedMesh) mesh.skeleton.pose();
+    });
+    cloned.updateMatrixWorld(true);
     const box = new THREE.Box3().setFromObject(cloned);
     const size = new THREE.Vector3();
     const center = new THREE.Vector3();
     box.getSize(size);
     box.getCenter(center);
     const s = 2 / Math.max(size.y || 1, 0.001);
-    return { s, offset: [-center.x * s, -box.min.y * s, -center.z * s] as const };
-  }, [cloned]);
+    const normalized = { s, offset: [-center.x * s, -box.min.y * s, -center.z * s] as const };
+    FIT_BY_INSTANCE.set(instanceUrl, normalized);
+    return normalized;
+  }, [cloned, instanceUrl]);
 
   const clip = names[0];
   const action = clip ? actions[clip] : null;
@@ -312,7 +322,14 @@ function Model({
     } else {
       danceAction.stop();
     }
-  }, [dance, instantDance, danceAction, victoryAction, action]);
+    return () => {
+      danceAction.stop();
+      cloned.traverse((node) => {
+        const mesh = node as THREE.SkinnedMesh;
+        if (mesh.isSkinnedMesh) mesh.skeleton.pose();
+      });
+    };
+  }, [dance, instantDance, danceAction, victoryAction, action, cloned]);
 
   useFrame(() => {
     if (!action || !kickToken || action.paused || victory) return;
