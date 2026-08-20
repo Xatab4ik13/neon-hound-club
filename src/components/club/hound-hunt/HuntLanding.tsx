@@ -11,7 +11,6 @@ import { HuntAvatar } from "./HuntAvatar";
 import { fetchHuntEntries, rankColorsOf, type HuntEntry } from "./hh-mock";
 import { getTier } from "@/data/hell-pass";
 import { haptic } from "@/hooks/use-haptic";
-import { toast } from "sonner";
 
 /** Ядовитый зелёный охоты — тот же, что в титре WINNER в шоу. */
 const TOXIC = "#B6FF3C";
