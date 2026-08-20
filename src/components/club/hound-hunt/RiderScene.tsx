@@ -249,6 +249,7 @@ export default function RiderScene({
   lookAt = { x: 0, y: 0 },
   className,
   kickToken,
+  victory,
   onKickReady,
   onImpact,
 }: Props) {
@@ -275,9 +276,15 @@ export default function RiderScene({
             mode={mode}
             lookAt={lookAt}
             kickToken={kickToken}
+            victory={victory}
             onKickReady={onKickReady}
             onImpact={onImpact}
           />
+        </Suspense>
+      </Canvas>
+    </div>
+  );
+
         </Suspense>
       </Canvas>
     </div>
