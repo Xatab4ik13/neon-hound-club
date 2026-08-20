@@ -23,14 +23,7 @@ import {
 
 import {
   isHuntMuted,
-  playHuntCountBeep,
   playHuntImpact,
-  playHuntRoundGo,
-  playHuntWin,
-  setHuntMuted,
-  setHuntTension,
-  startHuntMusic,
-  stopHuntMusic,
 } from "@/lib/hunt-audio";
 import { RiderCharacter, type RiderMode } from "@/components/club/hound-hunt/RiderCharacter";
 import { EmberField } from "@/components/club/hound-hunt/EmberField";
@@ -154,7 +147,7 @@ function suspenseMs(remaining: number) {
 /* ------------------------------ страница ------------------------------ */
 
 export function HoundHuntPage() {
-  const [speed, setSpeed] = useState<Speed>(1);
+  const [speed, setSpeed] = useState<Speed>(5);
   const speedRef = useRef<Speed>(speed);
   speedRef.current = speed;
   const dur = useCallback((base: number) => Math.max(220, base / speedRef.current), []);
@@ -374,7 +367,6 @@ export function HoundHuntPage() {
             settledRef.current = true;
             setSettled(true);
             haptic("success");
-            playHuntWin();
             // В финале в кадре должна остаться РОВНО одна аватарка победителя:
             // все остальные слоты (в т.ч. его же копии по кругу) убираем.
             const winIdx = Math.round(target - winStopOffset());
@@ -564,14 +556,13 @@ export function HoundHuntPage() {
           if (idx + 1 < HUNT_PRIZES.length) {
             // Между раундами: барабан стоит, музыка выключена, идёт отсчёт.
             stopReel();
-            stopHuntMusic(0.5);
             pendingRoundRef.current = { idx: idx + 1, entries: rest };
             setPhase("countdown");
           } else {
             stopReel();
             setPhase("podium");
           }
-        }, dur(BASE.reveal));
+        }, BASE.reveal);
       };
 
 
@@ -685,7 +676,6 @@ export function HoundHuntPage() {
       setGhosts([{ key, entry: kicked }]);
       playHuntImpact(aliveRef.current <= 4 ? 1 : 0.85);
       // Чем меньше осталось — тем плотнее музыка.
-      setHuntTension(1 - Math.min(1, (aliveRef.current - 1) / 18));
       later(() => setGhosts((g) => g.filter((x) => x.key !== key)), 2000);
       haptic("light");
       if (aliveRef.current <= 1) {
@@ -726,8 +716,6 @@ export function HoundHuntPage() {
   const start = async () => {
     clearTimers();
     // Музыку можно стартовать только из жеста пользователя — это он и есть.
-    setHuntTension(0);
-    startHuntMusic();
     const fresh = await fetchHuntEntries(MOCK_ENTRIES, Math.floor(Math.random() * 99999));
     await Promise.all(
       [...new Set(fresh.map((entry) => entry.avatarUrl).filter((src): src is string => Boolean(src)))].map(
@@ -784,9 +772,6 @@ export function HoundHuntPage() {
     [pool, winners],
   );
 
-  // Кнопка звука: музыка тихая, но пусть юзер её глушит одним тапом.
-  const [audioMuted, setAudioMuted] = useState(isHuntMuted());
-  useEffect(() => () => stopHuntMusic(0.4), []);
 
   // Тестовый пульт скорости показываем только по ?dev=1.
   const devPanel = useMemo(
@@ -798,20 +783,6 @@ export function HoundHuntPage() {
     <div className="fixed inset-0 z-40 overflow-hidden overscroll-none touch-pan-y bg-background text-foreground select-none">
       {/* Никаких слоёв фона: только мягкий градиент-«тень» за персонажем,
           чтобы силуэт не висел в пустоте. */}
-      <button
-        type="button"
-        aria-label={audioMuted ? "Включить звук" : "Выключить звук"}
-        onClick={() => {
-          const next = !audioMuted;
-          setAudioMuted(next);
-          setHuntMuted(next);
-        }}
-        className="absolute right-3 z-50 grid h-9 w-9 place-items-center rounded-full border border-border/50 bg-card/50 text-muted-foreground backdrop-blur"
-        style={{ top: "calc(0.6rem + env(safe-area-inset-top))" }}
-      >
-        {audioMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-      </button>
-
       <div
         className="pointer-events-none absolute left-1/2 top-[46%] z-0 -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl"
         style={{
@@ -894,8 +865,6 @@ export function HoundHuntPage() {
                 const next = pendingRoundRef.current;
                 pendingRoundRef.current = null;
                 if (!next) return;
-                startHuntMusic();
-                setHuntTension(0);
                 setCaseIdx(next.idx);
                 runCase(next.idx, next.entries);
               }}
@@ -1165,13 +1134,10 @@ function RoundCountdown({ round, onDone }: { round: number; onDone: () => void }
       timers.push(
         window.setTimeout(() => {
           setStep(value);
-          if (value > 0) playHuntCountBeep(value);
-          else playHuntRoundGo();
           haptic(value > 0 ? "light" : "success");
         }, delay),
       );
     };
-    playHuntCountBeep(3);
     haptic("light");
     tick(2, 850);
     tick(1, 1700);
