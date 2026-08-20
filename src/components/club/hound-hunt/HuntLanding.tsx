@@ -11,27 +11,14 @@ import { HuntAvatar } from "./HuntAvatar";
 import { fetchHuntEntries, type HuntEntry } from "./hh-mock";
 import { getTier } from "@/data/hell-pass";
 import { haptic } from "@/hooks/use-haptic";
+import { useViewer } from "@/hooks/use-viewer";
+import { useMyProfile } from "@/lib/garage-api";
+import { useHuntPhase } from "./hh-phase";
+import { useMyBet } from "./hh-bets";
+import { toast } from "sonner";
 
 /** Ядовитый зелёный охоты — тот же, что в титре WINNER в шоу. */
 const TOXIC = "#B6FF3C";
-
-/** Сколько шоу висит после старта, прежде чем считаем охоту завершённой. */
-const SHOW_WINDOW_MS = 30 * 60 * 1000;
-
-type Stage = "soon" | "live" | "finished";
-
-function useStage(startsAt: string): { stage: Stage; ms: number } {
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(id);
-  }, []);
-  const target = new Date(startsAt).getTime();
-  if (Number.isNaN(target)) return { stage: "soon", ms: 0 };
-  if (now < target) return { stage: "soon", ms: target - now };
-  if (now < target + SHOW_WINDOW_MS) return { stage: "live", ms: target + SHOW_WINDOW_MS - now };
-  return { stage: "finished", ms: now - target };
-}
 
 function split(ms: number) {
   const t = Math.floor(Math.max(0, ms) / 1000);
@@ -114,8 +101,13 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
   const { cfg } = useHuntConfig();
   const prizes = useMemo(() => prizesInRunOrder(cfg), [cfg]);
   
-  const { stage, ms } = useStage(cfg.startsAt);
-  const parts = split(ms);
+  const { phase } = useHuntPhase(cfg.startsAt);
+  const parts = split(msUntilStart(cfg.startsAt, Date.now()));
+
+  // Кто ставит: реальный юзер, его аватарка и ник, а не мок из базы.
+  const { isAuthed, tier, tickets: balance } = useViewer();
+  const profileQ = useMyProfile(isAuthed);
+  const isPlatinum = tier === "platinum";
 
   const [entries, setEntries] = useState<HuntEntry[]>([]);
   useEffect(() => {
@@ -128,10 +120,31 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
     };
   }, []);
 
-  const me = entries[0] ?? null;
+  const me: HuntEntry | null = useMemo(() => {
+    const nick = profileQ.data?.nick ?? null;
+    if (!nick) return null;
+    return {
+      id: profileQ.data?.userId ?? "me",
+      nick,
+      initials: nick.slice(0, 2).toUpperCase(),
+      avatarUrl: profileQ.data?.avatarUrl ?? undefined,
+      city: profileQ.data?.city ?? "",
+      tickets: 0,
+      slots: 0,
+    } as HuntEntry;
+  }, [profileQ.data]);
 
-  const [tickets, setTickets] = useState(() => cfg.ticketStep * 2);
+  const { bet, placeBet } = useMyBet(cfg.startsAt, cfg.ticketStep);
+  const [tickets, setTickets] = useState(() => cfg.ticketStep);
   const capsules = Math.max(0, Math.floor(tickets / cfg.ticketStep));
+  const canBet = phase === "betting" && isPlatinum && capsules > 0 && balance >= tickets;
+
+  const submitBet = async () => {
+    if (!canBet) return;
+    haptic("success");
+    await placeBet(tickets);
+    toast.success(`В барабане ${capsules + bet.capsules} ${capsules + bet.capsules === 1 ? "капсула" : "капсул"}`);
+  };
 
   const startLabel = `${new Date(cfg.startsAt).toLocaleString("ru-RU", {
     day: "numeric",
