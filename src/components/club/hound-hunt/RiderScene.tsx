@@ -152,6 +152,8 @@ function Model({
 
   const clip = names[0];
   const action = clip ? actions[clip] : null;
+  const victoryName = names.find((n) => n.toLowerCase().includes("victory"));
+  const victoryAction = victoryName ? actions[victoryName] : null;
   const impactRef = useRef(onImpact);
   impactRef.current = onImpact;
   const readyRef = useRef(onKickReady);
@@ -176,7 +178,7 @@ function Model({
   }, [action]);
 
   useEffect(() => {
-    if (!action || !kickToken) return;
+    if (!action || !kickToken || victory) return;
     kickCycle.current = kickToken;
     firedCycle.current = -1;
     prevTime.current = 0;
@@ -184,10 +186,38 @@ function Model({
     action.timeScale = 1;
     action.paused = false;
     action.play();
-  }, [action, kickToken]);
+  }, [action, kickToken, victory]);
+
+  // Победа: кроссфейд из текущей позы удара в танец. Без резких скачков —
+  // удар замораживается на своём кадре и плавно уступает вес танцу.
+  useEffect(() => {
+    if (!victoryAction) return;
+    if (victory) {
+      if (action) {
+        action.paused = false;
+        action.timeScale = 0;
+        action.fadeOut(0.6);
+      }
+      victoryAction.enabled = true;
+      victoryAction.clampWhenFinished = false;
+      victoryAction.setLoop(THREE.LoopRepeat, Infinity);
+      victoryAction.timeScale = 1;
+      victoryAction.reset();
+      victoryAction.setEffectiveWeight(1);
+      victoryAction.fadeIn(0.6).play();
+    } else {
+      victoryAction.fadeOut(0.35);
+      if (action) {
+        action.timeScale = 1;
+        action.reset();
+        action.paused = true;
+        action.fadeIn(0.35).play();
+      }
+    }
+  }, [victory, victoryAction, action]);
 
   useFrame(() => {
-    if (!action || !kickToken || action.paused) return;
+    if (!action || !kickToken || action.paused || victory) return;
     const dur = action.getClip().duration;
     const impactAt = dur * 0.6;
     const t = action.time;
@@ -197,6 +227,7 @@ function Model({
     }
     prevTime.current = t;
   });
+
 
 
   const yaw = Math.max(-1, Math.min(1, lookAt.x)) * 0.28;
