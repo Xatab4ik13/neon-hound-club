@@ -1115,20 +1115,6 @@ function ReelStage({
                   rotate: { duration: 26, repeat: Infinity, ease: "linear" },
                 }}
               />
-              <motion.div
-                key="win-halo"
-                className="pointer-events-none absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2 rounded-full blur-2xl"
-                style={{
-                  width: CHIP_W * 3.2,
-                  height: CHIP_W * 3.2,
-                  background:
-                    "radial-gradient(circle, rgba(182,255,60,0.34), color-mix(in oklab, var(--primary) 26%, transparent) 55%, transparent 72%)",
-                }}
-                initial={{ opacity: 0, scale: 0.6 }}
-                animate={{ opacity: [0.75, 1, 0.75], scale: [0.98, 1.06, 0.98] }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
-              />
               {[0, 0.35].map((d) => (
                 <motion.div
                   key={`win-wave-${d}`}
