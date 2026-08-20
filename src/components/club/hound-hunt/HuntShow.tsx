@@ -589,7 +589,10 @@ export function HoundHuntPage({ mode = "live" }: { mode?: HuntShowMode }) {
         if (finished) return;
         finished = true;
         const survivor = liveRef.current[0] ?? winner;
-        setWinners((w) => [...w, { prizeId: prizesRef.current[idx].id, entry: survivor }]);
+        const row = { prizeId: prizesRef.current[idx].id, entry: survivor };
+        winnersRef.current = [...winnersRef.current, row];
+        setWinners((w) => [...w, row]);
+
         // Победитель раунда теряет ОДНУ капсулу, а не выбывает целиком:
         // было 6 — в следующем раунде участвует 5. Кончились капсулы — вышел.
         const rest = entries
