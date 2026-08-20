@@ -25,7 +25,9 @@ import {
   preloadHuntSamples,
   playHuntWin,
   speakHuntCount,
+  HUNT_WIN_MS,
 } from "@/lib/hunt-audio";
+
 import { RiderCharacter, type RiderMode } from "@/components/club/hound-hunt/RiderCharacter";
 import { EmberField } from "@/components/club/hound-hunt/EmberField";
 import { HuntAvatar } from "@/components/club/hound-hunt/HuntAvatar";
