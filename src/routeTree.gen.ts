@@ -16,7 +16,6 @@ import { Route as LogosRouteImport } from './routes/logos'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LikeLabRouteImport } from './routes/like-lab'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
-import { Route as DevRiderRouteImport } from './routes/dev-rider'
 import { Route as ClubRouteImport } from './routes/club'
 import { Route as CartRouteImport } from './routes/cart'
 import { Route as BloggerRouteImport } from './routes/blogger'
@@ -139,11 +138,6 @@ const LikeLabRoute = LikeLabRouteImport.update({
 const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
   id: '/forgot-password',
   path: '/forgot-password',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DevRiderRoute = DevRiderRouteImport.update({
-  id: '/dev-rider',
-  path: '/dev-rider',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ClubRoute = ClubRouteImport.update({
@@ -594,7 +588,6 @@ export interface FileRoutesByFullPath {
   '/blogger': typeof BloggerRouteWithChildren
   '/cart': typeof CartRoute
   '/club': typeof ClubRouteWithChildren
-  '/dev-rider': typeof DevRiderRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/like-lab': typeof LikeLabRoute
   '/login': typeof LoginRoute
@@ -689,7 +682,6 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/cart': typeof CartRoute
-  '/dev-rider': typeof DevRiderRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/like-lab': typeof LikeLabRoute
   '/login': typeof LoginRoute
@@ -788,7 +780,6 @@ export interface FileRoutesById {
   '/blogger': typeof BloggerRouteWithChildren
   '/cart': typeof CartRoute
   '/club': typeof ClubRouteWithChildren
-  '/dev-rider': typeof DevRiderRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/like-lab': typeof LikeLabRoute
   '/login': typeof LoginRoute
@@ -888,7 +879,6 @@ export interface FileRouteTypes {
     | '/blogger'
     | '/cart'
     | '/club'
-    | '/dev-rider'
     | '/forgot-password'
     | '/like-lab'
     | '/login'
@@ -983,7 +973,6 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/cart'
-    | '/dev-rider'
     | '/forgot-password'
     | '/like-lab'
     | '/login'
@@ -1081,7 +1070,6 @@ export interface FileRouteTypes {
     | '/blogger'
     | '/cart'
     | '/club'
-    | '/dev-rider'
     | '/forgot-password'
     | '/like-lab'
     | '/login'
@@ -1180,7 +1168,6 @@ export interface RootRouteChildren {
   BloggerRoute: typeof BloggerRouteWithChildren
   CartRoute: typeof CartRoute
   ClubRoute: typeof ClubRouteWithChildren
-  DevRiderRoute: typeof DevRiderRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   LikeLabRoute: typeof LikeLabRoute
   LoginRoute: typeof LoginRoute
@@ -1255,13 +1242,6 @@ declare module '@tanstack/react-router' {
       path: '/forgot-password'
       fullPath: '/forgot-password'
       preLoaderRoute: typeof ForgotPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/dev-rider': {
-      id: '/dev-rider'
-      path: '/dev-rider'
-      fullPath: '/dev-rider'
-      preLoaderRoute: typeof DevRiderRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/club': {
@@ -2047,7 +2027,6 @@ const rootRouteChildren: RootRouteChildren = {
   BloggerRoute: BloggerRouteWithChildren,
   CartRoute: CartRoute,
   ClubRoute: ClubRouteWithChildren,
-  DevRiderRoute: DevRiderRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   LikeLabRoute: LikeLabRoute,
   LoginRoute: LoginRoute,
