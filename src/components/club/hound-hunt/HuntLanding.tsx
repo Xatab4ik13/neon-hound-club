@@ -9,6 +9,7 @@ import { RiderCharacter } from "./RiderCharacter";
 import { useHuntConfig, prizesInRunOrder } from "./hh-config";
 import { HuntAvatar } from "./HuntAvatar";
 import { fetchHuntEntries, rankColorsOf, type HuntEntry } from "./hh-mock";
+import { getTier } from "@/data/hell-pass";
 import { haptic } from "@/hooks/use-haptic";
 import { toast } from "sonner";
 
@@ -149,7 +150,7 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
 
 
         {/* ------------------------------ таймер ------------------------------ */}
-        <Reveal className="px-6">
+        <Reveal className="-mt-16 px-6">
           <div
             className="rounded-3xl border border-border/60 bg-card/60 p-5 text-center"
             style={{ boxShadow: `0 0 60px -30px ${TOXIC}` }}
@@ -180,16 +181,13 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
                   ))}
                 </div>
                 <p className="mt-3 text-xs text-muted-foreground">Старт {startLabel}</p>
-                <button
-                  type="button"
-                  onClick={() => {
-                    haptic("light");
-                    toast.success("Напомним перед стартом охоты");
-                  }}
-                  className="mt-4 w-full rounded-2xl border border-border/70 bg-background/40 px-6 py-3 font-display text-sm font-black uppercase tracking-wide transition active:scale-[0.98]"
+                <Link
+                  to="/club/hell-pass"
+                  onClick={() => haptic("light")}
+                  className="mt-4 block w-full rounded-2xl bg-primary px-6 py-3.5 text-center font-display text-base font-black uppercase tracking-wide text-primary-foreground transition active:scale-[0.98]"
                 >
-                  Напомнить
-                </button>
+                  Купить Hell Pass
+                </Link>
               </>
             )}
 
@@ -242,7 +240,9 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
 
         {/* ------------------------------ призы ------------------------------ */}
         <Reveal className="mt-10 px-6">
-          <SectionTitle kicker={`${prizes.length} приза — ${prizes.length} раунда`} title="Что разыгрываем" />
+          <h2 className="font-display text-2xl font-black uppercase leading-none tracking-tight">
+            Что разыгрываем
+          </h2>
           <div className="mt-4 space-y-2.5">
             {[...prizes].reverse().map((p, i) => (
               <div
@@ -256,9 +256,6 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
               >
                 <img src={p.img} alt={p.title} className="size-14 shrink-0 object-contain" />
                 <div className="min-w-0 flex-1">
-                  <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                    {p.place === 1 ? "главный приз" : `раунд ${prizes.length - p.place + 1}`}
-                  </p>
                   <p className="truncate font-display text-base font-black uppercase leading-tight">
                     {p.title}
                   </p>
@@ -310,7 +307,9 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
 
         {/* ------------------------- капсулы = шансы ------------------------- */}
         <Reveal className="mt-10 px-6">
-          <SectionTitle kicker="считаем шансы" title="Билеты = капсулы" />
+          <h2 className="font-display text-2xl font-black uppercase leading-none tracking-tight">
+            Билеты — капсулы
+          </h2>
           <div className="mt-4 rounded-3xl border border-border/60 bg-card/50 p-5">
             <div className="flex items-baseline justify-between">
               <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
@@ -335,21 +334,20 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
                 ? `Нужно минимум ${cfg.ticketStep} билетов, чтобы попасть в барабан.`
                 : `${capsules} ${capsules === 1 ? "капсула" : "капсулы"} с твоей аватаркой крутится в барабане.`}
             </p>
-            <div className="mt-4 flex flex-wrap gap-2">
-              {Array.from({ length: Math.min(capsules, 10) }, (_, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ scale: 0.6, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ delay: i * 0.04 }}
-                  className="size-10 rounded-full"
-                  style={{
-                    background: `linear-gradient(160deg, ${TOXIC}, color-mix(in oklab, var(--primary) 70%, transparent))`,
-                    boxShadow: `0 0 18px -6px ${TOXIC}`,
-                  }}
-                />
-              ))}
-            </div>
+            {me && (
+              <div className="mt-4 flex flex-wrap gap-2">
+                {Array.from({ length: Math.min(capsules, 10) }, (_, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ scale: 0.6, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ delay: i * 0.04 }}
+                  >
+                    <HuntAvatar entry={me} hideNick scale={0.32} />
+                  </motion.div>
+                ))}
+              </div>
+            )}
           </div>
         </Reveal>
 
