@@ -604,7 +604,7 @@ export function HoundHuntPage({ mode = "live" }: { mode?: HuntShowMode }) {
         startReel();
       }, dur(BASE.arming));
     },
-    [buildReel, dur, groomTape, halfWindow, later, phaseMv, pickWinner, startReel, stopReel],
+    [buildReel, cfg.ticketStep, dur, groomTape, halfWindow, later, phaseMv, pickWinner, startReel, stopReel],
   );
 
   /**
