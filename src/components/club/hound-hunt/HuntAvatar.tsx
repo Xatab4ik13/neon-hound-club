@@ -77,14 +77,17 @@ export function HuntAvatar({ entry, scale = 1, focused = false, className }: Pro
       </motion.div>
 
       <span
-        className="max-w-full truncate text-center font-mono uppercase tracking-[0.14em]"
+        className="max-w-full truncate text-center font-display font-black uppercase tracking-[0.14em]"
         style={{
           fontSize: Math.max(8, size * 0.105),
-          color: focused ? "var(--foreground)" : "color-mix(in oklab, var(--foreground) 60%, transparent)",
+          color: accent,
+          opacity: focused ? 1 : 0.75,
+          textShadow: focused ? `0 0 12px ${accentSoft}` : undefined,
         }}
       >
         {entry.nick}
       </span>
+
     </div>
   );
 }
