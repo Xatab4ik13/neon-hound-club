@@ -8,8 +8,7 @@ import { motion } from "framer-motion";
 import { RiderCharacter } from "./RiderCharacter";
 import { useHuntConfig, prizesInRunOrder } from "./hh-config";
 import { HuntAvatar } from "./HuntAvatar";
-import { KickedAvatar } from "./KickedAvatar";
-import { fetchHuntEntries, rankColorsOf, type HuntEntry } from "./hh-mock";
+import { fetchHuntEntries, type HuntEntry } from "./hh-mock";
 import { getTier } from "@/data/hell-pass";
 import { haptic } from "@/hooks/use-haptic";
 
