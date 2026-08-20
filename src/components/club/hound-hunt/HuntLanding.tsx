@@ -5,7 +5,6 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 
-import { RiderCharacter } from "./RiderCharacter";
 import { useHuntConfig, prizesInRunOrder } from "./hh-config";
 import { HuntAvatar } from "./HuntAvatar";
 import { KickedAvatar } from "./KickedAvatar";
@@ -87,26 +86,19 @@ function KickStage({ me }: { me: HuntEntry | null }) {
   const [flight, setFlight] = useState<number | null>(null);
 
   useEffect(() => {
-    const id = setInterval(() => setToken((t) => t + 1), 7500);
+    const id = setInterval(() => {
+      setToken((t) => {
+        const next = t + 1;
+        setFlight(next);
+        window.setTimeout(() => setFlight(null), 2000);
+        return next;
+      });
+    }, 7500);
     return () => clearInterval(id);
   }, []);
 
   return (
     <div className="relative h-full w-full overflow-visible">
-      {/* Canvas физически на 30% больше, поэтому персонаж крупнее без
-          внутреннего масштабирования и никогда не режется границами canvas. */}
-      <div className="absolute left-1/2 top-[calc(50%-70px)] z-20 h-[130%] w-[130%] -translate-x-1/2 -translate-y-1/2">
-        <RiderCharacter
-          mode="lunge"
-          instance="action"
-          kickToken={token}
-          onImpact={() => {
-            setFlight(token);
-            window.setTimeout(() => setFlight(null), 2000);
-          }}
-          className="h-full w-full"
-        />
-      </div>
       {me && flight === null && <CenteredCapsule entry={me} />}
       {me && flight !== null && (
         <div className="pointer-events-none absolute left-1/2 top-[calc(50%+3.125rem)] z-30 size-0">
@@ -217,20 +209,11 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
             выбивает всех, кроме одного.
           </motion.p>
 
-          <div className="mx-auto -mt-4 h-[64svh] w-full max-w-md">
-            <RiderCharacter
-              mode="idle"
-              instance="hero"
-              dance
-              instantDance
-              className="h-full w-full"
-            />
-          </div>
         </section>
 
 
         {/* ------------------------------ таймер ------------------------------ */}
-        <Reveal className="relative z-20 -mt-[24svh] px-6">
+        <Reveal className="relative z-20 mt-8 px-6">
           <div
             className="rounded-3xl border border-border/60 bg-card/60 p-5 text-center"
             style={{ boxShadow: `0 0 60px -30px ${TOXIC}` }}
