@@ -2,6 +2,7 @@
 // Позже заменим на реальные заявки (билеты = веса) и призы из админки.
 
 import { apiFetch } from "@/lib/api";
+import { RANKS, type RankId } from "@/data/ranks";
 import { resolveAssetUrl } from "@/lib/asset-url";
 import imgAirpods from "@/assets/spin/airpods.webp";
 import av1 from "@/assets/hunt/av1.jpg";
@@ -29,6 +30,8 @@ export type HuntEntry = {
   /** Фото профиля; пока в моках нет — рисуем инициалы. */
   avatarUrl?: string;
   city: string;
+  /** Ранг клуба — задаёт цвет рамки аватарки (как в профиле). */
+  rankId?: RankId;
   /** Сколько билетов вложил — вес в рулетке и множитель мест. */
   tickets: number;
   /** Кол-во мест в барабане (tickets / порог участия). */
@@ -82,6 +85,7 @@ export function makeEntries(count = 24, seed = 1337): HuntEntry[] {
       initials: initialsOf(nick),
       avatarUrl: MOCK_AVATARS[i % MOCK_AVATARS.length],
       city: CITIES[Math.floor(r() * CITIES.length)],
+      rankId: RANKS[Math.floor(r() * RANKS.length)].id,
       tickets: slots * HUNT_TICKET_STEP,
       slots,
     };
@@ -96,7 +100,13 @@ export function makeEntries(count = 24, seed = 1337): HuntEntry[] {
 export async function fetchHuntEntries(count = 20, seed = 1337): Promise<HuntEntry[]> {
   try {
     const res = await apiFetch<{
-      items: { id: string; nick: string; city: string | null; avatarUrl: string | null }[];
+      items: {
+        id: string;
+        nick: string;
+        city: string | null;
+        avatarUrl: string | null;
+        rankId?: string | null;
+      }[];
     }>("/api/v1/raffles/hunt-demo-entries");
     const items = (res.items ?? []).slice(0, count);
     if (!items.length) return makeEntries(count, seed);
@@ -109,6 +119,7 @@ export async function fetchHuntEntries(count = 20, seed = 1337): Promise<HuntEnt
         initials: initialsOf((u.nick || "RIDER").toUpperCase()),
         avatarUrl: resolveAssetUrl(u.avatarUrl) ?? undefined,
         city: u.city || "",
+        rankId: (RANKS.find((r) => r.id === u.rankId)?.id ?? "rookie") as RankId,
         tickets: slots * HUNT_TICKET_STEP,
         slots,
       };
@@ -123,4 +134,10 @@ export function hueOf(nick: string) {
   let h = 0;
   for (const ch of nick) h = (h * 31 + ch.charCodeAt(0)) % 360;
   return h;
+}
+
+/** Цвета рамки аватарки по рангу участника (как плашка в профиле). */
+export function rankColorsOf(entry: HuntEntry) {
+  const meta = RANKS.find((r) => r.id === entry.rankId) ?? RANKS[0];
+  return { accent: meta.accent, accentSoft: meta.accentSoft };
 }
