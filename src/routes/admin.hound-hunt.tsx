@@ -32,8 +32,11 @@ import {
   saveAdminHunt,
   drawAdminHunt,
   resetAdminHuntResults,
+  fetchAdminPlatinumUsers,
   type HuntApiEntry,
+  type HuntPlatinumUser,
 } from "@/lib/hunt-api";
+
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/hound-hunt")({
