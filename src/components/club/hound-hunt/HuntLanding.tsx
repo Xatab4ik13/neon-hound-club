@@ -390,7 +390,7 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
               <input
                 type="range"
                 min={0}
-                max={cfg.ticketStep * 10}
+                max={1000}
                 step={cfg.ticketStep}
                 value={tickets}
                 onChange={(e) => setTickets(Number(e.target.value))}
@@ -401,9 +401,9 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
                 type="button"
                 onClick={() => {
                   haptic("light");
-                  setTickets((t) => Math.min(cfg.ticketStep * 10, t + cfg.ticketStep));
+                  setTickets((t) => Math.min(1000, t + cfg.ticketStep));
                 }}
-                disabled={tickets >= cfg.ticketStep * 10}
+                disabled={tickets >= 1000}
                 className="size-12 shrink-0 rounded-2xl border border-border/70 bg-background/50 font-display text-2xl font-black leading-none transition active:scale-95 disabled:opacity-35"
                 aria-label={`Плюс ${cfg.ticketStep} билетов`}
               >
