@@ -851,6 +851,46 @@ export function HoundHuntPage() {
         )}
       </AnimatePresence>
 
+      {/* Карточка приза текущего раунда — сверху, в брендовом стиле */}
+      <AnimatePresence>
+        {(phase === "arming" || phase === "drift") && !settled && (
+          <motion.div
+            key={`prize-card-${prize.id}`}
+            initial={{ opacity: 0, y: -12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12, transition: { duration: 0.2 } }}
+            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+            className="pointer-events-none absolute inset-x-0 z-50 flex justify-center px-4"
+            style={{ top: "calc(0.75rem + env(safe-area-inset-top))" }}
+          >
+            <div
+              className="flex items-center gap-3 rounded-2xl border border-primary/40 bg-card/70 px-3 py-2 backdrop-blur-md"
+              style={{
+                boxShadow:
+                  "0 0 0 1px color-mix(in oklab, var(--primary) 18%, transparent), 0 12px 40px -12px color-mix(in oklab, var(--primary) 55%, transparent)",
+              }}
+            >
+              <div className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border/60 bg-background/60">
+                <img src={prize.img} alt="" className="h-9 w-9 object-contain" />
+              </div>
+              <div className="min-w-0 text-left">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-primary">
+                  разыгрывается
+                </p>
+                <p className="truncate font-display text-sm font-black uppercase leading-tight">
+                  {prize.title}
+                </p>
+              </div>
+              <span className="ml-1 shrink-0 rounded-full border border-border/60 bg-background/50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                {prize.sub}
+              </span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+
+
       <div className="relative flex h-full flex-col overflow-hidden pt-[max(0.5rem,env(safe-area-inset-top))] pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
         {/* арена */}
         <div className="relative flex min-h-0 flex-1 flex-col items-center justify-center">
