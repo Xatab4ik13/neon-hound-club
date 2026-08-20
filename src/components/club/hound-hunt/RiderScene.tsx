@@ -35,6 +35,10 @@ const VICTORY_URL = victoryAsset.url;
 const DANCE_URL = danceAsset.url;
 /** Имя, под которым регистрируется клип танца финального экрана. */
 const DANCE_CLIP = "hh_final_dance";
+/** Второй экземпляр того же клипа — им делаем бесшовный кроссфейд конца в начало. */
+const DANCE_CLIP_B = "hh_final_dance_b";
+/** Длительность кроссфейда лупа танца, сек. */
+const DANCE_FADE = 0.5;
 // Доля высоты канваса, добавленная сверху под поднятые руки победной анимации.
 const HEADROOM_FRAC = 6 / 74;
 
