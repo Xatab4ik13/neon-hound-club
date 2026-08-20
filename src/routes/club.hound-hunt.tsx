@@ -22,6 +22,7 @@ import {
 
 import {
   playHuntImpact,
+  playHuntWin,
 } from "@/lib/hunt-audio";
 import { RiderCharacter, type RiderMode } from "@/components/club/hound-hunt/RiderCharacter";
 import { EmberField } from "@/components/club/hound-hunt/EmberField";
@@ -364,6 +365,7 @@ export function HoundHuntPage() {
             syncStrip();
             settledRef.current = true;
             setSettled(true);
+            playHuntWin();
             haptic("success");
             // В финале в кадре должна остаться РОВНО одна аватарка победителя:
             // все остальные слоты (в т.ч. его же копии по кругу) убираем.
@@ -1158,24 +1160,32 @@ function RoundCountdown({ round, onDone }: { round: number; onDone: () => void }
   }, []);
 
   return (
-    <div className="absolute inset-0 z-40 flex flex-col items-center justify-center px-6">
-      <motion.p
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="font-mono text-[11px] uppercase tracking-[0.34em] text-muted-foreground"
+    <div className="pointer-events-none absolute inset-0 z-40">
+      {/* Шапка экрана: подпись раунда не перекрывает персонажа */}
+      <div
+        className="absolute inset-x-0 flex flex-col items-center"
+        style={{ top: "calc(0.75rem + env(safe-area-inset-top))" }}
       >
-        Раунд {round}
-      </motion.p>
-      <motion.p
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.08 }}
-        className="mt-2 font-display text-2xl font-black uppercase tracking-[0.08em] text-foreground"
-      >
-        Следующий раунд
-      </motion.p>
+        <motion.p
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="font-display text-xl font-black uppercase tracking-[0.08em] text-foreground"
+        >
+          Следующий раунд
+        </motion.p>
+        <motion.p
+          initial={{ opacity: 0, y: -6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.08 }}
+          className="mt-1 font-mono text-[11px] uppercase tracking-[0.34em] text-muted-foreground"
+        >
+          Раунд {round}
+        </motion.p>
+      </div>
 
-      <div className="relative mt-6 h-[38svh] w-full">
+      {/* Цифры — прямо на персонаже, по центру экрана */}
+      <div className="absolute inset-0">
+
         <AnimatePresence mode="popLayout">
           <motion.div
             key={step}
