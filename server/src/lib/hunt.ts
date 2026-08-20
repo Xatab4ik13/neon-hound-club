@@ -136,8 +136,14 @@ export async function drawHunt(huntId: string, force = false) {
   const entries = await getHuntEntries(huntId);
   const step = Math.max(1, hunt.ticketStep);
 
-  const taken = new Set<string>();
-  const forced = new Set(prizes.map((p) => p.forcedWinnerId).filter((v): v is string => !!v));
+  // Розыгрыш идёт по капсулам, а не по людям: каждая капсула — один шанс.
+  // Победа сжигает ровно одну капсулу владельца, поэтому один и тот же
+  // человек может взять несколько призов, но с каждым разом его шанс падает.
+  const capsules = new Map<string, number>();
+  for (const e of entries) {
+    const c = capsulesOf(e.tickets, step);
+    if (c > 0) capsules.set(e.userId, c);
+  }
 
   // Порядок вскрытия: сначала младшие места, главный приз последним.
   const order = [...prizes].sort((a, b) => b.place - a.place);
@@ -146,24 +152,26 @@ export async function drawHunt(huntId: string, force = false) {
     let winnerId: string | null = prize.forcedWinnerId ?? null;
 
     if (!winnerId) {
-      const pool = entries.filter(
-        (e) => !taken.has(e.userId) && !forced.has(e.userId) && capsulesOf(e.tickets, step) > 0,
-      );
-      const total = pool.reduce((s, e) => s + capsulesOf(e.tickets, step), 0);
+      const pool = [...capsules.entries()].filter(([, c]) => c > 0);
+      const total = pool.reduce((s, [, c]) => s + c, 0);
       if (total > 0) {
-        let roll = Math.random() * total;
-        for (const e of pool) {
-          roll -= capsulesOf(e.tickets, step);
+        // Равномерный выбор одной капсулы из всех оставшихся.
+        let roll = Math.floor(Math.random() * total) + 1;
+        for (const [userId, c] of pool) {
+          roll -= c;
           if (roll <= 0) {
-            winnerId = e.userId;
+            winnerId = userId;
             break;
           }
         }
-        if (!winnerId) winnerId = pool[pool.length - 1]!.userId;
+        if (!winnerId) winnerId = pool[pool.length - 1]![0];
       }
     }
 
-    if (winnerId) taken.add(winnerId);
+    if (winnerId) {
+      const left = capsules.get(winnerId);
+      if (left !== undefined) capsules.set(winnerId, Math.max(0, left - 1));
+    }
 
     await db.update(huntPrizes).set({ winnerUserId: winnerId }).where(eq(huntPrizes.id, prize.id));
 

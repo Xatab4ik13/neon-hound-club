@@ -492,9 +492,9 @@ export function HoundHuntPage({ mode = "live" }: { mode?: HuntShowMode }) {
 
   const pickWinner = useCallback((entries: HuntEntry[], roundIdx = 0) => {
     // ПРИОРИТЕТ: итог с бекенда (жребий уже прокручен) → назначенный руками
-    // победитель → честный жребий по весам капсул. Назначенный на другой приз
-    // участник в честных раундах не участвует, и уже победивший второй приз не
-    // забирает — иначе назначение одного приза «съедало» бы остальные.
+    // победитель → честный жребий по капсулам. Жребий идёт по капсулам, а не по
+    // людям: победа сжигает одну капсулу владельца, поэтому один человек может
+    // взять несколько призов, но его шанс с каждой победой падает.
     const list = prizesRef.current;
     const decided = list[roundIdx]?.winnerUserId;
     if (decided) {
@@ -507,26 +507,24 @@ export function HoundHuntPage({ mode = "live" }: { mode?: HuntShowMode }) {
       if (hit) return hit;
     }
 
-
-    const reserved = new Set(
-      list
-        .filter((_, i) => i !== roundIdx)
-        .map((p) => p.forcedWinnerId)
-        .filter((id): id is string => Boolean(id)),
-    );
-    const won = new Set(winnersRef.current.map((w) => w.entry.id));
-
-    let field = entries.filter((e) => !reserved.has(e.id) && !won.has(e.id));
-    if (!field.length) field = entries.filter((e) => !won.has(e.id));
-    if (!field.length) field = entries;
-
-    const total = field.reduce((s, e) => s + e.slots, 0);
-    let r = Math.random() * total;
-    for (const e of field) {
-      r -= e.slots;
-      if (r <= 0) return e;
+    // Сколько капсул уже сгорело у каждого в предыдущих раундах.
+    const burned = new Map<string, number>();
+    for (const w of winnersRef.current) {
+      burned.set(w.entry.id, (burned.get(w.entry.id) ?? 0) + 1);
     }
-    return field[field.length - 1];
+
+    const field = entries
+      .map((e) => ({ e, slots: Math.max(0, e.slots - (burned.get(e.id) ?? 0)) }))
+      .filter((x) => x.slots > 0);
+    if (!field.length) return entries[Math.floor(Math.random() * entries.length)];
+
+    const total = field.reduce((s, x) => s + x.slots, 0);
+    let r = Math.floor(Math.random() * total) + 1;
+    for (const x of field) {
+      r -= x.slots;
+      if (r <= 0) return x.e;
+    }
+    return field[field.length - 1].e;
   }, []);
 
 
