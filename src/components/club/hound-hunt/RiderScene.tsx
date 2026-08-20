@@ -226,8 +226,11 @@ function Model({
   // но поднятые руки в победном танце больше не срезаются верхней границей.
   const viewportH = useThree((s: { viewport: { height: number } }) => s.viewport.height);
   useEffect(() => {
-    if (group.current) group.current.position.y = -viewportH * HEADROOM_FRAC;
-  }, [viewportH]);
+    if (!group.current) return;
+    const baseOffset = -viewportH * HEADROOM_FRAC;
+    const victoryOffset = victory ? -viewportH * VICTORY_OFFSET_FRAC : 0;
+    group.current.position.y = baseOffset + victoryOffset;
+  }, [viewportH, victory]);
   useFrame(() => {
     if (!action || !kickToken || action.paused || victory) return;
     const dur = action.getClip().duration;
