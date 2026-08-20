@@ -16,7 +16,7 @@ import { pushSubscriptions } from "../db/schema/push.js";
 import { promoCodes } from "../db/schema/promo.js";
 import { passPurchases, PASS_CONFIG, PASS_DURATION_DAYS, type PassTier } from "../db/schema/pass.js";
 import { users } from "../db/schema/users.js";
-import { getActivePass } from "./pass.js";
+import { getActivePass, TIER_RANK } from "./pass.js";
 import { ticketCredit } from "./tickets.js";
 import { awardXp } from "./xp.js";
 import { generatePromoCode } from "./promo.js";
