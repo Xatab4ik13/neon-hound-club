@@ -13,6 +13,13 @@ import danceAsset from "@/assets/rider-agree.glb.asset.json";
 
 export type RiderMode = "idle" | "watch" | "lunge" | "chew";
 
+/** Кеш нормализации размера — один замер на модель за всю сессию. */
+const FIT_CACHE = new WeakMap<
+  THREE.Object3D,
+  { s: number; offset: readonly [number, number, number] }
+>();
+
+
 type Props = {
   mode: RiderMode;
   /** Куда смотрит: -1..1 по обеим осям. */
@@ -162,16 +169,46 @@ function Model({
   }, [cloned]);
   const { actions, names } = useAnimations(allClips, group);
 
-  // нормализуем масштаб/позицию: ставим на пол, высота ~2 юнита
+  // нормализуем масштаб/позицию: ставим на пол, высота ~2 юнита.
+  // Замер делаем ОДИН раз на модель и в её локальных координатах (без родителя
+  // и без текущей позы) — иначе повторный вход на страницу мерил бы модель
+  // вместе с уже применённым масштабом и размер прыгал бы туда-сюда.
   const fit = useMemo(() => {
+    const cached = FIT_CACHE.get(cloned);
+    if (cached) return cached;
+
+    const parent = cloned.parent;
+    if (parent) parent.remove(cloned);
+    const prevPos = cloned.position.clone();
+    const prevScale = cloned.scale.clone();
+    const prevQuat = cloned.quaternion.clone();
+    cloned.position.set(0, 0, 0);
+    cloned.scale.set(1, 1, 1);
+    cloned.quaternion.identity();
+    cloned.updateMatrix();
+    cloned.updateMatrixWorld(true);
+
     const box = new THREE.Box3().setFromObject(cloned);
     const size = new THREE.Vector3();
     const center = new THREE.Vector3();
     box.getSize(size);
     box.getCenter(center);
     const s = 2 / Math.max(size.y || 1, 0.001);
-    return { s, offset: [-center.x * s, -box.min.y * s, -center.z * s] as const };
+    const value = {
+      s,
+      offset: [-center.x * s, -box.min.y * s, -center.z * s] as const,
+    };
+
+    cloned.position.copy(prevPos);
+    cloned.scale.copy(prevScale);
+    cloned.quaternion.copy(prevQuat);
+    cloned.updateMatrix();
+    if (parent) parent.add(cloned);
+
+    FIT_CACHE.set(cloned, value);
+    return value;
   }, [cloned]);
+
 
   const clip = names[0];
   const action = clip ? actions[clip] : null;
