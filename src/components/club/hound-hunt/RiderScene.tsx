@@ -9,6 +9,7 @@ import { useAnimations, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import riderAsset from "@/assets/rider.glb.asset.json";
 import victoryAsset from "@/assets/rider-victory.glb.asset.json";
+import danceAsset from "@/assets/rider-dance.glb.asset.json";
 
 export type RiderMode = "idle" | "watch" | "lunge" | "chew";
 
@@ -21,6 +22,8 @@ type Props = {
   kickToken?: number;
   /** true = плавный переход в анимацию победы (луп). */
   victory?: boolean;
+  /** true = финальный экран «охота закрыта»: луп танца. */
+  dance?: boolean;
   /** Сообщает задержку от запуска взмаха до контакта ноги. */
   onKickReady?: (impactDelay: number, cycleMs: number) => void;
   /** Вызывается в момент контакта ноги (≈60% клипа). */
@@ -29,6 +32,9 @@ type Props = {
 
 const MODEL_URL = riderAsset.url;
 const VICTORY_URL = victoryAsset.url;
+const DANCE_URL = danceAsset.url;
+/** Имя, под которым регистрируется клип танца финального экрана. */
+const DANCE_CLIP = "hh_final_dance";
 // Доля высоты канваса, добавленная сверху под поднятые руки победной анимации.
 const HEADROOM_FRAC = 6 / 74;
 
@@ -91,6 +97,7 @@ function Model({
   lookAt,
   kickToken,
   victory,
+  dance,
   onKickReady,
   onImpact,
 }: {
@@ -98,16 +105,30 @@ function Model({
   lookAt: { x: number; y: number };
   kickToken?: number;
   victory?: boolean;
+  dance?: boolean;
   onKickReady?: (impactDelay: number, cycleMs: number) => void;
   onImpact?: (cycle: number) => void;
 }) {
   const group = useRef<THREE.Group>(null);
   const { scene, animations } = useGLTF(MODEL_URL);
   const { animations: victoryAnims } = useGLTF(VICTORY_URL);
+  const { animations: danceAnims } = useGLTF(DANCE_URL);
   const cloned = useMemo(() => scene, [scene]);
   // Клипы делят один и тот же риг (Meshy, одинаковые имена костей),
   // поэтому победный танец играется тем же миксером — без подмены модели.
-  const allClips = useMemo(() => [...animations, ...victoryAnims], [animations, victoryAnims]);
+  const danceClips = useMemo(
+    () =>
+      danceAnims.map((c, i) => {
+        const clone = c.clone();
+        clone.name = i === 0 ? DANCE_CLIP : `${DANCE_CLIP}_${i}`;
+        return clone;
+      }),
+    [danceAnims],
+  );
+  const allClips = useMemo(
+    () => [...animations, ...victoryAnims, ...danceClips],
+    [animations, victoryAnims, danceClips],
+  );
 
 
   // Перекраска в фирменный розовый + подтяжка резкости/контраста материалов.
@@ -156,6 +177,7 @@ function Model({
   const action = clip ? actions[clip] : null;
   const victoryName = names.find((n) => n.toLowerCase().includes("victory"));
   const victoryAction = victoryName ? actions[victoryName] : null;
+  const danceAction = actions[DANCE_CLIP] ?? null;
   const impactRef = useRef(onImpact);
   impactRef.current = onImpact;
   const readyRef = useRef(onKickReady);
@@ -218,6 +240,24 @@ function Model({
     }
   }, [victory, victoryAction, action]);
 
+  // Финальный экран: бесконечный танец. Плавно гасим победный клип.
+  useEffect(() => {
+    if (!danceAction) return;
+    if (dance) {
+      victoryAction?.fadeOut(0.5);
+      action?.fadeOut(0.5);
+      danceAction.enabled = true;
+      danceAction.clampWhenFinished = false;
+      danceAction.setLoop(THREE.LoopRepeat, Infinity);
+      danceAction.timeScale = 1;
+      danceAction.reset();
+      danceAction.setEffectiveWeight(1);
+      danceAction.fadeIn(0.5).play();
+    } else {
+      danceAction.fadeOut(0.35);
+    }
+  }, [dance, danceAction, victoryAction, action]);
+
   // Кадр канваса расширен вверх (см. HEADROOM_FRAC), поэтому модель сдвинута
   // вниз ровно на добавленный запас — визуально персонаж стоит и выглядит так же,
   // но поднятые руки в победном танце больше не срезаются верхней границей.
@@ -252,7 +292,7 @@ function Model({
       rootBone.getWorldPosition(tmpVec.current);
       const worldY = tmpVec.current.y;
       const floorY = -viewportH * HEADROOM_FRAC;
-      if (!victory) {
+      if (!victory && !dance) {
         // Эталон берём из позы удара (без победного смещения).
         baseRootY.current = worldY - (group.current.position.y - floorY);
         group.current.position.y = floorY;
@@ -295,6 +335,7 @@ export default function RiderScene({
   className,
   kickToken,
   victory,
+  dance,
   onKickReady,
   onImpact,
 }: Props) {
@@ -322,6 +363,7 @@ export default function RiderScene({
             lookAt={lookAt}
             kickToken={kickToken}
             victory={victory}
+            dance={dance}
             onKickReady={onKickReady}
             onImpact={onImpact}
           />
@@ -333,3 +375,4 @@ export default function RiderScene({
 
 useGLTF.preload(MODEL_URL);
 useGLTF.preload(VICTORY_URL);
+useGLTF.preload(DANCE_URL);

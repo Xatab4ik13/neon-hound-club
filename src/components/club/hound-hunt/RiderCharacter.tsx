@@ -14,6 +14,8 @@ type Props = {
   kickToken?: number;
   /** true = персонаж переходит в танец победы (плавный кроссфейд). */
   victory?: boolean;
+  /** true = финальный экран: луп танца. */
+  dance?: boolean;
   onKickReady?: (impactDelay: number, cycleMs: number) => void;
   onImpact?: (cycle: number) => void;
 };
