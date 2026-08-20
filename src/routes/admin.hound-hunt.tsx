@@ -25,6 +25,7 @@ import {
   type HuntConfigPrize,
 } from "@/components/club/hound-hunt/hh-config";
 import { fetchHuntEntries, type HuntEntry } from "@/components/club/hound-hunt/hh-mock";
+import { resetHuntState } from "@/components/club/hound-hunt/hh-bets";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/hound-hunt")({
@@ -86,6 +87,12 @@ function HoundHuntAdminPage() {
   const removePrize = (id: string) =>
     setCfg((c) => ({ ...c, prizes: c.prizes.filter((p) => p.id !== id) }));
 
+  /** Новая охота: ставки и итоги прошлой обнуляются. */
+  const newHunt = () => {
+    resetHuntState();
+    toast.success("Ставки и итоги прошлой охоты сброшены");
+  };
+
   const save = () => {
     if (!cfg.prizes.length) {
       toast.error("Нужен хотя бы один приз — это один раунд охоты");
@@ -111,6 +118,9 @@ function HoundHuntAdminPage() {
         description="Недельная охота для Hell Pass Platinum. Всё, что здесь настроено, видит лендинг и шоу."
         actions={
           <>
+            <Btn variant="secondary" onClick={newHunt}>
+              Новая охота
+            </Btn>
             <Btn variant="secondary" onClick={reset}>
               Сбросить
             </Btn>
