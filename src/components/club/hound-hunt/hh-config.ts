@@ -74,6 +74,7 @@ export function readHuntConfig(): HuntConfig {
     const base = defaultHuntConfig();
     const prizes = Array.isArray(parsed.prizes) && parsed.prizes.length ? parsed.prizes : base.prizes;
     return {
+      id: parsed.id ?? null,
       startsAt: typeof parsed.startsAt === "string" ? parsed.startsAt : base.startsAt,
       ticketStep: Number(parsed.ticketStep) > 0 ? Number(parsed.ticketStep) : base.ticketStep,
       prizes: prizes.map((p, i) => ({
@@ -83,6 +84,9 @@ export function readHuntConfig(): HuntConfig {
         sub: p.sub ?? "",
         img: p.img || base.prizes[0].img,
         forcedWinnerId: p.forcedWinnerId ?? null,
+        winnerUserId: p.winnerUserId ?? null,
+        winnerNick: p.winnerNick ?? null,
+        ticketsReward: p.ticketsReward ?? 0,
       })),
     };
   } catch {
