@@ -22,6 +22,7 @@ import {
 
 import {
   playHuntImpact,
+  preloadHuntSamples,
   playHuntWin,
   speakHuntCount,
 } from "@/lib/hunt-audio";
@@ -155,6 +156,9 @@ export function HoundHuntPage() {
   const [pool, setPool] = useState<HuntEntry[]>(() => makeEntries(MOCK_ENTRIES));
   // На входе подтягиваем 20 реальных участников из базы (ник + аватарка),
   // чтобы интро показывало живой состав, а не моки.
+  useEffect(() => {
+    preloadHuntSamples();
+  }, []);
   useEffect(() => {
     let cancelled = false;
     void fetchHuntEntries(MOCK_ENTRIES).then((entries) => {

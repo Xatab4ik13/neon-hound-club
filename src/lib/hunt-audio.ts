@@ -462,42 +462,52 @@ export function playHuntRoundGo() {
   src.start(t);
 }
 
-/** Финал: короткий победный стаб-аккорд + панч, без длинного гудения. */
-export function playHuntWin() {
-  const c = ac();
-  if (!c) return;
-  const t = c.currentTime + 0.02;
-  setHuntTension(1);
-  // Стабы/кик/плаки идут через музыкальную шину, а музыка выключена (gain ~0),
-  // поэтому на время победного аккорда открываем шину и потом закрываем обратно.
-  if (musicBus) {
-    musicBus.gain.cancelScheduledValues(t);
-    musicBus.gain.setValueAtTime(0.9, t);
-    musicBus.gain.setValueAtTime(0.9, t + 1.6);
-    musicBus.gain.linearRampToValueAtTime(0.0001, t + 2.2);
+// ===== Готовые mp3-сэмплы (public/sfx): фанфара победы и басовый отсчёт =====
+const SAMPLES = {
+  win: "/sfx/win-fanfare.mp3",
+  three: "/sfx/count-three.mp3",
+  two: "/sfx/count-two.mp3",
+  one: "/sfx/count-one.mp3",
+  go: "/sfx/count-go.mp3",
+} as const;
+type SampleKey = keyof typeof SAMPLES;
+
+const cache = new Map<SampleKey, HTMLAudioElement>();
+
+function sample(key: SampleKey): HTMLAudioElement | null {
+  if (typeof window === "undefined") return null;
+  let el = cache.get(key);
+  if (!el) {
+    el = new Audio(SAMPLES[key]);
+    el.preload = "auto";
+    cache.set(key, el);
   }
-  stab(c, t, ROOT * semi(3), [0, 4, 7, 12], 0.16);
-  stab(c, t + BEAT * 0.5, ROOT * semi(3), [0, 4, 7, 12], 0.1);
-  kick(c, t, 0.3);
-  clap(c, t + BEAT * 0.5, 0.14);
-  [0, 4, 7, 12, 16].forEach((st, i) => pluck(c, t + i * 0.07, ROOT * 4 * semi(st), 0.09));
+  return el;
 }
 
-/** Голосовой отсчёт «three / two / one / go» перед следующим раундом. */
-export function speakHuntCount(step: number) {
-  if (typeof window === "undefined" || muted) return;
-  const synth = window.speechSynthesis;
-  if (!synth) return;
-  const word = step === 3 ? "three" : step === 2 ? "two" : step === 1 ? "one" : "go";
-  try {
-    const u = new SpeechSynthesisUtterance(word);
-    u.lang = "en-US";
-    u.rate = step === 0 ? 1.05 : 0.95;
-    u.pitch = step === 0 ? 1.1 : 0.9;
-    u.volume = 1;
-    synth.speak(u);
-  } catch {
-    /* голос не обязателен */
-  }
+/** Прогреваем сэмплы, чтобы отсчёт не запаздывал при первом воспроизведении. */
+export function preloadHuntSamples() {
+  (Object.keys(SAMPLES) as SampleKey[]).forEach((k) => sample(k)?.load());
 }
+
+function playSample(key: SampleKey, volume = 1) {
+  if (muted) return;
+  const el = sample(key);
+  if (!el) return;
+  el.volume = volume;
+  el.currentTime = 0;
+  void el.play().catch(() => {});
+}
+
+/** Финал раунда: настоящая фанфара (mp3), без синтетической полифонии. */
+export function playHuntWin() {
+  playSample("win", 0.9);
+}
+
+/** Голосовой отсчёт «three / two / one / go» — грубый низкий голос. */
+export function speakHuntCount(step: number) {
+  const key: SampleKey = step === 3 ? "three" : step === 2 ? "two" : step === 1 ? "one" : "go";
+  playSample(key, 1);
+}
+
 
