@@ -4,7 +4,7 @@ import { and, eq, gt, inArray, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { hunts, huntPrizes, huntBets } from "../db/schema/hunt.js";
 import { users } from "../db/schema/users.js";
-import { profiles } from "../db/schema/profiles.js";
+import { profiles } from "../db/schema/profile.js";
 import { passPurchases } from "../db/schema/pass.js";
 
 import { requireAuth, requireAdmin, type SessionPayload } from "../lib/auth.js";
