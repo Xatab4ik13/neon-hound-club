@@ -284,11 +284,6 @@ export default function RiderScene({
       </Canvas>
     </div>
   );
-
-        </Suspense>
-      </Canvas>
-    </div>
-  );
 }
 
 useGLTF.preload(MODEL_URL);
