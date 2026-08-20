@@ -371,27 +371,13 @@ function HoundHuntAdminPage() {
                     <div className="sm:col-span-2">
                       <Field
                         label="Победитель"
-                        hint="Честный розыгрыш — жребий по весам билетов. Или выбери участника вручную."
+                        hint="Честный розыгрыш — жребий по капсулам. Или найди владельца Hell Pass Platinum и назначь вручную."
                       >
-                        <Select
-                          value={p.forcedWinnerId ?? ""}
-                          onChange={(e) =>
-                            patchPrize(p.id, { forcedWinnerId: e.target.value || null })
-                          }
-                        >
-                          <option value="">Честный розыгрыш</option>
-                          {entries.map((e) => (
-                            <option
-                              key={e.id}
-                              value={e.id}
-                              disabled={takenBy(e.id, p.id) !== null}
-                            >
-                              {e.nick} — {e.tickets} бил. / {e.slots} капс.
-                              {e.city ? ` — ${e.city}` : ""}
-                              {takenBy(e.id, p.id) ? ` (уже: ${takenBy(e.id, p.id)})` : ""}
-                            </option>
-                          ))}
-                        </Select>
+                        <WinnerPicker
+                          value={p.forcedWinnerId ?? null}
+                          onChange={(id) => patchPrize(p.id, { forcedWinnerId: id })}
+                          takenBy={(uid) => takenBy(uid, p.id)}
+                        />
                       </Field>
                       {p.forcedWinnerId ? (
                         <div className="mt-2">
@@ -403,6 +389,7 @@ function HoundHuntAdminPage() {
                         </div>
                       )}
                     </div>
+
 
                   </div>
 
