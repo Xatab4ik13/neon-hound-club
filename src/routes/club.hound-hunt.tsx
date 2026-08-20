@@ -23,7 +23,9 @@ import {
 
 import {
   isHuntMuted,
+  playHuntCountBeep,
   playHuntImpact,
+  playHuntRoundGo,
   playHuntWin,
   setHuntMuted,
   setHuntTension,
@@ -96,13 +98,13 @@ const BASE = {
   capsule: 360, // одна капсула проезжает мимо центра за столько мс (быстро)
   pull: 5000, // последняя капсула подъезжает к персонажу
   crack: 2200, // раскрытие капсулы
-  reveal: 26000, // ревил победителя
+  reveal: 2800, // ревил победителя перед отсчётом следующего раунда
 };
 
 const SPEEDS = [1, 2, 5, 20, 60] as const;
 type Speed = (typeof SPEEDS)[number];
 
-type Phase = "intro" | "arming" | "drift" | "settle" | "podium";
+type Phase = "intro" | "arming" | "drift" | "settle" | "countdown" | "podium";
 
 const CHIP_SCALE = 0.62;
 const CHIP_W = 132 * CHIP_SCALE;
@@ -171,6 +173,8 @@ export function HoundHuntPage() {
   }, []);
 
   const [caseIdx, setCaseIdx] = useState(0);
+  /** Данные следующего раунда, ждут окончания отсчёта «3 / 2 / 1». */
+  const pendingRoundRef = useRef<{ idx: number; entries: HuntEntry[] } | null>(null);
   const [phase, setPhase] = useState<Phase>("intro");
   const [winners, setWinners] = useState<{ prizeId: string; entry: HuntEntry }[]>([]);
   const [current, setCurrent] = useState<HuntEntry | null>(null);
@@ -558,8 +562,11 @@ export function HoundHuntPage() {
 
         later(() => {
           if (idx + 1 < HUNT_PRIZES.length) {
-            setCaseIdx(idx + 1);
-            runCase(idx + 1, rest);
+            // Между раундами: барабан стоит, музыка выключена, идёт отсчёт.
+            stopReel();
+            stopHuntMusic(0.5);
+            pendingRoundRef.current = { idx: idx + 1, entries: rest };
+            setPhase("countdown");
           } else {
             stopReel();
             setPhase("podium");
@@ -880,6 +887,21 @@ export function HoundHuntPage() {
           )}
 
 
+          {phase === "countdown" && (
+            <RoundCountdown
+              round={(pendingRoundRef.current?.idx ?? caseIdx) + 1}
+              onDone={() => {
+                const next = pendingRoundRef.current;
+                pendingRoundRef.current = null;
+                if (!next) return;
+                startHuntMusic();
+                setHuntTension(0);
+                setCaseIdx(next.idx);
+                runCase(next.idx, next.entries);
+              }}
+            />
+          )}
+
           {phase === "podium" && <Podium winners={winners} onRestart={start} />}
         </div>
 
@@ -1128,6 +1150,90 @@ function ReelSlot({
 
 
 
+
+/**
+ * Межраундовая заставка: «СЛЕДУЮЩИЙ РАУНД» и отсчёт 3 → 2 → 1 → GO,
+ * цифры влетают со звуком. Музыка на это время выключена.
+ */
+function RoundCountdown({ round, onDone }: { round: number; onDone: () => void }) {
+  const [step, setStep] = useState(3);
+  const doneRef = useRef(false);
+
+  useEffect(() => {
+    const timers: number[] = [];
+    const tick = (value: number, delay: number) => {
+      timers.push(
+        window.setTimeout(() => {
+          setStep(value);
+          if (value > 0) playHuntCountBeep(value);
+          else playHuntRoundGo();
+          haptic(value > 0 ? "light" : "success");
+        }, delay),
+      );
+    };
+    playHuntCountBeep(3);
+    haptic("light");
+    tick(2, 850);
+    tick(1, 1700);
+    tick(0, 2550);
+    timers.push(
+      window.setTimeout(() => {
+        if (doneRef.current) return;
+        doneRef.current = true;
+        onDone();
+      }, 3200),
+    );
+    return () => timers.forEach((t) => window.clearTimeout(t));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return (
+    <div className="absolute inset-0 z-40 flex flex-col items-center justify-center px-6">
+      <motion.p
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="font-mono text-[11px] uppercase tracking-[0.34em] text-muted-foreground"
+      >
+        Раунд {round}
+      </motion.p>
+      <motion.p
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.08 }}
+        className="mt-2 font-display text-2xl font-black uppercase tracking-[0.08em] text-foreground"
+      >
+        Следующий раунд
+      </motion.p>
+
+      <div className="relative mt-6 h-[38svh] w-full">
+        <AnimatePresence mode="popLayout">
+          <motion.div
+            key={step}
+            initial={{ scale: 2.6, opacity: 0, filter: "blur(14px)" }}
+            animate={{ scale: 1, opacity: 1, filter: "blur(0px)" }}
+            exit={{ scale: 0.6, opacity: 0, filter: "blur(10px)" }}
+            transition={{ type: "spring", stiffness: 420, damping: 22, mass: 0.7 }}
+            className="absolute inset-0 flex items-center justify-center"
+          >
+            <span
+              className="font-display font-black uppercase leading-none"
+              style={{
+                fontSize: step === 0 ? "clamp(64px, 20vw, 140px)" : "clamp(96px, 34vw, 220px)",
+                color: step === 0 ? "#B6FF3C" : "var(--foreground)",
+                textShadow:
+                  step === 0
+                    ? "0 0 46px color-mix(in oklab, #B6FF3C 60%, transparent)"
+                    : "0 0 40px color-mix(in oklab, var(--destructive) 55%, transparent)",
+              }}
+            >
+              {step === 0 ? "GO!" : step}
+            </span>
+          </motion.div>
+        </AnimatePresence>
+      </div>
+    </div>
+  );
+}
 
 function Podium({
   winners,
