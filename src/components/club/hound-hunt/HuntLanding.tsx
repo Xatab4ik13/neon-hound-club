@@ -223,7 +223,7 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
 
 
         {/* ------------------------------ таймер ------------------------------ */}
-        <Reveal className="-mt-16 px-6">
+        <Reveal className="relative z-20 -mt-[24svh] px-6">
           <div
             className="rounded-3xl border border-border/60 bg-card/60 p-5 text-center"
             style={{ boxShadow: `0 0 60px -30px ${TOXIC}` }}
