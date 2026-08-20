@@ -313,10 +313,37 @@ function Model({
         // Эталон берём из позы удара (без победного смещения).
         baseRootY.current = worldY - (group.current.position.y - floorY);
         group.current.position.y = floorY;
-      } else if (baseRootY.current !== null) {
-        group.current.position.y += baseRootY.current - worldY;
+      } else {
+        if (baseRootY.current === null) {
+          baseRootY.current = worldY - (group.current.position.y - floorY);
+          group.current.position.y = floorY;
+        } else {
+          group.current.position.y += baseRootY.current - worldY;
+        }
       }
     }
+
+    // 2) бесшовный луп танца: хвост клипа перекрываем его же началом
+    if (dance && danceCur.current && danceAction) {
+      const cur = danceCur.current;
+      const d = cur.getClip().duration;
+      if (d > DANCE_FADE * 2 && cur.time >= d - DANCE_FADE) {
+        const next = cur === danceAction ? danceActionB : danceAction;
+        if (next) {
+          next.enabled = true;
+          next.clampWhenFinished = true;
+          next.setLoop(THREE.LoopOnce, 1);
+          next.timeScale = 1;
+          next.reset();
+          next.setEffectiveWeight(0);
+          next.play();
+          next.fadeIn(DANCE_FADE);
+          cur.fadeOut(DANCE_FADE);
+          danceCur.current = next;
+        }
+      }
+    }
+
 
     if (!action || !kickToken || action.paused || victory) return;
     const dur = action.getClip().duration;
