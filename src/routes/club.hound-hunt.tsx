@@ -154,7 +154,7 @@ function suspenseMs(remaining: number) {
 /* ------------------------------ страница ------------------------------ */
 
 export function HoundHuntPage() {
-  const [speed, setSpeed] = useState<Speed>(5);
+  const [speed, setSpeed] = useState<Speed>(1);
   const speedRef = useRef<Speed>(speed);
   speedRef.current = speed;
   const dur = useCallback((base: number) => Math.max(220, base / speedRef.current), []);
