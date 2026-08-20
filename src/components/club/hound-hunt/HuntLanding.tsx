@@ -440,7 +440,7 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
         {/* --------------- витрина: удар + Hell Pass Platinum --------------- */}
         <Reveal className="mt-10 px-6">
           <div
-            className="overflow-hidden rounded-3xl border border-border/60 bg-card/40"
+            className="rounded-3xl border border-border/60 bg-card/40"
             style={{ boxShadow: `0 0 60px -30px ${TOXIC}` }}
           >
             <KickStage entries={entries} />
