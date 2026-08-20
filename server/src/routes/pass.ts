@@ -14,6 +14,7 @@ import {
   expireOldPasses,
   getActivePass,
   getPassHistory,
+  getUpgradeCreditRub,
   PassPurchaseError,
   revokePass,
 } from "../lib/pass.js";
@@ -51,7 +52,17 @@ export async function passRoutes(app: FastifyInstance) {
       const ms = new Date(active.expiresAt).getTime() - Date.now();
       daysLeft = Math.max(0, Math.ceil(ms / (24 * 60 * 60 * 1000)));
     }
-    return { active, history, daysLeft, durationDays: PASS_DURATION_DAYS };
+    // Цена каждого тира лично для этого юзера: при апгрейде вычитаем то,
+    // что он уже заплатил за активные пассы ниже тиром.
+    const prices: Record<string, { priceRub: number; creditRub: number }> = {};
+    for (const tier of PASS_TIERS) {
+      const creditRub = await getUpgradeCreditRub(session.sub, tier);
+      prices[tier] = {
+        creditRub,
+        priceRub: Math.max(0, PASS_CONFIG[tier].priceRub - creditRub),
+      };
+    }
+    return { active, history, daysLeft, durationDays: PASS_DURATION_DAYS, prices };
   });
 
   // POST /api/v1/pass/purchase — создать запись pending_payment и сразу инициировать
