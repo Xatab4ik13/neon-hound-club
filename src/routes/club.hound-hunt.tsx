@@ -10,6 +10,7 @@
 // ревил победителя. Победитель выбывает из барабана.
 
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { Volume2, VolumeX } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   AnimatePresence,
