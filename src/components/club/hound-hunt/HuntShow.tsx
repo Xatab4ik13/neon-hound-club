@@ -885,10 +885,9 @@ export function HoundHuntPage() {
         <div className="relative flex min-h-0 flex-1 flex-col items-center justify-center">
           {/* Персонаж стоит за лентой и чуть ниже: аватарки проходят перед ним,
               а в зоне удара пересекаются только с ногой. */}
+          {phase !== "intro" && (
           <motion.div
-            className={`relative z-10 w-full max-w-[560px] ${
-              phase === "intro" ? "mt-0 h-[34svh]" : "-mt-[1svh] h-[74svh]"
-            }`}
+            className="relative z-10 -mt-[1svh] h-[74svh] w-full max-w-[560px]"
             animate={{ opacity: 1 }}
           >
             <RiderCharacter
@@ -905,6 +904,7 @@ export function HoundHuntPage() {
               className="h-full w-full"
             />
           </motion.div>
+          )}
 
           {phase === "intro" && <IntroPanel onStart={start} />}
 
