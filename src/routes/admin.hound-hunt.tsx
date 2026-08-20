@@ -105,9 +105,15 @@ function HoundHuntAdminPage() {
       toast.error("Нужен хотя бы один приз — это один раунд охоты");
       return;
     }
+    const forced = cfg.prizes.map((p) => p.forcedWinnerId).filter(Boolean) as string[];
+    if (new Set(forced).size !== forced.length) {
+      toast.error("Один участник назначен на два приза — так нельзя");
+      return;
+    }
     writeHuntConfig(cfg);
     toast.success("Конфиг охоты применён");
   };
+
 
   const reset = () => {
     const d = defaultHuntConfig();
