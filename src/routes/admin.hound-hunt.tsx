@@ -224,16 +224,20 @@ function HoundHuntAdminPage() {
         description="Недельная охота для Hell Pass Platinum. Всё, что здесь настроено, видит лендинг и шоу."
         actions={
           <>
-            <Btn variant="secondary" onClick={newHunt}>
+            <Btn variant="secondary" onClick={() => void newHunt()} disabled={busy}>
               Новая охота
             </Btn>
-            <Btn variant="secondary" onClick={reset}>
+            <Btn variant="secondary" onClick={reset} disabled={busy}>
               Сбросить
             </Btn>
-            <Btn variant="primary" onClick={save}>
-              Применить к шоу
+            <Btn variant="secondary" onClick={() => void draw()} disabled={busy}>
+              Прокрутить жребий
+            </Btn>
+            <Btn variant="primary" onClick={() => void save()} disabled={busy}>
+              Сохранить охоту
             </Btn>
           </>
+
         }
       />
 
