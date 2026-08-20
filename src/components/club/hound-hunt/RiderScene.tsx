@@ -81,9 +81,16 @@ function Model({
     });
   }, [animations, instance]);
   const allClips = useMemo(() => {
-    // Meshy записывает перемещение всего тела в Hips.position. Оно полезно
-    // внутри DCC, но в приложении уводит персонажа из камеры. Оставляем
-    // вертикальную работу корпуса, фиксируем только X/Z на первом кадре.
+    // Реальная причина «персонаж исчезает»: в этих GLB rest-поза скелета
+    // записана в метрах (Hips.y ≈ 0.82), а треки анимации — в сантиметрах
+    // (Hips.y ≈ 80). Как только клип начинал играть, тело улетало в 100 раз
+    // выше камеры и на канвасе оставалась пустота. Позицию корня берём из
+    // rest-позы модели: это и убирает root-motion, и снимает расхождение единиц.
+    const restPositions = new Map<string, THREE.Vector3>();
+    cloned.traverse((node) => {
+      restPositions.set(node.name, node.position.clone());
+    });
+
     const lockRootMotion = (source: THREE.AnimationClip) => {
       const clip = source.clone();
       clip.tracks = clip.tracks.map((track) => {
@@ -91,10 +98,12 @@ function Model({
         // Armature.Hips. Проверяем окончание имени, иначе горизонтальный
         // root-motion остаётся и персонаж гуляет по canvas или выходит из него.
         if (track instanceof THREE.VectorKeyframeTrack && /hips\.position$/i.test(track.name)) {
+          const boneName = track.name.split(".")[0];
+          const rest = restPositions.get(boneName);
           const values = Array.from(track.values);
-          const x = values[0] ?? 0;
-          const y = values[1] ?? 0;
-          const z = values[2] ?? 0;
+          const x = rest ? rest.x : values[0] ?? 0;
+          const y = rest ? rest.y : values[1] ?? 0;
+          const z = rest ? rest.z : values[2] ?? 0;
           for (let i = 0; i < values.length; i += 3) {
             values[i] = x;
             values[i + 1] = y;
@@ -103,6 +112,9 @@ function Model({
           return new THREE.VectorKeyframeTrack(track.name, Array.from(track.times), values);
         }
         if (track instanceof THREE.VectorKeyframeTrack && /\.scale$/i.test(track.name)) {
+          const boneName = track.name.split(".")[0];
+          const rest = restPositions.has(boneName) ? null : null;
+          void rest;
           const values = Array.from(track.values);
           const x = values[0] ?? 1;
           const y = values[1] ?? 1;
@@ -118,8 +130,8 @@ function Model({
       });
       return clip;
     };
-    return localClips.map((c) => c); // TEMP: no root lock
-  }, [localClips]);
+    return localClips.map(lockRootMotion);
+  }, [localClips, cloned]);
 
 
   // Не копируем пиксели текстур через Canvas: на телефонах это удваивало
