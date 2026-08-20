@@ -120,15 +120,21 @@ function Model({
   const cloned = useMemo(() => scene, [scene]);
   // Клипы делят один и тот же риг (Meshy, одинаковые имена костей),
   // поэтому победный танец играется тем же миксером — без подмены модели.
-  const danceClips = useMemo(
-    () =>
-      danceAnims.map((c, i) => {
-        const clone = c.clone();
-        clone.name = i === 0 ? DANCE_CLIP : `${DANCE_CLIP}_${i}`;
-        return clone;
-      }),
-    [danceAnims],
-  );
+  const danceClips = useMemo(() => {
+    const base = danceAnims.map((c, i) => {
+      const clone = c.clone();
+      clone.name = i === 0 ? DANCE_CLIP : `${DANCE_CLIP}_${i}`;
+      return clone;
+    });
+    // Дубль первого клипа: два экземпляра позволяют перекрыть хвост клипа
+    // его же началом, поэтому луп идёт без рывка и «сжатия» на стыке.
+    if (danceAnims[0]) {
+      const twin = danceAnims[0].clone();
+      twin.name = DANCE_CLIP_B;
+      base.push(twin);
+    }
+    return base;
+  }, [danceAnims]);
   const allClips = useMemo(
     () => [...animations, ...victoryAnims, ...danceClips],
     [animations, victoryAnims, danceClips],
