@@ -1,11 +1,10 @@
 // Ленивая обёртка над 3D-сценой персонажа: three/fiber грузится только
 // на экране HOUND HUNT, а не в основном бандле.
 
-import { Suspense, lazy } from "react";
+import { Suspense } from "react";
+import RiderScene from "./RiderScene";
 
 export type RiderMode = "idle" | "watch" | "lunge" | "chew";
-
-const RiderScene = lazy(() => import("./RiderScene"));
 
 type Props = {
   mode: RiderMode;

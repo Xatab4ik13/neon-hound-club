@@ -7,6 +7,7 @@ import { Suspense, useEffect, useMemo, useRef } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { useAnimations, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
+import { clone as cloneSkeleton } from "three/examples/jsm/utils/SkeletonUtils.js";
 import riderAsset from "@/assets/rider.glb.asset.json";
 import victoryAsset from "@/assets/rider-victory.glb.asset.json";
 import danceAsset from "@/assets/rider-agree.glb.asset.json";
@@ -118,10 +119,10 @@ function Model({
   onImpact?: (cycle: number) => void;
 }) {
   const group = useRef<THREE.Group>(null);
-  // URL зависит только от постоянного слота, а не от режима анимации.
-  // Иначе при idle → lunge React заново скачивал 20 МБ и персонаж исчезал.
-  const instanceUrl = instance === "hero" ? MODEL_URL : `${MODEL_URL}?instance=action`;
-  const { scene: cloned, animations } = useGLTF(instanceUrl);
+  // Один GLB загружается и кэшируется один раз; каждому canvas отдаём
+  // независимый skeleton, чтобы сцены не забирали модель друг у друга.
+  const { scene, animations } = useGLTF(MODEL_URL);
+  const cloned = useMemo(() => cloneSkeleton(scene) as THREE.Group, [scene, instance]);
   const { animations: victoryAnims } = useGLTF(VICTORY_URL);
   const { animations: danceAnims } = useGLTF(DANCE_URL);
   // Клипы делят один и тот же риг (Meshy, одинаковые имена костей),
@@ -412,6 +413,5 @@ export default function RiderScene({
 }
 
 useGLTF.preload(MODEL_URL);
-useGLTF.preload(`${MODEL_URL}?instance=action`);
 useGLTF.preload(VICTORY_URL);
 useGLTF.preload(DANCE_URL);
