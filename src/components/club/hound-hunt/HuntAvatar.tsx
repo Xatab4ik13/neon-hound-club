@@ -10,10 +10,12 @@ type Props = {
   /** 1 = ~152px в ширину. */
   scale?: number;
   focused?: boolean;
+  /** true = рисуем только «шайбу», без ника под ней. */
+  hideNick?: boolean;
   className?: string;
 };
 
-export function HuntAvatar({ entry, scale = 1, focused = false, className }: Props) {
+export function HuntAvatar({ entry, scale = 1, focused = false, hideNick = false, className }: Props) {
   const size = 132 * scale;
   const hue = hueOf(entry.nick);
   // Рамка и свечение — цвета ранга участника (как плашка в профиле).
@@ -76,6 +78,7 @@ export function HuntAvatar({ entry, scale = 1, focused = false, className }: Pro
         </div>
       </motion.div>
 
+      {!hideNick && (
       <span
         className="max-w-full truncate text-center font-display font-black uppercase tracking-[0.14em]"
         style={{
@@ -87,6 +90,7 @@ export function HuntAvatar({ entry, scale = 1, focused = false, className }: Pro
       >
         {entry.nick}
       </span>
+      )}
 
     </div>
   );
