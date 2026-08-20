@@ -176,6 +176,10 @@ export function HoundHuntPage({ mode = "live" }: { mode?: HuntShowMode }) {
   const pendingRoundRef = useRef<{ idx: number; entries: HuntEntry[] } | null>(null);
   const [phase, setPhase] = useState<Phase>("intro");
   const [winners, setWinners] = useState<{ prizeId: string; entry: HuntEntry }[]>([]);
+  /** Уже разыгранные призы — чтобы честный жребий не отдал два приза одному. */
+  const winnersRef = useRef<{ prizeId: string; entry: HuntEntry }[]>([]);
+  winnersRef.current = winners;
+
   const [current, setCurrent] = useState<HuntEntry | null>(null);
   const [look, setLook] = useState({ x: 0, y: 0 });
   /** Счётчик ударов для вспышки/тряски арены — растёт на каждый импакт. */
