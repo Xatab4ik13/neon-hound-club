@@ -19,16 +19,16 @@ const SOURCE_BASE =
 /** key в бакете → путь на источнике. */
 const MODELS: { key: string; src: string }[] = [
   {
-    key: "models/rider.glb",
-    src: "/__l5e/assets-v1/46bbd62d-b8db-43c1-a829-da93d1a406fb/rider.glb",
+    key: "models/rider-v2.glb",
+    src: "/__l5e/assets-v1/1777b712-7ef5-4a24-90e5-4b579ae843ce/rider-v2.glb",
   },
   {
     key: "models/rider-victory.glb",
     src: "/__l5e/assets-v1/abe6ec6d-a795-42e2-9d77-93bb3f5d7c80/rider-victory.glb",
   },
   {
-    key: "models/rider-agree.glb",
-    src: "/__l5e/assets-v1/8b14d82f-63db-400a-b8e9-0c2ff5a4feb4/rider-agree.glb",
+    key: "models/rider-agree-v2.glb",
+    src: "/__l5e/assets-v1/3220f397-071b-41d2-862e-386be6e6da4f/rider-agree-v2.glb",
   },
 ];
 
