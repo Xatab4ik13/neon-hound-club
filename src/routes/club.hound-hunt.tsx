@@ -1333,24 +1333,38 @@ function Podium({
               className="flex items-center gap-3 rounded-2xl border border-border/60 bg-card/50 p-3 text-left backdrop-blur"
             >
               <img src={p.img} alt="" className="size-12 shrink-0 object-contain" />
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
                   {p.sub}
                 </p>
                 <p className="truncate font-display text-sm font-black uppercase">{p.title}</p>
-                <p className="truncate font-mono text-[11px] text-primary">{w.entry.nick}</p>
+              </div>
+              <div className="flex w-16 shrink-0 flex-col items-center gap-1">
+                <div
+                  className="flex size-11 items-center justify-center overflow-hidden rounded-full border"
+                  style={{
+                    borderColor: "rgba(182,255,60,0.6)",
+                    boxShadow: "0 0 14px -2px rgba(182,255,60,0.5)",
+                  }}
+                >
+                  {w.entry.avatarUrl ? (
+                    <img
+                      src={w.entry.avatarUrl}
+                      alt={w.entry.nick}
+                      className="size-full object-cover"
+                    />
+                  ) : (
+                    <span className="font-display text-xs font-black uppercase">
+                      {w.entry.initials}
+                    </span>
+                  )}
+                </div>
+                <p className="w-full truncate text-center font-mono text-[10px] uppercase text-primary">
+                  {w.entry.nick}
+                </p>
               </div>
             </div>
-          );
-        })}
-      </div>
-      <button
-        type="button"
-        onClick={onRestart}
-        className="mt-6 w-full rounded-2xl border border-border/60 bg-card/60 px-6 py-3.5 font-display text-base font-black uppercase tracking-wide backdrop-blur transition active:scale-[0.98]"
-      >
-        Прогнать ещё раз
-      </button>
+
     </motion.div>
   );
 }
