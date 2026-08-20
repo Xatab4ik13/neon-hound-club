@@ -40,6 +40,7 @@ import {
 
 } from "@/components/club/hound-hunt/hh-mock";
 import { prizesInRunOrder, useHuntConfig, type HuntConfigPrize } from "@/components/club/hound-hunt/hh-config";
+import { saveResults } from "@/components/club/hound-hunt/hh-bets";
 import { haptic } from "@/hooks/use-haptic";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -48,10 +49,12 @@ import { useIsMobile } from "@/hooks/use-mobile";
  * HELL HUNT — только телефон/приложение. На десктопе шоу не запускаем:
  * вся вёрстка и анимации рассчитаны на вертикальный мобильный экран.
  */
-export function HuntShow() {
+export type HuntShowMode = "live" | "replay";
+
+export function HuntShow({ mode = "live" }: { mode?: HuntShowMode }) {
   const isMobile = useIsMobile();
   if (!isMobile) return <DesktopBlock />;
-  return <HoundHuntPage />;
+  return <HoundHuntPage mode={mode} />;
 }
 
 function DesktopBlock() {
@@ -140,7 +143,7 @@ function suspenseMs(remaining: number) {
 
 /* ------------------------------ страница ------------------------------ */
 
-export function HoundHuntPage() {
+export function HoundHuntPage({ mode = "live" }: { mode?: HuntShowMode }) {
   const [speed, setSpeed] = useState<Speed>(5);
   const speedRef = useRef<Speed>(speed);
   speedRef.current = speed;
@@ -565,7 +568,15 @@ export function HoundHuntPage() {
         finished = true;
         const survivor = liveRef.current[0] ?? winner;
         setWinners((w) => [...w, { prizeId: prizesRef.current[idx].id, entry: survivor }]);
-        const rest = entries.filter((e) => e.id !== survivor.id);
+        // Победитель раунда теряет ОДНУ капсулу, а не выбывает целиком:
+        // было 6 — в следующем раунде участвует 5. Кончились капсулы — вышел.
+        const rest = entries
+          .map((e) =>
+            e.id === survivor.id
+              ? { ...e, slots: e.slots - 1, tickets: Math.max(0, e.tickets - cfg.ticketStep) }
+              : e,
+          )
+          .filter((e) => e.slots > 0);
         setPool(rest);
 
         later(() => {
@@ -594,7 +605,7 @@ export function HoundHuntPage() {
         startReel();
       }, dur(BASE.arming));
     },
-    [buildReel, dur, groomTape, halfWindow, later, phaseMv, pickWinner, startReel, stopReel],
+    [buildReel, cfg.ticketStep, dur, groomTape, halfWindow, later, phaseMv, pickWinner, startReel, stopReel],
   );
 
   /**
@@ -731,7 +742,7 @@ export function HoundHuntPage() {
 
   const start = async () => {
     clearTimers();
-    // Музыку можно стартовать только из жеста пользователя — это он и есть.
+    // Реплей крутит тот же состав, live — свежий жребий.
     const fresh = await fetchHuntEntries(MOCK_ENTRIES, Math.floor(Math.random() * 99999));
     await Promise.all(
       [...new Set(fresh.map((entry) => entry.avatarUrl).filter((src): src is string => Boolean(src)))].map(
@@ -749,6 +760,33 @@ export function HoundHuntPage() {
     setCaseIdx(0);
     runCase(0, fresh);
   };
+
+  /**
+   * Кнопки «Спустить Хелла» больше нет: шоу стартует само — по времени (live)
+   * или сразу при входе в реплей. Ref-замок гарантирует один запуск на монтаж.
+   */
+  const startedRef = useRef(false);
+  useEffect(() => {
+    if (startedRef.current) return;
+    startedRef.current = true;
+    void start();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /** Итоги пишутся один раз в конце — реплей показывает те же результаты. */
+  useEffect(() => {
+    if (phase !== "podium" || !winners.length) return;
+    saveResults(
+      cfg.startsAt,
+      winners.map((w) => ({
+        prizeId: w.prizeId,
+        entryId: w.entry.id,
+        nick: w.entry.nick,
+        avatarUrl: w.entry.avatarUrl,
+      })),
+    );
+  }, [phase, winners, cfg.startsAt]);
+
 
 
   /** Тестовая кнопка: перескочить к следующей фазе. */
@@ -906,7 +944,15 @@ export function HoundHuntPage() {
           </motion.div>
           )}
 
-          {phase === "intro" && <IntroPanel onStart={start} />}
+
+          {phase === "intro" && <ArenaLoading />}
+
+          {/* Реплей честно помечаем: это запись прошедшей охоты. */}
+          {mode === "replay" && (
+            <div className="pointer-events-none absolute left-1/2 top-3 z-30 -translate-x-1/2 rounded-full border border-border/60 bg-background/70 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground backdrop-blur">
+              запись
+            </div>
+          )}
 
           {(phase === "arming" ||
             phase === "drift" ||
@@ -979,32 +1025,17 @@ export function HoundHuntPage() {
 
 /* ------------------------------ куски арены ------------------------------ */
 
-function IntroPanel({ onStart }: { onStart: () => void }) {
+/** Пока состав грузится, арена пустая: кнопки старта в шоу больше нет. */
+function ArenaLoading() {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 24 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="relative z-10 mt-6 w-full max-w-md px-6 text-center"
-    >
+    <div className="relative z-10 mt-6 w-full max-w-md px-6 text-center">
       <p className="font-mono text-[11px] uppercase tracking-[0.26em] text-destructive">
         охота начинается
       </p>
-      <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-        Капсулы движутся без остановки, а пустое место уезжает вместе с лентой. Последний, кто
-        устоял, забирает приз.
-      </p>
-
-
-      <button
-        type="button"
-        onClick={onStart}
-        className="mt-6 w-full rounded-2xl border border-destructive/50 bg-destructive/15 px-6 py-4 font-display text-lg font-black uppercase tracking-wide text-foreground shadow-[0_0_40px_-6px_color-mix(in_oklab,var(--destructive)_70%,transparent)] transition active:scale-[0.98]"
-      >
-        Спустить Хелла
-      </button>
-    </motion.div>
+    </div>
   );
 }
+
 
 function ReelStage({
   slots,

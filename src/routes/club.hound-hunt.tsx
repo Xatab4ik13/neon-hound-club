@@ -1,6 +1,8 @@
-// HELL HUNT — два режима одной страницы: продающий лендинг и само шоу.
-// Пока фича в разработке, сверху висит dev-тумблер (HH_DEV_TOGGLE), чтобы
-// можно было спускать гончую в любой момент. В прод достаточно выключить флаг.
+// HELL HUNT — одна страница, состояние берётся из времени старта:
+//   betting/locked → лендинг с приёмом билетов
+//   live           → шоу стартует само, без кнопок
+//   replay         → сутки после старта: итоги + можно посмотреть запись
+//   idle           → ждём новую дату из админки, снова лендинг
 // Доступ только из PWA: вся вёрстка и анимации рассчитаны на приложение.
 
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -9,12 +11,10 @@ import { useEffect, useState } from "react";
 import { HuntLanding } from "@/components/club/hound-hunt/HuntLanding";
 import { HuntShow } from "@/components/club/hound-hunt/HuntShow";
 import { EmberField } from "@/components/club/hound-hunt/EmberField";
+import { useHuntConfig } from "@/components/club/hound-hunt/hh-config";
+import { useHuntPhase } from "@/components/club/hound-hunt/hh-phase";
 import { isStandalonePWA } from "@/lib/is-pwa";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { cn } from "@/lib/utils";
-
-/** Dev-тумблер режимов. Выключить, когда шоу пойдёт по расписанию. */
-const HH_DEV_TOGGLE = true;
 
 export const Route = createFileRoute("/club/hound-hunt")({
   head: () => ({
@@ -27,47 +27,33 @@ export const Route = createFileRoute("/club/hound-hunt")({
   component: HoundHuntRoute,
 });
 
-type Mode = "landing" | "show";
-
 function HoundHuntRoute() {
   const isMobile = useIsMobile();
-  const [mode, setMode] = useState<Mode>("landing");
+  const { cfg } = useHuntConfig();
+  const { phase } = useHuntPhase(cfg.startsAt);
   const [pwa, setPwa] = useState<boolean | null>(null);
+  /** Реплей запускается только по кнопке — иначе шоу крутилось бы сутки. */
+  const [replayOpen, setReplayOpen] = useState(false);
 
   useEffect(() => {
     setPwa(isStandalonePWA());
   }, []);
 
+  // Новая охота (сменилась дата старта) — закрываем прошлую запись.
+  useEffect(() => {
+    setReplayOpen(false);
+  }, [cfg.startsAt]);
+
   if (!isMobile) return <NotInApp desktop />;
   if (pwa === null) return <div className="min-h-[100svh] bg-background" />;
-  if (!pwa && !HH_DEV_TOGGLE) return <NotInApp />;
+  if (!pwa) return <NotInApp />;
+
+  if (phase === "live") return <HuntShow mode="live" />;
+  if (phase === "replay" && replayOpen) return <HuntShow mode="replay" />;
 
   return (
     <div className="relative overflow-x-hidden">
-      {HH_DEV_TOGGLE && <ModeToggle mode={mode} onChange={setMode} />}
-      {mode === "landing" ? <HuntLanding onEnterShow={() => setMode("show")} /> : <HuntShow />}
-    </div>
-  );
-}
-
-function ModeToggle({ mode, onChange }: { mode: Mode; onChange: (m: Mode) => void }) {
-  return (
-    <div className="pointer-events-none fixed inset-x-0 top-2 z-[60] flex justify-center">
-      <div className="pointer-events-auto flex gap-1 rounded-full border border-border/60 bg-background/80 p-1 backdrop-blur">
-        {(["landing", "show"] as Mode[]).map((m) => (
-          <button
-            key={m}
-            type="button"
-            onClick={() => onChange(m)}
-            className={cn(
-              "rounded-full px-3 py-1 font-mono text-[10px] uppercase tracking-[0.16em] transition",
-              mode === m ? "bg-primary text-primary-foreground" : "text-muted-foreground",
-            )}
-          >
-            {m === "landing" ? "лендинг" : "шоу"}
-          </button>
-        ))}
-      </div>
+      <HuntLanding onEnterShow={() => setReplayOpen(true)} />
     </div>
   );
 }

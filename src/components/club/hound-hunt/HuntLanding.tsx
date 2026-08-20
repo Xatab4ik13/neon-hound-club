@@ -11,27 +11,14 @@ import { HuntAvatar } from "./HuntAvatar";
 import { fetchHuntEntries, type HuntEntry } from "./hh-mock";
 import { getTier } from "@/data/hell-pass";
 import { haptic } from "@/hooks/use-haptic";
+import { useViewer } from "@/hooks/use-viewer";
+import { useMyProfile } from "@/lib/garage-api";
+import { useHuntPhase, msUntilStart } from "./hh-phase";
+import { useMyBet } from "./hh-bets";
+import { toast } from "sonner";
 
 /** Ядовитый зелёный охоты — тот же, что в титре WINNER в шоу. */
 const TOXIC = "#B6FF3C";
-
-/** Сколько шоу висит после старта, прежде чем считаем охоту завершённой. */
-const SHOW_WINDOW_MS = 30 * 60 * 1000;
-
-type Stage = "soon" | "live" | "finished";
-
-function useStage(startsAt: string): { stage: Stage; ms: number } {
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(id);
-  }, []);
-  const target = new Date(startsAt).getTime();
-  if (Number.isNaN(target)) return { stage: "soon", ms: 0 };
-  if (now < target) return { stage: "soon", ms: target - now };
-  if (now < target + SHOW_WINDOW_MS) return { stage: "live", ms: target + SHOW_WINDOW_MS - now };
-  return { stage: "finished", ms: now - target };
-}
 
 function split(ms: number) {
   const t = Math.floor(Math.max(0, ms) / 1000);
@@ -114,8 +101,13 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
   const { cfg } = useHuntConfig();
   const prizes = useMemo(() => prizesInRunOrder(cfg), [cfg]);
   
-  const { stage, ms } = useStage(cfg.startsAt);
-  const parts = split(ms);
+  const { phase } = useHuntPhase(cfg.startsAt);
+  const parts = split(msUntilStart(cfg.startsAt, Date.now()));
+
+  // Кто ставит: реальный юзер, его аватарка и ник, а не мок из базы.
+  const { isAuthed, tier, tickets: balance } = useViewer();
+  const profileQ = useMyProfile(isAuthed);
+  const isPlatinum = tier === "platinum";
 
   const [entries, setEntries] = useState<HuntEntry[]>([]);
   useEffect(() => {
@@ -128,10 +120,31 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
     };
   }, []);
 
-  const me = entries[0] ?? null;
+  const me: HuntEntry | null = useMemo(() => {
+    const nick = profileQ.data?.nick ?? null;
+    if (!nick) return null;
+    return {
+      id: profileQ.data?.userId ?? "me",
+      nick,
+      initials: nick.slice(0, 2).toUpperCase(),
+      avatarUrl: profileQ.data?.avatarUrl ?? undefined,
+      city: profileQ.data?.city ?? "",
+      tickets: 0,
+      slots: 0,
+    } as HuntEntry;
+  }, [profileQ.data]);
 
-  const [tickets, setTickets] = useState(() => cfg.ticketStep * 2);
+  const { bet, placeBet } = useMyBet(cfg.startsAt, cfg.ticketStep);
+  const [tickets, setTickets] = useState(() => cfg.ticketStep);
   const capsules = Math.max(0, Math.floor(tickets / cfg.ticketStep));
+  const canBet = phase === "betting" && isPlatinum && capsules > 0 && balance >= tickets;
+
+  const submitBet = async () => {
+    if (!canBet) return;
+    haptic("success");
+    await placeBet(tickets);
+    toast.success(`В барабане ${capsules + bet.capsules} ${capsules + bet.capsules === 1 ? "капсула" : "капсул"}`);
+  };
 
   const startLabel = `${new Date(cfg.startsAt).toLocaleString("ru-RU", {
     day: "numeric",
@@ -189,7 +202,7 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
             className="rounded-3xl border border-border/60 bg-card/60 p-5 text-center"
             style={{ boxShadow: `0 0 60px -30px ${TOXIC}` }}
           >
-            {stage === "soon" && (
+            {(phase === "betting" || phase === "locked" || phase === "idle") && (
               <>
                 <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-muted-foreground">
                   до начала охоты
@@ -215,6 +228,11 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
                   ))}
                 </div>
                 <p className="mt-3 text-xs text-muted-foreground">Старт {startLabel}</p>
+                {phase === "locked" && (
+                  <p className="mt-1 text-xs font-medium text-destructive">
+                    Приём билетов закрыт — состав барабана зафиксирован.
+                  </p>
+                )}
                 <Link
                   to="/club/hell-pass"
                   onClick={() => haptic("light")}
@@ -225,7 +243,7 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
               </>
             )}
 
-            {stage === "live" && (
+            {phase === "live" && (
               <>
                 <motion.p
                   animate={{ opacity: [1, 0.45, 1] }}
@@ -236,7 +254,7 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
                   охота идёт
                 </motion.p>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  Хелл уже в барабане. Заходи — шоу идёт прямо сейчас.
+                  Хелл уже в барабане. Шоу идёт прямо сейчас.
                 </p>
                 <button
                   type="button"
@@ -252,13 +270,13 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
               </>
             )}
 
-            {stage === "finished" && (
+            {phase === "replay" && (
               <>
                 <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-destructive">
                   охота завершилась
                 </p>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  Итоги подведены. Следующая охота — через неделю, готовь билеты.
+                  Итоги подведены. Запись доступна сутки, потом страница откроет новую охоту.
                 </p>
                 <button
                   type="button"
@@ -393,6 +411,12 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
               </button>
             </div>
 
+            {bet.tickets > 0 && (
+              <p className="mt-3 text-xs" style={{ color: TOXIC }}>
+                Уже в барабане: {bet.capsules} {bet.capsules === 1 ? "капсула" : "капсул"} ({bet.tickets} билетов). Новая ставка суммируется.
+              </p>
+            )}
+
             <p className="mt-3 text-xs text-muted-foreground">
               {capsules === 0
                 ? `Минимальная ставка — ${cfg.ticketStep} билетов. Шаг ${cfg.ticketStep}.`
@@ -416,13 +440,39 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
 
             <button
               type="button"
-              onClick={() => haptic("success")}
-              disabled={capsules === 0}
-              className="mt-5 w-full rounded-2xl px-6 py-3.5 font-display text-base font-black uppercase tracking-wide text-background transition active:scale-[0.98] disabled:opacity-40"
-              style={{ background: TOXIC, boxShadow: `0 0 45px -16px ${TOXIC}` }}
+              onClick={submitBet}
+              disabled={!canBet}
+              className={
+                "mt-5 w-full rounded-2xl px-6 py-3.5 font-display text-base font-black uppercase tracking-wide transition active:scale-[0.98] " +
+                (canBet ? "" : "border border-border/70 bg-background/40")
+              }
+              style={
+                canBet
+                  ? { background: TOXIC, boxShadow: `0 0 45px -16px ${TOXIC}`, color: "hsl(var(--background))" }
+                  : undefined
+              }
             >
-              Поставить {tickets} билетов
+              {canBet ? (
+                <>Поставить {tickets} билетов</>
+              ) : (
+                <span className="text-muted-foreground">Поставить билеты</span>
+              )}
             </button>
+
+            {/* Почему кнопка серая — говорим прямо, без догадок. */}
+            {!canBet && (
+              <p className="mt-2 text-center text-xs text-muted-foreground">
+                {!isAuthed
+                  ? "Войди в клуб, чтобы участвовать."
+                  : !isPlatinum
+                    ? "Ставить билеты могут только владельцы Hell Pass Platinum."
+                    : phase !== "betting"
+                      ? "Приём билетов на эту охоту закрыт."
+                      : capsules === 0
+                        ? `Минимум ${cfg.ticketStep} билетов.`
+                        : `Не хватает билетов: на балансе ${balance}.`}
+              </p>
+            )}
           </div>
         </Reveal>
 
