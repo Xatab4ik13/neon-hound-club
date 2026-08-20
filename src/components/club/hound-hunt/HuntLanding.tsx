@@ -8,7 +8,6 @@ import { motion } from "framer-motion";
 import { RiderCharacter } from "./RiderCharacter";
 import { useHuntConfig, prizesInRunOrder } from "./hh-config";
 import { HuntAvatar } from "./HuntAvatar";
-import { KickedAvatar } from "./KickedAvatar";
 import { fetchHuntEntries, type HuntEntry } from "./hh-mock";
 import { getTier } from "@/data/hell-pass";
 import { haptic } from "@/hooks/use-haptic";
@@ -235,7 +234,7 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
                   охота идёт
                 </motion.p>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  Гончая уже в барабане. Заходи — шоу идёт прямо сейчас.
+                  Хелл уже в барабане. Заходи — шоу идёт прямо сейчас.
                 </p>
                 <button
                   type="button"
@@ -443,7 +442,7 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
             {[
               {
                 q: "Что если я не зайду вовремя?",
-                a: "Капсулы крутятся независимо от того, смотришь ты или нет. Приз всё равно твой, если гончая тебя не выбила — итоги увидишь на этой странице.",
+                a: "Капсулы крутятся независимо от того, смотришь ты или нет. Приз всё равно твой, если Хелл тебя не выбил — итоги увидишь на этой странице.",
               },
               {
                 q: "Насколько это честно?",
