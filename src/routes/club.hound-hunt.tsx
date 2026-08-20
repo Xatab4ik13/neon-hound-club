@@ -1325,30 +1325,32 @@ function Podium({
       className="pointer-events-auto absolute inset-x-0 bottom-0 z-10 mx-auto w-full max-w-md px-6 text-center"
     >
       <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-destructive">
-        охота закрыта
+        охота завершилась
       </p>
-      <div className="mt-4 space-y-2">
+      <div className="mt-3 space-y-1.5">
         {[...winners].reverse().map((w) => {
           const p = HUNT_PRIZES.find((x) => x.id === w.prizeId)!;
           const rc = rankColorsOf(w.entry);
           return (
             <div
               key={w.prizeId}
-              className="flex items-center gap-3 rounded-2xl border border-border/60 bg-card/50 p-3 text-left backdrop-blur"
+              className="flex items-center gap-2.5 rounded-2xl border border-border/60 bg-card/50 p-2.5 text-left backdrop-blur"
             >
-              <img src={p.img} alt="" className="size-12 shrink-0 object-contain" />
+              <img src={p.img} alt="" className="size-10 shrink-0 object-contain" />
               <div className="min-w-0 flex-1">
-                <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                  {p.sub}
-                </p>
-                <p className="truncate font-display text-sm font-black uppercase">{p.title}</p>
+                {p.sub ? (
+                  <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+                    {p.sub}
+                  </p>
+                ) : null}
+                <p className="truncate font-display text-sm font-black uppercase leading-tight">{p.title}</p>
               </div>
-              <div className="flex w-16 shrink-0 flex-col items-center gap-1">
+              <div className="flex w-14 shrink-0 flex-col items-center gap-0.5">
                 <div
-                  className="flex size-11 items-center justify-center overflow-hidden rounded-full p-[2px]"
+                  className="flex size-9 items-center justify-center overflow-hidden rounded-full p-[2px]"
                   style={{
                     background: `linear-gradient(160deg, ${rc.accent}, ${rc.accentSoft})`,
-                    boxShadow: `0 0 16px -4px ${rc.accentSoft}`,
+                    boxShadow: `0 0 14px -4px ${rc.accentSoft}`,
                   }}
                 >
                   <div className="size-full overflow-hidden rounded-full bg-background/60">
@@ -1359,26 +1361,23 @@ function Podium({
                         className="size-full object-cover"
                       />
                     ) : (
-                      <span className="grid size-full place-items-center font-display text-xs font-black uppercase">
+                      <span className="grid size-full place-items-center font-display text-[10px] font-black uppercase">
                         {w.entry.initials}
                       </span>
                     )}
                   </div>
                 </div>
                 <p
-                  className="w-full truncate text-center font-display text-[10px] font-black uppercase"
+                  className="w-full truncate text-center font-display text-[9px] font-black uppercase"
                   style={{ color: rc.accent }}
                 >
                   {w.entry.nick}
                 </p>
               </div>
             </div>
-
           );
         })}
       </div>
-
-
     </motion.div>
   );
 }
