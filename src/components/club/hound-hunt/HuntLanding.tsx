@@ -221,7 +221,7 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
                 <button
                   type="button"
                   onClick={() => {
-                    haptic("medium");
+                    haptic("success");
                     onEnterShow();
                   }}
                   className="mt-4 w-full rounded-2xl px-6 py-4 font-display text-lg font-black uppercase tracking-wide text-background transition active:scale-[0.98]"
