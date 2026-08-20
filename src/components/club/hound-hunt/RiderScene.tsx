@@ -88,18 +88,25 @@ function Model({
   mode,
   lookAt,
   kickToken,
+  victory,
   onKickReady,
   onImpact,
 }: {
   mode: RiderMode;
   lookAt: { x: number; y: number };
   kickToken?: number;
+  victory?: boolean;
   onKickReady?: (impactDelay: number, cycleMs: number) => void;
   onImpact?: (cycle: number) => void;
 }) {
   const group = useRef<THREE.Group>(null);
   const { scene, animations } = useGLTF(MODEL_URL);
+  const { animations: victoryAnims } = useGLTF(VICTORY_URL);
   const cloned = useMemo(() => scene, [scene]);
+  // Клипы делят один и тот же риг (Meshy, одинаковые имена костей),
+  // поэтому победный танец играется тем же миксером — без подмены модели.
+  const allClips = useMemo(() => [...animations, ...victoryAnims], [animations, victoryAnims]);
+
 
   // Перекраска в фирменный розовый + подтяжка резкости/контраста материалов.
   useEffect(() => {
