@@ -13,7 +13,7 @@ import { getTier } from "@/data/hell-pass";
 import { haptic } from "@/hooks/use-haptic";
 import { useViewer } from "@/hooks/use-viewer";
 import { useMyProfile } from "@/lib/garage-api";
-import { useHuntPhase } from "./hh-phase";
+import { useHuntPhase, msUntilStart } from "./hh-phase";
 import { useMyBet } from "./hh-bets";
 import { toast } from "sonner";
 
@@ -202,7 +202,7 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
             className="rounded-3xl border border-border/60 bg-card/60 p-5 text-center"
             style={{ boxShadow: `0 0 60px -30px ${TOXIC}` }}
           >
-            {stage === "soon" && (
+            {(phase === "betting" || phase === "locked" || phase === "idle") && (
               <>
                 <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-muted-foreground">
                   до начала охоты
@@ -228,6 +228,11 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
                   ))}
                 </div>
                 <p className="mt-3 text-xs text-muted-foreground">Старт {startLabel}</p>
+                {phase === "locked" && (
+                  <p className="mt-1 text-xs font-medium text-destructive">
+                    Приём билетов закрыт — состав барабана зафиксирован.
+                  </p>
+                )}
                 <Link
                   to="/club/hell-pass"
                   onClick={() => haptic("light")}
@@ -238,7 +243,7 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
               </>
             )}
 
-            {stage === "live" && (
+            {phase === "live" && (
               <>
                 <motion.p
                   animate={{ opacity: [1, 0.45, 1] }}
@@ -249,7 +254,7 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
                   охота идёт
                 </motion.p>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  Хелл уже в барабане. Заходи — шоу идёт прямо сейчас.
+                  Хелл уже в барабане. Шоу идёт прямо сейчас.
                 </p>
                 <button
                   type="button"
@@ -265,13 +270,13 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
               </>
             )}
 
-            {stage === "finished" && (
+            {phase === "replay" && (
               <>
                 <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-destructive">
                   охота завершилась
                 </p>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  Итоги подведены. Следующая охота — через неделю, готовь билеты.
+                  Итоги подведены. Запись доступна сутки, потом страница откроет новую охоту.
                 </p>
                 <button
                   type="button"
@@ -406,6 +411,12 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
               </button>
             </div>
 
+            {bet.tickets > 0 && (
+              <p className="mt-3 text-xs" style={{ color: TOXIC }}>
+                Уже в барабане: {bet.capsules} {bet.capsules === 1 ? "капсула" : "капсул"} ({bet.tickets} билетов). Новая ставка суммируется.
+              </p>
+            )}
+
             <p className="mt-3 text-xs text-muted-foreground">
               {capsules === 0
                 ? `Минимальная ставка — ${cfg.ticketStep} билетов. Шаг ${cfg.ticketStep}.`
@@ -429,13 +440,36 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
 
             <button
               type="button"
-              onClick={() => haptic("success")}
-              disabled={capsules === 0}
-              className="mt-5 w-full rounded-2xl px-6 py-3.5 font-display text-base font-black uppercase tracking-wide text-background transition active:scale-[0.98] disabled:opacity-40"
-              style={{ background: TOXIC, boxShadow: `0 0 45px -16px ${TOXIC}` }}
+              onClick={submitBet}
+              disabled={!canBet}
+              className="mt-5 w-full rounded-2xl px-6 py-3.5 font-display text-base font-black uppercase tracking-wide transition active:scale-[0.98]"
+              style={
+                canBet
+                  ? { background: TOXIC, boxShadow: `0 0 45px -16px ${TOXIC}`, color: "hsl(var(--background))" }
+                  : undefined
+              }
             >
-              Поставить {tickets} билетов
+              {canBet ? (
+                <>Поставить {tickets} билетов</>
+              ) : (
+                <span className="text-muted-foreground">Поставить билеты</span>
+              )}
             </button>
+
+            {/* Почему кнопка серая — говорим прямо, без догадок. */}
+            {!canBet && (
+              <p className="mt-2 text-center text-xs text-muted-foreground">
+                {!isAuthed
+                  ? "Войди в клуб, чтобы участвовать."
+                  : !isPlatinum
+                    ? "Ставить билеты могут только владельцы Hell Pass Platinum."
+                    : phase !== "betting"
+                      ? "Приём билетов на эту охоту закрыт."
+                      : capsules === 0
+                        ? `Минимум ${cfg.ticketStep} билетов.`
+                        : `Не хватает билетов: на балансе ${balance}.`}
+              </p>
+            )}
           </div>
         </Reveal>
 
