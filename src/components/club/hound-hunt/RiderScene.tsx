@@ -4,7 +4,7 @@
 // "lunge" = удар ногой по капсуле (проигрывается клип один раз).
 
 import { Suspense, useEffect, useMemo, useRef } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useAnimations, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import riderAsset from "@/assets/rider.glb.asset.json";
@@ -29,6 +29,8 @@ type Props = {
 
 const MODEL_URL = riderAsset.url;
 const VICTORY_URL = victoryAsset.url;
+// Доля высоты канваса, добавленная сверху под поднятые руки победной анимации.
+const HEADROOM_FRAC = 6 / 74;
 
 
 const BRAND = { r: 0xf0, g: 0x00, b: 0xc0 };
@@ -219,7 +221,7 @@ function Model({
   // Кадр канваса расширен вверх (см. HEADROOM_FRAC), поэтому модель сдвинута
   // вниз ровно на добавленный запас — визуально персонаж стоит и выглядит так же,
   // но поднятые руки в победном танце больше не срезаются верхней границей.
-  const viewportH = useThree((s) => s.viewport.height);
+  const viewportH = useThree((s: { viewport: { height: number } }) => s.viewport.height);
   useEffect(() => {
     if (group.current) group.current.position.y = -viewportH * HEADROOM_FRAC;
   }, [viewportH]);
@@ -264,7 +266,7 @@ export default function RiderScene({
     <div className={className}>
       <Canvas
         dpr={[1, 2]}
-        camera={{ position: [0, 1.1, 5.6], fov: 42 }}
+        camera={{ position: [0, 1.1, 5.6], fov: 50 }}
         gl={{
           antialias: true,
           alpha: true,
