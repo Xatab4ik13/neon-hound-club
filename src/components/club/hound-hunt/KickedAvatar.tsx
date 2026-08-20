@@ -6,7 +6,7 @@
 import { motion } from "framer-motion";
 import { useMemo } from "react";
 import { HuntAvatar } from "./HuntAvatar";
-import type { HuntEntry } from "./hh-mock";
+import { rankColorsOf, type HuntEntry } from "./hh-mock";
 
 type Props = {
   entry: HuntEntry;
@@ -26,6 +26,8 @@ function hash(s: string) {
 }
 
 export function KickedAvatar({ entry, seed, scale = 0.62, width }: Props) {
+  // Вспышка, искры и трейл красим в цвет ранга — аватарка улетает со своим свечением.
+  const { accent, accentSoft } = rankColorsOf(entry);
   const r = useMemo(() => {
     const a = hash(seed);
     const b = hash(seed + "b");
@@ -68,7 +70,7 @@ export function KickedAvatar({ entry, seed, scale = 0.62, width }: Props) {
           width: width * 2.1,
           height: width * 2.1,
           background:
-            "radial-gradient(circle, rgba(255,255,255,0.95), color-mix(in oklab, var(--destructive) 70%, transparent) 32%, transparent 66%)",
+            `radial-gradient(circle, rgba(255,255,255,0.95), ${accentSoft} 32%, transparent 66%)`,
           mixBlendMode: "screen",
         }}
         initial={{ opacity: 0.95, scale: 0.25 }}
@@ -84,7 +86,7 @@ export function KickedAvatar({ entry, seed, scale = 0.62, width }: Props) {
           style={{
             width: s.size,
             height: s.size,
-            background: i % 3 === 0 ? "var(--primary)" : "color-mix(in oklab, var(--destructive) 85%, white)",
+            background: i % 3 === 0 ? accent : accentSoft,
             boxShadow: "0 0 8px currentColor",
           }}
           initial={{ opacity: 1, x: 0, y: 0 }}
@@ -100,7 +102,7 @@ export function KickedAvatar({ entry, seed, scale = 0.62, width }: Props) {
           width: width * 1.6,
           transformOrigin: "left center",
           background:
-            "linear-gradient(90deg, color-mix(in oklab, var(--destructive) 80%, transparent), transparent)",
+            `linear-gradient(90deg, ${accent}, transparent)`,
           filter: "blur(2px)",
         }}
         initial={{ opacity: 0.8, scaleX: 0.2, rotate: -22 }}

@@ -3,7 +3,7 @@
 // и болел за свою. Позже avatarUrl придёт с бекенда, пока моки без фото.
 
 import { motion } from "framer-motion";
-import { hueOf, type HuntEntry } from "./hh-mock";
+import { hueOf, rankColorsOf, type HuntEntry } from "./hh-mock";
 
 type Props = {
   entry: HuntEntry;
@@ -16,6 +16,8 @@ type Props = {
 export function HuntAvatar({ entry, scale = 1, focused = false, className }: Props) {
   const size = 132 * scale;
   const hue = hueOf(entry.nick);
+  // Рамка и свечение — цвета ранга участника (как плашка в профиле).
+  const { accent, accentSoft } = rankColorsOf(entry);
 
   return (
     <div
@@ -29,11 +31,11 @@ export function HuntAvatar({ entry, scale = 1, focused = false, className }: Pro
           height: size,
           padding: size * 0.045,
           background: focused
-            ? "conic-gradient(from 0deg, color-mix(in oklab, var(--destructive) 90%, transparent), color-mix(in oklab, var(--primary) 90%, transparent), color-mix(in oklab, var(--destructive) 90%, transparent))"
-            : "linear-gradient(160deg, rgba(255,255,255,0.35), rgba(255,255,255,0.06) 45%, rgba(0,0,0,0.7))",
+            ? `conic-gradient(from 0deg, ${accent}, ${accentSoft}, ${accent})`
+            : `linear-gradient(160deg, ${accent}, ${accentSoft} 45%, rgba(0,0,0,0.6))`,
           boxShadow: focused
-            ? "0 0 34px -4px color-mix(in oklab, var(--destructive) 75%, transparent), inset 0 1px 2px rgba(255,255,255,0.5)"
-            : "0 16px 30px -14px rgba(0,0,0,0.95), inset 0 1px 2px rgba(255,255,255,0.4)",
+            ? `0 0 34px -4px ${accentSoft}, 0 0 14px -2px ${accent}, inset 0 1px 2px rgba(255,255,255,0.45)`
+            : `0 0 16px -6px ${accentSoft}, 0 16px 30px -14px rgba(0,0,0,0.95), inset 0 1px 2px rgba(255,255,255,0.35)`,
         }}
         animate={focused ? { scale: [1, 1.05, 1] } : undefined}
         transition={focused ? { duration: 1.6, repeat: Infinity, ease: "easeInOut" } : undefined}

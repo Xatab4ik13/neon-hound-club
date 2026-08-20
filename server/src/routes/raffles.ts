@@ -38,6 +38,7 @@ export async function rafflesRoutes(app: FastifyInstance) {
   // для визуальной обкатки шоу HOUND HUNT (ники + аватарки из профиля).
   app.get("/hunt-demo-entries", { preHandler: requireAuth }, async () => {
     const { profiles } = await import("../db/schema/profile.js");
+    const { getRanksMap } = await import("./feed.js");
     const rows = await db
       .select({
         id: users.id,
@@ -50,7 +51,10 @@ export async function rafflesRoutes(app: FastifyInstance) {
       .where(eq(users.blocked, false))
       .orderBy(sql`random()`)
       .limit(20);
-    return { items: rows };
+    const ranks = await getRanksMap(rows.map((r) => r.id));
+    return {
+      items: rows.map((r) => ({ ...r, rankId: ranks.get(r.id) ?? "rookie" })),
+    };
   });
 
   // GET /api/v1/raffles/home — активные с флагом show_on_home, с превью призов.
