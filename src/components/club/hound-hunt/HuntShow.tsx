@@ -1016,32 +1016,17 @@ export function HoundHuntPage({ mode = "live" }: { mode?: HuntShowMode }) {
 
 /* ------------------------------ куски арены ------------------------------ */
 
-function IntroPanel({ onStart }: { onStart: () => void }) {
+/** Пока состав грузится, арена пустая: кнопки старта в шоу больше нет. */
+function ArenaLoading() {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 24 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="relative z-10 mt-6 w-full max-w-md px-6 text-center"
-    >
+    <div className="relative z-10 mt-6 w-full max-w-md px-6 text-center">
       <p className="font-mono text-[11px] uppercase tracking-[0.26em] text-destructive">
         охота начинается
       </p>
-      <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-        Капсулы движутся без остановки, а пустое место уезжает вместе с лентой. Последний, кто
-        устоял, забирает приз.
-      </p>
-
-
-      <button
-        type="button"
-        onClick={onStart}
-        className="mt-6 w-full rounded-2xl border border-destructive/50 bg-destructive/15 px-6 py-4 font-display text-lg font-black uppercase tracking-wide text-foreground shadow-[0_0_40px_-6px_color-mix(in_oklab,var(--destructive)_70%,transparent)] transition active:scale-[0.98]"
-      >
-        Спустить Хелла
-      </button>
-    </motion.div>
+    </div>
   );
 }
+
 
 function ReelStage({
   slots,
