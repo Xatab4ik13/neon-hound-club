@@ -947,6 +947,13 @@ export function HoundHuntPage({ mode = "live" }: { mode?: HuntShowMode }) {
 
           {phase === "intro" && <ArenaLoading />}
 
+          {/* Реплей честно помечаем: это запись прошедшей охоты. */}
+          {mode === "replay" && (
+            <div className="pointer-events-none absolute left-1/2 top-3 z-30 -translate-x-1/2 rounded-full border border-border/60 bg-background/70 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground backdrop-blur">
+              запись
+            </div>
+          )}
+
           {(phase === "arming" ||
             phase === "drift" ||
             phase === "settle" ||
