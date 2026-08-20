@@ -372,6 +372,9 @@ export function HoundHuntPage() {
             tapeRef.current = only;
             setTape(only);
             stopReel();
+            // Лента встала — сам запускаем финал раунда: показ победителя,
+            // затем отсчёт «3 / 2 / 1» и следующий приз.
+            finishRef.current?.();
             return;
           }
 
