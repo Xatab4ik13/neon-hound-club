@@ -19,6 +19,8 @@ import {
 } from "@/lib/queries";
 import { useViewer } from "@/hooks/use-viewer";
 import { useMyProfile } from "@/lib/garage-api";
+import { useHuntConfig } from "@/components/club/hound-hunt/hh-config";
+import { useHuntPhase } from "@/components/club/hound-hunt/hh-phase";
 
 export const Route = createFileRoute("/club/tickets")({
   head: () => ({
@@ -53,6 +55,12 @@ function TicketsPage() {
 
   const balance = balanceQ.data?.balance ?? 0;
   const entries = historyQ.data?.items ?? [];
+
+  // Плашка «идёт сейчас» на карточке охоты — та же фаза, что и на самой странице.
+  const huntCfg = useHuntConfig();
+  const huntPhase = useHuntPhase(huntCfg.cfg.startsAt);
+  const huntLive = huntPhase.phase === "live";
+
 
   // Активный розыгрыш — первый со статусом "active" (бэк сортирует по дедлайну).
   const activeRaffle = (rafflesQ.data?.items ?? []).find((r) => r.status === "active") ?? null;
@@ -91,6 +99,31 @@ function TicketsPage() {
         </span>
         <ChevronRight className="h-4 w-4 shrink-0 text-foreground/70" />
       </Link>
+
+      <Link
+        to="/club/hound-hunt"
+        className="group relative mb-5 flex items-center gap-3 rounded-2xl bg-card px-4 py-3 transition-transform active:scale-[0.98]"
+      >
+        {huntLive && (
+          <span className="absolute -left-1.5 -top-2.5 z-10 inline-flex -rotate-3 items-center gap-1 rounded-lg bg-[#B6FF3C] px-2 py-0.5 font-display text-[10px] font-black uppercase tracking-tight text-black">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-black" />
+            Идёт сейчас
+          </span>
+        )}
+        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground">
+          <Trophy className="h-4 w-4" />
+        </span>
+        <span className="min-w-0 flex-1 pt-1">
+          <span className="block font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+            Охота клуба
+          </span>
+          <span className="mt-0.5 block truncate font-display text-[15px] font-black uppercase tracking-tight text-foreground">
+            HELL HUNT — каждую неделю
+          </span>
+        </span>
+        <ChevronRight className="h-4 w-4 shrink-0 text-foreground/70" />
+      </Link>
+
 
       {activeRaffle && (
         <Link
