@@ -400,8 +400,9 @@ export function playHuntRoundGo() {
   src.start(t);
 }
 
-// ===== Готовые mp3-сэмплы (public/sfx): фанфара победы и басовый отсчёт =====
+// ===== Готовые mp3-сэмплы (public/sfx): удар, фанфара победы и басовый отсчёт =====
 const SAMPLES = {
+  impact: "/sfx/impact.mp3",
   win: "/sfx/win-fanfare.mp3",
   three: "/sfx/count-three.mp3",
   two: "/sfx/count-two.mp3",
@@ -409,6 +410,9 @@ const SAMPLES = {
   go: "/sfx/count-go.mp3",
 } as const;
 type SampleKey = keyof typeof SAMPLES;
+
+/** Длительность фанфары победы (мс) — под неё держим ревил победителя. */
+export const HUNT_WIN_MS = 6500;
 
 const cache = new Map<SampleKey, HTMLAudioElement>();
 
@@ -437,9 +441,31 @@ function playSample(key: SampleKey, volume = 1) {
   void el.play().catch(() => {});
 }
 
-/** Финал раунда: настоящая фанфара (mp3), без синтетической полифонии. */
+// Удары идут часто и могут накладываться — крутим пул копий сэмпла.
+const pools = new Map<SampleKey, { items: HTMLAudioElement[]; next: number }>();
+
+function playSampleOverlap(key: SampleKey, volume = 1, size = 4) {
+  if (muted || typeof window === "undefined") return;
+  let pool = pools.get(key);
+  if (!pool) {
+    pool = { items: Array.from({ length: size }, () => new Audio(SAMPLES[key])), next: 0 };
+    pool.items.forEach((a) => (a.preload = "auto"));
+    pools.set(key, pool);
+  }
+  const el = pool.items[pool.next % pool.items.length];
+  pool.next++;
+  el.volume = Math.max(0, Math.min(1, volume));
+  try {
+    el.currentTime = 0;
+  } catch {
+    /* noop */
+  }
+  void el.play().catch(() => {});
+}
+
+/** Финал раунда: настоящая фанфара (mp3). Чуть тише — она играет целиком. */
 export function playHuntWin() {
-  playSample("win", 0.9);
+  playSample("win", 0.55);
 }
 
 /** Голосовой отсчёт «three / two / one / go» — грубый низкий голос. */
@@ -447,5 +473,6 @@ export function speakHuntCount(step: number) {
   const key: SampleKey = step === 3 ? "three" : step === 2 ? "two" : step === 1 ? "one" : "go";
   playSample(key, 1);
 }
+
 
 
