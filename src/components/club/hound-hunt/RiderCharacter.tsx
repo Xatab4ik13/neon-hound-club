@@ -5,7 +5,20 @@ import { Suspense, lazy } from "react";
 
 export type RiderMode = "idle" | "watch" | "lunge" | "chew";
 
-const RiderScene = lazy(() => import("./RiderScene"));
+const importScene = () => import("./RiderScene");
+const RiderScene = lazy(importScene);
+
+/**
+ * Прогревает чанк three/fiber и GLB-модели заранее (модуль RiderScene
+ * вызывает useGLTF.preload на верхнем уровне), чтобы при переходе
+ * на HELL HUNT персонаж был уже готов.
+ */
+let riderPreloaded = false;
+export function preloadRider() {
+  if (riderPreloaded) return;
+  riderPreloaded = true;
+  void importScene();
+}
 
 type Props = {
   mode: RiderMode;
