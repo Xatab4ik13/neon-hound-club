@@ -1,4 +1,4 @@
-// HOUND HUNT — два режима одной страницы: продающий лендинг и само шоу.
+// HELL HUNT — два режима одной страницы: продающий лендинг и само шоу.
 // Пока фича в разработке, сверху висит dev-тумблер (HH_DEV_TOGGLE), чтобы
 // можно было спускать гончую в любой момент. В прод достаточно выключить флаг.
 // Доступ только из PWA: вся вёрстка и анимации рассчитаны на приложение.
@@ -19,7 +19,7 @@ const HH_DEV_TOGGLE = true;
 export const Route = createFileRoute("/club/hound-hunt")({
   head: () => ({
     meta: [
-      { title: "HOUND HUNT — клуб HELLHOUND" },
+      { title: "HELL HUNT — клуб HELLHOUND" },
       { name: "description", content: "Шоу-розыгрыш для владельцев Hell Pass Platinum." },
       { name: "robots", content: "noindex" },
     ],
@@ -78,7 +78,7 @@ function NotInApp({ desktop = false }: { desktop?: boolean }) {
     <div className="relative flex min-h-[100svh] flex-col items-center justify-center gap-5 overflow-hidden bg-black px-8 text-center">
       <EmberField className="pointer-events-none absolute inset-0 opacity-40" />
       <div className="relative z-10 flex flex-col items-center gap-4">
-        <h1 className="font-display text-2xl uppercase tracking-tight text-white">Hound Hunt</h1>
+        <h1 className="font-display text-2xl uppercase tracking-tight text-white">Hell Hunt</h1>
         <p className="max-w-xs text-sm leading-relaxed text-white/50">
           {desktop
             ? "Охота идёт только в приложении на телефоне. Открой клуб с мобильного или установи приложение."

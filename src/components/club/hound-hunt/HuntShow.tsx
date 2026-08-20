@@ -1,4 +1,4 @@
-// HOUND HUNT — шоу-розыгрыш для владельцев Hell Pass Platinum.
+// HELL HUNT — шоу-розыгрыш для владельцев Hell Pass Platinum.
 // ВАЖНО: пока это ТОЛЬКО визуал на моках. Победители определяются локально
 // (Math.random по весам билетов). Серверная часть (честный жребий, seed,
 // подпись) — позже. Звука нет намеренно: у HellSpin свой звук, здесь будет
@@ -45,7 +45,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 
 
 /**
- * HOUND HUNT — только телефон/приложение. На десктопе шоу не запускаем:
+ * HELL HUNT — только телефон/приложение. На десктопе шоу не запускаем:
  * вся вёрстка и анимации рассчитаны на вертикальный мобильный экран.
  */
 export function HuntShow() {
@@ -62,7 +62,7 @@ function DesktopBlock() {
         <div className="w-40">
           <RiderCharacter mode="idle" className="h-40 w-40" />
         </div>
-        <h1 className="font-display text-2xl uppercase tracking-tight text-white">Hound Hunt</h1>
+        <h1 className="font-display text-2xl uppercase tracking-tight text-white">Hell Hunt</h1>
         <p className="max-w-xs text-sm leading-relaxed text-white/50">
           Шоу идёт только в приложении на телефоне. Открой клуб с мобильного или установи PWA.
         </p>
@@ -1000,7 +1000,7 @@ function IntroPanel({ onStart }: { onStart: () => void }) {
         onClick={onStart}
         className="mt-6 w-full rounded-2xl border border-destructive/50 bg-destructive/15 px-6 py-4 font-display text-lg font-black uppercase tracking-wide text-foreground shadow-[0_0_40px_-6px_color-mix(in_oklab,var(--destructive)_70%,transparent)] transition active:scale-[0.98]"
       >
-        Спустить гончую
+        Спустить Хелла
       </button>
     </motion.div>
   );

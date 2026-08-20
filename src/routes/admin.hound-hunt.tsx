@@ -1,4 +1,4 @@
-// Админка HOUND HUNT. ТОЛЬКО ФРОНТ: конфиг охоты (время старта, порог
+// Админка HELL HUNT. ТОЛЬКО ФРОНТ: конфиг охоты (время старта, порог
 // билетов, призы и выбранные победители) живёт в localStorage и читается
 // страницей /club/hound-hunt. Бекенда здесь нет намеренно.
 
@@ -30,7 +30,7 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/admin/hound-hunt")({
   head: () => ({
     meta: [
-      { title: "HOUND HUNT — Админ" },
+      { title: "HELL HUNT — Админ" },
       { name: "robots", content: "noindex, nofollow" },
     ],
   }),
@@ -107,7 +107,7 @@ function HoundHuntAdminPage() {
   return (
     <div>
       <PageHeader
-        title="HOUND HUNT"
+        title="HELL HUNT"
         description="Недельная охота для Hell Pass Platinum. Всё, что здесь настроено, видит лендинг и шоу."
         actions={
           <>
