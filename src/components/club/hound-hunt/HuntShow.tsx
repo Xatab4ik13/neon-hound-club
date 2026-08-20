@@ -760,6 +760,33 @@ export function HoundHuntPage({ mode = "live" }: { mode?: HuntShowMode }) {
     runCase(0, fresh);
   };
 
+  /**
+   * Кнопки «Спустить Хелла» больше нет: шоу стартует само — по времени (live)
+   * или сразу при входе в реплей. Ref-замок гарантирует один запуск на монтаж.
+   */
+  const startedRef = useRef(false);
+  useEffect(() => {
+    if (startedRef.current) return;
+    startedRef.current = true;
+    void start();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /** Итоги пишутся один раз в конце — реплей показывает те же результаты. */
+  useEffect(() => {
+    if (phase !== "podium" || !winners.length) return;
+    saveResults(
+      cfg.startsAt,
+      winners.map((w) => ({
+        prizeId: w.prizeId,
+        entryId: w.entry.id,
+        nick: w.entry.nick,
+        avatarUrl: w.entry.avatarUrl,
+      })),
+    );
+  }, [phase, winners, cfg.startsAt]);
+
+
 
   /** Тестовая кнопка: перескочить к следующей фазе. */
   const skip = () => {
