@@ -154,7 +154,7 @@ function PlatinumCard() {
 export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
   const { cfg } = useHuntConfig();
   const prizes = useMemo(() => prizesInRunOrder(cfg), [cfg]);
-  const main = prizes[prizes.length - 1];
+  
   const { stage, ms } = useStage(cfg.startsAt);
   const parts = split(ms);
 
