@@ -7,9 +7,7 @@ import { Suspense, useEffect, useMemo, useRef } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useAnimations, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
-import riderAsset from "@/assets/rider.glb.asset.json";
-import victoryAsset from "@/assets/rider-victory.glb.asset.json";
-import danceAsset from "@/assets/rider-agree.glb.asset.json";
+import { BACKEND_URL } from "@/lib/api";
 
 export type RiderMode = "idle" | "watch" | "lunge" | "chew";
 
@@ -37,9 +35,13 @@ type Props = {
   onImpact?: (cycle: number) => void;
 };
 
-const MODEL_URL = riderAsset.url;
-const VICTORY_URL = victoryAsset.url;
-const DANCE_URL = danceAsset.url;
+// Модели лежат в нашем MinIO и отдаются через /media нашего API: Lovable CDN
+// в РФ без VPN не открывается, поэтому персонаж грузится только со своего сервера.
+// Заливка ключей: `docker compose exec api node dist/scripts/import-rider-models.js`.
+const MODEL_BASE = `${BACKEND_URL}/media/models`;
+const MODEL_URL = `${MODEL_BASE}/rider.glb`;
+const VICTORY_URL = `${MODEL_BASE}/rider-victory.glb`;
+const DANCE_URL = `${MODEL_BASE}/rider-agree.glb`;
 /** Имя, под которым регистрируется клип танца финального экрана. */
 const DANCE_CLIP = "hh_final_dance";
 // Доля высоты канваса, добавленная сверху под поднятые руки победной анимации.
