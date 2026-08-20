@@ -807,6 +807,7 @@ export function HoundHuntPage() {
               mode={dogMode}
               lookAt={look}
               kickToken={kickToken}
+              victory={settled}
               onKickReady={(impactDelay, cycleMs) => {
                 impactDelayRef.current = impactDelay;
                 kickCycleMsRef.current = cycleMs;

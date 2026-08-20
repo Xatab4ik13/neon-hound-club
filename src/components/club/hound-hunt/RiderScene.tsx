@@ -287,3 +287,4 @@ export default function RiderScene({
 }
 
 useGLTF.preload(MODEL_URL);
+useGLTF.preload(VICTORY_URL);
