@@ -120,7 +120,7 @@ function ac(): AudioContext | null {
     musicBus.connect(master);
 
     sfxBus = ctx.createGain();
-    sfxBus.gain.value = 0.34;
+    sfxBus.gain.value = 0.18;
     sfxBus.connect(master);
   }
   if (ctx.state === "suspended") ctx.resume().catch(() => {});
@@ -324,7 +324,7 @@ export function isHuntMuted() {
 /** Удар: настоящий mp3-сэмпл (мощный кинематографичный импакт), без синтеза. */
 export function playHuntImpact(power = 1) {
   const p = Math.max(0.35, Math.min(1, power));
-  playSampleOverlap("impact", 0.55 + 0.45 * p);
+  playSampleOverlap("impact", 0.22 + 0.16 * p);
 }
 
 
@@ -412,7 +412,7 @@ const SAMPLES = {
 type SampleKey = keyof typeof SAMPLES;
 
 /** Длительность фанфары победы (мс) — под неё держим ревил победителя. */
-export const HUNT_WIN_MS = 6500;
+export const HUNT_WIN_MS = 3950;
 
 const cache = new Map<SampleKey, HTMLAudioElement>();
 
@@ -465,13 +465,13 @@ function playSampleOverlap(key: SampleKey, volume = 1, size = 4) {
 
 /** Финал раунда: настоящая фанфара (mp3). Чуть тише — она играет целиком. */
 export function playHuntWin() {
-  playSample("win", 0.55);
+  playSample("win", 0.3);
 }
 
 /** Голосовой отсчёт «three / two / one / go» — грубый низкий голос. */
 export function speakHuntCount(step: number) {
   const key: SampleKey = step === 3 ? "three" : step === 2 ? "two" : step === 1 ? "one" : "go";
-  playSample(key, 1);
+  playSample(key, 0.5);
 }
 
 
