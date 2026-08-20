@@ -34,6 +34,25 @@ export async function rafflesRoutes(app: FastifyInstance) {
     return { items: rows };
   });
 
+  // GET /api/v1/raffles/hunt-demo-entries — 20 случайных реальных участников
+  // для визуальной обкатки шоу HOUND HUNT (ники + аватарки из профиля).
+  app.get("/hunt-demo-entries", { preHandler: requireAuth }, async () => {
+    const { profiles } = await import("../db/schema/profile.js");
+    const rows = await db
+      .select({
+        id: users.id,
+        nick: users.nick,
+        city: profiles.city,
+        avatarUrl: profiles.avatarUrl,
+      })
+      .from(users)
+      .leftJoin(profiles, eq(profiles.userId, users.id))
+      .where(eq(users.blocked, false))
+      .orderBy(sql`random()`)
+      .limit(20);
+    return { items: rows };
+  });
+
   // GET /api/v1/raffles/home — активные с флагом show_on_home, с превью призов.
   // Используется для hero-блока на главной.
   app.get("/home", async () => {
