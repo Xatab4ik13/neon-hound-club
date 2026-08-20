@@ -1167,7 +1167,7 @@ function RoundCountdown({ round, onDone }: { round: number; onDone: () => void }
           setStep(value);
           if (value > 0) playHuntCountBeep(value);
           else playHuntRoundGo();
-          haptic(value > 0 ? "light" : "medium");
+          haptic(value > 0 ? "light" : "success");
         }, delay),
       );
     };
