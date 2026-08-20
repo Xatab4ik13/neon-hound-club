@@ -148,6 +148,18 @@ export function HoundHuntPage() {
   const dur = useCallback((base: number) => Math.max(220, base / speedRef.current), []);
 
   const [pool, setPool] = useState<HuntEntry[]>(() => makeEntries(MOCK_ENTRIES));
+  // На входе подтягиваем 20 реальных участников из базы (ник + аватарка),
+  // чтобы интро показывало живой состав, а не моки.
+  useEffect(() => {
+    let cancelled = false;
+    void fetchHuntEntries(MOCK_ENTRIES).then((entries) => {
+      if (!cancelled) setPool(entries);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const [caseIdx, setCaseIdx] = useState(0);
   const [phase, setPhase] = useState<Phase>("intro");
   const [winners, setWinners] = useState<{ prizeId: string; entry: HuntEntry }[]>([]);
