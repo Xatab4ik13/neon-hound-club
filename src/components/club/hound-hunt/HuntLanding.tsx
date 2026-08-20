@@ -68,18 +68,6 @@ function Reveal({
   );
 }
 
-function SectionTitle({ kicker, title }: { kicker: string; title: string }) {
-  return (
-    <>
-      <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-muted-foreground">
-        {kicker}
-      </p>
-      <h2 className="mt-1.5 font-display text-2xl font-black uppercase leading-none tracking-tight">
-        {title}
-      </h2>
-    </>
-  );
-}
 
 /** Цвета плашек в FAQ — тот же приём, что на странице инструктора школы. */
 const FAQ_TINTS = [TOXIC, "#FF8A3C", "#F000C0", "#3CC8FF"];
