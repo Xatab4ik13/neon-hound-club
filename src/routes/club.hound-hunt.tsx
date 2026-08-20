@@ -867,7 +867,10 @@ export function HoundHuntPage() {
               <div className="min-w-0 text-left">
                 <p
                   className="text-[10px] font-semibold uppercase tracking-[0.22em]"
-                  style={{ color: "#B6FF3C", textShadow: "0 0 10px rgba(182,255,60,0.65)" }}
+                  style={{
+                    color: "var(--primary)",
+                    textShadow: "0 0 10px color-mix(in oklab, var(--primary) 65%, transparent)",
+                  }}
                 >
                   разыгрывается
                 </p>
