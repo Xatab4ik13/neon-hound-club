@@ -39,6 +39,18 @@ export function MobileTabBar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [moreOpen, setMoreOpen] = useState(false);
 
+  // Прогреваем 3D-персонажа заранее, пока юзер листает клуб.
+  useEffect(() => {
+    const w = window as Window & { requestIdleCallback?: (cb: () => void) => number };
+    const id = w.requestIdleCallback
+      ? w.requestIdleCallback(() => preloadRider())
+      : window.setTimeout(() => preloadRider(), 1500);
+    return () => {
+      if (!w.requestIdleCallback) window.clearTimeout(id as number);
+    };
+  }, []);
+
+
   const isTabActive = (tab: Tab) =>
     tab.exact ? pathname === tab.href : pathname === tab.href || pathname.startsWith(tab.href + "/");
   const moreActive = MORE_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/"));
