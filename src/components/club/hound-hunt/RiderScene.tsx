@@ -13,6 +13,13 @@ import danceAsset from "@/assets/rider-agree.glb.asset.json";
 
 export type RiderMode = "idle" | "watch" | "lunge" | "chew";
 
+/** Кеш нормализации размера — один замер на модель за всю сессию. */
+const FIT_CACHE = new WeakMap<
+  THREE.Object3D,
+  { s: number; offset: readonly [number, number, number] }
+>();
+
+
 type Props = {
   mode: RiderMode;
   /** Куда смотрит: -1..1 по обеим осям. */
