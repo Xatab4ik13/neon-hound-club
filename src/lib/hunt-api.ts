@@ -100,3 +100,21 @@ export function fetchAdminHuntParticipants() {
     "/api/v1/admin/hunt/participants",
   );
 }
+
+export type HuntPlatinumUser = {
+  id: string;
+  nick: string;
+  email: string;
+  city: string | null;
+  avatarUrl: string | null;
+  passExpiresAt: string | null;
+  tickets: number;
+  capsules: number;
+  inHunt: boolean;
+};
+
+/** Поиск владельцев активного Hell Pass Platinum (для назначения победителя). */
+export function fetchAdminPlatinumUsers(q = "") {
+  const qs = q.trim() ? `?q=${encodeURIComponent(q.trim())}` : "";
+  return apiFetch<{ items: HuntPlatinumUser[] }>(`/api/v1/admin/hunt/platinum-users${qs}`);
+}

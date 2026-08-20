@@ -11,7 +11,7 @@ import {
   PanelHeader,
   Btn,
   TextInput,
-  Select,
+  
   Field,
   Badge,
 } from "@/components/admin/ui";
@@ -32,8 +32,11 @@ import {
   saveAdminHunt,
   drawAdminHunt,
   resetAdminHuntResults,
+  fetchAdminPlatinumUsers,
   type HuntApiEntry,
+  type HuntPlatinumUser,
 } from "@/lib/hunt-api";
+
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/hound-hunt")({
@@ -62,6 +65,134 @@ function fromLocalInput(value: string): string {
 /** Настоящий id приза с бека (uuid) против локального мок-id. */
 function isUuid(v: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
+}
+
+/**
+ * Поиск победителя среди владельцев активного Hell Pass Platinum.
+ * Ищем по нику/почте на бэке, показываем ставку в текущей охоте.
+ */
+function WinnerPicker({
+  value,
+  onChange,
+  takenBy,
+}: {
+  value: string | null;
+  onChange: (id: string | null) => void;
+  takenBy: (userId: string) => string | null;
+}) {
+  const [q, setQ] = useState("");
+  const [open, setOpen] = useState(false);
+  const [items, setItems] = useState<HuntPlatinumUser[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [known, setKnown] = useState<Record<string, HuntPlatinumUser>>({});
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    const t = setTimeout(() => {
+      fetchAdminPlatinumUsers(q)
+        .then((res) => {
+          if (cancelled) return;
+          setItems(res.items);
+          setKnown((k) => {
+            const next = { ...k };
+            for (const u of res.items) next[u.id] = u;
+            return next;
+          });
+        })
+        .catch(() => {
+          if (!cancelled) setItems([]);
+        })
+        .finally(() => {
+          if (!cancelled) setLoading(false);
+        });
+    }, 250);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+  }, [q]);
+
+  const selected = value ? known[value] : undefined;
+
+  return (
+    <div className="space-y-2">
+      {value ? (
+        <div className="flex items-center justify-between gap-2 rounded border border-zinc-700 bg-zinc-900/60 px-3 py-2 text-sm">
+          <span className="truncate">
+            {selected ? (
+              <>
+                {selected.nick}
+                <span className="text-zinc-400">
+                  {" — "}
+                  {selected.capsules} капс. / {selected.tickets} бил.
+                  {selected.city ? ` — ${selected.city}` : ""}
+                </span>
+              </>
+            ) : (
+              <span className="text-zinc-400">Назначен: {value}</span>
+            )}
+          </span>
+          <button
+            type="button"
+            onClick={() => onChange(null)}
+            className="shrink-0 rounded px-2 py-0.5 text-xs text-rose-400 transition hover:bg-rose-500/10"
+          >
+            Снять
+          </button>
+        </div>
+      ) : (
+        <>
+          <TextInput
+            value={q}
+            placeholder="Поиск по нику или email (Hell Pass Platinum)"
+            onFocus={() => setOpen(true)}
+            onChange={(e) => {
+              setQ(e.target.value);
+              setOpen(true);
+            }}
+          />
+          {open ? (
+            <div className="max-h-56 overflow-y-auto rounded border border-zinc-700 bg-zinc-900/80">
+              {loading && !items.length ? (
+                <div className="px-3 py-2 text-xs text-zinc-500">Ищем…</div>
+              ) : !items.length ? (
+                <div className="px-3 py-2 text-xs text-zinc-500">
+                  Нет владельцев Platinum по запросу
+                </div>
+              ) : (
+                items.map((u) => {
+                  const taken = takenBy(u.id);
+                  return (
+                    <button
+                      key={u.id}
+                      type="button"
+                      disabled={taken !== null}
+                      onClick={() => {
+                        onChange(u.id);
+                        setOpen(false);
+                        setQ("");
+                      }}
+                      className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm transition hover:bg-zinc-800 disabled:opacity-40"
+                    >
+                      <span className="truncate">
+                        {u.nick}
+                        <span className="text-zinc-500"> · {u.email}</span>
+                      </span>
+                      <span className="shrink-0 text-xs text-zinc-400">
+                        {u.inHunt ? `${u.capsules} капс.` : "без ставки"}
+                        {taken ? ` · уже: ${taken}` : ""}
+                      </span>
+                    </button>
+                  );
+                })
+              )}
+            </div>
+          ) : null}
+        </>
+      )}
+    </div>
+  );
 }
 
 
@@ -371,27 +502,13 @@ function HoundHuntAdminPage() {
                     <div className="sm:col-span-2">
                       <Field
                         label="Победитель"
-                        hint="Честный розыгрыш — жребий по весам билетов. Или выбери участника вручную."
+                        hint="Честный розыгрыш — жребий по капсулам. Или найди владельца Hell Pass Platinum и назначь вручную."
                       >
-                        <Select
-                          value={p.forcedWinnerId ?? ""}
-                          onChange={(e) =>
-                            patchPrize(p.id, { forcedWinnerId: e.target.value || null })
-                          }
-                        >
-                          <option value="">Честный розыгрыш</option>
-                          {entries.map((e) => (
-                            <option
-                              key={e.id}
-                              value={e.id}
-                              disabled={takenBy(e.id, p.id) !== null}
-                            >
-                              {e.nick} — {e.tickets} бил. / {e.slots} капс.
-                              {e.city ? ` — ${e.city}` : ""}
-                              {takenBy(e.id, p.id) ? ` (уже: ${takenBy(e.id, p.id)})` : ""}
-                            </option>
-                          ))}
-                        </Select>
+                        <WinnerPicker
+                          value={p.forcedWinnerId ?? null}
+                          onChange={(id) => patchPrize(p.id, { forcedWinnerId: id })}
+                          takenBy={(uid) => takenBy(uid, p.id)}
+                        />
                       </Field>
                       {p.forcedWinnerId ? (
                         <div className="mt-2">
@@ -403,6 +520,7 @@ function HoundHuntAdminPage() {
                         </div>
                       )}
                     </div>
+
 
                   </div>
 

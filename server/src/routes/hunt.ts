@@ -1,9 +1,12 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { eq, inArray } from "drizzle-orm";
+import { and, eq, gt, inArray, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { hunts, huntPrizes, huntBets } from "../db/schema/hunt.js";
 import { users } from "../db/schema/users.js";
+import { profiles } from "../db/schema/profile.js";
+import { passPurchases } from "../db/schema/pass.js";
+
 import { requireAuth, requireAdmin, type SessionPayload } from "../lib/auth.js";
 import {
   HuntError,
@@ -243,6 +246,60 @@ export async function adminHuntRoutes(app: FastifyInstance) {
     };
   });
 
+  // Поиск владельцев активного Hell Pass Platinum — для назначения победителя
+  // вручную. Показываем ставку в текущей охоте, если она есть.
+  app.get("/platinum-users", { preHandler: requireAdmin }, async (req) => {
+    const q = String((req.query as { q?: string } | undefined)?.q ?? "").trim().toLowerCase();
+    const hunt = await getCurrentHunt(true);
+    const step = Math.max(1, hunt?.ticketStep ?? 10);
+
+    const rows = await db
+      .selectDistinctOn([users.id], {
+        id: users.id,
+        nick: users.nick,
+        email: users.email,
+        city: profiles.city,
+        avatarUrl: profiles.avatarUrl,
+        expiresAt: passPurchases.expiresAt,
+      })
+      .from(passPurchases)
+      .innerJoin(users, eq(users.id, passPurchases.userId))
+      .leftJoin(profiles, eq(profiles.userId, users.id))
+      .where(
+        and(
+          eq(passPurchases.tier, "platinum"),
+          eq(passPurchases.status, "active"),
+          gt(passPurchases.expiresAt, new Date()),
+          q
+            ? sql`(lower(${users.nick}) like ${`%${q}%`} or lower(${users.email}) like ${`%${q}%`})`
+            : sql`true`,
+        ),
+      )
+      .limit(200);
+
+    const bets = hunt ? await getHuntEntries(hunt.id) : [];
+    const betByUser = new Map(bets.map((b) => [b.userId, b.tickets]));
+
+    return {
+      items: rows
+        .map((r) => {
+          const tickets = betByUser.get(r.id) ?? 0;
+          return {
+            id: r.id,
+            nick: (r.nick ?? "RIDER").toUpperCase(),
+            email: r.email,
+            city: r.city ?? null,
+            avatarUrl: r.avatarUrl ?? null,
+            passExpiresAt: r.expiresAt?.toISOString() ?? null,
+            tickets,
+            capsules: capsulesOf(tickets, step),
+            inHunt: tickets > 0,
+          };
+        })
+        .sort((a, b) => Number(b.inHunt) - Number(a.inHunt) || b.capsules - a.capsules || a.nick.localeCompare(b.nick)),
+    };
+  });
+
   // Кол-во ставок (для дашборда).
   app.get("/stats", { preHandler: requireAdmin }, async () => {
     const hunt = await getCurrentHunt(true);
@@ -251,3 +308,4 @@ export async function adminHuntRoutes(app: FastifyInstance) {
     return { participants: rows.length, tickets: rows.reduce((s, r) => s + r.tickets, 0) };
   });
 }
+
