@@ -137,7 +137,7 @@ function Model({
       });
     });
   }, [cloned]);
-  const { actions, names } = useAnimations(animations, group);
+  const { actions, names } = useAnimations(allClips, group);
 
   // нормализуем масштаб/позицию: ставим на пол, высота ~2 юнита
   const fit = useMemo(() => {
