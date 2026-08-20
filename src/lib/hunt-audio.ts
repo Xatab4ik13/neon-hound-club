@@ -230,6 +230,7 @@ export function isHuntMuted() {
 export function playHuntImpact(power = 1) {
   const c = ac();
   if (!c || !sfxBus) return;
+  const sfx: GainNode = sfxBus;
   const t = c.currentTime + 0.005;
 
   // суб-бум
@@ -240,7 +241,7 @@ export function playHuntImpact(power = 1) {
   const og = c.createGain();
   og.gain.setValueAtTime(0.55 * power, t);
   og.gain.exponentialRampToValueAtTime(0.0001, t + 0.42);
-  o.connect(og).connect(sfxBus);
+  o.connect(og).connect(sfx);
   o.start(t);
   o.stop(t + 0.46);
 
@@ -253,7 +254,7 @@ export function playHuntImpact(power = 1) {
     const g = c.createGain();
     g.gain.setValueAtTime(0.12 * power / (i + 1), t);
     g.gain.exponentialRampToValueAtTime(0.0001, t + 0.5 - i * 0.08);
-    m.connect(g).connect(sfxBus);
+    m.connect(g).connect(sfx);
     m.start(t);
     m.stop(t + 0.55);
   });
@@ -270,7 +271,7 @@ export function playHuntImpact(power = 1) {
   hp.frequency.value = 1600;
   const ng = c.createGain();
   ng.gain.value = 0.3 * power;
-  src.connect(hp).connect(ng).connect(sfxBus);
+  src.connect(hp).connect(ng).connect(sfx);
   src.start(t);
 
   // «сайд-чейн»: музыка на миг проседает, удар читается чисто
