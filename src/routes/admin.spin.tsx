@@ -4,7 +4,7 @@
 
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   PageHeader,
   Panel,
@@ -30,6 +30,7 @@ import {
   fetchAdminSpinHistory,
   fetchAdminSpinOverview,
   fetchAdminSpinStreaks,
+  setAdminSpinPrizeActive,
   type SpinRarity,
 } from "@/lib/admin-spin-api";
 
@@ -182,8 +183,9 @@ function SpinAdminPage() {
   // Капсулу ×2 показываем всегда — даже если сезон стартовал до её появления
   // и приз ещё не подтянулся в пул.
   const wonByCode = new Map((overview.data?.byPrize ?? []).map((p) => [p.prizeCode, p.count]));
+  // t50 — служебная подмена при пустом пуле, в колесе её нет.
   const rawBig = (overview.data?.prizes ?? []).filter(
-    (p) => p.rarity === "epic" || p.rarity === "legend",
+    (p) => (p.rarity === "epic" || p.rarity === "legend") && p.code !== "t50",
   );
   const withCapsule =
     overview.data && !rawBig.some((p) => p.code === "boost_x2")
@@ -227,6 +229,13 @@ function SpinAdminPage() {
   );
 
   const refreshAll = () => qc.invalidateQueries({ queryKey: ["admin", "spin"] });
+
+  // Тумблер приза: выключенный остаётся в колесе, но не выпадает.
+  const togglePrize = useMutation({
+    mutationFn: ({ code, active }: { code: string; active: boolean }) =>
+      setAdminSpinPrizeActive(code, active),
+    onSuccess: () => qc.invalidateQueries({ queryKey: adminSpinQk.overview }),
+  });
 
   return (
     <div>
@@ -286,6 +295,41 @@ function SpinAdminPage() {
               <div className="text-[11px] text-zinc-500 dark:text-zinc-400">
                 {p.limitTotal ? `из пула ${fmt(p.limitTotal)}` : "без лимита"}
               </div>
+              <span
+                role="switch"
+                aria-checked={p.active}
+                aria-label={`Выдача приза «${p.title}»`}
+                tabIndex={0}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  togglePrize.mutate({ code: p.code, active: !p.active });
+                }}
+                onKeyDown={(e) => {
+                  if (e.key !== "Enter" && e.key !== " ") return;
+                  e.preventDefault();
+                  e.stopPropagation();
+                  togglePrize.mutate({ code: p.code, active: !p.active });
+                }}
+                className={cn(
+                  "mt-2 flex items-center gap-1.5 text-[11px] font-medium",
+                  p.active ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400",
+                )}
+              >
+                <span
+                  className={cn(
+                    "relative h-4 w-7 rounded-full transition-colors",
+                    p.active ? "bg-emerald-500" : "bg-zinc-300 dark:bg-zinc-700",
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "absolute top-0.5 h-3 w-3 rounded-full bg-white transition-all",
+                      p.active ? "left-3.5" : "left-0.5",
+                    )}
+                  />
+                </span>
+                {p.active ? "Выдаётся" : "Выключен"}
+              </span>
             </button>
           ))}
           {overview.isLoading && (

@@ -199,7 +199,7 @@ function Dashboard() {
           icon={PlumpStore}
         />
         <Kpi label="Средний чек" value={fmtRub(k.avgOrderRub)} hint={`скидки ${fmtRub(k.discountRub)}`} icon={TrendingUp} />
-        <Kpi label="Hell Pass продано" value={k.passSold} hint={`${fmtRub(k.passRevenue)} · активных ${k.passActive}`} icon={Crown} />
+        <Kpi label="Hell Pass продано" value={k.passSold} hint={`${fmtRub(k.passRevenue)} · активных ${k.passActive} · бесплатно ${k.passGranted ?? 0}`} icon={Crown} />
         <Kpi label="Новых пользователей" value={k.newUsers} icon={Users} />
         <Kpi label="Билетов в обороте" value={k.ticketsInCirculation.toLocaleString("ru-RU")} icon={PlumpTicket} />
         <Kpi
@@ -269,7 +269,8 @@ function Dashboard() {
                 String(t.cnt),
                 fmtRub(t.sum),
               ]),
-              ["Итого", String(k.passSold), fmtRub(k.passRevenue)],
+              ["Итого куплено", String(k.passSold), fmtRub(k.passRevenue)],
+              ["Выдано бесплатно", String(k.passGranted ?? 0), "—"],
               ["Активных сейчас", String(k.passActive), "—"],
             ]}
           />

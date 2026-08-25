@@ -58,7 +58,24 @@ export async function spinRoutes(app: FastifyInstance) {
 
 /** Админские роуты: /api/v1/admin/spin */
 export async function adminSpinRoutes(app: FastifyInstance) {
+  // Тумблер приза: выключенный приз остаётся в колесе и в списке, но не выпадает.
+  // Для jackpot-очереди это значит, что она на нём останавливается.
+  app.patch("/prizes/:code", { preHandler: requireAdmin }, async (req, reply) => {
+    const params = z.object({ code: z.string().trim().min(1).max(32) }).safeParse(req.params);
+    const body = z.object({ active: z.boolean() }).safeParse(req.body);
+    if (!params.success || !body.success) return reply.code(400).send({ error: "bad_request" });
+    const season = await ensureCurrentSeason();
+    const [row] = await db
+      .update(spinPrizes)
+      .set({ active: body.data.active })
+      .where(and(eq(spinPrizes.seasonId, season.id), eq(spinPrizes.code, params.data.code)))
+      .returning({ code: spinPrizes.code, active: spinPrizes.active });
+    if (!row) return reply.code(404).send({ error: "not_found" });
+    return row;
+  });
+
   // Сводка сезона: пулы призов + статистика прокрутов.
+
   app.get("/overview", { preHandler: requireAdmin }, async () => {
     const season = await ensureCurrentSeason();
     const prizes = await db

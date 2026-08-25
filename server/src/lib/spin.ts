@@ -163,8 +163,10 @@ async function syncSeasonPrizes(seasonId: string) {
         baseChancePpm: sql`excluded.base_chance_ppm`,
         limitTotal: sql`excluded.limit_total`,
         queueOrder: sql`excluded.queue_order`,
-        active: sql`excluded.active`,
+        // active НЕ перезаписываем: это ручной тумблер админки (например
+        // выключенный PS5), он должен переживать рестарт контейнера.
       },
+
     });
   syncedSeasons.add(seasonId);
 }
@@ -327,16 +329,32 @@ function pickWeighted(items: Weighted[]): Weighted | null {
   return items[items.length - 1] ?? null;
 }
 
-/** Гарантия: в последний день сезона нераскрытый jackpot выдаём принудительно. */
+/**
+ * Урезание билетных призов. Сектора «3 билета» и «10 билетов» остаются в колесе
+ * и в списке призов, но фактически начисляют 1 билет: бесплатных билетов
+ * в обороте оказалось слишком много.
+ */
+const TICKET_CAP_CODES = new Set(["t3", "t10"]);
+
+function capTickets(prize: SpinPrize, byCode: Map<string, SpinPrize>): SpinPrize {
+  if (!TICKET_CAP_CODES.has(prize.code)) return prize;
+  return byCode.get("t1") ?? prize;
+}
+
+/**
+ * Гарантия: в последний день сезона нераскрытый jackpot выдаём принудительно.
+ * Выключенные админкой призы (например PS5) в гарантию не попадают.
+ */
 function forcedJackpot(prizes: SpinPrize[], season: { endsAt: Date }): SpinPrize | null {
   const hoursLeft = (season.endsAt.getTime() - Date.now()) / 3_600_000;
   if (hoursLeft > 24) return null;
   return (
     prizes
-      .filter((p) => p.rewardKind === "jackpot" && p.issued < (p.limitTotal ?? 1))
+      .filter((p) => p.active && p.rewardKind === "jackpot" && p.issued < (p.limitTotal ?? 1))
       .sort((a, b) => (a.queueOrder ?? 0) - (b.queueOrder ?? 0))[0] ?? null
   );
 }
+
 
 export interface SpinResult {
   prizeCode: string;
@@ -409,6 +427,8 @@ export async function rollSpin(userId: string, pwa: boolean): Promise<SpinResult
   if (prize.limitTotal != null && prize.issued >= prize.limitTotal) {
     prize = byCode.get(prize.rewardKind === "jackpot" ? "t50" : "t10")!;
   }
+  prize = capTickets(prize, byCode);
+
 
   // Резервируем место в пуле атомарно.
   if (prize.limitTotal != null) {
@@ -423,9 +443,10 @@ export async function rollSpin(userId: string, pwa: boolean): Promise<SpinResult
       )
       .returning({ id: spinPrizes.id });
     if (res.length === 0) {
-      prize = byCode.get(prize.rewardKind === "jackpot" ? "t50" : "t10")!;
+      prize = capTickets(byCode.get(prize.rewardKind === "jackpot" ? "t50" : "t10")!, byCode);
     }
   }
+
 
   const isBonus = prize.rewardKind === "bonus_spin";
 

@@ -674,6 +674,111 @@ export async function adminSchoolRoutes(app: FastifyInstance) {
     if (!row) return reply.code(404).send({ error: "instructor_not_found" });
     return { ok: true, userId: targetUserId };
   });
+
+  // ── Чаты инструкторов: только чтение (по аналогии с админкой VIP-чата) ──
+  // Админ видит все переписки ученик↔инструктор, но не может писать в них.
+
+  app.get("/chats", { preHandler: requireAdmin }, async (req) => {
+    const q = z
+      .object({ instructorId: z.string().uuid().optional() })
+      .parse(req.query ?? {});
+    const rows = await db
+      .select({
+        chatId: schoolChats.id,
+        instructorId: schoolChats.instructorId,
+        instructorName: schoolInstructors.displayName,
+        instructorSlug: schoolInstructors.slug,
+        studentId: schoolChats.studentId,
+        studentNick: users.nick,
+        studentAvatar: profiles.avatarUrl,
+        lastMessageAt: schoolChats.lastMessageAt,
+        lastMessagePreview: schoolChats.lastMessagePreview,
+        lastMessageRole: schoolChats.lastMessageRole,
+        studentUnread: schoolChats.studentUnread,
+        instructorUnread: schoolChats.instructorUnread,
+      })
+      .from(schoolChats)
+      .innerJoin(schoolInstructors, eq(schoolInstructors.id, schoolChats.instructorId))
+      .innerJoin(users, eq(users.id, schoolChats.studentId))
+      .leftJoin(profiles, eq(profiles.userId, schoolChats.studentId))
+      .where(q.instructorId ? eq(schoolChats.instructorId, q.instructorId) : sql`true`)
+      .orderBy(desc(schoolChats.lastMessageAt))
+      .limit(500);
+    return { items: rows };
+  });
+
+  app.get<{ Params: { chatId: string } }>(
+    "/chats/:chatId",
+    { preHandler: requireAdmin },
+    async (req, reply) => {
+      const params = z.object({ chatId: z.string().uuid() }).safeParse(req.params);
+      if (!params.success) return reply.code(400).send({ error: "invalid_id" });
+      const [row] = await db
+        .select({ chat: schoolChats, instr: schoolInstructors })
+        .from(schoolChats)
+        .innerJoin(schoolInstructors, eq(schoolInstructors.id, schoolChats.instructorId))
+        .where(eq(schoolChats.id, params.data.chatId))
+        .limit(1);
+      if (!row) return reply.code(404).send({ error: "chat_not_found" });
+
+      const [student] = await db
+        .select({ id: users.id, nick: users.nick, avatarUrl: profiles.avatarUrl })
+        .from(users)
+        .leftJoin(profiles, eq(profiles.userId, users.id))
+        .where(eq(users.id, row.chat.studentId))
+        .limit(1);
+
+      const messages = await db
+        .select({
+          id: schoolMessages.id,
+          senderId: schoolMessages.senderId,
+          senderRole: schoolMessages.senderRole,
+          text: schoolMessages.text,
+          imageUrl: schoolMessages.imageUrl,
+          readAt: schoolMessages.readAt,
+          createdAt: schoolMessages.createdAt,
+        })
+        .from(schoolMessages)
+        .where(eq(schoolMessages.chatId, row.chat.id))
+        .orderBy(asc(schoolMessages.createdAt))
+        .limit(500);
+
+      const orders = await db
+        .select({
+          id: schoolOrders.id,
+          title: schoolOrders.title,
+          studentAmountRub: schoolOrders.studentAmountRub,
+          instructorAmountRub: schoolOrders.instructorAmountRub,
+          status: schoolOrders.status,
+          scheduledAt: schoolOrders.scheduledAt,
+          paidAt: schoolOrders.paidAt,
+          createdAt: schoolOrders.createdAt,
+        })
+        .from(schoolOrders)
+        .where(eq(schoolOrders.chatId, row.chat.id))
+        .orderBy(desc(schoolOrders.createdAt))
+        .limit(100);
+
+      return {
+        chat: {
+          id: row.chat.id,
+          lastMessageAt: row.chat.lastMessageAt,
+          studentUnread: row.chat.studentUnread,
+          instructorUnread: row.chat.instructorUnread,
+        },
+        instructor: {
+          id: row.instr.id,
+          userId: row.instr.userId,
+          displayName: row.instr.displayName,
+          slug: row.instr.slug,
+          avatarUrl: row.instr.avatarUrl,
+        },
+        student,
+        messages,
+        orders,
+      };
+    },
+  );
 }
 
 // --------------------- shared ---------------------

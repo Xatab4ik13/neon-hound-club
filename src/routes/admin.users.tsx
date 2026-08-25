@@ -8,6 +8,8 @@ import {
   adminQk,
   fetchAdminUsers,
   fetchAdminUsersStats,
+  fetchAdminPayers,
+  type AdminPayer,
   type AdminUsersSort,
   type AdminUsersStats,
 } from "@/lib/admin-queries";
@@ -79,6 +81,8 @@ function UsersPage() {
 
       {stats && <AudienceStats stats={stats} />}
 
+      <PayersPanel onOpenUser={setSelectedId} />
+
 
 
 
@@ -133,6 +137,92 @@ function UsersPage() {
         <AdminUserDrawer userId={selectedId} onClose={() => setSelectedId(null)} />
       )}
     </div>
+  );
+}
+
+/**
+ * Кто реально платит: подтверждённые платежи, число покупок (×2, ×3…),
+ * сумма и средний чек. Разбивка по мерчу / Pass / Школе.
+ */
+function PayersPanel({ onOpenUser }: { onOpenUser: (id: string) => void }) {
+  const [days, setDays] = useState<number | null>(null);
+  const [repeatOnly, setRepeatOnly] = useState(false);
+
+  const payersQ = useQuery({
+    queryKey: ["admin", "payers", days, repeatOnly],
+    queryFn: () =>
+      fetchAdminPayers({ days: days ?? undefined, minPayments: repeatOnly ? 2 : 1 }),
+    staleTime: 30_000,
+    placeholderData: (prev) => prev,
+  });
+
+  const rub = (n: number) => `${n.toLocaleString("ru-RU")} ₽`;
+  const items: AdminPayer[] = payersQ.data?.items ?? [];
+  const sum = payersQ.data?.summary;
+
+  const periods: { label: string; value: number | null }[] = [
+    { label: "30 дней", value: 30 },
+    { label: "90 дней", value: 90 },
+    { label: "Всё время", value: null },
+  ];
+
+  return (
+    <Panel className="mb-4">
+      <div className="flex flex-col gap-3 border-b border-zinc-200 p-4 dark:border-zinc-800 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <div className="text-sm font-semibold">Платящие</div>
+          <div className="text-xs text-zinc-500 dark:text-zinc-400">
+            {sum
+              ? `${sum.payers} плательщиков · повторных ${sum.repeatPayers} · оборот ${rub(sum.revenueRub)} · средний чек ${rub(sum.avgRub)}`
+              : "Только подтверждённые платежи"}
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          {periods.map((p) => (
+            <Btn
+              key={p.label}
+              variant={days === p.value ? "primary" : "ghost"}
+              onClick={() => setDays(p.value)}
+            >
+              {p.label}
+            </Btn>
+          ))}
+          <Btn variant={repeatOnly ? "primary" : "ghost"} onClick={() => setRepeatOnly((v) => !v)}>
+            Только повторные
+          </Btn>
+        </div>
+      </div>
+
+      <DataTable
+        headers={["Ник", "Покупок", "Сумма", "Средний чек", "Мерч", "Hell Pass", "Школа", "Последний платёж", ""]}
+        rows={items.map((p) => [
+          <span className="font-medium">@{p.nick}</span>,
+          <span className="tabular-nums font-semibold">
+            {p.payments}
+            {p.payments > 1 && (
+              <span className="ml-1 rounded bg-amber-500/15 px-1.5 py-0.5 text-[11px] font-bold text-amber-600 dark:text-amber-400">
+                ×{p.payments}
+              </span>
+            )}
+          </span>,
+          <span className="tabular-nums font-semibold">{rub(p.totalRub)}</span>,
+          <span className="tabular-nums">{rub(p.avgRub)}</span>,
+          <span className="tabular-nums text-zinc-500 dark:text-zinc-400">{rub(p.shopRub)}</span>,
+          <span className="tabular-nums text-zinc-500 dark:text-zinc-400">{rub(p.passRub)}</span>,
+          <span className="tabular-nums text-zinc-500 dark:text-zinc-400">{rub(p.schoolRub)}</span>,
+          <span className="tabular-nums text-zinc-500 dark:text-zinc-400">
+            {new Date(p.lastPaidAt).toLocaleDateString("ru-RU")}
+          </span>,
+          <Btn variant="ghost" onClick={() => onOpenUser(p.userId)}>
+            Открыть
+          </Btn>,
+        ])}
+      />
+      {payersQ.isLoading && <div className="p-6 text-center text-sm text-zinc-500">Загрузка…</div>}
+      {!payersQ.isLoading && items.length === 0 && (
+        <div className="p-6 text-center text-sm text-zinc-500">Платежей за период нет</div>
+      )}
+    </Panel>
   );
 }
 

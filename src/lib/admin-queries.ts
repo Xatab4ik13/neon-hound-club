@@ -754,6 +754,8 @@ export type AdminDashboard = {
     avgOrderRub: number;
     passSold: number;
     passRevenue: number;
+    /** Пассы, выданные без оплаты: рулетка, календарь, ручная выдача. */
+    passGranted: number;
     newUsers: number;
     passActive: number;
     ticketsInCirculation: number;
@@ -1251,4 +1253,42 @@ export function patchNewsAgentSource(id: number, patch: Partial<NewsAgentSource>
 
 export function deleteNewsAgentSource(id: number) {
   return apiFetch<{ ok: true }>(`/api/v1/admin/news-agent/sources/${id}`, { method: "DELETE" });
+}
+
+// ─── Платящие пользователи ───────────────────────────────────────────
+// Считаем только подтверждённые платежи: кто платил, сколько раз и средний чек.
+
+export type AdminPayer = {
+  userId: string;
+  nick: string;
+  email: string;
+  city: string | null;
+  avatarUrl: string | null;
+  payments: number;
+  totalRub: number;
+  avgRub: number;
+  passRub: number;
+  shopRub: number;
+  schoolRub: number;
+  firstPaidAt: string;
+  lastPaidAt: string;
+};
+
+export type AdminPayersResponse = {
+  items: AdminPayer[];
+  summary: {
+    payers: number;
+    repeatPayers: number;
+    paymentsCount: number;
+    revenueRub: number;
+    avgRub: number;
+  };
+};
+
+export function fetchAdminPayers(params: { days?: number; minPayments?: number } = {}) {
+  const sp = new URLSearchParams();
+  if (params.days) sp.set("days", String(params.days));
+  if (params.minPayments && params.minPayments > 1) sp.set("minPayments", String(params.minPayments));
+  const qs = sp.toString();
+  return apiFetch<AdminPayersResponse>(`/api/v1/admin/users/payers${qs ? `?${qs}` : ""}`);
 }
