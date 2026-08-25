@@ -102,7 +102,7 @@ export const PRIZE_CONFIG: PrizeConfig[] = [
   { code: "xp100", title: "100 XP", rarity: "common", rewardKind: "xp", rewardValue: 100, chancePpm: 260_000 },
   { code: "t1", title: "1 билет", rarity: "common", rewardKind: "tickets", rewardValue: 1, chancePpm: 90_000 },
   { code: "xp250", title: "250 XP", rarity: "common", rewardKind: "xp", rewardValue: 250, chancePpm: 170_000 },
-  { code: "t3", title: "3 билета", rarity: "rare", rewardKind: "tickets", rewardValue: 3, chancePpm: 40_000 },
+  { code: "t3", title: "1 билет", rarity: "rare", rewardKind: "tickets", rewardValue: 1, chancePpm: 40_000 },
   { code: "spin", title: "Бонус-спин", rarity: "rare", rewardKind: "bonus_spin", rewardValue: 1, chancePpm: 110_000 },
   { code: "xp500", title: "500 XP", rarity: "rare", rewardKind: "xp", rewardValue: 500, chancePpm: 80_000 },
   { code: "t10", title: "10 билетов", rarity: "epic", rewardKind: "tickets", rewardValue: 10, chancePpm: 10_000 },
