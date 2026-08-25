@@ -555,10 +555,10 @@ const ODDS_ROWS: { title: string; rarity: SpinRarity; ppm: number; note?: string
   { title: "1 билет", rarity: "common", ppm: 90_000 },
   { title: "500 XP", rarity: "rare", ppm: 80_000 },
   { title: "Капсула ×2", rarity: "legend", ppm: 50_000, note: "×2 билета на цифру, 24 ч" },
-  { title: "3 билета", rarity: "rare", ppm: 40_000 },
+  { title: "1 билет · сектор t3", rarity: "rare", ppm: 40_000, note: "бывшие «3 билета» — теперь 1" },
   { title: "Промокод 20%", rarity: "epic", ppm: 30_000 },
   { title: "Ремувка", rarity: "epic", ppm: 20_000, note: "пул 240 на сезон" },
-  { title: "10 билетов", rarity: "epic", ppm: 10_000 },
+  { title: "1 билет · сектор t10", rarity: "epic", ppm: 10_000, note: "бывшие «10 билетов» — теперь 1" },
   { title: "Hell Pass Silver", rarity: "legend", ppm: 3_000, note: "пул 60 на сезон" },
   { title: "Jackpot (AirPods → Watch → PS5)", rarity: "legend", ppm: 40, note: "1–15 дн: 40 ppm, 16–25: 150, 26+: 350" },
 ];
