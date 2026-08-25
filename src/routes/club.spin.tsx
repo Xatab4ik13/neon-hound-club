@@ -73,7 +73,7 @@ const POOL: Prize[] = [
   { id: "xp100", title: "100 XP", rarity: "common", img: imgXp },
   { id: "t1", title: "1 билет", rarity: "common", img: imgTicket },
   { id: "xp250", title: "250 XP", rarity: "common", img: imgXp },
-  { id: "t3", title: "3 билета", rarity: "rare", img: imgTicket },
+  { id: "t3", title: "1 билет", rarity: "rare", img: imgTicket },
   { id: "spin", title: "Бонус-спин", sub: "+1 прокрут", rarity: "rare", img: imgBonusSpin },
   { id: "xp500", title: "500 XP", rarity: "rare", img: imgXp },
   { id: "promo", title: "Промокод 20%", sub: "на товары", rarity: "epic", img: imgPromo },
