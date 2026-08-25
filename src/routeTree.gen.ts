@@ -64,6 +64,7 @@ import { Route as AdminSupportRouteImport } from './routes/admin.support'
 import { Route as AdminSpinRouteImport } from './routes/admin.spin'
 import { Route as AdminShopRouteImport } from './routes/admin.shop'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
+import { Route as AdminSchoolChatsRouteImport } from './routes/admin.school-chats'
 import { Route as AdminSchoolRouteImport } from './routes/admin.school'
 import { Route as AdminRafflesRouteImport } from './routes/admin.raffles'
 import { Route as AdminQuestsRouteImport } from './routes/admin.quests'
@@ -380,6 +381,11 @@ const AdminSettingsRoute = AdminSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminSchoolChatsRoute = AdminSchoolChatsRouteImport.update({
+  id: '/school-chats',
+  path: '/school-chats',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminSchoolRoute = AdminSchoolRouteImport.update({
   id: '/school',
   path: '/school',
@@ -608,6 +614,7 @@ export interface FileRoutesByFullPath {
   '/admin/quests': typeof AdminQuestsRoute
   '/admin/raffles': typeof AdminRafflesRoute
   '/admin/school': typeof AdminSchoolRoute
+  '/admin/school-chats': typeof AdminSchoolChatsRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/shop': typeof AdminShopRoute
   '/admin/spin': typeof AdminSpinRoute
@@ -702,6 +709,7 @@ export interface FileRoutesByTo {
   '/admin/quests': typeof AdminQuestsRoute
   '/admin/raffles': typeof AdminRafflesRoute
   '/admin/school': typeof AdminSchoolRoute
+  '/admin/school-chats': typeof AdminSchoolChatsRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/shop': typeof AdminShopRoute
   '/admin/spin': typeof AdminSpinRoute
@@ -800,6 +808,7 @@ export interface FileRoutesById {
   '/admin/quests': typeof AdminQuestsRoute
   '/admin/raffles': typeof AdminRafflesRoute
   '/admin/school': typeof AdminSchoolRoute
+  '/admin/school-chats': typeof AdminSchoolChatsRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/shop': typeof AdminShopRoute
   '/admin/spin': typeof AdminSpinRoute
@@ -899,6 +908,7 @@ export interface FileRouteTypes {
     | '/admin/quests'
     | '/admin/raffles'
     | '/admin/school'
+    | '/admin/school-chats'
     | '/admin/settings'
     | '/admin/shop'
     | '/admin/spin'
@@ -993,6 +1003,7 @@ export interface FileRouteTypes {
     | '/admin/quests'
     | '/admin/raffles'
     | '/admin/school'
+    | '/admin/school-chats'
     | '/admin/settings'
     | '/admin/shop'
     | '/admin/spin'
@@ -1090,6 +1101,7 @@ export interface FileRouteTypes {
     | '/admin/quests'
     | '/admin/raffles'
     | '/admin/school'
+    | '/admin/school-chats'
     | '/admin/settings'
     | '/admin/shop'
     | '/admin/spin'
@@ -1580,6 +1592,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminSettingsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/school-chats': {
+      id: '/admin/school-chats'
+      path: '/school-chats'
+      fullPath: '/admin/school-chats'
+      preLoaderRoute: typeof AdminSchoolChatsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/school': {
       id: '/admin/school'
       path: '/school'
@@ -1877,6 +1896,7 @@ interface AdminRouteChildren {
   AdminQuestsRoute: typeof AdminQuestsRoute
   AdminRafflesRoute: typeof AdminRafflesRoute
   AdminSchoolRoute: typeof AdminSchoolRoute
+  AdminSchoolChatsRoute: typeof AdminSchoolChatsRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
   AdminShopRoute: typeof AdminShopRoute
   AdminSpinRoute: typeof AdminSpinRoute
@@ -1901,6 +1921,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminQuestsRoute: AdminQuestsRoute,
   AdminRafflesRoute: AdminRafflesRoute,
   AdminSchoolRoute: AdminSchoolRoute,
+  AdminSchoolChatsRoute: AdminSchoolChatsRoute,
   AdminSettingsRoute: AdminSettingsRoute,
   AdminShopRoute: AdminShopRoute,
   AdminSpinRoute: AdminSpinRoute,

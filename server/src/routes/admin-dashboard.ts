@@ -75,6 +75,8 @@ export async function adminDashboardRoutes(app: FastifyInstance) {
       .from(users)
       .where(and(sql`${users.createdAt} >= ${from}::timestamptz`, sql`${users.createdAt} <= ${to}::timestamptz`));
 
+    // Только реальные покупки за деньги: пассы из рулетки / календаря / выданные
+    // админом (source != 'purchase') в продажи не попадают.
     const [passSold] = await db
       .select({
         cnt: sql<number>`COUNT(*)::int`,
@@ -84,6 +86,20 @@ export async function adminDashboardRoutes(app: FastifyInstance) {
       .where(
         and(
           inArray(passPurchases.status, ["active", "expired"]),
+          eq(passPurchases.source, "purchase"),
+          sql`${passPurchases.createdAt} >= ${from}::timestamptz`,
+          sql`${passPurchases.createdAt} <= ${to}::timestamptz`,
+        ),
+      );
+
+    // Бесплатно выданные пассы за период — отдельной строкой, чтобы не путать с продажами.
+    const [passGranted] = await db
+      .select({ cnt: sql<number>`COUNT(*)::int` })
+      .from(passPurchases)
+      .where(
+        and(
+          inArray(passPurchases.status, ["active", "expired"]),
+          sql`${passPurchases.source} <> 'purchase'`,
           sql`${passPurchases.createdAt} >= ${from}::timestamptz`,
           sql`${passPurchases.createdAt} <= ${to}::timestamptz`,
         ),
@@ -100,6 +116,7 @@ export async function adminDashboardRoutes(app: FastifyInstance) {
       .where(
         and(
           inArray(passPurchases.status, ["active", "expired"]),
+          eq(passPurchases.source, "purchase"),
           sql`${passPurchases.createdAt} >= ${from}::timestamptz`,
           sql`${passPurchases.createdAt} <= ${to}::timestamptz`,
         ),
@@ -222,6 +239,7 @@ export async function adminDashboardRoutes(app: FastifyInstance) {
         avgOrderRub: ordersCnt > 0 ? Math.round(goods / ordersCnt) : 0,
         passSold: passSold?.cnt ?? 0,
         passRevenue: passSold?.sum ?? 0,
+        passGranted: passGranted?.cnt ?? 0,
         newUsers: newUsers?.c ?? 0,
         passActive: passActive?.c ?? 0,
         ticketsInCirculation: ticketsTotal?.total ?? 0,

@@ -112,3 +112,14 @@ export function fetchAdminSpinLegends() {
 export function fetchAdminSpinStreaks() {
   return apiFetch<AdminSpinStreak[]>("/api/v1/admin/spin/streaks");
 }
+
+/**
+ * Включить/выключить приз в текущем сезоне. Выключенный приз остаётся в колесе
+ * и в списке призов, но не выпадает (jackpot-очередь на нём останавливается).
+ */
+export function setAdminSpinPrizeActive(code: string, active: boolean) {
+  return apiFetch<{ code: string; active: boolean }>(`/api/v1/admin/spin/prizes/${code}`, {
+    method: "PATCH",
+    body: JSON.stringify({ active }),
+  });
+}
