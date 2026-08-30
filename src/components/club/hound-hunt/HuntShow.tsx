@@ -495,18 +495,23 @@ export function HoundHuntPage({
 
 
   /**
-   * Барабан = реальные участники: 15 человек — 15 звеньев. Никаких случайных
-   * копий: счётчик «осталось N» совпадает с тем, что видно на ленте.
-   * Порядок перемешиваем, чтобы победитель не всегда стоял в конце.
+   * Барабан = физические капсулы: поставил 20 капсул — в ленте 20 звеньев с
+   * твоей аватаркой. Счётчик «осталось N» считает капсулы, а не людей.
+   * Порядок перемешиваем, чтобы копии одного человека шли не подряд.
    */
-  const buildReel = useCallback((entries: HuntEntry[]) => {
-    const list = [...entries];
+  const buildReel = useCallback((entries: HuntEntry[]): Cap[] => {
+    const list: Cap[] = [];
+    for (const entry of entries) {
+      const n = Math.max(1, entry.slots);
+      for (let i = 0; i < n; i++) list.push({ cid: `${entry.id}#${i}`, entry });
+    }
     for (let i = list.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [list[i], list[j]] = [list[j], list[i]];
     }
     return list;
   }, []);
+
 
   const pickWinner = useCallback((entries: HuntEntry[], roundIdx = 0) => {
     // ПРИОРИТЕТ: итог с бекенда (жребий уже прокручен) → назначенный руками
