@@ -371,10 +371,11 @@ export function HoundHuntPage({
       // справа появляется приз.
       if (phaseRef.current === "settle" && !settledRef.current) {
         if (settleTargetRef.current === null) {
-          const liveIds = new Set(liveRef.current.map((e) => e.id));
+          const liveCids = new Set(liveRef.current.map((c) => c.cid));
           const slot = tapeRef.current.find(
-            (s) => s.entry && liveIds.has(s.entry.id) && s.idx >= reelPhase.current + 1.6,
+            (s) => s.cid && liveCids.has(s.cid) && s.idx >= reelPhase.current + 1.6,
           );
+
           if (slot) settleTargetRef.current = slot.idx + winStopOffset();
         }
         const target = settleTargetRef.current;
