@@ -444,14 +444,18 @@ export function HoundHuntPage({
         // живой капсулы в центр. Дырки просто проезжают — персонаж их не бьёт.
         if (!kickInFlightRef.current && now >= kickReadyAtRef.current) {
           const impactPhase = reelPhase.current + impactDelayRef.current / step;
-          const liveIds = new Set(liveRef.current.map((entry) => entry.id));
+          const liveCids = new Set(liveRef.current.map((c) => c.cid));
+          // Капсулы победителя тоже выбиваются — кроме его ПОСЛЕДНЕЙ: она и
+          // останется в барабане одна. Так у всех сгорают лишние капсулы честно.
+          const winnerLive = liveRef.current.filter((c) => c.entry.id === winnerIdRef.current).length;
           const nextLive = tapeRef.current.find(
             (slot) =>
               slot.idx >= impactPhase &&
-              slot.entry !== null &&
-              liveIds.has(slot.entry.id) &&
-              slot.entry.id !== winnerIdRef.current,
+              slot.cid !== null &&
+              liveCids.has(slot.cid) &&
+              (slot.entry!.id !== winnerIdRef.current || winnerLive > 1),
           );
+
           if (nextLive) {
             const untilCenter = (nextLive.idx - reelPhase.current) * step;
             // Допуск в один кадр компенсирует React/Canvas между выбором цели
