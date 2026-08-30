@@ -628,7 +628,7 @@ export function HoundHuntPage({
       const finish = () => {
         if (finished) return;
         finished = true;
-        const survivor = liveRef.current[0] ?? winner;
+        const survivor = liveRef.current[0]?.entry ?? winner;
         const row = { prizeId: prizesRef.current[idx].id, entry: survivor };
         winnersRef.current = [...winnersRef.current, row];
         setWinners((w) => [...w, row]);
