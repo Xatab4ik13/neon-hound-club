@@ -144,14 +144,26 @@ function UsersPage() {
  * Кто реально платит: подтверждённые платежи, число покупок (×2, ×3…),
  * сумма и средний чек. Разбивка по мерчу / Pass / Школе.
  */
+/**
+ * Кто реально платит: подтверждённые платежи, число покупок (×2, ×3…),
+ * сумма и средний чек. Разбивка по мерчу / Pass / Школе.
+ * Пагинация по 10 человек на страницу.
+ */
 function PayersPanel({ onOpenUser }: { onOpenUser: (id: string) => void }) {
   const [days, setDays] = useState<number | null>(null);
   const [repeatOnly, setRepeatOnly] = useState(false);
+  const [payersPage, setPayersPage] = useState(1);
+  const PAYERS_PAGE_SIZE = 10;
 
   const payersQ = useQuery({
-    queryKey: ["admin", "payers", days, repeatOnly],
+    queryKey: ["admin", "payers", days, repeatOnly, payersPage],
     queryFn: () =>
-      fetchAdminPayers({ days: days ?? undefined, minPayments: repeatOnly ? 2 : 1 }),
+      fetchAdminPayers({
+        days: days ?? undefined,
+        minPayments: repeatOnly ? 2 : 1,
+        page: payersPage,
+        pageSize: PAYERS_PAGE_SIZE,
+      }),
     staleTime: 30_000,
     placeholderData: (prev) => prev,
   });
@@ -159,12 +171,18 @@ function PayersPanel({ onOpenUser }: { onOpenUser: (id: string) => void }) {
   const rub = (n: number) => `${n.toLocaleString("ru-RU")} ₽`;
   const items: AdminPayer[] = payersQ.data?.items ?? [];
   const sum = payersQ.data?.summary;
+  const total = payersQ.data?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / PAYERS_PAGE_SIZE));
+  const from = total === 0 ? 0 : (payersPage - 1) * PAYERS_PAGE_SIZE + 1;
+  const to = Math.min(total, payersPage * PAYERS_PAGE_SIZE);
 
   const periods: { label: string; value: number | null }[] = [
     { label: "30 дней", value: 30 },
     { label: "90 дней", value: 90 },
     { label: "Всё время", value: null },
   ];
+
+  const resetPage = () => setPayersPage(1);
 
   return (
     <Panel className="mb-4">
@@ -182,12 +200,21 @@ function PayersPanel({ onOpenUser }: { onOpenUser: (id: string) => void }) {
             <Btn
               key={p.label}
               variant={days === p.value ? "primary" : "ghost"}
-              onClick={() => setDays(p.value)}
+              onClick={() => {
+                setDays(p.value);
+                resetPage();
+              }}
             >
               {p.label}
             </Btn>
           ))}
-          <Btn variant={repeatOnly ? "primary" : "ghost"} onClick={() => setRepeatOnly((v) => !v)}>
+          <Btn
+            variant={repeatOnly ? "primary" : "ghost"}
+            onClick={() => {
+              setRepeatOnly((v) => !v);
+              resetPage();
+            }}
+          >
             Только повторные
           </Btn>
         </div>
@@ -221,6 +248,35 @@ function PayersPanel({ onOpenUser }: { onOpenUser: (id: string) => void }) {
       {payersQ.isLoading && <div className="p-6 text-center text-sm text-zinc-500">Загрузка…</div>}
       {!payersQ.isLoading && items.length === 0 && (
         <div className="p-6 text-center text-sm text-zinc-500">Платежей за период нет</div>
+      )}
+
+      {total > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-zinc-200 px-4 py-3 text-[12px] text-muted-foreground dark:border-zinc-800">
+          <span>
+            {from}–{to} из {total}
+          </span>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              disabled={payersPage <= 1}
+              onClick={() => setPayersPage((p) => p - 1)}
+              className="inline-flex h-8 items-center gap-1 rounded border border-white/10 px-2 text-foreground hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Назад
+            </button>
+            <span className="px-2">
+              {payersPage} / {totalPages}
+            </span>
+            <button
+              type="button"
+              disabled={payersPage >= totalPages}
+              onClick={() => setPayersPage((p) => p + 1)}
+              className="inline-flex h-8 items-center gap-1 rounded border border-white/10 px-2 text-foreground hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Вперёд
+            </button>
+          </div>
+        </div>
       )}
     </Panel>
   );
