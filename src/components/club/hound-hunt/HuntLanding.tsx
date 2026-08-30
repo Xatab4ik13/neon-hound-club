@@ -101,7 +101,7 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
   const { cfg } = useHuntConfig();
   const prizes = useMemo(() => prizesInRunOrder(cfg), [cfg]);
   
-  const { phase } = useHuntPhase(cfg.startsAt);
+  const { phase } = useHuntPhase(cfg.startsAt, cfg.drawnAt);
   const parts = split(msUntilStart(cfg.startsAt, Date.now()));
 
   // Кто ставит: реальный юзер, его аватарка и ник, а не мок из базы.

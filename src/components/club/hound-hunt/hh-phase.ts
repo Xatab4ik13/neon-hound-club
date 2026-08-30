@@ -33,9 +33,24 @@ export type HuntPhaseState = {
   startsAtMs: number;
 };
 
-export function computeHuntPhase(startsAt: string, now = Date.now()): HuntPhaseState {
+export function computeHuntPhase(
+  startsAt: string,
+  now = Date.now(),
+  /** Когда итоги зафиксированы на бекенде: шоу больше не «идёт». */
+  drawnAt?: string | null,
+): HuntPhaseState {
   const target = new Date(startsAt).getTime();
   if (Number.isNaN(target)) return { phase: "betting", ms: 0, startsAtMs: 0 };
+
+  // Итоги уже в базе — шоу закончилось, крутить его заново нельзя.
+  // Сутки показываем подиум и запись, дальше ждём новую охоту.
+  const drawn = drawnAt ? new Date(drawnAt).getTime() : NaN;
+  if (!Number.isNaN(drawn)) {
+    const end = drawn + HUNT_REPLAY_MS;
+    return now < end
+      ? { phase: "replay", ms: end - now, startsAtMs: target }
+      : { phase: "idle", ms: now - end, startsAtMs: target };
+  }
 
   const lockAt = target - HUNT_LOCK_MS;
   const showEnd = target + HUNT_SHOW_MS;
@@ -49,13 +64,13 @@ export function computeHuntPhase(startsAt: string, now = Date.now()): HuntPhaseS
 }
 
 /** Тикающая фаза: пересчёт раз в секунду, переходы происходят сами. */
-export function useHuntPhase(startsAt: string): HuntPhaseState {
+export function useHuntPhase(startsAt: string, drawnAt?: string | null): HuntPhaseState {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
   }, []);
-  return computeHuntPhase(startsAt, now);
+  return computeHuntPhase(startsAt, now, drawnAt);
 }
 
 /** Сколько осталось именно до старта охоты (для таймера). */
