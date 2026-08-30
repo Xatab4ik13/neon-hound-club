@@ -1149,7 +1149,7 @@ function ReelStage({
   prizeImg,
 }: {
   /** Слоты ленты со своими АБСОЛЮТНЫМИ индексами (не по кругу). */
-  slots: { idx: number; entry: HuntEntry | null }[];
+  slots: { idx: number; cid: string | null; entry: HuntEntry | null }[];
   /** Сколько живых участников осталось. */
   ghosts: { key: string; entry: HuntEntry }[];
   /** Абсолютная фаза ленты: целая часть выбирает центральный слот. */
@@ -1330,7 +1330,7 @@ function ReelSlot({
   slot,
   phase,
 }: {
-  slot: { idx: number; entry: HuntEntry | null };
+  slot: { idx: number; cid: string | null; entry: HuntEntry | null };
   phase: MotionValue<number>;
 }) {
   const x = useTransform(phase, (value) => (slot.idx - value) * STEP - CHIP_W / 2);
