@@ -29,13 +29,22 @@ function HoundHuntRoute() {
   /** Реплей запускается только по кнопке — иначе шоу крутилось бы сутки. */
   const [replayOpen, setReplayOpen] = useState(false);
 
+  /**
+   * Репетиция: `?preview=1` открывает шоу в любой фазе (для админа перед
+   * стартом). Ничего не пишет на бек — победители считаются локально.
+   */
+  const preview =
+    typeof window !== "undefined" && new URLSearchParams(window.location.search).has("preview");
+
   // Новая охота (сменилась дата старта) — закрываем прошлую запись.
   useEffect(() => {
     setReplayOpen(false);
   }, [cfg.startsAt]);
 
+  if (preview) return <HuntShow mode="live" />;
   if (phase === "live") return <HuntShow mode="live" />;
   if (phase === "replay" && replayOpen) return <HuntShow mode="replay" />;
+
 
   return (
     <div className="relative overflow-x-hidden">
