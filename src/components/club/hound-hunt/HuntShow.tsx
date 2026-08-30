@@ -685,16 +685,18 @@ export function HoundHuntPage({
       if (aliveRef.current <= 1) return;
       const now = performance.now();
       const list = tapeRef.current;
-      const liveIds = new Set(liveRef.current.map((e) => e.id));
-      const isLive = (slot: Slot) => Boolean(slot.entry && liveIds.has(slot.entry.id));
-      // Победителя раунда не выбиваем НИКОГДА: он должен остаться последним.
-      const isTargetable = (slot: Slot) => isLive(slot) && slot.entry!.id !== winnerIdRef.current;
+      const liveCids = new Set(liveRef.current.map((c) => c.cid));
+      const winnerLive = liveRef.current.filter((c) => c.entry.id === winnerIdRef.current).length;
+      const isLive = (slot: Slot) => Boolean(slot.cid && liveCids.has(slot.cid));
+      // Последнюю капсулу победителя не выбиваем НИКОГДА: она остаётся в
+      // барабане одна. Остальные его капсулы сгорают, как у всех.
+      const isTargetable = (slot: Slot) =>
+        isLive(slot) && (slot.entry!.id !== winnerIdRef.current || winnerLive > 1);
 
       let target = preferredIdx === null ? undefined : list.find((s) => s.idx === preferredIdx && isTargetable(s));
       if (preferredIdx === null) {
-        // Fallback: ближайшая к центру живая капсула (кроме победителя). Так
-        // watchdog может восстановить очередь, но забронированный удар никогда
-        // не подменяет цель другой аватаркой.
+        // Fallback: ближайшая к центру живая капсула. Так watchdog может
+        // восстановить очередь, но забронированный удар не подменяет цель.
         let bestDist = Infinity;
         for (const s of list) {
           if (!isTargetable(s)) continue;
@@ -705,42 +707,44 @@ export function HoundHuntPage({
           }
         }
       }
-      // Живых (кроме победителя) в ленте сейчас нет — следующий кадр попробует
-      // снова, watchdog не сбрасывается.
-      if (!target?.entry) return;
+      // Живых капсул под удар сейчас нет — следующий кадр попробует снова.
+      if (!target?.entry || !target.cid) return;
 
       const center = target.idx;
       const kicked = target.entry;
+      const kickedCid = target.cid;
 
 
-      // Сколько человек уносит один удар. На больших пулах (100-200 заявок)
-      // один удар = один человек означал бы 5+ минут ленты, поэтому удар
-      // сносит группу: центральная капсула улетает, остальные из группы
-      // снимаются за правым краем кадра — незаметно, но счётчик падает пачкой.
+      // Сколько КАПСУЛ уносит один удар. На больших пулах (несколько сотен
+      // капсул) один удар = одна капсула означал бы 10+ минут ленты, поэтому
+      // удар сносит группу: центральная капсула улетает, остальные снимаются
+      // за правым краем кадра — незаметно, но счётчик падает пачкой.
       const batch = Math.max(1, Math.ceil((aliveRef.current - 1) / 20));
-      const removedIds = new Set<string>([kicked.id]);
+      const removedCids = new Set<string>([kickedCid]);
+      let winnerLeft = winnerLive - (kicked.id === winnerIdRef.current ? 1 : 0);
       if (batch > 1) {
-        for (const e of liveRef.current) {
-          if (removedIds.size >= batch) break;
-          if (e.id === kicked.id || e.id === winnerIdRef.current) continue;
-          removedIds.add(e.id);
+        for (const c of liveRef.current) {
+          if (removedCids.size >= batch) break;
+          if (removedCids.has(c.cid)) continue;
+          if (c.entry.id === winnerIdRef.current && winnerLeft <= 1) continue;
+          if (c.entry.id === winnerIdRef.current) winnerLeft -= 1;
+          removedCids.add(c.cid);
         }
       }
-      liveRef.current = liveRef.current.filter((e) => !removedIds.has(e.id));
+      liveRef.current = liveRef.current.filter((c) => !removedCids.has(c.cid));
       // На пороге разрядки ленты пересобираем очередь с нуля, чтобы дырки
       // появились сразу, а не через круг.
       feedRef.current =
         liveRef.current.length <= 8
           ? []
-          : feedRef.current.filter((e) => e === null || !removedIds.has(e.id));
+          : feedRef.current.filter((c) => c === null || !removedCids.has(c.cid));
 
-      // Дыркой сразу становится физически выбитый слот. Копии выбитых, которые
-      // ещё не появились в кадре (правее видимого окна), гасим тоже — иначе
-      // мёртвые аватарки продолжают ездить по кругу и это читается как баг.
+      // Дыркой сразу становится физически выбитая капсула. Копии выбитых,
+      // которые ещё не появились в кадре (правее видимого окна), гасим тоже.
       const rightEdge = Math.floor(reelPhase.current) + halfWindow();
       const next = list.map((s) => {
-        if (s.idx === center) return { ...s, entry: null };
-        if (s.entry && s.idx > rightEdge && removedIds.has(s.entry.id)) return { ...s, entry: null };
+        if (s.idx === center) return { ...s, cid: null, entry: null };
+        if (s.cid && s.idx > rightEdge && removedCids.has(s.cid)) return { ...s, cid: null, entry: null };
         return s;
       });
       tapeRef.current = next;
@@ -770,9 +774,10 @@ export function HoundHuntPage({
         settleTargetRef.current = null;
         settledRef.current = false;
         setSettled(false);
-        setCurrent(liveRef.current[0] ?? kicked);
+        setCurrent(liveRef.current[0]?.entry ?? kicked);
         setPhase("settle");
       }
+
     },
     [halfWindow, later],
   );
