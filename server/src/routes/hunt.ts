@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { and, eq, gt, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, gt, inArray, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { hunts, huntPrizes, huntBets } from "../db/schema/hunt.js";
 import { users } from "../db/schema/users.js";
