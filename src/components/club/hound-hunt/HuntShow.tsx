@@ -322,15 +322,16 @@ export function HoundHuntPage({
     let changed = false;
     const wantTo = Math.floor(reelPhase.current) + Math.max(half + 2, leadRef.current);
     while (nextIdxRef.current <= wantTo) {
-      const entry = nextFeed();
-      if (entry === undefined) break;
+      const cap = nextFeed();
+      if (cap === undefined) break;
       if (!changed) {
         list = [...list];
         changed = true;
       }
-      list.push({ idx: nextIdxRef.current, entry });
+      list.push({ idx: nextIdxRef.current, cid: cap?.cid ?? null, entry: cap?.entry ?? null });
       nextIdxRef.current += 1;
     }
+
     const cutAt = Math.floor(reelPhase.current) - half - 2;
     if (list.length && list[0].idx < cutAt) {
       list = list.filter((s) => s.idx >= cutAt);
