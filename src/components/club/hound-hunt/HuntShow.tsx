@@ -227,13 +227,20 @@ export function HoundHuntPage({
      уезжает влево и удаляется с головы, по кругу она НЕ возвращается.
      Значит по центру всегда живая капсула — удара в пустоту не бывает,
      а reelPhase никогда не пересчитывается, поэтому ники не дёргаются. */
-  type Slot = { idx: number; entry: HuntEntry | null };
+  /**
+   * Капсула = одна ставка (ticketStep билетов). У человека с 20 капсулами в
+   * ленте физически 20 звеньев: удар выбивает ОДНУ капсулу, а не человека.
+   * Поэтому идентичность в барабане — cid капсулы, а не id участника.
+   */
+  type Cap = { cid: string; entry: HuntEntry };
+  type Slot = { idx: number; cid: string | null; entry: HuntEntry | null };
   const [tape, setTape] = useState<Slot[]>([]);
   const tapeRef = useRef<Slot[]>([]);
-  /** Живые участники — из них добирается хвост ленты. */
-  const liveRef = useRef<HuntEntry[]>([]);
+  /** Живые капсулы — из них добирается хвост ленты. */
+  const liveRef = useRef<Cap[]>([]);
   /** Очередь на добор: опустела — продолжаем тем же порядком живых. */
-  const feedRef = useRef<(HuntEntry | null)[]>([]);
+  const feedRef = useRef<(Cap | null)[]>([]);
+
   /** Следующий абсолютный индекс, который добавим в хвост. */
   const nextIdxRef = useRef(0);
   const [alive, setAlive] = useState(0);
