@@ -399,14 +399,6 @@ export function HoundHuntPage({
         }
       }
 
-
-      reelPhase.current += advance;
-      // Хвост ленты должен существовать дальше, чем точка будущего импакта,
-      // иначе цель «ещё не создана» и взмах не запускается.
-      leadRef.current = Math.ceil(impactDelayRef.current / step) + 3;
-      groomTape();
-      syncStrip();
-
       if (phaseRef.current === "drift" && aliveRef.current > 1) {
         // Пауза «раздумья»: в финале байкер не бьёт каждый цикл — лента
         // прокручивается лишний раз, и никто не знает, когда прилетит.
@@ -474,6 +466,13 @@ export function HoundHuntPage({
         const toTarget = reserved - reelPhase.current;
         if (toTarget >= 0) advance = Math.min(advance, toTarget);
       }
+
+      reelPhase.current += advance;
+      // Хвост ленты должен существовать дальше, чем точка будущего импакта,
+      // иначе цель «ещё не создана» и взмах не запускается.
+      leadRef.current = Math.ceil(impactDelayRef.current / step) + 3;
+      groomTape();
+      syncStrip();
 
       reelRaf.current = requestAnimationFrame(tick);
     };
