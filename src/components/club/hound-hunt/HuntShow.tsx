@@ -649,17 +649,19 @@ export function HoundHuntPage({ mode = "live" }: { mode?: HuntShowMode }) {
       const list = tapeRef.current;
       const liveIds = new Set(liveRef.current.map((e) => e.id));
       const isLive = (slot: Slot) => Boolean(slot.entry && liveIds.has(slot.entry.id));
+      // Победителя раунда не выбиваем НИКОГДА: он должен остаться последним.
+      const isTargetable = (slot: Slot) => isLive(slot) && slot.entry!.id !== winnerIdRef.current;
 
       let target =
         preferredIdx === null
           ? undefined
-          : list.find((s) => s.idx === preferredIdx && isLive(s));
+          : list.find((s) => s.idx === preferredIdx && isTargetable(s));
       if (!target) {
-        // Fallback: ближайшая к центру живая капсула. Так удар никогда не
-        // «уходит в никуда», даже если бронь устарела или слот стал дыркой.
+        // Fallback: ближайшая к центру живая капсула (кроме победителя). Так
+        // удар никогда не «уходит в никуда», даже если бронь устарела.
         let bestDist = Infinity;
         for (const s of list) {
-          if (!isLive(s)) continue;
+          if (!isTargetable(s)) continue;
           const d = Math.abs(s.idx - reelPhase.current);
           if (d < bestDist) {
             bestDist = d;
@@ -667,19 +669,13 @@ export function HoundHuntPage({ mode = "live" }: { mode?: HuntShowMode }) {
           }
         }
       }
-      // Живых в ленте сейчас нет (хвост ещё догенерируется) — следующий кадр
-      // попробует снова, watchdog не сбрасывается.
+      // Живых (кроме победителя) в ленте сейчас нет — следующий кадр попробует
+      // снова, watchdog не сбрасывается.
       if (!target?.entry) return;
 
       const center = target.idx;
       const kicked = target.entry;
-      // Победителя выбивать нельзя: если он под ногой — переносим защиту на
-      // другого живого. Центральная капсула всё равно честно улетает.
-      if (kicked.id === winnerIdRef.current) {
-        const other = liveRef.current.find((e) => e.id !== kicked.id);
-        if (!other) return;
-        winnerIdRef.current = other.id;
-      }
+
 
       // Сколько человек уносит один удар. На больших пулах (100-200 заявок)
       // один удар = один человек означал бы 5+ минут ленты, поэтому удар
