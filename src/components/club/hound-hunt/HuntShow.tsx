@@ -518,10 +518,23 @@ export function HoundHuntPage({
       burned.set(w.entry.id, (burned.get(w.entry.id) ?? 0) + 1);
     }
 
+    // Один человек не берёт два приза: из честного жребия исключаем уже
+    // победивших и тех, кто назначен победителем другого раунда — они
+    // продолжают крутиться в барабане, но не могут выиграть тут.
+    const excluded = new Set<string>();
+    for (const w of winnersRef.current) excluded.add(w.entry.id);
+    for (let i = 0; i < list.length; i++) {
+      if (i === roundIdx) continue;
+      const f = list[i]?.forcedWinnerId;
+      if (f) excluded.add(f);
+    }
+
     const field = entries
+      .filter((e) => !excluded.has(e.id))
       .map((e) => ({ e, slots: Math.max(0, e.slots - (burned.get(e.id) ?? 0)) }))
       .filter((x) => x.slots > 0);
     if (!field.length) return entries[Math.floor(Math.random() * entries.length)];
+
 
     const total = field.reduce((s, x) => s + x.slots, 0);
     let r = Math.floor(Math.random() * total) + 1;

@@ -151,6 +151,11 @@ export async function drawHunt(huntId: string, force = false) {
   // Порядок вскрытия: сначала младшие места, главный приз последним.
   const order = [...prizes].sort((a, b) => b.place - a.place);
 
+  // Один человек не берёт два приза: назначенные победители других раундов и
+  // уже победившие исключаются из честного жребия (в барабане они остаются).
+  const forcedAll = new Set(prizes.map((p) => p.forcedWinnerId).filter((x): x is string => !!x));
+  const alreadyWon = new Set<string>();
+
   for (const prize of order) {
     let winnerId: string | null = null;
 
@@ -162,7 +167,9 @@ export async function drawHunt(huntId: string, force = false) {
       if (left > 0) capsules.set(winnerId, left - 1);
     } else {
       // Честный жребий по оставшимся капсулам.
-      const pool = [...capsules.entries()].filter(([, c]) => c > 0);
+      const pool = [...capsules.entries()].filter(
+        ([uid, c]) => c > 0 && !forcedAll.has(uid) && !alreadyWon.has(uid),
+      );
       const total = pool.reduce((s, [, c]) => s + c, 0);
       if (total > 0) {
         // Равномерный выбор одной капсулы из всех оставшихся.
@@ -176,7 +183,14 @@ export async function drawHunt(huntId: string, force = false) {
         }
         if (!winnerId) winnerId = pool[pool.length - 1]![0];
       }
+      if (winnerId) {
+        const left = capsules.get(winnerId) ?? 0;
+        if (left > 0) capsules.set(winnerId, left - 1);
+      }
     }
+
+    if (winnerId) alreadyWon.add(winnerId);
+
 
     await db.update(huntPrizes).set({ winnerUserId: winnerId }).where(eq(huntPrizes.id, prize.id));
 
