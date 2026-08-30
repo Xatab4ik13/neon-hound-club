@@ -470,8 +470,56 @@ function HoundHuntAdminPage() {
               </div>
             </div>
 
+            <div className="rounded-md border border-zinc-200 dark:border-zinc-800">
+              <div className="flex items-center justify-between border-b border-zinc-200 px-3 py-2 text-sm font-medium dark:border-zinc-800">
+                <span>История охот</span>
+                <span className="text-xs text-zinc-500 dark:text-zinc-400">{history.length}</span>
+              </div>
+              <div className="max-h-96 divide-y divide-zinc-100 overflow-auto dark:divide-zinc-800/60">
+                {history.map((h) => (
+                  <div key={h.id} className="px-3 py-2 text-xs">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="truncate font-medium">
+                        {new Date(h.startsAt).toLocaleString("ru-RU", {
+                          day: "2-digit",
+                          month: "2-digit",
+                          year: "2-digit",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </span>
+                      <Badge tone={h.id === cfg.id ? "rose" : "zinc"}>
+                        {h.id === cfg.id ? "текущая" : h.status}
+                      </Badge>
+                    </div>
+                    <p className="mt-1 text-zinc-500 dark:text-zinc-400">
+                      {h.participants} чел. · {h.tickets} бил.
+                    </p>
+                    <ul className="mt-1 space-y-0.5 text-zinc-500 dark:text-zinc-400">
+                      {[...h.prizes]
+                        .sort((a, b) => a.place - b.place)
+                        .map((p) => (
+                          <li key={p.id} className="truncate">
+                            {p.place}. {p.title} —{" "}
+                            <span className={p.winnerNick ? "text-emerald-500" : ""}>
+                              {p.winnerNick ?? "нет победителя"}
+                            </span>
+                          </li>
+                        ))}
+                    </ul>
+                  </div>
+                ))}
+                {!history.length && (
+                  <p className="px-3 py-4 text-center text-xs text-zinc-500 dark:text-zinc-400">
+                    Охот пока нет.
+                  </p>
+                )}
+              </div>
+            </div>
+
           </div>
         </Panel>
+
 
         <Panel>
           <PanelHeader>
