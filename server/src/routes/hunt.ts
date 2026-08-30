@@ -192,7 +192,19 @@ export async function adminHuntRoutes(app: FastifyInstance) {
       }
     }
 
+    // Диагностика: видно, какие назначения победителей реально дошли и легли в БД.
+    const after = await getHuntPrizes(huntId);
+    req.log.info(
+      {
+        huntId,
+        got: body.prizes.map((p) => ({ place: p.place, id: p.id ?? null, forced: p.forcedWinnerId ?? null })),
+        saved: after.map((p) => ({ place: p.place, id: p.id, forced: p.forcedWinnerId })),
+      },
+      "hunt/save forced winners",
+    );
+
     return serializeHunt(huntId, null);
+
   });
 
   // Прокрутить жребий (в т.ч. повторно с force=true).
