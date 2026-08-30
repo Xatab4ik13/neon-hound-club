@@ -869,17 +869,19 @@ export function HoundHuntPage({
     clearTimers();
     const entries = pool;
     if (phase === "arming" || phase === "drift") {
-      const winner =
-        liveRef.current.find((e) => e.id === winnerIdRef.current) ??
+      const winnerCap =
+        liveRef.current.find((c) => c.entry.id === winnerIdRef.current) ??
         liveRef.current[0] ??
-        pickWinner(entries);
+        { cid: "skip#0", entry: pickWinner(entries) };
+      const winner = winnerCap.entry;
       kicksRef.current = Math.max(0, aliveRef.current - 1);
       setKicks(kicksRef.current);
-      liveRef.current = [winner];
+      liveRef.current = [winnerCap];
       aliveRef.current = 1;
       setAlive(1);
       setGhosts([]);
       setCurrent(winner);
+
       settleTargetRef.current = null;
       settledRef.current = false;
       setSettled(false);
