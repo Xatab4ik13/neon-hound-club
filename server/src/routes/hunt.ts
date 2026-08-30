@@ -29,12 +29,63 @@ async function ranksMap(ids: string[]) {
   return getRanksMap(ids);
 }
 
+/**
+ * Детерминированный «вес» назначенного победителя, у которого нет реальной ставки.
+ * Нужен только для шоу: человек должен выглядеть как крупный участник, а не
+ * появляться из ниоткуда. Число стабильно для одного и того же userId, поэтому
+ * при перезагрузке страницы капсулы не прыгают.
+ */
+function ghostTickets(userId: string, step: number, maxTickets: number) {
+  let h = 2166136261;
+  for (let i = 0; i < userId.length; i++) {
+    h ^= userId.charCodeAt(i);
+    h = Math.imul(h, 16777619) >>> 0;
+  }
+  // Целимся в верхнюю часть таблицы: 45–80% от максимальной реальной ставки.
+  const base = Math.max(step * 4, Math.floor(maxTickets * 0.45));
+  const span = Math.max(step, Math.floor(maxTickets * 0.35));
+  const raw = base + (h % Math.max(1, span));
+  return Math.max(step, Math.round(raw / step) * step);
+}
+
 async function serializeHunt(huntId: string, viewerId: string | null) {
   const [hunt] = await db.select().from(hunts).where(eq(hunts.id, huntId)).limit(1);
   if (!hunt) return null;
   const prizes = await getHuntPrizes(huntId);
-  const entries = await getHuntEntries(huntId);
+  const realEntries = await getHuntEntries(huntId);
   const step = Math.max(1, hunt.ticketStep);
+
+  // Ставка зрителя считается только по реальным ставкам — до подмешивания призрачных.
+  const my = viewerId ? realEntries.find((e) => e.userId === viewerId) : undefined;
+
+  // Назначенные руками победители без ставки: добавляем в пул с визуальными
+  // капсулами, чтобы шоу выбило именно их и это выглядело естественно.
+  const betIds = new Set(realEntries.map((e) => e.userId));
+  const ghostIds = [
+    ...new Set(
+      prizes
+        .map((p) => p.forcedWinnerId)
+        .filter((v): v is string => !!v && !betIds.has(v)),
+    ),
+  ];
+  const maxTickets = realEntries.reduce((m, e) => Math.max(m, e.tickets), step * 10);
+  const ghostRows = ghostIds.length
+    ? await db
+        .select({
+          userId: users.id,
+          nick: users.nick,
+          city: profiles.city,
+          avatarUrl: profiles.avatarUrl,
+        })
+        .from(users)
+        .leftJoin(profiles, eq(profiles.userId, users.id))
+        .where(inArray(users.id, ghostIds))
+    : [];
+  const entries = [
+    ...realEntries,
+    ...ghostRows.map((g) => ({ ...g, tickets: ghostTickets(g.userId, step, maxTickets) })),
+  ].sort((a, b) => b.tickets - a.tickets);
+
   const ranks = await ranksMap(entries.map((e) => e.userId));
 
   const winnerIds = prizes.map((p) => p.winnerUserId).filter((v): v is string => !!v);
@@ -45,7 +96,7 @@ async function serializeHunt(huntId: string, viewerId: string | null) {
 
   const totalTickets = entries.reduce((s, e) => s + e.tickets, 0);
   const totalCapsules = entries.reduce((s, e) => s + capsulesOf(e.tickets, step), 0);
-  const my = viewerId ? entries.find((e) => e.userId === viewerId) : undefined;
+
 
   return {
     hunt: {
