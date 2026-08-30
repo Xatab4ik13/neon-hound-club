@@ -646,6 +646,7 @@ export async function adminUsersRoutes(app: FastifyInstance) {
         .where(paid),
     ]);
 
+    const totalsRow = totals[0];
     const repeat = rows.filter((r) => r.payments > 1).length;
 
     return {
@@ -654,11 +655,11 @@ export async function adminUsersRoutes(app: FastifyInstance) {
       page,
       pageSize,
       summary: {
-        payers: totals?.payers ?? 0,
+        payers: totalsRow?.payers ?? 0,
         repeatPayers: repeat,
-        paymentsCount: totals?.paymentsCount ?? 0,
-        revenueRub: totals?.revenueRub ?? 0,
-        avgRub: totals?.avgRub ?? 0,
+        paymentsCount: totalsRow?.paymentsCount ?? 0,
+        revenueRub: totalsRow?.revenueRub ?? 0,
+        avgRub: totalsRow?.avgRub ?? 0,
       },
     };
   });
