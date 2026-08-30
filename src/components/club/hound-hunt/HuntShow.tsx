@@ -857,10 +857,14 @@ export function HoundHuntPage({ mode = "live" }: { mode?: HuntShowMode }) {
 
 
   // Тестовый пульт скорости показываем только по ?dev=1.
+  // Тестовый пульт скорости и счётчик барабана — только по ?dev=1 (админ).
   const devPanel = useMemo(
-    () => typeof window !== "undefined" && window.location.search.includes("dev"),
+    () =>
+      typeof window !== "undefined" &&
+      new URLSearchParams(window.location.search).get("dev") === "1",
     [],
   );
+
 
   return (
     <div className="fixed inset-0 z-40 overflow-hidden overscroll-none touch-pan-y bg-background text-foreground select-none">
