@@ -373,7 +373,40 @@ export async function adminHuntRoutes(app: FastifyInstance) {
     };
   });
 
+  // История охот: список всех охот с призами, победителями и объёмом ставок.
+  app.get("/list", { preHandler: requireAdmin }, async () => {
+    const rows = await db.select().from(hunts).orderBy(desc(hunts.startsAt)).limit(50);
+    const items = [];
+    for (const h of rows) {
+      const prizes = await getHuntPrizes(h.id);
+      const entries = await getHuntEntries(h.id);
+      const winnerIds = prizes.map((p) => p.winnerUserId).filter((v): v is string => !!v);
+      const nicks = winnerIds.length
+        ? await db.select({ id: users.id, nick: users.nick }).from(users).where(inArray(users.id, winnerIds))
+        : [];
+      const nickById = new Map(nicks.map((n) => [n.id, n.nick]));
+      items.push({
+        id: h.id,
+        title: h.title,
+        startsAt: h.startsAt.toISOString(),
+        status: h.status,
+        drawnAt: h.drawnAt?.toISOString() ?? null,
+        ticketStep: h.ticketStep,
+        participants: entries.length,
+        tickets: entries.reduce((s, e) => s + e.tickets, 0),
+        prizes: prizes.map((p) => ({
+          id: p.id,
+          place: p.place,
+          title: p.title,
+          winnerNick: p.winnerUserId ? ((nickById.get(p.winnerUserId) ?? null)?.toUpperCase() ?? null) : null,
+        })),
+      });
+    }
+    return { items };
+  });
+
   // Кол-во ставок (для дашборда).
+
   app.get("/stats", { preHandler: requireAdmin }, async () => {
     const hunt = await getCurrentHunt(true);
     if (!hunt) return { participants: 0, tickets: 0 };
