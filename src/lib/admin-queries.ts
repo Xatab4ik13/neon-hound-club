@@ -1276,6 +1276,9 @@ export type AdminPayer = {
 
 export type AdminPayersResponse = {
   items: AdminPayer[];
+  total: number;
+  page: number;
+  pageSize: number;
   summary: {
     payers: number;
     repeatPayers: number;
@@ -1285,10 +1288,17 @@ export type AdminPayersResponse = {
   };
 };
 
-export function fetchAdminPayers(params: { days?: number; minPayments?: number } = {}) {
+export function fetchAdminPayers(params: {
+  days?: number;
+  minPayments?: number;
+  page?: number;
+  pageSize?: number;
+} = {}) {
   const sp = new URLSearchParams();
   if (params.days) sp.set("days", String(params.days));
   if (params.minPayments && params.minPayments > 1) sp.set("minPayments", String(params.minPayments));
+  if (params.page) sp.set("page", String(params.page));
+  if (params.pageSize) sp.set("pageSize", String(params.pageSize));
   const qs = sp.toString();
   return apiFetch<AdminPayersResponse>(`/api/v1/admin/users/payers${qs ? `?${qs}` : ""}`);
 }
