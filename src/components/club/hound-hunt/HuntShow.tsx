@@ -227,13 +227,20 @@ export function HoundHuntPage({
      уезжает влево и удаляется с головы, по кругу она НЕ возвращается.
      Значит по центру всегда живая капсула — удара в пустоту не бывает,
      а reelPhase никогда не пересчитывается, поэтому ники не дёргаются. */
-  type Slot = { idx: number; entry: HuntEntry | null };
+  /**
+   * Капсула = одна ставка (ticketStep билетов). У человека с 20 капсулами в
+   * ленте физически 20 звеньев: удар выбивает ОДНУ капсулу, а не человека.
+   * Поэтому идентичность в барабане — cid капсулы, а не id участника.
+   */
+  type Cap = { cid: string; entry: HuntEntry };
+  type Slot = { idx: number; cid: string | null; entry: HuntEntry | null };
   const [tape, setTape] = useState<Slot[]>([]);
   const tapeRef = useRef<Slot[]>([]);
-  /** Живые участники — из них добирается хвост ленты. */
-  const liveRef = useRef<HuntEntry[]>([]);
+  /** Живые капсулы — из них добирается хвост ленты. */
+  const liveRef = useRef<Cap[]>([]);
   /** Очередь на добор: опустела — продолжаем тем же порядком живых. */
-  const feedRef = useRef<(HuntEntry | null)[]>([]);
+  const feedRef = useRef<(Cap | null)[]>([]);
+
   /** Следующий абсолютный индекс, который добавим в хвост. */
   const nextIdxRef = useRef(0);
   const [alive, setAlive] = useState(0);
@@ -285,25 +292,25 @@ export function HoundHuntPage({
    * и та же заявка не может случайно появиться рядом сама с собой на стыке
    * двух кругов и снова попасть под следующий удар.
    */
-  const nextFeed = useCallback((): HuntEntry | null | undefined => {
+  const nextFeed = useCallback((): Cap | null | undefined => {
     if (!feedRef.current.length) {
       const live = liveRef.current;
       if (!live.length) return undefined;
-      // Финал должен читаться глазами: чем меньше живых, тем разряженнее лента,
-      // и видно, что по кругу едут именно они, а не плотная толпа копий.
-      // Персонаж по пустотам не бьёт — он их пропускает.
+      // Финал должен читаться глазами: чем меньше живых капсул, тем разряженнее
+      // лента. Персонаж по пустотам не бьёт — он их пропускает.
       const n = live.length;
       const gaps = n > 8 ? 0 : n > 6 ? 1 : n > 4 ? 1 : n > 2 ? 2 : 3;
 
-      const built: (HuntEntry | null)[] = [];
-      for (const entry of live) {
-        built.push(entry);
+      const built: (Cap | null)[] = [];
+      for (const cap of live) {
+        built.push(cap);
         for (let i = 0; i < gaps; i++) built.push(null);
       }
       feedRef.current = built;
     }
     return feedRef.current.shift();
   }, []);
+
 
   /** На сколько слотов вперёд генерим хвост: минимум до точки будущего удара. */
   const leadRef = useRef(6);
@@ -315,15 +322,16 @@ export function HoundHuntPage({
     let changed = false;
     const wantTo = Math.floor(reelPhase.current) + Math.max(half + 2, leadRef.current);
     while (nextIdxRef.current <= wantTo) {
-      const entry = nextFeed();
-      if (entry === undefined) break;
+      const cap = nextFeed();
+      if (cap === undefined) break;
       if (!changed) {
         list = [...list];
         changed = true;
       }
-      list.push({ idx: nextIdxRef.current, entry });
+      list.push({ idx: nextIdxRef.current, cid: cap?.cid ?? null, entry: cap?.entry ?? null });
       nextIdxRef.current += 1;
     }
+
     const cutAt = Math.floor(reelPhase.current) - half - 2;
     if (list.length && list[0].idx < cutAt) {
       list = list.filter((s) => s.idx >= cutAt);
@@ -363,10 +371,11 @@ export function HoundHuntPage({
       // справа появляется приз.
       if (phaseRef.current === "settle" && !settledRef.current) {
         if (settleTargetRef.current === null) {
-          const liveIds = new Set(liveRef.current.map((e) => e.id));
+          const liveCids = new Set(liveRef.current.map((c) => c.cid));
           const slot = tapeRef.current.find(
-            (s) => s.entry && liveIds.has(s.entry.id) && s.idx >= reelPhase.current + 1.6,
+            (s) => s.cid && liveCids.has(s.cid) && s.idx >= reelPhase.current + 1.6,
           );
+
           if (slot) settleTargetRef.current = slot.idx + winStopOffset();
         }
         const target = settleTargetRef.current;
@@ -435,14 +444,18 @@ export function HoundHuntPage({
         // живой капсулы в центр. Дырки просто проезжают — персонаж их не бьёт.
         if (!kickInFlightRef.current && now >= kickReadyAtRef.current) {
           const impactPhase = reelPhase.current + impactDelayRef.current / step;
-          const liveIds = new Set(liveRef.current.map((entry) => entry.id));
+          const liveCids = new Set(liveRef.current.map((c) => c.cid));
+          // Капсулы победителя тоже выбиваются — кроме его ПОСЛЕДНЕЙ: она и
+          // останется в барабане одна. Так у всех сгорают лишние капсулы честно.
+          const winnerLive = liveRef.current.filter((c) => c.entry.id === winnerIdRef.current).length;
           const nextLive = tapeRef.current.find(
             (slot) =>
               slot.idx >= impactPhase &&
-              slot.entry !== null &&
-              liveIds.has(slot.entry.id) &&
-              slot.entry.id !== winnerIdRef.current,
+              slot.cid !== null &&
+              liveCids.has(slot.cid) &&
+              (slot.entry!.id !== winnerIdRef.current || winnerLive > 1),
           );
+
           if (nextLive) {
             const untilCenter = (nextLive.idx - reelPhase.current) * step;
             // Допуск в один кадр компенсирует React/Canvas между выбором цели
@@ -482,18 +495,23 @@ export function HoundHuntPage({
 
 
   /**
-   * Барабан = реальные участники: 15 человек — 15 звеньев. Никаких случайных
-   * копий: счётчик «осталось N» совпадает с тем, что видно на ленте.
-   * Порядок перемешиваем, чтобы победитель не всегда стоял в конце.
+   * Барабан = физические капсулы: поставил 20 капсул — в ленте 20 звеньев с
+   * твоей аватаркой. Счётчик «осталось N» считает капсулы, а не людей.
+   * Порядок перемешиваем, чтобы копии одного человека шли не подряд.
    */
-  const buildReel = useCallback((entries: HuntEntry[]) => {
-    const list = [...entries];
+  const buildReel = useCallback((entries: HuntEntry[]): Cap[] => {
+    const list: Cap[] = [];
+    for (const entry of entries) {
+      const n = Math.max(1, entry.slots);
+      for (let i = 0; i < n; i++) list.push({ cid: `${entry.id}#${i}`, entry });
+    }
     for (let i = list.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [list[i], list[j]] = [list[j], list[i]];
     }
     return list;
   }, []);
+
 
   const pickWinner = useCallback((entries: HuntEntry[], roundIdx = 0) => {
     // ПРИОРИТЕТ: итог с бекенда (жребий уже прокручен) → назначенный руками
@@ -610,7 +628,7 @@ export function HoundHuntPage({
       const finish = () => {
         if (finished) return;
         finished = true;
-        const survivor = liveRef.current[0] ?? winner;
+        const survivor = liveRef.current[0]?.entry ?? winner;
         const row = { prizeId: prizesRef.current[idx].id, entry: survivor };
         winnersRef.current = [...winnersRef.current, row];
         setWinners((w) => [...w, row]);
@@ -667,16 +685,18 @@ export function HoundHuntPage({
       if (aliveRef.current <= 1) return;
       const now = performance.now();
       const list = tapeRef.current;
-      const liveIds = new Set(liveRef.current.map((e) => e.id));
-      const isLive = (slot: Slot) => Boolean(slot.entry && liveIds.has(slot.entry.id));
-      // Победителя раунда не выбиваем НИКОГДА: он должен остаться последним.
-      const isTargetable = (slot: Slot) => isLive(slot) && slot.entry!.id !== winnerIdRef.current;
+      const liveCids = new Set(liveRef.current.map((c) => c.cid));
+      const winnerLive = liveRef.current.filter((c) => c.entry.id === winnerIdRef.current).length;
+      const isLive = (slot: Slot) => Boolean(slot.cid && liveCids.has(slot.cid));
+      // Последнюю капсулу победителя не выбиваем НИКОГДА: она остаётся в
+      // барабане одна. Остальные его капсулы сгорают, как у всех.
+      const isTargetable = (slot: Slot) =>
+        isLive(slot) && (slot.entry!.id !== winnerIdRef.current || winnerLive > 1);
 
       let target = preferredIdx === null ? undefined : list.find((s) => s.idx === preferredIdx && isTargetable(s));
       if (preferredIdx === null) {
-        // Fallback: ближайшая к центру живая капсула (кроме победителя). Так
-        // watchdog может восстановить очередь, но забронированный удар никогда
-        // не подменяет цель другой аватаркой.
+        // Fallback: ближайшая к центру живая капсула. Так watchdog может
+        // восстановить очередь, но забронированный удар не подменяет цель.
         let bestDist = Infinity;
         for (const s of list) {
           if (!isTargetable(s)) continue;
@@ -687,42 +707,44 @@ export function HoundHuntPage({
           }
         }
       }
-      // Живых (кроме победителя) в ленте сейчас нет — следующий кадр попробует
-      // снова, watchdog не сбрасывается.
-      if (!target?.entry) return;
+      // Живых капсул под удар сейчас нет — следующий кадр попробует снова.
+      if (!target?.entry || !target.cid) return;
 
       const center = target.idx;
       const kicked = target.entry;
+      const kickedCid = target.cid;
 
 
-      // Сколько человек уносит один удар. На больших пулах (100-200 заявок)
-      // один удар = один человек означал бы 5+ минут ленты, поэтому удар
-      // сносит группу: центральная капсула улетает, остальные из группы
-      // снимаются за правым краем кадра — незаметно, но счётчик падает пачкой.
+      // Сколько КАПСУЛ уносит один удар. На больших пулах (несколько сотен
+      // капсул) один удар = одна капсула означал бы 10+ минут ленты, поэтому
+      // удар сносит группу: центральная капсула улетает, остальные снимаются
+      // за правым краем кадра — незаметно, но счётчик падает пачкой.
       const batch = Math.max(1, Math.ceil((aliveRef.current - 1) / 20));
-      const removedIds = new Set<string>([kicked.id]);
+      const removedCids = new Set<string>([kickedCid]);
+      let winnerLeft = winnerLive - (kicked.id === winnerIdRef.current ? 1 : 0);
       if (batch > 1) {
-        for (const e of liveRef.current) {
-          if (removedIds.size >= batch) break;
-          if (e.id === kicked.id || e.id === winnerIdRef.current) continue;
-          removedIds.add(e.id);
+        for (const c of liveRef.current) {
+          if (removedCids.size >= batch) break;
+          if (removedCids.has(c.cid)) continue;
+          if (c.entry.id === winnerIdRef.current && winnerLeft <= 1) continue;
+          if (c.entry.id === winnerIdRef.current) winnerLeft -= 1;
+          removedCids.add(c.cid);
         }
       }
-      liveRef.current = liveRef.current.filter((e) => !removedIds.has(e.id));
+      liveRef.current = liveRef.current.filter((c) => !removedCids.has(c.cid));
       // На пороге разрядки ленты пересобираем очередь с нуля, чтобы дырки
       // появились сразу, а не через круг.
       feedRef.current =
         liveRef.current.length <= 8
           ? []
-          : feedRef.current.filter((e) => e === null || !removedIds.has(e.id));
+          : feedRef.current.filter((c) => c === null || !removedCids.has(c.cid));
 
-      // Дыркой сразу становится физически выбитый слот. Копии выбитых, которые
-      // ещё не появились в кадре (правее видимого окна), гасим тоже — иначе
-      // мёртвые аватарки продолжают ездить по кругу и это читается как баг.
+      // Дыркой сразу становится физически выбитая капсула. Копии выбитых,
+      // которые ещё не появились в кадре (правее видимого окна), гасим тоже.
       const rightEdge = Math.floor(reelPhase.current) + halfWindow();
       const next = list.map((s) => {
-        if (s.idx === center) return { ...s, entry: null };
-        if (s.entry && s.idx > rightEdge && removedIds.has(s.entry.id)) return { ...s, entry: null };
+        if (s.idx === center) return { ...s, cid: null, entry: null };
+        if (s.cid && s.idx > rightEdge && removedCids.has(s.cid)) return { ...s, cid: null, entry: null };
         return s;
       });
       tapeRef.current = next;
@@ -752,9 +774,10 @@ export function HoundHuntPage({
         settleTargetRef.current = null;
         settledRef.current = false;
         setSettled(false);
-        setCurrent(liveRef.current[0] ?? kicked);
+        setCurrent(liveRef.current[0]?.entry ?? kicked);
         setPhase("settle");
       }
+
     },
     [halfWindow, later],
   );
@@ -846,17 +869,19 @@ export function HoundHuntPage({
     clearTimers();
     const entries = pool;
     if (phase === "arming" || phase === "drift") {
-      const winner =
-        liveRef.current.find((e) => e.id === winnerIdRef.current) ??
+      const winnerCap =
+        liveRef.current.find((c) => c.entry.id === winnerIdRef.current) ??
         liveRef.current[0] ??
-        pickWinner(entries);
+        { cid: "skip#0", entry: pickWinner(entries) };
+      const winner = winnerCap.entry;
       kicksRef.current = Math.max(0, aliveRef.current - 1);
       setKicks(kicksRef.current);
-      liveRef.current = [winner];
+      liveRef.current = [winnerCap];
       aliveRef.current = 1;
       setAlive(1);
       setGhosts([]);
       setCurrent(winner);
+
       settleTargetRef.current = null;
       settledRef.current = false;
       setSettled(false);
@@ -1124,7 +1149,7 @@ function ReelStage({
   prizeImg,
 }: {
   /** Слоты ленты со своими АБСОЛЮТНЫМИ индексами (не по кругу). */
-  slots: { idx: number; entry: HuntEntry | null }[];
+  slots: { idx: number; cid: string | null; entry: HuntEntry | null }[];
   /** Сколько живых участников осталось. */
   ghosts: { key: string; entry: HuntEntry }[];
   /** Абсолютная фаза ленты: целая часть выбирает центральный слот. */
@@ -1305,7 +1330,7 @@ function ReelSlot({
   slot,
   phase,
 }: {
-  slot: { idx: number; entry: HuntEntry | null };
+  slot: { idx: number; cid: string | null; entry: HuntEntry | null };
   phase: MotionValue<number>;
 }) {
   const x = useTransform(phase, (value) => (slot.idx - value) * STEP - CHIP_W / 2);
