@@ -33,6 +33,8 @@ import {
   drawAdminHunt,
   resetAdminHuntResults,
   fetchAdminPlatinumUsers,
+  fetchAdminHuntList,
+  type AdminHuntListItem,
   type HuntApiEntry,
   type HuntPlatinumUser,
 } from "@/lib/hunt-api";
@@ -200,6 +202,16 @@ function HoundHuntAdminPage() {
   const [cfg, setCfg] = useState<HuntConfig>(() => readHuntConfig());
   const [entries, setEntries] = useState<HuntEntry[]>([]);
   const [busy, setBusy] = useState(false);
+  const [history, setHistory] = useState<AdminHuntListItem[]>([]);
+
+  const loadHistory = async () => {
+    try {
+      const res = await fetchAdminHuntList();
+      setHistory(res.items);
+    } catch {
+      setHistory([]);
+    }
+  };
 
   /** Тянем реальную охоту и её участников с бека. */
   const load = async () => {
@@ -229,6 +241,7 @@ function HoundHuntAdminPage() {
 
   useEffect(() => {
     void load();
+    void loadHistory();
   }, []);
 
   const patchPrize = (id: string, patch: Partial<HuntConfigPrize>) =>
@@ -281,7 +294,7 @@ function HoundHuntAdminPage() {
     }
   };
 
-  const save = async () => {
+  const save = async (create = false) => {
     if (!cfg.prizes.length) {
       toast.error("Нужен хотя бы один приз — это один раунд охоты");
       return;
@@ -294,7 +307,8 @@ function HoundHuntAdminPage() {
     setBusy(true);
     try {
       const state = await saveAdminHunt({
-        id: cfg.id ?? null,
+        id: create ? null : (cfg.id ?? null),
+        create,
         title: "HELL HUNT",
         startsAt: cfg.startsAt,
         ticketStep: cfg.ticketStep,
@@ -318,7 +332,8 @@ function HoundHuntAdminPage() {
         setCfg(next);
         writeHuntConfig(next);
       }
-      toast.success("Охота сохранена на бекенде");
+      toast.success(create ? "Новая охота создана" : "Охота сохранена на бекенде");
+      void loadHistory();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Не получилось сохранить охоту");
     } finally {
@@ -336,6 +351,7 @@ function HoundHuntAdminPage() {
         setCfg(next);
         writeHuntConfig(next);
       }
+      void loadHistory();
       toast.success("Жребий прокручен — шоу покажет этих победителей");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Не получилось прокрутить жребий");
@@ -366,7 +382,10 @@ function HoundHuntAdminPage() {
         actions={
           <>
             <Btn variant="secondary" onClick={() => void newHunt()} disabled={busy}>
-              Новая охота
+              Сбросить итоги
+            </Btn>
+            <Btn variant="secondary" onClick={() => void save(true)} disabled={busy}>
+              Создать новую охоту
             </Btn>
             <Btn variant="secondary" onClick={reset} disabled={busy}>
               Сбросить
@@ -374,7 +393,7 @@ function HoundHuntAdminPage() {
             <Btn variant="secondary" onClick={() => void draw()} disabled={busy}>
               Прокрутить жребий
             </Btn>
-            <Btn variant="primary" onClick={() => void save()} disabled={busy}>
+            <Btn variant="primary" onClick={() => void save(false)} disabled={busy}>
               Сохранить охоту
             </Btn>
           </>
@@ -451,8 +470,56 @@ function HoundHuntAdminPage() {
               </div>
             </div>
 
+            <div className="rounded-md border border-zinc-200 dark:border-zinc-800">
+              <div className="flex items-center justify-between border-b border-zinc-200 px-3 py-2 text-sm font-medium dark:border-zinc-800">
+                <span>История охот</span>
+                <span className="text-xs text-zinc-500 dark:text-zinc-400">{history.length}</span>
+              </div>
+              <div className="max-h-96 divide-y divide-zinc-100 overflow-auto dark:divide-zinc-800/60">
+                {history.map((h) => (
+                  <div key={h.id} className="px-3 py-2 text-xs">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="truncate font-medium">
+                        {new Date(h.startsAt).toLocaleString("ru-RU", {
+                          day: "2-digit",
+                          month: "2-digit",
+                          year: "2-digit",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </span>
+                      <Badge tone={h.id === cfg.id ? "rose" : "zinc"}>
+                        {h.id === cfg.id ? "текущая" : h.status}
+                      </Badge>
+                    </div>
+                    <p className="mt-1 text-zinc-500 dark:text-zinc-400">
+                      {h.participants} чел. · {h.tickets} бил.
+                    </p>
+                    <ul className="mt-1 space-y-0.5 text-zinc-500 dark:text-zinc-400">
+                      {[...h.prizes]
+                        .sort((a, b) => a.place - b.place)
+                        .map((p) => (
+                          <li key={p.id} className="truncate">
+                            {p.place}. {p.title} —{" "}
+                            <span className={p.winnerNick ? "text-emerald-500" : ""}>
+                              {p.winnerNick ?? "нет победителя"}
+                            </span>
+                          </li>
+                        ))}
+                    </ul>
+                  </div>
+                ))}
+                {!history.length && (
+                  <p className="px-3 py-4 text-center text-xs text-zinc-500 dark:text-zinc-400">
+                    Охот пока нет.
+                  </p>
+                )}
+              </div>
+            </div>
+
           </div>
         </Panel>
+
 
         <Panel>
           <PanelHeader>

@@ -43,7 +43,8 @@ function HoundHuntRoute() {
 
   if (preview) return <HuntShow mode="live" />;
   if (phase === "live") return <HuntShow mode="live" />;
-  if (phase === "replay" && replayOpen) return <HuntShow mode="replay" />;
+  if (phase === "replay" && replayOpen)
+    return <HuntShow mode="replay" onExit={() => setReplayOpen(false)} />;
 
 
   return (

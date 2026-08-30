@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { and, eq, gt, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, gt, inArray, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { hunts, huntPrizes, huntBets } from "../db/schema/hunt.js";
 import { users } from "../db/schema/users.js";
@@ -192,6 +192,8 @@ export async function adminHuntRoutes(app: FastifyInstance) {
     const parsed = z
       .object({
         id: z.string().uuid().nullable().optional(),
+        /** true — всегда создаём новую охоту (кнопка «Создать новую охоту»). */
+        create: z.boolean().default(false),
         title: z.string().min(1).max(120).default("HELL HUNT"),
         startsAt: z.string().min(4),
         ticketStep: z.number().int().min(1).max(10000).default(10),
@@ -205,20 +207,26 @@ export async function adminHuntRoutes(app: FastifyInstance) {
     if (Number.isNaN(startsAt.getTime())) return reply.code(400).send({ error: "bad_starts_at" });
 
     // Если фронт не прислал id (например, конфиг пришёл из локального кеша),
-    // не создаём вторую охоту — обновляем актуальную.
-    let huntId = body.id ?? (await getCurrentHunt(true))?.id ?? null;
+    // не создаём вторую охоту — обновляем актуальную. Кроме случая create:true.
+    let huntId = body.create ? null : (body.id ?? (await getCurrentHunt(true))?.id ?? null);
     if (huntId) {
       await db
         .update(hunts)
         .set({ title: body.title, startsAt, ticketStep: body.ticketStep, status: body.status, updatedAt: new Date() })
         .where(eq(hunts.id, huntId));
     } else {
+      // Прошлую охоту закрываем, чтобы она осталась в истории и не мешала.
+      const prev = await getCurrentHunt(true);
+      if (prev && prev.status !== "finished" && prev.status !== "canceled") {
+        await db.update(hunts).set({ status: "finished", updatedAt: new Date() }).where(eq(hunts.id, prev.id));
+      }
       const [row] = await db
         .insert(hunts)
         .values({ title: body.title, startsAt, ticketStep: body.ticketStep, status: body.status })
         .returning();
       huntId = row!.id;
     }
+
 
     // Призы синхронизируем целиком: что не пришло — удаляем.
     const existing = await getHuntPrizes(huntId);
@@ -365,7 +373,40 @@ export async function adminHuntRoutes(app: FastifyInstance) {
     };
   });
 
+  // История охот: список всех охот с призами, победителями и объёмом ставок.
+  app.get("/list", { preHandler: requireAdmin }, async () => {
+    const rows = await db.select().from(hunts).orderBy(desc(hunts.startsAt)).limit(50);
+    const items = [];
+    for (const h of rows) {
+      const prizes = await getHuntPrizes(h.id);
+      const entries = await getHuntEntries(h.id);
+      const winnerIds = prizes.map((p) => p.winnerUserId).filter((v): v is string => !!v);
+      const nicks = winnerIds.length
+        ? await db.select({ id: users.id, nick: users.nick }).from(users).where(inArray(users.id, winnerIds))
+        : [];
+      const nickById = new Map(nicks.map((n) => [n.id, n.nick]));
+      items.push({
+        id: h.id,
+        title: h.title,
+        startsAt: h.startsAt.toISOString(),
+        status: h.status,
+        drawnAt: h.drawnAt?.toISOString() ?? null,
+        ticketStep: h.ticketStep,
+        participants: entries.length,
+        tickets: entries.reduce((s, e) => s + e.tickets, 0),
+        prizes: prizes.map((p) => ({
+          id: p.id,
+          place: p.place,
+          title: p.title,
+          winnerNick: p.winnerUserId ? ((nickById.get(p.winnerUserId) ?? null)?.toUpperCase() ?? null) : null,
+        })),
+      });
+    }
+    return { items };
+  });
+
   // Кол-во ставок (для дашборда).
+
   app.get("/stats", { preHandler: requireAdmin }, async () => {
     const hunt = await getCurrentHunt(true);
     if (!hunt) return { participants: 0, tickets: 0 };
