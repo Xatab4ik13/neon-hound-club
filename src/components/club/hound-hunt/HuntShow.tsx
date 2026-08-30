@@ -50,10 +50,10 @@ import { useIsMobile } from "@/hooks/use-mobile";
  */
 export type HuntShowMode = "live" | "replay";
 
-export function HuntShow({ mode = "live" }: { mode?: HuntShowMode }) {
+export function HuntShow({ mode = "live", onExit }: { mode?: HuntShowMode; onExit?: () => void }) {
   const isMobile = useIsMobile();
   if (!isMobile) return <DesktopBlock />;
-  return <HoundHuntPage mode={mode} />;
+  return <HoundHuntPage mode={mode} onExit={onExit} />;
 }
 
 function DesktopBlock() {
@@ -140,7 +140,13 @@ function suspenseMs(remaining: number) {
 
 /* ------------------------------ страница ------------------------------ */
 
-export function HoundHuntPage({ mode = "live" }: { mode?: HuntShowMode }) {
+export function HoundHuntPage({
+  mode = "live",
+  onExit,
+}: {
+  mode?: HuntShowMode;
+  onExit?: () => void;
+}) {
   const [speed, setSpeed] = useState<Speed>(5);
   const speedRef = useRef<Speed>(speed);
   speedRef.current = speed;
@@ -993,9 +999,20 @@ export function HoundHuntPage({ mode = "live" }: { mode?: HuntShowMode }) {
 
           {/* Реплей честно помечаем: это запись прошедшей охоты. */}
           {mode === "replay" && (
-            <div className="pointer-events-none absolute left-1/2 top-3 z-30 -translate-x-1/2 rounded-full border border-border/60 bg-background/70 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground backdrop-blur">
-              запись
-            </div>
+            <>
+              <div className="pointer-events-none absolute left-1/2 top-3 z-30 -translate-x-1/2 rounded-full border border-border/60 bg-background/70 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground backdrop-blur">
+                запись
+              </div>
+              {onExit ? (
+                <button
+                  type="button"
+                  onClick={onExit}
+                  className="absolute right-3 top-3 z-30 rounded-full border border-border/60 bg-background/70 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground backdrop-blur transition active:scale-95"
+                >
+                  к итогам
+                </button>
+              ) : null}
+            </>
           )}
 
           {(phase === "arming" ||
