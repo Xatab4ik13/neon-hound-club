@@ -31,7 +31,10 @@ export async function getCurrentHunt(includeDraft = false): Promise<Hunt | null>
     .select()
     .from(hunts)
     .where(includeDraft ? sql`true` : sql`${hunts.status} <> 'draft'`)
-    .orderBy(desc(hunts.startsAt))
+    // Тай-брейк по createdAt: если в базе оказались две охоты с одинаковым
+    // startsAt, порядок должен быть детерминированным, иначе админка то видит
+    // свежую охоту с победителями, то старую пустую.
+    .orderBy(desc(hunts.startsAt), desc(hunts.createdAt))
     .limit(1);
   return rows[0] ?? null;
 }

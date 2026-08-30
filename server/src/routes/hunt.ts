@@ -153,7 +153,9 @@ export async function adminHuntRoutes(app: FastifyInstance) {
     const startsAt = new Date(body.startsAt);
     if (Number.isNaN(startsAt.getTime())) return reply.code(400).send({ error: "bad_starts_at" });
 
-    let huntId = body.id ?? null;
+    // Если фронт не прислал id (например, конфиг пришёл из локального кеша),
+    // не создаём вторую охоту — обновляем актуальную.
+    let huntId = body.id ?? (await getCurrentHunt(true))?.id ?? null;
     if (huntId) {
       await db
         .update(hunts)
