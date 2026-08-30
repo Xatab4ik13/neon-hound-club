@@ -576,14 +576,18 @@ export async function adminUsersRoutes(app: FastifyInstance) {
   // GET /api/v1/admin/users/payers — кто реально платит.
   // Считаем только подтверждённые платежи (status='confirmed'):
   // сколько раз человек платил, на сколько всего и средний чек.
+  // Пагинация: по умолчанию 10 человек на страницу.
   app.get("/payers", async (req) => {
     const q = z
       .object({
         days: z.coerce.number().int().min(1).max(3650).optional(),
         minPayments: z.coerce.number().int().min(1).max(50).default(1),
-        limit: z.coerce.number().int().min(1).max(500).default(200),
+        page: z.coerce.number().int().min(1).max(100000).default(1),
+        pageSize: z.coerce.number().int().min(1).max(100).default(10),
       })
       .parse(req.query ?? {});
+
+    const { page, pageSize, offset } = { ...q, offset: (q.page - 1) * q.pageSize };
 
     const paid = and(
       eq(payments.status, "confirmed"),
@@ -592,46 +596,63 @@ export async function adminUsersRoutes(app: FastifyInstance) {
         : sql`true`,
     );
 
-    const rows = await db
-      .select({
-        userId: payments.userId,
-        nick: users.nick,
-        email: users.email,
-        city: profiles.city,
-        avatarUrl: profiles.avatarUrl,
-        payments: sql<number>`count(*)::int`,
-        totalRub: sql<number>`coalesce(sum(${payments.amountRub}), 0)::int`,
-        avgRub: sql<number>`round(coalesce(avg(${payments.amountRub}), 0))::int`,
-        passRub: sql<number>`coalesce(sum(case when ${payments.refType} = 'pass' then ${payments.amountRub} else 0 end), 0)::int`,
-        shopRub: sql<number>`coalesce(sum(case when ${payments.refType} = 'order' then ${payments.amountRub} else 0 end), 0)::int`,
-        schoolRub: sql<number>`coalesce(sum(case when ${payments.refType} = 'school_order' then ${payments.amountRub} else 0 end), 0)::int`,
-        firstPaidAt: sql<string>`min(${payments.createdAt})`,
-        lastPaidAt: sql<string>`max(${payments.createdAt})`,
-      })
-      .from(payments)
-      .innerJoin(users, eq(users.id, payments.userId))
-      .leftJoin(profiles, eq(profiles.userId, payments.userId))
-      .where(paid)
-      .groupBy(payments.userId, users.nick, users.email, profiles.city, profiles.avatarUrl)
-      .having(sql`count(*) >= ${q.minPayments}`)
-      .orderBy(desc(sql`sum(${payments.amountRub})`))
-      .limit(q.limit);
+    const havingPayments = sql`count(*) >= ${q.minPayments}`;
 
-    // Сводка: сколько всего платящих, повторных, общий средний чек.
-    const [totals] = await db
-      .select({
-        payers: sql<number>`count(distinct ${payments.userId})::int`,
-        paymentsCount: sql<number>`count(*)::int`,
-        revenueRub: sql<number>`coalesce(sum(${payments.amountRub}), 0)::int`,
-        avgRub: sql<number>`round(coalesce(avg(${payments.amountRub}), 0))::int`,
-      })
-      .from(payments)
-      .where(paid);
+    const [rows, totalRows, totals] = await Promise.all([
+      db
+        .select({
+          userId: payments.userId,
+          nick: users.nick,
+          email: users.email,
+          city: profiles.city,
+          avatarUrl: profiles.avatarUrl,
+          payments: sql<number>`count(*)::int`,
+          totalRub: sql<number>`coalesce(sum(${payments.amountRub}), 0)::int`,
+          avgRub: sql<number>`round(coalesce(avg(${payments.amountRub}), 0))::int`,
+          passRub: sql<number>`coalesce(sum(case when ${payments.refType} = 'pass' then ${payments.amountRub} else 0 end), 0)::int`,
+          shopRub: sql<number>`coalesce(sum(case when ${payments.refType} = 'order' then ${payments.amountRub} else 0 end), 0)::int`,
+          schoolRub: sql<number>`coalesce(sum(case when ${payments.refType} = 'school_order' then ${payments.amountRub} else 0 end), 0)::int`,
+          firstPaidAt: sql<string>`min(${payments.createdAt})`,
+          lastPaidAt: sql<string>`max(${payments.createdAt})`,
+        })
+        .from(payments)
+        .innerJoin(users, eq(users.id, payments.userId))
+        .leftJoin(profiles, eq(profiles.userId, payments.userId))
+        .where(paid)
+        .groupBy(payments.userId, users.nick, users.email, profiles.city, profiles.avatarUrl)
+        .having(havingPayments)
+        .orderBy(desc(sql`sum(${payments.amountRub})`))
+        .limit(pageSize)
+        .offset(offset),
+      db
+        .select({ c: sql<number>`count(*)::int` })
+        .from(
+          db
+            .select({ userId: payments.userId })
+            .from(payments)
+            .where(paid)
+            .groupBy(payments.userId)
+            .having(havingPayments)
+            .as("payers_sub"),
+        ),
+      db
+        .select({
+          payers: sql<number>`count(distinct ${payments.userId})::int`,
+          paymentsCount: sql<number>`count(*)::int`,
+          revenueRub: sql<number>`coalesce(sum(${payments.amountRub}), 0)::int`,
+          avgRub: sql<number>`round(coalesce(avg(${payments.amountRub}), 0))::int`,
+        })
+        .from(payments)
+        .where(paid),
+    ]);
 
     const repeat = rows.filter((r) => r.payments > 1).length;
 
     return {
       items: rows,
+      total: totalRows[0]?.c ?? 0,
+      page,
+      pageSize,
       summary: {
         payers: totals?.payers ?? 0,
         repeatPayers: repeat,
