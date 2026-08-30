@@ -25,7 +25,7 @@ export const Route = createFileRoute("/club/hound-hunt")({
 
 function HoundHuntRoute() {
   const { cfg } = useHuntConfig();
-  const { phase } = useHuntPhase(cfg.startsAt);
+  const { phase } = useHuntPhase(cfg.startsAt, cfg.drawnAt);
   /** Реплей запускается только по кнопке — иначе шоу крутилось бы сутки. */
   const [replayOpen, setReplayOpen] = useState(false);
 

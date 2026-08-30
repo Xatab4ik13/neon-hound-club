@@ -34,6 +34,10 @@ export type HuntConfig = {
   startsAt: string;
   /** Сколько билетов даёт одну капсулу в барабане. */
   ticketStep: number;
+  /** Итоги зафиксированы на бекенде (ISO) или null — жребий ещё не крутили. */
+  drawnAt?: string | null;
+  /** Статус охоты с бекенда. */
+  status?: "draft" | "open" | "finished" | "canceled";
   /** Сколько призов — столько раундов. Порядок вскрытия: 3 → 2 → 1. */
   prizes: HuntConfigPrize[];
 };
@@ -75,6 +79,8 @@ export function readHuntConfig(): HuntConfig {
     const prizes = Array.isArray(parsed.prizes) && parsed.prizes.length ? parsed.prizes : base.prizes;
     return {
       id: parsed.id ?? null,
+      drawnAt: parsed.drawnAt ?? null,
+      status: parsed.status,
       startsAt: typeof parsed.startsAt === "string" ? parsed.startsAt : base.startsAt,
       ticketStep: Number(parsed.ticketStep) > 0 ? Number(parsed.ticketStep) : base.ticketStep,
       prizes: prizes.map((p, i) => ({
@@ -111,6 +117,8 @@ export function huntConfigFromApi(state: HuntApiState): HuntConfig | null {
   const base = defaultHuntConfig();
   return {
     id: state.hunt.id,
+    drawnAt: state.hunt.drawnAt ?? null,
+    status: state.hunt.status,
     startsAt: state.hunt.startsAt,
     ticketStep: state.hunt.ticketStep,
     prizes: state.prizes.map((p, i) => ({
