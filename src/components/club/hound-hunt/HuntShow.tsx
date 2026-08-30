@@ -292,25 +292,25 @@ export function HoundHuntPage({
    * и та же заявка не может случайно появиться рядом сама с собой на стыке
    * двух кругов и снова попасть под следующий удар.
    */
-  const nextFeed = useCallback((): HuntEntry | null | undefined => {
+  const nextFeed = useCallback((): Cap | null | undefined => {
     if (!feedRef.current.length) {
       const live = liveRef.current;
       if (!live.length) return undefined;
-      // Финал должен читаться глазами: чем меньше живых, тем разряженнее лента,
-      // и видно, что по кругу едут именно они, а не плотная толпа копий.
-      // Персонаж по пустотам не бьёт — он их пропускает.
+      // Финал должен читаться глазами: чем меньше живых капсул, тем разряженнее
+      // лента. Персонаж по пустотам не бьёт — он их пропускает.
       const n = live.length;
       const gaps = n > 8 ? 0 : n > 6 ? 1 : n > 4 ? 1 : n > 2 ? 2 : 3;
 
-      const built: (HuntEntry | null)[] = [];
-      for (const entry of live) {
-        built.push(entry);
+      const built: (Cap | null)[] = [];
+      for (const cap of live) {
+        built.push(cap);
         for (let i = 0; i < gaps; i++) built.push(null);
       }
       feedRef.current = built;
     }
     return feedRef.current.shift();
   }, []);
+
 
   /** На сколько слотов вперёд генерим хвост: минимум до точки будущего удара. */
   const leadRef = useRef(6);
