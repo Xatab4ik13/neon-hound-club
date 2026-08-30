@@ -264,18 +264,55 @@ export function HuntLanding({ onEnterShow }: { onEnterShow: () => void }) {
                 <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-destructive">
                   охота завершилась
                 </p>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  Итоги подведены. Запись доступна сутки, потом страница откроет новую охоту.
+
+                {/* Подиум: победители первые сутки после шоу. */}
+                <div className="mt-4 space-y-2 text-left">
+                  {[...prizes]
+                    .sort((a, b) => a.place - b.place)
+                    .map((p, i) => (
+                      <div
+                        key={p.id}
+                        className="flex items-center gap-3 rounded-2xl border border-border/60 bg-background/40 p-2.5"
+                        style={
+                          i === 0
+                            ? { borderColor: `${TOXIC}55`, boxShadow: `0 0 40px -24px ${TOXIC}` }
+                            : undefined
+                        }
+                      >
+                        <span
+                          className="w-5 shrink-0 text-center font-display text-lg font-black"
+                          style={{ color: i === 0 ? TOXIC : undefined }}
+                        >
+                          {p.place}
+                        </span>
+                        <img src={p.img} alt={p.title} className="size-10 shrink-0 object-contain" />
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate font-display text-sm font-black uppercase leading-tight">
+                            {p.winnerNick ?? "победитель не определён"}
+                          </p>
+                          <p className="truncate text-[11px] text-muted-foreground">{p.title}</p>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+
+                <p className="mt-3 text-xs text-muted-foreground">
+                  Запись шоу доступна сутки, потом страница откроет новую охоту.
                 </p>
                 <button
                   type="button"
-                  onClick={onEnterShow}
-                  className="mt-4 w-full rounded-2xl border border-border/70 bg-background/40 px-6 py-3 font-display text-sm font-black uppercase tracking-wide transition active:scale-[0.98]"
+                  onClick={() => {
+                    haptic("success");
+                    onEnterShow();
+                  }}
+                  className="mt-3 w-full rounded-2xl px-6 py-3.5 font-display text-base font-black uppercase tracking-wide text-background transition active:scale-[0.98]"
+                  style={{ background: TOXIC, boxShadow: `0 0 50px -14px ${TOXIC}` }}
                 >
-                  Посмотреть шоу
+                  Посмотреть охоту
                 </button>
               </>
             )}
+
           </div>
         </Reveal>
 
