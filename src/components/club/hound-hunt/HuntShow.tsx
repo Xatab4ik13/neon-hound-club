@@ -399,14 +399,6 @@ export function HoundHuntPage({
         }
       }
 
-
-      reelPhase.current += advance;
-      // Хвост ленты должен существовать дальше, чем точка будущего импакта,
-      // иначе цель «ещё не создана» и взмах не запускается.
-      leadRef.current = Math.ceil(impactDelayRef.current / step) + 3;
-      groomTape();
-      syncStrip();
-
       if (phaseRef.current === "drift" && aliveRef.current > 1) {
         // Пауза «раздумья»: в финале байкер не бьёт каждый цикл — лента
         // прокручивается лишний раз, и никто не знает, когда прилетит.
@@ -436,8 +428,7 @@ export function HoundHuntPage({
           lastImpactCycle.current = -1;
           impactLockedUntil.current = 0;
           kickReadyAtRef.current = 0;
-          eliminateRef.current(null);
-          setKickToken((token) => token + 1);
+          lastEliminationAtRef.current = now;
         }
 
         // Запускаем одиночный взмах ровно за impactDelay до прихода следующей
@@ -446,32 +437,42 @@ export function HoundHuntPage({
           const impactPhase = reelPhase.current + impactDelayRef.current / step;
           const liveIds = new Set(liveRef.current.map((entry) => entry.id));
           const nextLive = tapeRef.current.find(
-            (slot) => slot.idx >= impactPhase && slot.entry !== null && liveIds.has(slot.entry.id),
+            (slot) =>
+              slot.idx >= impactPhase &&
+              slot.entry !== null &&
+              liveIds.has(slot.entry.id) &&
+              slot.entry.id !== winnerIdRef.current,
           );
-          // Страховка от зависания: если окно идеального тайминга по какой-то
-          // причине проехало (кадр подвис, лента разряжена дырками), бьём по
-          // ближайшей живой капсуле впереди, а не стоим до конца розыгрыша.
-          const overdue = now - kickReadyAtRef.current > kickCycleMsRef.current * 1.5 + pause;
           if (nextLive) {
             const untilCenter = (nextLive.idx - reelPhase.current) * step;
             // Допуск в один кадр компенсирует React/Canvas между выбором цели
             // и фактическим стартом клипа, не меняя визуальную фазу ленты.
-            if (untilCenter <= impactDelayRef.current + 34 || overdue) {
+            if (untilCenter <= impactDelayRef.current + 34) {
               reservedTargetRef.current = nextLive.idx;
               kickInFlightRef.current = true;
               kickReadyAtRef.current = now + kickCycleMsRef.current + pause;
               kickDeadlineRef.current = now + impactDelayRef.current + kickCycleMsRef.current;
               setKickToken((token) => token + 1);
             }
-          } else if (overdue) {
-            // Живой цели впереди нет вообще (хвост из дырок) — бьём по
-            // ближайшей живой без брони, чтобы не зависнуть.
-            kickReadyAtRef.current = now + kickCycleMsRef.current + pause;
-            eliminateRef.current(null);
-            setKickToken((token) => token + 1);
           }
         }
       }
+
+      // Забронированная капсула не может проехать точку удара раньше ноги.
+      // Если 3D-клип или кадр задержался, лента удерживает именно её в центре
+      // до callback импакта — под ногой и в полёте всегда один участник.
+      const reserved = reservedTargetRef.current;
+      if (kickInFlightRef.current && reserved !== null) {
+        const toTarget = reserved - reelPhase.current;
+        if (toTarget >= 0) advance = Math.min(advance, toTarget);
+      }
+
+      reelPhase.current += advance;
+      // Хвост ленты должен существовать дальше, чем точка будущего импакта,
+      // иначе цель «ещё не создана» и взмах не запускается.
+      leadRef.current = Math.ceil(impactDelayRef.current / step) + 3;
+      groomTape();
+      syncStrip();
 
       reelRaf.current = requestAnimationFrame(tick);
     };
@@ -658,13 +659,11 @@ export function HoundHuntPage({
       // Победителя раунда не выбиваем НИКОГДА: он должен остаться последним.
       const isTargetable = (slot: Slot) => isLive(slot) && slot.entry!.id !== winnerIdRef.current;
 
-      let target =
-        preferredIdx === null
-          ? undefined
-          : list.find((s) => s.idx === preferredIdx && isTargetable(s));
-      if (!target) {
+      let target = preferredIdx === null ? undefined : list.find((s) => s.idx === preferredIdx && isTargetable(s));
+      if (preferredIdx === null) {
         // Fallback: ближайшая к центру живая капсула (кроме победителя). Так
-        // удар никогда не «уходит в никуда», даже если бронь устарела.
+        // watchdog может восстановить очередь, но забронированный удар никогда
+        // не подменяет цель другой аватаркой.
         let bestDist = Infinity;
         for (const s of list) {
           if (!isTargetable(s)) continue;
@@ -763,9 +762,13 @@ export function HoundHuntPage({
       if (duplicate) return;
       lastImpactCycle.current = cycle;
       impactLockedUntil.current = now + 650;
+      if (center !== null) {
+        reelPhase.current = center;
+        syncStrip();
+      }
       eliminateAt(center);
     },
-    [eliminateAt],
+    [eliminateAt, syncStrip],
   );
 
 
