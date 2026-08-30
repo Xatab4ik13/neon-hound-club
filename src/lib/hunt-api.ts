@@ -58,6 +58,8 @@ export function fetchAdminHunt() {
 
 export type AdminHuntSaveBody = {
   id?: string | null;
+  /** true — всегда создать новую охоту, не обновлять текущую. */
+  create?: boolean;
   title: string;
   startsAt: string;
   ticketStep: number;
@@ -78,6 +80,23 @@ export function saveAdminHunt(body: AdminHuntSaveBody) {
     method: "POST",
     body: JSON.stringify(body),
   });
+}
+
+export type AdminHuntListItem = {
+  id: string;
+  title: string;
+  startsAt: string;
+  status: "draft" | "open" | "finished" | "canceled";
+  drawnAt: string | null;
+  ticketStep: number;
+  participants: number;
+  tickets: number;
+  prizes: { id: string; place: number; title: string; winnerNick: string | null }[];
+};
+
+/** История охот для админки. */
+export function fetchAdminHuntList() {
+  return apiFetch<{ items: AdminHuntListItem[] }>("/api/v1/admin/hunt/list");
 }
 
 export function drawAdminHunt(force = false) {
