@@ -279,6 +279,21 @@ function HoundHuntAdminPage() {
   const removePrize = (id: string) =>
     setCfg((c) => ({ ...c, prizes: c.prizes.filter((p) => p.id !== id) }));
 
+  /** Загрузка картинки приза файлом в MinIO (kind=raffle). */
+  const uploadPrizeImage = async (prizeId: string, file: File) => {
+    setUploadingId(prizeId);
+    try {
+      const url = await uploadFileToS3(file, "raffle", "hunt");
+      patchPrize(prizeId, { img: url });
+      toast.success("Картинка загружена");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Не получилось загрузить");
+    } finally {
+      setUploadingId(null);
+    }
+  };
+
+
   /** Сброс итогов прошлой охоты на бекенде + локальный кеш. */
   const newHunt = async () => {
     setBusy(true);
