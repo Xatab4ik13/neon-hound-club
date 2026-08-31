@@ -422,17 +422,26 @@ function HoundHuntAdminPage() {
   const sortedEntries = [...entries].sort((a, b) => b.tickets - a.tickets);
 
 
+  const isDraft = (cfg.status ?? "open") === "draft";
+
   return (
     <div>
       <PageHeader
         title="HELL HUNT"
-        description="Недельная охота для Hell Pass Platinum. Всё, что здесь настроено, видит лендинг и шоу."
+        description={
+          isDraft
+            ? "Черновик: на сайте не показывается. Заполни призы и нажми «Опубликовать»."
+            : "Недельная охота для Hell Pass Platinum. Всё, что здесь настроено, видит лендинг и шоу."
+        }
         actions={
           <>
+            <Badge tone={isDraft ? "zinc" : "rose"}>
+              {isDraft ? "черновик" : (cfg.status ?? "open")}
+            </Badge>
             <Btn variant="secondary" onClick={() => void newHunt()} disabled={busy}>
               Сбросить итоги
             </Btn>
-            <Btn variant="secondary" onClick={() => void save(true)} disabled={busy}>
+            <Btn variant="secondary" onClick={startDraft} disabled={busy}>
               Создать новую охоту
             </Btn>
             <Btn variant="secondary" onClick={reset} disabled={busy}>
@@ -441,13 +450,24 @@ function HoundHuntAdminPage() {
             <Btn variant="secondary" onClick={() => void draw()} disabled={busy}>
               Прокрутить жребий
             </Btn>
-            <Btn variant="primary" onClick={() => void save(false)} disabled={busy}>
-              Сохранить охоту
+            <Btn
+              variant="secondary"
+              onClick={() => void save({ create: !cfg.id, status: "draft" })}
+              disabled={busy}
+            >
+              Сохранить черновик
+            </Btn>
+            <Btn
+              variant="primary"
+              onClick={() => void save({ create: !cfg.id, status: "open" })}
+              disabled={busy}
+            >
+              {isDraft || !cfg.id ? "Опубликовать" : "Сохранить охоту"}
             </Btn>
           </>
-
         }
       />
+
 
       <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
         <Panel className="p-4">
