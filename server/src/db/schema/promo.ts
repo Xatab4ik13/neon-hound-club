@@ -34,6 +34,12 @@ export const promoCodes = pgTable(
      * За такой заказ билеты не начисляются.
      */
     productId: uuid("product_id"),
+    /**
+     * Промокод на группу товаров (например «любые носки»).
+     * Если задан — код срабатывает, если в корзине есть любой из этих товаров,
+     * скидка идёт на 1 шт. самого дорогого подходящего.
+     */
+    productIds: uuid("product_ids").array(),
     note: varchar("note", { length: 200 }),
 
     expiresAt: timestamp("expires_at", { withTimezone: true }),
