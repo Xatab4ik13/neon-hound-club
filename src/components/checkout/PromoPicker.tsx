@@ -5,7 +5,13 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2, PlumpTicket } from "@/components/ui/icons";
-import { fetchMyPromoCodes, promoQk, type PromoCodeDto } from "@/lib/promo-api";
+import {
+  fetchMyPromoCodes,
+  promoQk,
+  promoTargetIds,
+  promoTargetLabel,
+  type PromoCodeDto,
+} from "@/lib/promo-api";
 
 type CartPos = { productId: string; qty: number };
 
@@ -13,13 +19,15 @@ function eligibility(
   promo: PromoCodeDto,
   cart: CartPos[],
 ): { ok: boolean; reason?: string } {
-  if (!promo.productId) return { ok: true };
-  const has = cart.some((i) => i.productId === promo.productId && i.qty > 0);
+  const targets = promoTargetIds(promo);
+  if (targets.length === 0) return { ok: true };
+  const has = cart.some((i) => targets.includes(i.productId) && i.qty > 0);
   if (!has) {
+    const label = promoTargetLabel(promo);
     return {
       ok: false,
-      reason: promo.productTitle
-        ? `Только на «${promo.productTitle}» — добавь этот товар в корзину`
+      reason: label
+        ? `Только на «${label}» — добавь этот товар в корзину`
         : "Добавь в корзину товар, на который выписан код",
     };
   }
@@ -84,8 +92,8 @@ export function PromoPicker({
                   </div>
                   <div className="truncate text-[11px] text-muted-foreground">
                     {el.ok
-                      ? p.productId
-                        ? `−${p.discountPct}% на 1 шт. «${p.productTitle ?? "товар"}» · билеты не начисляются`
+                      ? promoTargetIds(p).length > 0
+                        ? `−${p.discountPct}% на 1 шт. «${promoTargetLabel(p) ?? "товар"}» · билеты не начисляются`
                         : `−${p.discountPct}% на товары`
                       : el.reason}
                   </div>

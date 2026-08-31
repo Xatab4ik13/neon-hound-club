@@ -7,8 +7,12 @@ export type PromoCodeDto = {
   userId: string | null;
   /** Товарный промокод: скидка только на этот товар (корзина = 1 шт. этого товара). */
   productId: string | null;
+  /** Промокод на группу товаров (любой из них), например «любые носки». */
+  productIds?: string[] | null;
   /** Название товара для товарного промокода (только в /promo/mine). */
   productTitle?: string | null;
+  /** Названия всех целевых товаров (для группового промокода). */
+  productTitles?: string[] | null;
   note: string | null;
   expiresAt: string | null;
   usedAt: string | null;
@@ -22,6 +26,7 @@ export type AdminPromoCodeDto = PromoCodeDto & {
   userNick: string | null;
   userEmail: string | null;
   productTitle: string | null;
+  productTitles?: string[] | null;
 };
 
 /** Сводка по активированным промокодам — «докупают ли что-то ещё». */
@@ -125,6 +130,8 @@ export type PromoValidateResult = {
   discountPct: number;
   /** Не null — товарный промокод: скидка только на этот товар, билеты не начисляются. */
   productId: string | null;
+  /** Группа товаров: скидка на 1 шт. самого дорогого из них в корзине. */
+  productIds?: string[] | null;
   expiresAt: string | null;
 };
 
@@ -154,6 +161,7 @@ export async function adminCreatePromoCode(input: {
   discountPct: number;
   userId?: string | null;
   productId?: string | null;
+  productIds?: string[] | null;
   note?: string;
   expiresAt?: string | null;
 }) {
@@ -171,6 +179,7 @@ export async function adminUpdatePromoCode(
     active?: boolean;
     note?: string | null;
     productId?: string | null;
+    productIds?: string[] | null;
   },
 ) {
   return apiFetch<{ promo: AdminPromoCodeDto }>(`/api/v1/admin/promo/${id}`, {
@@ -181,4 +190,31 @@ export async function adminUpdatePromoCode(
 
 export async function adminDeletePromoCode(id: string) {
   return apiFetch<{ ok: true }>(`/api/v1/admin/promo/${id}`, { method: "DELETE" });
+}
+
+/** Товары, на которые действует промокод. Пусто — на всю корзину. */
+export function promoTargetIds(p: {
+  productId: string | null;
+  productIds?: string[] | null;
+}): string[] {
+  if (p.productIds && p.productIds.length > 0) return p.productIds;
+  return p.productId ? [p.productId] : [];
+}
+
+/** Человеческое описание, на что действует промокод. */
+export function promoTargetLabel(p: {
+  productId: string | null;
+  productIds?: string[] | null;
+  productTitle?: string | null;
+  productTitles?: string[] | null;
+}): string | null {
+  const titles = p.productTitles && p.productTitles.length > 0
+    ? p.productTitles
+    : p.productTitle
+      ? [p.productTitle]
+      : [];
+  if (promoTargetIds(p).length === 0) return null;
+  if (titles.length === 0) return "товар";
+  if (titles.length === 1) return titles[0]!;
+  return titles.join(" / ");
 }

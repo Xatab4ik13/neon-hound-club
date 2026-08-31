@@ -12,8 +12,33 @@ import {
   generatePromoCode,
   normalizePromoCode,
   validatePromoForUser,
+  promoTargetProductIds,
 } from "../lib/promo.js";
 
+
+/** Названия товаров для промокодов на группу товаров. */
+async function resolveProductTitles(rows: Array<typeof promoCodes.$inferSelect>) {
+  const ids = new Set<string>();
+  for (const r of rows) for (const id of r.productIds ?? []) ids.add(id);
+  if (ids.size === 0) return new Map<string, string>();
+  const list = await db
+    .select({ id: products.id, title: products.title })
+    .from(products)
+    .where(sql`${products.id} = ANY(${sql.raw(`ARRAY['${[...ids].join("','")}']::uuid[]`)})`);
+  return new Map(list.map((p) => [p.id, p.title]));
+}
+
+/** Текст «на что действует» + названия целевых товаров. */
+function targetTitles(
+  row: typeof promoCodes.$inferSelect,
+  titles: Map<string, string>,
+  singleTitle: string | null,
+): string[] {
+  if (row.productIds && row.productIds.length > 0) {
+    return row.productIds.map((id) => titles.get(id) ?? "товар");
+  }
+  return row.productId ? [singleTitle ?? "товар"] : [];
+}
 
 function serialize(row: typeof promoCodes.$inferSelect) {
   return {
@@ -22,6 +47,7 @@ function serialize(row: typeof promoCodes.$inferSelect) {
     discountPct: row.discountPct,
     userId: row.userId,
     productId: row.productId ?? null,
+    productIds: row.productIds ?? null,
     note: row.note,
     expiresAt: row.expiresAt?.toISOString() ?? null,
     usedAt: row.usedAt?.toISOString() ?? null,
@@ -45,10 +71,12 @@ export async function promoRoutes(app: FastifyInstance) {
       .where(and(eq(promoCodes.userId, session.sub), eq(promoCodes.active, true)))
       .orderBy(desc(promoCodes.createdAt));
     const now = Date.now();
+    const titles = await resolveProductTitles(rows.map((r) => r.promo));
     return {
       items: rows.map((r) => ({
         ...serialize(r.promo),
         productTitle: r.productTitle ?? null,
+        productTitles: targetTitles(r.promo, titles, r.productTitle ?? null),
         expired: !!r.promo.expiresAt && r.promo.expiresAt.getTime() < now,
       })),
     };
@@ -74,6 +102,7 @@ export async function promoRoutes(app: FastifyInstance) {
         code: promo.code,
         discountPct: promo.discountPct,
         productId: promo.productId ?? null,
+        productIds: promo.productIds ?? null,
         expiresAt: promo.expiresAt?.toISOString() ?? null,
       };
     } catch (e) {
@@ -91,6 +120,8 @@ const createSchema = z.object({
   userId: z.string().uuid().nullable().optional(),
   /** Товарный промокод: скидка только на этот товар, корзина = 1 шт. этого товара. */
   productId: z.string().uuid().nullable().optional(),
+  /** Промокод на группу товаров: любой из этих товаров (например, любые носки). */
+  productIds: z.array(z.string().uuid()).nullable().optional(),
   note: z.string().trim().max(200).optional(),
   /** ISO-дата окончания действия. */
   expiresAt: z.string().datetime().nullable().optional(),
@@ -126,12 +157,14 @@ export async function adminPromoRoutes(app: FastifyInstance) {
       .orderBy(desc(promoCodes.createdAt))
       .limit(500);
     const now = Date.now();
+    const titles = await resolveProductTitles(rows.map((r) => r.promo));
     return {
       items: rows.map((r) => ({
         ...serialize(r.promo),
         userNick: r.userNick ?? null,
         userEmail: r.userEmail ?? null,
         productTitle: r.productTitle ?? null,
+        productTitles: targetTitles(r.promo, titles, r.productTitle ?? null),
         expired: !!r.promo.expiresAt && r.promo.expiresAt.getTime() < now,
       })),
     };
@@ -213,9 +246,9 @@ export async function adminPromoRoutes(app: FastifyInstance) {
       .where(eq(orderItems.orderId, row.order.id))
       .orderBy(orderItems.createdAt);
 
-    const targetId = promo.productId;
+    const targetIds = promoTargetProductIds(promo);
     const extraRub = items
-      .filter((i) => !targetId || i.productId !== targetId)
+      .filter((i) => targetIds.length === 0 || !i.productId || !targetIds.includes(i.productId))
       .reduce((s, i) => s + i.priceRubSnapshot * i.qty, 0);
 
     return {
@@ -245,7 +278,7 @@ export async function adminPromoRoutes(app: FastifyInstance) {
           qty: i.qty,
           size: i.sizeSnapshot,
           kind: i.kindSnapshot,
-          isPromoTarget: !!targetId && i.productId === targetId,
+          isPromoTarget: !!i.productId && targetIds.includes(i.productId),
         })),
       },
     };
@@ -369,6 +402,7 @@ export async function adminPromoRoutes(app: FastifyInstance) {
         discountPct: data.discountPct,
         userId: data.userId ?? null,
         productId: data.productId ?? null,
+        productIds: data.productIds && data.productIds.length > 0 ? data.productIds : null,
         note: data.note ?? null,
         expiresAt: data.expiresAt ? new Date(data.expiresAt) : null,
       })
@@ -388,6 +422,7 @@ export async function adminPromoRoutes(app: FastifyInstance) {
         note: z.string().trim().max(200).nullable().optional(),
         userId: z.string().uuid().nullable().optional(),
         productId: z.string().uuid().nullable().optional(),
+        productIds: z.array(z.string().uuid()).nullable().optional(),
       })
       .safeParse(req.body);
     if (!parsed.success) return reply.code(400).send({ error: "invalid_input" });

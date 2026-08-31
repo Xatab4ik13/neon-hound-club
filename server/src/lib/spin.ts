@@ -765,15 +765,17 @@ const MILESTONE_TITLE: Record<StreakMilestone, string> = {
   30: "Hell Pass Gold + 20 билетов",
 };
 
-/** Ищет товар «носки» в магазине (для промокода-приза календаря). */
-async function findSocksProductId(): Promise<string | null> {
-  const [row] = await db
+/**
+ * Ищет ВСЕ товары «носки» в магазине (белые, розовые и т.д.).
+ * Промокод-приз календаря действует на любые носки.
+ */
+async function findSocksProductIds(): Promise<string[]> {
+  const rows = await db
     .select({ id: products.id })
     .from(products)
     .where(sql`${products.title} ILIKE '%носк%' AND ${products.active} = true`)
-    .orderBy(products.createdAt)
-    .limit(1);
-  return row?.id ?? null;
+    .orderBy(products.createdAt);
+  return rows.map((r) => r.id);
 }
 
 /** Забрать награду календаря активности. Физика уходит в spin_winners. */
@@ -814,15 +816,16 @@ export async function claimStreakMilestone(userId: string, milestone: StreakMile
 
   // 20 дней — носки: персональный промокод на 100% скидку, юзер платит только доставку.
   if (milestone === 20) {
-    const productId = await findSocksProductId();
-    if (productId) {
+    const socksIds = await findSocksProductIds();
+    if (socksIds.length > 0) {
       const code = generatePromoCode("SOCK");
       await db.insert(promoCodes).values({
         code,
         discountPct: 100,
         userId,
-        productId,
-        note: "Календарь активности: носки",
+        productId: socksIds[0]!,
+        productIds: socksIds,
+        note: "Календарь активности: носки (любые)",
         expiresAt: new Date(Date.now() + 60 * 86_400_000),
       });
       promoCode = code;
@@ -835,7 +838,7 @@ export async function claimStreakMilestone(userId: string, milestone: StreakMile
       prizeTitle: "Носки (20/30)",
       status: promoCode ? "contacted" : "pending",
       adminNote: promoCode
-        ? `Промокод ${promoCode} — 100% на носки, юзер оплачивает только доставку`
+        ? `Промокод ${promoCode} — 100% на любые носки, юзер оплачивает только доставку`
         : "Товар «носки» не найден в магазине — выдать вручную",
     });
   }

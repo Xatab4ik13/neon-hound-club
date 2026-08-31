@@ -25,6 +25,8 @@ import {
   adminUpdatePromoCode,
   adminListCapsules,
   promoQk,
+  promoTargetIds,
+  promoTargetLabel,
   type AdminPromoCodeDto,
 } from "@/lib/promo-api";
 
@@ -176,9 +178,9 @@ function PromoAdminPage() {
               {p.code}
             </span>,
             `${p.discountPct}%`,
-            p.productId ? (
+            promoTargetIds(p).length > 0 ? (
               <span key="p" className="text-emerald-400">
-                {p.productTitle ?? "товар"}
+                {promoTargetLabel(p) ?? "товар"}
               </span>
             ) : (
               "вся корзина"
@@ -343,7 +345,7 @@ function CreatePromoModal({ onClose }: { onClose: () => void }) {
   const [pct, setPct] = useState("10");
   const [expires, setExpires] = useState("");
   const [note, setNote] = useState("");
-  const [productId, setProductId] = useState("");
+  const [productIds, setProductIds] = useState<string[]>([]);
 
   const productsQ = useQuery({
     queryKey: ["admin", "shop", "products", "promo-picker"],
@@ -355,7 +357,8 @@ function CreatePromoModal({ onClose }: { onClose: () => void }) {
       adminCreatePromoCode({
         code: code.trim() ? code.trim().toUpperCase() : undefined,
         discountPct: Number(pct),
-        productId: productId || null,
+        productId: productIds[0] ?? null,
+        productIds: productIds.length > 1 ? productIds : null,
         note: note.trim() || undefined,
         expiresAt: expires ? new Date(`${expires}T23:59:59`).toISOString() : null,
       }),
@@ -391,17 +394,36 @@ function CreatePromoModal({ onClose }: { onClose: () => void }) {
           />
         </Field>
         <Field
-          label="Товар"
-          hint="Пусто — скидка на всю корзину. Выбран товар — купон сработает только если в корзине ровно 1 шт. этого товара, и билеты за заказ не начислятся."
+          label="Товары"
+          hint="Ничего не выбрано — скидка на всю корзину. Выбрано несколько (например, оба вида носков) — код сработает на любой из них: скидка на 1 шт. самого дорогого подходящего, билеты за заказ не начислятся."
         >
-          <Select value={productId} onChange={(e) => setProductId(e.target.value)}>
-            <option value="">Вся корзина (обычный промокод)</option>
-            {(productsQ.data?.items ?? []).map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.title} · {p.priceRub} ₽
-              </option>
-            ))}
-          </Select>
+          <div className="max-h-52 space-y-1 overflow-y-auto rounded-lg border border-zinc-200 p-2 dark:border-zinc-800">
+            {(productsQ.data?.items ?? []).map((p) => {
+              const checked = productIds.includes(p.id);
+              return (
+                <label
+                  key={p.id}
+                  className="flex cursor-pointer items-center gap-2 rounded px-1 py-1 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                >
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={() =>
+                      setProductIds((prev) =>
+                        checked ? prev.filter((x) => x !== p.id) : [...prev, p.id],
+                      )
+                    }
+                  />
+                  <span>
+                    {p.title} · {p.priceRub} ₽
+                  </span>
+                </label>
+              );
+            })}
+          </div>
+          {productIds.length === 0 && (
+            <div className="mt-1 text-xs text-zinc-500">Вся корзина (обычный промокод)</div>
+          )}
         </Field>
         <Field label="Действует до" hint="Пусто — без срока">
           <TextInput type="date" value={expires} onChange={(e) => setExpires(e.target.value)} />

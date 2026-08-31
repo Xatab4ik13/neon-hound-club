@@ -16,6 +16,7 @@ import {
   consumePromoCode,
   releasePromoCodeForOrder,
   validatePromoForUser,
+  promoTargetProductIds,
 } from "./promo.js";
 
 
@@ -213,24 +214,29 @@ export async function createOrderForUser(
   // Товарный промокод: скидка только на 1 шт. целевого товара.
   // Обычный промокод: процент на всю корзину.
   let promoDiscountRub = 0;
+  const promoTargets = promo ? promoTargetProductIds(promo) : [];
   if (promo) {
-    if (promo.productId) {
-      const target = productMap.get(promo.productId);
-      promoDiscountRub = target ? Math.floor((target.priceRub * promo.discountPct) / 100) : 0;
+    if (promoTargets.length > 0) {
+      // Товарный промокод (в т.ч. на группу товаров, например «любые носки»):
+      // скидка на 1 шт. самого дорогого подходящего товара в корзине.
+      const targetPrice = items
+        .filter((i) => promoTargets.includes(i.productId))
+        .reduce((max, i) => Math.max(max, productMap.get(i.productId)?.priceRub ?? 0), 0);
+      promoDiscountRub = Math.floor((targetPrice * promo.discountPct) / 100);
     } else {
       promoDiscountRub = Math.floor((subtotalRub * promo.discountPct) / 100);
     }
   }
   const usePromo = promoDiscountRub > passDiscountRub;
   const discountRub = Math.max(passDiscountRub, promoDiscountRub);
-  const discountPct = usePromo && promo?.productId
+  const discountPct = usePromo && promoTargets.length > 0
     ? (subtotalRub > 0 ? Math.round((discountRub * 100) / subtotalRub) : 0)
     : Math.max(passPct, promo?.discountPct ?? 0);
   const goodsAfterDiscount = Math.max(0, subtotalRub - discountRub);
   const totalRub = goodsAfterDiscount + shippingPriceRub;
 
   // Товарный промокод (скидка на конкретный товар) — билеты за заказ НЕ начисляем.
-  if (promo?.productId) bonusTotal = 0;
+  if (promoTargets.length > 0) bonusTotal = 0;
 
 
 

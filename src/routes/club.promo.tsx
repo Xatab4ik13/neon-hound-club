@@ -4,7 +4,13 @@ import { useState } from "react";
 import { PageHeader } from "@/components/club/PageHeader";
 import { useViewer } from "@/hooks/use-viewer";
 import { hhToast } from "@/lib/hh-toast";
-import { fetchMyPromoCodes, promoQk, type PromoCodeDto } from "@/lib/promo-api";
+import {
+  fetchMyPromoCodes,
+  promoQk,
+  promoTargetIds,
+  promoTargetLabel,
+  type PromoCodeDto,
+} from "@/lib/promo-api";
 import { CheckCircle2 } from "@/components/ui/icons";
 
 export const Route = createFileRoute("/club/promo")({
@@ -95,7 +101,9 @@ function PromoPage() {
                     </div>
                     <div className="mt-1 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
                       {p.expiresAt ? `до ${formatDate(p.expiresAt)}` : "без срока"}
-                      {p.productId ? ` · на «${p.productTitle ?? "товар"}»` : ""}
+                      {promoTargetIds(p).length > 0
+                        ? ` · на «${promoTargetLabel(p) ?? "товар"}»`
+                        : ""}
                     </div>
 
                     {st ? (
