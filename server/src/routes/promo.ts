@@ -243,9 +243,9 @@ export async function adminPromoRoutes(app: FastifyInstance) {
       .where(eq(orderItems.orderId, row.order.id))
       .orderBy(orderItems.createdAt);
 
-    const targetId = promo.productId;
+    const targetIds = promoTargetProductIds(promo);
     const extraRub = items
-      .filter((i) => !targetId || i.productId !== targetId)
+      .filter((i) => targetIds.length === 0 || !i.productId || !targetIds.includes(i.productId))
       .reduce((s, i) => s + i.priceRubSnapshot * i.qty, 0);
 
     return {
