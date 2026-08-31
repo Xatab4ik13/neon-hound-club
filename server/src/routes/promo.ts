@@ -15,6 +15,30 @@ import {
 } from "../lib/promo.js";
 
 
+/** Названия товаров для промокодов на группу товаров. */
+async function resolveProductTitles(rows: Array<typeof promoCodes.$inferSelect>) {
+  const ids = new Set<string>();
+  for (const r of rows) for (const id of r.productIds ?? []) ids.add(id);
+  if (ids.size === 0) return new Map<string, string>();
+  const list = await db
+    .select({ id: products.id, title: products.title })
+    .from(products)
+    .where(sql`${products.id} = ANY(${sql.raw(`ARRAY['${[...ids].join("','")}']::uuid[]`)})`);
+  return new Map(list.map((p) => [p.id, p.title]));
+}
+
+/** Текст «на что действует» + названия целевых товаров. */
+function targetTitles(
+  row: typeof promoCodes.$inferSelect,
+  titles: Map<string, string>,
+  singleTitle: string | null,
+): string[] {
+  if (row.productIds && row.productIds.length > 0) {
+    return row.productIds.map((id) => titles.get(id) ?? "товар");
+  }
+  return row.productId ? [singleTitle ?? "товар"] : [];
+}
+
 function serialize(row: typeof promoCodes.$inferSelect) {
   return {
     id: row.id,
@@ -22,6 +46,7 @@ function serialize(row: typeof promoCodes.$inferSelect) {
     discountPct: row.discountPct,
     userId: row.userId,
     productId: row.productId ?? null,
+    productIds: row.productIds ?? null,
     note: row.note,
     expiresAt: row.expiresAt?.toISOString() ?? null,
     usedAt: row.usedAt?.toISOString() ?? null,
