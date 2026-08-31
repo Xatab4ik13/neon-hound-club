@@ -25,6 +25,8 @@ import {
   adminUpdatePromoCode,
   adminListCapsules,
   promoQk,
+  promoTargetIds,
+  promoTargetLabel,
   type AdminPromoCodeDto,
 } from "@/lib/promo-api";
 
