@@ -203,6 +203,8 @@ function HoundHuntAdminPage() {
   const [entries, setEntries] = useState<HuntEntry[]>([]);
   const [busy, setBusy] = useState(false);
   const [history, setHistory] = useState<AdminHuntListItem[]>([]);
+  const [uploadingId, setUploadingId] = useState<string | null>(null);
+
 
   const loadHistory = async () => {
     try {
