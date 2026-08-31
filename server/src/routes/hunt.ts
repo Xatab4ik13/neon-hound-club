@@ -215,11 +215,13 @@ export async function adminHuntRoutes(app: FastifyInstance) {
         .set({ title: body.title, startsAt, ticketStep: body.ticketStep, status: body.status, updatedAt: new Date() })
         .where(eq(hunts.id, huntId));
     } else {
-      // Прошлую охоту закрываем, чтобы она осталась в истории и не мешала.
+      // Прошлую охоту закрываем только когда новая реально публикуется —
+      // черновик не должен убирать с сайта текущую охоту.
       const prev = await getCurrentHunt(true);
-      if (prev && prev.status !== "finished" && prev.status !== "canceled") {
+      if (body.status === "open" && prev && prev.status !== "finished" && prev.status !== "canceled") {
         await db.update(hunts).set({ status: "finished", updatedAt: new Date() }).where(eq(hunts.id, prev.id));
       }
+
       const [row] = await db
         .insert(hunts)
         .values({ title: body.title, startsAt, ticketStep: body.ticketStep, status: body.status })
