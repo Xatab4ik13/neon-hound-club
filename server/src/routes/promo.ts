@@ -70,10 +70,12 @@ export async function promoRoutes(app: FastifyInstance) {
       .where(and(eq(promoCodes.userId, session.sub), eq(promoCodes.active, true)))
       .orderBy(desc(promoCodes.createdAt));
     const now = Date.now();
+    const titles = await resolveProductTitles(rows.map((r) => r.promo));
     return {
       items: rows.map((r) => ({
         ...serialize(r.promo),
         productTitle: r.productTitle ?? null,
+        productTitles: targetTitles(r.promo, titles, r.productTitle ?? null),
         expired: !!r.promo.expiresAt && r.promo.expiresAt.getTime() < now,
       })),
     };
