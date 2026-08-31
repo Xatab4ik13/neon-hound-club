@@ -38,6 +38,8 @@ import {
   type HuntApiEntry,
   type HuntPlatinumUser,
 } from "@/lib/hunt-api";
+import { uploadFileToS3 } from "@/lib/garage-api";
+
 
 import { toast } from "sonner";
 
@@ -203,6 +205,8 @@ function HoundHuntAdminPage() {
   const [entries, setEntries] = useState<HuntEntry[]>([]);
   const [busy, setBusy] = useState(false);
   const [history, setHistory] = useState<AdminHuntListItem[]>([]);
+  const [uploadingId, setUploadingId] = useState<string | null>(null);
+
 
   const loadHistory = async () => {
     try {
@@ -278,6 +282,21 @@ function HoundHuntAdminPage() {
 
   const removePrize = (id: string) =>
     setCfg((c) => ({ ...c, prizes: c.prizes.filter((p) => p.id !== id) }));
+
+  /** Загрузка картинки приза файлом в MinIO (kind=raffle). */
+  const uploadPrizeImage = async (prizeId: string, file: File) => {
+    setUploadingId(prizeId);
+    try {
+      const url = await uploadFileToS3(file, "raffle", "hunt");
+      patchPrize(prizeId, { img: url });
+      toast.success("Картинка загружена");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Не получилось загрузить");
+    } finally {
+      setUploadingId(null);
+    }
+  };
+
 
   /** Сброс итогов прошлой охоты на бекенде + локальный кеш. */
   const newHunt = async () => {
@@ -630,12 +649,41 @@ function HoundHuntAdminPage() {
                         onChange={(e) => patchPrize(p.id, { sub: e.target.value })}
                       />
                     </Field>
-                    <Field label="Картинка (URL)">
-                      <TextInput
-                        value={p.img}
-                        onChange={(e) => patchPrize(p.id, { img: e.target.value })}
-                      />
+                    <Field label="Картинка" hint="PNG/JPG/WEBP до 10 МБ. Лучше PNG без фона.">
+                      <div className="space-y-2">
+                        <TextInput
+                          value={p.img}
+                          placeholder="URL или загрузи файл"
+                          onChange={(e) => patchPrize(p.id, { img: e.target.value })}
+                        />
+                        <div className="flex items-center gap-2">
+                          <label className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-zinc-300 px-3 py-1.5 text-sm dark:border-zinc-700">
+                            <input
+                              type="file"
+                              accept="image/jpeg,image/png,image/webp"
+                              hidden
+                              disabled={uploadingId === p.id}
+                              onChange={(e) => {
+                                const f = e.target.files?.[0];
+                                e.target.value = "";
+                                if (f) void uploadPrizeImage(p.id, f);
+                              }}
+                            />
+                            {uploadingId === p.id
+                              ? "Загружаем…"
+                              : p.img
+                                ? "Заменить файл"
+                                : "Загрузить файл"}
+                          </label>
+                          {p.img ? (
+                            <Btn variant="secondary" onClick={() => patchPrize(p.id, { img: "" })}>
+                              Убрать
+                            </Btn>
+                          ) : null}
+                        </div>
+                      </div>
                     </Field>
+
                     <div className="sm:col-span-2">
                       <Field
                         label="Победитель"
