@@ -16,6 +16,7 @@ import {
   consumePromoCode,
   releasePromoCodeForOrder,
   validatePromoForUser,
+  promoTargetProductIds,
 } from "./promo.js";
 
 
