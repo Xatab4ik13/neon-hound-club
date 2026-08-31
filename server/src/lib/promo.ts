@@ -48,6 +48,18 @@ export async function findPromoByCode(code: string): Promise<PromoCode | null> {
 export type PromoCartContext = Array<{ productId: string; qty: number }>;
 
 /**
+ * Товары, на которые действует промокод.
+ * Пустой массив = обычный промокод на всю корзину.
+ */
+export function promoTargetProductIds(promo: {
+  productId?: string | null;
+  productIds?: string[] | null;
+}): string[] {
+  if (promo.productIds && promo.productIds.length > 0) return promo.productIds;
+  return promo.productId ? [promo.productId] : [];
+}
+
+/**
  * Проверяет промокод для юзера. Бросает PromoError с человеческим текстом.
  * Если промокод товарный (productId), требуем наличие этого товара в корзине.
  * Скидка применяется только к 1 шт. целевого товара, остальные товары — по полной цене.
