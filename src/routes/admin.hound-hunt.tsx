@@ -294,9 +294,50 @@ function HoundHuntAdminPage() {
     }
   };
 
-  const save = async (create = false) => {
+  /**
+   * Чистый черновик новой охоты: пустые названия/картинки призов и НИ ОДНОГО
+   * назначенного победителя (иначе тянулись бы победители прошлой охоты).
+   * На бекенд ничего не уходит до «Сохранить черновик».
+   */
+  const startDraft = () => {
+    const startsAt = new Date(Date.now() + 7 * 24 * 3600 * 1000);
+    startsAt.setMinutes(0, 0, 0);
+    setCfg({
+      id: null,
+      status: "draft",
+      drawnAt: null,
+      startsAt: startsAt.toISOString(),
+      ticketStep: cfg.ticketStep,
+      prizes: [1, 2, 3].map((place) => ({
+        id: `p-${Date.now()}-${place}`,
+        place,
+        title: "",
+        sub: place === 1 ? "Главный приз" : "",
+        img: "",
+        forcedWinnerId: null,
+        winnerUserId: null,
+        winnerNick: null,
+        ticketsReward: 0,
+      })),
+    });
+    setEntries([]);
+    resetHuntState();
+    toast.success("Черновик новой охоты — заполни призы и нажми «Сохранить черновик»");
+  };
+
+  const save = async (opts: { create?: boolean; status?: HuntConfig["status"] } = {}) => {
+    const create = opts.create ?? false;
+    const status = opts.status ?? cfg.status ?? "open";
     if (!cfg.prizes.length) {
       toast.error("Нужен хотя бы один приз — это один раунд охоты");
+      return;
+    }
+    if (cfg.prizes.some((p) => !p.title.trim())) {
+      toast.error("У каждого приза должно быть название");
+      return;
+    }
+    if (status === "open" && cfg.prizes.some((p) => !p.img.trim() && !p.ticketsReward)) {
+      toast.error("Перед публикацией добавь картинку каждому призу");
       return;
     }
     const forced = cfg.prizes.map((p) => p.forcedWinnerId).filter(Boolean) as string[];
@@ -312,7 +353,7 @@ function HoundHuntAdminPage() {
         title: "HELL HUNT",
         startsAt: cfg.startsAt,
         ticketStep: cfg.ticketStep,
-        status: "open",
+        status,
         prizes: cfg.prizes.map((p) => ({
           // id отправляем только если это реальный uuid с бека: локальные
           // мок-id («p1», «p-1712…») бек не примет.
@@ -332,7 +373,13 @@ function HoundHuntAdminPage() {
         setCfg(next);
         writeHuntConfig(next);
       }
-      toast.success(create ? "Новая охота создана" : "Охота сохранена на бекенде");
+      toast.success(
+        status === "open"
+          ? "Охота опубликована — видна на сайте"
+          : create
+            ? "Черновик новой охоты сохранён"
+            : "Черновик сохранён",
+      );
       void loadHistory();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Не получилось сохранить охоту");
@@ -340,6 +387,7 @@ function HoundHuntAdminPage() {
       setBusy(false);
     }
   };
+
 
   /** Прокрутить жребий: назначенные победители фиксируются, остальные — по весам. */
   const draw = async () => {
