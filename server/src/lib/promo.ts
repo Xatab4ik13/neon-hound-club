@@ -83,7 +83,8 @@ export async function validatePromoForUser(
   }
   if (promo.discountPct <= 0) throw new PromoError("promo_invalid", "Промокод не даёт скидку");
 
-  if (promo.productId) {
+  const targets = promoTargetProductIds(promo);
+  if (targets.length > 0) {
     if (!cart) {
       throw new PromoError(
         "promo_product_cart_required",
@@ -92,7 +93,7 @@ export async function validatePromoForUser(
     }
     // Товарный промокод: в корзине могут быть и другие товары,
     // но скидка применяется только к 1 шт. целевого товара.
-    const has = cart.some((i) => i.productId === promo.productId && i.qty > 0);
+    const has = cart.some((i) => targets.includes(i.productId) && i.qty > 0);
     if (!has) {
       throw new PromoError(
         "promo_product_mismatch",
