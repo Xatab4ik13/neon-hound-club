@@ -275,7 +275,7 @@ export async function adminPromoRoutes(app: FastifyInstance) {
           qty: i.qty,
           size: i.sizeSnapshot,
           kind: i.kindSnapshot,
-          isPromoTarget: !!targetId && i.productId === targetId,
+          isPromoTarget: !!i.productId && targetIds.includes(i.productId),
         })),
       },
     };
