@@ -12,6 +12,7 @@ import {
   generatePromoCode,
   normalizePromoCode,
   validatePromoForUser,
+  promoTargetProductIds,
 } from "../lib/promo.js";
 
 
@@ -119,6 +120,8 @@ const createSchema = z.object({
   userId: z.string().uuid().nullable().optional(),
   /** Товарный промокод: скидка только на этот товар, корзина = 1 шт. этого товара. */
   productId: z.string().uuid().nullable().optional(),
+  /** Промокод на группу товаров: любой из этих товаров (например, любые носки). */
+  productIds: z.array(z.string().uuid()).nullable().optional(),
   note: z.string().trim().max(200).optional(),
   /** ISO-дата окончания действия. */
   expiresAt: z.string().datetime().nullable().optional(),
@@ -399,6 +402,7 @@ export async function adminPromoRoutes(app: FastifyInstance) {
         discountPct: data.discountPct,
         userId: data.userId ?? null,
         productId: data.productId ?? null,
+        productIds: data.productIds && data.productIds.length > 0 ? data.productIds : null,
         note: data.note ?? null,
         expiresAt: data.expiresAt ? new Date(data.expiresAt) : null,
       })
@@ -418,6 +422,7 @@ export async function adminPromoRoutes(app: FastifyInstance) {
         note: z.string().trim().max(200).nullable().optional(),
         userId: z.string().uuid().nullable().optional(),
         productId: z.string().uuid().nullable().optional(),
+        productIds: z.array(z.string().uuid()).nullable().optional(),
       })
       .safeParse(req.body);
     if (!parsed.success) return reply.code(400).send({ error: "invalid_input" });
