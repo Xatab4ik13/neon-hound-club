@@ -153,12 +153,14 @@ export async function adminPromoRoutes(app: FastifyInstance) {
       .orderBy(desc(promoCodes.createdAt))
       .limit(500);
     const now = Date.now();
+    const titles = await resolveProductTitles(rows.map((r) => r.promo));
     return {
       items: rows.map((r) => ({
         ...serialize(r.promo),
         userNick: r.userNick ?? null,
         userEmail: r.userEmail ?? null,
         productTitle: r.productTitle ?? null,
+        productTitles: targetTitles(r.promo, titles, r.productTitle ?? null),
         expired: !!r.promo.expiresAt && r.promo.expiresAt.getTime() < now,
       })),
     };
