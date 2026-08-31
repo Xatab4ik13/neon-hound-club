@@ -101,6 +101,7 @@ export async function promoRoutes(app: FastifyInstance) {
         code: promo.code,
         discountPct: promo.discountPct,
         productId: promo.productId ?? null,
+        productIds: promo.productIds ?? null,
         expiresAt: promo.expiresAt?.toISOString() ?? null,
       };
     } catch (e) {
