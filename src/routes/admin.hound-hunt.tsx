@@ -649,12 +649,41 @@ function HoundHuntAdminPage() {
                         onChange={(e) => patchPrize(p.id, { sub: e.target.value })}
                       />
                     </Field>
-                    <Field label="Картинка (URL)">
-                      <TextInput
-                        value={p.img}
-                        onChange={(e) => patchPrize(p.id, { img: e.target.value })}
-                      />
+                    <Field label="Картинка" hint="PNG/JPG/WEBP до 10 МБ. Лучше PNG без фона.">
+                      <div className="space-y-2">
+                        <TextInput
+                          value={p.img}
+                          placeholder="URL или загрузи файл"
+                          onChange={(e) => patchPrize(p.id, { img: e.target.value })}
+                        />
+                        <div className="flex items-center gap-2">
+                          <label className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-zinc-300 px-3 py-1.5 text-sm dark:border-zinc-700">
+                            <input
+                              type="file"
+                              accept="image/jpeg,image/png,image/webp"
+                              hidden
+                              disabled={uploadingId === p.id}
+                              onChange={(e) => {
+                                const f = e.target.files?.[0];
+                                e.target.value = "";
+                                if (f) void uploadPrizeImage(p.id, f);
+                              }}
+                            />
+                            {uploadingId === p.id
+                              ? "Загружаем…"
+                              : p.img
+                                ? "Заменить файл"
+                                : "Загрузить файл"}
+                          </label>
+                          {p.img ? (
+                            <Btn variant="secondary" onClick={() => patchPrize(p.id, { img: "" })}>
+                              Убрать
+                            </Btn>
+                          ) : null}
+                        </div>
+                      </div>
                     </Field>
+
                     <div className="sm:col-span-2">
                       <Field
                         label="Победитель"
