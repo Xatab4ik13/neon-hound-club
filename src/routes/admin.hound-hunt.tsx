@@ -38,6 +38,8 @@ import {
   type HuntApiEntry,
   type HuntPlatinumUser,
 } from "@/lib/hunt-api";
+import { uploadFileToS3 } from "@/lib/garage-api";
+
 
 import { toast } from "sonner";
 
