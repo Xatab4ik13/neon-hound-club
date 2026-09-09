@@ -31,6 +31,8 @@ import {
   fetchAdminSpinOverview,
   fetchAdminSpinStreaks,
   setAdminSpinPrizeActive,
+  fetchAdminSpinToggle,
+  setAdminSpinEnabled,
   type SpinRarity,
 } from "@/lib/admin-spin-api";
 
@@ -230,6 +232,14 @@ function SpinAdminPage() {
 
   const refreshAll = () => qc.invalidateQueries({ queryKey: ["admin", "spin"] });
 
+  // Тумблер всей рулетки: выключенная закрывает крутки для всех игроков.
+  const toggleQuery = useQuery({ queryKey: adminSpinQk.toggle, queryFn: fetchAdminSpinToggle });
+  const spinEnabled = toggleQuery.data?.enabled !== false;
+  const toggleSpin = useMutation({
+    mutationFn: (enabled: boolean) => setAdminSpinEnabled(enabled),
+    onSuccess: () => qc.invalidateQueries({ queryKey: adminSpinQk.toggle }),
+  });
+
   // Тумблер приза: выключенный остаётся в колесе, но не выпадает.
   const togglePrize = useMutation({
     mutationFn: ({ code, active }: { code: string; active: boolean }) =>
@@ -248,6 +258,27 @@ function SpinAdminPage() {
           </Btn>
         }
       />
+
+      {/* Тумблер рулетки */}
+      <Panel className="mb-6">
+        <div className="flex flex-wrap items-center justify-between gap-3 p-4">
+          <div>
+            <p className="text-sm font-semibold">
+              {spinEnabled ? "Рулетка открыта" : "Рулетка закрыта"}
+            </p>
+            <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
+              Выключенная рулетка закрывает крутки для всех: страница и статистика остаются.
+            </p>
+          </div>
+          <Btn
+            variant={spinEnabled ? "danger" : "primary"}
+            disabled={toggleQuery.isLoading || toggleSpin.isPending}
+            onClick={() => toggleSpin.mutate(!spinEnabled)}
+          >
+            {spinEnabled ? "Закрыть спины" : "Открыть спины"}
+          </Btn>
+        </div>
+      </Panel>
 
       {/* KPI */}
       <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
