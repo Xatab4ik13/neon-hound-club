@@ -729,13 +729,25 @@ export async function grantPass(
 
 /* ---------------- Календарь активности ---------------- */
 
-/** Отмечает день активности в сезоне, возвращает кол-во дней. */
-async function bumpStreak(userId: string, seasonId: string, day: string): Promise<number> {
-  const [existing] = await db
+/**
+ * Активная «полоса» юзера. НЕ привязана к сезону: календарь — личные 30 дней
+ * с первого спина. Раньше строка искалась по (user, season), и на смене сезона
+ * прогресс обнулялся — тот, кто начал не в первый день сезона, физически не мог
+ * дойти до 30/30. Берём самую свежую строку юзера и продолжаем её.
+ */
+async function getActiveStreak(userId: string) {
+  const [row] = await db
     .select()
     .from(spinStreaks)
-    .where(and(eq(spinStreaks.userId, userId), eq(spinStreaks.seasonId, seasonId)))
+    .where(eq(spinStreaks.userId, userId))
+    .orderBy(sql`${spinStreaks.updatedAt} desc`)
     .limit(1);
+  return row ?? null;
+}
+
+/** Отмечает день активности, возвращает кол-во дней. */
+async function bumpStreak(userId: string, seasonId: string, day: string): Promise<number> {
+  const existing = await getActiveStreak(userId);
 
   if (!existing) {
     const [created] = await db
@@ -755,6 +767,7 @@ async function bumpStreak(userId: string, seasonId: string, day: string): Promis
     .returning();
   return updated?.daysCount ?? existing.daysCount;
 }
+
 
 export const STREAK_MILESTONES = [10, 20, 30] as const;
 export type StreakMilestone = (typeof STREAK_MILESTONES)[number];
