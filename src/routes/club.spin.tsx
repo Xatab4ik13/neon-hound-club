@@ -172,6 +172,8 @@ type SpinTier = "none" | "silver" | "gold" | "platinum";
 
 type SpinState = {
   access: { granted: boolean; pwa: boolean; phoneVerified: boolean; pushEnabled: boolean };
+  /** Рулетка включена админом. false — крутки закрыты. */
+  enabled?: boolean;
   tier: SpinTier;
   season: { periodKey: string; daysTotal: number; startsAt?: string; endsAt: string };
   spins: { allowed: number; used: number; left: number };
@@ -218,6 +220,7 @@ function SpinPage() {
   const access = useSpinAccess();
   // Локально видим PWA + push, телефон проверяет сервер — блокируем по обоим сигналам.
   const phoneMissing = state ? !state.access.phoneVerified : false;
+  const spinClosed = state ? state.enabled === false : false;
   const locked = !access.granted || phoneMissing;
   const spinsLeft = state?.spins.left ?? 0;
   const spinsAllowed = state?.spins.allowed ?? 0;
@@ -455,7 +458,18 @@ function SpinPage() {
     <main className="mx-auto w-full max-w-3xl px-4 py-5 md:py-8">
       <PageHeader title="HellSpin" subtitle="Крути каждый день" />
 
-      {locked && !access.checking && <SpinAccessGate access={access} />}
+      {spinClosed && (
+        <div className="mb-4 rounded-3xl border border-border bg-card px-4 py-4">
+          <p className="font-display text-[15px] font-black uppercase tracking-tight text-foreground">
+            Сезон завершён
+          </p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Крутки закрыты. Новый сезон HellSpin откроем скоро — следи за уведомлениями.
+          </p>
+        </div>
+      )}
+
+      {locked && !access.checking && !spinClosed && <SpinAccessGate access={access} />}
 
       {/* Баланс спинов */}
       <div className="mb-4 flex items-center gap-3 rounded-3xl bg-card px-4 py-4">
@@ -553,10 +567,10 @@ function SpinPage() {
         <button
           type="button"
           onClick={() => void spin()}
-          disabled={spinning || loading || spinsLeft <= 0 || locked}
+          disabled={spinning || loading || spinsLeft <= 0 || locked || spinClosed}
           className="relative mt-3 flex h-14 w-full items-center justify-center overflow-hidden rounded-2xl bg-[#B6FF3C] font-display text-[17px] font-black uppercase tracking-tight text-black shadow-[0_10px_30px_-12px_#B6FF3C] transition-transform active:scale-[0.97] disabled:opacity-40 disabled:shadow-none"
         >
-          {!spinning && spinsLeft > 0 && !locked && (
+          {!spinning && spinsLeft > 0 && !locked && !spinClosed && (
             <span
               className="pointer-events-none absolute inset-y-0 left-0 w-1/3 animate-[hs-sweep_2600ms_linear_infinite]"
               style={{
@@ -565,7 +579,9 @@ function SpinPage() {
             />
           )}
           <span className="relative">
-            {phoneMissing
+            {spinClosed
+              ? "Сезон завершён"
+              : phoneMissing
               ? "Подтверди телефон"
               : locked
                 ? "Доступно в приложении"
