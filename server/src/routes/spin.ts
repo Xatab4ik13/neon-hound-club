@@ -254,9 +254,8 @@ export async function adminSpinRoutes(app: FastifyInstance) {
   });
 
 
-  // Календарь активности: кто сколько дней накрутил.
+  // Календарь активности: кто сколько дней накрутил (полоса личная, не сезонная).
   app.get("/streaks", { preHandler: requireAdmin }, async () => {
-    const season = await ensureCurrentSeason();
     const rows = await db
       .select({
         userId: spinStreaks.userId,
@@ -271,8 +270,9 @@ export async function adminSpinRoutes(app: FastifyInstance) {
       .from(spinStreaks)
       .leftJoin(profiles, eq(profiles.userId, spinStreaks.userId))
       .leftJoin(users, eq(users.id, spinStreaks.userId))
-      .where(eq(spinStreaks.seasonId, season.id))
+      .where(sql`${spinStreaks.daysCount} > 0`)
       .orderBy(desc(spinStreaks.daysCount));
     return rows;
   });
+
 }
