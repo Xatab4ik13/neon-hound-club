@@ -899,11 +899,8 @@ export async function getSpinState(userId: string, pwa: boolean) {
   const allowed = SPINS_PER_DAY[tier] + (daily?.bonus ?? 0);
   const used = daily?.used ?? 0;
 
-  const [streak] = await db
-    .select()
-    .from(spinStreaks)
-    .where(and(eq(spinStreaks.userId, userId), eq(spinStreaks.seasonId, season.id)))
-    .limit(1);
+  const streak = await getActiveStreak(userId);
+
 
   const history = await db
     .select({
