@@ -3,6 +3,7 @@ import { z } from "zod";
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { spinPrizes, spinSpins, spinStreaks } from "../db/schema/spin.js";
+import { systemSettings } from "../db/schema/economy.js";
 import { profiles } from "../db/schema/profile.js";
 import { users } from "../db/schema/users.js";
 import { requireAuth, requireAdmin, type SessionPayload } from "../lib/auth.js";
@@ -11,6 +12,7 @@ import {
   SPINS_PER_DAY,
   claimStreakMilestone,
   ensureCurrentSeason,
+  isSpinEnabled,
   getSpinState,
   rollSpin,
 } from "../lib/spin.js";
@@ -72,6 +74,25 @@ export async function adminSpinRoutes(app: FastifyInstance) {
       .returning({ code: spinPrizes.code, active: spinPrizes.active });
     if (!row) return reply.code(404).send({ error: "not_found" });
     return row;
+  });
+
+  // Тумблер всей рулетки: выключенный закрывает крутки для всех.
+  app.get("/toggle", { preHandler: requireAdmin }, async () => {
+    return { enabled: await isSpinEnabled() };
+  });
+
+  app.put("/toggle", { preHandler: requireAdmin }, async (req, reply) => {
+    const body = z.object({ enabled: z.boolean() }).safeParse(req.body);
+    if (!body.success) return reply.code(400).send({ error: "bad_request" });
+    const session = req.user as SessionPayload;
+    await db
+      .insert(systemSettings)
+      .values({ key: "spin", value: { enabled: body.data.enabled }, updatedBy: session.sub })
+      .onConflictDoUpdate({
+        target: systemSettings.key,
+        set: { value: { enabled: body.data.enabled }, updatedAt: new Date(), updatedBy: session.sub },
+      });
+    return { enabled: body.data.enabled };
   });
 
   // Сводка сезона: пулы призов + статистика прокрутов.
