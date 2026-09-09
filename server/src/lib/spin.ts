@@ -794,11 +794,8 @@ async function findSocksProductIds(): Promise<string[]> {
 /** Забрать награду календаря активности. Физика уходит в spin_winners. */
 export async function claimStreakMilestone(userId: string, milestone: StreakMilestone) {
   const season = await ensureCurrentSeason();
-  const [streak] = await db
-    .select()
-    .from(spinStreaks)
-    .where(and(eq(spinStreaks.userId, userId), eq(spinStreaks.seasonId, season.id)))
-    .limit(1);
+  const streak = await getActiveStreak(userId);
+
   if (!streak || streak.daysCount < milestone) {
     throw new SpinError("not_reached", "Ещё не накрутил столько дней.");
   }
