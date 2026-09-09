@@ -853,7 +853,7 @@ export async function claimStreakMilestone(userId: string, milestone: StreakMile
     });
   }
 
-  // 30 дней — Hell Pass Gold + 20 билетов.
+  // 30 дней — Hell Pass Gold + 20 билетов. После выдачи полоса стартует заново.
   if (milestone === 30) {
     await grantPass(userId, "gold", "Календарь активности 30/30", "streak");
     await ticketCredit({
@@ -865,7 +865,19 @@ export async function claimStreakMilestone(userId: string, milestone: StreakMile
       refId: streak.id,
       idempotent: true,
     });
+    await db
+      .update(spinStreaks)
+      .set({
+        daysCount: 0,
+        claimed10At: null,
+        claimed20At: null,
+        claimed30At: null,
+        lastSpinDate: null,
+        updatedAt: new Date(),
+      })
+      .where(eq(spinStreaks.id, streak.id));
   }
+
 
   return { milestone, title: MILESTONE_TITLE[milestone], promoCode };
 }
