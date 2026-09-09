@@ -12,6 +12,7 @@ import {
   type SpinRewardKind,
 } from "../db/schema/spin.js";
 import { profiles } from "../db/schema/profile.js";
+import { systemSettings } from "../db/schema/economy.js";
 import { pushSubscriptions } from "../db/schema/push.js";
 import { promoCodes } from "../db/schema/promo.js";
 import { passPurchases, PASS_CONFIG, PASS_DURATION_DAYS, type PassTier } from "../db/schema/pass.js";
@@ -47,7 +48,7 @@ export function mskDate(d = new Date()): string {
 /** Начало первого сезона: 11 августа 2026, 00:00 МСК. */
 export const SEASON_ANCHOR_UTC = Date.UTC(2026, 7, 11, -3, 0, 0);
 /** Длина сезона в днях. */
-export const SEASON_DAYS = 30;
+export const SEASON_DAYS = 31;
 
 /** Индекс текущего сезона (0 — первый). */
 function seasonIndex(d = new Date()): number {
@@ -55,7 +56,7 @@ function seasonIndex(d = new Date()): number {
   return diff <= 0 ? 0 : Math.floor(diff / (SEASON_DAYS * 86_400_000));
 }
 
-/** Границы сезона: скользящие окна по 30 дней от якоря. */
+/** Границы сезона: скользящие окна по SEASON_DAYS дней от якоря. */
 export function seasonBounds(d = new Date()): { startsAt: Date; endsAt: Date } {
   const idx = seasonIndex(d);
   const startsAt = new Date(SEASON_ANCHOR_UTC + idx * SEASON_DAYS * 86_400_000);
@@ -180,6 +181,18 @@ export async function ensureCurrentSeason() {
     .where(eq(spinSeasons.periodKey, periodKey))
     .limit(1);
   if (existing) {
+    // Длину сезона могли поменять (30 → 31): подтягиваем уже созданную строку,
+    // иначе календарь активности обрезался бы по старому значению.
+    if (existing.daysTotal !== SEASON_DAYS) {
+      const endsAt = new Date(existing.startsAt.getTime() + SEASON_DAYS * 86_400_000);
+      const [updated] = await db
+        .update(spinSeasons)
+        .set({ daysTotal: SEASON_DAYS, endsAt })
+        .where(eq(spinSeasons.id, existing.id))
+        .returning();
+      await syncSeasonPrizes(existing.id);
+      return updated ?? existing;
+    }
     await syncSeasonPrizes(existing.id);
     return existing;
   }
@@ -202,6 +215,23 @@ export async function ensureCurrentSeason() {
   return season;
 }
 
+
+/* ---------------- Тумблер HellSpin ---------------- */
+
+/**
+ * Ручной тумблер в админке (system_settings.spin = { enabled }).
+ * По умолчанию включён; выключенный закрывает крутки, но страница и статистика
+ * остаются доступными.
+ */
+export async function isSpinEnabled(): Promise<boolean> {
+  const [row] = await db
+    .select({ value: systemSettings.value })
+    .from(systemSettings)
+    .where(eq(systemSettings.key, "spin"))
+    .limit(1);
+  const value = row?.value as { enabled?: boolean } | undefined;
+  return value?.enabled !== false;
+}
 
 /* ---------------- Доступ ---------------- */
 
@@ -372,6 +402,9 @@ export interface SpinResult {
 
 /** Один прокрут: проверки → розыгрыш → начисление → запись. */
 export async function rollSpin(userId: string, pwa: boolean): Promise<SpinResult> {
+  if (!(await isSpinEnabled())) {
+    throw new SpinError("spin_closed", "HellSpin закрыт — сезон завершён. Скоро откроем новый.");
+  }
   const access = await checkSpinAccess(userId, pwa);
   if (!access.granted) {
     throw new SpinError(
@@ -886,6 +919,7 @@ export async function claimStreakMilestone(userId: string, milestone: StreakMile
 
 export async function getSpinState(userId: string, pwa: boolean) {
   const access = await checkSpinAccess(userId, pwa);
+  const enabled = await isSpinEnabled();
   const season = await ensureCurrentSeason();
   const tier = await getTier(userId);
   const day = mskDate();
@@ -916,6 +950,7 @@ export async function getSpinState(userId: string, pwa: boolean) {
 
   return {
     access,
+    enabled,
     tier,
     capsule: boost,
     season: {

@@ -83,6 +83,7 @@ export type AdminSpinHistoryParams = {
 };
 
 export const adminSpinQk = {
+  toggle: ["admin", "spin", "toggle"] as const,
   overview: ["admin", "spin", "overview"] as const,
   history: (p: AdminSpinHistoryParams) =>
     ["admin", "spin", "history", p.rarity ?? "all", p.q ?? "", p.prize ?? "", p.page, p.pageSize] as const,
@@ -121,5 +122,17 @@ export function setAdminSpinPrizeActive(code: string, active: boolean) {
   return apiFetch<{ code: string; active: boolean }>(`/api/v1/admin/spin/prizes/${code}`, {
     method: "PATCH",
     body: JSON.stringify({ active }),
+  });
+}
+
+/** Тумблер всей рулетки: выключенный закрывает крутки для всех. */
+export function fetchAdminSpinToggle() {
+  return apiFetch<{ enabled: boolean }>("/api/v1/admin/spin/toggle");
+}
+
+export function setAdminSpinEnabled(enabled: boolean) {
+  return apiFetch<{ enabled: boolean }>("/api/v1/admin/spin/toggle", {
+    method: "PUT",
+    body: JSON.stringify({ enabled }),
   });
 }
