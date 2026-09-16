@@ -634,22 +634,27 @@ function SpinPage() {
           </span>
         </div>
 
-        <p className="mb-3 text-[12.5px] leading-snug text-muted-foreground">
-          Сезон <span className="text-foreground">16 сентября — 30 октября</span> (45 дней). Крутанул
-          хотя бы один спин за день — день засчитан. Дни{" "}
-          <span className="text-foreground">не обязательно подряд</span>. Награды забираешь сам —
-          кнопкой «Забрать».
-        </p>
-
         {!streakEligible && (
-          <Link
-            to="/club/hell-pass"
-            className="mb-3 block rounded-2xl bg-black/30 px-3 py-2.5 text-[12.5px] leading-snug text-muted-foreground"
-          >
-            Дни считаются только с активным{" "}
-            <span className="text-foreground">Hell Pass Platinum</span>. Оформить →
-          </Link>
+          <div className="mb-4 mt-2 overflow-hidden rounded-2xl border-[2px] border-foreground bg-[linear-gradient(100deg,#8B5CF6_0%,#F000C0_55%,#FF8A00_100%)] p-3 shadow-[3px_3px_0_0_hsl(var(--foreground))]">
+            <p className="text-[13.5px] font-semibold leading-snug text-white drop-shadow-[0_1px_0_rgba(0,0,0,0.45)]">
+              {state?.tier === "silver" || state?.tier === "gold"
+                ? "Твои дни не считаются — календарь работает только на Platinum. Апгрейд со зачётом уплаченного."
+                : "Дни считаются только с активным Hell Pass Platinum."}
+            </p>
+            <p className="mt-1 text-[12px] leading-snug text-white/85">
+              Капсула ×3 · легендарная футболка бесплатно · 100 билетов
+            </p>
+            <Link
+              to="/club/hell-pass"
+              className="mt-2.5 inline-block rounded-xl border-[2px] border-foreground bg-[#B6FF3C] px-3.5 py-1.5 font-display text-[12px] font-black uppercase tracking-tight text-black shadow-[2px_2px_0_0_hsl(var(--foreground))] transition-transform active:scale-[0.94]"
+            >
+              {state?.tier === "silver" || state?.tier === "gold"
+                ? "Апгрейд до Platinum →"
+                : "Оформить Platinum →"}
+            </Link>
+          </div>
         )}
+
 
 
 
