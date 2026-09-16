@@ -32,9 +32,16 @@ export const passPurchases = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     tier: varchar("tier", { length: 16 }).notNull(),
+    /**
+     * Период доступа:
+     *   'monthly' — 30 дней (базовый вариант)
+     *   'annual'  — 365 дней, покупается сразу со скидкой ~50%
+     */
+    period: varchar("period", { length: 16 }).notNull().default("monthly"),
     priceRub: integer("price_rub").notNull(),
     ticketsGranted: integer("tickets_granted").notNull(),
     status: varchar("status", { length: 24 }).notNull().default("pending_payment"),
+
     /**
      * Откуда взялся пасс:
      *   'purchase' — юзер купил за деньги
