@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/icons";
 import { PlumpNum } from "@/components/brand/PlumpNum";
 import imgCapsule from "@/assets/spin/capsule-x2.webp";
+import imgCapsuleX3 from "@/assets/spin/capsule-x3.webp";
 
 import { SettingsModal } from "@/components/club/SettingsModal";
 import { OrdersList } from "@/components/club/OrdersList";
@@ -265,7 +266,10 @@ function MePage() {
       </section>
 
       {/* Капсула ×2 — плашка ниже промокодов, светится пока активна */}
-      <CapsuleBoostCard boostUntil={viewer.user?.ticketBoostUntil ?? null} />
+      <CapsuleBoostCard
+        boostUntil={viewer.user?.ticketBoostUntil ?? null}
+        boostMult={viewer.user?.ticketBoostMult ?? 2}
+      />
 
 
 
@@ -892,30 +896,31 @@ function useCountdown(targetIso: string | null) {
   return left;
 }
 
-function CapsuleBoostCard({ boostUntil }: { boostUntil: string | null }) {
+function CapsuleBoostCard({ boostUntil, boostMult = 2 }: { boostUntil: string | null; boostMult?: number }) {
   const ms = useCountdown(boostUntil);
   if (!boostUntil || ms === null || ms <= 0) return null;
+  const mult = boostMult > 2 ? 3 : 2;
   const totalSec = Math.floor(ms / 1000);
   const h = Math.floor(totalSec / 3600);
   const m = Math.floor((totalSec % 3600) / 60);
   const s = totalSec % 60;
   const pad = (n: number) => String(n).padStart(2, "0");
   return (
-    <section aria-label="Капсула ×2" className="mt-4 md:mt-6">
+    <section aria-label={`Капсула ×${mult}`} className="mt-4 md:mt-6">
       <div className="relative overflow-hidden rounded-3xl border border-[#e6007a]/40 bg-[#1a0a16] p-4 md:p-5">
         <div className="pointer-events-none absolute inset-[-10px] animate-[hs-capsule-glow_2.2s_ease-in-out_infinite] rounded-full opacity-60" />
         <div className="relative flex items-center gap-4">
           <img
-            src={imgCapsule}
-            alt="Капсула ×2"
+            src={mult >= 3 ? imgCapsuleX3 : imgCapsule}
+            alt={`Капсула ×${mult}`}
             className="h-[52px] w-[52px] animate-[hs-capsule-float_3s_ease-in-out_infinite] object-contain"
           />
           <div className="min-w-0 flex-1">
             <span className="block font-display text-[17px] font-black uppercase leading-tight tracking-tight text-foreground">
-              Капсула ×2
+              {`Капсула ×${mult}`}
             </span>
             <span className="block font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-              двойные билеты · активна
+              {mult >= 3 ? "тройные билеты · активна" : "двойные билеты · активна"}
             </span>
           </div>
           <div className="shrink-0 rounded-2xl bg-black/40 px-3 py-1.5 text-center">
@@ -928,8 +933,9 @@ function CapsuleBoostCard({ boostUntil }: { boostUntil: string | null }) {
           </div>
         </div>
         <p className="relative mt-3 text-[12px] leading-relaxed text-muted-foreground">
-          Покупай цифровые товары в магазине — билетов придёт в два раза больше.
-          Капсула расходуется одной покупкой.
+          {mult >= 3
+            ? "Покупай цифровые товары в магазине — билетов придёт в три раза больше. Капсула расходуется одной покупкой."
+            : "Покупай цифровые товары в магазине — билетов придёт в два раза больше. Капсула расходуется одной покупкой."}
         </p>
       </div>
     </section>

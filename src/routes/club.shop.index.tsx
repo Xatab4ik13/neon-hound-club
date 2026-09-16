@@ -40,11 +40,13 @@ function ClubShopPage() {
   const [activeSub, setActiveSub] = useState<string | null>(null);
 
   const { user } = useViewer();
-  // Капсула ×2 активна, если у юзера есть непросроченный ticket_boost_until.
+  // Капсула активна, если у юзера есть непросроченный ticket_boost_until.
   const boostActive = useMemo(() => {
     const until = user?.ticketBoostUntil;
     return !!until && new Date(until).getTime() > Date.now();
   }, [user?.ticketBoostUntil]);
+  // Множитель капсулы: ×2 из спина, ×3 с календаря активности.
+  const boostMult = user?.ticketBoostMult && user.ticketBoostMult > 2 ? 3 : 2;
 
 
 
@@ -229,7 +231,7 @@ function ClubShopPage() {
       ) : (
         <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4">
           {filtered.map((p) => (
-            <ProductCard key={p.id} product={p} boostActive={boostActive} />
+            <ProductCard key={p.id} product={p} boostActive={boostActive} boostMult={boostMult} />
           ))}
         </div>
       )}
@@ -292,7 +294,15 @@ function SubChip({
   );
 }
 
-function ProductCard({ product, boostActive }: { product: ShopProductListItem; boostActive: boolean }) {
+function ProductCard({
+  product,
+  boostActive,
+  boostMult = 2,
+}: {
+  product: ShopProductListItem;
+  boostActive: boolean;
+  boostMult?: number;
+}) {
   const sold = product.stock !== null && product.stock <= 0;
   const cover =
     product.images[0] ?? (product.slug === "stickerpack-special" ? SPECIAL_PACK_COVER : undefined);
@@ -303,9 +313,9 @@ function ProductCard({ product, boostActive }: { product: ShopProductListItem; b
     for (let i = 0; i < product.slug.length; i++) h = (h * 31 + product.slug.charCodeAt(i)) | 0;
     return `-${(Math.abs(h) % 1400) / 100}s`;
   }, [product.slug]);
-  // Капсула ×2 действует только на цифровые/виртуальные товары.
+  // Капсула действует только на цифровые/виртуальные товары.
   const boosted = boostActive && (product.kind === "digital" || product.kind === "virtual") && product.bonusTickets > 0;
-  const doubled = product.bonusTickets * 2;
+  const doubled = product.bonusTickets * boostMult;
   return (
     <Link
       to="/club/shop/$productSlug"
@@ -321,7 +331,7 @@ function ProductCard({ product, boostActive }: { product: ShopProductListItem; b
             <PlumpTicket className="h-3 w-3" />
             <s className="text-black decoration-white decoration-[2px]">{`+${product.bonusTickets}`}</s>
             <span className="text-black">{`+${doubled}`}</span>
-            <span className="ml-0.5 rounded bg-black/20 px-1 text-[8px] leading-none text-black">×2</span>
+            <span className="ml-0.5 rounded bg-black/20 px-1 text-[8px] leading-none text-black">{`×${boostMult}`}</span>
           </span>
 
         ) : (
