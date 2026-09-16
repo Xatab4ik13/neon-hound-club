@@ -331,7 +331,7 @@ function ProductCard({
             <PlumpTicket className="h-3 w-3" />
             <s className="text-black decoration-white decoration-[2px]">{`+${product.bonusTickets}`}</s>
             <span className="text-black">{`+${doubled}`}</span>
-            <span className="ml-0.5 rounded bg-black/20 px-1 text-[8px] leading-none text-black">×2</span>
+            <span className="ml-0.5 rounded bg-black/20 px-1 text-[8px] leading-none text-black">{`×${boostMult}`}</span>
           </span>
 
         ) : (
