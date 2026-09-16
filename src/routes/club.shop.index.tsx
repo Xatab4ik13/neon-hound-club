@@ -294,7 +294,15 @@ function SubChip({
   );
 }
 
-function ProductCard({ product, boostActive }: { product: ShopProductListItem; boostActive: boolean }) {
+function ProductCard({
+  product,
+  boostActive,
+  boostMult = 2,
+}: {
+  product: ShopProductListItem;
+  boostActive: boolean;
+  boostMult?: number;
+}) {
   const sold = product.stock !== null && product.stock <= 0;
   const cover =
     product.images[0] ?? (product.slug === "stickerpack-special" ? SPECIAL_PACK_COVER : undefined);
