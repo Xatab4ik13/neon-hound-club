@@ -945,6 +945,7 @@ export async function getSpinState(userId: string, pwa: boolean) {
     },
     spins: { allowed, used, left: Math.max(0, allowed - used) },
     streak: {
+      eligible: tier === STREAK_TIER,
       days: streak?.daysCount ?? 0,
       claimed: [
         ...(streak?.claimed10At ? [10] : []),
