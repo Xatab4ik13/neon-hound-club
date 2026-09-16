@@ -226,6 +226,8 @@ function SpinPage() {
   const tier: SpinTier = state?.tier ?? "none";
   const streak = state?.streak.days ?? 0;
   const claimed = state?.streak.claimed ?? [];
+  // Календарь активности работает только для Hell Pass Platinum.
+  const streakEligible = state ? (state.streak.eligible ?? state.tier === "platinum") : false;
   const lastPrize = state?.history[0]
     ? prizeByCode(state.history[0].prizeCode, state.history[0].title)
     : null;
@@ -773,7 +775,10 @@ function SpinPage() {
         </ul>
       </section>
 
-      <CapsuleAbout expiresAt={state?.capsule?.expiresAt ?? null} />
+      <CapsuleAbout
+        expiresAt={state?.capsule?.expiresAt ?? null}
+        mult={state?.capsule?.mult ?? 2}
+      />
     </main>
   );
 }
