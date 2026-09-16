@@ -23,6 +23,10 @@ export const users = pgTable(
     ticketBoostUntil: timestamp("ticket_boost_until", { withTimezone: true }),
     /** Множитель активной капсулы: 2 (спин) или 3 (календарь активности, 10/30). */
     ticketBoostMult: smallint("ticket_boost_mult").notNull().default(2),
+    /** Скидка на Hell Pass из HellSpin, % (0 — нет). */
+    passDiscountPct: smallint("pass_discount_pct").notNull().default(0),
+    /** До какого момента действует скидка на Hell Pass. NULL — нет. */
+    passDiscountUntil: timestamp("pass_discount_until", { withTimezone: true }),
   },
   (t) => ({
     emailIdx: index("users_email_idx").on(t.email),

@@ -216,7 +216,18 @@ export async function createOrderForUser(
   let promoDiscountRub = 0;
   const promoTargets = promo ? promoTargetProductIds(promo) : [];
   if (promo) {
-    if (promoTargets.length > 0) {
+    // Порог суммы заказа (промокоды HellSpin: 300 ₽ от 2 000 ₽ и т.д.).
+    if (promo.minOrderRub > 0 && subtotalRub < promo.minOrderRub) {
+      throw new OrderCreateError(
+        "promo_min_order",
+        `Промокод работает от ${promo.minOrderRub.toLocaleString("ru-RU")} ₽ товаров в заказе`,
+        400,
+      );
+    }
+    if (promo.discountAmountRub > 0) {
+      // Фиксированная сумма — не больше стоимости товаров.
+      promoDiscountRub = Math.min(promo.discountAmountRub, subtotalRub);
+    } else if (promoTargets.length > 0) {
       // Товарный промокод (в т.ч. на группу товаров, например «любые носки»):
       // скидка на 1 шт. самого дорогого подходящего товара в корзине.
       const targetPrice = items
@@ -229,9 +240,10 @@ export async function createOrderForUser(
   }
   const usePromo = promoDiscountRub > passDiscountRub;
   const discountRub = Math.max(passDiscountRub, promoDiscountRub);
-  const discountPct = usePromo && promoTargets.length > 0
-    ? (subtotalRub > 0 ? Math.round((discountRub * 100) / subtotalRub) : 0)
-    : Math.max(passPct, promo?.discountPct ?? 0);
+  const discountPct =
+    usePromo && (promoTargets.length > 0 || (promo?.discountAmountRub ?? 0) > 0)
+      ? (subtotalRub > 0 ? Math.round((discountRub * 100) / subtotalRub) : 0)
+      : Math.max(passPct, promo?.discountPct ?? 0);
   const goodsAfterDiscount = Math.max(0, subtotalRub - discountRub);
   const totalRub = goodsAfterDiscount + shippingPriceRub;
 

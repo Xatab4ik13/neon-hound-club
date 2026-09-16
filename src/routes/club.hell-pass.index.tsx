@@ -45,6 +45,13 @@ function HellPassPage() {
   });
   const active = passQ.data?.active ?? null;
   const daysLeft = passQ.data?.daysLeft ?? null;
+  const spinDiscount = passQ.data?.spinDiscount ?? null;
+  const discountHoursLeft = spinDiscount
+    ? Math.max(
+        0,
+        Math.ceil((new Date(spinDiscount.expiresAt).getTime() - Date.now()) / 3_600_000),
+      )
+    : 0;
 
   return (
     <main className="mx-auto w-full max-w-3xl px-4 py-5 pb-[calc(env(safe-area-inset-bottom)+96px)] md:py-8">
@@ -52,6 +59,17 @@ function HellPassPage() {
 
       {active && (
         <ActiveBanner tier={active.tier} daysLeft={daysLeft} />
+      )}
+
+      {spinDiscount && (
+        <div className="mt-4 border border-emerald-400/40 bg-emerald-400/10 px-4 py-3">
+          <div className="font-mono text-xs font-bold uppercase tracking-widest text-emerald-300">
+            Скидка −{spinDiscount.pct}% из HellSpin активна
+          </div>
+          <div className="mt-1 font-mono text-[10px] uppercase tracking-widest text-white/60">
+            Действует ещё {discountHoursLeft} ч · применится к любому тиру, месяц или год
+          </div>
+        </div>
       )}
 
       <div className="mt-8 flex flex-col gap-7 px-1 pb-2">

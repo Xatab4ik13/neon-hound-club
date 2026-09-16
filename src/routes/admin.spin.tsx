@@ -198,7 +198,7 @@ function SpinAdminPage() {
             title: "Капсула ×2",
             rarity: "legend" as SpinRarity,
             rewardKind: "ticket_boost",
-            chancePpm: 50_000,
+            chancePpm: 10_000,
             limitTotal: null,
             issued: 0,
             active: true,
@@ -580,18 +580,22 @@ function SpinAdminPage() {
  * (Gold ×1.2, Platinum ×1.5) применяется только к epic/legend.
  */
 const ODDS_ROWS: { title: string; rarity: SpinRarity; ppm: number; note?: string }[] = [
-  { title: "100 XP", rarity: "common", ppm: 260_000 },
-  { title: "250 XP", rarity: "common", ppm: 170_000 },
-  { title: "Бонус-спин", rarity: "rare", ppm: 110_000 },
-  { title: "1 билет", rarity: "common", ppm: 90_000 },
-  { title: "500 XP", rarity: "rare", ppm: 80_000 },
-  { title: "Капсула ×2", rarity: "legend", ppm: 50_000, note: "×2 билета на цифру, 24 ч" },
-  { title: "1 билет · сектор t3", rarity: "rare", ppm: 40_000, note: "бывшие «3 билета» — теперь 1" },
-  { title: "Промокод 20%", rarity: "epic", ppm: 30_000 },
-  { title: "Ремувка", rarity: "epic", ppm: 20_000, note: "пул 240 на сезон" },
-  { title: "1 билет · сектор t10", rarity: "epic", ppm: 10_000, note: "бывшие «10 билетов» — теперь 1" },
-  { title: "Hell Pass Silver", rarity: "legend", ppm: 3_000, note: "пул 60 на сезон" },
-  { title: "Jackpot (AirPods → Watch → PS5)", rarity: "legend", ppm: 40, note: "1–15 дн: 40 ppm, 16–25: 150, 26+: 350" },
+  { title: "100 XP", rarity: "common", ppm: 355_000 },
+  { title: "250 XP", rarity: "common", ppm: 240_000 },
+  { title: "Промокод 300 ₽", rarity: "common", ppm: 140_000, note: "от 2 000 ₽, 48 ч" },
+  { title: "500 XP", rarity: "rare", ppm: 100_000 },
+  { title: "Промокод 500 ₽", rarity: "rare", ppm: 80_000, note: "от 3 000 ₽, 48 ч" },
+  { title: "−20% на Hell Pass", rarity: "rare", ppm: 35_000, note: "24 часа, видна в кабинете" },
+  { title: "Промокод 1 000 ₽", rarity: "epic", ppm: 30_000, note: "от 5 000 ₽, 48 ч" },
+  { title: "1 билет", rarity: "epic", ppm: 7_000 },
+  { title: "3 билета", rarity: "epic", ppm: 2_500 },
+  { title: "Капсула ×2", rarity: "legend", ppm: 10_000, note: "×2 билета на цифру, 24 ч" },
+  {
+    title: "Легенда (AirPods → шлем AGV → PS5)",
+    rarity: "legend",
+    ppm: 40,
+    note: "1–20 дн: 40 ppm, 21–35: 150, 36+: 350 · выключенный приз крутится, но не выпадает",
+  },
 ];
 
 /**
@@ -599,18 +603,17 @@ const ODDS_ROWS: { title: string; rarity: SpinRarity; ppm: number; note?: string
  * «Капсулы ×2»). Нужны только для сравнительной таблицы.
  */
 const OLD_PPM: Record<string, number> = {
-  "100 XP": 240_000,
-  "250 XP": 140_000,
-  "Бонус-спин": 80_000,
-  "1 билет": 180_000,
-  "500 XP": 50_000,
-  "Капсула ×2": 0,
-  "1 билет · сектор t3": 100_000,
-  "Промокод 20%": 30_000,
-  Ремувка: 20_000,
-  "1 билет · сектор t10": 30_000,
-  "Hell Pass Silver": 3_000,
-  "Jackpot (AirPods → Watch → PS5)": 40,
+  "100 XP": 260_000,
+  "250 XP": 170_000,
+  "Промокод 300 ₽": 0,
+  "500 XP": 80_000,
+  "Промокод 500 ₽": 0,
+  "−20% на Hell Pass": 0,
+  "Промокод 1 000 ₽": 0,
+  "1 билет": 90_000,
+  "3 билета": 40_000,
+  "Капсула ×2": 50_000,
+  "Легенда (AirPods → шлем AGV → PS5)": 40,
 };
 
 
@@ -626,7 +629,7 @@ function OddsTable() {
   const [jackpotPpm, setJackpotPpm] = useState(40);
 
   const rows = ODDS_ROWS.map((r) =>
-    r.rarity === "legend" && r.title.startsWith("Jackpot") ? { ...r, ppm: jackpotPpm } : r,
+    r.rarity === "legend" && r.title.startsWith("Легенда") ? { ...r, ppm: jackpotPpm } : r,
   );
 
   const columns = ODDS_MULT.map(({ tier, mult }) => {
@@ -645,11 +648,11 @@ function OddsTable() {
   return (
     <div className="p-4">
       <div className="mb-3 flex flex-wrap items-center gap-2">
-        <span className="text-xs text-zinc-500 dark:text-zinc-400">Фаза месяца (шанс jackpot):</span>
+        <span className="text-xs text-zinc-500 dark:text-zinc-400">Фаза сезона (шанс легенды):</span>
         {[
-          { label: "1–15", ppm: 40 },
-          { label: "16–25", ppm: 150 },
-          { label: "26+", ppm: 350 },
+          { label: "1–20", ppm: 40 },
+          { label: "21–35", ppm: 150 },
+          { label: "36+", ppm: 350 },
         ].map((p) => (
           <button
             key={p.ppm}
@@ -797,10 +800,12 @@ function OddsCompare() {
         </table>
       </div>
       <div className="mt-3 text-xs text-zinc-500 dark:text-zinc-400">
-        Важное: «10 билетов» раньше стоял на 30 000 ppm (~3,49%) — поэтому падал часто. Сейчас
-        10 000 ppm (~1,16%). «Hell Pass Silver» и раньше, и сейчас 3 000 ppm — это ~0,35%, то есть
-        примерно 1 на 290 прокрутов; на 800 прокрутов это ожидаемо 2–3 выдачи. Дневных лимитов на
-        призы нет — ограничены только сезонные пулы (Ремувка 240, Silver 60) и очередь jackpot.
+        Сезон 2: 16 сентября — 30 октября 2026 (45 дней). Из пула убраны бонус-спин, промокод
+        20%, ремувка, Hell Pass Silver и пачки билетов. Билетов за сезон: ~870 против 45 544 в
+        первом сезоне. Промокоды — фиксированной суммой с порогом заказа, живут 48 часов, один
+        активный на человека. Легенда идёт по очереди AirPods → шлем AGV → PS5; выключенный
+        тумблером приз остаётся в колесе, но не выпадает, а в последний день сезона включённые
+        нераскрытые призы выдаются принудительно.
       </div>
     </div>
   );

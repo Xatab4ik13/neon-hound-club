@@ -11,6 +11,7 @@ import {
   type PassTier,
 } from "../db/schema/pass.js";
 import { userStickerPacks } from "../db/schema/stickers.js";
+import { users } from "../db/schema/users.js";
 import { ticketCredit } from "./tickets.js";
 import { awardXp } from "./xp.js";
 
@@ -61,7 +62,10 @@ export async function createPassPurchase(
   // Апгрейд: из цены нового тира вычитаем то, что юзер уже заплатил за активные
   // пассы ниже тиром с ТЕМ ЖЕ периодом. Бесплатные (спин/грант) стоили 0 — зачёта не дают.
   const credit = await getUpgradeCreditRub(userId, tier, period);
-  const priceRub = Math.max(0, plan.priceRub - credit);
+  // Скидка из HellSpin (−20% на 24 часа) считается от цены после зачёта апгрейда.
+  const discountPct = await getPassDiscountPct(userId);
+  const afterCredit = Math.max(0, plan.priceRub - credit);
+  const priceRub = Math.max(0, afterCredit - Math.floor((afterCredit * discountPct) / 100));
   const [row] = await db
     .insert(passPurchases)
     .values({
@@ -129,6 +133,9 @@ export async function activatePassPurchase(purchaseId: string): Promise<{ ok: bo
         .set({ status: "superseded" })
         .where(eq(passPurchases.id, otherActive.id));
     }
+
+    // Скидка из HellSpin одноразовая: она уже учтена в priceRub этой покупки.
+    if (p.source === "purchase") await clearPassSpinDiscount(p.userId);
   }
 
 
@@ -223,6 +230,34 @@ export async function getUpgradeCreditRub(
         (r.period ?? "monthly") === period,
     )
     .reduce((sum, r) => sum + (r.priceRub ?? 0), 0);
+}
+
+/**
+ * Личная скидка на Hell Pass из HellSpin: процент и до какого момента живёт.
+ * Истёкшая скидка не возвращается.
+ */
+export async function getPassSpinDiscount(
+  userId: string,
+): Promise<{ pct: number; expiresAt: Date } | null> {
+  const [row] = await db
+    .select({ pct: users.passDiscountPct, until: users.passDiscountUntil })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+  if (!row || row.pct <= 0 || !row.until || row.until.getTime() <= Date.now()) return null;
+  return { pct: row.pct, expiresAt: row.until };
+}
+
+export async function getPassDiscountPct(userId: string): Promise<number> {
+  return (await getPassSpinDiscount(userId))?.pct ?? 0;
+}
+
+/** Скидка одноразовая: гасим её после активации оплаченного пасса. */
+export async function clearPassSpinDiscount(userId: string): Promise<void> {
+  await db
+    .update(users)
+    .set({ passDiscountPct: 0, passDiscountUntil: null })
+    .where(eq(users.id, userId));
 }
 
 

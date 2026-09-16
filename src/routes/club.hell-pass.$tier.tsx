@@ -110,11 +110,23 @@ function TierDetailPage() {
   const savePct = Math.round((saveRub / yearFull) * 100);
   const perMonth = Math.round(tier.annualPrice / 12);
 
-  // Персональная цена с зачётом уплаченного за активные пассы ниже тиром.
+  // Персональная цена с зачётом уплаченного за активные пассы ниже тиром
+  // и со скидкой из HellSpin, если она сейчас активна.
   const personal = passQ.data?.prices?.[tier.slug as PassTier] ?? null;
   const personalForPeriod = isAnnual ? personal?.annual : personal;
   const creditRub = isUpgrade ? (personalForPeriod?.creditRub ?? 0) : 0;
-  const payRub = creditRub > 0 ? (personalForPeriod?.priceRub ?? listRub) : listRub;
+  const spinDiscount = passQ.data?.spinDiscount ?? null;
+  const basePayRub = creditRub > 0 ? (personalForPeriod?.priceRub ?? listRub) : listRub;
+  const payRub =
+    spinDiscount && creditRub === 0
+      ? Math.max(0, listRub - Math.floor((listRub * spinDiscount.pct) / 100))
+      : basePayRub;
+  const discountHoursLeft = spinDiscount
+    ? Math.max(
+        0,
+        Math.ceil((new Date(spinDiscount.expiresAt).getTime() - Date.now()) / 3_600_000),
+      )
+    : 0;
 
   // Перехват submit: если не залогинен — на /login; если даунгрейд — блок.
   const guard = (e: React.FormEvent<HTMLFormElement>) => {
@@ -293,7 +305,7 @@ function TierDetailPage() {
                 >
                   {payRub.toLocaleString("ru-RU")} ₽
                 </span>
-                {creditRub > 0 && (
+                {(creditRub > 0 || payRub < listRub) && (
                   <span className="font-mono text-lg text-white/35 line-through">
                     {listRub.toLocaleString("ru-RU")} ₽
                   </span>
@@ -326,6 +338,17 @@ function TierDetailPage() {
               {creditRub > 0 && (
                 <div className="mt-3 border border-primary/30 bg-primary/10 px-3 py-2 font-mono text-[10px] uppercase tracking-widest text-primary">
                   Апгрейд: зачли {creditRub.toLocaleString("ru-RU")} ₽ за твой текущий пасс
+                </div>
+              )}
+
+              {spinDiscount && (
+                <div className="mt-3 border border-emerald-400/40 bg-emerald-400/10 px-3 py-2">
+                  <div className="font-mono text-[11px] font-bold uppercase tracking-widest text-emerald-300">
+                    −{spinDiscount.pct}% из HellSpin уже в цене
+                  </div>
+                  <div className="mt-1 font-mono text-[10px] uppercase tracking-widest text-white/60">
+                    Скидка сгорит через {discountHoursLeft} ч
+                  </div>
                 </div>
               )}
 
