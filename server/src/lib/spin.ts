@@ -1007,7 +1007,8 @@ export async function getSpinState(userId: string, pwa: boolean) {
     spins: { allowed, used, left: Math.max(0, allowed - used) },
     streak: {
       eligible: tier === STREAK_TIER,
-      days: streak?.daysCount ?? 0,
+      daysTotal: STREAK_DAYS,
+      days: Math.min(streak?.daysCount ?? 0, STREAK_DAYS),
       claimed: [
         ...(streak?.claimed10At ? [10] : []),
         ...(streak?.claimed20At ? [20] : []),
