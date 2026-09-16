@@ -176,9 +176,9 @@ type SpinState = {
   tier: SpinTier;
   season: { periodKey: string; daysTotal: number; startsAt?: string; endsAt: string };
   spins: { allowed: number; used: number; left: number };
-  streak: { days: number; claimed: number[] };
+  streak: { days: number; claimed: number[]; eligible?: boolean };
   history: { prizeCode: string; title: string; at: string }[];
-  capsule?: { active: boolean; expiresAt: string | null };
+  capsule?: { active: boolean; expiresAt: string | null; mult?: number };
 };
 
 
@@ -287,9 +287,7 @@ function SpinPage() {
       });
       haptic("success");
       toast.success(
-        res?.promoCode
-          ? `Промокод ${res.promoCode} — носки за 0₽, платишь только доставку`
-          : "Награда забрана",
+        res?.promoCode ? `Промокод ${res.promoCode}` : "Награда забрана",
       );
       await loadState();
     } catch (err) {
