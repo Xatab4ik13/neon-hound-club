@@ -15,15 +15,17 @@ import silverBadge from "@/assets/hellpass/tpl-silver.webp";
 import goldBadge from "@/assets/hellpass/tpl-gold.webp";
 import platinumBadge from "@/assets/hellpass/tpl-platinum.webp";
 import imgAirpods from "@/assets/spin/airpods.webp";
-import imgWatch from "@/assets/spin/watch.webp";
+import imgHelmet from "@/assets/spin/helmet.webp";
 import imgPs5 from "@/assets/spin/ps5.webp";
-import imgBonusSpin from "@/assets/spin/bonus-spin.webp";
 import imgTicket from "@/assets/spin/ticket.webp";
+import imgTicketX3 from "@/assets/spin/ticket-x3.webp";
 import imgXp from "@/assets/spin/xp.webp";
-import imgPromo from "@/assets/spin/promo.webp";
-import imgRemovka from "@/assets/spin/removka.webp";
+import imgPromo300 from "@/assets/spin/promo-300.webp";
+import imgPromo500 from "@/assets/spin/promo-500.webp";
+import imgPromo1000 from "@/assets/spin/promo-1000.webp";
+import imgPassDiscount from "@/assets/spin/pass-discount.webp";
 import imgSocks from "@/assets/spin/socks.webp";
-import imgCapsule from "@/assets/spin/capsule-x2.png";
+import imgCapsule from "@/assets/spin/capsule-x2.webp";
 import { apiFetch, ApiError } from "@/lib/api";
 import { isStandalone } from "@/hooks/use-install-prompt";
 
@@ -71,22 +73,18 @@ const RARITY: Record<Rarity, { ring: string; glow: string; label: string; chip: 
 // иначе после деплоя картинка может не отдаться (как было с фото инструкторов).
 const POOL: Prize[] = [
   { id: "xp100", title: "100 XP", rarity: "common", img: imgXp },
-  { id: "t1", title: "1 билет", rarity: "common", img: imgTicket },
   { id: "xp250", title: "250 XP", rarity: "common", img: imgXp },
-  { id: "t3", title: "1 билет", rarity: "rare", img: imgTicket },
-  { id: "spin", title: "Бонус-спин", sub: "+1 прокрут", rarity: "rare", img: imgBonusSpin },
+  { id: "promo300", title: "Промокод 300 ₽", sub: "от 2 000 ₽", rarity: "common", img: imgPromo300 },
   { id: "xp500", title: "500 XP", rarity: "rare", img: imgXp },
-  { id: "promo", title: "Промокод 20%", sub: "на товары", rarity: "epic", img: imgPromo },
-  { id: "t10", title: "1 билет", rarity: "epic", img: imgTicket },
-  { id: "sticker", title: "Ремувка", rarity: "epic", img: imgRemovka },
-  { id: "boost_x2", title: "Капсула ×2", sub: "24 часа", rarity: "legend", img: imgCapsule },
-  { id: "silver", title: "Hell Pass Silver", sub: "30 дней", rarity: "legend", img: silverBadge },
+  { id: "promo500", title: "Промокод 500 ₽", sub: "от 3 000 ₽", rarity: "rare", img: imgPromo500 },
+  { id: "pass_discount", title: "−20% на Hell Pass", sub: "24 часа", rarity: "rare", img: imgPassDiscount },
+  { id: "promo1000", title: "Промокод 1 000 ₽", sub: "от 5 000 ₽", rarity: "epic", img: imgPromo1000 },
+  { id: "boost_x2", title: "Капсула ×2", sub: "24 часа", rarity: "epic", img: imgCapsule },
+  { id: "t1", title: "1 билет", sub: "на Yamaha MT-07", rarity: "epic", img: imgTicket },
+  { id: "t3", title: "3 билета", sub: "на Yamaha MT-07", rarity: "legend", img: imgTicketX3 },
   { id: "airpods", title: "AirPods 4", rarity: "legend", img: imgAirpods },
-  { id: "watch", title: "Apple Watch SE", rarity: "legend", img: imgWatch },
+  { id: "helmet", title: "AGV Pista GP RR", sub: "шлем", rarity: "legend", img: imgHelmet },
   { id: "ps5", title: "PlayStation 5 Slim", rarity: "legend", img: imgPs5 },
-  // Скрытые сектора: бэкенд подменяет ими приз, когда пул закончился.
-  { id: "t50", title: "50 билетов", rarity: "epic", img: imgTicket, hidden: true },
-  { id: "socks", title: "Носки", rarity: "rare", img: imgSocks, fit: "cover", hidden: true },
 ];
 
 const PRIZE_BY_ID = new Map(POOL.map((p) => [p.id, p]));
