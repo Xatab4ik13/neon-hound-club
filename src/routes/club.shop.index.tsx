@@ -40,11 +40,13 @@ function ClubShopPage() {
   const [activeSub, setActiveSub] = useState<string | null>(null);
 
   const { user } = useViewer();
-  // Капсула ×2 активна, если у юзера есть непросроченный ticket_boost_until.
+  // Капсула активна, если у юзера есть непросроченный ticket_boost_until.
   const boostActive = useMemo(() => {
     const until = user?.ticketBoostUntil;
     return !!until && new Date(until).getTime() > Date.now();
   }, [user?.ticketBoostUntil]);
+  // Множитель капсулы: ×2 из спина, ×3 с календаря активности.
+  const boostMult = user?.ticketBoostMult && user.ticketBoostMult > 2 ? 3 : 2;
 
 
 
