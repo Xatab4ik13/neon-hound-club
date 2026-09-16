@@ -2,7 +2,16 @@ import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { and, desc, eq, ilike, or, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
-import { passPurchases, PASS_CONFIG, PASS_DURATION_DAYS, PASS_TIERS } from "../db/schema/pass.js";
+import {
+  passPurchases,
+  PASS_CONFIG,
+  PASS_DURATION_DAYS,
+  PASS_ANNUAL_DURATION_DAYS,
+  PASS_PERIODS,
+  PASS_TIERS,
+  passPlan,
+} from "../db/schema/pass.js";
+
 import { users } from "../db/schema/users.js";
 import { profiles } from "../db/schema/profile.js";
 import { payments } from "../db/schema/payments.js";
