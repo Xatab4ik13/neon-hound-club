@@ -24,13 +24,25 @@ export type LedgerEntry = {
 };
 
 export type PassTier = "silver" | "gold" | "platinum";
+export type PassPeriod = "monthly" | "annual";
+
+export type PassAnnualInfo = {
+  priceRub: number;
+  tickets: number;
+  fullRub: number;
+  saveRub: number;
+  savePct: number;
+  perMonthRub: number;
+};
 
 export type PassTierInfo = {
   tier: PassTier;
   priceRub: number;
   tickets: number;
   aiQuestions: number | null;
+  annual?: PassAnnualInfo;
 };
+
 
 export type PassSource = "purchase" | "spin" | "streak" | "grant";
 
