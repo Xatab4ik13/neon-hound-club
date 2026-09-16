@@ -537,7 +537,7 @@ export async function rollSpin(userId: string, pwa: boolean): Promise<SpinResult
     streakDays =
       tier === "platinum"
         ? await bumpStreak(userId, season.id, day)
-        : (await getActiveStreak(userId))?.daysCount ?? 0;
+        : (await getActiveStreak(userId, season.id))?.daysCount ?? 0;
   } catch (grantErr) {
     await db
       .update(spinDaily)
@@ -898,7 +898,7 @@ export async function claimStreakMilestone(userId: string, milestone: StreakMile
   if (tier !== STREAK_TIER) {
     throw new SpinError("no_platinum", "Календарь активности — только для Hell Pass Platinum.");
   }
-  const streak = await getActiveStreak(userId);
+  const streak = await getActiveStreak(userId, season.id);
 
   if (!streak || streak.daysCount < milestone) {
     throw new SpinError("not_reached", "Ещё не накрутил столько дней.");
@@ -978,7 +978,7 @@ export async function getSpinState(userId: string, pwa: boolean) {
   const allowed = SPINS_PER_DAY[tier] + (daily?.bonus ?? 0);
   const used = daily?.used ?? 0;
 
-  const streak = await getActiveStreak(userId);
+  const streak = await getActiveStreak(userId, season.id);
 
 
   const history = await db
