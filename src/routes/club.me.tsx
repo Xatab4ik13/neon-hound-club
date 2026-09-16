@@ -266,7 +266,10 @@ function MePage() {
       </section>
 
       {/* Капсула ×2 — плашка ниже промокодов, светится пока активна */}
-      <CapsuleBoostCard boostUntil={viewer.user?.ticketBoostUntil ?? null} />
+      <CapsuleBoostCard
+        boostUntil={viewer.user?.ticketBoostUntil ?? null}
+        boostMult={viewer.user?.ticketBoostMult ?? 2}
+      />
 
 
 
