@@ -660,14 +660,32 @@ async function grantPrize(
 }
 
 /**
- * Статус капсулы ×2 для юзера.
- * active=true, если ticket_boost_until ещё в будущем.
+ * Выдать капсулу-множитель. Активная капсула заменяется новой:
+ * ×2 / 24 ч — приз спина, ×3 / 48 ч — награда календаря активности (10/30).
+ */
+export async function grantTicketBoost(
+  userId: string,
+  opts: { mult: 2 | 3; hours: number; source: "spin" | "streak" },
+): Promise<Date> {
+  const expiresAt = new Date(Date.now() + opts.hours * 60 * 60 * 1000);
+  await db
+    .update(users)
+    .set({ ticketBoostUntil: expiresAt, ticketBoostMult: opts.mult, updatedAt: new Date() })
+    .where(eq(users.id, userId));
+  // Лог для админки: кто получил капсулу, с каким множителем и до когда она живёт.
+  await db.insert(ticketBoosts).values({ userId, source: opts.source, mult: opts.mult, expiresAt });
+  return expiresAt;
+}
+
+/**
+ * Статус капсулы для юзера.
+ * active=true, если ticket_boost_until ещё в будущем. mult — множитель билетов.
  */
 export async function getTicketBoost(
   userId: string,
-): Promise<{ active: boolean; expiresAt: string | null }> {
+): Promise<{ active: boolean; expiresAt: string | null; mult: number }> {
   const [u] = await db
-    .select({ ticketBoostUntil: users.ticketBoostUntil })
+    .select({ ticketBoostUntil: users.ticketBoostUntil, ticketBoostMult: users.ticketBoostMult })
     .from(users)
     .where(eq(users.id, userId))
     .limit(1);
@@ -675,6 +693,7 @@ export async function getTicketBoost(
   return {
     active: !!until && until.getTime() > Date.now(),
     expiresAt: until ? until.toISOString() : null,
+    mult: u?.ticketBoostMult ?? 2,
   };
 }
 
