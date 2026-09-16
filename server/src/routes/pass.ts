@@ -180,6 +180,8 @@ export async function adminPassRoutes(app: FastifyInstance) {
         id: passPurchases.id,
         userId: passPurchases.userId,
         tier: passPurchases.tier,
+        period: passPurchases.period,
+
         priceRub: passPurchases.priceRub,
         ticketsGranted: passPurchases.ticketsGranted,
         status: passPurchases.status,
