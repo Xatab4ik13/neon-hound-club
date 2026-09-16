@@ -27,6 +27,13 @@ export const promoCodes = pgTable(
     id: uuid("id").primaryKey().defaultRandom(),
     code: varchar("code", { length: 32 }).notNull(),
     discountPct: integer("discount_pct").notNull().default(0),
+    /**
+     * Скидка фиксированной суммой в рублях (призы HellSpin: 300/500/1000 ₽).
+     * Если > 0 — процент игнорируется.
+     */
+    discountAmountRub: integer("discount_amount_rub").notNull().default(0),
+    /** Минимальная сумма товаров в заказе, при которой промокод работает. */
+    minOrderRub: integer("min_order_rub").notNull().default(0),
     userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" }),
     /**
      * Товарный промокод: скидка привязана к конкретному товару.

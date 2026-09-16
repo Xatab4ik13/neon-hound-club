@@ -1,4 +1,4 @@
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, notInArray, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import {
   spinDaily,
@@ -94,35 +94,52 @@ interface PrizeConfig {
   chancePpm: number;
   limitTotal?: number;
   queueOrder?: number;
-  /** Не участвует в колесе, только как подмена при исчерпанном пуле. */
-  hidden?: boolean;
+  /**
+   * Создаётся выключенным: в колесе виден, но не выпадает, пока админ
+   * не включит тумблер (дорогие физические призы).
+   */
+  offByDefault?: boolean;
 }
 
-/** Пул сезона. Коды совпадают с фронтом (src/routes/club.spin.tsx). */
+/**
+ * Пул сезона 2 (16 сентября — 30 октября 2026). Коды совпадают с фронтом
+ * (src/routes/club.spin.tsx). Из пула убраны бонус-спин, промокод 20%,
+ * ремувка, Hell Pass Silver и пачки билетов — билеты продаём, а не раздаём.
+ */
 export const PRIZE_CONFIG: PrizeConfig[] = [
-  { code: "xp100", title: "100 XP", rarity: "common", rewardKind: "xp", rewardValue: 100, chancePpm: 260_000 },
-  { code: "t1", title: "1 билет", rarity: "common", rewardKind: "tickets", rewardValue: 1, chancePpm: 90_000 },
-  { code: "xp250", title: "250 XP", rarity: "common", rewardKind: "xp", rewardValue: 250, chancePpm: 170_000 },
-  { code: "t3", title: "1 билет", rarity: "rare", rewardKind: "tickets", rewardValue: 1, chancePpm: 40_000 },
-  { code: "spin", title: "Бонус-спин", rarity: "rare", rewardKind: "bonus_spin", rewardValue: 1, chancePpm: 110_000 },
-  { code: "xp500", title: "500 XP", rarity: "rare", rewardKind: "xp", rewardValue: 500, chancePpm: 80_000 },
-  { code: "t10", title: "1 билет", rarity: "epic", rewardKind: "tickets", rewardValue: 1, chancePpm: 10_000 },
-
-  { code: "promo", title: "Промокод 20%", rarity: "epic", rewardKind: "promo", rewardValue: 20, chancePpm: 30_000 },
-  { code: "sticker", title: "Ремувка", rarity: "epic", rewardKind: "merch", rewardValue: 0, chancePpm: 20_000, limitTotal: 240 },
-  { code: "boost_x2", title: "Капсула ×2", rarity: "legend", rewardKind: "ticket_boost", rewardValue: 0, chancePpm: 50_000 },
-  { code: "silver", title: "Hell Pass Silver", rarity: "legend", rewardKind: "pass", rewardValue: 0, chancePpm: 3_000, limitTotal: 60 },
+  { code: "xp100", title: "100 XP", rarity: "common", rewardKind: "xp", rewardValue: 100, chancePpm: 355_000 },
+  { code: "xp250", title: "250 XP", rarity: "common", rewardKind: "xp", rewardValue: 250, chancePpm: 240_000 },
+  { code: "promo300", title: "Промокод 300 ₽", rarity: "common", rewardKind: "promo_fixed", rewardValue: 300, chancePpm: 140_000 },
+  { code: "xp500", title: "500 XP", rarity: "rare", rewardKind: "xp", rewardValue: 500, chancePpm: 100_000 },
+  { code: "promo500", title: "Промокод 500 ₽", rarity: "rare", rewardKind: "promo_fixed", rewardValue: 500, chancePpm: 80_000 },
+  { code: "pass_discount", title: "−20% на Hell Pass", rarity: "rare", rewardKind: "pass_discount", rewardValue: 20, chancePpm: 35_000 },
+  { code: "promo1000", title: "Промокод 1 000 ₽", rarity: "epic", rewardKind: "promo_fixed", rewardValue: 1000, chancePpm: 30_000 },
+  { code: "t1", title: "1 билет", rarity: "epic", rewardKind: "tickets", rewardValue: 1, chancePpm: 7_000 },
+  { code: "t3", title: "3 билета", rarity: "epic", rewardKind: "tickets", rewardValue: 3, chancePpm: 2_500 },
+  { code: "boost_x2", title: "Капсула ×2", rarity: "legend", rewardKind: "ticket_boost", rewardValue: 0, chancePpm: 10_000 },
+  // Легендарная тройка: очередь AirPods → шлем AGV → PS5. Каждый приз включается
+  // тумблером в админке: выключенный остаётся в колесе визуально, но не выпадает.
   { code: "airpods", title: "AirPods 4", rarity: "legend", rewardKind: "jackpot", rewardValue: 0, chancePpm: 0, limitTotal: 1, queueOrder: 1 },
-  { code: "watch", title: "Apple Watch SE", rarity: "legend", rewardKind: "jackpot", rewardValue: 0, chancePpm: 0, limitTotal: 1, queueOrder: 2 },
-  { code: "ps5", title: "PlayStation 5 Slim", rarity: "legend", rewardKind: "jackpot", rewardValue: 0, chancePpm: 0, limitTotal: 1, queueOrder: 3 },
-  // Подмены при пустом пуле — на колесе не показываются.
-  { code: "t50", title: "50 билетов", rarity: "epic", rewardKind: "tickets", rewardValue: 50, chancePpm: 0, hidden: true },
+  { code: "helmet", title: "Шлем AGV Pista GP RR", rarity: "legend", rewardKind: "jackpot", rewardValue: 0, chancePpm: 0, limitTotal: 1, queueOrder: 2, offByDefault: true },
+  { code: "ps5", title: "PlayStation 5 Slim", rarity: "legend", rewardKind: "jackpot", rewardValue: 0, chancePpm: 0, limitTotal: 1, queueOrder: 3, offByDefault: true },
 ];
 
-/** Шанс jackpot по фазам сезона (ppm), day — день сезона 1..30. */
+/** Минимальная сумма заказа для промокодов-призов. */
+const PROMO_MIN_ORDER: Record<string, number> = {
+  promo300: 2_000,
+  promo500: 3_000,
+  promo1000: 5_000,
+};
+
+/** Сколько живёт промокод из спина. */
+const PROMO_TTL_HOURS = 48;
+/** Сколько живёт скидка на Hell Pass из спина. */
+const PASS_DISCOUNT_TTL_HOURS = 24;
+
+/** Шанс jackpot по фазам сезона (ppm), day — день сезона 1..45. */
 function jackpotPhasePpm(dayOfSeason: number): number {
-  if (dayOfSeason <= 15) return 40; // ~0.004%
-  if (dayOfSeason <= 25) return 150; // ~0.015%
+  if (dayOfSeason <= 20) return 40; // ~0.004%
+  if (dayOfSeason <= 35) return 150; // ~0.015%
   return 350; // ~0.035%
 }
 
@@ -151,7 +168,7 @@ async function syncSeasonPrizes(seasonId: string) {
         baseChancePpm: p.chancePpm,
         limitTotal: p.limitTotal ?? null,
         queueOrder: p.queueOrder ?? null,
-        active: !p.hidden,
+        active: !p.offByDefault,
       })),
     )
     .onConflictDoUpdate({
@@ -169,6 +186,21 @@ async function syncSeasonPrizes(seasonId: string) {
       },
 
     });
+
+  // Призы прошлого сезона, которых больше нет в конфиге (бонус-спин, промокод 20%,
+  // ремувка, Hell Pass Silver, Apple Watch, пачки билетов), выключаем — иначе они
+  // продолжали бы выпадать в уже созданном сезоне.
+  const codes = PRIZE_CONFIG.map((p) => p.code);
+  await db
+    .update(spinPrizes)
+    .set({ active: false, baseChancePpm: 0 })
+    .where(
+      and(
+        eq(spinPrizes.seasonId, seasonId),
+        notInArray(spinPrizes.code, codes),
+      ),
+    );
+
   syncedSeasons.add(seasonId);
 }
 
@@ -359,17 +391,10 @@ function pickWeighted(items: Weighted[]): Weighted | null {
   return items[items.length - 1] ?? null;
 }
 
-/**
- * Урезание билетных призов. Сектора «3 билета» и «10 билетов» остаются в колесе
- * и в списке призов, но фактически начисляют 1 билет: бесплатных билетов
- * в обороте оказалось слишком много.
+/*
+ * В сезоне 2 билетные сектора начисляют ровно то, что написано: 1 и 3 билета.
+ * Урезания больше нет — вместо этого сами шансы низкие (0,7% и 0,25%).
  */
-const TICKET_CAP_CODES = new Set(["t3", "t10"]);
-
-function capTickets(prize: SpinPrize, byCode: Map<string, SpinPrize>): SpinPrize {
-  if (!TICKET_CAP_CODES.has(prize.code)) return prize;
-  return byCode.get("t1") ?? prize;
-}
 
 /**
  * Гарантия: в последний день сезона нераскрытый jackpot выдаём принудительно.
@@ -451,17 +476,11 @@ export async function rollSpin(userId: string, pwa: boolean): Promise<SpinResult
   let prize = chosen?.prize ?? byCode.get("xp100")!;
   let chancePpm = Math.round(chosen?.weight ?? 0);
 
-  // Silver Pass не выдаём тем, у кого уже есть активный пасс — подмена на 10 билетов.
-  if (prize.code === "silver") {
-    const active = await getActivePass(userId);
-    if (active) prize = byCode.get("t10")!;
-  }
   // Страховка на случай гонки: пул успел закончиться между чтением и записью.
+  // Подмена — 100 XP: билетами и пассами за пустой пул больше не расплачиваемся.
   if (prize.limitTotal != null && prize.issued >= prize.limitTotal) {
-    prize = byCode.get(prize.rewardKind === "jackpot" ? "t50" : "t10")!;
+    prize = byCode.get("xp100")!;
   }
-  prize = capTickets(prize, byCode);
-
 
   // Резервируем место в пуле атомарно.
   if (prize.limitTotal != null) {
@@ -476,7 +495,7 @@ export async function rollSpin(userId: string, pwa: boolean): Promise<SpinResult
       )
       .returning({ id: spinPrizes.id });
     if (res.length === 0) {
-      prize = capTickets(byCode.get(prize.rewardKind === "jackpot" ? "t50" : "t10")!, byCode);
+      prize = byCode.get("xp100")!;
     }
   }
 
@@ -595,6 +614,47 @@ async function grantPrize(
         expiresAt: new Date(Date.now() + 30 * 86_400_000),
       });
       return code;
+    }
+
+    case "promo_fixed": {
+      // Промокод фиксированной суммой (300/500/1000 ₽) с порогом заказа.
+      // Предохранители: живёт 48 часов и один активный на юзера —
+      // предыдущие неиспользованные промокоды спина гасим.
+      await db
+        .update(promoCodes)
+        .set({ active: false })
+        .where(
+          and(
+            eq(promoCodes.userId, userId),
+            eq(promoCodes.active, true),
+            sql`${promoCodes.usedAt} IS NULL`,
+            sql`${promoCodes.note} LIKE 'HellSpin%'`,
+          ),
+        );
+      const code = generatePromoCode("SPIN");
+      await db.insert(promoCodes).values({
+        code,
+        discountPct: 0,
+        discountAmountRub: prize.rewardValue,
+        minOrderRub: PROMO_MIN_ORDER[prize.code] ?? 0,
+        userId,
+        note: `HellSpin: ${prize.title}`,
+        expiresAt: new Date(Date.now() + PROMO_TTL_HOURS * 3_600_000),
+      });
+      return code;
+    }
+
+    case "pass_discount": {
+      // Личная скидка на Hell Pass на 24 часа: видна в кабинете, применяется
+      // и к покупке, и к апгрейду. Не суммируется с другими скидками.
+      await db
+        .update(users)
+        .set({
+          passDiscountPct: prize.rewardValue,
+          passDiscountUntil: new Date(Date.now() + PASS_DISCOUNT_TTL_HOURS * 3_600_000),
+        })
+        .where(eq(users.id, userId));
+      return undefined;
     }
 
     case "pass":

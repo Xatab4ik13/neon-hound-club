@@ -24,6 +24,7 @@ import {
   getActivePass,
   getPassHistory,
   getUpgradeCreditRub,
+  getPassSpinDiscount,
   PassPurchaseError,
   revokePass,
 } from "../lib/pass.js";
@@ -79,17 +80,30 @@ export async function passRoutes(app: FastifyInstance) {
     // вычитаем то, что он уже заплатил за активные пассы ниже тиром.
     const prices: Record<
       string,
-      { priceRub: number; creditRub: number; annual: { priceRub: number; creditRub: number } }
+      {
+        priceRub: number;
+        creditRub: number;
+        fullRub: number;
+        annual: { priceRub: number; creditRub: number; fullRub: number };
+      }
     > = {};
+    // Скидка из HellSpin (−20% на 24 часа) — та же формула, что в createPassPurchase.
+    const spinDiscount = await getPassSpinDiscount(session.sub);
+    const applyDiscount = (rub: number) =>
+      spinDiscount ? Math.max(0, rub - Math.floor((rub * spinDiscount.pct) / 100)) : rub;
     for (const tier of PASS_TIERS) {
       const creditRub = await getUpgradeCreditRub(session.sub, tier, "monthly");
       const annualCredit = await getUpgradeCreditRub(session.sub, tier, "annual");
+      const monthlyFull = Math.max(0, passPlan(tier, "monthly").priceRub - creditRub);
+      const annualFull = Math.max(0, passPlan(tier, "annual").priceRub - annualCredit);
       prices[tier] = {
         creditRub,
-        priceRub: Math.max(0, passPlan(tier, "monthly").priceRub - creditRub),
+        fullRub: monthlyFull,
+        priceRub: applyDiscount(monthlyFull),
         annual: {
           creditRub: annualCredit,
-          priceRub: Math.max(0, passPlan(tier, "annual").priceRub - annualCredit),
+          fullRub: annualFull,
+          priceRub: applyDiscount(annualFull),
         },
       };
     }
@@ -100,6 +114,9 @@ export async function passRoutes(app: FastifyInstance) {
       durationDays: PASS_DURATION_DAYS,
       annualDurationDays: PASS_ANNUAL_DURATION_DAYS,
       prices,
+      spinDiscount: spinDiscount
+        ? { pct: spinDiscount.pct, expiresAt: spinDiscount.expiresAt.toISOString() }
+        : null,
     };
   });
 

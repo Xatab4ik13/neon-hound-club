@@ -81,7 +81,9 @@ export async function validatePromoForUser(
   if (promo.userId && promo.userId !== userId) {
     throw new PromoError("promo_foreign", "Этот промокод выписан на другого райдера");
   }
-  if (promo.discountPct <= 0) throw new PromoError("promo_invalid", "Промокод не даёт скидку");
+  if (promo.discountPct <= 0 && promo.discountAmountRub <= 0) {
+    throw new PromoError("promo_invalid", "Промокод не даёт скидку");
+  }
 
   const targets = promoTargetProductIds(promo);
   if (targets.length > 0) {

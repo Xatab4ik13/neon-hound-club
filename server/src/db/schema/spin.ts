@@ -27,11 +27,13 @@ export type SpinRarity = "common" | "rare" | "epic" | "legend";
 export type SpinRewardKind =
   | "xp"
   | "tickets"
-  | "promo"
+  | "promo" // промокод в процентах (сезон 1, больше не выдаётся)
+  | "promo_fixed" // промокод фиксированной суммой: 300 / 500 / 1000 ₽
+  | "pass_discount" // личная скидка на Hell Pass на 24 часа
   | "bonus_spin"
   | "merch" // физический приз, отправляем руками (ремувка, носки)
   | "pass" // Hell Pass на 30 дней
-  | "jackpot" // AirPods / Watch / PS5
+  | "jackpot" // AirPods / шлем AGV / PS5
   | "ticket_boost"; // Капсула ×2: двойные билеты за цифру на 24 часа
 
 /** Сезон рулетки = календарный месяц. */

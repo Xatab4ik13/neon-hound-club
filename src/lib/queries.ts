@@ -372,17 +372,23 @@ export async function fetchPassMe() {
     daysLeft: number | null;
     durationDays: number;
     annualDurationDays?: number;
-    /** Персональная цена тира: при апгрейде уже вычтено уплаченное за низкие тиры. */
+    /**
+     * Персональная цена тира: при апгрейде уже вычтено уплаченное за низкие тиры,
+     * а также применена скидка из HellSpin. fullRub — цена без этой скидки.
+     */
     prices?: Partial<
       Record<
         PassTier,
         {
           priceRub: number;
           creditRub: number;
-          annual?: { priceRub: number; creditRub: number };
+          fullRub?: number;
+          annual?: { priceRub: number; creditRub: number; fullRub?: number };
         }
       >
     >;
+    /** Личная скидка на Hell Pass из HellSpin, пока активна. */
+    spinDiscount?: { pct: number; expiresAt: string } | null;
   }>("/api/v1/pass/me");
 }
 

@@ -519,6 +519,13 @@
       "when": 1787400000000,
       "tag": "0073_boost_mult",
       "breakpoints": true
+    },
+    {
+      "idx": 74,
+      "version": "7",
+      "when": 1787500000000,
+      "tag": "0074_spin_season2",
+      "breakpoints": true
     }
   ]
 }
