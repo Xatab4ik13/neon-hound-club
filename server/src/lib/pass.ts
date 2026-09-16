@@ -204,16 +204,27 @@ export async function getActivePass(userId: string) {
 }
 
 /**
- * Зачёт при апгрейде: сумма фактически уплаченного за активные пассы НИЖЕ тиром.
- * Silver 490 + Gold 1290 -> Platinum 2190 стоит 410 ₽. Бесплатные пассы = 0.
+ * Зачёт при апгрейде: сумма фактически уплаченного за активные пассы НИЖЕ тиром
+ * и с ТЕМ ЖЕ периодом. Silver 490 + Gold 1290 -> Platinum 2190 стоит 410 ₽.
+ * Бесплатные пассы = 0. Месячный пасс не зачитывается в годовой и наоборот —
+ * иначе годовой Silver обнулял бы цену месячного Platinum.
  */
-export async function getUpgradeCreditRub(userId: string, target: PassTier): Promise<number> {
+export async function getUpgradeCreditRub(
+  userId: string,
+  target: PassTier,
+  period: PassPeriod = "monthly",
+): Promise<number> {
   const rows = await getActivePasses(userId);
   const targetRank = TIER_RANK[target];
   return rows
-    .filter((r) => (TIER_RANK[r.tier as PassTier] ?? 0) < targetRank)
+    .filter(
+      (r) =>
+        (TIER_RANK[r.tier as PassTier] ?? 0) < targetRank &&
+        (r.period ?? "monthly") === period,
+    )
     .reduce((sum, r) => sum + (r.priceRub ?? 0), 0);
 }
+
 
 /** История покупок пасса. */
 export async function getPassHistory(userId: string, limit = 20) {
