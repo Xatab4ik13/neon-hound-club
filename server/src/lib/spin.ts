@@ -818,27 +818,21 @@ export const STREAK_MILESTONES = [10, 20, 30] as const;
 export type StreakMilestone = (typeof STREAK_MILESTONES)[number];
 
 const MILESTONE_TITLE: Record<StreakMilestone, string> = {
-  10: "Hell Pass Silver + 5 билетов",
-  20: "Носки",
-  30: "Hell Pass Gold + 20 билетов",
+  10: "Капсула ×3 на 48 часов",
+  20: "Легендарная футболка",
+  30: "100 билетов",
 };
 
-/**
- * Ищет ВСЕ товары «носки» в магазине (белые, розовые и т.д.).
- * Промокод-приз календаря действует на любые носки.
- */
-async function findSocksProductIds(): Promise<string[]> {
-  const rows = await db
-    .select({ id: products.id })
-    .from(products)
-    .where(sql`${products.title} ILIKE '%носк%' AND ${products.active} = true`)
-    .orderBy(products.createdAt);
-  return rows.map((r) => r.id);
-}
+/** Календарь активности — только для владельцев Hell Pass Platinum. */
+export const STREAK_TIER: SpinTier = "platinum";
 
 /** Забрать награду календаря активности. Физика уходит в spin_winners. */
 export async function claimStreakMilestone(userId: string, milestone: StreakMilestone) {
   const season = await ensureCurrentSeason();
+  const tier = await getTier(userId);
+  if (tier !== STREAK_TIER) {
+    throw new SpinError("no_platinum", "Календарь активности — только для Hell Pass Platinum.");
+  }
   const streak = await getActiveStreak(userId);
 
   if (!streak || streak.daysCount < milestone) {
