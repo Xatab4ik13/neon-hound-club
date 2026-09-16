@@ -41,7 +41,11 @@ export class PassPurchaseError extends Error {
  *  - тир выше разрешён = апгрейд (+30 дней к остатку, новый пакет билетов).
  * Реальная оплата подключится позже — пока админ активирует руками или вебхуком.
  */
-export async function createPassPurchase(userId: string, tier: PassTier) {
+export async function createPassPurchase(
+  userId: string,
+  tier: PassTier,
+  period: PassPeriod = "monthly",
+) {
   const active = await getActivePass(userId);
   if (active) {
     const activeRank = TIER_RANK[active.tier as PassTier] ?? 0;
@@ -53,24 +57,26 @@ export async function createPassPurchase(userId: string, tier: PassTier) {
       );
     }
   }
-  const cfg = PASS_CONFIG[tier];
+  const plan = passPlan(tier, period);
   // Апгрейд: из цены нового тира вычитаем то, что юзер уже заплатил за активные
-  // пассы ниже тиром. Бесплатные (спин/грант) стоили 0 — зачёта не дают.
-  const credit = await getUpgradeCreditRub(userId, tier);
-  const priceRub = Math.max(0, cfg.priceRub - credit);
+  // пассы ниже тиром с ТЕМ ЖЕ периодом. Бесплатные (спин/грант) стоили 0 — зачёта не дают.
+  const credit = await getUpgradeCreditRub(userId, tier, period);
+  const priceRub = Math.max(0, plan.priceRub - credit);
   const [row] = await db
     .insert(passPurchases)
     .values({
       userId,
       tier,
+      period,
       priceRub,
-      ticketsGranted: cfg.tickets,
+      ticketsGranted: plan.tickets,
       status: "pending_payment",
       source: "purchase",
     })
     .returning();
   return row!;
 }
+
 
 /**
  * Активировать пасс (после оплаты).
