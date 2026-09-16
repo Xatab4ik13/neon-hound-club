@@ -514,7 +514,11 @@ export async function rollSpin(userId: string, pwa: boolean): Promise<SpinResult
   let streakDays: number;
   try {
     promoCode = await grantPrize(userId, season.id, spinRow!.id, prize);
-    streakDays = await bumpStreak(userId, season.id, day);
+    // Календарь активности считается только владельцам Platinum.
+    streakDays =
+      tier === "platinum"
+        ? await bumpStreak(userId, season.id, day)
+        : (await getActiveStreak(userId))?.daysCount ?? 0;
   } catch (grantErr) {
     await db
       .update(spinDaily)
