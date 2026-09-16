@@ -416,10 +416,12 @@ export async function markOrderPaid(orderId: string): Promise<{ ok: boolean; rea
   let creditAmount = order.bonusTicketsTotal;
   let boostApplied = false;
   let boostBonus = 0;
+  let boostMult = 2;
   if (allElectronic && creditAmount > 0) {
     const boost = await getTicketBoost(order.userId);
     if (boost.active) {
-      boostBonus = order.bonusTicketsTotal;
+      boostMult = boost.mult;
+      boostBonus = order.bonusTicketsTotal * (boostMult - 1);
       creditAmount += boostBonus;
       boostApplied = true;
     }
@@ -432,7 +434,7 @@ export async function markOrderPaid(orderId: string): Promise<{ ok: boolean; rea
       amount: creditAmount,
       source: "product_bonus",
       reason: boostApplied
-        ? `Бонус за заказ #${order.id.slice(0, 8)} (×2 капсула)`
+        ? `Бонус за заказ #${order.id.slice(0, 8)} (×${boostMult} капсула)`
         : `Бонус за заказ #${order.id.slice(0, 8)}`,
       refType: "order",
       refId: order.id,
