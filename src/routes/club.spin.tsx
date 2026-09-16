@@ -170,7 +170,7 @@ type SpinState = {
   tier: SpinTier;
   season: { periodKey: string; daysTotal: number; startsAt?: string; endsAt: string };
   spins: { allowed: number; used: number; left: number };
-  streak: { days: number; claimed: number[]; eligible?: boolean };
+  streak: { days: number; claimed: number[]; eligible?: boolean; daysTotal?: number };
   history: { prizeCode: string; title: string; at: string }[];
   capsule?: { active: boolean; expiresAt: string | null; mult?: number };
 };
@@ -231,9 +231,11 @@ function SpinPage() {
   const stripRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number | null>(null);
 
+  // Календарь активности — 30 дней (внутри 45-дневного сезона).
+  const streakTotal = state?.streak.daysTotal ?? 30;
   const dayTicks = useMemo(
-    () => Array.from({ length: state?.season.daysTotal ?? 30 }, (_, i) => i + 1),
-    [state?.season.daysTotal],
+    () => Array.from({ length: streakTotal }, (_, i) => i + 1),
+    [streakTotal],
   );
 
   const loadState = useMemo(
@@ -629,7 +631,7 @@ function SpinPage() {
             Календарь активности
           </h2>
           <span className="flex items-center gap-1 text-muted-foreground">
-            <PlumpNum value={`${streak}/30`} size={13} />
+            <PlumpNum value={`${streak}/${streakTotal}`} size={13} />
             <span className="font-mono text-[10px] uppercase tracking-widest">дней</span>
           </span>
         </div>
