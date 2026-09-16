@@ -4,12 +4,16 @@ import {
   passPurchases,
   PASS_CONFIG,
   PASS_DURATION_DAYS,
+  PASS_ANNUAL_DURATION_DAYS,
   PASS_PENDING_TTL_MINUTES,
+  passPlan,
+  type PassPeriod,
   type PassTier,
 } from "../db/schema/pass.js";
 import { userStickerPacks } from "../db/schema/stickers.js";
 import { ticketCredit } from "./tickets.js";
 import { awardXp } from "./xp.js";
+
 
 /** Стикерпаки, которые выдаются бесплатно при активации Hell Pass (любой тир). */
 const PASS_STICKER_PACKS = ["special", "hell-minions"] as const;
