@@ -170,7 +170,7 @@ type SpinState = {
   tier: SpinTier;
   season: { periodKey: string; daysTotal: number; startsAt?: string; endsAt: string };
   spins: { allowed: number; used: number; left: number };
-  streak: { days: number; claimed: number[]; eligible?: boolean };
+  streak: { days: number; claimed: number[]; eligible?: boolean; daysTotal?: number };
   history: { prizeCode: string; title: string; at: string }[];
   capsule?: { active: boolean; expiresAt: string | null; mult?: number };
 };
