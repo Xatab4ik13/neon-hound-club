@@ -87,6 +87,49 @@ export const PASS_CONFIG: Record<PassTier, { priceRub: number; tickets: number; 
 
 export const PASS_DURATION_DAYS = 30;
 
+// ─── ГОДОВОЙ PASS ──────────────────────────────────────────────────────────
+// Разовая покупка на 365 дней. Цена ~половина от 12 месяцев,
+// пакет билетов = месячный ×12 + 20% бонусом (начисляется сразу при активации).
+
+export const PASS_PERIODS = ["monthly", "annual"] as const;
+export type PassPeriod = (typeof PASS_PERIODS)[number];
+
+export const PASS_ANNUAL_DURATION_DAYS = 365;
+
+export const PASS_ANNUAL_CONFIG: Record<PassTier, { priceRub: number; tickets: number }> = {
+  silver: { priceRub: 2990, tickets: 45 },
+  gold: { priceRub: 7900, tickets: 150 },
+  platinum: { priceRub: 12900, tickets: 450 },
+};
+
+/** Цена и пакет билетов для конкретной пары тир+период. */
+export function passPlan(tier: PassTier, period: PassPeriod) {
+  const monthly = PASS_CONFIG[tier];
+  if (period === "annual") {
+    const a = PASS_ANNUAL_CONFIG[tier];
+    const fullRub = monthly.priceRub * 12;
+    return {
+      priceRub: a.priceRub,
+      tickets: a.tickets,
+      durationDays: PASS_ANNUAL_DURATION_DAYS,
+      aiQuestions: monthly.aiQuestions,
+      fullRub,
+      saveRub: fullRub - a.priceRub,
+      savePct: Math.round(((fullRub - a.priceRub) / fullRub) * 100),
+    };
+  }
+  return {
+    priceRub: monthly.priceRub,
+    tickets: monthly.tickets,
+    durationDays: PASS_DURATION_DAYS,
+    aiQuestions: monthly.aiQuestions,
+    fullRub: monthly.priceRub,
+    saveRub: 0,
+    savePct: 0,
+  };
+}
+
+
 export const PASS_SOURCES = ["purchase", "spin", "streak", "grant"] as const;
 export type PassSource = (typeof PASS_SOURCES)[number];
 
