@@ -192,6 +192,11 @@ function TierCard({
               ₽ / 30 дней
             </span>
           </div>
+          <div className="mt-1 inline-flex items-center gap-1.5 rounded-full border-2 border-black bg-black px-2 py-0.5 font-mono text-[9px] font-bold uppercase tracking-widest text-white">
+            год {tier.annualPrice.toLocaleString("ru-RU")} ₽ · −
+            {Math.round(((tier.price * 12 - tier.annualPrice) / (tier.price * 12)) * 100)}%
+          </div>
+
         </div>
       </div>
 
