@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, timestamp, boolean, index } from "drizzle-orm/pg-core";
+import { pgTable, uuid, varchar, timestamp, boolean, smallint, index } from "drizzle-orm/pg-core";
 
 export const users = pgTable(
   "users",
@@ -21,6 +21,8 @@ export const users = pgTable(
     // Капсула ×2 из HellSpin: до этого момента действует двойное начисление
     // билетов за цифровые товары. NULL — капсулы нет.
     ticketBoostUntil: timestamp("ticket_boost_until", { withTimezone: true }),
+    /** Множитель активной капсулы: 2 (спин) или 3 (календарь активности, 10/30). */
+    ticketBoostMult: smallint("ticket_boost_mult").notNull().default(2),
   },
   (t) => ({
     emailIdx: index("users_email_idx").on(t.email),
