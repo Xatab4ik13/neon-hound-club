@@ -231,9 +231,11 @@ function SpinPage() {
   const stripRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number | null>(null);
 
+  // Календарь активности — 30 дней (внутри 45-дневного сезона).
+  const streakTotal = state?.streak.daysTotal ?? 30;
   const dayTicks = useMemo(
-    () => Array.from({ length: state?.season.daysTotal ?? 30 }, (_, i) => i + 1),
-    [state?.season.daysTotal],
+    () => Array.from({ length: streakTotal }, (_, i) => i + 1),
+    [streakTotal],
   );
 
   const loadState = useMemo(
