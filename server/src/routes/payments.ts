@@ -93,8 +93,10 @@ function paymentRedirectDocument(url: string): string {
 const passRedirectSchema = z.object({
   target: z.literal("pass"),
   tier: z.enum(PASS_TIERS),
+  period: z.enum(PASS_PERIODS).optional(),
   method: z.enum(PAYMENT_METHODS).optional(),
 });
+
 
 const orderItemSchema = z.object({
   productId: z.string().uuid(),
