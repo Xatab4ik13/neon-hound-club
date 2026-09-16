@@ -25,20 +25,34 @@ import { isRaifConfigured } from "../lib/raif.js";
 
 const purchaseSchema = z.object({
   tier: z.enum(PASS_TIERS),
+  period: z.enum(PASS_PERIODS).optional(),
   method: z.enum(["card", "sbp"]).optional(),
 });
 
 export async function passRoutes(app: FastifyInstance) {
-  // GET /api/v1/pass/tiers — публичный прайс/состав по тирам
+  // GET /api/v1/pass/tiers — публичный прайс/состав по тирам, месяц и год
   app.get("/tiers", async () => {
     return {
-      durationDays: 30,
-      tiers: Object.entries(PASS_CONFIG).map(([tier, cfg]) => ({
-        tier,
-        priceRub: cfg.priceRub,
-        tickets: cfg.tickets,
-        aiQuestions: cfg.aiQuestions, // null = без лимита
-      })),
+      durationDays: PASS_DURATION_DAYS,
+      annualDurationDays: PASS_ANNUAL_DURATION_DAYS,
+      tiers: PASS_TIERS.map((tier) => {
+        const monthly = passPlan(tier, "monthly");
+        const annual = passPlan(tier, "annual");
+        return {
+          tier,
+          priceRub: monthly.priceRub,
+          tickets: monthly.tickets,
+          aiQuestions: monthly.aiQuestions,
+          annual: {
+            priceRub: annual.priceRub,
+            tickets: annual.tickets,
+            fullRub: annual.fullRub,
+            saveRub: annual.saveRub,
+            savePct: annual.savePct,
+            perMonthRub: Math.round(annual.priceRub / 12),
+          },
+        };
+      }),
     };
   });
 
@@ -52,18 +66,34 @@ export async function passRoutes(app: FastifyInstance) {
       const ms = new Date(active.expiresAt).getTime() - Date.now();
       daysLeft = Math.max(0, Math.ceil(ms / (24 * 60 * 60 * 1000)));
     }
-    // Цена каждого тира лично для этого юзера: при апгрейде вычитаем то,
-    // что он уже заплатил за активные пассы ниже тиром.
-    const prices: Record<string, { priceRub: number; creditRub: number }> = {};
+    // Цена каждого тира лично для этого юзера, по обоим периодам: при апгрейде
+    // вычитаем то, что он уже заплатил за активные пассы ниже тиром.
+    const prices: Record<
+      string,
+      { priceRub: number; creditRub: number; annual: { priceRub: number; creditRub: number } }
+    > = {};
     for (const tier of PASS_TIERS) {
-      const creditRub = await getUpgradeCreditRub(session.sub, tier);
+      const creditRub = await getUpgradeCreditRub(session.sub, tier, "monthly");
+      const annualCredit = await getUpgradeCreditRub(session.sub, tier, "annual");
       prices[tier] = {
         creditRub,
-        priceRub: Math.max(0, PASS_CONFIG[tier].priceRub - creditRub),
+        priceRub: Math.max(0, passPlan(tier, "monthly").priceRub - creditRub),
+        annual: {
+          creditRub: annualCredit,
+          priceRub: Math.max(0, passPlan(tier, "annual").priceRub - annualCredit),
+        },
       };
     }
-    return { active, history, daysLeft, durationDays: PASS_DURATION_DAYS, prices };
+    return {
+      active,
+      history,
+      daysLeft,
+      durationDays: PASS_DURATION_DAYS,
+      annualDurationDays: PASS_ANNUAL_DURATION_DAYS,
+      prices,
+    };
   });
+
 
   // POST /api/v1/pass/purchase — создать запись pending_payment и сразу инициировать
   // платёж в Т-Банке (если терминал сконфигурирован). Возвращает paymentUrl для редиректа.
