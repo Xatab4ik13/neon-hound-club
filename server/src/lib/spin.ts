@@ -849,55 +849,29 @@ export async function claimStreakMilestone(userId: string, milestone: StreakMile
 
   let promoCode: string | undefined;
 
-  // 10 дней — Hell Pass Silver + 5 билетов.
+  // 10 дней — капсула ×3 на 48 часов.
   if (milestone === 10) {
-    await grantPass(userId, "silver", "Календарь активности 10/30", "streak");
-    await ticketCredit({
-      userId,
-      amount: 5,
-      source: "spin",
-      reason: "Календарь активности 10/30",
-      refType: "spin_streak",
-      refId: streak.id,
-      idempotent: true,
-    });
+    await grantTicketBoost(userId, { mult: 3, hours: 48, source: "streak" });
   }
 
-  // 20 дней — носки: персональный промокод на 100% скидку, юзер платит только доставку.
+  // 20 дней — легендарная футболка бесплатно. Уходит в spin_winners на выдачу вручную.
   if (milestone === 20) {
-    const socksIds = await findSocksProductIds();
-    if (socksIds.length > 0) {
-      const code = generatePromoCode("SOCK");
-      await db.insert(promoCodes).values({
-        code,
-        discountPct: 100,
-        userId,
-        productId: socksIds[0]!,
-        productIds: socksIds,
-        note: "Календарь активности: носки (любые)",
-        expiresAt: new Date(Date.now() + 60 * 86_400_000),
-      });
-      promoCode = code;
-    }
     await db.insert(spinWinners).values({
       userId,
       seasonId: season.id,
       source: "streak",
-      prizeCode: "socks",
-      prizeTitle: "Носки (20/30)",
-      status: promoCode ? "contacted" : "pending",
-      adminNote: promoCode
-        ? `Промокод ${promoCode} — 100% на любые носки, юзер оплачивает только доставку`
-        : "Товар «носки» не найден в магазине — выдать вручную",
+      prizeCode: "tshirt_legend",
+      prizeTitle: "Легендарная футболка (20/30)",
+      status: "pending",
+      adminNote: "Календарь активности 20/30 — футболка бесплатно, уточнить размер и адрес",
     });
   }
 
-  // 30 дней — Hell Pass Gold + 20 билетов. После выдачи полоса стартует заново.
+  // 30 дней — 100 билетов. После выдачи полоса стартует заново.
   if (milestone === 30) {
-    await grantPass(userId, "gold", "Календарь активности 30/30", "streak");
     await ticketCredit({
       userId,
-      amount: 20,
+      amount: 100,
       source: "spin",
       reason: "Календарь активности 30/30",
       refType: "spin_streak",
