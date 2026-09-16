@@ -29,6 +29,11 @@ export type Tier = {
   id: string;
   name: string;
   price: number;
+  /** Цена за год (разовый платёж, 365 дней). */
+  annualPrice: number;
+  /** Сколько билетов начисляется сразу при активации годового. */
+  annualTickets: number;
+
   /** Цвет тира — для подсветки. */
   color: string;
   /** Из какого тира наследуются все плюшки. */
@@ -271,6 +276,8 @@ export const TIERS: Tier[] = [
     id: "PASS-01-SILVER",
     name: "Silver",
     price: 490,
+    annualPrice: 2990,
+    annualTickets: 45,
     color: "#B6FF3C",
     tagline: "Вход в клуб. Билеты, Hell AI, все стикерпаки бесплатно, скидка 5%.",
     forWhom:
@@ -283,6 +290,8 @@ export const TIERS: Tier[] = [
     id: "PASS-02-GOLD",
     name: "Gold",
     price: 1290,
+    annualPrice: 7900,
+    annualTickets: 150,
     color: "#FF8A3C",
     inheritsFrom: "Silver",
     tagline: "Больше билетов и Hell AI-вопросов, скидка 10%. Все стикерпаки — с Silver.",
@@ -297,6 +306,8 @@ export const TIERS: Tier[] = [
     id: "PASS-03-PLATINUM",
     name: "Platinum",
     price: 2190,
+    annualPrice: 12900,
+    annualTickets: 450,
     color: "#F000C0",
     inheritsFrom: "Gold",
     tagline: "VIP-чат с Hell, Hell AI без лимита, 30 билетов, скидка 15%.",

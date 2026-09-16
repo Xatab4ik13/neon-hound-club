@@ -6,7 +6,7 @@
 
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { PlumpArrowLeft as ArrowLeft, Check } from "@/components/ui/icons";
 import { PayButton } from "@/components/brand/PayButton";
 import { hhToast } from "@/lib/hh-toast";
@@ -99,11 +99,22 @@ function TierDetailPage() {
   const targetRank = TIER_RANK[tier.slug as PassTier];
   const isSameTier = active?.tier === tier.slug;
   const isUpgrade = active && targetRank > activeRank;
+  const isDowngrade = active && targetRank < activeRank;
+
+  // Период: 30 дней или год. Год — разовый платёж, выгоднее почти в 2 раза.
+  const [period, setPeriod] = useState<"monthly" | "annual">("annual");
+  const isAnnual = period === "annual";
+  const listRub = isAnnual ? tier.annualPrice : tier.price;
+  const yearFull = tier.price * 12;
+  const saveRub = yearFull - tier.annualPrice;
+  const savePct = Math.round((saveRub / yearFull) * 100);
+  const perMonth = Math.round(tier.annualPrice / 12);
+
   // Персональная цена с зачётом уплаченного за активные пассы ниже тиром.
   const personal = passQ.data?.prices?.[tier.slug as PassTier] ?? null;
-  const creditRub = isUpgrade ? (personal?.creditRub ?? 0) : 0;
-  const payRub = creditRub > 0 ? (personal?.priceRub ?? tier.price) : tier.price;
-  const isDowngrade = active && targetRank < activeRank;
+  const personalForPeriod = isAnnual ? personal?.annual : personal;
+  const creditRub = isUpgrade ? (personalForPeriod?.creditRub ?? 0) : 0;
+  const payRub = creditRub > 0 ? (personalForPeriod?.priceRub ?? listRub) : listRub;
 
   // Перехват submit: если не залогинен — на /login; если даунгрейд — блок.
   const guard = (e: React.FormEvent<HTMLFormElement>) => {
@@ -119,15 +130,19 @@ function TierDetailPage() {
   };
 
   const isPlatinum = tier.ultimate;
+  const periodLabel = isAnnual ? "на год" : "на 30 дней";
   const baseLabel = !isAuthed
     ? "Войти и оплатить"
     : isDowngrade
       ? `Уже выше — ${active!.tier.toUpperCase()}`
       : isSameTier
-        ? "Продлить на 30 дней"
+        ? `Продлить ${periodLabel}`
         : isUpgrade
           ? "Апгрейд — оплатить"
-          : "Оплатить";
+          : isAnnual
+            ? "Оплатить год"
+            : "Оплатить";
+
 
   return (
     <main className="mx-auto w-full max-w-5xl px-4 py-8 md:px-8 md:py-12">
@@ -227,7 +242,48 @@ function TierDetailPage() {
               }}
             />
             <div className="relative">
-              <div className="font-mono text-[10px] font-bold uppercase tracking-widest text-white/50">
+              {/* Переключатель периода: год стоит первым и подсвечен как выгодный */}
+              <div
+                className="grid grid-cols-2 gap-1 border p-1"
+                style={{ borderColor: `${tier.color}33` }}
+                role="group"
+                aria-label="Период доступа"
+              >
+                <button
+                  type="button"
+                  onClick={() => setPeriod("annual")}
+                  aria-pressed={isAnnual}
+                  className="relative flex flex-col items-center px-2 py-2 font-mono text-[10px] font-bold uppercase tracking-widest transition-colors"
+                  style={
+                    isAnnual
+                      ? { background: tier.color, color: "#000" }
+                      : { color: "rgba(255,255,255,0.5)" }
+                  }
+                >
+                  Год
+                  <span className="mt-0.5 text-[9px] font-bold tracking-widest">
+                    −{savePct}%
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPeriod("monthly")}
+                  aria-pressed={!isAnnual}
+                  className="flex flex-col items-center px-2 py-2 font-mono text-[10px] font-bold uppercase tracking-widest transition-colors"
+                  style={
+                    !isAnnual
+                      ? { background: tier.color, color: "#000" }
+                      : { color: "rgba(255,255,255,0.5)" }
+                  }
+                >
+                  30 дней
+                  <span className="mt-0.5 text-[9px] tracking-widest opacity-60">
+                    {tier.price.toLocaleString("ru-RU")} ₽
+                  </span>
+                </button>
+              </div>
+
+              <div className="mt-4 font-mono text-[10px] font-bold uppercase tracking-widest text-white/50">
                 Стоимость
               </div>
               <div className="mt-2 flex items-baseline gap-2">
@@ -239,13 +295,33 @@ function TierDetailPage() {
                 </span>
                 {creditRub > 0 && (
                   <span className="font-mono text-lg text-white/35 line-through">
-                    {tier.price.toLocaleString("ru-RU")} ₽
+                    {listRub.toLocaleString("ru-RU")} ₽
                   </span>
                 )}
                 <span className="font-mono text-xs uppercase tracking-widest text-white/40">
-                  / 30 дней
+                  {isAnnual ? "/ 365 дней" : "/ 30 дней"}
                 </span>
               </div>
+
+              {isAnnual && (
+                <div
+                  className="mt-3 border px-3 py-2"
+                  style={{ borderColor: `${tier.color}55`, background: `${tier.color}12` }}
+                >
+                  <div className="font-mono text-[11px] font-bold uppercase tracking-widest" style={{ color: tier.color }}>
+                    Экономия {saveRub.toLocaleString("ru-RU")} ₽
+                  </div>
+                  <div className="mt-1 font-mono text-[10px] uppercase tracking-widest text-white/50">
+                    {perMonth.toLocaleString("ru-RU")} ₽ в месяц вместо{" "}
+                    {tier.price.toLocaleString("ru-RU")} ₽ · 12 месяцев по цене{" "}
+                    {Math.round(tier.annualPrice / tier.price)} мес.
+                  </div>
+
+                  <div className="mt-2 font-mono text-[10px] uppercase tracking-widest text-white/70">
+                    + {tier.annualTickets} билетов сразу при активации
+                  </div>
+                </div>
+              )}
 
               {creditRub > 0 && (
                 <div className="mt-3 border border-primary/30 bg-primary/10 px-3 py-2 font-mono text-[10px] uppercase tracking-widest text-primary">
@@ -264,6 +340,7 @@ function TierDetailPage() {
                 <form method="POST" action={PAY_ACTION} onSubmit={guard}>
                   <input type="hidden" name="target" value="pass" />
                   <input type="hidden" name="tier" value={tier.slug} />
+                  <input type="hidden" name="period" value={period} />
                   <input type="hidden" name="method" value="sbp" />
                   <PayButton
                     type="submit"
@@ -279,13 +356,19 @@ function TierDetailPage() {
                 {isDowngrade
                   ? "Тир ниже текущего недоступен. Дождись окончания активного пасса."
                   : isSameTier
-                    ? "Разовая оплата. Продлит доступ ещё на 30 дней."
+                    ? isAnnual
+                      ? "Разовая оплата. Продлит доступ ещё на 365 дней."
+                      : "Разовая оплата. Продлит доступ ещё на 30 дней."
                     : isUpgrade
                       ? creditRub > 0
-                        ? "Апгрейд со зачётом: платишь только разницу. Срок — 30 дней."
-                        : "Апгрейд. Оплата по цене нового тира, срок — 30 дней."
-                      : "Разовая оплата. Доступ 30 дней с момента оплаты."}
+                        ? `Апгрейд со зачётом: платишь только разницу. Срок — ${isAnnual ? "365" : "30"} дней.`
+                        : `Апгрейд. Оплата по цене нового тира, срок — ${isAnnual ? "365" : "30"} дней.`
+                      : isAnnual
+                        ? "Разовая оплата. Доступ 365 дней с момента оплаты. Без автопродления."
+                        : "Разовая оплата. Доступ 30 дней с момента оплаты."}
               </div>
+
+
             </div>
           </div>
         </aside>

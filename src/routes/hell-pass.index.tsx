@@ -158,6 +158,11 @@ function TierCard({ tier, index }: { tier: Tier; index: number }) {
             <div className="font-mono text-[10px] font-bold uppercase tracking-widest text-black/60">
               в месяц
             </div>
+            <div className="mt-2 rounded-full bg-black px-2.5 py-1 font-mono text-[9px] font-bold uppercase tracking-widest text-white">
+              год {tier.annualPrice.toLocaleString("ru-RU")} ₽ · −
+              {Math.round(((tier.price * 12 - tier.annualPrice) / (tier.price * 12)) * 100)}%
+            </div>
+
             <Link
               to="/hell-pass/$tier"
               params={{ tier: tier.slug }}

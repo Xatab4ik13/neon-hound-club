@@ -4,12 +4,16 @@ import {
   passPurchases,
   PASS_CONFIG,
   PASS_DURATION_DAYS,
+  PASS_ANNUAL_DURATION_DAYS,
   PASS_PENDING_TTL_MINUTES,
+  passPlan,
+  type PassPeriod,
   type PassTier,
 } from "../db/schema/pass.js";
 import { userStickerPacks } from "../db/schema/stickers.js";
 import { ticketCredit } from "./tickets.js";
 import { awardXp } from "./xp.js";
+
 
 /** Стикерпаки, которые выдаются бесплатно при активации Hell Pass (любой тир). */
 const PASS_STICKER_PACKS = ["special", "hell-minions"] as const;
@@ -37,7 +41,11 @@ export class PassPurchaseError extends Error {
  *  - тир выше разрешён = апгрейд (+30 дней к остатку, новый пакет билетов).
  * Реальная оплата подключится позже — пока админ активирует руками или вебхуком.
  */
-export async function createPassPurchase(userId: string, tier: PassTier) {
+export async function createPassPurchase(
+  userId: string,
+  tier: PassTier,
+  period: PassPeriod = "monthly",
+) {
   const active = await getActivePass(userId);
   if (active) {
     const activeRank = TIER_RANK[active.tier as PassTier] ?? 0;
@@ -49,24 +57,26 @@ export async function createPassPurchase(userId: string, tier: PassTier) {
       );
     }
   }
-  const cfg = PASS_CONFIG[tier];
+  const plan = passPlan(tier, period);
   // Апгрейд: из цены нового тира вычитаем то, что юзер уже заплатил за активные
-  // пассы ниже тиром. Бесплатные (спин/грант) стоили 0 — зачёта не дают.
-  const credit = await getUpgradeCreditRub(userId, tier);
-  const priceRub = Math.max(0, cfg.priceRub - credit);
+  // пассы ниже тиром с ТЕМ ЖЕ периодом. Бесплатные (спин/грант) стоили 0 — зачёта не дают.
+  const credit = await getUpgradeCreditRub(userId, tier, period);
+  const priceRub = Math.max(0, plan.priceRub - credit);
   const [row] = await db
     .insert(passPurchases)
     .values({
       userId,
       tier,
+      period,
       priceRub,
-      ticketsGranted: cfg.tickets,
+      ticketsGranted: plan.tickets,
       status: "pending_payment",
       source: "purchase",
     })
     .returning();
   return row!;
 }
+
 
 /**
  * Активировать пасс (после оплаты).
@@ -101,7 +111,9 @@ export async function activatePassPurchase(purchaseId: string): Promise<{ ok: bo
       .limit(1);
 
     const base = otherActive?.expiresAt && otherActive.expiresAt > now ? otherActive.expiresAt : now;
-    const expiresAt = new Date(base.getTime() + PASS_DURATION_DAYS * 24 * 60 * 60 * 1000);
+    const days = p.period === "annual" ? PASS_ANNUAL_DURATION_DAYS : PASS_DURATION_DAYS;
+    const expiresAt = new Date(base.getTime() + days * 24 * 60 * 60 * 1000);
+
 
     await db
       .update(passPurchases)
@@ -192,16 +204,27 @@ export async function getActivePass(userId: string) {
 }
 
 /**
- * Зачёт при апгрейде: сумма фактически уплаченного за активные пассы НИЖЕ тиром.
- * Silver 490 + Gold 1290 -> Platinum 2190 стоит 410 ₽. Бесплатные пассы = 0.
+ * Зачёт при апгрейде: сумма фактически уплаченного за активные пассы НИЖЕ тиром
+ * и с ТЕМ ЖЕ периодом. Silver 490 + Gold 1290 -> Platinum 2190 стоит 410 ₽.
+ * Бесплатные пассы = 0. Месячный пасс не зачитывается в годовой и наоборот —
+ * иначе годовой Silver обнулял бы цену месячного Platinum.
  */
-export async function getUpgradeCreditRub(userId: string, target: PassTier): Promise<number> {
+export async function getUpgradeCreditRub(
+  userId: string,
+  target: PassTier,
+  period: PassPeriod = "monthly",
+): Promise<number> {
   const rows = await getActivePasses(userId);
   const targetRank = TIER_RANK[target];
   return rows
-    .filter((r) => (TIER_RANK[r.tier as PassTier] ?? 0) < targetRank)
+    .filter(
+      (r) =>
+        (TIER_RANK[r.tier as PassTier] ?? 0) < targetRank &&
+        (r.period ?? "monthly") === period,
+    )
     .reduce((sum, r) => sum + (r.priceRub ?? 0), 0);
 }
+
 
 /** История покупок пасса. */
 export async function getPassHistory(userId: string, limit = 20) {

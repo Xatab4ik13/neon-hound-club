@@ -11,7 +11,7 @@ import {
 import { isRaifConfigured } from "../lib/raif.js";
 import { PAYMENT_METHODS } from "../db/schema/payments.js";
 import { createPassPurchase, PassPurchaseError } from "../lib/pass.js";
-import { PASS_TIERS } from "../db/schema/pass.js";
+import { PASS_TIERS, PASS_PERIODS } from "../db/schema/pass.js";
 import { createOrderForUser, createOrderFromCartForUser, OrderCreateError } from "../lib/shop.js";
 
 const idSchema = z.object({ id: z.string().uuid() });
@@ -93,8 +93,10 @@ function paymentRedirectDocument(url: string): string {
 const passRedirectSchema = z.object({
   target: z.literal("pass"),
   tier: z.enum(PASS_TIERS),
+  period: z.enum(PASS_PERIODS).optional(),
   method: z.enum(PAYMENT_METHODS).optional(),
 });
+
 
 const orderItemSchema = z.object({
   productId: z.string().uuid(),
@@ -234,10 +236,12 @@ export async function paymentsRoutes(app: FastifyInstance) {
         return replyErr("/club/hell-pass", "Неверные данные");
       }
       const { tier } = parsed.data;
+      const period = parsed.data.period ?? "monthly";
       const method = parsed.data.method ?? "sbp";
       try {
-        const purchase = await createPassPurchase(session.sub, tier);
+        const purchase = await createPassPurchase(session.sub, tier, period);
         const r = await createPaymentForPass(purchase.id, session.sub, method);
+
         return replyOk(r.paymentUrl);
       } catch (e) {
         const msg =
