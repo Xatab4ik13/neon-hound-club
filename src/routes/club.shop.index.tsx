@@ -313,9 +313,9 @@ function ProductCard({
     for (let i = 0; i < product.slug.length; i++) h = (h * 31 + product.slug.charCodeAt(i)) | 0;
     return `-${(Math.abs(h) % 1400) / 100}s`;
   }, [product.slug]);
-  // Капсула ×2 действует только на цифровые/виртуальные товары.
+  // Капсула действует только на цифровые/виртуальные товары.
   const boosted = boostActive && (product.kind === "digital" || product.kind === "virtual") && product.bonusTickets > 0;
-  const doubled = product.bonusTickets * 2;
+  const doubled = product.bonusTickets * boostMult;
   return (
     <Link
       to="/club/shop/$productSlug"
