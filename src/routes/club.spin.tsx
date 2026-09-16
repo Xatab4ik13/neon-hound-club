@@ -631,7 +631,7 @@ function SpinPage() {
             Календарь активности
           </h2>
           <span className="flex items-center gap-1 text-muted-foreground">
-            <PlumpNum value={`${streak}/30`} size={13} />
+            <PlumpNum value={`${streak}/${streakTotal}`} size={13} />
             <span className="font-mono text-[10px] uppercase tracking-widest">дней</span>
           </span>
         </div>
