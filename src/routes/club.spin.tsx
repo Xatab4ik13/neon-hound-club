@@ -1263,9 +1263,10 @@ function HowItWorks({ season }: { season?: SpinState["season"] }) {
                 ))}
               </div>
               <p className="mt-2 text-[12px] leading-relaxed text-muted-foreground">
-                Футболка за 20 дней — <span className="text-foreground">бесплатно</span>, размер и
-                адрес уточним лично. Капсула ×3 умножает билеты за цифровые товары 48 часов.
+                Капсула ×3 — цифровой товар: 48 часов билеты за покупки идут ×3. Футболка за 20 дней —{" "}
+                <span className="text-foreground">бесплатно</span>, размер и адрес уточним лично.
               </p>
+
             </div>
 
             {/* Призы гарантированы */}
