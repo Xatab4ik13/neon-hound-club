@@ -1103,6 +1103,12 @@ function WinModal({
               билетов за цифровые товары. Используй прямо сейчас.
             </p>
           </>
+        ) : prize.id === "pass_discount" ? (
+          <p className="relative mt-3 text-[13px] leading-relaxed text-muted-foreground">
+            Скидка <span className="text-foreground">−20% на Hell Pass</span> активна{" "}
+            <span className="text-foreground">24 часа</span> — она уже в цене на странице Hell Pass,
+            и для покупки, и для апгрейда.
+          </p>
         ) : (
           <p className="relative mt-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
             Приз зачислен в твой аккаунт
