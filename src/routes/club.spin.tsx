@@ -1236,12 +1236,14 @@ function HowItWorks({ season }: { season?: SpinState["season"] }) {
                 Календарь активности
               </h3>
               <p className="mb-3 text-[13px] leading-relaxed text-muted-foreground">
+                Сезон <span className="text-foreground">16 сентября — 30 октября</span>, 45 дней.
+                Каждый календарный день, когда ты крутанул хотя бы один спин, засчитывается в
+                календарь. Дни <span className="text-foreground">не обязательно подряд</span>.
                 Работает только с активным{" "}
-                <span className="text-foreground">Hell Pass Platinum</span>. Каждый день, когда ты
-                крутанул хотя бы один спин, засчитывается в календарь. Дни{" "}
-                <span className="text-foreground">не обязательно подряд</span> — считаем сколько
-                дней из 30 ты был активен. Награды забираются вручную кнопкой «Забрать».
+                <span className="text-foreground">Hell Pass Platinum</span>. Награды забираются
+                вручную кнопкой «Забрать».
               </p>
+
               <div className="space-y-1.5">
                 {CALENDAR.map((c) => (
                   <div key={c.day} className="flex items-center gap-3 rounded-2xl bg-black/30 px-3 py-2.5">
