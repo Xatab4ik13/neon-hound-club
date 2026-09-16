@@ -821,9 +821,11 @@ function useCapsuleCountdown(expiresAt: string | null) {
   return left !== null && left > 0 ? left : null;
 }
 
-function CapsuleAbout({ expiresAt }: { expiresAt: string | null }) {
+function CapsuleAbout({ expiresAt, mult = 2 }: { expiresAt: string | null; mult?: number }) {
   const ms = useCapsuleCountdown(expiresAt);
   const active = ms !== null;
+  // ×2 — приз спина на 24 часа, ×3 — награда календаря активности на 48 часов.
+  const hours = mult >= 3 ? 48 : 24;
   const pad = (n: number) => String(n).padStart(2, "0");
   const timer =
     ms === null
@@ -834,7 +836,7 @@ function CapsuleAbout({ expiresAt }: { expiresAt: string | null }) {
   return (
 
     <section
-      aria-label="Капсула ×2"
+      aria-label={`Капсула ×${mult}`}
       className="relative mb-2 mt-5 overflow-hidden rounded-3xl bg-card p-4"
       style={{ boxShadow: `inset 0 0 0 1.5px ${RARITY.legend.ring}` }}
     >
@@ -849,8 +851,8 @@ function CapsuleAbout({ expiresAt }: { expiresAt: string | null }) {
           style={{ boxShadow: `inset 0 0 0 1px ${RARITY.legend.ring}` }}
         >
           <img
-            src={imgCapsule}
-            alt="Капсула ×2"
+            src={mult >= 3 ? imgCapsuleX3 : imgCapsule}
+            alt={`Капсула ×${mult}`}
             width={1024}
             height={1024}
             loading="lazy"
@@ -860,7 +862,7 @@ function CapsuleAbout({ expiresAt }: { expiresAt: string | null }) {
         </span>
         <span className="min-w-0 flex-1">
           <span className="mt-1 block font-display text-[17px] font-black uppercase leading-tight tracking-tight text-foreground">
-            Капсула ×2
+            Капсула ×{mult}
           </span>
           {active ? (
             <span
@@ -872,7 +874,7 @@ function CapsuleAbout({ expiresAt }: { expiresAt: string | null }) {
             </span>
           ) : (
             <span className="block font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-              двойные билеты · 24 часа
+              билеты ×{mult} · {hours} часа
             </span>
           )}
         </span>
@@ -890,16 +892,16 @@ function CapsuleAbout({ expiresAt }: { expiresAt: string | null }) {
 
 
       <p className="relative mt-3 text-[13px] leading-relaxed text-muted-foreground">
-        Выпала капсула — на <span className="text-foreground">24 часа</span> включается двойное
-        начисление билетов. Покупаешь в магазине цифровой товар — билетов приходит{" "}
-        <span className="text-foreground">в два раза больше</span>.
+        Капсула на руках — на <span className="text-foreground">{hours} часа</span> включается
+        умноженное начисление билетов. Покупаешь в магазине цифровой товар — билетов приходит{" "}
+        <span className="text-foreground">в {mult} раза больше</span>.
       </p>
 
       <ul className="relative mt-3 space-y-1.5">
         {[
           "Работает только на цифровые товары",
           "Капсулу можно использовать один раз — после покупки она сразу пропадает",
-          "Через 24 часа капсула тоже пропадает",
+          `Через ${hours} часа капсула тоже пропадает`,
         ].map((t) => (
           <li key={t} className="flex gap-2 text-[12.5px] leading-snug text-muted-foreground">
             <span
