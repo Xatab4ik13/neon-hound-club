@@ -231,7 +231,7 @@ function ClubShopPage() {
       ) : (
         <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4">
           {filtered.map((p) => (
-            <ProductCard key={p.id} product={p} boostActive={boostActive} />
+            <ProductCard key={p.id} product={p} boostActive={boostActive} boostMult={boostMult} />
           ))}
         </div>
       )}
