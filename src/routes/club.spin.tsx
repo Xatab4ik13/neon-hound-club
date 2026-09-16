@@ -1114,8 +1114,8 @@ function WinModal({
               {promoCode}
             </p>
             <p className="relative mt-2 text-[12px] leading-snug text-muted-foreground">
-              {prize.id === "sticker"
-                ? "Промокод на 100% скидку на ремувку. Оформи её в магазине — оплатишь только доставку."
+              {prize.id.startsWith("promo")
+                ? `Скидка ${prize.title.replace("Промокод ", "")} ${prize.sub ? `при заказе ${prize.sub.replace("от ", "от ")}` : ""}. Действует 48 часов, сохранён в профиле, вкладка «Промокоды».`
                 : "Промокод сохранён в профиле, вкладка «Промокоды»."}
             </p>
           </>
