@@ -1164,7 +1164,10 @@ function HowItWorks({ season }: { season?: SpinState["season"] }) {
   const fmt = (iso: string) =>
     new Date(iso).toLocaleDateString("ru-RU", { day: "numeric", month: "long" });
   const startsLabel = season?.startsAt ? fmt(season.startsAt) : null;
-  const endsLabel = season ? fmt(season.endsAt) : null;
+  // endsAt — исключающая граница (00:00 следующего дня), поэтому для подписи отступаем на день назад.
+  const endsLabel = season
+    ? fmt(new Date(new Date(season.endsAt).getTime() - 86_400_000).toISOString())
+    : null;
   const days = season?.daysTotal ?? 30;
   const seasonLabel =
     startsLabel && endsLabel
