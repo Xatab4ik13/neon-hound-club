@@ -314,8 +314,9 @@ function TierDetailPage() {
                   <div className="mt-1 font-mono text-[10px] uppercase tracking-widest text-white/50">
                     {perMonth.toLocaleString("ru-RU")} ₽ в месяц вместо{" "}
                     {tier.price.toLocaleString("ru-RU")} ₽ · 12 месяцев по цене{" "}
-                    {Math.round(tier.annualPrice / tier.price)}
+                    {Math.round(tier.annualPrice / tier.price)} мес.
                   </div>
+
                   <div className="mt-2 font-mono text-[10px] uppercase tracking-widest text-white/70">
                     + {tier.annualTickets} билетов сразу при активации
                   </div>
