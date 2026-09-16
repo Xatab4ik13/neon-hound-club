@@ -624,15 +624,9 @@ function SpinPage() {
 
       {/* Календарь активности */}
       <section aria-label="Календарь активности" className="mb-5 rounded-3xl bg-card p-4">
-        <div className="mb-3 flex items-baseline justify-between">
-          <h2 className="flex items-center gap-2 font-display text-[15px] font-black uppercase tracking-tight text-foreground">
+        <div className="mb-1 flex items-baseline justify-between">
+          <h2 className="font-display text-[15px] font-black uppercase tracking-tight text-foreground">
             Календарь активности
-            <span
-              className="rounded-full px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-widest"
-              style={{ background: TIER_LABEL.platinum.bg, color: TIER_LABEL.platinum.fg }}
-            >
-              Platinum
-            </span>
           </h2>
           <span className="flex items-center gap-1 text-muted-foreground">
             <PlumpNum value={`${streak}/30`} size={13} />
@@ -640,15 +634,23 @@ function SpinPage() {
           </span>
         </div>
 
+        <p className="mb-3 text-[12.5px] leading-snug text-muted-foreground">
+          Сезон <span className="text-foreground">16 сентября — 30 октября</span> (45 дней). Крутанул
+          хотя бы один спин за день — день засчитан. Дни{" "}
+          <span className="text-foreground">не обязательно подряд</span>. Награды забираешь сам —
+          кнопкой «Забрать».
+        </p>
+
         {!streakEligible && (
           <Link
             to="/club/hell-pass"
             className="mb-3 block rounded-2xl bg-black/30 px-3 py-2.5 text-[12.5px] leading-snug text-muted-foreground"
           >
-            Календарь считает дни только с активным{" "}
+            Дни считаются только с активным{" "}
             <span className="text-foreground">Hell Pass Platinum</span>. Оформить →
           </Link>
         )}
+
 
 
         <div className="mb-4 grid grid-cols-10 gap-1.5">
@@ -1234,12 +1236,14 @@ function HowItWorks({ season }: { season?: SpinState["season"] }) {
                 Календарь активности
               </h3>
               <p className="mb-3 text-[13px] leading-relaxed text-muted-foreground">
+                Сезон <span className="text-foreground">16 сентября — 30 октября</span>, 45 дней.
+                Каждый календарный день, когда ты крутанул хотя бы один спин, засчитывается в
+                календарь. Дни <span className="text-foreground">не обязательно подряд</span>.
                 Работает только с активным{" "}
-                <span className="text-foreground">Hell Pass Platinum</span>. Каждый день, когда ты
-                крутанул хотя бы один спин, засчитывается в календарь. Дни{" "}
-                <span className="text-foreground">не обязательно подряд</span> — считаем сколько
-                дней из 30 ты был активен. Награды забираются вручную кнопкой «Забрать».
+                <span className="text-foreground">Hell Pass Platinum</span>. Награды забираются
+                вручную кнопкой «Забрать».
               </p>
+
               <div className="space-y-1.5">
                 {CALENDAR.map((c) => (
                   <div key={c.day} className="flex items-center gap-3 rounded-2xl bg-black/30 px-3 py-2.5">
@@ -1259,9 +1263,10 @@ function HowItWorks({ season }: { season?: SpinState["season"] }) {
                 ))}
               </div>
               <p className="mt-2 text-[12px] leading-relaxed text-muted-foreground">
-                Футболка за 20 дней — <span className="text-foreground">бесплатно</span>, размер и
-                адрес уточним лично. Капсула ×3 умножает билеты за цифровые товары 48 часов.
+                Капсула ×3 — цифровой товар: 48 часов билеты за покупки идут ×3. Футболка за 20 дней —{" "}
+                <span className="text-foreground">бесплатно</span>, размер и адрес уточним лично.
               </p>
+
             </div>
 
             {/* Призы гарантированы */}
