@@ -29,6 +29,11 @@ export type Tier = {
   id: string;
   name: string;
   price: number;
+  /** Цена за год (разовый платёж, 365 дней). */
+  annualPrice: number;
+  /** Сколько билетов начисляется сразу при активации годового. */
+  annualTickets: number;
+
   /** Цвет тира — для подсветки. */
   color: string;
   /** Из какого тира наследуются все плюшки. */
