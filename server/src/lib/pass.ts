@@ -111,7 +111,9 @@ export async function activatePassPurchase(purchaseId: string): Promise<{ ok: bo
       .limit(1);
 
     const base = otherActive?.expiresAt && otherActive.expiresAt > now ? otherActive.expiresAt : now;
-    const expiresAt = new Date(base.getTime() + PASS_DURATION_DAYS * 24 * 60 * 60 * 1000);
+    const days = p.period === "annual" ? PASS_ANNUAL_DURATION_DAYS : PASS_DURATION_DAYS;
+    const expiresAt = new Date(base.getTime() + days * 24 * 60 * 60 * 1000);
+
 
     await db
       .update(passPurchases)
