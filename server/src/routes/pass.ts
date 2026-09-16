@@ -4,7 +4,7 @@ import { and, desc, eq, ilike, or, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import {
   passPurchases,
-  PASS_CONFIG,
+  PASS_DURATION_DAYS_UNUSED_PLACEHOLDER_REMOVED,
   PASS_DURATION_DAYS,
   PASS_ANNUAL_DURATION_DAYS,
   PASS_PERIODS,
