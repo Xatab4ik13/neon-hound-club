@@ -888,7 +888,7 @@ const MILESTONE_TITLE: Record<StreakMilestone, string> = {
 };
 
 /** Календарь активности — только для владельцев Hell Pass Platinum. */
-export const STREAK_TIER: SpinTier = "platinum";
+export const STREAK_TIER: PassTier = "platinum";
 
 /** Забрать награду календаря активности. Физика уходит в spin_winners. */
 export async function claimStreakMilestone(userId: string, milestone: StreakMilestone) {
