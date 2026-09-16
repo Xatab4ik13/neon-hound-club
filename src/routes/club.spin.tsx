@@ -111,12 +111,6 @@ const MILESTONE_IMG: Record<number, string> = {
   30: imgTicketX3,
 };
 
-// Фото товара нужно кропать по кругу, а рендеры — вписывать целиком.
-const MILESTONE_FIT: Record<number, "cover" | "contain"> = {
-  10: "contain",
-  20: "contain",
-  30: "contain",
-};
 
 const CALENDAR = [
   { day: 10, title: "Капсула ×3 на 48 часов", sub: "10 дней активности" },
