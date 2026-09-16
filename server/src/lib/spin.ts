@@ -649,14 +649,7 @@ async function grantPrize(
 
     case "ticket_boost": {
       // Капсула ×2: 24 часа двойного начисления билетов за цифровые товары.
-      // Активная капсула заменяется новой (продлеваем до +24ч от сейчас).
-      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
-      await db
-        .update(users)
-        .set({ ticketBoostUntil: expiresAt, updatedAt: new Date() })
-        .where(eq(users.id, userId));
-      // Лог для админки: кто выбил капсулу и до когда она живёт.
-      await db.insert(ticketBoosts).values({ userId, source: "spin", expiresAt });
+      await grantTicketBoost(userId, { mult: 2, hours: 24, source: "spin" });
       return undefined;
     }
 
