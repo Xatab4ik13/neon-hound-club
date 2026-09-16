@@ -113,7 +113,12 @@ export async function passRoutes(app: FastifyInstance) {
     }
     const session = req.user as SessionPayload;
     try {
-      const purchase = await createPassPurchase(session.sub, parsed.data.tier);
+      const purchase = await createPassPurchase(
+        session.sub,
+        parsed.data.tier,
+        parsed.data.period ?? "monthly",
+      );
+
       const method = parsed.data.method ?? "card";
       let paymentUrl: string | null = null;
       if (isRaifConfigured(method)) {
