@@ -360,7 +360,9 @@ export async function fetchTicketsHistory(limit = 30) {
 // ---------- HELL PASS ----------
 
 export async function fetchPassTiers() {
-  return apiFetch<{ durationDays: number; tiers: PassTierInfo[] }>("/api/v1/pass/tiers");
+  return apiFetch<{ durationDays: number; annualDurationDays?: number; tiers: PassTierInfo[] }>(
+    "/api/v1/pass/tiers",
+  );
 }
 
 export async function fetchPassMe() {
@@ -369,18 +371,33 @@ export async function fetchPassMe() {
     history: PassRecord[];
     daysLeft: number | null;
     durationDays: number;
+    annualDurationDays?: number;
     /** Персональная цена тира: при апгрейде уже вычтено уплаченное за низкие тиры. */
-    prices?: Partial<Record<PassTier, { priceRub: number; creditRub: number }>>;
+    prices?: Partial<
+      Record<
+        PassTier,
+        {
+          priceRub: number;
+          creditRub: number;
+          annual?: { priceRub: number; creditRub: number };
+        }
+      >
+    >;
   }>("/api/v1/pass/me");
 }
 
 
-export async function purchasePass(tier: PassTier, method: "card" | "sbp" = "card") {
+export async function purchasePass(
+  tier: PassTier,
+  method: "card" | "sbp" = "card",
+  period: PassPeriod = "monthly",
+) {
   return apiFetch<{ purchase: PassRecord; paymentUrl: string | null }>(
     "/api/v1/pass/purchase",
-    { method: "POST", body: JSON.stringify({ tier, method }) },
+    { method: "POST", body: JSON.stringify({ tier, method, period }) },
   );
 }
+
 
 // ---------- QUESTS ----------
 
