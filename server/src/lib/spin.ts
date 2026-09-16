@@ -839,24 +839,22 @@ export async function grantPass(
 /* ---------------- Календарь активности ---------------- */
 
 /**
- * Активная «полоса» юзера. НЕ привязана к сезону: календарь — личные 30 дней
- * с первого спина. Раньше строка искалась по (user, season), и на смене сезона
- * прогресс обнулялся — тот, кто начал не в первый день сезона, физически не мог
- * дойти до 30/30. Берём самую свежую строку юзера и продолжаем её.
+ * Полоса юзера в рамках текущего сезона: 30 дней активности внутри 45-дневного
+ * сезона, дни не обязательно подряд. Строка ищется по (user, season) — прогресс
+ * прошлого сезона не переносится.
  */
-async function getActiveStreak(userId: string) {
+async function getActiveStreak(userId: string, seasonId: string) {
   const [row] = await db
     .select()
     .from(spinStreaks)
-    .where(eq(spinStreaks.userId, userId))
-    .orderBy(sql`${spinStreaks.updatedAt} desc`)
+    .where(and(eq(spinStreaks.userId, userId), eq(spinStreaks.seasonId, seasonId)))
     .limit(1);
   return row ?? null;
 }
 
-/** Отмечает день активности, возвращает кол-во дней. */
+/** Отмечает день активности, возвращает кол-во дней (максимум STREAK_DAYS). */
 async function bumpStreak(userId: string, seasonId: string, day: string): Promise<number> {
-  const existing = await getActiveStreak(userId);
+  const existing = await getActiveStreak(userId, seasonId);
 
   if (!existing) {
     const [created] = await db
@@ -869,6 +867,7 @@ async function bumpStreak(userId: string, seasonId: string, day: string): Promis
   }
 
   if (existing.lastSpinDate === day) return existing.daysCount;
+  if (existing.daysCount >= STREAK_DAYS) return existing.daysCount;
   const [updated] = await db
     .update(spinStreaks)
     .set({ daysCount: existing.daysCount + 1, lastSpinDate: day, updatedAt: new Date() })
