@@ -236,10 +236,12 @@ export async function paymentsRoutes(app: FastifyInstance) {
         return replyErr("/club/hell-pass", "Неверные данные");
       }
       const { tier } = parsed.data;
+      const period = parsed.data.period ?? "monthly";
       const method = parsed.data.method ?? "sbp";
       try {
-        const purchase = await createPassPurchase(session.sub, tier);
+        const purchase = await createPassPurchase(session.sub, tier, period);
         const r = await createPaymentForPass(purchase.id, session.sub, method);
+
         return replyOk(r.paymentUrl);
       } catch (e) {
         const msg =
