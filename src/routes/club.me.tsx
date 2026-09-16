@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/icons";
 import { PlumpNum } from "@/components/brand/PlumpNum";
 import imgCapsule from "@/assets/spin/capsule-x2.webp";
+import imgCapsuleX3 from "@/assets/spin/capsule-x3.webp";
 
 import { SettingsModal } from "@/components/club/SettingsModal";
 import { OrdersList } from "@/components/club/OrdersList";
