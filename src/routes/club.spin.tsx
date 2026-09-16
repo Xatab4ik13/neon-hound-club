@@ -24,8 +24,9 @@ import imgPromo300 from "@/assets/spin/promo-300.webp";
 import imgPromo500 from "@/assets/spin/promo-500.webp";
 import imgPromo1000 from "@/assets/spin/promo-1000.webp";
 import imgPassDiscount from "@/assets/spin/pass-discount.webp";
-import imgSocks from "@/assets/spin/socks.webp";
 import imgCapsule from "@/assets/spin/capsule-x2.webp";
+import imgCapsuleX3 from "@/assets/spin/capsule-x3.webp";
+import imgTshirtBlur from "@/assets/spin/tshirt-blur.webp";
 import { apiFetch, ApiError } from "@/lib/api";
 import { isStandalone } from "@/hooks/use-install-prompt";
 
@@ -105,22 +106,22 @@ const LEGENDS = VISIBLE.filter((p) => p.rarity === "legend");
 const NON_LEGENDS = VISIBLE.filter((p) => p.rarity !== "legend");
 
 const MILESTONE_IMG: Record<number, string> = {
-  10: silverBadge,
-  20: imgSocks,
-  30: goldBadge,
+  10: imgCapsuleX3,
+  20: imgTshirtBlur,
+  30: imgTicketX3,
 };
 
-// Фото товара нужно кропать по кругу, а бейджи — вписывать целиком.
+// Фото товара нужно кропать по кругу, а рендеры — вписывать целиком.
 const MILESTONE_FIT: Record<number, "cover" | "contain"> = {
   10: "contain",
-  20: "cover",
+  20: "contain",
   30: "contain",
 };
 
 const CALENDAR = [
-  { day: 10, title: "Hell Pass Silver + 5 билетов", sub: "10 дней подряд" },
-  { day: 20, title: "Носки", sub: "20 дней подряд" },
-  { day: 30, title: "Hell Pass Gold + 20 билетов", sub: "30 дней подряд" },
+  { day: 10, title: "Капсула ×3 на 48 часов", sub: "10 дней активности" },
+  { day: 20, title: "Легендарная футболка", sub: "20 дней активности" },
+  { day: 30, title: "100 билетов", sub: "30 дней активности" },
 ];
 
 const TIER_LABEL: Record<SpinTier, { name: string; bg: string; fg: string }> = {
