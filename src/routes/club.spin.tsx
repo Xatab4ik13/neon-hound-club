@@ -1252,7 +1252,7 @@ function HowItWorks({ season }: { season?: SpinState["season"] }) {
                 Календарь активности
               </h3>
               <p className="mb-3 text-[13px] leading-relaxed text-muted-foreground">
-                Сезон <span className="text-foreground">16 сентября — 30 октября</span>, 45 дней.
+                Календарь — <span className="text-foreground">30 дней</span> внутри сезона.
                 Каждый календарный день, когда ты крутанул хотя бы один спин, засчитывается в
                 календарь. Дни <span className="text-foreground">не обязательно подряд</span>.
                 Работает только с активным{" "}
