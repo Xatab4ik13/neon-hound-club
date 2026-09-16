@@ -880,6 +880,8 @@ async function bumpStreak(userId: string, seasonId: string, day: string): Promis
 
 export const STREAK_MILESTONES = [10, 20, 30] as const;
 export type StreakMilestone = (typeof STREAK_MILESTONES)[number];
+/** Календарь активности — 30 дней внутри 45-дневного сезона (дни не обязательно подряд). */
+export const STREAK_DAYS = 30;
 
 const MILESTONE_TITLE: Record<StreakMilestone, string> = {
   10: "Капсула ×3 на 48 часов",
