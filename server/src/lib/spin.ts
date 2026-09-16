@@ -45,10 +45,10 @@ export function mskDate(d = new Date()): string {
   return shifted.toISOString().slice(0, 10);
 }
 
-/** Начало первого сезона: 11 августа 2026, 00:00 МСК. */
-export const SEASON_ANCHOR_UTC = Date.UTC(2026, 7, 11, -3, 0, 0);
+/** Начало сезона 2: 16 сентября 2026, 00:00 МСК. */
+export const SEASON_ANCHOR_UTC = Date.UTC(2026, 8, 15, 21, 0, 0);
 /** Длина сезона в днях. */
-export const SEASON_DAYS = 31;
+export const SEASON_DAYS = 45;
 
 /** Индекс текущего сезона (0 — первый). */
 function seasonIndex(d = new Date()): number {
