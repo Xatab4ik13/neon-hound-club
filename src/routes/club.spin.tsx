@@ -1257,9 +1257,11 @@ function HowItWorks({ season }: { season?: SpinState["season"] }) {
                 Календарь активности
               </h3>
               <p className="mb-3 text-[13px] leading-relaxed text-muted-foreground">
-                Каждый день, когда ты крутанул хотя бы один спин, засчитывается в календарь. Дни{" "}
+                Работает только с активным{" "}
+                <span className="text-foreground">Hell Pass Platinum</span>. Каждый день, когда ты
+                крутанул хотя бы один спин, засчитывается в календарь. Дни{" "}
                 <span className="text-foreground">не обязательно подряд</span> — считаем сколько
-                дней из {days} ты был активен. Награды забираются вручную кнопкой «Забрать».
+                дней из 30 ты был активен. Награды забираются вручную кнопкой «Забрать».
               </p>
               <div className="space-y-1.5">
                 {CALENDAR.map((c) => (
@@ -1286,9 +1288,8 @@ function HowItWorks({ season }: { season?: SpinState["season"] }) {
                 ))}
               </div>
               <p className="mt-2 text-[12px] leading-relaxed text-muted-foreground">
-                Носки приходят персональным промокодом на{" "}
-                <span className="text-foreground">100% скидку</span> — одна пара любого размера,
-                платишь только доставку.
+                Футболка за 20 дней — <span className="text-foreground">бесплатно</span>, размер и
+                адрес уточним лично. Капсула ×3 умножает билеты за цифровые товары 48 часов.
               </p>
             </div>
 
