@@ -11,7 +11,7 @@ import {
 import { isRaifConfigured } from "../lib/raif.js";
 import { PAYMENT_METHODS } from "../db/schema/payments.js";
 import { createPassPurchase, PassPurchaseError } from "../lib/pass.js";
-import { PASS_TIERS } from "../db/schema/pass.js";
+import { PASS_TIERS, PASS_PERIODS } from "../db/schema/pass.js";
 import { createOrderForUser, createOrderFromCartForUser, OrderCreateError } from "../lib/shop.js";
 
 const idSchema = z.object({ id: z.string().uuid() });
