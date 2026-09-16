@@ -24,8 +24,9 @@ import imgPromo300 from "@/assets/spin/promo-300.webp";
 import imgPromo500 from "@/assets/spin/promo-500.webp";
 import imgPromo1000 from "@/assets/spin/promo-1000.webp";
 import imgPassDiscount from "@/assets/spin/pass-discount.webp";
-import imgSocks from "@/assets/spin/socks.webp";
 import imgCapsule from "@/assets/spin/capsule-x2.webp";
+import imgCapsuleX3 from "@/assets/spin/capsule-x3.webp";
+import imgTshirtBlur from "@/assets/spin/tshirt-blur.webp";
 import { apiFetch, ApiError } from "@/lib/api";
 import { isStandalone } from "@/hooks/use-install-prompt";
 
@@ -105,22 +106,16 @@ const LEGENDS = VISIBLE.filter((p) => p.rarity === "legend");
 const NON_LEGENDS = VISIBLE.filter((p) => p.rarity !== "legend");
 
 const MILESTONE_IMG: Record<number, string> = {
-  10: silverBadge,
-  20: imgSocks,
-  30: goldBadge,
+  10: imgCapsuleX3,
+  20: imgTshirtBlur,
+  30: imgTicketX3,
 };
 
-// Фото товара нужно кропать по кругу, а бейджи — вписывать целиком.
-const MILESTONE_FIT: Record<number, "cover" | "contain"> = {
-  10: "contain",
-  20: "cover",
-  30: "contain",
-};
 
 const CALENDAR = [
-  { day: 10, title: "Hell Pass Silver + 5 билетов", sub: "10 дней подряд" },
-  { day: 20, title: "Носки", sub: "20 дней подряд" },
-  { day: 30, title: "Hell Pass Gold + 20 билетов", sub: "30 дней подряд" },
+  { day: 10, title: "Капсула ×3 на 48 часов", sub: "10 дней активности" },
+  { day: 20, title: "Легендарная футболка", sub: "20 дней активности" },
+  { day: 30, title: "100 билетов", sub: "30 дней активности" },
 ];
 
 const TIER_LABEL: Record<SpinTier, { name: string; bg: string; fg: string }> = {
@@ -175,9 +170,9 @@ type SpinState = {
   tier: SpinTier;
   season: { periodKey: string; daysTotal: number; startsAt?: string; endsAt: string };
   spins: { allowed: number; used: number; left: number };
-  streak: { days: number; claimed: number[] };
+  streak: { days: number; claimed: number[]; eligible?: boolean };
   history: { prizeCode: string; title: string; at: string }[];
-  capsule?: { active: boolean; expiresAt: string | null };
+  capsule?: { active: boolean; expiresAt: string | null; mult?: number };
 };
 
 
@@ -225,6 +220,8 @@ function SpinPage() {
   const tier: SpinTier = state?.tier ?? "none";
   const streak = state?.streak.days ?? 0;
   const claimed = state?.streak.claimed ?? [];
+  // Календарь активности работает только для Hell Pass Platinum.
+  const streakEligible = state ? (state.streak.eligible ?? state.tier === "platinum") : false;
   const lastPrize = state?.history[0]
     ? prizeByCode(state.history[0].prizeCode, state.history[0].title)
     : null;
@@ -286,9 +283,7 @@ function SpinPage() {
       });
       haptic("success");
       toast.success(
-        res?.promoCode
-          ? `Промокод ${res.promoCode} — носки за 0₽, платишь только доставку`
-          : "Награда забрана",
+        res?.promoCode ? `Промокод ${res.promoCode}` : "Награда забрана",
       );
       await loadState();
     } catch (err) {
@@ -630,8 +625,14 @@ function SpinPage() {
       {/* Календарь активности */}
       <section aria-label="Календарь активности" className="mb-5 rounded-3xl bg-card p-4">
         <div className="mb-3 flex items-baseline justify-between">
-          <h2 className="font-display text-[15px] font-black uppercase tracking-tight text-foreground">
+          <h2 className="flex items-center gap-2 font-display text-[15px] font-black uppercase tracking-tight text-foreground">
             Календарь активности
+            <span
+              className="rounded-full px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-widest"
+              style={{ background: TIER_LABEL.platinum.bg, color: TIER_LABEL.platinum.fg }}
+            >
+              Platinum
+            </span>
           </h2>
           <span className="flex items-center gap-1 text-muted-foreground">
             <PlumpNum value={`${streak}/30`} size={13} />
@@ -639,29 +640,29 @@ function SpinPage() {
           </span>
         </div>
 
+        {!streakEligible && (
+          <Link
+            to="/club/hell-pass"
+            className="mb-3 block rounded-2xl bg-black/30 px-3 py-2.5 text-[12.5px] leading-snug text-muted-foreground"
+          >
+            Календарь считает дни только с активным{" "}
+            <span className="text-foreground">Hell Pass Platinum</span>. Оформить →
+          </Link>
+        )}
+
+
         <div className="mb-4 grid grid-cols-10 gap-1.5">
           {dayTicks.map((d) => {
             const done = d <= streak;
             const img = MILESTONE_IMG[d];
             if (img) {
-              const fit = MILESTONE_FIT[d] ?? "contain";
-              const isClaimed = claimed.includes(d);
               return (
-                <span
-                  key={d}
-                  className={`relative grid aspect-square place-items-center overflow-hidden rounded-full ${
-                    done
-                      ? "bg-[#B6FF3C] shadow-[0_4px_14px_-6px_#B6FF3C]"
-                      : "bg-[#B6FF3C]/15 ring-1 ring-inset ring-[#B6FF3C]/40"
-                  }`}
-                >
+                <span key={d} className="relative grid aspect-square place-items-center">
                   <img
                     src={img}
                     alt=""
                     loading="lazy"
-                    className={`h-full w-full ${
-                      fit === "cover" ? "scale-[1.15] object-cover" : "object-contain p-[2px]"
-                    } ${done ? "" : "opacity-70"}`}
+                    className={`h-full w-full object-contain ${done ? "" : "opacity-60"}`}
                   />
                 </span>
               );
@@ -689,18 +690,12 @@ function SpinPage() {
                 key={c.day}
                 className="relative flex items-center gap-3 overflow-hidden rounded-2xl bg-black/30 px-3 py-2.5"
               >
-                <span className="relative grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full bg-white/[0.06]">
-                  <img
-                    src={MILESTONE_IMG[c.day]}
-                    alt={c.title}
-                    loading="lazy"
-                    className={`h-full w-full ${
-                      (MILESTONE_FIT[c.day] ?? "contain") === "cover"
-                        ? "scale-[1.15] object-cover"
-                        : "object-contain p-1"
-                    }`}
-                  />
-                </span>
+                <img
+                  src={MILESTONE_IMG[c.day]}
+                  alt={c.title}
+                  loading="lazy"
+                  className="relative h-11 w-11 shrink-0 object-contain"
+                />
 
                 <span className="min-w-0 flex-1">
                   <span
@@ -719,7 +714,7 @@ function SpinPage() {
                   <span className="shrink-0 rounded-lg border-[2px] border-foreground bg-[#B6FF3C] px-2 py-1 font-display text-[10px] font-black uppercase tracking-tight text-black shadow-[2px_2px_0_0_hsl(var(--foreground))]">
                     Твоё
                   </span>
-                ) : streak >= c.day ? (
+                ) : streak >= c.day && streakEligible ? (
                   <button
                     type="button"
                     onClick={() => void claimMilestone(c.day)}
@@ -774,7 +769,10 @@ function SpinPage() {
         </ul>
       </section>
 
-      <CapsuleAbout expiresAt={state?.capsule?.expiresAt ?? null} />
+      <CapsuleAbout
+        expiresAt={state?.capsule?.expiresAt ?? null}
+        mult={state?.capsule?.mult ?? 2}
+      />
     </main>
   );
 }
@@ -800,9 +798,11 @@ function useCapsuleCountdown(expiresAt: string | null) {
   return left !== null && left > 0 ? left : null;
 }
 
-function CapsuleAbout({ expiresAt }: { expiresAt: string | null }) {
+function CapsuleAbout({ expiresAt, mult = 2 }: { expiresAt: string | null; mult?: number }) {
   const ms = useCapsuleCountdown(expiresAt);
   const active = ms !== null;
+  // ×2 — приз спина на 24 часа, ×3 — награда календаря активности на 48 часов.
+  const hours = mult >= 3 ? 48 : 24;
   const pad = (n: number) => String(n).padStart(2, "0");
   const timer =
     ms === null
@@ -813,7 +813,7 @@ function CapsuleAbout({ expiresAt }: { expiresAt: string | null }) {
   return (
 
     <section
-      aria-label="Капсула ×2"
+      aria-label={`Капсула ×${mult}`}
       className="relative mb-2 mt-5 overflow-hidden rounded-3xl bg-card p-4"
       style={{ boxShadow: `inset 0 0 0 1.5px ${RARITY.legend.ring}` }}
     >
@@ -828,8 +828,8 @@ function CapsuleAbout({ expiresAt }: { expiresAt: string | null }) {
           style={{ boxShadow: `inset 0 0 0 1px ${RARITY.legend.ring}` }}
         >
           <img
-            src={imgCapsule}
-            alt="Капсула ×2"
+            src={mult >= 3 ? imgCapsuleX3 : imgCapsule}
+            alt={`Капсула ×${mult}`}
             width={1024}
             height={1024}
             loading="lazy"
@@ -839,7 +839,7 @@ function CapsuleAbout({ expiresAt }: { expiresAt: string | null }) {
         </span>
         <span className="min-w-0 flex-1">
           <span className="mt-1 block font-display text-[17px] font-black uppercase leading-tight tracking-tight text-foreground">
-            Капсула ×2
+            Капсула ×{mult}
           </span>
           {active ? (
             <span
@@ -851,7 +851,7 @@ function CapsuleAbout({ expiresAt }: { expiresAt: string | null }) {
             </span>
           ) : (
             <span className="block font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-              двойные билеты · 24 часа
+              билеты ×{mult} · {hours} часа
             </span>
           )}
         </span>
@@ -869,16 +869,16 @@ function CapsuleAbout({ expiresAt }: { expiresAt: string | null }) {
 
 
       <p className="relative mt-3 text-[13px] leading-relaxed text-muted-foreground">
-        Выпала капсула — на <span className="text-foreground">24 часа</span> включается двойное
-        начисление билетов. Покупаешь в магазине цифровой товар — билетов приходит{" "}
-        <span className="text-foreground">в два раза больше</span>.
+        Капсула на руках — на <span className="text-foreground">{hours} часа</span> включается
+        умноженное начисление билетов. Покупаешь в магазине цифровой товар — билетов приходит{" "}
+        <span className="text-foreground">в {mult} раза больше</span>.
       </p>
 
       <ul className="relative mt-3 space-y-1.5">
         {[
           "Работает только на цифровые товары",
           "Капсулу можно использовать один раз — после покупки она сразу пропадает",
-          "Через 24 часа капсула тоже пропадает",
+          `Через ${hours} часа капсула тоже пропадает`,
         ].map((t) => (
           <li key={t} className="flex gap-2 text-[12.5px] leading-snug text-muted-foreground">
             <span
@@ -1234,25 +1234,21 @@ function HowItWorks({ season }: { season?: SpinState["season"] }) {
                 Календарь активности
               </h3>
               <p className="mb-3 text-[13px] leading-relaxed text-muted-foreground">
-                Каждый день, когда ты крутанул хотя бы один спин, засчитывается в календарь. Дни{" "}
+                Работает только с активным{" "}
+                <span className="text-foreground">Hell Pass Platinum</span>. Каждый день, когда ты
+                крутанул хотя бы один спин, засчитывается в календарь. Дни{" "}
                 <span className="text-foreground">не обязательно подряд</span> — считаем сколько
-                дней из {days} ты был активен. Награды забираются вручную кнопкой «Забрать».
+                дней из 30 ты был активен. Награды забираются вручную кнопкой «Забрать».
               </p>
               <div className="space-y-1.5">
                 {CALENDAR.map((c) => (
                   <div key={c.day} className="flex items-center gap-3 rounded-2xl bg-black/30 px-3 py-2.5">
-                    <span className="grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-full bg-white/[0.06]">
-                      <img
-                        src={MILESTONE_IMG[c.day]}
-                        alt=""
-                        loading="lazy"
-                        className={`h-full w-full ${
-                          (MILESTONE_FIT[c.day] ?? "contain") === "cover"
-                            ? "scale-[1.15] object-cover"
-                            : "object-contain p-0.5"
-                        }`}
-                      />
-                    </span>
+                    <img
+                      src={MILESTONE_IMG[c.day]}
+                      alt=""
+                      loading="lazy"
+                      className="h-8 w-8 shrink-0 object-contain"
+                    />
                     <span className="min-w-0 flex-1 text-[13px] font-semibold text-foreground">
                       {c.title}
                     </span>
@@ -1263,9 +1259,8 @@ function HowItWorks({ season }: { season?: SpinState["season"] }) {
                 ))}
               </div>
               <p className="mt-2 text-[12px] leading-relaxed text-muted-foreground">
-                Носки приходят персональным промокодом на{" "}
-                <span className="text-foreground">100% скидку</span> — одна пара любого размера,
-                платишь только доставку.
+                Футболка за 20 дней — <span className="text-foreground">бесплатно</span>, размер и
+                адрес уточним лично. Капсула ×3 умножает билеты за цифровые товары 48 часов.
               </p>
             </div>
 

@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, integer, timestamp, index } from "drizzle-orm/pg-core";
+import { pgTable, uuid, varchar, integer, smallint, timestamp, index } from "drizzle-orm/pg-core";
 import { users } from "./users.js";
 import { orders } from "./shop.js";
 
@@ -15,8 +15,10 @@ export const ticketBoosts = pgTable(
     userId: uuid("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
-    /** 'spin' — выбита в рулетке. */
+    /** 'spin' — выбита в рулетке, 'streak' — награда календаря активности. */
     source: varchar("source", { length: 16 }).notNull().default("spin"),
+    /** Множитель капсулы: 2 (спин) или 3 (календарь, 10/30). */
+    mult: smallint("mult").notNull().default(2),
     grantedAt: timestamp("granted_at", { withTimezone: true }).notNull().defaultNow(),
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
     usedAt: timestamp("used_at", { withTimezone: true }),
