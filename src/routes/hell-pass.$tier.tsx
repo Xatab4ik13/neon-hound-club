@@ -182,6 +182,27 @@ function TierDetailPage() {
                   </span>
                 </div>
 
+                <div
+                  className="mt-3 border px-3 py-2"
+                  style={{ borderColor: `${tier.color}55`, background: `${tier.color}12` }}
+                >
+                  <div
+                    className="font-mono text-[11px] font-bold uppercase tracking-widest"
+                    style={{ color: tier.color }}
+                  >
+                    Год — {tier.annualPrice.toLocaleString("ru-RU")} ₽
+                  </div>
+                  <div className="mt-1 font-mono text-[10px] uppercase tracking-widest text-white/50">
+                    экономия {(tier.price * 12 - tier.annualPrice).toLocaleString("ru-RU")} ₽ ·{" "}
+                    {Math.round(tier.annualPrice / 12).toLocaleString("ru-RU")} ₽ в месяц
+                  </div>
+                  <div className="mt-2 font-mono text-[10px] uppercase tracking-widest text-white/70">
+                    + {tier.annualTickets} билетов сразу
+                  </div>
+                </div>
+
+
+
                 <Link
                   to="/login"
                   search={{ redirect: `/club/hell-pass/${tier.slug}` }}
