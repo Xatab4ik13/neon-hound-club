@@ -99,11 +99,22 @@ function TierDetailPage() {
   const targetRank = TIER_RANK[tier.slug as PassTier];
   const isSameTier = active?.tier === tier.slug;
   const isUpgrade = active && targetRank > activeRank;
+  const isDowngrade = active && targetRank < activeRank;
+
+  // Период: 30 дней или год. Год — разовый платёж, выгоднее почти в 2 раза.
+  const [period, setPeriod] = useState<"monthly" | "annual">("annual");
+  const isAnnual = period === "annual";
+  const listRub = isAnnual ? tier.annualPrice : tier.price;
+  const yearFull = tier.price * 12;
+  const saveRub = yearFull - tier.annualPrice;
+  const savePct = Math.round((saveRub / yearFull) * 100);
+  const perMonth = Math.round(tier.annualPrice / 12);
+
   // Персональная цена с зачётом уплаченного за активные пассы ниже тиром.
   const personal = passQ.data?.prices?.[tier.slug as PassTier] ?? null;
-  const creditRub = isUpgrade ? (personal?.creditRub ?? 0) : 0;
-  const payRub = creditRub > 0 ? (personal?.priceRub ?? tier.price) : tier.price;
-  const isDowngrade = active && targetRank < activeRank;
+  const personalForPeriod = isAnnual ? personal?.annual : personal;
+  const creditRub = isUpgrade ? (personalForPeriod?.creditRub ?? 0) : 0;
+  const payRub = creditRub > 0 ? (personalForPeriod?.priceRub ?? listRub) : listRub;
 
   // Перехват submit: если не залогинен — на /login; если даунгрейд — блок.
   const guard = (e: React.FormEvent<HTMLFormElement>) => {
@@ -119,15 +130,19 @@ function TierDetailPage() {
   };
 
   const isPlatinum = tier.ultimate;
+  const periodLabel = isAnnual ? "на год" : "на 30 дней";
   const baseLabel = !isAuthed
     ? "Войти и оплатить"
     : isDowngrade
       ? `Уже выше — ${active!.tier.toUpperCase()}`
       : isSameTier
-        ? "Продлить на 30 дней"
+        ? `Продлить ${periodLabel}`
         : isUpgrade
           ? "Апгрейд — оплатить"
-          : "Оплатить";
+          : isAnnual
+            ? "Оплатить год"
+            : "Оплатить";
+
 
   return (
     <main className="mx-auto w-full max-w-5xl px-4 py-8 md:px-8 md:py-12">
