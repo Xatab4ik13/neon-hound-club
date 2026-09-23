@@ -304,6 +304,8 @@ export async function paymentsRoutes(app: FastifyInstance) {
             : "Не удалось открыть оплату";
         if (!(e instanceof OrderCreateError || e instanceof PaymentInitError)) {
           req.log.error({ err: e }, "order redirect failed");
+        } else {
+          req.log.warn({ code: (e as { code?: string }).code, msg }, "order redirect rejected");
         }
         return replyErr("/club/checkout", msg);
       }
