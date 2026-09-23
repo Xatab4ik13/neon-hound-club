@@ -258,6 +258,7 @@ export async function paymentsRoutes(app: FastifyInstance) {
     if (target === "order") {
       const parsed = orderRedirectSchema.safeParse(body);
       if (!parsed.success) {
+        req.log.warn({ issues: parsed.error.issues }, "order redirect invalid body");
         return replyErr("/club/checkout", parsed.error.issues[0]?.message ?? "Неверные данные");
       }
       const method = parsed.data.method ?? "sbp";
@@ -304,6 +305,8 @@ export async function paymentsRoutes(app: FastifyInstance) {
             : "Не удалось открыть оплату";
         if (!(e instanceof OrderCreateError || e instanceof PaymentInitError)) {
           req.log.error({ err: e }, "order redirect failed");
+        } else {
+          req.log.warn({ code: (e as { code?: string }).code, msg }, "order redirect rejected");
         }
         return replyErr("/club/checkout", msg);
       }
