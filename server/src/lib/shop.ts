@@ -636,7 +636,7 @@ export async function decrementSizeStockIfTracked(
     UPDATE products
     SET sizes = (
       SELECT jsonb_agg(
-        CASE WHEN (s->>'label') = ${sizeLabel} AND (s->'stock') IS NOT NULL AND (s->>'stock') <> 'null'
+        CASE WHEN (s->>'label') = ${sizeLabel} AND (s->>'stock') IS NOT NULL
              THEN jsonb_set(s, '{stock}', to_jsonb(((s->>'stock')::int) - ${qty}))
              ELSE s END
       )
@@ -647,7 +647,7 @@ export async function decrementSizeStockIfTracked(
       AND EXISTS (
         SELECT 1 FROM jsonb_array_elements(sizes) s
         WHERE (s->>'label') = ${sizeLabel}
-          AND ((s->'stock') IS NULL OR (s->>'stock') = 'null' OR ((s->>'stock')::int) >= ${qty})
+          AND ((s->>'stock') IS NULL OR ((s->>'stock')::int) >= ${qty})
       )
     RETURNING id
   `);
@@ -678,7 +678,7 @@ export async function incrementSizeStockIfTracked(
     UPDATE products
     SET sizes = (
       SELECT jsonb_agg(
-        CASE WHEN (s->>'label') = ${sizeLabel} AND (s->'stock') IS NOT NULL AND (s->>'stock') <> 'null'
+        CASE WHEN (s->>'label') = ${sizeLabel} AND (s->>'stock') IS NOT NULL
              THEN jsonb_set(s, '{stock}', to_jsonb(((s->>'stock')::int) + ${qty}))
              ELSE s END
       )
