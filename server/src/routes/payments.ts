@@ -258,6 +258,7 @@ export async function paymentsRoutes(app: FastifyInstance) {
     if (target === "order") {
       const parsed = orderRedirectSchema.safeParse(body);
       if (!parsed.success) {
+        req.log.warn({ issues: parsed.error.issues }, "order redirect invalid body");
         return replyErr("/club/checkout", parsed.error.issues[0]?.message ?? "Неверные данные");
       }
       const method = parsed.data.method ?? "sbp";
