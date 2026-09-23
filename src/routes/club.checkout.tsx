@@ -452,6 +452,7 @@ function ClubCheckoutPage() {
       <form
         method="POST"
         action={PAY_ACTION}
+        noValidate
         onSubmit={guard}
         className="md:grid md:grid-cols-[1fr_380px] md:items-start md:gap-8"
       >
