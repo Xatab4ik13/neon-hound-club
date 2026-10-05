@@ -95,6 +95,9 @@ export async function buildApp() {
   await app.register(adminRafflePrizesRoutes, { prefix: "/api/v1/admin/raffles" });
   await app.register(bloggerRafflesRoutes, { prefix: "/api/v1/blogger/raffles" });
 
+  const { bloggerMoneyRoutes } = await import("./routes/blogger-money.js");
+  await app.register(bloggerMoneyRoutes, { prefix: "/api/v1/blogger/money" });
+
   const { profileRoutes, garageRoutes } = await import("./routes/profile.js");
   await app.register(profileRoutes, { prefix: "/api/v1/profile" });
   await app.register(garageRoutes, { prefix: "/api/v1/garage" });
