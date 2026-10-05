@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { Banknote, Loader2 } from "@/components/ui/icons";
+import { CircleDollarSign, Loader2 } from "@/components/ui/icons";
 import { fetchBloggerMoney } from "@/lib/blogger-money";
 
 export const Route = createFileRoute("/blogger/money")({
@@ -48,7 +48,7 @@ function BloggerMoneyPage() {
 
         <div className="mt-8 border-y border-border bg-card/30 px-4 py-10 md:px-8 md:py-14">
           <div className="flex items-center gap-3 text-primary">
-            <Banknote className="h-7 w-7" aria-hidden />
+            <CircleDollarSign className="h-7 w-7" strokeWidth={2.5} aria-hidden />
             <span className="font-mono text-xs font-bold uppercase tracking-wider">Цифровые и виртуальные товары</span>
           </div>
           <div className="mt-5 min-h-[64px] font-display text-5xl font-black leading-none tabular-nums text-foreground md:text-7xl">
