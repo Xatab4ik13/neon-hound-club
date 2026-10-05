@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { Banknote, Loader2 } from "@/components/ui/icons";
 import { fetchBloggerMoney } from "@/lib/blogger-money";
 
@@ -27,8 +28,8 @@ function defaultRange() {
 
 function BloggerMoneyPage() {
   const initial = defaultRange();
-  const [from, setFrom] = React.useState(initial.from);
-  const [to, setTo] = React.useState(initial.to);
+  const [from, setFrom] = useState(initial.from);
+  const [to, setTo] = useState(initial.to);
   const today = localDateValue(new Date());
   const validRange = from >= MIN_DATE && from <= to && to <= today;
   const { data, isLoading, isFetching } = useQuery({
