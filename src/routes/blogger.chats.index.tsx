@@ -2,9 +2,46 @@
 // показываем empty-state, без моков.
 
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useBloggerChatList } from "@/lib/blogger-chats-api";
 import { cn } from "@/lib/utils";
+import { getPushSubscription, isPushSupported, subscribeToPush } from "@/lib/push";
+
+/** Блогер раньше нигде не подписывался на пуши — поэтому уведомления не приходили. */
+function PushPrompt() {
+  const [state, setState] = useState<"hidden" | "off" | "busy">("hidden");
+  const [err, setErr] = useState<string | null>(null);
+  useEffect(() => {
+    if (!isPushSupported()) return;
+    getPushSubscription()
+      .then((s) => setState(s && Notification.permission === "granted" ? "hidden" : "off"))
+      .catch(() => setState("off"));
+  }, []);
+  if (state === "hidden") return null;
+  return (
+    <div className="mx-4 mb-3 rounded-2xl border border-primary/40 bg-primary/10 p-3">
+      <p className="text-[13px] text-foreground">Включи уведомления, чтобы видеть новые сообщения в VIP-чате.</p>
+      {err && <p className="mt-1 text-[12px] text-destructive">{err}</p>}
+      <button
+        type="button"
+        disabled={state === "busy"}
+        onClick={async () => {
+          setErr(null);
+          setState("busy");
+          const r = await subscribeToPush().catch(() => ({ ok: false, reason: "Не получилось включить" }));
+          if (r.ok) setState("hidden");
+          else {
+            setErr(r.reason ?? "Не получилось включить");
+            setState("off");
+          }
+        }}
+        className="mt-2 rounded-xl bg-primary px-4 py-2 text-[13px] font-bold text-primary-foreground disabled:opacity-50"
+      >
+        {state === "busy" ? "Включаю…" : "Включить уведомления"}
+      </button>
+    </div>
+  );
+}
 
 export const Route = createFileRoute("/blogger/chats/")({
   head: () => ({
@@ -71,6 +108,8 @@ function BloggerChatsList() {
             {(data?.length ?? 0)} чатов
           </p>
         </div>
+
+        <PushPrompt />
 
         <div className="px-4 pb-3">
           <input
