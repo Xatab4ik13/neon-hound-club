@@ -32,7 +32,7 @@ function BloggerMoneyPage() {
   const [to, setTo] = useState(initial.to);
   const today = localDateValue(new Date());
   const validRange = from >= MIN_DATE && from <= to && to <= today;
-  const { data, isLoading, isFetching } = useQuery({
+  const { data, isLoading, isFetching, isError } = useQuery({
     queryKey: ["blogger", "money", from, to],
     queryFn: () => fetchBloggerMoney(from, to),
     enabled: validRange,
@@ -54,6 +54,8 @@ function BloggerMoneyPage() {
           <div className="mt-5 min-h-[64px] font-display text-5xl font-black leading-none tabular-nums text-foreground md:text-7xl">
             {isLoading ? (
               <Loader2 className="h-10 w-10 animate-spin text-primary" aria-label="Загрузка" />
+            ) : isError ? (
+              <span className="text-2xl text-destructive md:text-3xl">Не удалось загрузить</span>
             ) : (
               `${(data?.amountRub ?? 0).toLocaleString("ru-RU")} ₽`
             )}
