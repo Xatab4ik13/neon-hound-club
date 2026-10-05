@@ -232,7 +232,13 @@ export async function bloggerVipChatRoutes(app: FastifyInstance) {
       .from(vipChatThreads)
       .innerJoin(users, eq(users.id, vipChatThreads.userId))
       .leftJoin(profiles, eq(profiles.userId, vipChatThreads.userId))
-      .where(eq(vipChatThreads.bloggerId, session.sub))
+      .where(
+        and(
+          eq(vipChatThreads.bloggerId, session.sub),
+          // Пустые треды (юзер открыл чат и ничего не написал) не показываем.
+          sql`exists (select 1 from ${vipChatMessages} m where m.thread_id = ${vipChatThreads.id})`,
+        ),
+      )
       .orderBy(desc(vipChatThreads.lastMessageAt))
       .limit(200);
     return { items: rows };
