@@ -46,21 +46,29 @@ function BloggerMoneyPage() {
           БАБЛО
         </h1>
 
-        <div className="mt-8 border-y border-border bg-card/30 px-4 py-10 md:px-8 md:py-14">
-          <div className="flex items-center gap-3 text-primary">
-            <CircleDollarSign className="h-7 w-7" strokeWidth={2.5} aria-hidden />
-            <span className="font-mono text-xs font-bold uppercase tracking-wider">Цифровые и виртуальные товары</span>
+        {[
+          { label: "Цифровые и виртуальные товары", value: data?.amountRub },
+          { label: "Предзаказы футболок", value: data?.preorderRub },
+        ].map((row, i) => (
+          <div
+            key={row.label}
+            className={`${i === 0 ? "mt-8 border-y" : "border-b"} border-border bg-card/30 px-4 py-10 md:px-8 md:py-14`}
+          >
+            <div className="flex items-center gap-3 text-primary">
+              <CircleDollarSign className="h-7 w-7" strokeWidth={2.5} aria-hidden />
+              <span className="font-mono text-xs font-bold uppercase tracking-wider">{row.label}</span>
+            </div>
+            <div className="mt-5 min-h-[64px] font-display text-5xl font-black leading-none tabular-nums text-foreground md:text-7xl">
+              {isLoading ? (
+                <Loader2 className="h-10 w-10 animate-spin text-primary" aria-label="Загрузка" />
+              ) : isError ? (
+                <span className="text-2xl text-destructive md:text-3xl">Не удалось загрузить</span>
+              ) : (
+                `${(row.value ?? 0).toLocaleString("ru-RU")} ₽`
+              )}
+            </div>
           </div>
-          <div className="mt-5 min-h-[64px] font-display text-5xl font-black leading-none tabular-nums text-foreground md:text-7xl">
-            {isLoading ? (
-              <Loader2 className="h-10 w-10 animate-spin text-primary" aria-label="Загрузка" />
-            ) : isError ? (
-              <span className="text-2xl text-destructive md:text-3xl">Не удалось загрузить</span>
-            ) : (
-              `${(data?.amountRub ?? 0).toLocaleString("ru-RU")} ₽`
-            )}
-          </div>
-        </div>
+        ))}
 
         <div className={`mt-6 grid gap-4 sm:grid-cols-2 transition-opacity ${isFetching ? "opacity-60" : ""}`}>
           <DateField

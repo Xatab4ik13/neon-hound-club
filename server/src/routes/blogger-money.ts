@@ -4,7 +4,7 @@ import { z } from "zod";
 import { db } from "../db/client.js";
 import { orderItems, orders, PAID_ORDER_STATUSES } from "../db/schema/shop.js";
 import { requireBlogger } from "../lib/auth.js";
-import { calculateBloggerMoneyRub } from "../lib/blogger-money.js";
+import { calculateBloggerMoneyRub, calculatePreorderRub } from "../lib/blogger-money.js";
 
 const PROJECT_STARTED_AT = "2026-08-09T00:00:00.000Z";
 
@@ -38,6 +38,7 @@ export async function bloggerMoneyRoutes(app: FastifyInstance) {
           subtotalRub: orders.subtotalRub,
           discountRub: orders.discountRub,
           digitalGrossRub: sql<number>`COALESCE(SUM(${orderItems.qty} * ${orderItems.priceRubSnapshot}) FILTER (WHERE ${orderItems.kindSnapshot} IN ('digital', 'virtual')), 0)::int`,
+          preorderGrossRub: sql<number>`COALESCE(SUM(${orderItems.qty} * ${orderItems.priceRubSnapshot}) FILTER (WHERE ${orderItems.kindSnapshot} = 'preorder'), 0)::int`,
         })
         .from(orders)
         .innerJoin(orderItems, sql`${orderItems.orderId} = ${orders.id}`)
@@ -52,6 +53,7 @@ export async function bloggerMoneyRoutes(app: FastifyInstance) {
 
       return {
         amountRub: calculateBloggerMoneyRub(rows),
+        preorderRub: calculatePreorderRub(rows),
         range: {
           from: from.toISOString(),
           to: to.toISOString(),
