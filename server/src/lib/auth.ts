@@ -227,3 +227,20 @@ export async function requireBloggerOrAdmin(req: FastifyRequest, reply: FastifyR
     return reply.code(401).send({ error: "unauthorized", message: "Требуется вход" });
   }
 }
+
+/** preHandler: требует именно роль blogger через клубную cookie. */
+export async function requireBlogger(req: FastifyRequest, reply: FastifyReply): Promise<void> {
+  try {
+    await req.jwtVerify();
+    const tokenUser = req.user as SessionPayload;
+    const user = await hydrateFreshSession(req, tokenUser.sub);
+    if (!user) {
+      return reply.code(401).send({ error: "unauthorized", message: "Сессия устарела" });
+    }
+    if (user.role !== "blogger") {
+      return reply.code(403).send({ error: "forbidden", message: "Только для блогера" });
+    }
+  } catch {
+    return reply.code(401).send({ error: "unauthorized", message: "Требуется вход" });
+  }
+}

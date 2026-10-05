@@ -3,7 +3,7 @@
 
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useState } from "react";
-import { Newspaper, PlumpChat, PlumpTicket, PlumpMore, type LucideIcon } from "@/components/ui/icons";
+import { Newspaper, PlumpChat, PlumpTicket, PlumpMore, Banknote, type LucideIcon } from "@/components/ui/icons";
 import { haptic } from "@/hooks/use-haptic";
 import { BloggerMoreSheet } from "./BloggerMoreSheet";
 
@@ -11,7 +11,7 @@ type TabIcon = LucideIcon | React.ComponentType<React.SVGProps<SVGSVGElement>>;
 
 type Tab = {
   label: string;
-  href: "/blogger" | "/blogger/chats" | "/blogger/raffles";
+  href: "/blogger" | "/blogger/chats" | "/blogger/raffles" | "/blogger/money";
   icon: TabIcon;
   exact?: boolean;
 };
@@ -20,6 +20,7 @@ const TABS: Tab[] = [
   { label: "Лента", href: "/blogger", icon: Newspaper, exact: true },
   { label: "VIP чат", href: "/blogger/chats", icon: PlumpChat },
   { label: "Розыгрыши", href: "/blogger/raffles", icon: PlumpTicket },
+  { label: "БАБЛО", href: "/blogger/money", icon: Banknote },
 ];
 
 const MORE_PATHS = ["/blogger/hell-ai", "/blogger/settings"];

@@ -56,6 +56,7 @@ import { Route as ClubCheckoutRouteImport } from './routes/club.checkout'
 import { Route as ClubCartRouteImport } from './routes/club.cart'
 import { Route as CheckoutSuccessRouteImport } from './routes/checkout.success'
 import { Route as BloggerSettingsRouteImport } from './routes/blogger.settings'
+import { Route as BloggerMoneyRouteImport } from './routes/blogger.money'
 import { Route as BloggerHellAiRouteImport } from './routes/blogger.hell-ai'
 import { Route as AdminVipChatRouteImport } from './routes/admin.vip-chat'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
@@ -341,6 +342,11 @@ const BloggerSettingsRoute = BloggerSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => BloggerRoute,
 } as any)
+const BloggerMoneyRoute = BloggerMoneyRouteImport.update({
+  id: '/money',
+  path: '/money',
+  getParentRoute: () => BloggerRoute,
+} as any)
 const BloggerHellAiRoute = BloggerHellAiRouteImport.update({
   id: '/hell-ai',
   path: '/hell-ai',
@@ -623,6 +629,7 @@ export interface FileRoutesByFullPath {
   '/admin/users': typeof AdminUsersRoute
   '/admin/vip-chat': typeof AdminVipChatRoute
   '/blogger/hell-ai': typeof BloggerHellAiRoute
+  '/blogger/money': typeof BloggerMoneyRoute
   '/blogger/settings': typeof BloggerSettingsRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/club/cart': typeof ClubCartRoute
@@ -718,6 +725,7 @@ export interface FileRoutesByTo {
   '/admin/users': typeof AdminUsersRoute
   '/admin/vip-chat': typeof AdminVipChatRoute
   '/blogger/hell-ai': typeof BloggerHellAiRoute
+  '/blogger/money': typeof BloggerMoneyRoute
   '/blogger/settings': typeof BloggerSettingsRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/club/cart': typeof ClubCartRoute
@@ -817,6 +825,7 @@ export interface FileRoutesById {
   '/admin/users': typeof AdminUsersRoute
   '/admin/vip-chat': typeof AdminVipChatRoute
   '/blogger/hell-ai': typeof BloggerHellAiRoute
+  '/blogger/money': typeof BloggerMoneyRoute
   '/blogger/settings': typeof BloggerSettingsRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/club/cart': typeof ClubCartRoute
@@ -917,6 +926,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/admin/vip-chat'
     | '/blogger/hell-ai'
+    | '/blogger/money'
     | '/blogger/settings'
     | '/checkout/success'
     | '/club/cart'
@@ -1012,6 +1022,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/admin/vip-chat'
     | '/blogger/hell-ai'
+    | '/blogger/money'
     | '/blogger/settings'
     | '/checkout/success'
     | '/club/cart'
@@ -1110,6 +1121,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/admin/vip-chat'
     | '/blogger/hell-ai'
+    | '/blogger/money'
     | '/blogger/settings'
     | '/checkout/success'
     | '/club/cart'
@@ -1536,6 +1548,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BloggerSettingsRouteImport
       parentRoute: typeof BloggerRoute
     }
+    '/blogger/money': {
+      id: '/blogger/money'
+      path: '/money'
+      fullPath: '/blogger/money'
+      preLoaderRoute: typeof BloggerMoneyRouteImport
+      parentRoute: typeof BloggerRoute
+    }
     '/blogger/hell-ai': {
       id: '/blogger/hell-ai'
       path: '/hell-ai'
@@ -1936,6 +1955,7 @@ const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 interface BloggerRouteChildren {
   BloggerHellAiRoute: typeof BloggerHellAiRoute
+  BloggerMoneyRoute: typeof BloggerMoneyRoute
   BloggerSettingsRoute: typeof BloggerSettingsRoute
   BloggerIndexRoute: typeof BloggerIndexRoute
   BloggerChatsUserIdRoute: typeof BloggerChatsUserIdRoute
@@ -1946,6 +1966,7 @@ interface BloggerRouteChildren {
 
 const BloggerRouteChildren: BloggerRouteChildren = {
   BloggerHellAiRoute: BloggerHellAiRoute,
+  BloggerMoneyRoute: BloggerMoneyRoute,
   BloggerSettingsRoute: BloggerSettingsRoute,
   BloggerIndexRoute: BloggerIndexRoute,
   BloggerChatsUserIdRoute: BloggerChatsUserIdRoute,
