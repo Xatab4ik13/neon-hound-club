@@ -28,14 +28,7 @@ export async function enterRaffle(opts: {
   if (!r) return { ok: false, code: "not_found" };
   if (r.status !== "active") return { ok: false, code: "not_active" };
 
-  // Анти-мультиак: участвовать можно только с подтверждённым через Telegram Gateway телефоном.
-  // phone_verified_at заполняется только успешным /profile/phone/verify, ручной ввод не считается.
-  const [prof] = await db
-    .select({ phoneVerifiedAt: profiles.phoneVerifiedAt })
-    .from(profiles)
-    .where(eq(profiles.userId, opts.userId))
-    .limit(1);
-  if (!prof?.phoneVerifiedAt) return { ok: false, code: "phone_required" };
+  // Требование подтверждённого телефона для участия отключено (решение владельца).
 
 
 
