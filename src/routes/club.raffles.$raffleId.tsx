@@ -139,7 +139,8 @@ function RaffleDetailContent({
   const [flash, setFlash] = useState<string | null>(null);
   const [stakeBump, setStakeBump] = useState(0);
   const finished = raffle.status === "finished";
-  const phoneRequired = isAuthed && !phoneVerified;
+  void phoneVerified;
+  const phoneRequired = false;
 
   const enterMut = useMutation({
     mutationFn: async () => {
