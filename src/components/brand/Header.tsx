@@ -110,7 +110,7 @@ export function Header() {
             className="pointer-events-auto absolute left-1/2 top-0 flex h-full -translate-x-1/2 items-start"
           >
             <img
-              src={hhrLogo.url}
+              src={hhrLogo}
               alt="HELLHOUND Racing"
               className="pointer-events-none h-[187%] w-auto"
             />
@@ -340,7 +340,7 @@ function MobileMenu({
             onClick={onClose}
             aria-label="HELLHOUND Racing"
           >
-            <img src={hhrLogo.url} alt="HELLHOUND Racing" className="h-24 w-auto" />
+            <img src={hhrLogo} alt="HELLHOUND Racing" className="h-24 w-auto" />
           </Link>
 
           <button
