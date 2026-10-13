@@ -258,6 +258,7 @@ function pluralTickets(n: number) {
   return "билетов";
 }
 
+function Field({ placeholder }: { placeholder: string }) {
   return (
     <input
       placeholder={placeholder}
