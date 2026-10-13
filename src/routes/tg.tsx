@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   AppRoot,
   Badge,
@@ -11,6 +11,9 @@ import {
   Section,
 } from "@telegram-apps/telegram-ui";
 import "@telegram-apps/telegram-ui/dist/styles.css";
+import { Slider } from "@/components/ui/slider";
+import { PlumpNum } from "@/components/brand/PlumpNum";
+import { getTgTicketSelection, TG_TICKET_MIN, TG_TICKET_MAX, TG_TICKET_STEP } from "@/lib/tg-tickets";
 import { Minus, Plus, X } from "lucide-react";
 import ticketImg from "@/assets/spin/ticket.webp";
 import tshirtImg from "@/assets/spin/tshirt-blur.webp";
@@ -51,50 +54,13 @@ const SHIRTS = [
 
 type Line = { size: string; qty: number };
 
-// Брендовые цвета поверх темы Telegram
-const THEME = `
-.hh-tg {
-  --tgui--bg_color: #0b0b0f;
-  --tgui--secondary_bg_color: #0b0b0f;
-  --tgui--section_bg_color: #15151c;
-  --tgui--card_bg_color: #15151c;
-  --tgui--header_bg_color: #0b0b0f;
-  --tgui--text_color: #ffffff;
-  --tgui--hint_color: #8b8b99;
-  --tgui--subtitle_text_color: #8b8b99;
-  --tgui--section_header_text_color: #ff2bd6;
-  --tgui--button_color: #f000c0;
-  --tgui--button_text_color: #ffffff;
-  --tgui--link_color: #ff2bd6;
-  --tgui--accent_text_color: #ff2bd6;
-  --tgui--tertiary_bg_color: #1f1f29;
-  --tgui--quartenary_bg_color: #2a2a36;
-  background: #0b0b0f;
-}
-@keyframes hh-beam { to { --hh-angle: 360deg; } }
-@property --hh-angle { syntax: "<angle>"; initial-value: 0deg; inherits: false; }
-.hh-beam { position: relative; }
-.hh-beam::before {
-  content: ""; position: absolute; inset: -1.5px; border-radius: inherit; padding: 1.5px;
-  background: conic-gradient(from var(--hh-angle), transparent 70%, #ff2bd6 85%, #c6ff00 92%, transparent 100%);
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor; mask-composite: exclude;
-  animation: hh-beam 2.6s linear infinite; pointer-events: none;
-}
-@keyframes hh-float { 0%,100% { transform: translateY(0) rotate(-1deg); } 50% { transform: translateY(-8px) rotate(0.5deg); } }
-.hh-float { animation: hh-float 4.5s ease-in-out infinite; }
-@keyframes hh-shine { from { background-position: 200% 0; } to { background-position: -200% 0; } }
-.hh-shine { background: linear-gradient(110deg, #fff 35%, #ff2bd6 50%, #fff 65%); background-size: 200% 100%;
-  -webkit-background-clip: text; background-clip: text; color: transparent; animation: hh-shine 4s linear infinite; }
-@media (prefers-reduced-motion: reduce) { .hh-beam::before, .hh-float, .hh-shine { animation: none; } }
-`;
-
 function TgMiniApp() {
   const [pack, setPack] = useState(3);
+  const [customTickets, setCustomTickets] = useState<number | null>(null);
   const [shirts, setShirts] = useState<Record<string, Line>>({});
   const [checkout, setCheckout] = useState(false);
 
-  const selected = TICKET_PACKS[pack];
+  const selected = customTickets === null ? TICKET_PACKS[pack] : getTgTicketSelection(customTickets);
   const shirtsTotal = SHIRTS.reduce((s, sh) => s + (shirts[sh.id]?.qty ?? 0) * sh.price, 0);
   const total = selected.price + shirtsTotal;
   const hasShirts = shirtsTotal > 0;
@@ -102,7 +68,6 @@ function TgMiniApp() {
 
   return (
     <AppRoot appearance="dark" platform="ios" className="hh-tg">
-      <style>{THEME}</style>
       <div className="mx-auto min-h-dvh max-w-md pb-32">
         <header className="flex justify-center pt-5">
           <img src={hhrLogo.url} alt="HELLHOUND Racing" className="h-14 w-auto" draggable={false} />
@@ -113,7 +78,7 @@ function TgMiniApp() {
           <img
             src={bikeImg}
             alt="Ваня на розовой Yamaha MT-07"
-            className="hh-float mx-auto block w-full max-w-[250px] select-none"
+            className="mx-auto block w-full max-w-[250px] select-none"
             draggable={false}
           />
           <div className="mt-3 font-mono text-[11px] font-bold uppercase tracking-[0.3em] text-[#c6ff00]">
@@ -136,11 +101,11 @@ function TgMiniApp() {
           >
             <div className="grid grid-cols-3 gap-2 p-3">
               {TICKET_PACKS.map((p, i) => {
-                const active = i === pack;
+                const active = customTickets === null && i === pack;
                 return (
                   <button
                     key={p.tickets}
-                    onClick={() => setPack(i)}
+                    onClick={() => { setPack(i); setCustomTickets(null); }}
                     className={`relative rounded-2xl px-2 pb-3 pt-4 text-center transition-all active:scale-95 ${
                       active ? "hh-beam bg-[#f000c0]/15" : "bg-[#1f1f29]"
                     }`}
@@ -166,6 +131,17 @@ function TgMiniApp() {
                 );
               })}
             </div>
+            <div className={`hh-ticket-slider px-4 pb-4 pt-2 ${customTickets !== null ? "hh-ticket-slider-active" : ""}`}>
+              <div className="mb-3 flex items-center justify-between">
+                <span className="font-bold">Больше билетов</span>
+                <PlumpNum value={customTickets ?? TG_TICKET_MIN} size={20} />
+              </div>
+              <Slider aria-label="Количество билетов" min={TG_TICKET_MIN} max={TG_TICKET_MAX}
+                step={TG_TICKET_STEP} value={[customTickets ?? TG_TICKET_MIN]}
+                onValueChange={([value]) => { if (value !== undefined) setCustomTickets(value); }}
+                onPointerDown={() => setCustomTickets((current) => current ?? TG_TICKET_MIN)} />
+              <div className="mt-3 flex justify-between text-xs text-muted-foreground"><span>100</span><span>1 000</span></div>
+            </div>
             <Cell
               before={<img src={ticketImg} alt="" className="h-9 w-9 object-contain" />}
               subtitle={`${perTicket} ₽ за билет`}
@@ -176,7 +152,7 @@ function TgMiniApp() {
           </Section>
 
           <Section
-            header={<Section.Header large>Предзаказ мерча</Section.Header>}
+            header={<Section.Header large><span className="hh-merch-heading">Предзаказ мерча</span></Section.Header>}
             footer={<Section.Footer className="!text-[#8b8b99]">Доставку посчитаем и согласуем при отправке.</Section.Footer>}
           >
             {SHIRTS.map((sh) => {
@@ -184,11 +160,9 @@ function TgMiniApp() {
               const update = (patch: Partial<Line>) =>
                 setShirts((s) => ({ ...s, [sh.id]: { ...line, ...patch } }));
               return (
-                <div key={sh.id}>
+                <div key={sh.id} className="hh-merch-item">
+                  <img src={tshirtImg} alt={sh.name} className="hh-shirt-image" />
                   <Cell
-                    before={
-                      <img src={tshirtImg} alt={sh.name} className="h-16 w-16 rounded-xl bg-[#1f1f29] object-contain" />
-                    }
                     subtitle={`${sh.price.toLocaleString("ru-RU")} ₽`}
                     after={<Stepper value={line.qty} onChange={(qty) => update({ qty })} max={10} />}
                   >
@@ -213,11 +187,11 @@ function TgMiniApp() {
         </List>
 
         {/* Аналог MainButton Telegram */}
-        <div className="fixed inset-x-0 bottom-0 z-40 mx-auto max-w-md bg-gradient-to-t from-[#0b0b0f] via-[#0b0b0f]/95 to-transparent px-4 pb-5 pt-6">
-          <Button size="l" stretched onClick={() => setCheckout(true)}>
+        <div className="hh-payment-dock fixed inset-x-0 bottom-0 z-40 mx-auto max-w-md px-4">
+          <Button className="hh-pay-button" size="l" stretched onClick={() => setCheckout(true)}>
             Оплатить · <NumberTicker value={total} /> ₽
           </Button>
-          <div className="mt-2 text-center text-[11px] text-[#8b8b99]">
+          <div className="hh-payment-summary mt-2 text-center text-[11px]">
             {selected.tickets} {pluralTickets(selected.tickets)}
             {hasShirts ? " + мерч" : ""}
           </div>
@@ -279,7 +253,7 @@ function NumberTicker({ value }: { value: number }) {
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
   }, [value]);
-  return <span className="tabular-nums">{shown.toLocaleString("ru-RU")}</span>;
+  return <span className="inline-flex"><PlumpNum value={shown} format size={18} /></span>;
 }
 
 function Stepper({ value, onChange, max }: { value: number; onChange: (v: number) => void; max: number }) {
@@ -326,7 +300,7 @@ function CheckoutSheet({ total, needAddress, onClose }: { total: number; needAdd
           {needAddress ? "Доставку посчитаем и согласуем при отправке." : "Билеты придут на этот аккаунт Telegram."}
         </p>
         <div className="px-4 pt-4">
-          <Button size="l" stretched>
+          <Button className="hh-pay-button" size="l" stretched>
             К оплате {total.toLocaleString("ru-RU")} ₽
           </Button>
         </div>

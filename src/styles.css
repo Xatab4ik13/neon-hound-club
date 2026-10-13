@@ -902,3 +902,51 @@ html.hh-admin *::-webkit-scrollbar-thumb:hover {
   background: var(--primary);
   border: 3px solid var(--background);
 }
+
+/* Telegram-only theme and controls. */
+
+.hh-tg {
+  --hh-tg-lime: #c6ff00;
+  --hh-tg-ink: #0b0b0f;
+  --hh-tg-paper: #ffffff;
+  --hh-tg-payment-shadow: 0 8px 0 #78a000, 0 16px 28px #00000080;
+  --tgui--bg_color: #0b0b0f;
+  --tgui--secondary_bg_color: #0b0b0f;
+  --tgui--section_bg_color: #15151c;
+  --tgui--card_bg_color: #15151c;
+  --tgui--header_bg_color: #0b0b0f;
+  --tgui--text_color: #ffffff;
+  --tgui--hint_color: #8b8b99;
+  --tgui--subtitle_text_color: #8b8b99;
+  --tgui--section_header_text_color: #ff2bd6;
+  --tgui--button_color: #f000c0;
+  --tgui--button_text_color: #ffffff;
+  --tgui--link_color: #ff2bd6;
+  --tgui--accent_text_color: #ff2bd6;
+  --tgui--tertiary_bg_color: #1f1f29;
+  --tgui--quartenary_bg_color: #2a2a36;
+  background: #0b0b0f;
+}
+@keyframes hh-beam { to { --hh-angle: 360deg; } }
+@property --hh-angle { syntax: "<angle>"; initial-value: 0deg; inherits: false; }
+.hh-beam { position: relative; }
+.hh-beam::before {
+  content: ""; position: absolute; inset: -1.5px; border-radius: inherit; padding: 1.5px;
+  background: conic-gradient(from var(--hh-angle), transparent 70%, #ff2bd6 85%, #c6ff00 92%, transparent 100%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+  animation: hh-beam 2.6s linear infinite; pointer-events: none;
+}
+@keyframes hh-shine { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+.hh-tg .hh-shine { background: linear-gradient(110deg, var(--hh-tg-lime) 35%, var(--hh-tg-paper) 50%, var(--hh-tg-lime) 65%); background-size: 200% 100%;
+  -webkit-background-clip: text; background-clip: text; color: transparent; animation: hh-shine 4s linear infinite; }
+@media (prefers-reduced-motion: reduce) { .hh-beam::before, .hh-shine { animation: none; } }
+
+.hh-tg .hh-ticket-slider { --primary: var(--hh-tg-lime); --background: var(--hh-tg-ink); color: var(--tgui--text_color); }
+.hh-tg .hh-ticket-slider-active { color: var(--hh-tg-lime); }
+.hh-tg .hh-merch-heading { color: var(--hh-tg-lime); font-weight: 900; font-size: 26px; }
+.hh-tg .hh-merch-item + .hh-merch-item { border-top: 1px solid var(--tgui--quartenary_bg_color); }
+.hh-tg .hh-shirt-image { display: block; width: 100%; height: 240px; object-fit: contain; padding: 16px 24px 0; }
+.hh-tg .hh-payment-dock { padding-bottom: max(22px, env(safe-area-inset-bottom)); padding-top: 12px; pointer-events: none; }
+.hh-tg .hh-pay-button { --tgui--button_color: var(--hh-tg-lime); --tgui--button_text_color: var(--hh-tg-ink); background: var(--hh-tg-lime); color: var(--hh-tg-ink); border-radius: 24px; min-height: 58px; font-family: var(--font-display); font-weight: 900; font-size: 17px; box-shadow: var(--hh-tg-payment-shadow); pointer-events: auto; }
+.hh-tg .hh-payment-summary { color: var(--hh-tg-paper); text-shadow: 0 1px 4px var(--hh-tg-ink); }
