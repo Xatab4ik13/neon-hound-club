@@ -66,6 +66,31 @@ function TgMiniApp() {
   const [customTickets, setCustomTickets] = useState<number | null>(null);
   const [shirts, setShirts] = useState<Record<string, Line>>({});
   const [checkout, setCheckout] = useState(false);
+  const [paidState, setPaidState] = useState<"none" | "wait" | "paid" | "failed">("none");
+
+  // Telegram WebApp SDK: initData для привязки покупки к Telegram-аккаунту
+  useEffect(() => {
+    const ready = () => { const w = (window as any).Telegram?.WebApp; w?.ready?.(); w?.expand?.(); };
+    if ((window as any).Telegram?.WebApp) return ready();
+    const sc = document.createElement("script");
+    sc.src = "https://telegram.org/js/telegram-web-app.js";
+    sc.onload = ready;
+    document.head.appendChild(sc);
+  }, []);
+
+  // Возврат с платёжной формы банка: ?paid=<id> — ждём подтверждения
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search);
+    if (q.get("failed")) { setPaidState("failed"); return; }
+    const id = q.get("paid");
+    if (!id) return;
+    setPaidState("wait");
+    let n = 0;
+    const tick = () => apiFetch<{ status: string }>(`/api/v1/tg/orders/${id}`)
+      .then((r) => { if (r.status === "paid") setPaidState("paid"); else if (r.status === "failed") setPaidState("failed"); else if (++n < 20) setTimeout(tick, 3000); })
+      .catch(() => { if (++n < 20) setTimeout(tick, 3000); });
+    tick();
+  }, []);
 
   const power = customTickets === null ? 0 : (customTickets - TG_TICKET_MIN) / (TG_TICKET_MAX - TG_TICKET_MIN);
   const isMax = customTickets === TG_TICKET_MAX;
@@ -98,6 +123,13 @@ function TgMiniApp() {
         <header className="flex justify-center pt-5">
           <img src={hhrLogo.url} alt="HELLHOUND Racing" className="h-14 w-auto" draggable={false} />
         </header>
+        {paidState !== "none" && (
+          <div className="hh-paid-banner">
+            {paidState === "paid" && <><b>Оплата прошла</b>Чек пришлём в этот чат. Всё привязано к вашему номеру телефона.</>}
+            {paidState === "wait" && <><b>Проверяем оплату…</b>Обычно это занимает несколько секунд.</>}
+            {paidState === "failed" && <><b>Оплата не прошла</b>Деньги не списаны. Попробуйте ещё раз.</>}
+          </div>
+        )}
 
         {/* Hero: Ваня на байке парит */}
         <div className="px-5 pt-2 text-center">
