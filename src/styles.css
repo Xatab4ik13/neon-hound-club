@@ -944,7 +944,6 @@ html.hh-admin *::-webkit-scrollbar-thumb:hover {
 
 .hh-tg .hh-ticket-slider { --primary: var(--hh-tg-lime); --background: var(--hh-tg-ink); color: var(--tgui--text_color); }
 .hh-tg .hh-ticket-slider-active { color: var(--hh-tg-lime); }
-.hh-tg .hh-section-heading { display: inline-flex; align-items: center; gap: 8px; }
 .hh-tg .hh-section-footer { display: inline-flex; align-items: center; gap: 6px; }
 .hh-tg .hh-merch-heading { color: var(--hh-tg-paper); font-weight: 900; font-size: 26px; }
 .hh-tg .hh-merch-item + .hh-merch-item { border-top: 1px solid var(--tgui--quartenary_bg_color); }
