@@ -334,6 +334,7 @@ function TgDocSheet({ path, onNavigate, onClose }: { path: string; onNavigate: (
 
 /** Подвал: предупреждение о восстановлении сервиса + ссылки на документы */
 function TgLegalFooter() {
+  const [doc, setDoc] = useState<string | null>(null);
   return (
     <footer className="hh-legal">
       <div className="hh-notice">
