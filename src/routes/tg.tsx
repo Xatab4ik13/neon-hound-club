@@ -1,5 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  AppRoot,
+  Badge,
+  Button,
+  Cell,
+  Chip,
+  Input,
+  List,
+  Section,
+} from "@telegram-apps/telegram-ui";
+import "@telegram-apps/telegram-ui/dist/styles.css";
 import { Minus, Plus, X } from "lucide-react";
 import ticketImg from "@/assets/spin/ticket.webp";
 import tshirtImg from "@/assets/spin/tshirt-blur.webp";
@@ -7,8 +18,9 @@ import bikeImg from "@/assets/vanya-bike-float.png";
 import hhrLogo from "@/assets/hhr-logo.png.asset.json";
 
 /**
- * Набросок страницы для Telegram: только визуал, без оплаты и сервера.
- * Цены и названия футболок — заглушки, пока владелец не пришлёт реальные.
+ * Страница для Telegram на базе TelegramUI (нативные блоки Telegram)
+ * + пара «вау»-эффектов в духе Magic UI: бегущая рамка, счётчик суммы, таймер до финала.
+ * Пока только визуал — оплата и сервер не подключены. Футболки — заглушки.
  */
 export const Route = createFileRoute("/tg")({
   head: () => ({
@@ -20,12 +32,13 @@ export const Route = createFileRoute("/tg")({
   component: TgMiniApp,
 });
 
-// Наборы билетов — как у цифровых открыток Hell: те же объёмы и цены, только билеты напрямую.
+const FINAL_AT = new Date("2026-10-29T20:00:00+03:00").getTime();
+
 const TICKET_PACKS = [
   { tickets: 1, price: 300 },
   { tickets: 3, price: 500, badge: "−45%" },
   { tickets: 5, price: 700, badge: "−54%" },
-  { tickets: 10, price: 1000, badge: "Hot · −67%" },
+  { tickets: 10, price: 1000, badge: "−67%", hot: true },
   { tickets: 20, price: 1500, badge: "−75%" },
   { tickets: 50, price: 3000, badge: "−80%" },
 ];
@@ -36,187 +49,254 @@ const SHIRTS = [
   { id: "b", name: "Футболка №2", price: 2500 },
 ];
 
-type Cart = { shirts: Record<string, { size: string; qty: number }> };
+type Line = { size: string; qty: number };
+
+// Брендовые цвета поверх темы Telegram
+const THEME = `
+.hh-tg {
+  --tgui--bg_color: #0b0b0f;
+  --tgui--secondary_bg_color: #0b0b0f;
+  --tgui--section_bg_color: #15151c;
+  --tgui--card_bg_color: #15151c;
+  --tgui--header_bg_color: #0b0b0f;
+  --tgui--text_color: #ffffff;
+  --tgui--hint_color: #8b8b99;
+  --tgui--subtitle_text_color: #8b8b99;
+  --tgui--section_header_text_color: #ff2bd6;
+  --tgui--button_color: #f000c0;
+  --tgui--button_text_color: #ffffff;
+  --tgui--link_color: #ff2bd6;
+  --tgui--accent_text_color: #ff2bd6;
+  --tgui--tertiary_bg_color: #1f1f29;
+  --tgui--quartenary_bg_color: #2a2a36;
+  background: #0b0b0f;
+}
+@keyframes hh-beam { to { --hh-angle: 360deg; } }
+@property --hh-angle { syntax: "<angle>"; initial-value: 0deg; inherits: false; }
+.hh-beam { position: relative; }
+.hh-beam::before {
+  content: ""; position: absolute; inset: -1.5px; border-radius: inherit; padding: 1.5px;
+  background: conic-gradient(from var(--hh-angle), transparent 70%, #ff2bd6 85%, #c6ff00 92%, transparent 100%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+  animation: hh-beam 2.6s linear infinite; pointer-events: none;
+}
+@keyframes hh-float { 0%,100% { transform: translateY(0) rotate(-1deg); } 50% { transform: translateY(-8px) rotate(0.5deg); } }
+.hh-float { animation: hh-float 4.5s ease-in-out infinite; }
+@keyframes hh-shine { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+.hh-shine { background: linear-gradient(110deg, #fff 35%, #ff2bd6 50%, #fff 65%); background-size: 200% 100%;
+  -webkit-background-clip: text; background-clip: text; color: transparent; animation: hh-shine 4s linear infinite; }
+@media (prefers-reduced-motion: reduce) { .hh-beam::before, .hh-float, .hh-shine { animation: none; } }
+`;
 
 function TgMiniApp() {
-  const [pack, setPack] = useState(0);
-  const [cart, setCart] = useState<Cart>({ shirts: {} });
+  const [pack, setPack] = useState(3);
+  const [shirts, setShirts] = useState<Record<string, Line>>({});
   const [checkout, setCheckout] = useState(false);
 
-  const selectedPack = TICKET_PACKS[pack];
-  const total = useMemo(
-    () =>
-      selectedPack.price +
-      SHIRTS.reduce((s, sh) => s + (cart.shirts[sh.id]?.qty ?? 0) * sh.price, 0),
-    [selectedPack, cart],
-  );
-  const hasShirts = Object.values(cart.shirts).some((s) => s.qty > 0);
+  const selected = TICKET_PACKS[pack];
+  const shirtsTotal = SHIRTS.reduce((s, sh) => s + (shirts[sh.id]?.qty ?? 0) * sh.price, 0);
+  const total = selected.price + shirtsTotal;
+  const hasShirts = shirtsTotal > 0;
+  const perTicket = Math.round(selected.price / selected.tickets);
 
   return (
-    <div className="mx-auto min-h-dvh max-w-md bg-background pb-28 text-foreground">
-      <header className="flex justify-center px-4 pt-5">
-        <img
-          src={hhrLogo.url}
-          alt="HELLHOUND Racing"
-          className="h-16 w-auto"
-          draggable={false}
-        />
-      </header>
+    <AppRoot appearance="dark" platform="ios" className="hh-tg">
+      <style>{THEME}</style>
+      <div className="mx-auto min-h-dvh max-w-md pb-32">
+        <header className="flex justify-center pt-5">
+          <img src={hhrLogo.url} alt="HELLHOUND Racing" className="h-14 w-auto" draggable={false} />
+        </header>
 
-      {/* Розыгрыш: Ваня на байке парит в воздухе, без рамок и фона */}
-      <section className="mt-2 px-4">
-        <img
-          src={bikeImg}
-          alt="Ваня на розовой Yamaha MT-07"
-          className="mx-auto block w-full max-w-[280px] -rotate-1 select-none drop-shadow-[0_26px_34px_rgba(240,0,192,0.25)]"
-          draggable={false}
-        />
-
-        <h1 className="mt-2 text-center font-display text-[clamp(24px,7.2vw,34px)] font-black uppercase leading-[0.95] tracking-tight text-foreground">
-          Легендарный{" "}
-          <span className="text-primary drop-shadow-[0_0_16px_rgba(240,0,192,0.5)]">
-            розыгрыш
-          </span>{" "}
-          <span className="text-primary drop-shadow-[0_0_16px_rgba(240,0,192,0.5)]">
-            Yamaha MT-07
-          </span>
-        </h1>
-        <p className="mx-auto mt-3 w-fit rounded-full border border-primary/60 bg-primary/10 px-4 py-1.5 font-mono text-[12px] font-bold uppercase tracking-[0.25em] text-primary">
-          Финал 29 октября
-        </p>
-
-        {/* Наборы билетов — по аналогии с цифровыми открытками */}
-        <div className="mt-7">
-          <div className="flex items-center gap-3">
-            <img src={ticketImg} alt="" className="h-11 w-11 object-contain" />
-            <div>
-              <div className="font-display text-base font-bold uppercase leading-none">
-                Билеты на розыгрыш
-              </div>
-              <div className="mt-1 text-xs text-muted-foreground">
-                1 билет = 1 шанс забрать Yamaha MT-07
-              </div>
-            </div>
+        {/* Hero: Ваня на байке парит */}
+        <div className="px-5 pt-2 text-center">
+          <img
+            src={bikeImg}
+            alt="Ваня на розовой Yamaha MT-07"
+            className="hh-float mx-auto block w-full max-w-[250px] select-none"
+            draggable={false}
+          />
+          <div className="mt-3 font-mono text-[11px] font-bold uppercase tracking-[0.3em] text-[#c6ff00]">
+            Легендарный розыгрыш
           </div>
+          <h1 className="hh-shine mt-1 font-display text-[44px] font-black uppercase leading-none tracking-tight">
+            Yamaha MT-07
+          </h1>
+          <Countdown />
+        </div>
 
-          <div className="mt-4 grid grid-cols-3 gap-2">
-            {TICKET_PACKS.map((p, i) => (
-              <button
-                key={p.tickets}
-                onClick={() => setPack(i)}
-                className={`relative rounded-2xl border p-3 text-center transition-colors ${
-                  i === pack
-                    ? "border-primary bg-primary text-primary-foreground"
-                    : "border-border bg-card text-foreground"
-                }`}
-              >
-                {p.badge && (
-                  <span
-                    className={`absolute right-1.5 top-1.5 font-mono text-[9px] font-bold uppercase ${
-                      i === pack ? "text-primary-foreground/80" : "text-primary"
+        <List className="mt-4">
+          <Section
+            header={<Section.Header large>Билеты</Section.Header>}
+            footer={
+              <Section.Footer>
+                1 билет = 1 шанс. Билеты привязываются к твоему Telegram и потом переносятся в аккаунт HHR.
+              </Section.Footer>
+            }
+          >
+            <div className="grid grid-cols-3 gap-2 p-3">
+              {TICKET_PACKS.map((p, i) => {
+                const active = i === pack;
+                return (
+                  <button
+                    key={p.tickets}
+                    onClick={() => setPack(i)}
+                    className={`relative rounded-2xl px-2 pb-3 pt-4 text-center transition-all active:scale-95 ${
+                      active ? "hh-beam bg-[#f000c0]/15" : "bg-[#1f1f29]"
                     }`}
                   >
-                    {p.badge}
-                  </span>
-                )}
-                <div className="font-display text-xl font-black leading-none tabular-nums">
-                  {p.tickets}
-                </div>
-                <div
-                  className={`mt-1 font-mono text-[10px] uppercase tracking-wider ${
-                    i === pack ? "text-primary-foreground/80" : "text-muted-foreground"
-                  }`}
-                >
-                  {pluralTickets(p.tickets)}
-                </div>
-                <div
-                  className={`mt-1.5 font-display text-sm font-bold tabular-nums ${
-                    i === pack ? "text-primary-foreground" : "text-foreground"
-                  }`}
-                >
-                  {p.price.toLocaleString("ru-RU")} ₽
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Футболки */}
-      <section className="mt-8 px-4">
-        <h2 className="font-display text-2xl font-black uppercase">Предзаказ мерча</h2>
-        <div className="mt-4 grid gap-4">
-          {SHIRTS.map((sh) => {
-            const line = cart.shirts[sh.id] ?? { size: "L", qty: 0 };
-            const update = (patch: Partial<typeof line>) =>
-              setCart((c) => ({ ...c, shirts: { ...c.shirts, [sh.id]: { ...line, ...patch } } }));
-            return (
-              <div key={sh.id} className="rounded-3xl border border-border bg-card p-4">
-                <div className="flex gap-4">
-                  <img src={tshirtImg} alt={sh.name} className="h-28 w-28 rounded-2xl bg-secondary object-contain" />
-                  <div className="flex flex-1 flex-col">
-                    <div className="font-display text-lg font-bold uppercase leading-tight">{sh.name}</div>
-                    <div className="mt-1 text-sm text-muted-foreground">{sh.price.toLocaleString("ru-RU")} ₽</div>
-                    <div className="mt-auto">
-                      <Stepper value={line.qty} onChange={(qty) => update({ qty })} max={10} />
+                    {p.badge && (
+                      <span
+                        className={`absolute -top-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full px-2 py-0.5 font-mono text-[9px] font-bold ${
+                          p.hot ? "bg-[#c6ff00] text-black" : "bg-[#2a2a36] text-[#ff2bd6]"
+                        }`}
+                      >
+                        {p.hot ? "ХИТ " : ""}
+                        {p.badge}
+                      </span>
+                    )}
+                    <div className="font-display text-2xl font-black leading-none tabular-nums text-white">
+                      {p.tickets}
                     </div>
+                    <div className="mt-1 text-[11px] text-[#8b8b99]">{pluralTickets(p.tickets)}</div>
+                    <div className={`mt-2 text-sm font-bold tabular-nums ${active ? "text-[#ff2bd6]" : "text-white"}`}>
+                      {p.price.toLocaleString("ru-RU")} ₽
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+            <Cell
+              before={<img src={ticketImg} alt="" className="h-9 w-9 object-contain" />}
+              subtitle={`${perTicket} ₽ за билет`}
+              after={<Badge type="number" mode="primary">{selected.tickets}</Badge>}
+            >
+              Выбрано
+            </Cell>
+          </Section>
+
+          <Section
+            header={<Section.Header large>Предзаказ мерча</Section.Header>}
+            footer={<Section.Footer>Доставку посчитаем и согласуем при отправке.</Section.Footer>}
+          >
+            {SHIRTS.map((sh) => {
+              const line = shirts[sh.id] ?? { size: "L", qty: 0 };
+              const update = (patch: Partial<Line>) =>
+                setShirts((s) => ({ ...s, [sh.id]: { ...line, ...patch } }));
+              return (
+                <div key={sh.id}>
+                  <Cell
+                    before={
+                      <img src={tshirtImg} alt={sh.name} className="h-16 w-16 rounded-xl bg-[#1f1f29] object-contain" />
+                    }
+                    subtitle={`${sh.price.toLocaleString("ru-RU")} ₽`}
+                    after={<Stepper value={line.qty} onChange={(qty) => update({ qty })} max={10} />}
+                  >
+                    {sh.name}
+                  </Cell>
+                  <div className="flex gap-1.5 px-4 pb-3">
+                    {SIZES.map((s) => (
+                      <Chip
+                        key={s}
+                        mode={line.size === s ? "elevated" : "outline"}
+                        onClick={() => update({ size: s })}
+                        className={`flex-1 justify-center ${line.size === s ? "!bg-[#f000c0] !text-white" : ""}`}
+                      >
+                        {s}
+                      </Chip>
+                    ))}
                   </div>
                 </div>
-                <div className="mt-4 flex gap-2">
-                  {SIZES.map((s) => (
-                    <button
-                      key={s}
-                      onClick={() => update({ size: s })}
-                      className={`h-10 flex-1 rounded-xl border font-mono text-sm font-bold transition-colors ${
-                        line.size === s
-                          ? "border-primary bg-primary text-primary-foreground"
-                          : "border-border text-muted-foreground"
-                      }`}
-                    >
-                      {s}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </Section>
+        </List>
+
+        {/* Аналог MainButton Telegram */}
+        <div className="fixed inset-x-0 bottom-0 z-40 mx-auto max-w-md bg-gradient-to-t from-[#0b0b0f] via-[#0b0b0f]/95 to-transparent px-4 pb-5 pt-6">
+          <Button size="l" stretched onClick={() => setCheckout(true)}>
+            Оплатить · <NumberTicker value={total} /> ₽
+          </Button>
+          <div className="mt-2 text-center text-[11px] text-[#8b8b99]">
+            {selected.tickets} {pluralTickets(selected.tickets)}
+            {hasShirts ? " + мерч" : ""}
+          </div>
         </div>
-      </section>
 
-      {/* Аналог MainButton Telegram */}
-      <div className="fixed inset-x-0 bottom-0 mx-auto max-w-md border-t border-border bg-background/95 p-4 backdrop-blur">
-        <button
-          disabled={total === 0}
-          onClick={() => setCheckout(true)}
-          className="h-14 w-full rounded-2xl bg-primary font-display text-lg font-black uppercase text-primary-foreground disabled:opacity-40"
-        >
-          {selectedPack.tickets}{" "}
-          {pluralTickets(selectedPack.tickets)} · {total.toLocaleString("ru-RU")} ₽
-        </button>
+        {checkout && <CheckoutSheet total={total} needAddress={hasShirts} onClose={() => setCheckout(false)} />}
       </div>
+    </AppRoot>
+  );
+}
 
-      {checkout && (
-        <CheckoutSheet total={total} needAddress={hasShirts} onClose={() => setCheckout(false)} />
-      )}
+/** Таймер до финала */
+function Countdown() {
+  const [now, setNow] = useState<number | null>(null);
+  useEffect(() => {
+    setNow(Date.now());
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
+  const left = Math.max(0, FINAL_AT - (now ?? FINAL_AT));
+  const parts = [
+    [Math.floor(left / 86400000), "дн"],
+    [Math.floor(left / 3600000) % 24, "ч"],
+    [Math.floor(left / 60000) % 60, "мин"],
+    [Math.floor(left / 1000) % 60, "сек"],
+  ] as const;
+  return (
+    <div className="mt-4">
+      <div className="text-[11px] uppercase tracking-[0.2em] text-[#8b8b99]">Финал 29 октября · через</div>
+      <div className="mt-2 flex justify-center gap-2">
+        {parts.map(([v, l]) => (
+          <div key={l} className="w-16 rounded-2xl bg-[#15151c] py-2">
+            <div className="font-display text-2xl font-black tabular-nums text-white">
+              {now === null ? "—" : String(v).padStart(2, "0")}
+            </div>
+            <div className="text-[10px] uppercase text-[#8b8b99]">{l}</div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
 
+/** Плавный счётчик суммы */
+function NumberTicker({ value }: { value: number }) {
+  const [shown, setShown] = useState(value);
+  const from = useRef(value);
+  useEffect(() => {
+    const start = performance.now();
+    const a = from.current;
+    let raf = 0;
+    const tick = (t: number) => {
+      const k = Math.min(1, (t - start) / 400);
+      const v = Math.round(a + (value - a) * (1 - Math.pow(1 - k, 3)));
+      setShown(v);
+      from.current = v;
+      if (k < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [value]);
+  return <span className="tabular-nums">{shown.toLocaleString("ru-RU")}</span>;
+}
+
 function Stepper({ value, onChange, max }: { value: number; onChange: (v: number) => void; max: number }) {
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-1.5">
       <button
         aria-label="Меньше"
         onClick={() => onChange(Math.max(0, value - 1))}
-        className="grid h-10 w-10 place-items-center rounded-xl border border-border"
+        className="grid h-8 w-8 place-items-center rounded-full bg-[#2a2a36] text-white"
       >
         <Minus className="h-4 w-4" />
       </button>
-      <span className="w-8 text-center font-display text-xl font-bold tabular-nums">{value}</span>
+      <span className="w-5 text-center font-bold tabular-nums text-white">{value}</span>
       <button
         aria-label="Больше"
         onClick={() => onChange(Math.min(max, value + 1))}
-        className="grid h-10 w-10 place-items-center rounded-xl bg-primary text-primary-foreground"
+        className="grid h-8 w-8 place-items-center rounded-full bg-[#f000c0] text-white"
       >
         <Plus className="h-4 w-4" />
       </button>
@@ -226,25 +306,30 @@ function Stepper({ value, onChange, max }: { value: number; onChange: (v: number
 
 function CheckoutSheet({ total, needAddress, onClose }: { total: number; needAddress: boolean; onClose: () => void }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-end bg-background/70 backdrop-blur-sm">
-      <div className="mx-auto w-full max-w-md rounded-t-3xl border-t border-border bg-card p-5">
-        <div className="flex items-center justify-between">
-          <h3 className="font-display text-xl font-black uppercase">Оформление</h3>
-          <button aria-label="Закрыть" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-end bg-black/70 backdrop-blur-sm" onClick={onClose}>
+      <div
+        className="mx-auto w-full max-w-md rounded-t-3xl bg-[#15151c] pb-5 pt-4"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between px-5">
+          <h3 className="font-display text-xl font-black uppercase text-white">Оформление</h3>
+          <button aria-label="Закрыть" onClick={onClose} className="text-[#8b8b99]">
             <X className="h-5 w-5" />
           </button>
         </div>
-        <div className="mt-4 grid gap-3">
-          <Field placeholder="Имя и фамилия" />
-          <Field placeholder="Телефон" />
-          {needAddress && <Field placeholder="Город" />}
+        <div className="mt-2">
+          <Input header="Имя и фамилия" placeholder="Иван Иванов" />
+          <Input header="Телефон" placeholder="+7" type="tel" />
+          {needAddress && <Input header="Город" placeholder="Москва" />}
         </div>
-        <p className="mt-3 text-xs text-muted-foreground">
+        <p className="px-5 text-xs text-[#8b8b99]">
           {needAddress ? "Доставку посчитаем и согласуем при отправке." : "Билеты придут на этот аккаунт Telegram."}
         </p>
-        <button className="mt-5 h-14 w-full rounded-2xl bg-primary font-display text-lg font-black uppercase text-primary-foreground">
-          К оплате {total.toLocaleString("ru-RU")} ₽
-        </button>
+        <div className="px-4 pt-4">
+          <Button size="l" stretched>
+            К оплате {total.toLocaleString("ru-RU")} ₽
+          </Button>
+        </div>
       </div>
     </div>
   );
@@ -256,13 +341,4 @@ function pluralTickets(n: number) {
   if (mod10 === 1 && mod100 !== 11) return "билет";
   if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return "билета";
   return "билетов";
-}
-
-function Field({ placeholder }: { placeholder: string }) {
-  return (
-    <input
-      placeholder={placeholder}
-      className="h-12 rounded-xl border border-border bg-background px-4 text-base outline-none focus:border-primary"
-    />
-  );
 }
