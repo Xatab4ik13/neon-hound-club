@@ -22,6 +22,7 @@ import { PrivacyContent } from "@/components/legal/content/PrivacyContent";
 import { PromoRulesContent } from "@/components/legal/content/PromoRulesContent";
 import { RequisitesContent } from "@/components/legal/content/RequisitesContent";
 import { apiFetch } from "@/lib/api";
+import { QRCodeSVG } from "qrcode.react";
 import { DadataInput } from "@/components/ui/DadataInput";
 import { formatRuPhone, isValidRuPhone } from "@/lib/phone";
 import { TgPvzPicker } from "@/components/tg/TgPvzPicker";
@@ -556,7 +557,6 @@ function CheckoutSheet({
         }),
       });
       setPayUrl(r.paymentUrl);
-      openPay(r.paymentUrl);
     } catch (e) {
       setPayError((e as Error).message || "Не удалось создать оплату");
     } finally {
@@ -566,6 +566,21 @@ function CheckoutSheet({
   };
 
   const grand = total + (ship?.price ?? 0);
+
+  if (payUrl) {
+    return (
+      <div className={`hh-sheet-root ${closing ? "is-closing" : ""}`} onClick={close}>
+        <div className="hh-sheet" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
+          <div className="hh-sheet-grip" />
+          <div className="hh-sheet-head">
+            <h3>Ссылка на оплату</h3>
+            <button aria-label="Закрыть" onClick={close}><PlumpClose size={20} /></button>
+          </div>
+          <TgPayLink url={payUrl} amount={grand} onOpen={() => openPay(payUrl)} onExpired={() => setPayUrl(null)} />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`hh-sheet-root ${closing ? "is-closing" : ""}`} onClick={close}>
@@ -623,14 +638,7 @@ function CheckoutSheet({
 
         <div className="hh-sheet-foot hh-stagger" style={{ ["--i" as string]: needAddress ? 5 : 3 }}>
           {payError && <div className="hh-pay-error">{payError}</div>}
-          {payUrl && (
-            <div className="hh-pay-hint">
-              Оплата открыта в браузере.{" "}
-              <a href={payUrl} onClick={(e) => { e.preventDefault(); openPay(payUrl); }}>Открыть ещё раз</a>
-              <br />Если страница банка долго грузится — выключите VPN на минуту, оплата откроется сразу.
-            </div>
-          )}
-          {!payUrl && slowHint && (
+          {slowHint && (
             <div className="hh-pay-hint">Если включён VPN — выключите его на минуту, оплата откроется сразу.</div>
           )}
           <Button className="hh-pay-button hh-pay-button-docked" size="l" stretched disabled={!canPay || paying} loading={paying} onClick={pay}>
@@ -640,6 +648,59 @@ function CheckoutSheet({
         </div>
       </div>
     </div>
+  );
+}
+
+const PAY_LINK_TTL_MS = 20 * 60 * 1000;
+
+/** Экран оплаты как у «Плати по миру»: QR, таймер 20 минут, копировать ссылку, перейти к оплате (во внешнем браузере). */
+function TgPayLink({ url, amount, onOpen, onExpired }: { url: string; amount: number; onOpen: () => void; onExpired: () => void }) {
+  const [deadline] = useState(() => Date.now() + PAY_LINK_TTL_MS);
+  const [left, setLeft] = useState(PAY_LINK_TTL_MS);
+  const [copied, setCopied] = useState(false);
+  useEffect(() => {
+    const t = setInterval(() => setLeft(Math.max(0, deadline - Date.now())), 1000);
+    return () => clearInterval(t);
+  }, [deadline]);
+  const expired = left === 0;
+  const mm = String(Math.floor(left / 60000)).padStart(2, "0");
+  const ss = String(Math.floor((left % 60000) / 1000)).padStart(2, "0");
+  const copy = async () => {
+    try { await navigator.clipboard.writeText(url); } catch {
+      const ta = document.createElement("textarea"); ta.value = url; document.body.appendChild(ta); ta.select();
+      try { document.execCommand("copy"); } catch { /* ignore */ } ta.remove();
+    }
+    setCopied(true); setTimeout(() => setCopied(false), 2000);
+    (window as any).Telegram?.WebApp?.HapticFeedback?.notificationOccurred?.("success");
+  };
+  return (
+    <>
+      <div className="hh-sheet-body">
+        <div className="hh-paylink-qr">
+          <div className={expired ? "opacity-20" : ""}><QRCodeSVG value={url} size={200} level="M" marginSize={0} /></div>
+        </div>
+        <div className="hh-paylink-row">
+          <span>{expired ? "Ссылка истекла" : "Ссылка активна"}</span>
+          <b className={expired ? "is-expired" : ""}>{mm}:{ss}</b>
+        </div>
+        <div className="hh-paylink-note">
+          Оплата откроется в браузере телефона. Если страница банка долго грузится — выключите VPN на минуту.
+        </div>
+      </div>
+      <div className="hh-sheet-foot">
+        {expired ? (
+          <Button className="hh-pay-button hh-pay-button-docked" size="l" stretched onClick={onExpired}>Создать новую ссылку</Button>
+        ) : (
+          <>
+            <button type="button" className="hh-paylink-copy" onClick={copy}>{copied ? "Скопировано" : "Скопировать ссылку"}</button>
+            <Button className="hh-pay-button hh-pay-button-docked" size="l" stretched onClick={onOpen}>
+              <span className="hh-payment-label">Перейти к оплате</span>
+              <span className="hh-payment-amount">{amount.toLocaleString("ru-RU")} ₽</span>
+            </Button>
+          </>
+        )}
+      </div>
+    </>
   );
 }
 

@@ -1040,6 +1040,13 @@ html.hh-admin *::-webkit-scrollbar-thumb:hover {
 .hh-tg .hh-field input { background: transparent; color: #fff; font-size: 16px; outline: none; border: 0; box-shadow: none; }
 .hh-tg .hh-pay-button[disabled] { opacity: 0.55; filter: saturate(0.6); }
 .hh-tg .hh-pay-error { margin-bottom: 10px; text-align: center; font-size: 14px; color: #ff2bd6; }
+.hh-tg .hh-paylink-qr { display: flex; justify-content: center; padding: 20px; border-radius: 24px; background: #1f1f29; }
+.hh-tg .hh-paylink-qr > div { padding: 16px; border-radius: 20px; background: #fff; line-height: 0; }
+.hh-tg .hh-paylink-row { margin-top: 12px; display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-radius: 18px; background: #1f1f29; color: #fff; font-size: 15px; }
+.hh-tg .hh-paylink-row b { padding: 6px 12px; border-radius: 12px; border: 1.5px solid var(--hh-tg-lime); color: var(--hh-tg-lime); font-variant-numeric: tabular-nums; }
+.hh-tg .hh-paylink-row b.is-expired { border-color: #ff2bd6; color: #ff2bd6; }
+.hh-tg .hh-paylink-note { margin-top: 12px; padding: 12px 16px; border-radius: 16px; background: rgba(198,255,0,.08); color: rgba(255,255,255,.85); font-size: 13px; line-height: 1.4; }
+.hh-tg .hh-paylink-copy { width: 100%; margin-bottom: 10px; padding: 14px; border-radius: 18px; background: #1f1f29; color: var(--hh-tg-lime); font-weight: 700; font-size: 16px; }
 .hh-tg .hh-pay-hint { margin-bottom: 10px; text-align: center; font-size: 14px; line-height: 1.4; color: rgba(255,255,255,.8); }
 .hh-tg .hh-pay-hint a { color: var(--hh-tg-lime); text-decoration: underline; }
 .hh-tg .hh-paid-banner { margin: 16px 16px 0; padding: 16px; border-radius: 20px; border: 1.5px solid var(--hh-tg-lime); color: #fff; text-align: center; }
