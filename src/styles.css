@@ -958,3 +958,13 @@ html.hh-admin *::-webkit-scrollbar-thumb:hover {
 .hh-tg .hh-pay-button-docked > span { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .hh-tg .hh-payment-label { font-size: 20px; }
 .hh-tg .hh-payment-amount { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+
+.hh-tg .hh-legal { margin-top: 44px; padding: 0 20px; }
+.hh-tg .hh-notice { border: 2px solid #c6ff0059; border-radius: 20px; background: #15151c; padding: 18px; }
+.hh-tg .hh-notice-title { color: var(--hh-tg-lime); font-family: var(--font-display); font-weight: 900; font-size: 15px; letter-spacing: 0.18em; text-transform: uppercase; }
+.hh-tg .hh-notice p { margin-top: 10px; font-size: 14px; line-height: 1.5; color: var(--hh-tg-paper); }
+.hh-tg .hh-notice p + p { margin-top: 8px; }
+.hh-tg .hh-notice-contact { display: inline-block; margin-top: 12px; color: var(--hh-tg-lime); font-size: 13px; font-weight: 700; text-decoration: none; }
+.hh-tg .hh-legal-links { display: flex; flex-wrap: wrap; gap: 6px 16px; list-style: none; margin: 22px 0 0; padding: 0; }
+.hh-tg .hh-legal-links a { color: #8b8b99; font-size: 12px; text-decoration: none; }
+.hh-tg .hh-legal-req { margin-top: 10px; font-family: var(--font-mono); font-size: 10px; color: #5c5c68; }

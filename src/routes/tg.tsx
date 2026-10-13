@@ -16,6 +16,7 @@ import { PlumpNum } from "@/components/brand/PlumpNum";
 import { getTgTicketSelection, TG_TICKET_MIN, TG_TICKET_MAX, TG_TICKET_STEP } from "@/lib/tg-tickets";
 import { Minus, Plus } from "lucide-react";
 import { PlumpTruck, PlumpClose } from "@/components/ui/icons";
+import { LEGAL } from "@/data/legal";
 import ticketImg from "@/assets/spin/ticket.webp";
 import shirt299 from "@/assets/tg-shirt-299.webp.asset.json";
 import shirtShalavam from "@/assets/tg-shirt-shalavam.webp.asset.json";
@@ -191,6 +192,8 @@ function TgMiniApp() {
           </div>
         </List>
 
+        <TgLegalFooter />
+
         {/* Аналог MainButton Telegram */}
         <div className="hh-payment-dock fixed inset-x-0 bottom-0 z-40 mx-auto max-w-md">
           <Button className="hh-pay-button hh-pay-button-docked" size="l" stretched onClick={() => setCheckout(true)}>
@@ -202,6 +205,55 @@ function TgMiniApp() {
         {checkout && <CheckoutSheet total={total} needAddress={hasShirts} onClose={() => setCheckout(false)} />}
       </div>
     </AppRoot>
+  );
+}
+
+const LEGAL_LINKS = [
+  { label: "Публичная оферта", path: "/legal/offer" },
+  { label: "Пользовательское соглашение", path: "/legal/terms" },
+  { label: "Политика ПДн", path: "/legal/privacy" },
+  { label: "Правила розыгрышей", path: "/legal/promo-rules" },
+  { label: "Реквизиты", path: "/legal/requisites" },
+];
+
+/** Подвал: предупреждение о восстановлении сервиса + ссылки на документы */
+function TgLegalFooter() {
+  return (
+    <footer className="hh-legal">
+      <div className="hh-notice">
+        <div className="hh-notice-title">Внимание</div>
+        <p>
+          Ваши старые билеты, Hell Pass и прогресс в рулетке никуда не пропадут.
+          Мы восстанавливаем HHR и вернём всё на ваши аккаунты.
+        </p>
+        <p>
+          Билеты, купленные здесь, тоже привяжутся к вашему аккаунту — по номеру
+          телефона, который вы укажете при оплате. Указывайте тот же номер, что в HHR.
+        </p>
+        <p>
+          Эта страница нужна, чтобы розыгрыш и предзаказ футболок не ждали: она
+          работает, пока основной сайт снова не заработал. Дата финала и правила
+          не меняются.
+        </p>
+        <a className="hh-notice-contact" href={LEGAL.contactTelegram} target="_blank" rel="noreferrer">
+          Вопросы — @HellGuarding
+        </a>
+      </div>
+
+      <ul className="hh-legal-links">
+        {LEGAL_LINKS.map((l) => (
+          <li key={l.path}>
+            <a href={`https://${LEGAL.site}${l.path}`} target="_blank" rel="noreferrer">
+              {l.label}
+            </a>
+          </li>
+        ))}
+      </ul>
+
+      <div className="hh-legal-req">
+        {LEGAL.shortName} · ОГРНИП {LEGAL.ogrnip} · ИНН {LEGAL.inn}
+      </div>
+    </footer>
   );
 }
 
