@@ -30,7 +30,6 @@ function AdminTelegramPage() {
     queryFn: () => apiFetch<{ items: Order[] }>(`/api/v1/admin/tg/orders?status=${tab === "all" ? "all" : "paid"}`),
     refetchInterval: 30_000,
   });
-  const setup = useMutation({ mutationFn: () => apiFetch("/api/v1/admin/tg/bot/setup", { method: "POST" }) });
 
   // Покупатели: сводка по номеру телефона
   const buyers = useMemo(() => {
@@ -58,17 +57,11 @@ function AdminTelegramPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-display text-2xl font-black uppercase">Телеграм бот</h1>
-        <div className="flex gap-2">
-          <button onClick={() => setup.mutate()} disabled={setup.isPending}
-            className="rounded-xl border border-border px-3 py-2 text-sm text-foreground disabled:opacity-50">
-            {setup.isPending ? "Подключаем…" : setup.isSuccess ? "Бот подключён ✓" : "Подключить бота"}
-          </button>
-          <button onClick={() => { summary.refetch(); orders.refetch(); }} className="rounded-xl border border-border p-2 text-foreground" aria-label="Обновить">
-            {orders.isFetching ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-          </button>
-        </div>
+        <button onClick={() => { summary.refetch(); orders.refetch(); }} className="rounded-xl border border-border p-2 text-foreground" aria-label="Обновить">
+          {orders.isFetching ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+        </button>
       </div>
-      {setup.isError && <div className="text-sm text-destructive">{(setup.error as Error).message}</div>}
+
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {cards.map((c) => (
