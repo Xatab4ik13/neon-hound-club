@@ -38,6 +38,7 @@ export async function tgRoutes(app: FastifyInstance) {
       shirts: z.array(shirtSchema).max(10).default([]),
       recipientName: z.string().max(128).optional(),
       pvz: z.object({ cityCode: z.number().int().positive(), cityName: z.string().max(128), code: z.string().max(32), address: z.string().max(300) }).optional(),
+      address: z.string().trim().min(8).max(300).optional(),
     }).safeParse(req.body);
     if (!p.success) return reply.code(400).send({ error: "bad_input", message: "Проверьте данные заказа" });
     const b = p.data;
@@ -52,15 +53,11 @@ export async function tgRoutes(app: FastifyInstance) {
     if (!sh) return reply.code(400).send({ error: "bad_shirts", message: "Проверьте футболки и размеры" });
     if (t.tickets === 0 && sh.qty === 0) return reply.code(400).send({ error: "empty", message: "Корзина пуста" });
 
-    let shipping = 0;
+    const shipping = 0;
     if (sh.qty > 0) {
-      if (!b.pvz || !b.recipientName || b.recipientName.trim().split(/\s+/).length < 2) {
-        return reply.code(400).send({ error: "need_delivery", message: "Укажите получателя и пункт выдачи" });
-      }
-      try {
-        shipping = (await shippingFor(b.pvz.cityCode, sh.qty)).price;
-      } catch {
-        return reply.code(502).send({ error: "cdek_unavailable", message: "Не удалось посчитать доставку, попробуйте позже" });
+      // Предзаказ: доставку пока не считаем, берём только адрес
+      if (!b.address || !b.recipientName || b.recipientName.trim().split(/\s+/).length < 2) {
+        return reply.code(400).send({ error: "need_delivery", message: "Укажите получателя и адрес доставки" });
       }
     }
     if (!isRaifConfigured("any")) return reply.code(503).send({ error: "payments_not_configured", message: "Оплата временно недоступна" });
@@ -76,10 +73,10 @@ export async function tgRoutes(app: FastifyInstance) {
       shirts: sh.lines,
       shirtsRub: sh.total,
       shippingRub: shipping,
-      cdekCityCode: sh.qty ? b.pvz!.cityCode : null,
-      cdekCityName: sh.qty ? b.pvz!.cityName : null,
-      cdekPvzCode: sh.qty ? b.pvz!.code : null,
-      cdekPvzAddress: sh.qty ? b.pvz!.address : null,
+      cdekCityCode: null,
+      cdekCityName: null,
+      cdekPvzCode: null,
+      cdekPvzAddress: sh.qty ? b.address! : null,
       totalRub: t.price + sh.total + shipping,
     }).returning();
 

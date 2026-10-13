@@ -25,8 +25,6 @@ import { apiFetch } from "@/lib/api";
 import { QRCodeSVG } from "qrcode.react";
 import { DadataInput } from "@/components/ui/DadataInput";
 import { formatRuPhone, isValidRuPhone } from "@/lib/phone";
-import { TgPvzPicker } from "@/components/tg/TgPvzPicker";
-import { EMPTY_CDEK_STATE, type CdekPickerState } from "@/components/checkout/CdekDeliveryPicker";
 import ticketImg from "@/assets/spin/ticket.webp";
 import shirt299 from "@/assets/local-tg-shirt-299.webp";
 import shirtShalavam from "@/assets/local-tg-shirt-shalavam.webp";
@@ -493,15 +491,12 @@ function CheckoutSheet({
   const [slowHint, setSlowHint] = useState(false);
   const needAddress = shirtLines.length > 0;
   const [closing, setClosing] = useState(false);
-  const [cdek, setCdek] = useState<CdekPickerState>(EMPTY_CDEK_STATE);
+  const [address, setAddress] = useState("");
   const [phone, setPhone] = useState("");
   const [name, setName] = useState("");
   const phoneOk = isValidRuPhone(phone);
   const nameOk = name.trim().split(/\s+/).length >= 2;
-  const canPay = phoneOk && (!needAddress || (nameOk && !!cdek.pvzCode));
-  const [ship, setShip] = useState<{ price: number; min: number; max: number } | null>(null);
-  const [shipState, setShipState] = useState<"idle" | "loading" | "error">("idle");
-
+  const canPay = phoneOk && (!needAddress || (nameOk && address.trim().length >= 8));
   const close = () => {
     setClosing(true);
     setTimeout(onClose, 260);
@@ -512,24 +507,6 @@ function CheckoutSheet({
     document.body.style.overflow = "hidden";
     return () => { document.body.style.overflow = prev; };
   }, []);
-
-  // Доставка СДЭК до ПВЗ с нашей наценкой — считает сервер
-  const shirtQty = shirtLines.reduce((n, l) => n + l.qty, 0);
-  useEffect(() => {
-    setShip(null);
-    if (!needAddress || !cdek.cityCode) { setShipState("idle"); return; }
-    let cancelled = false;
-    setShipState("loading");
-    const t = setTimeout(() => {
-      apiFetch<{ price: number; min: number; max: number }>("/api/v1/tg/shipping", {
-        method: "POST",
-        body: JSON.stringify({ cityCode: cdek.cityCode, qty: shirtQty }),
-      })
-        .then((r) => { if (!cancelled) { setShip(r); setShipState("idle"); } })
-        .catch(() => { if (!cancelled) setShipState("error"); });
-    }, 350);
-    return () => { cancelled = true; clearTimeout(t); };
-  }, [needAddress, cdek.cityCode, shirtQty]);
 
   const openPay = (url: string) => {
     const tg = (window as any).Telegram?.WebApp;
@@ -552,7 +529,7 @@ function CheckoutSheet({
           shirts: shirtLines.map(({ id, size, qty }) => ({ id, size, qty })),
           ...(needAddress ? {
             recipientName: name,
-            pvz: { cityCode: cdek.cityCode, cityName: cdek.cityName, code: cdek.pvzCode, address: cdek.pvzAddress },
+            address: address.trim(),
           } : {}),
         }),
       });
@@ -565,7 +542,7 @@ function CheckoutSheet({
     }
   };
 
-  const grand = total + (ship?.price ?? 0);
+  const grand = total;
 
   if (payUrl) {
     return (
@@ -617,20 +594,12 @@ function CheckoutSheet({
                   </div>
                 </Section>
               </div>
-              <div className="hh-stagger hh-sheet-cdek" style={{ ["--i" as string]: 4 }}>
-                <TgPvzPicker value={cdek} onChange={setCdek} />
-                <div className="hh-sheet-ship">
-                  <PlumpTruck size={16} />
-                  {!cdek.cityCode && <span>Выберите пункт — посчитаем доставку</span>}
-                  {cdek.cityCode && shipState === "loading" && <span>Считаем доставку…</span>}
-                  {cdek.cityCode && shipState === "error" && <span>Не удалось посчитать — согласуем при отправке</span>}
-                  {ship && shipState === "idle" && (
-                    <span>
-                      Доставка <b>{ship.price.toLocaleString("ru-RU")} ₽</b>
-                      {ship.max > 0 && <> · {ship.min === ship.max ? ship.min : `${ship.min}–${ship.max}`} дн.</>}
-                    </span>
-                  )}
-                </div>
+              <div className="hh-stagger" style={{ ["--i" as string]: 4 }}>
+                <Section header="Адрес доставки" footer="Это предзаказ: доставку СДЭК согласуем перед отправкой, сейчас её оплачивать не нужно.">
+                  <div className="hh-field">
+                    <DadataInput type="address" value={address} onChange={setAddress} placeholder="Город, улица, дом, квартира" autoComplete="street-address" className="min-w-0 flex-1" />
+                  </div>
+                </Section>
               </div>
             </>
           )}
