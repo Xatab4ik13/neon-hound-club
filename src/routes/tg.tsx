@@ -476,6 +476,8 @@ function CheckoutSheet({
 }) {
   const [paying, setPaying] = useState(false);
   const [payError, setPayError] = useState<string | null>(null);
+  const [payUrl, setPayUrl] = useState<string | null>(null);
+  const [slowHint, setSlowHint] = useState(false);
   const needAddress = shirtLines.length > 0;
   const [closing, setClosing] = useState(false);
   const [cdek, setCdek] = useState<CdekPickerState>(EMPTY_CDEK_STATE);
@@ -516,9 +518,16 @@ function CheckoutSheet({
     return () => { cancelled = true; clearTimeout(t); };
   }, [needAddress, cdek.cityCode, shirtQty]);
 
+  const openPay = (url: string) => {
+    const tg = (window as any).Telegram?.WebApp;
+    if (tg?.openLink) tg.openLink(url, { try_instant_view: false });
+    else window.open(url, "_blank", "noopener") || (window.location.href = url);
+  };
+
   const pay = async () => {
     if (!canPay || paying) return;
-    setPaying(true); setPayError(null);
+    setPaying(true); setPayError(null); setSlowHint(false); setPayUrl(null);
+    const slowTimer = setTimeout(() => setSlowHint(true), 6000);
     try {
       const tg = (window as any).Telegram?.WebApp;
       const r = await apiFetch<{ paymentUrl: string }>("/api/v1/tg/orders", {
@@ -534,9 +543,12 @@ function CheckoutSheet({
           } : {}),
         }),
       });
-      window.location.href = r.paymentUrl;
+      setPayUrl(r.paymentUrl);
+      openPay(r.paymentUrl);
     } catch (e) {
       setPayError((e as Error).message || "Не удалось создать оплату");
+    } finally {
+      clearTimeout(slowTimer);
       setPaying(false);
     }
   };
@@ -599,6 +611,16 @@ function CheckoutSheet({
 
         <div className="hh-sheet-foot hh-stagger" style={{ ["--i" as string]: needAddress ? 5 : 3 }}>
           {payError && <div className="hh-pay-error">{payError}</div>}
+          {payUrl && (
+            <div className="hh-pay-hint">
+              Оплата открыта в браузере.{" "}
+              <a href={payUrl} onClick={(e) => { e.preventDefault(); openPay(payUrl); }}>Открыть ещё раз</a>
+              <br />Если страница банка долго грузится — выключите VPN на минуту, оплата откроется сразу.
+            </div>
+          )}
+          {!payUrl && slowHint && (
+            <div className="hh-pay-hint">Если включён VPN — выключите его на минуту, оплата откроется сразу.</div>
+          )}
           <Button className="hh-pay-button hh-pay-button-docked" size="l" stretched disabled={!canPay || paying} loading={paying} onClick={pay}>
             <span className="hh-payment-label">{canPay ? "К оплате" : !phoneOk ? "Укажите телефон" : !nameOk ? "Укажите имя" : "Выберите пункт"}</span>
             <span className="hh-payment-amount"><NumberTicker value={grand} /> ₽</span>

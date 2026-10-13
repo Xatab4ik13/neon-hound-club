@@ -1040,6 +1040,8 @@ html.hh-admin *::-webkit-scrollbar-thumb:hover {
 .hh-tg .hh-field input { background: transparent; color: #fff; font-size: 16px; outline: none; border: 0; box-shadow: none; }
 .hh-tg .hh-pay-button[disabled] { opacity: 0.55; filter: saturate(0.6); }
 .hh-tg .hh-pay-error { margin-bottom: 10px; text-align: center; font-size: 14px; color: #ff2bd6; }
+.hh-tg .hh-pay-hint { margin-bottom: 10px; text-align: center; font-size: 14px; line-height: 1.4; color: rgba(255,255,255,.8); }
+.hh-tg .hh-pay-hint a { color: var(--hh-tg-lime); text-decoration: underline; }
 .hh-tg .hh-paid-banner { margin: 16px 16px 0; padding: 16px; border-radius: 20px; border: 1.5px solid var(--hh-tg-lime); color: #fff; text-align: center; }
 .hh-tg .hh-paid-banner b { color: var(--hh-tg-lime); font-size: 18px; display: block; margin-bottom: 4px; }
 
