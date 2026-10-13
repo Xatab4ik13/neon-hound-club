@@ -208,6 +208,55 @@ function TgMiniApp() {
   );
 }
 
+const LEGAL_LINKS = [
+  { label: "Публичная оферта", path: "/legal/offer" },
+  { label: "Пользовательское соглашение", path: "/legal/terms" },
+  { label: "Политика ПДн", path: "/legal/privacy" },
+  { label: "Правила розыгрышей", path: "/legal/promo-rules" },
+  { label: "Реквизиты", path: "/legal/requisites" },
+];
+
+/** Подвал: предупреждение о восстановлении сервиса + ссылки на документы */
+function TgLegalFooter() {
+  return (
+    <footer className="hh-legal">
+      <div className="hh-notice">
+        <div className="hh-notice-title">Внимание</div>
+        <p>
+          Ваши старые билеты, Hell Pass и прогресс в рулетке никуда не пропадут.
+          Мы восстанавливаем HHR и вернём всё на ваши аккаунты.
+        </p>
+        <p>
+          Билеты, купленные здесь, тоже привяжутся к вашему аккаунту — по номеру
+          телефона, который вы укажете при оплате. Указывайте тот же номер, что в HHR.
+        </p>
+        <p>
+          Эта страница нужна, чтобы розыгрыш и предзаказ футболок не ждали: она
+          работает, пока основной сайт снова не заработал. Дата финала и правила
+          не меняются.
+        </p>
+        <a className="hh-notice-contact" href={LEGAL.contactTelegram} target="_blank" rel="noreferrer">
+          Вопросы — @HellGuarding
+        </a>
+      </div>
+
+      <ul className="hh-legal-links">
+        {LEGAL_LINKS.map((l) => (
+          <li key={l.path}>
+            <a href={`https://${LEGAL.site}${l.path}`} target="_blank" rel="noreferrer">
+              {l.label}
+            </a>
+          </li>
+        ))}
+      </ul>
+
+      <div className="hh-legal-req">
+        {LEGAL.shortName} · ОГРНИП {LEGAL.ogrnip} · ИНН {LEGAL.inn}
+      </div>
+    </footer>
+  );
+}
+
 /** Таймер до финала */
 function Countdown() {
   const [now, setNow] = useState<number | null>(null);
