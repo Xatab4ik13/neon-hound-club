@@ -132,12 +132,12 @@ function TgMiniApp() {
       })),
     [shirts],
   );
-  const perTicket = Math.round(selected.price / selected.tickets);
+  const perTicket = selected.tickets ? Math.round(selected.price / selected.tickets) : 0;
 
   return (
     <AppRoot appearance="dark" platform="ios" className="hh-tg">
       <div className="mx-auto min-h-dvh max-w-md pb-32">
-        <header className="flex justify-center pt-5">
+        <header className="flex justify-center pt-5" style={{ paddingTop: "calc(20px + var(--tg-safe-area-inset-top, 0px) + var(--tg-content-safe-area-inset-top, 0px))" }}>
           <img src={hhrLogo} alt="HELLHOUND Racing" className="h-14 w-auto" draggable={false} />
         </header>
         {paidState !== "none" && (
@@ -220,7 +220,7 @@ function TgMiniApp() {
             </div>
             <Cell
               before={<img src={ticketImg} alt="" className="h-9 w-9 object-contain" />}
-              subtitle={`${perTicket} ₽ за билет`}
+              subtitle={selected.tickets ? `${perTicket} ₽ за билет` : "Можно купить только мерч"}
               after={<Badge type="number" mode="primary">{selected.tickets}</Badge>}
             >
               Выбрано
@@ -483,7 +483,7 @@ function CheckoutSheet({
   total: number;
   ticketsLabel: string;
   shirtLines: { id: string; size: string; qty: number; label: string }[];
-  ticketChoice: { pack: number } | { custom: number };
+  ticketChoice: { pack: number } | { custom: number } | null;
   onClose: () => void;
 }) {
   const [paying, setPaying] = useState(false);
@@ -578,7 +578,7 @@ function CheckoutSheet({
 
         <div className="hh-sheet-body">
           <div className="hh-sheet-summary hh-stagger" style={{ ["--i" as string]: 1 }}>
-            <div className="hh-sheet-row"><span>{ticketsLabel}</span></div>
+            {ticketsLabel && <div className="hh-sheet-row"><span>{ticketsLabel}</span></div>}
             {shirtLines.map((l) => (
               <div key={l.label} className="hh-sheet-row"><span>{l.label}</span></div>
             ))}
