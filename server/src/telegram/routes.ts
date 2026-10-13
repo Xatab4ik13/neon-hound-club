@@ -157,7 +157,7 @@ export async function adminTgRoutes(app: FastifyInstance) {
     const { botCall } = await import("./bot.js");
     try {
       await botCall("setWebhook", { url: `${base}/api/v1/tg/bot/webhook`, secret_token: webhookSecret(), allowed_updates: ["message"] });
-      await botCall("setChatMenuButton", { menu_button: { type: "web_app", text: "Открыть", web_app: { url: (process.env.TG_WEBAPP_URL || "https://tg.hhr.pro") } } });
+      await botCall("setChatMenuButton", { menu_button: { type: "web_app", text: "Открыть", web_app: { url: `${(process.env.TG_WEBAPP_URL || "https://tg.hhr.pro").replace(/\/$/, "")}/tg` } } });
       return { ok: true };
     } catch (e) {
       return reply.code(502).send({ error: "telegram_failed", message: String((e as Error).message) });

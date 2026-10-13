@@ -318,6 +318,10 @@
             h === "beta.lovable.dev" ||
             h.endsWith(".beta.lovable.dev");
           // Telegram-страница — отдельный продукт, сплэш PWA ей не нужен.
+          // На tg.hhr.pro сразу уходим на /tg, чтобы главная не мелькала.
+          if (h === "tg.hhr.pro" && location.pathname !== "/tg") {
+            location.replace("/tg" + location.search + location.hash);
+          }
           var isTg = h === "tg.hhr.pro" || location.pathname.indexOf("/tg") === 0;
           if (inIframe || isLovablePreview || isTg) {
             var b = document.getElementById("hh-boot");

@@ -32,8 +32,11 @@ export async function sendMessage(chatId: number | string, text: string, extra: 
   return botCall("sendMessage", { chat_id: chatId, text, parse_mode: "HTML", disable_web_page_preview: true, ...extra });
 }
 
+const BOT_USERNAME = (process.env.TG_BOT_USERNAME || "hhr_probot").replace(/^@/, "");
+
+/** Кнопка открывает главное мини-приложение бота сразу на весь экран (настраивается в BotFather). */
 export function openAppButton(text = "Открыть") {
-  return { reply_markup: { inline_keyboard: [[{ text, web_app: { url: TG_WEBAPP_URL } }]] } };
+  return { reply_markup: { inline_keyboard: [[{ text, url: `https://t.me/${BOT_USERNAME}?startapp=open&mode=fullscreen` }]] } };
 }
 
 /** Секрет вебхука бота — производный от токена, хранить отдельно не нужно. */
