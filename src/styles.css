@@ -1036,3 +1036,8 @@ html.hh-admin *::-webkit-scrollbar-thumb:hover {
 @keyframes hh-max-kick { 0% { transform: scale(1); } 40% { transform: scale(1.06); } 100% { transform: scale(1.03); } }
 @keyframes hh-pay-breathe { 0%, 100% { box-shadow: var(--hh-tg-payment-shadow), 0 0 40px rgb(163 230 53 / 0.8); } 50% { box-shadow: var(--hh-tg-payment-shadow), 0 0 60px rgb(255 43 214 / 0.7); } }
 @media (prefers-reduced-motion: reduce) { .hh-tg .hh-power-ring, .hh-tg .hh-pay-powered::after { animation: none; } }
+.hh-tg .hh-field { display: flex; align-items: center; min-height: 52px; padding: 0 14px; margin: 0 16px; border-radius: 14px; background: var(--tgui--bg_color, #1c1c24); color: #fff; border: 1px solid transparent; transition: border-color 200ms; }
+.hh-tg .hh-field input { background: transparent; color: #fff; font-size: 16px; outline: none; border: 0; box-shadow: none; }
+.hh-tg .hh-field.is-error { border-color: #ff2bd6; }
+.hh-tg .hh-field-error { margin: 6px 16px 0; font-size: 13px; color: #ff2bd6; }
+.hh-tg .hh-pay-button[disabled] { opacity: 0.55; filter: saturate(0.6); }

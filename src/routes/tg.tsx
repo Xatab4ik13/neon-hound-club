@@ -6,7 +6,6 @@ import {
   Button,
   Cell,
   Chip,
-  Input,
   List,
   Section,
 } from "@telegram-apps/telegram-ui";

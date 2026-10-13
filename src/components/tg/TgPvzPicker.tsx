@@ -9,10 +9,12 @@ import { Button, Cell, Input, Section } from "@telegram-apps/telegram-ui";
 import { Loader2 } from "lucide-react";
 import { PlumpMap, PlumpClose, PlumpSearch } from "@/components/ui/icons";
 import { apiFetch } from "@/lib/api";
+import { suggest, type DadataAddressData } from "@/lib/dadata";
 import { loadYandexMaps } from "@/lib/yandex-maps";
 import { EMPTY_CDEK_STATE, type CdekPickerState } from "@/components/checkout/CdekDeliveryPicker";
 
 type City = { code: number; city: string; region: string; countryCode: string };
+type Hint = { city: string; region: string; fias: string | null; postal: string | null; iso: string | null };
 type Pvz = { code: string; name: string; address: string; workTime: string; lat: number; lng: number };
 
 export function TgPvzPicker({ value, onChange }: { value: CdekPickerState; onChange: (v: CdekPickerState) => void }) {
@@ -45,7 +47,7 @@ export function TgPvzPicker({ value, onChange }: { value: CdekPickerState; onCha
 function PvzMapPanel({ value, onClose, onPick }: { value: CdekPickerState; onClose: () => void; onPick: (v: CdekPickerState) => void }) {
   const [closing, setClosing] = useState(false);
   const [q, setQ] = useState(value.cityName);
-  const [cities, setCities] = useState<City[]>([]);
+  const [cities, setCities] = useState<Hint[]>([]);
   const [city, setCity] = useState<City | null>(
     value.cityCode ? { code: value.cityCode, city: value.cityName, region: "", countryCode: value.countryCode } : null,
   );
@@ -61,10 +63,32 @@ function PvzMapPanel({ value, onClose, onPick }: { value: CdekPickerState; onClo
     const s = q.trim();
     if (s.length < 2 || (city && s === city.city)) { setCities([]); return; }
     let cancelled = false;
-    const t = setTimeout(() => {
-      apiFetch<{ items: City[] }>(`/api/v1/cdek/cities?q=${encodeURIComponent(s)}`)
-        .then((r) => { if (!cancelled) setCities(r.items ?? []); })
-        .catch(() => { if (!cancelled) setCities([]); });
+    const t = setTimeout(async () => {
+      // Автозаполнение DaData (как на сайте), фолбэк — справочник СДЭК
+      const sug = await suggest<DadataAddressData>("address", s, {
+        count: 6,
+        params: { from_bound: { value: "city" }, to_bound: { value: "settlement" }, locations: [{ country: "*" }] },
+      });
+      let hints: Hint[] = sug
+        .map((x) => {
+          const raw = x.data.city ?? x.data.settlement;
+          if (!raw) return null;
+          return {
+            city: raw.replace(/^(г|гор|пгт|с|п|д)\.?\s+/i, "").trim(),
+            region: x.data.region_with_type ?? x.data.region ?? "",
+            fias: x.data.fias_id ?? null,
+            postal: x.data.postal_code ?? null,
+            iso: x.data.country_iso_code?.toUpperCase() ?? null,
+          };
+        })
+        .filter((x): x is Hint => !!x);
+      if (!hints.length) {
+        try {
+          const r = await apiFetch<{ items: City[] }>(`/api/v1/cdek/cities?q=${encodeURIComponent(s)}`);
+          hints = (r.items ?? []).map((c) => ({ city: c.city, region: c.region, fias: null, postal: null, iso: c.countryCode }));
+        } catch { /* ignore */ }
+      }
+      if (!cancelled) setCities(hints);
     }, 250);
     return () => { cancelled = true; clearTimeout(t); };
   }, [q, city]);
@@ -81,7 +105,19 @@ function PvzMapPanel({ value, onClose, onPick }: { value: CdekPickerState; onClo
     return () => { cancelled = true; };
   }, [city]);
 
-  const pickCity = (c: City) => { setCity(c); setQ(c.city); setCities([]); };
+  const pickCity = async (h: Hint) => {
+    setQ(h.city); setCities([]); setError(null);
+    const p = new URLSearchParams({ city: h.city });
+    if (h.fias) p.set("fias", h.fias);
+    if (h.postal) p.set("postalCode", h.postal);
+    if (h.iso) p.set("country", h.iso);
+    try {
+      const r = await apiFetch<City>(`/api/v1/cdek/city-resolve?${p}`);
+      setCity({ ...r, city: h.city });
+    } catch {
+      setError("СДЭК не возит в этот город — попробуйте ближайший крупный");
+    }
+  };
 
   const confirm = () => {
     if (!active || !city) return;
@@ -108,8 +144,8 @@ function PvzMapPanel({ value, onClose, onPick }: { value: CdekPickerState; onClo
           />
           {cities.length > 0 && (
             <div className="hh-map-cities">
-              {cities.slice(0, 6).map((c) => (
-                <button key={c.code} onClick={() => pickCity(c)}>
+              {cities.slice(0, 6).map((c, i) => (
+                <button key={`${c.city}-${c.region}-${i}`} onClick={() => pickCity(c)}>
                   <b>{c.city}</b><span>{c.region}</span>
                 </button>
               ))}
@@ -123,7 +159,7 @@ function PvzMapPanel({ value, onClose, onPick }: { value: CdekPickerState; onClo
 
       {!city && <div className="hh-map-hint">Начните вводить город</div>}
       {city && loading && <div className="hh-map-hint"><Loader2 className="h-4 w-4 animate-spin" /> Ищем пункты выдачи…</div>}
-      {city && error && <div className="hh-map-hint">{error}</div>}
+      {error && <div className="hh-map-hint">{error}</div>}
       {city && !loading && !error && !active && pvz.length > 0 && <div className="hh-map-hint">Нажмите на точку на карте</div>}
 
       {active && (
