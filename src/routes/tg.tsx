@@ -4,6 +4,7 @@ import { Minus, Plus, X } from "lucide-react";
 import ticketImg from "@/assets/spin/ticket.webp";
 import tshirtImg from "@/assets/spin/tshirt-blur.webp";
 import bikeImg from "@/assets/vanya-bike.webp";
+import hhrLogo from "@/assets/hhr-logo.png.asset.json";
 
 /**
  * Набросок Telegram Mini App: только визуал, без оплаты и сервера.
