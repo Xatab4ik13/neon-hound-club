@@ -92,7 +92,7 @@ function TgMiniApp() {
           <Countdown />
         </div>
 
-        <List className="mt-4">
+        <List className="mt-6">
           <Section
             footer={
               <Section.Footer className="!text-[#8b8b99]">
