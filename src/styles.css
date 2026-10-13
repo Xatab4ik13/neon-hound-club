@@ -855,3 +855,50 @@ html.hh-admin *::-webkit-scrollbar-thumb:hover {
   0%, 100% { opacity: 0.45; transform: scale(0.96); }
   50% { opacity: 0.9; transform: scale(1.04); }
 }
+
+/* Ползунок количества билетов на странице /tg */
+.hh-range {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 30px;
+  background: transparent;
+  cursor: pointer;
+}
+.hh-range::-webkit-slider-runnable-track {
+  height: 8px;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    var(--primary) var(--fill, 0%),
+    var(--secondary) var(--fill, 0%)
+  );
+}
+.hh-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 26px;
+  width: 26px;
+  margin-top: -9px;
+  border-radius: 999px;
+  background: var(--primary);
+  border: 3px solid var(--background);
+  box-shadow: 0 0 16px 0 color-mix(in oklab, var(--primary) 55%, transparent);
+}
+.hh-range::-moz-range-track {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--secondary);
+}
+.hh-range::-moz-range-progress {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--primary);
+}
+.hh-range::-moz-range-thumb {
+  height: 20px;
+  width: 20px;
+  border-radius: 999px;
+  background: var(--primary);
+  border: 3px solid var(--background);
+}
