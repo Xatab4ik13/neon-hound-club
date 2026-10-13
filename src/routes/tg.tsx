@@ -75,7 +75,17 @@ function TgMiniApp() {
 
   // Telegram WebApp SDK: initData для привязки покупки к Telegram-аккаунту
   useEffect(() => {
-    const ready = () => { const w = (window as any).Telegram?.WebApp; w?.ready?.(); w?.expand?.(); };
+    const ready = () => {
+      const w = (window as any).Telegram?.WebApp;
+      if (!w) return;
+      w.ready?.(); w.expand?.();
+      try { w.setHeaderColor?.("#000000"); w.setBackgroundColor?.("#000000"); w.setBottomBarColor?.("#000000"); } catch { /* old client */ }
+      try { w.disableVerticalSwipes?.(); } catch { /* old client */ }
+      // Полный экран как у «Плати по миру» — только на телефонах (на ПК это растянет окно на весь монитор)
+      if ((w.platform === "ios" || w.platform === "android") && w.isVersionAtLeast?.("8.0")) {
+        try { w.requestFullscreen?.(); } catch { /* ignore */ }
+      }
+    };
     if ((window as any).Telegram?.WebApp) return ready();
     const sc = document.createElement("script");
     sc.src = "https://telegram.org/js/telegram-web-app.js";
@@ -106,7 +116,9 @@ function TgMiniApp() {
     if (customTickets === TG_TICKET_MAX) h.notificationOccurred?.("success");
     else h.impactOccurred?.(power > 0.6 ? "heavy" : power > 0.3 ? "medium" : "light");
   }, [customTickets]);
-  const selected = customTickets === null ? TICKET_PACKS[pack] : getTgTicketSelection(customTickets);
+  const selected = customTickets !== null
+    ? getTgTicketSelection(customTickets)
+    : pack >= 0 ? TICKET_PACKS[pack] : { tickets: 0, price: 0 };
   const shirtsTotal = SHIRTS.reduce((s, sh) => s + (shirts[sh.id]?.qty ?? 0) * sh.price, 0);
   const total = selected.price + shirtsTotal;
   const hasShirts = shirtsTotal > 0;
@@ -167,7 +179,7 @@ function TgMiniApp() {
                 return (
                   <button
                     key={p.tickets}
-                    onClick={() => { setPack(i); setCustomTickets(null); }}
+                    onClick={() => { setPack(active ? -1 : i); setCustomTickets(null); }}
                     className={`relative rounded-2xl px-2 pb-3 pt-4 text-center transition-all active:scale-95 ${
                       active ? "hh-beam bg-[#f000c0]/15" : "bg-[#1f1f29]"
                     }`}
@@ -259,7 +271,7 @@ function TgMiniApp() {
         {/* Аналог MainButton Telegram */}
         <div className={`hh-payment-dock fixed inset-x-0 bottom-0 z-40 mx-auto max-w-md ${isMax ? "is-max" : ""}`}
           style={{ ["--hh-power" as string]: power }}>
-          <Button className="hh-pay-button hh-pay-button-docked hh-pay-powered" size="l" stretched onClick={() => setCheckout(true)}>
+          <Button className="hh-pay-button hh-pay-button-docked hh-pay-powered" size="l" stretched disabled={total === 0} onClick={() => setCheckout(true)}>
             <span className="hh-payment-label">Оплатить</span>
             <span className="hh-payment-amount"><NumberTicker value={total} /> ₽</span>
           </Button>
@@ -268,9 +280,9 @@ function TgMiniApp() {
         {checkout && (
           <CheckoutSheet
             total={total}
-            ticketsLabel={`${selected.tickets} ${pluralTickets(selected.tickets)} · ${selected.price.toLocaleString("ru-RU")} ₽`}
+            ticketsLabel={selected.tickets > 0 ? `${selected.tickets} ${pluralTickets(selected.tickets)} · ${selected.price.toLocaleString("ru-RU")} ₽` : ""}
             shirtLines={shirtLines}
-            ticketChoice={customTickets === null ? { pack } : { custom: selected.tickets }}
+            ticketChoice={customTickets !== null ? { custom: selected.tickets } : pack >= 0 ? { pack } : null}
             onClose={() => setCheckout(false)}
           />
         )}

@@ -317,7 +317,9 @@
             h.endsWith(".lovableproject-dev.com") ||
             h === "beta.lovable.dev" ||
             h.endsWith(".beta.lovable.dev");
-          if (inIframe || isLovablePreview) {
+          // Telegram-страница — отдельный продукт, сплэш PWA ей не нужен.
+          var isTg = h === "tg.hhr.pro" || location.pathname.indexOf("/tg") === 0;
+          if (inIframe || isLovablePreview || isTg) {
             var b = document.getElementById("hh-boot");
             if (b) b.parentNode.removeChild(b);
           }
