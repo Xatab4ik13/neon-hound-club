@@ -66,6 +66,15 @@ function TgMiniApp() {
   const [shirts, setShirts] = useState<Record<string, Line>>({});
   const [checkout, setCheckout] = useState(false);
 
+  const power = customTickets === null ? 0 : (customTickets - TG_TICKET_MIN) / (TG_TICKET_MAX - TG_TICKET_MIN);
+  const isMax = customTickets === TG_TICKET_MAX;
+  useEffect(() => {
+    if (customTickets === null) return;
+    const h = (window as any).Telegram?.WebApp?.HapticFeedback;
+    if (!h) return;
+    if (customTickets === TG_TICKET_MAX) h.notificationOccurred?.("success");
+    else h.impactOccurred?.(power > 0.6 ? "heavy" : power > 0.3 ? "medium" : "light");
+  }, [customTickets]);
   const selected = customTickets === null ? TICKET_PACKS[pack] : getTgTicketSelection(customTickets);
   const shirtsTotal = SHIRTS.reduce((s, sh) => s + (shirts[sh.id]?.qty ?? 0) * sh.price, 0);
   const total = selected.price + shirtsTotal;
@@ -145,7 +154,9 @@ function TgMiniApp() {
                 );
               })}
             </div>
-            <div className={`hh-ticket-slider px-4 pb-4 pt-2 ${customTickets !== null ? "hh-ticket-slider-active" : ""}`}>
+            <div className={`hh-ticket-slider px-4 pb-4 pt-2 ${customTickets !== null ? "hh-ticket-slider-active" : ""} ${isMax ? "is-max" : ""}`}
+              style={{ ["--hh-power" as string]: power }}>
+              <span className="hh-power-ring" aria-hidden />
               <div className="mb-3 flex items-center justify-between">
                 <span className="font-bold">Больше билетов</span>
                 <PlumpNum value={customTickets ?? TG_TICKET_MIN} size={20} />
@@ -207,8 +218,9 @@ function TgMiniApp() {
         <TgLegalFooter />
 
         {/* Аналог MainButton Telegram */}
-        <div className="hh-payment-dock fixed inset-x-0 bottom-0 z-40 mx-auto max-w-md">
-          <Button className="hh-pay-button hh-pay-button-docked" size="l" stretched onClick={() => setCheckout(true)}>
+        <div className={`hh-payment-dock fixed inset-x-0 bottom-0 z-40 mx-auto max-w-md ${isMax ? "is-max" : ""}`}
+          style={{ ["--hh-power" as string]: power }}>
+          <Button className="hh-pay-button hh-pay-button-docked hh-pay-powered" size="l" stretched onClick={() => setCheckout(true)}>
             <span className="hh-payment-label">Оплатить</span>
             <span className="hh-payment-amount"><NumberTicker value={total} /> ₽</span>
           </Button>
