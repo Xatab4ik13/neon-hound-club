@@ -27,10 +27,10 @@ import { formatRuPhone, isValidRuPhone } from "@/lib/phone";
 import { TgPvzPicker } from "@/components/tg/TgPvzPicker";
 import { EMPTY_CDEK_STATE, type CdekPickerState } from "@/components/checkout/CdekDeliveryPicker";
 import ticketImg from "@/assets/spin/ticket.webp";
-import shirt299 from "@/assets/tg-shirt-299.webp.asset.json";
-import shirtShalavam from "@/assets/tg-shirt-shalavam.webp.asset.json";
+import shirt299 from "@/assets/local-tg-shirt-299.webp";
+import shirtShalavam from "@/assets/local-tg-shirt-shalavam.webp";
 import bikeImg from "@/assets/vanya-bike-float.png";
-import hhrLogo from "@/assets/hhr-logo.png.asset.json";
+import hhrLogo from "@/assets/local-hhr-logo.png";
 
 /**
  * Страница для Telegram на базе TelegramUI (нативные блоки Telegram)

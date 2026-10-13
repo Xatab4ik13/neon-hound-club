@@ -1,4 +1,4 @@
-import hhrLogo from "@/assets/hhr-logo.png.asset.json";
+import hhrLogo from "@/assets/local-hhr-logo.png";
 import { TG_BOT_URL } from "@/lib/maintenance";
 
 export function MaintenanceScreen() {
