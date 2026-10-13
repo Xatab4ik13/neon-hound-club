@@ -62,6 +62,7 @@ import { Route as BloggerHellAiRouteImport } from './routes/blogger.hell-ai'
 import { Route as AdminVipChatRouteImport } from './routes/admin.vip-chat'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminTicketsRouteImport } from './routes/admin.tickets'
+import { Route as AdminTelegramRouteImport } from './routes/admin.telegram'
 import { Route as AdminSupportRouteImport } from './routes/admin.support'
 import { Route as AdminSpinRouteImport } from './routes/admin.spin'
 import { Route as AdminShopRouteImport } from './routes/admin.shop'
@@ -373,6 +374,11 @@ const AdminTicketsRoute = AdminTicketsRouteImport.update({
   path: '/tickets',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminTelegramRoute = AdminTelegramRouteImport.update({
+  id: '/telegram',
+  path: '/telegram',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminSupportRoute = AdminSupportRouteImport.update({
   id: '/support',
   path: '/support',
@@ -632,6 +638,7 @@ export interface FileRoutesByFullPath {
   '/admin/shop': typeof AdminShopRoute
   '/admin/spin': typeof AdminSpinRoute
   '/admin/support': typeof AdminSupportRoute
+  '/admin/telegram': typeof AdminTelegramRoute
   '/admin/tickets': typeof AdminTicketsRoute
   '/admin/users': typeof AdminUsersRoute
   '/admin/vip-chat': typeof AdminVipChatRoute
@@ -729,6 +736,7 @@ export interface FileRoutesByTo {
   '/admin/shop': typeof AdminShopRoute
   '/admin/spin': typeof AdminSpinRoute
   '/admin/support': typeof AdminSupportRoute
+  '/admin/telegram': typeof AdminTelegramRoute
   '/admin/tickets': typeof AdminTicketsRoute
   '/admin/users': typeof AdminUsersRoute
   '/admin/vip-chat': typeof AdminVipChatRoute
@@ -830,6 +838,7 @@ export interface FileRoutesById {
   '/admin/shop': typeof AdminShopRoute
   '/admin/spin': typeof AdminSpinRoute
   '/admin/support': typeof AdminSupportRoute
+  '/admin/telegram': typeof AdminTelegramRoute
   '/admin/tickets': typeof AdminTicketsRoute
   '/admin/users': typeof AdminUsersRoute
   '/admin/vip-chat': typeof AdminVipChatRoute
@@ -932,6 +941,7 @@ export interface FileRouteTypes {
     | '/admin/shop'
     | '/admin/spin'
     | '/admin/support'
+    | '/admin/telegram'
     | '/admin/tickets'
     | '/admin/users'
     | '/admin/vip-chat'
@@ -1029,6 +1039,7 @@ export interface FileRouteTypes {
     | '/admin/shop'
     | '/admin/spin'
     | '/admin/support'
+    | '/admin/telegram'
     | '/admin/tickets'
     | '/admin/users'
     | '/admin/vip-chat'
@@ -1129,6 +1140,7 @@ export interface FileRouteTypes {
     | '/admin/shop'
     | '/admin/spin'
     | '/admin/support'
+    | '/admin/telegram'
     | '/admin/tickets'
     | '/admin/users'
     | '/admin/vip-chat'
@@ -1603,6 +1615,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminTicketsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/telegram': {
+      id: '/admin/telegram'
+      path: '/telegram'
+      fullPath: '/admin/telegram'
+      preLoaderRoute: typeof AdminTelegramRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/support': {
       id: '/admin/support'
       path: '/support'
@@ -1940,6 +1959,7 @@ interface AdminRouteChildren {
   AdminShopRoute: typeof AdminShopRoute
   AdminSpinRoute: typeof AdminSpinRoute
   AdminSupportRoute: typeof AdminSupportRoute
+  AdminTelegramRoute: typeof AdminTelegramRoute
   AdminTicketsRoute: typeof AdminTicketsRoute
   AdminUsersRoute: typeof AdminUsersRoute
   AdminVipChatRoute: typeof AdminVipChatRoute
@@ -1965,6 +1985,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminShopRoute: AdminShopRoute,
   AdminSpinRoute: AdminSpinRoute,
   AdminSupportRoute: AdminSupportRoute,
+  AdminTelegramRoute: AdminTelegramRoute,
   AdminTicketsRoute: AdminTicketsRoute,
   AdminUsersRoute: AdminUsersRoute,
   AdminVipChatRoute: AdminVipChatRoute,
