@@ -1,6 +1,5 @@
-import { describe, expect, it } from "vitest";
+import { test } from "node:test";
+import { strict as assert } from "node:assert";
 import { formatRuPhone, isValidRuPhone } from "./phone";
-describe("RU phone", () => {
-  it("replaces leading 8 with +7", () => expect(formatRuPhone("89001234567")).toBe("+7 (900) 123-45-67"));
-  it("valid only with 11 digits", () => { expect(isValidRuPhone("+7 (900) 123-45")).toBe(false); expect(isValidRuPhone("+7 (900) 123-45-67")).toBe(true); });
-});
+test("8 → +7", () => assert.equal(formatRuPhone("89001234567"), "+7 (900) 123-45-67"));
+test("valid only with 11 digits", () => { assert.equal(isValidRuPhone("+7 (900) 123-45"), false); assert.equal(isValidRuPhone("+7 (900) 123-45-67"), true); });

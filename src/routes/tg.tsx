@@ -66,6 +66,31 @@ function TgMiniApp() {
   const [customTickets, setCustomTickets] = useState<number | null>(null);
   const [shirts, setShirts] = useState<Record<string, Line>>({});
   const [checkout, setCheckout] = useState(false);
+  const [paidState, setPaidState] = useState<"none" | "wait" | "paid" | "failed">("none");
+
+  // Telegram WebApp SDK: initData для привязки покупки к Telegram-аккаунту
+  useEffect(() => {
+    const ready = () => { const w = (window as any).Telegram?.WebApp; w?.ready?.(); w?.expand?.(); };
+    if ((window as any).Telegram?.WebApp) return ready();
+    const sc = document.createElement("script");
+    sc.src = "https://telegram.org/js/telegram-web-app.js";
+    sc.onload = ready;
+    document.head.appendChild(sc);
+  }, []);
+
+  // Возврат с платёжной формы банка: ?paid=<id> — ждём подтверждения
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search);
+    if (q.get("failed")) { setPaidState("failed"); return; }
+    const id = q.get("paid");
+    if (!id) return;
+    setPaidState("wait");
+    let n = 0;
+    const tick = () => apiFetch<{ status: string }>(`/api/v1/tg/orders/${id}`)
+      .then((r) => { if (r.status === "paid") setPaidState("paid"); else if (r.status === "failed") setPaidState("failed"); else if (++n < 20) setTimeout(tick, 3000); })
+      .catch(() => { if (++n < 20) setTimeout(tick, 3000); });
+    tick();
+  }, []);
 
   const power = customTickets === null ? 0 : (customTickets - TG_TICKET_MIN) / (TG_TICKET_MAX - TG_TICKET_MIN);
   const isMax = customTickets === TG_TICKET_MAX;
@@ -83,7 +108,8 @@ function TgMiniApp() {
   const shirtLines = useMemo(
     () =>
       SHIRTS.filter((sh) => (shirts[sh.id]?.qty ?? 0) > 0).map((sh) => ({
-        productId: sh.productId,
+        id: sh.id,
+        size: shirts[sh.id].size,
         qty: shirts[sh.id].qty,
         label: `${sh.name} · ${shirts[sh.id].size} × ${shirts[sh.id].qty}`,
       })),
@@ -97,6 +123,13 @@ function TgMiniApp() {
         <header className="flex justify-center pt-5">
           <img src={hhrLogo.url} alt="HELLHOUND Racing" className="h-14 w-auto" draggable={false} />
         </header>
+        {paidState !== "none" && (
+          <div className="hh-paid-banner">
+            {paidState === "paid" && <><b>Оплата прошла</b>Чек пришлём в этот чат. Всё привязано к вашему номеру телефона.</>}
+            {paidState === "wait" && <><b>Проверяем оплату…</b>Обычно это занимает несколько секунд.</>}
+            {paidState === "failed" && <><b>Оплата не прошла</b>Деньги не списаны. Попробуйте ещё раз.</>}
+          </div>
+        )}
 
         {/* Hero: Ваня на байке парит */}
         <div className="px-5 pt-2 text-center">
@@ -232,6 +265,7 @@ function TgMiniApp() {
             total={total}
             ticketsLabel={`${selected.tickets} ${pluralTickets(selected.tickets)} · ${selected.price.toLocaleString("ru-RU")} ₽`}
             shirtLines={shirtLines}
+            ticketChoice={customTickets === null ? { pack } : { custom: selected.tickets }}
             onClose={() => setCheckout(false)}
           />
         )}
@@ -373,13 +407,17 @@ function CheckoutSheet({
   total,
   ticketsLabel,
   shirtLines,
+  ticketChoice,
   onClose,
 }: {
   total: number;
   ticketsLabel: string;
-  shirtLines: { productId: string | null; qty: number; label: string }[];
+  shirtLines: { id: string; size: string; qty: number; label: string }[];
+  ticketChoice: { pack: number } | { custom: number };
   onClose: () => void;
 }) {
+  const [paying, setPaying] = useState(false);
+  const [payError, setPayError] = useState<string | null>(null);
   const needAddress = shirtLines.length > 0;
   const [closing, setClosing] = useState(false);
   const [cdek, setCdek] = useState<CdekPickerState>(EMPTY_CDEK_STATE);
@@ -402,24 +440,48 @@ function CheckoutSheet({
     return () => { document.body.style.overflow = prev; };
   }, []);
 
-  // Доставка — тот же расчёт СДЭК, что на сайте (/api/v1/cdek/calculate)
+  // Доставка СДЭК до ПВЗ с нашей наценкой — считает сервер
+  const shirtQty = shirtLines.reduce((n, l) => n + l.qty, 0);
   useEffect(() => {
     setShip(null);
     if (!needAddress || !cdek.cityCode) { setShipState("idle"); return; }
-    const items = shirtLines.filter((l) => l.productId).map((l) => ({ productId: l.productId, qty: l.qty }));
-    if (items.length === 0) { setShipState("error"); return; }
     let cancelled = false;
     setShipState("loading");
     const t = setTimeout(() => {
-      apiFetch<{ totalSum: number; periodMin: number; periodMax: number }>("/api/v1/cdek/calculate", {
+      apiFetch<{ price: number; min: number; max: number }>("/api/v1/tg/shipping", {
         method: "POST",
-        body: JSON.stringify({ cityCode: cdek.cityCode, mode: cdek.mode, items }),
+        body: JSON.stringify({ cityCode: cdek.cityCode, qty: shirtQty }),
       })
-        .then((r) => { if (!cancelled) { setShip({ price: r.totalSum, min: r.periodMin, max: r.periodMax }); setShipState("idle"); } })
+        .then((r) => { if (!cancelled) { setShip(r); setShipState("idle"); } })
         .catch(() => { if (!cancelled) setShipState("error"); });
     }, 350);
     return () => { cancelled = true; clearTimeout(t); };
-  }, [needAddress, cdek.cityCode, cdek.mode, shirtLines]);
+  }, [needAddress, cdek.cityCode, shirtQty]);
+
+  const pay = async () => {
+    if (!canPay || paying) return;
+    setPaying(true); setPayError(null);
+    try {
+      const tg = (window as any).Telegram?.WebApp;
+      const r = await apiFetch<{ paymentUrl: string }>("/api/v1/tg/orders", {
+        method: "POST",
+        body: JSON.stringify({
+          initData: tg?.initData ?? "",
+          phone,
+          tickets: ticketChoice,
+          shirts: shirtLines.map(({ id, size, qty }) => ({ id, size, qty })),
+          ...(needAddress ? {
+            recipientName: name,
+            pvz: { cityCode: cdek.cityCode, cityName: cdek.cityName, code: cdek.pvzCode, address: cdek.pvzAddress },
+          } : {}),
+        }),
+      });
+      window.location.href = r.paymentUrl;
+    } catch (e) {
+      setPayError((e as Error).message || "Не удалось создать оплату");
+      setPaying(false);
+    }
+  };
 
   const grand = total + (ship?.price ?? 0);
 
@@ -478,7 +540,8 @@ function CheckoutSheet({
         </div>
 
         <div className="hh-sheet-foot hh-stagger" style={{ ["--i" as string]: needAddress ? 5 : 3 }}>
-          <Button className="hh-pay-button hh-pay-button-docked" size="l" stretched disabled={!canPay}>
+          {payError && <div className="hh-pay-error">{payError}</div>}
+          <Button className="hh-pay-button hh-pay-button-docked" size="l" stretched disabled={!canPay || paying} loading={paying} onClick={pay}>
             <span className="hh-payment-label">{canPay ? "К оплате" : !phoneOk ? "Укажите телефон" : !nameOk ? "Укажите имя" : "Выберите пункт"}</span>
             <span className="hh-payment-amount"><NumberTicker value={grand} /> ₽</span>
           </Button>

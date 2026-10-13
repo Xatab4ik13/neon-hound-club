@@ -1039,3 +1039,6 @@ html.hh-admin *::-webkit-scrollbar-thumb:hover {
 .hh-tg .hh-field { display: flex; align-items: center; min-height: 52px; padding: 0 14px; margin: 0 16px; border-radius: 14px; background: var(--tgui--bg_color, #1c1c24); color: #fff; border: 1px solid transparent; transition: border-color 200ms; }
 .hh-tg .hh-field input { background: transparent; color: #fff; font-size: 16px; outline: none; border: 0; box-shadow: none; }
 .hh-tg .hh-pay-button[disabled] { opacity: 0.55; filter: saturate(0.6); }
+.hh-tg .hh-pay-error { margin-bottom: 10px; text-align: center; font-size: 14px; color: #ff2bd6; }
+.hh-tg .hh-paid-banner { margin: 16px 16px 0; padding: 16px; border-radius: 20px; border: 1.5px solid var(--hh-tg-lime); color: #fff; text-align: center; }
+.hh-tg .hh-paid-banner b { color: var(--hh-tg-lime); font-size: 18px; display: block; margin-bottom: 4px; }

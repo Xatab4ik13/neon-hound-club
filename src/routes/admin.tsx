@@ -181,6 +181,7 @@ const NAV: NavItem[] = [
   { to: "/admin/school-chats", label: "Чаты Школы", icon: PlumpChat },
   { to: "/admin/pass", label: "Hell Pass", icon: Crown },
   { to: "/admin/cdek", label: "СДЭК", icon: Package },
+  { to: "/admin/telegram", label: "Телеграм бот", icon: Bot },
   { to: "/admin/settings", label: "Настройки", icon: Settings },
 ];
 
