@@ -264,5 +264,24 @@ export async function buildApp() {
     app.log.error({ err: e }, "seedQuests failed");
   }
 
+  // Первый админ на пустой базе: BOOTSTRAP_ADMIN_EMAIL + BOOTSTRAP_ADMIN_PASSWORD.
+  try {
+    const email = process.env.BOOTSTRAP_ADMIN_EMAIL?.trim().toLowerCase();
+    const password = process.env.BOOTSTRAP_ADMIN_PASSWORD;
+    if (email && password) {
+      const { db } = await import("./db/client.js");
+      const { users } = await import("./db/schema/users.js");
+      const { hashPassword } = await import("./lib/auth.js");
+      const { eq } = await import("drizzle-orm");
+      const [u] = await db.select({ id: users.id }).from(users).where(eq(users.email, email)).limit(1);
+      if (!u) {
+        await db.insert(users).values({ email, passwordHash: await hashPassword(password), nick: "admin", role: "admin", emailVerified: true });
+        app.log.warn({ email }, "bootstrap admin created");
+      }
+    }
+  } catch (e) {
+    app.log.error({ err: e }, "bootstrap admin failed");
+  }
+
   return app;
 }
