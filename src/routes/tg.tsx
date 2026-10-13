@@ -16,6 +16,7 @@ import { PlumpNum } from "@/components/brand/PlumpNum";
 import { getTgTicketSelection, TG_TICKET_MIN, TG_TICKET_MAX, TG_TICKET_STEP } from "@/lib/tg-tickets";
 import { Minus, Plus } from "lucide-react";
 import { PlumpTruck, PlumpClose } from "@/components/ui/icons";
+import { LEGAL } from "@/data/legal";
 import ticketImg from "@/assets/spin/ticket.webp";
 import shirt299 from "@/assets/tg-shirt-299.webp.asset.json";
 import shirtShalavam from "@/assets/tg-shirt-shalavam.webp.asset.json";
@@ -190,6 +191,8 @@ function TgMiniApp() {
             </div>
           </div>
         </List>
+
+        <TgLegalFooter />
 
         {/* Аналог MainButton Telegram */}
         <div className="hh-payment-dock fixed inset-x-0 bottom-0 z-40 mx-auto max-w-md">
