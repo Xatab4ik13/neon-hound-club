@@ -20,25 +20,35 @@ export const Route = createFileRoute("/tg")({
   component: TgMiniApp,
 });
 
-const TICKET_PRICE = 300;
-const TICKET_MAX = 100;
+// Наборы билетов — как у цифровых открыток Hell: те же объёмы и цены, только билеты напрямую.
+const TICKET_PACKS = [
+  { tickets: 1, price: 300 },
+  { tickets: 3, price: 500, badge: "−45%" },
+  { tickets: 5, price: 700, badge: "−54%" },
+  { tickets: 10, price: 1000, badge: "Hot · −67%" },
+  { tickets: 20, price: 1500, badge: "−75%" },
+  { tickets: 50, price: 3000, badge: "−80%" },
+];
+
 const SIZES = ["S", "M", "L", "XL", "XXL"] as const;
 const SHIRTS = [
   { id: "a", name: "Футболка №1", price: 2500 },
   { id: "b", name: "Футболка №2", price: 2500 },
 ];
 
-type Cart = { tickets: number; shirts: Record<string, { size: string; qty: number }> };
+type Cart = { shirts: Record<string, { size: string; qty: number }> };
 
 function TgMiniApp() {
-  const [cart, setCart] = useState<Cart>({ tickets: 0, shirts: {} });
+  const [pack, setPack] = useState(0);
+  const [cart, setCart] = useState<Cart>({ shirts: {} });
   const [checkout, setCheckout] = useState(false);
 
+  const selectedPack = TICKET_PACKS[pack];
   const total = useMemo(
     () =>
-      cart.tickets * TICKET_PRICE +
+      selectedPack.price +
       SHIRTS.reduce((s, sh) => s + (cart.shirts[sh.id]?.qty ?? 0) * sh.price, 0),
-    [cart],
+    [selectedPack, cart],
   );
   const hasShirts = Object.values(cart.shirts).some((s) => s.qty > 0);
 
@@ -55,61 +65,79 @@ function TgMiniApp() {
 
       {/* Розыгрыш: Ваня на байке парит в воздухе, без рамок и фона */}
       <section className="mt-2 px-4">
-        <div className="relative">
-          <div
-            aria-hidden
-            className="absolute inset-x-10 top-12 h-40 rounded-full bg-primary/20 blur-[64px]"
-          />
-          <img
-            src={bikeImg}
-            alt="Ваня на розовой Yamaha MT-07"
-            className="relative mx-auto block w-full max-w-[320px] -rotate-1 select-none drop-shadow-[0_26px_34px_rgba(240,0,192,0.25)]"
-            draggable={false}
-          />
-        </div>
+        <img
+          src={bikeImg}
+          alt="Ваня на розовой Yamaha MT-07"
+          className="mx-auto block w-full max-w-[280px] -rotate-1 select-none drop-shadow-[0_26px_34px_rgba(240,0,192,0.25)]"
+          draggable={false}
+        />
 
-        <h1 className="mt-1 whitespace-nowrap text-center font-display text-[clamp(15px,4.9vw,26px)] font-black uppercase leading-none tracking-tight text-foreground">
-          Легендарный розыгрыш <span className="text-primary">Yamaha MT-07</span>
+        <h1 className="mt-2 text-center font-display text-[clamp(24px,7.2vw,34px)] font-black uppercase leading-[0.95] tracking-tight text-foreground">
+          Легендарный{" "}
+          <span className="text-primary drop-shadow-[0_0_16px_rgba(240,0,192,0.5)]">
+            розыгрыш
+          </span>{" "}
+          <span className="text-primary drop-shadow-[0_0_16px_rgba(240,0,192,0.5)]">
+            Yamaha MT-07
+          </span>
         </h1>
-        <p className="mt-2.5 text-center font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+        <p className="mx-auto mt-3 w-fit rounded-full border border-primary/60 bg-primary/10 px-4 py-1.5 font-mono text-[12px] font-bold uppercase tracking-[0.25em] text-primary">
           Финал 29 октября
         </p>
 
-        {/* Количество билетов — ползунок */}
+        {/* Наборы билетов — по аналогии с цифровыми открытками */}
         <div className="mt-7">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <img src={ticketImg} alt="" className="h-11 w-11 object-contain" />
-              <div>
-                <div className="font-display text-base font-bold uppercase leading-none">
-                  Билеты
-                </div>
-                <div className="mt-1 text-xs text-muted-foreground">
-                  {TICKET_PRICE} ₽ за 1 билет
-                </div>
+          <div className="flex items-center gap-3">
+            <img src={ticketImg} alt="" className="h-11 w-11 object-contain" />
+            <div>
+              <div className="font-display text-base font-bold uppercase leading-none">
+                Билеты на розыгрыш
               </div>
-            </div>
-            <div className="font-display text-4xl font-black leading-none tabular-nums">
-              {cart.tickets}
+              <div className="mt-1 text-xs text-muted-foreground">
+                1 билет = 1 шанс забрать Yamaha MT-07
+              </div>
             </div>
           </div>
 
-          <input
-            type="range"
-            min={0}
-            max={TICKET_MAX}
-            step={1}
-            value={cart.tickets}
-            aria-label="Количество билетов"
-            onChange={(e) =>
-              setCart((c) => ({ ...c, tickets: Number(e.target.value) }))
-            }
-            className="hh-range mt-3 w-full"
-            style={{ ["--fill" as string]: `${(cart.tickets / TICKET_MAX) * 100}%` }}
-          />
-          <div className="mt-1 flex justify-between font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-            <span>0</span>
-            <span>{TICKET_MAX}</span>
+          <div className="mt-4 grid grid-cols-3 gap-2">
+            {TICKET_PACKS.map((p, i) => (
+              <button
+                key={p.tickets}
+                onClick={() => setPack(i)}
+                className={`relative rounded-2xl border p-3 text-center transition-colors ${
+                  i === pack
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-border bg-card text-foreground"
+                }`}
+              >
+                {p.badge && (
+                  <span
+                    className={`absolute right-1.5 top-1.5 font-mono text-[9px] font-bold uppercase ${
+                      i === pack ? "text-primary-foreground/80" : "text-primary"
+                    }`}
+                  >
+                    {p.badge}
+                  </span>
+                )}
+                <div className="font-display text-xl font-black leading-none tabular-nums">
+                  {p.tickets}
+                </div>
+                <div
+                  className={`mt-1 font-mono text-[10px] uppercase tracking-wider ${
+                    i === pack ? "text-primary-foreground/80" : "text-muted-foreground"
+                  }`}
+                >
+                  {p.tickets === 1 ? "билет" : "билетов"}
+                </div>
+                <div
+                  className={`mt-1.5 font-display text-sm font-bold tabular-nums ${
+                    i === pack ? "text-primary-foreground" : "text-foreground"
+                  }`}
+                >
+                  {p.price.toLocaleString("ru-RU")} ₽
+                </div>
+              </button>
+            ))}
           </div>
         </div>
       </section>
@@ -162,7 +190,8 @@ function TgMiniApp() {
           onClick={() => setCheckout(true)}
           className="h-14 w-full rounded-2xl bg-primary font-display text-lg font-black uppercase text-primary-foreground disabled:opacity-40"
         >
-          {total === 0 ? "Выбери билеты или мерч" : `Оплатить ${total.toLocaleString("ru-RU")} ₽`}
+          {selectedPack.tickets} билет{selectedPack.tickets === 1 ? "" : "ов"} ·{" "}
+          {total.toLocaleString("ru-RU")} ₽
         </button>
       </div>
 
