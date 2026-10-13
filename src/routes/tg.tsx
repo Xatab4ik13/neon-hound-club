@@ -25,8 +25,6 @@ import { apiFetch } from "@/lib/api";
 import { QRCodeSVG } from "qrcode.react";
 import { DadataInput } from "@/components/ui/DadataInput";
 import { formatRuPhone, isValidRuPhone } from "@/lib/phone";
-import { TgPvzPicker } from "@/components/tg/TgPvzPicker";
-import { EMPTY_CDEK_STATE, type CdekPickerState } from "@/components/checkout/CdekDeliveryPicker";
 import ticketImg from "@/assets/spin/ticket.webp";
 import shirt299 from "@/assets/local-tg-shirt-299.webp";
 import shirtShalavam from "@/assets/local-tg-shirt-shalavam.webp";

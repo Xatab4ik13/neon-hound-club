@@ -53,7 +53,7 @@ export async function tgRoutes(app: FastifyInstance) {
     if (!sh) return reply.code(400).send({ error: "bad_shirts", message: "Проверьте футболки и размеры" });
     if (t.tickets === 0 && sh.qty === 0) return reply.code(400).send({ error: "empty", message: "Корзина пуста" });
 
-    let shipping = 0;
+    const shipping = 0;
     if (sh.qty > 0) {
       // Предзаказ: доставку пока не считаем, берём только адрес
       if (!b.address || !b.recipientName || b.recipientName.trim().split(/\s+/).length < 2) {
