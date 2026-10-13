@@ -422,7 +422,7 @@ function CheckoutSheet({
           </div>
 
           <div className="hh-stagger" style={{ ["--i" as string]: 2 }}>
-            <Section header="Телефон" footer="Тот же номер, что в HHR — по нему привяжем билеты к аккаунту.">
+            <Section header="Телефон" footer="Тот же номер, что в HHR — по нему привяжем билеты к аккаунту. Если аккаунта не было — укажите любой свой номер, по нему и создадим.">
               <Input placeholder="+7 900 000-00-00" type="tel" inputMode="tel" autoComplete="tel" />
             </Section>
           </div>
