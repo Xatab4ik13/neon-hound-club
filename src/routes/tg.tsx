@@ -14,7 +14,8 @@ import "@telegram-apps/telegram-ui/dist/styles.css";
 import { Slider } from "@/components/ui/slider";
 import { PlumpNum } from "@/components/brand/PlumpNum";
 import { getTgTicketSelection, TG_TICKET_MIN, TG_TICKET_MAX, TG_TICKET_STEP } from "@/lib/tg-tickets";
-import { Minus, Plus, X } from "lucide-react";
+import { Minus, Plus } from "lucide-react";
+import { PlumpTicket, PlumpStore, PlumpTruck, PlumpClose } from "@/components/ui/icons";
 import ticketImg from "@/assets/spin/ticket.webp";
 import tshirtImg from "@/assets/spin/tshirt-blur.webp";
 import bikeImg from "@/assets/vanya-bike-float.png";
@@ -92,7 +93,7 @@ function TgMiniApp() {
 
         <List className="mt-4">
           <Section
-            header={<Section.Header large>Билеты</Section.Header>}
+            header={<Section.Header large><span className="hh-section-heading"><PlumpTicket size={22} />Билеты</span></Section.Header>}
             footer={
               <Section.Footer className="!text-[#8b8b99]">
                 1 билет = 1 шанс. Билеты привязываются к твоему Telegram и потом переносятся в аккаунт HHR.
@@ -152,8 +153,8 @@ function TgMiniApp() {
           </Section>
 
           <Section
-            header={<Section.Header large><span className="hh-merch-heading">Предзаказ мерча</span></Section.Header>}
-            footer={<Section.Footer className="!text-[#8b8b99]">Доставку посчитаем и согласуем при отправке.</Section.Footer>}
+            header={<Section.Header large><span className="hh-section-heading hh-merch-heading"><PlumpStore size={22} />Предзаказ мерча</span></Section.Header>}
+            footer={<Section.Footer className="!text-[#8b8b99]"><span className="hh-section-footer"><PlumpTruck size={14} />Доставку посчитаем и согласуем при отправке.</span></Section.Footer>}
           >
             {SHIRTS.map((sh) => {
               const line = shirts[sh.id] ?? { size: "L", qty: 0 };
@@ -288,7 +289,7 @@ function CheckoutSheet({ total, needAddress, onClose }: { total: number; needAdd
         <div className="flex items-center justify-between px-5">
           <h3 className="font-display text-xl font-black uppercase text-white">Оформление</h3>
           <button aria-label="Закрыть" onClick={onClose} className="text-[#8b8b99]">
-            <X className="h-5 w-5" />
+            <PlumpClose size={20} />
           </button>
         </div>
         <div className="mt-2">
