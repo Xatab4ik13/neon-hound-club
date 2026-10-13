@@ -18,7 +18,8 @@ import { Minus, Plus } from "lucide-react";
 import { PlumpTruck, PlumpClose } from "@/components/ui/icons";
 import { LEGAL } from "@/data/legal";
 import { apiFetch } from "@/lib/api";
-import { CdekDeliveryPicker, EMPTY_CDEK_STATE, type CdekPickerState } from "@/components/checkout/CdekDeliveryPicker";
+import { TgPvzPicker } from "@/components/tg/TgPvzPicker";
+import { EMPTY_CDEK_STATE, type CdekPickerState } from "@/components/checkout/CdekDeliveryPicker";
 import ticketImg from "@/assets/spin/ticket.webp";
 import shirt299 from "@/assets/tg-shirt-299.webp.asset.json";
 import shirtShalavam from "@/assets/tg-shirt-shalavam.webp.asset.json";
@@ -435,11 +436,10 @@ function CheckoutSheet({
                 </Section>
               </div>
               <div className="hh-stagger hh-sheet-cdek" style={{ ["--i" as string]: 4 }}>
-                <div className="hh-sheet-label">Доставка СДЭК</div>
-                <CdekDeliveryPicker value={cdek} onChange={setCdek} />
+                <TgPvzPicker value={cdek} onChange={setCdek} />
                 <div className="hh-sheet-ship">
                   <PlumpTruck size={16} />
-                  {!cdek.cityCode && <span>Выберите город — посчитаем доставку</span>}
+                  {!cdek.cityCode && <span>Выберите пункт — посчитаем доставку</span>}
                   {cdek.cityCode && shipState === "loading" && <span>Считаем доставку…</span>}
                   {cdek.cityCode && shipState === "error" && <span>Не удалось посчитать — согласуем при отправке</span>}
                   {ship && shipState === "idle" && (

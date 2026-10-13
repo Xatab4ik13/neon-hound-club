@@ -4,6 +4,7 @@
  * с поиском города сверху; тап по точке → карточка снизу «Забрать здесь».
  */
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Button, Cell, Input, Section } from "@telegram-apps/telegram-ui";
 import { Loader2 } from "lucide-react";
 import { PlumpMap, PlumpClose, PlumpSearch } from "@/components/ui/icons";
@@ -29,12 +30,13 @@ export function TgPvzPicker({ value, onChange }: { value: CdekPickerState; onCha
           {value.pvzAddress ?? "Выбрать пункт выдачи"}
         </Cell>
       </Section>
-      {open && (
+      {open && createPortal(
         <PvzMapPanel
           value={value}
           onClose={() => setOpen(false)}
           onPick={(v) => { onChange(v); setOpen(false); }}
-        />
+        />,
+        document.querySelector(".hh-tg") ?? document.body,
       )}
     </>
   );
