@@ -17,14 +17,15 @@ import { getTgTicketSelection, TG_TICKET_MIN, TG_TICKET_MAX, TG_TICKET_STEP } fr
 import { Minus, Plus } from "lucide-react";
 import { PlumpTruck, PlumpClose } from "@/components/ui/icons";
 import ticketImg from "@/assets/spin/ticket.webp";
-import tshirtImg from "@/assets/spin/tshirt-blur.webp";
+import shirt299 from "@/assets/tg-shirt-299.webp.asset.json";
+import shirtShalavam from "@/assets/tg-shirt-shalavam.webp.asset.json";
 import bikeImg from "@/assets/vanya-bike-float.png";
 import hhrLogo from "@/assets/hhr-logo.png.asset.json";
 
 /**
  * Страница для Telegram на базе TelegramUI (нативные блоки Telegram)
  * + пара «вау»-эффектов в духе Magic UI: бегущая рамка, счётчик суммы, таймер до финала.
- * Пока только визуал — оплата и сервер не подключены. Футболки — заглушки.
+ * Пока только визуал — оплата и сервер не подключены.
  */
 export const Route = createFileRoute("/tg")({
   head: () => ({
@@ -49,8 +50,8 @@ const TICKET_PACKS = [
 
 const SIZES = ["S", "M", "L", "XL", "XXL"] as const;
 const SHIRTS = [
-  { id: "a", name: "Футболка №1", price: 2500 },
-  { id: "b", name: "Футболка №2", price: 2500 },
+  { id: "a", name: "Сегодня ехал 299", price: 2500, image: shirt299.url },
+  { id: "b", name: "Еду к шалавам", price: 2500, image: shirtShalavam.url },
 ];
 
 type Line = { size: string; qty: number };
@@ -161,7 +162,7 @@ function TgMiniApp() {
                 setShirts((s) => ({ ...s, [sh.id]: { ...line, ...patch } }));
               return (
                 <div key={sh.id} className="hh-merch-item">
-                  <img src={tshirtImg} alt={sh.name} className="hh-shirt-image" />
+                  <img src={sh.image} alt={sh.name} className="hh-shirt-image" />
                   <Cell
                     subtitle={`${sh.price.toLocaleString("ru-RU")} ₽`}
                     after={<Stepper value={line.qty} onChange={(qty) => update({ qty })} max={10} />}
@@ -187,14 +188,11 @@ function TgMiniApp() {
         </List>
 
         {/* Аналог MainButton Telegram */}
-        <div className="hh-payment-dock fixed inset-x-0 bottom-0 z-40 mx-auto max-w-md px-4">
-          <Button className="hh-pay-button" size="l" stretched onClick={() => setCheckout(true)}>
-            Оплатить · <NumberTicker value={total} /> ₽
+        <div className="hh-payment-dock fixed inset-x-0 bottom-0 z-40 mx-auto max-w-md">
+          <Button className="hh-pay-button hh-pay-button-docked" size="l" stretched onClick={() => setCheckout(true)}>
+            <span className="hh-payment-label">Оплатить</span>
+            <span className="hh-payment-amount"><NumberTicker value={total} /> ₽</span>
           </Button>
-          <div className="hh-payment-summary mt-2 text-center text-[11px]">
-            {selected.tickets} {pluralTickets(selected.tickets)}
-            {hasShirts ? " + мерч" : ""}
-          </div>
         </div>
 
         {checkout && <CheckoutSheet total={total} needAddress={hasShirts} onClose={() => setCheckout(false)} />}
