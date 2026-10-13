@@ -8,6 +8,8 @@ import {
 
 import { ViewerProvider } from "@/hooks/use-viewer";
 import { CartProvider } from "@/hooks/use-cart";
+import { MaintenanceScreen } from "@/components/brand/MaintenanceScreen";
+import { isTgHost, shouldShowMaintenance } from "@/lib/maintenance";
 import { PaymentErrorWatcher } from "@/components/brand/PaymentErrorWatcher";
 import { useEffect } from "react";
 import { captureRefFromUrl } from "@/data/referral";
@@ -128,6 +130,18 @@ function RootComponent() {
     if (link) link.href = "/club-manifest.webmanifest";
     document.title = "HELLHOUND Club";
   }, []);
+
+  // tg.hhr.pro всегда открывает страницу Telegram; hhr.pro — заглушка на время восстановления.
+  const [maintenance, setMaintenance] = useState(false);
+  useEffect(() => {
+    const { hostname, pathname } = window.location;
+    if (isTgHost(hostname) && pathname !== "/tg") {
+      window.location.replace(`/tg${window.location.search}`);
+      return;
+    }
+    setMaintenance(shouldShowMaintenance(hostname, pathname));
+  }, []);
+  if (maintenance) return <MaintenanceScreen />;
 
   return (
     <QueryClientProvider client={queryClient}>
