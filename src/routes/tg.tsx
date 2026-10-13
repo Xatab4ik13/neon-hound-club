@@ -190,8 +190,8 @@ function TgMiniApp() {
           onClick={() => setCheckout(true)}
           className="h-14 w-full rounded-2xl bg-primary font-display text-lg font-black uppercase text-primary-foreground disabled:opacity-40"
         >
-          {selectedPack.tickets} билет{selectedPack.tickets === 1 ? "" : "ов"} ·{" "}
-          {total.toLocaleString("ru-RU")} ₽
+          {selectedPack.tickets}{" "}
+          {pluralTickets(selectedPack.tickets)} · {total.toLocaleString("ru-RU")} ₽
         </button>
       </div>
 
