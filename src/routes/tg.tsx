@@ -152,24 +152,25 @@ function TgMiniApp() {
             </Cell>
           </Section>
 
-          <Section
-            header={<Section.Header large><span className="hh-merch-heading">Предзаказ мерча</span></Section.Header>}
-            footer={<Section.Footer className="!text-[#8b8b99]"><span className="hh-section-footer"><PlumpTruck size={14} />Доставку посчитаем и согласуем при отправке.</span></Section.Footer>}
-          >
+          <div className="hh-merch">
+            <div className="px-5">
+              <span className="hh-merch-heading">Предзаказ мерча</span>
+            </div>
             {SHIRTS.map((sh) => {
               const line = shirts[sh.id] ?? { size: "L", qty: 0 };
               const update = (patch: Partial<Line>) =>
                 setShirts((s) => ({ ...s, [sh.id]: { ...line, ...patch } }));
               return (
                 <div key={sh.id} className="hh-merch-item">
-                  <img src={sh.image} alt={sh.name} className="hh-shirt-image" />
-                  <Cell
-                    subtitle={`${sh.price.toLocaleString("ru-RU")} ₽`}
-                    after={<Stepper value={line.qty} onChange={(qty) => update({ qty })} max={10} />}
-                  >
-                    {sh.name}
-                  </Cell>
-                  <div className="flex gap-1.5 px-4 pb-3">
+                  <img src={sh.image} alt={sh.name} className="hh-shirt-image" draggable={false} />
+                  <div className="hh-merch-controls">
+                    <div>
+                      <div className="text-base font-bold text-white">{sh.name}</div>
+                      <div className="text-sm text-[#8b8b99]">{sh.price.toLocaleString("ru-RU")} ₽</div>
+                    </div>
+                    <Stepper value={line.qty} onChange={(qty) => update({ qty })} max={10} />
+                  </div>
+                  <div className="flex gap-1.5 px-5 pt-3">
                     {SIZES.map((s) => (
                       <Chip
                         key={s}
@@ -184,7 +185,10 @@ function TgMiniApp() {
                 </div>
               );
             })}
-          </Section>
+            <div className="px-5 pt-4 text-sm text-[#8b8b99]">
+              <span className="hh-section-footer"><PlumpTruck size={14} />Доставку посчитаем и согласуем при отправке.</span>
+            </div>
+          </div>
         </List>
 
         {/* Аналог MainButton Telegram */}
