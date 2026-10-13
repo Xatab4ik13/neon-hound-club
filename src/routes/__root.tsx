@@ -11,7 +11,7 @@ import { CartProvider } from "@/hooks/use-cart";
 import { MaintenanceScreen } from "@/components/brand/MaintenanceScreen";
 import { isTgHost, shouldShowMaintenance } from "@/lib/maintenance";
 import { PaymentErrorWatcher } from "@/components/brand/PaymentErrorWatcher";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { captureRefFromUrl } from "@/data/referral";
 import { isClubHost } from "@/lib/host";
 import { Illustration } from "@/components/club/Illustration";
