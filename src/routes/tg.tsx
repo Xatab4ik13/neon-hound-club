@@ -17,9 +17,8 @@ import { Minus, Plus } from "lucide-react";
 import { PlumpTruck, PlumpClose } from "@/components/ui/icons";
 import { LEGAL } from "@/data/legal";
 import { apiFetch } from "@/lib/api";
-import { PhoneInput } from "@/components/ui/phone-input";
 import { DadataInput } from "@/components/ui/DadataInput";
-import { isValidPhoneNumber } from "libphonenumber-js";
+import { formatRuPhone, isValidRuPhone } from "@/lib/phone";
 import { TgPvzPicker } from "@/components/tg/TgPvzPicker";
 import { EMPTY_CDEK_STATE, type CdekPickerState } from "@/components/checkout/CdekDeliveryPicker";
 import ticketImg from "@/assets/spin/ticket.webp";
@@ -385,9 +384,8 @@ function CheckoutSheet({
   const [closing, setClosing] = useState(false);
   const [cdek, setCdek] = useState<CdekPickerState>(EMPTY_CDEK_STATE);
   const [phone, setPhone] = useState("");
-  const [phoneTouched, setPhoneTouched] = useState(false);
   const [name, setName] = useState("");
-  const phoneOk = !!phone && isValidPhoneNumber(phone);
+  const phoneOk = isValidRuPhone(phone);
   const nameOk = name.trim().split(/\s+/).length >= 2;
   const canPay = phoneOk && (!needAddress || (nameOk && !!cdek.pvzCode));
   const [ship, setShip] = useState<{ price: number; min: number; max: number } | null>(null);
@@ -444,10 +442,10 @@ function CheckoutSheet({
 
           <div className="hh-stagger" style={{ ["--i" as string]: 2 }}>
             <Section header="Телефон" footer="Тот же номер, что в HHR — по нему привяжем билеты к аккаунту. Если аккаунта не было — укажите любой свой номер, по нему и создадим.">
-              <div className={`hh-field ${phoneTouched && !phoneOk ? "is-error" : ""}`} onBlur={() => setPhoneTouched(true)}>
-                <PhoneInput value={phone} onChange={(v) => setPhone(v || "")} placeholder="Номер телефона" autoComplete="tel" verified={phoneOk} className="min-w-0 flex-1" />
+              <div className="hh-field">
+                <input type="tel" inputMode="tel" autoComplete="tel" placeholder="+7 (900) 000-00-00" value={phone}
+                  onChange={(e) => setPhone(formatRuPhone(e.target.value))} className="min-w-0 flex-1" />
               </div>
-              {phoneTouched && phone && !phoneOk && <div className="hh-field-error">Проверьте номер — не хватает цифр</div>}
             </Section>
           </div>
 
