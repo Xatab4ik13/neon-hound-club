@@ -4,6 +4,7 @@ import { Minus, Plus, X } from "lucide-react";
 import ticketImg from "@/assets/spin/ticket.webp";
 import tshirtImg from "@/assets/spin/tshirt-blur.webp";
 import bikeImg from "@/assets/vanya-bike.webp";
+import hhrLogo from "@/assets/hhr-logo.png.asset.json";
 
 /**
  * Набросок Telegram Mini App: только визуал, без оплаты и сервера.
@@ -42,11 +43,13 @@ function TgMiniApp() {
 
   return (
     <div className="mx-auto min-h-dvh max-w-md bg-background pb-28 text-foreground">
-      <header className="flex items-center justify-between px-4 pt-5">
-        <span className="font-display text-xl font-black uppercase tracking-tight">HELLHOUND</span>
-        <span className="rounded-full border border-border px-3 py-1 font-mono text-[11px] uppercase text-muted-foreground">
-          Mini App
-        </span>
+      <header className="flex justify-center px-4 pt-5">
+        <img
+          src={hhrLogo.url}
+          alt="HELLHOUND Racing"
+          className="h-16 w-auto"
+          draggable={false}
+        />
       </header>
 
       {/* Розыгрыш */}
