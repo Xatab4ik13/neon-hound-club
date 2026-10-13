@@ -27,10 +27,10 @@ import { formatRuPhone, isValidRuPhone } from "@/lib/phone";
 import { TgPvzPicker } from "@/components/tg/TgPvzPicker";
 import { EMPTY_CDEK_STATE, type CdekPickerState } from "@/components/checkout/CdekDeliveryPicker";
 import ticketImg from "@/assets/spin/ticket.webp";
-import shirt299 from "@/assets/tg-shirt-299.webp.asset.json";
-import shirtShalavam from "@/assets/tg-shirt-shalavam.webp.asset.json";
+import shirt299 from "@/assets/local-tg-shirt-299.webp";
+import shirtShalavam from "@/assets/local-tg-shirt-shalavam.webp";
 import bikeImg from "@/assets/vanya-bike-float.png";
-import hhrLogo from "@/assets/hhr-logo.png.asset.json";
+import hhrLogo from "@/assets/local-hhr-logo.png";
 
 /**
  * Страница для Telegram на базе TelegramUI (нативные блоки Telegram)
@@ -60,8 +60,8 @@ const TICKET_PACKS = [
 
 const SIZES = ["S", "M", "L", "XL", "XXL"] as const;
 const SHIRTS = [
-  { id: "a", name: "Сегодня ехал 299", price: 2500, productId: null as string | null, image: shirt299.url },
-  { id: "b", name: "Еду к шалавам", price: 2600, productId: null as string | null, image: shirtShalavam.url },
+  { id: "a", name: "Сегодня ехал 299", price: 2500, productId: null as string | null, image: shirt299 },
+  { id: "b", name: "Еду к шалавам", price: 2600, productId: null as string | null, image: shirtShalavam },
 ];
 
 type Line = { size: string; qty: number };
@@ -126,7 +126,7 @@ function TgMiniApp() {
     <AppRoot appearance="dark" platform="ios" className="hh-tg">
       <div className="mx-auto min-h-dvh max-w-md pb-32">
         <header className="flex justify-center pt-5">
-          <img src={hhrLogo.url} alt="HELLHOUND Racing" className="h-14 w-auto" draggable={false} />
+          <img src={hhrLogo} alt="HELLHOUND Racing" className="h-14 w-auto" draggable={false} />
         </header>
         {paidState !== "none" && (
           <div className="hh-paid-banner">

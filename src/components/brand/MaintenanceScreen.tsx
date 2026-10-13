@@ -1,10 +1,10 @@
-import hhrLogo from "@/assets/hhr-logo.png.asset.json";
+import hhrLogo from "@/assets/local-hhr-logo.png";
 import { TG_BOT_URL } from "@/lib/maintenance";
 
 export function MaintenanceScreen() {
   return (
     <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background px-6 text-center">
-      <img src={hhrLogo.url} alt="HELLHOUND Racing" className="h-16 w-auto" draggable={false} />
+      <img src={hhrLogo} alt="HELLHOUND Racing" className="h-16 w-auto" draggable={false} />
       <h1 className="mt-8 font-display text-3xl font-black uppercase tracking-tight text-foreground">
         Сайт временно не работает
       </h1>
