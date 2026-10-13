@@ -127,7 +127,7 @@ function TgMiniApp() {
                     i === pack ? "text-primary-foreground/80" : "text-muted-foreground"
                   }`}
                 >
-                  {p.tickets === 1 ? "билет" : "билетов"}
+                  {pluralTickets(p.tickets)}
                 </div>
                 <div
                   className={`mt-1.5 font-display text-sm font-bold tabular-nums ${
@@ -250,7 +250,14 @@ function CheckoutSheet({ total, needAddress, onClose }: { total: number; needAdd
   );
 }
 
-function Field({ placeholder }: { placeholder: string }) {
+function pluralTickets(n: number) {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return "билет";
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return "билета";
+  return "билетов";
+}
+
   return (
     <input
       placeholder={placeholder}
