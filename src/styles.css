@@ -1012,3 +1012,27 @@ html.hh-admin *::-webkit-scrollbar-thumb:hover {
 .hh-tg .hh-map-card-sub { color: #8b8b99; font-size: 13px; margin: 4px 0 12px; }
 @keyframes hh-sheet-item { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .hh-tg .hh-sheet, .hh-tg .hh-sheet-root, .hh-tg .hh-stagger { animation-duration: 1ms !important; animation-delay: 0ms !important; } }
+
+/* Нарастающий эффект ползунка билетов: рамка, трек и кнопка оплаты (--hh-power 0..1) */
+@property --hh-ring-angle { syntax: "<angle>"; initial-value: 0deg; inherits: false; }
+.hh-tg .hh-ticket-slider { position: relative; isolation: isolate; border-radius: 22px; margin: 0 8px 8px; }
+.hh-tg .hh-power-ring { position: absolute; inset: 0; z-index: -1; border-radius: inherit; padding: 1.5px; pointer-events: none;
+  background: conic-gradient(from var(--hh-ring-angle), transparent 0deg, var(--hh-tg-lime) 70deg, #ff2bd6 140deg, transparent 220deg, var(--hh-tg-lime) 300deg, transparent 360deg);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude;
+  opacity: calc(var(--hh-power, 0) * 1.2); filter: drop-shadow(0 0 calc(var(--hh-power, 0) * 14px) rgb(163 230 53 / 0.7));
+  animation: hh-ring-spin calc(6s - var(--hh-power, 0) * 4.8s) linear infinite; transition: opacity 250ms; }
+.hh-tg .hh-ticket-slider [role="slider"] { transition: box-shadow 200ms, transform 200ms; box-shadow: 0 0 calc(var(--hh-power, 0) * 22px) rgb(163 230 53 / 0.9); transform: scale(calc(1 + var(--hh-power, 0) * 0.25)); }
+.hh-tg .hh-ticket-slider.is-max .hh-power-ring { animation-duration: 0.9s; filter: drop-shadow(0 0 18px rgb(255 43 214 / 0.8)); }
+.hh-tg .hh-ticket-slider.is-max { animation: hh-max-kick 520ms cubic-bezier(0.22, 1.4, 0.36, 1); }
+.hh-tg .hh-pay-powered { position: relative; overflow: hidden; transition: box-shadow 250ms, transform 250ms;
+  box-shadow: var(--hh-tg-payment-shadow), 0 0 calc(var(--hh-power, 0) * 40px) rgb(163 230 53 / calc(var(--hh-power, 0) * 0.8)) !important;
+  transform: scale(calc(1 + var(--hh-power, 0) * 0.03)); }
+.hh-tg .hh-pay-powered::after { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: calc(var(--hh-power, 0) * 1.4);
+  background: linear-gradient(110deg, transparent 35%, rgb(255 255 255 / 0.55) 50%, transparent 65%); background-size: 250% 100%;
+  animation: hh-pay-sheen calc(3.2s - var(--hh-power, 0) * 2s) ease-in-out infinite; }
+.hh-tg .hh-payment-dock.is-max .hh-pay-powered { animation: hh-max-kick 520ms cubic-bezier(0.22, 1.4, 0.36, 1), hh-pay-breathe 1.4s 520ms ease-in-out infinite; }
+@keyframes hh-ring-spin { to { --hh-ring-angle: 360deg; } }
+@keyframes hh-pay-sheen { 0% { background-position: 150% 0; } 60%, 100% { background-position: -100% 0; } }
+@keyframes hh-max-kick { 0% { transform: scale(1); } 40% { transform: scale(1.06); } 100% { transform: scale(1.03); } }
+@keyframes hh-pay-breathe { 0%, 100% { box-shadow: var(--hh-tg-payment-shadow), 0 0 40px rgb(163 230 53 / 0.8); } 50% { box-shadow: var(--hh-tg-payment-shadow), 0 0 60px rgb(255 43 214 / 0.7); } }
+@media (prefers-reduced-motion: reduce) { .hh-tg .hh-power-ring, .hh-tg .hh-pay-powered::after { animation: none; } }
