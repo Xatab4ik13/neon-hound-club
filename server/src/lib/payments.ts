@@ -379,7 +379,11 @@ export async function handleRaifNotification(
     .from(payments)
     .where(eq(payments.providerPaymentId, providerPaymentId))
     .limit(1);
-  if (!payment) return false;
+  if (!payment) {
+    // Заказы со страницы Telegram живут в своей таблице.
+    const { handleTgRaifNotification } = await import("../telegram/payments.js");
+    return handleTgRaifNotification(body, signature);
+  }
 
   const method = (payment.method as PaymentMethod) || "card";
   const acc = getAccount(method);
