@@ -968,3 +968,27 @@ html.hh-admin *::-webkit-scrollbar-thumb:hover {
 .hh-tg .hh-legal-links { display: flex; flex-wrap: wrap; gap: 6px 16px; list-style: none; margin: 22px 0 0; padding: 0; }
 .hh-tg .hh-legal-links a { color: #8b8b99; font-size: 12px; text-decoration: none; }
 .hh-tg .hh-legal-req { margin-top: 10px; font-family: var(--font-mono); font-size: 10px; color: #5c5c68; }
+
+/* ===== Telegram: окно оформления (bottom sheet) ===== */
+.hh-tg .hh-sheet-root { position: fixed; inset: 0; z-index: 60; display: flex; align-items: flex-end; justify-content: center; background: rgb(0 0 0 / 0.62); backdrop-filter: blur(6px); animation: hh-sheet-fade 220ms ease-out both; }
+.hh-tg .hh-sheet { position: relative; width: 100%; max-width: 28rem; max-height: 92dvh; display: flex; flex-direction: column; background: var(--tgui--secondary_bg_color, #15151c); border-radius: 28px 28px 0 0; box-shadow: 0 -20px 60px rgb(0 0 0 / 0.5); animation: hh-sheet-up 420ms cubic-bezier(0.22, 1.2, 0.36, 1) both; }
+.hh-tg .hh-sheet-root.is-closing { animation: hh-sheet-fade 260ms ease-in reverse both; }
+.hh-tg .hh-sheet-root.is-closing .hh-sheet { animation: hh-sheet-down 260ms ease-in both; }
+.hh-tg .hh-sheet-grip { width: 40px; height: 5px; border-radius: 99px; background: rgb(255 255 255 / 0.18); margin: 10px auto 4px; }
+.hh-tg .hh-sheet-head { display: flex; align-items: center; justify-content: space-between; padding: 8px 20px 4px; }
+.hh-tg .hh-sheet-head h3 { font-family: var(--font-display); font-weight: 900; font-size: 22px; text-transform: uppercase; color: #fff; }
+.hh-tg .hh-sheet-head button { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 99px; background: rgb(255 255 255 / 0.07); color: #8b8b99; }
+.hh-tg .hh-sheet-body { overflow-y: auto; padding-bottom: 8px; overscroll-behavior: contain; }
+.hh-tg .hh-sheet-summary { margin: 8px 20px 4px; padding: 12px 14px; border-radius: 18px; background: rgb(255 255 255 / 0.04); border: 1px solid rgb(255 255 255 / 0.06); display: grid; gap: 6px; }
+.hh-tg .hh-sheet-row { font-size: 14px; color: #e6e6ef; }
+.hh-tg .hh-sheet-cdek { padding: 4px 20px 0; }
+.hh-tg .hh-sheet-label { font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; color: #8b8b99; margin: 12px 0 8px; }
+.hh-tg .hh-sheet-ship { display: flex; align-items: center; gap: 8px; margin-top: 12px; font-size: 14px; color: #c9c9d6; }
+.hh-tg .hh-sheet-ship b { color: var(--hh-tg-lime); }
+.hh-tg .hh-sheet-foot { padding: 10px 20px calc(16px + env(safe-area-inset-bottom)); }
+.hh-tg .hh-stagger { animation: hh-sheet-item 380ms cubic-bezier(0.22, 1, 0.36, 1) both; animation-delay: calc(90ms + var(--i, 0) * 45ms); }
+@keyframes hh-sheet-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes hh-sheet-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
+@keyframes hh-sheet-down { from { transform: translateY(0); } to { transform: translateY(100%); } }
+@keyframes hh-sheet-item { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .hh-tg .hh-sheet, .hh-tg .hh-sheet-root, .hh-tg .hh-stagger { animation-duration: 1ms !important; animation-delay: 0ms !important; } }

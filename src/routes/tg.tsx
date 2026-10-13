@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AppRoot,
   Badge,
@@ -17,6 +17,8 @@ import { getTgTicketSelection, TG_TICKET_MIN, TG_TICKET_MAX, TG_TICKET_STEP } fr
 import { Minus, Plus } from "lucide-react";
 import { PlumpTruck, PlumpClose } from "@/components/ui/icons";
 import { LEGAL } from "@/data/legal";
+import { apiFetch } from "@/lib/api";
+import { CdekDeliveryPicker, EMPTY_CDEK_STATE, type CdekPickerState } from "@/components/checkout/CdekDeliveryPicker";
 import ticketImg from "@/assets/spin/ticket.webp";
 import shirt299 from "@/assets/tg-shirt-299.webp.asset.json";
 import shirtShalavam from "@/assets/tg-shirt-shalavam.webp.asset.json";
@@ -51,8 +53,8 @@ const TICKET_PACKS = [
 
 const SIZES = ["S", "M", "L", "XL", "XXL"] as const;
 const SHIRTS = [
-  { id: "a", name: "Сегодня ехал 299", price: 2500, image: shirt299.url },
-  { id: "b", name: "Еду к шалавам", price: 2600, image: shirtShalavam.url },
+  { id: "a", name: "Сегодня ехал 299", price: 2500, productId: null as string | null, image: shirt299.url },
+  { id: "b", name: "Еду к шалавам", price: 2600, productId: null as string | null, image: shirtShalavam.url },
 ];
 
 type Line = { size: string; qty: number };
@@ -67,6 +69,15 @@ function TgMiniApp() {
   const shirtsTotal = SHIRTS.reduce((s, sh) => s + (shirts[sh.id]?.qty ?? 0) * sh.price, 0);
   const total = selected.price + shirtsTotal;
   const hasShirts = shirtsTotal > 0;
+  const shirtLines = useMemo(
+    () =>
+      SHIRTS.filter((sh) => (shirts[sh.id]?.qty ?? 0) > 0).map((sh) => ({
+        productId: sh.productId,
+        qty: shirts[sh.id].qty,
+        label: `${sh.name} · ${shirts[sh.id].size} × ${shirts[sh.id].qty}`,
+      })),
+    [shirts],
+  );
   const perTicket = Math.round(selected.price / selected.tickets);
 
   return (
@@ -202,7 +213,14 @@ function TgMiniApp() {
           </Button>
         </div>
 
-        {checkout && <CheckoutSheet total={total} needAddress={hasShirts} onClose={() => setCheckout(false)} />}
+        {checkout && (
+          <CheckoutSheet
+            total={total}
+            ticketsLabel={`${selected.tickets} ${pluralTickets(selected.tickets)} · ${selected.price.toLocaleString("ru-RU")} ₽`}
+            shirtLines={shirtLines}
+            onClose={() => setCheckout(false)}
+          />
+        )}
       </div>
     </AppRoot>
   );
@@ -337,30 +355,109 @@ function Stepper({ value, onChange, max }: { value: number; onChange: (v: number
   );
 }
 
-function CheckoutSheet({ total, needAddress, onClose }: { total: number; needAddress: boolean; onClose: () => void }) {
+function CheckoutSheet({
+  total,
+  ticketsLabel,
+  shirtLines,
+  onClose,
+}: {
+  total: number;
+  ticketsLabel: string;
+  shirtLines: { productId: string | null; qty: number; label: string }[];
+  onClose: () => void;
+}) {
+  const needAddress = shirtLines.length > 0;
+  const [closing, setClosing] = useState(false);
+  const [cdek, setCdek] = useState<CdekPickerState>(EMPTY_CDEK_STATE);
+  const [ship, setShip] = useState<{ price: number; min: number; max: number } | null>(null);
+  const [shipState, setShipState] = useState<"idle" | "loading" | "error">("idle");
+
+  const close = () => {
+    setClosing(true);
+    setTimeout(onClose, 260);
+  };
+
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = prev; };
+  }, []);
+
+  // Доставка — тот же расчёт СДЭК, что на сайте (/api/v1/cdek/calculate)
+  useEffect(() => {
+    setShip(null);
+    if (!needAddress || !cdek.cityCode) { setShipState("idle"); return; }
+    const items = shirtLines.filter((l) => l.productId).map((l) => ({ productId: l.productId, qty: l.qty }));
+    if (items.length === 0) { setShipState("error"); return; }
+    let cancelled = false;
+    setShipState("loading");
+    const t = setTimeout(() => {
+      apiFetch<{ totalSum: number; periodMin: number; periodMax: number }>("/api/v1/cdek/calculate", {
+        method: "POST",
+        body: JSON.stringify({ cityCode: cdek.cityCode, mode: cdek.mode, items }),
+      })
+        .then((r) => { if (!cancelled) { setShip({ price: r.totalSum, min: r.periodMin, max: r.periodMax }); setShipState("idle"); } })
+        .catch(() => { if (!cancelled) setShipState("error"); });
+    }, 350);
+    return () => { cancelled = true; clearTimeout(t); };
+  }, [needAddress, cdek.cityCode, cdek.mode, shirtLines]);
+
+  const grand = total + (ship?.price ?? 0);
+
   return (
-    <div className="fixed inset-0 z-50 flex items-end bg-black/70 backdrop-blur-sm" onClick={onClose}>
-      <div
-        className="mx-auto w-full max-w-md rounded-t-3xl bg-[#15151c] pb-5 pt-4"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between px-5">
-          <h3 className="font-display text-xl font-black uppercase text-white">Оформление</h3>
-          <button aria-label="Закрыть" onClick={onClose} className="text-[#8b8b99]">
-            <PlumpClose size={20} />
-          </button>
+    <div className={`hh-sheet-root ${closing ? "is-closing" : ""}`} onClick={close}>
+      <div className="hh-sheet" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
+        <div className="hh-sheet-grip" />
+        <div className="hh-sheet-head hh-stagger" style={{ ["--i" as string]: 0 }}>
+          <h3>{needAddress ? "Оформление заказа" : "Почти готово"}</h3>
+          <button aria-label="Закрыть" onClick={close}><PlumpClose size={20} /></button>
         </div>
-        <div className="mt-2">
-          <Input header="Имя и фамилия" placeholder="Иван Иванов" />
-          <Input header="Телефон" placeholder="+7" type="tel" />
-          {needAddress && <Input header="Город" placeholder="Москва" />}
+
+        <div className="hh-sheet-body">
+          <div className="hh-sheet-summary hh-stagger" style={{ ["--i" as string]: 1 }}>
+            <div className="hh-sheet-row"><span>{ticketsLabel}</span></div>
+            {shirtLines.map((l) => (
+              <div key={l.label} className="hh-sheet-row"><span>{l.label}</span></div>
+            ))}
+          </div>
+
+          <div className="hh-stagger" style={{ ["--i" as string]: 2 }}>
+            <Section header="Телефон" footer="Тот же номер, что в HHR — по нему привяжем билеты к аккаунту.">
+              <Input placeholder="+7 900 000-00-00" type="tel" inputMode="tel" autoComplete="tel" />
+            </Section>
+          </div>
+
+          {needAddress && (
+            <>
+              <div className="hh-stagger" style={{ ["--i" as string]: 3 }}>
+                <Section header="Получатель">
+                  <Input placeholder="Имя и фамилия" autoComplete="name" />
+                </Section>
+              </div>
+              <div className="hh-stagger hh-sheet-cdek" style={{ ["--i" as string]: 4 }}>
+                <div className="hh-sheet-label">Доставка СДЭК</div>
+                <CdekDeliveryPicker value={cdek} onChange={setCdek} />
+                <div className="hh-sheet-ship">
+                  <PlumpTruck size={16} />
+                  {!cdek.cityCode && <span>Выберите город — посчитаем доставку</span>}
+                  {cdek.cityCode && shipState === "loading" && <span>Считаем доставку…</span>}
+                  {cdek.cityCode && shipState === "error" && <span>Не удалось посчитать — согласуем при отправке</span>}
+                  {ship && shipState === "idle" && (
+                    <span>
+                      Доставка <b>{ship.price.toLocaleString("ru-RU")} ₽</b>
+                      {ship.max > 0 && <> · {ship.min === ship.max ? ship.min : `${ship.min}–${ship.max}`} дн.</>}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
         </div>
-        <p className="px-5 text-xs text-[#8b8b99]">
-          {needAddress ? "Доставку посчитаем и согласуем при отправке." : "Билеты придут на этот аккаунт Telegram."}
-        </p>
-        <div className="px-4 pt-4">
-          <Button className="hh-pay-button" size="l" stretched>
-            К оплате {total.toLocaleString("ru-RU")} ₽
+
+        <div className="hh-sheet-foot hh-stagger" style={{ ["--i" as string]: needAddress ? 5 : 3 }}>
+          <Button className="hh-pay-button hh-pay-button-docked" size="l" stretched>
+            <span className="hh-payment-label">К оплате</span>
+            <span className="hh-payment-amount"><NumberTicker value={grand} /> ₽</span>
           </Button>
         </div>
       </div>
