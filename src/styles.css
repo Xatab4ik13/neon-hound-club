@@ -981,7 +981,8 @@ html.hh-admin *::-webkit-scrollbar-thumb:hover {
 .hh-tg .hh-sheet-body { overflow-y: auto; padding-bottom: 8px; overscroll-behavior: contain; }
 .hh-tg .hh-sheet-summary { margin: 8px 20px 4px; padding: 12px 14px; border-radius: 18px; background: rgb(255 255 255 / 0.04); border: 1px solid rgb(255 255 255 / 0.06); display: grid; gap: 6px; }
 .hh-tg .hh-sheet-row { font-size: 14px; color: #e6e6ef; }
-.hh-tg .hh-sheet-cdek { padding: 4px 20px 0; }
+.hh-tg .hh-sheet-cdek { padding: 0; }
+.hh-tg .hh-sheet-cdek .hh-sheet-ship { padding: 0 20px; }
 .hh-tg .hh-sheet-label { font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; color: #8b8b99; margin: 12px 0 8px; }
 .hh-tg .hh-sheet-ship { display: flex; align-items: center; gap: 8px; margin-top: 12px; font-size: 14px; color: #c9c9d6; }
 .hh-tg .hh-sheet-ship b { color: var(--hh-tg-lime); }
