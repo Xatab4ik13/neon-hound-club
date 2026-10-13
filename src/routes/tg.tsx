@@ -16,6 +16,11 @@ import { getTgTicketSelection, TG_TICKET_MIN, TG_TICKET_MAX, TG_TICKET_STEP } fr
 import { Minus, Plus } from "lucide-react";
 import { PlumpTruck, PlumpClose } from "@/components/ui/icons";
 import { LEGAL } from "@/data/legal";
+import { OfferContent } from "@/components/legal/content/OfferContent";
+import { TermsContent } from "@/components/legal/content/TermsContent";
+import { PrivacyContent } from "@/components/legal/content/PrivacyContent";
+import { PromoRulesContent } from "@/components/legal/content/PromoRulesContent";
+import { RequisitesContent } from "@/components/legal/content/RequisitesContent";
 import { apiFetch } from "@/lib/api";
 import { DadataInput } from "@/components/ui/DadataInput";
 import { formatRuPhone, isValidRuPhone } from "@/lib/phone";
@@ -282,8 +287,54 @@ const LEGAL_LINKS = [
   { label: "Реквизиты", path: "/legal/requisites" },
 ];
 
+function DocBody({ path }: { path: string }) {
+  switch (path) {
+    case "/legal/offer": return <OfferContent />;
+    case "/legal/terms": return <TermsContent />;
+    case "/legal/privacy": return <PrivacyContent basePath="/legal" />;
+    case "/legal/promo-rules": return <PromoRulesContent basePath="/legal" />;
+    default: return <RequisitesContent />;
+  }
+}
+
+/** Документ открывается прямо внутри Telegram-страницы, без перехода на сайт */
+function TgDocSheet({ path, onNavigate, onClose }: { path: string; onNavigate: (p: string) => void; onClose: () => void }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const title = LEGAL_LINKS.find((l) => l.path === path)?.label ?? "Документ";
+  useEffect(() => {
+    ref.current?.scrollTo({ top: 0 });
+  }, [path]);
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = prev; };
+  }, []);
+  return (
+    <div className="hh-doc-sheet" role="dialog" aria-modal="true" aria-label={title}>
+      <div className="hh-doc-head">
+        <span>{title}</span>
+        <button type="button" aria-label="Закрыть" onClick={onClose}><PlumpClose /></button>
+      </div>
+      <div
+        ref={ref}
+        className="hh-doc-body"
+        onClickCapture={(e) => {
+          const a = (e.target as HTMLElement).closest("a");
+          const href = a?.getAttribute("href") ?? "";
+          const m = href.match(/\/legal\/(offer|terms|privacy|promo-rules|requisites)/);
+          if (m) { e.preventDefault(); e.stopPropagation(); onNavigate(`/legal/${m[1]}`); }
+        }}
+      >
+        <p className="hh-doc-date">Редакция от {LEGAL.registeredAt}</p>
+        <DocBody path={path} />
+      </div>
+    </div>
+  );
+}
+
 /** Подвал: предупреждение о восстановлении сервиса + ссылки на документы */
 function TgLegalFooter() {
+  const [doc, setDoc] = useState<string | null>(null);
   return (
     <footer className="hh-legal">
       <div className="hh-notice">
@@ -314,12 +365,19 @@ function TgLegalFooter() {
       <ul className="hh-legal-links">
         {LEGAL_LINKS.map((l) => (
           <li key={l.path}>
-            <a href={`https://${LEGAL.site}${l.path}`} target="_blank" rel="noreferrer">
+            <a
+              href={l.path}
+              onClick={(e) => {
+                e.preventDefault();
+                setDoc(l.path);
+              }}
+            >
               {l.label}
             </a>
           </li>
         ))}
       </ul>
+      {doc && <TgDocSheet path={doc} onNavigate={setDoc} onClose={() => setDoc(null)} />}
 
       <div className="hh-legal-req">
         {LEGAL.shortName} · ОГРНИП {LEGAL.ogrnip} · ИНН {LEGAL.inn}
