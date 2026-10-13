@@ -129,7 +129,7 @@ function TgMiniApp() {
           <Section
             header={<Section.Header large>Билеты</Section.Header>}
             footer={
-              <Section.Footer>
+              <Section.Footer className="!text-[#8b8b99]">
                 1 билет = 1 шанс. Билеты привязываются к твоему Telegram и потом переносятся в аккаунт HHR.
               </Section.Footer>
             }
@@ -177,7 +177,7 @@ function TgMiniApp() {
 
           <Section
             header={<Section.Header large>Предзаказ мерча</Section.Header>}
-            footer={<Section.Footer>Доставку посчитаем и согласуем при отправке.</Section.Footer>}
+            footer={<Section.Footer className="!text-[#8b8b99]">Доставку посчитаем и согласуем при отправке.</Section.Footer>}
           >
             {SHIRTS.map((sh) => {
               const line = shirts[sh.id] ?? { size: "L", qty: 0 };
@@ -200,7 +200,7 @@ function TgMiniApp() {
                         key={s}
                         mode={line.size === s ? "elevated" : "outline"}
                         onClick={() => update({ size: s })}
-                        className={`flex-1 justify-center ${line.size === s ? "!bg-[#f000c0] !text-white" : ""}`}
+                        className={`flex-1 justify-center text-center [&>*]:mx-auto ${line.size === s ? "!bg-[#f000c0] !text-white" : ""}`}
                       >
                         {s}
                       </Chip>
