@@ -6,7 +6,6 @@ import {
   Button,
   Cell,
   Chip,
-  Input,
   List,
   Section,
 } from "@telegram-apps/telegram-ui";
@@ -18,6 +17,9 @@ import { Minus, Plus } from "lucide-react";
 import { PlumpTruck, PlumpClose } from "@/components/ui/icons";
 import { LEGAL } from "@/data/legal";
 import { apiFetch } from "@/lib/api";
+import { PhoneInput } from "@/components/ui/phone-input";
+import { DadataInput } from "@/components/ui/DadataInput";
+import { isValidPhoneNumber } from "libphonenumber-js";
 import { TgPvzPicker } from "@/components/tg/TgPvzPicker";
 import { EMPTY_CDEK_STATE, type CdekPickerState } from "@/components/checkout/CdekDeliveryPicker";
 import ticketImg from "@/assets/spin/ticket.webp";
@@ -382,6 +384,12 @@ function CheckoutSheet({
   const needAddress = shirtLines.length > 0;
   const [closing, setClosing] = useState(false);
   const [cdek, setCdek] = useState<CdekPickerState>(EMPTY_CDEK_STATE);
+  const [phone, setPhone] = useState("");
+  const [phoneTouched, setPhoneTouched] = useState(false);
+  const [name, setName] = useState("");
+  const phoneOk = !!phone && isValidPhoneNumber(phone);
+  const nameOk = name.trim().split(/\s+/).length >= 2;
+  const canPay = phoneOk && (!needAddress || (nameOk && !!cdek.pvzCode));
   const [ship, setShip] = useState<{ price: number; min: number; max: number } | null>(null);
   const [shipState, setShipState] = useState<"idle" | "loading" | "error">("idle");
 
@@ -436,7 +444,10 @@ function CheckoutSheet({
 
           <div className="hh-stagger" style={{ ["--i" as string]: 2 }}>
             <Section header="Телефон" footer="Тот же номер, что в HHR — по нему привяжем билеты к аккаунту. Если аккаунта не было — укажите любой свой номер, по нему и создадим.">
-              <Input placeholder="+7 900 000-00-00" type="tel" inputMode="tel" autoComplete="tel" />
+              <div className={`hh-field ${phoneTouched && !phoneOk ? "is-error" : ""}`} onBlur={() => setPhoneTouched(true)}>
+                <PhoneInput value={phone} onChange={(v) => setPhone(v || "")} placeholder="Номер телефона" autoComplete="tel" verified={phoneOk} className="min-w-0 flex-1" />
+              </div>
+              {phoneTouched && phone && !phoneOk && <div className="hh-field-error">Проверьте номер — не хватает цифр</div>}
             </Section>
           </div>
 
@@ -444,7 +455,9 @@ function CheckoutSheet({
             <>
               <div className="hh-stagger" style={{ ["--i" as string]: 3 }}>
                 <Section header="Получатель">
-                  <Input placeholder="Имя и фамилия" autoComplete="name" />
+                  <div className="hh-field">
+                    <DadataInput type="fio" value={name} onChange={setName} placeholder="Фамилия и имя" autoComplete="name" className="min-w-0 flex-1" />
+                  </div>
                 </Section>
               </div>
               <div className="hh-stagger hh-sheet-cdek" style={{ ["--i" as string]: 4 }}>
@@ -467,8 +480,8 @@ function CheckoutSheet({
         </div>
 
         <div className="hh-sheet-foot hh-stagger" style={{ ["--i" as string]: needAddress ? 5 : 3 }}>
-          <Button className="hh-pay-button hh-pay-button-docked" size="l" stretched>
-            <span className="hh-payment-label">К оплате</span>
+          <Button className="hh-pay-button hh-pay-button-docked" size="l" stretched disabled={!canPay}>
+            <span className="hh-payment-label">{canPay ? "К оплате" : !phoneOk ? "Укажите телефон" : !nameOk ? "Укажите имя" : "Выберите пункт"}</span>
             <span className="hh-payment-amount"><NumberTicker value={grand} /> ₽</span>
           </Button>
         </div>
