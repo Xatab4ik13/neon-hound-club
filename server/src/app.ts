@@ -71,6 +71,19 @@ export async function buildApp() {
   app.get("/healthz", async () => healthPayload());
   app.get("/health", async () => healthPayload());
 
+  // Режим обслуживания (MAINTENANCE_MODE=1): пока старая база не восстановлена,
+  // работает только Telegram-страница и админка — новые аккаунты не создаются.
+  if (process.env.MAINTENANCE_MODE === "1") {
+    const allowed = ["/api/v1/tg", "/api/v1/admin", "/api/v1/auth/admin", "/api/v1/payments/raif/webhook", "/api/v1/dadata", "/api/v1/cdek", "/api/v1/system", "/media"];
+    app.addHook("onRequest", async (req, reply) => {
+      const url = req.url.split("?")[0]!;
+      if (!url.startsWith("/api/") && !url.startsWith("/media")) return;
+      if (allowed.some((p) => url.startsWith(p))) return;
+      return reply.code(503).send({ error: "maintenance", message: "HHR временно не работает — всё доступно в Telegram: @hhr_probot" });
+    });
+    app.log.warn("MAINTENANCE_MODE is on");
+  }
+
   const { authRoutes } = await import("./routes/auth.js");
   await app.register(authRoutes, { prefix: "/api/v1/auth" });
 
@@ -202,6 +215,11 @@ export async function buildApp() {
   const { spinRoutes, adminSpinRoutes } = await import("./routes/spin.js");
   await app.register(spinRoutes, { prefix: "/api/v1/spin" });
   await app.register(adminSpinRoutes, { prefix: "/api/v1/admin/spin" });
+
+  // Telegram-страница tg.hhr.pro и бот @hhr_probot (папка src/telegram).
+  const { tgRoutes, adminTgRoutes } = await import("./telegram/routes.js");
+  await app.register(tgRoutes, { prefix: "/api/v1/tg" });
+  await app.register(adminTgRoutes, { prefix: "/api/v1/admin/tg" });
 
   const { huntRoutes, adminHuntRoutes } = await import("./routes/hunt.js");
   await app.register(huntRoutes, { prefix: "/api/v1/hunt" });
