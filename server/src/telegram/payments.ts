@@ -6,12 +6,12 @@ import { adminChatIds, escapeHtml, openAppButton, sendMessage, TG_WEBAPP_URL } f
 
 export async function createTgPayment(order: TgOrder): Promise<string> {
   const back = `${TG_WEBAPP_URL}/tg?paid=${order.id}`;
-  const parts = [order.tickets ? `${order.tickets} бил.` : "", (order.shirts as unknown[]).length ? "предзаказ футболок" : ""].filter(Boolean);
+  const parts = [order.tickets ? "Открытка HELLHOUND" : "", (order.shirts as unknown[]).length ? "Футболка HELLHOUND" : ""].filter(Boolean);
   const r = await createOrder({
     method: "any",
     orderId: order.id,
     amountRub: order.totalRub,
-    comment: `HELLHOUND Telegram: ${parts.join(" + ")}`.slice(0, 140),
+    comment: `HELLHOUND: ${parts.join(" + ")}`.slice(0, 140),
     successUrl: back,
     failUrl: `${TG_WEBAPP_URL}/tg?failed=${order.id}`,
     extra: { refType: "tg_order", refId: order.id, phone: order.phone },
