@@ -488,6 +488,7 @@ function CheckoutSheet({
   const [paying, setPaying] = useState(false);
   const [payError, setPayError] = useState<string | null>(null);
   const [payUrl, setPayUrl] = useState<string | null>(null);
+  const [orderId, setOrderId] = useState<string | null>(null);
   const [slowHint, setSlowHint] = useState(false);
   const needAddress = shirtLines.length > 0;
   const [closing, setClosing] = useState(false);
@@ -520,7 +521,7 @@ function CheckoutSheet({
     const slowTimer = setTimeout(() => setSlowHint(true), 6000);
     try {
       const tg = (window as any).Telegram?.WebApp;
-      const r = await apiFetch<{ paymentUrl: string }>("/api/v1/tg/orders", {
+      const r = await apiFetch<{ paymentUrl: string; orderId: string }>("/api/v1/tg/orders", {
         method: "POST",
         body: JSON.stringify({
           initData: tg?.initData ?? "",
@@ -533,6 +534,7 @@ function CheckoutSheet({
           } : {}),
         }),
       });
+      setOrderId(r.orderId);
       setPayUrl(r.paymentUrl);
     } catch (e) {
       setPayError((e as Error).message || "Не удалось создать оплату");
@@ -553,7 +555,7 @@ function CheckoutSheet({
             <h3>Ссылка на оплату</h3>
             <button aria-label="Закрыть" onClick={close}><PlumpClose size={20} /></button>
           </div>
-          <TgPayLink url={payUrl} amount={grand} onOpen={() => openPay(payUrl)} onExpired={() => setPayUrl(null)} />
+          <TgPayLink url={payUrl} orderId={orderId} amount={grand} onOpen={() => openPay(payUrl)} onExpired={() => setPayUrl(null)} onDone={close} />
         </div>
       </div>
     );
@@ -623,14 +625,34 @@ function CheckoutSheet({
 const PAY_LINK_TTL_MS = 20 * 60 * 1000;
 
 /** Экран оплаты как у «Плати по миру»: QR, таймер 20 минут, копировать ссылку, перейти к оплате (во внешнем браузере). */
-function TgPayLink({ url, amount, onOpen, onExpired }: { url: string; amount: number; onOpen: () => void; onExpired: () => void }) {
+function TgPayLink({ url, orderId, amount, onOpen, onExpired, onDone }: { url: string; orderId: string | null; amount: number; onOpen: () => void; onExpired: () => void; onDone: () => void }) {
   const [deadline] = useState(() => Date.now() + PAY_LINK_TTL_MS);
   const [left, setLeft] = useState(PAY_LINK_TTL_MS);
   const [copied, setCopied] = useState(false);
+  const [paid, setPaid] = useState(false);
   useEffect(() => {
     const t = setInterval(() => setLeft(Math.max(0, deadline - Date.now())), 1000);
     return () => clearInterval(t);
   }, [deadline]);
+  // Проверяем статус заказа, пока открыт экран: вебхук банка ставит paid
+  useEffect(() => {
+    if (!orderId || paid) return;
+    let stop = false;
+    const tick = () => {
+      if (stop || document.hidden) return;
+      apiFetch<{ status: string }>(`/api/v1/tg/orders/${orderId}`).then((r) => {
+        if (!stop && r.status === "paid") {
+          setPaid(true);
+          (window as any).Telegram?.WebApp?.HapticFeedback?.notificationOccurred?.("success");
+        }
+      }).catch(() => {});
+    };
+    const t = setInterval(tick, 4000);
+    const onVis = () => { if (!document.hidden) tick(); };
+    document.addEventListener("visibilitychange", onVis);
+    tick();
+    return () => { stop = true; clearInterval(t); document.removeEventListener("visibilitychange", onVis); };
+  }, [orderId, paid]);
   const expired = left === 0;
   const mm = String(Math.floor(left / 60000)).padStart(2, "0");
   const ss = String(Math.floor((left % 60000) / 1000)).padStart(2, "0");
@@ -642,6 +664,19 @@ function TgPayLink({ url, amount, onOpen, onExpired }: { url: string; amount: nu
     setCopied(true); setTimeout(() => setCopied(false), 2000);
     (window as any).Telegram?.WebApp?.HapticFeedback?.notificationOccurred?.("success");
   };
+  if (paid) {
+    return (
+      <>
+        <div className="hh-sheet-body" style={{ textAlign: "center", padding: "32px 16px" }}>
+          <div style={{ fontSize: 22, fontWeight: 700, marginBottom: 8 }}>Оплата прошла</div>
+          <div style={{ opacity: 0.7 }}>{amount.toLocaleString("ru-RU")} ₽ — спасибо! Заказ сохранён.</div>
+        </div>
+        <div className="hh-sheet-foot">
+          <Button className="hh-pay-button hh-pay-button-docked" size="l" stretched onClick={onDone}>Готово</Button>
+        </div>
+      </>
+    );
+  }
   return (
     <>
       <div className="hh-sheet-body">
