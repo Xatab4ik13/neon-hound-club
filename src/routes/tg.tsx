@@ -24,7 +24,7 @@ import { RequisitesContent } from "@/components/legal/content/RequisitesContent"
 import { apiFetch } from "@/lib/api";
 import { QRCodeSVG } from "qrcode.react";
 import { DadataInput } from "@/components/ui/DadataInput";
-import { formatRuPhone, isValidRuPhone } from "@/lib/phone";
+import { formatPhone, isValidPhone } from "@/lib/phone";
 import ticketImg from "@/assets/spin/ticket.webp";
 import shirt299 from "@/assets/local-tg-shirt-299.webp";
 import shirtShalavam from "@/assets/local-tg-shirt-shalavam.webp";
@@ -495,7 +495,7 @@ function CheckoutSheet({
   const [address, setAddress] = useState("");
   const [phone, setPhone] = useState("");
   const [name, setName] = useState("");
-  const phoneOk = isValidRuPhone(phone);
+  const phoneOk = isValidPhone(phone);
   const nameOk = name.trim().split(/\s+/).length >= 2;
   const canPay = phoneOk && (!needAddress || (nameOk && address.trim().length >= 8));
   const close = () => {
@@ -579,10 +579,10 @@ function CheckoutSheet({
           </div>
 
           <div className="hh-stagger" style={{ ["--i" as string]: 2 }}>
-            <Section header="Телефон" footer="Тот же номер, что в HHR — по нему привяжем билеты к аккаунту. Если аккаунта не было — укажите любой свой номер, по нему и создадим.">
+            <Section header="Телефон" footer="По этому номеру привяжем билеты к аккаунту. Можно любой номер — СНГ и другие страны. Если аккаунта не было, создадим по нему.">
               <div className="hh-field">
                 <input type="tel" inputMode="tel" autoComplete="tel" placeholder="+7 (900) 000-00-00" value={phone}
-                  onChange={(e) => setPhone(formatRuPhone(e.target.value))} className="min-w-0 flex-1" />
+                  onChange={(e) => setPhone(formatPhone(e.target.value))} className="min-w-0 flex-1" />
               </div>
             </Section>
           </div>
