@@ -64,10 +64,11 @@ export function shirtPackage(qty: number) {
   return { weightG: p.weightG * qty, lengthCm: p.lengthCm, widthCm: p.widthCm, heightCm: p.heightCm * qty };
 }
 
-/** 8XXXXXXXXXX / 7XXXXXXXXXX / +7 (...) → +7XXXXXXXXXX, иначе null. */
-export function normalizeRuPhone(input: string): string | null {
+/** Любой номер: 8XXXXXXXXXX / 7XXXXXXXXXX / +<код><номер> → +<цифры> (8–15 цифр), иначе null. */
+export function normalizePhone(input: string): string | null {
   let d = input.replace(/\D/g, "");
   if (d.length === 11 && d.startsWith("8")) d = "7" + d.slice(1);
   if (d.length === 10) d = "7" + d;
-  return d.length === 11 && d.startsWith("7") ? `+${d}` : null;
+  if (d.length < 8 || d.length > 15) return null;
+  return "+" + d;
 }

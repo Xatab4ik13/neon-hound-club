@@ -6,7 +6,7 @@ import { tgOrders } from "../db/schema/tg.js";
 import { cdek } from "../lib/cdek.js";
 import { isRaifConfigured, RaifApiError } from "../lib/raif.js";
 import { requireAdmin } from "../lib/auth.js";
-import { normalizeRuPhone, priceShirts, priceTickets, shirtPackage, type ShirtLine } from "./pricing.js";
+import { normalizePhone, priceShirts, priceTickets, shirtPackage, type ShirtLine } from "./pricing.js";
 import { openAppButton, sendMessage, verifyInitData, webhookSecret } from "./bot.js";
 import { createTgPayment } from "./payments.js";
 
@@ -43,8 +43,8 @@ export async function tgRoutes(app: FastifyInstance) {
     if (!p.success) return reply.code(400).send({ error: "bad_input", message: "Проверьте данные заказа" });
     const b = p.data;
 
-    const phone = normalizeRuPhone(b.phone);
-    if (!phone) return reply.code(400).send({ error: "bad_phone", message: "Укажите номер в формате +7 (900) 000-00-00" });
+    const phone = normalizePhone(b.phone);
+    if (!phone) return reply.code(400).send({ error: "bad_phone", message: "Укажите номер телефона" });
 
     const tg = verifyInitData(b.initData);
     const t = b.tickets ? priceTickets(b.tickets) : { tickets: 0, price: 0 };
