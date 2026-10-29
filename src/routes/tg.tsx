@@ -12,7 +12,7 @@ import {
 import "@telegram-apps/telegram-ui/dist/styles.css";
 import { Slider } from "@/components/ui/slider";
 import { PlumpNum } from "@/components/brand/PlumpNum";
-import { getTgTicketSelection, TG_TICKET_MIN, TG_TICKET_MAX, TG_TICKET_STEP } from "@/lib/tg-tickets";
+import { getTgTicketSelection, TG_FINAL_AT, TG_TICKET_MIN, TG_TICKET_MAX, TG_TICKET_STEP } from "@/lib/tg-tickets";
 import { Minus, Plus } from "lucide-react";
 import { PlumpTruck, PlumpClose } from "@/components/ui/icons";
 import { LEGAL } from "@/data/legal";
@@ -46,7 +46,6 @@ export const Route = createFileRoute("/tg")({
   component: TgMiniApp,
 });
 
-const FINAL_AT = new Date("2026-10-29T20:00:00+03:00").getTime();
 
 const TICKET_PACKS = [
   { tickets: 1, price: 300 },
@@ -405,7 +404,7 @@ function Countdown() {
     const t = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(t);
   }, []);
-  const left = Math.max(0, FINAL_AT - (now ?? FINAL_AT));
+  const left = Math.max(0, TG_FINAL_AT - (now ?? TG_FINAL_AT));
   const parts = [
     [Math.floor(left / 86400000), "дн"],
     [Math.floor(left / 3600000) % 24, "ч"],
@@ -414,7 +413,7 @@ function Countdown() {
   ] as const;
   return (
     <div className="mt-4">
-      <div className="text-[11px] uppercase tracking-[0.2em] text-[#8b8b99]">Финал 29 октября · через</div>
+      <div className="text-[11px] uppercase tracking-[0.2em] text-[#8b8b99]">Финал 5 ноября · 23:00 МСК · через</div>
       <div className="mt-2 flex justify-center gap-2">
         {parts.map(([v, l]) => (
           <div key={l} className="w-16 rounded-2xl bg-[#15151c] py-2">
