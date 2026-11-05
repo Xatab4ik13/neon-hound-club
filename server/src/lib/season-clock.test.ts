@@ -4,8 +4,8 @@ import { DOWNTIME_DAYS, seasonBounds, seasonIndex, seasonTimeShiftMs } from "./s
 const DAY = 86_400_000;
 // 5 ноября 2026, 12:00 UTC — сайт ещё не открыт, простой идёт.
 const nov5 = Date.UTC(2026, 10, 5, 12, 0, 0);
-// Конец сезона 2 по старому графику: 31 октября 2026, 21:00 UTC.
-const season2EndOld = Date.UTC(2026, 9, 31, 21, 0, 0);
+// Конец сезона 2 по старому графику: 31 октября 2026, 00:00 МСК (30-е 21:00 UTC).
+const season2EndOld = Date.UTC(2026, 9, 30, 21, 0, 0);
 
 // 5 ноября сезон 2 ещё продолжается: продлён на дни простоя.
 assert.equal(seasonIndex(nov5), 0);
