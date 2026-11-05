@@ -1,10 +1,11 @@
 import type { FastifyInstance } from "fastify";
-import { and, inArray, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../db/client.js";
 import { orderItems, orders, PAID_ORDER_STATUSES } from "../db/schema/shop.js";
+import { tgOrders } from "../db/schema/tg.js";
 import { requireBlogger } from "../lib/auth.js";
-import { calculateBloggerMoneyRub, calculatePreorderRub } from "../lib/blogger-money.js";
+import { calculateBloggerMoneyRub, calculatePreorderRub, calculateBloggerTotalRub } from "../lib/blogger-money.js";
 
 const PROJECT_STARTED_AT = "2026-08-09T00:00:00.000Z";
 
@@ -51,7 +52,20 @@ export async function bloggerMoneyRoutes(app: FastifyInstance) {
         )
         .groupBy(orders.id, orders.subtotalRub, orders.discountRub);
 
+      const [telegram] = await db
+        .select({
+          ticketsRub: sql<number>`COALESCE(SUM(${tgOrders.ticketsRub}), 0)::int`,
+          shirtsRub: sql<number>`COALESCE(SUM(${tgOrders.shirtsRub}), 0)::int`,
+        })
+        .from(tgOrders)
+        .where(and(
+          eq(tgOrders.status, "paid"),
+          sql`${tgOrders.paidAt} >= ${from.toISOString()}::timestamptz`,
+          sql`${tgOrders.paidAt} <= ${to.toISOString()}::timestamptz`,
+        ));
+
       return {
+        totalRub: calculateBloggerTotalRub(rows, telegram ?? { ticketsRub: 0, shirtsRub: 0 }),
         amountRub: calculateBloggerMoneyRub(rows),
         preorderRub: calculatePreorderRub(rows),
         range: {

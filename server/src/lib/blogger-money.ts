@@ -21,3 +21,17 @@ export function calculateBloggerMoneyRub(rows: BloggerMoneyOrder[]): number {
 export function calculatePreorderRub(rows: BloggerMoneyOrder[]): number {
   return rows.reduce((t, r) => t + netShare(r, r.preorderGrossRub ?? 0), 0);
 }
+
+export type BloggerTelegramRevenue = {
+  ticketsRub: number;
+  shirtsRub: number;
+};
+
+/** Общий доход: сайт + половина билетов Telegram + полные предзаказы, без доставки. */
+export function calculateBloggerTotalRub(
+  rows: BloggerMoneyOrder[],
+  telegram: BloggerTelegramRevenue,
+): number {
+  return calculateBloggerMoneyRub(rows) + calculatePreorderRub(rows)
+    + Math.round(telegram.ticketsRub * 0.5) + telegram.shirtsRub;
+}
