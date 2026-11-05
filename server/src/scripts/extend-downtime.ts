@@ -6,8 +6,8 @@ import { spinSeasons } from "../db/schema/spin.js";
 import { DOWNTIME_DAYS, DOWNTIME_MS, DOWNTIME_START_MS } from "../lib/season-clock.js";
 
 /**
- * Продление на дни простоя сайта (13 октября — 5 ноября 2026):
- *  - активные Hell Pass, жившие на 13 октября, продлеваются на DOWNTIME_DAYS;
+ * Продление на дни простоя сайта (11 октября — 5 ноября 2026):
+ *  - активные Hell Pass, жившие на 11 октября, продлеваются на DOWNTIME_DAYS;
  *  - сезон HellSpin продлевается кодом (lib/season-clock.ts), здесь только отчёт.
  *
  * Идемпотентность: флаг system_settings 'downtime_pass_extension' — повторный
@@ -45,7 +45,7 @@ async function main() {
       );
 
     const cnt = stats?.cnt ?? 0;
-    console.log(`Активных Hell Pass, живших на 13 октября: ${cnt}`);
+    console.log(`Активных Hell Pass, живших на 11 октября: ${cnt}`);
     console.log(`Сроки действия: ${stats?.min ?? "—"} … ${stats?.max ?? "—"}`);
 
     if (!apply) {
