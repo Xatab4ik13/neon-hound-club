@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VerifyEmailRouteImport } from './routes/verify-email'
+import { Route as TgLoginRouteImport } from './routes/tg-login'
 import { Route as TgRouteImport } from './routes/tg'
 import { Route as ShopInfoRouteImport } from './routes/shop-info'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
@@ -112,6 +113,11 @@ import { Route as BloggerChatsUserIdRouteImport } from './routes/blogger.chats.$
 const VerifyEmailRoute = VerifyEmailRouteImport.update({
   id: '/verify-email',
   path: '/verify-email',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TgLoginRoute = TgLoginRouteImport.update({
+  id: '/tg-login',
+  path: '/tg-login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TgRoute = TgRouteImport.update({
@@ -619,6 +625,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/shop-info': typeof ShopInfoRoute
   '/tg': typeof TgRoute
+  '/tg-login': typeof TgLoginRoute
   '/verify-email': typeof VerifyEmailRoute
   '/admin/banners': typeof AdminBannersRoute
   '/admin/cdek': typeof AdminCdekRoute
@@ -717,6 +724,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/shop-info': typeof ShopInfoRoute
   '/tg': typeof TgRoute
+  '/tg-login': typeof TgLoginRoute
   '/verify-email': typeof VerifyEmailRoute
   '/admin/banners': typeof AdminBannersRoute
   '/admin/cdek': typeof AdminCdekRoute
@@ -819,6 +827,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/shop-info': typeof ShopInfoRoute
   '/tg': typeof TgRoute
+  '/tg-login': typeof TgLoginRoute
   '/verify-email': typeof VerifyEmailRoute
   '/admin/banners': typeof AdminBannersRoute
   '/admin/cdek': typeof AdminCdekRoute
@@ -922,6 +931,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/shop-info'
     | '/tg'
+    | '/tg-login'
     | '/verify-email'
     | '/admin/banners'
     | '/admin/cdek'
@@ -1020,6 +1030,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/shop-info'
     | '/tg'
+    | '/tg-login'
     | '/verify-email'
     | '/admin/banners'
     | '/admin/cdek'
@@ -1121,6 +1132,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/shop-info'
     | '/tg'
+    | '/tg-login'
     | '/verify-email'
     | '/admin/banners'
     | '/admin/cdek'
@@ -1223,6 +1235,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   ShopInfoRoute: typeof ShopInfoRoute
   TgRoute: typeof TgRoute
+  TgLoginRoute: typeof TgLoginRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
   CheckoutSuccessRoute: typeof CheckoutSuccessRoute
   HellPassTierRoute: typeof HellPassTierRoute
@@ -1249,6 +1262,13 @@ declare module '@tanstack/react-router' {
       path: '/verify-email'
       fullPath: '/verify-email'
       preLoaderRoute: typeof VerifyEmailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tg-login': {
+      id: '/tg-login'
+      path: '/tg-login'
+      fullPath: '/tg-login'
+      preLoaderRoute: typeof TgLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/tg': {
@@ -2117,6 +2137,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   ShopInfoRoute: ShopInfoRoute,
   TgRoute: TgRoute,
+  TgLoginRoute: TgLoginRoute,
   VerifyEmailRoute: VerifyEmailRoute,
   CheckoutSuccessRoute: CheckoutSuccessRoute,
   HellPassTierRoute: HellPassTierRoute,
