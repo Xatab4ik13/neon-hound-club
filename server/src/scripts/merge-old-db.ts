@@ -193,11 +193,12 @@ async function processTgOrders() {
       const nick = `tg_${phone}`.slice(0, 32);
       const passwordHash = await bcrypt.hash(randomBytes(24).toString("hex"), 10);
       if (APPLY) {
-        const [u] = await db<{ id: string }[]>`
+        await db`
           INSERT INTO users (email, password_hash, nick)
           VALUES (${email}, ${passwordHash}, ${nick})
-          ON CONFLICT (email) DO UPDATE SET email = EXCLUDED.email
-          RETURNING id`;
+          ON CONFLICT (email) DO NOTHING`;
+        const [u] = await db<{ id: string }[]>`
+          SELECT id FROM users WHERE email = ${email}`;
         userId = u.id;
         await db`
           INSERT INTO profiles (user_id, phone, phone_e164)
