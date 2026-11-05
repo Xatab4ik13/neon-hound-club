@@ -3,7 +3,7 @@
  * заглушку со ссылкой на бота, работают только админка и страница Telegram.
  * Выключить — поставить false (и MAINTENANCE_MODE=0 на сервере).
  */
-export const MAINTENANCE_MODE = true;
+export const MAINTENANCE_MODE = false;
 export const TG_BOT_URL = "https://t.me/hhr_probot";
 
 const OPEN_PATHS = ["/admin", "/tg", "/legal"];
