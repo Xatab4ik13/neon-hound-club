@@ -45,28 +45,13 @@ export function mskDate(d = new Date()): string {
   return shifted.toISOString().slice(0, 10);
 }
 
-/** Начало сезона 2: 16 сентября 2026, 00:00 МСК. */
-export const SEASON_ANCHOR_UTC = Date.UTC(2026, 8, 15, 21, 0, 0);
-/** Длина сезона в днях. */
-export const SEASON_DAYS = 45;
-
-/** Индекс текущего сезона (0 — первый). */
-function seasonIndex(d = new Date()): number {
-  const diff = d.getTime() - SEASON_ANCHOR_UTC;
-  return diff <= 0 ? 0 : Math.floor(diff / (SEASON_DAYS * 86_400_000));
-}
-
-/** Границы сезона: скользящие окна по SEASON_DAYS дней от якоря. */
-export function seasonBounds(d = new Date()): { startsAt: Date; endsAt: Date } {
-  const idx = seasonIndex(d);
-  const startsAt = new Date(SEASON_ANCHOR_UTC + idx * SEASON_DAYS * 86_400_000);
-  const endsAt = new Date(startsAt.getTime() + SEASON_DAYS * 86_400_000);
-  return { startsAt, endsAt };
-}
+// Часы сезона (якорь, длина, «заморозка» на простой сайта) вынесены в season-clock.ts.
+export { SEASON_ANCHOR_UTC, SEASON_DAYS, seasonBounds } from "./season-clock.js";
+import { SEASON_DAYS, seasonBounds, seasonTimeShiftMs } from "./season-clock.js";
 
 /** Ключ сезона — дата его начала (YYYY-MM-DD по МСК). */
 export function mskPeriodKey(d = new Date()): string {
-  return mskDate(seasonBounds(d).startsAt);
+  return mskDate(seasonBounds(d.getTime()).startsAt);
 }
 
 export const SPINS_PER_DAY: Record<"none" | PassTier, number> = {
@@ -215,11 +200,15 @@ export async function ensureCurrentSeason() {
   if (existing) {
     // Длину сезона могли поменять (30 → 31): подтягиваем уже созданную строку,
     // иначе календарь активности обрезался бы по старому значению.
-    if (existing.daysTotal !== SEASON_DAYS) {
-      const endsAt = new Date(existing.startsAt.getTime() + SEASON_DAYS * 86_400_000);
+    // Заодно переносим конец сезона на продлённый график (простой 13 октября — 5 ноября).
+    const { endsAt: expectedEndsAt } = seasonBounds();
+    if (
+      existing.daysTotal !== SEASON_DAYS ||
+      existing.endsAt.getTime() !== expectedEndsAt.getTime()
+    ) {
       const [updated] = await db
         .update(spinSeasons)
-        .set({ daysTotal: SEASON_DAYS, endsAt })
+        .set({ daysTotal: SEASON_DAYS, endsAt: expectedEndsAt })
         .where(eq(spinSeasons.id, existing.id))
         .returning();
       await syncSeasonPrizes(existing.id);
@@ -346,9 +335,11 @@ function buildWeights(prizes: SpinPrize[], tier: "none" | PassTier, season: { st
   const mult = TIER_CHANCE_MULT[tier];
   const progress = seasonProgress(season.startsAt, season.endsAt);
   // День сезона (1..30), а не день месяца.
+  // День сезона считается по «замороженному» времени: дни простоя сайта
+  // (13 октября — 5 ноября) не двигают календарь и фазы jackpot.
   const day = Math.min(
     SEASON_DAYS,
-    Math.floor((Date.now() - season.startsAt.getTime()) / 86_400_000) + 1,
+    Math.floor((Date.now() - seasonTimeShiftMs() - season.startsAt.getTime()) / 86_400_000) + 1,
   );
   const jackpotQueue = prizes
     .filter((p) => p.rewardKind === "jackpot" && p.issued < (p.limitTotal ?? 1))
