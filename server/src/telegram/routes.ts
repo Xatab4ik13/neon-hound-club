@@ -5,7 +5,11 @@ import { db } from "../db/client.js";
 import { tgOrders } from "../db/schema/tg.js";
 import { cdek } from "../lib/cdek.js";
 import { isRaifConfigured, RaifApiError } from "../lib/raif.js";
-import { requireAdmin } from "../lib/auth.js";
+import { requireAdmin, setSessionCookie, type SessionPayload } from "../lib/auth.js";
+import { users } from "../db/schema/users.js";
+import { profiles } from "../db/schema/profile.js";
+import { findOwnersByPhone, normalizePhone as digitsPhone } from "./credit.js";
+import { bindChat, clearChat, codeForChat, createLoginCode, isValidCode, resolveCode, takeCode } from "./login.js";
 import { normalizePhone, priceShirts, priceTickets, shirtPackage, type ShirtLine } from "./pricing.js";
 import { openAppButton, sendMessage, verifyInitData, webhookSecret } from "./bot.js";
 import { createTgPayment } from "./payments.js";
@@ -98,20 +102,96 @@ export async function tgRoutes(app: FastifyInstance) {
     return o;
   });
 
-  // Вебхук бота: /start → кнопка открытия страницы.
+  // ===== Вход на сайт через бота =====
+  app.post("/login/start", async () => {
+    const code = createLoginCode();
+    const bot = (process.env.TG_BOT_USERNAME || "hhr_probot").replace(/^@/, "");
+    return { code, botUrl: `https://t.me/${bot}?start=login_${code}` };
+  });
+
+  app.post("/login/poll", async (req, reply) => {
+    const code = String((req.body as { code?: string })?.code ?? "");
+    const e = takeCode(code);
+    if (!e) return reply.code(410).send({ error: "expired", message: "Ссылка устарела — начни вход заново" });
+    if (e.status !== "ok" || !e.userId) return { status: e.status };
+    const [u] = await db.select().from(users).where(eq(users.id, e.userId)).limit(1);
+    if (!u) return reply.code(404).send({ error: "not_found" });
+    if (u.blocked) return reply.code(403).send({ error: "user_blocked", message: "Аккаунт заблокирован" });
+    if (u.role === "admin") return reply.code(403).send({ error: "admin_use_admin_login", message: "Войди через /admin" });
+    const payload: SessionPayload = { sub: u.id, role: u.role as SessionPayload["role"], nick: u.nick };
+    await setSessionCookie(reply, payload);
+    const recoveryToken = await reply.jwtSign({ sub: u.id, scope: "password_reset" }, { expiresIn: "30m" });
+    return { status: "ok", user: { id: u.id, email: u.email, nick: u.nick, role: u.role }, recoveryToken };
+  });
+
+  // Вебхук бота: /start → кнопка открытия страницы; /start login_… и контакт → вход на сайт.
   app.post("/bot/webhook", async (req, reply) => {
     if (req.headers["x-telegram-bot-api-secret-token"] !== webhookSecret()) return reply.code(401).send({ error: "unauthorized" });
-    const msg = (req.body as { message?: { chat?: { id: number }; text?: string } })?.message;
-    if (msg?.chat?.id) {
-      const text = [
-        "<b>HELLHOUND</b> 🏍",
+    type Msg = {
+      chat?: { id: number }; from?: { id: number }; text?: string;
+      contact?: { phone_number: string; user_id?: number };
+    };
+    const msg = (req.body as { message?: Msg })?.message;
+    const chatId = msg?.chat?.id;
+    const fromId = msg?.from?.id;
+    if (!chatId) return { ok: true };
+    const log = (e: unknown) => req.log.error({ err: e }, "tg bot reply failed");
+
+    const loginMatch = msg?.text?.match(/^\/start\s+login_([A-Za-z0-9_-]{10,64})$/);
+    if (loginMatch && fromId) {
+      if (!isValidCode(loginMatch[1]!)) {
+        await sendMessage(chatId, "Ссылка для входа устарела. Вернись на hhr.pro и нажми «Покупал в боте» ещё раз.").catch(log);
+        return { ok: true };
+      }
+      bindChat(fromId, loginMatch[1]!);
+      await sendMessage(chatId, [
+        "<b>Вход на сайт hhr.pro</b>",
         "",
-        "Пока основной сайт hhr.pro восстанавливается, здесь можно купить билеты на легендарный розыгрыш Yamaha MT-07 и оформить предзаказ футболок.",
+        "Нажми кнопку ниже, чтобы подтвердить номер — найдём твой аккаунт с покупками.",
         "",
-        "Старые билеты, Hell Pass и прогресс никуда не пропадут — всё вернём на ваши аккаунты.",
-      ].join("\n");
-      await sendMessage(msg.chat.id, text, openAppButton("Открыть")).catch((e) => req.log.error({ err: e }, "tg /start reply failed"));
+        "Если ссылку тебе прислал кто-то другой — ничего не нажимай.",
+      ].join("\n"), {
+        reply_markup: { keyboard: [[{ text: "📱 Подтвердить номер", request_contact: true }]], resize_keyboard: true, one_time_keyboard: true },
+      }).catch(log);
+      return { ok: true };
     }
+
+    if (msg?.contact && fromId) {
+      const code = codeForChat(fromId);
+      const remove = { reply_markup: { remove_keyboard: true } };
+      if (!code || !isValidCode(code)) {
+        await sendMessage(chatId, "Ссылка для входа устарела. Вернись на hhr.pro и начни вход заново.", remove).catch(log);
+        return { ok: true };
+      }
+      if (msg.contact.user_id !== fromId) {
+        await sendMessage(chatId, "Нужен твой собственный номер — нажми кнопку «Подтвердить номер».").catch(log);
+        return { ok: true };
+      }
+      const phone = digitsPhone(msg.contact.phone_number);
+      const owners = await findOwnersByPhone(phone);
+      clearChat(fromId);
+      if (owners.length === 1) {
+        await db.update(profiles).set({ phoneE164: phone, phoneVerifiedAt: new Date() }).where(eq(profiles.userId, owners[0]!.user_id));
+        resolveCode(code, "ok", owners[0]!.user_id);
+        await sendMessage(chatId, "✅ Номер подтверждён. Вернись на сайт — вход выполнится сам, там же задашь пароль.", remove).catch(log);
+      } else if (owners.length === 0) {
+        resolveCode(code, "not_found");
+        await sendMessage(chatId, "На этот номер нет аккаунта и покупок. Если покупал на другой номер — напиши в поддержку.", remove).catch(log);
+      } else {
+        resolveCode(code, "conflict");
+        await sendMessage(chatId, "На этот номер несколько аккаунтов — напиши в поддержку, поможем войти.", remove).catch(log);
+      }
+      return { ok: true };
+    }
+
+    const text = [
+      "<b>HELLHOUND</b> 🏍",
+      "",
+      "Пока основной сайт hhr.pro восстанавливается, здесь можно купить билеты на легендарный розыгрыш Yamaha MT-07 и оформить предзаказ футболок.",
+      "",
+      "Старые билеты, Hell Pass и прогресс никуда не пропадут — всё вернём на ваши аккаунты.",
+    ].join("\n");
+    await sendMessage(chatId, text, openAppButton("Открыть")).catch(log);
     return { ok: true };
   });
 }

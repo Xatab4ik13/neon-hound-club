@@ -14,6 +14,20 @@ function normalizePhone(raw: string): string {
   return d;
 }
 
+export { normalizePhone };
+
+/** Аккаунты, у которых нормализованный телефон совпадает с номером (только цифры, 8→7). */
+export async function findOwnersByPhone(phone: string): Promise<{ user_id: string }[]> {
+  return sql<{ user_id: string }[]>`
+    SELECT DISTINCT user_id FROM profiles
+    WHERE CASE
+      WHEN length(regexp_replace(coalesce(phone_e164, phone, ''), '[^0-9]', '', 'g')) = 11
+        AND regexp_replace(coalesce(phone_e164, phone, ''), '[^0-9]', '', 'g') LIKE '8%'
+      THEN '7' || substring(regexp_replace(coalesce(phone_e164, phone, ''), '[^0-9]', '', 'g') FROM 2)
+      ELSE regexp_replace(coalesce(phone_e164, phone, ''), '[^0-9]', '', 'g')
+    END = ${phone}`;
+}
+
 export type CreditResult = "credited" | "created" | "already" | "conflict" | "skipped";
 
 export async function creditTgOrder(orderId: string): Promise<CreditResult> {
@@ -37,14 +51,7 @@ export async function creditTgOrder(orderId: string): Promise<CreditResult> {
   if (!raffle) throw new Error(`Розыгрыш ${raffleId} не найден`);
 
   const phone = normalizePhone(o.phone);
-  const owners = await sql<{ user_id: string }[]>`
-    SELECT DISTINCT user_id FROM profiles
-    WHERE CASE
-      WHEN length(regexp_replace(coalesce(phone_e164, phone, ''), '[^0-9]', '', 'g')) = 11
-        AND regexp_replace(coalesce(phone_e164, phone, ''), '[^0-9]', '', 'g') LIKE '8%'
-      THEN '7' || substring(regexp_replace(coalesce(phone_e164, phone, ''), '[^0-9]', '', 'g') FROM 2)
-      ELSE regexp_replace(coalesce(phone_e164, phone, ''), '[^0-9]', '', 'g')
-    END = ${phone}`;
+  const owners = await findOwnersByPhone(phone);
   if (owners.length > 1) {
     console.warn(`[tg-credit] конфликт телефона ${phone}: ${owners.map((x) => x.user_id).join(", ")}`);
     return "conflict";
