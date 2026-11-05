@@ -64,8 +64,13 @@ export async function bloggerMoneyRoutes(app: FastifyInstance) {
           sql`${tgOrders.paidAt} <= ${to.toISOString()}::timestamptz`,
         ));
 
+      const tg = telegram ?? { ticketsRub: 0, shirtsRub: 0 };
+      const totalRub = calculateBloggerTotalRub(rows, tg);
+      const preorderAllRub = calculatePreorderRub(rows) + tg.shirtsRub;
       return {
-        totalRub: calculateBloggerTotalRub(rows, telegram ?? { ticketsRub: 0, shirtsRub: 0 }),
+        totalRub,
+        digitalAllRub: totalRub - preorderAllRub,
+        preorderAllRub,
         amountRub: calculateBloggerMoneyRub(rows),
         preorderRub: calculatePreorderRub(rows),
         range: {
