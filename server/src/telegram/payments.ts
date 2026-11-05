@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { tgOrders, type TgOrder } from "../db/schema/tg.js";
 import { createOrder, getAccount, mapRaifStatus, verifyPaymentCallback, RaifApiError } from "../lib/raif.js";
+import { creditTgOrder } from "./credit.js";
 import { adminChatIds, escapeHtml, openAppButton, sendMessage, TG_WEBAPP_URL } from "./bot.js";
 
 export async function createTgPayment(order: TgOrder): Promise<string> {
@@ -40,7 +41,11 @@ export async function handleTgRaifNotification(body: Record<string, unknown>, si
   await db.update(tgOrders)
     .set({ status: next, rawLastNotification: body, paidAt: next === "paid" ? new Date() : null, updatedAt: new Date() })
     .where(eq(tgOrders.id, order.id));
-  if (next === "paid") await notifyPaid({ ...order, status: "paid" });
+  if (next === "paid") {
+    // Сразу начисляем билеты в аккаунт и Yamaha; при сбое заказ доберёт merge-скрипт.
+    await creditTgOrder(order.id).catch((e) => console.error("[tg] auto-credit failed", order.id, e));
+    await notifyPaid({ ...order, status: "paid" });
+  }
   return true;
 }
 
