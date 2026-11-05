@@ -47,8 +47,7 @@ function BloggerMoneyPage() {
         </h1>
 
         {[
-          { label: "Цифровые и виртуальные товары", value: data?.amountRub },
-          { label: "Предзаказы футболок", value: data?.preorderRub },
+          { label: "Общая сумма", value: data?.totalRub },
         ].map((row, i) => (
           <div
             key={row.label}
@@ -58,10 +57,10 @@ function BloggerMoneyPage() {
               <CircleDollarSign className="h-7 w-7" strokeWidth={2.5} aria-hidden />
               <span className="font-mono text-xs font-bold uppercase tracking-wider">{row.label}</span>
             </div>
-            <div className="mt-5 min-h-[64px] font-display text-5xl font-black leading-none tabular-nums text-foreground md:text-7xl">
+            <div className="mt-5 min-h-[64px] break-words font-display text-4xl font-black leading-none tabular-nums text-foreground md:text-7xl">
               {isLoading ? (
                 <Loader2 className="h-10 w-10 animate-spin text-primary" aria-label="Загрузка" />
-              ) : isError ? (
+              ) : isError || (data && typeof row.value !== "number") ? (
                 <span className="text-2xl text-destructive md:text-3xl">Не удалось загрузить</span>
               ) : (
                 `${(row.value ?? 0).toLocaleString("ru-RU")} ₽`

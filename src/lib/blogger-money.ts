@@ -1,6 +1,7 @@
 import { apiFetch } from "@/lib/api";
 
 export type BloggerMoneyResponse = {
+  totalRub: number;
   amountRub: number;
   preorderRub: number;
   range: { from: string; to: string };
