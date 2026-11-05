@@ -313,6 +313,13 @@ function LoginPage() {
             {error && <ErrorLine>{error}</ErrorLine>}
 
             <SubmitButton busy={busy}>Войти</SubmitButton>
+
+            <Link
+              to="/tg-login"
+              className="block text-center font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground transition-colors hover:text-primary"
+            >
+              Покупал в Telegram-боте? Первый вход →
+            </Link>
           </form>
         ) : (
           <form onSubmit={handleRegister} className="space-y-5">
