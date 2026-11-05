@@ -39,6 +39,9 @@ function BloggerMoneyPage() {
     placeholderData: (previous) => previous,
   });
 
+  // Telegram-часть итога: сервер уже сложил сайт + билеты (50%) + футболки (100%).
+  const telegramRub = data ? data.totalRub - data.amountRub - data.preorderRub : undefined;
+
   return (
     <main className="relative flex-1 px-4 py-8 md:px-8 md:py-10">
       <div className="mx-auto max-w-5xl">
@@ -47,8 +50,10 @@ function BloggerMoneyPage() {
         </h1>
 
         {[
+          { label: "Цифровые и виртуальные товары", value: data?.amountRub },
+          { label: "Предзаказы футболок", value: data?.preorderRub },
           { label: "Общая сумма", value: data?.totalRub },
-        ].map((row, i) => (
+        ].map((row, i, all) => (
           <div
             key={row.label}
             className={`${i === 0 ? "mt-8 border-y" : "border-b"} border-border bg-card/30 px-4 py-10 md:px-8 md:py-14`}
@@ -66,6 +71,11 @@ function BloggerMoneyPage() {
                 `${(row.value ?? 0).toLocaleString("ru-RU")} ₽`
               )}
             </div>
+            {i === all.length - 1 && typeof telegramRub === "number" && telegramRub > 0 ? (
+              <p className="mt-4 font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
+                включая Telegram: {telegramRub.toLocaleString("ru-RU")} ₽
+              </p>
+            ) : null}
           </div>
         ))}
 
