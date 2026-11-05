@@ -3,9 +3,9 @@
  *
  * Запуск на сервере из /opt/hhr/server:
  *   # 1. Пробный прогон — только статистика, ничего не пишет:
- *   docker compose exec api npx tsx src/scripts/merge-old-db.ts
+ *   docker compose exec -T api sh -c 'OLD_DATABASE_URL="${DATABASE_URL%/*}/hellhound_old" node dist/scripts/merge-old-db.js'
  *   # 2. Реальное слияние:
- *   docker compose exec api npx tsx src/scripts/merge-old-db.ts --apply
+ *   docker compose exec -T api sh -c 'OLD_DATABASE_URL="${DATABASE_URL%/*}/hellhound_old" node dist/scripts/merge-old-db.js --apply'
  *
  * Env:
  *   DATABASE_URL      — текущая база (берётся из .env контейнера)
@@ -27,6 +27,7 @@
 import postgres from "postgres";
 import { randomBytes } from "node:crypto";
 import bcrypt from "bcryptjs";
+import { allocateMergeTickets } from "./merge-ticket-allocation.js";
 
 const APPLY = process.argv.includes("--apply");
 const url = process.env.DATABASE_URL;
@@ -116,12 +117,12 @@ async function copyOldData() {
       }
     }
     if (failed.length === pending.length) {
-      log(`  ⚠ Застряли на таблицах: ${failed.join(", ")}`);
-      break;
+      throw new Error(`Перенос не завершён; начисления отменены. Таблицы: ${failed.join(", ")}`);
     }
     pending = failed;
     if (pending.length > 0) log(`  проход ${pass + 1}: повторяем ${pending.length} таблиц`);
   }
+  if (pending.length > 0) throw new Error(`Перенос не завершён: ${pending.join(", ")}`);
 }
 
 type TgOrderRow = {
@@ -136,10 +137,12 @@ type TgOrderRow = {
 };
 
 async function processTgOrders() {
+  // В пробном прогоне данные ещё не перенесены — ищем Yamaha в старой базе.
+  const raffleDb = APPLY ? db : old;
   // Ищем розыгрыш Yamaha.
   let raffleId = process.env.YAMAHA_RAFFLE_ID;
   if (!raffleId) {
-    const [r] = await db<{ id: string; title: string; ticket_cost: number }[]>`
+    const [r] = await raffleDb<{ id: string; title: string; ticket_cost: number }[]>`
       SELECT id, title, ticket_cost FROM raffles
       WHERE status = 'active' AND lower(title) LIKE '%yamaha%'
       ORDER BY created_at DESC LIMIT 1`;
@@ -147,7 +150,7 @@ async function processTgOrders() {
     raffleId = r.id;
     log(`\nРозыгрыш найден автоматически: "${r.title}" (${r.id}), ticket_cost=${r.ticket_cost}`);
   }
-  const [raffle] = await db<{ id: string; title: string; ticket_cost: number }[]>`
+  const [raffle] = await raffleDb<{ id: string; title: string; ticket_cost: number }[]>`
     SELECT id, title, ticket_cost FROM raffles WHERE id = ${raffleId}`;
   if (!raffle) throw new Error(`Розыгрыш ${raffleId} не найден`);
 
@@ -170,14 +173,19 @@ async function processTgOrders() {
     }
 
     const phone = normalizePhone(o.phone);
-    const owners = await db<{ user_id: string }[]>`
-      SELECT user_id FROM profiles WHERE phone_e164 = ${phone}`;
-    // Запасной вариант: старый формат phone без нормализации.
-    if (owners.length === 0) {
-      const alt = await db<{ user_id: string }[]>`
-        SELECT user_id FROM profiles WHERE phone = ${o.phone} OR phone = ${"+" + phone}`;
-      owners.push(...alt);
+    const ownersById = new Map<string, { user_id: string }>();
+    for (const source of APPLY ? [db] : [db, old]) {
+      const matches = await source<{ user_id: string }[]>`
+        SELECT user_id FROM profiles
+        WHERE CASE
+          WHEN length(regexp_replace(coalesce(phone_e164, phone, ''), '[^0-9]', '', 'g')) = 11
+            AND regexp_replace(coalesce(phone_e164, phone, ''), '[^0-9]', '', 'g') LIKE '8%'
+          THEN '7' || substring(regexp_replace(coalesce(phone_e164, phone, ''), '[^0-9]', '', 'g') FROM 2)
+          ELSE regexp_replace(coalesce(phone_e164, phone, ''), '[^0-9]', '', 'g')
+        END = ${phone}`;
+      for (const match of matches) ownersById.set(match.user_id, match);
     }
+    const owners = [...ownersById.values()];
 
     let userId: string;
     if (owners.length > 1) {
@@ -199,6 +207,7 @@ async function processTgOrders() {
           ON CONFLICT (email) DO NOTHING`;
         const [u] = await db<{ id: string }[]>`
           SELECT id FROM users WHERE email = ${email}`;
+        if (!u) throw new Error(`Не удалось создать аккаунт для заказа ${o.id}`);
         userId = u.id;
         await db`
           INSERT INTO profiles (user_id, phone, phone_e164)
@@ -212,13 +221,19 @@ async function processTgOrders() {
 
     if (APPLY) {
       await db.begin(async (tx) => {
+        // Сериализуем обработку одного заказа и повторно проверяем внутри транзакции.
+        await tx`SELECT id FROM tg_orders WHERE id = ${o.id} FOR UPDATE`;
+        const [alreadyDone] = await tx`
+          SELECT id FROM tickets_ledger WHERE ref_type = 'tg_order' AND ref_id = ${o.id} LIMIT 1`;
+        if (alreadyDone) return;
+        const allocation = allocateMergeTickets(o.tickets, raffle.ticket_cost);
         await tx`
           INSERT INTO tickets_ledger (user_id, amount, source, reason, ref_type, ref_id, created_at)
           VALUES (${userId}, ${o.tickets}, 'tg_merge',
                   ${`Покупка билетов через Telegram-бот (${o.total_rub} ₽)`},
                   'tg_order', ${o.id}, ${o.paid_at ?? new Date()})`;
         // Записи в розыгрыш: tickets / ticket_cost штук.
-        const entries = Math.floor(o.tickets / raffle.ticket_cost);
+        const entries = allocation.entries;
         if (entries > 0) {
           const rows = Array.from({ length: entries }, () => ({
             raffle_id: raffle.id,
@@ -229,6 +244,11 @@ async function processTgOrders() {
           for (let i = 0; i < rows.length; i += 500) {
             await tx`INSERT INTO raffle_entries ${tx(rows.slice(i, i + 500))}`;
           }
+          await tx`
+            INSERT INTO tickets_ledger (user_id, amount, source, reason, ref_type, ref_id, created_at)
+            VALUES (${userId}, ${allocation.debit}, 'raffle_entry',
+                    ${`Розыгрыш: ${raffle.title} (Telegram)`},
+                    'tg_order', ${o.id}, ${o.paid_at ?? new Date()})`;
         }
       });
     }
