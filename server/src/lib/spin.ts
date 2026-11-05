@@ -47,7 +47,7 @@ export function mskDate(d = new Date()): string {
 
 // Часы сезона (якорь, длина, «заморозка» на простой сайта) вынесены в season-clock.ts.
 export { SEASON_ANCHOR_UTC, SEASON_DAYS, seasonBounds } from "./season-clock.js";
-import { seasonBounds, seasonTimeShiftMs } from "./season-clock.js";
+import { SEASON_DAYS, seasonBounds, seasonTimeShiftMs } from "./season-clock.js";
 
 /** Ключ сезона — дата его начала (YYYY-MM-DD по МСК). */
 export function mskPeriodKey(d = new Date()): string {
