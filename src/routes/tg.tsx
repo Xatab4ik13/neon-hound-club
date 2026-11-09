@@ -413,7 +413,7 @@ function Countdown() {
   ] as const;
   return (
     <div className="mt-4">
-      <div className="text-[11px] uppercase tracking-[0.2em] text-[#8b8b99]">Финал 5 ноября · 23:00 МСК · через</div>
+      <div className="text-[11px] uppercase tracking-[0.2em] text-[#8b8b99]">Финал 15 ноября · 23:00 МСК · через</div>
       <div className="mt-2 flex justify-center gap-2">
         {parts.map(([v, l]) => (
           <div key={l} className="w-16 rounded-2xl bg-[#15151c] py-2">
