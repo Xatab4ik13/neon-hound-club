@@ -261,16 +261,23 @@ export async function profileRoutes(app: FastifyInstance) {
         .send({ error: "phone_taken", message: "Этот номер уже привязан к другому аккаунту" });
     }
 
-    const phoneE164Digits = row.phoneE164.replace(/\D/g, "");
-    await db
-      .update(profiles)
-      .set({
-        phone: row.phoneE164,
-        phoneE164: phoneE164Digits,
-        phoneVerifiedAt: new Date(),
-        updatedAt: new Date(),
-      })
-      .where(eq(profiles.userId, session.sub));
+    // Номер может лежать у авто-аккаунта из Telegram-бота — тогда его покупки переходят сюда.
+    const { claimVerifiedPhone } = await import("../lib/phone-claim.js");
+    let claim;
+    try {
+      claim = await claimVerifiedPhone(session.sub, row.phoneE164);
+    } catch (e) {
+      if (String((e as { code?: string })?.code) !== "23505") throw e;
+      claim = { status: "blocked" } as const;
+    }
+    if (claim.status === "blocked") {
+      return reply
+        .code(409)
+        .send({ error: "phone_taken", message: "Этот номер уже привязан к другому аккаунту" });
+    }
+    if (claim.mergedAccounts > 0) {
+      req.log.info({ userId: session.sub, ...claim }, "phone verify: merged telegram bot account");
+    }
 
     await db
       .update(phoneVerifications)

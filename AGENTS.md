@@ -7,3 +7,4 @@
 - Keep tg.hhr.pro orders in their own table, not users/payments, so purchases made without HHR accounts can be linked by phone later.
 - Merge Telegram ticket credits, raffle entries and ticket debits in one order-locked transaction, because participation must not leave purchased tickets reusable.
 - Log Telegram buyers into the site only via bot-verified own contact (contact.user_id = from.id) and a one-time in-memory code, because a bare Telegram nick or typed phone must not grant account access.
+- On phone verification, move tickets and raffle entries from an unverified Telegram bot auto-account holding the same number in one transaction (`server/src/lib/phone-claim.ts`), because the unique phone index otherwise blocks the real owner and they would lose bot purchases.
