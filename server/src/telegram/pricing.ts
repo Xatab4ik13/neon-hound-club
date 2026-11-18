@@ -3,18 +3,18 @@
  * фронт только показывает, сумму заказа всегда считает сервер.
  */
 export const TG_TICKET_PACKS = [
-  { tickets: 1, price: 300 },
-  { tickets: 3, price: 500 },
-  { tickets: 5, price: 700 },
-  { tickets: 10, price: 1000 },
-  { tickets: 20, price: 1500 },
-  { tickets: 50, price: 3000 },
+  { tickets: 2, price: 300 },
+  { tickets: 6, price: 500 },
+  { tickets: 10, price: 700 },
+  { tickets: 20, price: 1000 },
+  { tickets: 40, price: 1500 },
+  { tickets: 100, price: 3000 },
 ] as const;
 
-export const TG_CUSTOM_MIN = 100;
-export const TG_CUSTOM_MAX = 1000;
-export const TG_CUSTOM_STEP = 50;
-export const TG_CUSTOM_PRICE_PER_TICKET = 60;
+export const TG_CUSTOM_MIN = 200;
+export const TG_CUSTOM_MAX = 2000;
+export const TG_CUSTOM_STEP = 100;
+export const TG_CUSTOM_PRICE_PER_TICKET = 30;
 
 export const TG_SHIRTS = {
   a: { name: "Сегодня ехал 299", price: 2500 },

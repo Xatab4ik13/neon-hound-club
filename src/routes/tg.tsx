@@ -48,12 +48,12 @@ export const Route = createFileRoute("/tg")({
 
 
 const TICKET_PACKS = [
-  { tickets: 1, price: 300 },
-  { tickets: 3, price: 500, badge: "−45%" },
-  { tickets: 5, price: 700, badge: "−54%" },
-  { tickets: 10, price: 1000, badge: "−67%", hot: true },
-  { tickets: 20, price: 1500, badge: "−75%" },
-  { tickets: 50, price: 3000, badge: "−80%" },
+  { tickets: 2, price: 300 },
+  { tickets: 6, price: 500, badge: "−45%" },
+  { tickets: 10, price: 700, badge: "−54%" },
+  { tickets: 20, price: 1000, badge: "−67%", hot: true },
+  { tickets: 40, price: 1500, badge: "−75%" },
+  { tickets: 100, price: 3000, badge: "−80%" },
 ];
 
 const SIZES = ["S", "M", "L", "XL", "XXL"] as const;
