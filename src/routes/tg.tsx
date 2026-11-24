@@ -12,7 +12,7 @@ import {
 import "@telegram-apps/telegram-ui/dist/styles.css";
 import { Slider } from "@/components/ui/slider";
 import { PlumpNum } from "@/components/brand/PlumpNum";
-import { getTgTicketSelection, TG_FINAL_AT, TG_TICKET_MIN, TG_TICKET_MAX, TG_TICKET_STEP } from "@/lib/tg-tickets";
+import { getTgTicketSelection, TG_TICKET_PACKS as TICKET_PACKS, TG_FINAL_AT, TG_TICKET_MIN, TG_TICKET_MAX, TG_TICKET_STEP } from "@/lib/tg-tickets";
 import { Minus, Plus } from "lucide-react";
 import { PlumpTruck, PlumpClose } from "@/components/ui/icons";
 import { LEGAL } from "@/data/legal";
@@ -46,15 +46,6 @@ export const Route = createFileRoute("/tg")({
   component: TgMiniApp,
 });
 
-
-const TICKET_PACKS = [
-  { tickets: 2, price: 300 },
-  { tickets: 6, price: 500, badge: "−45%" },
-  { tickets: 10, price: 700, badge: "−54%" },
-  { tickets: 20, price: 1000, badge: "−67%", hot: true },
-  { tickets: 40, price: 1500, badge: "−75%" },
-  { tickets: 100, price: 3000, badge: "−80%" },
-];
 
 const SIZES = ["S", "M", "L", "XL", "XXL"] as const;
 const SHIRTS = [

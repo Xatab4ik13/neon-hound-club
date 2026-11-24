@@ -1,13 +1,19 @@
 import assert from "node:assert/strict";
 import { normalizePhone, priceShirts, priceTickets } from "./pricing.js";
 
-assert.deepEqual(priceTickets({ pack: 5 }), { tickets: 100, price: 3000 });
-assert.deepEqual(priceTickets({ pack: 3 }), { tickets: 20, price: 1000 });
-assert.deepEqual(priceTickets({ custom: 200 }), { tickets: 200, price: 6000 });
-assert.deepEqual(priceTickets({ custom: 2000 }), { tickets: 2000, price: 60000 });
+assert.deepEqual(priceTickets({ pack: 0 }), { tickets: 2, price: 150 });
+assert.deepEqual(priceTickets({ pack: 1 }), { tickets: 6, price: 250 });
+assert.deepEqual(priceTickets({ pack: 2 }), { tickets: 10, price: 350 });
+assert.deepEqual(priceTickets({ pack: 3 }), { tickets: 20, price: 500 });
+assert.deepEqual(priceTickets({ pack: 4 }), { tickets: 40, price: 750 });
+assert.deepEqual(priceTickets({ pack: 5 }), { tickets: 100, price: 1500 });
+assert.deepEqual(priceTickets({ custom: 200 }), { tickets: 200, price: 3000 });
+assert.deepEqual(priceTickets({ custom: 2000 }), { tickets: 2000, price: 30000 });
 assert.equal(priceTickets({ custom: 250 }), null);
 assert.equal(priceTickets({ custom: 2100 }), null);
 assert.equal(priceShirts([{ id: "a", size: "L", qty: 1 }, { id: "b", size: "M", qty: 2 }])?.total, 7700);
+assert.equal(priceShirts([{ id: "a", size: "L", qty: 1 }])?.total, 2500);
+assert.equal(priceShirts([{ id: "b", size: "L", qty: 1 }])?.total, 2600);
 assert.equal(normalizePhone("8 (900) 123-45-67"), "+79001234567");
 assert.equal(normalizePhone("+995 599 123 456"), "+995599123456");
 assert.equal(normalizePhone("+380 99 123 45 67"), "+380991234567");
