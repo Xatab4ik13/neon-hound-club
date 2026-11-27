@@ -540,6 +540,13 @@
       "when": 1787700000000,
       "tag": "0076_spin_season2_extend",
       "breakpoints": true
+    },
+    {
+      "idx": 77,
+      "version": "7",
+      "when": 1787800000000,
+      "tag": "0077_spin_streak_40",
+      "breakpoints": true
     }
   ]
 }

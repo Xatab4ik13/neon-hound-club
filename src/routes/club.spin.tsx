@@ -19,6 +19,7 @@ import imgHelmet from "@/assets/spin/helmet.webp";
 import imgPs5 from "@/assets/spin/ps5.webp";
 import imgTicket from "@/assets/spin/ticket.webp";
 import imgTicketX3 from "@/assets/spin/ticket-x3.webp";
+import imgSecretBox from "@/assets/spin/secret-box.webp";
 import imgXp from "@/assets/spin/xp.webp";
 import imgPromo300 from "@/assets/spin/promo-300.webp";
 import imgPromo500 from "@/assets/spin/promo-500.webp";
@@ -109,6 +110,7 @@ const MILESTONE_IMG: Record<number, string> = {
   10: imgCapsuleX3,
   20: imgTshirtBlur,
   30: imgTicketX3,
+  40: imgSecretBox,
 };
 
 
@@ -116,6 +118,12 @@ const CALENDAR = [
   { day: 10, title: "Капсула ×3 на 48 часов", sub: "10 дней активности" },
   { day: 20, title: "Легендарная футболка", sub: "20 дней активности" },
   { day: 30, title: "100 билетов", sub: "30 дней активности" },
+  {
+    day: 40,
+    title: "Secret Box",
+    sub: "40 дней активности",
+    note: "Физическая коробка с секретными призами от HELLHOUND",
+  },
 ];
 
 const TIER_LABEL: Record<SpinTier, { name: string; bg: string; fg: string }> = {
@@ -644,7 +652,7 @@ function SpinPage() {
                 : "Дни считаются только с активным Hell Pass Platinum."}
             </p>
             <p className="mt-1 text-[12px] leading-snug text-white/85">
-              Капсула ×3 · легендарная футболка бесплатно · 100 билетов
+              Капсула ×3 · легендарная футболка бесплатно · 100 билетов · Secret Box
             </p>
             <Link
               to="/club/hell-pass"
@@ -717,6 +725,11 @@ function SpinPage() {
                   <span className="block font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
                     {isClaimed ? "Забрано" : c.sub}
                   </span>
+                  {"note" in c && c.note && (
+                    <span className="mt-0.5 block text-[11.5px] leading-snug text-muted-foreground">
+                      {c.note}
+                    </span>
+                  )}
                 </span>
 
                 {isClaimed ? (

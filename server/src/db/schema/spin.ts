@@ -156,6 +156,7 @@ export const spinStreaks = pgTable(
     claimed10At: timestamp("claimed_10_at", { withTimezone: true }),
     claimed20At: timestamp("claimed_20_at", { withTimezone: true }),
     claimed30At: timestamp("claimed_30_at", { withTimezone: true }),
+    claimed40At: timestamp("claimed_40_at", { withTimezone: true }),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => ({

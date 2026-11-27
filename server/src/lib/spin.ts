@@ -868,7 +868,7 @@ async function bumpStreak(userId: string, seasonId: string, day: string): Promis
 }
 
 
-export const STREAK_MILESTONES = [10, 20, 30] as const;
+export const STREAK_MILESTONES = [10, 20, 30, 40] as const;
 export type StreakMilestone = (typeof STREAK_MILESTONES)[number];
 /** Календарь активности — 30 дней внутри 45-дневного сезона (дни не обязательно подряд). */
 export const STREAK_DAYS = 40;
@@ -877,6 +877,7 @@ const MILESTONE_TITLE: Record<StreakMilestone, string> = {
   10: "Капсула ×3 на 48 часов",
   20: "Легендарная футболка",
   30: "100 билетов",
+  40: "Secret Box",
 };
 
 /** Календарь активности — только для владельцев Hell Pass Platinum. */
@@ -895,7 +896,13 @@ export async function claimStreakMilestone(userId: string, milestone: StreakMile
     throw new SpinError("not_reached", "Ещё не накрутил столько дней.");
   }
   const field =
-    milestone === 10 ? "claimed10At" : milestone === 20 ? "claimed20At" : "claimed30At";
+    milestone === 10
+      ? "claimed10At"
+      : milestone === 20
+        ? "claimed20At"
+        : milestone === 30
+          ? "claimed30At"
+          : "claimed40At";
   if (streak[field]) throw new SpinError("already_claimed", "Награда уже забрана.");
 
   await db
@@ -920,6 +927,19 @@ export async function claimStreakMilestone(userId: string, milestone: StreakMile
       prizeTitle: "Легендарная футболка (20/30)",
       status: "pending",
       adminNote: "Календарь активности 20/30 — футболка бесплатно, уточнить размер и адрес",
+    });
+  }
+
+  // 40 дней — Secret Box (физика). Уходит в spin_winners на выдачу вручную.
+  if (milestone === 40) {
+    await db.insert(spinWinners).values({
+      userId,
+      seasonId: season.id,
+      source: "streak",
+      prizeCode: "secret_box",
+      prizeTitle: "Secret Box (40/40)",
+      status: "pending",
+      adminNote: "Календарь активности 40/40 — Secret Box, уточнить адрес ПВЗ, доставку оплачивает участник",
     });
   }
 
@@ -994,6 +1014,7 @@ export async function getSpinState(userId: string, pwa: boolean) {
         ...(streak?.claimed10At ? [10] : []),
         ...(streak?.claimed20At ? [20] : []),
         ...(streak?.claimed30At ? [30] : []),
+        ...(streak?.claimed40At ? [40] : []),
       ],
     },
     history: history.map((h) => ({

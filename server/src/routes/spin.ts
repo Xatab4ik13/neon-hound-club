@@ -45,7 +45,7 @@ export async function spinRoutes(app: FastifyInstance) {
 
   app.post("/streak/claim", { preHandler: requireAuth }, async (req, reply) => {
     const session = req.user as SessionPayload;
-    const parsed = z.object({ milestone: z.union([z.literal(10), z.literal(20), z.literal(30)]) }).safeParse(req.body);
+    const parsed = z.object({ milestone: z.union([z.literal(10), z.literal(20), z.literal(30), z.literal(40)]) }).safeParse(req.body);
     if (!parsed.success) return reply.code(400).send({ error: "bad_request" });
     try {
       return await claimStreakMilestone(session.sub, parsed.data.milestone);
@@ -287,6 +287,7 @@ export async function adminSpinRoutes(app: FastifyInstance) {
         claimed10At: spinStreaks.claimed10At,
         claimed20At: spinStreaks.claimed20At,
         claimed30At: spinStreaks.claimed30At,
+        claimed40At: spinStreaks.claimed40At,
       })
       .from(spinStreaks)
       .leftJoin(profiles, eq(profiles.userId, spinStreaks.userId))
