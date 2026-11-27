@@ -27,20 +27,24 @@ const SEASON2_END_UTC = SEASON_ANCHOR_UTC + SEASON_DAYS * 86_400_000;
  * После окончания продления сдвиг снова 0 — следующие сезоны по обычному графику.
  */
 export function seasonTimeShiftMs(now = Date.now()): number {
-  return now < SEASON2_END_UTC + DOWNTIME_MS ? DOWNTIME_MS : 0;
+  return now < SEASON2_FINAL_END_UTC ? DOWNTIME_MS : 0;
 }
 
+/**
+ * Сезон 2 продлён ещё на 40 дней от 27 ноября 2026: до 6 января 2027, 00:00 МСК.
+ * Новые сезоны сами не стартуют: после этой даты остаётся сезон 2, пока
+ * владелец не подтвердит запуск следующего (правка кода).
+ */
+export const SEASON2_FINAL_END_UTC = Date.UTC(2027, 0, 5, 21, 0, 0);
+void SEASON2_END_UTC;
+
 /** Индекс текущего сезона (0 — первый) по «замороженному» времени. */
-export function seasonIndex(now = Date.now()): number {
-  const diff = now - seasonTimeShiftMs(now) - SEASON_ANCHOR_UTC;
-  return diff <= 0 ? 0 : Math.floor(diff / (SEASON_DAYS * 86_400_000));
+export function seasonIndex(_now = Date.now()): number {
+  return 0;
 }
 
 /** Границы сезона: текущий (продлённый) сезон получает конец со сдвигом простоя. */
 export function seasonBounds(now = Date.now()): { startsAt: Date; endsAt: Date } {
-  const shift = seasonTimeShiftMs(now);
-  const idx = seasonIndex(now);
-  const startsAt = new Date(SEASON_ANCHOR_UTC + idx * SEASON_DAYS * 86_400_000);
-  const endsAt = new Date(startsAt.getTime() + SEASON_DAYS * 86_400_000 + shift);
-  return { startsAt, endsAt };
+  void now;
+  return { startsAt: new Date(SEASON_ANCHOR_UTC), endsAt: new Date(SEASON2_FINAL_END_UTC) };
 }

@@ -871,7 +871,7 @@ async function bumpStreak(userId: string, seasonId: string, day: string): Promis
 export const STREAK_MILESTONES = [10, 20, 30] as const;
 export type StreakMilestone = (typeof STREAK_MILESTONES)[number];
 /** Календарь активности — 30 дней внутри 45-дневного сезона (дни не обязательно подряд). */
-export const STREAK_DAYS = 30;
+export const STREAK_DAYS = 40;
 
 const MILESTONE_TITLE: Record<StreakMilestone, string> = {
   10: "Капсула ×3 на 48 часов",
@@ -923,7 +923,7 @@ export async function claimStreakMilestone(userId: string, milestone: StreakMile
     });
   }
 
-  // 30 дней — 100 билетов. После выдачи полоса стартует заново.
+  // 30 дней — 100 билетов.
   if (milestone === 30) {
     await ticketCredit({
       userId,
@@ -934,17 +934,7 @@ export async function claimStreakMilestone(userId: string, milestone: StreakMile
       refId: streak.id,
       idempotent: true,
     });
-    await db
-      .update(spinStreaks)
-      .set({
-        daysCount: 0,
-        claimed10At: null,
-        claimed20At: null,
-        claimed30At: null,
-        lastSpinDate: null,
-        updatedAt: new Date(),
-      })
-      .where(eq(spinStreaks.id, streak.id));
+    // Полоса больше не сбрасывается: дальше идёт веха 40 дней.
   }
 
 
