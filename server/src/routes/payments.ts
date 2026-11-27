@@ -13,6 +13,7 @@ import { PAYMENT_METHODS } from "../db/schema/payments.js";
 import { createPassPurchase, PassPurchaseError } from "../lib/pass.js";
 import { PASS_TIERS, PASS_PERIODS } from "../db/schema/pass.js";
 import { createOrderForUser, createOrderFromCartForUser, OrderCreateError } from "../lib/shop.js";
+import { createSpinDeliveryOrder, SpinDeliveryError } from "../lib/spin-delivery.js";
 
 const idSchema = z.object({ id: z.string().uuid() });
 const initBodySchema = z
@@ -102,6 +103,20 @@ const orderItemSchema = z.object({
   productId: z.string().uuid(),
   qty: z.coerce.number().int().min(1).max(50),
   size: z.string().trim().min(1).max(24).optional(),
+});
+
+// Оплата доставки физической награды HellSpin (футболка / Secret Box) до ПВЗ СДЭК.
+const spinDeliveryRedirectSchema = z.object({
+  target: z.literal("spin_delivery"),
+  winner_id: z.string().uuid(),
+  size: z.string().trim().max(8).optional(),
+  shipping_fio: z.string().trim().min(2).max(120),
+  shipping_phone: z.string().trim().min(5).max(32),
+  shipping_city: z.string().trim().max(80).optional().default("—"),
+  cdek_city_code: z.coerce.number().int().positive(),
+  cdek_pvz_code: z.string().trim().min(1).max(32),
+  cdek_pvz_address: z.string().trim().max(500).optional(),
+  method: z.enum(PAYMENT_METHODS).optional(),
 });
 
 const orderRedirectSchema = z.object({
@@ -309,6 +324,33 @@ export async function paymentsRoutes(app: FastifyInstance) {
           req.log.warn({ code: (e as { code?: string }).code, msg }, "order redirect rejected");
         }
         return replyErr("/club/checkout", msg);
+      }
+    }
+
+    if (target === "spin_delivery") {
+      const parsed = spinDeliveryRedirectSchema.safeParse(body);
+      const back = "/club/spin";
+      if (!parsed.success) {
+        return replyErr(back, parsed.error.issues[0]?.message ?? "Неверные данные");
+      }
+      const d = parsed.data;
+      try {
+        const { orderId } = await createSpinDeliveryOrder(session.sub, {
+          winnerId: d.winner_id,
+          size: d.size ?? null,
+          fio: d.shipping_fio,
+          phone: d.shipping_phone,
+          city: d.shipping_city,
+          cdekCityCode: d.cdek_city_code,
+          cdekPvzCode: d.cdek_pvz_code,
+          cdekPvzAddress: d.cdek_pvz_address ?? null,
+        });
+        const r = await createPaymentForOrder(orderId, session.sub, d.method ?? "sbp");
+        return replyOk(r.paymentUrl);
+      } catch (e) {
+        const known = e instanceof SpinDeliveryError || e instanceof PaymentInitError;
+        if (!known) req.log.error({ err: e }, "spin delivery redirect failed");
+        return replyErr(back, known ? (e as Error).message : "Не удалось открыть оплату");
       }
     }
 

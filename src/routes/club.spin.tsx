@@ -228,6 +228,18 @@ function SpinPage() {
   const tier: SpinTier = state?.tier ?? "none";
   const streak = state?.streak.days ?? 0;
   const claimed = state?.streak.claimed ?? [];
+  const [deliveries, setDeliveries] = useState<
+    Array<{ winnerId: string; prizeCode: string; orderId: string | null }>
+  >([]);
+  useEffect(() => {
+    if (!state) return;
+    apiFetch<{ items: Array<{ winnerId: string; prizeCode: string; orderId: string | null }> }>(
+      "/api/v1/spin/deliveries",
+    )
+      .then((r) => setDeliveries(r.items))
+      .catch(() => setDeliveries([]));
+  }, [state]);
+  const DELIVERY_CODE: Record<number, string> = { 20: "tshirt_legend", 40: "secret_box" };
   // Календарь активности работает только для Hell Pass Platinum.
   const streakEligible = state ? (state.streak.eligible ?? state.tier === "platinum") : false;
   const lastPrize = state?.history[0]
@@ -732,7 +744,20 @@ function SpinPage() {
                   )}
                 </span>
 
-                {isClaimed ? (
+                {isClaimed && DELIVERY_CODE[c.day] && (() => {
+                  const d = deliveries.find((x) => x.prizeCode === DELIVERY_CODE[c.day]);
+                  if (!d || d.orderId) return null;
+                  return (
+                    <Link
+                      to="/club/spin-delivery/$winnerId"
+                      params={{ winnerId: d.winnerId }}
+                      className="shrink-0 rounded-lg bg-primary px-2.5 py-1 font-display text-[10px] font-black uppercase text-primary-foreground transition-transform active:scale-[0.94]"
+                    >
+                      Получить
+                    </Link>
+                  );
+                })()}
+                {isClaimed && DELIVERY_CODE[c.day] && deliveries.some((x) => x.prizeCode === DELIVERY_CODE[c.day] && !x.orderId) ? null : isClaimed ? (
                   <span className="shrink-0 rounded-lg border-[2px] border-foreground bg-[#B6FF3C] px-2 py-1 font-display text-[10px] font-black uppercase tracking-tight text-black shadow-[2px_2px_0_0_hsl(var(--foreground))]">
                     Твоё
                   </span>

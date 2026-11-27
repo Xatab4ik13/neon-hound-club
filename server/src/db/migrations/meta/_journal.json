@@ -547,6 +547,13 @@
       "when": 1787800000000,
       "tag": "0077_spin_streak_40",
       "breakpoints": true
+    },
+    {
+      "idx": 78,
+      "version": "7",
+      "when": 1787900000000,
+      "tag": "0078_orders_spin_winner",
+      "breakpoints": true
     }
   ]
 }

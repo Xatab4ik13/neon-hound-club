@@ -16,6 +16,7 @@ import {
   getSpinState,
   rollSpin,
 } from "../lib/spin.js";
+import { calcSpinDelivery, listMyDeliveries, SpinDeliveryError } from "../lib/spin-delivery.js";
 
 function isPwa(req: { headers: Record<string, unknown>; body?: unknown }): boolean {
   const header = String(req.headers["x-pwa"] ?? "").toLowerCase();
@@ -54,6 +55,30 @@ export async function spinRoutes(app: FastifyInstance) {
         return reply.code(409).send({ error: err.code, message: err.message });
       }
       throw err;
+    }
+  });
+
+  // Физические награды календаря: футболка (20) и Secret Box (40) — платится только доставка.
+  app.get("/deliveries", { preHandler: requireAuth }, async (req) => {
+    const session = req.user as SessionPayload;
+    return { items: await listMyDeliveries(session.sub) };
+  });
+
+  app.post("/deliveries/calculate", { preHandler: requireAuth }, async (req, reply) => {
+    const session = req.user as SessionPayload;
+    const parsed = z
+      .object({ winnerId: z.string().uuid(), cityCode: z.coerce.number().int().positive() })
+      .safeParse(req.body);
+    if (!parsed.success) return reply.code(400).send({ error: "bad_request" });
+    try {
+      const r = await calcSpinDelivery(session.sub, parsed.data.winnerId, parsed.data.cityCode);
+      return { totalSum: r.totalSum, periodMin: r.periodMin, periodMax: r.periodMax };
+    } catch (err) {
+      if (err instanceof SpinDeliveryError) {
+        return reply.code(err.status).send({ error: err.code, message: err.message });
+      }
+      req.log.error({ err }, "spin delivery calc failed");
+      return reply.code(502).send({ error: "cdek_calc_failed", message: "Не удалось рассчитать доставку" });
     }
   });
 }

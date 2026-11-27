@@ -183,6 +183,8 @@ export const orders = pgTable(
     cdekStatusAt: timestamp("cdek_status_at", { withTimezone: true }),
     /** Сводка типов в заказе — для фильтров в /club/orders. */
     kindSummary: varchar("kind_summary", { length: 16 }).notNull().default("physical"),
+    /** Оплата доставки награды HellSpin (kindSummary='spin'): ссылка на spin_winners.id. */
+    spinWinnerId: uuid("spin_winner_id"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
     paidAt: timestamp("paid_at", { withTimezone: true }),

@@ -210,7 +210,7 @@ export type ShopOrder = {
   /** Дедлайн оплаты для status='pending_payment'. После него заказ сносится воркером. */
   expiresAt: string | null;
   /** Снимок типа состава заказа: physical | virtual | digital | preorder | mixed. */
-  kindSummary?: "physical" | "virtual" | "digital" | "preorder" | "mixed";
+  kindSummary?: "physical" | "virtual" | "digital" | "preorder" | "mixed" | "spin";
   /** Превью позиций заказа для карточки в списке. Доступно только в GET /shop/orders. */
   preview?: ShopOrderPreview;
 };

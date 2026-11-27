@@ -209,6 +209,11 @@ function OrdersTable({
               <td className="px-3 py-2.5">
                 <div className="font-medium">{o.shipping.fio}</div>
                 <div className="text-xs text-zinc-500">{o.shipping.phone}</div>
+                {o.kindSummary === "spin" && (
+                  <span className="mt-1 inline-block rounded bg-fuchsia-100 px-1.5 py-0.5 text-[10px] font-medium text-fuchsia-700 dark:bg-fuchsia-900/40 dark:text-fuchsia-300">
+                    Оплата доставки из HellSpin
+                  </span>
+                )}
               </td>
               <td className="px-3 py-2.5 text-xs text-zinc-600 dark:text-zinc-400">{o.shipping.city}</td>
               <td className="px-3 py-2.5 text-right font-mono text-xs font-semibold">{`${(o.totalRub).toLocaleString("ru-RU")} ₽`}</td>
@@ -319,6 +324,11 @@ function OrderDrawer({ orderId, onClose }: { orderId: string; onClose: () => voi
             >
               {STATUS_LABEL[order.data.status]}
             </span>
+            {order.data.kindSummary === "spin" && (
+              <span className="ml-2 mt-2 inline-block rounded-md bg-fuchsia-100 px-2 py-0.5 text-xs font-medium text-fuchsia-700 dark:bg-fuchsia-900/40 dark:text-fuchsia-300">
+                Оплата доставки из HellSpin
+              </span>
+            )}
           </div>
 
           <Section title="Покупатель">

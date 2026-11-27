@@ -93,6 +93,7 @@ import { Route as ClubHellPassIndexRouteImport } from './routes/club.hell-pass.i
 import { Route as BloggerRafflesIndexRouteImport } from './routes/blogger.raffles.index'
 import { Route as BloggerChatsIndexRouteImport } from './routes/blogger.chats.index'
 import { Route as ClubUNickRouteImport } from './routes/club.u.$nick'
+import { Route as ClubSpinDeliveryWinnerIdRouteImport } from './routes/club.spin-delivery.$winnerId'
 import { Route as ClubShopProductSlugRouteImport } from './routes/club.shop.$productSlug'
 import { Route as ClubSchoolInstructorIdRouteImport } from './routes/club.school.$instructorId'
 import { Route as ClubSchoolChatsChatIdRouteImport } from './routes/club.school-chats.$chatId'
@@ -530,6 +531,12 @@ const ClubUNickRoute = ClubUNickRouteImport.update({
   path: '/u/$nick',
   getParentRoute: () => ClubRoute,
 } as any)
+const ClubSpinDeliveryWinnerIdRoute =
+  ClubSpinDeliveryWinnerIdRouteImport.update({
+    id: '/spin-delivery/$winnerId',
+    path: '/spin-delivery/$winnerId',
+    getParentRoute: () => ClubRoute,
+  } as any)
 const ClubShopProductSlugRoute = ClubShopProductSlugRouteImport.update({
   id: '/shop/$productSlug',
   path: '/shop/$productSlug',
@@ -701,6 +708,7 @@ export interface FileRoutesByFullPath {
   '/club/school-chats/$chatId': typeof ClubSchoolChatsChatIdRoute
   '/club/school/$instructorId': typeof ClubSchoolInstructorIdRoute
   '/club/shop/$productSlug': typeof ClubShopProductSlugRoute
+  '/club/spin-delivery/$winnerId': typeof ClubSpinDeliveryWinnerIdRoute
   '/club/u/$nick': typeof ClubUNickRoute
   '/blogger/chats/': typeof BloggerChatsIndexRoute
   '/blogger/raffles/': typeof BloggerRafflesIndexRoute
@@ -800,6 +808,7 @@ export interface FileRoutesByTo {
   '/club/school-chats/$chatId': typeof ClubSchoolChatsChatIdRoute
   '/club/school/$instructorId': typeof ClubSchoolInstructorIdRoute
   '/club/shop/$productSlug': typeof ClubShopProductSlugRoute
+  '/club/spin-delivery/$winnerId': typeof ClubSpinDeliveryWinnerIdRoute
   '/club/u/$nick': typeof ClubUNickRoute
   '/blogger/chats': typeof BloggerChatsIndexRoute
   '/blogger/raffles': typeof BloggerRafflesIndexRoute
@@ -903,6 +912,7 @@ export interface FileRoutesById {
   '/club/school-chats/$chatId': typeof ClubSchoolChatsChatIdRoute
   '/club/school/$instructorId': typeof ClubSchoolInstructorIdRoute
   '/club/shop/$productSlug': typeof ClubShopProductSlugRoute
+  '/club/spin-delivery/$winnerId': typeof ClubSpinDeliveryWinnerIdRoute
   '/club/u/$nick': typeof ClubUNickRoute
   '/blogger/chats/': typeof BloggerChatsIndexRoute
   '/blogger/raffles/': typeof BloggerRafflesIndexRoute
@@ -1007,6 +1017,7 @@ export interface FileRouteTypes {
     | '/club/school-chats/$chatId'
     | '/club/school/$instructorId'
     | '/club/shop/$productSlug'
+    | '/club/spin-delivery/$winnerId'
     | '/club/u/$nick'
     | '/blogger/chats/'
     | '/blogger/raffles/'
@@ -1106,6 +1117,7 @@ export interface FileRouteTypes {
     | '/club/school-chats/$chatId'
     | '/club/school/$instructorId'
     | '/club/shop/$productSlug'
+    | '/club/spin-delivery/$winnerId'
     | '/club/u/$nick'
     | '/blogger/chats'
     | '/blogger/raffles'
@@ -1208,6 +1220,7 @@ export interface FileRouteTypes {
     | '/club/school-chats/$chatId'
     | '/club/school/$instructorId'
     | '/club/shop/$productSlug'
+    | '/club/spin-delivery/$winnerId'
     | '/club/u/$nick'
     | '/blogger/chats/'
     | '/blogger/raffles/'
@@ -1845,6 +1858,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ClubUNickRouteImport
       parentRoute: typeof ClubRoute
     }
+    '/club/spin-delivery/$winnerId': {
+      id: '/club/spin-delivery/$winnerId'
+      path: '/spin-delivery/$winnerId'
+      fullPath: '/club/spin-delivery/$winnerId'
+      preLoaderRoute: typeof ClubSpinDeliveryWinnerIdRouteImport
+      parentRoute: typeof ClubRoute
+    }
     '/club/shop/$productSlug': {
       id: '/club/shop/$productSlug'
       path: '/shop/$productSlug'
@@ -2069,6 +2089,7 @@ interface ClubRouteChildren {
   ClubSchoolChatsChatIdRoute: typeof ClubSchoolChatsChatIdRoute
   ClubSchoolInstructorIdRoute: typeof ClubSchoolInstructorIdRoute
   ClubShopProductSlugRoute: typeof ClubShopProductSlugRoute
+  ClubSpinDeliveryWinnerIdRoute: typeof ClubSpinDeliveryWinnerIdRoute
   ClubUNickRoute: typeof ClubUNickRoute
   ClubHellPassIndexRoute: typeof ClubHellPassIndexRoute
   ClubHelpIndexRoute: typeof ClubHelpIndexRoute
@@ -2110,6 +2131,7 @@ const ClubRouteChildren: ClubRouteChildren = {
   ClubSchoolChatsChatIdRoute: ClubSchoolChatsChatIdRoute,
   ClubSchoolInstructorIdRoute: ClubSchoolInstructorIdRoute,
   ClubShopProductSlugRoute: ClubShopProductSlugRoute,
+  ClubSpinDeliveryWinnerIdRoute: ClubSpinDeliveryWinnerIdRoute,
   ClubUNickRoute: ClubUNickRoute,
   ClubHellPassIndexRoute: ClubHellPassIndexRoute,
   ClubHelpIndexRoute: ClubHelpIndexRoute,
