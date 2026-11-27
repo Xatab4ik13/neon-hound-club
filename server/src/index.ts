@@ -75,7 +75,8 @@ try {
   setInterval(async () => {
     try {
       const r = await runReminderTick();
-      if (r.spins || r.pass || r.boost) app.log.info({ ...r }, "push reminders sent");
+      if (r.spins || r.pass || r.boost || r.box || r.expired)
+        app.log.info({ ...r }, "push reminders sent");
     } catch (e) {
       app.log.error({ err: e }, "runReminderTick failed");
     }

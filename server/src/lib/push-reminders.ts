@@ -1,15 +1,17 @@
 // Напоминания пушами: HellSpin (23:00 МСК), истечение Hell Pass, истечение капсулы ×2.
 // Дедуп через таблицу push_reminders (user_id + kind + ref_key).
 
-import { and, eq, gt, isNotNull, lt, sql } from "drizzle-orm";
+import { and, desc, eq, gt, isNotNull, lt, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { pushSubscriptions } from "../db/schema/push.js";
 import { pushReminders } from "../db/schema/push-reminders.js";
 import { passPurchases } from "../db/schema/pass.js";
 import { users } from "../db/schema/users.js";
-import { spinDaily } from "../db/schema/spin.js";
+import { spinDaily, spinSeasons, spinStreaks } from "../db/schema/spin.js";
+import { systemSettings } from "../db/schema/economy.js";
 import { mskDate, SPINS_PER_DAY } from "./spin.js";
 import { pushToAll, pushToUsers, type PushPayload } from "./push.js";
+import { planSeasonCampaign, type CampaignUser } from "./season-campaign.js";
 
 /** Помечает напоминание отправленным. false — уже отправляли раньше. */
 async function claim(userId: string, kind: string, refKey: string): Promise<boolean> {
@@ -168,12 +170,118 @@ export function isMskSpinReminderWindow(d = new Date()): boolean {
   return msk.getUTCHours() === 23 && msk.getUTCMinutes() < 5;
 }
 
+/** true, если сейчас 10:00–21:00 по МСК — время слать сезонную кампанию. */
+export function isCampaignWindow(d = new Date()): boolean {
+  const msk = new Date(d.getTime() + 180 * 60_000);
+  const h = msk.getUTCHours();
+  return h >= 10 && h < 21;
+}
+
+/**
+ * Кампания сезона: пуш «до Secret Box N дней» тем, у кого активный Platinum,
+ * и пуш «Platinum закончился» тем, у кого прогресс есть, а Platinum истёк.
+ * Один раз за сезон на человека — дедуп по period_key сезона в push_reminders.
+ */
+/**
+ * Кампания выключена, пока владелец не включит её вручную:
+ * system_settings key='season_campaign', value={"enabled": true}.
+ */
+export async function isSeasonCampaignEnabled(): Promise<boolean> {
+  const [row] = await db
+    .select({ value: systemSettings.value })
+    .from(systemSettings)
+    .where(eq(systemSettings.key, "season_campaign"))
+    .limit(1);
+  const value = row?.value as { enabled?: boolean } | undefined;
+  return value?.enabled === true;
+}
+
+export async function runSeasonCampaign(): Promise<{ box: number; expired: number }> {
+  if (!(await isSeasonCampaignEnabled())) return { box: 0, expired: 0 };
+
+  const [season] = await db
+    .select()
+    .from(spinSeasons)
+    .where(eq(spinSeasons.active, true))
+    .orderBy(desc(spinSeasons.startsAt))
+    .limit(1);
+  if (!season) return { box: 0, expired: 0 };
+
+  const [subs, platinum, streaks] = await Promise.all([
+    db
+      .selectDistinct({ userId: pushSubscriptions.userId })
+      .from(pushSubscriptions)
+      .where(isNotNull(pushSubscriptions.userId)),
+    db
+      .selectDistinct({ userId: passPurchases.userId })
+      .from(passPurchases)
+      .where(
+        and(
+          eq(passPurchases.tier, "platinum"),
+          eq(passPurchases.status, "active"),
+          gt(passPurchases.expiresAt, new Date()),
+        ),
+      ),
+    db
+      .select({
+        userId: spinStreaks.userId,
+        days: spinStreaks.daysCount,
+        claimed40: spinStreaks.claimed40At,
+      })
+      .from(spinStreaks)
+      .innerJoin(users, eq(users.id, spinStreaks.userId))
+      .where(
+        and(
+          eq(spinStreaks.seasonId, season.id),
+          gt(spinStreaks.daysCount, 0),
+          eq(users.blocked, false),
+        ),
+      ),
+  ]);
+
+  const subscribed = new Set(subs.map((s) => s.userId).filter((id): id is string => !!id));
+  const hasPlatinum = new Set(platinum.map((p) => p.userId));
+
+  const list: CampaignUser[] = streaks
+    .filter((s) => subscribed.has(s.userId))
+    .map((s) => ({
+      userId: s.userId,
+      days: s.days,
+      hasPlatinum: hasPlatinum.has(s.userId),
+      claimed40: s.claimed40 !== null,
+    }));
+
+  let box = 0;
+  let expired = 0;
+  for (const m of planSeasonCampaign(list)) {
+    if (!(await sendOnce(m.userId, m.kind, season.periodKey, m.payload))) continue;
+    if (m.kind === "secret_box") box++;
+    else expired++;
+  }
+  return { box, expired };
+}
+
+/** Кампанию сезона отправляем один раз за процесс (дедуп в БД — на человека). */
+let campaignDone = false;
+
 /** Единый тик планировщика напоминаний. Вызывается раз в минуту. */
-export async function runReminderTick(): Promise<{ spins: number; pass: number; boost: number }> {
-  const out = { spins: 0, pass: 0, boost: 0 };
+export async function runReminderTick(): Promise<{
+  spins: number;
+  pass: number;
+  boost: number;
+  box: number;
+  expired: number;
+}> {
+  const out = { spins: 0, pass: 0, boost: 0, box: 0, expired: 0 };
   if (isMskSpinReminderWindow()) out.spins = await remindUnusedSpins();
   const minute = new Date().getUTCMinutes();
   if (minute % 15 === 0) out.boost = await remindBoostExpiring();
   if (minute === 5) out.pass = await remindPassExpiring();
+  if (!campaignDone && isCampaignWindow() && (await isSeasonCampaignEnabled())) {
+    const c = await runSeasonCampaign();
+    campaignDone = true;
+    out.box = c.box;
+    out.expired = c.expired;
+  }
   return out;
 }
