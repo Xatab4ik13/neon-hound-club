@@ -19,6 +19,8 @@ type Props = {
   required?: boolean;
   autoComplete?: string;
   verified?: boolean;
+  /** Без собственной рамки/фона — когда поле уже внутри рамки формы. */
+  bare?: boolean;
 };
 
 /** Эмодзи-флаг по двухбуквенному ISO-коду. */
@@ -37,7 +39,7 @@ function flagEmoji(country: string): string {
  * флаг-кнопка, выпадающий список с поиском, автоформат и помощь по длине номера для выбранной страны.
  */
 export const PhoneInput = forwardRef<HTMLInputElement, Props>(function PhoneInput(
-  { value, defaultValue, onChange, placeholder, className, required, autoComplete = "tel", verified },
+  { value, defaultValue, onChange, placeholder, className, required, autoComplete = "tel", verified, bare },
   ref,
 ) {
   // Определяем стартовую страну ОДИН РАЗ на маунте: если в value уже есть
@@ -116,7 +118,10 @@ export const PhoneInput = forwardRef<HTMLInputElement, Props>(function PhoneInpu
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex h-12 shrink-0 items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-3 transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+        className={cn(
+          "flex h-12 shrink-0 items-center gap-1.5 rounded-xl px-3 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60",
+          !bare && "border border-white/10 bg-white/5 hover:bg-white/10",
+        )}
         aria-label="Выбор страны"
         aria-haspopup="listbox"
         aria-expanded={open}
@@ -137,7 +142,8 @@ export const PhoneInput = forwardRef<HTMLInputElement, Props>(function PhoneInpu
           autoComplete={autoComplete}
           required={required}
           className={cn(
-            "flex h-12 w-full min-w-0 rounded-xl border border-white/10 bg-white/5 px-4 text-base text-white ring-offset-background placeholder:text-white/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 disabled:cursor-not-allowed disabled:opacity-50",
+            "flex h-12 w-full min-w-0 rounded-xl text-base text-white ring-offset-background placeholder:text-white/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 disabled:cursor-not-allowed disabled:opacity-50",
+            bare ? "bg-transparent px-1" : "border border-white/10 bg-white/5 px-4",
             verified && "pr-11",
           )}
         />

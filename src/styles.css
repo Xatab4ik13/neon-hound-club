@@ -1066,3 +1066,31 @@ html.hh-admin *::-webkit-scrollbar-thumb:hover {
 .hh-tg .hh-doc-body a { color: #b6ff3b; text-decoration: underline; }
 .hh-tg .hh-doc-body strong { color: #fff; }
 .hh-tg .hh-doc-date { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: #8b8b99; }
+
+/* ── Форма доставки наград HellSpin: поля в рамках, ошибка — красным ── */
+.hh-spin-form { --hh-spin-alert: color-mix(in oklab, var(--destructive) 72%, #fff); }
+.hh-spin-field {
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 16px;
+  background: rgba(255,255,255,0.04);
+  transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+}
+.hh-spin-field:focus-within {
+  border-color: color-mix(in oklab, var(--primary) 60%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 16%, transparent);
+}
+.hh-spin-field.is-error {
+  border-color: var(--hh-spin-alert);
+  background: color-mix(in oklab, var(--destructive) 12%, transparent);
+  animation: hh-spin-alert 1.6s ease-in-out infinite;
+}
+.hh-spin-section.is-error { border-color: var(--hh-spin-alert); animation: hh-spin-alert 1.6s ease-in-out infinite; }
+.hh-spin-label.is-error { color: var(--hh-spin-alert); }
+.hh-spin-hint { color: var(--hh-spin-alert); font-size: 12px; font-weight: 600; }
+@keyframes hh-spin-alert {
+  0%, 100% { box-shadow: 0 0 0 1px var(--hh-spin-alert), 0 0 16px -6px color-mix(in oklab, var(--destructive) 85%, #fff); }
+  50%      { box-shadow: 0 0 0 1px var(--hh-spin-alert), 0 0 28px -2px color-mix(in oklab, var(--destructive) 85%, #fff); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hh-spin-field.is-error, .hh-spin-section.is-error { animation: none; box-shadow: 0 0 0 1px var(--hh-spin-alert); }
+}
